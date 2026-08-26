@@ -278,12 +278,26 @@ verification this slice, same honest "primitives only" pattern §8.1 already est
 instead by full local gauntlet (2005 tests, typecheck/lint/build all clean) and direct comparison
 against the real legacy CSS/markup cited in the plan doc.
 
-**Immediate next steps:** 8.4 (retrofit existing call sites onto the new §8.3 components, split by
-area into separate reviewable PRs — app-bar/header, sidebar, document header + toolbar, dropdown
-menus + modals) is next — same PR-per-slice discipline as every prior phase, hold verification to
-a real side-by-side screenshot against legacy, not just "renders/behaves correctly," since this is
-the slice that actually puts the new components on screen. Once `web/` is visually close enough to
-legacy for a person to sign off, return to docs/phase6-full-parity-
+**8.4a (retrofit: app-bar/header) landed**: `AccountMenu.tsx`/`ExportButtons.tsx`, the two real
+`DropdownMenu` consumers anchored in the header row, retrofit onto §8.3's `MenuItem` inside a real
+`<DropdownMenu rich>`, with real icons per row and real `.export-section-label`/`.export-divider`/
+`.export-ext` structure ported from legacy. Header icon buttons themselves (sidebar-toggle, theme,
+hub, settings-gear) needed no change — confirmed legacy's own app-bar buttons carry no extra class,
+relying solely on §8.1's `#appbar button` selector. Found and fixed a real structural duplication:
+`SyncStatusIndicator.tsx` rendered a second avatar next to `AccountMenu`'s own toggle specifically
+because that toggle's status dot was hardcoded — folded the real live sync-status logic into
+`AccountMenu` and deleted `SyncStatusIndicator.tsx`, matching legacy's one-avatar-does-both-jobs
+reality. Also found and fixed three more real gaps while wiring these two up: two missing CSS
+classes (`.export-menu-rich .export-divider`/`.export-ext`, both real §8.1 misses), a `DropdownMenu`
+inline-style bug (`padding:4` always beat the real `rich`-class `padding:6` regardless of the prop),
+and a `MenuItem` icon-span gap (missing `.export-icon.danger` when `danger` is set). See the plan
+doc's own Status section for the full breakdown and every icon/class cited.
+
+**Immediate next steps:** 8.4b (sidebar) is next — same PR-per-slice discipline, split by area into
+separate reviewable PRs (sidebar → document header + toolbar → dropdown menus + modals remaining),
+hold verification to a real side-by-side screenshot against legacy, not just "renders/behaves
+correctly," since this is the slice that actually puts the new components on screen. Once `web/` is
+visually close enough to legacy for a person to sign off, return to docs/phase6-full-parity-
 plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking through the real
 `/web-preview/` build end-to-end; signing in with a real account to confirm production-synced
 documents round-trip; the actual `deploy.yml` cutover PR) — none of which are appropriate to

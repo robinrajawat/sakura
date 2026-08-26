@@ -5,6 +5,21 @@ import { usePadStore } from '../store/padStore';
 import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { DropdownMenu } from './DropdownMenu';
+import { MenuItem } from './ui/MenuItem';
+import {
+  UploadTrayIcon,
+  DownloadTrayIcon,
+  PrinterIcon,
+  ClipboardIcon,
+  MarkdownFileIcon,
+  TreeLinesIcon,
+  DocFileIcon,
+  PdfFileIcon,
+  PptFileIcon,
+  OpmlIcon,
+  SakuraDocIcon,
+  XlsxFileIcon
+} from '../icons';
 import { rebuildParentIdsCore } from '../core/nodeSelection';
 import { serializeMarkdown } from '../utils/serializeMarkdown';
 import { serializeOpmlCore } from '../utils/serializeOpml';
@@ -1038,7 +1053,17 @@ export function ExportButtons() {
     XLSX.writeFile(wb, 'outline-decision-log.xlsx');
   }
 
-  const menuItemStyle: CSSProperties = {
+  function closeMenu(): void {
+    setOpen(false);
+    setSection('root');
+  }
+
+  // §8.4 retrofit (docs/phase8-design-system-parity-plan.md): the one row below that isn't a real
+  // `.export-item` -- legacy's own two-level menus don't have a "‹ Back" row at all (its real
+  // top-level menu instead re-opens a DIFFERENT full menu elsewhere, see this file's own header
+  // for why `web/` deliberately keeps a single in-place two-level menu instead), so there's no
+  // real class to port for it; kept as its own small ad hoc style, same as before this slice.
+  const backRowStyle: CSSProperties = {
     display: 'block',
     width: '100%',
     textAlign: 'left',
@@ -1047,15 +1072,9 @@ export function ExportButtons() {
     borderRadius: 6,
     padding: '7px 8px',
     font: 'inherit',
-    fontSize: 12.5,
-    color: t.text,
+    fontSize: 11.5,
     cursor: 'pointer'
   };
-
-  function closeMenu(): void {
-    setOpen(false);
-    setSection('root');
-  }
 
   return (
     <div style={{ position: 'relative' }}>
@@ -1077,156 +1096,151 @@ export function ExportButtons() {
         </svg>
       </button>
       {open && (
-        <DropdownMenu onClose={closeMenu} width={210} align="right">
+        <DropdownMenu onClose={closeMenu} width={210} align="right" rich>
           {section === 'root' && (
             <>
-              <button type="button" style={menuItemStyle} onClick={() => setSection('export')}>
+              <MenuItem icon={<UploadTrayIcon />} onClick={() => setSection('export')}>
                 Export ›
-              </button>
-              <button type="button" style={menuItemStyle} onClick={() => setSection('import')}>
+              </MenuItem>
+              <MenuItem icon={<DownloadTrayIcon />} onClick={() => setSection('import')}>
                 Import ›
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+              </MenuItem>
+              <MenuItem
+                icon={<PrinterIcon />}
                 onClick={() => {
                   exportPdf();
                   closeMenu();
                 }}
               >
                 Print
-              </button>
+              </MenuItem>
             </>
           )}
           {section === 'export' && (
             <>
-              <button type="button" style={{ ...menuItemStyle, color: t.mutedText, fontSize: 11.5 }} onClick={() => setSection('root')}>
+              <button type="button" style={{ ...backRowStyle, color: t.mutedText }} onClick={() => setSection('root')}>
                 ‹ Back
               </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+              <div className="export-section-label">Copy</div>
+              <MenuItem
+                icon={<ClipboardIcon />}
                 onClick={() => {
                   void exportClipboard();
                   closeMenu();
                 }}
               >
                 Copy as Text
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+              </MenuItem>
+              <div className="export-divider" />
+              <div className="export-section-label">Document</div>
+              <MenuItem
+                icon={<MarkdownFileIcon />}
                 onClick={() => {
                   exportMarkdown();
                   closeMenu();
                 }}
               >
-                Export .md
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+                Markdown <span className="export-ext">.md</span>
+              </MenuItem>
+              <MenuItem
+                icon={<TreeLinesIcon />}
                 onClick={() => {
                   exportPlainText();
                   closeMenu();
                 }}
               >
-                Export .txt
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
-                onClick={() => {
-                  exportOpml();
-                  closeMenu();
-                }}
-              >
-                Export .opml
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
-                onClick={() => {
-                  exportPdf();
-                  closeMenu();
-                }}
-              >
-                Export .pdf
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+                Tree <span className="export-ext">.txt</span>
+              </MenuItem>
+              <MenuItem
+                icon={<DocFileIcon />}
                 onClick={() => {
                   void exportWord();
                   closeMenu();
                 }}
               >
-                Export .docx
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+                Word <span className="export-ext">.docx</span>
+              </MenuItem>
+              <MenuItem
+                icon={<PdfFileIcon />}
+                onClick={() => {
+                  exportPdf();
+                  closeMenu();
+                }}
+              >
+                PDF <span className="export-ext">.pdf</span>
+              </MenuItem>
+              <MenuItem
+                icon={<PptFileIcon />}
                 onClick={() => {
                   void exportPowerpoint();
                   closeMenu();
                 }}
               >
-                Export .pptx
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+                PowerPoint <span className="export-ext">.pptx</span>
+              </MenuItem>
+              <MenuItem
+                icon={<OpmlIcon />}
                 onClick={() => {
-                  exportDecisionLogXlsx();
+                  exportOpml();
                   closeMenu();
                 }}
               >
-                Export Decision Log .xlsx
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+                OPML <span className="export-ext">.opml</span>
+              </MenuItem>
+              <div className="export-divider" />
+              <div className="export-section-label">Send a copy</div>
+              <MenuItem
+                icon={<SakuraDocIcon />}
                 onClick={() => {
                   exportSakuraDocument();
                   closeMenu();
                 }}
               >
-                Export .sakura.json
-              </button>
+                Sakura Document <span className="export-ext">.json</span>
+              </MenuItem>
+              <div className="export-divider" />
+              <div className="export-section-label">Data</div>
+              <MenuItem
+                icon={<XlsxFileIcon />}
+                onClick={() => {
+                  exportDecisionLogXlsx();
+                  closeMenu();
+                }}
+              >
+                Decision Log <span className="export-ext">.xlsx</span>
+              </MenuItem>
             </>
           )}
           {section === 'import' && (
             <>
-              <button type="button" style={{ ...menuItemStyle, color: t.mutedText, fontSize: 11.5 }} onClick={() => setSection('root')}>
+              <button type="button" style={{ ...backRowStyle, color: t.mutedText }} onClick={() => setSection('root')}>
                 ‹ Back
               </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+              <div className="export-section-label">From a file</div>
+              <MenuItem
+                icon={<OpmlIcon />}
                 onClick={() => {
                   opmlFileInputRef.current?.click();
                 }}
               >
-                Import .opml
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
-                onClick={() => {
-                  sakuraDocFileInputRef.current?.click();
-                }}
-              >
-                Import .sakura.json
-              </button>
-              <button
-                type="button"
-                style={menuItemStyle}
+                OPML <span className="export-ext">.opml</span>
+              </MenuItem>
+              <MenuItem
+                icon={<DocFileIcon />}
                 onClick={() => {
                   docxFileInputRef.current?.click();
                 }}
               >
-                Import .docx
-              </button>
+                Word <span className="export-ext">.docx</span>
+              </MenuItem>
+              <MenuItem
+                icon={<SakuraDocIcon />}
+                onClick={() => {
+                  sakuraDocFileInputRef.current?.click();
+                }}
+              >
+                Sakura Document <span className="export-ext">.json</span>
+              </MenuItem>
             </>
           )}
         </DropdownMenu>
