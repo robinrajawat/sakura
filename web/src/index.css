@@ -1337,3 +1337,189 @@ body.theme-dark .account-visibility-badge:hover {
   color: var(--hint);
   text-align: center;
 }
+
+/* §8.4f retrofit (docs/phase8-design-system-parity-plan.md) -- the Settings panel's own real
+ * container/rail/content structure (legacy/index.html:392-394, 3288-3302). `SettingsPanel.tsx`'s
+ * outer dialog and its rail buttons were still ad hoc inline `style` objects -- a real gap this
+ * phase's own §8.1 pass never covered (it scoped to buttons/menus/chips/badges, not this panel's
+ * own container/rail system). `.settings-panel` combines legacy's base anchored-popover rule
+ * (position/background/border/shadow) with its later "has a rail" override (fixed 600px width,
+ * flex-column layout, padding/overflow) -- legacy ships both as separate rules at different
+ * source positions that combine via the cascade; here they're merged into one block since `web/`
+ * only ever renders the "has a rail" shape. Real nested structure ported too, matching legacy's
+ * own DOM exactly: `.settings-header` (title + close) sits above `.settings-body` (a bordered-top
+ * row holding `.settings-rail` + `.settings-content`), not a single flat container.
+ *
+ * Deliberately NOT ported: the `@media (max-width:700px)` responsive collapse (legacy/index.html:
+ * 3304) -- same reasoning as §8.4d's toolbar decision: `App.tsx` returns `<MobileHub />` entirely
+ * below the mobile breakpoint before `SettingsPanel.tsx` (mounted only from within `App()`) is
+ * ever reached, so the rule would be unreachable dead CSS here. Also not ported: the settings-
+ * search box treatment (`.panel-search-wrap` etc.) and the "features" rail button's unread-dot
+ * indicator (`.settings-rail-btn[data-cat="features"].has-off-features::after`) -- neither has a
+ * real `web/` consumer (no settings-search feature, no "features" rail category), both already
+ * named as deliberately out of scope in this file's own header comment.
+ */
+.settings-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 120;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+  width: 600px;
+  max-width: min(94vw, 600px);
+  max-height: min(78vh, 640px);
+  padding: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.settings-header {
+  padding: 0 16px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-header h3 {
+  flex: 0 0 auto;
+}
+
+.settings-panel h3 {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.settings-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+}
+
+.settings-rail {
+  flex: 0 0 176px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.settings-rail-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  font: 500 12px 'Inter', sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+
+.settings-rail-btn svg {
+  flex: 0 0 auto;
+}
+
+.settings-rail-btn span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-rail-btn:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.settings-rail-btn.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.settings-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px 16px 16px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+/* §8.4f retrofit (docs/phase8-design-system-parity-plan.md) -- the Hub dock's real tab strip
+ * (legacy/index.html:3650-3659, `#dock-tabstrip`/`.dock-tab`). `HubDock.tsx` (§7.6) rendered its
+ * tab row entirely with ad hoc inline `style` objects, and used a vertical icon-over-label stack
+ * splitting the row into equal-width columns -- legacy's own real tabs are a horizontal icon+
+ * label row with an accent underline on the active tab, not equal-width vertical stacks. Ported
+ * here as the closest real match `web/` has a consumer for: `#dock-tabstrip`'s `display:none`/
+ * `.active{display:flex}` toggle is skipped (a `web/`-specific simplification, not silently
+ * dropped) since `HubDock.tsx` already returns `null` outright when no tab is open -- the
+ * conditional-render already does what the toggle does in legacy, so the class is applied
+ * unconditionally. `#dock-tabstrip-spacer`/`#dock-tabstrip-maximize` (legacy's own "expand to
+ * full view" control) are deliberately NOT ported -- `web/`'s dock has no maximize/full-view
+ * concept to back it, so building that button now would be dead UI, matching this project's own
+ * established "no dead UI" discipline.
+ */
+#dock-tabstrip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 8px 8px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dock-tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: 500 12px 'Inter', sans-serif;
+  padding: 8px 2px 6px;
+  margin: 0 12px -1px 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+}
+
+.dock-tab:hover {
+  color: var(--fg);
+}
+
+.dock-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.dock-tab svg {
+  flex-shrink: 0;
+}
+
+.dock-tab span {
+  white-space: nowrap;
+}
+
+.dock-tabstrip-spacer {
+  flex: 1;
+}

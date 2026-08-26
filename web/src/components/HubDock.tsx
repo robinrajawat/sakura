@@ -90,6 +90,13 @@ const HUB_PANEL_BY_TAB: Record<HubTab, ComponentType> = {
  * yet (its content area is still Phase 6's plain vertical stack), so this deliberately overlays
  * the content column and status bar's right edge rather than reflowing the layout to make room, a
  * real, documented scope simplification for this structural-docking slice, not an oversight.
+ *
+ * §8.4f retrofit (docs/phase8-design-system-parity-plan.md): the tab strip itself now renders
+ * through the real `#dock-tabstrip`/`.dock-tab` classes (index.css) instead of ad hoc inline
+ * `style` objects -- a horizontal icon+label row with an accent underline on the active tab,
+ * matching legacy's real look, replacing this component's original vertical icon-over-label
+ * stack. See index.css's own header comment on this class family for what's deliberately not
+ * ported (the maximize/full-view control, no backing feature in `web/`).
  */
 export function HubDock() {
   const theme = useThemeStore((s) => s.theme);
@@ -122,37 +129,23 @@ export function HubDock() {
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
-        <div role="tablist" aria-label="Hub sections" style={{ display: 'flex', flex: 1, overflowX: 'auto' }}>
-          {HUB_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              title={tab.label}
-              onClick={() => openTab(tab.id)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 3,
-                flex: '1 0 auto',
-                padding: '8px 10px',
-                border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
-                background: 'none',
-                color: activeTab === tab.id ? t.text : t.mutedText,
-                fontSize: 10.5,
-                cursor: 'pointer'
-              }}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-        <button type="button" onClick={close} aria-label="Close Hub" title="Close Hub" style={{ flexShrink: 0, margin: '0 6px' }}>
+      <div id="dock-tabstrip" role="tablist" aria-label="Hub sections">
+        {HUB_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            title={tab.label}
+            onClick={() => openTab(tab.id)}
+            className={`dock-tab${activeTab === tab.id ? ' active' : ''}`}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
+        <span className="dock-tabstrip-spacer" />
+        <button type="button" onClick={close} aria-label="Close Hub" title="Close Hub">
           <CloseIcon />
         </button>
       </div>
