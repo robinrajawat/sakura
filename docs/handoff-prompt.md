@@ -549,9 +549,58 @@ scrollbar thumbs — Chromium's overlay scrollbars fade after a scroll gesture s
 dark-mode screenshot confirming the canvas-vs-chrome contrast. Full gauntlet clean: 2005 tests
 passing, typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.5 (a real verification fixture document). Worth a targeted look before
-or during that: whether other non-dialog Phase 6/7 components were similarly missed by 8.4's
-dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/this scrollbar gap were.
+**8.5 (real verification fixture document) landed (PR #298).** New `web/src/state/devFixture.ts`:
+navigating to `?seedFixture=1` builds a richly-populated document — real tags, a status chip set
+to a real non-empty value (exercising all 5 real options via its popover), an author, a link, a
+decision log card (all 5 fields + status + author, anchored to a real node), a checkbox parent with
+mixed-checked sub-items, and two levels of nested sidebar folders — replacing every prior phase's
+own screenshot subject, the empty "Welcome" seed document, which never exercised any of this. Built
+entirely out of already-public store actions plus one direct `useOutlineStore.setState` for the
+node list, matching `documentsStore.ts`'s own established bulk-content technique; no store internals
+changed. Wired into `main.tsx` before React renders, same placement as `installAudienceBridge()`.
+
+**8.6 (found via 8.5's own fixture, reported directly by the user — "the editor, floating buttons,
+Pad area, nothing matches the legacy") landed (PR #298).** A `grep -c "style={{"` ranking across
+every component (the same signal that already caught `EmptyDocState.tsx`/`QuickAssistBar.tsx`)
+confirmed `PadPanel.tsx` (62 blocks) and `OutlineTree.tsx` (59 blocks) as the two largest untouched
+files — Phase 8's own Goal section always scoped that plan to "shared chrome," never the tree
+itself or the Pad panel's own internals, so this is real, previously-unscoped work, not a miss.
+This slice closed the two smallest, highest-confidence pieces found while investigating: the
+floating toolbar-reveal toggle (`App.tsx`) now carries legacy's real `#editor-toolbar-toggle` CSS
+(border/background-tint/opacity/hover/active states), previously a bare icon button; and
+`OutlineTree.tsx`'s own `<div role="tree">` wrapper drew its OWN invented
+`border`/`border-radius`/`background`/`padding` box around the whole tree — legacy's real
+`#editor-pane` has rows sitting directly on the canvas with no separate boxed panel at all
+(confirmed via a real legacy screenshot built fresh for direct comparison), and `AppShell.tsx`'s
+own `#editor-pane` ancestor already provides the real canvas background/padding (§8.4q) — the
+tree's own box sat on top of that, rendering a visibly separate panel legacy never has. Removed.
+Verified with a real side-by-side: `legacy/dist` and `web/dist` built fresh, both driven through
+headless Chrome, before/after screenshots of each fix. Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean.
+
+**Still open, real and sizeable:** `OutlineTree.tsx`'s own row-level class family
+(`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
+543-2174) and `PadPanel.tsx`'s 7-tab retrofit (Notepad/Q&A/Decision Log/Diagrams/Mind Map/Files/
+Remarks) — each large enough to be its own slice (§8.7+), and `OutlineTree.tsx` in particular is
+this project's single riskiest component to touch (its hottest per-row render path), so neither was
+attempted in the same pass as 8.6's two smaller fixes. **Immediate next step:** pick up `PadPanel.tsx`
+(§8.7) — the user's own "Pad area" complaint is still unaddressed. Also still worth a targeted look:
+whether any OTHER non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep,
+the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/the scrollbar gap/this slice's own two
+findings all were — now easier to check with 8.5's own fixture as a real subject to screenshot
+against instead of the empty seed document.
+
+**Repo hygiene note, found this session, not fixed:** this repo has ~180 long-merged branches still
+present on `origin` (every prior phase/slice branch going back to Phase 0), none ever successfully
+deleted — `git push origin --delete <branch>` fails with a 403 on every one tested, and
+`list_branches` shows `"protected": true` on all of them. This is a pre-existing, repo-wide branch
+protection setting blocking deletion (not something this or any prior session broke), confirmed
+when this session's own `claude/sakura-react-migration-yge8kg` hit the same 403 after PR #298
+merged. Not attempted: any override/force/admin-API workaround — that's the account owner's call,
+not something to route around unilaterally. Worth the account owner's attention if a cleaner
+branch list matters (e.g. relaxing branch protection's deletion restriction, or a bulk cleanup via
+the GitHub UI/admin API), but not blocking any actual work.
+
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
 person clicking
