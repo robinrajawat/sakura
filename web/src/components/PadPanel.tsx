@@ -6,7 +6,12 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlineStore } from '../store/outlineStore';
 import { qaVisibleItems, qaIsUnanswered } from '../state/qaFilter';
 import { decisionVisibleItems, decisionIsOpen } from '../state/decisionFilter';
-import { decisionLogAnchorLabelCore, decisionStatusLabelCore, getDecisionAnchorCandidatesCore } from '../state/decisionLogQueries';
+import {
+  decisionLogAnchorLabelCore,
+  decisionStatusLabelCore,
+  decisionStatusColorKeyCore,
+  getDecisionAnchorCandidatesCore
+} from '../state/decisionLogQueries';
 import { generateDiagramXmlFromOutline } from '../state/diagramGenScope';
 import { formatRemarkDateDisplay } from '../utils/remarkDate';
 import { formatFileSize } from '../utils/formatFileSize';
@@ -208,28 +213,19 @@ function DecisionTab({ t }: { t: Tokens }) {
 
   return (
     <div>
+      {/* §8.8 slice: direct port of legacy's real `#dltb-add`/`.note-tb-btn` (legacy/index.html:
+          6648, 1968) and `#decision-open-chip` (legacy/index.html:1713-1716, markup at 6650). */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <button
-          type="button"
-          onClick={() => setExpandedId(createDecision(selectedId))}
-          style={{ fontSize: 11, padding: '2px 8px' }}
-        >
+        <button type="button" className="note-tb-btn" onClick={() => setExpandedId(createDecision(selectedId))} title="New decision log">
           + New
         </button>
         <button
           type="button"
+          className="decision-open-chip"
           disabled={!openOnly && (decisions.length === 0 || openCount === 0)}
+          aria-pressed={openOnly}
           onClick={() => setOpenOnly(!openOnly)}
           title="Show open (proposed) decisions only"
-          style={{
-            fontSize: 11,
-            padding: '2px 6px',
-            border: `1px solid ${t.border}`,
-            borderRadius: 4,
-            background: openOnly ? t.text : 'transparent',
-            color: openOnly ? t.background : t.text,
-            cursor: 'pointer'
-          }}
         >
           {openCount} open
         </button>
@@ -240,40 +236,40 @@ function DecisionTab({ t }: { t: Tokens }) {
       {decisions.length === 0 && (
         <div style={{ color: t.mutedText, fontSize: 12, fontStyle: 'italic', padding: '4px 0' }}>No decisions logged yet.</div>
       )}
+      {/* §8.8 slice: direct port of legacy's real `.decision-row`/`.decision-row-summary`/
+          `.decision-row-status`(+`data-color`)/`.decision-row-content`/`.decision-row-node`/
+          `.decision-row-delete`/`.decision-row-expand-slot` (legacy/index.html:1722-1747). Scoped
+          down from legacy's real row (no drag-handle/reorder chrome, no title-row/snippet/meta
+          sub-rows -- see this file's own index.css comment for the full list of what's not built
+          yet). The field editor below stays plain `<textarea>`s, matching this component's own
+          already-documented simplification (no `.decision-field-body` contentEditable styling to
+          port onto a `<textarea>`). */}
       {visibleDecisions.map((d) => {
         const isExpanded = d.id === expandedId;
         return (
-          <div key={d.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '6px 0', fontSize: 13 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setExpandedId(isExpanded ? null : d.id)}>
+          <div key={d.id} className={isExpanded ? 'decision-row expanded' : 'decision-row'}>
+            <div className="decision-row-summary" onClick={() => setExpandedId(isExpanded ? null : d.id)}>
               <button
                 type="button"
+                className="decision-row-status"
+                data-color={decisionStatusColorKeyCore(d.status)}
                 onClick={(e) => {
                   e.stopPropagation();
                   setDecisionStatus(d.id, DECISION_STATUS_CYCLE[d.status]);
                 }}
-                style={{ fontSize: 11 }}
               >
                 {decisionStatusLabelCore(d.status)}
               </button>
-              <span style={{ position: 'relative', flex: 1 }}>
+              <span className="decision-row-content" style={{ position: 'relative' }}>
                 <button
                   type="button"
+                  className="decision-row-node"
                   onClick={(e) => {
                     e.stopPropagation();
                     setAnchorQuery('');
                     setAnchorPickerId(anchorPickerId === d.id ? null : d.id);
                   }}
                   title="Change which node this decision is linked to"
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    fontSize: 12,
-                    color: t.mutedText,
-                    background: 'transparent',
-                    border: 'none',
-                    padding: 0,
-                    cursor: 'pointer'
-                  }}
                 >
                   {decisionLogAnchorLabelCore(d, nodes)}
                 </button>
@@ -293,18 +289,19 @@ function DecisionTab({ t }: { t: Tokens }) {
               </span>
               <button
                 type="button"
+                className="decision-row-delete"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeDecision(d.id);
                   if (isExpanded) setExpandedId(null);
                 }}
-                style={{ fontSize: 11 }}
+                title="Delete"
               >
                 delete
               </button>
             </div>
             {isExpanded && (
-              <div style={{ display: 'grid', gap: 6, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+              <div className="decision-row-expand-slot" style={{ display: 'grid', gap: 6 }} onClick={(e) => e.stopPropagation()}>
                 {DECISION_FIELDS.map((f) => (
                   <label key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: t.mutedText }}>{f.label}</span>

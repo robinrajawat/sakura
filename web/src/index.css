@@ -2878,3 +2878,143 @@ input[type='number'] {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+
+/* §8.8 slice (docs/phase8-design-system-parity-plan.md): the Decision Log tab's own real card
+ * system, direct port of legacy's real `.decision-row-*` family (legacy/index.html:1722-1747)
+ * plus its toolbar's `#decision-open-chip` (1713-1716) and shared `.note-tb-btn` (1968, also a
+ * real NotePanel.tsx toolbar class -- that component's own retrofit is a separate, still-open
+ * follow-up, not attempted here; only what this slice's own "+ New" button needs is ported).
+ * Scoped down to what `web/`'s own `DecisionTab` actually has: no drag-handle/drag-reorder
+ * chrome (`reorderDecision` exists on the store but no UI drives it yet), no title-row/snippet/
+ * meta sub-rows (this component shows only the anchor label in its collapsed row, not a text
+ * preview or timestamp), no `.decision-field-rewrite`/`.decision-field-body` (this component's
+ * fields are plain `<textarea>`s, a documented simplification -- see `DecisionTab`'s own header).
+ */
+.decision-open-chip {
+  border: 1px solid color-mix(in srgb, var(--fc-orange) 35%, transparent);
+  background: color-mix(in srgb, var(--fc-orange) 10%, transparent);
+  color: var(--fc-orange);
+  padding: 2px 9px;
+  border-radius: 999px;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+.decision-open-chip:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fc-orange) 18%, transparent);
+}
+.decision-open-chip[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.decision-open-chip:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.note-tb-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: 500 13px 'Inter', sans-serif;
+  padding: 3px 7px;
+  border-radius: 6px;
+  min-width: 28px;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+.note-tb-btn:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+
+.decision-row {
+  border-radius: 8px;
+}
+.decision-row-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+.decision-row-summary:hover,
+.decision-row.expanded .decision-row-summary {
+  background: var(--hover);
+}
+.decision-row-status {
+  font: 700 9.5px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+}
+.decision-row-status[data-color='green'] {
+  background: color-mix(in srgb, var(--fc-green) 16%, transparent);
+  color: var(--fc-green);
+}
+.decision-row-status[data-color='red'] {
+  background: color-mix(in srgb, var(--fc-red) 16%, transparent);
+  color: var(--fc-red);
+}
+.decision-row-status[data-color='orange'] {
+  background: color-mix(in srgb, var(--fc-orange) 16%, transparent);
+  color: var(--fc-orange);
+}
+.decision-row-status[data-color='gray'] {
+  background: color-mix(in srgb, var(--fc-gray) 16%, transparent);
+  color: var(--fc-gray);
+}
+.decision-row-content {
+  flex: 1;
+  min-width: 0;
+}
+.decision-row-node {
+  font: 500 12.5px 'Inter', sans-serif;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+.decision-row-node:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.decision-row-delete {
+  border: none;
+  background: none;
+  color: var(--hint);
+  padding: 5px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
+}
+.decision-row-summary:hover .decision-row-delete {
+  opacity: 1;
+}
+.decision-row-delete:hover {
+  color: var(--fc-red);
+  background: var(--hover);
+}
+.decision-row-expand-slot {
+  padding: 0 8px 10px;
+}
