@@ -982,12 +982,34 @@ follow-ups (§8.7+), each large enough to be its own slice.
   hover states (accent-underline on the node label, the delete button fading in) both confirmed.
   Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
   clean.
-- Still open, not yet done: the remaining Pad tabs' own INTERNAL content -- `.qa-item`-equivalent
-  Q&A rows, Remarks rows, Files rows, Diagrams/Mind Map list chrome -- still plain default-button
-  styling, a real, separately-scoped follow-up (§8.9+). `OutlineTree.tsx`'s own row-level class
-  family (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/
-  index.html:543-2174) is also still fully open. Also still worth a targeted look: whether any
-  other non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep, the same
-  way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings were -- now easier to check
-  with 8.5's own fixture as a real, richly-populated subject to screenshot against instead of the
-  empty seed document.
+- ✅ **8.9 (Q&A, Remarks, and Files tabs' own row shells) landed.** The three remaining Pad tabs
+  with a real, simple, list-of-rows shape (Diagrams/Mind Map are real visual editors, a
+  genuinely different category, deliberately left out of this slice). Each ported ONLY the real
+  legacy row shell that has a genuine `web/` counterpart, matching the same scoping discipline
+  §8.8's Decision Log slice already established -- none of these three components have rich-text
+  fields, drag-reorder, multi-select, or node-linking chrome, so none of legacy's own real CSS for
+  those was ported:
+  - **Q&A**: `.qa-row`/`.qa-row-content`/`.qa-row-delete` (legacy/index.html:1855-1891, a small
+    subset of a much larger real system -- drag/select-mode/section-rows/field-icons/follow-up
+    chips, none built here, see this slice's own index.css comment for the full list).
+  - **Remarks**: `.remark-card` (legacy/index.html:3460-3463), reusing `.note-tb-btn`'s hover-
+    reveal treatment for the remove button (no rich-text quote/byline/avatar system to port --
+    `web/`'s RemarksTab is plain `<strong>person:</strong> text`).
+  - **Files**: `.file-row`/`.file-row-info`/`.file-row-name`/`.file-row-size`/`.file-row-remove`
+    (legacy/index.html:3428-3436) -- `.file-row-icon` skipped, no per-mime icon set in `web/` yet.
+  **A real, small drive-by fix found while retrofitting `FilesTab`**: its error message
+  (`"<file>" is over the 5 MB attachment limit`) used a hardcoded `#b02020` instead of the real
+  `var(--sem-alert)` token already used by every other alert-colored element this slice touches --
+  fixed, and the now-fully-unused `t: Tokens` prop dropped from that component entirely.
+  Verified with real headless-Chrome screenshots (a real Q&A row and Remarks row, each hovered to
+  confirm the delete button's real fade-in). Full gauntlet clean: 2005 tests still passing (no
+  test changes needed), typecheck/lint/build all clean.
+- Still open, not yet done: Diagrams/Mind Map tabs' own list chrome (genuinely different from the
+  three simple-row tabs above -- each backs a real visual editor), and `OutlineTree.tsx`'s own
+  row-level class family (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/
+  etc., legacy/index.html:543-2174) -- the single largest remaining piece of this whole plan and
+  this project's riskiest component to touch (its hottest per-row render path). Also still worth a
+  targeted look: whether any other non-dialog Phase 6/7 component was similarly missed by 8.4's
+  dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings
+  were -- now easier to check with 8.5's own fixture as a real, richly-populated subject to
+  screenshot against instead of the empty seed document.

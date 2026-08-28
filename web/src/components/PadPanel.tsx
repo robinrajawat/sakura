@@ -135,7 +135,7 @@ export function PadPanel() {
       {tab === 'decision' && <DecisionTab t={t} />}
       {tab === 'qa' && <QaTab t={t} />}
       {tab === 'remarks' && <RemarksTab t={t} />}
-      {tab === 'files' && <FilesTab t={t} />}
+      {tab === 'files' && <FilesTab />}
       {tab === 'diagrams' && <DiagramsTab t={t} />}
       {tab === 'mindmap' && <MindMapsTab t={t} />}
     </div>
@@ -380,12 +380,18 @@ function QaTab({ t }: { t: Tokens }) {
           {unansweredOnly ? ' (unanswered only)' : ''}.
         </div>
       )}
+      {/* §8.9 slice: direct port of legacy's real `.qa-row`/`.qa-row-content`/`.qa-row-delete`
+          shell (legacy/index.html:1855-1891), scoped to this component's own simpler flat list --
+          see this file's own index.css comment for what's not ported (drag/select/sections/
+          rich-text icons, none of which `web/`'s QaTab has). */}
       {visibleItems.map((q) => (
-        <div key={q.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
-          <strong>{q.question}</strong>
-          <div style={{ color: t.mutedText }}>{q.answer || 'No answer provided'}</div>
-          <button type="button" onClick={() => removeQaItem(q.id)} style={{ fontSize: 11 }}>
-            remove
+        <div key={q.id} className="qa-row" style={{ fontSize: 13 }}>
+          <div className="qa-row-content">
+            <strong>{q.question}</strong>
+            <div style={{ color: t.mutedText }}>{q.answer || 'No answer provided'}</div>
+          </div>
+          <button type="button" className="qa-row-delete" onClick={() => removeQaItem(q.id)} title="Delete">
+            ✕
           </button>
         </div>
       ))}
@@ -431,12 +437,16 @@ function RemarksTab({ t }: { t: Tokens }) {
   const orderedRemarks = [...remarks].reverse();
   return (
     <div>
+      {/* §8.9 slice: direct port of legacy's real `.remark-card` shell (legacy/index.html:
+          3460-3463), reusing `.note-tb-btn`'s hover-reveal treatment for the remove button (this
+          component has no rich-text quote/byline/avatar system to port -- see this file's own
+          index.css comment). */}
       {orderedRemarks.map((r) => (
-        <div key={r.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
+        <div key={r.id} className="remark-card" style={{ fontSize: 13 }}>
           <strong>{r.person}:</strong> {r.text}{' '}
           <span style={{ color: t.mutedText, fontSize: 11 }}>{formatRemarkDateDisplay(r.date)}</span>{' '}
-          <button type="button" onClick={() => removeRemark(r.id)} style={{ fontSize: 11 }}>
-            remove
+          <button type="button" className="note-tb-btn remark-tb-btn" onClick={() => removeRemark(r.id)} title="Delete">
+            ✕
           </button>
         </div>
       ))}
@@ -469,7 +479,7 @@ function RemarksTab({ t }: { t: Tokens }) {
   );
 }
 
-function FilesTab({ t }: { t: Tokens }) {
+function FilesTab() {
   const files = usePadStore((s) => s.files);
   const addFile = usePadStore((s) => s.addFile);
   const removeFile = usePadStore((s) => s.removeFile);
@@ -496,19 +506,25 @@ function FilesTab({ t }: { t: Tokens }) {
 
   return (
     <div>
+      {/* §8.9 slice: direct port of legacy's real `.file-row`/`.file-row-info`/`.file-row-name`/
+          `.file-row-size`/`.file-row-remove` (legacy/index.html:3428-3436) -- `.file-row-icon`
+          skipped, no per-mime icon set exists in `web/` yet (see this file's own index.css
+          comment). */}
       {files.map((f) => (
-        <div key={f.id} style={{ borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}>
-          <a href={f.dataUrl} download={f.name} style={{ color: t.text }}>
-            {f.name}
-          </a>{' '}
-          <span style={{ color: t.mutedText, fontSize: 11 }}>{formatFileSize(f.size)}</span>{' '}
-          <button type="button" onClick={() => removeFile(f.id)} style={{ fontSize: 11 }}>
-            remove
+        <div key={f.id} className="file-row" style={{ fontSize: 13 }}>
+          <div className="file-row-info">
+            <a href={f.dataUrl} download={f.name} className="file-row-name">
+              {f.name}
+            </a>
+            <span className="file-row-size">{formatFileSize(f.size)}</span>
+          </div>
+          <button type="button" className="file-row-remove" onClick={() => removeFile(f.id)} title="Remove">
+            ✕
           </button>
         </div>
       ))}
       {error && (
-        <div style={{ color: '#b02020', fontSize: 12, marginTop: 6 }}>{error}</div>
+        <div style={{ color: 'var(--sem-alert)', fontSize: 12, marginTop: 6 }}>{error}</div>
       )}
       <input
         type="file"

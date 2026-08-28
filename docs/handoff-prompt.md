@@ -603,14 +603,25 @@ dropped. Verified with real headless-Chrome screenshots against the 8.5 fixture'
 approved decision (solid green pill, orange chip, hover states). Full gauntlet clean: 2005 tests
 passing, typecheck/lint/build all clean.
 
+**8.9 (Q&A, Remarks, and Files tabs' own row shells) landed.** Each tab ported ONLY the real
+legacy row shell with a genuine `web/` counterpart — `.qa-row`/`.qa-row-content`/`.qa-row-delete`
+for Q&A, `.remark-card` (reusing `.note-tb-btn`'s hover-reveal) for Remarks,
+`.file-row`/`.file-row-info`/`.file-row-name`/`.file-row-size`/`.file-row-remove` for Files —
+skipping every richer piece of legacy's own real system (drag/select-mode/rich-text/node-linking)
+that has no `web/` equivalent yet. A real drive-by fix: `FilesTab`'s error message used a
+hardcoded `#b02020` instead of the real `var(--sem-alert)` token; fixed, and the now-unused
+`t: Tokens` prop dropped from that component. Verified with real headless-Chrome screenshots
+(hover-reveal delete buttons on a real Q&A row and Remarks row). Full gauntlet clean: 2005 tests
+passing, typecheck/lint/build all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own row-level class family
 (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
-543-2174) and the remaining Pad tabs' own INTERNAL content styling (Q&A/Remarks/Files rows,
-Diagrams/Mind Map list chrome — still plain default-button styling) — each large enough to be its
-own slice (§8.9+), and `OutlineTree.tsx` in particular is this project's single riskiest component
-to touch (its hottest per-row render path). **Immediate next step:** whoever picks this up next
-should decide between continuing the remaining Pad tabs (Q&A is the next most content-rich) or
-finally tackling `OutlineTree.tsx`'s row-level system — both are real, user-flagged gaps. Also
+543-2174) — the single largest remaining piece of this whole plan and this project's riskiest
+component to touch (its hottest per-row render path) — and the Diagrams/Mind Map tabs' own list
+chrome (genuinely different from the three simple-row tabs above, each backs a real visual
+editor). **Immediate next step:** whoever picks this up next should decide between Diagrams/Mind
+Map's list chrome (smaller, similar pattern to 8.9) or finally tackling `OutlineTree.tsx`'s
+row-level system (bigger, riskier, but the more consequential of the two remaining gaps). Also
 still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was similarly missed
 by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two
 findings all were — now easier to check with 8.5's own fixture as a real subject to screenshot
