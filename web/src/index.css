@@ -3018,3 +3018,127 @@ input[type='number'] {
 .decision-row-expand-slot {
   padding: 0 8px 10px;
 }
+
+/* §8.9 slice (docs/phase8-design-system-parity-plan.md): the Q&A tab's own row shell, a scoped-
+ * down subset of legacy's real, much larger `.qa-row` system (legacy/index.html:1855-1899 --
+ * drag-reorder, multi-select mode, section-header rows, per-field rich-text icons, follow-up
+ * chips). `web/`'s own QaTab is a deliberately simpler flat list (plain question/answer text, no
+ * drag/select/sections/rich-text -- see that component's own header), so only the real row
+ * shell that has a genuine `web/` counterpart is ported: the row/content layout, the border
+ * between rows, and the hover-reveal delete button.
+ */
+.qa-row {
+  position: relative;
+  padding: 0 0 12px 0;
+  margin-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+.qa-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+.qa-row-content {
+  flex: 1;
+  min-width: 0;
+}
+.qa-row-delete {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  width: 17px;
+  height: 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--hint);
+  cursor: pointer;
+  border-radius: 5px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.qa-row:hover .qa-row-delete {
+  opacity: 1;
+}
+.qa-row-delete:hover {
+  background: color-mix(in srgb, var(--sem-alert) 15%, transparent);
+  color: var(--sem-alert);
+}
+
+/* §8.9 slice continued: Remarks and Files tabs' own row shells, same "port what has a real web/
+ * counterpart" scoping as the Q&A row above. `.remark-card` (legacy/index.html:3460-3463) --
+ * `web/`'s RemarksTab has no rich-text quote/byline/avatar system (`.remark-text-input`/
+ * `.remark-byline`/`.remark-avatar`/etc.), just plain `<strong>person:</strong> text`, so only
+ * the card shell + reused `.note-tb-btn`-style hover-reveal remove button are ported.
+ * `.file-row`/`.file-row-info`/`.file-row-name`/`.file-row-size`/`.file-row-remove`
+ * (legacy/index.html:3428-3436) -- `.file-row-icon`/`-anchor`/`-note-input`/`-author-input`
+ * skipped, no `web/` counterpart (no per-mime icon, no node-linking, no note/author fields on
+ * `FileRef` yet).
+ */
+.remark-card {
+  position: relative;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.remark-card:last-child {
+  border-bottom: none;
+}
+.remark-card .remark-tb-btn {
+  opacity: 0;
+}
+.remark-card:hover .remark-tb-btn,
+.remark-card:focus-within .remark-tb-btn {
+  opacity: 1;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+.file-row:hover {
+  background: var(--hover);
+}
+.file-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.file-row-name {
+  font: 500 13px 'Inter', sans-serif;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-row-size {
+  font-size: 11px;
+  color: var(--hint);
+}
+.file-row-remove {
+  border: none;
+  background: none;
+  color: var(--hint);
+  flex: 0 0 auto;
+  padding: 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
+}
+.file-row:hover .file-row-remove {
+  opacity: 1;
+}
+.file-row-remove:hover {
+  color: var(--sem-alert);
+  background: var(--bg);
+}
