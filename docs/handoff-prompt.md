@@ -578,17 +578,30 @@ Verified with a real side-by-side: `legacy/dist` and `web/dist` built fresh, bot
 headless Chrome, before/after screenshots of each fix. Full gauntlet clean: 2005 tests passing,
 typecheck/lint/build all clean.
 
+**8.7 (`PadPanel.tsx`'s own always-visible chrome: tab strip + outer panel surface) landed.**
+First piece of the `PadPanel.tsx` retrofit, scoped to the chrome visible regardless of which of
+the 7 tabs is open. Direct port of legacy's real `.pad-mode-tab` (legacy/index.html:1643-1645,
+underline-style active-tab treatment) replacing the tab strip's previous flat disabled-when-active
+buttons, plus `#pad-panel-header`'s real `background: var(--tb-bg)`. `PadPanel()`'s own root had
+the same invented-box bug §8.6 found in `OutlineTree.tsx` (an arbitrary border/padding box with no
+real legacy counterpart) — removed here too. `web/`'s Pad still renders inline rather than
+legacy's real docked 440px side panel — an existing, already-documented structural simplification
+(§7.5), unchanged by this slice. Verified with a real headless-Chrome screenshot (Decision Log tab
+active against the 8.5 fixture's own anchored decision). Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own row-level class family
 (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
-543-2174) and `PadPanel.tsx`'s 7-tab retrofit (Notepad/Q&A/Decision Log/Diagrams/Mind Map/Files/
-Remarks) — each large enough to be its own slice (§8.7+), and `OutlineTree.tsx` in particular is
-this project's single riskiest component to touch (its hottest per-row render path), so neither was
-attempted in the same pass as 8.6's two smaller fixes. **Immediate next step:** pick up `PadPanel.tsx`
-(§8.7) — the user's own "Pad area" complaint is still unaddressed. Also still worth a targeted look:
-whether any OTHER non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep,
-the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/the scrollbar gap/this slice's own two
-findings all were — now easier to check with 8.5's own fixture as a real subject to screenshot
-against instead of the empty seed document.
+543-2174) and each Pad tab's own INTERNAL content styling (`.decision-*` card system, Q&A/Remarks/
+Files rows, Diagrams/Mind Map list chrome — still plain default-button styling inside every tab) —
+each large enough to be its own slice (§8.8+), and `OutlineTree.tsx` in particular is this
+project's single riskiest component to touch (its hottest per-row render path). **Immediate next
+step:** pick up the Decision Log tab's own `.decision-*` card system next (§8.8) — it's the most
+content-rich of the remaining Pad tabs and the one the 8.5 fixture already exercises directly.
+Also still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was similarly
+missed by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's
+own two findings all were — now easier to check with 8.5's own fixture as a real subject to
+screenshot against instead of the empty seed document.
 
 **Repo hygiene note, found this session, not fixed:** this repo has ~180 long-merged branches still
 present on `origin` (every prior phase/slice branch going back to Phase 0), none ever successfully
