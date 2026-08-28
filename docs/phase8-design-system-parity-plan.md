@@ -167,7 +167,13 @@ doc let this gap through repeated verification passes already.
 
 ## Status
 
-**In progress.**
+**Complete.** All five phases in this plan's own sequencing (8.1 CSS primitives, 8.2 icon set, 8.3
+shared React components, 8.4 retrofit -- 14 sub-slices, 8.4a through 8.4n, plus two more found
+post-8.4n: 8.4o `EmptyDocState.tsx` and 8.4p the Quick Assist app-bar restructuring, and 8.4q's
+own app-wide scrollbar/canvas-background fix -- and 8.5 the verification fixture) have landed. The
+one remaining item is the open-ended follow-up named at the end of 8.5's own entry below (a
+targeted look for any other non-dialog Phase 6/7 component missed by 8.4's dialog-only sweep),
+not itself a numbered slice in this plan's original sequencing.
 
 - ✅ **8.1 — CSS primitives landed.** Every class named in this plan's own "Real findings" section
   ported into `web/src/index.css`, verified against the exact legacy lines cited there: `.primary`/
@@ -858,7 +864,41 @@ doc let this gap through repeated verification passes already.
   screenshot-timing limitation, not a rendering gap); a real dark-mode screenshot confirmed the
   canvas-vs-chrome background contrast is visibly present. Full gauntlet clean: 2005 tests still
   passing (no test changes needed), typecheck/lint/build all clean.
-- Remaining: 8.5 (a real verification fixture document). Also worth a targeted look before or
-  during 8.5: whether other non-dialog components built before Phase 8 (i.e. anything from Phase
-  6/7 that isn't itself a `role="dialog"`) were similarly missed by 8.4's dialog-only sweep, the
-  same way `EmptyDocState.tsx`/`QuickAssistBar.tsx` were.
+- ✅ **8.5 — Real verification fixture document landed.** New `web/src/state/devFixture.ts`:
+  navigating to `?seedFixture=1` builds a richly-populated fixture, covering every piece of
+  content this plan's own 8.5 scope named -- real tags (four, across three nodes), the status
+  chip set to a real non-empty value (`'review'`, exercising all 5 real options when its popover
+  is opened, including the checkmark on the active one), an author, a link, a decision log card
+  (all 5 structured fields + status + author, anchored to a real outline node), a checkbox parent
+  with mixed-checked sub-items (a real "3/4" progress badge), and two levels of nested sidebar
+  folders (`Projects` > `Design System`, the fixture document filed in the inner one) -- replacing
+  every prior phase's own screenshot subject, the empty "Welcome" seed document, which never
+  exercised any of this.
+  Built entirely out of already-public store actions (`useDocumentsStore`/`usePadStore`), the same
+  way a real user's own actions would build this content, plus one direct
+  `useOutlineStore.setState` call for the node list itself -- the same technique
+  `documentsStore.ts`'s own `applyTabView`/`restoreDocRevision` already use for bulk content, not
+  a new pattern; no changes needed to any store's own internals. Wired into `main.tsx` via a new
+  `seedFixtureIfRequested(window.location.search)` call before `ReactDOM.createRoot(...).render`,
+  same "run before React renders, before any store's own mount-time `init()`" placement this
+  file's own `installAudienceBridge()` call already established -- `devFixture.ts`'s own
+  `seedFixtureIfRequested` calls `useDocumentsStore.getState().init()` itself first (the same
+  precedent `AudienceWindow.tsx` already set for a caller that, like this one, runs before
+  `DocumentTabs.tsx` -- the component that normally calls `init()` -- ever mounts), so any real
+  documents already in `localStorage` are preserved, not discarded; the fixture folder/document
+  is simply added alongside them. A no-op with no query param, so this has zero effect on the
+  normal boot path.
+  Verified end-to-end in real headless Chrome against a real `vite preview` build: the base
+  document (nested folder tree, status/author/link chips, tags, the checkbox progress badge and
+  strikethrough on checked items) and the status popover open (all 5 real options, checkmark on
+  "Review") both screenshotted and correct; a third screenshot (reached via the same run) also
+  confirmed the decision log card renders correctly in Preview mode with all 5 fields, its status
+  badge, and its author/date line. Full gauntlet clean: 2005 tests still passing (no test changes
+  needed -- a dev-only seeding helper with no pure logic of its own to unit-test beyond what
+  real-browser verification already covers, same precedent as every UI-only §8.4 slice),
+  typecheck/lint/build all clean.
+- Also worth a targeted look, not yet done: whether other non-dialog components built before
+  Phase 8 (i.e. anything from Phase 6/7 that isn't itself a `role="dialog"`) were similarly missed
+  by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx` were -- now
+  easier to check with 8.5's own fixture as a real, richly-populated subject to screenshot against
+  instead of the empty seed document.
