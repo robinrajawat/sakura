@@ -761,5 +761,36 @@ doc let this gap through repeated verification passes already.
   text is entered, list icon, and full real body copy all rendering correctly. Full gauntlet clean:
   2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
 - **§8.4 (all 14 sub-slices, 8.4a through 8.4n) is now complete.** Every `web/` component named in
-  this plan's own investigation has been retrofit onto real, line-cited legacy CSS -- remaining:
-  8.5 (a real verification fixture document).
+  this plan's own investigation has been retrofit onto real, line-cited legacy CSS.
+- ✅ **8.4o (found post-8.4n) — Retrofit: `EmptyDocState.tsx` onto `.empty-state`/`.doc-empty`.**
+  Found via a real side-by-side screenshot comparison against a genuinely empty legacy document
+  (not the populated "Welcome" seed doc) -- `EmptyDocState.tsx` is a Phase 7.4 component that
+  predates Phase 8's own `role="dialog"` sweep (8.4a-n only ever investigated dialog components),
+  so it was never actually retrofit despite already being scoped correctly against legacy CSS at
+  the time it was built. Real legacy source: legacy/index.html:544-552 (CSS) and 20292 (the
+  `render()`/`!nodes.length` branch's own generated markup/inline styling). Ported
+  `.empty-state`/`.empty-state>div`/`.empty-state.doc-empty`/`.empty-state-illustration`/
+  `.empty-state-actions` into `index.css`.
+  **Two real visual gaps found and fixed**: "New document" now gets legacy's real solid
+  accent-filled `.btn.primary` treatment (via the already-ported standalone `.primary` class, §8.1)
+  instead of rendering identically to the plain "Generate with AI" button, and the illustration
+  gets legacy's real opacity treatment (`.55` default, `.72` on hover) instead of always rendering
+  at full opacity -- both real, visible contributors to the "poles apart" look a direct side-by-
+  side screenshot surfaced.
+  **One real technique deviation, found and fixed via a screenshot regression while building
+  this**: legacy's own `.doc-empty` fills its parent via `position:absolute;inset:0`, relying on
+  `#editor-pane`'s own fixed-viewport flex layout to already give that parent a real height.
+  `web/`'s equivalent wrapper (the plain `position:relative` div around `<OutlineTree>` in
+  `App.tsx`) has no such height of its own -- it's a normally-flowing page, not a fixed-viewport
+  app -- so porting `position:absolute` literally collapsed the parent to zero height and the
+  illustration visibly overlapped the Notes panel rendered below it. Fixed by using `min-height`
+  in normal flow instead, reproducing the same "enough room to look centered" effect without the
+  collapse -- same "port the effect, not the exact technique" precedent used throughout §8.4.
+  Verified end-to-end in real headless Chrome (creating a genuinely new, empty document): the
+  illustration, primary "New document" button, and correct block-level layout above the Notes
+  panel all rendering correctly, matching legacy's own real chrome. Full gauntlet clean: 2005
+  tests still passing (no test changes needed), typecheck/lint/build all clean.
+- Remaining: 8.5 (a real verification fixture document). Also worth a targeted look before or
+  during 8.5: whether other non-dialog components built before Phase 8 (i.e. anything from Phase
+  6/7 that isn't itself a `role="dialog"`) were similarly missed by 8.4's dialog-only sweep, the
+  same way `EmptyDocState.tsx` was.
