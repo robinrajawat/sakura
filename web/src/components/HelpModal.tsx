@@ -1,6 +1,6 @@
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useEscapeToClose } from '../utils/useEscapeToClose';
-import { CloseIcon } from '../icons';
+import { CloseIcon, BookIcon } from '../icons';
 
 /**
  * §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): "Help", one of the account
@@ -14,6 +14,15 @@ import { CloseIcon } from '../icons';
  * to what's covered elsewhere already (the always-visible keyboard-shortcut list under the
  * toolbar, `ul` in `App.tsx`) plus the same repo link legacy's own About section gives, rather
  * than either faking a full help center or leaving "Help" a dead click.
+ *
+ * §8.4g retrofit (docs/phase8-design-system-parity-plan.md): renders through the real
+ * `.app-modal-overlay`/`.app-modal`/`.app-modal-head`/`.app-modal-close-btn`/`.app-modal-body`
+ * classes (index.css) -- same generic dialog shell as `FeedbackModal.tsx`/`AboutModal.tsx`, reused
+ * here for the same reason `AboutModal.tsx` does: this placeholder renders the identical shape,
+ * even though legacy's own real Help target (`#help-panel`) is a different, anchored-popover
+ * component this slice isn't attempting to port (see this file's own header above). `<BookIcon>`
+ * in the title reuses the same icon already used for this entry's own row in `AccountMenu.tsx`'s
+ * dropdown.
  */
 export function HelpModal({ onClose }: { onClose: () => void }) {
   const theme = useThemeStore((s) => s.theme);
@@ -21,34 +30,18 @@ export function HelpModal({ onClose }: { onClose: () => void }) {
   useEscapeToClose(onClose);
 
   return (
-    <div
-      role="presentation"
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <div
-        role="dialog"
-        aria-label="Help"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: t.background,
-          color: t.text,
-          border: `1px solid ${t.border}`,
-          borderRadius: 12,
-          padding: 20,
-          width: 420,
-          maxWidth: '92vw',
-          boxShadow: '0 20px 40px rgba(0,0,0,.25)',
-          fontFamily: "'Inter', sans-serif"
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-          <h3 style={{ margin: 0, fontSize: 15 }}>Help</h3>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+    <div role="dialog" aria-label="Help" aria-modal="true" className="app-modal-overlay" onClick={onClose}>
+      <div className="app-modal" style={{ width: 'min(420px, 94vw)' }} onClick={(e) => e.stopPropagation()}>
+        <div className="app-modal-head">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <BookIcon width={15} height={15} stroke="var(--accent)" />
+            Help
+          </h2>
+          <button type="button" className="app-modal-close-btn" onClick={onClose} aria-label="Close" title="Close">
             <CloseIcon />
           </button>
         </div>
-        <div style={{ fontSize: 12.5, lineHeight: 1.6, color: t.mutedText }}>
+        <div className="app-modal-body" style={{ fontSize: 12.5, lineHeight: 1.6, color: t.mutedText }}>
           <p style={{ margin: '0 0 8px' }}>
             Click to select a row, double-click to edit. <kbd>Enter</kbd> adds a sibling, <kbd>Ctrl/Cmd+Enter</kbd> a child,{' '}
             <kbd>Tab</kbd>/<kbd>Shift+Tab</kbd> indents/outdents, and dragging a row onto another lets you drop it above, below, or nested

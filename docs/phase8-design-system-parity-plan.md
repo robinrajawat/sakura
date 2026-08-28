@@ -541,5 +541,66 @@ doc let this gap through repeated verification passes already.
   label tabs, accent underline on the active tab) -- both screenshotted and matching legacy's real
   structure. Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/
   lint/build all clean.
-- Remaining: 8.4g (modal/dialog chrome across the 10 `role="dialog"` components named above) →
-  8.5 (verification fixture document).
+- ✅ **8.4g — Retrofit: generic dialog shell (`FeedbackModal.tsx`/`AboutModal.tsx`/`HelpModal.tsx`).**
+  **Correction found during 8.4g's own investigation**: this plan's original 8.4g scope named all
+  10 `role="dialog"` components as one slice, but a real per-component investigation (checking each
+  one's actual legacy markup, not assuming they share a class) found they map to at least 7
+  genuinely DIFFERENT real legacy families -- far too heterogeneous for one PR. Confirmed by line:
+  - `.app-modal-overlay`/`.app-modal`/`.app-modal-head`/`.app-modal-close-btn`/`.app-modal-body`
+    (legacy/index.html:926-936) -- the generic "simple centered dialog box" shell. `FeedbackModal.tsx`
+    is a literal 1:1 port of legacy's own `#feedback-modal-overlay` (legacy/index.html:7077-7092).
+    **This slice's actual scope.**
+  - `#sakura-landing-overlay`/`#sakura-landing-card`/`#sakura-landing-brand`/etc. (legacy/
+    index.html:698-704, markup at 4498-4526) -- `SignInGate.tsx`'s real target, a bespoke full-page
+    landing overlay, not a generic modal.
+  - `#welcome-overlay`/`#welcome-modal`/`.welcome-choice` (markup at legacy/index.html:7639-7661)
+    plus the stacked `#why-sakura-overlay` (7663-7708) -- `WelcomeModal.tsx`'s real target, its own
+    bespoke onboarding-card family.
+  - `.history-modal-overlay`/`.history-modal` (legacy/index.html:1396-1399) -- `VersionHistoryPanel.tsx`'s
+    real target. Same general shape as `.app-modal-*` (centered box, animated open transform) but
+    with its own distinct real values (rgba(0,0,0,.38) not .5, z-index 200 not 1100, width 440 not
+    640, a translateY/scale open transition `.app-modal` doesn't have) -- a genuinely separate
+    class, not reusable as `.app-modal-*` without a real inaccuracy.
+  - `.icon-picker-popover` (legacy/index.html:1196-1199, markup at 7344) -- `IconPickerPopover.tsx`'s
+    real target, a small inline icon-button row. Legacy's own real markup uses `role="menu"`, not
+    `role="dialog"` -- `web/`'s current `role="dialog"` is itself a real a11y mismatch to fix
+    alongside the CSS.
+  - `.export-menu`/`.export-menu-rich` (already ported in §8.1) plus new `.notif-menu-header`/
+    `.notif-menu-title` (legacy/index.html:496-498, markup at 4550-4555) -- `NotificationBell.tsx`'s
+    real target. Legacy's own `#notif-menu` is a real `DropdownMenu`-family consumer
+    (`class="export-menu export-menu-rich"`), not a standalone popover -- `web/`'s current ad hoc
+    implementation should retrofit onto the EXISTING `DropdownMenu.tsx`/`MenuItem.tsx` components
+    (§7.6/§8.3), not a new one.
+  - `.qa-input-row`/`.qa-dropdown`/`.qa-hint`/`.qa-results` (legacy/index.html:6769-6788) --
+    `QuickAssistBar.tsx`'s real target, its own command-palette-specific family.
+  - `#sakura-modal-overlay`/`#sakura-modal`/`#sakura-modal-body` (legacy/index.html:635-643, markup
+    at 7783) -- the real generic *animated prompt/confirm* dialog every `sakuraTextareaPrompt`/
+    `sakuraLinkPrompt` call opens via `_openModal` (legacy/index.html:18434+). `RestructureTextDialog.tsx`'s
+    real target. `AboutModal.tsx`/`HelpModal.tsx` have no direct legacy modal at all (legacy's real
+    About/Help live inside Settings/`#help-panel`, not a standalone dialog) but render the exact
+    same "simple centered dialog" shape `FeedbackModal.tsx` does, so they reuse `.app-modal-*` too,
+    for `web/`-internal visual consistency, not presented as literal legacy ports.
+  Renumbered: 8.4g is now scoped to just the `.app-modal-*` family (`FeedbackModal.tsx`, a literal
+  port, plus `AboutModal.tsx`/`HelpModal.tsx` reusing the same shell for consistency). The other 7
+  components move to later slices once picked up, each already scoped above with its real target
+  family and line citations so that work doesn't need to re-investigate:
+  8.4h (SignInGate.tsx), 8.4i (WelcomeModal.tsx + why-sakura), 8.4j (VersionHistoryPanel.tsx),
+  8.4k (IconPickerPopover.tsx -- also fix its `role` mismatch), 8.4l (NotificationBell.tsx, retrofit
+  onto `DropdownMenu`/`MenuItem`), 8.4m (QuickAssistBar.tsx), 8.4n (RestructureTextDialog.tsx).
+  Same "split further/resequenced by whoever picks up each slice" flexibility this doc's own
+  Sequencing summary already reserves.
+  **`role="dialog"` moved from the inner box to the overlay element** in all three retrofit
+  components, matching legacy's own real markup exactly (`#feedback-modal-overlay` itself carries
+  the role, not its inner `.app-modal` box) -- the former backdrop `role="presentation"` is dropped
+  since the overlay is now the real dialog root.
+  **Two new icons added to each modal's title**, none of which existed before since these
+  components only ever rendered a bare text title: `<MessageIcon>` for Feedback (legacy/index.html:
+  7080's own real inline `<svg>`, a literal match), `<InfoIcon>`/`<BookIcon>` for About/Help
+  (reusing the same icons already used for each entry's own row in `AccountMenu.tsx`'s dropdown,
+  for self-consistency since neither has a real legacy modal header to match).
+  Verified end-to-end in real headless Chrome: all three modals (Feedback with its textarea/email
+  form, About with its four paragraphs of copy, Help with its placeholder copy) screenshotted --
+  consistent header/close/body chrome, correct icons, matching the shared shell. Full gauntlet
+  clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
+- Remaining: 8.4h through 8.4n (the 7 components named above, each independently scoped) → 8.5
+  (verification fixture document).
