@@ -1399,27 +1399,44 @@ export function OutlineTree() {
                 </span>
               </span>
             ))}
-            {editingTagsId === node.id ? (
-              <input
-                autoFocus
-                placeholder="tag + Enter"
-                onKeyDown={(e) => handleTagInputKeyDown(e, node.id)}
-                onBlur={() => setEditingTagsId(null)}
-                onClick={(e) => e.stopPropagation()}
-                style={{ fontSize: 11, width: 80, marginRight: 4 }}
-              />
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingTagsId(node.id);
-                }}
-                title="Add tag"
-                style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
-              >
-                +tag
-              </span>
-            )}
+            {/* §8.10 slice (docs/phase8-design-system-parity-plan.md): legacy's own real per-row
+                icons (`.node-note-dot` etc, legacy/index.html:2125) are existing-content
+                indicators shown at `opacity:.55` idle / `1` on hover -- legacy never shows an
+                empty-state "+tag"/"+note"/"+code" ADD prompt inline in a row at all (confirmed by
+                reading the real per-row render loop, legacy/index.html:20293 area: a note/code/
+                decision/etc. dot is only ever appended when that content already exists).
+                `web/`'s own always-fully-visible text-button versions are a genuine, useful entry
+                point this project added (no separate "Add tag"/"Add note" menu action exists
+                yet), kept rather than removed -- but muted to the same idle/hover opacity legacy
+                uses for its own real dots, closing most of the "always looks cluttered" gap
+                without losing the functionality. Scoped to just this add-affordance cluster, not
+                a full `.node-row` port (a separate, much larger follow-up). Opacity keys off the
+                same `hoveredNodeId` state the hover toolbar below already tracks, rather than a
+                new CSS `:hover` mechanism, for consistency with this component's own established
+                per-row-hover pattern. */}
+            <span style={{ opacity: hoveredNodeId === node.id ? 1 : 0.55, transition: 'opacity .12s' }}>
+              {editingTagsId === node.id ? (
+                <input
+                  autoFocus
+                  placeholder="tag + Enter"
+                  onKeyDown={(e) => handleTagInputKeyDown(e, node.id)}
+                  onBlur={() => setEditingTagsId(null)}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ fontSize: 11, width: 80, marginRight: 4 }}
+                />
+              ) : (
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingTagsId(node.id);
+                  }}
+                  title="Add tag"
+                  style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+                >
+                  +tag
+                </span>
+              )}
+            </span>
             {/* Checkbox progress badge -- "X/Y done" for a checkbox node with checkbox
                 children, matching legacy's own real cb-progress badge exactly
                 (isCheckboxNode(node)&&hasChildren, getCheckboxChildStats for the counts). Also
@@ -1448,44 +1465,48 @@ export function OutlineTree() {
                   </span>
                 );
               })()}
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                zoomIntoNode(node.id);
-              }}
-              title="Zoom into this node (Focus mode)"
-              style={{ display: 'inline-flex', color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
-            >
-              <SearchIcon width={11} height={11} />
-            </span>
-            {/* Note dot -- matches legacy's own real dual-purpose click exactly (legacy/
-                index.html:20333-20340): with note text present, a plain click toggles the
-                inline preview below (`toggleNoteExpand`) rather than opening the panel; with no
-                note text yet, there's nothing to preview, so it still opens the panel to add one
-                (unchanged from before this slice). */}
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                if (hasNoteText) {
-                  toggleNoteExpand(node.id);
-                  return;
-                }
-                openNotePanel(node.id, false, !!node.codeBlock?.code?.trim(), 'note');
-              }}
-              title={hasNoteText ? (noteOpen ? 'Hide note preview' : 'Show note preview') : 'Add note'}
-              style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
-            >
-              {node.note ? '📝' : '+note'}
-            </span>
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'code');
-              }}
-              title={node.codeBlock ? 'Edit code block' : 'Add code block'}
-              style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
-            >
-              {node.codeBlock ? '💻' : '+code'}
+            {/* §8.10 slice: same muted idle/hover treatment as the tag-add control above --
+                see that span's own comment for the full reasoning. */}
+            <span style={{ opacity: hoveredNodeId === node.id ? 1 : 0.55, transition: 'opacity .12s' }}>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  zoomIntoNode(node.id);
+                }}
+                title="Zoom into this node (Focus mode)"
+                style={{ display: 'inline-flex', color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              >
+                <SearchIcon width={11} height={11} />
+              </span>
+              {/* Note dot -- matches legacy's own real dual-purpose click exactly (legacy/
+                  index.html:20333-20340): with note text present, a plain click toggles the
+                  inline preview below (`toggleNoteExpand`) rather than opening the panel; with no
+                  note text yet, there's nothing to preview, so it still opens the panel to add one
+                  (unchanged from before this slice). */}
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (hasNoteText) {
+                    toggleNoteExpand(node.id);
+                    return;
+                  }
+                  openNotePanel(node.id, false, !!node.codeBlock?.code?.trim(), 'note');
+                }}
+                title={hasNoteText ? (noteOpen ? 'Hide note preview' : 'Show note preview') : 'Add note'}
+                style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              >
+                {node.note ? '📝' : '+note'}
+              </span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'code');
+                }}
+                title={node.codeBlock ? 'Edit code block' : 'Add code block'}
+                style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              >
+                {node.codeBlock ? '💻' : '+code'}
+              </span>
             </span>
             {/* Node hover toolbar (Phase 6.2) -- ⤴ insert above / ＋ add child / ⤵ insert below,
                 matching legacy's own default hoverToolbarActions exactly. Only rendered while
