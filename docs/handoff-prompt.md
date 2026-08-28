@@ -499,9 +499,29 @@ one deliberate omission (legacy's text promises the pasted text is "kept in its 
 claimed true). Verified with real headless-Chrome screenshots (disabled vs. enabled button states,
 icon, full body copy). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.5 (a real verification fixture document — can be picked up any time,
-no longer blocked on anything). Once `web/` is visually close enough to legacy for a person to
-sign off, return to docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
+**8.4o (found post-8.4n, retrofit: `EmptyDocState.tsx` → `.empty-state`/`.doc-empty`) landed.**
+Found via a real side-by-side screenshot comparison the user posted (their own new-web-preview
+screenshot next to a genuinely empty legacy document, not the populated "Welcome" seed doc) —
+`EmptyDocState.tsx` is a Phase 7.4 component that predates Phase 8's own `role="dialog"` sweep, so
+it was never actually retrofit. Ported the real `.empty-state`/`.doc-empty`/`-illustration`/
+`-actions` classes (legacy/index.html:544-552). Found and fixed two real visual gaps ("New
+document" now gets legacy's real solid accent-filled `.primary` treatment instead of matching the
+plain "Generate with AI" button; the illustration gets legacy's real opacity treatment instead of
+always full opacity) plus one real technique deviation caught by a screenshot regression while
+building this: legacy's own `position:absolute;inset:0` technique collapsed `web/`'s own wrapper
+(a normally-flowing page, not legacy's fixed-viewport app) to zero height and made the illustration
+overlap the Notes panel below it — fixed with `min-height` in normal flow instead, same
+"port the effect, not the exact technique" precedent used throughout §8.4. Verified with a real
+headless-Chrome screenshot of a genuinely new empty document. Full gauntlet clean: 2005 tests
+passing, typecheck/lint/build all clean.
+
+**Immediate next steps:** 8.5 (a real verification fixture document). Worth a targeted look before
+or during that: whether other non-dialog Phase 6/7 components were similarly missed by 8.4's
+dialog-only sweep, the same way `EmptyDocState.tsx` was — the app-bar-docked-by-default Quick
+Assist gap already flagged in 8.4m/8.4m's own plan-doc entry is a second, larger, separately-scoped
+example of the same kind of miss (a real structural difference, not just CSS, so a bigger lift than
+a retrofit). Once `web/` is visually close enough to legacy for a person to sign off, return to
+docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
 person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
 production-synced documents round-trip; the actual `deploy.yml` cutover PR) — none of which are

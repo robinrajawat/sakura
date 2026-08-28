@@ -42,6 +42,17 @@ function greetingTimePrefix(): string {
  * system at all in `web/`, same doc's own Documents & Tabs section). Porting either claim verbatim
  * would promise a capability this build doesn't have -- so this hint only names what's real here:
  * pressing Enter or typing directly.
+ *
+ * Design-system retrofit (docs/phase8-design-system-parity-plan.md): now renders through the real
+ * `.empty-state`/`.doc-empty`/`.empty-state-illustration`/`.empty-state-actions` classes
+ * (index.css, cited from legacy/index.html:544-552) instead of inline `style` objects -- this
+ * component predates Phase 8's own `role="dialog"` sweep (§8.4a-n), so it was never swept by that
+ * investigation despite needing the same retrofit. Found via a real side-by-side screenshot
+ * comparison against a genuinely empty legacy document. Two real visual gaps fixed along the way:
+ * the "New document" button now gets legacy's real solid accent-filled `.btn.primary` treatment
+ * (via the already-ported standalone `.primary` class, §8.1) instead of rendering identically to
+ * the plain "Generate with AI" button, and the illustration gets legacy's real opacity treatment
+ * (`.55` default, `.72` on hover) instead of always rendering at full opacity.
  */
 export function EmptyDocState() {
   const theme = useThemeStore((s) => s.theme);
@@ -108,10 +119,11 @@ export function EmptyDocState() {
       tabIndex={0}
       autoFocus
       onKeyDown={handleKeyDown}
-      style={{ position: 'relative', minHeight: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '32px 16px', outline: 'none' }}
+      className="empty-state doc-empty"
+      style={{ outline: 'none' }}
     >
-      <div style={{ maxWidth: 360 }}>
-        <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }} aria-hidden="true">
+      <div>
+        <div className="empty-state-illustration" aria-hidden="true">
           <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
             <g opacity={0.9}>
               <ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" strokeWidth={1} />
@@ -123,10 +135,10 @@ export function EmptyDocState() {
             </g>
           </svg>
         </div>
-        <div style={{ fontSize: 18, marginBottom: 6, color: t.text, fontFamily: "'Inter', sans-serif" }}>{title}</div>
-        <div style={{ fontSize: 13, color: t.mutedText, lineHeight: 1.6, marginBottom: 18, fontFamily: "'Inter', sans-serif" }}>{subtitle}</div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-          <button type="button" onClick={() => newDocument(activeFolderId)}>
+        <div style={{ fontSize: '1.1em', marginBottom: 6, color: t.text }}>{title}</div>
+        <div style={{ fontSize: '.88em', opacity: 0.7, lineHeight: 1.6 }}>{subtitle}</div>
+        <div className="empty-state-actions">
+          <button type="button" className="primary" onClick={() => newDocument(activeFolderId)}>
             New document
           </button>
           <button
