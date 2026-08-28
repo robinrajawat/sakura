@@ -2840,3 +2840,41 @@ input[type='number'] {
   color: var(--accent);
   border-color: var(--accent);
 }
+
+/* §8.7 slice (docs/phase8-design-system-parity-plan.md): the Pad panel's own always-visible
+ * chrome -- the tab strip and outer surface -- direct port of legacy's real `.pad-mode-tab`
+ * (legacy/index.html:1643-1645) plus `#pad-panel-header`'s real background/border-bottom
+ * (legacy/index.html:1641). `web/`'s own Pad renders inline below the editor rather than as
+ * legacy's real docked 440px side panel (`#pad-panel`, legacy/index.html:1638) -- an existing,
+ * documented structural simplification (§7.5's own comment: "the Pad panel already renders
+ * permanently inline... no toggle concept to relocate"), unchanged by this slice -- so only the
+ * real background tone and tab-strip treatment are ported, not the fixed width/dock positioning.
+ */
+.pad-panel {
+  background: var(--tb-bg);
+  border-radius: 8px;
+}
+.pad-panel-tabstrip {
+  border-bottom: 1px solid var(--border);
+  background: var(--tb-bg);
+}
+.pad-mode-tab {
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: 500 12px 'Inter', sans-serif;
+  padding: 8px 1px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+}
+.pad-mode-tab:hover {
+  color: var(--fg);
+}
+.pad-mode-tab[aria-selected='true'] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}

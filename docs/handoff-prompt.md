@@ -549,9 +549,71 @@ scrollbar thumbs — Chromium's overlay scrollbars fade after a scroll gesture s
 dark-mode screenshot confirming the canvas-vs-chrome contrast. Full gauntlet clean: 2005 tests
 passing, typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.5 (a real verification fixture document). Worth a targeted look before
-or during that: whether other non-dialog Phase 6/7 components were similarly missed by 8.4's
-dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/this scrollbar gap were.
+**8.5 (real verification fixture document) landed (PR #298).** New `web/src/state/devFixture.ts`:
+navigating to `?seedFixture=1` builds a richly-populated document — real tags, a status chip set
+to a real non-empty value (exercising all 5 real options via its popover), an author, a link, a
+decision log card (all 5 fields + status + author, anchored to a real node), a checkbox parent with
+mixed-checked sub-items, and two levels of nested sidebar folders — replacing every prior phase's
+own screenshot subject, the empty "Welcome" seed document, which never exercised any of this. Built
+entirely out of already-public store actions plus one direct `useOutlineStore.setState` for the
+node list, matching `documentsStore.ts`'s own established bulk-content technique; no store internals
+changed. Wired into `main.tsx` before React renders, same placement as `installAudienceBridge()`.
+
+**8.6 (found via 8.5's own fixture, reported directly by the user — "the editor, floating buttons,
+Pad area, nothing matches the legacy") landed (PR #298).** A `grep -c "style={{"` ranking across
+every component (the same signal that already caught `EmptyDocState.tsx`/`QuickAssistBar.tsx`)
+confirmed `PadPanel.tsx` (62 blocks) and `OutlineTree.tsx` (59 blocks) as the two largest untouched
+files — Phase 8's own Goal section always scoped that plan to "shared chrome," never the tree
+itself or the Pad panel's own internals, so this is real, previously-unscoped work, not a miss.
+This slice closed the two smallest, highest-confidence pieces found while investigating: the
+floating toolbar-reveal toggle (`App.tsx`) now carries legacy's real `#editor-toolbar-toggle` CSS
+(border/background-tint/opacity/hover/active states), previously a bare icon button; and
+`OutlineTree.tsx`'s own `<div role="tree">` wrapper drew its OWN invented
+`border`/`border-radius`/`background`/`padding` box around the whole tree — legacy's real
+`#editor-pane` has rows sitting directly on the canvas with no separate boxed panel at all
+(confirmed via a real legacy screenshot built fresh for direct comparison), and `AppShell.tsx`'s
+own `#editor-pane` ancestor already provides the real canvas background/padding (§8.4q) — the
+tree's own box sat on top of that, rendering a visibly separate panel legacy never has. Removed.
+Verified with a real side-by-side: `legacy/dist` and `web/dist` built fresh, both driven through
+headless Chrome, before/after screenshots of each fix. Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean.
+
+**8.7 (`PadPanel.tsx`'s own always-visible chrome: tab strip + outer panel surface) landed.**
+First piece of the `PadPanel.tsx` retrofit, scoped to the chrome visible regardless of which of
+the 7 tabs is open. Direct port of legacy's real `.pad-mode-tab` (legacy/index.html:1643-1645,
+underline-style active-tab treatment) replacing the tab strip's previous flat disabled-when-active
+buttons, plus `#pad-panel-header`'s real `background: var(--tb-bg)`. `PadPanel()`'s own root had
+the same invented-box bug §8.6 found in `OutlineTree.tsx` (an arbitrary border/padding box with no
+real legacy counterpart) — removed here too. `web/`'s Pad still renders inline rather than
+legacy's real docked 440px side panel — an existing, already-documented structural simplification
+(§7.5), unchanged by this slice. Verified with a real headless-Chrome screenshot (Decision Log tab
+active against the 8.5 fixture's own anchored decision). Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean.
+
+**Still open, real and sizeable:** `OutlineTree.tsx`'s own row-level class family
+(`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
+543-2174) and each Pad tab's own INTERNAL content styling (`.decision-*` card system, Q&A/Remarks/
+Files rows, Diagrams/Mind Map list chrome — still plain default-button styling inside every tab) —
+each large enough to be its own slice (§8.8+), and `OutlineTree.tsx` in particular is this
+project's single riskiest component to touch (its hottest per-row render path). **Immediate next
+step:** pick up the Decision Log tab's own `.decision-*` card system next (§8.8) — it's the most
+content-rich of the remaining Pad tabs and the one the 8.5 fixture already exercises directly.
+Also still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was similarly
+missed by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's
+own two findings all were — now easier to check with 8.5's own fixture as a real subject to
+screenshot against instead of the empty seed document.
+
+**Repo hygiene note, found this session, not fixed:** this repo has ~180 long-merged branches still
+present on `origin` (every prior phase/slice branch going back to Phase 0), none ever successfully
+deleted — `git push origin --delete <branch>` fails with a 403 on every one tested, and
+`list_branches` shows `"protected": true` on all of them. This is a pre-existing, repo-wide branch
+protection setting blocking deletion (not something this or any prior session broke), confirmed
+when this session's own `claude/sakura-react-migration-yge8kg` hit the same 403 after PR #298
+merged. Not attempted: any override/force/admin-API workaround — that's the account owner's call,
+not something to route around unilaterally. Worth the account owner's attention if a cleaner
+branch list matters (e.g. relaxing branch protection's deletion restriction, or a bulk cleanup via
+the GitHub UI/admin API), but not blocking any actual work.
+
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
 person clicking

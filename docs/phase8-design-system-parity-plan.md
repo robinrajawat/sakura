@@ -940,11 +940,33 @@ follow-ups (§8.7+), each large enough to be its own slice.
   outline now sits flush on the canvas with no extra box, and the floating toggle now shows a real
   bordered/tinted square instead of a bare icon. Full gauntlet clean: 2005 tests still passing (no
   test changes needed, pure presentation swap), typecheck/lint/build all clean.
-- Still open, not yet done: `OutlineTree.tsx`'s own row-level class family (`.node-row`/
-  `.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:543-2174) and
-  `PadPanel.tsx`'s 7-tab retrofit (Notepad/Q&A/Decision Log/Diagrams/Mind Map/Files/Remarks) --
-  each large enough to be its own real slice, not attempted in this pass. Also still worth a
-  targeted look: whether any other non-dialog Phase 6/7 component was similarly missed by 8.4's
-  dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/this slice's own two
-  findings were -- now easier to check with 8.5's own fixture as a real, richly-populated subject
-  to screenshot against instead of the empty seed document.
+- ✅ **8.7 (`PadPanel.tsx`'s own always-visible chrome: the tab strip + outer panel surface)
+  landed.** First piece of the `PadPanel.tsx` retrofit named as open at the end of §8.6 -- scoped
+  to just the chrome that's visible regardless of which of the 7 tabs is open, same "highest-
+  leverage single change first" precedent §8.1's own `#appbar`/`#header-actions` discovery
+  established. Direct port of legacy's real `.pad-mode-tab` (legacy/index.html:1643-1645, markup
+  at 6601-6607 -- `role="tab"`/`aria-selected`, matched exactly) replacing the tab strip's
+  previous flat row of disabled-when-active buttons with legacy's real underline-style active-tab
+  treatment, plus `#pad-panel-header`'s real `background: var(--tb-bg)` (legacy/index.html:1641)
+  on the panel's own outer surface. `PadPanel()`'s own root `<div>` had the same invented-box bug
+  §8.6 found and fixed in `OutlineTree.tsx` -- an arbitrary `border`/`padding` box with no real
+  legacy counterpart -- removed here too (kept `padding: '0.75rem'` as `web/`'s own reasonable
+  value, since legacy's real docked panel has no equivalent inline-block padding to port).
+  **Real, documented scope note, not a gap**: `web/`'s Pad renders inline below the editor rather
+  than legacy's real docked 440px side panel (`#pad-panel`, legacy/index.html:1638) -- an
+  existing, already-documented structural simplification (§7.5's own comment) left unchanged by
+  this slice; only the real background tone and tab-strip treatment were ported, not the fixed
+  width/dock positioning. Verified with a real headless-Chrome screenshot of the 8.5 fixture
+  (Decision Log tab active, showing the real underline-accent tab treatment against the fixture's
+  own anchored decision). Full gauntlet clean: 2005 tests still passing (no test changes needed),
+  typecheck/lint/build all clean.
+- Still open, not yet done: each tab's own INTERNAL content -- `.decision-*` card system (status
+  pill, collapsed/expanded row, field editing), `.qa-item`-equivalent Q&A rows, Remarks rows,
+  Files rows, Diagrams/Mind Map list chrome -- still plain default-button styling inside each tab,
+  a real, separately-scoped follow-up (§8.8+). `OutlineTree.tsx`'s own row-level class family
+  (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
+  543-2174) is also still fully open. Also still worth a targeted look: whether any other
+  non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep, the same way
+  `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings were -- now easier to check
+  with 8.5's own fixture as a real, richly-populated subject to screenshot against instead of the
+  empty seed document.

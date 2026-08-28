@@ -114,16 +114,14 @@ export function PadPanel() {
   const t = THEME_TOKENS[theme];
 
   return (
-    <div style={{ fontFamily: 'sans-serif', border: `1px solid ${t.border}`, borderRadius: 8, padding: '0.75rem' }}>
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 10 }}>
+    <div className="pad-panel" style={{ fontFamily: 'sans-serif', padding: '0.75rem' }}>
+      {/* §8.7 slice: direct port of legacy's real `.pad-mode-tab` (legacy/index.html:6601-6607,
+          1643-1645) -- `role="tablist"`/`role="tab"`/`aria-selected` matching legacy's real
+          markup exactly, an underline-style tab strip instead of the previous flat row of
+          disabled-when-active buttons. */}
+      <div className="pad-panel-tabstrip" role="tablist" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 10, paddingBottom: 0 }}>
         {TABS.map((tb) => (
-          <button
-            key={tb.id}
-            type="button"
-            onClick={() => setTab(tb.id)}
-            disabled={tab === tb.id}
-            style={{ fontSize: 12, padding: '3px 8px' }}
-          >
+          <button key={tb.id} type="button" className="pad-mode-tab" role="tab" aria-selected={tab === tb.id} onClick={() => setTab(tb.id)}>
             {tb.label}
           </button>
         ))}
