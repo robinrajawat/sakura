@@ -2496,3 +2496,122 @@ body.theme-dark .account-visibility-badge:hover {
   font-size: 11.5px;
   color: var(--muted);
 }
+
+/* §8.4n retrofit (docs/phase8-design-system-parity-plan.md): `RestructureTextDialog.tsx`'s real
+ * legacy counterpart is the generic animated prompt/confirm dialog every `sakuraTextareaPrompt`/
+ * `sakuraLinkPrompt` call opens via `_openModal` (legacy/index.html:635-660, markup at 7783-7791,
+ * `sakuraTextareaPrompt` at 18559-18563) -- `#sakura-modal` is legacy's own single, dynamically-
+ * repurposed dialog instance (icon/title/body/inputs swapped per call), not a dialog-per-purpose
+ * shell; `RestructureTextDialog.tsx` is `web/`'s own single-purpose instance of just the
+ * textarea-prompt variant (per this component's own header, `web/` has no generic modal system to
+ * reuse), so only the pieces that variant actually uses are ported: overlay/box/icon/title/body/
+ * textarea-wrap/textarea/actions/buttons. The `#sakura-modal-input`/`-input2` pieces (the
+ * single-line-prompt variant `sakuraLinkPrompt` uses) are real classes too but have no `web/`
+ * consumer yet -- not ported here, matching this project's own "port what's used" convention.
+ *
+ * Skips legacy's own `.open`/`.closing` opacity-fade + transform-scale enter/exit transition,
+ * same React mount/unmount precedent as `.app-modal-overlay`/`#welcome-overlay`. `#sakura-modal`'s
+ * own real conditional width bump (`:has(#sakura-modal-textarea-wrap[style*="display: block"])`,
+ * only relevant when the SAME dialog instance sometimes shows a single-line input instead) is
+ * applied unconditionally here since this instance only ever renders the textarea variant. */
+#sakura-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1150;
+  background: rgba(0, 0, 0, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#sakura-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 22px 24px 20px;
+  width: min(560px, 92vw);
+  font-family: 'Inter', sans-serif;
+}
+
+#sakura-modal-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+#sakura-modal-title {
+  font: 600 14px 'Inter', sans-serif;
+  color: var(--fg);
+  margin-bottom: 6px;
+}
+
+#sakura-modal-body {
+  font: 400 13px 'Inter', sans-serif;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 16px;
+  white-space: pre-line;
+  max-height: 240px;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+#sakura-modal-textarea-wrap {
+  margin-bottom: 16px;
+}
+
+#sakura-modal-textarea {
+  width: 100%;
+  min-height: 180px;
+  max-height: 40vh;
+  resize: vertical;
+  background: var(--edit-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--fg);
+  font: 400 13px 'Fira Code', Consolas, 'Courier New', monospace;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+#sakura-modal-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+#sakura-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.smodal-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font: 500 12px 'Inter', sans-serif;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.smodal-btn:hover {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.smodal-btn.primary {
+  border-color: var(--accent);
+  color: #fff;
+  background: color-mix(in srgb, var(--accent) 86%, var(--tb-bg) 14%);
+}
+
+.smodal-btn.primary:hover {
+  background: color-mix(in srgb, var(--accent) 94%, var(--tb-bg) 6%);
+}

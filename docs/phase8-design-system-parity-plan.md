@@ -736,4 +736,30 @@ doc let this gap through repeated verification passes already.
   category picker (verb/category pill chips with the active chip highlighted) all rendering
   correctly. Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/
   lint/build all clean.
-- Remaining: 8.4n (the 1 component named above) → 8.5 (verification fixture document).
+- ✅ **8.4n — Retrofit: `RestructureTextDialog.tsx` onto `#sakura-modal-*`/`.smodal-btn`.** Real
+  legacy source: CSS at legacy/index.html:635-660, markup at 7783-7791, `sakuraTextareaPrompt` at
+  18559-18563 (all already cited by this file's own header before this slice). `#sakura-modal` is
+  legacy's own single, dynamically-repurposed dialog instance (icon/title/body/inputs swapped per
+  call by `_openModal`); `RestructureTextDialog.tsx` is `web/`'s own single-purpose instance of
+  just the textarea-prompt variant, so only that variant's real pieces were ported: overlay/box/
+  icon/title/body/textarea-wrap/textarea/actions/`.smodal-btn`(+`.primary`). The
+  `#sakura-modal-input`/`-input2` pieces (the single-line-prompt variant `sakuraLinkPrompt` uses)
+  are real classes too but have no `web/` consumer yet -- not ported, matching this project's own
+  "port what's used" convention. Skips legacy's own `.open`/`.closing` opacity-fade +
+  transform-scale enter/exit transition, same React mount/unmount precedent used throughout this
+  slice family.
+  **Two real content/asset gaps found and fixed, beyond the CSS retrofit**: (1) a new
+  `RestructureListIcon` (icons.tsx) ports legacy's own real inline `<svg>` from the
+  `restructureTextWithAi` call site (legacy/index.html:29444) -- the dialog previously had no icon
+  at all. (2) the body copy now matches legacy's own real text at that same call site close to
+  verbatim, with one deliberate omission: legacy's real text promises "your original pasted text
+  kept in its Pad" -- `state/aiOutline.ts`'s own `restructureText` doesn't actually do this (a
+  real, pre-existing feature gap from an earlier phase), so that sentence was left out rather than
+  silently claiming a behavior that isn't there.
+  Verified end-to-end in real headless Chrome (revealing the hidden-by-default toolbar first, per
+  §7.5): the dialog's disabled (faded) accent-filled button with empty text, then fully solid once
+  text is entered, list icon, and full real body copy all rendering correctly. Full gauntlet clean:
+  2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
+- **§8.4 (all 14 sub-slices, 8.4a through 8.4n) is now complete.** Every `web/` component named in
+  this plan's own investigation has been retrofit onto real, line-cited legacy CSS -- remaining:
+  8.5 (a real verification fixture document).
