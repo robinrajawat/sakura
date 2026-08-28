@@ -385,16 +385,32 @@ chrome piece of the renamed 8.4f touches 10 separate `role="dialog"` components 
 PR alongside the rail/tab-strip work, so it split out again into its own 8.4g. See
 phase8-design-system-parity-plan.md's own Status section for the full breakdown and component list.
 
-**Immediate next steps:** 8.4g covers shared modal/dialog chrome (`.app-modal-overlay`/
-`.app-modal`/`.app-modal-head`/`.app-modal-close-btn`/`.app-modal-body`, legacy/index.html:
-926-936) across `SignInGate.tsx`, `VersionHistoryPanel.tsx`, `WelcomeModal.tsx`,
-`FeedbackModal.tsx`, `HelpModal.tsx`, `IconPickerPopover.tsx`, `NotificationBell.tsx`,
-`QuickAssistBar.tsx`, `RestructureTextDialog.tsx`, and `AboutModal.tsx` — worth checking each
-component's real legacy counterpart individually first, since some may be anchored popovers
-(matching `.settings-panel`'s own pattern) rather than true full-screen `.app-modal-overlay`
-dialogs; not every one may need the same treatment. The last retrofit slice, then 8.5
-(verification fixture document, can run in parallel/earlier if picked up independently). Once
-`web/` is visually close enough to legacy for a person to sign off, return to
+**8.4g (generic dialog shell) landed.** Real per-component investigation found the 10
+`role="dialog"` components map to at least 7 genuinely different real legacy families, not one --
+far too heterogeneous for a single PR. Scoped this slice down to just the three that share legacy's
+real `.app-modal-overlay`/`.app-modal`/`.app-modal-head`/`.app-modal-close-btn`/`.app-modal-body`
+shell (legacy/index.html:926-936): `FeedbackModal.tsx` (a literal 1:1 port of legacy's own
+`#feedback-modal-overlay`), plus `AboutModal.tsx`/`HelpModal.tsx` (no direct legacy modal at all,
+but reusing the same shell for `web/`-internal visual consistency since they render the identical
+shape). `role="dialog"` moved from the inner box to the overlay element in all three, matching
+legacy's own real markup. Added `<MessageIcon>`/`<InfoIcon>`/`<BookIcon>` to each modal's
+previously-bare-text title (Feedback's is a literal legacy match; About/Help reuse their own
+existing `AccountMenu.tsx` dropdown-row icons for self-consistency). The other 7 components' real
+target families are now fully scoped with exact line citations in phase8-design-system-parity-
+plan.md's own Status section, so picking any of them up next doesn't need re-investigation:
+8.4h (SignInGate.tsx → `#sakura-landing-*`), 8.4i (WelcomeModal.tsx → `#welcome-*`/`#why-sakura-*`),
+8.4j (VersionHistoryPanel.tsx → `.history-modal-overlay`, its own distinct family), 8.4k
+(IconPickerPopover.tsx → `.icon-picker-popover`, also fix a real `role="dialog"`→`role="menu"`
+mismatch), 8.4l (NotificationBell.tsx → retrofit onto the EXISTING `DropdownMenu`/`MenuItem`
+components, since legacy's own `#notif-menu` is itself a real `.export-menu`/`.export-menu-rich`
+consumer), 8.4m (QuickAssistBar.tsx → `.qa-dropdown` family), 8.4n (RestructureTextDialog.tsx →
+`#sakura-modal-overlay`, the real generic animated prompt/confirm dialog). Verified with real
+headless-Chrome screenshots of all three modals. Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean.
+
+**Immediate next steps:** 8.4h through 8.4n (the 7 components above, each independently scoped),
+then 8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
+Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
 production-synced documents round-trip; the actual `deploy.yml` cutover PR) — none of which are

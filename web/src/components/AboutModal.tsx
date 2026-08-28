@@ -1,6 +1,6 @@
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useEscapeToClose } from '../utils/useEscapeToClose';
-import { CloseIcon } from '../icons';
+import { CloseIcon, InfoIcon } from '../icons';
 
 /**
  * §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): "About Sakura", one of the account
@@ -15,6 +15,15 @@ import { CloseIcon } from '../icons';
  * intentional omission is the "About → Support" section's Ko-fi button, since that same button
  * already lives one level up in `AccountMenu.tsx`'s own dropdown (legacy repeats it in both
  * places; this port doesn't).
+ *
+ * §8.4g retrofit (docs/phase8-design-system-parity-plan.md): renders through the real
+ * `.app-modal-overlay`/`.app-modal`/`.app-modal-head`/`.app-modal-close-btn`/`.app-modal-body`
+ * classes (index.css) -- the same generic dialog shell `FeedbackModal.tsx` uses for its own real
+ * legacy-matched modal, reused here for visual consistency since this component renders the
+ * identical shape (backdrop-centered box, header+close, body) even though legacy itself has no
+ * standalone About modal to port 1:1 (see this file's own header above). `<InfoIcon>` in the
+ * title reuses the same icon already used for this entry's own row in `AccountMenu.tsx`'s
+ * dropdown, for the same self-consistency reason.
  */
 export function AboutModal({ onClose }: { onClose: () => void }) {
   const theme = useThemeStore((s) => s.theme);
@@ -22,34 +31,18 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
   useEscapeToClose(onClose);
 
   return (
-    <div
-      role="presentation"
-      onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <div
-        role="dialog"
-        aria-label="About Sakura"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: t.background,
-          color: t.text,
-          border: `1px solid ${t.border}`,
-          borderRadius: 12,
-          padding: 20,
-          width: 440,
-          maxWidth: '92vw',
-          boxShadow: '0 20px 40px rgba(0,0,0,.25)',
-          fontFamily: "'Inter', sans-serif"
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
-          <h3 style={{ margin: 0, fontSize: 15 }}>About Sakura</h3>
-          <button type="button" onClick={onClose} aria-label="Close" title="Close">
+    <div role="dialog" aria-label="About Sakura" aria-modal="true" className="app-modal-overlay" onClick={onClose}>
+      <div className="app-modal" style={{ width: 'min(440px, 94vw)' }} onClick={(e) => e.stopPropagation()}>
+        <div className="app-modal-head">
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <InfoIcon width={15} height={15} stroke="var(--accent)" />
+            About Sakura
+          </h2>
+          <button type="button" className="app-modal-close-btn" onClick={onClose} aria-label="Close" title="Close">
             <CloseIcon />
           </button>
         </div>
-        <div style={{ fontSize: 12, lineHeight: 1.6, color: t.mutedText, display: 'grid', gap: 8 }}>
+        <div className="app-modal-body" style={{ fontSize: 12, lineHeight: 1.6, color: t.mutedText, display: 'grid', gap: 8 }}>
           <p style={{ margin: 0 }}>
             A knowledge-management workspace for structured documents and everyday personal productivity — To-Dos, Meeting Notes,
             Journal, Recap, and Library in the Hub.
