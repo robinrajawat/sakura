@@ -714,5 +714,26 @@ doc let this gap through repeated verification passes already.
   data) -- red badge, per-row unread accent dot, "just now" relative time, and "Clear all" button
   all rendering correctly. Full gauntlet clean: 2005 tests still passing (no test changes needed),
   typecheck/lint/build all clean.
-- Remaining: 8.4m and 8.4n (the 2 components named above, each independently scoped) → 8.5
-  (verification fixture document).
+- ✅ **8.4m — Retrofit: `QuickAssistBar.tsx` onto the real `.qa-*` family.** Real legacy source:
+  CSS at legacy/index.html:1117-1177, markup at 6769-6788 (both already cited by this file's own
+  header before this slice). Ported the full real class family: `.qa-input-row`/`.qa-icon-btn`/
+  `.qa-dropdown`/`.qa-hint`(+`-label`/`-phrases`/`-phrase`)/`.qa-results`/`.qa-item`(+`.qa-active`/
+  `.qa-item-disabled`/`-verb`+`.qa-verb-hide`/`-goto`/`-run`/`-label`/`-state`)/`.qa-chip-row`/
+  `.qa-item-chip`/`.gs-group-title` (the last one also shared with the picker's own "Browse by
+  action…"/"Search within…" section titles, confirmed real via legacy/index.html:17529,17542).
+  **A real structural finding, deliberately NOT acted on**: legacy's own real Quick Assist input is
+  a PERMANENTLY-VISIBLE search-style box docked in the status bar or app bar
+  (`setQaLocation`/`#appbar-qa-slot`, legacy/index.html:21054-21068) -- there is no click-to-reveal
+  toggle at all in legacy. `QuickAssistBar.tsx` predates this slice with its own `web/`-only "⌘K"
+  toggle-button-then-popover structure (§6.10) -- this slice does NOT redesign that (a real,
+  separately-scoped structural change, not a CSS retrofit), reusing legacy's real classes for their
+  cosmetic properties only and keeping `web/`'s own toggle-button mount and the popover's own
+  absolute positioning, same "port the effect, not the exact technique" precedent already used for
+  `IconPickerPopover.tsx`. `.qa-input-row`'s own real per-context fixed/focus-expanding `width`
+  values (meaningless inside a fixed-width popover) are skipped for the same reason.
+  Verified end-to-end in real headless Chrome: the hint state (pill-shaped phrase chips), a real
+  command result row ("SHOW · Dark mode · currently off" with the active-row accent bar), and the
+  category picker (verb/category pill chips with the active chip highlighted) all rendering
+  correctly. Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/
+  lint/build all clean.
+- Remaining: 8.4n (the 1 component named above) → 8.5 (verification fixture document).

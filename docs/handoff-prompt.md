@@ -474,8 +474,21 @@ per-item relative-timestamp line, which `NotificationBell.tsx` never rendered ev
 immediately by `setMenuOpen`'s own `refresh()` call). Full gauntlet clean: 2005 tests passing,
 typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.4m and 8.4n (the 2 components above, each independently scoped), then
-8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
+**8.4m (retrofit: `QuickAssistBar.tsx` → the real `.qa-*` family) landed.** Ported the full real
+class family (legacy/index.html:1117-1177): `.qa-input-row`/`.qa-icon-btn`/`.qa-dropdown`/
+`.qa-hint`(+`-label`/`-phrases`/`-phrase`)/`.qa-results`/`.qa-item`(+`.qa-active`/`-disabled`/
+`-verb`+variants/`-label`/`-state`)/`.qa-chip-row`/`.qa-item-chip`/`.gs-group-title`. Found a real
+structural fact, deliberately not acted on: legacy's own Quick Assist input is a
+PERMANENTLY-VISIBLE search-style box docked in the status bar or app bar, with no click-to-reveal
+toggle at all — `QuickAssistBar.tsx`'s own pre-existing "⌘K" toggle-button-then-popover structure
+(§6.10) stays as-is (a real, separately-scoped structural change, not this slice's CSS-retrofit
+job); the real classes are reused for their cosmetic properties only, keeping `web/`'s own
+toggle-button mount and popover positioning. Verified with real headless-Chrome screenshots (hint
+phrase chips, a real command result row with its active-row accent bar, the category picker's verb/
+category pill chips). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
+
+**Immediate next steps:** 8.4n (the 1 component above), then 8.5 (verification fixture document,
+can run in parallel/earlier if picked up independently).
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
