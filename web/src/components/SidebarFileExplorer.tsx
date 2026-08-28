@@ -249,7 +249,7 @@ export function SidebarFileExplorer() {
   }
 
   return (
-    <div ref={scrollRef} style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
+    <div id="sidebar-scroll" ref={scrollRef} style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
       <div className="sb-section-hdr">
         <span className="sb-section-label">Documents</span>
         <div className="sb-section-actions">

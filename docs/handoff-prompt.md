@@ -532,9 +532,26 @@ typed-query results, outside-click close, ⌘K reopen, the category picker, both
 (picker-only vs. whole-box), and a hint-phrase click. Full gauntlet clean: 2005 tests passing,
 typecheck/lint/build all clean.
 
+**8.4q (found post-8.4p, app-wide scrollbar theming + editor-pane canvas background) landed —
+reported directly by the user.** Confirmed `web/` had ZERO scrollbar CSS anywhere at all — every
+scrollable region rendered the bare OS default the whole time (a gap `#doc-tab-strip-row`'s own
+§8.4e comment had already flagged as codebase-wide but never acted on). Ported legacy's 3 true
+global resets, its Firefox fallback, and its real per-container `::-webkit-scrollbar` treatment
+(grouped by canvas-bg/bg/tb-bg/edit-bg surface) for every container with a real `web/` counterpart:
+`#editor-pane`, `.settings-content`/`.settings-rail`/`#sakura-modal-body`/`#why-sakura-modal`/
+`.app-modal-body`/`.doc-tab-overview-menu`/`.qa-dropdown`/`.history-modal-body`, `#doc-tab-strip`/
+`#sidebar-scroll`/`#hub-tab-body`, `.sakura-note-editor`. Adding `#editor-pane` as a real id
+surfaced two more real gaps on the same element: it had no `background` at all (should be
+`--canvas-bg`, a distinct token already fully wired since §6.1 but never consumed — visibly
+confirmed in dark mode) and an approximated uniform padding instead of legacy's real asymmetric
+`12px 14px 18px 26px`. Verified via computed-style/CSSOM inspection (screenshots alone can't show
+scrollbar thumbs — Chromium's overlay scrollbars fade after a scroll gesture settles) plus a real
+dark-mode screenshot confirming the canvas-vs-chrome contrast. Full gauntlet clean: 2005 tests
+passing, typecheck/lint/build all clean.
+
 **Immediate next steps:** 8.5 (a real verification fixture document). Worth a targeted look before
 or during that: whether other non-dialog Phase 6/7 components were similarly missed by 8.4's
-dialog-only sweep, the same way `EmptyDocState.tsx` and `QuickAssistBar.tsx`'s own structure were.
+dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/this scrollbar gap were.
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
 person clicking
