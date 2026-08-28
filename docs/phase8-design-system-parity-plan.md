@@ -627,5 +627,29 @@ doc let this gap through repeated verification passes already.
   email form expanded (plain-bordered white inputs, bordered Sign In button), and dismissal (gate
   closes, app underneath renders normally) all screenshotted and correct. Full gauntlet clean: 2005
   tests still passing (no test changes needed), typecheck/lint/build all clean.
-- Remaining: 8.4i through 8.4n (the 6 components named above, each independently scoped) → 8.5
+- ✅ **8.4i — Retrofit: `WelcomeModal.tsx` onto `#welcome-*`/`#why-sakura-*`.** Real legacy source:
+  markup at legacy/index.html:7639-7708, CSS at 665-787 (both already cited by this file's own
+  header before this slice). Ported the full real class family for both overlays: `#welcome-
+  overlay`/`#welcome-modal`(+`-brand`/`-brand-icon`/`-brand-name`/`-sub`)/`#welcome-choices`/
+  `.welcome-choice`(+hover/focus)/`.welcome-choice-icon`/`.welcome-choice-text`/`-label`/`-desc`/
+  `#welcome-skip`/`#welcome-why-link`/`#welcome-editors-choice-link`, and `#why-sakura-overlay`/
+  `#why-sakura-modal`(+`-brand`/`-brand-icon`/`-brand-name`/`-sub`)/`#why-sakura-list`/`.why-row`/
+  `.why-row-icon`/`.why-row-text`/`-label`/`-desc`/`#why-sakura-caveat`/`#why-sakura-close`. Both
+  overlays skip legacy's own `.open`/`.closing` opacity-fade + transform-scale enter/exit
+  transition (legacy/index.html:665-670, 691-697) -- same React mount/unmount-replaces-class-toggle
+  precedent as `#dock-tabstrip`/`.app-modal-overlay`/`#sakura-landing-overlay`, rendering directly
+  at legacy's own "open" end state.
+  **Two real visual gaps found and fixed, beyond the planned CSS-family port**: the choice-row
+  icons (`.welcome-choice-icon`/`.why-row-icon`) previously rendered as bare, unstyled spans;
+  legacy's real CSS gives each a rounded accent-tinted badge background (36px/30px respectively) --
+  now matched. `#why-sakura-close` ("Got it — let's start") previously rendered as a plain
+  unstyled button; legacy's real CSS makes it a solid accent-filled primary button (`background:
+  var(--accent);color:#fff`) -- now matched, a real, visible mismatch a side-by-side would have
+  caught immediately.
+  Verified end-to-end in real headless Chrome (dismissing the §8.4h sign-in gate first, then
+  waiting out the real 500ms boot delay): the welcome modal's two bordered choice cards with
+  accent-badge icons, and the stacked "Why an outliner" modal's five accent-badge rows plus the
+  accent-filled close button, both screenshotted and correct. Full gauntlet clean: 2005 tests still
+  passing (no test changes needed), typecheck/lint/build all clean.
+- Remaining: 8.4j through 8.4n (the 5 components named above, each independently scoped) → 8.5
   (verification fixture document).
