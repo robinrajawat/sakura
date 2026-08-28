@@ -437,7 +437,19 @@ unstyled button instead of legacy's real solid accent-filled primary-button look
 real headless-Chrome screenshots (welcome modal's two choice cards, the stacked "Why an outliner"
 modal). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.4j through 8.4n (the 5 components above, each independently scoped),
+**8.4j (retrofit: `VersionHistoryPanel.tsx` → `.history-modal-*`) landed.** Ported the full real
+class family (legacy/index.html:1396-1415): `.history-modal-overlay`/`.history-modal`/`-header`/
+`-title`/`-close-x`/`-body`/`-footer`/`-footer-hint`, plus the row family `.history-row`/`-info`/
+`-time`/`-meta`/`-restore` and `.history-empty`. Confirmed this is a genuinely distinct shell from
+`.app-modal-*` (different rgba/z-index, its own enter transition, its own close-button treatment)
+rather than reusing that shell — switched the close button from the generic `<CloseIcon>` svg to
+legacy's own real plain "×" glyph (`.history-modal-close-x`) to match. Skips legacy's own `.open`
+enter transition, same mount/unmount precedent as `.app-modal-overlay`/`#welcome-overlay`. Verified
+with real headless-Chrome screenshots (an existing auto-captured revision row, then a second row
+after "Save a version now"). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all
+clean.
+
+**Immediate next steps:** 8.4k through 8.4n (the 4 components above, each independently scoped),
 then 8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
