@@ -1612,3 +1612,69 @@ body.theme-dark .account-visibility-badge:hover {
   overflow-y: auto;
   padding: 14px 20px 20px;
 }
+
+/* §8.4h retrofit (docs/phase8-design-system-parity-plan.md): `SignInGate.tsx`'s real legacy
+ * counterpart is `#sakura-landing-overlay` (legacy/index.html:4498-4526), whose own CSS
+ * (legacy/index.html:698-704) only ever names the overlay/card/brand/heading/sub shell -- every
+ * other element inside (Google button, divider, email toggle/form/inputs/error/submit, mode-
+ * toggle, forgot-password, continue-without-signing-in) is legacy's own real per-element inline
+ * `style=""`, not a named class, so those stay inline in `SignInGate.tsx` too rather than this
+ * slice inventing classes legacy itself never had.
+ *
+ * `#sakura-landing-overlay` omits legacy's own `display:none` (JS-toggled open/closed) since
+ * `SignInGate.tsx` only ever mounts this element while visible -- the same React
+ * mount/unmount-replaces-class-toggle precedent already used for `#dock-tabstrip`/
+ * `.app-modal-overlay` elsewhere in this file. */
+#sakura-landing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#sakura-landing-card {
+  width: min(380px, calc(100vw - 32px));
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+}
+
+#sakura-landing-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+/* Legacy sizes this icon via the wrapper's `font-size` (56px) with the inner `<svg>` itself at
+ * `width="1em" height="1em"`, not a hardcoded pixel size on the svg -- `SignInGate.tsx`'s svg
+ * matches that same em-based technique now instead of a hardcoded `width={40} height={40}`. */
+#sakura-landing-brand-icon {
+  font-size: 56px;
+  line-height: 1;
+  display: inline-flex;
+}
+
+#sakura-landing-brand-name {
+  font: 700 18px 'Inter', sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--fg);
+}
+
+#sakura-landing-heading {
+  font: 700 21px 'Inter', sans-serif;
+  color: var(--fg);
+  margin: 0 0 8px;
+}
+
+#sakura-landing-sub {
+  font: 400 13.5px 'Inter', sans-serif;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 24px;
+}

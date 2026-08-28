@@ -602,5 +602,30 @@ doc let this gap through repeated verification passes already.
   form, About with its four paragraphs of copy, Help with its placeholder copy) screenshotted --
   consistent header/close/body chrome, correct icons, matching the shared shell. Full gauntlet
   clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
-- Remaining: 8.4h through 8.4n (the 7 components named above, each independently scoped) → 8.5
+- ✅ **8.4h — Retrofit: `SignInGate.tsx` onto `#sakura-landing-*`.** Real legacy source: CSS at
+  legacy/index.html:698-704, markup at 4498-4526 (both already cited by this file's own header
+  before this slice). Legacy's own `#sakura-landing-*{...}` CSS block only ever names the
+  overlay/card/brand/brand-icon/brand-name/heading/sub shell -- every other element inside (Google
+  button, "or" divider, email toggle/form/inputs/error/submit, mode-toggle, forgot-password,
+  continue-without-signing-in) is legacy's own real per-element inline `style=""`, not a named
+  class, confirmed by reading the real markup line-by-line -- so this slice only added the 7 real
+  `#sakura-landing-*` ids/CSS rules to `index.css`, leaving every other element's inline styling in
+  place (it was already a close-to-exact match; see the two real mismatches fixed below).
+  `#sakura-landing-overlay` omits legacy's own `display:none` toggle since `SignInGate.tsx` only
+  ever mounts this element while visible, the same React mount/unmount-replaces-class-toggle
+  precedent already used for `#dock-tabstrip`/`.app-modal-overlay`.
+  **Two real mismatches found and fixed along the way, beyond the planned CSS-family port**:
+  (1) the brand icon was sized with a hardcoded `width={40} height={40}` on the `<svg>`; legacy's
+  real technique sizes it via the wrapper's `font-size:56px` with the svg itself at
+  `width="1em" height="1em"` -- fixed to match legacy's actual mechanism, not just its rendered
+  size. (2) the Google/email-submit buttons and the email/password inputs were missing the plain
+  `border`/`background`/`color` inline overrides legacy's own markup gives them on top of `web/`'s
+  bare-element-selector base treatment (§6.1) -- without them these rendered with the base
+  treatment's accent-tinted border/text color instead of legacy's real plain
+  `var(--border)`/`var(--edit-bg)`/`var(--fg)`, a real visual gap a side-by-side would have caught.
+  Verified end-to-end in real headless Chrome: initial gate (56px icon, bordered Google button),
+  email form expanded (plain-bordered white inputs, bordered Sign In button), and dismissal (gate
+  closes, app underneath renders normally) all screenshotted and correct. Full gauntlet clean: 2005
+  tests still passing (no test changes needed), typecheck/lint/build all clean.
+- Remaining: 8.4i through 8.4n (the 6 components named above, each independently scoped) → 8.5
   (verification fixture document).
