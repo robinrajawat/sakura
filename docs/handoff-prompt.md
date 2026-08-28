@@ -590,18 +590,31 @@ legacy's real docked 440px side panel — an existing, already-documented struct
 active against the 8.5 fixture's own anchored decision). Full gauntlet clean: 2005 tests passing,
 typecheck/lint/build all clean.
 
+**8.8 (Decision Log tab's own `.decision-row-*` card system) landed.** Direct port of legacy's
+real `.decision-row`/`.decision-row-summary`/`.decision-row-status` (+`data-color` green/red/
+orange/gray)/`.decision-row-content`/`.decision-row-node`/`.decision-row-delete`/
+`.decision-row-expand-slot` (legacy/index.html:1722-1747), plus `#decision-open-chip` and
+`.note-tb-btn` for the tab's own toolbar. The collapsed row's status pill now reads real color
+from `decisionLogQueries.ts`'s own pre-existing `decisionStatusColorKeyCore` (already ported,
+never wired to a CSS class before this slice). Scoped down from legacy's real row: no drag-handle/
+reorder chrome, no title-row/snippet/meta sub-rows, no rich-text field styling (this component's
+5 fields are plain `<textarea>`s, an already-documented simplification) — each named, not silently
+dropped. Verified with real headless-Chrome screenshots against the 8.5 fixture's own anchored,
+approved decision (solid green pill, orange chip, hover states). Full gauntlet clean: 2005 tests
+passing, typecheck/lint/build all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own row-level class family
 (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
-543-2174) and each Pad tab's own INTERNAL content styling (`.decision-*` card system, Q&A/Remarks/
-Files rows, Diagrams/Mind Map list chrome — still plain default-button styling inside every tab) —
-each large enough to be its own slice (§8.8+), and `OutlineTree.tsx` in particular is this
-project's single riskiest component to touch (its hottest per-row render path). **Immediate next
-step:** pick up the Decision Log tab's own `.decision-*` card system next (§8.8) — it's the most
-content-rich of the remaining Pad tabs and the one the 8.5 fixture already exercises directly.
-Also still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was similarly
-missed by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's
-own two findings all were — now easier to check with 8.5's own fixture as a real subject to
-screenshot against instead of the empty seed document.
+543-2174) and the remaining Pad tabs' own INTERNAL content styling (Q&A/Remarks/Files rows,
+Diagrams/Mind Map list chrome — still plain default-button styling) — each large enough to be its
+own slice (§8.9+), and `OutlineTree.tsx` in particular is this project's single riskiest component
+to touch (its hottest per-row render path). **Immediate next step:** whoever picks this up next
+should decide between continuing the remaining Pad tabs (Q&A is the next most content-rich) or
+finally tackling `OutlineTree.tsx`'s row-level system — both are real, user-flagged gaps. Also
+still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was similarly missed
+by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two
+findings all were — now easier to check with 8.5's own fixture as a real subject to screenshot
+against instead of the empty seed document.
 
 **Repo hygiene note, found this session, not fixed:** this repo has ~180 long-merged branches still
 present on `origin` (every prior phase/slice branch going back to Phase 0), none ever successfully

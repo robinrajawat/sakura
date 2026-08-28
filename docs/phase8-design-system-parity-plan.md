@@ -960,13 +960,34 @@ follow-ups (§8.7+), each large enough to be its own slice.
   (Decision Log tab active, showing the real underline-accent tab treatment against the fixture's
   own anchored decision). Full gauntlet clean: 2005 tests still passing (no test changes needed),
   typecheck/lint/build all clean.
-- Still open, not yet done: each tab's own INTERNAL content -- `.decision-*` card system (status
-  pill, collapsed/expanded row, field editing), `.qa-item`-equivalent Q&A rows, Remarks rows,
-  Files rows, Diagrams/Mind Map list chrome -- still plain default-button styling inside each tab,
-  a real, separately-scoped follow-up (§8.8+). `OutlineTree.tsx`'s own row-level class family
-  (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
-  543-2174) is also still fully open. Also still worth a targeted look: whether any other
-  non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep, the same way
-  `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings were -- now easier to check
+- ✅ **8.8 (Decision Log tab's own `.decision-row-*` card system) landed.** Direct port of
+  legacy's real `.decision-row`/`.decision-row-summary`(+hover/`.expanded`)/`.decision-row-status`
+  (+`data-color` green/red/orange/gray)/`.decision-row-content`/`.decision-row-node`(+hover)/
+  `.decision-row-delete`(+hover-reveal-on-summary-hover)/`.decision-row-expand-slot`
+  (legacy/index.html:1722-1747), plus the toolbar's `#decision-open-chip` (1713-1716, a real
+  orange pill, accent-colored when active) and `.note-tb-btn` (1968, a generic muted toolbar
+  icon-button -- also a real `NotePanel.tsx` class, that component's own retrofit still a
+  separate, open follow-up; only what this slice's "+ New" button needs was ported). The
+  collapsed row's status pill now reads real color from `decisionLogQueries.ts`'s own pre-existing
+  `decisionStatusColorKeyCore` (already ported, just never wired to any CSS class before this
+  slice) instead of rendering as a plain unstyled button.
+  **Scoped down from legacy's real row**, each named rather than silently dropped: no drag-handle/
+  drag-reorder chrome (`reorderDecision` exists on the store but no UI drives it yet), no
+  title-row/snippet/meta sub-rows (this component's collapsed row shows only the anchor label, no
+  text preview or timestamp), no `.decision-field-rewrite`/`.decision-field-body` (this
+  component's 5 fields are plain `<textarea>`s, an already-documented `DecisionTab` simplification
+  -- no contentEditable rich-text styling to port onto them). Verified with real headless-Chrome
+  screenshots against the 8.5 fixture's own anchored, approved decision: the collapsed row (solid
+  green "APPROVED" pill, orange "0 open" chip, muted "+ New" button) and the row's own real
+  hover states (accent-underline on the node label, the delete button fading in) both confirmed.
+  Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
+  clean.
+- Still open, not yet done: the remaining Pad tabs' own INTERNAL content -- `.qa-item`-equivalent
+  Q&A rows, Remarks rows, Files rows, Diagrams/Mind Map list chrome -- still plain default-button
+  styling, a real, separately-scoped follow-up (§8.9+). `OutlineTree.tsx`'s own row-level class
+  family (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/
+  index.html:543-2174) is also still fully open. Also still worth a targeted look: whether any
+  other non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep, the same
+  way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings were -- now easier to check
   with 8.5's own fixture as a real, richly-populated subject to screenshot against instead of the
   empty seed document.
