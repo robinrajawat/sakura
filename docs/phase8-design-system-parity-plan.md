@@ -822,7 +822,43 @@ doc let this gap through repeated verification passes already.
   closing the whole box (clears, blurs), and a hint-phrase click filling the query and immediately
   showing its real matching result row. Full gauntlet clean: 2005 tests still passing (no test
   changes needed), typecheck/lint/build all clean.
+- ✅ **8.4q (found post-8.4p) — App-wide scrollbar theming + editor-pane canvas background.**
+  Reported directly by the user ("scrollbars across the app... nothing seems aligned with the
+  legacy app"). Confirmed real and systemic: `web/` had ZERO scrollbar CSS anywhere in the
+  codebase -- every scrollable region rendered the bare OS/browser default scrollbar the entire
+  time. This gap had already been NOTICED once before (`#doc-tab-strip-row`'s own §8.4e comment
+  explicitly flagged legacy's real per-container scrollbar rules as "a gap real to the whole
+  codebase, not this component") but never acted on until now.
+  Real legacy source: the 3 true global resets (`::-webkit-scrollbar-button`/`-corner`, number-
+  input spinners, legacy/index.html:312-326), the Firefox `scrollbar-width`/`-color` fallback
+  (334-341), and the real per-container `::-webkit-scrollbar`/`-thumb` values grouped by which
+  background surface each container sits on (`--canvas-bg`/`--bg`/`--tb-bg`/`--edit-bg`,
+  legacy/index.html:522, 3308-3346). Ported the 3 global resets and the Firefox fallback verbatim,
+  plus the real per-container treatment for every container that has an actual `web/` counterpart:
+  `#editor-pane` (canvas-bg), `.settings-content`/`.settings-rail`/`#sakura-modal-body`/
+  `#why-sakura-modal`/`.app-modal-body`/`.doc-tab-overview-menu`/`.qa-dropdown`/`.history-modal-body`
+  (bg), `#doc-tab-strip`/`#sidebar-scroll`/`#hub-tab-body` (tb-bg), `.sakura-note-editor` (edit-bg).
+  Containers with no real `web/` equivalent (`#code-editor`, `#qa-body`, `#meetings-body`, etc. --
+  features `web/` hasn't built) are correctly skipped, not fabricated.
+  **Three real ids added along the way, each needed as a selector hook and each itself a real,
+  previously-missing piece of legacy fidelity**: `#editor-pane` (`AppShell.tsx`'s content pane,
+  legacy/index.html:522) -- which also surfaced two more real gaps on the same element while
+  adding it: the pane had no `background` at all (inheriting the surrounding `--bg` instead of
+  legacy's own real `--canvas-bg`, a distinct near-white/near-black token that was already fully
+  wired in `themeStore.ts` since §6.1 but never actually consumed anywhere -- confirmed visible in
+  dark mode, where the contrast is clearest), and its padding was an approximated uniform
+  `1rem 1.5rem` instead of legacy's real asymmetric `12px 14px 18px 26px`. `#sidebar-scroll`
+  (`SidebarFileExplorer.tsx`'s own scroll container). `#hub-tab-body` (`HubDock.tsx`'s shared
+  active-tab content wrapper -- legacy splits this identically-styled treatment across 4 separate
+  per-tab ids `web/` doesn't need since one wrapper serves every tab).
+  Verified via a combination of real headless-Chrome checks: computed-style + CSSOM inspection
+  confirmed `#editor-pane`'s real background/padding/overflow and that the `::-webkit-scrollbar`
+  rule is registered and targets the right element (a static screenshot alone can't show the
+  thumb -- Chromium's overlay scrollbars fade out once a scroll gesture settles, a known
+  screenshot-timing limitation, not a rendering gap); a real dark-mode screenshot confirmed the
+  canvas-vs-chrome background contrast is visibly present. Full gauntlet clean: 2005 tests still
+  passing (no test changes needed), typecheck/lint/build all clean.
 - Remaining: 8.5 (a real verification fixture document). Also worth a targeted look before or
   during 8.5: whether other non-dialog components built before Phase 8 (i.e. anything from Phase
   6/7 that isn't itself a `role="dialog"`) were similarly missed by 8.4's dialog-only sweep, the
-  same way `EmptyDocState.tsx` was.
+  same way `EmptyDocState.tsx`/`QuickAssistBar.tsx` were.

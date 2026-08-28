@@ -1114,9 +1114,10 @@ body.theme-dark .account-visibility-badge:hover {
  * there is no state this dot could ever represent; porting the CSS for it would be dead styling
  * with no real consumer. Also NOT ported: `.doc-tab.pinned`+`.doc-tab-pin-icon` (no `documentsStore.ts`
  * pinning concept exists to back it), `#sidebar-reopen-btn` (already has a real, separately-built
- * `web/` equivalent in App.tsx's header actions), and the strip's own custom scrollbar rules
- * (legacy/index.html:3308-3324 -- cosmetic scrollbar theming `web/` has never ported anywhere else
- * in this codebase either, not a gap specific to this component).
+ * `web/` equivalent in App.tsx's header actions). The strip's own custom scrollbar rules (legacy/
+ * index.html:3308-3324) -- flagged here as a gap real to the whole codebase, not this component --
+ * are ported by the later app-wide scrollbar-theming retrofit further down this file (search
+ * `::-webkit-scrollbar-button`), which gives `#doc-tab-strip` the same real treatment.
  */
 #doc-tab-strip-row {
   display: flex;
@@ -2681,4 +2682,132 @@ body.theme-dark .account-visibility-badge:hover {
   gap: 8px;
   justify-content: center;
   margin-top: 10px;
+}
+
+/* Scrollbar theming retrofit (docs/phase8-design-system-parity-plan.md), found via a direct
+ * user report that scrollbars across the whole app looked wrong -- confirmed real: this cosmetic
+ * theming (legacy/index.html:312-341, 3308-3346) had never been ported anywhere in `web/` at all
+ * (already flagged, but left unaddressed, in `#doc-tab-strip`'s own §8.4e comment). Every
+ * scrollable region in `web/` was rendering the bare OS/browser default scrollbar the entire time.
+ *
+ * The three rules below are true GLOBAL resets in legacy (bare pseudo-elements/selectors, no
+ * scoping) -- ported verbatim, no `web/`-specific reasoning needed. */
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* Firefox has no `::-webkit-scrollbar-*`; legacy's own real fallback (legacy/index.html:334-341)
+ * scopes `scrollbar-width`/`scrollbar-color` to only the same containers styled below, keeping
+ * Chromium on the fully custom (arrow-free) `::-webkit-scrollbar` path -- ported for the same
+ * subset of that list that has a real `web/` counterpart (see each rule below for exact line
+ * citations; ids/classes with no `web/` equivalent, e.g. `#code-editor`/`#qa-body`, are skipped).
+ */
+@supports not selector(::-webkit-scrollbar) {
+  #editor-pane,
+  .settings-content,
+  .settings-rail,
+  #sakura-modal-body,
+  #why-sakura-modal,
+  .app-modal-body,
+  .doc-tab-overview-menu,
+  .qa-dropdown,
+  .history-modal-body,
+  #doc-tab-strip,
+  #sidebar-scroll,
+  #hub-tab-body,
+  .sakura-note-editor {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll) transparent;
+  }
+}
+
+/* `--canvas-bg` surface (legacy/index.html:522's own `#editor-pane::-webkit-scrollbar*`). */
+#editor-pane::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+#editor-pane::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 999px;
+  border: 2px solid var(--canvas-bg);
+  background-clip: padding-box;
+}
+
+/* `--edit-bg` surface (legacy/index.html:3341-3346's own `#note-editor` group -- `#note-editor`'s
+ * real background is `var(--canvas-bg)`, identical in value to `--edit-bg` in both themes, so
+ * `.sakura-note-editor`'s own real `background: t.editBg` already matches without a token
+ * change). */
+.sakura-note-editor::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.sakura-note-editor::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 999px;
+  border: 2px solid var(--edit-bg);
+  background-clip: padding-box;
+}
+
+/* `--bg` surfaces (legacy/index.html:3308-3330's own real group). */
+.settings-content::-webkit-scrollbar,
+.settings-rail::-webkit-scrollbar,
+#sakura-modal-body::-webkit-scrollbar,
+#why-sakura-modal::-webkit-scrollbar,
+.app-modal-body::-webkit-scrollbar,
+.doc-tab-overview-menu::-webkit-scrollbar,
+.qa-dropdown::-webkit-scrollbar,
+.history-modal-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.settings-content::-webkit-scrollbar-thumb,
+.settings-rail::-webkit-scrollbar-thumb,
+#sakura-modal-body::-webkit-scrollbar-thumb,
+#why-sakura-modal::-webkit-scrollbar-thumb,
+.app-modal-body::-webkit-scrollbar-thumb,
+.doc-tab-overview-menu::-webkit-scrollbar-thumb,
+.qa-dropdown::-webkit-scrollbar-thumb,
+.history-modal-body::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 999px;
+  border: 2px solid var(--bg);
+  background-clip: padding-box;
+}
+
+/* `--tb-bg` surfaces (legacy/index.html:3331-3339's own real group -- `#hub-tab-body` here covers
+ * what legacy names four times over as `#diagrams-tab-body`/`#files-tab-body`/`#mindmap-tab-body`/
+ * `#remarks-tab-body`, all identical values, see `HubDock.tsx`'s own comment). */
+#doc-tab-strip::-webkit-scrollbar,
+#sidebar-scroll::-webkit-scrollbar,
+#hub-tab-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+#doc-tab-strip::-webkit-scrollbar-thumb,
+#sidebar-scroll::-webkit-scrollbar-thumb,
+#hub-tab-body::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 999px;
+  border: 2px solid var(--tb-bg);
+  background-clip: padding-box;
 }

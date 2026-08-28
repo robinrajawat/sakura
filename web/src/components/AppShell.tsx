@@ -178,10 +178,19 @@ export function AppShell({
           />
         )}
 
+        {/* #editor-pane -- legacy/index.html:522. A real id (added alongside the scrollbar-theming
+            retrofit, docs/phase8-design-system-parity-plan.md) so index.css's new
+            `#editor-pane::-webkit-scrollbar` rule has something to attach to, plus legacy's own
+            real `background:var(--canvas-bg)` (previously inherited the surrounding `--bg`, no
+            visual separation from the chrome around it -- a real, findable color gap since
+            `--canvas-bg` was already a wired theme token, §6.1, just never consumed) and its own
+            real asymmetric padding (`12px 14px 18px 26px`, previously an approximated uniform
+            `1rem 1.5rem`). */}
         <div
           ref={contentRef}
+          id="editor-pane"
           data-testid="appshell-content"
-          style={{ flex: '1 1 auto', minWidth: 0, overflow: 'auto', padding: '1rem 1.5rem' }}
+          style={{ flex: '1 1 auto', minWidth: 0, overflow: 'auto', padding: '12px 14px 18px 26px', background: 'var(--canvas-bg)' }}
         >
           {children}
         </div>

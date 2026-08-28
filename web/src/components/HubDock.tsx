@@ -149,7 +149,13 @@ export function HubDock() {
           <CloseIcon />
         </button>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+      {/* §8.4-follow-up scrollbar retrofit (docs/phase8-design-system-parity-plan.md): legacy
+          splits this scrollable body across 4 identically-styled per-tab ids
+          (`#diagrams-tab-body`/`#files-tab-body`/`#mindmap-tab-body`/`#remarks-tab-body`,
+          legacy/index.html:3336-3339 -- all `width:8px`/`var(--tb-bg)`-bordered thumb, no other
+          difference) -- `HubDock.tsx` shares one wrapper for whichever tab is active, so this id
+          covers what legacy names four times over with the same real CSS values. */}
+      <div id="hub-tab-body" style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
         <ActivePanel />
       </div>
     </div>
