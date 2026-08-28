@@ -790,6 +790,38 @@ doc let this gap through repeated verification passes already.
   illustration, primary "New document" button, and correct block-level layout above the Notes
   panel all rendering correctly, matching legacy's own real chrome. Full gauntlet clean: 2005
   tests still passing (no test changes needed), typecheck/lint/build all clean.
+- ✅ **8.4p (found post-8.4o) — Restructure: `QuickAssistBar.tsx` onto legacy's real always-visible
+  app-bar-docked input, not just its CSS.** Requested directly by the user after a real side-by-
+  side screenshot comparison surfaced legacy's own app-bar header as a permanently-visible search
+  box, not the icon-only header §8.4m's own CSS-only retrofit had left in place. Confirmed via
+  legacy source: `qaLocation='appbar'` is legacy's own real DEFAULT (legacy/index.html:185, not an
+  edge case), and `#appbar-qa-slot` is the FIRST child of `#header-actions`
+  (legacy/index.html:4533-4534) -- so this is literally the first thing every legacy user sees in
+  the header, not a rare configuration.
+  §8.4m's own CSS retrofit had deliberately deferred this exact restructuring as a real, separately
+  -scoped structural change (documented in its own plan entry and in `index.css`'s own comment on
+  the `.qa-*` family) -- this slice is that follow-up. Removed `QuickAssistBar.tsx`'s own `web/`-
+  only "⌘K" toggle-button-then-popover mount entirely: `.qa-input-row` now renders unconditionally,
+  first in `header-actions` (`App.tsx`), matching `#appbar-qa-slot`'s own real position.
+  `.qa-dropdown` opens below-left of it (matching legacy's real `left:0` anchor for the app-bar-
+  docked case, restoring the base rule's real positioning that §8.4m's CSS had deliberately left
+  off the class since it didn't apply to the old popover-anchored structure), driven by
+  focus/typing/outside-click/Escape/⌘K exactly matching legacy's own real `setQaOpen`/`toggleQa`
+  (legacy/index.html:17633-17650) -- opening focuses the input, closing clears the query and blurs.
+  `quickAssistStore.ts`'s own pre-existing `open`/`openBox`/`closeBox`/`toggleBox` shape already
+  matched legacy's real state model exactly (its own header already said so) -- only the
+  component's OWN rendering needed to change, not the store, and the global ⌘K handler in
+  `App.tsx` needed no changes either. `.qa-input-row`'s own real per-context `width:200px`/
+  `:focus-within{width:320px}` values, dropped in §8.4m as "meaningless inside a fixed-width
+  popover," are restored now that the row is genuinely inline in the header.
+  Verified end-to-end in real headless Chrome across every real interaction path: default state
+  (plain 200px box, no toggle button), focus opening the hint dropdown, typing narrowing to a real
+  command result with its active-row highlight, outside-click closing and clearing, ⌘K reopening
+  and refocusing, the category picker (opened via the "⋯" icon button) with its verb/category
+  chips, a first Escape closing just the picker back to the hint (box stays open), a second Escape
+  closing the whole box (clears, blurs), and a hint-phrase click filling the query and immediately
+  showing its real matching result row. Full gauntlet clean: 2005 tests still passing (no test
+  changes needed), typecheck/lint/build all clean.
 - Remaining: 8.5 (a real verification fixture document). Also worth a targeted look before or
   during 8.5: whether other non-dialog components built before Phase 8 (i.e. anything from Phase
   6/7 that isn't itself a `role="dialog"`) were similarly missed by 8.4's dialog-only sweep, the

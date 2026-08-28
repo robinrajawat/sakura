@@ -515,12 +515,27 @@ overlap the Notes panel below it — fixed with `min-height` in normal flow inst
 headless-Chrome screenshot of a genuinely new empty document. Full gauntlet clean: 2005 tests
 passing, typecheck/lint/build all clean.
 
+**8.4p (found post-8.4o, restructure: `QuickAssistBar.tsx` onto legacy's real always-visible
+app-bar-docked input) landed — requested directly by the user.** Confirmed `qaLocation='appbar'`
+is legacy's own real DEFAULT (not an edge case) and `#appbar-qa-slot` is the FIRST child of
+`#header-actions` — the first thing every legacy user sees in the header. §8.4m's own CSS retrofit
+had deliberately deferred this exact restructuring; this is that follow-up. Removed the "⌘K"
+toggle-button-then-popover mount entirely: `.qa-input-row` now renders unconditionally, first in
+`header-actions`, with `.qa-dropdown` opening below-left of it (restoring the base rule's real
+`left:0` positioning §8.4m had deliberately left off), driven by focus/typing/outside-click/
+Escape/⌘K exactly matching legacy's real `setQaOpen`/`toggleQa`. `quickAssistStore.ts`'s own
+pre-existing state shape already matched legacy's model — only the component's rendering needed to
+change. `.qa-input-row`'s real `width:200px`/`:focus-within{width:320px}` values, dropped in §8.4m
+as meaningless inside a popover, are restored now that the row is genuinely inline. Verified
+end-to-end in real headless Chrome across every interaction path: default state, focus-opens-hint,
+typed-query results, outside-click close, ⌘K reopen, the category picker, both Escape levels
+(picker-only vs. whole-box), and a hint-phrase click. Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean.
+
 **Immediate next steps:** 8.5 (a real verification fixture document). Worth a targeted look before
 or during that: whether other non-dialog Phase 6/7 components were similarly missed by 8.4's
-dialog-only sweep, the same way `EmptyDocState.tsx` was — the app-bar-docked-by-default Quick
-Assist gap already flagged in 8.4m/8.4m's own plan-doc entry is a second, larger, separately-scoped
-example of the same kind of miss (a real structural difference, not just CSS, so a bigger lift than
-a retrofit). Once `web/` is visually close enough to legacy for a person to sign off, return to
+dialog-only sweep, the same way `EmptyDocState.tsx` and `QuickAssistBar.tsx`'s own structure were.
+Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
 person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
