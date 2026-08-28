@@ -1004,12 +1004,35 @@ follow-ups (§8.7+), each large enough to be its own slice.
   Verified with real headless-Chrome screenshots (a real Q&A row and Remarks row, each hovered to
   confirm the delete button's real fade-in). Full gauntlet clean: 2005 tests still passing (no
   test changes needed), typecheck/lint/build all clean.
+- ✅ **8.10 (`OutlineTree.tsx`'s per-row action-icon cluster: idle/hover opacity) landed.** A real,
+  more fundamental finding, not just a missing CSS class: reading legacy's actual real per-row
+  render loop (legacy/index.html:20293 area) confirmed legacy NEVER shows an empty-state
+  "+tag"/"+note"/"+code" ADD prompt inline in a row at all -- a note/code/decision/etc. dot
+  (`.node-note-dot`, legacy/index.html:2125, `opacity:.55` idle / `1` hover) is only ever appended
+  to a row when that content ALREADY exists. `web/`'s own always-fully-visible text-button
+  versions (`+tag`/🔍/`+note`/`+code`, rendered unconditionally on every single row) are a real,
+  useful entry point this project added that legacy has no equivalent for (no separate "Add tag"/
+  "Add note" menu action exists yet) -- kept rather than removed, but muted to the same real idle/
+  hover opacity legacy uses for its own dots, which closes most of the "every row looks cluttered"
+  gap without losing functionality. Implemented via the SAME `hoveredNodeId` JS state the node
+  hover toolbar already tracks (not a new CSS `:hover` mechanism), for consistency with this
+  component's own established per-row-hover pattern -- no new CSS needed, no `index.css` change.
+  Deliberately scoped to just this one add-affordance cluster, not a full `.node-row` port (still
+  fully open, see below). Verified via computed-style inspection in real headless Chrome (a
+  hovered row's own `+tag` element's `opacity` read `0.55` idle, `1` on hover) -- a screenshot
+  alone can't reliably show a 0.55-vs-1 opacity difference this small. Full gauntlet clean: 2005
+  tests still passing (no test changes needed), typecheck/lint/build all clean.
 - Still open, not yet done: Diagrams/Mind Map tabs' own list chrome (genuinely different from the
-  three simple-row tabs above -- each backs a real visual editor), and `OutlineTree.tsx`'s own
-  row-level class family (`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/
-  etc., legacy/index.html:543-2174) -- the single largest remaining piece of this whole plan and
-  this project's riskiest component to touch (its hottest per-row render path). Also still worth a
-  targeted look: whether any other non-dialog Phase 6/7 component was similarly missed by 8.4's
-  dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings
-  were -- now easier to check with 8.5's own fixture as a real, richly-populated subject to
-  screenshot against instead of the empty seed document.
+  three simple-row tabs §8.9 covered -- each backs a real visual editor), and `OutlineTree.tsx`'s
+  own FULL row-level class family (`.node-row`/`.node-label`/selection-and-drag states/etc.,
+  legacy/index.html:543-2174) -- §8.10 above closed one real, concrete finding inside this
+  component, but the row's own background/border/selection-highlight CSS is still JS-token-driven
+  (`resolveRowHighlightStyle`, a pre-Phase-8 mechanism, not Phase 8's own CSS-class approach) and
+  hasn't been directly re-verified against legacy's real `.node-row.selected`/`.primary-selection`
+  values since before this phase started. Still this project's riskiest component to touch (its
+  hottest per-row render path) -- any further work here should be done carefully, one small piece
+  at a time, same discipline §8.10 just used. Also still worth a targeted look: whether any other
+  non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep, the same way
+  `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings were -- now easier to check
+  with 8.5's own fixture as a real, richly-populated subject to screenshot against instead of the
+  empty seed document.

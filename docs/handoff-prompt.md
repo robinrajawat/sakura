@@ -614,18 +614,32 @@ hardcoded `#b02020` instead of the real `var(--sem-alert)` token; fixed, and the
 (hover-reveal delete buttons on a real Q&A row and Remarks row). Full gauntlet clean: 2005 tests
 passing, typecheck/lint/build all clean.
 
-**Still open, real and sizeable:** `OutlineTree.tsx`'s own row-level class family
-(`.node-row`/`.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:
-543-2174) — the single largest remaining piece of this whole plan and this project's riskiest
-component to touch (its hottest per-row render path) — and the Diagrams/Mind Map tabs' own list
-chrome (genuinely different from the three simple-row tabs above, each backs a real visual
+**8.10 (`OutlineTree.tsx`'s per-row action-icon cluster: idle/hover opacity) landed.** A real,
+more fundamental finding: legacy's own real per-row render loop NEVER shows an empty-state
+"+tag"/"+note"/"+code" ADD prompt inline in a row at all — a note/code/decision/etc. dot
+(`.node-note-dot`, `opacity:.55` idle / `1` hover) is only ever appended when that content already
+exists. `web/`'s own always-fully-visible text-button versions are a real, useful entry point this
+project added with no legacy equivalent — kept, but muted to legacy's real idle/hover opacity,
+closing most of the "every row looks cluttered" gap without losing functionality. Implemented via
+the same `hoveredNodeId` JS state the hover toolbar already tracks, no new CSS. Verified via
+computed-style inspection (a hovered row's `+tag` opacity read `0.55` idle, `1` on hover — too
+small a difference for a screenshot alone to show reliably). Full gauntlet clean: 2005 tests
+passing, typecheck/lint/build all clean.
+
+**Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
+(`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
+closed one concrete finding, but the row's own background/border/selection-highlight is still
+JS-token-driven (`resolveRowHighlightStyle`, a pre-Phase-8 mechanism), not re-verified against
+legacy's real `.node-row.selected`/`.primary-selection` values since before this phase started.
+Still this project's riskiest component to touch. Also open: the Diagrams/Mind Map tabs' own list
+chrome (genuinely different from the three simple-row tabs 8.9 covered, each backs a real visual
 editor). **Immediate next step:** whoever picks this up next should decide between Diagrams/Mind
-Map's list chrome (smaller, similar pattern to 8.9) or finally tackling `OutlineTree.tsx`'s
-row-level system (bigger, riskier, but the more consequential of the two remaining gaps). Also
-still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was similarly missed
-by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two
-findings all were — now easier to check with 8.5's own fixture as a real subject to screenshot
-against instead of the empty seed document.
+Map's list chrome (smaller, similar pattern to 8.9) or continuing `OutlineTree.tsx`'s row-level
+system carefully, one small piece at a time (same discipline 8.10 just used, not a full rewrite in
+one pass). Also still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was
+similarly missed by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/
+§8.6's own two findings all were — now easier to check with 8.5's own fixture as a real subject to
+screenshot against instead of the empty seed document.
 
 **Repo hygiene note, found this session, not fixed:** this repo has ~180 long-merged branches still
 present on `origin` (every prior phase/slice branch going back to Phase 0), none ever successfully
