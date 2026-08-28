@@ -788,6 +788,15 @@ export function OutlineTree() {
           )}
         </button>
       </div>
+      {/* §8.6 slice (docs/phase8-design-system-parity-plan.md): no border/box/background of its
+          own -- legacy's real `#editor-pane` (legacy/index.html:522) has node rows sitting
+          directly on the canvas, no separate bordered panel around them. `AppShell.tsx`'s own
+          `#editor-pane` ancestor already provides the real `var(--canvas-bg)` background and
+          real padding (§8.4q) -- this wrapper previously drew its OWN bordered box with its own
+          `t.background` (the chrome `--bg` tone, not the canvas) directly on top of that,
+          producing a "boxed-in" look legacy never has. `color: t.text` is kept as the real
+          fallback text color for any child that doesn't set its own (no `body`-level `color`
+          rule exists to inherit from otherwise). */}
       <div
         role="tree"
         tabIndex={0}
@@ -795,11 +804,7 @@ export function OutlineTree() {
         style={{
           fontFamily: 'sans-serif',
           fontSize: 14 * editorScale,
-          border: `1px solid ${t.border}`,
-          borderRadius: 8,
-          padding: '0.5rem',
           outline: 'none',
-          background: t.background,
           color: t.text
         }}
       >

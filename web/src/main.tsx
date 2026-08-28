@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { App } from './App';
 import { installAudienceBridge } from './state/audienceBridge';
+import { seedFixtureIfRequested } from './state/devFixture';
 
 // Phase 0 (docs/framework-migration-plan.md): this is a scaffold, not the real app yet.
 // Its only job right now is proving the React + Vite + TypeScript + Zustand toolchain
@@ -15,6 +16,12 @@ import { installAudienceBridge } from './state/audienceBridge';
 // cross-window calls can reach it, so this happens here at the true top of boot, before
 // `App` even renders.
 installAudienceBridge();
+
+// §8.5 slice (docs/phase8-design-system-parity-plan.md): the real verification fixture, gated
+// behind `?seedFixture=1` -- a no-op otherwise. Must run before App renders and before
+// DocumentTabs.tsx's own mount-time `documentsStore.init()` call, same "before React renders"
+// placement as installAudienceBridge() above.
+seedFixtureIfRequested(window.location.search);
 
 const rootEl = document.getElementById('root');
 if (!rootEl) {
