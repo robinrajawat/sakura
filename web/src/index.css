@@ -2096,3 +2096,41 @@ body.theme-dark .account-visibility-badge:hover {
   font: 400 11px 'Inter', sans-serif;
   color: var(--muted);
 }
+
+/* §8.4k retrofit (docs/phase8-design-system-parity-plan.md): `IconPickerPopover.tsx`'s real
+ * legacy counterpart is `#icon-picker-popover` (legacy/index.html:1196-1199, markup at 7344).
+ * Legacy's own real element carries `role="menu"`, not `role="dialog"` -- `web/`'s previous
+ * `role="dialog"` was a real a11y mismatch, now fixed alongside the CSS.
+ *
+ * Legacy positions this popover itself via JS-set `left`/`top` anchored above the target row
+ * (`position:fixed`, no backdrop at all); `IconPickerPopover.tsx`'s own header already documents
+ * why it renders centered behind a transparent full-screen click-catcher instead (no stable row
+ * anchor to attach to in `web/`'s tree) -- so only the popover's own visual chrome (background/
+ * border/shadow/padding/button treatment) is ported here as a class, not `position`/`z-index`,
+ * which stay the wrapping backdrop's job. */
+.icon-picker-popover {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.14);
+  padding: 5px;
+}
+
+.icon-picker-popover button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 18px;
+  line-height: 1;
+  padding: 5px 7px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.icon-picker-popover button:hover {
+  background: var(--hover);
+}
