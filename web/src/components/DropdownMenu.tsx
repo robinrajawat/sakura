@@ -16,12 +16,18 @@ export function DropdownMenu({
   onClose,
   children,
   width,
+  maxHeight,
   align = 'left',
   rich = false
 }: {
   onClose: () => void;
   children: ReactNode;
   width?: number;
+  /** §8.4l addition (docs/phase8-design-system-parity-plan.md): matches legacy's own real
+   * per-instance `max-height`+`overflow-y:auto` (e.g. `#notif-menu{max-height:380px}`,
+   * legacy/index.html:499) for a menu whose content can outgrow a fixed height -- unset by
+   * default since most `DropdownMenu` consumers (Settings/status/link popovers) never need it. */
+  maxHeight?: number;
   align?: 'left' | 'right';
   /** §8.3 addition (docs/phase8-design-system-parity-plan.md): applies the real `export-menu-rich`
    * class legacy's own icon+label popovers carry (`class="export-menu export-menu-rich"`, e.g.
@@ -71,7 +77,8 @@ export function DropdownMenu({
         // of `rich`, since inline style outranks a class selector -- only noticed once a real
         // `rich` consumer (AccountMenu.tsx, this slice) existed to expose it.
         padding: rich ? 6 : 4,
-        font: "400 12.5px 'Inter', sans-serif"
+        font: "400 12.5px 'Inter', sans-serif",
+        ...(maxHeight !== undefined ? { maxHeight, overflowY: 'auto' as const } : {})
       }}
     >
       {children}

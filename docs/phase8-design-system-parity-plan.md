@@ -692,5 +692,27 @@ doc let this gap through repeated verification passes already.
   rendering as a compact, undimmed, borderless-button popover matching legacy's real chrome. Full
   gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
   clean.
-- Remaining: 8.4l through 8.4n (the 3 components named above, each independently scoped) → 8.5
+- ✅ **8.4l — Retrofit: `NotificationBell.tsx` onto the existing `DropdownMenu`.** Real legacy
+  source: markup at legacy/index.html:4550-4555, CSS at 496-513 (both already cited by this file's
+  own header before this slice). Confirmed legacy's real `#notif-menu` is itself a
+  `class="export-menu export-menu-rich"` consumer, not a standalone popover -- so this slice
+  retrofits onto the EXISTING `DropdownMenu.tsx`/`rich` prop (§7.6/§8.3) rather than building a new
+  overlay, adding only what `.export-menu-rich` doesn't already cover: `.notif-menu-header`/`-title`/
+  `.notif-clear-all`, and the row family `.notif-item`(+`.unread`)/`-body`/`-text`/`-meta`/
+  `-dismiss`/`.notif-empty`. `DropdownMenu.tsx` gained one small, generic, optional `maxHeight` prop
+  (matching legacy's own real `#notif-menu{max-height:380px}`) -- additive, no other consumer
+  passes it, so no other `DropdownMenu` usage changes behavior.
+  **A real content gap found and fixed, not just styling**: legacy's own `renderNotifList` always
+  shows a per-item relative-timestamp line (`.notif-item-meta`); `NotificationBell.tsx` never
+  rendered one, even though `NotifItem.createdAt` was already available -- now wired through the
+  already-ported `formatRelativeTime` util.
+  Verified end-to-end in real headless Chrome: the empty state ("You're all caught up", uppercase
+  muted header) confirmed first, then two real local notifications pushed via `pushLocalNotification`
+  (the direct Zustand-`setState` approach was tried first and found to be overwritten immediately --
+  `setMenuOpen`'s own real `refresh(set)` call recomputes `items` from `combinedNotifItems()` on
+  every open, so seeding through the real local-notification path was the only way to see genuine
+  data) -- red badge, per-row unread accent dot, "just now" relative time, and "Clear all" button
+  all rendering correctly. Full gauntlet clean: 2005 tests still passing (no test changes needed),
+  typecheck/lint/build all clean.
+- Remaining: 8.4m and 8.4n (the 2 components named above, each independently scoped) → 8.5
   (verification fixture document).
