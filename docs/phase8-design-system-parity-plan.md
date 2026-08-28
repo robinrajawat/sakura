@@ -651,5 +651,26 @@ doc let this gap through repeated verification passes already.
   accent-badge icons, and the stacked "Why an outliner" modal's five accent-badge rows plus the
   accent-filled close button, both screenshotted and correct. Full gauntlet clean: 2005 tests still
   passing (no test changes needed), typecheck/lint/build all clean.
-- Remaining: 8.4j through 8.4n (the 5 components named above, each independently scoped) → 8.5
+- ✅ **8.4j — Retrofit: `VersionHistoryPanel.tsx` onto `.history-modal-*`.** Real legacy source:
+  markup at legacy/index.html:7794-7799, CSS at 1396-1415 (both already cited by this file's own
+  header before this slice). A genuinely distinct shell from `.app-modal-*` despite the similar
+  centered-box shape, confirmed by real values: different rgba (`.38` not `.5`)/z-index (200 not
+  1100), a real `.open` transform-scale enter transition `.app-modal` doesn't have, and its own
+  close-button treatment -- legacy's real `.history-modal-close-x` is a plain "×" text glyph, not
+  an svg icon like `.app-modal-close-btn` -- so this slice switched the close button off the
+  generic `<CloseIcon>` it previously used, to match. Ported the full real class family:
+  `.history-modal-overlay`/`.history-modal`/`-header`/`-title`/`-close-x`/`-body`/`-footer`/
+  `-footer-hint`, plus the row family `.history-row`/`-info`/`-time`/`-meta`/`-restore` and
+  `.history-empty`. Skips legacy's own `.open` opacity-fade + transform-scale enter transition,
+  same React mount/unmount precedent as `.app-modal-overlay`/`#welcome-overlay`.
+  `web/`'s own component stays scoped to whole-document history only (its own pre-existing header
+  already established this), so legacy's separate per-node history mode (`.history-row-now`, a
+  distinct "current text" row with no restore button, part of `renderVersionHistoryList`'s other
+  branch) has no `web/` equivalent to match -- not attempted here, consistent with that existing
+  scope, not a new gap.
+  Verified end-to-end in real headless Chrome: the panel with an existing auto-captured revision
+  row, then again after "Save a version now" added a second row -- bordered card, em-dash title,
+  "×" close button, and bordered `Restore` buttons all rendering correctly. Full gauntlet clean:
+  2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
+- Remaining: 8.4k through 8.4n (the 4 components named above, each independently scoped) → 8.5
   (verification fixture document).

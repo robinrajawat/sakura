@@ -1946,3 +1946,153 @@ body.theme-dark .account-visibility-badge:hover {
 #why-sakura-close:hover {
   opacity: 0.9;
 }
+
+/* §8.4j retrofit (docs/phase8-design-system-parity-plan.md): `VersionHistoryPanel.tsx`'s real
+ * legacy counterpart is `#history-modal-overlay`/`.history-modal-*`/`.history-row-*`
+ * (legacy/index.html:7794-7799, CSS at 1396-1415) -- a genuinely distinct shell from
+ * `.app-modal-*` despite the similar centered-box shape: different rgba/z-index, a real open
+ * enter transition `.app-modal` doesn't have, and its own close-button treatment (a plain "×"
+ * glyph via `.history-modal-close-x`, not an svg icon like `.app-modal-close-btn`).
+ *
+ * `.history-modal-overlay` skips legacy's own `.open` opacity-fade + transform-scale enter
+ * transition (1396-1399) -- same React mount/unmount-replaces-class-toggle precedent as
+ * `.app-modal-overlay`/`#welcome-overlay`, rendering directly at the "open" end state.
+ * `web/`'s own component is deliberately scoped to whole-document history only (this file's own
+ * header), so only the document-mode row shape (`renderVersionHistoryList`'s second half,
+ * legacy/index.html:11020-11044) is ported here -- legacy's separate per-node history mode
+ * (`.history-row-now`, a "current text" row with no restore button) has no `web/` equivalent to
+ * match since that mode itself is out of this component's own scope. */
+.history-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 18px 20px;
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(560px, calc(100vh - 64px));
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', sans-serif;
+}
+
+.history-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.history-modal-title {
+  font: 600 14px 'Inter', sans-serif;
+  color: var(--fg);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-modal-close-x {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.history-modal-close-x:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+
+.history-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  margin: 0 -6px;
+  padding: 0 6px;
+  min-height: 60px;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 6px;
+  border-radius: 8px;
+}
+
+.history-row:hover {
+  background: var(--hover);
+}
+
+.history-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-row-time {
+  font: 500 12.5px 'Inter', sans-serif;
+  color: var(--fg);
+}
+
+.history-row-meta {
+  font: 400 11px 'Inter', sans-serif;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.history-row-restore {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  font: 500 11px 'Inter', sans-serif;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.history-row-restore:hover {
+  background: var(--hover);
+  border-color: var(--accent);
+}
+
+.history-empty {
+  padding: 20px 6px;
+  text-align: center;
+  color: var(--muted);
+  font: 400 12.5px 'Inter', sans-serif;
+  line-height: 1.5;
+}
+
+.history-modal-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.history-modal-footer-hint {
+  flex: 1;
+  font: 400 11px 'Inter', sans-serif;
+  color: var(--muted);
+}
