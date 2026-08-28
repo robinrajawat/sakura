@@ -672,5 +672,25 @@ doc let this gap through repeated verification passes already.
   row, then again after "Save a version now" added a second row -- bordered card, em-dash title,
   "×" close button, and bordered `Restore` buttons all rendering correctly. Full gauntlet clean:
   2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
-- Remaining: 8.4k through 8.4n (the 4 components named above, each independently scoped) → 8.5
+- ✅ **8.4k — Retrofit: `IconPickerPopover.tsx` onto `.icon-picker-popover`.** Real legacy source:
+  markup at legacy/index.html:7344, CSS at 1196-1199 (both already cited by this file's own
+  header before this slice). Confirmed the real a11y mismatch this plan's own investigation
+  flagged: legacy's real `#icon-picker-popover` carries `role="menu"`, not `role="dialog"` --
+  `IconPickerPopover.tsx`'s previous `role="dialog"` was a genuine mismatch, fixed alongside the
+  CSS. Ported `.icon-picker-popover`'s own visual chrome (background/border/radius/shadow/padding/
+  gap) plus its real borderless-button-with-hover treatment (`.icon-picker-popover button`) --
+  legacy's real candidate buttons have no border at all and highlight via `var(--hover)` on hover,
+  a real visual difference from `IconPickerPopover.tsx`'s previous bordered-pill buttons.
+  `position`/`z-index` deliberately stay on the wrapping backdrop div, not the ported class --
+  `IconPickerPopover.tsx`'s own pre-existing header already documents why this renders centered
+  behind a transparent click-catcher rather than legacy's real JS-computed anchor-above-the-row
+  position (no stable row-anchor selector in `web/`'s tree); that backdrop's own tint also changed
+  from an invented `rgba(0,0,0,.15)` dark overlay to fully transparent, since legacy's real popover
+  has no dimming behind it at all.
+  Verified end-to-end in real headless Chrome (driving `iconPickerStore.ts` directly in dev mode,
+  since triggering the real path needs a configured AI provider key): four candidate emoji
+  rendering as a compact, undimmed, borderless-button popover matching legacy's real chrome. Full
+  gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
+  clean.
+- Remaining: 8.4l through 8.4n (the 3 components named above, each independently scoped) → 8.5
   (verification fixture document).

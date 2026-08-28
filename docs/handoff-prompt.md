@@ -449,7 +449,18 @@ with real headless-Chrome screenshots (an existing auto-captured revision row, t
 after "Save a version now"). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all
 clean.
 
-**Immediate next steps:** 8.4k through 8.4n (the 4 components above, each independently scoped),
+**8.4k (retrofit: `IconPickerPopover.tsx` → `.icon-picker-popover`) landed.** Confirmed and fixed
+the real a11y mismatch this plan flagged: legacy's real `#icon-picker-popover` carries
+`role="menu"`, not `role="dialog"`. Ported `.icon-picker-popover`'s own visual chrome plus its real
+borderless-button-with-hover treatment (legacy's candidate buttons have no border at all, unlike
+the previous bordered-pill look). `position`/`z-index` deliberately stay on the wrapping backdrop
+div (the component's own pre-existing header already explains the centered-not-anchored
+deviation); that backdrop also switched from an invented dark tint to fully transparent, matching
+legacy's real undimmed popover. Verified with real headless-Chrome screenshots (driving
+`iconPickerStore.ts` directly in dev mode, since the real trigger path needs an AI provider key).
+Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
+
+**Immediate next steps:** 8.4l through 8.4n (the 3 components above, each independently scoped),
 then 8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking

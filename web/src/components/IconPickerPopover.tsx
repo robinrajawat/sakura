@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useIconPickerStore } from '../store/iconPickerStore';
 import { applyIconChoice } from '../state/aiIcon';
 
@@ -17,10 +16,17 @@ import { applyIconChoice } from '../state/aiIcon';
  * Rendered once from `App.tsx`, same as `RestructureTextDialog.tsx`; reads which node (if any) has
  * a picker open from `iconPickerStore.ts` rather than props, since both the toolbar button and
  * `OutlineTree.tsx`'s right-click menu need to open it and `OutlineTree.tsx` takes no props.
+ *
+ * §8.4k retrofit (docs/phase8-design-system-parity-plan.md): the popover itself now renders
+ * through the real `.icon-picker-popover` class (index.css, cited from legacy/index.html:
+ * 1196-1199) instead of inline `style`, and its `role` moves from `"dialog"` to legacy's own real
+ * `"menu"` (legacy/index.html:7344) -- a real a11y mismatch this slice's own investigation found.
+ * The full-screen backdrop div (`web/`'s own click-catcher, not something legacy has at all) is
+ * now transparent rather than a dark `rgba(0,0,0,.15)` tint, since legacy's real popover has no
+ * dimming behind it -- position/z-index stay on that backdrop, matching the "port the effect, not
+ * the exact technique" note above.
  */
 export function IconPickerPopover() {
-  const theme = useThemeStore((s) => s.theme);
-  const t = THEME_TOKENS[theme];
   const nodeId = useIconPickerStore((s) => s.nodeId);
   const candidates = useIconPickerStore((s) => s.candidates);
   const close = useIconPickerStore((s) => s.close);
@@ -49,32 +55,11 @@ export function IconPickerPopover() {
     <div
       role="presentation"
       onClick={close}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.15)', zIndex: 210, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 210, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
-      <div
-        role="dialog"
-        aria-label="Choose an icon"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: t.background,
-          color: t.text,
-          border: `1px solid ${t.border}`,
-          borderRadius: 10,
-          padding: 10,
-          display: 'flex',
-          gap: 6,
-          boxShadow: '0 14px 28px rgba(0,0,0,.2)'
-        }}
-      >
+      <div className="icon-picker-popover" role="menu" aria-label="Choose an icon" onClick={(e) => e.stopPropagation()}>
         {candidates.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => choose(c)}
-            title={c}
-            aria-label={`Use icon ${c}`}
-            style={{ fontSize: 20, lineHeight: 1, padding: '6px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.background, cursor: 'pointer' }}
-          >
+          <button key={c} type="button" onClick={() => choose(c)} title={c} aria-label={`Use icon ${c}`}>
             {c}
           </button>
         ))}
