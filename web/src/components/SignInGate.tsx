@@ -44,6 +44,23 @@ function readDismissed(): boolean {
  * regardless of prior dismissal). Reset back to false on the next dismissal, or as soon as
  * `user` becomes non-null (a plain effect below), so a stale request can never resurface the
  * gate uninvited after a later sign-out.
+ *
+ * §8.4h retrofit (docs/phase8-design-system-parity-plan.md): the overlay/card/brand/heading/sub
+ * shell now renders through real `#sakura-landing-*` ids and CSS (index.css, cited from
+ * legacy/index.html:698-704) instead of inline `style` objects -- `#sakura-landing-overlay` skips
+ * legacy's own `display:none` toggle since this component only ever mounts while visible (the
+ * same precedent already used for `#dock-tabstrip`/`.app-modal-overlay`). Every other element
+ * (Google button, divider, email toggle/form/inputs/error/submit, mode-toggle, forgot-password,
+ * continue-without-signing-in) stays inline, matching legacy's own real markup, which styles all
+ * of those the same way (no named class beyond a bare `class="btn"` the two `<button>`s already
+ * get for free from `web/`'s own bare-element-selector base treatment, index.css §6.1) -- this
+ * slice also fixed two real mismatches investigation turned up along the way: the Google/email-
+ * submit buttons and the email/password inputs were missing the plain `border`/`background`/
+ * `color` inline overrides legacy's own markup gives them on top of that base treatment, so they'd
+ * rendered with the wrong (accent-tinted) border and text color instead of legacy's plain
+ * `var(--border)`/`var(--edit-bg)`/`var(--fg)`. The brand icon also now matches legacy's real
+ * em-based sizing technique (`font-size:56px` on the wrapper, `width="1em" height="1em"` on the
+ * svg) instead of a hardcoded `width={40} height={40}`.
  */
 export function SignInGate() {
   const user = useAuthStore((s) => s.user);
@@ -134,25 +151,11 @@ export function SignInGate() {
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="sakura-landing-heading"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 3000,
-        background: 'var(--bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24
-      }}
-    >
-      <div style={{ width: 'min(380px, calc(100vw - 32px))', textAlign: 'center', fontFamily: "'Inter', sans-serif" }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 22 }}>
-          <span style={{ display: 'inline-flex' }} aria-hidden="true">
-            <svg width="40" height="40" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+    <div id="sakura-landing-overlay" role="dialog" aria-modal="true" aria-labelledby="sakura-landing-heading">
+      <div id="sakura-landing-card">
+        <div id="sakura-landing-brand">
+          <span id="sakura-landing-brand-icon" aria-hidden="true">
+            <svg width="1em" height="1em" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
               <g opacity={0.9}>
                 <ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" strokeWidth={1} />
                 <ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" strokeWidth={1} />
@@ -163,12 +166,10 @@ export function SignInGate() {
               </g>
             </svg>
           </span>
-          <span style={{ font: "700 18px 'Inter', sans-serif", letterSpacing: '0.02em', color: 'var(--fg)' }}>Sakura</span>
+          <span id="sakura-landing-brand-name">Sakura</span>
         </div>
-        <h1 id="sakura-landing-heading" style={{ font: "700 21px 'Inter', sans-serif", color: 'var(--fg)', margin: '0 0 8px' }}>
-          Your outline, wherever you go
-        </h1>
-        <p style={{ font: "400 13.5px 'Inter', sans-serif", color: 'var(--muted)', lineHeight: 1.5, margin: '0 0 24px' }}>
+        <h1 id="sakura-landing-heading">Your outline, wherever you go</h1>
+        <p id="sakura-landing-sub">
           Sign in to sync everything — documents, Hub, and settings — across devices. Fully
           optional — everything keeps working locally if you skip this.
         </p>
@@ -176,9 +177,11 @@ export function SignInGate() {
           type="button"
           onClick={() => void signInWithGoogle()}
           style={{
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: '10px 16px',
             width: '100%',
             fontSize: 14,
-            padding: '10px 16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -215,7 +218,18 @@ export function SignInGate() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', marginBottom: 8, fontSize: 13 }}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '9px 10px',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                background: 'var(--edit-bg)',
+                color: 'var(--fg)',
+                fontSize: 13,
+                marginBottom: 8,
+                fontFamily: "'Inter', sans-serif"
+              }}
             />
             <input
               type="password"
@@ -229,14 +243,25 @@ export function SignInGate() {
                   void handleSubmit();
                 }
               }}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '9px 10px', marginBottom: 8, fontSize: 13 }}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '9px 10px',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                background: 'var(--edit-bg)',
+                color: 'var(--fg)',
+                fontSize: 13,
+                marginBottom: 8,
+                fontFamily: "'Inter', sans-serif"
+              }}
             />
             {error && <div style={{ color: 'var(--fc-red)', fontSize: 12, marginBottom: 8, textAlign: 'left' }}>{error}</div>}
             <button
               type="button"
               onClick={() => void handleSubmit()}
               disabled={submitting}
-              style={{ width: '100%', padding: 9, fontSize: 13, fontWeight: 600 }}
+              style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 8, padding: 9, fontSize: 13, fontWeight: 600 }}
             >
               {mode === 'signup' ? 'Create account' : 'Sign in'}
             </button>

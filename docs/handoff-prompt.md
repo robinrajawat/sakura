@@ -408,7 +408,21 @@ consumer), 8.4m (QuickAssistBar.tsx → `.qa-dropdown` family), 8.4n (Restructur
 headless-Chrome screenshots of all three modals. Full gauntlet clean: 2005 tests passing,
 typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.4h through 8.4n (the 7 components above, each independently scoped),
+**8.4h (retrofit: `SignInGate.tsx` → `#sakura-landing-*`) landed.** Ported the 7 real
+`#sakura-landing-*` id-based CSS rules (legacy/index.html:698-704) into `index.css`; every other
+element inside the gate (Google button, divider, email toggle/form/inputs/error/submit,
+mode-toggle, forgot-password, continue-without-signing-in) stays inline since legacy's own real
+markup styles those the same way, not via a named class. Found and fixed two real mismatches along
+the way: the brand icon was hardcoded to `width={40} height={40}` instead of legacy's real
+em-based technique (`font-size:56px` wrapper + `width="1em" height="1em"` svg), and the Google/
+email-submit buttons plus the email/password inputs were missing the plain `border`/`background`/
+`color` inline overrides legacy's own markup gives them on top of `web/`'s base button/input
+treatment (§6.1) — without them they rendered with the base treatment's accent-tinted border/text
+instead of legacy's real plain colors. Verified with real headless-Chrome screenshots (initial
+gate, expanded email form, post-dismissal). Full gauntlet clean: 2005 tests passing, typecheck/
+lint/build all clean.
+
+**Immediate next steps:** 8.4i through 8.4n (the 6 components above, each independently scoped),
 then 8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
