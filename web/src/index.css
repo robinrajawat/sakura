@@ -2257,3 +2257,242 @@ body.theme-dark .account-visibility-badge:hover {
   color: var(--hint);
   font: 400 13px 'Inter', sans-serif;
 }
+
+/* §8.4m retrofit (docs/phase8-design-system-parity-plan.md): `QuickAssistBar.tsx`'s real legacy
+ * counterparts are `.qa-input-row`/`.qa-icon-btn`/`.qa-dropdown`/`.qa-hint`/`.qa-results`/
+ * `.qa-item`/`.qa-chip-row`/`.gs-group-title` (legacy/index.html:1117-1177, markup at 6769-6788).
+ *
+ * Legacy's own real Quick Assist input is a PERMANENTLY-VISIBLE search-style box docked in either
+ * the status bar or the app bar (`setQaLocation`/`#appbar-qa-slot`, legacy/index.html:21054-21068)
+ * -- there is no click-to-reveal toggle button at all in legacy; `.qa-input-row` sits inline,
+ * `.qa-dropdown` opens below it only while there's a query or focus. `QuickAssistBar.tsx` predates
+ * this slice with its own `web/`-only "⌘K" toggle-button-then-popover structure (§6.10), which
+ * this retrofit does NOT redesign -- reusing legacy's real classes for their cosmetic properties
+ * (background/border/radius/shadow/padding/typography) while keeping `web/`'s own toggle-button
+ * mount and the popover's own absolute positioning (anchored from the button, not inline in a
+ * status/app bar), same "port the effect, not the exact technique" precedent already used for
+ * `IconPickerPopover.tsx`. `.qa-input-row`'s own real per-context `width`/focus-expand values (200px
+ * fixed-width inline elements, meaningless inside a fixed-width popover) are skipped for the same
+ * reason -- the row stretches to fill the popover's own width instead. */
+.qa-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--edit-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  transition: border-color 0.12s;
+}
+
+.qa-input-row:focus-within {
+  border-color: var(--accent);
+}
+
+.qa-input-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--fg);
+  font: 400 12px 'Inter', sans-serif;
+  padding: 0;
+}
+
+.qa-input-row input::placeholder {
+  color: var(--hint);
+}
+
+.qa-icon-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  color: var(--hint);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+.qa-icon-btn:hover,
+.qa-icon-btn:focus-visible {
+  color: var(--accent);
+}
+
+.qa-dropdown {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  max-width: min(480px, calc(100vw - 40px));
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.gs-group-title {
+  font: 600 10px 'Inter', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 8px 4px;
+}
+
+.qa-hint {
+  padding: 12px 10px 10px;
+}
+
+.qa-hint-label {
+  font: 500 11px 'Inter', sans-serif;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  margin: 0 0 8px 2px;
+}
+
+.qa-hint-phrases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.qa-hint-phrase {
+  font: 400 12px 'Inter', sans-serif;
+  color: var(--hint);
+  line-height: 1.4;
+  background: var(--hover);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 11px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.qa-hint-phrase:hover {
+  color: var(--fg);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--hover));
+}
+
+.qa-hint-phrase:focus-visible {
+  color: var(--fg);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--hover));
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.qa-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.qa-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  padding: 9px 10px;
+  font: 400 13.5px 'Inter', sans-serif;
+  cursor: pointer;
+  border-radius: 8px;
+  flex: 0 0 auto;
+  position: relative;
+  transition: background 0.1s;
+}
+
+.qa-item:hover {
+  background: var(--hover);
+}
+
+.qa-item.qa-active {
+  background: color-mix(in srgb, var(--accent) 10%, var(--hover));
+}
+
+.qa-item.qa-active::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 22%;
+  bottom: 22%;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.qa-item.qa-item-disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+.qa-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 10px 10px;
+}
+
+.qa-item-chip {
+  width: auto;
+  flex: 0 0 auto;
+  gap: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--hover);
+  font-size: 12px;
+}
+
+.qa-item-chip.qa-active {
+  background: color-mix(in srgb, var(--accent) 10%, var(--hover));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+.qa-item-verb {
+  flex: 0 0 auto;
+  font: 600 10px 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  padding: 3px 7px;
+  border-radius: 5px;
+}
+
+.qa-item-verb.qa-verb-hide {
+  color: var(--fc-red, var(--muted));
+  background: color-mix(in srgb, var(--fc-red, var(--muted)) 14%, transparent);
+}
+
+.qa-item-verb.qa-verb-goto {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+}
+
+.qa-item-verb.qa-verb-run {
+  color: var(--fc-green, var(--accent));
+  background: color-mix(in srgb, var(--fc-green, var(--accent)) 14%, transparent);
+}
+
+.qa-item-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qa-item-state {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  color: var(--muted);
+}

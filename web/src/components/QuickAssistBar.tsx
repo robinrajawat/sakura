@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { useThemeStore, THEME_TOKENS, type ThemeTokens } from '../store/themeStore';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { useOutlineStore } from '../store/outlineStore';
 import { useOutlinePrefsStore } from '../store/outlinePrefsStore';
 import { useQuickAssistStore } from '../store/quickAssistStore';
@@ -47,6 +47,19 @@ const QA_PICKER_VERB_LABELS: Record<QaPickerVerb, string> = { show: 'Show', hide
  * e.g. `App.tsx`'s own header note on `handleAiRewrite`). Built small and scoped to just this
  * component rather than a generic app-wide toast system, since Quick Assist's whole "safe to try
  * things" pitch depends on Undo being visibly one click away, matching legacy's own real UX.
+ *
+ * §8.4m retrofit (docs/phase8-design-system-parity-plan.md): renders through the real
+ * `.qa-input-row`/`.qa-icon-btn`/`.qa-dropdown`/`.qa-hint`/`.qa-results`/`.qa-item`/`.qa-chip-row`/
+ * `.gs-group-title` classes (index.css, cited from legacy/index.html:1117-1177) instead of inline
+ * `style` objects. Legacy's own real Quick Assist input is a PERMANENTLY-VISIBLE search-style box
+ * docked in the status bar or app bar (`setQaLocation`, legacy/index.html:21054-21068) -- there is
+ * no click-to-reveal toggle at all in legacy. This slice does NOT redesign this component's own
+ * pre-existing "⌘K" toggle-button-then-popover structure (§6.10) to match that -- it reuses
+ * legacy's real classes for their cosmetic properties only, keeping `web/`'s own toggle-button
+ * mount and the popover's own absolute positioning, same "port the effect, not the exact
+ * technique" precedent already used for `IconPickerPopover.tsx`. `.qa-input-row`'s own real
+ * per-context fixed/focus-expanding `width` values (meaningless inside a fixed-width popover) are
+ * skipped for the same reason.
  */
 const HINT_PHRASES = ['hide file explorer', 'toggle dark mode', 'duplicate node', 'rewrite this node', 'toggle compact rows', 'generate outline'];
 
@@ -177,27 +190,15 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
       </button>
       {open && (
         <div
+          className="qa-dropdown"
           role="dialog"
           aria-label="Quick Assist"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            zIndex: 130,
-            width: 340,
-            maxWidth: '92vw',
-            background: t.background,
-            border: `1px solid ${t.border}`,
-            borderRadius: 12,
-            boxShadow: '0 14px 28px rgba(0,0,0,.12)',
-            padding: 10,
-            fontFamily: 'sans-serif',
-            color: t.text
-          }}
+          style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 130, width: 340 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="qa-input-row" style={{ width: 'auto' }}>
             <button
               type="button"
+              className="qa-icon-btn"
               onClick={() => {
                 setPickerOpen(true);
                 setActiveIndex(0);
@@ -205,16 +206,6 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
               }}
               title="Browse by category"
               aria-label="Browse Quick Assist categories"
-              style={{
-                flexShrink: 0,
-                fontSize: 12,
-                padding: '5px 7px',
-                borderRadius: 6,
-                border: `1px solid ${t.border}`,
-                background: 'transparent',
-                color: t.mutedText,
-                cursor: 'pointer'
-              }}
             >
               ⋯
             </button>
@@ -231,25 +222,13 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
               placeholder="Search…"
               autoComplete="off"
               aria-label="Quick assist command and search input"
-              style={{
-                flex: 1,
-                minWidth: 0,
-                boxSizing: 'border-box',
-                font: 'inherit',
-                fontSize: 12,
-                padding: '6px 8px',
-                borderRadius: 6,
-                border: `1px solid ${t.border}`,
-                background: t.background,
-                color: t.text
-              }}
             />
           </div>
-          <div style={{ marginTop: 8, maxHeight: 320, overflowY: 'auto' }}>
+          <div style={{ marginTop: 8 }}>
             {pickerOpen && (
               <>
-                <div style={groupTitleStyle(t)}>Browse by action…</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                <div className="gs-group-title">Browse by action…</div>
+                <div className="qa-chip-row">
                   {entries
                     .filter((e): e is Extract<QaEntry, { kind: 'verb' }> => e.kind === 'verb')
                     .map((entry) => {
@@ -258,17 +237,17 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
                         <button
                           key={`verb-${entry.verb}`}
                           type="button"
+                          className={`qa-item qa-item-chip${navIndex === activeIndex ? ' qa-active' : ''}`}
                           onClick={() => activate(entry)}
                           onMouseEnter={() => setActiveIndex(navIndex)}
-                          style={qaChipStyle(t, navIndex === activeIndex)}
                         >
-                          {QA_PICKER_VERB_LABELS[entry.verb]}
+                          <span className="qa-item-label">{QA_PICKER_VERB_LABELS[entry.verb]}</span>
                         </button>
                       );
                     })}
                 </div>
-                <div style={groupTitleStyle(t)}>Search within…</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div className="gs-group-title">Search within…</div>
+                <div className="qa-chip-row">
                   {entries
                     .filter((e): e is Extract<QaEntry, { kind: 'category' }> => e.kind === 'category')
                     .map((entry) => {
@@ -277,11 +256,11 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
                         <button
                           key={`cat-${entry.categoryKey}`}
                           type="button"
+                          className={`qa-item qa-item-chip${navIndex === activeIndex ? ' qa-active' : ''}`}
                           onClick={() => activate(entry)}
                           onMouseEnter={() => setActiveIndex(navIndex)}
-                          style={qaChipStyle(t, navIndex === activeIndex)}
                         >
-                          {entry.group}
+                          <span className="qa-item-label">{entry.group}</span>
                         </button>
                       );
                     })}
@@ -289,30 +268,31 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
               </>
             )}
             {!pickerOpen && !query.trim() && (
-              <div style={{ fontSize: 11, color: t.mutedText }}>
-                <div style={{ marginBottom: 6 }}>Try things like</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div className="qa-hint">
+                <div className="qa-hint-label">Try things like</div>
+                <div className="qa-hint-phrases">
                   {HINT_PHRASES.map((phrase) => (
-                    <button
+                    <span
                       key={phrase}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
+                      className="qa-hint-phrase"
                       onClick={() => {
                         setQuery(phrase);
                         setActiveIndex(0);
                         inputRef.current?.focus();
                       }}
-                      style={{
-                        fontSize: 11,
-                        padding: '3px 8px',
-                        borderRadius: 999,
-                        border: `1px solid ${t.border}`,
-                        background: 'transparent',
-                        color: t.text,
-                        cursor: 'pointer'
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setQuery(phrase);
+                          setActiveIndex(0);
+                          inputRef.current?.focus();
+                        }
                       }}
                     >
                       {phrase}
-                    </button>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -320,68 +300,73 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
             {!pickerOpen && !!query.trim() && entries.length === 0 && (
               <div style={{ fontSize: 12, color: t.mutedText, padding: '8px 4px' }}>No matching command or content for &quot;{query.trim()}&quot;</div>
             )}
-            {!pickerOpen &&
-              entries.map((entry, i) => {
-              if (entry.kind === 'command') {
-                const navIndex = navEntries.indexOf(entry);
-                const verbLabel = qaVerbLabel(entry.verb, entry.cmd);
-                return (
-                  <button
-                    key={`cmd-${entry.cmd.id}`}
-                    type="button"
-                    onClick={() => activate(entry)}
-                    onMouseEnter={() => setActiveIndex(navIndex)}
-                    style={qaRowStyle(t, navIndex === activeIndex)}
-                  >
-                    <span style={{ fontWeight: 600, color: verbLabel === 'Hide' ? t.mutedText : 'var(--accent)' }}>{verbLabel}</span>
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.cmd.label}</span>
-                    <span style={{ fontSize: 10, color: t.mutedText }}>{entry.cmd.get() ? 'currently on' : 'currently off'}</span>
-                  </button>
-                );
-              }
-              if (entry.kind === 'action') {
-                const navIndex = entry.disabled ? -1 : navEntries.indexOf(entry);
-                return (
-                  <button
-                    key={`action-${entry.action.id}`}
-                    type="button"
-                    disabled={entry.disabled}
-                    onClick={() => activate(entry)}
-                    onMouseEnter={() => {
-                      if (!entry.disabled) setActiveIndex(navIndex);
-                    }}
-                    style={qaRowStyle(t, navIndex >= 0 && navIndex === activeIndex, entry.disabled)}
-                  >
-                    <span style={{ fontWeight: 600, color: 'var(--accent)' }}>Run</span>
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.action.label}</span>
-                    {entry.disabled && <span style={{ fontSize: 10, color: t.mutedText }}>select a node first</span>}
-                  </button>
-                );
-              }
-              // Search-hit row -- shows a group header ("Documents", "Notes", ...) whenever the
-              // group changes from the previous entry, matching legacy's own real `gs-group-title`
-              // insertion in qaRender. `verb`/`category` kinds never reach here: they only exist
-              // in `buildQaPickerEntries()`'s own output, rendered by the `pickerOpen` branch
-              // above, never mixed into this `entries.map` (guarded by `!pickerOpen` itself).
-              if (entry.kind !== 'search') return null;
-              const prev = entries[i - 1];
-              const showGroupHeader = !prev || prev.kind !== 'search' || prev.group !== entry.group;
-              const navIndex = navEntries.indexOf(entry);
-              return (
-                <div key={`search-${entry.group}-${i}`}>
-                  {showGroupHeader && (
-                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: t.mutedText, padding: '8px 8px 2px' }}>
-                      {entry.group}
+            {!pickerOpen && entries.length > 0 && (
+              <div className="qa-results">
+                {entries.map((entry, i) => {
+                  if (entry.kind === 'command') {
+                    const navIndex = navEntries.indexOf(entry);
+                    const verbLabel = qaVerbLabel(entry.verb, entry.cmd);
+                    const verbClass = verbLabel === 'Hide' ? ' qa-verb-hide' : '';
+                    return (
+                      <button
+                        key={`cmd-${entry.cmd.id}`}
+                        type="button"
+                        className={`qa-item${navIndex === activeIndex ? ' qa-active' : ''}`}
+                        onClick={() => activate(entry)}
+                        onMouseEnter={() => setActiveIndex(navIndex)}
+                      >
+                        <span className={`qa-item-verb${verbClass}`}>{verbLabel}</span>
+                        <span className="qa-item-label">{entry.cmd.label}</span>
+                        <span className="qa-item-state">{entry.cmd.get() ? 'currently on' : 'currently off'}</span>
+                      </button>
+                    );
+                  }
+                  if (entry.kind === 'action') {
+                    const navIndex = entry.disabled ? -1 : navEntries.indexOf(entry);
+                    return (
+                      <button
+                        key={`action-${entry.action.id}`}
+                        type="button"
+                        disabled={entry.disabled}
+                        className={`qa-item qa-verb-run${entry.disabled ? ' qa-item-disabled' : navIndex === activeIndex ? ' qa-active' : ''}`}
+                        onClick={() => activate(entry)}
+                        onMouseEnter={() => {
+                          if (!entry.disabled) setActiveIndex(navIndex);
+                        }}
+                      >
+                        <span className="qa-item-verb qa-verb-run">Run</span>
+                        <span className="qa-item-label">{entry.action.label}</span>
+                        {entry.disabled && <span className="qa-item-state">select a node first</span>}
+                      </button>
+                    );
+                  }
+                  // Search-hit row -- shows a group header ("Documents", "Notes", ...) whenever the
+                  // group changes from the previous entry, matching legacy's own real
+                  // `gs-group-title` insertion in qaRender. `verb`/`category` kinds never reach
+                  // here: they only exist in `buildQaPickerEntries()`'s own output, rendered by the
+                  // `pickerOpen` branch above, never mixed into this list (guarded by `!pickerOpen`).
+                  if (entry.kind !== 'search') return null;
+                  const prev = entries[i - 1];
+                  const showGroupHeader = !prev || prev.kind !== 'search' || prev.group !== entry.group;
+                  const navIndex = navEntries.indexOf(entry);
+                  return (
+                    <div key={`search-${entry.group}-${i}`}>
+                      {showGroupHeader && <div className="gs-group-title">{entry.group}</div>}
+                      <button
+                        type="button"
+                        className={`qa-item${navIndex === activeIndex ? ' qa-active' : ''}`}
+                        onClick={() => activate(entry)}
+                        onMouseEnter={() => setActiveIndex(navIndex)}
+                      >
+                        <span className="qa-item-verb qa-verb-goto">Go to</span>
+                        <span className="qa-item-label">{entry.hit.label}</span>
+                        {entry.hit.meta && <span className="qa-item-state">{entry.hit.meta}</span>}
+                      </button>
                     </div>
-                  )}
-                  <button type="button" onClick={() => activate(entry)} onMouseEnter={() => setActiveIndex(navIndex)} style={qaRowStyle(t, navIndex === activeIndex)}>
-                    <span style={{ fontWeight: 600, color: 'var(--accent)' }}>Go to</span>
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.hit.label}</span>
-                    {entry.hit.meta && <span style={{ fontSize: 10, color: t.mutedText }}>{entry.hit.meta}</span>}
-                  </button>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -422,39 +407,4 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
       )}
     </div>
   );
-}
-
-function groupTitleStyle(t: ThemeTokens): CSSProperties {
-  return { fontSize: 10, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: t.mutedText, padding: '4px 4px 6px' };
-}
-
-function qaChipStyle(t: ThemeTokens, active: boolean): CSSProperties {
-  return {
-    fontSize: 11,
-    padding: '4px 10px',
-    borderRadius: 999,
-    border: `1px solid ${active ? 'var(--accent)' : t.border}`,
-    background: active ? t.hoverBg : 'transparent',
-    color: t.text,
-    cursor: 'pointer'
-  };
-}
-
-function qaRowStyle(t: ThemeTokens, active: boolean, disabled?: boolean): CSSProperties {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    width: '100%',
-    textAlign: 'left',
-    font: 'inherit',
-    fontSize: 12,
-    padding: '6px 8px',
-    borderRadius: 6,
-    border: 'none',
-    cursor: disabled ? 'default' : 'pointer',
-    background: active ? t.hoverBg : 'transparent',
-    color: disabled ? t.mutedText : t.text,
-    opacity: disabled ? 0.6 : 1
-  };
 }
