@@ -1,7 +1,8 @@
 import { useAuthStore } from '../store/authStore';
 import { useNotificationsStore } from '../store/notificationsStore';
-import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { BellIcon, CloseIcon } from '../icons';
+import { DropdownMenu } from './DropdownMenu';
+import { formatRelativeTime } from '../utils/formatRelativeTime';
 
 /**
  * §6.8 slice: notification bell -- badge + dropdown, direct port of legacy's real bell/menu UX
@@ -11,6 +12,18 @@ import { BellIcon, CloseIcon } from '../icons';
  * icon buttons there (theme toggle, sidebar toggle); renders nothing when signed out, matching
  * legacy's own real behavior of only ever populating the notifications collection for a signed-in
  * account.
+ *
+ * §8.4l retrofit (docs/phase8-design-system-parity-plan.md): legacy's real `#notif-menu`
+ * (legacy/index.html:4550-4555) is itself a `class="export-menu export-menu-rich"` consumer, not a
+ * standalone popover -- this now renders through the EXISTING `DropdownMenu.tsx` (`rich`, plus a
+ * new `maxHeight` prop matching legacy's real `#notif-menu{max-height:380px}`) instead of its own
+ * ad hoc inline-styled overlay, with the real `.notif-menu-header`/`-title`/`.notif-clear-all` and
+ * `.notif-item`(+`.unread`)/`-body`/`-text`/`-meta`/`-dismiss`/`.notif-empty` classes (index.css,
+ * cited from legacy/index.html:496-513) for everything `.export-menu-rich` doesn't already cover.
+ * Also adds a real per-item relative-timestamp line (`.notif-item-meta`, via the already-ported
+ * `formatRelativeTime`) that legacy's own `renderNotifList` always shows and this component never
+ * had before -- a genuine content gap this retrofit's own investigation found, not just a styling
+ * one, since `NotifItem.createdAt` was already available and simply never rendered.
  */
 export function NotificationBell() {
   const user = useAuthStore((s) => s.user);
@@ -21,8 +34,6 @@ export function NotificationBell() {
   const markRead = useNotificationsStore((s) => s.markRead);
   const remove = useNotificationsStore((s) => s.remove);
   const clearAll = useNotificationsStore((s) => s.clearAll);
-  const theme = useThemeStore((s) => s.theme);
-  const t = THEME_TOKENS[theme];
 
   if (!user) return null;
 
@@ -33,10 +44,11 @@ export function NotificationBell() {
         onClick={() => setMenuOpen(!menuOpen)}
         title="Notifications"
         aria-label="Notifications"
+        aria-haspopup="true"
         aria-expanded={menuOpen}
         style={{ position: 'relative' }}
       >
-        <BellIcon />
+        <BellIcon width={15} height={15} />
         {unreadCount > 0 && (
           <span className="notif-badge" aria-label={`${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`}>
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -44,76 +56,49 @@ export function NotificationBell() {
         )}
       </button>
       {menuOpen && (
-        <div
-          role="dialog"
-          aria-label="Notifications"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            zIndex: 120,
-            width: 320,
-            maxWidth: '90vw',
-            maxHeight: 360,
-            overflowY: 'auto',
-            background: t.background,
-            border: `1px solid ${t.border}`,
-            borderRadius: 10,
-            boxShadow: '0 14px 28px rgba(0,0,0,.12)',
-            padding: 10,
-            fontSize: 12,
-            color: t.text
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <strong>Notifications</strong>
+        <DropdownMenu onClose={() => setMenuOpen(false)} align="right" rich width={300} maxHeight={380}>
+          <div className="notif-menu-header">
+            <div className="notif-menu-title">Notifications</div>
             {items.length > 0 && (
-              <button type="button" onClick={() => void clearAll()} style={{ fontSize: 11 }}>
+              <button type="button" className="notif-clear-all" onClick={() => void clearAll()}>
                 Clear all
               </button>
             )}
           </div>
           {items.length === 0 ? (
-            <div style={{ color: t.mutedText, padding: '6px 0' }}>No notifications yet.</div>
+            <div className="notif-empty">You&apos;re all caught up</div>
           ) : (
-            <div style={{ display: 'grid', gap: 4 }}>
-              {items.map((n) => (
-                <div
-                  key={n.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 6,
-                    padding: 6,
-                    borderRadius: 6,
-                    background: n.read ? 'transparent' : t.hoverBg
-                  }}
-                >
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => !n.read && void markRead(n.id)}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ' ') && !n.read) void markRead(n.id);
-                    }}
-                    style={{ flex: 1, cursor: n.read ? 'default' : 'pointer' }}
-                  >
-                    {n.text}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void remove(n.id)}
-                    aria-label="Dismiss notification"
-                    title="Dismiss"
-                    style={{ flexShrink: 0 }}
-                  >
-                    <CloseIcon width={10} height={10} />
-                  </button>
+            items.map((n) => (
+              <div
+                key={n.id}
+                role="button"
+                tabIndex={0}
+                className={`notif-item${n.read ? '' : ' unread'}`}
+                onClick={() => !n.read && void markRead(n.id)}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && !n.read) void markRead(n.id);
+                }}
+              >
+                <div className="notif-item-body">
+                  <div className="notif-item-text">{n.text}</div>
+                  <div className="notif-item-meta">{formatRelativeTime(n.createdAt)}</div>
                 </div>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  className="notif-item-dismiss"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void remove(n.id);
+                  }}
+                  aria-label="Dismiss notification"
+                  title="Dismiss"
+                >
+                  <CloseIcon width={12} height={12} />
+                </button>
+              </div>
+            ))
           )}
-        </div>
+        </DropdownMenu>
       )}
     </div>
   );

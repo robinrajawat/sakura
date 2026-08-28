@@ -460,8 +460,22 @@ legacy's real undimmed popover. Verified with real headless-Chrome screenshots (
 `iconPickerStore.ts` directly in dev mode, since the real trigger path needs an AI provider key).
 Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.4l through 8.4n (the 3 components above, each independently scoped),
-then 8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
+**8.4l (retrofit: `NotificationBell.tsx` → the existing `DropdownMenu`) landed.** Confirmed
+legacy's real `#notif-menu` is itself a `class="export-menu export-menu-rich"` consumer, not a
+standalone popover — retrofit onto the EXISTING `DropdownMenu.tsx`/`rich` prop rather than a new
+overlay, adding only `.notif-menu-header`/`-title`/`.notif-clear-all` and the row family
+`.notif-item`(+`.unread`)/`-body`/`-text`/`-meta`/`-dismiss`/`.notif-empty`. `DropdownMenu.tsx`
+gained one small, generic, optional `maxHeight` prop (additive, no other consumer affected). Found
+and fixed a real content gap, not just styling: legacy's own `renderNotifList` always shows a
+per-item relative-timestamp line, which `NotificationBell.tsx` never rendered even though
+`NotifItem.createdAt` was already available — now wired through the already-ported
+`formatRelativeTime` util. Verified with real headless-Chrome screenshots (seeding real data via
+`pushLocalNotification` after discovering a direct Zustand-`setState` injection gets overwritten
+immediately by `setMenuOpen`'s own `refresh()` call). Full gauntlet clean: 2005 tests passing,
+typecheck/lint/build all clean.
+
+**Immediate next steps:** 8.4m and 8.4n (the 2 components above, each independently scoped), then
+8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
