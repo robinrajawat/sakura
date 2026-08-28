@@ -2811,3 +2811,32 @@ input[type='number'] {
   border: 2px solid var(--tb-bg);
   background-clip: padding-box;
 }
+
+/* §8.6 slice (docs/phase8-design-system-parity-plan.md): the editor pane's own floating
+ * toolbar-reveal toggle, direct port of legacy's real `#editor-toolbar-toggle`
+ * (legacy/index.html:2259, plus its `:hover`/`.is-active` states at 2266-2268). `right: 14px` is
+ * kept as `App.tsx`'s own value, not legacy's real `right: 90px` -- legacy's own offset only makes
+ * sense alongside its three sibling floating buttons (`#editor-zen-toggle`/`#editor-pad-toggle`/
+ * `#editor-preview-toggle`), none of which `web/` builds into this same floating cluster (§7.5's
+ * own documented scope reduction, still true here) -- this is the one floating button `web/` has,
+ * so it sits at the corner directly. */
+.editor-toolbar-toggle {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--edit-bg) 88%, transparent);
+  color: var(--hint);
+  opacity: 0.55;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
+}
+.editor-toolbar-toggle:hover {
+  opacity: 1;
+  color: var(--fg);
+  background: var(--hover);
+}
+.editor-toolbar-toggle[aria-pressed='true'] {
+  opacity: 1;
+  color: var(--accent);
+  border-color: var(--accent);
+}

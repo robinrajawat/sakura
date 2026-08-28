@@ -167,13 +167,18 @@ doc let this gap through repeated verification passes already.
 
 ## Status
 
-**Complete.** All five phases in this plan's own sequencing (8.1 CSS primitives, 8.2 icon set, 8.3
-shared React components, 8.4 retrofit -- 14 sub-slices, 8.4a through 8.4n, plus two more found
-post-8.4n: 8.4o `EmptyDocState.tsx` and 8.4p the Quick Assist app-bar restructuring, and 8.4q's
-own app-wide scrollbar/canvas-background fix -- and 8.5 the verification fixture) have landed. The
-one remaining item is the open-ended follow-up named at the end of 8.5's own entry below (a
-targeted look for any other non-dialog Phase 6/7 component missed by 8.4's dialog-only sweep),
-not itself a numbered slice in this plan's original sequencing.
+**In progress.** All five phases in this plan's own original sequencing (8.1 CSS primitives, 8.2
+icon set, 8.3 shared React components, 8.4 retrofit -- 14 sub-slices, 8.4a through 8.4n, plus two
+more found post-8.4n: 8.4o `EmptyDocState.tsx` and 8.4p the Quick Assist app-bar restructuring, and
+8.4q's own app-wide scrollbar/canvas-background fix -- and 8.5 the verification fixture) have
+landed. **A real gap in this plan's own original scope was found once 8.5's fixture was actually
+used**: the plan's own Goal section always scoped this work to "shared chrome" -- the app-bar,
+sidebar, document header, toolbar wrapper, dropdown menus, and modals -- and never claimed to
+cover the tree editor itself (`OutlineTree.tsx`) or the Pad panel's own internals
+(`PadPanel.tsx`), the two largest, most-visible remaining surfaces in the whole app. §8.6 (below)
+closed the two smallest, highest-confidence pieces of that gap; the rest -- `OutlineTree.tsx`'s
+own row-level class family and `PadPanel.tsx`'s 7-tab retrofit -- are real, separately-scoped
+follow-ups (§8.7+), each large enough to be its own slice.
 
 - ✅ **8.1 — CSS primitives landed.** Every class named in this plan's own "Real findings" section
   ported into `web/src/index.css`, verified against the exact legacy lines cited there: `.primary`/
@@ -897,8 +902,49 @@ not itself a numbered slice in this plan's original sequencing.
   needed -- a dev-only seeding helper with no pure logic of its own to unit-test beyond what
   real-browser verification already covers, same precedent as every UI-only §8.4 slice),
   typecheck/lint/build all clean.
-- Also worth a targeted look, not yet done: whether other non-dialog components built before
-  Phase 8 (i.e. anything from Phase 6/7 that isn't itself a `role="dialog"`) were similarly missed
-  by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx` were -- now
-  easier to check with 8.5's own fixture as a real, richly-populated subject to screenshot against
-  instead of the empty seed document.
+- ✅ **8.6 (found via 8.5's own fixture, reported directly by the user) — the floating
+  toolbar-toggle button and `OutlineTree.tsx`'s own invented bordered box.** The user flagged
+  three areas directly ("the editor, floating buttons, Pad area") after seeing a real screenshot
+  of the 8.5 fixture next to legacy. A `grep -c "style={{"` ranking across every component (the
+  same signal that already caught `EmptyDocState.tsx`/`QuickAssistBar.tsx`) confirmed
+  `PadPanel.tsx` (62) and `OutlineTree.tsx` (59) as the two largest untouched files -- Phase 8's
+  own Goal section always scoped this plan to "shared chrome," never the tree itself or the Pad
+  panel's own internals, so neither gap is a miss so much as work this plan never claimed to cover.
+  This slice closes the two smallest, highest-confidence pieces of that gap; `OutlineTree.tsx`'s
+  own row-level class family and `PadPanel.tsx`'s own per-tab retrofit are each real, separately-
+  scoped follow-ups (§8.7+), too large and too risky (`OutlineTree.tsx` is this project's single
+  hottest per-row render path) to fold into the same pass.
+  - **The floating toolbar-reveal toggle** (`App.tsx`): direct port of legacy's real
+    `#editor-toolbar-toggle` (legacy/index.html:2259, `:hover`/`.is-active` at 2266-2268) --
+    border/background-tint/opacity/hover-active states, previously a bare icon button with no
+    chrome at all. `right: 14px` deliberately kept as `web/`'s own value rather than legacy's real
+    `right: 90px`, which only makes sense alongside legacy's three sibling floating buttons
+    (`#editor-zen-toggle`/`#editor-pad-toggle`/`#editor-preview-toggle`) -- confirmed via a real
+    legacy screenshot (a fresh empty document, `/tmp` scratch build) that legacy's own floating
+    cluster is genuinely 4 buttons; `web/` still only builds the one (§7.5's own already-documented
+    scope reduction, unchanged by this slice).
+  - **`OutlineTree.tsx`'s own invented bordered box.** A real, previously-unnoticed structural bug,
+    not just missing CSS: the tree's own `<div role="tree">` wrapper drew its OWN
+    `border`/`border-radius`/`background`/`padding` -- legacy's real `#editor-pane`
+    (legacy/index.html:522) has node rows sitting directly on the canvas, no separate boxed panel
+    around them at all, confirmed by the same real legacy screenshot. `AppShell.tsx`'s own
+    `#editor-pane` ancestor already provides the real `var(--canvas-bg)` background and real
+    padding (§8.4q) -- this wrapper's own box sat directly on top of that, rendering as a visibly
+    separate bordered panel legacy never has. Removed the border/radius/background/padding
+    entirely; `color: t.text` is kept as the real fallback text color for any child that doesn't
+    set its own (no `body`-level `color` rule exists in `web/` to inherit from otherwise).
+  Verified with a real side-by-side: built `legacy/dist` and `web/dist` fresh, drove both through
+  headless Chrome (dismiss sign-in gate + welcome modal, type a small representative outline into
+  a genuinely empty document, screenshot). Confirmed both real gaps above directly against that
+  legacy screenshot, then confirmed both fixes visually in a rebuilt `web/dist` screenshot -- the
+  outline now sits flush on the canvas with no extra box, and the floating toggle now shows a real
+  bordered/tinted square instead of a bare icon. Full gauntlet clean: 2005 tests still passing (no
+  test changes needed, pure presentation swap), typecheck/lint/build all clean.
+- Still open, not yet done: `OutlineTree.tsx`'s own row-level class family (`.node-row`/
+  `.node-label`/`.node-note-dot`/selection-and-drag states/etc., legacy/index.html:543-2174) and
+  `PadPanel.tsx`'s 7-tab retrofit (Notepad/Q&A/Decision Log/Diagrams/Mind Map/Files/Remarks) --
+  each large enough to be its own real slice, not attempted in this pass. Also still worth a
+  targeted look: whether any other non-dialog Phase 6/7 component was similarly missed by 8.4's
+  dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/this slice's own two
+  findings were -- now easier to check with 8.5's own fixture as a real, richly-populated subject
+  to screenshot against instead of the empty seed document.

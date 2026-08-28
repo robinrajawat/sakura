@@ -771,6 +771,7 @@ export function App() {
               required toggle, not an oversight. */}
           <button
             type="button"
+            className="editor-toolbar-toggle"
             onClick={() => setToolbarVisible(!toolbarVisible)}
             title={toolbarVisible ? 'Hide toolbar' : 'Show toolbar'}
             aria-label="Toggle toolbar"
@@ -785,8 +786,7 @@ export function App() {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: 0,
-              opacity: 0.7
+              padding: 0
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
