@@ -321,6 +321,12 @@ export function App() {
         title="Sakura"
         headerActions={
           <>
+            {/* §6.10 slice 3 (docs/phase6-full-parity-plan.md), restructured (docs/phase8-design-
+                system-parity-plan.md's 8.4m follow-up): Quick Assist -- first in header-actions,
+                matching legacy's own real `#appbar-qa-slot`, the FIRST child of `#header-actions`
+                (legacy/index.html:4533-4534). See QuickAssistBar.tsx's own header for what this
+                covers and why it moved here from its old spot near the account menu. */}
+            <QuickAssistBar openRestructureDialog={() => setRestructureDialogOpen(true)} />
             <button
               type="button"
               onClick={toggleSidebarOpen}
@@ -459,10 +465,6 @@ export function App() {
               </button>
               {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} initialCategory={settingsCategory} />}
             </div>
-            {/* §6.10 slice 3 (docs/phase6-full-parity-plan.md): Quick Assist -- see
-                QuickAssistBar.tsx's own header for what this covers and what it deliberately
-                doesn't yet (search-hit rows, category scoping -- slice 4). */}
-            <QuickAssistBar openRestructureDialog={() => setRestructureDialogOpen(true)} />
             {/* §7.6 slice: the real header account entry point -- see AccountMenu.tsx's own
                 header for what moved here from the old `AuthPanel.tsx` inline block (now
                 retired) and what it deliberately doesn't duplicate (the profile-visibility badge,

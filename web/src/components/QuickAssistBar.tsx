@@ -51,15 +51,21 @@ const QA_PICKER_VERB_LABELS: Record<QaPickerVerb, string> = { show: 'Show', hide
  * §8.4m retrofit (docs/phase8-design-system-parity-plan.md): renders through the real
  * `.qa-input-row`/`.qa-icon-btn`/`.qa-dropdown`/`.qa-hint`/`.qa-results`/`.qa-item`/`.qa-chip-row`/
  * `.gs-group-title` classes (index.css, cited from legacy/index.html:1117-1177) instead of inline
- * `style` objects. Legacy's own real Quick Assist input is a PERMANENTLY-VISIBLE search-style box
- * docked in the status bar or app bar (`setQaLocation`, legacy/index.html:21054-21068) -- there is
- * no click-to-reveal toggle at all in legacy. This slice does NOT redesign this component's own
- * pre-existing "⌘K" toggle-button-then-popover structure (§6.10) to match that -- it reuses
- * legacy's real classes for their cosmetic properties only, keeping `web/`'s own toggle-button
- * mount and the popover's own absolute positioning, same "port the effect, not the exact
- * technique" precedent already used for `IconPickerPopover.tsx`. `.qa-input-row`'s own real
- * per-context fixed/focus-expanding `width` values (meaningless inside a fixed-width popover) are
- * skipped for the same reason.
+ * `style` objects.
+ *
+ * Restructured (docs/phase8-design-system-parity-plan.md's 8.4m follow-up) to match legacy's own
+ * real structure, not just its CSS: legacy's Quick Assist input is a PERMANENTLY-VISIBLE
+ * search-style box docked in the app bar by default (`qaLocation='appbar'`, legacy/index.html:185;
+ * `#appbar-qa-slot`, the FIRST child of `#header-actions`, legacy/index.html:4533-4534) -- there is
+ * no click-to-reveal toggle button in legacy at all. `.qa-input-row` (icon button + input) now
+ * renders unconditionally; `.qa-dropdown` opens below-left of it, driven by
+ * focus/typing/outside-click/Escape/⌘K exactly matching legacy's own real `setQaOpen`/`toggleQa`
+ * (legacy/index.html:17633-17650): focusing or typing opens it, closing (outside click, Escape, or
+ * `useQuickAssistStore`'s `open` flipping false via the global ⌘K handler in `App.tsx`) clears the
+ * query and blurs, matching legacy's own real behavior exactly. `quickAssistStore.ts`'s own header
+ * already noted its `open`/`openBox`/`closeBox`/`toggleBox` shape "matches legacy's real
+ * setQaOpen/toggleQa... minus zen-mode chrome-reveal side effects" -- only this component's own
+ * rendering needed to change to actually use that shape the way legacy does, not the store itself.
  */
 const HINT_PHRASES = ['hide file explorer', 'toggle dark mode', 'duplicate node', 'rewrite this node', 'toggle compact rows', 'generate outline'];
 
@@ -67,11 +73,12 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
   const open = useQuickAssistStore((s) => s.open);
+  const openBox = useQuickAssistStore((s) => s.openBox);
   const closeBox = useQuickAssistStore((s) => s.closeBox);
-  const toggleBox = useQuickAssistStore((s) => s.toggleBox);
   const quickAssistEnabled = useOutlinePrefsStore((s) => s.quickAssistEnabled);
   const quickAssistSearchEnabled = useOutlinePrefsStore((s) => s.quickAssistSearchEnabled);
   const hasSelection = useOutlineStore((s) => s.selectedId !== null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -80,17 +87,28 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Matches legacy's real `setQaOpen(true)` (focuses the input on a short delay) and
-  // `setQaOpen(false)` (clears the input value) -- both folded into one effect here since React
-  // owns `query` rather than the DOM owning it directly.
+  // `setQaOpen(false)` (clears the input value and blurs) exactly.
   useEffect(() => {
     if (open) {
-      setQuery('');
-      setActiveIndex(0);
-      setPickerOpen(false);
       const timer = setTimeout(() => inputRef.current?.focus(), 10);
       return () => clearTimeout(timer);
     }
+    setQuery('');
+    setActiveIndex(0);
+    setPickerOpen(false);
+    inputRef.current?.blur();
   }, [open]);
+
+  // Matches legacy's own real document-level outside-click close (the input row and the dropdown
+  // both stop propagation on their own clicks, legacy/index.html:17727-17728).
+  useEffect(() => {
+    if (!open) return;
+    function onDocMouseDown(e: MouseEvent): void {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) closeBox();
+    }
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, [open, closeBox]);
 
   useEffect(() => () => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -184,47 +202,42 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
   if (!quickAssistEnabled) return null;
 
   return (
-    <div style={{ position: 'relative' }}>
-      <button type="button" onClick={toggleBox} title="Quick Assist (Ctrl/Cmd+K)" aria-pressed={open} aria-label="Quick Assist">
-        ⌘K
-      </button>
-      {open && (
-        <div
-          className="qa-dropdown"
-          role="dialog"
-          aria-label="Quick Assist"
-          style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 130, width: 340 }}
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <div className="qa-input-row">
+        <button
+          type="button"
+          className="qa-icon-btn"
+          onClick={() => {
+            openBox();
+            setPickerOpen(true);
+            setActiveIndex(0);
+            inputRef.current?.focus();
+          }}
+          title="Browse by category"
+          aria-label="Browse Quick Assist categories"
         >
-          <div className="qa-input-row" style={{ width: 'auto' }}>
-            <button
-              type="button"
-              className="qa-icon-btn"
-              onClick={() => {
-                setPickerOpen(true);
-                setActiveIndex(0);
-                inputRef.current?.focus();
-              }}
-              title="Browse by category"
-              aria-label="Browse Quick Assist categories"
-            >
-              ⋯
-            </button>
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.currentTarget.value);
-                setActiveIndex(0);
-                setPickerOpen(false);
-              }}
-              onKeyDown={onInputKeyDown}
-              placeholder="Search…"
-              autoComplete="off"
-              aria-label="Quick assist command and search input"
-            />
-          </div>
-          <div style={{ marginTop: 8 }}>
+          ⋯
+        </button>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onFocus={openBox}
+          onChange={(e) => {
+            openBox();
+            setQuery(e.currentTarget.value);
+            setActiveIndex(0);
+            setPickerOpen(false);
+          }}
+          onKeyDown={onInputKeyDown}
+          placeholder="Search…"
+          autoComplete="off"
+          aria-label="Quick assist command and search input"
+        />
+      </div>
+      {open && (
+        <div className="qa-dropdown" role="dialog" aria-label="Quick Assist">
+          <div>
             {pickerOpen && (
               <>
                 <div className="gs-group-title">Browse by action…</div>

@@ -2258,35 +2258,38 @@ body.theme-dark .account-visibility-badge:hover {
   font: 400 13px 'Inter', sans-serif;
 }
 
-/* §8.4m retrofit (docs/phase8-design-system-parity-plan.md): `QuickAssistBar.tsx`'s real legacy
- * counterparts are `.qa-input-row`/`.qa-icon-btn`/`.qa-dropdown`/`.qa-hint`/`.qa-results`/
- * `.qa-item`/`.qa-chip-row`/`.gs-group-title` (legacy/index.html:1117-1177, markup at 6769-6788).
- *
- * Legacy's own real Quick Assist input is a PERMANENTLY-VISIBLE search-style box docked in either
- * the status bar or the app bar (`setQaLocation`/`#appbar-qa-slot`, legacy/index.html:21054-21068)
- * -- there is no click-to-reveal toggle button at all in legacy; `.qa-input-row` sits inline,
- * `.qa-dropdown` opens below it only while there's a query or focus. `QuickAssistBar.tsx` predates
- * this slice with its own `web/`-only "⌘K" toggle-button-then-popover structure (§6.10), which
- * this retrofit does NOT redesign -- reusing legacy's real classes for their cosmetic properties
- * (background/border/radius/shadow/padding/typography) while keeping `web/`'s own toggle-button
- * mount and the popover's own absolute positioning (anchored from the button, not inline in a
- * status/app bar), same "port the effect, not the exact technique" precedent already used for
- * `IconPickerPopover.tsx`. `.qa-input-row`'s own real per-context `width`/focus-expand values (200px
- * fixed-width inline elements, meaningless inside a fixed-width popover) are skipped for the same
- * reason -- the row stretches to fill the popover's own width instead. */
+/* §8.4m retrofit (docs/phase8-design-system-parity-plan.md), restructured (docs/phase8-design-
+ * system-parity-plan.md's 8.4m follow-up): `QuickAssistBar.tsx`'s real legacy counterparts are
+ * `.qa-input-row`/`.qa-icon-btn`/`.qa-dropdown`/`.qa-hint`/`.qa-results`/`.qa-item`/`.qa-chip-row`/
+ * `.gs-group-title` (legacy/index.html:1117-1177, markup at 6769-6788). Legacy's own real Quick
+ * Assist input is a PERMANENTLY-VISIBLE search-style box docked in the app bar by default
+ * (`qaLocation='appbar'` is legacy's own real default, legacy/index.html:185; `#appbar-qa-slot`,
+ * the FIRST child of `#header-actions`, legacy/index.html:4533-4534) -- there is no click-to-
+ * reveal toggle button at all in legacy. `QuickAssistBar.tsx` originally kept its own `web/`-only
+ * "⌘K" toggle-button-then-popover structure even after the §8.4m CSS retrofit (a deliberate,
+ * explicitly-flagged deferral at the time); this follow-up removes that toggle button entirely --
+ * `.qa-input-row` now renders unconditionally in the header (first in `header-actions`, matching
+ * `#appbar-qa-slot`'s own real position), and `.qa-dropdown` opens below-left of it (matching
+ * legacy's own real `left:0` anchor for the app-bar-docked case) driven by focus/typing/outside-
+ * click/Escape/⌘K exactly as legacy's own `setQaOpen`/`toggleQa` are -- `web/`'s existing
+ * `quickAssistStore.ts` already modeled this open/close state correctly (its own header already
+ * noted it "matches legacy's real setQaOpen/toggleQa... minus zen-mode chrome-reveal side
+ * effects"), so only the component's own rendering needed to change, not the store. */
 .qa-input-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 200px;
   background: var(--edit-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 7px 10px;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, width 0.15s;
 }
 
 .qa-input-row:focus-within {
   border-color: var(--accent);
+  width: 320px;
 }
 
 .qa-input-row input {
@@ -2323,7 +2326,15 @@ body.theme-dark .account-visibility-badge:hover {
   color: var(--accent);
 }
 
+/* Skips legacy's own `.open`/`display:none` toggle -- `QuickAssistBar.tsx` only ever mounts this
+ * element while `open`, same React mount/unmount-replaces-class-toggle precedent used throughout
+ * this file (`.app-modal-overlay`/`#welcome-overlay`/etc). */
 .qa-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 420px;
+  z-index: 120;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
