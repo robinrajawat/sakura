@@ -1678,3 +1678,271 @@ body.theme-dark .account-visibility-badge:hover {
   line-height: 1.5;
   margin: 0 0 24px;
 }
+
+/* §8.4i retrofit (docs/phase8-design-system-parity-plan.md): `WelcomeModal.tsx`'s real legacy
+ * counterparts are `#welcome-overlay`/`#welcome-modal` (legacy/index.html:7639-7661, CSS at
+ * 665-690) and the stacked-on-top `#why-sakura-overlay`/`#why-sakura-modal` (markup at
+ * 7663-7708, CSS at 691-787). Both overlays skip legacy's own `.open`/`.closing` opacity-fade +
+ * transform-scale enter/exit transition (665-670, 691-697) -- `WelcomeModal.tsx` only ever mounts
+ * either element while visible, the same React mount/unmount-replaces-class-toggle precedent
+ * already used for `#dock-tabstrip`/`.app-modal-overlay`/`#sakura-landing-overlay` -- so both
+ * render directly at legacy's own "open" end state (full opacity, no transform) rather than
+ * reproducing the animated enter/exit itself, a real, separately-scoped follow-up if ever wanted. */
+#welcome-overlay,
+#why-sakura-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+#welcome-overlay {
+  z-index: 1200;
+}
+
+#why-sakura-overlay {
+  z-index: 1210;
+}
+
+#welcome-modal,
+#why-sakura-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 28px 56px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 28px 28px 22px;
+  font-family: 'Inter', sans-serif;
+}
+
+#welcome-modal {
+  width: min(480px, calc(100vw - 32px));
+}
+
+#why-sakura-modal {
+  width: min(600px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+#welcome-modal h2,
+#why-sakura-modal h2 {
+  font: 700 18px 'Inter', sans-serif;
+  color: var(--fg);
+  margin: 0 0 6px;
+}
+
+#welcome-modal-brand,
+#why-sakura-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+#why-sakura-brand {
+  margin-bottom: 16px;
+}
+
+#welcome-modal-brand-icon,
+#why-sakura-brand-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+#welcome-modal-brand-name,
+#why-sakura-brand-name {
+  font: 600 13px 'Inter', sans-serif;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+#welcome-modal-sub {
+  font: 400 13px 'Inter', sans-serif;
+  color: var(--muted);
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+
+#why-sakura-sub {
+  font: 400 13px 'Inter', sans-serif;
+  color: var(--muted);
+  margin: 0 0 18px;
+  line-height: 1.55;
+}
+
+#welcome-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.welcome-choice {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s;
+  color: var(--fg);
+}
+
+.welcome-choice:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.welcome-choice:hover .welcome-choice-icon {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.welcome-choice:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.welcome-choice-icon,
+.why-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.welcome-choice-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.why-row-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+.welcome-choice-text,
+.why-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.welcome-choice-label {
+  font: 600 13px 'Inter', sans-serif;
+  color: var(--fg);
+}
+
+.welcome-choice-desc {
+  font: 400 11.5px 'Inter', sans-serif;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+#welcome-skip {
+  display: block;
+  text-align: center;
+  font: 400 12px 'Inter', sans-serif;
+  color: var(--hint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  width: 100%;
+  transition: color 0.12s;
+}
+
+#welcome-skip:hover {
+  color: var(--muted);
+}
+
+#welcome-why-link,
+#welcome-editors-choice-link {
+  display: block;
+  text-align: center;
+  font: 500 12px 'Inter', sans-serif;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  width: 100%;
+  margin-bottom: 4px;
+  transition: opacity 0.12s;
+}
+
+#welcome-why-link:hover,
+#welcome-editors-choice-link:hover {
+  opacity: 0.8;
+}
+
+#why-sakura-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.why-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+}
+
+.why-row-label {
+  font: 600 13px 'Inter', sans-serif;
+  color: var(--fg);
+  line-height: 1.3;
+}
+
+.why-row-desc {
+  font: 400 12px 'Inter', sans-serif;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+#why-sakura-caveat {
+  font: 400 11.5px 'Inter', sans-serif;
+  color: var(--hint);
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 80%, var(--tb-bg) 20%);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+#why-sakura-close {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  border-radius: 9px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font: 600 13px 'Inter', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+
+#why-sakura-close:hover {
+  opacity: 0.9;
+}

@@ -75,11 +75,11 @@ const WHY_SAKURA_ROWS: { icon: JSX.Element; label: string; desc: string }[] = [
   }
 ];
 
-function BrandRow({ size }: { size: number }) {
+function BrandRow({ prefix }: { prefix: 'welcome-modal' | 'why-sakura' }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 18 }}>
-      <span style={{ display: 'inline-flex' }} aria-hidden="true">
-        <svg width={size} height={size} viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+    <div id={`${prefix}-brand`}>
+      <span id={`${prefix}-brand-icon`} aria-hidden="true">
+        <svg width="1em" height="1em" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
           <g opacity={0.9}>
             <ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" strokeWidth={1} />
             <ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" strokeWidth={1} />
@@ -90,7 +90,7 @@ function BrandRow({ size }: { size: number }) {
           </g>
         </svg>
       </span>
-      <span style={{ font: "600 13px 'Inter', sans-serif", color: 'var(--muted)', letterSpacing: '0.04em' }}>Sakura</span>
+      <span id={`${prefix}-brand-name`}>Sakura</span>
     </div>
   );
 }
@@ -129,6 +129,16 @@ function BrandRow({ size }: { size: number }) {
  * ~40-setting personal configuration snapshot, most of which has no equivalent in `web/` at all)
  * -- so this link's own placeholder message says so rather than implying it's merely "coming
  * later" like the tour/demo ones.
+ *
+ * §8.4i retrofit (docs/phase8-design-system-parity-plan.md): both overlays now render through the
+ * real `#welcome-*`/`#why-sakura-*`/`.welcome-choice*`/`.why-row*` ids and classes (index.css,
+ * cited from legacy/index.html:665-787) instead of inline `style` objects. Skips legacy's own
+ * `.open`/`.closing` opacity-fade + transform-scale enter/exit transition -- see index.css's own
+ * comment on this class family for why (the established React mount/unmount precedent). Two real
+ * visual gaps the previous inline-styled version had, now fixed by the real CSS: the choice-row
+ * icons (`.welcome-choice-icon`/`.why-row-icon`) get legacy's real accent-tinted rounded badge
+ * background, and `#why-sakura-close` gets legacy's real solid accent-filled primary-button look
+ * -- both previously rendered as plain unstyled buttons/icons with no such treatment.
  */
 export function WelcomeModal() {
   const [seen, setSeen] = useState(readSeen);
@@ -174,52 +184,29 @@ export function WelcomeModal() {
   return (
     <>
       <div
+        id="welcome-overlay"
         role="dialog"
         aria-modal="true"
         aria-labelledby="welcome-modal-heading"
         onClick={(e) => {
           if (e.target === e.currentTarget) dismiss();
         }}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 1200,
-          background: 'rgba(0,0,0,.45)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24
-        }}
       >
-        <div
-          style={{
-            background: 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            boxShadow: '0 28px 56px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.10)',
-            padding: '28px 28px 22px',
-            width: 'min(480px, calc(100vw - 32px))',
-            fontFamily: "'Inter', sans-serif"
-          }}
-        >
-          <BrandRow size={22} />
-          <h2 id="welcome-modal-heading" style={{ font: "700 18px 'Inter', sans-serif", color: 'var(--fg)', margin: '0 0 6px' }}>
-            Welcome — where would you like to start?
-          </h2>
-          <p style={{ font: "400 13px 'Inter', sans-serif", color: 'var(--muted)', margin: '0 0 22px', lineHeight: 1.5 }}>
-            Pick how you want to get familiar. You can always revisit both from the Help menu.
-          </p>
-          <div style={{ display: 'grid', gap: 10, marginBottom: 16 }}>
+        <div id="welcome-modal">
+          <BrandRow prefix="welcome-modal" />
+          <h2 id="welcome-modal-heading">Welcome — where would you like to start?</h2>
+          <p id="welcome-modal-sub">Pick how you want to get familiar. You can always revisit both from the Help menu.</p>
+          <div id="welcome-choices">
             <button
               type="button"
+              className="welcome-choice"
               autoFocus
               onClick={() => {
                 dismiss();
                 window.alert("Guided tour isn't built here yet — coming in a future update.");
               }}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 14px' }}
             >
-              <span aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
+              <span className="welcome-choice-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" stroke="none" opacity={0.25} />
@@ -227,22 +214,20 @@ export function WelcomeModal() {
                   <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
                 </svg>
               </span>
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontWeight: 600, fontSize: 13 }}>Guided tour</span>
-                <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}>
-                  Step-by-step walkthrough of the real editor — interactive, skippable, takes about a minute.
-                </span>
+              <span className="welcome-choice-text">
+                <span className="welcome-choice-label">Guided tour</span>
+                <span className="welcome-choice-desc">Step-by-step walkthrough of the real editor — interactive, skippable, takes about a minute.</span>
               </span>
             </button>
             <button
               type="button"
+              className="welcome-choice"
               onClick={() => {
                 dismiss();
                 window.alert("The demo isn't built here yet — coming in a future update.");
               }}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 14px' }}
             >
-              <span aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
+              <span className="welcome-choice-icon" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="3" width="20" height="14" rx="2" />
                   <path d="M8 21h8M12 17v4" />
@@ -250,98 +235,67 @@ export function WelcomeModal() {
                   <polygon points="10 8 16 11 10 14 10 8" />
                 </svg>
               </span>
-              <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontWeight: 600, fontSize: 13 }}>Watch the demo</span>
-                <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 400 }}>A scripted animation showing the key features — just sit back and watch.</span>
+              <span className="welcome-choice-text">
+                <span className="welcome-choice-label">Watch the demo</span>
+                <span className="welcome-choice-desc">A scripted animation showing the key features — just sit back and watch.</span>
               </span>
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setWhySakuraOpen(true)}
-            style={{ display: 'block', width: '100%', background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12.5, cursor: 'pointer', padding: '4px 0', textAlign: 'left' }}
-          >
+          <button type="button" id="welcome-why-link" onClick={() => setWhySakuraOpen(true)}>
             Why an outliner instead of plain notes? →
           </button>
           <button
             type="button"
+            id="welcome-editors-choice-link"
             onClick={() => {
               window.alert("Editor's Choice isn't available in this build (docs/phase6-full-parity-plan.md §6.7).");
               dismiss();
             }}
-            style={{ display: 'block', width: '100%', background: 'none', border: 'none', color: 'var(--accent)', fontSize: 12.5, cursor: 'pointer', padding: '4px 0', textAlign: 'left', marginBottom: 8 }}
           >
             Prefer a leaner writing view? Apply Editor's Choice →
           </button>
-          <button
-            type="button"
-            onClick={dismiss}
-            style={{ display: 'block', width: '100%', textAlign: 'center', background: 'none', border: 'none', color: 'var(--hint)', fontSize: 12, cursor: 'pointer', padding: 4 }}
-          >
+          <button type="button" id="welcome-skip" onClick={dismiss}>
             Skip for now, I'll explore on my own
           </button>
         </div>
       </div>
       {whySakuraOpen && (
         <div
+          id="why-sakura-overlay"
           role="dialog"
           aria-modal="true"
           aria-labelledby="why-sakura-heading"
           onClick={(e) => {
             if (e.target === e.currentTarget) setWhySakuraOpen(false);
           }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1210,
-            background: 'rgba(0,0,0,.45)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 24
-          }}
         >
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 16,
-              boxShadow: '0 28px 56px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.10)',
-              padding: '28px 28px 22px',
-              width: 'min(560px, calc(100vw - 32px))',
-              maxHeight: 'calc(100vh - 48px)',
-              overflowY: 'auto',
-              fontFamily: "'Inter', sans-serif"
-            }}
-          >
-            <BrandRow size={22} />
-            <h2 id="why-sakura-heading" style={{ font: "700 18px 'Inter', sans-serif", color: 'var(--fg)', margin: '0 0 6px' }}>
-              Why an outliner — and why Sakura?
-            </h2>
-            <p style={{ font: "400 13px 'Inter', sans-serif", color: 'var(--muted)', margin: '0 0 18px', lineHeight: 1.5 }}>
+          <div id="why-sakura-modal">
+            <BrandRow prefix="why-sakura" />
+            <h2 id="why-sakura-heading">Why an outliner — and why Sakura?</h2>
+            <p id="why-sakura-sub">
               Think of an outliner as turning your notes into a family tree, instead of a messy
               pile of paragraphs. Instead of writing left to right, you write in points that tuck
               inside one another. Here's why that makes life easier:
             </p>
-            <div style={{ display: 'grid', gap: 14, marginBottom: 16 }}>
+            <div id="why-sakura-list">
               {WHY_SAKURA_ROWS.map((row) => (
-                <div key={row.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span aria-hidden="true" style={{ flexShrink: 0, marginTop: 2, color: 'var(--accent)' }}>
+                <div key={row.label} className="why-row">
+                  <span className="why-row-icon" aria-hidden="true">
                     {row.icon}
                   </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--fg)' }}>{row.label}</span>
-                    <span style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.5 }}>{row.desc}</span>
+                  <div className="why-row-text">
+                    <span className="why-row-label">{row.label}</span>
+                    <span className="why-row-desc">{row.desc}</span>
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--hint)', lineHeight: 1.5, marginBottom: 18 }}>
+            <div id="why-sakura-caveat">
               Not every kind of writing wants this. Flowing essays and loosely connected notes are
               still better off elsewhere — Sakura's built for things that have a shape: plans,
               specs, architecture, meeting notes, decisions.
             </div>
-            <button type="button" autoFocus onClick={() => setWhySakuraOpen(false)} style={{ width: '100%', padding: 9, fontSize: 13, fontWeight: 600 }}>
+            <button type="button" id="why-sakura-close" autoFocus onClick={() => setWhySakuraOpen(false)}>
               Got it — let's start
             </button>
           </div>

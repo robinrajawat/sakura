@@ -422,7 +422,22 @@ instead of legacy's real plain colors. Verified with real headless-Chrome screen
 gate, expanded email form, post-dismissal). Full gauntlet clean: 2005 tests passing, typecheck/
 lint/build all clean.
 
-**Immediate next steps:** 8.4i through 8.4n (the 6 components above, each independently scoped),
+**8.4i (retrofit: `WelcomeModal.tsx` → `#welcome-*`/`#why-sakura-*`) landed.** Ported the full real
+class family for both overlays (legacy/index.html:665-787): `#welcome-overlay`/`#welcome-modal`
+(+brand/heading/sub)/`#welcome-choices`/`.welcome-choice`(+hover/focus)/`.welcome-choice-icon`/
+`.welcome-choice-text`/`-label`/`-desc`/`#welcome-skip`/`#welcome-why-link`/
+`#welcome-editors-choice-link`, and the stacked `#why-sakura-overlay`/`#why-sakura-modal`
+(+brand/heading/sub)/`#why-sakura-list`/`.why-row`/`.why-row-icon`/`.why-row-text`/`-label`/`-desc`/
+`#why-sakura-caveat`/`#why-sakura-close`. Both overlays skip legacy's own opacity-fade +
+transform-scale enter/exit transition, same mount/unmount precedent as `.app-modal-overlay`/
+`#sakura-landing-overlay`. Found and fixed two real visual gaps along the way: the choice-row icons
+previously rendered as bare unstyled spans instead of legacy's real rounded accent-tinted badge
+background, and `#why-sakura-close` ("Got it — let's start") previously rendered as a plain
+unstyled button instead of legacy's real solid accent-filled primary-button look. Verified with
+real headless-Chrome screenshots (welcome modal's two choice cards, the stacked "Why an outliner"
+modal). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
+
+**Immediate next steps:** 8.4j through 8.4n (the 5 components above, each independently scoped),
 then 8.5 (verification fixture document, can run in parallel/earlier if picked up independently).
 Once `web/` is visually close enough to legacy for a person to sign off, return to
 docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
