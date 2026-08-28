@@ -527,3 +527,20 @@ export function DatabaseIcon(props: IconProps = {}) {
     </svg>
   );
 }
+
+/** §8.4n (docs/phase8-design-system-parity-plan.md): `restructureTextWithAi`'s own real inline
+ * icon (legacy/index.html:29444) -- a real deviation from every other icon in this file:
+ * `stroke-width="1.8"` (not this file's own default 2) at a real 24x24 size (not this file's own
+ * default 14), matching legacy's own real per-context usage exactly rather than the usual default. */
+export function RestructureListIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps({ width: 24, height: 24, strokeWidth: 1.8, ...props })}>
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}

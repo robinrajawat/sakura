@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import { RestructureListIcon } from '../icons';
 
 /**
  * §6.9 slice 5 (docs/phase6-full-parity-plan.md): the paste-target for Restructure Text — direct
@@ -13,10 +13,25 @@ import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
  * generic modal system to reuse, so this is a small, single-purpose overlay built just for this,
  * matching the same "simpler chrome, purpose-built rather than a general system" precedent
  * `SettingsPanel.tsx`/`AiProviderSettings.tsx` already established.
+ *
+ * §8.4n retrofit (docs/phase8-design-system-parity-plan.md): renders through the real
+ * `#sakura-modal-overlay`/`#sakura-modal`/`-icon`/`-title`/`-body`/`-textarea-wrap`/`-textarea`/
+ * `-actions`/`.smodal-btn`(+`.primary`) classes (index.css, cited from legacy/index.html:635-660)
+ * instead of inline `style` objects -- `#sakura-modal` is legacy's own single, dynamically-
+ * repurposed dialog instance (every `sakuraTextareaPrompt`/`sakuraLinkPrompt` call reuses the same
+ * DOM node); this component is `web/`'s own single-purpose instance of just the textarea-prompt
+ * variant, so only that variant's real pieces are ported (see index.css's own comment on this
+ * class family for what's skipped and why). Body copy now matches legacy's own real
+ * `restructureTextWithAi` call site (legacy/index.html:29444) close to verbatim, with one
+ * deliberate omission: legacy's real text promises "your original pasted text kept in its Pad" --
+ * `state/aiOutline.ts`'s own `restructureText` doesn't actually do this (a real, pre-existing
+ * feature gap from an earlier phase, not something this CSS-retrofit slice silently claims true by
+ * copying the sentence anyway). `<RestructureListIcon>` (new in `icons.tsx`) is a literal port of
+ * legacy's own real inline `<svg>` at that same call site. Skips legacy's own `.open`/`.closing`
+ * opacity-fade + transform-scale enter/exit transition, same React mount/unmount precedent as
+ * `.app-modal-overlay`/`#welcome-overlay`.
  */
 export function RestructureTextDialog({ onSubmit, onCancel }: { onSubmit: (text: string) => void; onCancel: () => void }) {
-  const theme = useThemeStore((s) => s.theme);
-  const t = THEME_TOKENS[theme];
   const [text, setText] = useState('');
 
   function handleSubmit(): void {
@@ -25,36 +40,36 @@ export function RestructureTextDialog({ onSubmit, onCancel }: { onSubmit: (text:
   }
 
   return (
-    <div
-      role="presentation"
-      onClick={onCancel}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-    >
-      <div
-        role="dialog"
-        aria-label="Restructure Text into a Tree"
-        onClick={(e) => e.stopPropagation()}
-        style={{ background: t.background, color: t.text, border: `1px solid ${t.border}`, borderRadius: 12, padding: 20, width: 520, maxWidth: '92vw', boxShadow: '0 20px 40px rgba(0,0,0,.25)', fontFamily: 'sans-serif' }}
-      >
-        <h3 style={{ margin: '0 0 8px', fontSize: 15 }}>Restructure Text into a Tree</h3>
-        <p style={{ fontSize: 12, color: t.mutedText, margin: '0 0 12px' }}>
-          Paste messy notes, an email, a transcript — anything without clear structure. Already-structured text (bullets, indents) is
-          parsed instantly with no AI call. Always lands in a new document.
-        </p>
-        <textarea
-          autoFocus
-          value={text}
-          onChange={(e) => setText(e.currentTarget.value)}
-          placeholder="Paste or type the text to restructure…"
-          aria-label="Text to restructure"
-          rows={10}
-          style={{ width: '100%', boxSizing: 'border-box', font: 'inherit', fontSize: 13, padding: 8, borderRadius: 6, border: `1px solid ${t.border}`, background: t.background, color: t.text, resize: 'vertical' }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
-          <button type="button" onClick={onCancel}>
+    <div id="sakura-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sakura-modal-title" onClick={onCancel}>
+      <div id="sakura-modal" onClick={(e) => e.stopPropagation()}>
+        <div id="sakura-modal-icon">
+          <RestructureListIcon />
+        </div>
+        <div id="sakura-modal-title">Restructure Text into a Tree</div>
+        <div id="sakura-modal-body">
+          Paste messy notes, an email, a transcript — anything without clear structure. The AI organizes it into a tree and may clean up
+          wording (fix broken line wraps, tighten long sentences) so it reads well as outline nodes — it will not invent facts that are
+          not in your text, but it is not a verbatim copy either.
+          {'\n\n'}
+          Already-structured text (bullets, indents) is detected automatically and parsed instantly without an AI call.
+          {'\n\n'}
+          Always lands in a new document.
+        </div>
+        <div id="sakura-modal-textarea-wrap">
+          <textarea
+            id="sakura-modal-textarea"
+            autoFocus
+            value={text}
+            onChange={(e) => setText(e.currentTarget.value)}
+            placeholder="Paste or type the text to restructure…"
+            aria-label="Text to restructure"
+          />
+        </div>
+        <div id="sakura-modal-actions">
+          <button type="button" className="smodal-btn" onClick={onCancel}>
             Cancel
           </button>
-          <button type="button" onClick={handleSubmit} disabled={!text.trim()}>
+          <button type="button" className="smodal-btn primary" onClick={handleSubmit} disabled={!text.trim()}>
             Restructure
           </button>
         </div>

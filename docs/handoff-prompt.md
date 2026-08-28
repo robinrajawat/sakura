@@ -487,10 +487,22 @@ toggle-button mount and popover positioning. Verified with real headless-Chrome 
 phrase chips, a real command result row with its active-row accent bar, the category picker's verb/
 category pill chips). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
 
-**Immediate next steps:** 8.4n (the 1 component above), then 8.5 (verification fixture document,
-can run in parallel/earlier if picked up independently).
-Once `web/` is visually close enough to legacy for a person to sign off, return to
-docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a person clicking
+**8.4n (retrofit: `RestructureTextDialog.tsx` → `#sakura-modal-*`/`.smodal-btn`) landed — §8.4 is
+now fully complete (all 14 sub-slices, 8.4a through 8.4n).** `#sakura-modal` is legacy's own
+single, dynamically-repurposed dialog instance; this component is `web/`'s own single-purpose
+textarea-prompt variant, so only that variant's real pieces were ported (overlay/box/icon/title/
+body/textarea-wrap/textarea/actions/`.smodal-btn`+`.primary`). Found and fixed two real gaps beyond
+the CSS retrofit: a new `RestructureListIcon` (icons.tsx) ports legacy's own real inline icon (the
+dialog had none before), and the body copy now matches legacy's real text close to verbatim — with
+one deliberate omission (legacy's text promises the pasted text is "kept in its Pad", which
+`state/aiOutline.ts`'s `restructureText` doesn't actually do, a real pre-existing gap not silently
+claimed true). Verified with real headless-Chrome screenshots (disabled vs. enabled button states,
+icon, full body copy). Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
+
+**Immediate next steps:** 8.5 (a real verification fixture document — can be picked up any time,
+no longer blocked on anything). Once `web/` is visually close enough to legacy for a person to
+sign off, return to docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
+person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
 production-synced documents round-trip; the actual `deploy.yml` cutover PR) — none of which are
 appropriate to attempt unilaterally; they need the account owner directly. Don't repoint
