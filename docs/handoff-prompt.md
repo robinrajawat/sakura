@@ -626,6 +626,23 @@ computed-style inspection (a hovered row's `+tag` opacity read `0.55` idle, `1` 
 small a difference for a screenshot alone to show reliably). Full gauntlet clean: 2005 tests
 passing, typecheck/lint/build all clean.
 
+**8.11 (`MobileHub.tsx`'s missing background/brand/account chrome) landed — reported directly by
+the user ("mobile version of legacy and web preview are totally different — no colors, logo,
+account menu").** A real gap: this component never set a real background/text color anywhere at
+all (no `AppShell` ancestor, no `body`-level CSS rule either — confirmed rendering solid white
+regardless of OS dark-mode preference), and had no brand row or account entry point, unlike
+legacy's real `#hub-sticky-header`/`#todo-bar` (brand icon+wordmark, `#account-menu-wrap` with a
+real Auto/Light/Dark theme row, reminders toggle, sign-out). Fixed: real `background: var(--bg)`/
+`color: var(--fg)` on the wrapper (matching `AppShell.tsx`'s own treatment) plus a new header row
+reusing `AppShell.tsx`'s own exact "Sakura" wordmark treatment and the already-real
+`AccountMenu.tsx` (§7.6) for the account button/dropdown — reused as-is, not rebuilt. Settings
+shows an honest `window.alert` placeholder (no mobile Settings panel exists); the search icon and
+offline-banner/greeting chrome legacy's real header also has are still not built. Legacy's own
+real *signed-in* mobile chrome couldn't be screenshotted directly (no real auth reachable in this
+sandbox) — verified by reading legacy's real markup/CSS instead, plus real iPhone-13-emulated
+screenshots of the fixed `web/` view. Full gauntlet clean: 2005 tests passing, typecheck/lint/build
+all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
 closed one concrete finding, but the row's own background/border/selection-highlight is still
@@ -635,8 +652,8 @@ Still this project's riskiest component to touch. Also open: the Diagrams/Mind M
 chrome (genuinely different from the three simple-row tabs 8.9 covered, each backs a real visual
 editor). **Immediate next step:** whoever picks this up next should decide between Diagrams/Mind
 Map's list chrome (smaller, similar pattern to 8.9) or continuing `OutlineTree.tsx`'s row-level
-system carefully, one small piece at a time (same discipline 8.10 just used, not a full rewrite in
-one pass). Also still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was
+system carefully, one small piece at a time (same discipline 8.10 used, not a full rewrite in one
+pass). Also still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was
 similarly missed by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/
 §8.6's own two findings all were — now easier to check with 8.5's own fixture as a real subject to
 screenshot against instead of the empty seed document.
