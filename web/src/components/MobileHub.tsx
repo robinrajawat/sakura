@@ -3,6 +3,7 @@ import { useHubJournalStore } from '../store/hubJournalStore';
 import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
 import { MobileHubTodos } from './MobileHubTodos';
 import { MobileHubJournal } from './MobileHubJournal';
+import { AccountMenu } from './AccountMenu';
 
 type MobileHubView = 'todos' | 'journal';
 
@@ -29,12 +30,34 @@ type MobileHubView = 'todos' | 'journal';
  * Rendered by `App.tsx` as an early return in place of `AppShell`'s entire desktop layout below
  * `useIsMobileViewport()`'s breakpoint -- no app-shell header/sidebar/tab-bar chrome wraps it,
  * matching legacy's own "wholly separate, focused experience" feel rather than squeezed-down
- * desktop chrome. Deliberately not ported: the account menu/search bar/offline
- * banner/personalized greeting header legacy's own mobile chrome has, and (a real, honest gap
- * from bypassing `AppShell` entirely) the theme toggle -- there is currently no way to switch
- * light/dark from this view; it still renders whatever `themeStore` was last set to from a
- * desktop-width session. Each a real, separately-scoped follow-up once this view's own chrome
- * needs grow past "swap in the two real panels," not silently dropped.
+ * desktop chrome.
+ *
+ * §8.11 slice (docs/phase8-design-system-parity-plan.md), reported directly by the user against
+ * a real side-by-side of this view and legacy's real `hub.html`: this component never set a real
+ * background/text color anywhere (no `AppShell` ancestor to inherit `var(--bg)`/`var(--fg)` from,
+ * and no `body`-level rule exists in `web/`'s own `index.css` either -- confirmed by a real
+ * screenshot rendering solid white regardless of the OS's dark-mode preference), and had no brand
+ * row or account entry point at all, unlike legacy's real `#hub-sticky-header`/`#todo-bar`
+ * (legacy/hub.html:445-448: a brand icon+wordmark, and `#account-menu-wrap`, legacy/hub.html:
+ * 449-471: an avatar button opening a dropdown with name/email, a real Auto/Light/Dark theme
+ * row, a reminders toggle, and sign-out). Fixed: the wrapping div now carries real
+ * `background: var(--bg)` / `color: var(--fg)` (matching `AppShell.tsx`'s own exact treatment,
+ * §6.1) plus `minHeight: '100vh'`; a new header row reuses `AppShell.tsx`'s own exact "Sakura"
+ * wordmark treatment (bold, `var(--accent)`, no separate brand icon -- confirmed desktop's own
+ * real `#appbar` has none either, despite legacy's *mobile*-only page having one) plus the
+ * already-real, already-tested `AccountMenu.tsx` (§7.6) for the account button/dropdown --
+ * reused as-is rather than rebuilt, the same "one real account surface, not two" precedent §8.4a
+ * already established for desktop's own former `SyncStatusIndicator.tsx` duplication.
+ * **Real, deliberate scope note, not silently dropped**: `AccountMenu.tsx`'s own dropdown has
+ * Settings/Help/Feedback/About entries legacy's real mobile dropdown doesn't (that one has only
+ * name/email/theme/reminders/sign-out) -- reused anyway rather than forking a mobile-only
+ * variant, since a real desktop-only Settings panel exists to open ("Settings" here shows an
+ * honest `window.alert` placeholder instead, matching this project's established
+ * no-toast-system convention, e.g. `WelcomeModal.tsx`'s own "not built here yet" placeholders --
+ * a real mobile Settings surface is a separate, larger follow-up). The search icon
+ * (`#hub-search-toggle`) and offline-banner/personalized-greeting chrome legacy's real header
+ * also has are still deliberately not built -- no backing search/offline-detection feature
+ * exists in `web/` for either yet.
  */
 export function MobileHub() {
   const [view, setView] = useState<MobileHubView>('todos');
@@ -48,8 +71,20 @@ export function MobileHub() {
   }, [journalLoaded, loadJournal]);
 
   return (
-    <div style={{ fontFamily: 'sans-serif', maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ display: 'flex', borderBottom: `1px solid ${t.border}`, padding: '10px 12px 0' }}>
+    <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', background: 'var(--bg)', color: 'var(--fg)' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 12px 8px'
+          }}
+        >
+          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.015em', color: 'var(--accent)' }}>Sakura</span>
+          <AccountMenu onOpenSettings={() => window.alert('Settings is not available on this mobile view yet -- open Sakura on a computer.')} />
+        </div>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${t.border}`, padding: '0 12px 0' }}>
         {(
           [
             { key: 'todos', label: 'To-Dos' },
@@ -78,6 +113,7 @@ export function MobileHub() {
         ))}
       </div>
       {view === 'todos' ? <MobileHubTodos /> : <MobileHubJournal />}
+      </div>
     </div>
   );
 }

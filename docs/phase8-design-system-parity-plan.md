@@ -1022,16 +1022,48 @@ follow-ups (§8.7+), each large enough to be its own slice.
   hovered row's own `+tag` element's `opacity` read `0.55` idle, `1` on hover) -- a screenshot
   alone can't reliably show a 0.55-vs-1 opacity difference this small. Full gauntlet clean: 2005
   tests still passing (no test changes needed), typecheck/lint/build all clean.
+- ✅ **8.11 (`MobileHub.tsx`'s missing background/brand/account chrome) landed -- reported directly
+  by the user against a real side-by-side of this view and legacy's real `hub.html`.** A real,
+  previously-undiscovered gap: this component never set a real background/text color anywhere at
+  all (no `AppShell` ancestor to inherit `var(--bg)`/`var(--fg)` from, and no `body`-level rule
+  exists in `web/`'s own `index.css` either) -- confirmed by a real screenshot rendering solid
+  white regardless of the OS's dark-mode preference -- and had no brand row or account entry point
+  at all, unlike legacy's real `#hub-sticky-header`/`#todo-bar` (legacy/hub.html:445-448: a brand
+  icon+wordmark; legacy/hub.html:449-471: `#account-menu-wrap`, an avatar button opening a
+  dropdown with name/email, a real Auto/Light/Dark theme row, a reminders toggle, and sign-out).
+  Fixed: the wrapping div now carries real `background: var(--bg)` / `color: var(--fg)` (matching
+  `AppShell.tsx`'s own exact treatment, §6.1) plus `minHeight: '100vh'`; a new header row reuses
+  `AppShell.tsx`'s own exact "Sakura" wordmark treatment (bold, `var(--accent)`, no separate brand
+  icon -- confirmed desktop's own real `#appbar` has none either, despite legacy's *mobile*-only
+  page having one) plus the already-real, already-tested `AccountMenu.tsx` (§7.6) for the account
+  button/dropdown, reused as-is rather than rebuilt -- the same "one real account surface, not
+  two" precedent §8.4a already established for desktop's own former `SyncStatusIndicator.tsx`
+  duplication. **Real, deliberate scope note, not silently dropped**: `AccountMenu.tsx`'s own
+  dropdown has Settings/Help/Feedback/About entries legacy's real mobile dropdown doesn't (that
+  one has only name/email/theme/reminders/sign-out) -- reused anyway rather than forking a
+  mobile-only variant; "Settings" shows an honest `window.alert` placeholder instead of a real
+  panel, matching this project's established no-toast-system convention (a real mobile Settings
+  surface is a separate, larger follow-up). The search icon (`#hub-search-toggle`) and
+  offline-banner/personalized-greeting chrome legacy's real header also has are still deliberately
+  not built -- no backing search/offline-detection feature exists in `web/` for either yet.
+  Legacy's real *signed-in* mobile Hub chrome (past its own real sign-in gate) couldn't be
+  screenshotted directly -- no real Google/email auth reachable in this sandbox -- so this slice
+  was verified by reading legacy's real markup/CSS directly (cited above) rather than a live
+  side-by-side; confirmed instead via real headless-Chrome iPhone-13-emulated screenshots of the
+  fixed `web/` view itself (warm cream background + accent wordmark + "Sign in" button at rest,
+  the real `AccountMenu` dropdown opening cleanly within the narrow viewport with no overflow).
+  Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
+  clean.
 - Still open, not yet done: Diagrams/Mind Map tabs' own list chrome (genuinely different from the
   three simple-row tabs §8.9 covered -- each backs a real visual editor), and `OutlineTree.tsx`'s
   own FULL row-level class family (`.node-row`/`.node-label`/selection-and-drag states/etc.,
-  legacy/index.html:543-2174) -- §8.10 above closed one real, concrete finding inside this
-  component, but the row's own background/border/selection-highlight CSS is still JS-token-driven
+  legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,
+  but the row's own background/border/selection-highlight CSS is still JS-token-driven
   (`resolveRowHighlightStyle`, a pre-Phase-8 mechanism, not Phase 8's own CSS-class approach) and
   hasn't been directly re-verified against legacy's real `.node-row.selected`/`.primary-selection`
   values since before this phase started. Still this project's riskiest component to touch (its
   hottest per-row render path) -- any further work here should be done carefully, one small piece
-  at a time, same discipline §8.10 just used. Also still worth a targeted look: whether any other
+  at a time, same discipline §8.10 used. Also still worth a targeted look: whether any other
   non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep, the same way
   `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings were -- now easier to check
   with 8.5's own fixture as a real, richly-populated subject to screenshot against instead of the
