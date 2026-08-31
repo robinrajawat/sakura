@@ -18,6 +18,11 @@ stopped effort, not active work queues — kept for reference, not maintained fu
   a session/usage limit. Scoped to `legacy/`-only work now that the `web/` migration is
   discontinued. Keep its "Current state" section updated at the end of every work session. **Start
   here.**
+- **`ai-hosted-vault-design.md`** — proposal for a Cloudflare Worker giving `legacy/` (a) a synced
+  key vault so a BYOK key follows a user across devices, and (b) hosted/keyless AI funded by
+  Robin's own provider account for users with no key at all. Not started, not scheduled — several
+  open decisions (anonymous vs. real sign-in for hosted mode, quota numbers, default-on vs.
+  opt-in) need answers before any code lands.
 
 ## Closed / historical reference (`history/`)
 
