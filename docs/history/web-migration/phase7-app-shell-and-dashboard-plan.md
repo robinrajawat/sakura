@@ -2,7 +2,7 @@
 
 ## Note: the whole `web/` migration is now discontinued (2026-08-31)
 
-This phase itself completed successfully — see `docs/framework-migration-plan.md`'s top section
+This phase itself completed successfully — see `docs/history/web-migration/framework-migration-plan.md`'s top section
 for why the broader migration stopped afterward anyway (during Phase 8). Kept as historical
 record.
 
@@ -25,7 +25,7 @@ Full parity for the layer of `legacy/` that sits above and around an open docume
 gate, first-run onboarding, the always-present per-document header (title + status/author/link/
 presence/share chips), the empty-document state, and legacy's real toolbar-visibility defaults
 (hidden by default, revealed by a floating toggle, not the dense always-on bar `web/` currently
-renders). Same standard as `docs/phase6-full-parity-plan.md`: pixel-close, not "same spirit."
+renders). Same standard as `docs/history/web-migration/phase6-full-parity-plan.md`: pixel-close, not "same spirit."
 
 ## Why sequenced this way
 
@@ -116,8 +116,8 @@ alternate default-preferences profile — legacy/index.html:41235+ area — out 
 Settings/preferences surface exists to house the toggle it flips). Both choice cards and both
 links render and are clickable in this slice; clicking "Guided tour" or "Watch the demo" can
 close the modal and show a real "not built yet" placeholder rather than a broken dead click,
-same honesty convention as every other deliberately-deferred item in `docs/phase6-full-parity-
-plan.md`.
+same honesty convention as every other deliberately-deferred item in
+`docs/history/web-migration/phase6-full-parity-plan.md`.
 
 ### 7.3 — Document data model: status, author, link
 Before any header UI can render real per-document state, `DocSummary` (`web/src/store/
@@ -127,7 +127,7 @@ partial one. Add `status: '' | 'draft' | 'review' | 'approved' | 'rejected'`, `a
 and `link: { label: string; url: string } | null`, each matching legacy's real per-document
 fields the header chips below read (legacy/index.html:6506-6530), persisted the same way title
 already is. This slice is store-and-migration only — no new UI — same "store PR before UI PR"
-discipline `docs/phase6-full-parity-plan.md`'s own header names throughout.
+discipline `docs/history/web-migration/phase6-full-parity-plan.md`'s own header names throughout.
 
 ### 7.4 — Per-document header: status, author, link, presence, share chips
 The header row that sits directly under the (already-existing) title input, always present for
@@ -189,7 +189,7 @@ built across §6.2/§6.9), not a new build:
    Insert buttons, matching legacy's own documented default `aiHiddenButtons`/`insertHiddenButtons`
    arrays.
 5. **Hover-toolbar default-off correction**: `web/`'s existing node hover toolbar (§6.2 item,
-   `docs/phase6-full-parity-plan.md`'s own text: "matches legacy's own default `hoverToolbarActions`
+   `docs/history/web-migration/phase6-full-parity-plan.md`'s own text: "matches legacy's own default `hoverToolbarActions`
    exactly") ported the *action list* correctly but never gated *whether the rail renders at all*
    — legacy's real `hoverToolbarEnabled` defaults to `false` (confirmed: `feature-off-hovertoolbar`
    present on `document.body` on a fresh profile), so the rail should not appear until a real
@@ -228,7 +228,7 @@ as out of scope. Real legacy markup for both now located precisely:
 - **Templates** (`#sb-templates-section`, legacy/index.html:6314-6328): its own section header
   ("TEMPLATES" label + collapse-all/new-template-folder/"⋯" manage-templates icon buttons) and
   list, matching the Documents section's own structural pattern one level down — a real,
-  separately-scoped system per `docs/phase6-full-parity-plan.md`'s own 6.1 note ("templates -- a
+  separately-scoped system per `docs/history/web-migration/phase6-full-parity-plan.md`'s own 6.1 note ("templates -- a
   separate system entirely, out of scope for this phase"), still true here: this slice is the
   empty-state shell + section chrome, not the full save-as-template flow (a real follow-up).
 - **Trash** (`#sb-trash-list`, legacy/index.html:6329, and the collapsible row shown in every
@@ -319,7 +319,7 @@ alone, matching the verification standard every Phase 6 slice was held to.
   shows a plain `window.alert` "not built here yet" placeholder (this project's established
   no-toast-system convention); the "Apply Editor's Choice" link's own placeholder is worded
   differently on purpose, since that preset was already marked N/A by explicit user decision in
-  `docs/phase6-full-parity-plan.md` §6.7, not merely deferred. Verified end-to-end in real
+  `docs/history/web-migration/phase6-full-parity-plan.md` §6.7, not merely deferred. Verified end-to-end in real
   headless Chrome in both light and dark theme: the modal opens ~500ms after boot (matching
   legacy's own real delay) once the sign-in gate is dismissed, both overlays stack correctly (a
   live screenshot confirms "Why an outliner" renders on top with the welcome modal still mounted
@@ -371,7 +371,7 @@ alone, matching the verification standard every Phase 6 slice was held to.
   reuse, is actually a plain cycle button, checked directly before writing this; (3) presence/
   share chips stay deferred, but not because "§6.8 is still not started" as this section's text
   claimed — §6.8 is actually complete except real-time presence tracking itself
-  (`docs/post-cutover-backlog.md`'s own Account/Sync section names only that one real gap). The
+  (`docs/history/web-migration/post-cutover-backlog.md`'s own Account/Sync section names only that one real gap). The
   real, still-valid reason to defer both: `docSyncStore.ts`/`sharingStore.ts`/`state/presence.ts`
   all exist but have never been wired into a per-document-header UI surface like this one.
   **A real, necessary supporting fix, found only once this slice made the empty state actually
@@ -416,11 +416,11 @@ alone, matching the verification standard every Phase 6 slice was held to.
   floating buttons living outside the collapsible toolbar entirely.
   **Deliberately NOT ported, each named rather than silently dropped:** legacy's real Move group
   (up/down) and Fold group's "Collapse all" have no backing `outlineStore.ts` action at all
-  (`docs/post-cutover-backlog.md`'s own Core Editing section already names "Alt+↑/↓ move" and
+  (`docs/history/web-migration/post-cutover-backlog.md`'s own Core Editing section already names "Alt+↑/↓ move" and
   "collapse/expand-all" as real, separate gaps) -- building their toolbar buttons now would be
   dead UI, not a shortcut past a real backend gap; Format's highlight/text-color swatch pickers
   and the heading popover palette (kept as the pre-existing `<select>`) are the same category of
-  gap, already named in `docs/post-cutover-backlog.md`'s Core Editing row; the Extras group
+  gap, already named in `docs/history/web-migration/post-cutover-backlog.md`'s Core Editing row; the Extras group
   (sort/version-history/clear-all) is redundant with entry points `web/` already has elsewhere
   (inline Sort top-level buttons, the header Version History button). **One real, deliberate
   divergence from legacy's own stated default, not a correction**: legacy additionally hides
@@ -538,15 +538,15 @@ alone, matching the verification standard every Phase 6 slice was held to.
      section header (label + "New template folder"/"Save · manage templates" icon buttons,
      disabled with an explanatory title) and an empty-state list. Deliberately NOT the full
      save-as-template flow -- confirmed still real and separately-scoped by both
-     `docs/phase6-full-parity-plan.md`'s own 6.1 note ("templates -- a separate system entirely")
-     and `docs/post-cutover-backlog.md` ("Templates ... never got a system at all"); `web/` has no
+     `docs/history/web-migration/phase6-full-parity-plan.md`'s own 6.1 note ("templates -- a separate system entirely")
+     and `docs/history/web-migration/post-cutover-backlog.md` ("Templates ... never got a system at all"); `web/` has no
      template store/data of any kind to back real buttons with yet, so disabling them with an
      explanatory title is honest chrome, not a faked flow.
   4. **Trash section** (`#sb-trash-list`, legacy/index.html:6329): the same real collapsible-row-
      plus-live-count chrome as legacy's own `renderSidebarTrash` (legacy/index.html:30528-30538),
      not the restore/purge/bulk-select system behind it -- confirmed via `documentsStore.ts`'s own
      `deleteDocument` (a real, immediate hard delete, no soft-delete concept at all) and
-     `docs/post-cutover-backlog.md`'s own "no trash concept exists" line that this really is a
+     `docs/history/web-migration/post-cutover-backlog.md`'s own "no trash concept exists" line that this really is a
      separate, unbuilt system. The count is always 0 and the expanded state always shows "Trash is
      empty" -- both real and currently always true, not placeholder text pretending otherwise.
   New test coverage: `documentsStore.test.ts` gained 2 tests for `openFolderChain` (opens a full
@@ -562,8 +562,8 @@ alone, matching the verification standard every Phase 6 slice was held to.
   same expected Firebase network failure every other §7 slice hits in this sandboxed environment).
   Full gauntlet: 2005 tests (2 new).
 
-**Phase 7 is now complete** -- 7.1 through 7.7 all landed. Per docs/handoff-prompt.md's own
-Current state and this plan's own §9-equivalent framing (docs/phase6-full-parity-plan.md's real
+**Phase 7 is now complete** -- 7.1 through 7.7 all landed. Per docs/history/web-migration/handoff-prompt.md's own
+Current state and this plan's own §9-equivalent framing (docs/history/web-migration/phase6-full-parity-plan.md's real
 Section 9 pre-cutover gate), the next real step is returning to that gate's items 2-4 (a person
 clicking through the real `/web-preview/` build end-to-end; signing in with a real account to
 confirm production-synced documents round-trip; the actual `deploy.yml` cutover PR) -- none of

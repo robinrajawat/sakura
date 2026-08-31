@@ -3,7 +3,7 @@
 ## STATUS: DISCONTINUED (2026-08-31)
 
 **This was the phase in progress when the `web/` migration was discontinued — see
-`docs/framework-migration-plan.md`'s top section for the decision.** Everything below this
+`docs/history/web-migration/framework-migration-plan.md`'s top section for the decision.** Everything below this
 notice is kept exactly as it stood: an accurate record of what landed (8.1 through 8.23; 8.24 was
 built and reported but never shipped — see its own entry below) and what was next in the queue,
 but that queue is now frozen, not paused. Do not pick up any "still open" item named below as
@@ -11,7 +11,7 @@ live work.
 
 ## The rule this plan exists to enforce
 
-**§6.1's "generic form controls" fix (docs/phase6-full-parity-plan.md) closed a real gap, but not
+**§6.1's "generic form controls" fix (docs/history/web-migration/phase6-full-parity-plan.md) closed a real gap, but not
 the whole gap it looked like it closed.** That fix ported legacy's real `.btn,.select,.meta-input`
 base rule (border/color/padding/radius/font) to bare `button`/`select`/`input` element selectors
 in a new `web/src/index.css`, and was verified with real screenshots. It was a genuine, correctly-
@@ -49,7 +49,7 @@ every prior phase: pixel-close, verified against real legacy source and real scr
 
 - **CSS classes, not React style-prop components** — matching legacy's own real technique exactly,
   and already the established direction in this codebase for exactly this reason: `AppShell.tsx`
-  and `DocumentTabs.tsx` (docs/phase6-full-parity-plan.md's own 6.1 section) already moved off
+  and `DocumentTabs.tsx` (docs/history/web-migration/phase6-full-parity-plan.md's own 6.1 section) already moved off
   per-component `THEME_TOKENS` style objects onto real `var(--bg)`/`var(--accent)` CSS custom
   properties specifically so "neither component needs to subscribe to theme/accentPreset at all
   anymore for styling purposes." Extending that same real-CSS-class approach to buttons/icons/chips

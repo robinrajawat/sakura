@@ -6,7 +6,7 @@
 Production (`www.sakura-notes.com`) stays on `legacy/` permanently, not just "until a cutover
 gate passes" — there is no longer a planned cutover. Decision made directly by the project owner
 after a hands-on review of the `web/` rewrite (PR #316's fixes were the last slice of work; see
-`docs/handoff-prompt.md`'s "Current state" for the full list of what shipped and what didn't):
+`docs/history/web-migration/handoff-prompt.md`'s "Current state" for the full list of what shipped and what didn't):
 core tree-editing behavior and several other areas were judged not close enough to `legacy/`'s
 real experience to be worth the remaining effort, even after 8+ phases of parity work. All
 further effort goes into refining `legacy/` directly instead.
@@ -16,7 +16,7 @@ further effort goes into refining `legacy/` directly instead.
   the migration — that would need a new, separate, explicit decision, not an assumption.
 - `.github/workflows/deploy.yml` keeps building and publishing `legacy/` exclusively, as it
   always has. If it still builds a `web/dist` `/web-preview/` artifact alongside legacy (see
-  "Repo structure" in `docs/handoff-prompt.md`), that can be removed as unneeded cleanup, but
+  "Repo structure" in `docs/history/web-migration/handoff-prompt.md`), that can be removed as unneeded cleanup, but
   leaving it isn't a problem to fix urgently.
 - `web/` itself is not being deleted as part of this — removing ~9 phases of working code is a
   separate, larger decision than pausing further investment in it, and isn't assumed just because
@@ -392,7 +392,7 @@ exactly Phase 6's job. Two feature slices also landed while this phase was under
 Tabs, Tags & Focus) — real, merged work, not blocked on Phase 6 either.
 
 **Phase 6 — Full parity build-out, cutover & legacy retirement.** Full plan:
-`docs/phase6-full-parity-plan.md`. Owns everything Phase 5's audit found still missing, plus the
+`docs/history/web-migration/phase6-full-parity-plan.md`. Owns everything Phase 5's audit found still missing, plus the
 cutover itself — `www.sakura-notes.com` stays on `legacy/` until that plan's own pre-cutover gate
 is explicitly satisfied (see that document's own opening section for why this rule exists; the
 short version: it's the "prove it before the production cutover" discipline Stage 1/Stage 2 of

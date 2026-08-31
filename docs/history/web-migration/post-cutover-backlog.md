@@ -3,14 +3,14 @@
 ## Note: moot as of 2026-08-31 — the `web/` migration is discontinued
 
 There is no longer a planned cutover for these items to follow — see
-`docs/framework-migration-plan.md`'s top section. Kept for reference only, not an active backlog.
+`docs/history/web-migration/framework-migration-plan.md`'s top section. Kept for reference only, not an active backlog.
 
 Every item below is a real, confirmed gap between `web/` and `legacy/` as of the cutover decision
 — not a guess, and not stale (each was directly re-verified against the current code as part of
 the same pass that corrected `docs/history/phase5-parity-checklist.md`'s stale rows). None of
 them block cutover: none risks data loss, a security regression, or breaks a core editing/sync
 workflow. They're deliberately deferred to **after** `web/` goes live, tracked here so they don't
-get silently forgotten once `docs/phase6-full-parity-plan.md` itself is done.
+get silently forgotten once `docs/history/web-migration/phase6-full-parity-plan.md` itself is done.
 
 This is the actionable list. For the full reasoning behind each item (why it's scoped this way,
 which PR touched it, what legacy's own real behavior is), see the detailed section in
