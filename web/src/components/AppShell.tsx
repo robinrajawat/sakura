@@ -267,11 +267,34 @@ export function AppShell({
             `--canvas-bg` was already a wired theme token, §6.1, just never consumed) and its own
             real asymmetric padding (`12px 14px 18px 26px`, previously an approximated uniform
             `1rem 1.5rem`). */}
+        {/* §8.23 slice (docs/phase8-design-system-parity-plan.md): `display:flex;flex-direction:
+            column` -- previously plain block flow, which meant every direct child (DocumentHeader,
+            the tree/Preview/Presenter region, NotePanel, the Sync section, ...) had no real
+            resolved height to hand a percentage-height descendant, only its own natural content
+            size. `EmptyDocState.tsx`'s own `.empty-state.doc-empty{height:100%}` therefore
+            couldn't fill anything -- confirmed as the root cause of a real bug reported directly
+            by the user with a screenshot: the empty-state illustration rendered near the TOP of
+            the pane instead of vertically centered like legacy's real `.doc-empty` (which fills a
+            real flex-column sibling of its own title row, legacy/index.html:522 area), and a
+            phantom vertical scrollbar sometimes appeared from the mismatch. Flex-column here,
+            paired with App.tsx's new `flex:'1 1 auto',minHeight:0` wrapper around the mode-
+            conditional tree/Preview/Presenter region, gives that ONE region a real resolved
+            height (every other child keeps its natural content height, the flex-item default) --
+            `EmptyDocState`'s own `height:100%` now has something real to fill. */}
         <div
           ref={contentRef}
           id="editor-pane"
           data-testid="appshell-content"
-          style={{ flex: '1 1 auto', minWidth: 0, position: 'relative', overflow: 'auto', padding: '12px 14px 18px 26px', background: 'var(--canvas-bg)' }}
+          style={{
+            flex: '1 1 auto',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            overflow: 'auto',
+            padding: '12px 14px 18px 26px',
+            background: 'var(--canvas-bg)'
+          }}
         >
           {children}
           {floatingEditorChrome}
