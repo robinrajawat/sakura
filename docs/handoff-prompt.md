@@ -670,20 +670,34 @@ entry point into the real `ExportButtons.tsx` "More" menu now that one exists (l
 placement, legacy/index.html:6489) — `App.tsx`'s own comment on that button already flags its
 current placement as stale reasoning.
 
+**8.13 (Diagrams/Mind Map tabs' own list chrome) landed.** Direct port of legacy's real
+`.diagram-row`/`.mindmap-row` families (legacy/index.html:3504-3554), scoped to what has a real
+`web/` counterpart today (same §8.9 discipline) — skipped bulk-select/drag-reorder/thumbnail/
+status/whiteboard/anchor/note chips (none of those fields exist on `Diagram`/`MindMap` yet, each
+already named as deliberately deferred in those stores' own headers) and the Mind Map row's
+Scratchpad chip (no `isScratchpad` field). New `MindMapIcon` (icons.tsx) is a direct port of
+legacy's fixed per-row icon; `MonitorIcon` removed as dead code (see 8.12 above). **A real bug
+caught by the screenshot verification itself**: both new row title buttons showed an unwanted
+accent-colored border on hover, traced to `index.css`'s own generic `button:hover` base rule
+cascading through with no more-specific override — fixed with each row's own real `:hover`/
+`:focus` rules matching legacy exactly, confirmed by re-screenshotting. Also fixed a small
+drive-by bug: `DiagramsTab`'s error text used a hardcoded `#b02020` instead of `var(--sem-alert)`,
+the same fix §8.9 already made for `FilesTab`. Verified with real headless-Chrome screenshots of
+both tabs (rest state, hover-revealed actions, dark theme) against a real build. Full gauntlet
+clean: 2005 tests passing, typecheck/lint/build all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
 closed one concrete finding, but the row's own background/border/selection-highlight is still
 JS-token-driven (`resolveRowHighlightStyle`, a pre-Phase-8 mechanism), not re-verified against
 legacy's real `.node-row.selected`/`.primary-selection` values since before this phase started.
-Still this project's riskiest component to touch. Also open: the Diagrams/Mind Map tabs' own list
-chrome (genuinely different from the three simple-row tabs 8.9 covered, each backs a real visual
-editor). **Immediate next step:** whoever picks this up next should decide between Diagrams/Mind
-Map's list chrome (smaller, similar pattern to 8.9) or continuing `OutlineTree.tsx`'s row-level
-system carefully, one small piece at a time (same discipline 8.10 used, not a full rewrite in one
-pass). Also still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was
-similarly missed by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/
-§8.6's own two findings all were — now easier to check with 8.5's own fixture as a real subject to
-screenshot against instead of the empty seed document.
+Still this project's riskiest component to touch — any further work here should be done carefully,
+one small piece at a time, same discipline §8.10/§8.13 used, not a full rewrite in one pass. Also
+still worth a targeted look: whether any OTHER non-dialog Phase 6/7 component was similarly missed
+by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two
+findings all were — now easier to check with 8.5's own fixture as a real subject to screenshot
+against instead of the empty seed document. Also worth checking: the app-bar's own remaining
+button-order mismatch and Version History's placement, both named as follow-ups in §8.12 above.
 
 **Repo hygiene note, found this session, not fixed:** this repo has ~180 long-merged branches still
 present on `origin` (every prior phase/slice branch going back to Phase 0), none ever successfully

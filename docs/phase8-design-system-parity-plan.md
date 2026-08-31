@@ -1094,9 +1094,45 @@ follow-ups (§8.7+), each large enough to be its own slice.
   `App.tsx`'s own header comment on that button already flags this as stale reasoning ("moved to
   the header toolbar since `web/` has no More menu of its own yet"), a real, confirmed but
   deliberately unfixed gap this slice found and left for whoever picks it up next.
-- Still open, not yet done: Diagrams/Mind Map tabs' own list chrome (genuinely different from the
-  three simple-row tabs §8.9 covered -- each backs a real visual editor), and `OutlineTree.tsx`'s
-  own FULL row-level class family (`.node-row`/`.node-label`/selection-and-drag states/etc.,
+- ✅ **8.13 (Diagrams/Mind Map tabs' own list chrome) landed.** The two remaining Pad tabs with
+  their own list-of-items row shells (Diagrams/Mind Map are real visual-editor features -- a
+  draw.io embed, a freeform canvas -- but their OWN pre-open list rows are a real, simple row
+  shape, same category §8.9 already covered for Q&A/Remarks/Files). Direct port of legacy's real
+  `.diagram-row`/`-info`/`-title-input`/`-dup`/`-delete` (legacy/index.html:3522-3554) and
+  `.mindmap-row`/`-icon`/`-info`/`-title-input`/`-meta`/`-actions`/`-dup`/`-delete`
+  (legacy/index.html:3504-3518), scoped down to what has a real `web/` counterpart today, matching
+  §8.9's own established discipline: skipped `.diagram-row-select`/`-drag-handle` (no bulk-select/
+  reorder UI, `padStore.ts` has no `reorderDiagram` action, confirmed by grep), `.diagram-row-
+  thumb` (no `previewSvg` field), `.diagram-row-status`/`-warn-chip`/`-whiteboard-chip`/`-pages`
+  (no `status`/`isWhiteboard`/`pageCount` fields -- every one already named as deliberately
+  deferred in `padStore.ts`'s own `Diagram` interface header), `.diagram-row-anchor`/`-note-input`
+  (no `anchorNodeId`/`note` fields), and `.mindmap-row-title-row`/`-scratch-chip` (no
+  `isScratchpad` field on `web/`'s own `MindMap` type, confirmed in `mindMapStore.ts`'s own
+  header). A real, confirmed dead class found along the way: legacy's own `.diagram-row-title` (no
+  `-input` suffix) has zero real call sites anywhere in legacy/index.html -- only
+  `.diagram-row-title-input` is ever actually applied. New `MindMapIcon` (icons.tsx) is a direct
+  port of legacy's real fixed per-row icon (legacy/index.html:50118 -- every row gets the same
+  icon, not content-driven); the Mind Map row's meta line combines node count + the already-ported
+  `formatRelativeTime`, matching legacy's real `renderMindMapsList` text exactly
+  (legacy/index.html:50141). `MonitorIcon` (icons.tsx) removed too -- see §8.12 above for why.
+  `.diagram-row-title-input`/`.mindmap-row-title-input`'s dup/delete buttons use the already-
+  established `⧉`/`✕` glyphs (`SidebarFileExplorer.tsx`/`App.tsx`'s own precedent for "duplicate"/
+  "delete", not new SVG icon work for two small buttons). **A real bug caught and fixed by the
+  screenshot verification itself, not assumed correct from the CSS alone**: both new
+  `*-title-input` buttons showed an unwanted accent-colored border on hover -- traced to
+  `index.css`'s own generic `button:hover{border-color:var(--accent)}` base rule (§6.1) cascading
+  through, since neither row's title button had its own more-specific `:hover`/`:focus` override
+  the way legacy's real CSS does (legacy/index.html:3535-3536, 3510-3511: `:hover` only changes
+  `background`, never `border-color`). Fixed by adding both rows' own real `:hover`/`:focus`
+  rules, verified by re-screenshotting before/after. Also fixed a small, real drive-by bug found in
+  the same component while retrofitting `DiagramsTab`: its error-alert text used a hardcoded
+  `#b02020` instead of `var(--sem-alert)` -- the same fix §8.9 already made for `FilesTab`'s
+  identical hardcoded color, now applied here too. Verified with real headless-Chrome screenshots
+  of both tabs (rest state with 2 real rows each, hover-revealed dup/delete buttons, and Mind
+  Map's own dark-theme rendering) against a real build, not the dev server. Full gauntlet clean:
+  2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
+- Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
+  (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,
   but the row's own background/border/selection-highlight CSS is still JS-token-driven
   (`resolveRowHighlightStyle`, a pre-Phase-8 mechanism, not Phase 8's own CSS-class approach) and

@@ -15,9 +15,11 @@ import {
 import { generateDiagramXmlFromOutline } from '../state/diagramGenScope';
 import { formatRemarkDateDisplay } from '../utils/remarkDate';
 import { formatFileSize } from '../utils/formatFileSize';
+import { formatRelativeTime } from '../utils/formatRelativeTime';
 import { DiagramEditor } from './DiagramEditor';
 import { MindMapCanvas } from './MindMapCanvas';
 import { AnchorPicker } from './AnchorPicker';
+import { MindMapIcon } from '../icons';
 
 type PadTab = 'notes' | 'decision' | 'qa' | 'remarks' | 'files' | 'diagrams' | 'mindmap';
 
@@ -585,31 +587,34 @@ function DiagramsTab({ t }: { t: Tokens }) {
           Generate from outline
         </button>
       </div>
-      {error && <div style={{ color: '#b02020', fontSize: 12, marginBottom: 8 }}>{error}</div>}
+      {error && <div style={{ color: 'var(--sem-alert)', fontSize: 12, marginBottom: 8 }}>{error}</div>}
       {diagrams.length === 0 && (
         <div style={{ color: t.mutedText, fontStyle: 'italic', fontSize: 13 }}>
           No diagrams yet. Click + to create one in draw.io, or Generate to build one from the
           outline (a selected node's subtree, or the whole document if nothing's selected).
         </div>
       )}
+      {/* §8.13 slice (docs/phase8-design-system-parity-plan.md): direct port of legacy's real
+          `.diagram-row`/`.diagram-row-info`/`.diagram-row-title-input`/`.diagram-row-dup`/
+          `.diagram-row-delete` shell (legacy/index.html:3522-3554), scoped to this component's
+          own simpler flat list -- see this file's own index.css comment for what's not ported
+          (bulk-select, drag-reorder, thumbnail, status/whiteboard/warning chips, anchor, note --
+          none of which `Diagram` has a field for yet). */}
       {diagrams.map((d) => (
-        <div
-          key={d.id}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}
-        >
-          <button
-            type="button"
-            onClick={() => setOpenId(d.id)}
-            style={{ flex: 1, textAlign: 'left', fontSize: 13, color: t.text, background: 'transparent', border: 'none', cursor: 'pointer' }}
-          >
-            {d.title || 'Untitled diagram'}
+        <div key={d.id} className="diagram-row">
+          <div className="diagram-row-info">
+            <button type="button" className="diagram-row-title-input" onClick={() => setOpenId(d.id)}>
+              {d.title || 'Untitled diagram'}
+            </button>
+          </div>
+          <span style={{ color: t.mutedText, fontSize: 11, flexShrink: 0 }}>
+            {new Date(d.modifiedAt).toLocaleDateString()}
+          </span>
+          <button type="button" className="diagram-row-dup" onClick={() => duplicateDiagram(d.id)} title="Duplicate">
+            ⧉
           </button>
-          <span style={{ color: t.mutedText, fontSize: 11 }}>{new Date(d.modifiedAt).toLocaleDateString()}</span>
-          <button type="button" onClick={() => duplicateDiagram(d.id)} style={{ fontSize: 11 }}>
-            duplicate
-          </button>
-          <button type="button" onClick={() => removeDiagram(d.id)} style={{ fontSize: 11 }}>
-            remove
+          <button type="button" className="diagram-row-delete" onClick={() => removeDiagram(d.id)} title="Delete">
+            ✕
           </button>
         </div>
       ))}
@@ -649,27 +654,35 @@ function MindMapsTab({ t }: { t: Tokens }) {
           No mind maps yet. Click + to start a freeform brainstorming canvas for this document.
         </div>
       )}
+      {/* §8.13 slice (docs/phase8-design-system-parity-plan.md): direct port of legacy's real
+          `.mindmap-row`/`-icon`/`-info`/`-title-input`/`-meta`/`-actions`/`-dup`/`-delete` shell
+          (legacy/index.html:3504-3518) -- see this file's own index.css comment for what's not
+          ported (`.mindmap-row-title-row`/`-scratch-chip`, no `isScratchpad` field on `web/`'s
+          own `MindMap` type). The meta line combines node count + `formatRelativeTime`, matching
+          legacy's own real `renderMindMapsList` text exactly (legacy/index.html:50141). */}
       {maps.map((m) => (
-        <div
-          key={m.id}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${t.border}`, padding: '4px 0', fontSize: 13 }}
-        >
-          <button
-            type="button"
-            onClick={() => setOpenId(m.id)}
-            style={{ flex: 1, textAlign: 'left', fontSize: 13, color: t.text, background: 'transparent', border: 'none', cursor: 'pointer' }}
-          >
-            {m.title || 'Untitled map'}
-          </button>
-          <span style={{ color: t.mutedText, fontSize: 11 }}>
-            {m.nodes.length ? `${m.nodes.length} node${m.nodes.length === 1 ? '' : 's'}` : 'Empty'}
-          </span>
-          <button type="button" onClick={() => duplicateMap(m.id)} style={{ fontSize: 11 }}>
-            duplicate
-          </button>
-          <button type="button" onClick={() => removeMap(m.id)} style={{ fontSize: 11 }}>
-            remove
-          </button>
+        <div key={m.id} className="mindmap-row">
+          <div className="mindmap-row-icon">
+            <MindMapIcon />
+          </div>
+          <div className="mindmap-row-info">
+            <button type="button" className="mindmap-row-title-input" onClick={() => setOpenId(m.id)}>
+              {m.title || 'Untitled map'}
+            </button>
+            <div className="mindmap-row-meta">
+              {(m.nodes.length ? `${m.nodes.length} node${m.nodes.length === 1 ? '' : 's'}` : 'Empty') +
+                ' · ' +
+                formatRelativeTime(m.modifiedAt || m.createdAt)}
+            </div>
+          </div>
+          <div className="mindmap-row-actions">
+            <button type="button" className="mindmap-row-dup" onClick={() => duplicateMap(m.id)} title="Duplicate">
+              ⧉
+            </button>
+            <button type="button" className="mindmap-row-delete" onClick={() => removeMap(m.id)} title="Delete">
+              ✕
+            </button>
+          </div>
         </div>
       ))}
       {openMap && (
