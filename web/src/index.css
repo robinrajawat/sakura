@@ -2327,22 +2327,34 @@ body.theme-dark .account-visibility-badge:hover {
  * click/Escape/⌘K exactly as legacy's own `setQaOpen`/`toggleQa` are -- `web/`'s existing
  * `quickAssistStore.ts` already modeled this open/close state correctly (its own header already
  * noted it "matches legacy's real setQaOpen/toggleQa... minus zen-mode chrome-reveal side
- * effects"), so only the component's own rendering needed to change, not the store. */
+ * effects"), so only the component's own rendering needed to change, not the store.
+ *
+ * Shape fix (user-reported): the rule below used to copy legacy's *generic* `.qa-input-row` rule
+ * (legacy/index.html:1124 -- border-radius:8px, 7px/10px padding, no fixed height), but that rule
+ * is dead code in legacy: `.qa-input-row` only ever appears once in legacy's real markup, inside
+ * `#global-search-wrap.status-qa` (legacy/index.html:6768-6769), so the box legacy actually renders
+ * is always the `.status-qa .qa-input-row`/`#global-search-wrap .qa-input-row` override
+ * (legacy/index.html:1139-1141): a slim 25px-tall pill (border-radius:999px, 0/10px padding,
+ * box-sizing:border-box) 200px wide growing to 300px on focus -- not the boxier 8px-radius
+ * rectangle growing to 320px this rule used to produce. Values below now match that real override
+ * directly, since web/ only ever has the one (app-bar) location legacy's status-qa variant covers. */
 .qa-input-row {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 200px;
+  height: 25px;
+  box-sizing: border-box;
   background: var(--edit-bg);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 7px 10px;
+  border-radius: 999px;
+  padding: 0 10px;
   transition: border-color 0.12s, width 0.15s;
 }
 
 .qa-input-row:focus-within {
   border-color: var(--accent);
-  width: 320px;
+  width: 300px;
 }
 
 .qa-input-row input {
