@@ -205,7 +205,7 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
       <div style={{ display: 'grid', gap: 14, fontSize: 12, marginBottom: 20 }}>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span>Theme</span>
-          <div role="tablist" aria-label="Theme" style={{ display: 'inline-flex', border: `1px solid ${t.border}`, borderRadius: 6, width: 'fit-content', overflow: 'hidden' }}>
+          <div role="tablist" aria-label="Theme" className="segmented-control" style={{ width: 'fit-content' }}>
             {(['light', 'dark'] as const).map((val) => (
               <button
                 key={val}
@@ -213,15 +213,7 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
                 role="tab"
                 aria-selected={theme === val}
                 onClick={() => setTheme(val)}
-                style={{
-                  padding: '5px 14px',
-                  border: 'none',
-                  background: theme === val ? 'var(--accent)' : 'transparent',
-                  color: theme === val ? '#fff' : t.text,
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: theme === val ? 600 : 400
-                }}
+                className={`segmented-btn${theme === val ? ' active' : ''}`}
               >
                 {val === 'light' ? 'Light' : 'Dark'}
               </button>
@@ -230,7 +222,7 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span>Auto theme</span>
-          <div role="tablist" aria-label="Auto theme" style={{ display: 'inline-flex', border: `1px solid ${t.border}`, borderRadius: 6, width: 'fit-content', overflow: 'hidden' }}>
+          <div role="tablist" aria-label="Auto theme" className="segmented-control" style={{ width: 'fit-content' }}>
             {(['manual', 'system'] as const).map((val) => (
               <button
                 key={val}
@@ -238,15 +230,7 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
                 role="tab"
                 aria-selected={themeMode === val}
                 onClick={() => setThemeMode(val)}
-                style={{
-                  padding: '5px 14px',
-                  border: 'none',
-                  background: themeMode === val ? 'var(--accent)' : 'transparent',
-                  color: themeMode === val ? '#fff' : t.text,
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: themeMode === val ? 600 : 400
-                }}
+                className={`segmented-btn${themeMode === val ? ' active' : ''}`}
               >
                 {val === 'manual' ? 'Off' : 'System'}
               </button>
