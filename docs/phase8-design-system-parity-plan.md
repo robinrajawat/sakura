@@ -1,5 +1,13 @@
 # Phase 8 — Design System Parity Plan
 
+## STATUS: DISCONTINUED (2026-08-31)
+
+**This was the phase in progress when the `web/` migration was discontinued — see
+`docs/framework-migration-plan.md`'s top section for the decision.** Everything below this
+notice is kept exactly as it stood: an accurate record of what landed (8.1 through 8.24) and
+what was next in the queue, but that queue is now frozen, not paused. Do not pick up any "still
+open" item named below as live work.
+
 ## The rule this plan exists to enforce
 
 **§6.1's "generic form controls" fix (docs/phase6-full-parity-plan.md) closed a real gap, but not
@@ -1491,6 +1499,31 @@ follow-ups (§8.7+), each large enough to be its own slice.
      a real headless-Chrome screenshot: search, Hub, More, bell, Sign in, left to right.
   Full gauntlet clean: 2010 tests passing (no test changes needed), typecheck/lint/build all
   clean.
+- ✅ **8.24 (the app's real universal CSS reset was never ported at all) landed -- reported
+  directly by the user with side-by-side screenshots: visible margins at the top/left of the
+  whole app (legacy renders edge-to-edge) and a real page-level scrollbar, distinct from the
+  `#editor-pane`-scoped one §8.23 already fixed.** Confirmed by reading legacy's real base CSS
+  (legacy/index.html:311): `*{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}` -- `web/`'s `index.css` had never ported this at all
+  (confirmed: zero `html`/`body`/universal-selector rules anywhere in the file before this
+  slice). Without it, the browser's own default `<body>` margin (typically 8px) left a visible
+  gap around the whole app, and `AppShell.tsx`'s own `height:'100vh'` root div sat inside that
+  non-zero-margin body, pushing the total page past the viewport height and producing a real
+  page-level scrollbar on top of any inner pane's own scrolling. Ported both rules verbatim to
+  the top of `index.css`. `overflow:hidden` on `html,body` matches legacy's own real
+  fixed-viewport model -- every actual scroll region in this app is already a specific inner
+  element with its own `overflow:auto` (`#editor-pane`, `#sidebar`, dialog bodies, ...), never
+  the page itself. **Real, deliberate risk called out, not silently assumed safe**: the
+  universal `*{margin:0;padding:0}` half of this reset has a wide blast radius -- every element
+  in the whole app, not just the one surface that surfaced the bug -- and `web/`'s own components
+  were never built expecting it (unlike legacy's, which were all built and styled WITH this exact
+  reset already in place). Verified broadly, not just the one reported surface: real
+  headless-Chrome screenshots of the main editor (empty and populated), Settings panel, Hub dock,
+  and the `About Sakura` modal (a real `.app-modal-*` consumer with real paragraph spacing) all
+  show no spacing regressions; `document.body`'s computed margin is `0px`, `html`/`body` overflow
+  is `hidden`, and the page no longer scrolls at all (`scrollHeight === clientHeight` at the
+  `html` level). Full gauntlet clean: 2010 tests passing (no test changes needed), typecheck/
+  lint/build all clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10/§8.20 closed two real, concrete findings inside this

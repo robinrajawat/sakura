@@ -1,5 +1,11 @@
 # Phase 6 — Full Parity Migration Plan
 
+## Note: the whole `web/` migration is now discontinued (2026-08-31)
+
+This phase itself completed successfully — see `docs/framework-migration-plan.md`'s top section
+for why the broader migration stopped afterward anyway (Phase 7 and Phase 8 of parity work).
+Kept as historical record.
+
 ## The rule this plan exists to enforce
 
 **`www.sakura-notes.com` stays on `legacy/` until this plan's final gate (Section 9) is
