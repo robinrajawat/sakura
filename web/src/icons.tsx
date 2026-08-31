@@ -655,3 +655,27 @@ export function EditorZenToggleIcon({ active, ...props }: IconProps & { active?:
     </svg>
   );
 }
+
+/** legacy/index.html:20326's own real per-row content-indicator dot (a chat-bubble path, 11x11,
+ * stroke-width 2.2) -- shown once a node has note and/or code text, replacing web/'s prior
+ * separate emoji-dot approximations (§8.20, docs/phase8-design-system-parity-plan.md). */
+export function NoteDotIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps({ width: 11, height: 11, strokeWidth: 2.2, ...props })}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+/** legacy/index.html:20327's own real `.node-code-badge` overlay (a small "</>"-style mark) --
+ * appended inside the note dot above when a node ALSO has code, matching legacy's real combined
+ * single-dot-with-badge treatment rather than a second separate dot. */
+export function CodeBadgeIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps({ width: 7, height: 7, strokeWidth: 3, ...props })}>
+      <path d="M14.5 4l-5 16" />
+      <polyline points="8.5 8 4 12 8.5 16" />
+      <polyline points="15.5 8 20 12 15.5 16" />
+    </svg>
+  );
+}

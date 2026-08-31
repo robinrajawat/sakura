@@ -1348,16 +1348,57 @@ follow-ups (§8.7+), each large enough to be its own slice.
   editor content area shrinks to match, confirming both the docking and the leftward-grow direction
   work end to end. Full gauntlet clean: 2010 tests passing (5 new, `padVisibilityStore.test.ts`),
   typecheck/lint/build all clean.
+- ✅ **8.20 (row-level "+tag/+note/+code" clutter: hidden at idle, not just dimmed) landed --
+  found via a direct, deliberate side-by-side comparison of a comparable real document in both
+  apps (not the empty seed doc), prompted by the user reporting `web/` still "looks unfinished,
+  poor visuals" overall despite 19 prior Phase 8 rounds.** Confirmed by re-reading legacy's own
+  real per-row render loop (legacy/index.html:20293 area) that it NEVER shows an empty-state
+  "+tag"/"+note"/"+code" ADD prompt on a row at all -- only a small dot when that content already
+  exists. §8.10's own fix (idle `opacity:.55` / hover `1`) kept this whole add-affordance cluster
+  ALWAYS RENDERED on literally every row of every document, just dimmed -- still real, persistent
+  visual noise legacy simply never has, and (confirmed by this direct comparison) a genuine,
+  significant contributor to the app reading as cluttered/unfinished, more so than any single
+  chrome-level gap the prior 19 rounds fixed. Switched from `opacity` to `display:none` while not
+  hovering (and not actively editing a tag) -- the same real hover-reveal mechanism already
+  established for the sidebar's own row actions (`.sdoc-actions`/`.sfolder-actions`, §8.4b) -- so
+  the cluster is genuinely invisible at idle, matching legacy's real clean row, with zero
+  functionality lost (still fully reachable on hover). Also split the note/code controls so an
+  EXISTING note/code stays visible regardless of hover, while only the empty-state "+note"/"+code"
+  prompt is hover-gated -- a real, previously-conflated distinction the single shared opacity
+  wrapper didn't make.
+  **Follow-up in the same slice, prompted directly by the user ("check the dot indicators too"):**
+  the existing-content indicator itself was still wrong, not just the hover gating around it --
+  `web/` rendered two separate raw emoji (📝/💻) where legacy's real per-row render loop
+  (legacy/index.html:20323-20336) renders exactly ONE combined dot (a real chat-bubble `<svg>`,
+  not an emoji) whenever a node has note and/or code content, with a small accent-colored
+  "</>"-style badge (`.node-code-badge`, legacy/index.html:2103-2104, `position:absolute;
+  right:-3px;bottom:-3px`) overlaid on that same dot when code ALSO exists alongside a note --
+  never two separate icons. New `NoteDotIcon`/`CodeBadgeIcon` (icons.tsx) are direct, line-cited
+  ports of legacy's real paths, combined into one dot in `OutlineTree.tsx` with the exact same
+  click semantics legacy's own comment documents: note text present -> toggle the inline preview;
+  code-only -> open the panel directly (unchanged behavior, only the icon/structure was wrong).
+  The empty-state "+note"/"+code" hover prompts (still a real, deliberate `web/`-only addition,
+  see above) now each show only for whichever content type is genuinely still missing, rather than
+  redundantly next to a dot that already indicates that same content exists. Verified with a real
+  headless-Chrome screenshot of a node carrying both a note and a code block: one dot renders with
+  the small accent-colored badge in its corner, matching legacy's real combined structure. The
+  `resolveRowHighlightStyle`-driven selection/hover background itself was also directly
+  re-checked against legacy's real `color-mix(in srgb, var(--sel) 30%/50%, transparent)` values
+  this pass -- confirmed close enough in practice (both apps render a comparably subtle highlight
+  band in a real screenshot) to not be the same order of gap as the clutter above; still not a
+  literal pixel-value match and worth a dedicated future pass, not re-opened here. Verified with
+  real headless-Chrome screenshots (idle vs. hover, against a real comparable document built fresh
+  in both `web/` and `legacy/` for direct side-by-side comparison, not the fixture alone). Full
+  gauntlet clean: 2010 tests passing (no test changes needed), typecheck/lint/build all clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
-  legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,
-  but the row's own background/border/selection-highlight CSS is still JS-token-driven
-  (`resolveRowHighlightStyle`, a pre-Phase-8 mechanism, not Phase 8's own CSS-class approach) and
-  hasn't been directly re-verified against legacy's real `.node-row.selected`/`.primary-selection`
-  values since before this phase started. Still this project's riskiest component to touch (its
-  hottest per-row render path) -- any further work here should be done carefully, one small piece
-  at a time, same discipline §8.10 used. Also still worth a targeted look: whether any other
-  non-dialog Phase 6/7 component was similarly missed by 8.4's dialog-only sweep, the same way
-  `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's own two findings were -- now easier to check
-  with 8.5's own fixture as a real, richly-populated subject to screenshot against instead of the
-  empty seed document.
+  legacy/index.html:543-2174) -- §8.10/§8.20 closed two real, concrete findings inside this
+  component, but the row's own background/border/selection-highlight CSS is still JS-token-driven
+  (`resolveRowHighlightStyle`, a pre-Phase-8 mechanism, not Phase 8's own CSS-class approach), not
+  a literal `color-mix()` match to legacy's real values (§8.20's own note above). Still this
+  project's riskiest component to touch (its hottest per-row render path) -- any further work here
+  should be done carefully, one small piece at a time, same discipline §8.10/§8.20 used. Also
+  still worth a targeted look: whether any other non-dialog Phase 6/7 component was similarly
+  missed by 8.4's dialog-only sweep, the same way `EmptyDocState.tsx`/`QuickAssistBar.tsx`/§8.6's
+  own two findings were -- now easier to check with 8.5's own fixture as a real, richly-populated
+  subject to screenshot against instead of the empty seed document.
