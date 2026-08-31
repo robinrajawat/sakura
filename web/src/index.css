@@ -3442,3 +3442,42 @@ input[type='number'] {
   color: var(--fc-red);
   background: var(--hover);
 }
+
+/* §8.21 slice (docs/phase8-design-system-parity-plan.md): the real segmented-control family
+   (legacy/index.html:1238-1243) -- SettingsPanel.tsx's Theme/Auto-theme toggles previously
+   approximated the active state with a solid accent fill + white text; legacy's real active
+   state is a subtle accent-tinted background with accent-colored text and a faint inset border,
+   not a bold solid fill. */
+.segmented-control {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tb-bg) 86%, transparent);
+}
+.segmented-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 5px 12px;
+  border-radius: 8px;
+  font: 600 12px 'Inter', sans-serif;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.segmented-btn:hover {
+  color: var(--fg);
+}
+.segmented-btn.active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg) 86%);
+  color: var(--accent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+}
