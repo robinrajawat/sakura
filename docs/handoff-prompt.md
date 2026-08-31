@@ -746,6 +746,17 @@ legacy's own real markup before touching anything.**
 Verified with real headless-Chrome screenshots covering all four scenarios. Full gauntlet clean:
 2005 tests passing, typecheck/lint/build all clean.
 
+**8.16 (search box shape/size) landed — reported directly by the user against the real live
+`/web-preview/` app-bar.** `.qa-input-row`'s CSS had copied legacy's *generic* `.qa-input-row` rule
+(border-radius:8px, 7px/10px padding, no fixed height, 200px→320px on focus) — but that rule is
+dead code in legacy: `.qa-input-row` only ever appears once in legacy's real markup, inside
+`#global-search-wrap.status-qa`, so the box legacy actually renders is always the `.status-qa
+.qa-input-row` override: a slim 25px-tall pill (border-radius:999px, 0 10px padding,
+box-sizing:border-box), 200px wide growing to 300px on focus — not the boxier 8px-radius rectangle
+`web/` was rendering. Fixed to match that real override directly. Verified with a side-by-side
+headless-Chrome screenshot of both apps' real app-bar search boxes at rest — pixel-matching pill
+shape, height, and padding. Typecheck/build clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
 closed one concrete finding, but the row's own background/border/selection-highlight is still
