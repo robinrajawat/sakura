@@ -2717,19 +2717,19 @@ body.theme-dark .account-visibility-badge:hover {
   gap: 8px;
 }
 
-/* Legacy's own `.doc-empty` fills its parent via `position:absolute;inset:0`, relying on
- * `#editor-pane`'s own fixed-viewport flex layout to already give that parent a real height.
- * `web/`'s equivalent wrapper (the plain `position:relative` div around `<OutlineTree>` in
- * App.tsx) has no such height of its own -- it's a normally-flowing page, not a fixed-viewport
- * app -- so absolute-positioning this against it collapses the parent to zero height and the
- * illustration overlaps whatever renders below (confirmed by a real screenshot regression while
- * building this). `min-height` in normal flow reproduces the same "enough room to look centered"
- * effect without that collapse -- same "port the effect, not the exact technique" precedent used
- * elsewhere in this file. */
-.empty-state.doc-empty {
-  height: auto;
-  min-height: 220px;
-}
+/* §8.23 slice (docs/phase8-design-system-parity-plan.md): this used to override `.empty-state`'s
+ * own real `height:100%` back down to `height:auto;min-height:220px` -- a workaround for the
+ * wrapper this renders into (the plain `position:relative` div around `<OutlineTree>` in App.tsx)
+ * having no real resolved height of its own at the time (a normally-flowing page, not a
+ * fixed-viewport app like legacy). That workaround never actually centered the illustration
+ * within the pane's real available height, only within its own small 220px box sitting at the
+ * TOP of the flow -- a real, confirmed bug reported directly by the user with a screenshot (the
+ * illustration rendering near the top instead of vertically centered like legacy's real
+ * `.doc-empty`), and the height mismatch also produced a phantom scrollbar in some cases. Fixed
+ * at the real source instead: `#editor-pane` (AppShell.tsx) is now `display:flex;flex-direction:
+ * column`, and App.tsx wraps the edit-mode tree region in a real `flex:1,minHeight:0` box -- that
+ * wrapper now has the genuine resolved height `.empty-state`'s own `height:100%` above needs, so
+ * no override is needed here at all. */
 
 .empty-state-illustration {
   margin-bottom: 4px;

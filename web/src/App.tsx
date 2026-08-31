@@ -453,8 +453,6 @@ export function App() {
                 moved out of here into the toolbar's own "History" group below, next to Undo/Redo --
                 see that group for the real reasoning (legacy's own real entry point is the quick-bar's
                 "Extras" dropdown, `#more-toggle`/`#more-version-history-btn`, never the app-bar). */}
-            {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. */}
-            <NotificationBell />
             {/* §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): the Hub launcher --
                 direct port of legacy's real `#dock-panel-appbar-toggle`
                 (legacy/index.html:4534) -- toggles the docked Hub panel (`HubDock.tsx`, rendered
@@ -479,6 +477,15 @@ export function App() {
                 see ExportButtons.tsx's own header (added this slice) for exactly what moved and
                 what stayed a documented simplification. */}
             <ExportButtons />
+            {/* §8.23 slice (docs/phase8-design-system-parity-plan.md): notifications bell -- see
+                NotificationBell.tsx's own header for the component itself. Moved here, right
+                before the account wrapper, matching legacy's real `#header-actions` DOM order
+                exactly (legacy/index.html:4533-4607: `#appbar-qa-slot`, `#dock-panel-appbar-
+                toggle`, `#appbar-more-wrap`, `#notif-wrap`, then `#account-wrap` -- `#notif-wrap`
+                is the one right before account, not the one right after search). Previously sat
+                second overall (right after Quick Assist), a real ordering bug reported directly
+                by the user via a side-by-side screenshot against legacy's own real header. */}
+            <NotificationBell />
             {/* §8.15 slice (docs/phase8-design-system-parity-plan.md): the standalone Settings
                 gear button that used to live here is gone -- reported directly by the user.
                 Settings stays reachable only through AccountMenu.tsx's own "Settings" entry
@@ -771,7 +778,24 @@ export function App() {
             present above whichever content pane is active, matching legacy's own real DOM order
             (`#editor-title-row` is the first child of `#editor-wrap`, before the node rows). */}
         <DocumentHeader />
-        {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane onEnterPresenter={() => setMode('present')} /> : <PresenterMode />}
+        {/* §8.23 slice (docs/phase8-design-system-parity-plan.md): the edit-mode tree region
+            gets a real `flex:1,minHeight:0` wrapper, giving it (and therefore
+            `EmptyDocState.tsx`'s own `height:100%` on a genuinely empty document) a real
+            resolved height to fill within `#editor-pane`'s own new flex-column layout -- see
+            AppShell.tsx's own `#editor-pane` comment for the full reasoning. Scoped to edit mode
+            only: Preview (`height:'60vh'`, self-contained) and Presenter (`position:'fixed'`
+            overlay) already manage their own height independently of their parent's layout mode,
+            confirmed by reading both components directly, so wrapping them here would be a
+            no-op at best. */}
+        {mode === 'edit' ? (
+          <div style={{ flex: '1 1 auto', minHeight: 0, position: 'relative' }}>
+            <OutlineTree />
+          </div>
+        ) : mode === 'preview' ? (
+          <PreviewPane onEnterPresenter={() => setMode('present')} />
+        ) : (
+          <PresenterMode />
+        )}
         <NotePanel />
         {/* §8.22 slice (docs/phase8-design-system-parity-plan.md): a real "Sign in above to
             sync a document." message has no legacy equivalent at all -- legacy shows NOTHING

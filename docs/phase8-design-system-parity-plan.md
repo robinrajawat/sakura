@@ -1461,6 +1461,36 @@ follow-ups (§8.7+), each large enough to be its own slice.
   the user's own legacy screenshot closely; the favicon link resolves to `/flower-glyph.svg`.
   Full gauntlet clean: 2010 tests passing (2 updated, no count change), typecheck/lint/build all
   clean.
+- ✅ **8.23 (empty-state centering + phantom scrollbar, plus the notification bell's app-bar
+  order) landed -- three more real gaps reported directly by the user with side-by-side
+  screenshots against legacy.**
+  1. **`EmptyDocState.tsx`'s illustration rendered near the TOP of the pane instead of vertically
+     centered**, and a phantom vertical scrollbar sometimes appeared. Root-caused, not
+     symptom-patched: `.empty-state.doc-empty`'s own CSS (§8.4o) overrode `.empty-state`'s real
+     `height:100%` down to `height:auto;min-height:220px` -- a workaround from when the wrapper
+     it renders into had no real resolved height of its own. That workaround centered the
+     illustration only within its own small 220px box at the top of the flow, never within the
+     pane's real available height. Fixed at the actual source: `#editor-pane` (`AppShell.tsx`) is
+     now `display:flex;flex-direction:column`, and `App.tsx` wraps the edit-mode tree region in a
+     real `flex:'1 1 auto',minHeight:0` box -- that box now has the genuine resolved height
+     `.empty-state`'s own `height:100%` needs, so the `min-height:220px` override could be removed
+     entirely rather than tuned further. Preview (`height:'60vh'`, self-contained) and Presenter
+     (`position:'fixed'` overlay) were deliberately left unwrapped -- confirmed by reading both
+     directly that they already manage their own height independently of their parent's layout
+     mode, so wrapping them would have been a no-op. Verified: a genuinely empty document's
+     `#editor-pane` reports `scrollHeight === clientHeight` (no phantom overflow) and the
+     illustration renders vertically centered, matching legacy's own real layout closely; a
+     40-node populated document still correctly overflows and scrolls (`scrollHeight >
+     clientHeight`, a real `scrollTop` change actually moves the view) -- no regression to the
+     existing tall-document scroll behavior.
+  2. **The notification bell rendered second in the app-bar (right after Quick Assist) instead of
+     last, right before the account button.** Confirmed against legacy's real `#header-actions`
+     DOM order (legacy/index.html:4533-4607): `#appbar-qa-slot`, `#dock-panel-appbar-toggle`,
+     `#appbar-more-wrap`, `#notif-wrap`, THEN `#account-wrap` -- `NotificationBell` moved in
+     `App.tsx` to sit right before the account wrapper, matching that order exactly. Verified with
+     a real headless-Chrome screenshot: search, Hub, More, bell, Sign in, left to right.
+  Full gauntlet clean: 2010 tests passing (no test changes needed), typecheck/lint/build all
+  clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10/§8.20 closed two real, concrete findings inside this
