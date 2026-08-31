@@ -13,7 +13,7 @@ import { usePadStore } from '../store/padStore';
 import { decisionLogForNodeCore, subtreeHasDecisionCore } from '../state/decisionLogQueries';
 import { useInlineExpandStore } from '../store/inlineExpandStore';
 import { isInlineExpanded } from '../state/inlineExpand';
-import { SearchIcon, SparkleIcon } from '../icons';
+import { SearchIcon, SparkleIcon, NoteDotIcon, CodeBadgeIcon } from '../icons';
 import { NodeText } from './NodeText';
 import { EmptyDocState } from './EmptyDocState';
 import { rewriteNode, rewriteNodes, rewriteDocument } from '../state/aiRewrite';
@@ -789,6 +789,7 @@ export function OutlineTree() {
         const highlight = resolveRowHighlightStyle(rowHighlightStyle, isSelected, isMultiSelected, t.dropIndicator, t.selectedBg, t.multiSelectedBg);
         const showHighlightDot = rowHighlightStyle === 'dot' && (isSelected || isMultiSelected);
         const hasNoteText = !!node.note?.trim();
+        const hasCodeText = !!node.codeBlock?.code?.trim();
         const noteOpen = isInlineExpanded(alwaysExpandInlineEnabled, noteExpandIds, node.id);
         const nodeRemarks = remarks.filter((r) => r.anchorNodeId === node.id);
         const remarkOpen = isInlineExpanded(alwaysExpandInlineEnabled, remarkExpandIds, node.id);
@@ -1366,22 +1367,22 @@ export function OutlineTree() {
                 </span>
               </span>
             ))}
-            {/* §8.10 slice (docs/phase8-design-system-parity-plan.md): legacy's own real per-row
+            {/* §8.20 slice (docs/phase8-design-system-parity-plan.md): legacy's own real per-row
                 icons (`.node-note-dot` etc, legacy/index.html:2125) are existing-content
-                indicators shown at `opacity:.55` idle / `1` on hover -- legacy never shows an
+                indicators, shown ONLY when that content already exists -- legacy never shows an
                 empty-state "+tag"/"+note"/"+code" ADD prompt inline in a row at all (confirmed by
-                reading the real per-row render loop, legacy/index.html:20293 area: a note/code/
-                decision/etc. dot is only ever appended when that content already exists).
-                `web/`'s own always-fully-visible text-button versions are a genuine, useful entry
-                point this project added (no separate "Add tag"/"Add note" menu action exists
-                yet), kept rather than removed -- but muted to the same idle/hover opacity legacy
-                uses for its own real dots, closing most of the "always looks cluttered" gap
-                without losing the functionality. Scoped to just this add-affordance cluster, not
-                a full `.node-row` port (a separate, much larger follow-up). Opacity keys off the
-                same `hoveredNodeId` state the hover toolbar below already tracks, rather than a
-                new CSS `:hover` mechanism, for consistency with this component's own established
-                per-row-hover pattern. */}
-            <span style={{ opacity: hoveredNodeId === node.id ? 1 : 0.55, transition: 'opacity .12s' }}>
+                reading the real per-row render loop, legacy/index.html:20293 area). §8.10's own
+                opacity fade (`.55` idle / `1` hover) kept this add-affordance cluster ALWAYS
+                rendered, just dimmed -- still real, persistent visual noise on every single row of
+                every document that legacy simply never has, and a real, confirmed contributor to
+                the app reading as cluttered/unfinished overall (found via a direct side-by-side
+                screenshot comparison against a comparable legacy document). Switched from `opacity`
+                to `display:none` while NOT hovering (and not actively editing a tag) -- the same
+                real hover-reveal mechanism this project already established for the sidebar's own
+                row actions (`.sdoc-actions`/`.sfolder-actions`, §8.4b) -- so the add-affordance is
+                genuinely invisible at idle, matching legacy's real clean row, while staying fully
+                reachable on hover with zero functionality lost. */}
+            <span style={{ display: hoveredNodeId === node.id || editingTagsId === node.id ? 'inline-flex' : 'none' }}>
               {editingTagsId === node.id ? (
                 <input
                   autoFocus
@@ -1432,9 +1433,13 @@ export function OutlineTree() {
                   </span>
                 );
               })()}
-            {/* §8.10 slice: same muted idle/hover treatment as the tag-add control above --
-                see that span's own comment for the full reasoning. */}
-            <span style={{ opacity: hoveredNodeId === node.id ? 1 : 0.55, transition: 'opacity .12s' }}>
+            {/* §8.20 slice: same hover-reveal correction as the tag-add control above -- the
+                zoom icon has no legacy equivalent as a persistent row affordance at all, so it's
+                hover-only outright; the note/code controls split in two, matching legacy's real
+                distinction between an existing-content indicator (always visible, like legacy's
+                own `.node-note-dot`) and an empty-state add-prompt (legacy has none -- hover-only
+                here, same as the tag-add control). */}
+            <span style={{ display: hoveredNodeId === node.id ? 'inline-flex' : 'none' }}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1445,11 +1450,18 @@ export function OutlineTree() {
               >
                 <SearchIcon width={11} height={11} />
               </span>
-              {/* Note dot -- matches legacy's own real dual-purpose click exactly (legacy/
-                  index.html:20333-20340): with note text present, a plain click toggles the
-                  inline preview below (`toggleNoteExpand`) rather than opening the panel; with no
-                  note text yet, there's nothing to preview, so it still opens the panel to add one
-                  (unchanged from before this slice). */}
+            </span>
+            {/* Unified note/code content-indicator dot -- direct port of legacy's own real
+                single dot with an optional code-badge overlay (legacy/index.html:20323-20336),
+                replacing the prior two separate emoji indicators (📝/💻), which didn't match
+                legacy's real icon (a chat-bubble SVG, not emoji) or its real single-dot-plus-
+                badge structure when a node has BOTH note and code. Click semantics match legacy
+                exactly (legacy/index.html:20333-20340): note text present -> a plain click
+                toggles the inline preview below (`toggleNoteExpand`); code-only (no note text)
+                -> there's nothing to preview inline, so it opens the panel directly instead.
+                Always visible when either exists, matching legacy's own real always-on
+                indicator (never hover-gated, unlike the empty-state prompts below). */}
+            {(hasNoteText || hasCodeText) && (
               <span
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1457,22 +1469,67 @@ export function OutlineTree() {
                     toggleNoteExpand(node.id);
                     return;
                   }
-                  openNotePanel(node.id, false, !!node.codeBlock?.code?.trim(), 'note');
+                  openNotePanel(node.id, false, hasCodeText, 'code');
                 }}
-                title={hasNoteText ? (noteOpen ? 'Hide note preview' : 'Show note preview') : 'Add note'}
-                style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+                title={
+                  hasNoteText
+                    ? hasCodeText
+                      ? 'This node has a note and code — click to expand the note, or open the panel for code'
+                      : noteOpen
+                        ? 'Hide note preview'
+                        : 'Show note preview'
+                    : 'This node has code — click to open'
+                }
+                style={{ position: 'relative', display: 'inline-flex', color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
               >
-                {node.note ? '📝' : '+note'}
+                <NoteDotIcon />
+                {hasCodeText && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      right: 2,
+                      bottom: -1,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 9,
+                      height: 9,
+                      borderRadius: 3,
+                      background: 'var(--accent)',
+                      color: 'var(--bg)'
+                    }}
+                  >
+                    <CodeBadgeIcon width={6} height={6} />
+                  </span>
+                )}
               </span>
+            )}
+            {/* Empty-state "+note"/"+code" add prompts -- no legacy equivalent at all (see this
+                cluster's own §8.20 header above), hover-only, and only for whichever content
+                type is genuinely still missing (not shown redundantly next to the dot above once
+                that type already has content). */}
+            <span style={{ display: !hasNoteText && hoveredNodeId === node.id ? 'inline-flex' : 'none' }}>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  openNotePanel(node.id, !!node.note?.trim(), !!node.codeBlock?.code?.trim(), 'code');
+                  openNotePanel(node.id, false, hasCodeText, 'note');
                 }}
-                title={node.codeBlock ? 'Edit code block' : 'Add code block'}
+                title="Add note"
                 style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
               >
-                {node.codeBlock ? '💻' : '+code'}
+                +note
+              </span>
+            </span>
+            <span style={{ display: !hasCodeText && hoveredNodeId === node.id ? 'inline-flex' : 'none' }}>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openNotePanel(node.id, hasNoteText, false, 'code');
+                }}
+                title="Add code block"
+                style={{ fontSize: 11, color: t.mutedText, cursor: 'pointer', padding: '0 6px', userSelect: 'none' }}
+              >
+                +code
               </span>
             </span>
             {/* Node hover toolbar (Phase 6.2) -- ⤴ insert above / ＋ add child / ⤵ insert below,
