@@ -1,5 +1,10 @@
 # Post-Cutover Backlog
 
+## Note: moot as of 2026-08-31 — the `web/` migration is discontinued
+
+There is no longer a planned cutover for these items to follow — see
+`docs/framework-migration-plan.md`'s top section. Kept for reference only, not an active backlog.
+
 Every item below is a real, confirmed gap between `web/` and `legacy/` as of the cutover decision
 — not a guess, and not stale (each was directly re-verified against the current code as part of
 the same pass that corrected `docs/history/phase5-parity-checklist.md`'s stale rows). None of

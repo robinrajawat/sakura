@@ -1,5 +1,29 @@
 # Framework migration plan — from single-file to a hosted SPA
 
+## STATUS: DISCONTINUED (2026-08-31)
+
+**This migration is stopped. `web/` will not be developed further and will never be deployed.**
+Production (`www.sakura-notes.com`) stays on `legacy/` permanently, not just "until a cutover
+gate passes" — there is no longer a planned cutover. Decision made directly by the project owner
+after a hands-on review of the `web/` rewrite (PR #316's fixes were the last slice of work; see
+`docs/handoff-prompt.md`'s "Current state" for the full list of what shipped and what didn't):
+core tree-editing behavior and several other areas were judged not close enough to `legacy/`'s
+real experience to be worth the remaining effort, even after 8+ phases of parity work. All
+further effort goes into refining `legacy/` directly instead.
+
+**What this means practically:**
+- Do not open new PRs against `web/` (`sakura-web` workspace) unless explicitly asked to resume
+  the migration — that would need a new, separate, explicit decision, not an assumption.
+- `.github/workflows/deploy.yml` keeps building and publishing `legacy/` exclusively, as it
+  always has. If it still builds a `web/dist` `/web-preview/` artifact alongside legacy (see
+  "Repo structure" in `docs/handoff-prompt.md`), that can be removed as unneeded cleanup, but
+  leaving it isn't a problem to fix urgently.
+- `web/` itself is not being deleted as part of this — removing ~9 phases of working code is a
+  separate, larger decision than pausing further investment in it, and isn't assumed just because
+  the migration stopped. Leave it in place unless the project owner asks for removal.
+- Everything below this section is kept as a historical record of the plan and decisions made
+  while the migration was active — accurate as of when it was written, not maintained further.
+
 ## Why this doc exists, and why it's separate from architecture-plan.md
 
 `docs/history/architecture-plan.md` covers the TypeScript modularization of the *existing*

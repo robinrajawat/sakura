@@ -1,5 +1,11 @@
 # Phase 7 — Sign-in, Onboarding, Document Chrome & Toolbar Realignment Plan
 
+## Note: the whole `web/` migration is now discontinued (2026-08-31)
+
+This phase itself completed successfully — see `docs/framework-migration-plan.md`'s top section
+for why the broader migration stopped afterward anyway (during Phase 8). Kept as historical
+record.
+
 ## The rule this plan exists to enforce
 
 **This entire phase exists because Phase 6 was marked complete without anyone ever looking at

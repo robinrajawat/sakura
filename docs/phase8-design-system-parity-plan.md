@@ -1,5 +1,13 @@
 # Phase 8 — Design System Parity Plan
 
+## STATUS: DISCONTINUED (2026-08-31)
+
+**This was the phase in progress when the `web/` migration was discontinued — see
+`docs/framework-migration-plan.md`'s top section for the decision.** Everything below this
+notice is kept exactly as it stood: an accurate record of what landed (8.1 through 8.24) and
+what was next in the queue, but that queue is now frozen, not paused. Do not pick up any "still
+open" item named below as live work.
+
 ## The rule this plan exists to enforce
 
 **§6.1's "generic form controls" fix (docs/phase6-full-parity-plan.md) closed a real gap, but not

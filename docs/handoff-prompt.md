@@ -16,11 +16,16 @@ it too if a real convention changes, but don't expect to need to.
 ```
 I'm continuing work on Sakura (github.com/robinrajawat/sakura). Production
 (www.sakura-notes.com) is the legacy single-file HTML outliner app, served by
-GitHub Actions from CI-built `legacy/dist/` (deploy.yml). In parallel there's
-an active React rewrite in `web/` (npm workspace `sakura-web`), currently NOT
-deployed anywhere — see docs/framework-migration-plan.md and
-docs/phase6-full-parity-plan.md for why, and don't change that without an
-explicit, separate decision (see both docs' own opening sections).
+GitHub Actions from CI-built `legacy/dist/` (deploy.yml).
+
+**The React rewrite in `web/` (npm workspace `sakura-web`) is DISCONTINUED as
+of 2026-08-31 — see docs/framework-migration-plan.md's own "STATUS:
+DISCONTINUED" section at the top for the decision and what it means
+practically.** It is not deployed anywhere and never will be; all further
+work goes into `legacy/` directly. Do not resume `web/` work, open PRs
+against it, or treat any phase 6/7/8 plan doc's "next slice" as live work,
+unless the project owner explicitly asks to restart the migration as a new,
+separate decision.
 
 Clone a fresh copy, run `sh scripts/setup-git-identity.sh`, and read these
 four docs in full before touching anything — they're kept current after
@@ -176,6 +181,19 @@ comment). Remove those extra steps once the real cutover happens.
 
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
+
+**MIGRATION DISCONTINUED (2026-08-31).** After 8+ phases of parity work (summarized in full
+below, kept as historical record), the project owner did a hands-on review of the `web/` build
+and judged it not close enough to `legacy/`'s real experience to be worth continuing — the tree
+itself, the app's core editing surface, was called out specifically ("poles apart"), on top of
+several other rounds of visual/structural gaps found via direct screenshot comparison throughout
+Phase 8. The last piece of in-flight work (PR #316, a real CSS-reset fix for page margins/
+scrollbar) was closed without merging rather than shipped, since there's no further point
+polishing a build that won't go live. **Do not pick up any "next slice" mentioned below or in
+phase6/7/8's own plan docs — that queue is frozen, not paused-with-intent-to-resume.** See
+docs/framework-migration-plan.md's own top section for what this means practically. Everything
+from here down in this "Current state" section is the historical record of what shipped while
+the migration was active.
 
 **Phase 6 is complete.** All eleven sub-phases (6.1–6.11) in
 docs/phase6-full-parity-plan.md landed, closing every feature and
