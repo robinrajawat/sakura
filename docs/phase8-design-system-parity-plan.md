@@ -1390,6 +1390,46 @@ follow-ups (§8.7+), each large enough to be its own slice.
   real headless-Chrome screenshots (idle vs. hover, against a real comparable document built fresh
   in both `web/` and `legacy/` for direct side-by-side comparison, not the fixture alone). Full
   gauntlet clean: 2010 tests passing (no test changes needed), typecheck/lint/build all clean.
+- ✅ **8.21 (Settings segmented-control active state: real tinted pill, not a bold solid fill)
+  landed -- found via a bounded, systematic side-by-side audit pass across every major surface
+  (app-bar, sidebar, Settings, Hub dock, toolbar, Preview), not another single reactive fix.**
+  Confirmed by reading legacy's real CSS (legacy/index.html:1238-1243, `.segmented-control`/
+  `.segmented-btn`/`.segmented-btn.active`) that its active-segment state is a subtle accent-
+  tinted background (`color-mix(in srgb, var(--accent) 14%, var(--bg) 86%)`) with accent-colored
+  TEXT and a faint inset border -- `SettingsPanel.tsx`'s Theme/Auto-theme toggles instead used a
+  bold solid `var(--accent)` fill with white text, a real, previously-unfound §8.1-scope miss
+  (that pass never covered this specific control family). New `.segmented-control`/`.segmented-
+  btn`/`.segmented-btn.active` classes in `index.css`, direct-ported and applied to both real
+  consumers. Verified with a real headless-Chrome screenshot: the active pill now reads as a
+  subtle tint with colored text, matching legacy exactly. Full gauntlet clean: 2010 tests passing
+  (no test changes needed), typecheck/lint/build all clean.
+  **Other findings from the same audit pass, deliberately not acted on this slice, each a real
+  finding with its own reasoning for why:**
+  - `SettingsPanel.tsx` invents uppercase sub-section headers ("THEME", "EXPORT FORMATTING",
+    "LAYOUT", ...) within a category; legacy's real structure is one flat `.settings-grid` of
+    labeled fields under a single category title ("Appearance") with no further subdivision
+    (legacy/index.html:4674-4676). A real structural difference, but arguably a legitimate
+    organizational improvement rather than a regression -- not reverted without a product call on
+    whether the extra structure is wanted.
+  - The AI toolbar group renders 7 full text-labeled buttons and wraps onto its own second row,
+    where legacy's real AI group is two compact icon-only buttons that stay on the toolbar's one
+    single row (legacy only ever shows Outline+Rewrite by default, hiding Expand/Summarise/Tags/
+    Icon behind a Settings toggle `web/` doesn't have). This is a real, ALREADY-DELIBERATE
+    divergence, not a new find -- §7.5's own text explains the call: hiding already-shipped,
+    already-tested capability with no way to reveal it back would be a real regression, not a
+    faithful port of a default that itself depends on a toggle this project hasn't built. Flagged
+    again here because seeing it side-by-side makes clear it's the single biggest reason the
+    toolbar reads as heavier/bulkier than legacy's, not because the original call was wrong --
+    the actual fix (if wanted) is building the real Settings toggle so the default can match
+    legacy exactly while keeping the capability reachable, a real, separately-scoped follow-up.
+  - Hub dock panel internals (`HubJournalPanel.tsx` etc.) were never touched by Phase 8's own
+    chrome-only retrofit sweep -- e.g. the Journal tab's "Today"/"Jump to date" text buttons vs.
+    legacy's real icon-only `+`/calendar buttons, and a shorter single-line empty-state message vs.
+    legacy's real two-line (title + italic hint) version. Real, but small -- a separately-scoped
+    follow-up, not chased in this pass.
+  - Preview mode, Presenter mode, and the Insert toolbar group's exact button count were spot-
+    checked and found no confirmed gap large enough to act on in this pass (Preview in particular
+    rendered a decision-log card correctly and looked visually solid).
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10/§8.20 closed two real, concrete findings inside this
