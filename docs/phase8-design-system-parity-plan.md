@@ -1430,6 +1430,37 @@ follow-ups (§8.7+), each large enough to be its own slice.
   - Preview mode, Presenter mode, and the Insert toolbar group's exact button count were spot-
     checked and found no confirmed gap large enough to act on in this pass (Preview in particular
     rendered a decision-log card correctly and looked visually solid).
+- ✅ **8.22 (three more real gaps found directly by the user, with real screenshots) landed.**
+  1. **The permanent "Sync" heading + "Sign in above to sync a document." message had no legacy
+     equivalent at all** (confirmed by grep: that exact string, and any permanent below-the-editor
+     sync section, appear nowhere in legacy's real markup) -- it rendered unconditionally below
+     every document regardless of sign-in state. Gated the whole block on being signed in
+     (`App.tsx`) -- `DocSyncPanel.tsx`'s own real functionality (share dialog, sync status,
+     "Shared with me") stays fully reachable for a signed-in user, matching legacy's real
+     behavior of showing nothing when there's nothing actionable.
+  2. **The auto-created first document had hand-authored "Welcome to Sakura" tutorial content and
+     was titled "Welcome"** -- a real, confirmed mismatch: legacy's own real first document
+     (`ensureDocSystem()`/`createDoc()`, legacy/index.html:29818) is genuinely EMPTY, titled
+     "Untitled" like every other new document. Legacy's real onboarding text ("Like a cherry
+     blossom tree...") lives entirely in the separate Welcome MODAL's own Guided-tour step
+     content (already ported, `WelcomeModal.tsx`, §7.2) -- never baked into a document's own
+     outline. `documentsStore.ts`'s `init()` now creates a genuinely empty "Untitled" first
+     document, matching `newDocument()`'s own already-correct convention exactly rather than
+     being a special case; two tests updated to match (one regression-tests the id-collision fix
+     against the new empty-document shape instead of the old 3-node one).
+  3. **The browser-tab favicon used the PWA card-style icon** (padding + shadow + circular
+     background, designed for an OS home-screen tile) instead of legacy's real bare-glyph
+     favicon, and legacy's own comment on this exact choice (legacy/index.html:100-110) explains
+     why that's wrong: the card's padding makes the glyph smaller and less legible at the
+     ~16-32px a browser tab actually renders it at. `flower-glyph.svg` (present in `legacy/
+     public/`, never copied to `web/public/`) copied over and wired up as the real `rel="icon"`;
+     `apple-touch-icon` correctly keeps the PWA card icon, matching legacy's own real distinction
+     between the two surfaces.
+  Verified with real headless-Chrome screenshots: a genuinely fresh first load now shows
+  "Untitled" with the real clean empty-state illustration and no trailing Sync section, matching
+  the user's own legacy screenshot closely; the favicon link resolves to `/flower-glyph.svg`.
+  Full gauntlet clean: 2010 tests passing (2 updated, no count change), typecheck/lint/build all
+  clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10/§8.20 closed two real, concrete findings inside this

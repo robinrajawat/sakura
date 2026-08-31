@@ -160,24 +160,27 @@ describe('documentsStore', () => {
     expect(() => useDocumentsStore.getState().saveActiveDocNodes()).not.toThrow();
   });
 
-  it('init() on first-ever launch creates its own explicit welcome document, independent of outlineStore\'s current content', () => {
+  it('init() on first-ever launch creates a genuinely empty first document, independent of outlineStore\'s current content', () => {
     // Deliberately set outlineStore to something that must NOT leak into the new document --
     // this is the regression test for the real bug this decoupling fixes: init() used to
     // adopt whatever was transiently sitting in outlineStore at that moment, which meant a
     // fresh visitor's permanent first document was outlineStore.ts's own module-level default
     // content, whatever that happened to be.
+    // §8.22 slice: this document used to carry hand-authored "Welcome to Sakura" tutorial
+    // content -- a real, confirmed mismatch with legacy's own actual behavior, whose real first
+    // document is genuinely empty (`ensureDocSystem()`/`createDoc()`), titled "Untitled" like
+    // every other new document. Now matches `newDocument()`'s own already-correct convention.
     useOutlineStore.setState({
       nodes: [{ id: 1, depth: 0, text: 'should not leak into the new document', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }]
     });
     useDocumentsStore.getState().init();
     const { docsIndex, openTabs, activeDocId } = useDocumentsStore.getState();
     expect(docsIndex).toHaveLength(1);
-    expect(docsIndex[0].title).toBe('Welcome');
+    expect(docsIndex[0].title).toBe('Untitled');
     expect(openTabs).toEqual([docsIndex[0].id]);
     expect(activeDocId).toBe(docsIndex[0].id);
-    // The document has its own explicit welcome content -- not the pre-init outlineStore state.
-    expect(useOutlineStore.getState().nodes[0].text).toBe('Welcome to Sakura');
-    expect(useOutlineStore.getState().nodes.some((n) => n.text?.includes('should not leak'))).toBe(false);
+    // The document is genuinely empty -- not the pre-init outlineStore state.
+    expect(useOutlineStore.getState().nodes).toEqual([]);
   });
 
   it('init() is idempotent -- calling it twice does not create a second document', () => {
@@ -186,19 +189,18 @@ describe('documentsStore', () => {
     expect(useDocumentsStore.getState().docsIndex).toHaveLength(1);
   });
 
-  it('init() on first-ever launch advances outlineStore\'s nextId past the welcome document\'s own node ids, so the first newChild() cannot collide with them', () => {
-    // Regression test for a real bug: the welcome document seeds nodes with ids 1/2/3, but
-    // outlineStore's own module-level default `nextId` is 2 (from its unrelated single-node
-    // seedNodes()). Without explicitly advancing `nextId` here, the very first newChild() call
-    // minted a new node with id 2 -- colliding with the existing "This is your first
-    // document..." node and corrupting the outline (two nodes sharing one React key, one of
-    // them silently vanishing from the rendered tree).
+  it('init() on first-ever launch resets outlineStore\'s nextId to 1, so the first real node created via createFirstNode gets a clean id', () => {
+    // Regression test for the same id-collision bug class as before (§8.22): a stale nextId
+    // left over from outlineStore's own unrelated module-level default must not leak into the
+    // brand-new empty document's own id sequence.
+    useOutlineStore.setState({ nextId: 999 });
     useDocumentsStore.getState().init();
-    useOutlineStore.getState().newChild(1);
+    expect(useOutlineStore.getState().nextId).toBe(1);
+    useOutlineStore.getState().createFirstNode('the first real node');
     const { nodes } = useOutlineStore.getState();
-    const ids = nodes.map((n) => n.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    expect(nodes.find((n) => n.text?.startsWith('This is your first document'))).toBeDefined();
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].id).toBe(1);
+    expect(nodes[0].text).toBe('the first real node');
   });
 
   it('openDocument advances outlineStore\'s nextId past the incoming document\'s own node ids', () => {
