@@ -8,12 +8,15 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 // See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
-// Sync subsystem — Phase 4, first slice. Exercises the real, unchanged applyIncomingDocData/
+// Sync subsystem — Phase 4, first slice. Exercises the real applyIncomingDocData/
 // applyIncomingTemplateData/applyIncomingMetaData functions — the same call paths the periodic
 // pullAndMergeFromCloud and realtime onSnapshot listeners use — against real
 // localStorage/_lastPushedTs global state, proving all three real callers correctly delegate the
 // "should apply" decision to shouldApplyIncomingSyncCore and that the real storage writes still
-// happen when it says yes.
+// happen when it says yes. applyIncomingDocData now takes (mod,db,id,cloud,viaRealtime) — mod/db
+// are only ever dereferenced when the incoming cloud doc has diagrams/attachments to hydrate from
+// their own subcollections (see hydrateCloudDocBlobs), which none of this test's payloads do, so
+// null stands in for both here rather than a real Firestore mod/db pair.
 test.describe('generated syncApply block (src/state/syncApply.ts spliced into index.html)', () => {
   test('applyIncomingDocData/applyIncomingTemplateData/applyIncomingMetaData correctly apply, reject stale, and reject echoes, through the real functions', async ({ page }) => {
     const unexpectedErrors: string[] = [];
@@ -45,20 +48,20 @@ test.describe('generated syncApply block (src/state/syncApply.ts spliced into in
       // @ts-expect-error — bare globals from index.html
       const docId = 'test-doc-' + Date.now();
       // @ts-expect-error
-      const docApplied = applyIncomingDocData(docId, { updatedAt: 500, title: 'New Doc' }, false);
+      const docApplied = await applyIncomingDocData(null, null, 'test-uid', docId, { updatedAt: 500, title: 'New Doc' }, false);
       // @ts-expect-error
       const docIndexAfter = loadDocsIndex().find((d) => d.id === docId);
 
       // Regenerate a second, older update — should be rejected as stale now that a local entry
       // with updatedAt=500 exists (touchDocIndex stamps Date.now(), always newer than 500).
       // @ts-expect-error
-      const docStaleRejected = !applyIncomingDocData(docId, { updatedAt: 1, title: 'Stale' }, false);
+      const docStaleRejected = !(await applyIncomingDocData(null, null, 'test-uid', docId, { updatedAt: 1, title: 'Stale' }, false));
 
       // Echo suppression: simulate having just pushed this exact timestamp.
       // @ts-expect-error
       _lastPushedTs['doc:' + docId] = 999;
       // @ts-expect-error
-      const docEchoRejected = !applyIncomingDocData(docId, { updatedAt: 999, title: 'Echo' }, false);
+      const docEchoRejected = !(await applyIncomingDocData(null, null, 'test-uid', docId, { updatedAt: 999, title: 'Echo' }, false));
 
       // --- Template: same "new item always applies" shape ---
       // @ts-expect-error

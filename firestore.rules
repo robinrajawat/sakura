@@ -165,6 +165,44 @@ service cloud.firestore {
       // the same moment — the only requirement is that it's your own entry.
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
+    // Diagram XML and Files-tab attachment data both live in their own subcollection of the
+    // parent doc now (see pushDocToCloud/hydrateCloudDocBlobs in index.html) instead of inline —
+    // kept out of the parent doc specifically so neither one, however large on its own, is
+    // bounded by Firestore's 1MB-per-document cap together with everything else in the document.
+    // Access mirrors the parent doc's own model exactly: owner always; any collaborator
+    // (viewer or editor) can read; only an editor can write. Re-checked here via get() on the
+    // parent, the same reason the presence block above already does — a subcollection match
+    // doesn't inherit the parent's `resource`. The owner's own access to these is already covered
+    // by the generic /users/{userId}/{document=**} rule below, which is broader (it isn't scoped
+    // to just these two subcollections) — these two blocks exist purely to extend that same
+    // access to collaborators, the same way the sharedWith/sharedWithUids blocks on the parent
+    // doc itself do; multiple matching blocks are ORed together, so this is purely additive.
+    match /users/{ownerUid}/docs/{docId}/diagrams/{diagramId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == ownerUid ||
+        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
+      );
+      allow write: if request.auth != null && (
+        request.auth.uid == ownerUid ||
+        (
+          'sharedWith' in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data &&
+          get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWith[request.auth.uid].role == 'editor'
+        )
+      );
+    }
+    match /users/{ownerUid}/docs/{docId}/attachments/{attachmentId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == ownerUid ||
+        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
+      );
+      allow write: if request.auth != null && (
+        request.auth.uid == ownerUid ||
+        (
+          'sharedWith' in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data &&
+          get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWith[request.auth.uid].role == 'editor'
+        )
+      );
+    }
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

@@ -14343,7 +14343,28 @@ async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmai
     if(!snap.exists()){ showToast('This document is no longer available'); return; }
     const d=snap.data();
     const nds=Array.isArray(d.nodes)?d.nodes.map(normalizeNode):[];
-    tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',pad:d.pad||'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:Array.isArray(d.diagrams)?d.diagrams:[],mindMaps:Array.isArray(d.mindMaps)?d.mindMaps:[],decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[],attachments:Array.isArray(d.attachments)?d.attachments:[],remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),focusedId:null,undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+    // Diagram xml and attachment dataUrl live in their own subcollections now (see
+    // pushDocToCloud), not inline on d itself — merge them back in here so the rest of this
+    // function (and the _hydrated marking just below) sees the same full shape it always has. A
+    // pre-migration document pushed before this split existed already has them inline on d, with
+    // no matching subcollection doc to find — that inline copy passes through untouched below.
+    let mergedDiagrams=Array.isArray(d.diagrams)?d.diagrams:[];
+    if(mergedDiagrams.length){
+      try{
+        const dgSnap=await mod.getDocs(mod.collection(db,'users',ownerUid,'docs',docId,'diagrams'));
+        const blobs={}; dgSnap.docs.forEach(bd=>{blobs[bd.id]=bd.data()});
+        mergedDiagrams=mergedDiagrams.map(dg=>blobs[dg.id]?{...dg,xml:blobs[dg.id].xml}:dg);
+      }catch(e){ console.warn('[sakura] openSharedDocument: diagrams subcollection fetch failed:',e); }
+    }
+    let mergedAttachments=Array.isArray(d.attachments)?d.attachments:[];
+    if(mergedAttachments.length){
+      try{
+        const attSnap=await mod.getDocs(mod.collection(db,'users',ownerUid,'docs',docId,'attachments'));
+        const blobs={}; attSnap.docs.forEach(bd=>{blobs[bd.id]=bd.data()});
+        mergedAttachments=mergedAttachments.map(a=>blobs[a.id]?{...a,dataUrl:blobs[a.id].dataUrl}:a);
+      }catch(e){ console.warn('[sakura] openSharedDocument: attachments subcollection fetch failed:',e); }
+    }
+    tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',pad:d.pad||'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:mergedDiagrams,mindMaps:Array.isArray(d.mindMaps)?d.mindMaps:[],decisionLogs:Array.isArray(d.decisionLogs)?d.decisionLogs:[],attachments:mergedAttachments,remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),focusedId:null,undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
     // Mirrors loadDocFromStorage's own identical line — without this, applyTabSnapshot (called
     // below) has no equivalent step of its own, so hydrateDiagramBlobsForDoc would treat every
     // one of these as un-hydrated and go looking for it in THIS device's local IndexedDB
@@ -15562,6 +15583,13 @@ let _syncPushTimer=null;
 let _lastPushedTs={};
 let _syncErrorToastShown=false;
 let _docTooLargeToastShown=new Set(); // per-docId, so a genuinely-too-large document's toast doesn't repeat on every retry — see pushDocToCloud
+// Tracks the last blob (a diagram's xml, or an attachment's dataUrl) actually written to each
+// subcollection doc by THIS device, keyed 'docId:diagrams:diagId' or
+// 'docId:attachments:attId' — see pushDocBlobSubcollection. Skipping a re-write when nothing
+// changed matters here specifically because, unlike the single doc write pushDocToCloud already
+// did unconditionally, a document can carry many diagrams/attachments; without this, every
+// keystroke-triggered push would re-write every one of them, not just the parent doc.
+let _lastPushedBlobSig={};
 // Tracks the sync engine's own last-known status, independent of the DOM (the status dot can
 // be hidden/removed by settings, but code elsewhere — like the session-backup-warning gate
 // below — still needs to know "is cloud sync currently healthy" without caring whether the
@@ -15642,45 +15670,57 @@ async function pushDocToCloud(mod,db,docId){
   // owner's real-time listener (applyIncomingDocData below) can tell "someone ELSE just changed
   // one of my documents" from its own echo, and notify accordingly. Not used for anything else.
   const editedBy={lastEditedByUid:currentUser.uid,lastEditedByDisplayName:currentUser.displayName||'',lastEditedByEmail:(currentUser.email||'').toLowerCase()};
-  // Diagram XML is included here specifically so a shared document's diagrams actually reach the
-  // recipient — the localStorage copy this function reads from deliberately has it stripped out
-  // (see saveToStorage's own comment on diagramMeta) since that split exists purely for
-  // localStorage's much tighter aggregate quota, a constraint that doesn't apply to a single
-  // Firestore document the same way. previewSvg/pageSvgs are deliberately NOT included: they're
-  // pure rendered-from-xml cache, the actual expensive part size-wise, and the app already has a
-  // clean, calm fallback for "xml present, no cached thumbnail yet" (a plain placeholder icon
-  // with a visible, clearly-labeled regenerate button — see renderDiagramsList) rather than
-  // needing this to ship pre-rendered images across the wire at all.
-  let dataToSend=data;
-  if(Array.isArray(data.diagrams)&&data.diagrams.length){
-    const diagramsWithXml=await Promise.all(data.diagrams.map(async dg=>{
-      try{
-        const blob=await idbGet('diagblob:'+docId+':'+dg.id);
-        return blob&&blob.xml?{...dg,xml:blob.xml}:dg;
-      }catch(e){ return dg; } // best-effort — a diagram whose blob can't be read here pushes with whatever xml it already had (usually none), not a hard failure for the rest of the document
-    }));
-    dataToSend={...data,diagrams:diagramsWithXml};
-  }
-  // {merge:true} is deliberate, not the previous plain overwrite: a normal content sync push
-  // from this device only ever knows about the fields it has locally (nodes, title, etc.) — it
-  // has no idea whether this document carries a sharedWith map (collaboration metadata that
-  // lives on the Firestore doc itself, not mirrored into this device's local copy). A plain
-  // setDoc would silently wipe that out on every single autosave-triggered push. Only matters
-  // once sharing is actually wired up client-side, but the write path needs to already be safe
-  // for it — retrofitting merge:true later, after real sharedWith data exists, would mean the
-  // bug window was "every push, for every collaborator, until someone noticed."
+  // Diagram XML and Files-tab attachment data both used to ride inline in this same doc write —
+  // a document with either enough diagrams or a couple of sizeable attachments can add up past
+  // Firestore's 1MB-per-document cap (see the "too large" catch below, which used to be the only
+  // defense). Each diagram's XML and each attachment's dataUrl now push to their own subcollection
+  // doc instead — pushDocBlobSubcollection — so no single one of them is bounded by how many
+  // others, or how much other document content, happens to exist alongside it. previewSvg/
+  // pageSvgs are still deliberately NOT pushed at all: they're pure rendered-from-xml cache (often
+  // the actual expensive part, size-wise) and the app already has a clean, calm fallback for "xml
+  // present, no cached thumbnail yet" (see renderDiagramsList) rather than needing pre-rendered
+  // images to cross the wire, now doubly so since a diagram's own subcollection doc still has its
+  // own 1MB ceiling.
   try{
+    let diagrams=Array.isArray(data.diagrams)?data.diagrams:[];
+    if(diagrams.length){
+      const hydrated=await Promise.all(diagrams.map(async dg=>{
+        if(dg.xml!==undefined)return dg; // saveToStorage's own pre-first-sync safety-net copy — already has it
+        try{
+          const blob=await idbGet('diagblob:'+docId+':'+dg.id);
+          return blob&&blob.xml?{...dg,xml:blob.xml}:dg;
+        }catch(e){ return dg; } // best-effort — a diagram whose blob can't be read here pushes with whatever xml it already had (usually none), not a hard failure for the rest of the document
+      }));
+      await pushDocBlobSubcollection(mod,db,ownerUid,docId,'diagrams',hydrated,['xml']);
+      diagrams=hydrated.map(({xml,previewSvg,pageSvgs,...meta})=>meta);
+    }
+    let attachments=Array.isArray(data.attachments)?data.attachments:[];
+    if(attachments.length){
+      await pushDocBlobSubcollection(mod,db,ownerUid,docId,'attachments',attachments,['dataUrl']);
+      attachments=attachments.map(({dataUrl,...meta})=>meta);
+    }
+    const dataToSend={...data,diagrams,attachments};
+    // {merge:true} is deliberate, not the previous plain overwrite: a normal content sync push
+    // from this device only ever knows about the fields it has locally (nodes, title, etc.) — it
+    // has no idea whether this document carries a sharedWith map (collaboration metadata that
+    // lives on the Firestore doc itself, not mirrored into this device's local copy). A plain
+    // setDoc would silently wipe that out on every single autosave-triggered push. Only matters
+    // once sharing is actually wired up client-side, but the write path needs to already be safe
+    // for it — retrofitting merge:true later, after real sharedWith data exists, would mean the
+    // bug window was "every push, for every collaborator, until someone noticed."
     await mod.setDoc(mod.doc(db,'users',ownerUid,'docs',docId),{...dataToSend,...editedBy,updatedAt:ts},{merge:true});
     _docTooLargeToastShown.delete(docId); // clears the one-time-per-incident gate below, so a genuinely new occurrence (after this got fixed once) is reported again rather than staying silently suppressed forever
   }catch(e){
-    // Firestore's 1MB-per-document limit is the one real risk of including diagram xml (or,
-    // already, base64 attachments) inline — worth a specific, actionable message instead of the
-    // generic "will keep retrying quietly" flushSyncQueue shows for everything else, since
-    // retrying literally cannot help here: the document will be exactly this size again next
-    // time. Detected by message pattern rather than a stable error code, since Firestore doesn't
-    // expose one specific to this — checked narrowly enough (both "size"/"large" AND a byte-limit
-    // or "exceed" mention) to stay a genuine size-limit match rather than misfiring on an
-    // unrelated error that happens to share one common word.
+    // Firestore's 1MB-per-document limit still applies to EACH write above — the parent doc, and
+    // each diagram/attachment subcollection doc — just no longer as one shared budget between a
+    // document's diagrams/attachments AND its own text/structure combined (see pushDocToCloud's
+    // own comment on the split). Worth a specific, actionable message instead of the generic "will
+    // keep retrying quietly" flushSyncQueue shows for everything else, since retrying literally
+    // cannot help here: the content will be exactly this size again next time. Detected by message
+    // pattern rather than a stable error code, since Firestore doesn't expose one specific to this
+    // — checked narrowly enough (both "size"/"large" AND a byte-limit or "exceed" mention) to stay
+    // a genuine size-limit match rather than misfiring on an unrelated error that happens to share
+    // one common word.
     const msg=String(e&&e.message||'');
     if(/longer than \d+ bytes|exceeds? maximum size|document exceeds[^.]*size|1,?048,?576/i.test(msg)){
       if(!_docTooLargeToastShown.has(docId)){
@@ -15690,6 +15730,27 @@ async function pushDocToCloud(mod,db,docId){
     }
     throw e; // still surfaces to flushSyncQueue's own catch, which needs it for the sync-status dot regardless of which toast (if either) already fired
   }
+}
+// Writes each item's heavy field(s) — a diagram's xml, an attachment's dataUrl — to its own doc
+// in a subcollection of the parent document, instead of inline in the parent doc itself (see
+// pushDocToCloud). Skips any item whose relevant fields are byte-for-byte unchanged since this
+// device's own last push of it, so a document with many diagrams/attachments doesn't turn every
+// autosave-triggered push into a write per item regardless of what actually changed. A single
+// writeBatch (atomic, same as a lone setDoc would have been) rather than sequential awaits, so a
+// mid-loop failure can't leave some items pushed and others not.
+async function pushDocBlobSubcollection(mod,db,ownerUid,docId,subcolName,items,blobFields){
+  const batch=mod.writeBatch(db);
+  let hasWrites=false;
+  for(const item of items){
+    const blob={}; for(const f of blobFields)blob[f]=item[f]||'';
+    const sig=JSON.stringify(blob);
+    const cacheKey=docId+':'+subcolName+':'+item.id;
+    if(_lastPushedBlobSig[cacheKey]===sig)continue;
+    _lastPushedBlobSig[cacheKey]=sig;
+    batch.set(mod.doc(db,'users',ownerUid,'docs',docId,subcolName,item.id),{...blob,updatedAt:Date.now()},{merge:true});
+    hasWrites=true;
+  }
+  if(hasWrites)await batch.commit();
 }
 // The other half of "delete propagation" — without this, permanently deleting a document (or
 // emptying Trash) only ever removed it from THIS device. The Firestore record was left sitting
@@ -15704,6 +15765,21 @@ async function deleteDocFromCloud(docId){
   if(!currentUser)return;
   try{
     const {mod,db}=await loadFirestoreMods();
+    // Diagrams/attachments live in their own subcollections now (see pushDocToCloud) — deleting
+    // just the parent doc would leave those orphaned in Firestore forever, invisible from the app
+    // but still billed/stored. Best-effort, same as the parent delete below: each subcollection is
+    // listed then batch-deleted, and a failure on either just means this device's next sign-in
+    // retries the whole thing (deleteDocFromCloud always runs again for anything still locally
+    // marked for deletion), not silent data loss.
+    for(const subcol of ['diagrams','attachments']){
+      try{
+        const snap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs',docId,subcol));
+        if(snap.empty)continue;
+        const batch=mod.writeBatch(db);
+        snap.docs.forEach(d=>batch.delete(d.ref));
+        await batch.commit();
+      }catch(e){ console.warn('[sakura] deleteDocFromCloud: failed to clear',subcol,'subcollection for',docId,':',e); }
+    }
     await mod.deleteDoc(mod.doc(db,'users',currentUser.uid,'docs',docId));
   }catch(e){ console.warn('[sakura] deleteDocFromCloud: failed to delete',docId,'from the cloud — it may reappear on next sync:',e); }
 }
@@ -15807,13 +15883,56 @@ function shouldApplyIncomingSyncCore(cloudUpdatedAt, localUpdatedAt, lastPushedT
 }
 
 /* GENERATED:syncApply:END */
-function applyIncomingDocData(id,cloud,viaRealtime){
+// Cloud documents keep diagram XML and attachment data in their own subcollections now (see
+// pushDocToCloud), not inline — so any code pulling a cloud document's fields into localStorage
+// needs this extra step to reassemble the shape the rest of the app expects. Diagrams route their
+// real content back into the same local IndexedDB overflow store the rest of the app already
+// reads from (diagblob:<docId>:<diagramId> — see saveToStorage/hydrateDiagramBlobsForDoc) rather
+// than writing it inline into localStorage, for the same reason it was split out of localStorage
+// in the first place: that store's own much tighter aggregate quota. Attachments have no local
+// split to preserve — they're kept inline in localStorage same as always — so their real dataUrl
+// is merged straight back in. A pre-migration document pushed before this split existed already
+// has xml/dataUrl inline on the metadata itself (no subcollection docs to find for it); that
+// inline copy is used as-is either way, so old cloud data keeps working with no migration step.
+async function hydrateCloudDocBlobs(mod,db,ownerUid,docId,docData){
+  const diagrams=Array.isArray(docData.diagrams)?docData.diagrams:[];
+  if(diagrams.length){
+    let blobs={};
+    try{
+      const snap=await mod.getDocs(mod.collection(db,'users',ownerUid,'docs',docId,'diagrams'));
+      snap.docs.forEach(d=>{blobs[d.id]=d.data()});
+    }catch(e){ console.warn('[sakura] hydrateCloudDocBlobs: diagrams subcollection fetch failed:',e); }
+    const metaDiagrams=[];
+    for(const dg of diagrams){
+      const blob=blobs[dg.id];
+      const xml=blob?blob.xml:dg.xml;
+      if(xml!==undefined){
+        try{ await idbSet('diagblob:'+docId+':'+dg.id,{xml:xml||'',previewSvg:'',pageSvgs:[]}); }catch(e){}
+      }
+      const {xml:_x,previewSvg:_p,pageSvgs:_pg,...meta}=dg;
+      metaDiagrams.push(meta);
+    }
+    docData={...docData,diagrams:metaDiagrams};
+  }
+  const attachments=Array.isArray(docData.attachments)?docData.attachments:[];
+  if(attachments.length){
+    let blobs={};
+    try{
+      const snap=await mod.getDocs(mod.collection(db,'users',ownerUid,'docs',docId,'attachments'));
+      snap.docs.forEach(d=>{blobs[d.id]=d.data()});
+    }catch(e){ console.warn('[sakura] hydrateCloudDocBlobs: attachments subcollection fetch failed:',e); }
+    docData={...docData,attachments:attachments.map(a=>blobs[a.id]?{...a,dataUrl:blobs[a.id].dataUrl}:a)};
+  }
+  return docData;
+}
+async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   const localIndex=loadDocsIndex();
   const localEntry=localIndex.find(d=>d.id===id);
   if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localEntry?Number(localEntry.updatedAt)||0:null,_lastPushedTs['doc:'+id]))return false;
   if(id===currentDocId){
     if(!viaRealtime)return false; // polling: leave the active doc alone entirely
-    const {updatedAt,...docData}=cloud;
+    const {updatedAt,...rawDocData}=cloud;
+    const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData)); // safe: not touching live `nodes`
     if(crossTabWarningDocId!==currentDocId){
       crossTabWarningDocId=currentDocId;
@@ -15822,7 +15941,8 @@ function applyIncomingDocData(id,cloud,viaRealtime){
     }
     return true;
   }
-  const {updatedAt,...docData}=cloud;
+  const {updatedAt,...rawDocData}=cloud;
+  const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   touchDocIndex(id,docData.title||'Untitled');
   // A collaborator with edit access just changed one of MY documents that isn't the one I have
@@ -16003,7 +16123,7 @@ async function pullAndMergeFromCloud(isInitial=false){
     if(cloudDocsSnap){
       for(const docSnap of cloudDocsSnap.docs){
         const id=docSnap.id; cloudIds.add(id);
-        if(applyIncomingDocData(id,docSnap.data(),false))pulledInCount++;
+        if(await applyIncomingDocData(mod,db,currentUser.uid,id,docSnap.data(),false))pulledInCount++;
       }
     }
     // Only decide "this local doc is missing from the cloud, push it up" when we actually
@@ -16067,10 +16187,10 @@ async function startRealtimeSync(){
     // snapshot like the polling pull (viaRealtime=false, silently skips the open doc); only
     // snapshots after it reflect actual real-time changes worth surfacing.
     let _docsFirstSnapshot=true;
-    const docsUnsub=mod.onSnapshot(mod.collection(db,'users',uid,'docs'),snapshot=>{
+    const docsUnsub=mod.onSnapshot(mod.collection(db,'users',uid,'docs'),async snapshot=>{
       const isLive=!_docsFirstSnapshot; _docsFirstSnapshot=false;
       let changed=false;
-      snapshot.docChanges().forEach(change=>{
+      for(const change of snapshot.docChanges()){
         // permanentlyDeleteDocCore now calls deleteDocFromCloud, so a 'removed' change here CAN
         // legitimately mean a document was permanently deleted (by this device or another one
         // signed into the same account). Deliberately still a no-op rather than mirroring the
@@ -16078,9 +16198,9 @@ async function startRealtimeSync(){
         // might be this device's own write echoing back through the listener (already handled
         // locally by the delete path that triggered it). Cross-device delete propagation is a
         // separate, more involved piece of work than what's needed here.
-        if(change.type==='removed')return;
-        if(applyIncomingDocData(change.doc.id,change.doc.data(),isLive))changed=true;
-      });
+        if(change.type==='removed')continue;
+        if(await applyIncomingDocData(mod,db,uid,change.doc.id,change.doc.data(),isLive))changed=true;
+      }
       if(changed){ renderSidebar(); if(typeof renderDocsList==='function')renderDocsList(); }
     },err=>console.warn('[sakura] docs realtime listener error:',err));
 
@@ -31867,11 +31987,12 @@ function startSharedDocRealtimeSyncIfNeeded(docId){
   let firstSnapshot=true; // Firestore's own first callback is a catch-up snapshot matching what openSharedDocument already fetched, not a live change — same pattern as startRealtimeSync's own _docsFirstSnapshot guard
   loadFirestoreMods().then(({mod,db})=>{
     if(_sharedDocUnsubId!==docId)return; // switched to a different tab before this resolved
-    _sharedDocUnsub=mod.onSnapshot(mod.doc(db,'users',meta.ownerUid,'docs',docId),snap=>{
+    _sharedDocUnsub=mod.onSnapshot(mod.doc(db,'users',meta.ownerUid,'docs',docId),async snap=>{
       const isFirst=firstSnapshot; firstSnapshot=false;
       const cloud=snap.exists()?snap.data():null;
       if(!shouldApplySharedDocRealtimeUpdate(isFirst,snap.exists(),cloud?.updatedAt,_lastPushedTs['doc:'+docId],docId,currentDocId))return;
-      const {updatedAt,...docData}=cloud;
+      const {updatedAt,...rawDocData}=cloud;
+      const docData=await hydrateCloudDocBlobs(mod,db,meta.ownerUid,docId,rawDocData);
       localStorage.setItem(docKey(docId),JSON.stringify(docData));
       if(crossTabWarningDocId!==currentDocId){
         crossTabWarningDocId=currentDocId;
