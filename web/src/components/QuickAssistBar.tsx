@@ -14,6 +14,7 @@ import {
   type QaEntry,
   type QaPickerVerb
 } from '../state/quickAssist';
+import { QaCategoryIcon } from '../icons';
 
 const QA_PICKER_VERB_LABELS: Record<QaPickerVerb, string> = { show: 'Show', hide: 'Hide', toggle: 'Toggle', run: 'Run' };
 
@@ -216,7 +217,7 @@ export function QuickAssistBar({ openRestructureDialog }: { openRestructureDialo
           title="Browse by category"
           aria-label="Browse Quick Assist categories"
         >
-          ⋯
+          <QaCategoryIcon width={14} height={14} />
         </button>
         <input
           ref={inputRef}

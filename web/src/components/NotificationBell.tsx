@@ -1,4 +1,3 @@
-import { useAuthStore } from '../store/authStore';
 import { useNotificationsStore } from '../store/notificationsStore';
 import { BellIcon, CloseIcon } from '../icons';
 import { DropdownMenu } from './DropdownMenu';
@@ -9,9 +8,17 @@ import { formatRelativeTime } from '../utils/formatRelativeTime';
  * (legacy/index.html's `renderNotifBell`/`toggleNotifMenu`/`renderNotifList`, now driven by
  * `notificationsStore.ts` instead of hand-built DOM -- see that store's own header for the split
  * between the two). Mounted unconditionally in App.tsx's `headerActions` alongside the other
- * icon buttons there (theme toggle, sidebar toggle); renders nothing when signed out, matching
- * legacy's own real behavior of only ever populating the notifications collection for a signed-in
- * account.
+ * icon buttons there.
+ *
+ * §8.15 correction (docs/phase8-design-system-parity-plan.md): this component used to render
+ * nothing at all when signed out -- reported directly by the user as a real gap, and confirmed
+ * against legacy's own real markup: `#notif-wrap` (legacy/index.html:4545-4557) has no
+ * hide-by-default/auth-gated styling anywhere -- only the unread-count badge itself
+ * (`#notif-badge`) starts `display:none`, not the bell button around it. The bell now always
+ * renders; `items`/`unreadCount` are naturally empty when signed out (the store only ever
+ * populates for a signed-in account, matching legacy's own real behavior), so the dropdown
+ * correctly falls through to its own existing empty state ("You're all caught up") rather than
+ * needing any new signed-out-specific copy.
  *
  * §8.4l retrofit (docs/phase8-design-system-parity-plan.md): legacy's real `#notif-menu`
  * (legacy/index.html:4550-4555) is itself a `class="export-menu export-menu-rich"` consumer, not a
@@ -26,7 +33,6 @@ import { formatRelativeTime } from '../utils/formatRelativeTime';
  * one, since `NotifItem.createdAt` was already available and simply never rendered.
  */
 export function NotificationBell() {
-  const user = useAuthStore((s) => s.user);
   const items = useNotificationsStore((s) => s.items);
   const unreadCount = useNotificationsStore((s) => s.unreadCount);
   const menuOpen = useNotificationsStore((s) => s.menuOpen);
@@ -34,8 +40,6 @@ export function NotificationBell() {
   const markRead = useNotificationsStore((s) => s.markRead);
   const remove = useNotificationsStore((s) => s.remove);
   const clearAll = useNotificationsStore((s) => s.clearAll);
-
-  if (!user) return null;
 
   return (
     <div style={{ position: 'relative' }}>

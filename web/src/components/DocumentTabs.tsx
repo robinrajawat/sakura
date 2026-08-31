@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDocumentsStore } from '../store/documentsStore';
+import { useSidebarStore } from '../store/sidebarStore';
 import { filterTabsByTitle, moveOverviewSelection } from '../state/tabOrder';
-import { CloseIcon } from '../icons';
+import { CloseIcon, SidebarToggleIcon } from '../icons';
 
 /**
  * Phase 5 slice (docs/framework-migration-plan.md): Documents & Tabs, part 2 -- the UI. A tab
@@ -50,6 +51,8 @@ import { CloseIcon } from '../icons';
  * working around it in JS.
  */
 export function DocumentTabs() {
+  const sidebarOpen = useSidebarStore((s) => s.open);
+  const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
   const docsIndex = useDocumentsStore((s) => s.docsIndex);
   const openTabs = useDocumentsStore((s) => s.openTabs);
   const activeDocId = useDocumentsStore((s) => s.activeDocId);
@@ -120,6 +123,22 @@ export function DocumentTabs() {
 
   return (
     <>
+      {/* §8.15 slice (docs/phase8-design-system-parity-plan.md): direct port of legacy's real
+          `#sidebar-reopen-btn` (legacy/index.html:1623-1624, 6337) -- the reopen half of legacy's
+          real two-button sidebar-toggle split (the collapse half, `#sidebar-toggle`, lives in
+          SidebarFileExplorer.tsx's own section header instead). Shown only while the sidebar is
+          closed, matching legacy's own `rb.style.display=open?'none':'inline-flex'` exactly. */}
+      {!sidebarOpen && (
+        <button
+          id="sidebar-reopen-btn"
+          type="button"
+          onClick={toggleSidebarOpen}
+          title="Show file explorer"
+          aria-label="Show file explorer"
+        >
+          <SidebarToggleIcon width={16} height={16} />
+        </button>
+      )}
       <div id="doc-tab-strip" role="tablist" aria-label="Open documents">
         {openTabs.map((id) => {
           const isDropTarget = dropTarget?.id === id;

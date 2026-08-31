@@ -575,3 +575,14 @@ export function SakuraBrandIcon(props: SVGProps<SVGSVGElement> = {}) {
     </svg>
   );
 }
+
+/** §8.15 (docs/phase8-design-system-parity-plan.md): the Quick Assist box's own real "Browse by
+ * category" icon (`#qa-category-icon-btn`, legacy/index.html:6770) -- an 8-spoke compass/starburst
+ * glyph. `QuickAssistBar.tsx` previously used a plain "⋯" text character in its place. */
+export function QaCategoryIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3" />
+    </svg>
+  );
+}
