@@ -552,3 +552,26 @@ export function MindMapIcon(props: IconProps = {}) {
     </svg>
   );
 }
+
+/** §8.14 (docs/phase8-design-system-parity-plan.md): the app-bar's own real brand icon
+ * (`#app-brand-icon`, legacy/index.html:4529) -- a real, previously-missed gap: a prior session's
+ * own §7.6/8.11 write-up claimed "desktop's own real #appbar has none either," which turned out
+ * to be wrong once this element was actually read; it's real, and it's in the desktop appbar, not
+ * just the mobile page. A five-petal blossom built from `color-mix(in srgb, var(--accent) N%,
+ * transparent)`-filled ellipses -- deliberately NOT using this file's own `baseProps` stroke
+ * convention, since every shape here uses its own per-shape `fill`, not a single `currentColor`
+ * stroke. */
+export function SakuraBrandIcon(props: SVGProps<SVGSVGElement> = {}) {
+  return (
+    <svg width={16} height={16} viewBox="4.5 0.5 63 63" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" {...props}>
+      <g opacity={0.9}>
+        <ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb, var(--accent) 38%, transparent)" stroke="color-mix(in srgb, var(--accent) 55%, transparent)" strokeWidth={1} />
+        <ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb, var(--accent) 30%, transparent)" stroke="color-mix(in srgb, var(--accent) 45%, transparent)" strokeWidth={1} />
+        <ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb, var(--accent) 30%, transparent)" stroke="color-mix(in srgb, var(--accent) 45%, transparent)" strokeWidth={1} />
+        <ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb, var(--accent) 22%, transparent)" stroke="color-mix(in srgb, var(--accent) 38%, transparent)" strokeWidth={1} />
+        <ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb, var(--accent) 22%, transparent)" stroke="color-mix(in srgb, var(--accent) 38%, transparent)" strokeWidth={1} />
+        <circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb, var(--accent) 18%, transparent)" stroke="color-mix(in srgb, var(--accent) 48%, transparent)" strokeWidth={1.2} />
+      </g>
+    </svg>
+  );
+}

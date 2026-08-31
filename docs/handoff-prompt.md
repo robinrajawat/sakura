@@ -686,6 +686,33 @@ the same fix §8.9 already made for `FilesTab`. Verified with real headless-Chro
 both tabs (rest state, hover-revealed actions, dark theme) against a real build. Full gauntlet
 clean: 2005 tests passing, typecheck/lint/build all clean.
 
+**Separate infrastructure issue found and fixed this session, not a code bug — worth knowing about
+if this symptom ever recurs:** after §8.12/§8.13 merged, the user reported the live
+`/web-preview/` app-bar still looked unfixed. Investigation found `deploy.yml`'s `pages`
+concurrency group had a run from PR #298's merge (2026-08-28) stuck in `queued` status for over 2
+days, silently blocking every deploy behind it — meaning `/web-preview/` hadn't actually
+redeployed since before PR #298, roughly six phases (8.7-8.13) of real merged work never reaching
+the preview URL. "CI is green and the PR merged, but the live site still looks unchanged" is the
+symptom to watch for — check `deploy.yml`'s own recent run history (`list_workflow_runs`) for a
+`queued`/`cancelled` pileup before assuming it's browser caching. Fixed by cancelling the stuck
+run, which released the lock; confirmed via the next run's own `deploy-pages` log reporting "Reported
+success!" for the right commit.
+
+**8.14 (app-bar brand icon + wordmark styling) landed — reported directly by the user against the
+now-actually-live `/web-preview/` deploy.** Two real gaps in `AppShell.tsx`'s `#appbar`: (1) no
+brand icon at all — confirmed legacy's real `#app-brand-icon` (legacy/index.html:4529) genuinely
+lives in the DESKTOP `#appbar`, not just `hub.html`, directly correcting a wrong claim §7.6/8.11's
+own write-up made ("desktop's own real `#appbar` has none either"); (2) the wordmark's own styling
+never actually matched legacy's real `#app-name` (legacy/index.html:368) — a small, muted,
+letter-spaced, uppercase label, not the bold/16px/accent-colored treatment used since Phase 6.1's
+own original approximation. New `SakuraBrandIcon` (icons.tsx) direct-ports the real five-petal
+blossom SVG. Verified with real headless-Chrome screenshots in both themes. **A related,
+NOT-yet-fixed finding, left as a named follow-up**: `MobileHub.tsx` (§8.11) copied this same
+wordmark styling assuming it should match — legacy's real mobile `hub.html` actually has its own
+distinct brand treatment (`800 18px`, `color:var(--fg)`, plus a real accent-colored "Hub"
+sub-badge chip `web/` has never had), confirmed by reading legacy/hub.html:54-69,446 directly, not
+a copy of this fix. Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
 closed one concrete finding, but the row's own background/border/selection-highlight is still
