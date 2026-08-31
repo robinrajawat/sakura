@@ -643,6 +643,33 @@ sandbox) — verified by reading legacy's real markup/CSS instead, plus real iPh
 screenshots of the fixed `web/` view. Full gauntlet clean: 2005 tests passing, typecheck/lint/build
 all clean.
 
+**8.12 (app-bar decluttering: theme/accent controls moved into Settings → Appearance) landed —
+reported directly by the user via a real side-by-side screenshot of legacy's actual app-bar next
+to `web/`'s (legacy: minimal — brand, search, Hub, More, Notifications, Account, Settings; `web/`:
+the same plus a permanently-visible Light/Dark toggle, System auto-theme toggle, and 11 color
+swatches crammed into the header).** Confirmed by reading legacy's real `#appbar` markup
+end to end (legacy/index.html:4527-4607) that legacy has NO theme/color controls in its app-bar at
+all — all four (Theme, Auto theme, Accent, Text color) live inside `#settings-panel`'s own real
+"Appearance" section (legacy/index.html:4674-4715) instead. `web/` had them permanently in the
+header only because they were built (§6.7) before this project's Settings panel existed —
+`SettingsPanel.tsx`'s own header comment had already flagged this exact consolidation as a
+follow-up, never picked up until now. Moved all four out of `App.tsx` into a new "Theme" section
+at the top of `SettingsPanel.tsx`'s Appearance category (a real Light/Dark segmented pair, an
+Off/System segmented pair, and the two swatch rows, now larger at 20px since Settings has real
+room) — `App.tsx`'s header now shows only what legacy's real one does among what `web/` has built:
+Quick Assist, sidebar toggle (a real `web/`-only addition, kept), Version History, Notifications,
+Hub, More, Settings, Account. `MonitorIcon` (icons.tsx) removed as genuinely dead code (its own
+header comment already flagged it as legacy-equivalent-free; its only call site was the removed
+auto-theme button). Verified with real headless-Chrome screenshots of the app-bar (light + dark,
+confirming the swatches are actually gone) and the new Settings → Appearance section (confirming
+the controls render and still work — clicking the Moss accent swatch live-updates the segmented
+buttons' own color via `var(--accent)`). Full gauntlet clean: 2005 tests passing, typecheck/lint/
+build all clean. Deliberately not done in this slice, left as a named follow-up: reordering the
+remaining header buttons to match legacy's exact left-to-right order, and moving Version History's
+entry point into the real `ExportButtons.tsx` "More" menu now that one exists (legacy's own real
+placement, legacy/index.html:6489) — `App.tsx`'s own comment on that button already flags its
+current placement as stale reasoning.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
 closed one concrete finding, but the row's own background/border/selection-highlight is still

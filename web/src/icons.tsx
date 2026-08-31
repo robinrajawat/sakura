@@ -4,10 +4,10 @@
  * stroke-linecap="round" stroke-linejoin="round"`, no icon font, no sprite sheet), kept here as
  * small named exports so a future component pulls `<LocateIcon />` instead of re-pasting an
  * `<svg>` block per call site. Each icon below is a direct, line-cited port of a real legacy
- * `<svg>`; a handful with no legacy equivalent at all (Sun/Moon/Monitor -- legacy has no header
- * theme toggle, theme lives only in `Settings -> Appearance` as text-label segmented buttons) are
- * built in the same stroke-based style for visual consistency and explicitly called out as such
- * below, not presented as ports.
+ * `<svg>`; a handful with no legacy equivalent at all (Sun/Moon -- legacy has no header theme
+ * toggle at all, theme lives only in `Settings -> Appearance` as text-label segmented buttons,
+ * §8.12 docs/phase8-design-system-parity-plan.md) are built in the same stroke-based style for
+ * visual consistency and explicitly called out as such below, not presented as ports.
  *
  * Default `width`/`height` on every icon is 14 (this project's own most common icon size); pass
  * explicit `width`/`height` props to override for a specific call site, matching whatever size
@@ -261,16 +261,6 @@ export function SunIcon(props: IconProps = {}) {
       <line x1="20" y1="12" x2="22" y2="12" />
       <line x1="4.93" y1="19.07" x2="6.34" y2="17.66" />
       <line x1="17.66" y1="6.34" x2="19.07" y2="4.93" />
-    </svg>
-  );
-}
-
-export function MonitorIcon(props: IconProps = {}) {
-  return (
-    <svg {...baseProps(props)}>
-      <rect x="2" y="3" width="20" height="14" rx="2" />
-      <line x1="8" y1="21" x2="16" y2="21" />
-      <line x1="12" y1="17" x2="12" y2="21" />
     </svg>
   );
 }
