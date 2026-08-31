@@ -52,6 +52,21 @@ interface AppShellProps {
    * documentsStore's `registerScrollContainer`) read/write its `scrollTop` for the per-tab
    * scroll-position restore described in documentsStore.ts's own `TabViewState` header. */
   contentRef?: (el: HTMLDivElement | null) => void;
+  /** §8.17 slice (docs/phase8-design-system-parity-plan.md): matches legacy's real
+   * `body.zen-mode.zen-hide-appbar #appbar{display:none!important}` (legacy/index.html:2266) --
+   * legacy's own real `zenHideAppbar` default is `true`, so `#appbar` hiding is unconditional
+   * here too rather than wired to a settings toggle `web/` has no equivalent of yet. */
+  zenMode?: boolean;
+  /** §8.17 slice: the editor pane's floating chrome cluster (preview/toolbar/pad/zen toggles) --
+   * a SIBLING of `children` inside `#editor-pane`, not nested inside it, matching legacy's own
+   * real DOM exactly (`#editor-zen-toggle` etc. are direct children of `#editor-pane`, siblings of
+   * `#editor-pane-inner`, legacy/index.html:6563-6577). Rendering it here instead of inside
+   * `children` is what makes `position:absolute;bottom:14px` anchor to `#editor-pane`'s own real
+   * flex-filled height (`flex:1 1 auto`, matching legacy's real `flex:1;min-height:0`) rather than
+   * to the outline's own intrinsic content height -- nesting it inside `children` was a real bug
+   * this slice found and fixed: on a short document the buttons rendered right after the last
+   * node row instead of pinned to the bottom of the editing area. */
+  floatingEditorChrome?: ReactNode;
 }
 
 export function AppShell({
@@ -62,7 +77,9 @@ export function AppShell({
   statusLeft,
   statusRight,
   children,
-  contentRef
+  contentRef,
+  zenMode,
+  floatingEditorChrome
 }: AppShellProps) {
   const initTheme = useThemeStore((s) => s.init);
   const sidebarWidth = useSidebarStore((s) => s.width);
@@ -123,7 +140,7 @@ export function AppShell({
         style={{
           flex: '0 0 auto',
           height: 40,
-          display: 'flex',
+          display: zenMode ? 'none' : 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 10,
@@ -216,9 +233,10 @@ export function AppShell({
           ref={contentRef}
           id="editor-pane"
           data-testid="appshell-content"
-          style={{ flex: '1 1 auto', minWidth: 0, overflow: 'auto', padding: '12px 14px 18px 26px', background: 'var(--canvas-bg)' }}
+          style={{ flex: '1 1 auto', minWidth: 0, position: 'relative', overflow: 'auto', padding: '12px 14px 18px 26px', background: 'var(--canvas-bg)' }}
         >
           {children}
+          {floatingEditorChrome}
         </div>
       </div>
 

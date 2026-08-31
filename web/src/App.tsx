@@ -1,7 +1,9 @@
-import { useState, useEffect, type ReactNode } from 'react';
-import { ClockIcon, SparkleIcon } from './icons';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { ClockIcon, SparkleIcon, EditorPreviewToggleIcon, EditorToolbarToggleIcon, EditorPadToggleIcon, EditorZenToggleIcon } from './icons';
 import { Button } from './components/ui/Button';
 import { AppShell } from './components/AppShell';
+import { useSidebarStore } from './store/sidebarStore';
+import { usePadVisibilityStore } from './store/padVisibilityStore';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
 import { OutlineTree } from './components/OutlineTree';
 import { NotePanel } from './components/NotePanel';
@@ -72,6 +74,65 @@ function ToolbarGroup({ label, children }: { label: string; children: ReactNode 
  */
 export function App() {
   const [mode, setMode] = useState<'edit' | 'preview' | 'present'>('edit');
+  // §8.17 slice (docs/phase8-design-system-parity-plan.md): matches legacy's real transient
+  // `zenMode` module variable (legacy/index.html:29751) -- NOT persisted across reloads, unlike
+  // `toolbarVisible`/`padVisible`, matching legacy's own real distinction (only the `zenHideX`
+  // per-panel settings are ever saved, never `zenMode` itself). Scoped down from legacy's real
+  // `setZenMode` (legacy/index.html:31223-31244) to the two auto-hide targets `web/` actually has
+  // sensible equivalents for -- sidebar and app-bar (legacy's real defaults, `zenHideSidebar=true`/
+  // `zenHideAppbar=true`) -- and skips the configurable per-panel toggle settings (`zenHideToolbar`/
+  // `zenHidePad`, both default `false` in legacy anyway) and Quick-Assist-into-statusbar relocation
+  // (`web/`'s Quick Assist has only ever had the one app-bar-docked location, §8.15) as real,
+  // separately-scoped follow-ups rather than silently-approximated behavior.
+  const [zenMode, setZenModeState] = useState(false);
+  const zenAutoHidSidebarRef = useRef(false);
+  const sidebarOpen = useSidebarStore((s) => s.open);
+  const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
+
+  function setZenMode(on: boolean): void {
+    setZenModeState(on);
+    if (on) {
+      zenAutoHidSidebarRef.current = false;
+      if (sidebarOpen) {
+        toggleSidebarOpen();
+        zenAutoHidSidebarRef.current = true;
+      }
+      // Matches legacy's real `zenUseFullscreen` default (true) -- best-effort: sandboxed iframes
+      // and some browsers reject this outright, matching legacy's own `.catch(()=>{})` no-op.
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } else {
+      if (zenAutoHidSidebarRef.current && !useSidebarStore.getState().open) toggleSidebarOpen();
+      zenAutoHidSidebarRef.current = false;
+      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+  }
+
+  // Matches legacy's real `fullscreenchange` listener (legacy/index.html:31248-31249): stays in
+  // sync with fullscreen exited some way other than this toggle (Esc, F11, browser chrome).
+  useEffect(() => {
+    function onFullscreenChange(): void {
+      if (!document.fullscreenElement && zenMode) setZenMode(false);
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zenMode]);
+
+  // Matches legacy's real Escape handler's zen-mode clause (legacy/index.html:28043's own
+  // `if(zenMode)setZenMode(false)`) -- scoped to just that one clause, not legacy's whole
+  // multi-purpose Escape chain (context menu/drag/focus-mode, each already handled by their own
+  // component here).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent): void {
+      if (e.key === 'Escape' && zenMode) setZenMode(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zenMode]);
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory | undefined>(undefined);
   const hubDockActiveTab = useHubDockStore((s) => s.activeTab);
@@ -114,6 +175,8 @@ export function App() {
   // `toolbarVisible` default (false) -- see outlinePrefsStore.ts's own header for the full story.
   const toolbarVisible = useOutlinePrefsStore((s) => s.toolbarVisible);
   const setToolbarVisible = useOutlinePrefsStore((s) => s.setToolbarVisible);
+  const padVisible = usePadVisibilityStore((s) => s.padVisible);
+  const togglePadVisible = usePadVisibilityStore((s) => s.togglePadVisible);
   const openNotePanel = useNotePanelStore((s) => s.openPanel);
   const [aiRewriteBusy, setAiRewriteBusy] = useState(false);
   const autoRewriteEnabled = useAutoRewriteStore((s) => s.enabled);
@@ -299,6 +362,70 @@ export function App() {
       <WelcomeModal />
       <AppShell
         title="Sakura"
+        zenMode={zenMode}
+        floatingEditorChrome={
+          /* §8.17 slice (docs/phase8-design-system-parity-plan.md): the editor pane's real
+             floating chrome cluster -- reported directly by the user against the real live
+             `/web-preview/` editor ("preview, toolbar, maximize editor buttons should be
+             floating buttons, check the legacy"). §7.5/§8.6 only ever built one of legacy's real
+             four floating buttons (toolbar-reveal, at the wrong offset for a lone button); this
+             completes the set with `#editor-preview-toggle`/`#editor-pad-toggle`/
+             `#editor-zen-toggle` (legacy/index.html:6566-6577) at their own real offsets
+             (`.editor-preview-toggle`/`.editor-toolbar-toggle`/`.editor-pad-toggle`/
+             `.editor-zen-toggle`, index.css). Passed as AppShell's own `floatingEditorChrome`
+             prop (a sibling of `children` inside `#editor-pane`, not nested inside it) --
+             see that prop's own header for the real layout bug this fixes: nested inside the
+             outline's own wrapper, these anchored to the outline's intrinsic content height
+             instead of `#editor-pane`'s real flex-filled height, landing right after the last
+             node row on a short document instead of pinned to the bottom of the editing area.
+             The old always-visible plain Edit/Preview/Present text-button row is gone -- legacy
+             has no such row at all; Edit⇄Preview is this one toggle button, and Present is
+             reached from INSIDE Preview (legacy's real `#preview-present-btn`, a "▶" button in
+             Preview's own toolbar, not a top-level floating button) -- see PreviewPane.tsx's own
+             header for that port. */
+          <>
+            <button
+              type="button"
+              className="editor-preview-toggle"
+              onClick={() => setMode(mode === 'preview' ? 'edit' : 'preview')}
+              title={mode === 'preview' ? 'Back to editing' : 'Preview (read-only)'}
+              aria-label="Preview document"
+              aria-pressed={mode === 'preview'}
+            >
+              <EditorPreviewToggleIcon width={14} height={14} />
+            </button>
+            <button
+              type="button"
+              className="editor-toolbar-toggle"
+              onClick={() => setToolbarVisible(!toolbarVisible)}
+              title={toolbarVisible ? 'Hide toolbar' : 'Show toolbar'}
+              aria-label="Toggle toolbar"
+              aria-pressed={toolbarVisible}
+            >
+              <EditorToolbarToggleIcon width={14} height={14} />
+            </button>
+            <button
+              type="button"
+              className="editor-pad-toggle"
+              onClick={togglePadVisible}
+              title="Toggle Pad (Ctrl/Cmd+Shift+P)"
+              aria-label="Toggle Pad"
+              aria-pressed={padVisible}
+            >
+              <EditorPadToggleIcon width={14} height={14} />
+            </button>
+            <button
+              type="button"
+              className="editor-zen-toggle"
+              onClick={() => setZenMode(!zenMode)}
+              title={zenMode ? 'Restore (Esc)' : 'Maximize editor (hide file explorer & chrome)'}
+              aria-label="Maximize editor"
+              aria-pressed={zenMode}
+            >
+              <EditorZenToggleIcon width={14} height={14} active={zenMode} />
+            </button>
+          </>
+        }
         headerActions={
           <>
             {/* §6.10 slice 3 (docs/phase6-full-parity-plan.md), restructured (docs/phase8-design-
@@ -390,22 +517,7 @@ export function App() {
         }
         contentRef={registerScrollContainer}
       >
-        {/* §7.5 slice (docs/phase7-app-shell-and-dashboard-plan.md): Edit/Preview/Present mode
-            switching stays always-visible, matching legacy's real always-on floating mode
-            buttons -- these are NOT part of the collapsible per-node toolbar below (legacy's own
-            `#editor-preview-toggle` sits in its own floating row, never inside `#quick-bar`). */}
-        <div style={{ marginBottom: 12 }}>
-          <button type="button" onClick={() => setMode('edit')} disabled={mode === 'edit'} style={{ marginRight: 6 }}>
-            Edit
-          </button>
-          <button type="button" onClick={() => setMode('preview')} disabled={mode === 'preview'} style={{ marginRight: 6 }}>
-            Preview
-          </button>
-          <button type="button" onClick={() => setMode('present')} disabled={mode === 'present'}>
-            Present
-          </button>
-        </div>
-        {/* §7.5 slice: the real per-node action toolbar (legacy's own `#quick-bar`), hidden by
+        {/* §7.5 slice (docs/phase7-app-shell-and-dashboard-plan.md): the real per-node action toolbar (legacy's own `#quick-bar`), hidden by
             default (matches legacy's real `toolbarVisible=false` first-run default -- this whole
             block used to render unconditionally, matching no real legacy default) and, once
             shown, laid out as labeled groups instead of one flat row (History/Structure/Format/
@@ -677,47 +789,19 @@ export function App() {
             present above whichever content pane is active, matching legacy's own real DOM order
             (`#editor-title-row` is the first child of `#editor-wrap`, before the node rows). */}
         <DocumentHeader />
-        <div style={{ position: 'relative' }}>
-          {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane /> : <PresenterMode />}
-          {/* §7.5 slice: the floating toolbar-reveal toggle, matching legacy's real
-              `#editor-toolbar-toggle` (legacy/index.html:2259-2264, 6572) -- bottom-right of the
-              editor pane. Legacy positions this alongside three sibling floating buttons
-              (`#editor-preview-toggle`/`#editor-pad-toggle`/`#editor-zen-toggle`); this slice
-              deliberately doesn't relocate Preview/Present mode switching or the always-inline
-              Pad panel into that same floating cluster, and doesn't build a zen/maximize concept
-              at all (`web/` has none) -- a real, documented scope reduction to just this one
-              required toggle, not an oversight. */}
-          <button
-            type="button"
-            className="editor-toolbar-toggle"
-            onClick={() => setToolbarVisible(!toolbarVisible)}
-            title={toolbarVisible ? 'Hide toolbar' : 'Show toolbar'}
-            aria-label="Toggle toolbar"
-            aria-pressed={toolbarVisible}
-            style={{
-              position: 'absolute',
-              bottom: 14,
-              right: 14,
-              width: 28,
-              height: 28,
-              borderRadius: 7,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="4" rx="1" />
-              <rect x="3" y="10" width="18" height="4" rx="1" />
-              <rect x="3" y="16" width="18" height="4" rx="1" />
-            </svg>
-          </button>
-        </div>
+        {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane onEnterPresenter={() => setMode('present')} /> : <PresenterMode />}
         <NotePanel />
-        <div style={{ marginTop: 16 }}>
-          <PadPanel />
-        </div>
+        {/* §8.17 slice: gated on `padVisible` now, matching legacy's real `padOpen`-gated
+            `#pad-panel` (legacy/index.html:40295-40301's own `updatePadVisibility`) -- the Sync
+            section below is NOT part of that gate: it's a `web/`-only affordance for the
+            not-yet-built cloud-sync feature with no real legacy element to match (confirmed no
+            `#pad-panel`-nested or `padOpen`-gated "Sync" heading exists anywhere in legacy),
+            so it keeps its prior always-visible behavior rather than an invented coupling. */}
+        {padVisible && (
+          <div style={{ marginTop: 16 }}>
+            <PadPanel />
+          </div>
+        )}
         <div style={{ marginTop: 16 }}>
           <h2 style={{ fontSize: 16 }}>Sync</h2>
           <DocSyncPanel />

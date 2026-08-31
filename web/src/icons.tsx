@@ -586,3 +586,72 @@ export function QaCategoryIcon(props: IconProps = {}) {
     </svg>
   );
 }
+
+/** §8.17 (docs/phase8-design-system-parity-plan.md): the editor pane's floating chrome cluster --
+ * direct ports of legacy's real `#editor-preview-toggle`/`#editor-toolbar-toggle`/
+ * `#editor-pad-toggle`/`#editor-zen-toggle` icons (legacy/index.html:6566-6577). */
+export function EditorPreviewToggleIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export function EditorToolbarToggleIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+      <circle cx="9" cy="6" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="18" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function EditorPadToggleIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <line x1="15" y1="3" x2="15" y2="21" />
+    </svg>
+  );
+}
+
+/** §8.17 (docs/phase8-design-system-parity-plan.md): legacy's real `#preview-present-btn` icon
+ * (legacy/index.html:7559) -- Preview's own entry point into Presenter mode, a small "▶" button
+ * living inside Preview's toolbar, not a top-level app-bar/floating button. */
+export function PresenterPlayIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="currentColor" />
+    </svg>
+  );
+}
+
+/** Legacy swaps this icon's own inner paths between the two states (legacy/index.html:31223) --
+ * `active` renders the "restore" (inward-pointing) variant, matching that swap exactly. */
+export function EditorZenToggleIcon({ active, ...props }: IconProps & { active?: boolean } = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      {active ? (
+        <>
+          <polyline points="9 3 9 9 3 9" />
+          <polyline points="15 3 15 9 21 9" />
+          <polyline points="9 21 9 15 3 15" />
+          <polyline points="15 21 15 15 21 15" />
+        </>
+      ) : (
+        <>
+          <polyline points="9 3 3 3 3 9" />
+          <polyline points="15 3 21 3 21 9" />
+          <polyline points="3 15 3 21 9 21" />
+          <polyline points="21 15 21 21 15 21" />
+        </>
+      )}
+    </svg>
+  );
+}

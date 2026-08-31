@@ -2876,17 +2876,34 @@ input[type='number'] {
   background-clip: padding-box;
 }
 
-/* §8.6 slice (docs/phase8-design-system-parity-plan.md): the editor pane's own floating
- * toolbar-reveal toggle, direct port of legacy's real `#editor-toolbar-toggle`
- * (legacy/index.html:2259, plus its `:hover`/`.is-active` states at 2266-2268). `right: 14px` is
- * kept as `App.tsx`'s own value, not legacy's real `right: 90px` -- legacy's own offset only makes
- * sense alongside its three sibling floating buttons (`#editor-zen-toggle`/`#editor-pad-toggle`/
- * `#editor-preview-toggle`), none of which `web/` builds into this same floating cluster (§7.5's
- * own documented scope reduction, still true here) -- this is the one floating button `web/` has,
- * so it sits at the corner directly. */
-.editor-toolbar-toggle {
+/* §8.6 slice (docs/phase8-design-system-parity-plan.md), completed into the real 4-button
+ * cluster by §8.17 -- reported directly by the user against the real live `/web-preview/` editor
+ * pane. Direct port of legacy's real `#editor-preview-toggle`/`#editor-toolbar-toggle`/
+ * `#editor-pad-toggle`/`#editor-zen-toggle` (legacy/index.html:2250-2264, markup at 6566-6577):
+ * four floating icon buttons, absolutely positioned bottom-right of the editor pane, each 28x28,
+ * `border-radius:7px`, semi-transparent `edit-bg` background, `opacity:.55` at rest / `1` on
+ * hover or while active. §8.6 only ever built the toolbar-reveal one of the four (at `right:14px`,
+ * not legacy's real `right:90px`, since it was the only member of what should be a 4-button
+ * cluster) -- this closes that gap with the other three at their own real offsets
+ * (preview `right:126px`, toolbar `right:90px`, pad `right:54px`, zen `right:18px`, all
+ * `bottom:14px`), and moves the toolbar toggle itself back to its real `right:90px` slot. */
+.editor-preview-toggle,
+.editor-toolbar-toggle,
+.editor-pad-toggle,
+.editor-zen-toggle {
+  position: absolute;
+  bottom: 14px;
+  z-index: 6;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--edit-bg) 88%, transparent);
+  border-radius: 7px;
+  cursor: pointer;
   color: var(--hint);
   opacity: 0.55;
   transition:
@@ -2894,12 +2911,29 @@ input[type='number'] {
     color 0.12s,
     background 0.12s;
 }
-.editor-toolbar-toggle:hover {
+.editor-preview-toggle {
+  right: 126px;
+}
+.editor-toolbar-toggle {
+  right: 90px;
+}
+.editor-pad-toggle {
+  right: 54px;
+}
+.editor-zen-toggle {
+  right: 18px;
+}
+.editor-preview-toggle:hover,
+.editor-toolbar-toggle:hover,
+.editor-pad-toggle:hover,
+.editor-zen-toggle:hover {
   opacity: 1;
   color: var(--fg);
   background: var(--hover);
 }
-.editor-toolbar-toggle[aria-pressed='true'] {
+.editor-toolbar-toggle[aria-pressed='true'],
+.editor-pad-toggle[aria-pressed='true'],
+.editor-zen-toggle[aria-pressed='true'] {
   opacity: 1;
   color: var(--accent);
   border-color: var(--accent);

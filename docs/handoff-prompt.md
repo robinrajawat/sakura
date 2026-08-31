@@ -757,6 +757,36 @@ box-sizing:border-box), 200px wide growing to 300px on focus — not the boxier 
 headless-Chrome screenshot of both apps' real app-bar search boxes at rest — pixel-matching pill
 shape, height, and padding. Typecheck/build clean.
 
+**8.17 (editor pane's floating chrome cluster) landed — reported directly by the user against the
+real live `/web-preview/` editor and toolbar.** §7.5/§8.6 had only ever built ONE of legacy's real
+four floating buttons (`#editor-toolbar-toggle`, wrong offset for a lone button). Closed the gap
+with all three missing (`#editor-preview-toggle`/`#editor-pad-toggle`/`#editor-zen-toggle`) at
+their own real offsets. Real findings along the way, not just missing icons:
+1. The old plain Edit/Preview/Present text-button row is gone — legacy has no such row at all.
+   Edit⇄Preview is the one real floating toggle; Present is reached from INSIDE Preview (legacy's
+   real `#preview-present-btn`, a "▶" button in Preview's own toolbar) — ported into
+   `PreviewPane.tsx` via a new `onEnterPresenter` prop rather than inventing a floating fourth
+   button that doesn't exist in legacy.
+2. Pad's real default is CLOSED, not always-visible (`padOpen=false`, legacy's own static markup
+   even ships `#pad-panel` with `pad-hidden` already on it) — `<PadPanel/>` had rendered
+   unconditionally since Phase 6. New `padVisibilityStore.ts` (its own dedicated persistence key,
+   matching legacy's own separate `PAD_OPEN_KEY`) now gates it. The Sync section below stays
+   ungated — no legacy element ties it to `padOpen`.
+3. Zen/maximize mode was entirely unbuilt — new local `zenMode` state, matching legacy's real
+   defaults (hide sidebar + app-bar, best-effort fullscreen, Escape/fullscreenchange resync),
+   deliberately not persisted (matching legacy's own transient module variable).
+4. A real layout bug found and fixed along the way: the floating cluster, first nested inside the
+   outline's own wrapper, sized to the outline's intrinsic content height — on a short document the
+   buttons rendered right after the last row instead of pinned to the bottom of the editing area.
+   Fixed via `AppShell.tsx`'s new `floatingEditorChrome` prop, rendered as a sibling of `children`
+   inside the same `#editor-pane` (which already had the right real flex-fill sizing), matching
+   legacy's real DOM structure (buttons are siblings of `#editor-pane-inner`, not nested in it).
+
+Verified with real headless-Chrome screenshots: side-by-side floating-cluster crop against legacy's
+real four-icon cluster (pixel-matching), pad-toggle/preview-toggle/present-launch/zen-mode all
+exercised and working, Escape correctly restoring sidebar+app-bar. Full gauntlet clean: 2005 tests
+passing, typecheck/lint/build all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
 closed one concrete finding, but the row's own background/border/selection-highlight is still
