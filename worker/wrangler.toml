@@ -1,0 +1,26 @@
+# Cloudflare Worker config for docs/ai-hosted-vault-design.md's proposed AI key vault +
+# hosted AI backend. Not deployed anywhere yet — see that doc's "Explicitly out of scope"
+# section. This file alone is not enough to deploy: the KV namespace id below is a
+# placeholder, and the encryption/provider secrets referenced in code aren't set here at
+# all (secrets are provisioned via `wrangler secret put <NAME>`, never committed).
+#
+# Before a real deploy:
+#   1. `wrangler kv:namespace create SAKURA_VAULT_KV` and paste the real id below.
+#   2. `wrangler secret put VAULT_KEK` — the AES-256-GCM key-encryption-key for vaulted
+#      BYOK keys (see docs/ai-hosted-vault-design.md's "Trust model" section).
+#   3. `wrangler secret put <PROVIDER>_API_KEY` for whichever provider(s) fund hosted mode
+#      (Groq/Cerebras per the design doc's cost-control section).
+#   4. Confirm `FIREBASE_PROJECT_ID` below still matches legacy/index.html's own
+#      FIREBASE_CONFIG.projectId (currently "sakura-4cdae") before relying on token
+#      verification.
+
+name = "sakura-vault"
+main = "src/index.ts"
+compatibility_date = "2026-08-31"
+
+[vars]
+FIREBASE_PROJECT_ID = "sakura-4cdae"
+
+[[kv_namespaces]]
+binding = "SAKURA_VAULT_KV"
+id = "REPLACE_WITH_REAL_KV_NAMESPACE_ID"
