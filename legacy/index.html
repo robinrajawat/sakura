@@ -15925,14 +15925,14 @@ async function hydrateCloudDocBlobs(mod,db,ownerUid,docId,docData){
   }
   return docData;
 }
-async function applyIncomingDocData(mod,db,id,cloud,viaRealtime){
+async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   const localIndex=loadDocsIndex();
   const localEntry=localIndex.find(d=>d.id===id);
   if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localEntry?Number(localEntry.updatedAt)||0:null,_lastPushedTs['doc:'+id]))return false;
   if(id===currentDocId){
     if(!viaRealtime)return false; // polling: leave the active doc alone entirely
     const {updatedAt,...rawDocData}=cloud;
-    const docData=await hydrateCloudDocBlobs(mod,db,currentUser.uid,id,rawDocData);
+    const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData)); // safe: not touching live `nodes`
     if(crossTabWarningDocId!==currentDocId){
       crossTabWarningDocId=currentDocId;
@@ -15942,7 +15942,7 @@ async function applyIncomingDocData(mod,db,id,cloud,viaRealtime){
     return true;
   }
   const {updatedAt,...rawDocData}=cloud;
-  const docData=await hydrateCloudDocBlobs(mod,db,currentUser.uid,id,rawDocData);
+  const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   touchDocIndex(id,docData.title||'Untitled');
   // A collaborator with edit access just changed one of MY documents that isn't the one I have
@@ -16123,7 +16123,7 @@ async function pullAndMergeFromCloud(isInitial=false){
     if(cloudDocsSnap){
       for(const docSnap of cloudDocsSnap.docs){
         const id=docSnap.id; cloudIds.add(id);
-        if(await applyIncomingDocData(mod,db,id,docSnap.data(),false))pulledInCount++;
+        if(await applyIncomingDocData(mod,db,currentUser.uid,id,docSnap.data(),false))pulledInCount++;
       }
     }
     // Only decide "this local doc is missing from the cloud, push it up" when we actually
@@ -16199,7 +16199,7 @@ async function startRealtimeSync(){
         // locally by the delete path that triggered it). Cross-device delete propagation is a
         // separate, more involved piece of work than what's needed here.
         if(change.type==='removed')continue;
-        if(await applyIncomingDocData(mod,db,change.doc.id,change.doc.data(),isLive))changed=true;
+        if(await applyIncomingDocData(mod,db,uid,change.doc.id,change.doc.data(),isLive))changed=true;
       }
       if(changed){ renderSidebar(); if(typeof renderDocsList==='function')renderDocsList(); }
     },err=>console.warn('[sakura] docs realtime listener error:',err));
