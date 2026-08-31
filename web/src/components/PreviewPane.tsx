@@ -9,6 +9,7 @@ import { buildTocEntries } from '../state/previewToc';
 import { PreviewToc } from './PreviewToc';
 import { decisionStatusLabelCore, decisionStatusColorKeyCore } from '../state/decisionLogQueries';
 import { stripHtmlToText } from '../utils/stripHtmlToText';
+import { PresenterPlayIcon } from '../icons';
 
 const PV_DL_FIELDS: { key: DecisionTextField; label: string }[] = [
   { key: 'context', label: 'Context' },
@@ -46,12 +47,20 @@ const PV_DL_FIELDS: { key: DecisionTextField; label: string }[] = [
  * decision-log TOC-entry/grouping (a real, separately-scoped follow-up -- `previewToc.ts`'s own
  * header would need its own extension for this).
  *
- * Deliberately still scoped down from legacy's real Preview: no Presenter Mode slide deck, no
- * word-count/author/updated-at meta header, no TOC collapse/resize -- each a real,
- * separately-scoped follow-up (Presenter Mode itself is still §6.6's own unscoped remaining
- * item).
+ * Deliberately still scoped down from legacy's real Preview: no word-count/author/updated-at meta
+ * header, no TOC collapse/resize -- each a real, separately-scoped follow-up.
+ *
+ * §8.17 slice (docs/phase8-design-system-parity-plan.md): `onEnterPresenter` -- direct port of
+ * legacy's real `#preview-present-btn` (legacy/index.html:7559, a "▶" button in Preview's own
+ * toolbar) as the entry point into Presenter mode. `PresenterMode.tsx` was already built
+ * (correcting this file's own now-stale claim that it was still unscoped) but, until this slice,
+ * was only reachable via `App.tsx`'s old top-level plain "Present" button -- removed in the same
+ * slice that replaced it and "Edit"/"Preview" with the real floating editor-chrome cluster, since
+ * legacy has no top-level Present button at all; this is its one real entry point, matching
+ * legacy's own actual structure instead of inventing a floating fourth button that doesn't exist
+ * there.
  */
-export function PreviewPane() {
+export function PreviewPane({ onEnterPresenter }: { onEnterPresenter: () => void }) {
   const nodes = useOutlineStore((s) => s.nodes);
   const decisions = usePadStore((s) => s.decisions);
   const theme = useThemeStore((s) => s.theme);
@@ -118,10 +127,35 @@ export function PreviewPane() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '60vh', border: `1px solid ${t.border}`, borderRadius: 6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '60vh', border: `1px solid ${t.border}`, borderRadius: 6, position: 'relative' }}>
       <div style={{ height: 2, flexShrink: 0, background: 'transparent' }}>
         <div style={{ height: '100%', width: `${progress}%`, background: 'var(--accent)', transition: 'width .08s linear' }} />
       </div>
+      <button
+        type="button"
+        onClick={onEnterPresenter}
+        title="Presenter mode — step through top-level sections one at a time"
+        aria-label="Enter Presenter mode"
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 2,
+          width: 24,
+          height: 24,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+          borderRadius: 6,
+          border: `1px solid ${t.border}`,
+          background: t.background,
+          color: t.mutedText,
+          cursor: 'pointer'
+        }}
+      >
+        <PresenterPlayIcon width={13} height={13} />
+      </button>
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <PreviewToc entries={tocEntries} activeId={activeTocId} onSelect={scrollToEntry} />
         <div ref={bodyRef} onScroll={updateProgress} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', fontFamily: 'sans-serif', color: t.text, lineHeight: 1.6 }}>

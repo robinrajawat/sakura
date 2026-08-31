@@ -1237,6 +1237,63 @@ follow-ups (§8.7+), each large enough to be its own slice.
   directly (web/ only ever has the one app-bar-docked location legacy's `status-qa` variant covers,
   so no second selector tier is needed). Verified with a side-by-side headless-Chrome screenshot of
   both apps' real app-bar search boxes at rest -- pixel-matching pill shape, height, and padding.
+- ✅ **8.17 (editor pane's floating chrome cluster) landed -- reported directly by the user against
+  the real live `/web-preview/` editor and toolbar ("pad area, preview, toolbar, maximize editor
+  buttons should be floating buttons, check the legacy").** §7.5/§8.6 had only ever built ONE of
+  legacy's real four floating buttons (`#editor-toolbar-toggle`, at `right:14px` -- the wrong
+  offset for a lone button, legacy's real value is `right:90px`). Investigated legacy's real markup
+  (`#editor-zen-toggle`/`#editor-pad-toggle`/`#editor-toolbar-toggle`/`#editor-preview-toggle`,
+  legacy/index.html:2250-2264 CSS, 6566-6577 markup) and closed the gap with all three missing
+  buttons at their own real offsets (`right:126px`/`90px`/`54px`/`18px`, `bottom:14px`, all 28x28).
+  Several real, confirmed findings along the way, not just missing icons:
+  1. **The old plain Edit/Preview/Present text-button row is gone.** Legacy has no such row at
+     all -- confirmed no top-level Present button anywhere in legacy's real markup. Edit⇄Preview is
+     the one real `#editor-preview-toggle` toggle button; Present is reached from INSIDE Preview
+     (legacy's real `#preview-present-btn`, legacy/index.html:7559, a "▶" button in Preview's own
+     toolbar) -- ported into `PreviewPane.tsx` as a small top-right button calling a new
+     `onEnterPresenter` prop, rather than inventing a floating fourth button that doesn't exist in
+     legacy. `PresenterMode.tsx` was already built (correcting `PreviewPane.tsx`'s own stale header
+     claim that it was still unscoped) but had been reachable only via the removed top-level button.
+  2. **Pad's real default is CLOSED, not always-visible.** Legacy's real `padOpen` (legacy/
+     index.html:8276) defaults `false` -- confirmed legacy's own static markup even ships
+     `#pad-panel` with a `pad-hidden` class already on it (legacy/index.html:6598). `<PadPanel />`
+     had rendered unconditionally since Phase 6, matching no real legacy default. New
+     `padVisibilityStore.ts` (a tiny dedicated store, matching legacy's own separate
+     `PAD_OPEN_KEY='sakura_pad_open'` persistence -- kept out of `outlinePrefsStore.ts` for the same
+     reason legacy keeps it a separate `localStorage` entry) now gates it, toggled by the new
+     `#editor-pad-toggle`-equivalent floating button. The "Sync" section below Pad is deliberately
+     NOT gated by this -- confirmed no `padOpen`-gated or `#pad-panel`-nested "Sync" heading exists
+     anywhere in legacy; it's a `web/`-only cloud-sync affordance with no real legacy element to
+     match, so gating it on `padVisible` would be an invented coupling, not a port.
+  3. **Zen/maximize mode was entirely unbuilt.** New local `zenMode` state in `App.tsx` (explicitly
+     NOT persisted, matching legacy's own real transient `zenMode` module variable,
+     legacy/index.html:29751 -- only the `zenHideX` per-panel settings are ever saved) -- scoped
+     to legacy's real default behavior (`zenHideSidebar=true`/`zenHideAppbar=true`,
+     legacy/index.html:8352): hides the sidebar (reusing the existing `sidebarStore`) and the
+     app-bar (`AppShell`'s new `zenMode` prop, `#appbar{display:none}`), plus a best-effort
+     `requestFullscreen()`/`exitFullscreen()` pair matching legacy's own real `zenUseFullscreen`
+     default and its `fullscreenchange` resync listener (legacy/index.html:31248-31249) and Escape
+     handler (legacy/index.html:28043's own `if(zenMode)setZenMode(false)` clause). Deliberately
+     NOT ported: legacy's configurable `zenHideToolbar`/`zenHidePad` settings (both default `false`
+     in legacy anyway) and Quick-Assist-into-statusbar relocation (`web/`'s Quick Assist has only
+     ever had the one app-bar-docked location, §8.15) -- real, separately-scoped follow-ups.
+  4. **A real layout bug found and fixed along the way**: the floating cluster was first built
+     nested inside the same `position:relative` wrapper as `<OutlineTree/>` itself, which sizes to
+     the outline's own intrinsic content height -- on a short document the buttons rendered right
+     after the last node row instead of pinned to the bottom of the editing area. Legacy's real
+     `#editor-pane{flex:1;min-height:0}` is a flex item filling the remaining viewport height, and
+     its floating buttons are direct children of THAT (siblings of `#editor-pane-inner`), not
+     nested inside the outline. Fixed by adding `AppShell.tsx`'s new `floatingEditorChrome` prop --
+     rendered as a sibling of `children` inside the SAME `#editor-pane` div (which already had the
+     right real `flex:'1 1 auto'` sizing, now also `position:'relative'`) -- matching legacy's real
+     DOM structure exactly instead of approximating it one level too deep.
+
+  Verified with real headless-Chrome screenshots: side-by-side floating-cluster crop against
+  legacy's real four-icon cluster (pixel-matching shape/spacing/order), the pad-toggle opening Pad
+  with the real accent-active state, the preview-toggle switching modes with the real "▶" Present
+  button visible, Presenter mode launching correctly from it, and zen mode hiding sidebar+app-bar
+  with Escape correctly restoring both. Full gauntlet clean: 2005 tests passing (no test changes
+  needed), typecheck/lint/build all clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,
