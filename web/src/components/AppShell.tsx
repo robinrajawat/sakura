@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useThemeStore } from '../store/themeStore';
 import { useSidebarStore } from '../store/sidebarStore';
+import { SakuraBrandIcon } from '../icons';
 
 /**
  * Phase 6.1, part 2 (docs/phase6-full-parity-plan.md, "Design tokens & app shell"). The real
@@ -131,8 +132,33 @@ export function AppShell({
           borderBottom: '1px solid var(--border)'
         }}
       >
-        <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.015em', color: 'var(--accent)' }}>
-          {title}
+        {/* §8.14 slice (docs/phase8-design-system-parity-plan.md): direct port of legacy's real
+            `#app-brand`/`#app-brand-icon`/`#app-name` (legacy/index.html:4528-4530, 366-368) --
+            two real, previously-missed gaps found together: no brand icon at all (see icons.tsx's
+            own SakuraBrandIcon header for the correction to a prior session's wrong claim that the
+            desktop appbar has no icon), and the wordmark's own styling was never actually matched
+            to legacy's real `#app-name` rule -- a small, muted, letter-spaced, uppercase label
+            (`font:700 12px`, `color:var(--muted)`, `letter-spacing:.09em`, `text-transform:
+            uppercase`), not the bold/16px/accent-colored treatment this span previously had
+            (`text-transform:uppercase` renders correctly regardless of the `title` prop's own
+            literal casing, same as legacy's own redundant-but-real CSS transform over its
+            already-uppercase "SAKURA" markup). */}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 0 }}>
+          <span style={{ display: 'inline-flex', flexShrink: 0, marginRight: 7 }}>
+            <SakuraBrandIcon />
+          </span>
+          <span
+            style={{
+              display: 'inline',
+              font: "700 12px 'Inter', sans-serif",
+              color: 'var(--muted)',
+              letterSpacing: '.09em',
+              textTransform: 'uppercase',
+              userSelect: 'none'
+            }}
+          >
+            {title}
+          </span>
         </span>
         <div id="header-actions" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {headerActions}

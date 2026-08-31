@@ -1131,6 +1131,46 @@ follow-ups (§8.7+), each large enough to be its own slice.
   of both tabs (rest state with 2 real rows each, hover-revealed dup/delete buttons, and Mind
   Map's own dark-theme rendering) against a real build, not the dev server. Full gauntlet clean:
   2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
+- ✅ **8.14 (app-bar brand icon + wordmark styling) landed -- reported directly by the user against
+  the real live `/web-preview/` deploy, after also tracking down and fixing a real 2-day-stuck
+  deploy.yml queue lock (a separate, non-code infrastructure issue -- see below) that had silently
+  blocked every deploy since PR #298, which is why §8.12's own fix hadn't actually reached
+  production yet when this was reported.** Two real gaps in `AppShell.tsx`'s `#appbar`, found
+  together by reading legacy's own real CSS rather than assumed: (1) no brand icon at all -- confirmed
+  legacy's real `#app-brand-icon` (legacy/index.html:4529) is genuinely present in the DESKTOP
+  `#appbar`, not just the mobile `hub.html` page, directly correcting a wrong claim §7.6/8.11's own
+  write-up made ("desktop's own real `#appbar` has none either"); (2) the wordmark's own styling was
+  never actually matched to legacy's real `#app-name` rule (legacy/index.html:368) at all -- a small,
+  muted, letter-spaced, uppercase label (`font:700 12px`, `color:var(--muted)`,
+  `letter-spacing:.09em`, `text-transform:uppercase`), not the bold/16px/`var(--accent)`-colored
+  treatment `AppShell.tsx` had used since Phase 6.1's own original approximation. New
+  `SakuraBrandIcon` (icons.tsx) direct-ports the real five-petal `color-mix(in srgb, var(--accent)
+  N%, transparent)`-filled-ellipse blossom SVG. Verified with real headless-Chrome screenshots in
+  both themes against a real build. **A related, separate, NOT-yet-fixed finding**: `MobileHub.tsx`
+  (§8.11) copied this same AppShell wordmark styling on the assumption the two should match --
+  turns out legacy's real mobile `hub.html` has its OWN distinct brand treatment
+  (`#hub-brand-word`: `font:800 18px`, `color:var(--fg)`, `letter-spacing:.04em` -- NOT muted, NOT
+  12px -- plus a real accent-colored "Hub" sub-badge chip, `#hub-brand-sub`, that `web/` has never
+  had at all), confirmed by reading legacy/hub.html:54-69,446 directly -- left as a named follow-up
+  rather than folded into this slice, since it's a different source file with genuinely different
+  real CSS, not a copy-paste of this fix. Full gauntlet clean: 2005 tests still passing (no test
+  changes needed), typecheck/lint/build all clean.
+
+  **Separate infrastructure finding, not a code bug**: `deploy.yml`'s `pages` concurrency group had
+  a workflow run (from PR #298's merge, 2026-08-28) stuck in `queued` status for over 2 days,
+  blocking every subsequent deploy behind it (either queuing indefinitely or getting cancelled) --
+  confirmed via `list_workflow_runs`/`get_workflow_run`/`list_workflow_jobs` showing a chain of
+  `cancelled` conclusions for every push since, and one run genuinely still `queued` since
+  2026-08-28T15:50:43Z with zero jobs ever started. This meant `/web-preview/` had not actually
+  redeployed since before PR #298 landed -- roughly six phases (8.7 through 8.13) of real, merged,
+  gauntlet-clean work never reached the preview URL, which is why the app-bar declutter (§8.12)
+  still looked unfixed when the user checked it live. Fixed by cancelling the stuck run
+  (`cancel_workflow_run`), which released the lock and let the queue drain -- confirmed by watching
+  the next run (§8.13's own commit) go from `pending`/zero-jobs to a real completed `build`+`deploy`
+  job pair, with the `deploy-pages` action's own log showing "Reported success!" for that exact
+  commit. Not something to route around unilaterally if it recurs -- flagging here so a future
+  session recognizes the "CI/PR all green but the live site still looks unchanged" symptom instead
+  of re-diagnosing from scratch.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,
