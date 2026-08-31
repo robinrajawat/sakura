@@ -503,6 +503,7 @@ export function App() {
         }
         tabBar={<DocumentTabs />}
         sidebar={<SidebarFileExplorer />}
+        padPanel={<PadPanel />}
         statusLeft={<span>Phase 6.2, in progress</span>}
         statusRight={
           <>
@@ -763,27 +764,6 @@ export function App() {
             </ToolbarGroup>
           </div>
         )}
-        <ul style={{ fontSize: '0.9em', color: '#555' }}>
-          <li>Click to select, double-click to edit</li>
-          <li>
-            <kbd>Enter</kbd> — new sibling below; <kbd>Ctrl/Cmd+Enter</kbd> — new child
-          </li>
-          <li>
-            <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — indent / outdent
-          </li>
-          <li>
-            <kbd>Backspace</kbd> on empty text — delete the node
-          </li>
-          <li>Click the ▾/▸ arrow to collapse/expand a subtree</li>
-          <li>
-            Drag a row onto another — top third = above, bottom third = below, middle third =
-            nest as child
-          </li>
-          <li>
-            Semantic markup: <code>[Section]</code>, <code>(note)</code>, <code>!alert</code>,{' '}
-            <code>`code`</code> — matches legacy's real styling, delimiters hidden
-          </li>
-        </ul>
         {/* §7.4 slice (docs/phase7-app-shell-and-dashboard-plan.md): the per-document header row
             (title + status/author/link chips) -- see DocumentHeader.tsx's own header. Always
             present above whichever content pane is active, matching legacy's own real DOM order
@@ -791,17 +771,6 @@ export function App() {
         <DocumentHeader />
         {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane onEnterPresenter={() => setMode('present')} /> : <PresenterMode />}
         <NotePanel />
-        {/* §8.17 slice: gated on `padVisible` now, matching legacy's real `padOpen`-gated
-            `#pad-panel` (legacy/index.html:40295-40301's own `updatePadVisibility`) -- the Sync
-            section below is NOT part of that gate: it's a `web/`-only affordance for the
-            not-yet-built cloud-sync feature with no real legacy element to match (confirmed no
-            `#pad-panel`-nested or `padOpen`-gated "Sync" heading exists anywhere in legacy),
-            so it keeps its prior always-visible behavior rather than an invented coupling. */}
-        {padVisible && (
-          <div style={{ marginTop: 16 }}>
-            <PadPanel />
-          </div>
-        )}
         <div style={{ marginTop: 16 }}>
           <h2 style={{ fontSize: 16 }}>Sync</h2>
           <DocSyncPanel />

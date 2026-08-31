@@ -819,43 +819,45 @@ local terminal open). `main` now sits at rewritten SHAs `e16581d`/`2e47ee7` for 
 workflow rule above has been strengthened with this incident's specifics so a future session
 doesn't repeat it a third time.
 
-**Reported by the user this session, investigated and confirmed against legacy's real code, NOT
-YET fixed** (found while looking at `/web-preview/`'s document-editor view, screenshot-compared
-against legacy's own clean empty-state):
-1. **A permanent instructional bullet list** ("Click to select, double-click to edit" / kbd-tag
-   keyboard shortcuts / semantic-markup legend) is hardcoded in `App.tsx` (a `<ul>`, right before
-   `<DocumentHeader/>`) and renders above EVERY document, unconditionally. Confirmed no legacy
-   equivalent exists anywhere as permanent on-screen UI -- legacy's own real onboarding content
-   lives in the Guided Tour / Help panel / cheatsheet, never inline above the outline. This is
-   Phase-3-era placeholder content that was never removed once those real entry points existed;
-   simplest fix is deleting the block outright.
-2. **The ad hoc "Sort top-level: A→Z / Z→A / By depth" + "Dark" theme-toggle row** in
-   `OutlineTree.tsx` (unstyled inline `<button>`s, `fontFamily:'sans-serif'`) renders permanently
-   above every document's node tree. Confirmed no legacy equivalent as a permanent row: legacy's
-   real sort buttons live behind the toolbar's Extras/More dropdown (`#more-toggle`, already
-   flagged as deliberately-deferred scope in §8.15 point 3 above), and the real theme toggle
-   already correctly lives in Settings → Appearance (§8.12) -- this row predates both of those and
-   was never cleaned up. `sortChildren` (`outlineStore.ts`) is a real, working, already-tested
-   action with no home yet other than this misplaced row; same call as §8.15 point 3: remove the
-   row (matching legacy's real default of no permanent Sort/Theme UI here) rather than build the
-   full Extras dropdown just to house it.
-3. **Pad should render as a docked RIGHT SIDE PANEL, not stacked inline below the outline.**
-   Confirmed directly from legacy's real CSS: `#editor-row{flex:1;display:flex}` is a horizontal
-   flex row containing `#editor-pane` (flex:1, fills remaining width) then `#pad-resize-handle` +
-   `#pad-panel` (`flex:0 0 var(--pad-width)`, default 440px, resizable 220–640px, its own separate
-   `PAD_WIDTH_KEY='sakura_pad_width_v1'` persistence) as trailing siblings -- i.e. Pad sits beside
-   the editor, not below it. `index.css`'s own §8.7 comment on `.pad-panel` already named this
-   exact gap ("`web/`'s own Pad renders inline below the editor rather than as legacy's real docked
-   440px side panel... an existing, documented structural simplification"), now confirmed by the
-   user as a real, wanted fix rather than an acceptable simplification. Some prep work exists but
-   was LOST mid-session (a `git reset --hard` during the attribution-fix rewrite above discarded
-   uncommitted edits to `padVisibilityStore.ts` adding `padWidth`/`setPadWidth`/`commitPadWidth`,
-   mirroring `sidebarStore.ts`'s own `setWidth`/`commitWidth` split) -- needs redoing from scratch,
-   not resuming. The real fix needs `AppShell.tsx` restructured the same way `floatingEditorChrome`
-   was in §8.17: a new prop (e.g. `padPanel`) rendered as a sibling of `#editor-pane` inside the
-   SAME horizontal flex row (`<div style={{flex:'1 1 auto', display:'flex', minHeight:0}}>`), with
-   `<PadPanel/>` moved out of `#editor-pane`'s own children into that prop, plus a resize handle
-   modeled on the sidebar's own `startResize` drag closure. None of this is committed yet.
+**All three items reported by the user in the previous session (investigated and confirmed
+against legacy's real code) are now fixed, landed this session as §8.18/§8.19
+(docs/phase8-design-system-parity-plan.md).**
+1. ✅ **8.18 — the permanent instructional bullet list and the ad hoc "Sort top-level"/theme-toggle
+   row, both removed outright.** Neither had a real legacy counterpart as permanent on-screen UI:
+   legacy's own real onboarding content lives in the Guided Tour / Help panel / cheatsheet, never
+   inline above the outline (the bullet list, `App.tsx`); legacy's real sort buttons live behind
+   the toolbar's Extras/More dropdown (already flagged as deliberately-deferred scope, §8.15 point
+   3) and the real theme toggle already correctly lives in Settings → Appearance (§8.12) -- the row
+   predated both of those moves and was never cleaned up (`OutlineTree.tsx`). `sortChildren`
+   (`outlineStore.ts`) and `toggleTheme` (`themeStore.ts`) stay real, working, already-tested
+   actions -- only this component's own now-unused local bindings/imports were removed, not the
+   store actions themselves. Verified with a real headless-Chrome screenshot against the 8.5
+   fixture: the tree now renders straight into content with nothing above it. Full gauntlet clean:
+   2005 tests passing, typecheck/lint/build all clean.
+2. ✅ **8.19 — Pad now renders as a real docked right-side panel, not stacked inline below the
+   outline.** `padVisibilityStore.ts` gained `padWidth`/`setPadWidth`/`commitPadWidth`, mirroring
+   `sidebarStore.ts`'s own `setWidth`/`commitWidth` split (redone from scratch after the prior
+   session's `git reset --hard` lost the uncommitted prep work) -- with one real, confirmed
+   asymmetry ported faithfully rather than "fixed" to match the sidebar: legacy's own real Pad
+   handle grows the panel LEFTWARD (`applyPadWidth(startW - (e.clientX-startX))`,
+   legacy/index.html:41599, since the panel is docked on the trailing edge), the opposite sign from
+   the sidebar's own rightward growth. `AppShell.tsx` gained a new `padPanel` prop, rendered as a
+   real sibling of `#editor-pane` inside the SAME horizontal flex row (matching legacy's real DOM
+   order exactly: `#editor-pane` then `#pad-resize-handle` then `#pad-panel` as trailing siblings),
+   plus its own resize handle between them, both gated on `padVisible` read directly from the store
+   the same way `sidebarWidth`/`sidebarOpen` already are. `App.tsx` moved `<PadPanel/>` out of its
+   own inline `{padVisible && ...}` block below the outline into that new prop. `#pad-panel`'s own
+   `overflow:hidden` (legacy relies on internal child elements to scroll) was ported as
+   `overflow:'auto'` on the outer wrapper instead, since `PadPanel.tsx`'s tabs are a single flat div
+   with no internal scroll containers -- the same "port the effect, not the exact technique"
+   precedent used throughout §8.4/§8.6-8.18. Verified with real headless-Chrome screenshots against
+   the 8.5 fixture: Pad opens as a genuine docked side panel with the editor content visibly
+   narrower alongside it, and a real drag-left on the resize handle correctly widens the panel while
+   the editor shrinks to match. Full gauntlet clean: 2010 tests passing (5 new,
+   `padVisibilityStore.test.ts`), typecheck/lint/build all clean.
+
+Both slices committed and pushed to `claude/sakura-react-migration-94a5m0` (not yet merged to
+`main` — no PR opened this session per this doc's own "don't create a PR unless asked" default).
 
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10

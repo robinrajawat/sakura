@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useThemeStore } from '../store/themeStore';
 import { useSidebarStore } from '../store/sidebarStore';
+import { usePadVisibilityStore } from '../store/padVisibilityStore';
 import { SakuraBrandIcon } from '../icons';
 
 /**
@@ -67,6 +68,16 @@ interface AppShellProps {
    * this slice found and fixed: on a short document the buttons rendered right after the last
    * node row instead of pinned to the bottom of the editing area. */
   floatingEditorChrome?: ReactNode;
+  /** §8.19 slice (docs/phase8-design-system-parity-plan.md): the Pad panel's own content
+   * (`<PadPanel />`) -- rendered as a SIBLING of `#editor-pane` inside the same horizontal flex
+   * row, matching legacy's real DOM exactly: `#editor-row{flex:1;display:flex}` contains
+   * `#editor-wrap` (`#editor-pane`'s own real ancestor), then `#pad-resize-handle`, then
+   * `#pad-panel` as trailing siblings (legacy/index.html:6504-6765) -- Pad sits BESIDE the
+   * editor, not stacked below it. Visibility/width are read internally from
+   * `padVisibilityStore.ts` (same "the shell owns its own docked-panel state" convention
+   * `sidebarWidth`/`sidebarOpen` above already establish for the sidebar), so a caller just
+   * always passes the panel's content -- this component decides whether/how wide to show it. */
+  padPanel?: ReactNode;
 }
 
 export function AppShell({
@@ -79,7 +90,8 @@ export function AppShell({
   children,
   contentRef,
   zenMode,
-  floatingEditorChrome
+  floatingEditorChrome,
+  padPanel
 }: AppShellProps) {
   const initTheme = useThemeStore((s) => s.init);
   const sidebarWidth = useSidebarStore((s) => s.width);
@@ -87,6 +99,10 @@ export function AppShell({
   const initSidebar = useSidebarStore((s) => s.init);
   const setSidebarWidth = useSidebarStore((s) => s.setWidth);
   const commitSidebarWidth = useSidebarStore((s) => s.commitWidth);
+  const padVisible = usePadVisibilityStore((s) => s.padVisible);
+  const padWidth = usePadVisibilityStore((s) => s.padWidth);
+  const setPadWidth = usePadVisibilityStore((s) => s.setPadWidth);
+  const commitPadWidth = usePadVisibilityStore((s) => s.commitPadWidth);
 
   useEffect(() => {
     initTheme();
@@ -116,6 +132,28 @@ export function AppShell({
     // matches legacy's own initSidebarResize closure shape exactly (legacy/index.html:33046-33056)
     // rather than routing this through React state/effects, since the gesture's lifetime is
     // itself the right scope for these listeners and doesn't need to survive a re-render.
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  function startPadResize(startEvent: React.MouseEvent): void {
+    startEvent.preventDefault();
+    const startX = startEvent.clientX;
+    const startWidth = usePadVisibilityStore.getState().padWidth;
+    document.body.style.userSelect = 'none';
+
+    function onMouseMove(e: MouseEvent): void {
+      // Mirrors the sidebar's own startResize, but grows LEFTWARD -- the Pad panel is docked on
+      // the trailing (right) edge, so dragging the handle left should widen it, matching legacy's
+      // own real `applyPadWidth(startW - (e.clientX-startX))` (legacy/index.html:41599).
+      setPadWidth(startWidth - (e.clientX - startX));
+    }
+    function onMouseUp(): void {
+      document.body.style.userSelect = '';
+      commitPadWidth();
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    }
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
   }
@@ -238,6 +276,34 @@ export function AppShell({
           {children}
           {floatingEditorChrome}
         </div>
+
+        {/* #pad-resize-handle -- legacy/index.html:1634-1637/6597, 5px wide, hidden while Pad is
+            closed (legacy's own real `.pad-hidden` class on both the handle and the panel). */}
+        {padVisible && (
+          <div
+            onMouseDown={startPadResize}
+            title="Drag to resize Pad"
+            style={{ flex: '0 0 5px', width: 5, cursor: 'ew-resize', background: 'transparent' }}
+          />
+        )}
+
+        {/* #pad-panel -- legacy/index.html:1638, a docked trailing sibling of #editor-pane (NOT
+            stacked below it), `flex:0 0 var(--pad-width)` with its own real resizable width
+            (padVisibilityStore.ts). */}
+        {padVisible && (
+          <div
+            style={{
+              flex: `0 0 ${padWidth}px`,
+              width: padWidth,
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--tb-bg)',
+              overflow: 'auto'
+            }}
+          >
+            {padPanel}
+          </div>
+        )}
       </div>
 
       {/* #statusbar -- legacy/index.html:619 */}

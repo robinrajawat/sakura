@@ -13,7 +13,7 @@ import { usePadStore } from '../store/padStore';
 import { decisionLogForNodeCore, subtreeHasDecisionCore } from '../state/decisionLogQueries';
 import { useInlineExpandStore } from '../store/inlineExpandStore';
 import { isInlineExpanded } from '../state/inlineExpand';
-import { SearchIcon, MoonIcon, SunIcon, SparkleIcon } from '../icons';
+import { SearchIcon, SparkleIcon } from '../icons';
 import { NodeText } from './NodeText';
 import { EmptyDocState } from './EmptyDocState';
 import { rewriteNode, rewriteNodes, rewriteDocument } from '../state/aiRewrite';
@@ -102,7 +102,6 @@ function composeNodeLabelStyle(node: Pick<OutlineNode, 'styles' | 'isCheckbox' |
  */
 export function OutlineTree() {
   const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
   const t = THEME_TOKENS[theme];
   const nodes = useOutlineStore((s) => s.nodes);
   const selectedId = useOutlineStore((s) => s.selectedId);
@@ -130,7 +129,6 @@ export function OutlineTree() {
   const moveSelected = useOutlineStore((s) => s.moveSelected);
   const deleteSelected = useOutlineStore((s) => s.deleteSelected);
   const toggleCollapse = useOutlineStore((s) => s.toggleCollapse);
-  const sortChildren = useOutlineStore((s) => s.sortChildren);
   const toggleCheckbox = useOutlineStore((s) => s.toggleCheckbox);
   const toggleTag = useOutlineStore((s) => s.toggleTag);
   const activeTagFilter = useOutlineStore((s) => s.activeTagFilter);
@@ -757,37 +755,6 @@ export function OutlineTree() {
           )}
         </div>
       )}
-      {/* Sort top-level nodes — the toolbar-level entry point legacy exposes via its "Extras"
-          menu (sort-root-az-btn/sort-root-za-btn/sort-root-depth-btn), always operating on
-          root blocks (parentId null). The per-node "sort this node's children" context-menu
-          entry point is deferred until web/ has a context menu at all. */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 6, fontFamily: 'sans-serif', fontSize: 12 }}>
-        <span style={{ color: t.mutedText, alignSelf: 'center' }}>Sort top-level:</span>
-        <button type="button" onClick={() => sortChildren(null, 'az')} style={sortButtonStyle(t)}>
-          A → Z
-        </button>
-        <button type="button" onClick={() => sortChildren(null, 'za')} style={sortButtonStyle(t)}>
-          Z → A
-        </button>
-        <button type="button" onClick={() => sortChildren(null, 'depth')} style={sortButtonStyle(t)}>
-          By depth
-        </button>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          style={{ ...sortButtonStyle(t), marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-        >
-          {theme === 'light' ? (
-            <>
-              <MoonIcon width={12} height={12} /> Dark
-            </>
-          ) : (
-            <>
-              <SunIcon width={12} height={12} /> Light
-            </>
-          )}
-        </button>
-      </div>
       {/* §8.6 slice (docs/phase8-design-system-parity-plan.md): no border/box/background of its
           own -- legacy's real `#editor-pane` (legacy/index.html:522) has node rows sitting
           directly on the canvas, no separate bordered panel around them. `AppShell.tsx`'s own
