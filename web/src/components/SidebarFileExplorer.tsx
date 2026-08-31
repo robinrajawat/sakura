@@ -3,7 +3,7 @@ import { useDocumentsStore, type DocSummary } from '../store/documentsStore';
 import { useSidebarStore } from '../store/sidebarStore';
 import { flattenFolderTree } from '../state/folderTree';
 import { formatRelativeTime } from '../utils/formatRelativeTime';
-import { TargetIcon, SearchIcon, NewFolderIcon, CloseIcon, TrashIcon } from '../icons';
+import { TargetIcon, SearchIcon, NewFolderIcon, CloseIcon, TrashIcon, SidebarToggleIcon } from '../icons';
 import { Button } from './ui/Button';
 
 /**
@@ -251,7 +251,25 @@ export function SidebarFileExplorer() {
   return (
     <div id="sidebar-scroll" ref={scrollRef} style={{ padding: '8px 8px 8px', overflowY: 'auto', fontSize: 12 }}>
       <div className="sb-section-hdr">
-        <span className="sb-section-label">Documents</span>
+        {/* §8.15 slice (docs/phase8-design-system-parity-plan.md): direct port of legacy's real
+            `#sidebar-toggle` (legacy/index.html:1620-1622, 6288) -- the collapse half of legacy's
+            real two-button sidebar-toggle split (the reopen half, `#sidebar-reopen-btn`, lives in
+            DocumentTabs.tsx's own tab-strip row instead, matching legacy's real DOM exactly). A
+            single shared toggle button used to live in App.tsx's header instead, which matched
+            neither real legacy button -- see index.css's own correction comment on this. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+          <button
+            id="sidebar-toggle"
+            type="button"
+            onClick={toggleSidebarOpen}
+            title="Toggle file explorer"
+            aria-label="Toggle file explorer"
+            aria-pressed={sidebarOpen}
+          >
+            <SidebarToggleIcon width={16} height={16} />
+          </button>
+          <span className="sb-section-label">Documents</span>
+        </div>
         <div className="sb-section-actions">
           <Button variant="sidebar-icon" onClick={locateActiveDoc} disabled={!activeDocId} title="Locate the open document">
             <TargetIcon width={13} height={13} />

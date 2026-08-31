@@ -1113,12 +1113,64 @@ body.theme-dark .account-visibility-badge:hover {
  * `web/` has no manual-save/dirty-tracking concept at all (autosave is the only save path), so
  * there is no state this dot could ever represent; porting the CSS for it would be dead styling
  * with no real consumer. Also NOT ported: `.doc-tab.pinned`+`.doc-tab-pin-icon` (no `documentsStore.ts`
- * pinning concept exists to back it), `#sidebar-reopen-btn` (already has a real, separately-built
- * `web/` equivalent in App.tsx's header actions). The strip's own custom scrollbar rules (legacy/
+ * pinning concept exists to back it). The strip's own custom scrollbar rules (legacy/
  * index.html:3308-3324) -- flagged here as a gap real to the whole codebase, not this component --
  * are ported by the later app-wide scrollbar-theming retrofit further down this file (search
  * `::-webkit-scrollbar-button`), which gives `#doc-tab-strip` the same real treatment.
+ *
+ * §8.15 correction (docs/phase8-design-system-parity-plan.md): this comment previously claimed
+ * `#sidebar-reopen-btn` "already has a real, separately-built `web/` equivalent in App.tsx's
+ * header actions" -- wrong, found by the user directly. Legacy's real sidebar toggle is genuinely
+ * a TWO-BUTTON split, not one shared toggle: `#sidebar-toggle` (legacy/index.html:1620-1622) lives
+ * inside the sidebar's own `.sb-section-hdr` (collapses it), while `#sidebar-reopen-btn`
+ * (legacy/index.html:1623-1624, 6337) is a real, separate element -- the first child of THIS row,
+ * `#doc-tab-strip-row` -- shown only while the sidebar is closed. `App.tsx`'s old single toggle
+ * button never matched either half of that. Both real ids ported below.
  */
+#sidebar-toggle {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: none;
+  background: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--hint);
+  transition:
+    color 0.12s,
+    background 0.12s;
+  flex-shrink: 0;
+}
+#sidebar-toggle:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+#sidebar-reopen-btn {
+  width: 26px;
+  height: 26px;
+  align-self: center;
+  margin: 3px 2px 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  transition:
+    color 0.12s,
+    background 0.12s;
+  flex-shrink: 0;
+}
+#sidebar-reopen-btn:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
 #doc-tab-strip-row {
   display: flex;
   align-items: stretch;

@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { SidebarToggleIcon, ClockIcon, SettingsGearIcon, SparkleIcon } from './icons';
+import { ClockIcon, SparkleIcon } from './icons';
 import { Button } from './components/ui/Button';
 import { AppShell } from './components/AppShell';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
@@ -8,7 +8,6 @@ import { NotePanel } from './components/NotePanel';
 import { useOutlineStore } from './store/outlineStore';
 import { DocumentTabs } from './components/DocumentTabs';
 import { useDocumentsStore } from './store/documentsStore';
-import { useSidebarStore } from './store/sidebarStore';
 import { PreviewPane } from './components/PreviewPane';
 import { PresenterMode } from './components/PresenterMode';
 import { ExportButtons } from './components/ExportButtons';
@@ -95,8 +94,6 @@ export function App() {
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
   const activeDocId = useDocumentsStore((s) => s.activeDocId);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
-  const sidebarOpen = useSidebarStore((s) => s.open);
-  const toggleSidebarOpen = useSidebarStore((s) => s.toggleOpen);
   const undo = useOutlineStore((s) => s.undo);
   const redo = useOutlineStore((s) => s.redo);
   const canUndo = useOutlineStore((s) => s.canUndo());
@@ -310,14 +307,6 @@ export function App() {
                 (legacy/index.html:4533-4534). See QuickAssistBar.tsx's own header for what this
                 covers and why it moved here from its old spot near the account menu. */}
             <QuickAssistBar openRestructureDialog={() => setRestructureDialogOpen(true)} />
-            <button
-              type="button"
-              onClick={toggleSidebarOpen}
-              title="Toggle file explorer"
-              aria-pressed={sidebarOpen}
-            >
-              <SidebarToggleIcon />
-            </button>
             {/* §8.12 slice (docs/phase8-design-system-parity-plan.md): the theme toggle, System
                 auto-theme, accent-color picker, and node-text-color picker all moved OUT of the
                 header here -- see SettingsPanel.tsx's own "Theme" section header comment for
@@ -326,19 +315,16 @@ export function App() {
                 `#settings-panel`'s own "Appearance" category (legacy/index.html:4674-4715), only
                 ever built directly in the header here because this project's Settings panel
                 didn't exist yet when §6.7 first wired these up. */}
-            {/* §6.8 slice: Version History for the active document -- direct port of legacy's
-                real "More" menu "Version history…" entry point (legacy/index.html:6489), moved to
-                the header toolbar since `web/` has no "More" menu of its own yet, same convention
-                already used for the Settings/notification-bell/sync-dot entry points. Hidden
-                entirely with no document open, matching legacy's own `if(currentDocId)` guard. */}
-            {activeDocId && (
-              <button type="button" onClick={() => setVersionHistoryOpen(true)} title="Version history" aria-label="Version history">
-                <ClockIcon />
-              </button>
-            )}
-            {versionHistoryOpen && <VersionHistoryPanel onClose={() => setVersionHistoryOpen(false)} />}
-            {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. Renders
-                nothing when signed out. */}
+            {/* §8.15 slice (docs/phase8-design-system-parity-plan.md): the sidebar-toggle button
+                that used to live here is gone -- legacy's real toggle is genuinely a two-button
+                split (a collapse button inside the sidebar itself, a reopen button in the tab-strip
+                row), neither of which is the app-bar -- see SidebarFileExplorer.tsx/DocumentTabs.tsx
+                for where the two real halves live now, and index.css's own correction comment on
+                the mistaken assumption this single button used to rest on. Version History also
+                moved out of here into the toolbar's own "History" group below, next to Undo/Redo --
+                see that group for the real reasoning (legacy's own real entry point is the quick-bar's
+                "Extras" dropdown, `#more-toggle`/`#more-version-history-btn`, never the app-bar). */}
+            {/* §6.8 slice: notifications bell -- see NotificationBell.tsx's own header. */}
             <NotificationBell />
             {/* §7.6 slice (docs/phase7-app-shell-and-dashboard-plan.md): the Hub launcher --
                 direct port of legacy's real `#dock-panel-appbar-toggle`
@@ -364,27 +350,28 @@ export function App() {
                 see ExportButtons.tsx's own header (added this slice) for exactly what moved and
                 what stayed a documented simplification. */}
             <ExportButtons />
-            {/* §6.7/§6.10 slice (docs/phase6-full-parity-plan.md): `web/`'s first real Settings
-                surface. Direct port of legacy's real `.settings-wrap{position:relative}` +
-                button-anchored dropdown UX (legacy/index.html:392-394, 4606-4607) -- see
-                SettingsPanel.tsx's own header for exactly what it holds and why it's deliberately
-                minimal (a single flat section, not legacy's own multi-category rail). */}
+            {/* §8.15 slice (docs/phase8-design-system-parity-plan.md): the standalone Settings
+                gear button that used to live here is gone -- reported directly by the user.
+                Settings stays reachable only through AccountMenu.tsx's own "Settings" entry
+                (`goToSettings`), which already calls this same `openSettings`/`settingsOpen`
+                state. Note this is a deliberate simplification, not a parity port: legacy's real
+                app-bar genuinely keeps BOTH a standalone `#settings-toggle` button AND a
+                `#account-settings-btn` deep-link inside the account menu (legacy/index.html:
+                4590, 4605-4607) -- confirmed no hide-by-default/media-query removes the standalone
+                one. Kept as the user's own explicit call rather than reverted back to match legacy
+                exactly. `SettingsPanel` now anchors off THIS wrapper (around the account button,
+                its only real trigger left) instead of its own now-removed button -- matches
+                legacy's own real re-anchoring behavior when Settings is opened from the account
+                menu (`anchorMenuToButton(el('settings-panel'), el('account-toggle'))`,
+                legacy/index.html:27258), not an invented position. */}
             <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => (settingsOpen ? setSettingsOpen(false) : openSettings())}
-                title="Settings"
-                aria-pressed={settingsOpen}
-              >
-                <SettingsGearIcon />
-              </button>
               {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} initialCategory={settingsCategory} />}
+              {/* §7.6 slice: the real header account entry point -- see AccountMenu.tsx's own
+                  header for what moved here from the old `AuthPanel.tsx` inline block (now
+                  retired) and what it deliberately doesn't duplicate (the profile-visibility badge,
+                  already real in Settings → Account). */}
+              <AccountMenu onOpenSettings={openSettings} />
             </div>
-            {/* §7.6 slice: the real header account entry point -- see AccountMenu.tsx's own
-                header for what moved here from the old `AuthPanel.tsx` inline block (now
-                retired) and what it deliberately doesn't duplicate (the profile-visibility badge,
-                already real in Settings → Account). */}
-            <AccountMenu onOpenSettings={openSettings} />
           </>
         }
         tabBar={<DocumentTabs />}
@@ -455,6 +442,22 @@ export function App() {
               <Button variant="icon" className="quick-btn" onClick={redo} disabled={mode !== 'edit' || !canRedo} title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo">
                 ↷
               </Button>
+              {/* §8.15 slice (docs/phase8-design-system-parity-plan.md): Version History, moved
+                  here from the app-bar -- reported directly by the user. Grouped with Undo/Redo
+                  since both are "past states of this document" actions; legacy's own real entry
+                  point for the currently-open document is actually the quick-bar's "Extras"
+                  dropdown (`#more-toggle`/`#more-version-history-btn`, legacy/index.html:6489),
+                  alongside Sort-top-level-nodes and Clear-all-nodes -- a real, separately-scoped
+                  follow-up if that whole dropdown is ever wanted; this is a direct button in its
+                  place rather than inventing the two unbuilt sort/clear actions just to house one
+                  real button. Still hidden entirely with no document open, matching legacy's own
+                  `if(currentDocId)` guard. */}
+              {activeDocId && (
+                <Button variant="icon" className="quick-btn" onClick={() => setVersionHistoryOpen(true)} title="Version history" aria-label="Version history">
+                  <ClockIcon />
+                </Button>
+              )}
+              {versionHistoryOpen && <VersionHistoryPanel onClose={() => setVersionHistoryOpen(false)} />}
             </ToolbarGroup>
             <span className="quick-sep" />
             <ToolbarGroup label="Structure">

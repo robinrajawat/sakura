@@ -713,6 +713,39 @@ distinct brand treatment (`800 18px`, `color:var(--fg)`, plus a real accent-colo
 sub-badge chip `web/` has never had), confirmed by reading legacy/hub.html:54-69,446 directly, not
 a copy of this fix. Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
 
+**8.15 (four more app-bar/toolbar structural corrections) landed — all four reported directly by
+the user in rapid succession against the real live `/web-preview/`, each investigated against
+legacy's own real markup before touching anything.**
+1. **Quick Assist search icon**: the real `#qa-category-icon-btn` icon (an 8-spoke starburst) had
+   never actually been ported — a plain "⋯" text character stood in for it since the box was first
+   restructured (§8.4p). New `QaCategoryIcon` (icons.tsx) fixes it.
+2. **Sidebar toggle**: a real structural gap, not just a position tweak — legacy's real sidebar
+   toggle is genuinely a TWO-BUTTON split (`#sidebar-toggle` inside the sidebar's own section
+   header collapses it; `#sidebar-reopen-btn`, the first child of the tab-strip row, reopens it),
+   not the single shared button `App.tsx` used to have. Directly corrects a wrong claim
+   `index.css`'s own §8.4e comment made ("already has a real equivalent in App.tsx's header
+   actions") — it didn't; both real buttons are now ported to their real locations
+   (`SidebarFileExplorer.tsx`/`DocumentTabs.tsx`).
+3. **Version History**: moved from the app-bar into the toolbar's "History" group next to
+   Undo/Redo. Legacy's own real entry point is actually the quick-bar's "Extras" dropdown
+   (`#more-toggle`/`#more-version-history-btn`), grouped with two unbuilt sort actions and a
+   clear-all action — building that whole dropdown was judged real scope creep, so this ports
+   Version History as a direct toolbar button instead, with the full dropdown flagged as a real
+   separately-scoped follow-up.
+4. **Notification bell always visible**: confirmed legacy's real `#notif-wrap` has no
+   hide-by-default/auth-gated styling at all — only the badge count does. `NotificationBell.tsx`
+   previously returned `null` when signed out, a real confirmed gap now fixed; it correctly falls
+   through to its own empty state when there's nothing to show.
+5. **Standalone Settings button removed — a genuine, flagged DEVIATION from legacy, not a parity
+   correction**: legacy's real app-bar actually keeps both a standalone Settings button and the
+   account-menu deep-link; removing the standalone one was the user's own explicit request,
+   followed and flagged in-code rather than silently treated as parity work. `SettingsPanel` now
+   re-anchors around the account-menu wrapper, matching legacy's own real re-anchoring behavior
+   when Settings is opened that way.
+
+Verified with real headless-Chrome screenshots covering all four scenarios. Full gauntlet clean:
+2005 tests passing, typecheck/lint/build all clean.
+
 **Still open, real and sizeable:** `OutlineTree.tsx`'s own FULL row-level class family
 (`.node-row`/`.node-label`/selection-and-drag states/etc., legacy/index.html:543-2174) — §8.10
 closed one concrete finding, but the row's own background/border/selection-highlight is still

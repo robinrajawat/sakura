@@ -1171,6 +1171,59 @@ follow-ups (§8.7+), each large enough to be its own slice.
   commit. Not something to route around unilaterally if it recurs -- flagging here so a future
   session recognizes the "CI/PR all green but the live site still looks unchanged" symptom instead
   of re-diagnosing from scratch.
+- ✅ **8.15 (four more app-bar/toolbar structural corrections) landed -- all four reported directly
+  by the user in rapid succession against the real live `/web-preview/`, each investigated against
+  legacy's own real markup before touching anything (one turned out to conflict with what the user
+  asked, flagged rather than silently overridden or silently complied with).**
+  1. **Quick Assist search icon**: the real `#qa-category-icon-btn` icon (legacy/index.html:6770,
+     an 8-spoke compass/starburst glyph) had never actually been ported -- `QuickAssistBar.tsx`
+     used a plain "⋯" text character in its place since the box was first restructured (§8.4p).
+     New `QaCategoryIcon` (icons.tsx) fixes it.
+  2. **Sidebar toggle**: confirmed a real, previously-missed structural gap, not just a position
+     tweak -- legacy's real sidebar toggle is genuinely a TWO-BUTTON split: `#sidebar-toggle`
+     (legacy/index.html:1620-1622, 6288) lives inside the sidebar's own `.sb-section-hdr` (collapses
+     it), while `#sidebar-reopen-btn` (legacy/index.html:1623-1624, 6337) is a separate element --
+     the first child of `#doc-tab-strip-row`, the tab-strip row -- shown only while the sidebar is
+     closed. `App.tsx`'s old single shared toggle button matched neither. This directly corrects a
+     wrong claim `index.css`'s own §8.4e comment made ("`#sidebar-reopen-btn` already has a real,
+     separately-built `web/` equivalent in App.tsx's header actions") -- it didn't; that comment is
+     now fixed too. Both real buttons now ported: the collapse half in
+     `SidebarFileExplorer.tsx`'s own section header, the reopen half in `DocumentTabs.tsx`'s tab
+     strip.
+  3. **Version History**: moved from the app-bar into the toolbar's "History" group, next to
+     Undo/Redo. Legacy's own real entry point for the currently-open document is actually the
+     quick-bar's "Extras" dropdown (`#more-toggle`/`#more-version-history-btn`, legacy/index.html:
+     6489), grouped alongside "Sort top-level nodes" (A→Z/Z→A/By depth) and "Clear all nodes" --
+     confirmed real, `class="btn icon-btn quick-btn"`, genuinely part of the toolbar, not the
+     app-bar. Building the FULL Extras dropdown (with two unbuilt sort variants and a clear-all
+     action) was judged real scope creep beyond what was asked, so this slice ports Version History
+     as a direct toolbar button in its place instead of inventing the other two actions just to
+     house one real button -- the full dropdown remains a real, separately-scoped follow-up if ever
+     wanted.
+  4. **Notification bell always visible**: confirmed against legacy's real markup that `#notif-wrap`
+     (legacy/index.html:4545-4557) has NO hide-by-default/auth-gated styling anywhere -- only the
+     unread-count badge itself (`#notif-badge`) starts `display:none`, not the bell button around
+     it. `NotificationBell.tsx` previously returned `null` outright when signed out, a real,
+     confirmed gap (not a stylistic choice) -- now always renders, correctly falling through to its
+     own existing empty state ("You're all caught up") when there's nothing to show.
+  5. **Standalone Settings button removed** -- this one is a genuine, flagged deviation from
+     legacy, not a parity correction: legacy's own real app-bar actually keeps BOTH a standalone
+     `#settings-toggle` button AND a `#account-settings-btn` deep-link inside the account menu
+     (legacy/index.html:4590, 4605-4607) -- confirmed no hide-by-default/media-query removes the
+     standalone one, so this genuinely isn't a legacy bug or an already-planned removal. The user's
+     own explicit, direct request to drop it and keep Settings reachable only through the account
+     menu was followed as a deliberate simplification anyway, flagged in-code rather than silently
+     treated as parity work. `SettingsPanel`'s own anchor (previously the removed button) now
+     re-anchors around the account-menu wrapper instead, matching legacy's own real re-anchoring
+     behavior when Settings is opened that way (`anchorMenuToButton(el('settings-panel'),
+     el('account-toggle'))`, legacy/index.html:27258) -- not an invented position.
+
+  Verified with real headless-Chrome screenshots covering all four: the full app-bar at rest, the
+  search box focused (real icon + hint-phrase dropdown), the sidebar collapse/reopen cycle through
+  both real buttons, the toolbar's History group showing Undo/Redo/Version-History together, the
+  bell's real empty state while signed out, and Settings opening correctly anchored from the
+  account menu. Full gauntlet clean: 2005 tests still passing (no test changes needed),
+  typecheck/lint/build all clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,
