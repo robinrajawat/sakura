@@ -6,7 +6,16 @@
   <title>Sakura (web — in development)</title>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#f8f8f6" />
-  <link rel="icon" href="/icon-192-pwa.png" />
+  <!-- §8.22 slice (docs/phase8-design-system-parity-plan.md): direct port of legacy's real
+       favicon choice (legacy/index.html:96-110) -- the browser-tab favicon previously reused the
+       PWA card-style icon (icon-192-pwa.png, padding + shadow + circular background, designed
+       for an OS home-screen tile), which legacy's own comment there explicitly warns against:
+       that padding makes the actual glyph smaller and less legible at the ~16-32px a browser tab
+       actually renders it at. flower-glyph.svg is the bare vector glyph alone (same circle
+       geometry/colors, no card, no shadow), scaling perfectly at any size the tab strip/bookmark
+       bar needs. apple-touch-icon keeps the PWA card icon -- that surface DOES need the card
+       treatment, matching legacy's own real distinction between the two. -->
+  <link rel="icon" type="image/svg+xml" href="/flower-glyph.svg" />
   <link rel="apple-touch-icon" href="/icon-192-pwa.png" />
   <!-- Same real fonts and URL legacy/index.html loads (Public Sans/Inter/Fira Code) -- web/ never
        loaded these at all, so every component's `fontFamily: 'Inter', ...` reference was silently

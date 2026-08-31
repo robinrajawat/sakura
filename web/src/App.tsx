@@ -21,6 +21,7 @@ import { SignInGate } from './components/SignInGate';
 import { WelcomeModal } from './components/WelcomeModal';
 import { DocumentHeader } from './components/DocumentHeader';
 import { DocSyncPanel } from './components/DocSyncPanel';
+import { useAuthStore } from './store/authStore';
 import { NotificationBell } from './components/NotificationBell';
 import { VersionHistoryPanel } from './components/VersionHistoryPanel';
 import { MobileHub } from './components/MobileHub';
@@ -177,6 +178,7 @@ export function App() {
   const setToolbarVisible = useOutlinePrefsStore((s) => s.setToolbarVisible);
   const padVisible = usePadVisibilityStore((s) => s.padVisible);
   const togglePadVisible = usePadVisibilityStore((s) => s.togglePadVisible);
+  const signedIn = useAuthStore((s) => !!s.user);
   const openNotePanel = useNotePanelStore((s) => s.openPanel);
   const [aiRewriteBusy, setAiRewriteBusy] = useState(false);
   const autoRewriteEnabled = useAutoRewriteStore((s) => s.enabled);
@@ -771,10 +773,22 @@ export function App() {
         <DocumentHeader />
         {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane onEnterPresenter={() => setMode('present')} /> : <PresenterMode />}
         <NotePanel />
-        <div style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 16 }}>Sync</h2>
-          <DocSyncPanel />
-        </div>
+        {/* §8.22 slice (docs/phase8-design-system-parity-plan.md): a real "Sign in above to
+            sync a document." message has no legacy equivalent at all -- legacy shows NOTHING
+            for sync while signed out (confirmed by grep: that exact string, and any permanent
+            below-the-editor sync section, appear nowhere in legacy's real markup). This whole
+            block used to render unconditionally regardless of sign-in state, a real, confirmed
+            contributor to the app reading as cluttered/unfinished (reported directly by the
+            user with a real screenshot). Gated on being signed in -- DocSyncPanel's own real
+            functionality (share dialog, sync status, "Shared with me") stays fully reachable
+            for a signed-in user, matching legacy's real behavior of showing nothing when there
+            is nothing actionable to show. */}
+        {signedIn && (
+          <div style={{ marginTop: 16 }}>
+            <h2 style={{ fontSize: 16 }}>Sync</h2>
+            <DocSyncPanel />
+          </div>
+        )}
         {restructureDialogOpen && <RestructureTextDialog onSubmit={(text) => void handleRestructureSubmit(text)} onCancel={() => setRestructureDialogOpen(false)} />}
         <IconPickerPopover />
       </AppShell>

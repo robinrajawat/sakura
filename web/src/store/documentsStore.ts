@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { useOutlineStore, type OutlineNode, type UndoSnapshot, defaultNodeStyles } from './outlineStore';
-import { rebuildParentIdsCore } from '../core/nodeSelection';
+import { useOutlineStore, type OutlineNode, type UndoSnapshot } from './outlineStore';
 import { reorderTabsCore, type OrderableTab } from '../state/tabOrder';
 import { useVersionHistoryStore } from './versionHistoryStore';
 
@@ -395,38 +394,43 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => get().saveActiveDocNodes(), 800);
     });
-    // First-ever launch (nothing in the index at all) -- create a real first document with its
-    // own explicit welcome content, rather than adopting whatever happens to be sitting in
-    // outlineStore's transient in-memory state at this exact moment. This used to read
-    // useOutlineStore.getState().nodes directly, which meant a fresh visitor's permanent first
-    // document was whatever outlineStore.ts's own module-level seedNodes() produced -- when
-    // that was Phase 0's dev/validation-spike tutorial text ("Welcome to the Sakura web spike",
-    // "nodeMutations.ts — indent/outdent/move, byte-identical to legacy", etc.), every new
-    // visitor's first document was permanently saved with that text as its content. Explicit
-    // ownership of this content here means the two can never drift apart like that again,
-    // regardless of what outlineStore's own default happens to be at any point.
+    // First-ever launch (nothing in the index at all) -- create a real first document, rather
+    // than adopting whatever happens to be sitting in outlineStore's transient in-memory state
+    // at this exact moment. This used to read useOutlineStore.getState().nodes directly, which
+    // meant a fresh visitor's permanent first document was whatever outlineStore.ts's own
+    // module-level seedNodes() produced -- when that was Phase 0's dev/validation-spike tutorial
+    // text ("Welcome to the Sakura web spike", "nodeMutations.ts — indent/outdent/move,
+    // byte-identical to legacy", etc.), every new visitor's first document was permanently saved
+    // with that text as its content. Explicit ownership of this document here means the two can
+    // never drift apart like that again, regardless of what outlineStore's own default happens
+    // to be at any point.
+    // §8.22 slice (docs/phase8-design-system-parity-plan.md): this document used to carry
+    // hand-authored "Welcome to Sakura" / "This is your first document..." tutorial content,
+    // titled "Welcome" -- a real, confirmed mismatch with legacy's own actual behavior (reported
+    // directly by the user with a real screenshot): legacy's real first document is genuinely
+    // EMPTY (`ensureDocSystem()`/`createDoc()`, legacy/index.html:29818), titled "Untitled" like
+    // every other new document, showing the real clean empty-state illustration + "New
+    // document"/"Generate with AI" buttons instead. Legacy's own real onboarding text ("Like a
+    // cherry blossom tree...") lives entirely in the separate Welcome MODAL's own Guided-tour
+    // step content (already ported, WelcomeModal.tsx, §7.2) -- never baked into a document's own
+    // outline. Now matches `newDocument()`'s own already-correct empty-doc convention exactly,
+    // rather than being a special case.
     if (docsIndex.length === 0) {
       const id = generateDocId();
       const now = Date.now();
-      const nodes: OutlineNode[] = [
-        { id: 1, depth: 0, text: 'Welcome to Sakura', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
-        { id: 2, depth: 1, text: 'This is your first document — start typing to replace this', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() },
-        { id: 3, depth: 1, text: 'Enter creates a new line, Tab indents it', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: defaultNodeStyles() }
-      ];
-      rebuildParentIdsCore(nodes);
-      const summary: DocSummary = { id, title: 'Welcome', createdAt: now, modifiedAt: now, status: '', author: '', link: null };
-      writeJson(docStorageKey(id), { title: summary.title, nodes });
+      const summary: DocSummary = { id, title: 'Untitled', createdAt: now, modifiedAt: now, status: '', author: '', link: null };
+      writeJson(docStorageKey(id), { title: summary.title, nodes: [] });
       writeJson(_DOCS_INDEX_KEY, [summary]);
       writeJson(_OPEN_TABS_KEY, [id]);
       writeJson(_ACTIVE_DOC_KEY, id);
       set({ docsIndex: [summary], openTabs: [id], activeDocId: id });
       useOutlineStore.setState({
-        nodes,
-        nextId: nextIdForNodes(nodes),
-        selectedId: nodes[0]?.id ?? null,
+        nodes: [],
+        nextId: 1,
+        selectedId: null,
         editingId: null,
         multiSelectedIds: [],
-        selectionAnchorId: nodes[0]?.id ?? null
+        selectionAnchorId: null
       });
     }
   },
