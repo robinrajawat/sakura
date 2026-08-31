@@ -3142,3 +3142,205 @@ input[type='number'] {
   color: var(--sem-alert);
   background: var(--bg);
 }
+
+/* §8.13 slice (docs/phase8-design-system-parity-plan.md): the Diagrams and Mind Map tabs' own
+ * list-row shells -- both real visual-editor features (draw.io / a freeform canvas), a genuinely
+ * different category from the three simple-row tabs §8.9 covered, but their OWN list rows (before
+ * a diagram/map is opened) are the same "port only what has a real web/ counterpart" scoping.
+ * `.diagram-row`/`.diagram-row-info`/`.diagram-row-title-input`/`.diagram-row-dup`/
+ * `.diagram-row-delete` (legacy/index.html:3522-3554) -- skipped: `.diagram-row-select`/
+ * `-drag-handle` (no bulk-select/reorder UI, `padStore.ts` has no `reorderDiagram` action),
+ * `.diagram-row-thumb` (no `previewSvg`/thumbnail field), `.diagram-row-status`/`-warn-chip`/
+ * `-whiteboard-chip`/`-pages` (no `status`/`isWhiteboard`/`pageCount` fields), `.diagram-row-anchor`
+ * (no `anchorNodeId`) and `.diagram-row-note-input` (no `note` field) -- every one of these is
+ * already named as a deliberately-deferred field in `padStore.ts`'s own `Diagram` interface
+ * header. `.diagram-row-title-input` is applied to `web/`'s own title `<button>` (click-to-open,
+ * not click-to-rename -- this row has no rename entry point of its own; renaming only happens
+ * inside the opened `DiagramEditor`) purely for its visual treatment, same "port the effect, not
+ * the exact interactive mechanism" precedent used throughout this project. A real, confirmed dead
+ * class along the way, not silently skipped: legacy's own `.diagram-row-title` (no `-input`
+ * suffix) has zero real call sites anywhere in legacy/index.html -- `.diagram-row-title-input` is
+ * the only one ever actually applied.
+ */
+.diagram-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 9px;
+  transition: background 0.12s;
+}
+.diagram-row:hover {
+  background: var(--hover);
+}
+.diagram-row-info {
+  flex: 1;
+  min-width: 0;
+}
+.diagram-row-title-input {
+  appearance: none;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--fg);
+  font: 500 12.5px 'Inter', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  cursor: pointer;
+}
+/* Overrides the generic `button:hover{border-color:var(--accent)}` base rule (index.css's own
+ * §6.1 reset) -- legacy's real `.diagram-row-title-input:hover`/`:focus` never changes border
+ * color on hover, only on focus, matching legacy/index.html:3535-3536 exactly. */
+.diagram-row-title-input:hover {
+  background: var(--hover);
+  border-color: transparent;
+}
+.diagram-row-title-input:focus {
+  background: var(--bg);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  text-overflow: clip;
+}
+.diagram-row-dup,
+.diagram-row-delete {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--hint);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    color 0.12s,
+    background 0.12s;
+}
+.diagram-row:hover .diagram-row-dup,
+.diagram-row:hover .diagram-row-delete {
+  opacity: 1;
+}
+.diagram-row-dup:hover {
+  color: var(--accent);
+  background: var(--hover);
+}
+.diagram-row-delete:hover {
+  color: var(--fc-red);
+  background: var(--hover);
+}
+
+/* §8.13 slice continued: Mind Map's own row shell. `.mindmap-row`/`-icon`/`-info`/
+ * `-title-input`/`-meta`/`-actions`/`-dup`/`-delete` (legacy/index.html:3504-3518) -- skipped:
+ * `.mindmap-row-title-row`/`-scratch-chip` (no `isScratchpad` field on `web/`'s own `MindMap`
+ * type, confirmed in `mindMapStore.ts`'s own header as a real, separately-scoped follow-up).
+ * `.mindmap-row-title-input` is applied to `web/`'s title `<button>`, same "visual treatment
+ * only" reasoning as the Diagrams row above. `.mindmap-row-actions`'s hover-reveal (opacity 0->1)
+ * is a real behavior change from `web/`'s prior always-visible duplicate/delete buttons, matching
+ * legacy's own real row exactly.
+ */
+.mindmap-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+.mindmap-row:hover {
+  background: var(--hover);
+}
+.mindmap-row-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--edit-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+.mindmap-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mindmap-row-title-input {
+  appearance: none;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--fg);
+  font: 600 12.5px 'Inter', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  border-radius: 5px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+/* Overrides the generic `button:hover{border-color:var(--accent)}` base rule, same reasoning as
+ * `.diagram-row-title-input`'s own override above -- matches legacy/index.html:3510-3511 exactly. */
+.mindmap-row-title-input:hover {
+  background: var(--hover);
+  border-color: transparent;
+}
+.mindmap-row-title-input:focus {
+  background: var(--edit-bg);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.mindmap-row-meta {
+  font: 400 11px 'Inter', sans-serif;
+  color: var(--muted);
+}
+.mindmap-row-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.mindmap-row:hover .mindmap-row-actions {
+  opacity: 1;
+}
+.mindmap-row-dup,
+.mindmap-row-delete {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--hint);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+.mindmap-row-dup:hover {
+  color: var(--accent);
+  background: var(--hover);
+}
+.mindmap-row-delete:hover {
+  color: var(--fc-red);
+  background: var(--hover);
+}

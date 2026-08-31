@@ -534,3 +534,21 @@ export function RestructureListIcon(props: IconProps = {}) {
     </svg>
   );
 }
+
+/** §8.13 (docs/phase8-design-system-parity-plan.md): the Mind Map tab's own per-row icon
+ * (legacy/index.html:50118, `.mindmap-row-icon`'s fixed content -- every row gets the same
+ * icon, not content-driven). */
+export function MindMapIcon(props: IconProps = {}) {
+  return (
+    <svg {...baseProps(props)}>
+      <circle cx="12" cy="12" r="2.3" />
+      <circle cx="20" cy="12" r="1.6" />
+      <circle cx="16" cy="5.1" r="1.6" />
+      <circle cx="8" cy="5.1" r="1.6" />
+      <circle cx="4" cy="12" r="1.6" />
+      <circle cx="8" cy="18.9" r="1.6" />
+      <circle cx="16" cy="18.9" r="1.6" />
+      <path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9" />
+    </svg>
+  );
+}
