@@ -277,6 +277,8 @@ Sakura works in any modern browser. Two features are the exception:
 
 After cloning, run `sh scripts/setup-git-identity.sh` once — it sets the correct commit author and enables a pre-commit guard (`.githooks/pre-commit`) that blocks any commit made under a different email. This exists because a placeholder email used in an earlier session turned out to belong to someone else's real GitHub account and got silently listed as a contributor; the guard catches that before it happens again.
 
+Starting a Claude session on this repo (including a fresh session after a usage limit, or from a different Claude account)? Paste `docs/legacy-handoff-prompt.md`'s fenced prompt block into the conversation — it has everything needed to pick up work with no other context.
+
 ### Deployment
 
 This section covers how the maintainer's copy is built and published — it doesn't change anything about running Sakura yourself (see [Overview](#overview): still just an `.html` file you open in a browser, no build step required).

@@ -15,10 +15,11 @@ further.
 
 ## Active
 
-- **`handoff-prompt.md`** — a copy-pasteable prompt for starting a fresh Claude session on this
-  repo from scratch (including a different Claude account), for continuing after a session/usage
-  limit. Keep its "Current state" section updated at the end of every work session. Its opening
-  block states the `web/` discontinuation up front.
+- **`legacy-handoff-prompt.md`** — the current copy-pasteable prompt for starting a fresh Claude
+  session on this repo from scratch (including a different Claude account), for continuing after
+  a session/usage limit. Scoped to `legacy/`-only work now that the `web/` migration is
+  discontinued. Keep its "Current state" section updated at the end of every work session. **Start
+  here.**
 
 ## Closed / historical reference (`history/`, plus the discontinued `web/` migration docs)
 
@@ -43,8 +44,13 @@ updates; each is kept as the record of what was true when it closed.
   phase in progress when the migration was discontinued; its own top section notes this.
 - **`post-cutover-backlog.md`** — the list of gaps that were deliberately deferred past a planned
   cutover that will now never happen. Kept for reference only.
+- **`handoff-prompt.md`** — the OLD handoff prompt, used while the `web/` migration was active.
+  Superseded by `legacy-handoff-prompt.md` above for starting a new session — this one is kept
+  only as the historical record of the migration's own workflow rules and phase-by-phase state.
+  Its own opening block and "Current state" section both point forward to the new file.
 
 ## If you're only reading one thing
 
-`framework-migration-plan.md`'s top section for the discontinuation decision, `handoff-prompt.md`
-if you're starting a session with no prior context at all.
+`legacy-handoff-prompt.md` if you're starting a session with no prior context at all —
+`framework-migration-plan.md`'s top section if you specifically need the `web/` discontinuation
+decision and its reasoning.

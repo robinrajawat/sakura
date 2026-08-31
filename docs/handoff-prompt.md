@@ -1,9 +1,15 @@
-# Handoff Prompt
+# Handoff Prompt (superseded — see docs/legacy-handoff-prompt.md)
 
-**Purpose:** this document is a ready-to-paste prompt for starting a fresh Claude session on
-this project — including in a completely different Claude account, e.g. after exhausting a
-session/usage limit. Copy everything inside the fenced block below into a new conversation and
-Claude can pick up the work with no other context needed.
+**This file is no longer the prompt to start a session from.** Now that the `web/` migration is
+discontinued (2026-08-31), use **`docs/legacy-handoff-prompt.md`** instead — it's the current,
+`legacy/`-scoped version of exactly this document. This file is kept only as the historical
+record of the migration's own workflow rules and phase-by-phase state; its "Current state"
+section below is frozen as of the discontinuation and won't be updated further.
+
+**Original purpose (historical):** this document was a ready-to-paste prompt for starting a
+fresh Claude session on this project — including in a completely different Claude account, e.g.
+after exhausting a session/usage limit. Copy everything inside the fenced block below into a new
+conversation and Claude can pick up the work with no other context needed.
 
 **Maintenance rule:** the "Current state" section is the only part of this file that goes stale.
 Whoever (human or Claude) finishes a significant chunk of work — a PR merged, a phase closed, a
