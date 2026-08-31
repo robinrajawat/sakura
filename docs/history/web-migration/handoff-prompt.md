@@ -25,7 +25,7 @@ I'm continuing work on Sakura (github.com/robinrajawat/sakura). Production
 GitHub Actions from CI-built `legacy/dist/` (deploy.yml).
 
 **The React rewrite in `web/` (npm workspace `sakura-web`) is DISCONTINUED as
-of 2026-08-31 — see docs/framework-migration-plan.md's own "STATUS:
+of 2026-08-31 — see docs/history/web-migration/framework-migration-plan.md's own "STATUS:
 DISCONTINUED" section at the top for the decision and what it means
 practically.** It is not deployed anywhere and never will be; all further
 work goes into `legacy/` directly. Do not resume `web/` work, open PRs
@@ -41,11 +41,11 @@ re-verify state against them rather than trusting this prompt's own
 
 - docs/history/architecture-plan.md — legacy/'s own modularization history (frozen,
   historical reference only, not where current work happens)
-- docs/framework-migration-plan.md — the legacy/+web/ split, and the full
+- docs/history/web-migration/framework-migration-plan.md — the legacy/+web/ split, and the full
   phase history of the React rewrite (Phases 0–6)
 - docs/history/phase5-parity-checklist.md — the row-by-row audit of what web/ can
   and can't do yet vs. legacy/'s real feature set (Phase 5, closed)
-- docs/phase6-full-parity-plan.md — sequencing plan for closing every
+- docs/history/web-migration/phase6-full-parity-plan.md — sequencing plan for closing every
   remaining gap toward full feature AND pixel-close visual parity with
   legacy/, ending in an explicit pre-cutover gate before
   www.sakura-notes.com is ever repointed at web/
@@ -176,7 +176,7 @@ hub*Store, themeStore), `components/` (React components), `utils/`.
 
 `.github/workflows/deploy.yml` builds+publishes `legacy/dist/` at the site
 root — do not repoint the ROOT at `web/dist/` without completing
-docs/phase6-full-parity-plan.md's own pre-cutover gate (§9) and explicit,
+docs/history/web-migration/phase6-full-parity-plan.md's own pre-cutover gate (§9) and explicit,
 separate sign-off first. It currently ALSO builds `web/dist/` (base=
 `/web-preview/`) and publishes it alongside legacy at
 `www.sakura-notes.com/web-preview/` — a deliberate, temporary addition for
@@ -197,19 +197,19 @@ Phase 8. The last piece of in-flight work (PR #316, a real CSS-reset fix for pag
 scrollbar) was closed without merging rather than shipped, since there's no further point
 polishing a build that won't go live. **Do not pick up any "next slice" mentioned below or in
 phase6/7/8's own plan docs — that queue is frozen, not paused-with-intent-to-resume.** See
-docs/framework-migration-plan.md's own top section for what this means practically. Everything
+docs/history/web-migration/framework-migration-plan.md's own top section for what this means practically. Everything
 from here down in this "Current state" section is the historical record of what shipped while
 the migration was active.
 
 **Phase 6 is complete.** All eleven sub-phases (6.1–6.11) in
-docs/phase6-full-parity-plan.md landed, closing every feature and
+docs/history/web-migration/phase6-full-parity-plan.md landed, closing every feature and
 visual-token gap that plan explicitly scoped.
 
 **Section 9's pre-cutover gate, item by item:**
 1. *Checklist shows no remaining gaps against the plan's scope* — satisfied
    via a real split, not a literal zero-row count: docs/history/
    phase5-parity-checklist.md was audited for staleness and corrected, then
-   every remaining real gap moved into **docs/post-cutover-backlog.md** as
+   every remaining real gap moved into **docs/history/web-migration/post-cutover-backlog.md** as
    an explicit, confirmed non-blocking list (Phase 6 deliberately scoped
    many things down; 100% literal parity was never the intent).
 2. *A person clicks through the real built web/dist output* — enabled via
@@ -228,10 +228,9 @@ slice assumed a document was already open. Never scoped anywhere before
 now, since nobody ever needed to render what's above/before that. A
 smaller, separate styling gap (generic buttons/selects/inputs never
 styled at all, real fonts never loaded) was found in the same pass and is
-already fixed — see §6.1's note in docs/phase6-full-parity-plan.md.
+already fixed — see §6.1's note in docs/history/web-migration/phase6-full-parity-plan.md.
 
-The structural gap is scoped into **docs/phase7-app-shell-and-dashboard-
-plan.md** — check that file directly for its real current status before
+The structural gap is scoped into **docs/history/web-migration/phase7-app-shell-and-dashboard-plan.md** — check that file directly for its real current status before
 starting related work; it explicitly does NOT cover everything (e.g. the
 Guided-tour/demo content stays a placeholder, several items already in
 post-cutover-backlog.md are untouched by it) and its own components still
@@ -265,7 +264,7 @@ matching titles), "Locate the open document" (a new `documentsStore.ts`
 `openFolderChain` action opens every ancestor folder, then scrolls/
 flashes the row), a Templates section shell (chrome only — no real
 template system exists in `web/` yet, confirmed still out of scope by
-docs/post-cutover-backlog.md), and a Trash section shell (collapsible
+docs/history/web-migration/post-cutover-backlog.md), and a Trash section shell (collapsible
 row + live count, always 0/"Trash is empty" today since `web/` has no
 soft-delete concept at all — also already confirmed in that same
 backlog doc). See phase7-app-shell-and-dashboard-plan.md's own Status
@@ -279,7 +278,7 @@ every phase 6/7 slice built its own UI on top of `web/`'s base button/input styl
 never legacy's real button/icon/chip *variants* (`.btn.primary`, `.icon-btn`/`.sb-icon-btn`,
 `.export-item`, `.status-chip`, etc.) or its real icon set (several `web/` components use raw
 emoji as a shortcut instead of legacy's real inline SVGs) — a missing shared component layer, not
-any one feature gap. Scoped into **docs/phase8-design-system-parity-plan.md** — check that file
+any one feature gap. Scoped into **docs/history/web-migration/phase8-design-system-parity-plan.md** — check that file
 directly for its real current status; it cites the exact legacy CSS lines behind every primitive
 it names, not assumption.
 
@@ -845,7 +844,7 @@ doesn't repeat it a third time.
 
 **All three items reported by the user in the previous session (investigated and confirmed
 against legacy's real code) are now fixed, landed this session as §8.18/§8.19
-(docs/phase8-design-system-parity-plan.md).**
+(docs/history/web-migration/phase8-design-system-parity-plan.md).**
 1. ✅ **8.18 — the permanent instructional bullet list and the ad hoc "Sort top-level"/theme-toggle
    row, both removed outright.** Neither had a real legacy counterpart as permanent on-screen UI:
    legacy's own real onboarding content lives in the Guided Tour / Help panel / cheatsheet, never
@@ -908,7 +907,7 @@ branch list matters (e.g. relaxing branch protection's deletion restriction, or 
 the GitHub UI/admin API), but not blocking any actual work.
 
 Once `web/` is visually close enough to legacy for a person to sign off, return to
-docs/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
+docs/history/web-migration/phase6-full-parity-plan.md's own Section 9 pre-cutover gate, items 2-4 (a
 person clicking
 through the real `/web-preview/` build end-to-end; signing in with a real account to confirm
 production-synced documents round-trip; the actual `deploy.yml` cutover PR) — none of which are

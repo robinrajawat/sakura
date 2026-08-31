@@ -2,7 +2,7 @@
 
 ## Note: the whole `web/` migration is now discontinued (2026-08-31)
 
-This phase itself completed successfully — see `docs/framework-migration-plan.md`'s top section
+This phase itself completed successfully — see `docs/history/web-migration/framework-migration-plan.md`'s top section
 for why the broader migration stopped afterward anyway (Phase 7 and Phase 8 of parity work).
 Kept as historical record.
 
@@ -394,7 +394,7 @@ document-level activity grouping now that Documents & Tabs exists), Mobile Hub.
   required-account-sign-in-gated, built specifically to bridge a phone's otherwise-empty local
   storage with a desktop's data via Firestore sync. `web/` has neither piece of infra that
   premise depends on: no client-side routing at all (decision #3,
-  docs/framework-migration-plan.md) and no Hub-domain Firestore sync (§6.8, not started). A real
+  docs/history/web-migration/framework-migration-plan.md) and no Hub-domain Firestore sync (§6.8, not started). A real
   scope reduction was agreed with the user before building anything (a genuine architectural
   blocker, same category as Recap's `OutlineNode`-timestamps gap): **responsive layout only** --
   a live viewport-width breakpoint (`useIsMobileViewport.ts`, 640px) swaps in a dedicated
@@ -552,7 +552,7 @@ format, Word/OPML import.
   the query-param boot check translates directly and cheaply -- a single
   `new URLSearchParams(location.search).get('sakuraAudience') === '1'` read at the app root, no
   router library, no path route, nothing Phase 0's actual no-client-side-routing decision
-  (docs/framework-migration-plan.md decision #3) was ever about; (2) the REAL blocker is that
+  (docs/history/web-migration/framework-migration-plan.md decision #3) was ever about; (2) the REAL blocker is that
   `PresenterMode.tsx`'s slide index/blanked/laser/overview/notes state is all local
   `useState` inside that one component, not a Zustand store -- legacy's whole cross-window
   design depends on being able to call a function in the OTHER window's own scope to change
@@ -1984,7 +1984,7 @@ Planned slice sequence:
 Every item below, checked in that order, before any cutover PR is even opened:
 
 1. Every remaining `❌`/`⚠` row in `docs/history/phase5-parity-checklist.md` is accounted for in
-   **`docs/post-cutover-backlog.md`** — nothing silently dropped — and nothing left in that
+   **`docs/history/web-migration/post-cutover-backlog.md`** — nothing silently dropped — and nothing left in that
    backlog is launch-blocking (no data-loss, security, or core-workflow risk; see that doc's own
    top note). This replaces an earlier, stricter reading of this item ("no remaining rows at
    all") — Phase 6 deliberately scoped many features down rather than reaching literal 100%
@@ -2337,7 +2337,7 @@ verification, static precache strategy, full visual-token pass) have landed.
 Section 9's pre-cutover gate) surfaced a major gap this whole phase never scoped — legacy's
 entire sign-in gate / first-run onboarding / document-dashboard / per-document-header layer,
 never built because every Phase 6 slice assumed a document was already open. That work is
-sequenced separately in **`docs/phase7-app-shell-and-dashboard-plan.md`**, not folded back into
+sequenced separately in **`docs/history/web-migration/phase7-app-shell-and-dashboard-plan.md`**, not folded back into
 this closed phase.
 
 Update each phase's own
