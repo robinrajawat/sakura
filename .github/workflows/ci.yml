@@ -3,14 +3,14 @@ name: CI
 # Verification only — see .github/workflows/deploy.yml for the separate publish workflow
 # (production, www.sakura-notes.com, is served from legacy/'s CI-built dist/ via GitHub
 # Actions as of Stage 2, docs/history/architecture-plan.md). This workflow's job is to make sure
-# every change is well-verified before it ever reaches deploy.yml. Two jobs, one per npm
-# workspace (docs/history/web-migration/framework-migration-plan.md): verify-legacy runs the full existing
-# gauntlet — typecheck, lint, unit tests, generated-code drift check, build, e2e tests, and
-# HTML structure validation — the four checks that would have caught this project's past
-# bugs (the FOLDERS_KEY-class TDZ crashes, and the RAWTEXT-hijack class
-# legacy/scripts/validate_html_structure.py guards against). verify-web runs the equivalent
-# checks for the new React app; lighter for now since it's still a Phase 0 scaffold, not
-# yet real feature code.
+# every change is well-verified before it ever reaches deploy.yml. One job, verify-legacy,
+# runs the full existing gauntlet — typecheck, lint, unit tests, generated-code drift check,
+# build, e2e tests, and HTML structure validation — the four checks that would have caught
+# this project's past bugs (the FOLDERS_KEY-class TDZ crashes, and the RAWTEXT-hijack class
+# legacy/scripts/validate_html_structure.py guards against). A former verify-web job ran the
+# equivalent checks for the web/ React rewrite; removed after that migration was discontinued
+# (docs/history/web-migration/framework-migration-plan.md) — web/ is frozen and never
+# deployed, so there's no benefit to still paying its CI cost on every legacy/-only change.
 
 on:
   push:
@@ -65,28 +65,3 @@ jobs:
           name: playwright-report
           path: legacy/playwright-report/
           retention-days: 14
-
-  verify-web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies (root — installs both workspaces)
-        run: npm ci
-
-      - name: Typecheck (web/src/)
-        run: npm run typecheck -w sakura-web
-
-      - name: Lint (web/src/)
-        run: npm run lint -w sakura-web
-
-      - name: Unit tests
-        run: npm run test:unit -w sakura-web
-
-      - name: Build
-        run: npm run build -w sakura-web
