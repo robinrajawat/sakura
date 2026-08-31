@@ -1054,6 +1054,46 @@ follow-ups (§8.7+), each large enough to be its own slice.
   the real `AccountMenu` dropdown opening cleanly within the narrow viewport with no overflow).
   Full gauntlet clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all
   clean.
+- ✅ **8.12 (app-bar decluttering: theme/accent controls moved into Settings → Appearance) landed --
+  reported directly by the user via a real side-by-side screenshot of legacy's actual app-bar next
+  to `web/`'s.** A real, previously-undocumented gap: legacy's real `#appbar` (legacy/index.html:
+  4527-4607, read end to end before touching anything) has NO theme or color controls in it at
+  all -- just brand, Quick Assist, Hub, More (Export/Import/Print), Notifications, Account, and
+  Settings. Every one of the Light/Dark toggle, System auto-theme toggle, 7-swatch accent-color
+  picker, and 4-swatch node-text-color picker legacy actually has lives entirely inside
+  `#settings-panel`'s own real "Appearance" section (legacy/index.html:4674-4715) -- confirmed by
+  reading that markup directly, not assumed. `web/` had all four permanently visible in the header
+  instead, because they were built in §6.7 before this project's Settings panel existed --
+  `SettingsPanel.tsx`'s own header comment had already named this exact consolidation as "a real,
+  separately-scoped follow-up" at the time, never picked up since. Fixed: all four controls
+  (`App.tsx`) moved into a new "Theme" section at the top of `SettingsPanel.tsx`'s "general"
+  (Appearance) category -- a real Light/Dark segmented pair (via `setTheme`, not the old single
+  toggle button, since legacy's own `#theme-segmented` is a two-button pair, not a toggle) and a
+  real Off/System segmented pair for auto-theme, both ahead of the existing accent/text-color
+  swatch rows (now 20px circles, up from the header's cramped 16px, since Settings has real room).
+  `App.tsx`'s header now renders only what legacy's own real app-bar does among what `web/` has
+  built so far: Quick Assist, sidebar toggle (a real `web/`-only addition, no legacy counterpart --
+  not removed, since it backs a real feature), Version History, notifications, Hub, More (Export/
+  Import/Print), Settings, Account. `MonitorIcon` (icons.tsx) is now removed entirely -- its own
+  header comment already correctly flagged it as having no legacy equivalent, and its only call
+  site was the auto-theme button just removed, so it's genuinely dead code now, not kept "just in
+  case." Content font (`#editor-font-segmented`, Sans-serif/Monospace) deliberately NOT ported --
+  `web/` has no font-family preference axis at all yet, a real, separately-scoped gap. Verified
+  with real headless-Chrome screenshots of the app-bar in both light and dark theme (confirming the
+  swatches/toggle buttons are genuinely gone, not just visually hidden) and of the new Settings →
+  Appearance section itself (confirming the Theme/Auto-theme segmented controls and both swatch
+  rows render and actually work -- clicking the Moss accent swatch live-updates the segmented
+  buttons' own background color via the same `var(--accent)` the rest of the app already reads,
+  proving the relocation didn't just move markup but kept the real wiring intact). Full gauntlet
+  clean: 2005 tests still passing (no test changes needed), typecheck/lint/build all clean.
+  Deliberately NOT done in this same slice, each a separate, smaller follow-up: reordering the
+  remaining header buttons to match legacy's own exact left-to-right order (Hub/More currently sit
+  after Version History/Notifications in `web/`, legacy has Hub/More first) and moving Version
+  History's own entry point into the real `ExportButtons.tsx` "More" menu, matching legacy's real
+  "More → Version history…" placement (legacy/index.html:6489) now that a real More menu exists --
+  `App.tsx`'s own header comment on that button already flags this as stale reasoning ("moved to
+  the header toolbar since `web/` has no More menu of its own yet"), a real, confirmed but
+  deliberately unfixed gap this slice found and left for whoever picks it up next.
 - Still open, not yet done: Diagrams/Mind Map tabs' own list chrome (genuinely different from the
   three simple-row tabs §8.9 covered -- each backs a real visual editor), and `OutlineTree.tsx`'s
   own FULL row-level class family (`.node-row`/`.node-label`/selection-and-drag states/etc.,

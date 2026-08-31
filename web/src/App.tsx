@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { SidebarToggleIcon, MoonIcon, SunIcon, MonitorIcon, ClockIcon, SettingsGearIcon, SparkleIcon } from './icons';
+import { SidebarToggleIcon, ClockIcon, SettingsGearIcon, SparkleIcon } from './icons';
 import { Button } from './components/ui/Button';
 import { AppShell } from './components/AppShell';
 import { SidebarFileExplorer } from './components/SidebarFileExplorer';
@@ -22,15 +22,6 @@ import { DocumentHeader } from './components/DocumentHeader';
 import { DocSyncPanel } from './components/DocSyncPanel';
 import { NotificationBell } from './components/NotificationBell';
 import { VersionHistoryPanel } from './components/VersionHistoryPanel';
-import {
-  useThemeStore,
-  ACCENT_PRESETS,
-  ACCENT_PRESET_ORDER,
-  ACCENT_PRESET_LABELS,
-  NODE_FONT_COLOR_PRESETS,
-  NODE_FONT_COLOR_PRESET_ORDER,
-  NODE_FONT_COLOR_PRESET_LABELS
-} from './store/themeStore';
 import { MobileHub } from './components/MobileHub';
 import { useIsMobileViewport } from './utils/useIsMobileViewport';
 import { SettingsPanel, type SettingsCategory } from './components/SettingsPanel';
@@ -101,14 +92,6 @@ export function App() {
     setSettingsCategory(category);
     setSettingsOpen(true);
   }
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const accentPreset = useThemeStore((s) => s.accentPreset);
-  const setAccentPreset = useThemeStore((s) => s.setAccentPreset);
-  const themeMode = useThemeStore((s) => s.themeMode);
-  const setThemeMode = useThemeStore((s) => s.setThemeMode);
-  const nodeFontColorPreset = useThemeStore((s) => s.nodeFontColorPreset);
-  const setNodeFontColorPreset = useThemeStore((s) => s.setNodeFontColorPreset);
   const registerScrollContainer = useDocumentsStore((s) => s.registerScrollContainer);
   const activeDocId = useDocumentsStore((s) => s.activeDocId);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
@@ -335,82 +318,14 @@ export function App() {
             >
               <SidebarToggleIcon />
             </button>
-            <button type="button" onClick={toggleTheme} title="Toggle theme">
-              {theme === 'light' ? <MoonIcon /> : <SunIcon />}
-            </button>
-            {/* §6.7 slice (docs/phase6-full-parity-plan.md): System auto-theme. Direct port of
-                legacy's real two-mode `setThemeMode`/`applyAutoTheme` (`themeStore.ts`'s own
-                header comment has the full story, including why there's no third "Schedule" mode
-                despite a leftover legacy comment mentioning one -- it doesn't actually exist in
-                legacy's real code either). Clicking the theme button above still works while this
-                is on -- it starts a temporary override, matching legacy's real UX, until the OS
-                preference naturally catches up and agrees with it again. */}
-            <button
-              type="button"
-              onClick={() => setThemeMode(themeMode === 'system' ? 'manual' : 'system')}
-              title="Follow system theme"
-              aria-pressed={themeMode === 'system'}
-            >
-              <MonitorIcon />
-            </button>
-            {/* §6.7 slice (docs/phase6-full-parity-plan.md): accent-color picker. Direct port of
-                legacy's real `#accent-swatch-row` (legacy/index.html:4695-4703) -- same 7 presets,
-                same order, same radiogroup semantics -- as a small round-button row next to the
-                theme toggle rather than inside a dedicated Settings panel, since `web/` has no
-                Settings surface at all yet (a real, separately-scoped follow-up covering every
-                other toggle this phase and later ones reference, not just this one). The
-                `setAccentPreset` action itself has existed since Phase 6.1; this is the first UI
-                that actually calls it. */}
-            <div role="radiogroup" aria-label="Accent color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              {ACCENT_PRESET_ORDER.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  role="radio"
-                  aria-checked={accentPreset === preset}
-                  aria-label={ACCENT_PRESET_LABELS[preset]}
-                  title={ACCENT_PRESET_LABELS[preset]}
-                  onClick={() => setAccentPreset(preset)}
-                  style={{
-                    width: 16,
-                    height: 16,
-                    padding: 0,
-                    borderRadius: '50%',
-                    border: accentPreset === preset ? '2px solid currentColor' : '1px solid transparent',
-                    background: ACCENT_PRESETS[preset][theme],
-                    cursor: 'pointer'
-                  }}
-                />
-              ))}
-            </div>
-            {/* §6.7 slice (docs/phase6-full-parity-plan.md): node-text-color picker. Direct port of
-                legacy's real `#node-font-swatch-row` (legacy/index.html:4707-4711) -- a separate
-                color axis from accent above (this one recolors node text itself, `--node-fg`, not
-                the accent highlight), same 4 presets/order/radiogroup semantics. Unlike the accent
-                picker, `setNodeFontColorPreset` itself is new in this slice, not just its UI --
-                `web/` had no node-text-color axis at all before this. */}
-            <div role="radiogroup" aria-label="Node text color" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              {NODE_FONT_COLOR_PRESET_ORDER.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  role="radio"
-                  aria-checked={nodeFontColorPreset === preset}
-                  aria-label={NODE_FONT_COLOR_PRESET_LABELS[preset]}
-                  title={NODE_FONT_COLOR_PRESET_LABELS[preset]}
-                  onClick={() => setNodeFontColorPreset(preset)}
-                  style={{
-                    width: 16,
-                    height: 16,
-                    padding: 0,
-                    borderRadius: '50%',
-                    border: nodeFontColorPreset === preset ? '2px solid currentColor' : '1px solid transparent',
-                    background: NODE_FONT_COLOR_PRESETS[preset][theme],
-                    cursor: 'pointer'
-                  }}
-                />
-              ))}
-            </div>
+            {/* §8.12 slice (docs/phase8-design-system-parity-plan.md): the theme toggle, System
+                auto-theme, accent-color picker, and node-text-color picker all moved OUT of the
+                header here -- see SettingsPanel.tsx's own "Theme" section header comment for
+                where they live now and why. Legacy's real app-bar (legacy/index.html:4527-4607)
+                has NO theme/color controls in it at all; every one of these lives inside
+                `#settings-panel`'s own "Appearance" category (legacy/index.html:4674-4715), only
+                ever built directly in the header here because this project's Settings panel
+                didn't exist yet when §6.7 first wired these up. */}
             {/* §6.8 slice: Version History for the active document -- direct port of legacy's
                 real "More" menu "Version history…" entry point (legacy/index.html:6489), moved to
                 the header toolbar since `web/` has no "More" menu of its own yet, same convention

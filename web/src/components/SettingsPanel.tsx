@@ -1,5 +1,14 @@
 import { useState, type ReactNode } from 'react';
-import { useThemeStore, THEME_TOKENS } from '../store/themeStore';
+import {
+  useThemeStore,
+  THEME_TOKENS,
+  ACCENT_PRESETS,
+  ACCENT_PRESET_ORDER,
+  ACCENT_PRESET_LABELS,
+  NODE_FONT_COLOR_PRESETS,
+  NODE_FONT_COLOR_PRESET_ORDER,
+  NODE_FONT_COLOR_PRESET_LABELS
+} from '../store/themeStore';
 import { useOutlinePrefsStore, type RowHighlightStyle } from '../store/outlinePrefsStore';
 import { AiProviderSettings } from './AiProviderSettings';
 import { SecureStorageSettings } from './SecureStorageSettings';
@@ -21,11 +30,18 @@ import { CloseIcon, AppearanceIcon, EditPencilIcon, SparkleIcon, DatabaseIcon, I
  * 4622-4650) with dozens of settings; this panel is still a single flat page (no rail yet),
  * just with a second section now.
  *
- * The accent-color/node-text-color/System-auto-theme controls landed earlier this session live
- * in `App.tsx`'s header directly rather than here, since they were built before this panel
- * existed -- consolidating them into this panel (matching legacy's own real layout, where they
- * DO live inside `#settings-panel`) is a real, separately-scoped follow-up, not attempted in
- * this slice to avoid touching already-shipped, already-verified controls.
+ * §8.12 slice (docs/phase8-design-system-parity-plan.md): the theme toggle, System auto-theme,
+ * accent-color picker, and node-text-color picker -- previously live in `App.tsx`'s header
+ * directly (built before this panel existed, §6.7) -- now live here instead, as the new "Theme"
+ * section at the top of the "general" (Appearance) category, direct port of legacy's real
+ * `#settings-panel`'s own "Appearance" section (legacy/index.html:4674-4715: `#theme-segmented`,
+ * `#theme-mode-segmented`, `#accent-swatch-row`, `#node-font-swatch-row`). Legacy's real app-bar
+ * has NO theme/color controls in it at all -- confirmed by reading legacy/index.html:4527-4607's
+ * own real markup end to end -- so this consolidation isn't just tidying, it closes a real
+ * app-bar-clutter gap found via a direct side-by-side screenshot against legacy's own real header
+ * (search/Hub/More/notifications/account/Settings only, nothing else). Content font
+ * (`#editor-font-segmented`, Sans-serif/Monospace) is deliberately NOT ported here -- `web/` has
+ * no font-family preference axis at all yet, a real, separately-scoped gap, not silently dropped.
  *
  * §6.7 slice: added the real "Layout" section from legacy's own Settings panel
  * (legacy/index.html:5693-5698's own summary line, verified against the real code): compact
@@ -117,6 +133,13 @@ const SETTINGS_CATEGORIES: { id: SettingsCategory; label: string; icon: ReactNod
 export function SettingsPanel({ onClose, initialCategory }: { onClose: () => void; initialCategory?: SettingsCategory }) {
   const theme = useThemeStore((s) => s.theme);
   const t = THEME_TOKENS[theme];
+  const setTheme = useThemeStore((s) => s.setTheme);
+  const accentPreset = useThemeStore((s) => s.accentPreset);
+  const setAccentPreset = useThemeStore((s) => s.setAccentPreset);
+  const themeMode = useThemeStore((s) => s.themeMode);
+  const setThemeMode = useThemeStore((s) => s.setThemeMode);
+  const nodeFontColorPreset = useThemeStore((s) => s.nodeFontColorPreset);
+  const setNodeFontColorPreset = useThemeStore((s) => s.setNodeFontColorPreset);
   const treeIndentWidth = useOutlinePrefsStore((s) => s.treeIndentWidth);
   const setTreeIndentWidth = useOutlinePrefsStore((s) => s.setTreeIndentWidth);
   const hideTreeLines = useOutlinePrefsStore((s) => s.hideTreeLines);
@@ -165,6 +188,126 @@ export function SettingsPanel({ onClose, initialCategory }: { onClose: () => voi
         </div>
         <div className="settings-content">
       <div style={{ display: activeCategory === 'general' ? 'block' : 'none' }}>
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: '.04em',
+          textTransform: 'uppercase',
+          color: t.mutedText,
+          margin: '0 0 8px',
+          paddingBottom: 6,
+          borderBottom: `1px solid ${t.border}`
+        }}
+      >
+        Theme
+      </div>
+      <div style={{ display: 'grid', gap: 14, fontSize: 12, marginBottom: 20 }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span>Theme</span>
+          <div role="tablist" aria-label="Theme" style={{ display: 'inline-flex', border: `1px solid ${t.border}`, borderRadius: 6, width: 'fit-content', overflow: 'hidden' }}>
+            {(['light', 'dark'] as const).map((val) => (
+              <button
+                key={val}
+                type="button"
+                role="tab"
+                aria-selected={theme === val}
+                onClick={() => setTheme(val)}
+                style={{
+                  padding: '5px 14px',
+                  border: 'none',
+                  background: theme === val ? 'var(--accent)' : 'transparent',
+                  color: theme === val ? '#fff' : t.text,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: theme === val ? 600 : 400
+                }}
+              >
+                {val === 'light' ? 'Light' : 'Dark'}
+              </button>
+            ))}
+          </div>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span>Auto theme</span>
+          <div role="tablist" aria-label="Auto theme" style={{ display: 'inline-flex', border: `1px solid ${t.border}`, borderRadius: 6, width: 'fit-content', overflow: 'hidden' }}>
+            {(['manual', 'system'] as const).map((val) => (
+              <button
+                key={val}
+                type="button"
+                role="tab"
+                aria-selected={themeMode === val}
+                onClick={() => setThemeMode(val)}
+                style={{
+                  padding: '5px 14px',
+                  border: 'none',
+                  background: themeMode === val ? 'var(--accent)' : 'transparent',
+                  color: themeMode === val ? '#fff' : t.text,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: themeMode === val ? 600 : 400
+                }}
+              >
+                {val === 'manual' ? 'Off' : 'System'}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: t.mutedText }}>
+            Off: only the Light/Dark switch above, changed by hand. System: follows your OS/browser's
+            dark mode setting automatically.
+          </div>
+        </label>
+        <div>
+          <span>Accent</span>
+          <div role="radiogroup" aria-label="Accent color" style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6 }}>
+            {ACCENT_PRESET_ORDER.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                role="radio"
+                aria-checked={accentPreset === preset}
+                aria-label={ACCENT_PRESET_LABELS[preset]}
+                title={ACCENT_PRESET_LABELS[preset]}
+                onClick={() => setAccentPreset(preset)}
+                style={{
+                  width: 20,
+                  height: 20,
+                  padding: 0,
+                  borderRadius: '50%',
+                  border: accentPreset === preset ? '2px solid currentColor' : '1px solid transparent',
+                  background: ACCENT_PRESETS[preset][theme],
+                  cursor: 'pointer'
+                }}
+              />
+            ))}
+          </div>
+        </div>
+        <div>
+          <span>Text color</span>
+          <div role="radiogroup" aria-label="Text color" style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6 }}>
+            {NODE_FONT_COLOR_PRESET_ORDER.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                role="radio"
+                aria-checked={nodeFontColorPreset === preset}
+                aria-label={NODE_FONT_COLOR_PRESET_LABELS[preset]}
+                title={NODE_FONT_COLOR_PRESET_LABELS[preset]}
+                onClick={() => setNodeFontColorPreset(preset)}
+                style={{
+                  width: 20,
+                  height: 20,
+                  padding: 0,
+                  borderRadius: '50%',
+                  border: nodeFontColorPreset === preset ? '2px solid currentColor' : '1px solid transparent',
+                  background: NODE_FONT_COLOR_PRESETS[preset][theme],
+                  cursor: 'pointer'
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
       <div
         style={{
           fontSize: 12,
