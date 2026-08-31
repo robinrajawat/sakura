@@ -763,27 +763,6 @@ export function App() {
             </ToolbarGroup>
           </div>
         )}
-        <ul style={{ fontSize: '0.9em', color: '#555' }}>
-          <li>Click to select, double-click to edit</li>
-          <li>
-            <kbd>Enter</kbd> — new sibling below; <kbd>Ctrl/Cmd+Enter</kbd> — new child
-          </li>
-          <li>
-            <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> — indent / outdent
-          </li>
-          <li>
-            <kbd>Backspace</kbd> on empty text — delete the node
-          </li>
-          <li>Click the ▾/▸ arrow to collapse/expand a subtree</li>
-          <li>
-            Drag a row onto another — top third = above, bottom third = below, middle third =
-            nest as child
-          </li>
-          <li>
-            Semantic markup: <code>[Section]</code>, <code>(note)</code>, <code>!alert</code>,{' '}
-            <code>`code`</code> — matches legacy's real styling, delimiters hidden
-          </li>
-        </ul>
         {/* §7.4 slice (docs/phase7-app-shell-and-dashboard-plan.md): the per-document header row
             (title + status/author/link chips) -- see DocumentHeader.tsx's own header. Always
             present above whichever content pane is active, matching legacy's own real DOM order

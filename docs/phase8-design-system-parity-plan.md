@@ -1294,6 +1294,28 @@ follow-ups (§8.7+), each large enough to be its own slice.
   button visible, Presenter mode launching correctly from it, and zen mode hiding sidebar+app-bar
   with Escape correctly restoring both. Full gauntlet clean: 2005 tests passing (no test changes
   needed), typecheck/lint/build all clean.
+- ✅ **8.18 (remove two stray leftover-chrome elements found via a real side-by-side screenshot
+  comparison against the 8.5 fixture) landed.** Confirmed both had no real legacy counterpart
+  anywhere, not just an unstyled one: (1) a permanent instructional `<ul>` (`App.tsx`, right
+  before `<DocumentHeader/>`) -- "Click to select, double-click to edit" plus a keyboard-shortcut/
+  semantic-markup legend -- rendered unconditionally above every document. Legacy's own real
+  onboarding content lives entirely in the Guided Tour / Help panel / cheatsheet, never as
+  permanent inline UI above the outline; this was Phase-3-era placeholder content never removed
+  once those real entry points existed. Deleted outright. (2) an ad hoc "Sort top-level: A→Z / Z→A
+  / By depth" + light/dark theme-toggle row (`OutlineTree.tsx`, unstyled inline `<button>`s,
+  `fontFamily:'sans-serif'`) rendered permanently above every document's node tree. Confirmed no
+  legacy equivalent as a permanent row: legacy's real sort buttons live behind the toolbar's
+  Extras/More dropdown (§8.15 point 3, already flagged as deliberately-deferred scope), and the
+  real theme toggle already correctly lives in Settings → Appearance (§8.12) -- this row predates
+  both of those moves and was simply never cleaned up afterward. Removed rather than rebuilt behind
+  a real entry point, matching legacy's real default of no permanent Sort/Theme UI in this
+  location; `sortChildren` (`outlineStore.ts`) stays a real, working, already-tested action with no
+  UI home today (same still-real gap §8.15 point 3 already named), and `toggleTheme`
+  (`themeStore.ts`) keeps its real Settings → Appearance entry point (§8.12) -- neither store
+  action itself was touched, only this component's own now-unused local bindings/imports
+  (`toggleTheme`, `sortChildren`, `MoonIcon`, `SunIcon`). Verified with a real headless-Chrome
+  screenshot against the 8.5 fixture: the tree renders straight into content with no leftover row
+  above it. Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,
