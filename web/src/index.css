@@ -24,6 +24,30 @@
  * matches legacy's real treatment.
  */
 
+/* §8.24 slice (docs/phase8-design-system-parity-plan.md): legacy's real universal reset
+ * (legacy/index.html:311: `*{box-sizing:border-box;margin:0;padding:0}
+ * html,body{height:100%;overflow:hidden}`) was never ported to `web/` at all -- a real,
+ * confirmed gap reported directly by the user with a screenshot: without it, the browser's own
+ * default `<body>` margin left a visible gap at the top/left of the whole app (legacy renders
+ * edge-to-edge, `web/` didn't), and `AppShell.tsx`'s own `height:'100vh'` root div sat inside
+ * that non-zero-margin `<body>`, pushing the total page past the viewport height and producing a
+ * real page-level scrollbar on top of whatever any inner pane's own `overflow:auto` already
+ * handles correctly. `overflow:hidden` on `html,body` matches legacy's own real fixed-viewport
+ * model exactly -- every actual scroll region in this app is already a specific inner element
+ * (`#editor-pane`, `#sidebar`, `#doc-tab-strip`, dialog bodies, ...) with its own `overflow:auto`,
+ * never the page itself, so this has no legitimate content to hide. */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 :root {
   --accent-text-blend: 45%;
   --accent-border-blend: 30%;
