@@ -1316,6 +1316,38 @@ follow-ups (§8.7+), each large enough to be its own slice.
   (`toggleTheme`, `sortChildren`, `MoonIcon`, `SunIcon`). Verified with a real headless-Chrome
   screenshot against the 8.5 fixture: the tree renders straight into content with no leftover row
   above it. Full gauntlet clean: 2005 tests passing, typecheck/lint/build all clean.
+- ✅ **8.19 (Pad panel docked as a real right-side flex sibling, not stacked inline below the
+  outline) landed.** Confirmed directly from legacy's real CSS: `#editor-row{flex:1;display:flex}`
+  is a horizontal flex row containing `#editor-pane` (fills remaining width) then
+  `#pad-resize-handle` + `#pad-panel` (`flex:0 0 var(--pad-width)`, default 440px, resizable
+  220-640px, its own separate `PAD_WIDTH_KEY='sakura_pad_width_v1'` persistence,
+  legacy/index.html:1633-1638, 40283-40288) as trailing siblings -- Pad sits BESIDE the editor,
+  never below it. `index.css`'s own §8.7 comment had already named this exact gap as an "existing,
+  documented structural simplification"; the user confirmed it as a real, wanted fix, not an
+  acceptable one. `padVisibilityStore.ts` gained `padWidth`/`setPadWidth`/`commitPadWidth`,
+  mirroring `sidebarStore.ts`'s own `setWidth`/`commitWidth` split exactly (a live unpersisted
+  update on every drag-move frame, a single persist on drag-end) -- with one real, confirmed
+  asymmetry from the sidebar: legacy's own real Pad handle grows the panel LEFTWARD
+  (`applyPadWidth(startW - (e.clientX-startX))`, legacy/index.html:41599, since the panel is
+  docked on the trailing edge) rather than the sidebar's own rightward growth, ported faithfully
+  as the sign flip in `AppShell.tsx`'s new `startPadResize`, not "fixed" to match the sidebar.
+  `AppShell.tsx` gained a new `padPanel` prop, rendered as a real sibling of `#editor-pane` inside
+  the SAME horizontal flex row (matching legacy's real DOM order exactly), plus its own resize
+  handle between them -- both gated on `padVisible`, read directly from the store the same way
+  `sidebarWidth`/`sidebarOpen` already are, so a caller just always passes the panel's content and
+  this component decides whether/how wide to show it. `App.tsx` moved `<PadPanel/>` out of its own
+  inline `{padVisible && ...}` block below the outline into that new prop -- the previous
+  `marginTop:16` stacking wrapper is gone entirely. `#pad-panel`'s own `overflow:hidden` (legacy
+  relies on its own internal `#pad-editor`/`#qa-body` child elements to scroll) was ported as
+  `overflow:'auto'` on the outer wrapper instead, since `PadPanel.tsx`'s own tabs are a single flat
+  div with no internal scroll containers of their own -- the same "port the effect, not the exact
+  technique" precedent used throughout §8.4/§8.6-8.18. Verified with real headless-Chrome
+  screenshots against the 8.5 fixture: Pad opened via the floating toggle renders as a genuine
+  docked side panel (tab strip, Notes content, editor content visibly narrower alongside it, not
+  above/below it), and a real drag-left on the resize handle correctly widens the panel while the
+  editor content area shrinks to match, confirming both the docking and the leftward-grow direction
+  work end to end. Full gauntlet clean: 2010 tests passing (5 new, `padVisibilityStore.test.ts`),
+  typecheck/lint/build all clean.
 - Still open, not yet done: `OutlineTree.tsx`'s own FULL row-level class family
   (`.node-row`/`.node-label`/selection-and-drag states/etc.,
   legacy/index.html:543-2174) -- §8.10 closed one real, concrete finding inside this component,

@@ -503,6 +503,7 @@ export function App() {
         }
         tabBar={<DocumentTabs />}
         sidebar={<SidebarFileExplorer />}
+        padPanel={<PadPanel />}
         statusLeft={<span>Phase 6.2, in progress</span>}
         statusRight={
           <>
@@ -770,17 +771,6 @@ export function App() {
         <DocumentHeader />
         {mode === 'edit' ? <OutlineTree /> : mode === 'preview' ? <PreviewPane onEnterPresenter={() => setMode('present')} /> : <PresenterMode />}
         <NotePanel />
-        {/* §8.17 slice: gated on `padVisible` now, matching legacy's real `padOpen`-gated
-            `#pad-panel` (legacy/index.html:40295-40301's own `updatePadVisibility`) -- the Sync
-            section below is NOT part of that gate: it's a `web/`-only affordance for the
-            not-yet-built cloud-sync feature with no real legacy element to match (confirmed no
-            `#pad-panel`-nested or `padOpen`-gated "Sync" heading exists anywhere in legacy),
-            so it keeps its prior always-visible behavior rather than an invented coupling. */}
-        {padVisible && (
-          <div style={{ marginTop: 16 }}>
-            <PadPanel />
-          </div>
-        )}
         <div style={{ marginTop: 16 }}>
           <h2 style={{ fontSize: 16 }}>Sync</h2>
           <DocSyncPanel />
