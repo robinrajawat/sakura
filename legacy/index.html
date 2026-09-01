@@ -1984,12 +1984,10 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .selection-fmt-btn.sfmt-ai:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .selection-fmt-btn.sfmt-ai.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .selection-fmt-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
-#note-editor{flex:1;min-height:44px;max-height:160px;overflow-y:auto;overflow-x:auto;margin:0 10px 10px;border-radius:8px;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
+#note-editor{flex:1;min-height:44px;max-height:160px;overflow-y:auto;margin:0 10px 10px;border:none;resize:none;border-radius:8px;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
 #note-panel.maximized #note-editor{max-height:none;flex:1}
 #note-panel.note-bg-distinct #note-editor{background:var(--tb-bg)}
-#note-editor:empty::before{content:attr(data-placeholder);color:var(--hint);pointer-events:none}
-#note-editor img{max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:default}
-#note-editor img.sakura-diagram-img{outline:2px solid var(--accent);outline-offset:2px}
+#note-editor::placeholder{color:var(--hint)}
 .pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:stretch}
 .pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0;display:flex;flex-direction:column}
 .pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
@@ -2007,16 +2005,6 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-card-icon{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .pv-table-card-value{font:700 22px 'Inter',sans-serif;color:var(--fg);line-height:1.15}
 .pv-table-card-label{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
-#note-editor ul,#note-editor ol{margin:6px 0;padding-left:26px}
-#note-editor li{margin:2px 0;padding-left:2px}
-#note-editor li ul,#note-editor li ol{margin:2px 0}
-#note-editor a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-#note-editor table{border-collapse:collapse;margin:6px 0;font-size:12px;table-layout:fixed;max-width:none}
-#note-editor table td,#note-editor table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
-#note-editor table th{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600;color:var(--fg)}
-#note-editor table td:focus,#note-editor table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
-.col-resize-handle{position:absolute;top:0;right:-3px;width:6px;height:100%;cursor:col-resize;z-index:10;user-select:none}
-.col-resize-handle:hover,.col-resize-handle.dragging{background:color-mix(in srgb,var(--accent) 45%,transparent)}
 
 
 #note-panel-footer{display:none;align-items:center;justify-content:flex-end;padding:4px 14px 10px;flex-shrink:0}
@@ -2076,7 +2064,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
    </> badge overlaid when the node also has a non-empty code block — so one dot signals
    both "has a note" and "has code", instead of two separate dots side by side. */
 .node-note-dot{position:relative}
-.node-note-line{position:relative;max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;white-space:pre-wrap;word-break:break-word;outline:none}
+.node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font:0.82em/1.4 inherit;color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;border:none;resize:none;overflow:hidden;background:transparent}
 .node-note-line:focus{color:var(--fg)}
 .node-remark-line{position:relative;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:0.82em;line-height:1.4}
 .node-inline-open-panel-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;color:var(--hint);opacity:0;cursor:pointer;transition:opacity .12s,background .12s,color .12s;margin-top:1px}
@@ -4879,15 +4867,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <span class="settings-row-desc">Hide buttons you don't use in the per-node note panel's toolbar</span>
                 <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="ntbsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="ntbsec-none-btn">Hide all</button></div>
                 <div class="settings-grid" id="note-toolbar-buttons-grid" style="margin-top:6px">
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-bold" checked /> Bold</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-italic" checked /> Italic</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-underline" checked /> Underline</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-strike" checked /> Strikethrough</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-ul" checked /> Bullet list</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-ol" checked /> Numbered list</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-link" checked /> Link</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-table" checked /> Table</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-image" checked /> Image</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-timestamp" checked /> Timestamp</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-ai-rewrite" checked /> AI Rewrite</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-ai-summarise" checked /> AI Summarise</label>
@@ -7253,27 +7232,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <div id="note-panel-subtitle"></div>
   <div id="note-title-row"><input type="text" id="note-title-input" placeholder="Add a title (optional)" maxlength="120" aria-label="Note title" /></div>
   <div id="note-toolbar">
-    <button class="note-tb-btn" id="ntb-bold" data-tip="Bold" data-cmd="bold"><strong>B</strong></button>
-    <button class="note-tb-btn" id="ntb-italic" data-tip="Italic" data-cmd="italic"><em>I</em></button>
-    <button class="note-tb-btn" id="ntb-underline" data-tip="Underline" data-cmd="underline"><u>U</u></button>
-    <button class="note-tb-btn" id="ntb-strike" data-tip="Strikethrough" data-cmd="strikeThrough"><s>S</s></button>
-    <span class="note-tb-sep"></span>
-    <button class="note-tb-btn" id="ntb-ul" data-tip="Bullet list" data-cmd="insertUnorderedList"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button>
-    <button class="note-tb-btn" id="ntb-ol" data-tip="Numbered list" data-cmd="insertOrderedList"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button>
-    <span class="note-tb-sep"></span>
-    <button class="note-tb-btn" id="ntb-link" data-tip="Insert / edit link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
-    <button class="note-tb-btn" id="ntb-table" data-tip="Insert table (2×2 to start)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></button>
-    <button class="note-tb-btn" id="ntb-image" data-tip="Insert image from file"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
     <button class="note-tb-btn" id="ntb-timestamp" data-tip="Insert date/time"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
     <span class="note-tb-sep"></span>
     <button class="note-tb-btn" id="ntb-ai-rewrite" data-tip="Rewrite note (AI) — rewrites selection or full note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
     <button class="note-tb-btn" id="ntb-ai-summarise" data-tip="Summarise subtree into note (AI)" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg></button>
   </div>
-  <div id="note-editor" contenteditable="true" spellcheck="true" data-placeholder="Add a note… Paste images, format text, add links."></div>
+  <textarea id="note-editor" spellcheck="true" placeholder="Add a note…"></textarea>
   <div id="bl-panel"></div>
   <div id="node-ts-panel"></div>
   <div id="note-panel-footer">
-    <span class="note-footer-hint">Ctrl+Enter to close &amp; save · images can be pasted directly</span>
+    <span class="note-footer-hint">Ctrl+Enter to close &amp; save</span>
   </div>
   <div id="code-toolbar">
     <div class="select-wrap">
@@ -7311,7 +7279,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
 </div>
 
-<div id="note-ctx-menu" class="note-ctx-menu" role="menu" aria-label="Note editor actions"></div>
 <div id="at-suggest"></div>
 <div id="node-qa-suggest"></div>
 <div id="answerer-suggest"></div>
@@ -8318,7 +8285,7 @@ const DL_FIELDS=[
   {key:'impact', text:'Impact: What systems or people are affected?'},
 ];
 const PAD_TB_BTN_ID={bold:'ptb-bold',italic:'ptb-italic',underline:'ptb-underline',strike:'ptb-strike',ul:'ptb-ul',ol:'ptb-ol',link:'ptb-link',quote:'ptb-quote',table:'ptb-table',image:'ptb-image',timestamp:'ptb-timestamp','ai-rewrite':'ptb-ai-rewrite'};
-const NOTE_TB_BUTTONS=['bold','italic','underline','strike','ul','ol','link','table','image','timestamp','ai-rewrite','ai-summarise'];
+const NOTE_TB_BUTTONS=['timestamp','ai-rewrite','ai-summarise'];
 const TOOLBAR_GROUPS=['history','structure','move','format','fold','inserts','extras','ai','delete'];
 // Per-button visibility tables for every toolbar group, mirroring INSERT_TB_BUTTONS above —
 // lets each icon within a group be hidden individually, separate from the whole-group
@@ -9622,53 +9589,13 @@ function stripFeaturedTablesFromPadHtml(html){
   tmp.querySelectorAll('table[data-feature-node]').forEach(t=>t.remove());
   return tmp.innerHTML;
 }
-// "Feature as diagram" — an image marked this way (right-click it in the Note editor) is
-// pulled out of its small collapsible note card in Preview/Presenter mode and rendered as
-// a large, always-visible figure right under the node's text instead — for things like
-// architecture diagrams that are the actual point of the slide, not a footnote you have to
-// click to reveal. The marker is just a class on the <img>, so it round-trips through the
-// existing note save/load path with no new storage needed.
-// Sets an image's alt text, which doubles as its caption when the image is featured as a
-// diagram in Preview/Presenter (see splitNoteDiagramImages/renderPreviewBody) — otherwise
-// alt text is invisible in the note editor itself, so this is the only way to set it.
-async function setImageCaption(img){
-  if(!img) return;
-  // The caption modal (like every sakuraPrompt/sakuraConfirm) lives outside #note-panel in
-  // the DOM, so without this, clicking its Save button — or even just the click that closes
-  // the note's own right-click menu to open the modal — reads as "clicked outside the note
-  // panel" to the global listener a few hundred lines down and closes the panel immediately,
-  // before this function ever gets to persist the caption. Same suppression flag "Clear
-  // note" already uses for its own confirm dialog.
-  _notePanelSuppressClickOutside=true;
-  const value=await sakuraPrompt({
-    icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
-    title:'Image caption',
-    body:'Shown under the image when it\'s featured as a diagram in Preview/Presenter — leave blank for no caption.',
-    defaultValue: img.getAttribute('alt')||'',
-    confirmLabel:'Save'
-  });
-  _notePanelSuppressClickOutside=false;
-  if(value===null) return; // cancelled
-  const trimmed=value.trim();
-  if(trimmed) img.setAttribute('alt',trimmed); else img.removeAttribute('alt');
-  const editor=el('note-editor');
-  if(notePanelNodeId!==null&&editor){
-    const idx=getIndex(nodes,notePanelNodeId);
-    if(idx>=0){ nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); markDirty(); }
-  }
-  showToast(trimmed?'Caption saved':'Caption removed');
-}
-function toggleImageDiagramFeature(img){
-  if(!img) return;
-  img.classList.toggle('sakura-diagram-img');
-  const featured=img.classList.contains('sakura-diagram-img');
-  const editor=el('note-editor');
-  if(notePanelNodeId!==null&&editor){
-    const idx=getIndex(nodes,notePanelNodeId);
-    if(idx>=0){ nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); markDirty(); }
-  }
-  showToast(featured?'Featured as diagram — shows full-size in Preview/Presenter':'No longer featured as a diagram');
-}
+// "Feature as diagram" (setImageCaption/toggleImageDiagramFeature, right-click an image in
+// the Note editor) was removed once per-node Notes became plain text and stopped accepting
+// images at all. splitNoteDiagramImages/htmlHasVisibleContent below stay: export/Preview code
+// still calls them, and they degrade correctly on plain-text input (no <img>/<table> tags to
+// find, so restHtml just comes back as the note's own text) — real simplification of those
+// call sites is a deliberate follow-up, not done here.
+//
 // Pulls any diagram-featured images out of a note's HTML for prominent rendering, returning
 // the remaining HTML separately so the small note card doesn't show the same image twice.
 // True if html has anything a reader would actually see — real text, or a meaningful
@@ -9717,7 +9644,28 @@ function setLastFontColor(c){if(!FONT_COLORS.includes(c))return; lastFontColor=c
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
+// One-way migration for notes saved back when the Note panel was rich text (HTML): flattens
+// tags/images/tables down to their plain text, one line per block-level element, preserving line
+// breaks rather than collapsing everything to one run-on line the way stripHtmlToText does.
+// Deliberately does NOT drop .note-comment-stamp spans the way notePreviewPlainText/
+// noteBlockLines do for their own truncated-preview use case — this is the actual stored
+// content, dropping a timestamp here would be real, silent data loss, not just a display
+// simplification. Runs on every load (normalizeNode), so it's self-healing: any note that
+// somehow still has HTML in it (an old sync payload, an imported file) gets flattened the
+// next time it's touched, not just once at a one-time migration point. The no-tags fast path
+// matters since this runs for every node's note on every doc load.
+function notePlainTextFromLegacyHtml(html){
+  if(!html)return '';
+  if(!/[<>]/.test(html))return html; // already plain — skip the DOM round-trip
+  // U+E000 (Private Use Area) — same marker technique noteBlockLines uses; never appears in
+  // real content and HTML parsing leaves it untouched, unlike NUL.
+  const marker='';
+  const tmp=document.createElement('div');
+  tmp.innerHTML=String(html).replace(/<\/(div|p|li)>|<br\s*\/?>/gi,marker+'$&');
+  const text=(tmp.textContent||tmp.innerText||'');
+  return text.split(marker).map(s=>s.replace(/[ \t]+/g,' ').trim()).filter(Boolean).join('\n');
+}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:notePlainTextFromLegacyHtml(typeof n.note==='string'?n.note:''),noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 function normalizeCodeBlock(cb){if(!cb||typeof cb!=='object')return null; const code=typeof cb.code==='string'?cb.code:''; if(!code)return null; const lang=CODE_LANGS.includes(cb.lang)?cb.lang:'plain'; return {lang,code}}
 /* GENERATED:decisionLog:START — DO NOT EDIT BY HAND. Source of truth: src/state/decisionLog.ts (tests: tests/unit/decisionLog.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -9835,9 +9783,9 @@ function padRedo(){const editor=el('pad-editor'); if(!editor||!padRedoStack.leng
 // whole session still lands as one step on the outline's stack when the panel closes
 // (commitNoteEdit/commitCodeEdit's pushUndo()), so the two layers compose: fine-grained
 // while open, one coarse step once closed.
-function pushNoteSessionUndo(){const editor=el('note-editor'); if(!editor)return; noteSessionUndoStack.push(editor.innerHTML); if(noteSessionUndoStack.length>100)noteSessionUndoStack.shift(); noteSessionRedoStack=[]}
-function noteSessionUndo(){const editor=el('note-editor'); if(!editor||!noteSessionUndoStack.length)return; noteSessionRedoStack.push(editor.innerHTML); editor.innerHTML=noteSessionUndoStack.pop(); markDirty(); _reinitNoteEditorTables(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
-function noteSessionRedo(){const editor=el('note-editor'); if(!editor||!noteSessionRedoStack.length)return; noteSessionUndoStack.push(editor.innerHTML); editor.innerHTML=noteSessionRedoStack.pop(); markDirty(); _reinitNoteEditorTables(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
+function pushNoteSessionUndo(){const editor=el('note-editor'); if(!editor)return; noteSessionUndoStack.push(editor.value); if(noteSessionUndoStack.length>100)noteSessionUndoStack.shift(); noteSessionRedoStack=[]}
+function noteSessionUndo(){const editor=el('note-editor'); if(!editor||!noteSessionUndoStack.length)return; noteSessionRedoStack.push(editor.value); editor.value=noteSessionUndoStack.pop(); markDirty(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
+function noteSessionRedo(){const editor=el('note-editor'); if(!editor||!noteSessionRedoStack.length)return; noteSessionUndoStack.push(editor.value); editor.value=noteSessionRedoStack.pop(); markDirty(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
 function pushCodeSessionUndo(){const editor=el('code-editor'); if(!editor)return; codeSessionUndoStack.push(editor.value); if(codeSessionUndoStack.length>100)codeSessionUndoStack.shift(); codeSessionRedoStack=[]}
 function codeSessionUndo(){const editor=el('code-editor'); if(!editor||!codeSessionUndoStack.length)return; codeSessionRedoStack.push(editor.value); editor.value=codeSessionUndoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true; _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo()}
 function codeSessionRedo(){const editor=el('code-editor'); if(!editor||!codeSessionRedoStack.length)return; codeSessionUndoStack.push(editor.value); editor.value=codeSessionRedoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true; _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo()}
@@ -20475,17 +20423,32 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   if((forceInlineNoteId===node.id||(alwaysExpandInlineEnabled!==inlineExpandNoteNodeIds.has(node.id)))&&(!folded||forceInlineNoteId===node.id)&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
-    const noteLine=document.createElement('div'); noteLine.className='node-note-line'; noteLine.contentEditable='true'; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id); noteLine.id='note-line-'+node.id;
+    // A real <textarea> now, not contenteditable — Enter/paste/multi-line all "just work"
+    // natively and correctly. (An earlier contenteditable-based version tried to special-case
+    // Enter with a manually-inserted text-node newline: Chrome has a well-known caret-placement
+    // quirk when a text node's caret sits right after a *trailing* newline — subsequent native
+    // typing landed *before* that newline instead of after it, silently scrambling multi-line
+    // notes. Measured and confirmed directly; not worth chasing further workarounds for when a
+    // textarea sidesteps the entire bug class, the same way the Note panel's own editor and
+    // code-editor already do.)
+    const noteLine=document.createElement('textarea'); noteLine.className='node-note-line'; noteLine.rows=1; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id); noteLine.id='note-line-'+node.id;
     noteLine.style.paddingLeft=hideTreeLines?(noteDepth*18+8*editorScale+24)+'px':(8*editorScale+24)+'px';
-    noteLine.innerHTML=sakuraSanitizeRichHtml(node.note||'');
-    noteLine.dataset.tip='Note — click to edit inline, or use the note icon above for images/diagrams';
+    noteLine.value=node.note||'';
+    // Sized from explicit line breaks up front (cheap, no layout measurement needed since the
+    // row isn't attached to the live DOM yet at this point) — autoGrowTextarea on focus/input
+    // below refines it further for wrapped (not just explicit-newline) lines once it's live.
+    noteLine.rows=Math.max(1,String(node.note||'').split('\n').length);
+    noteLine.dataset.tip='Note — click to edit inline, or use the note icon above';
     noteLine.addEventListener('mousedown',e=>{e.stopPropagation()});
-    noteLine.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id}; });
+    noteLine.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id}; autoGrowTextarea(noteLine); });
     noteLine.addEventListener('click',e=>{e.stopPropagation()});
-    noteLine.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(noteLine.textContent||'').trim(); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(noteLine.textContent||'').trim())doDelete(); },0); });
-    noteLine.addEventListener('input',()=>{ const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=noteLine.innerHTML; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&noteLine.textContent.trim())forceInlineNoteId=null; });
-    noteLine.addEventListener('blur',()=>{ if(noteLine.dataset.deleting)return; const html=sakuraSanitizeRichHtml(noteLine.innerHTML); const i=getIndex(nodes,node.id); if(i>=0)nodes[i].note=html; if(forceInlineNoteId===node.id&&!noteLine.textContent.trim()){ forceInlineNoteId=null; render(); } });
-    noteLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
+    noteLine.addEventListener('keydown',e=>{
+      if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
+      const wasEmpty=!(noteLine.value||'').trim(); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(noteLine.value||'').trim())doDelete(); },0);
+    });
+    noteLine.addEventListener('input',()=>{ autoGrowTextarea(noteLine); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=noteLine.value; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&noteLine.value.trim())forceInlineNoteId=null; });
+    noteLine.addEventListener('blur',()=>{ if(noteLine.dataset.deleting)return; const i=getIndex(nodes,node.id); if(i>=0)nodes[i].note=noteLine.value; if(forceInlineNoteId===node.id&&!noteLine.value.trim()){ forceInlineNoteId=null; render(); } });
+    noteLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.value||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=result; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
     noteWrap.appendChild(noteLine);
     const noteOpenPanelBtn=document.createElement('span'); noteOpenPanelBtn.className='node-inline-open-panel-btn'; noteOpenPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; noteOpenPanelBtn.dataset.tip='Open in Note panel'; noteOpenPanelBtn.style.position='absolute'; noteOpenPanelBtn.style.top='1px'; noteOpenPanelBtn.style.right='0';
     noteOpenPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
@@ -27119,7 +27082,7 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
   }
   if(matchesShortcut(e,'bold')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('bold'); beginEdit(id,true); return} if(matchesShortcut(e,'italic')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('italic'); beginEdit(id,true); return} if(matchesShortcut(e,'underline')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('underline'); beginEdit(id,true); return} if(matchesShortcut(e,'strike')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('strike'); beginEdit(id,true); return} if(matchesShortcut(e,'highlight')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('highlight'); beginEdit(id,true); return} if(matchesShortcut(e,'textColor')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('color'); beginEdit(id,true); return} if(matchesShortcut(e,'heading1')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(1); beginEdit(id,true); return} if(matchesShortcut(e,'heading2')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(2); beginEdit(id,true); return} if(matchesShortcut(e,'heading3')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(3); beginEdit(id,true); return} if(matchesShortcut(e,'heading4')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(4); beginEdit(id,true); return} if(matchesShortcut(e,'heading5')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(5); beginEdit(id,true); return} if(matchesShortcut(e,'heading6')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(6); beginEdit(id,true); return} if(matchesShortcut(e,'headingClear')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(0); beginEdit(id,true); return} if(e.key==='Escape'){e.preventDefault(); cancelEdit(); return} if(e.key==='Enter'){e.preventDefault(); const input=e.target; const currentValue=String(input?.textContent||''); const currentNode=nodes[getIndex(nodes,id)]; const isEffectivelyEmpty=!currentValue.trim()&&!String(currentNode?.text||'').trim(); if(isEffectivelyEmpty){selectedId=id; inputCaret=getEditableCaretOffset(input)??0; beginEdit(id,true); return} if(e.shiftKey){
     commitEdit(); expandNode(id); forceInlineNoteId=id; render();
-    requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } });
+    requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const len=ln.value.length; ln.setSelectionRange(len,len); } });
     return;
   } commitEdit(); selectedId=id; if(e.ctrlKey||e.metaKey)insertChildFirst(id,true); else insertSiblingAfter(id,true); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); commitEdit(); selectedId=id; if(e.shiftKey)outdentSelected(); else indentSelected(); beginEdit(selectedId,true); return}
 }
@@ -33310,15 +33273,11 @@ function openNodePanel(id, anchorRectOverride, forcedMode) {
   if (!panel) return;
   const editor = el('note-editor');
   if (editor) {
-    editor.innerHTML = sakuraSanitizeRichHtml(node.note || '');
+    editor.value = node.note || '';
     // move cursor to end
     try {
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
+      const len = editor.value.length;
+      editor.setSelectionRange(len, len);
     } catch(e) {}
   }
   _loadCodePanelContent(id);
@@ -33345,14 +33304,14 @@ function openNodePanel(id, anchorRectOverride, forcedMode) {
   // Default tab: Note if it has prose, else Code if the node has code but no note text —
   // otherwise Note (the more common empty-state starting point). An explicit forcedMode
   // (from the toggleNote/toggleCodeBlock shortcuts) always wins over that heuristic.
-  const hasNoteText = !!(node.note && stripHtmlToText(node.note).trim());
+  const hasNoteText = !!(node.note && node.note.trim());
   const hasCode = featureCodeEnabled && !!(node.codeBlock && node.codeBlock.code && node.codeBlock.code.trim());
   const mode = (forcedMode==='code'||forcedMode==='note') ? forcedMode : (hasNoteText ? 'note' : (hasCode ? 'code' : 'note'));
   setNodePanelMode(mode, id, anchorRectOverride);
   updateNoteAiButtonStates();
   setTimeout(() => { try {
     if (notePanelMode==='code') { el('code-editor')?.focus(); }
-    else { el('note-editor')?.focus(); _reinitNoteEditorTables(); }
+    else { el('note-editor')?.focus(); }
   } catch(e) {} }, 60);
 }
 
@@ -33384,8 +33343,8 @@ function updateNodePanelTabDots(){
   const node=nodes[idx];
   const noteEditor=el('note-editor');
   const hasNoteText = notePanelMode==='note'
-    ? !!(noteEditor && stripHtmlToText(noteEditor.innerHTML).trim())
-    : !!(node.note && stripHtmlToText(node.note).trim());
+    ? !!(noteEditor && noteEditor.value.trim())
+    : !!(node.note && node.note.trim());
   const codeEditor=el('code-editor');
   const hasCode = featureCodeEnabled && (notePanelMode==='code'
     ? !!(codeEditor && codeEditor.value.trim())
@@ -33568,7 +33527,6 @@ function _noteResizeInPlace() {
 })();
 
 
-let _noteCtxEl = null;
 function _closeNoteCtx() {
   const m = el('note-ctx-menu');
   if (m) { m.classList.remove('open'); m.innerHTML = ''; }
@@ -33586,126 +33544,6 @@ function _noteCtxDivider() {
 function _noteCtxGroupLabel(text) {
   const s = document.createElement('div'); s.className = 'note-ctx-group-label'; s.textContent = text; return s;
 }
-el('note-editor')?.addEventListener('contextmenu', e => {
-  if(e.shiftKey)return; // Shift+right-click falls through to the browser's own context menu, so spellcheck suggestions on a misspelled word are still reachable
-  e.preventDefault();
-  _closeNoteCtx();
-  const menu = el('note-ctx-menu');
-  if (!menu) return;
-
-  const sel = window.getSelection();
-  const hasText = sel && !sel.isCollapsed;
-  const inTable = !!e.target.closest('table');
-  const inCell  = e.target.closest('td, th');
-  const imgTarget = e.target.closest('img');
-
-  // ── Formatting ──
-  menu.appendChild(_noteCtxGroupLabel('Format'));
-  const boldBtn = _noteCtxItem('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg>', 'Bold', false, () => noteExecCmd('bold'));
-  const italBtn = _noteCtxItem('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>', 'Italic', false, () => noteExecCmd('italic'));
-  const ulBtn   = _noteCtxItem('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/></svg>', 'Bullet list', false, () => noteExecCmd('insertUnorderedList'));
-  if (!hasText) { boldBtn.disabled = true; italBtn.disabled = true; }
-  menu.appendChild(boldBtn);
-  menu.appendChild(italBtn);
-  menu.appendChild(ulBtn);
-
-  // ── Table actions ──
-  if (inTable && inCell) {
-    menu.appendChild(_noteCtxDivider());
-    menu.appendChild(_noteCtxGroupLabel('Table'));
-    menu.appendChild(_noteCtxItem(
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="12" y1="3" x2="12" y2="21"/></svg>',
-      'Add row below', false, () => {
-        const row = inCell.closest('tr');
-        if (!row) return;
-        const newRow = row.cloneNode(false);
-        const colCount = row.cells.length;
-        for (let i = 0; i < colCount; i++) {
-          const td = document.createElement('td');
-          td.contentEditable = 'true';
-          newRow.appendChild(td);
-        }
-        row.insertAdjacentElement('afterend', newRow);
-        _noteCtxTableMutated(inCell.closest('table'));
-      }
-    ));
-    menu.appendChild(_noteCtxItem(
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>',
-      'Add column right', false, () => {
-        const table = inCell.closest('table');
-        if (!table) return;
-        const cellIndex = inCell.cellIndex;
-        table.querySelectorAll('tr').forEach(row => {
-          const isHead = row.closest('thead') !== null;
-          const cell = isHead ? document.createElement('th') : document.createElement('td');
-          cell.contentEditable = 'true';
-          if (isHead) cell.textContent = 'Column';
-          const refCell = row.cells[cellIndex];
-          if (refCell) refCell.insertAdjacentElement('afterend', cell);
-          else row.appendChild(cell);
-        });
-        _noteCtxTableMutated(table);
-      }
-    ));
-    menu.appendChild(_noteCtxDivider());
-    menu.appendChild(_noteCtxItem(
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
-      'Delete row', true, () => {
-        const row = inCell.closest('tr');
-        const tbody = row?.closest('tbody');
-        if (row && tbody && tbody.rows.length > 1) row.remove();
-      }
-    ));
-    menu.appendChild(_noteCtxItem(
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
-      'Delete column', true, () => {
-        const table = inCell.closest('table');
-        const ci = inCell.cellIndex;
-        if (!table) return;
-        let canDelete = true;
-        table.querySelectorAll('tr').forEach(r => { if (r.cells.length <= 1) canDelete = false; });
-        if (canDelete) table.querySelectorAll('tr').forEach(r => r.cells[ci]?.remove());
-      }
-    ));
-    menu.appendChild(_noteCtxItem(
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>',
-      'Delete table', true, () => { inCell.closest('table')?.remove(); }
-    ));
-  }
-
-  // ── Image actions ──
-  if (imgTarget) {
-    menu.appendChild(_noteCtxDivider());
-    menu.appendChild(_noteCtxGroupLabel('Image'));
-    const isFeatured = imgTarget.classList.contains('sakura-diagram-img');
-    menu.appendChild(_noteCtxItem(
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>',
-      isFeatured ? 'Remove diagram feature' : 'Feature as diagram', false,
-      () => toggleImageDiagramFeature(imgTarget)
-    ));
-    menu.appendChild(_noteCtxItem(
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
-      imgTarget.getAttribute('alt') ? 'Edit caption…' : 'Set caption…', false,
-      () => setImageCaption(imgTarget)
-    ));
-  }
-
-  // Position and show
-  menu.classList.add('open');
-  const mw = 200, mh = menu.offsetHeight || 260;
-  let mx = e.clientX + 2, my = e.clientY + 2;
-  if (mx + mw > window.innerWidth - 8) mx = e.clientX - mw - 2;
-  if (my + mh > window.innerHeight - 8) my = e.clientY - mh - 2;
-  menu.style.left = Math.max(8, mx) + 'px';
-  menu.style.top  = Math.max(8, my) + 'px';
-});
-
-// Close note context menu on outside click
-document.addEventListener('mousedown', e => {
-  const m = el('note-ctx-menu');
-  if (m && m.classList.contains('open') && !m.contains(e.target)) _closeNoteCtx();
-});
-
 // Safely turns "SAP Note ######" / "OSS Note ######" into a real link within existing rich-text
 // HTML (Note panel, Pad, Decision Log fields) — used at natural "settle" points (blur/commit),
 // never on every keystroke, since live-typing DOM surgery on a focused contenteditable risks
@@ -33747,19 +33585,18 @@ function commitNoteEdit() {
   if (idx < 0) return;
   const editor = el('note-editor');
   if (!editor) return;
-  linkifySapNotesInElement(editor);
-  const html = editor.innerHTML || '';
+  const text = editor.value || '';
   const titleInput = el('note-title-input');
   const title = titleInput ? titleInput.value.trim() : (nodes[idx].noteTitle || '');
   // Only push undo + dirty if changed
-  if (nodes[idx].note !== html || nodes[idx].noteTitle !== title) {
+  if (nodes[idx].note !== text || nodes[idx].noteTitle !== title) {
     pushUndo();
-    nodes[idx].note = html;
+    nodes[idx].note = text;
     nodes[idx].noteTitle = title;
     nodes[idx].modifiedAt = Date.now();
     markDirty();
     render();
-    sakuraLog('commit','commitNoteEdit changed',{nodeId:notePanelNodeId,newLength:html.length});
+    sakuraLog('commit','commitNoteEdit changed',{nodeId:notePanelNodeId,newLength:text.length});
   }
 }
 // Neither the Note nor Code panel syncs to the node live on every keystroke — the only two
@@ -33873,125 +33710,66 @@ function positionNodePanel(id, anchorRectOverride) {
   });
 }
 
-// Note toolbar commands
-function noteExecCmd(cmd, value) {
-  el('note-editor')?.focus();
-  document.execCommand(cmd, false, value || null);
-  updateNoteTbState();
-}
-
-function updateNoteTbState() {
-  ['bold','italic','underline','strikeThrough'].forEach(cmd => {
-    const map = {bold:'ntb-bold',italic:'ntb-italic',underline:'ntb-underline',strikeThrough:'ntb-strike'};
-    const btn = el(map[cmd]);
-    if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
-  });
-}
-
-// Wire note toolbar buttons
-document.querySelectorAll('#note-toolbar .note-tb-btn[data-cmd]').forEach(btn => {
-  btn.addEventListener('mousedown', e => {
-    e.preventDefault(); // don't lose focus from editor
-    noteExecCmd(btn.dataset.cmd);
-  });
-});
-
 el('ntb-timestamp')?.addEventListener('mousedown', e => {
   e.preventDefault();
   insertDateTime('note-editor');
 });
 
-el('ntb-link')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  const editor = el('note-editor');
-  editor?.focus();
-  const sel = window.getSelection();
-  const range = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
-  const existing = sel && sel.anchorNode ? sel.anchorNode.parentElement?.closest('a') : null;
-  const selectedText = sel ? sel.toString() : '';
-  const defaultUrl = existing ? existing.href : '';
-  const defaultText = existing ? existing.textContent : selectedText;
-  sakuraLinkPrompt({title:'Insert Link', text: defaultText, url: defaultUrl}).then(result => {
-    if (!result) return;
-    editor?.focus();
-    if (existing) {
-      const r = document.createRange(); r.selectNode(existing);
-      sel.removeAllRanges(); sel.addRange(r);
-    } else if (range) {
-      sel.removeAllRanges(); sel.addRange(range);
-    }
-    const url = (result.url || '').trim();
-    // execCommand('unlink'/'insertHTML') doesn't reliably fire beforeinput — measured directly —
-    // so the idle-debounce checkpoint below never captures a pre-edit state for either branch.
-    pushNoteSessionUndo();
-    if (!url) {
-      document.execCommand('unlink', false, null);
-    } else {
-      const text = (result.text || '').trim() || url;
-      document.execCommand('insertHTML', false, `<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
-    }
-  });
+el('note-editor')?.addEventListener('paste', e => {
+  // Stop this from bubbling to the document-level paste handler, which treats any
+  // un-prevented paste as "paste a tree into the outline". A plain textarea only ever
+  // accepts the clipboard's plain-text representation on its own, so nothing else needs
+  // handling here.
+  e.stopPropagation();
 });
 
-el('ntb-table')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  const editor = el('note-editor');
-  if (!editor) return;
-  editor.focus();
-  // Raw DOM insert below, not execCommand — bypasses beforeinput, needs its own checkpoint.
-  pushNoteSessionUndo();
-
-  const cols = 2, defaultColW = 120;
-  const table = document.createElement('table');
-
-  // colgroup for resizable fixed widths
-  const cg = document.createElement('colgroup');
-  for (let i = 0; i < cols; i++) {
-    const col = document.createElement('col');
-    col.style.width = defaultColW + 'px';
-    cg.appendChild(col);
+el('note-editor')?.addEventListener('keydown', e => {
+  // See code-editor's identical change — same reasoning: this now opens the mini
+  // character-insert menu instead of passing Ctrl/Cmd+Space through to the full Quick
+  // Assist search.
+  if (handleGenericQaKeydown(e, e.currentTarget)) return;
+  e.stopPropagation(); // don't fire global shortcuts
+  // Contextual undo/redo: fine-grained, scoped to this open Note session (reset on
+  // open, discarded on close), same pattern as Code. The whole session still lands as
+  // one step on the outline's own stack via commitNoteEdit()'s pushUndo() when the
+  // panel closes.
+  if (matchesShortcut(e,'undo')) { e.preventDefault(); noteSessionUndo(); return; }
+  if (matchesShortcut(e,'redo')) { e.preventDefault(); noteSessionRedo(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    closeNodePanel(true);
+    return;
   }
-  table.appendChild(cg);
-
-  // Header row
-  const thead = table.createTHead();
-  const hrow = thead.insertRow();
-  ['Column 1','Column 2'].forEach(text => {
-    const th = document.createElement('th');
-    th.contentEditable = 'true';
-    th.textContent = text;
-    hrow.appendChild(th);
-  });
-  // Two data rows
-  const tbody = table.createTBody();
-  for (let r = 0; r < 2; r++) {
-    const row = tbody.insertRow();
-    for (let c = 0; c < cols; c++) {
-      const td = row.insertCell();
-      td.contentEditable = 'true';
-    }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeNodePanel(true);
+    return;
   }
-
-  // Insert at cursor or append
-  const sel = window.getSelection();
-  if (sel && sel.rangeCount) {
-    const range = sel.getRangeAt(0);
-    range.collapse(false);
-    range.insertNode(table);
-    const firstCell = tbody.rows[0].cells[0];
-    const newRange = document.createRange();
-    newRange.setStart(firstCell, 0);
-    newRange.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(newRange);
-  } else {
-    editor.appendChild(table);
+  if (e.key === 'Tab') {
+    // Plain two-space insert — a real textarea, so no caret-offset tracking needed.
+    e.preventDefault();
+    pushNoteSessionUndo();
+    const ta = e.target;
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    ta.value = ta.value.slice(0,start) + '  ' + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + 2;
   }
+});
 
-  _attachTableResizeHandles(table);
+// Idle-debounce undo checkpointing for Note — same pattern as Code's (see there for the
+// full reasoning): one step per burst of typing, captured before the mutating edit via
+// beforeinput, not one step per keystroke.
+let _noteIdleTimer = null;
+let _noteCheckpointPending = true;
+el('note-editor')?.addEventListener('beforeinput', () => {
+  if (_noteCheckpointPending) { pushNoteSessionUndo(); _noteCheckpointPending = false; }
+  clearTimeout(_noteIdleTimer);
+  _noteIdleTimer = setTimeout(() => { _noteCheckpointPending = true; }, 800);
 });
 
 // ── Column resize handles ────────────────────────────────────────────────────
+// Still used by Pad's own Notepad table feature (see ~line 41918/42868) even though
+// the Note editor that originally introduced this no longer has tables.
 function _attachTableResizeHandles(table) {
   // Ensure colgroup exists with explicit widths
   let cg = table.querySelector('colgroup');
@@ -34052,160 +33830,12 @@ function _attachTableResizeHandles(table) {
   });
 }
 
-// Re-attach handles whenever the note panel opens (for saved notes with tables)
-function _reinitNoteEditorTables() {
-  const editor = el('note-editor');
-  if (!editor) return;
-  editor.querySelectorAll('table').forEach(t => _attachTableResizeHandles(t));
-}
-
-// Also attach when new rows/columns are added via context menu
+// Attach handles when new rows/columns are added via a context menu — used by Pad's own
+// Notepad table feature (the Note editor that originally introduced this no longer has
+// tables at all).
 function _noteCtxTableMutated(table) {
   if (table) _attachTableResizeHandles(table);
 }
-
-el('ntb-image')?.addEventListener('click', () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
-  document.body.appendChild(input);
-  input.addEventListener('change', () => {
-    const file = input.files?.[0];
-    if (!file) { input.remove(); return; }
-    const reader = new FileReader();
-    reader.onload = evt => {
-      el('note-editor')?.focus();
-      // execCommand('insertImage') doesn't reliably fire beforeinput — measured directly — so
-      // the idle-debounce checkpoint never captures a pre-edit state for it.
-      pushNoteSessionUndo();
-      document.execCommand('insertImage', false, evt.target.result);
-      input.remove();
-    };
-    reader.readAsDataURL(file);
-  });
-  input.click();
-});
-
-el('note-editor')?.addEventListener('paste', e => {
-  // Stop this from bubbling to the document-level paste handler, which treats
-  // any un-prevented paste as "paste a tree into the outline" — without this,
-  // pasting plain text/HTML here (anything that isn't an image) falls through
-  // to that handler and the content lands in the outline instead of the note.
-  e.stopPropagation();
-
-  // Sources like OneNote/Word put BOTH a rich text/html representation (with
-  // the actual text, tables, and inline images already embedded as data URIs)
-  // AND a flattened image/png "snapshot" of the same selection on the
-  // clipboard as a fallback. Previously this handler grabbed the first
-  // image/* item unconditionally and inserted only that, which is why mixed
-  // copies came through as a single flat picture instead of real content.
-  // Now: if there's meaningful text or HTML, let the browser's native paste
-  // handle it (it already knows how to insert tables/text/embedded images
-  // from text/html), and only fall back to the manual image-insert path for
-  // a genuine image-only clipboard (e.g. a screenshot tool with no html/text).
-  const html = e.clipboardData?.getData('text/html') || '';
-  const text = e.clipboardData?.getData('text/plain') || '';
-  const hasRichContent = text.trim().length > 0 || html.replace(/<[^>]*>/g, '').trim().length > 0;
-  if (hasRichContent) {
-    // Let default paste insert the html/text as-is, then make any pasted
-    // table immediately resizable instead of waiting for the panel to reopen.
-    setTimeout(() => _reinitNoteEditorTables(), 0);
-    return;
-  }
-
-  // Handle image-only paste (from clipboard screenshots, etc.)
-  const items = e.clipboardData?.items;
-  if (!items) return;
-  for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      e.preventDefault();
-      const file = item.getAsFile();
-      if (!file) continue;
-      const reader = new FileReader();
-      reader.onload = evt => {
-        pushNoteSessionUndo();
-        document.execCommand('insertImage', false, evt.target.result);
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
-  }
-  // For text/html paste, strip external styles but allow basic tags
-  // (browser default behavior is fine for this)
-});
-
-el('note-editor')?.addEventListener('keydown', e => {
-  // Was previously left to bubble to the document-level handler so Ctrl/Cmd+Space opened
-  // the full Quick Assist search here, same as everywhere else outside inline node editing.
-  // Now opens the same Quick Insert character-insert menu used everywhere else — Note/Code
-  // block/Tags/Decision log/AI rewrite are left out since none of them make sense without a
-  // specific outline node backing them; the full Quick Assist is still one click away via its
-  // own button if that's what's actually wanted.
-  if (handleGenericQaKeydown(e, e.currentTarget)) return;
-  e.stopPropagation(); // don't fire global shortcuts
-  // Contextual undo/redo: fine-grained, scoped to this open Note session (reset on
-  // open, discarded on close). The whole session still lands as one step on the
-  // outline's own stack via commitNoteEdit()'s pushUndo() when the panel closes.
-  if (matchesShortcut(e,'undo')) { e.preventDefault(); noteSessionUndo(); return; }
-  if (matchesShortcut(e,'redo')) { e.preventDefault(); noteSessionRedo(); return; }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    e.preventDefault();
-    closeNodePanel(true);
-    return;
-  }
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    closeNodePanel(true);
-    return;
-  }
-  // Tab / Shift+Tab: indent list items, or insert spaces in plain text
-  if (e.key === 'Tab') {
-    e.preventDefault();
-    const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
-    const range = sel.getRangeAt(0);
-    // Check if cursor is inside a list item — use browser indent/outdent
-    const li = sel.anchorNode?.closest?.('li') || (sel.anchorNode?.parentElement?.closest?.('li'));
-    if (li) {
-      document.execCommand(e.shiftKey ? 'outdent' : 'indent');
-    } else if (!e.shiftKey) {
-      // Insert two spaces as a tab equivalent in plain text areas. This bypasses
-      // beforeinput (unlike execCommand/indent above), so it needs its own checkpoint.
-      pushNoteSessionUndo();
-      const spaces = document.createTextNode('\u00a0\u00a0\u00a0\u00a0');
-      range.deleteContents();
-      range.insertNode(spaces);
-      range.setStartAfter(spaces);
-      range.setEndAfter(spaces);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      // Persist
-      const editor = el('note-editor');
-      if (notePanelNodeId !== null && editor) {
-        const idx = getIndex(nodes,notePanelNodeId);
-        if (idx >= 0) { nodes[idx].note = cleanEditorHtml(editor); markDirty(); }
-      }
-    }
-    return;
-  }
-  // Update toolbar state
-  updateNoteTbState();
-});
-
-el('note-editor')?.addEventListener('keyup', updateNoteTbState);
-el('note-editor')?.addEventListener('mouseup', updateNoteTbState);
-
-// Idle-debounce undo checkpointing for Note — same pattern as Pad's (see there for the
-// full reasoning): one step per burst of typing, captured before the mutating edit via
-// beforeinput, not one step per keystroke.
-let _noteIdleTimer = null;
-let _noteCheckpointPending = true;
-el('note-editor')?.addEventListener('beforeinput', () => {
-  if (_noteCheckpointPending) { pushNoteSessionUndo(); _noteCheckpointPending = false; }
-  clearTimeout(_noteIdleTimer);
-  _noteIdleTimer = setTimeout(() => { _noteCheckpointPending = true; }, 800);
-});
 
 el('note-panel-close')?.addEventListener('click', () => closeNodePanel(true));
 
@@ -34237,7 +33867,7 @@ el('note-panel-clear')?.addEventListener('click', async (e) => {
     }
   }
   const editor = el('note-editor');
-  if (editor) editor.innerHTML = '';
+  if (editor) editor.value = '';
   const titleInput = el('note-title-input');
   if (titleInput) titleInput.value = '';
   closeNodePanel(true);
@@ -34346,46 +33976,14 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
   if (!editor) return;
   const btn = el('ntb-ai-rewrite');
 
-  const sel = window.getSelection();
-  const hasSelection = sel && sel.rangeCount > 0 && !sel.isCollapsed && editor.contains(sel.anchorNode);
-
-  let inputText = '';
-  let savedRange = null;
-
-  if (hasSelection) {
-    savedRange = sel.getRangeAt(0).cloneRange();
-    inputText = savedRange.toString().trim();
-  } else {
-    // Markdown extraction (mdBlocksFromHtml), not innerText — same reasoning as the Pad's
-    // whole-content rewrite above: innerText discards list/bold/heading structure entirely,
-    // leaving nothing for aiRewritePrompt's preservation instructions to preserve.
-    inputText = mdBlocksFromHtml(editor.innerHTML,0).trim();
-  }
+  const selStart = editor.selectionStart, selEnd = editor.selectionEnd;
+  const hasSelection = selStart !== selEnd;
+  const inputText = (hasSelection ? editor.value.slice(selStart, selEnd) : editor.value).trim();
 
   if (!inputText) return;
 
-  // With nothing selected, this replaces the ENTIRE note — lists, bold/italic, and headings
-  // now survive the round-trip via Markdown (see extraction above), but embedded images and
-  // tables still don't since mdBlocksFromHtml has no representation for them. Confirm first.
-  if(!hasSelection){
-    const nImg=editor.querySelectorAll('img').length;
-    const nTable=editor.querySelectorAll('table').length;
-    if(nImg||nTable){
-      const parts=[];
-      if(nImg) parts.push(`${nImg} image${nImg===1?'':'s'}`);
-      if(nTable) parts.push(`${nTable} table${nTable===1?'':'s'}`);
-      const ok=await sakuraConfirm({
-        icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',
-        title:'Rewrite the whole note?',
-        body:`This replaces all of the note's content with AI-rewritten text, which will remove ${parts.join(', ')} (other formatting like lists and bold text is preserved). Select just the text you want rewritten instead if you'd like to keep them.`,
-        confirmLabel:'Replace everything', confirmCls:'danger', cancelLabel:'Cancel'
-      });
-      if(!ok) return;
-    }
-  }
-
   const requestNodeId = notePanelNodeId;
-  const htmlAtRequestStart = editor.innerHTML;
+  const valueAtRequestStart = editor.value;
   btn.classList.add('ai-busy');
   try {
     const prompt = aiRewritePrompt + '\n\nText: ' + inputText;
@@ -34394,29 +33992,23 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
 
     // The Note panel is a reused singleton — while this request was pending the user could have
     // kept typing in this same note, or closed it and opened a different node's note into the
-    // same #note-editor entirely. Either way, applying the saved Range / replacing innerHTML now
-    // would silently overwrite content that's no longer what this rewrite was requested against.
-    if (aiSnapshotChanged(requestNodeId,notePanelNodeId) || aiSnapshotChanged(htmlAtRequestStart,editor.innerHTML)) {
+    // same #note-editor entirely. Either way, applying the saved selection / replacing the whole
+    // value now would silently overwrite content that's no longer what this rewrite was
+    // requested against.
+    if (aiSnapshotChanged(requestNodeId,notePanelNodeId) || aiSnapshotChanged(valueAtRequestStart,editor.value)) {
       showToast('This note changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
       return;
     }
 
     editor.focus();
-    // Checkpoint the session stack before mutating — this (not the execCommand calls
-    // below) is what makes the rewrite actually undoable via Ctrl+Z while the panel
-    // is still open.
+    // Checkpoint the session stack before mutating — this is what makes the rewrite
+    // actually undoable via Ctrl+Z while the panel is still open.
     pushNoteSessionUndo();
-    if (hasSelection && savedRange) {
-      // Restore saved range and replace only that portion
-      const selRestore = window.getSelection();
-      selRestore.removeAllRanges();
-      selRestore.addRange(savedRange);
-      document.execCommand('insertText', false, result);
+    if (hasSelection) {
+      editor.value = editor.value.slice(0,selStart) + result + editor.value.slice(selEnd);
+      editor.setSelectionRange(selStart, selStart + result.length);
     } else {
-      // Parse the AI's Markdown response back into real HTML instead of selecting-all +
-      // execCommand('insertText', result) — that always inserts a flat text node, which is
-      // exactly what used to destroy list/bold/heading structure on every whole-note rewrite.
-      editor.innerHTML = sakuraSanitizeRichHtml(mdTextToHtml(result));
+      editor.value = result;
     }
     // Persist. pushUndo() here (previously missing) puts the rewrite on the
     // app-level undo stack too — without it, commitNoteEdit()'s on-close diff
@@ -34424,7 +34016,7 @@ el('ntb-ai-rewrite')?.addEventListener('click', async () => {
     // so the rewrite was unrecoverable once the Note panel closed.
     if (notePanelNodeId !== null) {
       const idx = getIndex(nodes,notePanelNodeId);
-      if (idx >= 0) { pushUndo(); nodes[idx].note = cleanEditorHtml(editor); markDirty(); }
+      if (idx >= 0) { pushUndo(); nodes[idx].note = editor.value; markDirty(); }
     }
     if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   } catch (err) {
@@ -34458,25 +34050,16 @@ el('ntb-ai-summarise')?.addEventListener('click', async () => {
 
     editor.focus();
     // Append with a blank line separator if note already has content
-    const hasContent = editor.innerText.trim().length > 0;
-    if (hasContent) {
-      // Insert two <br> then the summary as a new paragraph
-      editor.innerHTML += '<br><br>' + result.replace(/\n/g, '<br>');
-    } else {
-      editor.innerHTML = result.replace(/\n/g, '<br>');
-    }
+    const hasContent = editor.value.trim().length > 0;
+    editor.value = hasContent ? (editor.value + '\n\n' + result) : result;
     // Move cursor to end
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    const s = window.getSelection();
-    s.removeAllRanges();
-    s.addRange(range);
+    const len = editor.value.length;
+    editor.setSelectionRange(len, len);
 
     // Persist
     if (notePanelNodeId !== null) {
       const tidx = getIndex(nodes,notePanelNodeId);
-      if (tidx >= 0) { nodes[tidx].note = cleanEditorHtml(editor); markDirty(); }
+      if (tidx >= 0) { nodes[tidx].note = editor.value; markDirty(); }
     }
     showToast('Summary appended ✦', 'success');
   } catch (err) {
@@ -38478,46 +38061,14 @@ function saveNodeText(nodeId,text){
   markDirty(); scheduleAutoSave();
   showToast('Node text updated');
 }
-// Converts markdown-style "- "/"* " lines typed into the presenter-mode note textarea into a
-// real <ul><li> list, so a quick "- risk\n- mitigation\n- owner" capture reads as an actual
-// bulleted list everywhere node.note is rendered (Note panel, exports, PPTX/Word notes) rather
-// than three dashes glued into one run-on line — noteBlockLines/notePreviewPlainText already
-// treat <li> as its own block, same as the rich editor's real lists, so nothing downstream needs
-// to change. Non-bullet lines stay plain text, each its own block. Deliberately not full
-// Markdown (no bold/italic/links) — this popover is a fast plain-textarea capture, not the rich
-// contenteditable editor.
-function noteCaptureLinesToHtml(text){
-  const lines=text.split(/\r\n|\r|\n/);
-  let html=''; let listBuf=[];
-  const flushList=()=>{ if(listBuf.length){ html+='<ul>'+listBuf.map(t=>`<li>${esc(t)}</li>`).join('')+'</ul>'; listBuf=[]; } };
-  for(const raw of lines){
-    const m=/^\s*[-*]\s+(.+)$/.exec(raw);
-    if(m){ listBuf.push(m[1].trim()); continue; }
-    flushList();
-    if(raw.trim()==='')continue;
-    html+=`<div>${esc(raw.trim())}</div>`;
-  }
-  flushList();
-  return html;
-}
 function saveNodeComment(nodeId,text){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const trimmed=text.trim(); if(!trimmed)return;
   const stamp=new Date().toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-  // Stamp and text share one line (no <br> between them) — the one part of the same-line
-  // experiment worth keeping — but only for the plain single-line case, which is still the
-  // overwhelming majority of captures and keeps producing byte-identical markup to before this
-  // function grew list support. Anything with a newline or a leading "- "/"* " routes through
-  // noteCaptureLinesToHtml instead, with the stamp getting its own line via <br> rather than
-  // sharing one with the first bullet — gluing a timestamp onto the front of a list item read
-  // worse than a run-on sentence did. Entries themselves stay <div>-based (not spans) so multiple
-  // comments on one node still stack as separate, clearly-separated blocks via the existing
-  // margin — a "·"-joined run of several full sentences read worse than each on its own line.
-  const isPlainSingleLine=!/\r|\n/.test(trimmed)&&!/^\s*[-*]\s+/.test(trimmed);
-  const addition=isPlainSingleLine
-    ?`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span> ${esc(trimmed)}</div>`
-    :`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span><br>${noteCaptureLinesToHtml(trimmed)}</div>`;
-  node.note=node.note?(node.note.trim()+addition):addition;
+  // Notes are plain text — stamp fronts the entry's first line, multiple comments on one node
+  // stack as separate lines (blank line between entries) rather than needing their own markup.
+  const addition=`${stamp} ${trimmed}`;
+  node.note=node.note?(node.note.trim()+'\n\n'+addition):addition;
   node.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   showToast('Comment added to node note');
@@ -40012,8 +39563,6 @@ async function copyPreviewAsRichText(){
     ul.appendChild(liEl);
     stack.push({depth,ul,lastLi:liEl});
   }
-  function htmlToPlain(html){ const tmp=document.createElement('div'); tmp.innerHTML=html||''; return (tmp.textContent||'').trim(); }
-
   const {consumed,groups}=previewDetectDecisionLogs(nodes);
   const groupByHeader=new Map(groups.map(g=>[g.headerIdx,g]));
   let skipDepth=null;
@@ -40062,10 +39611,11 @@ async function copyPreviewAsRichText(){
       head.textContent='Note';
       noteCard.appendChild(head);
       const body=document.createElement('div');
-      body.innerHTML=node.note;
+      body.style.whiteSpace='pre-wrap';
+      body.textContent=node.note;
       noteCard.appendChild(body);
       ownerEl.appendChild(noteCard);
-      plainLines.push('  Note: '+htmlToPlain(node.note));
+      plainLines.push('  Note: '+(node.note||'').trim());
     }
     if(decisionLogForNode(node.id)&&!(folded&&hasChildren)){
       plainLines.push('  Decision Log');
@@ -40237,7 +39787,7 @@ function _setupImageResize(editorId){
     _imgResizePersist();
   });
 }
-_setupImageResize('note-editor');
+// Note editor no longer accepts images (plain text), so only Pad's Notepad wires this up now.
 _setupImageResize('pad-editor');
 
 // Copy handler for images and tables in both rich editors.
@@ -48464,7 +48014,9 @@ document.querySelectorAll('.meeting-field-fmt-btn').forEach(btn=>{
 // (short of typing raw HTML) to add a link in meeting notes at all, since that field's own
 // toolbar only ever had bullet/numbered list and AI rewrite buttons. Settings → Editing →
 // "Selection formatting popover" turns it off if it gets in the way.
-const SELECTION_FMT_EDITOR_IDS=['note-editor','pad-editor','meeting-agenda','meeting-body-field','journal-body-field','library-body-field'];
+// note-editor deliberately excluded — it's plain text now (no execCommand formatting applies
+// to a <textarea>), so the popover would show Bold/Italic/etc. buttons that do nothing.
+const SELECTION_FMT_EDITOR_IDS=['pad-editor','meeting-agenda','meeting-body-field','journal-body-field','library-body-field'];
 const SELECTION_HIGHLIGHT_COLOR='rgba(234,179,8,.35)'; // same hue as the node-highlight palette's yellow
 let _selectionFmtEditorId=null;
 function selectionFmtEditorFor(node){
@@ -48472,7 +48024,8 @@ function selectionFmtEditorFor(node){
   while(n){
     if(n.nodeType===1){
       if(SELECTION_FMT_EDITOR_IDS.includes(n.id))return n.id;
-      if(n.classList&&n.classList.contains('node-note-line')&&n.id)return n.id;
+      // node-note-line deliberately excluded — same reasoning as note-editor above: notes are
+      // plain text now, so there's no formatting for this popover to apply.
       if(n.classList&&(n.classList.contains('node-qa-question')||n.classList.contains('node-qa-answer'))&&n.id)return n.id;
       // Remarks aren't a singleton editor like Pad/Note — there's one of these per remark, each
       // with its own generated id (see renderRemarksList) — so this checks the class instead of
