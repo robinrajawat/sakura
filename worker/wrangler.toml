@@ -1,12 +1,15 @@
 # Cloudflare Worker config for docs/ai-hosted-vault-design.md's hosted, admin-funded AI
 # backend (BYOK dropped — see that doc's own scope-change section). Not deployed anywhere
 # yet — see the design doc's "Explicitly out of scope" section. This file alone is not
-# enough to deploy: the KV namespace id below is a placeholder, and the two required
-# secrets aren't set here at all (secrets are provisioned via `wrangler secret put <NAME>`,
-# never committed).
+# enough to deploy: the two required secrets aren't set here at all (secrets are
+# provisioned via `wrangler secret put <NAME>`, never committed). The KV namespace id
+# below is real (the "sakura-vault-kv" namespace, created via the Cloudflare dashboard) —
+# a namespace id isn't a secret on its own, it grants nothing without real account
+# credentials, so it's safe to commit same as the KV namespace ids in most public
+# wrangler.toml files.
 #
 # Before a real deploy:
-#   1. `wrangler kv:namespace create SAKURA_VAULT_KV` and paste the real id below.
+#   1. Done — SAKURA_VAULT_KV below points at the real "sakura-vault-kv" namespace.
 #   2. `wrangler secret put VAULT_KEK` — the AES-256-GCM key-encryption-key for the
 #      provider API keys stored in KV (see src/vault.ts; generate one with
 #      `openssl rand -base64 32`).
@@ -34,4 +37,4 @@ DAILY_AI_QUOTA = "20"
 
 [[kv_namespaces]]
 binding = "SAKURA_VAULT_KV"
-id = "REPLACE_WITH_REAL_KV_NAMESPACE_ID"
+id = "160c845516104abbb49306c740e809ed"
