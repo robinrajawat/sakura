@@ -2,7 +2,7 @@
   "name": "sakura-worker",
   "private": true,
   "version": "0.0.0",
-  "description": "Cloudflare Worker backing docs/ai-hosted-vault-design.md — a synced AI key vault and hosted/keyless AI for legacy/, part of the sakura-monorepo npm workspace (see root package.json). Not deployed anywhere yet; see the design doc's 'Explicitly out of scope' section for what's still needed before that's true.",
+  "description": "Cloudflare Worker backing docs/ai-hosted-vault-design.md — hosted, admin-funded AI for legacy/ (BYOK dropped; see that doc's own scope-change section). Not deployed anywhere yet; see the design doc's 'Explicitly out of scope' section for what's still needed before that's true.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src tests --ext .ts",
     "test:unit": "vitest run"
+  },
+  "dependencies": {
+    "jose": "^6.2.10"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250101.0",
