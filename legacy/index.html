@@ -13632,12 +13632,11 @@ function el(id){return document.getElementById(id)}
 const FIREBASE_CONFIG={apiKey:"AIzaSyB0WitU2dazVbt_MCkkxZuL_pxSH76Xlj0",authDomain:"auth.sakura-notes.com",projectId:"sakura-4cdae",storageBucket:"sakura-4cdae.firebasestorage.app",messagingSenderId:"547935562547",appId:"1:547935562547:web:50ddb56ab0db0089452c46",measurementId:"G-KSBVB732SJ"};
 const FIREBASE_SDK_VERSION="10.14.1";
 // Base URL of the deployed sakura-vault Cloudflare Worker (docs/ai-hosted-vault-design.md) that
-// backs the "AI Providers" admin panel in #settings-section-account-admin. Blank until a real
-// deploy exists — aiVaultAdminFetch() checks this first and fails with a clear "not deployed
-// yet" error rather than a raw network failure. Not a secret, same reasoning as FIREBASE_CONFIG
-// above: the real access boundary is the Worker's own Firebase token verification plus its
-// ADMIN_UID check, not this URL.
-const AI_VAULT_WORKER_URL="";
+// backs the "AI Providers" admin panel in #settings-section-account-admin. Points at the real
+// deploy — .github/workflows/deploy-worker.yml ships worker/ here on every push to main that
+// touches it. Not a secret, same reasoning as FIREBASE_CONFIG above: the real access boundary
+// is the Worker's own Firebase token verification plus its ADMIN_UID check, not this URL.
+const AI_VAULT_WORKER_URL="https://sakura-vault.robinsinghrajawat.workers.dev";
 let currentUser=null;
 let _firebaseModsPromise=null;
 function loadFirebaseMods(){
