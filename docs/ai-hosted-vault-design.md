@@ -83,9 +83,13 @@ There's no more "BYOK mode bears no cost" split — every request now bills Robi
 account, with Firebase auth as the only gate standing between "any Sakura user" and unmetered
 spend on his credentials.
 
-- **Quota**: `quota:{uid}:{yyyy-mm-dd}` counter, checked and incremented atomically per request,
-  request rejected once the daily cap is hit. Needs an actual number chosen before launch — not
-  guessed here.
+- **Quota**: `quota:{uid}:{yyyy-mm-dd}` counter (`worker/src/quota.ts`), request rejected once the
+  daily cap is hit. Not actually atomic — Cloudflare KV has no compare-and-swap, so the
+  read-then-write has a narrow race under truly concurrent requests from the same UID (both could
+  read the same count and both write count+1, undercounting by one). Accepted deliberately: a
+  Durable Object would close that race but is real added complexity for a single-admin
+  abuse-mitigation quota, not a financial ledger. Needs an actual daily limit number chosen before
+  launch — not guessed here.
 - **Provider choice for the fallback chain**: fund it from providers with a genuinely free tier at
   the volumes expected — Groq and Cerebras are the obvious first choices (see the labels on those
   two in the current, soon-to-be-removed `AI_BUILTIN_PROVIDERS` list, `legacy/index.html` ~line
