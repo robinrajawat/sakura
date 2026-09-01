@@ -8,11 +8,14 @@ encrypted provider storage (`providers.ts`), the per-provider request/response a
 `.github/workflows/deploy-worker.yml` on every push to `main` that touches `worker/`.
 `legacy/index.html` has a Settings → Account → Admin panel for managing the provider chain
 against those endpoints (see "Admin UI" below), and its `AI_VAULT_WORKER_URL` constant now
-points at the real deployed URL. **No provider is configured yet** — hosted AI has no funded
-provider in its fallback chain until one is added through that admin panel. What's still
-missing: the *user-facing* `legacy/` client-side wiring (the `/ai/complete` call and removing
-the old BYOK Settings surface), which is deliberately a separate, later pass. See "Open
-decisions" below for what still needs an answer before that client wiring happens.
+points at the real deployed URL. **The fallback chain is funded**: Groq (order 0), Cerebras
+(order 1), and Gemini (order 2) are all configured through that admin panel, each with a real
+API key encrypted at rest — the same three named in "Cost and abuse control" below. What's
+still missing: the *user-facing* `legacy/` client-side wiring (the `/ai/complete` call and
+removing the old BYOK Settings surface), which is deliberately a separate, later pass — nothing
+in the app actually calls `/ai/complete` yet, so this funded chain isn't reachable by real users
+until that wiring lands. See "Open decisions" below for what still needs an answer before that
+client wiring happens.
 
 ## Origin, and a real scope change since the first draft
 
@@ -152,11 +155,13 @@ spend on his credentials.
   concurrent requests from the same UID (both could read the same count and both write count+1,
   undercounting by one). Accepted deliberately: a Durable Object would close that race but is real
   added complexity for a single-admin abuse-mitigation quota, not a financial ledger.
-- **Provider choice for the fallback chain**: fund it from providers with a genuinely free tier at
-  the volumes expected — Groq and Cerebras are the obvious first choices (see the labels on those
-  two in the current, soon-to-be-removed `AI_BUILTIN_PROVIDERS` list, `legacy/index.html` ~line
-  8859: "free, fast" / "free tier"). Doesn't need to be a long chain — one or two funded providers
-  with a defined order is enough, added via `POST /admin/providers` once deployed.
+- **Provider choice for the fallback chain**: fund it from providers with a genuinely free tier
+  at the volumes expected. Done: Groq (order 0), Cerebras (order 1), and Gemini (order 2) — all
+  three have their own dedicated free tier (not a shared aggregator quota the way OpenRouter's
+  `:free`-tagged models do), same labels as the current, soon-to-be-removed `AI_BUILTIN_PROVIDERS`
+  list (`legacy/index.html` ~line 8859: "free, fast" / "free tier" / "free"). Claude/ChatGPT/
+  OpenRouter/GitHub Models are deliberately not funded this way — paid-only, a shared low-limit
+  free tier, or tied to a personal account identity, respectively.
 - **UID-only quota is gameable if sign-in is anonymous** (see next section) — someone scripting
   repeated anonymous sign-ins gets a fresh UID and a fresh quota each time. An IP-based backstop
   (Cloudflare Workers can read the connecting IP from request context) is probably needed too if
