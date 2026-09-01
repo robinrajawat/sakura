@@ -7,8 +7,12 @@
  * Route handlers are exported individually and tested directly with injected dependencies
  * (getKey, fetchImpl) rather than through the router — the router itself (the default export's
  * fetch) is thin dispatch logic, matching this project's core-vs-orchestration split
- * everywhere else. CORS is deliberately not handled yet: no client calls this Worker
- * cross-origin until the legacy/ wiring (a separate, later piece) exists to need it.
+ * everywhere else. CORS is handled only in the router (corsHeadersFor/withCors below), wrapped
+ * around whatever a handler returns, so the handlers themselves stay CORS-agnostic and directly
+ * testable. legacy/index.html's admin panel (docs/ai-hosted-vault-design.md) is the one real
+ * cross-origin caller today, from https://www.sakura-notes.com (legacy/public/CNAME) — the
+ * allowlist below is closed to that plus local dev, same reasoning as legacy/index.html's own
+ * CSP connect-src: a fixed, known set of origins is an actual boundary, a wildcard isn't.
  */
 
 import { verifyFirebaseIdToken, isAdmin, firebaseJwks } from './auth';
@@ -28,9 +32,32 @@ export interface Env {
 
 const VALID_SHAPES: readonly AiShape[] = ['gemini', 'openai', 'cerebras', 'anthropic'];
 const DEFAULT_DAILY_QUOTA = 20;
+const ALLOWED_ORIGINS: readonly string[] = ['https://www.sakura-notes.com', 'http://localhost:5173'];
 
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
+/** CORS headers for a given request Origin — empty (no CORS headers at all) for anything not
+ * on the allowlist, which is the correct default-deny: the browser then blocks the response
+ * from ever reaching the calling page's JS, same as if this Worker had no CORS support. */
+export function corsHeadersFor(origin: string | null): Record<string, string> {
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) return {};
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin'
+  };
+}
+
+/** Wraps an already-built Response with CORS headers for the given origin, preserving its
+ * original status/body/other headers. */
+function withCors(response: Response, origin: string | null): Response {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(corsHeadersFor(origin))) headers.set(key, value);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
 /** Verifies the Authorization header's bearer token, returning the caller's uid — or a
@@ -176,21 +203,34 @@ export async function handleAiComplete(
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const origin = request.headers.get('Origin');
+
+    // Preflight: the browser sends this before the real request whenever it carries a custom
+    // header (Authorization) or isn't a "simple" method — answered here directly, never reaches
+    // a handler.
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeadersFor(origin) });
+    }
+
     if (url.pathname === '/health') {
-      return new Response('ok', { status: 200 });
+      return withCors(new Response('ok', { status: 200 }), origin);
     }
 
     const getKey = firebaseJwks();
+    let response: Response;
 
-    if (url.pathname === '/admin/providers') {
-      if (request.method === 'POST') return handleAdminProvidersPost(request, env, getKey);
-      if (request.method === 'GET') return handleAdminProvidersGet(request, env, getKey);
-      if (request.method === 'DELETE') return handleAdminProvidersDelete(request, env, getKey, url);
-    }
-    if (url.pathname === '/ai/complete' && request.method === 'POST') {
-      return handleAiComplete(request, env, getKey, fetch);
+    if (url.pathname === '/admin/providers' && request.method === 'POST') {
+      response = await handleAdminProvidersPost(request, env, getKey);
+    } else if (url.pathname === '/admin/providers' && request.method === 'GET') {
+      response = await handleAdminProvidersGet(request, env, getKey);
+    } else if (url.pathname === '/admin/providers' && request.method === 'DELETE') {
+      response = await handleAdminProvidersDelete(request, env, getKey, url);
+    } else if (url.pathname === '/ai/complete' && request.method === 'POST') {
+      response = await handleAiComplete(request, env, getKey, fetch);
+    } else {
+      response = new Response('not found', { status: 404 });
     }
 
-    return new Response('not found', { status: 404 });
+    return withCors(response, origin);
   }
 };

@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { SignJWT, generateKeyPair, type JWTVerifyGetKey } from 'jose';
 import {
+  default as worker,
   handleAdminProvidersPost,
   handleAdminProvidersGet,
   handleAdminProvidersDelete,
   handleAiComplete,
+  corsHeadersFor,
   type Env
 } from '../src/index';
 import { b64FromBytes } from '../src/vault';
@@ -285,5 +287,50 @@ describe('handleAiComplete', () => {
     // adminToken's own uid has never used its quota yet, so it should still succeed.
     const res = await handleAiComplete(authedRequest('https://x/ai/complete', adminToken, { method: 'POST', body: JSON.stringify({ userContent: 'hi' }) }), env, getKey, fakeFetch);
     expect(res.status).toBe(200);
+  });
+});
+
+describe('corsHeadersFor', () => {
+  it('returns Access-Control-Allow-Origin echoing the production origin when allowed', () => {
+    const headers = corsHeadersFor('https://www.sakura-notes.com');
+    expect(headers['Access-Control-Allow-Origin']).toBe('https://www.sakura-notes.com');
+    expect(headers['Access-Control-Allow-Methods']).toContain('POST');
+    expect(headers['Access-Control-Allow-Headers']).toContain('Authorization');
+  });
+
+  it('allows the local dev origin', () => {
+    const headers = corsHeadersFor('http://localhost:5173');
+    expect(headers['Access-Control-Allow-Origin']).toBe('http://localhost:5173');
+  });
+
+  it('returns no CORS headers at all for an origin not on the allowlist', () => {
+    expect(corsHeadersFor('https://evil.example.com')).toEqual({});
+  });
+
+  it('returns no CORS headers for a null origin (same-origin or non-browser caller)', () => {
+    expect(corsHeadersFor(null)).toEqual({});
+  });
+});
+
+describe('default export (the router) — CORS wrapping', () => {
+  it('answers an OPTIONS preflight directly, with CORS headers, without reaching a handler', async () => {
+    const req = new Request('https://x/admin/providers', { method: 'OPTIONS', headers: { Origin: 'https://www.sakura-notes.com' } });
+    const res = await worker.fetch(req, makeEnv(fakeKv()));
+    expect(res.status).toBe(204);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://www.sakura-notes.com');
+  });
+
+  it('adds CORS headers to a real response when the origin is allowed', async () => {
+    const req = new Request('https://x/health', { headers: { Origin: 'https://www.sakura-notes.com' } });
+    const res = await worker.fetch(req, makeEnv(fakeKv()));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://www.sakura-notes.com');
+  });
+
+  it('adds no CORS headers when the origin is not on the allowlist', async () => {
+    const req = new Request('https://x/health', { headers: { Origin: 'https://evil.example.com' } });
+    const res = await worker.fetch(req, makeEnv(fakeKv()));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
 });

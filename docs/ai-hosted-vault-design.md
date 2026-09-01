@@ -93,6 +93,13 @@ Two things worth calling out about how this is wired:
   configured yet" error had the URL still been blank — that path was verified with a real
   headless-browser pass, including the empty/loading/error states and the add-provider
   round-trip, before the URL was set to the real value.
+- **Two real-world gaps surfaced once this actually ran against the live site**, both fixed:
+  the Worker's origin needed adding to `legacy/index.html`'s own CSP `connect-src` allowlist
+  (the browser was blocking the request before it ever left the page), and the Worker itself
+  needed real CORS support (`corsHeadersFor`/`withCors` in `index.ts`) — it had none before,
+  since nothing called it cross-origin until this panel existed. CORS is a closed allowlist,
+  same reasoning as the CSP: `https://www.sakura-notes.com` (the real production origin, from
+  `legacy/public/CNAME`) plus `http://localhost:5173` for local dev, not a wildcard.
 
 ### `POST /ai/complete`
 - Auth: Firebase ID token (`Authorization: Bearer <token>`), verified in the Worker (see "Firebase
