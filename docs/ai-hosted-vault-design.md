@@ -1,92 +1,66 @@
-# AI key vault + hosted AI — design proposal
+# Hosted AI (Cloudflare Worker) — design proposal
 
-**Status: proposal, not started, not scheduled.** No code exists yet. This doc exists so the
-architecture and open decisions are written down before any of it is built — see "Open decisions"
-below for what still needs an answer first.
+**Status: proposal, not started, not scheduled.** No code exists yet beyond the pure workspace
+scaffold (`worker/` — tooling only, no logic). This doc exists so the architecture and open
+decisions are written down before any real logic is built — see "Open decisions" below for what
+still needs an answer first.
 
-## Origin
+## Origin, and a real scope change since the first draft
 
 This started as the "AI key vault (Cloudflare Worker)" appendix in
 `docs/history/web-migration/phase6-full-parity-plan.md` — written while the `web/` React rewrite
 was still active, filed there only because that was the live planning doc at the time. `web/` is
 now discontinued; this proposal was never about `web/` specifically, and targets `legacy/` — the
-only live app — instead. Reproduced and extended here because it's active work, not migration
-history.
+only live app — instead.
 
-## Two goals, not one
+**The first version of this doc proposed two goals: sync a user's own BYOK key across devices, and
+add hosted/keyless AI alongside it.** That's been superseded. The actual driver, on reflection: no
+user has ever gone and gotten their own AI provider API key just to use Sakura's AI features — the
+friction of "go create a Groq/Gemini account, generate a key, paste it into Settings" is high
+enough that BYOK has effectively gone unused since it shipped, regardless of how much of it is
+built and tested. **Decision: BYOK is removed entirely, not kept alongside hosted AI.** Hosted AI,
+authenticated the same way Sakura's existing document sync already is, is now the *only* AI path —
+lower friction than BYOK ever was, since many users already sign in for sync. This is a real
+narrowing, not just an addition, and it changes the architecture below substantially from the first
+draft: there is no user-supplied key anywhere in this system anymore, so there is nothing left to
+vault, encrypt, or sync per-user. The `/vault/key` endpoint and "vaulted-BYOK mode" from the first
+draft are gone.
 
-The original proposal solved one problem: let a user who already has their own AI provider key
-avoid re-pasting it on every device. Discussion since then surfaced a second, larger goal: let a
-user use AI features **without** providing a key at all. These need different mechanisms:
+## The one goal now
 
-1. **Key sync** (original goal) — the user's own key, encrypted, available on every device without
-   re-entry. A Cloudflare Worker is one way to do this, but not the only way — see "Rejected
-   alternative" below.
-2. **Hosted/keyless AI** (new goal) — Sakura itself holds a provider key and fronts the cost, so a
-   user with no key configured can still use AI features. This one has no client-only alternative:
-   there is no way to grant AI access without *some* party holding a real credential, so a server
-   component is structurally required, not just a nicer-to-have.
-
-**Decision: build both, as two additional entries in the existing Settings → AI provider list,
-alongside the seven built-in providers — not a replacement for BYOK.** This is additive by
-design: the seven existing providers keep working exactly as they do today (direct
-browser-to-provider calls, no Worker involved), so existing users see zero change unless they
-opt into one of the two new options. See `AI_BUILTIN_PROVIDERS` (`legacy/index.html`, ~line 8859)
-for the current list this extends.
-
-## Rejected alternative (for goal 1 alone)
-
-Sync the user's own client-side-encrypted key through Firestore, the same mechanism documents and
-prefs already sync through (`markMetaChanged`/`getSyncMetaKeys`, `legacy/index.html` ~line 14087).
-Zero new infrastructure — reuses the Firebase project Sakura already has for auth/sync. This is
-still the better answer for goal 1 *alone*: no new Cloudflare project, no KV, no secret
-management, no new attack surface, and it fits Sakura's existing "the only backend is Firebase"
-posture.
-
-It doesn't reach goal 2 at all, though — it only ever relays a key the user already has, it can't
-manufacture one. Once hosted/keyless AI is in scope, a server has to exist anyway, so goal 1's
-"never touches the browser again" guarantee comes for free by reusing the same Worker rather than
-staying with Firestore-sync. That's the actual reason this doc proposes a Worker for both goals
-instead of splitting them across two mechanisms.
+Let a signed-in user use AI features with zero per-user setup — no provider to pick, no API key to
+find or paste, ever. Sakura holds the provider credentials (Robin's own) and fronts the cost. There
+is no client-only way to do this — granting AI access requires *some* party to hold a real
+credential — so a server component is structurally required. This also means AI features move from
+"works offline, no account needed" (today) to "requires sign-in" — a real change to how AI is
+positioned, addressed in "Open decisions" below.
 
 ## Architecture
 
-One Cloudflare Worker, two endpoints, backed by one KV namespace (or two — see "KV layout"):
-
-### `POST /vault/key`
-- Auth: Firebase ID token (`Authorization: Bearer <token>`), verified in the Worker (see
-  "Firebase token verification" below — this is not `firebase-admin`, which doesn't run on
-  Workers).
-- Body: `{provider: string, key: string}`.
-- Encrypts `key` at rest with AES-256-GCM, keyed by a Worker secret (a KEK, not user-derived —
-  see "Trust model" below for why this is deliberately *not* the same guarantee as the existing
-  client-side Secure Storage vault), unique IV per record.
-- Stores `{provider, encryptedKey, iv, updatedAt}` in KV under the caller's Firebase UID.
-- Never returns the plaintext key in the response, including to the same user who just sent it —
-  the response confirms storage, nothing else.
+One Cloudflare Worker, one endpoint, backed by one KV namespace.
 
 ### `POST /ai/complete`
-- Auth: same Firebase ID token.
+- Auth: Firebase ID token (`Authorization: Bearer <token>`), verified in the Worker (see "Firebase
+  token verification" below — this is not `firebase-admin`, which doesn't run on Workers).
 - Body: whatever the existing client-side AI call shape already sends (prompt/messages, feature
-  type, max tokens) — reuse that shape rather than inventing a new one, so this can be a drop-in
-  swap in the client's request path.
-- Two modes, selected by which of the two new Settings → AI options the client has picked:
-  - **Vaulted-BYOK mode**: looks up the caller's own vaulted key from `/vault/key`'s KV record,
-    decrypts it in-memory for the duration of the request only, forwards to that provider,
-    streams/returns the completion, discards the decrypted key. The Worker is a pure relay here —
-    it never bills its own credentials.
-  - **Hosted mode**: no user key involved. Worker uses its own provider key(s), held as Worker
-    secrets (`wrangler secret put`), against a per-UID quota (see "Cost and abuse control").
-- Decrypted keys and the Worker's own hosted-mode secrets never appear in a response body, ever,
-  under any error path — this needs to be a reviewed invariant, not just the happy path's
-  behavior.
+  type, max tokens) — reuse that shape rather than inventing a new one, so the client-side change
+  is "call this endpoint instead of the provider directly," not a new request format.
+- Checks the caller's quota (`quota:{uid}:{yyyy-mm-dd}` in KV — see "Cost and abuse control"),
+  rejects if exhausted.
+- Tries providers from a **fixed, admin-defined fallback chain** — not a per-user choice, there is
+  no per-user provider config left at all. Each entry in the chain names a Worker secret holding
+  Robin's own key for that provider (`wrangler secret put <PROVIDER>_API_KEY`). The chain itself
+  lives as a plain ordered constant in the Worker's source (or a `[vars]` entry in
+  `wrangler.toml` if reordering-without-a-code-change is worth the extra indirection) — deliberately
+  **not** a KV-backed or runtime-configurable system. There's exactly one operator who will ever
+  change this, and changing a Worker secret already requires a `wrangler` action, so a dynamic
+  admin config API would be real complexity serving no one.
+- Never returns a provider's own API key or any Worker secret in a response body, ever, under any
+  error path — a reviewed invariant, not just the happy path's behavior.
 
 ### KV layout
-- `vault:{uid}` → `{provider, encryptedKey, iv, updatedAt}` (goal 1: vaulted BYOK key).
-- `quota:{uid}:{yyyy-mm-dd}` → integer count, short TTL (auto-expires the next day) (goal 2: daily
-  usage counter for hosted mode). Same namespace, different key prefix — no need for two KV
-  namespaces unless later operational needs (different access policies, different backup/export
-  needs) argue for splitting them.
+- `quota:{uid}:{yyyy-mm-dd}` → integer count, short TTL (auto-expires the next day). That's the
+  only KV record this system needs now — no per-user vault record, since there's no per-user key.
 
 ### Firebase token verification
 Firebase Admin SDK is Node-only and doesn't run in the Workers runtime. Verification in-Worker
@@ -94,85 +68,75 @@ means fetching Google's public JWKS and validating the ID token's signature/clai
 (`jose` or similar — a well-documented pattern, not novel, but worth calling out explicitly since
 it's an easy thing to assume "just works" the way it does in a Node backend).
 
-## Trust model — this is not the existing client-side vault
+## Not touched by this doc: the existing client-side Secure Storage vault
 
-Sakura already has a client-side "Secure Storage" vault (`legacy/index.html`, `vaultCryptoKey`/
-`vaultEncrypt`/`vaultDecrypt`, extracted to `legacy/src/state/vault.ts` — see
-`docs/history/architecture-plan.md`'s Phase 2 section). That vault is passphrase-derived and
-zero-knowledge: the server never sees the plaintext key or the passphrase, only ciphertext it
-can't read.
-
-The Worker vault proposed here is **not** zero-knowledge. The Worker holds the KEK (a Worker
-secret Robin controls) and decrypts the user's key server-side on every `/ai/complete` call in
-vaulted-BYOK mode — that's the entire point, it's what lets the key never touch the browser again.
-But it means the operator (Robin, or anyone with Worker secret access) can technically decrypt any
-vaulted key. This is a real, different trust boundary from the existing local vault and needs to
-be stated plainly to users choosing this option, not glossed over as "another kind of encryption."
-Whatever UI copy ships with this should say so directly.
+Sakura's client-side "Secure Storage" vault (`legacy/index.html`, `vaultCryptoKey`/`vaultEncrypt`/
+`vaultDecrypt`, extracted to `legacy/src/state/vault.ts`) protects more than just AI keys today —
+it also guards a Gist/Drive backup token. Removing BYOK removes *one* of that vault's use cases,
+not the feature itself; the Gist/Drive token path is untouched and out of scope here. Don't conflate
+"this doc's Worker vault is gone" with "the client-side Secure Storage feature is gone" — they were
+always two different things even in the first draft, and only the first ever existed in this design.
 
 ## Cost and abuse control (the hard part, not the Worker plumbing)
 
-Vaulted-BYOK mode has no cost-control problem — the user's own key bills the user's own account,
-same as today, the Worker just relays. **Hosted mode is the actual risk**: every request there
-bills Robin's own provider account, with authentication as the only gate standing between "any
-Sakura user" and unmetered spend on his credentials.
+There's no more "BYOK mode bears no cost" split — every request now bills Robin's own provider
+account, with Firebase auth as the only gate standing between "any Sakura user" and unmetered
+spend on his credentials.
 
 - **Quota**: `quota:{uid}:{yyyy-mm-dd}` counter, checked and incremented atomically per request,
   request rejected once the daily cap is hit. Needs an actual number chosen before launch — not
   guessed here.
-- **Provider choice for hosted mode**: fund it from a provider with a genuinely free tier at the
-  volumes expected — Groq and Cerebras are both already first-choice in the existing
-  fallback-chain convention for exactly this reason (see `AI_BUILTIN_PROVIDERS` labels, "free,
-  fast" / "free tier"). Hosted mode likely doesn't need all seven providers as fallback, just
-  one or two funded ones with a defined order.
+- **Provider choice for the fallback chain**: fund it from providers with a genuinely free tier at
+  the volumes expected — Groq and Cerebras are the obvious first choices (see the labels on those
+  two in the current, soon-to-be-removed `AI_BUILTIN_PROVIDERS` list, `legacy/index.html` ~line
+  8859: "free, fast" / "free tier"). Doesn't need to be a long chain — one or two funded providers
+  with a defined order is enough.
 - **UID-only quota is gameable if sign-in is anonymous** (see next section) — someone scripting
-  repeated anonymous sign-ins gets a fresh UID and a fresh quota each time. Per-UID quota alone is
-  not sufficient anti-abuse for hosted mode if anonymous auth is the sign-in path; an IP-based
-  backstop (Cloudflare Workers can read the connecting IP from request context) is probably
-  needed too. This needs real design attention before hosted mode ships, not just before it scales
-  — the failure mode here is "Robin's provider bill," not a slow degradation.
+  repeated anonymous sign-ins gets a fresh UID and a fresh quota each time. An IP-based backstop
+  (Cloudflare Workers can read the connecting IP from request context) is probably needed too if
+  anonymous auth is the sign-in path. This needs real design attention before this ships, not just
+  before it scales — the failure mode here is "Robin's provider bill," not a slow degradation, and
+  it's now the *only* AI path rather than one option among several.
 
-## Open decision: does hosted mode require a visible account?
+## Open decisions
 
-Both new endpoints need *a* Firebase UID to key quota/vault records against, but Sakura's whole
-pitch is "no install, no account required" (`README.md` Overview). Requiring real sign-in
-(Google/email) just to try hosted AI cuts against that positioning for exactly the users most
-likely to want a zero-setup AI trial.
+Still genuinely unresolved, needs an explicit answer before implementation starts:
 
-**Firebase anonymous auth is a plausible middle ground**: sign in anonymously (no email/password
-prompt, no visible "account"), get a stable UID, use that for quota. This keeps the zero-setup
-feel while still giving the Worker something to rate-limit against. The real cost is weaker
-anti-abuse (an anonymous UID is free and disposable — see the IP-backstop note above), so this
-is a genuine trade-off, not a free win, and worth deciding deliberately rather than defaulting into
-without weighing it.
-
-**This doc does not resolve the question — it needs an explicit answer before implementation
-starts**, along with:
-
-- Is hosted mode pre-selected for a brand-new user (AI "just works" out of the box), or does it
-  stay an opt-in choice next to the seven BYOK providers? The former serves the actual "no setup"
-  goal better; the latter is lower-risk to ship first.
-- What's the actual daily quota number, and does it differ for anonymous vs. real-account UIDs
-  (e.g. a lower cap for anonymous, higher once someone signs in for real)?
-- Is hosted mode a permanent free tier, or a trial meant to nudge toward BYOK once a user is
-  convinced the feature is useful?
+- **Anonymous vs. real Firebase sign-in for AI access.** Firebase anonymous auth (no email/password
+  prompt) gives the Worker a stable UID to rate-limit against without a visible "account," but is
+  weaker against abuse (a free, disposable UID — see the IP-backstop note above) than requiring a
+  real Google/email sign-in. This is less urgent than it was in the BYOK-alongside-hosted draft,
+  though: sync already pushes many users toward a real account anyway, so the actual added friction
+  of requiring real sign-in specifically for AI may be smaller than it first appears. Still worth
+  deciding deliberately rather than defaulting into.
+- **What happens to a user who currently has a BYOK key configured?** Real accounts exist today with
+  a provider/key saved in `AI_PREFS_KEY` (`legacy/index.html`). Once the client-side provider-calling
+  code is removed, does their AI usage silently switch to the hosted path (using their existing
+  sign-in, if any) with no notice, or does it need an explicit one-time migration message ("your
+  saved API key is no longer used — AI now works automatically")? Given the premise that BYOK use
+  is at or near zero, this may be a non-issue in practice, but it should be confirmed rather than
+  assumed before the removal ships.
+- **Actual daily quota number**, and whether it should differ for anonymous vs. real-account UIDs
+  (if anonymous auth is the answer to the first question above).
 
 ## Explicitly out of scope for this doc
 
-- Actual Cloudflare account/project provisioning and `wrangler` deployment — infrastructure
-  access wasn't available in the session this was drafted in; whoever picks this up needs to
-  confirm that before writing Worker code, not after.
-- The exact request/response shape for `/ai/complete` beyond "reuse what the client already
-  sends" — needs a pass against the real current client code once someone is actually
-  implementing this, not guessed here.
-- UI copy for the two new Settings → AI entries, including the trust-model disclosure from
-  above.
+- Actual Cloudflare account/project provisioning and `wrangler` deployment — infrastructure access
+  wasn't available in the session this was drafted in; whoever picks this up needs to confirm that
+  before a real deploy, not after.
+- The exact request/response shape for `/ai/complete` beyond "reuse what the client already sends"
+  — needs a pass against the real current client code once someone is actually implementing this.
+- The `legacy/index.html` side of this: removing the Settings → AI provider/API-key/fallback UI
+  (currently user-facing, becomes irrelevant once there's no BYOK to configure) and whatever
+  replaces it (most likely a single "AI" on/off surface with no provider concepts exposed at all).
+  Not designed here — a separate pass once the Worker side is real.
 
-## Rollout shape (once the open decisions above are answered)
+## Rollout shape
 
-Additive only, at every step: the Worker and its two endpoints can be built and deployed
-independently of `legacy/index.html`, tested directly (`curl`/Postman against the deployed Worker)
-before any client wiring happens. Client wiring is then two new entries in the existing provider
-list — no changes to the seven existing providers' code paths. If the Worker is ever down or
-unreachable, that should degrade to an error on those two options specifically, never to a
-regression in the seven existing ones.
+The Worker and its one endpoint can be built and deployed independently of `legacy/index.html`,
+tested directly (`curl`/Postman against the deployed Worker) before any client wiring happens.
+Client wiring, when it happens, is **not** purely additive the way the first draft's "two new
+provider-list entries" was — it removes the existing seven-provider Settings → AI surface rather
+than adding beside it. That's a real, user-visible change to existing Settings, not a side option,
+and deserves its own careful pass (including the "existing BYOK user" question above) rather than
+being treated as low-risk just because the backend side is additive.

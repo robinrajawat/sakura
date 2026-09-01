@@ -18,11 +18,12 @@ stopped effort, not active work queues — kept for reference, not maintained fu
   a session/usage limit. Scoped to `legacy/`-only work now that the `web/` migration is
   discontinued. Keep its "Current state" section updated at the end of every work session. **Start
   here.**
-- **`ai-hosted-vault-design.md`** — proposal for a Cloudflare Worker giving `legacy/` (a) a synced
-  key vault so a BYOK key follows a user across devices, and (b) hosted/keyless AI funded by
-  Robin's own provider account for users with no key at all. Not started, not scheduled — several
-  open decisions (anonymous vs. real sign-in for hosted mode, quota numbers, default-on vs.
-  opt-in) need answers before any code lands.
+- **`ai-hosted-vault-design.md`** — proposal for a Cloudflare Worker giving `legacy/` hosted AI,
+  funded by Robin's own provider account, as the sole AI path — BYOK is being removed entirely
+  (see the doc's own "Origin, and a real scope change" section for why). Not started, not
+  scheduled beyond a pure tooling scaffold (`worker/`) — several open decisions (anonymous vs.
+  real sign-in, quota numbers, what happens to a user with an existing BYOK key) need answers
+  before real logic lands.
 
 ## Closed / historical reference (`history/`)
 
