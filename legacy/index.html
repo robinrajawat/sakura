@@ -32,10 +32,12 @@ Sakura v1.0.0 — see LICENSE for terms.
   which constructs a function in the Audience window's own realm at runtime — see
   loadXmlIntoOwnWhiteboardIframe's own comment for why that's necessary. Given both are already
   required, this CSP's real value is what it restricts rather than inline execution: connect-src
-  is a closed, fixed allowlist of exactly the seven built-in AI providers plus Gist/Drive/Outlook
-  — no arbitrary endpoint an injected script could exfiltrate data to. That's only meaningful
-  because custom AI providers were removed as a feature specifically to make this list closed
-  rather than needing to stay open — see AI_BUILTIN_PROVIDERS' own comment.
+  is a closed, fixed allowlist of exactly the seven built-in AI providers, the sakura-vault
+  Cloudflare Worker (docs/ai-hosted-vault-design.md's AI_VAULT_WORKER_URL — a single known
+  origin, not an arbitrary one), plus Gist/Drive/Outlook — no arbitrary endpoint an injected
+  script could exfiltrate data to. That's only meaningful because custom AI providers were
+  removed as a feature specifically to make this list closed rather than needing to stay open —
+  see AI_BUILTIN_PROVIDERS' own comment.
 
   connect-src accounts.google.com/oauth2.googleapis.com and login.microsoftonline.com: the
   Google Identity Services and MSAL libraries (loaded from script-src below) handle their own
@@ -56,7 +58,7 @@ Sakura v1.0.0 — see LICENSE for terms.
   and is the preferred fix if/when that's set up — see the PowerPoint export comment near the
   pptxgenjs <script> tag for the current reasoning on why it's still CDN-hosted.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com https://alcdn.msauth.net https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com https://firestore.googleapis.com; frame-src https://embed.diagrams.net https://accounts.google.com https://login.microsoftonline.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com https://alcdn.msauth.net https://www.gstatic.com https://apis.google.com https://ssl.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.groq.com https://api.cerebras.ai https://generativelanguage.googleapis.com https://openrouter.ai https://models.github.ai https://api.github.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://graph.microsoft.com https://login.microsoftonline.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com https://firestore.googleapis.com https://sakura-vault.robinsinghrajawat.workers.dev; frame-src https://embed.diagrams.net https://accounts.google.com https://login.microsoftonline.com https://sakura-4cdae.firebaseapp.com https://auth.sakura-notes.com https://apis.google.com; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';" />
 <!--
   Referrer-Policy: the app links out to several external sites (SAP Notes via me.sap.com,
   GitHub token pages, Azure/Google Cloud consoles, provider key pages, draw.io/diagrams.net).
