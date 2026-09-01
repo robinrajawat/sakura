@@ -1,18 +1,25 @@
-# Cloudflare Worker config for docs/ai-hosted-vault-design.md's proposed AI key vault +
-# hosted AI backend. Not deployed anywhere yet — see that doc's "Explicitly out of scope"
-# section. This file alone is not enough to deploy: the KV namespace id below is a
-# placeholder, and the encryption/provider secrets referenced in code aren't set here at
-# all (secrets are provisioned via `wrangler secret put <NAME>`, never committed).
+# Cloudflare Worker config for docs/ai-hosted-vault-design.md's hosted, admin-funded AI
+# backend (BYOK dropped — see that doc's own scope-change section). Not deployed anywhere
+# yet — see the design doc's "Explicitly out of scope" section. This file alone is not
+# enough to deploy: the KV namespace id below is a placeholder, and the two required
+# secrets aren't set here at all (secrets are provisioned via `wrangler secret put <NAME>`,
+# never committed).
 #
 # Before a real deploy:
 #   1. `wrangler kv:namespace create SAKURA_VAULT_KV` and paste the real id below.
-#   2. `wrangler secret put VAULT_KEK` — the AES-256-GCM key-encryption-key for vaulted
-#      BYOK keys (see docs/ai-hosted-vault-design.md's "Trust model" section).
-#   3. `wrangler secret put <PROVIDER>_API_KEY` for whichever provider(s) fund hosted mode
-#      (Groq/Cerebras per the design doc's cost-control section).
+#   2. `wrangler secret put VAULT_KEK` — the AES-256-GCM key-encryption-key for the
+#      provider API keys stored in KV (see src/vault.ts; generate one with
+#      `openssl rand -base64 32`).
+#   3. `wrangler secret put ADMIN_UID` — your own Firebase UID, gates every
+#      /admin/providers request (see src/auth.ts's isAdmin).
 #   4. Confirm `FIREBASE_PROJECT_ID` below still matches legacy/index.html's own
 #      FIREBASE_CONFIG.projectId (currently "sakura-4cdae") before relying on token
 #      verification.
+#   5. Deploy, then sign in as the admin and call `POST /admin/providers` for each
+#      provider that funds hosted mode (Groq/Cerebras per the design doc's cost-control
+#      section) — provider API keys are admin-submitted through this endpoint and
+#      encrypted into KV, not set as individual Worker secrets. No separate bootstrapping
+#      step: the very first provider goes in through the same endpoint as every later one.
 
 name = "sakura-vault"
 main = "src/index.ts"
@@ -20,6 +27,10 @@ compatibility_date = "2026-08-31"
 
 [vars]
 FIREBASE_PROJECT_ID = "sakura-4cdae"
+# Requests per signed-in user per UTC day against hosted AI (src/quota.ts). A plain [vars]
+# entry, not a secret, so it's tunable without touching code — still needs a real number
+# chosen before launch (see docs/ai-hosted-vault-design.md's "Open decisions").
+DAILY_AI_QUOTA = "20"
 
 [[kv_namespaces]]
 binding = "SAKURA_VAULT_KV"

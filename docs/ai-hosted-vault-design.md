@@ -1,9 +1,13 @@
 # Hosted AI (Cloudflare Worker) — design proposal
 
-**Status: proposal, not started, not scheduled.** No code exists yet beyond the pure workspace
-scaffold (`worker/` — tooling only, no logic). This doc exists so the architecture and open
-decisions are written down before any real logic is built — see "Open decisions" below for what
-still needs an answer first.
+**Status: built and unit-tested (`worker/`), not deployed.** Every piece described below exists
+as real, tested code — encryption (`vault.ts`), quota (`quota.ts`), Firebase auth + the admin
+check (`auth.ts`), encrypted provider storage (`providers.ts`), the per-provider request/response
+adapters (`providerShapes.ts`), and the two endpoints themselves (`index.ts`). What's still
+missing: actual Cloudflare deployment (no account/credentials available in the sessions this was
+built in — see "Explicitly out of scope"), and the `legacy/` client-side wiring, which is
+deliberately a separate, later pass. See "Open decisions" below for what still needs an answer
+before that client wiring happens.
 
 ## Origin, and a real scope change since the first draft
 
@@ -37,36 +41,57 @@ positioned, addressed in "Open decisions" below.
 
 ## Architecture
 
-One Cloudflare Worker, one endpoint, backed by one KV namespace.
+One Cloudflare Worker, two endpoints, backed by one KV namespace. **Revised from the original
+plan below**: the first version of this section had the provider fallback chain as a hardcoded
+source constant with one Worker secret per provider (`wrangler secret put <PROVIDER>_API_KEY`).
+Built as admin-managed KV storage instead — `POST /admin/providers` to add/update a provider,
+`GET` to list the current chain, `DELETE` to remove one — so the admin never touches `wrangler`
+or redeploys just to rotate a key or add a provider after initial setup. Only two Worker secrets
+remain: `VAULT_KEK` (encrypts provider keys at rest) and `ADMIN_UID` (gates the endpoint). No
+separate bootstrapping step either — the very first provider goes in through the same endpoint as
+every later one, once those two secrets exist.
+
+### `GET/POST/DELETE /admin/providers`
+- Auth: Firebase ID token, same verification as `/ai/complete` below, plus `isAdmin(uid,
+  ADMIN_UID)` (`auth.ts`) — an exact match against a fixed admin UID, not a real roles system,
+  since there's exactly one admin. Non-admin callers get 403, not 404 (no attempt to hide the
+  route's existence — it's not a secret, just gated).
+- `POST` body: `{id, baseUrl, shape, model, apiKey, order}`. `apiKey` is encrypted via
+  `vault.ts`'s AES-256-GCM (keyed by the `VAULT_KEK` Worker secret) before it ever reaches KV;
+  the plaintext key is never returned in the response, including to the admin who just sent it.
+  Upserts by `id`.
+- `GET` returns the current chain (`id`/`baseUrl`/`shape`/`model`/`order` only — never the
+  encrypted key blob either, no reason to widen the response beyond what admin visibility needs).
+- `DELETE ?id=<id>` removes one provider.
 
 ### `POST /ai/complete`
 - Auth: Firebase ID token (`Authorization: Bearer <token>`), verified in the Worker (see "Firebase
   token verification" below — this is not `firebase-admin`, which doesn't run on Workers).
-- Body: whatever the existing client-side AI call shape already sends (prompt/messages, feature
-  type, max tokens) — reuse that shape rather than inventing a new one, so the client-side change
-  is "call this endpoint instead of the provider directly," not a new request format.
+- Body: `{systemPrompt?, userContent, maxTokens?}` — a request shape designed fresh for this
+  endpoint rather than pinned to the client's existing internal call shape, since no client code
+  calls this endpoint yet (that's the client-wiring pass, still out of scope here).
 - Checks the caller's quota (`quota:{uid}:{yyyy-mm-dd}` in KV — see "Cost and abuse control"),
-  rejects if exhausted.
-- Tries providers from a **fixed, admin-defined fallback chain** — not a per-user choice, there is
-  no per-user provider config left at all. Each entry in the chain names a Worker secret holding
-  Robin's own key for that provider (`wrangler secret put <PROVIDER>_API_KEY`). The chain itself
-  lives as a plain ordered constant in the Worker's source (or a `[vars]` entry in
-  `wrangler.toml` if reordering-without-a-code-change is worth the extra indirection) — deliberately
-  **not** a KV-backed or runtime-configurable system. There's exactly one operator who will ever
-  change this, and changing a Worker secret already requires a `wrangler` action, so a dynamic
-  admin config API would be real complexity serving no one.
-- Never returns a provider's own API key or any Worker secret in a response body, ever, under any
-  error path — a reviewed invariant, not just the happy path's behavior.
+  rejects with 429 if exhausted.
+- Reads the admin-configured provider list from KV (`providers.ts`), tries each in `order`,
+  decrypting that provider's key just for the duration of the request. Per-provider request/
+  response building is `providerShapes.ts`, which mirrors `legacy/index.html`'s own
+  `callAiByShape` exactly for all four shapes (gemini/openai/cerebras/anthropic) rather than
+  reinventing the wire format. On success, returns `{text, provider}`. If every provider fails,
+  502 with per-provider error details; if none are configured at all, 503.
+- Never returns a provider's own API key or the `VAULT_KEK`/`ADMIN_UID` secrets in a response
+  body, ever, under any error path — a reviewed invariant, not just the happy path's behavior.
 
 ### KV layout
-- `quota:{uid}:{yyyy-mm-dd}` → integer count, short TTL (auto-expires the next day). That's the
-  only KV record this system needs now — no per-user vault record, since there's no per-user key.
+- `provider:{id}` → `{id, baseUrl, shape, model, order, encryptedApiKey}` — one record per
+  admin-configured provider (`providers.ts`).
+- `quota:{uid}:{yyyy-mm-dd}` → integer count, short TTL (auto-expires the next day).
 
 ### Firebase token verification
 Firebase Admin SDK is Node-only and doesn't run in the Workers runtime. Verification in-Worker
-means fetching Google's public JWKS and validating the ID token's signature/claims manually
-(`jose` or similar — a well-documented pattern, not novel, but worth calling out explicitly since
-it's an easy thing to assume "just works" the way it does in a Node backend).
+means fetching Google's public JWKS and validating the ID token's signature/claims manually via
+`jose` (`auth.ts`) — a well-documented pattern, not novel, but worth calling out explicitly since
+it's an easy thing to assume "just works" the way it does in a Node backend. The signing algorithm
+is pinned explicitly to RS256 against alg-confusion.
 
 ## Not touched by this doc: the existing client-side Secure Storage vault
 
@@ -84,17 +109,17 @@ account, with Firebase auth as the only gate standing between "any Sakura user" 
 spend on his credentials.
 
 - **Quota**: `quota:{uid}:{yyyy-mm-dd}` counter (`worker/src/quota.ts`), request rejected once the
-  daily cap is hit. Not actually atomic — Cloudflare KV has no compare-and-swap, so the
-  read-then-write has a narrow race under truly concurrent requests from the same UID (both could
-  read the same count and both write count+1, undercounting by one). Accepted deliberately: a
-  Durable Object would close that race but is real added complexity for a single-admin
-  abuse-mitigation quota, not a financial ledger. Needs an actual daily limit number chosen before
-  launch — not guessed here.
+  daily cap is hit — currently `DAILY_AI_QUOTA = 20` in `wrangler.toml`'s `[vars]`, a working
+  placeholder, not a considered number; change it before a real launch. Not actually atomic —
+  Cloudflare KV has no compare-and-swap, so the read-then-write has a narrow race under truly
+  concurrent requests from the same UID (both could read the same count and both write count+1,
+  undercounting by one). Accepted deliberately: a Durable Object would close that race but is real
+  added complexity for a single-admin abuse-mitigation quota, not a financial ledger.
 - **Provider choice for the fallback chain**: fund it from providers with a genuinely free tier at
   the volumes expected — Groq and Cerebras are the obvious first choices (see the labels on those
   two in the current, soon-to-be-removed `AI_BUILTIN_PROVIDERS` list, `legacy/index.html` ~line
   8859: "free, fast" / "free tier"). Doesn't need to be a long chain — one or two funded providers
-  with a defined order is enough.
+  with a defined order is enough, added via `POST /admin/providers` once deployed.
 - **UID-only quota is gameable if sign-in is anonymous** (see next section) — someone scripting
   repeated anonymous sign-ins gets a fresh UID and a fresh quota each time. An IP-based backstop
   (Cloudflare Workers can read the connecting IP from request context) is probably needed too if
@@ -120,27 +145,30 @@ Still genuinely unresolved, needs an explicit answer before implementation start
   saved API key is no longer used — AI now works automatically")? Given the premise that BYOK use
   is at or near zero, this may be a non-issue in practice, but it should be confirmed rather than
   assumed before the removal ships.
-- **Actual daily quota number**, and whether it should differ for anonymous vs. real-account UIDs
-  (if anonymous auth is the answer to the first question above).
+- **Real daily quota number** — `DAILY_AI_QUOTA = 20` is a working placeholder (see above), and
+  whether it should differ for anonymous vs. real-account UIDs (if anonymous auth is the answer to
+  the first question above).
 
 ## Explicitly out of scope for this doc
 
 - Actual Cloudflare account/project provisioning and `wrangler` deployment — infrastructure access
-  wasn't available in the session this was drafted in; whoever picks this up needs to confirm that
+  wasn't available in the sessions this was built in; whoever picks this up needs to confirm that
   before a real deploy, not after.
-- The exact request/response shape for `/ai/complete` beyond "reuse what the client already sends"
-  — needs a pass against the real current client code once someone is actually implementing this.
 - The `legacy/index.html` side of this: removing the Settings → AI provider/API-key/fallback UI
   (currently user-facing, becomes irrelevant once there's no BYOK to configure) and whatever
-  replaces it (most likely a single "AI" on/off surface with no provider concepts exposed at all).
-  Not designed here — a separate pass once the Worker side is real.
+  replaces it (most likely a single "AI" on/off surface with no provider concepts exposed at all),
+  plus whatever admin-facing screen ends up calling `/admin/providers` — right now that endpoint
+  has no UI at all, only `curl`/Postman access. Not designed here — a separate pass once client
+  wiring is actually being built.
 
 ## Rollout shape
 
-The Worker and its one endpoint can be built and deployed independently of `legacy/index.html`,
-tested directly (`curl`/Postman against the deployed Worker) before any client wiring happens.
-Client wiring, when it happens, is **not** purely additive the way the first draft's "two new
-provider-list entries" was — it removes the existing seven-provider Settings → AI surface rather
-than adding beside it. That's a real, user-visible change to existing Settings, not a side option,
+The Worker and its two endpoints were built and unit-tested independently of `legacy/index.html`
+(85 tests, `worker/tests/`) — the plan below of testing a *deployed* Worker directly still holds
+for the one thing tests-against-fakes can't cover: an actual Cloudflare deploy. Once deployed,
+confirm end-to-end behavior with `curl`/Postman before any client wiring happens. Client wiring,
+when it happens, is **not** purely additive the way the first draft's "two new provider-list
+entries" was — it removes the existing seven-provider Settings → AI surface rather than adding
+beside it. That's a real, user-visible change to existing Settings, not a side option,
 and deserves its own careful pass (including the "existing BYOK user" question above) rather than
 being treated as low-risk just because the backend side is additive.
