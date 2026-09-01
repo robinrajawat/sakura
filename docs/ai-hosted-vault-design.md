@@ -1,19 +1,18 @@
 # Hosted AI (Cloudflare Worker) — design proposal
 
-**Status: built and unit-tested (`worker/`), infra provisioned, deploy automation in place. Admin
-UI shipped in `legacy/`.** Every Worker piece described below exists as real, tested code —
+**Status: deployed and live.** Every Worker piece described below exists as real, tested code —
 encryption (`vault.ts`), quota (`quota.ts`), Firebase auth + the admin check (`auth.ts`),
 encrypted provider storage (`providers.ts`), the per-provider request/response adapters
-(`providerShapes.ts`), and the two endpoints themselves (`index.ts`). `legacy/index.html` also
-has a Settings → Account → Admin panel for managing the provider chain against those endpoints
-(see "Admin UI" below). The Cloudflare side is provisioned — the `sakura-vault-kv` KV namespace
-and the `sakura-vault` Worker exist, both Worker secrets are set — and
-`.github/workflows/deploy-worker.yml` now deploys `worker/` on every push to `main` that touches
-it, so the real first deploy happens the moment this lands. `AI_VAULT_WORKER_URL` in
-`legacy/index.html` still needs to be pointed at the real deployed URL once that's confirmed
-live. What's still missing: the *user-facing* `legacy/` client-side wiring (the `/ai/complete`
-call and removing the old BYOK Settings surface), which is deliberately a separate, later pass.
-See "Open decisions" below for what still needs an answer before that client wiring happens.
+(`providerShapes.ts`), and the two endpoints themselves (`index.ts`) — and is live at
+`https://sakura-vault.robinsinghrajawat.workers.dev`, deployed by
+`.github/workflows/deploy-worker.yml` on every push to `main` that touches `worker/`.
+`legacy/index.html` has a Settings → Account → Admin panel for managing the provider chain
+against those endpoints (see "Admin UI" below), and its `AI_VAULT_WORKER_URL` constant now
+points at the real deployed URL. **No provider is configured yet** — hosted AI has no funded
+provider in its fallback chain until one is added through that admin panel. What's still
+missing: the *user-facing* `legacy/` client-side wiring (the `/ai/complete` call and removing
+the old BYOK Settings surface), which is deliberately a separate, later pass. See "Open
+decisions" below for what still needs an answer before that client wiring happens.
 
 ## Origin, and a real scope change since the first draft
 
@@ -89,12 +88,11 @@ Two things worth calling out about how this is wired:
   the Worker's `ADMIN_UID` sees the panel but gets a 403 from every call, not real access.
   Unifying the two admin concepts (or dropping the Firestore one) is a candidate future cleanup,
   not required for this to be safe.
-- **`AI_VAULT_WORKER_URL` is a blank placeholder constant** (next to `FIREBASE_CONFIG`) until a
-  real Worker deploy exists. Every call goes through `aiVaultAdminFetch()`, which checks this
-  first and fails with a clear "not configured yet" error (shown inline in the panel, and via
-  toast on the add-provider form) rather than a raw network failure — this was verified with a
-  real headless-browser pass, including the empty/loading/error states and the add-provider
-  round-trip failing cleanly, since there's no deployed Worker to actually call yet.
+- **`AI_VAULT_WORKER_URL`** (next to `FIREBASE_CONFIG`) now points at the real deployed Worker.
+  Every call goes through `aiVaultAdminFetch()`, which would have failed with a clear "not
+  configured yet" error had the URL still been blank — that path was verified with a real
+  headless-browser pass, including the empty/loading/error states and the add-provider
+  round-trip, before the URL was set to the real value.
 
 ### `POST /ai/complete`
 - Auth: Firebase ID token (`Authorization: Bearer <token>`), verified in the Worker (see "Firebase
