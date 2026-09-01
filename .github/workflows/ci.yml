@@ -11,10 +11,10 @@ name: CI
 # equivalent checks for the web/ React rewrite; removed after that migration was discontinued
 # (docs/history/web-migration/framework-migration-plan.md) — web/ is frozen and never
 # deployed, so there's no benefit to still paying its CI cost on every legacy/-only change.
-# verify-worker covers worker/ (docs/ai-hosted-vault-design.md's proposed Cloudflare Worker) —
-# typecheck/lint/unit tests only, no deploy or wrangler dev: there's no Cloudflare account
-# wired into CI, and deployment stays a manual step regardless (see the design doc's
-# "Explicitly out of scope" section).
+# verify-worker covers worker/ (docs/ai-hosted-vault-design.md's Cloudflare Worker) —
+# typecheck/lint/unit tests only, no wrangler dev or deploy. The real deploy runs from a
+# separate workflow, deploy-worker.yml, triggered by a push to main that touches worker/ (not
+# by this workflow) — see that file for the Cloudflare credentials it needs.
 
 on:
   push:
