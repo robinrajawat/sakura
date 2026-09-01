@@ -1,17 +1,19 @@
 # Hosted AI (Cloudflare Worker) — design proposal
 
-**Status: built and unit-tested (`worker/`), not deployed. Admin UI shipped in `legacy/`.** Every
-Worker piece described below exists as real, tested code — encryption (`vault.ts`), quota
-(`quota.ts`), Firebase auth + the admin check (`auth.ts`), encrypted provider storage
-(`providers.ts`), the per-provider request/response adapters (`providerShapes.ts`), and the two
-endpoints themselves (`index.ts`). `legacy/index.html` also now has a Settings → Account → Admin
-panel for managing the provider chain against those endpoints (see "Admin UI" below) — verified
-against a real headless browser, though it can't be exercised end-to-end until the Worker is
-actually deployed. What's still missing: actual Cloudflare deployment (no account/credentials
-available in the sessions this was built in — see "Explicitly out of scope"), and the *user-facing*
-`legacy/` client-side wiring (the `/ai/complete` call and removing the old BYOK Settings surface),
-which is deliberately a separate, later pass. See "Open decisions" below for what still needs an
-answer before that client wiring happens.
+**Status: built and unit-tested (`worker/`), infra provisioned, deploy automation in place. Admin
+UI shipped in `legacy/`.** Every Worker piece described below exists as real, tested code —
+encryption (`vault.ts`), quota (`quota.ts`), Firebase auth + the admin check (`auth.ts`),
+encrypted provider storage (`providers.ts`), the per-provider request/response adapters
+(`providerShapes.ts`), and the two endpoints themselves (`index.ts`). `legacy/index.html` also
+has a Settings → Account → Admin panel for managing the provider chain against those endpoints
+(see "Admin UI" below). The Cloudflare side is provisioned — the `sakura-vault-kv` KV namespace
+and the `sakura-vault` Worker exist, both Worker secrets are set — and
+`.github/workflows/deploy-worker.yml` now deploys `worker/` on every push to `main` that touches
+it, so the real first deploy happens the moment this lands. `AI_VAULT_WORKER_URL` in
+`legacy/index.html` still needs to be pointed at the real deployed URL once that's confirmed
+live. What's still missing: the *user-facing* `legacy/` client-side wiring (the `/ai/complete`
+call and removing the old BYOK Settings surface), which is deliberately a separate, later pass.
+See "Open decisions" below for what still needs an answer before that client wiring happens.
 
 ## Origin, and a real scope change since the first draft
 
@@ -181,9 +183,12 @@ Still genuinely unresolved, needs an explicit answer before implementation start
 
 ## Explicitly out of scope for this doc
 
-- Actual Cloudflare account/project provisioning and `wrangler` deployment — infrastructure access
-  wasn't available in the sessions this was built in; whoever picks this up needs to confirm that
-  before a real deploy, not after.
+- ~~Actual Cloudflare account/project provisioning and `wrangler` deployment~~ — done: the
+  `sakura-vault-kv` KV namespace and the `sakura-vault` Worker exist, both Worker secrets
+  (`VAULT_KEK`, `ADMIN_UID`) are set, and `.github/workflows/deploy-worker.yml` deploys on every
+  push to `main` that touches `worker/`, authenticated via a Workers-scoped Cloudflare API token
+  held as a GitHub repo secret (never printed by the workflow, never touches the Worker's own
+  secrets — those stay attached to the Worker independent of how its code ships).
 - The `legacy/index.html` side of this: removing the Settings → AI provider/API-key/fallback UI
   (currently user-facing, becomes irrelevant once there's no BYOK to configure) and whatever
   replaces it (most likely a single "AI" on/off surface with no provider concepts exposed at all).

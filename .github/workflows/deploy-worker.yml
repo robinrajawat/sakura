@@ -1,0 +1,61 @@
+name: Deploy Worker
+
+# Deploys worker/ (docs/ai-hosted-vault-design.md's hosted, admin-funded AI backend) to
+# Cloudflare Workers. Separate from deploy.yml (which publishes legacy/'s dist/ to GitHub
+# Pages) since this targets a different platform and should only run when worker/ actually
+# changed — the paths filter below keeps a legacy/-only push from triggering a needless
+# redeploy of unrelated code.
+#
+# Requires two repo secrets, set up manually in the Cloudflare/GitHub dashboards (not
+# something this workflow or wrangler.toml can provision): CLOUDFLARE_API_TOKEN (a token
+# scoped to Workers only, via Cloudflare's "Edit Cloudflare Workers" template — not the
+# account's master API key) and CLOUDFLARE_ACCOUNT_ID. Neither secret's value is ever
+# printed or otherwise exposed by this workflow. `wrangler deploy` itself never touches the
+# Worker's own secrets (VAULT_KEK, ADMIN_UID, set once via `wrangler secret put` or the
+# Cloudflare dashboard) — those stay attached to the Worker independent of how its code gets
+# deployed.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (root — installs every workspace)
+        run: npm ci
+
+      # Belt-and-suspenders: verify-worker (ci.yml) already ran these on the PR that got
+      # merged, but re-running here means a broken worker/ can never reach production even if
+      # that gate were ever bypassed — cheap insurance right before the one step that actually
+      # ships code.
+      - name: Typecheck, lint, unit test (worker/) before deploying
+        run: |
+          npm run typecheck -w sakura-worker
+          npm run lint -w sakura-worker
+          npm run test:unit -w sakura-worker
+
+      - name: Deploy to Cloudflare Workers
+        run: npm run deploy -w sakura-worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
