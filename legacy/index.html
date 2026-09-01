@@ -5303,6 +5303,28 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Feedback Inbox</span><span class="settings-row-desc">Review bug reports and feedback sent in by users.</span></div><button type="button" class="btn" id="account-feedback-inbox-btn">Open…</button></div>
             </div>
+            <div class="settings-section-title" style="margin-top:4px">AI Providers</div>
+            <div class="settings-row-desc" style="margin:-4px 0 0">Hosted-AI provider fallback chain (docs/ai-hosted-vault-design.md). Tried in order; keys are encrypted at rest and never shown again after saving.</div>
+            <div id="ai-vault-providers-loading" class="muted-help" style="margin:0">Loading…</div>
+            <div id="ai-vault-providers-error" class="settings-inline-notice" style="margin:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="ai-vault-providers-error-text"></span></div>
+            <div id="ai-vault-providers-empty" class="muted-help" style="display:none;margin:0">No providers configured yet — add one below.</div>
+            <div class="settings-list" id="ai-vault-providers-list-wrap" style="display:none;max-height:30vh;overflow-y:auto">
+              <div id="ai-vault-providers-list"></div>
+            </div>
+            <div class="settings-list">
+              <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+                <span class="settings-switch-text" style="width:100%">Add / update provider</span>
+                <div style="display:flex;gap:6px;width:100%;flex-wrap:wrap;min-width:0">
+                  <input id="ai-vault-provider-id-input" type="text" class="meta-input" placeholder="id (e.g. groq)" style="flex:1;min-width:90px" autocomplete="off" spellcheck="false" />
+                  <div class="select-wrap" style="flex-shrink:0"><select class="select" id="ai-vault-provider-shape-select" style="width:112px"><option value="openai">openai</option><option value="gemini">gemini</option><option value="cerebras">cerebras</option><option value="anthropic">anthropic</option></select><span class="select-arrow">▾</span></div>
+                  <input id="ai-vault-provider-order-input" type="number" class="meta-input" placeholder="order" value="0" style="width:56px;flex-shrink:0" />
+                </div>
+                <input id="ai-vault-provider-baseurl-input" type="text" class="meta-input" placeholder="Base URL (e.g. https://api.groq.com/openai/v1/chat/completions)" style="width:100%" autocomplete="off" spellcheck="false" />
+                <input id="ai-vault-provider-model-input" type="text" class="meta-input" placeholder="Model (e.g. llama-3.3-70b-versatile)" style="width:100%" autocomplete="off" spellcheck="false" />
+                <input id="ai-vault-provider-apikey-input" type="password" class="meta-input" placeholder="API key" style="width:100%" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
+                <button type="button" class="btn primary" id="ai-vault-provider-add-btn">Add / update provider</button>
+              </div>
+            </div>
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-danger" data-feature-hidden="1" style="display:none">
             <div style="background:color-mix(in srgb,#e5484d 9%,transparent);border:1.5px solid color-mix(in srgb,#e5484d 45%,transparent);border-radius:12px;padding:14px 16px">
@@ -13609,6 +13631,13 @@ function el(id){return document.getElementById(id)}
 // project itself, not this object.
 const FIREBASE_CONFIG={apiKey:"AIzaSyB0WitU2dazVbt_MCkkxZuL_pxSH76Xlj0",authDomain:"auth.sakura-notes.com",projectId:"sakura-4cdae",storageBucket:"sakura-4cdae.firebasestorage.app",messagingSenderId:"547935562547",appId:"1:547935562547:web:50ddb56ab0db0089452c46",measurementId:"G-KSBVB732SJ"};
 const FIREBASE_SDK_VERSION="10.14.1";
+// Base URL of the deployed sakura-vault Cloudflare Worker (docs/ai-hosted-vault-design.md) that
+// backs the "AI Providers" admin panel in #settings-section-account-admin. Blank until a real
+// deploy exists — aiVaultAdminFetch() checks this first and fails with a clear "not deployed
+// yet" error rather than a raw network failure. Not a secret, same reasoning as FIREBASE_CONFIG
+// above: the real access boundary is the Worker's own Firebase token verification plus its
+// ADMIN_UID check, not this URL.
+const AI_VAULT_WORKER_URL="";
 let currentUser=null;
 let _firebaseModsPromise=null;
 function loadFirebaseMods(){
@@ -15517,6 +15546,130 @@ document.querySelectorAll('#feedback-inbox-filter-menu .todo-dd-item').forEach(i
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('feedback-inbox-modal-overlay')?.classList.contains('open')){ e.preventDefault(); closeFeedbackInboxModal(); }
 });
+
+// ===== AI Providers admin panel (docs/ai-hosted-vault-design.md) =====
+// Talks to the sakura-vault Cloudflare Worker's /admin/providers endpoint. Lives inline in
+// #settings-section-account-admin (below the Feedback Inbox row, same section) rather than
+// behind its own modal — it's a short list plus one small form, not worth an extra click layer.
+// Gated client-side by the same `isAdmin` flag as the rest of that section (visibility only; the
+// real authorization boundary is the Worker's own Firebase-token verification plus its
+// ADMIN_UID check, so a non-admin who somehow reached this UI still gets a 403 from every call,
+// not real access). The list is (re)loaded from the settings-toggle click handler below, right
+// alongside this panel's sibling status refreshes, whenever an admin opens Settings.
+let aiVaultProvidersItems=[];
+let aiVaultProvidersLoading=false;
+let aiVaultProvidersError=null;
+let aiVaultProvidersBusyId=null;
+async function aiVaultAdminFetch(path,options={}){
+  if(!AI_VAULT_WORKER_URL)throw new Error("AI Provider admin isn't configured yet — set AI_VAULT_WORKER_URL after deploying the Worker.");
+  if(!currentUser)throw new Error('Sign in first.');
+  const token=await currentUser.getIdToken();
+  const res=await fetch(AI_VAULT_WORKER_URL+path,{...options,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,...(options.headers||{})}});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(data.error||('Request failed ('+res.status+')'));
+  return data;
+}
+async function loadAiVaultProviders(){
+  const data=await aiVaultAdminFetch('/admin/providers',{method:'GET'});
+  return Array.isArray(data.providers)?data.providers:[];
+}
+async function saveAiVaultProvider(config){
+  await aiVaultAdminFetch('/admin/providers',{method:'POST',body:JSON.stringify(config)});
+}
+async function deleteAiVaultProviderApi(id){
+  await aiVaultAdminFetch('/admin/providers?id='+encodeURIComponent(id),{method:'DELETE'});
+}
+function renderAiVaultProvidersList(){
+  const wrapEl=el('ai-vault-providers-list-wrap'), listEl=el('ai-vault-providers-list'), emptyEl=el('ai-vault-providers-empty'), loadingEl=el('ai-vault-providers-loading'), errorEl=el('ai-vault-providers-error');
+  if(!listEl||!wrapEl)return;
+  if(aiVaultProvidersLoading){
+    if(loadingEl)loadingEl.style.display='';
+    wrapEl.style.display='none'; if(emptyEl)emptyEl.style.display='none'; if(errorEl)errorEl.classList.remove('show');
+    return;
+  }
+  if(loadingEl)loadingEl.style.display='none';
+  if(aiVaultProvidersError){
+    if(errorEl){errorEl.classList.add('show'); const t=el('ai-vault-providers-error-text'); if(t)t.textContent=aiVaultProvidersError;}
+    wrapEl.style.display='none'; if(emptyEl)emptyEl.style.display='none';
+    return;
+  }
+  if(errorEl)errorEl.classList.remove('show');
+  if(!aiVaultProvidersItems.length){
+    wrapEl.style.display='none';
+    if(emptyEl)emptyEl.style.display='';
+    return;
+  }
+  if(emptyEl)emptyEl.style.display='none';
+  wrapEl.style.display='';
+  listEl.innerHTML='';
+  aiVaultProvidersItems.slice().sort((a,b)=>(a.order||0)-(b.order||0)).forEach(p=>{
+    const busy=aiVaultProvidersBusyId===p.id;
+    const row=document.createElement('div');
+    row.className='settings-list-row';
+    row.style.cssText=busy?'opacity:.55':'';
+    row.innerHTML=`
+      <div style="flex:1;min-width:0">
+        <div style="font:600 12.5px 'Inter',sans-serif;color:var(--fg)">${esc(p.id)} <span style="color:var(--muted);font-weight:400">— order ${Number.isFinite(p.order)?p.order:0}</span></div>
+        <div style="font:400 11px 'Inter',sans-serif;color:var(--hint);word-break:break-all;margin-top:2px">${esc(p.shape)} · ${esc(p.model)} · ${esc(p.baseUrl)}</div>
+      </div>
+      <button type="button" class="ai-vault-provider-delete btn" style="flex-shrink:0;color:var(--sem-alert);border-color:color-mix(in srgb,var(--sem-alert) 40%,transparent)">${TRASH_ICON.replace('width="24" height="24"','width="12" height="12"')}</button>
+    `;
+    row.querySelector('.ai-vault-provider-delete')?.addEventListener('click',()=>requestDeleteAiVaultProvider(p));
+    listEl.appendChild(row);
+  });
+}
+async function refreshAiVaultProvidersList(){
+  aiVaultProvidersLoading=true; aiVaultProvidersError=null; renderAiVaultProvidersList();
+  try{
+    aiVaultProvidersItems=await loadAiVaultProviders();
+  }catch(e){
+    aiVaultProvidersItems=[];
+    aiVaultProvidersError=(e&&e.message)?String(e.message):'Failed to load providers';
+  }
+  aiVaultProvidersLoading=false;
+  renderAiVaultProvidersList();
+}
+async function requestDeleteAiVaultProvider(p){
+  if(aiVaultProvidersBusyId)return;
+  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Remove this provider?',body:esc(p.id)+' will no longer be tried for hosted AI requests.',confirmLabel:'Remove',confirmCls:'danger',cancelLabel:'Cancel'});
+  if(!ok)return;
+  aiVaultProvidersBusyId=p.id; renderAiVaultProvidersList();
+  try{
+    await deleteAiVaultProviderApi(p.id);
+    aiVaultProvidersItems=aiVaultProvidersItems.filter(x=>x.id!==p.id);
+  }catch(e){
+    showToast((e&&e.message)?String(e.message):'Failed to remove provider');
+  }
+  aiVaultProvidersBusyId=null;
+  renderAiVaultProvidersList();
+}
+async function addOrUpdateAiVaultProvider(){
+  const btn=el('ai-vault-provider-add-btn'); if(!btn)return;
+  const id=(el('ai-vault-provider-id-input')?.value||'').trim();
+  const baseUrl=(el('ai-vault-provider-baseurl-input')?.value||'').trim();
+  const shape=el('ai-vault-provider-shape-select')?.value||'openai';
+  const model=(el('ai-vault-provider-model-input')?.value||'').trim();
+  const apiKey=(el('ai-vault-provider-apikey-input')?.value||'').trim();
+  const order=Number(el('ai-vault-provider-order-input')?.value)||0;
+  if(!id||!baseUrl||!model||!apiKey){ showToast('id, base URL, model, and API key are all required'); return; }
+  const origLabel=btn.textContent;
+  btn.textContent='Saving…'; btn.disabled=true;
+  try{
+    await saveAiVaultProvider({id,baseUrl,shape,model,apiKey,order});
+    el('ai-vault-provider-id-input').value='';
+    el('ai-vault-provider-baseurl-input').value='';
+    el('ai-vault-provider-model-input').value='';
+    el('ai-vault-provider-apikey-input').value='';
+    el('ai-vault-provider-order-input').value='0';
+    showToast('Provider saved','success');
+    await refreshAiVaultProvidersList();
+  }catch(e){
+    showToast((e&&e.message)?String(e.message):'Failed to save provider');
+  }finally{
+    btn.textContent=origLabel; btn.disabled=false;
+  }
+}
+el('ai-vault-provider-add-btn')?.addEventListener('click',addOrUpdateAiVaultProvider);
 
 let _syncPushQueue=new Map();
 let _syncPushTimer=null;
@@ -27317,7 +27470,7 @@ el('fc-swatch-blue')?.addEventListener('click',e=>{e.stopPropagation(); setFontC
 el('fc-swatch-purple')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('purple')});
 el('fc-swatch-gray')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('gray')});
 el('fc-swatch-none')?.addEventListener('click',e=>{e.stopPropagation(); clearFontColor()});
-el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus()}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('import-menu').classList.toggle('open')});
+el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); if(isAdmin)refreshAiVaultProvidersList();}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('import-menu').classList.toggle('open')});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('export-menu').classList.toggle('open'); if(el('export-menu').classList.contains('open'))updateExportMenuFoldNote()}); el('more-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('more-menu').classList.toggle('open')});
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
 el('appbar-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(false); el('appbar-more-menu').classList.toggle('open')});
