@@ -43,6 +43,18 @@ export async function verifyFirebaseIdToken(
   };
 }
 
+/**
+ * Whether a verified caller is the (single) admin — the one person who ever configures the
+ * hosted-mode provider fallback chain (docs/ai-hosted-vault-design.md). Deliberately just an
+ * exact-match comparison against a fixed UID (a Worker secret, ADMIN_UID) rather than a real
+ * roles/permissions system — there's exactly one admin, and building anything more general
+ * would be complexity with no one else to use it. adminUid empty/unset always denies, so a
+ * misconfigured deploy (secret never set) fails closed rather than open.
+ */
+export function isAdmin(uid: string, adminUid: string): boolean {
+  return !!adminUid && uid === adminUid;
+}
+
 const FIREBASE_JWKS_URL =
   'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 

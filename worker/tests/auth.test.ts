@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { SignJWT, generateKeyPair, type JWTVerifyGetKey } from 'jose';
-import { verifyFirebaseIdToken } from '../src/auth';
+import { verifyFirebaseIdToken, isAdmin } from '../src/auth';
 
 const PROJECT_ID = 'sakura-4cdae';
 const ISSUER = `https://securetoken.google.com/${PROJECT_ID}`;
@@ -75,5 +75,27 @@ describe('verifyFirebaseIdToken (real RS256 signing/verification, no mocks)', ()
     // Verifier is told to trust a DIFFERENT public key — simulates a token forged with an
     // unrelated key, or an attacker-controlled JWKS response.
     await expect(verifyFirebaseIdToken(token, PROJECT_ID, getKeyFor(otherPublicKey))).rejects.toThrow();
+  });
+});
+
+describe('isAdmin', () => {
+  it('is true when the uid exactly matches the admin uid', () => {
+    expect(isAdmin('admin-uid-123', 'admin-uid-123')).toBe(true);
+  });
+
+  it('is false for any other uid', () => {
+    expect(isAdmin('some-other-user', 'admin-uid-123')).toBe(false);
+  });
+
+  it('is false when adminUid is empty (fails closed on a misconfigured secret)', () => {
+    expect(isAdmin('admin-uid-123', '')).toBe(false);
+  });
+
+  it('is false when uid is empty', () => {
+    expect(isAdmin('', 'admin-uid-123')).toBe(false);
+  });
+
+  it('is case-sensitive', () => {
+    expect(isAdmin('Admin-Uid-123', 'admin-uid-123')).toBe(false);
   });
 });
