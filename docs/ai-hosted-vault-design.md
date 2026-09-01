@@ -1,13 +1,17 @@
 # Hosted AI (Cloudflare Worker) — design proposal
 
-**Status: built and unit-tested (`worker/`), not deployed.** Every piece described below exists
-as real, tested code — encryption (`vault.ts`), quota (`quota.ts`), Firebase auth + the admin
-check (`auth.ts`), encrypted provider storage (`providers.ts`), the per-provider request/response
-adapters (`providerShapes.ts`), and the two endpoints themselves (`index.ts`). What's still
-missing: actual Cloudflare deployment (no account/credentials available in the sessions this was
-built in — see "Explicitly out of scope"), and the `legacy/` client-side wiring, which is
-deliberately a separate, later pass. See "Open decisions" below for what still needs an answer
-before that client wiring happens.
+**Status: built and unit-tested (`worker/`), not deployed. Admin UI shipped in `legacy/`.** Every
+Worker piece described below exists as real, tested code — encryption (`vault.ts`), quota
+(`quota.ts`), Firebase auth + the admin check (`auth.ts`), encrypted provider storage
+(`providers.ts`), the per-provider request/response adapters (`providerShapes.ts`), and the two
+endpoints themselves (`index.ts`). `legacy/index.html` also now has a Settings → Account → Admin
+panel for managing the provider chain against those endpoints (see "Admin UI" below) — verified
+against a real headless browser, though it can't be exercised end-to-end until the Worker is
+actually deployed. What's still missing: actual Cloudflare deployment (no account/credentials
+available in the sessions this was built in — see "Explicitly out of scope"), and the *user-facing*
+`legacy/` client-side wiring (the `/ai/complete` call and removing the old BYOK Settings surface),
+which is deliberately a separate, later pass. See "Open decisions" below for what still needs an
+answer before that client wiring happens.
 
 ## Origin, and a real scope change since the first draft
 
@@ -63,6 +67,32 @@ every later one, once those two secrets exist.
 - `GET` returns the current chain (`id`/`baseUrl`/`shape`/`model`/`order` only — never the
   encrypted key blob either, no reason to widen the response beyond what admin visibility needs).
 - `DELETE ?id=<id>` removes one provider.
+
+### Admin UI (`legacy/index.html`)
+
+Built: an "AI Providers" box sits directly inside Settings → Account → Admin, right below the
+Feedback Inbox row, visible under the same `isAdmin` flag that already gates that whole section
+(see `legacy/src/state/admin.ts`) — no separate modal or extra click layer, since it's a short
+list plus one small form. It shows the current provider chain (each as its own boxed row,
+matching the app's existing `.settings-list`/`.settings-list-row` styling, with a delete button
+per row) and an add/update form (id, base URL, shape, model, API key, order) below it, calling
+the three endpoints above directly.
+
+Two things worth calling out about how this is wired:
+- **Visibility vs. authorization are deliberately different checks.** The panel shows for anyone
+  the existing `isAdmin` flag says is an admin (hardcoded email or an `/admins/{uid}` Firestore
+  doc) — that's a *different* admin concept than the Worker's own fixed `ADMIN_UID` secret. This
+  is fine because visibility is cosmetic: every real request still goes through the Worker's own
+  Firebase-token verification and `isAdmin(uid, ADMIN_UID)` check, so a Firestore-admin who isn't
+  the Worker's `ADMIN_UID` sees the panel but gets a 403 from every call, not real access.
+  Unifying the two admin concepts (or dropping the Firestore one) is a candidate future cleanup,
+  not required for this to be safe.
+- **`AI_VAULT_WORKER_URL` is a blank placeholder constant** (next to `FIREBASE_CONFIG`) until a
+  real Worker deploy exists. Every call goes through `aiVaultAdminFetch()`, which checks this
+  first and fails with a clear "not configured yet" error (shown inline in the panel, and via
+  toast on the add-provider form) rather than a raw network failure — this was verified with a
+  real headless-browser pass, including the empty/loading/error states and the add-provider
+  round-trip failing cleanly, since there's no deployed Worker to actually call yet.
 
 ### `POST /ai/complete`
 - Auth: Firebase ID token (`Authorization: Bearer <token>`), verified in the Worker (see "Firebase
@@ -156,10 +186,9 @@ Still genuinely unresolved, needs an explicit answer before implementation start
   before a real deploy, not after.
 - The `legacy/index.html` side of this: removing the Settings → AI provider/API-key/fallback UI
   (currently user-facing, becomes irrelevant once there's no BYOK to configure) and whatever
-  replaces it (most likely a single "AI" on/off surface with no provider concepts exposed at all),
-  plus whatever admin-facing screen ends up calling `/admin/providers` — right now that endpoint
-  has no UI at all, only `curl`/Postman access. Not designed here — a separate pass once client
-  wiring is actually being built.
+  replaces it (most likely a single "AI" on/off surface with no provider concepts exposed at all).
+  Not designed here — a separate pass once client wiring is actually being built. (The
+  *admin*-facing side of `/admin/providers` is no longer out of scope — see "Admin UI" below.)
 
 ## Rollout shape
 
