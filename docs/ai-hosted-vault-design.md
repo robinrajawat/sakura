@@ -208,11 +208,13 @@ Still genuinely unresolved, needs an explicit answer before implementation start
 ## Rollout shape
 
 The Worker and its two endpoints were built and unit-tested independently of `legacy/index.html`
-(85 tests, `worker/tests/`) — the plan below of testing a *deployed* Worker directly still holds
-for the one thing tests-against-fakes can't cover: an actual Cloudflare deploy. Once deployed,
-confirm end-to-end behavior with `curl`/Postman before any client wiring happens. Client wiring,
-when it happens, is **not** purely additive the way the first draft's "two new provider-list
-entries" was — it removes the existing seven-provider Settings → AI surface rather than adding
-beside it. That's a real, user-visible change to existing Settings, not a side option,
-and deserves its own careful pass (including the "existing BYOK user" question above) rather than
-being treated as low-risk just because the backend side is additive.
+(92 tests, `worker/tests/`), then verified for real against the actual deployed Worker (the one
+thing tests-against-fakes can't cover): `GET /health` returns `ok`, and a real signed-in user
+calling `POST /ai/complete` with `{userContent: 'Reply with the single word OK.'}` got back
+`{text: 'OK', provider: 'groq'}` — the full chain confirmed live: Firebase token verification,
+quota, KEK decryption of the stored key, the real call to Groq's API, and correct response
+parsing. Client wiring, when it happens, is **not** purely additive the way the first draft's
+"two new provider-list entries" was — it removes the existing seven-provider Settings → AI
+surface rather than adding beside it. That's a real, user-visible change to existing Settings,
+not a side option, and deserves its own careful pass (including the "existing BYOK user"
+question above) rather than being treated as low-risk just because the backend side is proven.
