@@ -12,11 +12,14 @@ nested under Account — see "Admin UI" below) for managing the provider chain a
 against those endpoints, and its `AI_VAULT_WORKER_URL` constant now points at the real deployed
 URL. **The fallback chain is funded**: Groq (order 0), Cerebras (order 1), and Gemini (order 2)
 are all configured through that admin panel, each with a real API key encrypted at rest — the
-same three named in "Cost and abuse control" below. What's still missing: the *user-facing*
-`legacy/` client-side wiring — adding the `/ai/complete` call as a hosted-AI mode alongside the
-existing BYOK Settings surface (kept, not removed — see the second scope change below), which is
-deliberately a separate, later pass. Nothing in the app actually calls `/ai/complete` yet, so
-this funded chain isn't reachable by real users until that wiring lands.
+same three named in "Cost and abuse control" below. **The user-facing client wiring is also
+done**: "Sakura Hosted AI (beta)" is a real option in Settings → AI → Provider, sitting next to
+the seven BYOK providers rather than replacing them — see "Client UI" below for how mode-switching
+works. Every AI capability in the app (Rewrite, Generate Outline, Restructure Text, Q&A, to-do
+extraction, icon assignment, auto-rewrite-on-commit, all of it) reaches `/ai/complete` for free the
+moment hosted is selected, because all of them already funnel through the one shared
+`callAiByShapeWithFallback`/`callAiByShape` choke point — adding a `shape==='hosted'` branch there
+was the entire integration, not fifteen separate call-site changes.
 
 ## Origin, and a real scope change since the first draft
 
@@ -132,6 +135,53 @@ Two things worth calling out about how this is wired:
   same reasoning as the CSP: `https://www.sakura-notes.com` (the real production origin, from
   `legacy/public/CNAME`) plus `http://localhost:5173` for local dev, not a wildcard.
 
+### Client UI (`legacy/index.html`)
+
+Built: "Sakura Hosted AI (beta)" is the first option in Settings → AI → Provider's dropdown
+(`getAiSelectableProviders()` = hosted + the seven `AI_BUILTIN_PROVIDERS`, unchanged from before).
+Selecting it swaps the whole Provider panel into hosted mode — Model and API Key rows hide
+(there's no user-facing key or model choice; the Worker's own admin-configured chain handles
+that), replaced by a sign-in-aware status block: signed out shows a "Sign in" button (deep-links
+to Settings → Account, reusing the existing sign-in UI rather than duplicating a Google-popup
+button here) and a one-line explanation; signed in shows the account and a "Test" button
+(`testHostedAi()`, mirrors the BYOK "Test" button's bypass-fallback-and-usage-counter behavior).
+Switching back to any BYOK provider restores the Model/API Key rows exactly as before —
+`applyAiProviderModeUI()` is the one function that toggles all of this, called on load, on
+provider-select change, and on sign-in/sign-out (hooked into the existing `updateAccountUI()`, the
+one place every sign-in path already funnels through) so the sign-in status never goes stale while
+Settings is open.
+
+Two things worth calling out about how the wiring actually works:
+- **One choke point, not fifteen call sites.** Every AI capability already funneled through
+  `callAiByShapeWithFallback(shape, baseUrl, key, model, ...)` → `callAiByShape`. Hosted mode is
+  just a new `shape==='hosted'` branch in `callAiByShape` that ignores `key`/`model` (unused for
+  this shape), sends `Authorization: Bearer <Firebase ID token>` instead, and POSTs
+  `{systemPrompt, userContent, maxTokens}` to `AI_VAULT_WORKER_URL + '/ai/complete'`, matching the
+  Worker's contract in `worker/src/index.ts::handleAiComplete` exactly (verified end-to-end with a
+  headless-browser pass that intercepts the network call and asserts method/headers/body, plus a
+  429-quota-exceeded case). `requireAiKey()` (called by every one of those ~15 call sites before
+  it reaches `callAiByShapeWithFallback`) got one new branch too: for hosted it checks
+  `currentUser` instead of a saved key, so the existing "no key" error path becomes "sign in"
+  instead — no other call site needed to change.
+- **429 (quota exceeded) is fallback-eligible, same as a BYOK rate limit.** `isRateLimitStatus`
+  already treats any 429 as a `RateLimitError`, and `callAiByShapeWithFallback`'s fallback chain
+  (`getEffectiveFallbackChain()`) is built from `aiFallbackOrder`, which only ever contains the
+  seven BYOK providers — hosted was never added to it. That means, with zero extra plumbing, a
+  user who has hosted selected as primary *and* fallback enabled with a BYOK key configured for
+  say Groq gets automatically routed to their own key once their daily hosted quota runs out,
+  instead of just failing. Not required by the design, but falls out of reusing the existing
+  mechanism rather than building a parallel one.
+- **Auto-rewrite-on-commit needed one more change.** It bypasses `requireAiKey()` and checks
+  `getAiKey()` directly to decide whether to pause the queue — which is always empty/falsy for
+  hosted (there's no BYOK key to look up). Introduced `hasUsableAiKey()` (hosted: `!!currentUser`,
+  BYOK: `!!getAiKey()`) and swapped it in at both call sites (`flushAutoRewriteQueue`'s pause
+  check, `resumeAutoRewriteIfPaused`'s resume check), plus hooked `resumeAutoRewriteIfPaused()`
+  into `updateAccountUI()` so a queue paused on "sign in to use hosted AI" actually resumes the
+  moment sign-in completes, not just on the next manual settings interaction.
+- **No CSP change needed.** `/ai/complete` is served from the same origin
+  (`sakura-vault.robinsinghrajawat.workers.dev`) already allowlisted in `connect-src` for the
+  admin panel's `/admin/*` calls (see "Admin UI" above) — one Worker, one origin, both surfaces.
+
 ### `POST /ai/complete`
 - Auth: Firebase ID token (`Authorization: Bearer <token>`), verified in the Worker (see "Firebase
   token verification" below — this is not `firebase-admin`, which doesn't run on Workers).
@@ -225,12 +275,10 @@ All three now resolved (kept here, not deleted, as a record of what was decided 
   push to `main` that touches `worker/`, authenticated via a Workers-scoped Cloudflare API token
   held as a GitHub repo secret (never printed by the workflow, never touches the Worker's own
   secrets — those stay attached to the Worker independent of how its code ships).
-- The *user-facing* `legacy/index.html` client wiring: adding the actual `POST /ai/complete` call
-  and a way for a signed-in user to choose hosted AI as an alternative to their existing BYOK
-  Settings (which stay exactly as they are — see the "second reversal" in "Origin" above; this is
-  additive, not a removal, unlike the first draft's plan). Not designed here — a separate pass.
-  (The *admin*-facing side of `/admin/providers` and `/admin/config` is no longer out of scope —
-  see "Admin UI" above.)
+- ~~The *user-facing* `legacy/index.html` client wiring~~ — done: see "Client UI" above. Both the
+  *admin*-facing side (`/admin/providers`, `/admin/config`) and the *user*-facing side
+  (`/ai/complete`) are wired into `legacy/index.html` now; nothing about this Worker's endpoints
+  remains unreachable from the app.
 
 ## Rollout shape
 
@@ -240,9 +288,13 @@ thing tests-against-fakes can't cover): `GET /health` returns `ok`, and a real s
 calling `POST /ai/complete` with `{userContent: 'Reply with the single word OK.'}` got back
 `{text: 'OK', provider: 'groq'}` — the full chain confirmed live: Firebase token verification,
 quota, KEK decryption of the stored key, the real call to Groq's API, and correct response
-parsing. Client wiring, when it happens, ended up purely additive after all — closer to the first
-draft's original "two new provider-list entries" shape than the hosted-only draft's plan to
-remove the existing seven-provider Settings → AI surface. BYOK stays untouched; hosted AI is a
-new option next to it, not a replacement. Still deserves its own careful pass (a real sign-in gate
-for the hosted option, a clear way to pick between the two modes) rather than being treated as
-trivial just because the backend side is proven.
+parsing. Client wiring landed purely additive after all — closer to the first draft's original
+"two new provider-list entries" shape than the hosted-only draft's plan to remove the existing
+seven-provider Settings → AI surface. BYOK stays untouched; hosted AI is a new option next to it
+in the same Provider dropdown, gated on real sign-in (see "Client UI" above), not a replacement.
+The wiring itself was verified the same two ways as the Worker side: unit tests for every touched
+function (`requireAiKey`, `hasUsableAiKey`, the provider-registry helpers) plus a real
+headless-browser pass exercising the actual Settings UI — provider switch hiding/showing the
+right rows, sign-in state flipping the status block live, and a network-intercepted `/ai/complete`
+call asserting the exact request the Worker expects and a correct parse of both its success and
+429-quota response shapes.
