@@ -3,19 +3,20 @@
 **Status: deployed and live.** Every Worker piece described below exists as real, tested code —
 encryption (`vault.ts`), quota (`quota.ts`), Firebase auth + the admin check (`auth.ts`),
 encrypted provider storage (`providers.ts`), the per-provider request/response adapters
-(`providerShapes.ts`), and the two endpoints themselves (`index.ts`) — and is live at
+(`providerShapes.ts`), admin-configurable runtime settings (`config.ts`), and the endpoints
+themselves (`index.ts`) — and is live at
 `https://sakura-vault.robinsinghrajawat.workers.dev`, deployed by
 `.github/workflows/deploy-worker.yml` on every push to `main` that touches `worker/`.
-`legacy/index.html` has a Settings → Account → Admin panel for managing the provider chain
-against those endpoints (see "Admin UI" below), and its `AI_VAULT_WORKER_URL` constant now
-points at the real deployed URL. **The fallback chain is funded**: Groq (order 0), Cerebras
-(order 1), and Gemini (order 2) are all configured through that admin panel, each with a real
-API key encrypted at rest — the same three named in "Cost and abuse control" below. What's
-still missing: the *user-facing* `legacy/` client-side wiring (the `/ai/complete` call and
-removing the old BYOK Settings surface), which is deliberately a separate, later pass — nothing
-in the app actually calls `/ai/complete` yet, so this funded chain isn't reachable by real users
-until that wiring lands. See "Open decisions" below for what still needs an answer before that
-client wiring happens.
+`legacy/index.html` has its own top-level Settings → Admin panel (its own rail category, not
+nested under Account — see "Admin UI" below) for managing the provider chain and the daily quota
+against those endpoints, and its `AI_VAULT_WORKER_URL` constant now points at the real deployed
+URL. **The fallback chain is funded**: Groq (order 0), Cerebras (order 1), and Gemini (order 2)
+are all configured through that admin panel, each with a real API key encrypted at rest — the
+same three named in "Cost and abuse control" below. What's still missing: the *user-facing*
+`legacy/` client-side wiring — adding the `/ai/complete` call as a hosted-AI mode alongside the
+existing BYOK Settings surface (kept, not removed — see the second scope change below), which is
+deliberately a separate, later pass. Nothing in the app actually calls `/ai/complete` yet, so
+this funded chain isn't reachable by real users until that wiring lands.
 
 ## Origin, and a real scope change since the first draft
 
@@ -38,18 +39,30 @@ draft: there is no user-supplied key anywhere in this system anymore, so there i
 vault, encrypt, or sync per-user. The `/vault/key` endpoint and "vaulted-BYOK mode" from the first
 draft are gone.
 
+**Second reversal, after the Worker was already built and deployed: BYOK stays after all,
+alongside hosted AI.** The honest case for keeping it: it's a real escape hatch from hosted's
+daily quota for anyone who wants unlimited usage on their own dime, and since it already exists
+and works, keeping it costs little beyond not deleting it and adding a small mode-switch surface
+to Settings. This reopens one question the first reversal had closed — a cross-device BYOK-key
+sync mechanism (`/vault/key`, held by the Worker's own KEK) was proposed and then explicitly
+rejected: server-side decryption capability for a user's own key was judged too large a security
+trade for the UX win, so BYOK keys remain local-only, one device at a time, exactly as they
+worked before any of this. Client wiring is therefore **additive**, not a replacement — see
+"Explicitly out of scope" below.
+
 ## The one goal now
 
 Let a signed-in user use AI features with zero per-user setup — no provider to pick, no API key to
 find or paste, ever. Sakura holds the provider credentials (Robin's own) and fronts the cost. There
 is no client-only way to do this — granting AI access requires *some* party to hold a real
-credential — so a server component is structurally required. This also means AI features move from
-"works offline, no account needed" (today) to "requires sign-in" — a real change to how AI is
-positioned, addressed in "Open decisions" below.
+credential — so a server component is structurally required for *this path specifically*. Unlike
+the first draft, this no longer means AI overall requires sign-in: BYOK (see the second reversal
+above) still works offline with no account, exactly as today; only the *hosted* path requires
+signing in, as a new second option alongside it, addressed in "Open decisions" below.
 
 ## Architecture
 
-One Cloudflare Worker, two endpoints, backed by one KV namespace. **Revised from the original
+One Cloudflare Worker, three endpoints, backed by one KV namespace. **Revised from the original
 plan below**: the first version of this section had the provider fallback chain as a hardcoded
 source constant with one Worker secret per provider (`wrangler secret put <PROVIDER>_API_KEY`).
 Built as admin-managed KV storage instead — `POST /admin/providers` to add/update a provider,
@@ -72,15 +85,30 @@ every later one, once those two secrets exist.
   encrypted key blob either, no reason to widen the response beyond what admin visibility needs).
 - `DELETE ?id=<id>` removes one provider.
 
+### `GET/POST /admin/config`
+- Same admin auth as `/admin/providers` above.
+- `GET` returns `{dailyQuota}` — the current value, KV-set if the admin has ever tuned it,
+  otherwise falling back to `wrangler.toml`'s `DAILY_AI_QUOTA` var and then a hardcoded default
+  (`config.ts`'s `getDailyQuota`, same layered-fallback shape used nowhere else in this Worker).
+- `POST` body: `{dailyQuota}`, a positive integer — lets the admin tune the real daily quota
+  number at runtime, no `wrangler.toml` edit or redeploy needed (resolves the "real daily quota
+  number" open decision below by making it a runtime knob rather than a number to pick upfront).
+
 ### Admin UI (`legacy/index.html`)
 
-Built: an "AI Providers" box sits directly inside Settings → Account → Admin, right below the
-Feedback Inbox row, visible under the same `isAdmin` flag that already gates that whole section
-(see `legacy/src/state/admin.ts`) — no separate modal or extra click layer, since it's a short
-list plus one small form. It shows the current provider chain (each as its own boxed row,
-matching the app's existing `.settings-list`/`.settings-list-row` styling, with a delete button
-per row) and an add/update form (id, base URL, shape, model, API key, order) below it, calling
-the three endpoints above directly.
+Built: "Admin" is its own top-level Settings rail category (not nested under Account — moved
+there after starting as an Account sub-section, since a rare, single-admin maintenance area
+sitting between everyday categories like Account and AI wasn't the right spot; it now sits right
+before "About", matching the "rare/meta stuff trails" pattern that section already followed). The
+whole category — Feedback Inbox, "Daily AI quota", and "AI Providers" — is visible under the same
+`isAdmin` flag that already gated it as an Account sub-section (see `legacy/src/state/admin.ts`),
+now extended to also toggle the rail button itself in real time (`getAdminRailButtonElement`), so
+a non-admin never sees an empty "Admin" tab. No separate modal or extra click layer for any of
+this, since it's short lists plus small forms. "AI Providers" shows the current provider chain
+(each as its own boxed row, matching the app's existing `.settings-list`/`.settings-list-row`
+styling, with a delete button per row) and an add/update form (id, base URL, shape, model, API
+key, order) below it; "Daily AI quota" is a single number input + Save button above that. All of
+it calls the endpoints above directly.
 
 Two things worth calling out about how this is wired:
 - **Visibility vs. authorization are deliberately different checks.** The panel shows for anyone
@@ -137,9 +165,10 @@ is pinned explicitly to RS256 against alg-confusion.
 
 Sakura's client-side "Secure Storage" vault (`legacy/index.html`, `vaultCryptoKey`/`vaultEncrypt`/
 `vaultDecrypt`, extracted to `legacy/src/state/vault.ts`) protects more than just AI keys today —
-it also guards a Gist/Drive backup token. Removing BYOK removes *one* of that vault's use cases,
-not the feature itself; the Gist/Drive token path is untouched and out of scope here. Don't conflate
-"this doc's Worker vault is gone" with "the client-side Secure Storage feature is gone" — they were
+it also guards a Gist/Drive backup token, and (now that BYOK stays — see the "second reversal" in
+"Origin" above) continues to protect BYOK provider keys too, exactly as before. Nothing about this
+doc changes what Secure Storage protects or how; entirely untouched and out of scope here. Don't
+conflate "this doc's Worker-side vault" with "the client-side Secure Storage feature" — they were
 always two different things even in the first draft, and only the first ever existed in this design.
 
 ## Cost and abuse control (the hard part, not the Worker plumbing)
@@ -149,8 +178,9 @@ account, with Firebase auth as the only gate standing between "any Sakura user" 
 spend on his credentials.
 
 - **Quota**: `quota:{uid}:{yyyy-mm-dd}` counter (`worker/src/quota.ts`), request rejected once the
-  daily cap is hit — currently `DAILY_AI_QUOTA = 20` in `wrangler.toml`'s `[vars]`, a working
-  placeholder, not a considered number; change it before a real launch. Not actually atomic —
+  daily cap is hit — the cap itself is admin-configurable at runtime via `GET/POST /admin/config`
+  (`config.ts`), defaulting to `wrangler.toml`'s `DAILY_AI_QUOTA = 20` var until the admin sets a
+  real value through that endpoint; no redeploy needed to tune it. Not actually atomic —
   Cloudflare KV has no compare-and-swap, so the read-then-write has a narrow race under truly
   concurrent requests from the same UID (both could read the same count and both write count+1,
   undercounting by one). Accepted deliberately: a Durable Object would close that race but is real
@@ -158,38 +188,34 @@ spend on his credentials.
 - **Provider choice for the fallback chain**: fund it from providers with a genuinely free tier
   at the volumes expected. Done: Groq (order 0), Cerebras (order 1), and Gemini (order 2) — all
   three have their own dedicated free tier (not a shared aggregator quota the way OpenRouter's
-  `:free`-tagged models do), same labels as the current, soon-to-be-removed `AI_BUILTIN_PROVIDERS`
-  list (`legacy/index.html` ~line 8859: "free, fast" / "free tier" / "free"). Claude/ChatGPT/
+  `:free`-tagged models do), same labels as the current `AI_BUILTIN_PROVIDERS` list (still there —
+  BYOK stays; `legacy/index.html` ~line 8859: "free, fast" / "free tier" / "free"). Claude/ChatGPT/
   OpenRouter/GitHub Models are deliberately not funded this way — paid-only, a shared low-limit
   free tier, or tied to a personal account identity, respectively.
-- **UID-only quota is gameable if sign-in is anonymous** (see next section) — someone scripting
-  repeated anonymous sign-ins gets a fresh UID and a fresh quota each time. An IP-based backstop
-  (Cloudflare Workers can read the connecting IP from request context) is probably needed too if
-  anonymous auth is the sign-in path. This needs real design attention before this ships, not just
-  before it scales — the failure mode here is "Robin's provider bill," not a slow degradation, and
-  it's now the *only* AI path rather than one option among several.
+- ~~UID-only quota is gameable if sign-in is anonymous~~ — resolved, doesn't apply: "Open
+  decisions" below settled on real Google/email sign-in only for hosted AI, no anonymous auth
+  built. A real account is meaningfully harder to script repeated fresh UIDs from than a
+  no-prompt anonymous sign-in would have been.
 
 ## Open decisions
 
-Still genuinely unresolved, needs an explicit answer before implementation starts:
+All three now resolved (kept here, not deleted, as a record of what was decided and why):
 
-- **Anonymous vs. real Firebase sign-in for AI access.** Firebase anonymous auth (no email/password
-  prompt) gives the Worker a stable UID to rate-limit against without a visible "account," but is
-  weaker against abuse (a free, disposable UID — see the IP-backstop note above) than requiring a
-  real Google/email sign-in. This is less urgent than it was in the BYOK-alongside-hosted draft,
-  though: sync already pushes many users toward a real account anyway, so the actual added friction
-  of requiring real sign-in specifically for AI may be smaller than it first appears. Still worth
-  deciding deliberately rather than defaulting into.
-- **What happens to a user who currently has a BYOK key configured?** Real accounts exist today with
-  a provider/key saved in `AI_PREFS_KEY` (`legacy/index.html`). Once the client-side provider-calling
-  code is removed, does their AI usage silently switch to the hosted path (using their existing
-  sign-in, if any) with no notice, or does it need an explicit one-time migration message ("your
-  saved API key is no longer used — AI now works automatically")? Given the premise that BYOK use
-  is at or near zero, this may be a non-issue in practice, but it should be confirmed rather than
-  assumed before the removal ships.
-- **Real daily quota number** — `DAILY_AI_QUOTA = 20` is a working placeholder (see above), and
-  whether it should differ for anonymous vs. real-account UIDs (if anonymous auth is the answer to
-  the first question above).
+- ~~Anonymous vs. real Firebase sign-in for AI access.~~ **Decided: real sign-in only** (Google or
+  email — Firebase anonymous auth doesn't exist anywhere in `legacy/index.html` today and won't be
+  built for this; there's no existing sign-in flow to reuse, and BYOK already covers the
+  no-account case, so the friction anonymous auth would have saved isn't needed). Building it
+  would have meant new sign-in UI work for a path that's abuse-prone by nature (a free, disposable
+  UID resets quota every time) with an existing lower-friction alternative (BYOK) already covering
+  "I don't want to sign in." Hosted AI requires a real account; BYOK requires none, unchanged.
+- ~~What happens to a user who currently has a BYOK key configured?~~ **Moot — BYOK isn't being
+  removed** (see the "second reversal" in "Origin" above). Existing BYOK users are completely
+  unaffected: their saved key keeps working exactly as it does today, with hosted AI arriving
+  alongside it as a new, separate option, not a replacement.
+- ~~Real daily quota number~~ **Resolved by making it a runtime knob, not a number to pick
+  upfront** — `GET/POST /admin/config` (see "Architecture" above) lets the admin tune
+  `DAILY_AI_QUOTA` at runtime, defaulting to `wrangler.toml`'s `20` until changed. No fixed number
+  needed to be right on the first guess.
 
 ## Explicitly out of scope for this doc
 
@@ -199,22 +225,24 @@ Still genuinely unresolved, needs an explicit answer before implementation start
   push to `main` that touches `worker/`, authenticated via a Workers-scoped Cloudflare API token
   held as a GitHub repo secret (never printed by the workflow, never touches the Worker's own
   secrets — those stay attached to the Worker independent of how its code ships).
-- The `legacy/index.html` side of this: removing the Settings → AI provider/API-key/fallback UI
-  (currently user-facing, becomes irrelevant once there's no BYOK to configure) and whatever
-  replaces it (most likely a single "AI" on/off surface with no provider concepts exposed at all).
-  Not designed here — a separate pass once client wiring is actually being built. (The
-  *admin*-facing side of `/admin/providers` is no longer out of scope — see "Admin UI" below.)
+- The *user-facing* `legacy/index.html` client wiring: adding the actual `POST /ai/complete` call
+  and a way for a signed-in user to choose hosted AI as an alternative to their existing BYOK
+  Settings (which stay exactly as they are — see the "second reversal" in "Origin" above; this is
+  additive, not a removal, unlike the first draft's plan). Not designed here — a separate pass.
+  (The *admin*-facing side of `/admin/providers` and `/admin/config` is no longer out of scope —
+  see "Admin UI" above.)
 
 ## Rollout shape
 
-The Worker and its two endpoints were built and unit-tested independently of `legacy/index.html`
-(92 tests, `worker/tests/`), then verified for real against the actual deployed Worker (the one
+The Worker and its endpoints were built and unit-tested independently of `legacy/index.html`
+(104 tests, `worker/tests/`), then verified for real against the actual deployed Worker (the one
 thing tests-against-fakes can't cover): `GET /health` returns `ok`, and a real signed-in user
 calling `POST /ai/complete` with `{userContent: 'Reply with the single word OK.'}` got back
 `{text: 'OK', provider: 'groq'}` — the full chain confirmed live: Firebase token verification,
 quota, KEK decryption of the stored key, the real call to Groq's API, and correct response
-parsing. Client wiring, when it happens, is **not** purely additive the way the first draft's
-"two new provider-list entries" was — it removes the existing seven-provider Settings → AI
-surface rather than adding beside it. That's a real, user-visible change to existing Settings,
-not a side option, and deserves its own careful pass (including the "existing BYOK user"
-question above) rather than being treated as low-risk just because the backend side is proven.
+parsing. Client wiring, when it happens, ended up purely additive after all — closer to the first
+draft's original "two new provider-list entries" shape than the hosted-only draft's plan to
+remove the existing seven-provider Settings → AI surface. BYOK stays untouched; hosted AI is a
+new option next to it, not a replacement. Still deserves its own careful pass (a real sign-in gate
+for the hosted option, a clear way to pick between the two modes) rather than being treated as
+trivial just because the backend side is proven.

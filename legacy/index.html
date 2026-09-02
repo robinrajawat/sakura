@@ -4638,10 +4638,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="7" cy="3.1" rx="5.5" ry="2"/><path d="M1.5 3.1v7.8c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2V3.1"/><path d="M1.5 7c0 1.1 2.46 2 5.5 2s5.5-.9 5.5-2"/></svg>
                 <span>Data &amp; backup</span>
               </button>
-              <button type="button" class="settings-rail-btn" data-cat="account" data-tip="Account">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M5 16c.6-1.6 2.1-2.5 4-2.5s3.4.9 4 2.5"/><line x1="14" y1="9" x2="18" y2="9"/><line x1="14" y1="12" x2="18" y2="12"/></svg>
-                <span>Account</span>
-              </button>
               <button type="button" class="settings-rail-btn" data-cat="ai" data-tip="AI">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.2l1.3 3.9L12.2 6.4l-3.9 1.3L7 11.6l-1.3-3.9L1.8 6.4l3.9-1.3Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>
                 <span>AI</span>
@@ -4653,6 +4649,14 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               <button type="button" class="settings-rail-btn" data-cat="shortcuts" data-tip="Keyboard Shortcuts">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3.4" width="12" height="7.2" rx="1.3"/><circle cx="3.4" cy="5.9" r="0.35" fill="currentColor" stroke="none"/><circle cx="5.7" cy="5.9" r="0.35" fill="currentColor" stroke="none"/><circle cx="8" cy="5.9" r="0.35" fill="currentColor" stroke="none"/><circle cx="10.3" cy="5.9" r="0.35" fill="currentColor" stroke="none"/><rect x="3.2" y="7.7" width="7.6" height="1.3" rx="0.5" fill="currentColor" stroke="none"/></svg>
                 <span>Shortcuts</span>
+              </button>
+              <button type="button" class="settings-rail-btn" data-cat="account" data-tip="Account">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M5 16c.6-1.6 2.1-2.5 4-2.5s3.4.9 4 2.5"/><line x1="14" y1="9" x2="18" y2="9"/><line x1="14" y1="12" x2="18" y2="12"/></svg>
+                <span>Account</span>
+              </button>
+              <button type="button" class="settings-rail-btn" data-cat="admin" data-tip="Admin" id="settings-rail-admin-btn" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10V5l8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+                <span>Admin</span>
               </button>
               <button type="button" class="settings-rail-btn" data-cat="about" data-tip="About">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -5300,13 +5304,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               </div>
             </div>
           </div>
-          <div class="settings-section" data-cat="account" id="settings-section-account-admin" data-feature-hidden="1" style="display:none">
+          <div class="settings-section" data-cat="admin" id="settings-section-account-admin" data-feature-hidden="1" style="display:none">
             <div class="settings-section-title">Admin</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Feedback Inbox</span><span class="settings-row-desc">Review bug reports and feedback sent in by users.</span></div><button type="button" class="btn" id="account-feedback-inbox-btn">Open…</button></div>
             </div>
             <div class="settings-section-title" style="margin-top:4px">AI Providers</div>
             <div class="settings-row-desc" style="margin:-4px 0 0">Hosted-AI provider fallback chain (docs/ai-hosted-vault-design.md). Tried in order; keys are encrypted at rest and never shown again after saving.</div>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Daily AI quota</span><span class="settings-row-desc">Requests per signed-in user per UTC day against hosted AI, across all providers combined.</span></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><input id="ai-vault-quota-input" type="number" class="meta-input" min="1" step="1" style="width:64px" /><button type="button" class="btn" id="ai-vault-quota-save-btn">Save</button></div></div>
+            </div>
             <div id="ai-vault-providers-loading" class="muted-help" style="margin:0">Loading…</div>
             <div id="ai-vault-providers-error" class="settings-inline-notice" style="margin:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="ai-vault-providers-error-text"></span></div>
             <div id="ai-vault-providers-empty" class="muted-help" style="display:none;margin:0">No providers configured yet — add one below.</div>
@@ -13732,6 +13739,9 @@ function updateFeedbackAdminUI() {
         sec.style.display = isAdmin ? '' : 'none';
         sec.dataset.featureHidden = isAdmin ? '' : '1';
     }
+    const railBtn = d.getAdminRailButtonElement();
+    if (railBtn)
+        railBtn.style.display = isAdmin ? '' : 'none';
     if (!isAdmin)
         d.closeFeedbackInboxModal();
 }
@@ -13753,6 +13763,7 @@ function refreshAdminStatus(user) {
 initAdminState({
   loadFirestoreMods:()=>loadFirestoreMods(),
   getAdminSectionElement:()=>el('settings-section-account-admin'),
+  getAdminRailButtonElement:()=>el('settings-rail-admin-btn'),
   closeFeedbackInboxModal:()=>closeFeedbackInboxModal()
 });
 /* GENERATED:admin:END */
@@ -15671,6 +15682,32 @@ async function addOrUpdateAiVaultProvider(){
   }
 }
 el('ai-vault-provider-add-btn')?.addEventListener('click',addOrUpdateAiVaultProvider);
+async function refreshAiVaultQuota(){
+  const input=el('ai-vault-quota-input'); if(!input)return;
+  try{
+    const data=await aiVaultAdminFetch('/admin/config',{method:'GET'});
+    if(Number.isFinite(data.dailyQuota))input.value=String(data.dailyQuota);
+  }catch(e){
+    // Silent — the provider list's own error state above already surfaces "not configured
+    // yet"/network-failure messaging; duplicating it here for a secondary field would be noise.
+  }
+}
+async function saveAiVaultQuota(){
+  const btn=el('ai-vault-quota-save-btn'); if(!btn)return;
+  const dailyQuota=Number(el('ai-vault-quota-input')?.value);
+  if(!Number.isInteger(dailyQuota)||dailyQuota<=0){ showToast('Daily quota must be a positive whole number'); return; }
+  const origLabel=btn.textContent;
+  btn.textContent='Saving…'; btn.disabled=true;
+  try{
+    await aiVaultAdminFetch('/admin/config',{method:'POST',body:JSON.stringify({dailyQuota})});
+    showToast('Daily quota saved','success');
+  }catch(e){
+    showToast((e&&e.message)?String(e.message):'Failed to save quota');
+  }finally{
+    btn.textContent=origLabel; btn.disabled=false;
+  }
+}
+el('ai-vault-quota-save-btn')?.addEventListener('click',saveAiVaultQuota);
 
 let _syncPushQueue=new Map();
 let _syncPushTimer=null;
@@ -27471,7 +27508,7 @@ el('fc-swatch-blue')?.addEventListener('click',e=>{e.stopPropagation(); setFontC
 el('fc-swatch-purple')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('purple')});
 el('fc-swatch-gray')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('gray')});
 el('fc-swatch-none')?.addEventListener('click',e=>{e.stopPropagation(); clearFontColor()});
-el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); if(isAdmin)refreshAiVaultProvidersList();}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('import-menu').classList.toggle('open')});
+el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updateSafetyCopyStatus(); updatePreRestoreSnapshotStatus(); updateFsBackupHistoryStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('import-menu').classList.toggle('open')});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('export-menu').classList.toggle('open'); if(el('export-menu').classList.contains('open'))updateExportMenuFoldNote()}); el('more-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('more-menu').classList.toggle('open')});
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('scale-popover').classList.remove('open'); toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
 el('appbar-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('more-menu').classList.remove('open'); el('scale-popover').classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(false); el('appbar-more-menu').classList.toggle('open')});
