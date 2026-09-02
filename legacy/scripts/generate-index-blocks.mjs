@@ -106,6 +106,7 @@ document.addEventListener('click',e=>{ if(isNotifMenuOpen()&&!e.target.closest('
 initAdminState({
   loadFirestoreMods:()=>loadFirestoreMods(),
   getAdminSectionElement:()=>el('settings-section-account-admin'),
+  getAdminRailButtonElement:()=>el('settings-rail-admin-btn'),
   closeFeedbackInboxModal:()=>closeFeedbackInboxModal()
 });
 `.trim()

@@ -36,6 +36,9 @@ export interface AdminFirestoreModLike {
 export interface AdminDeps {
   loadFirestoreMods: () => Promise<{ mod: AdminFirestoreModLike; db: unknown }>;
   getAdminSectionElement: () => HTMLElement | null;
+  /** The Settings rail button for the "Admin" category — kept in sync with the section itself
+   * so a non-admin never sees an empty tab (the section is the only content in it). */
+  getAdminRailButtonElement: () => HTMLElement | null;
   closeFeedbackInboxModal: () => void;
 }
 
@@ -92,6 +95,8 @@ export function updateFeedbackAdminUI(): void {
     sec.style.display = isAdmin ? '' : 'none';
     sec.dataset.featureHidden = isAdmin ? '' : '1';
   }
+  const railBtn = d.getAdminRailButtonElement();
+  if (railBtn) railBtn.style.display = isAdmin ? '' : 'none';
   if (!isAdmin) d.closeFeedbackInboxModal();
 }
 

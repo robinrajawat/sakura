@@ -33,6 +33,7 @@ describe('stateful admin status (initAdminState + refreshAdminStatus)', () => {
   let collectionAdminResults: Record<string, boolean>;
   let collectionAdminShouldThrow: boolean;
   let sectionEl: { style: { display: string }; dataset: Record<string, string> };
+  let railBtnEl: { style: { display: string } };
   let closeFeedbackInboxModalCalls: number;
 
   const fakeMod: AdminFirestoreModLike = {
@@ -50,6 +51,7 @@ describe('stateful admin status (initAdminState + refreshAdminStatus)', () => {
     return {
       loadFirestoreMods: async () => ({ mod: fakeMod, db: {} }),
       getAdminSectionElement: () => sectionEl as unknown as HTMLElement,
+      getAdminRailButtonElement: () => railBtnEl as unknown as HTMLElement,
       closeFeedbackInboxModal: () => {
         closeFeedbackInboxModalCalls++;
       }
@@ -61,6 +63,7 @@ describe('stateful admin status (initAdminState + refreshAdminStatus)', () => {
     collectionAdminResults = {};
     collectionAdminShouldThrow = false;
     sectionEl = { style: { display: '' }, dataset: {} };
+    railBtnEl = { style: { display: '' } };
     closeFeedbackInboxModalCalls = 0;
     initAdminState(makeDeps());
   });
@@ -80,20 +83,23 @@ describe('stateful admin status (initAdminState + refreshAdminStatus)', () => {
     expect(isAdminNow()).toBe(true);
     expect(sectionEl.style.display).toBe('');
     expect(sectionEl.dataset.featureHidden).toBe('');
+    expect(railBtnEl.style.display).toBe('');
   });
 
-  it('starts non-admin and hides the section for a non-admin, non-matching user, until the Firestore check resolves true', async () => {
+  it('starts non-admin and hides the section AND rail button for a non-admin, non-matching user, until the Firestore check resolves true', async () => {
     collectionAdminResults['u2'] = true;
     refreshAdminStatus({ uid: 'u2', email: 'someone@example.com' });
     expect(isAdminNow()).toBe(false);
     expect(sectionEl.style.display).toBe('none');
     expect(sectionEl.dataset.featureHidden).toBe('1');
+    expect(railBtnEl.style.display).toBe('none');
     expect(closeFeedbackInboxModalCalls).toBe(1);
 
     await flushMicrotasks();
     expect(getDocCalls).toEqual([['admins', 'u2']]);
     expect(isAdminNow()).toBe(true);
     expect(sectionEl.style.display).toBe('');
+    expect(railBtnEl.style.display).toBe('');
   });
 
   it('never flips true when the Firestore admins doc does not exist', async () => {
@@ -136,11 +142,17 @@ describe('stateful admin status (initAdminState + refreshAdminStatus)', () => {
   it('updateFeedbackAdminUI can be called directly and reflects current isAdmin state', () => {
     updateFeedbackAdminUI();
     expect(sectionEl.style.display).toBe('none');
+    expect(railBtnEl.style.display).toBe('none');
     expect(closeFeedbackInboxModalCalls).toBe(1);
   });
 
   it('does nothing to the DOM when the admin section element is absent', () => {
     initAdminState({ ...makeDeps(), getAdminSectionElement: () => null });
+    expect(() => refreshAdminStatus({ uid: 'u1', email: ADMIN_EMAIL })).not.toThrow();
+  });
+
+  it('does nothing to the DOM when the rail button element is absent', () => {
+    initAdminState({ ...makeDeps(), getAdminRailButtonElement: () => null });
     expect(() => refreshAdminStatus({ uid: 'u1', email: ADMIN_EMAIL })).not.toThrow();
   });
 });
