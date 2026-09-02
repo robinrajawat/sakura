@@ -1,7 +1,8 @@
 /**
- * Sakura hosted AI Worker (docs/ai-hosted-vault-design.md). Two real routes:
+ * Sakura hosted AI Worker (docs/ai-hosted-vault-design.md). Real routes:
  *
  *   GET/POST/DELETE /admin/providers — the admin manages the provider fallback chain
+ *   GET/POST /admin/config           — the admin tunes the daily AI quota at runtime
  *   POST /ai/complete                — a signed-in user gets an AI completion, quota-gated
  *
  * Route handlers are exported individually and tested directly with injected dependencies
@@ -18,6 +19,7 @@
 import { verifyFirebaseIdToken, isAdmin, firebaseJwks } from './auth';
 import { importKek } from './vault';
 import { saveProvider, listProviders, deleteProvider, getProviderKey, type ProviderConfig } from './providers';
+import { getDailyQuota, setDailyQuota } from './config';
 import { consumeQuota } from './quota';
 import { buildAiRequest, parseAiResponse, parseAiErrorMessage, type AiShape } from './providerShapes';
 import type { JWTVerifyGetKey } from 'jose';
@@ -145,6 +147,34 @@ export async function handleAdminProvidersDelete(
   return jsonResponse({ ok: true });
 }
 
+export async function handleAdminConfigGet(request: Request, env: Env, getKey: JWTVerifyGetKey): Promise<Response> {
+  const uidOrResponse = await requireAdminUid(request, env, getKey);
+  if (uidOrResponse instanceof Response) return uidOrResponse;
+
+  const envDefault = env.DAILY_AI_QUOTA ? parseInt(env.DAILY_AI_QUOTA, 10) : DEFAULT_DAILY_QUOTA;
+  const dailyQuota = await getDailyQuota(env.SAKURA_VAULT_KV, envDefault);
+  return jsonResponse({ dailyQuota });
+}
+
+export async function handleAdminConfigPost(request: Request, env: Env, getKey: JWTVerifyGetKey): Promise<Response> {
+  const uidOrResponse = await requireAdminUid(request, env, getKey);
+  if (uidOrResponse instanceof Response) return uidOrResponse;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400);
+  }
+  const b = (body ?? {}) as Record<string, unknown>;
+  const dailyQuota = b.dailyQuota;
+  if (typeof dailyQuota !== 'number' || !Number.isFinite(dailyQuota) || dailyQuota <= 0 || !Number.isInteger(dailyQuota)) {
+    return jsonResponse({ error: 'dailyQuota must be a positive integer' }, 400);
+  }
+  await setDailyQuota(env.SAKURA_VAULT_KV, dailyQuota);
+  return jsonResponse({ ok: true });
+}
+
 export async function handleAiComplete(
   request: Request,
   env: Env,
@@ -167,7 +197,8 @@ export async function handleAiComplete(
   const maxTokens = typeof b.maxTokens === 'number' && b.maxTokens > 0 ? b.maxTokens : 1024;
   if (!userContent.trim()) return jsonResponse({ error: 'userContent is required' }, 400);
 
-  const limit = env.DAILY_AI_QUOTA ? parseInt(env.DAILY_AI_QUOTA, 10) : DEFAULT_DAILY_QUOTA;
+  const envDefault = env.DAILY_AI_QUOTA ? parseInt(env.DAILY_AI_QUOTA, 10) : DEFAULT_DAILY_QUOTA;
+  const limit = await getDailyQuota(env.SAKURA_VAULT_KV, envDefault);
   const quota = await consumeQuota(env.SAKURA_VAULT_KV, uid, limit);
   if (!quota.allowed) return jsonResponse({ error: 'Daily AI quota exceeded' }, 429);
 
@@ -225,6 +256,10 @@ export default {
       response = await handleAdminProvidersGet(request, env, getKey);
     } else if (url.pathname === '/admin/providers' && request.method === 'DELETE') {
       response = await handleAdminProvidersDelete(request, env, getKey, url);
+    } else if (url.pathname === '/admin/config' && request.method === 'GET') {
+      response = await handleAdminConfigGet(request, env, getKey);
+    } else if (url.pathname === '/admin/config' && request.method === 'POST') {
+      response = await handleAdminConfigPost(request, env, getKey);
     } else if (url.pathname === '/ai/complete' && request.method === 'POST') {
       response = await handleAiComplete(request, env, getKey, fetch);
     } else {
