@@ -18,12 +18,14 @@ stopped effort, not active work queues — kept for reference, not maintained fu
   a session/usage limit. Scoped to `legacy/`-only work now that the `web/` migration is
   discontinued. Keep its "Current state" section updated at the end of every work session. **Start
   here.**
-- **`ai-hosted-vault-design.md`** — proposal for a Cloudflare Worker giving `legacy/` hosted AI,
-  funded by Robin's own provider account, as the sole AI path — BYOK is being removed entirely
-  (see the doc's own "Origin, and a real scope change" section for why). Not started, not
-  scheduled beyond a pure tooling scaffold (`worker/`) — several open decisions (anonymous vs.
-  real sign-in, quota numbers, what happens to a user with an existing BYOK key) need answers
-  before real logic lands.
+- **`ai-hosted-vault-design.md`** — design record for Sakura Hosted AI, a Cloudflare Worker
+  (`worker/`) that gives `legacy/` zero-setup AI funded by Robin's own provider account,
+  *alongside* BYOK rather than replacing it (the doc's own "Origin, and a real scope change"
+  section covers the two reversals that landed on that). **Done and live**: the Worker
+  (auth, quota, encrypted provider storage, per-provider request/response adapters, admin
+  endpoints), its admin panel in `legacy/`'s Settings, and the user-facing client wiring
+  ("Sakura Hosted AI (beta)" in Settings → AI → Provider) are all built, merged to `main`, and
+  deployed. All three "Open decisions" the doc originally listed are resolved — see that section.
 
 ## Closed / historical reference (`history/`)
 
