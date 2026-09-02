@@ -170,8 +170,22 @@ out of your way to fix.
 contradicts the docs above, trust the docs.)*
 
 **2026-08-31: the `web/` migration was discontinued and this prompt was created as the new
-day-to-day entry point.** No `legacy/`-specific work has started yet under this prompt — the
-project owner's stated direction is "focus on refining the legacy app," but no specific task has
-been picked yet. Whoever picks up the next session should check with the project owner for
-priorities if none are already recorded here.
+day-to-day entry point.**
+
+**2026-09-02: Sakura Hosted AI shipped end to end.** `docs/ai-hosted-vault-design.md` is the
+design record — read it first for the full history (including two real scope reversals) if
+touching anything AI-related. In one sequence of PRs: the `worker/` Cloudflare Worker (Firebase
+ID-token verification, per-UID daily quota, encrypted provider storage, per-provider
+request/response adapters, admin-configurable runtime quota), its admin panel in `legacy/`
+Settings (its own top-level "Admin" rail category — provider chain + daily quota management), and
+finally the user-facing client wiring (`legacy/index.html` Settings → AI → Provider now offers
+"Sakura Hosted AI (beta)" alongside the original seven BYOK providers — additive, BYOK untouched).
+All merged to `main` and deployed (`.github/workflows/deploy-worker.yml` for the Worker,
+`deploy.yml` for `legacy/`). A same-session follow-up pass then swept every place that still
+described AI as BYOK-only — `README.md`, `docs/README.md`, and `legacy/index.html`'s own in-app
+Help panel/cheat sheet/Settings copy — to mention hosted AI too, since none of those update
+themselves just because the feature shipped.
+
+No specific next task is queued. Whoever picks up the next session should check with the project
+owner for priorities if none are recorded here by then.
 ```

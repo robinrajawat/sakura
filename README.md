@@ -37,7 +37,7 @@ Key capabilities:
 - Companion panels per node or per document: rich-text Notes, Code blocks, a Decision Log, a whole-document Pad (with Notepad, Q&A, Diagrams, Mind Map, Files, and Remarks tabs)
 - **Hub** — five app-level panels shared across your whole workspace, independent of any single document, all reachable from one button in the app bar: **To-Dos**, **Meeting Notes** (with action items promotable directly into a linked to-do), a daily **Journal**, a **Library** of quick-reference notes and links (with favorites and tag filtering), and **Recap** — a curated, document-grouped look back at what actually got done (Today / This Week / Last Week) across every document, To-Dos, Meeting Notes, and Journal at once, with click-to-jump navigation and an optional AI bullet-summary for standups/status updates
 - Diagrams — link a draw.io diagram (Pad → Diagrams tab) to any node; embeds as a real picture in Word, PowerPoint, and PDF exports
-- Optional AI features — rewrite, generate an outline from a topic, restructure pasted text, expand a label into a subtree, suggest tags/icons, summarise a selection, plus dedicated AI actions inside To-Dos and Q&A — using your own API key with any of six built-in providers or a custom one
+- Optional AI features — rewrite, generate an outline from a topic, restructure pasted text, expand a label into a subtree, suggest tags/icons, summarise a selection, plus dedicated AI actions inside To-Dos and Q&A — either zero-setup via **Sakura Hosted AI** (sign in, no key needed, daily quota) or bring your own key with any of seven built-in providers
 - Quick Assist: a combined command bar and search box (plain-English toggles like "hide file explorer," plus search across documents, notes, tags, to-dos, meetings, journal, and settings)
 - In-document search and a global header search across settings, help, documents, and templates
 - Folders and templates in the file explorer (including built-in packs like Meeting Notes, 1:1, Kickoff, Retrospective), with drag-and-drop filing and nesting
@@ -112,7 +112,12 @@ hub.html has its own web app manifest (`hub-manifest.json`, `display: "standalon
 
 ## AI Features
 
-AI features are entirely optional and require your own API key for one of the built-in providers (Gemini, Groq, Claude API, OpenRouter, Cerebras, GitHub Models — all free-tier friendly) or a custom OpenAI-compatible/Gemini-style/Anthropic-style endpoint. Configure this at Settings → AI → Provider.
+AI features are entirely optional. Pick a mode at Settings → AI → Provider:
+
+- **Sakura Hosted AI (beta)** — sign in (Google or email) and use it immediately, no key to find or paste. Requests go through a small Cloudflare Worker running Sakura's own credentials, capped by a daily per-account quota; the request text passes through that Worker to a third-party provider Sakura selects and isn't stored on either side. See "Data & privacy" below for the full breakdown against the BYOK path.
+- **Bring your own key** — one of seven built-in providers (Gemini, Groq, Claude API, ChatGPT, OpenRouter, Cerebras, GitHub Models — all free-tier friendly except Claude/ChatGPT). This is a fixed list; Sakura doesn't support a custom/self-hosted endpoint, since an open-ended one would defeat the point of the Content-Security-Policy allowlist that only these seven origins are on.
+
+Both modes are available side by side in the same dropdown, and every AI feature below shares whichever one is currently active.
 
 - **Rewrite** — the ✦ toolbar button rewrites the selected node (or a batch, if multiple are selected, or just a highlighted portion of text). The rewrite prompt itself is fully customizable in Settings, with a one-click reset to the default grammar-and-spelling-only wording.
 - **Auto-rewrite on commit** (off by default) — automatically runs Rewrite on a node as soon as you finish typing it (pastes/drops are excluded). Batches multiple nodes into a single request after a configurable idle pause or queue size, rather than firing one request per node, to avoid burning through rate limits. A status-bar chip shows the live queued/countdown/rewriting state and doubles as its own on/off toggle.
@@ -203,7 +208,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Chrome background | Appearance | Default | Five presets; independent of theme and accent color |
 | Expanded toolbar | Bars & Menus | Off | Shows "Extras" actions as buttons instead of a dropdown menu |
 | Format buttons | Bars & Menus | All shown | Hide individual Bold/Italic/Underline/Strike/Highlight/Text color/Heading buttons independently, without affecting the shortcuts |
-| AI Capabilities | Features | On | Master switch for all AI features; each still needs its own provider key |
+| AI Capabilities | Features | On | Master switch for all AI features; each still needs Sakura Hosted AI (sign in) or a BYOK provider key active |
 | Auto-rewrite on commit | AI | Off | See AI Features above; needs a configured API key |
 | Provider fallback | AI | Off | Auto-retries with the next configured provider on failure (except a bad key) |
 | To-Dos | Features | On | App-level task list; independent of any single document |
@@ -270,7 +275,7 @@ Sakura works in any modern browser. Two features are the exception:
 - Storage is scoped per file URL. A renamed, moved, or re-downloaded copy of this file starts with empty storage — export/import is the way to carry data across.
 - The local safety copy and auto-backup both protect against accidental data loss within normal use, but neither replaces taking an occasional Export as a true external backup.
 - Account sync (see [Account, Sync & Sharing](#account-sync--sharing)) is optional, newer-item-wins, and per-document — there is no real-time/live co-editing. Two people (or two of your own devices) editing the same document at the same moment still resolve by whichever save lands last, the same as any other sync conflict here, not a merge. Sharing itself is per-document, not per-folder, and a document shared with you doesn't stay open across a page reload — reopen it from the Shared section in the file explorer.
-- AI features send node/selection text to whichever third-party provider you configure, using an API key you supply and manage yourself — review that provider's own data-handling terms if that matters for your use case. The in-app "Usage today" counter is a local approximation, not an authoritative quota reading.
+- AI features send node/selection text to a third-party provider — with your own key, straight from your browser to the provider you configured (review that provider's own data-handling terms if that matters); with Sakura Hosted AI, through Sakura's own server first, to a provider Sakura selects, using Sakura's credentials (not stored on that server either way — see Settings → About → Privacy & data in-app for the full breakdown). The in-app "Usage today" counter is a local approximation, not an authoritative quota reading, and Sakura Hosted AI is additionally capped by a real daily per-account quota enforced server-side.
 - Below 768px, this file redirects to hub.html, which requires signing in (no local-only mode there — see Mobile Hub above for why) and currently covers To-Dos and Journal only — Meeting Notes, Library, Recap, and the outliner itself aren't reachable from a phone-sized screen at all. hub.html's sign-in screen points to a computer for all of that instead of offering a non-working link back here. This is an intentional, staged rollout, not a bug, but someone who's never signed in has no mobile Hub access until they do.
 
 ## Contributing
