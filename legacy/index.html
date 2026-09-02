@@ -5350,17 +5350,21 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <span class="settings-switch-text">Provider</span>
                 <div class="select-wrap"><select class="select" id="ai-provider-select" style="width:172px"></select><span class="select-arrow">▾</span></div>
               </div>
-              <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px">
+              <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px" id="ai-provider-help-hosted">
+                <span class="muted-help" style="margin-top:0">Sakura Hosted AI uses Sakura's own AI credentials — no key to find or paste, and no separate account with a provider. Requires signing in; each signed-in account gets a daily request quota. A real escape hatch still exists if you'd rather not sign in or want unlimited usage on your own dime: pick any of the seven providers below and bring your own key instead.</span>
+                <span class="muted-help" style="margin-top:0">Disclosure: when you use this mode, the text for that request (a node, selection, or document, depending on the feature) is sent to Sakura's server and forwarded to a third-party AI provider Sakura selects — not stored on Sakura's server either way. See Settings → About → Privacy &amp; data for the full picture.</span>
+              </div>
+              <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px" id="ai-provider-help-byok">
                 <span class="muted-help" style="margin-top:0">All seven built-in providers require their own API key — select one from the Provider dropdown above to see where to get it. GitHub Models requires a fine-grained personal access token with <code>models:read</code> scope. This is a fixed list — Sakura doesn't support adding another API endpoint, so a Content-Security-Policy can restrict outbound requests to these known providers rather than staying open to anywhere.</span>
               </div>
-              <div class="settings-list-row">
+              <div class="settings-list-row" id="ai-model-settings-row">
                 <span class="settings-switch-text">Model</span>
                 <div class="select-wrap"><select class="select" id="ai-model-select" style="width:172px"></select><span class="select-arrow">▾</span></div>
               </div>
-              <div style="padding:0 12px 4px">
+              <div style="padding:0 12px 4px" id="ai-model-custom-wrap">
                 <input class="meta-input" id="ai-model-custom-input" type="text" placeholder="Enter exact model ID" style="display:none;width:100%" />
               </div>
-              <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+              <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:6px" id="ai-byok-key-row">
                 <span class="settings-switch-text" style="width:100%">API Key</span>
                 <div style="display:flex;gap:6px;width:100%">
                   <input id="ai-api-key-input" type="text" class="meta-input key-masked" placeholder="Paste key here…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
@@ -5371,6 +5375,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <span class="muted-help" style="margin-top:0" id="ai-key-status">No key saved.</span>
                 <span class="muted-help" style="margin-top:0" id="ai-key-hint"></span>
                 <span class="muted-help" style="margin-top:0" id="ai-usage-summary">No requests to this provider yet today.</span>
+              </div>
+              <div class="settings-list-row" id="ai-hosted-status-row" style="flex-direction:column;align-items:flex-start;gap:6px;display:none">
+                <span class="settings-switch-text" style="width:100%">Sakura Hosted AI</span>
+                <div id="ai-hosted-signedout" style="display:flex;gap:8px;width:100%;align-items:center;flex-wrap:wrap">
+                  <span class="muted-help" style="margin-top:0;flex:1;min-width:180px">Sign in to start using hosted AI — no API key needed.</span>
+                  <button class="btn primary" id="ai-hosted-signin-btn" type="button" style="flex-shrink:0">Sign in</button>
+                </div>
+                <div id="ai-hosted-signedin" style="display:none;flex-direction:column;gap:6px;width:100%">
+                  <span class="muted-help" style="margin-top:0" id="ai-hosted-account-line"></span>
+                  <button class="btn" id="ai-hosted-test-btn" type="button" style="align-self:flex-start">Test</button>
+                  <span class="muted-help" style="margin-top:0" id="ai-usage-summary-hosted"></span>
+                </div>
               </div>
               <div class="settings-list-row">
                 <div class="settings-row-text"><span class="settings-switch-text">Fallback order</span><span class="settings-row-desc">When any error occurs on the active provider (quota, rate limit, or other failure), Sakura retries with the next checked provider in order. The active provider is always tried first. Providers without a saved key are skipped. A toast confirms which provider was used.</span></div>
@@ -5548,7 +5564,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="settings-section" data-cat="about" id="settings-section-about-privacy">
             <div class="settings-section-title">Privacy &amp; data</div>
             <div class="muted-help" style="margin-top:0">Everything is stored locally in your browser by default — nothing leaves this tab unless you turn on one of the following.</div>
-            <div class="muted-help">AI features send the relevant text (a node, selection, or document, depending on the feature) to whichever AI provider you've configured; Cloud Backup (Gist/Drive) uploads a copy to that service; and signing in (Google or email) syncs your documents, templates, and settings to Sakura's own cloud storage so they follow you across devices. Each of these only happens while connected, and only when you actually use that feature.</div>
+            <div class="muted-help">AI features send the relevant text (a node, selection, or document, depending on the feature) to an AI provider; Cloud Backup (Gist/Drive) uploads a copy to that service; and signing in (Google or email) syncs your documents, templates, and settings to Sakura's own cloud storage so they follow you across devices. Each of these only happens while connected, and only when you actually use that feature.</div>
+            <div class="muted-help">Which AI provider depends on which mode you've picked in Settings → AI → Provider. With your own API key (the seven built-in providers), that text goes directly from your browser to the provider you configured, using your own key and account — Sakura's own server is never involved. With Sakura Hosted AI, that text instead goes to Sakura's own server first, which forwards it to a third-party provider Sakura selects (currently Groq, Cerebras, or Gemini) using Sakura's own credentials, and returns the response — Sakura's server doesn't store that text either way, only a per-day request count against your account's quota.</div>
             <div class="muted-help">An account holds your documents, templates, and app settings — including the full Hub (To-Dos, Meeting Notes, Journal, and Library) — and nothing else. No analytics or tracking anywhere in Sakura, and other users can never access your data.</div>
             <div class="muted-help">Signing in with Google only shares your name, email, and profile picture — the same info shown in the account menu, not stored anywhere beyond that. Email sign-in needs only the email and password themselves, handled directly by Firebase Authentication — no separate profile data involved. Google Drive backup, if you turn it on separately, only ever gets access to the files it creates itself, never the rest of your Drive.</div>
           </div>
@@ -8874,7 +8891,21 @@ const AI_BUILTIN_PROVIDERS=[
 // previously-selected custom provider ID saved from before this change just lands back on
 // Gemini automatically — no explicit migration needed.
 function getAllAiProviders(){return AI_BUILTIN_PROVIDERS}
-function getAiProviderById(id){return getAllAiProviders().find(p=>p.id===id)||AI_BUILTIN_PROVIDERS[0]}
+// Sakura Hosted AI (docs/ai-hosted-vault-design.md) — a distinct, separately-reasoned-about
+// eighth option, not a normal entry in AI_BUILTIN_PROVIDERS above: that list's whole point is
+// being a fixed set of endpoints the user supplies their own key to (the CSP invariant in the
+// comment above), while hosted has no user-supplied key or endpoint at all — it always talks to
+// Sakura's own sakura-vault Worker, authenticated by Firebase sign-in instead. Kept as a real
+// function rather than a plain object literal because its baseUrl depends on AI_VAULT_WORKER_URL,
+// declared much later in this file (~line 13648) — evaluating that at module-load time here would
+// hit the const's temporal-dead-zone; deferring to call time (well after the whole script has
+// run) avoids it.
+const AI_HOSTED_PROVIDER_ID='hosted';
+function getHostedAiProvider(){return {id:AI_HOSTED_PROVIDER_ID,label:'Sakura Hosted AI (beta)',shape:'hosted',baseUrl:(typeof AI_VAULT_WORKER_URL==='string'?AI_VAULT_WORKER_URL:'')+'/ai/complete',builtin:true,hosted:true};}
+// The full set offered in the Provider dropdown: hosted first (it's the lowest-friction option —
+// no key to go find), then the seven BYOK providers, unchanged.
+function getAiSelectableProviders(){return [getHostedAiProvider(),...AI_BUILTIN_PROVIDERS]}
+function getAiProviderById(id){if(id===AI_HOSTED_PROVIDER_ID)return getHostedAiProvider();return getAllAiProviders().find(p=>p.id===id)||AI_BUILTIN_PROVIDERS[0]}
 function migrateStaleModelIds(){
   // Reset any saved model ID that's no longer in the curated list for that provider
   try{
@@ -8951,16 +8982,21 @@ function formatAgo(ts){
   return Math.round(h/24)+'d ago';
 }
 function updateAiUsageDisplay(){
-  const summary=el('ai-usage-summary');
-  if(summary){
+  // Shared by both rows: #ai-usage-summary (BYOK) and #ai-usage-summary-hosted (hosted) — only
+  // one is ever visible at a time (applyAiProviderModeUI), but both get the same text so
+  // whichever one applyAiProviderModeUI shows is already correct without a separate call.
+  const summary=el('ai-usage-summary'); const summaryHosted=el('ai-usage-summary-hosted');
+  if(summary||summaryHosted){
     const u=getAiUsageForProvider(aiProvider);
-    if(!u.count){summary.textContent='No requests to this provider yet today.';}
+    let txt;
+    if(!u.count){txt='No requests to this provider yet today.';}
     else{
-      let txt=u.count+' request'+(u.count===1?'':'s')+' today';
+      txt=u.count+' request'+(u.count===1?'':'s')+' today';
       if(u.fails)txt+=' ('+u.fails+' failed)';
       if(u.lastTs)txt+=' · last '+formatAgo(u.lastTs)+(u.lastOk?' ✓':' ✗');
-      summary.textContent=txt;
     }
+    if(summary)summary.textContent=txt;
+    if(summaryHosted)summaryHosted.textContent=txt;
   }
   if(aiFallbackEnabled)renderFallbackOrderList();
 }
@@ -13776,6 +13812,8 @@ function updateAccountUI(user){
   if(user){ ensureUserProfile(user); startNotificationsListener(); }
   else { stopNotificationsListener(); resetProfileUiState(); sharedWithMeCache=null; sharedSectionOpen=false; if(typeof stopPresenceTracking==='function')stopPresenceTracking(); if(typeof stopSharedDocRealtimeSync==='function')stopSharedDocRealtimeSync(); }
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
+  if(typeof updateAiHostedStatusUI==='function')updateAiHostedStatusUI();
+  if(typeof resumeAutoRewriteIfPaused==='function')resumeAutoRewriteIfPaused();
   const signedOutEl=el('account-signed-out'), signedInEl=el('account-signed-in');
   const toggleLabel=el('account-toggle-label'), toggleAvatar=el('account-toggle-avatar'), toggleAvatarWrap=el('account-toggle-avatar-wrap');
   if(user){
@@ -28438,15 +28476,23 @@ initAiProvidersState({
   getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } }
 });
 /* GENERATED:aiProviders:END */
-function loadAiPrefs(){const validIds=getAllAiProviders().map(p=>p.id); const resolved=loadAiPrefsCore({provider:aiProvider,model:aiModel,modelByProvider:aiModelByProvider,prompt:aiRewritePrompt},validIds); aiProvider=resolved.provider; aiModel=resolved.model; aiModelByProvider=resolved.modelByProvider; aiRewritePrompt=resolved.prompt; syncAiProviderOptions(); const msel=el('ai-model-select'); if(msel)msel.value=aiModel; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt||ta.value; updateAiKeyStatus(); syncAiModelOptions()}
+function loadAiPrefs(){const validIds=getAiSelectableProviders().map(p=>p.id); const resolved=loadAiPrefsCore({provider:aiProvider,model:aiModel,modelByProvider:aiModelByProvider,prompt:aiRewritePrompt},validIds); aiProvider=resolved.provider; aiModel=resolved.model; aiModelByProvider=resolved.modelByProvider; aiRewritePrompt=resolved.prompt; syncAiProviderOptions(); const msel=el('ai-model-select'); if(msel)msel.value=aiModel; const ta=el('ai-prompt-input'); if(ta)ta.value=aiRewritePrompt||ta.value; updateAiKeyStatus(); syncAiModelOptions(); applyAiProviderModeUI()}
 function saveAiPrefs(){saveAiPrefsCore(aiProvider,aiModel,aiModelByProvider,aiRewritePrompt)}
 function getAiKey(){return getAiKeyForProvider(aiProvider)||''}
+// Whether an AI call could actually go through right now, for either mode — hosted has no BYOK
+// key at all, so callers that used to just check getAiKey() (auto-rewrite's pause/resume gate
+// below) need this instead to also unpause once the user signs in.
+function hasUsableAiKey(){return aiProvider===AI_HOSTED_PROVIDER_ID?!!currentUser:!!getAiKey();}
 // Every AI call site needs a key and used to throw the same generic "No AI key set" error
 // whether or not a key actually existed — including when Secure Storage was simply locked,
 // which reads a saved key as empty until it's unlocked (see getAiKeyForProvider). That made
 // "I definitely saved a key" support requests indistinguishable from "never set one up".
 // Centralize the check so the error matches what's actually wrong.
 function requireAiKey(){
+  if(aiProvider===AI_HOSTED_PROVIDER_ID){
+    if(!currentUser)throw new Error('Sign in to use Sakura Hosted AI — open Settings › AI Rewrite, or switch to your own API key');
+    return AI_HOSTED_PROVIDER_ID; // placeholder — the hosted call path below never uses a BYOK key
+  }
   const key=getAiKey();
   if(key)return key;
   if(vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider))throw new Error('Secure Storage is locked — unlock it in Settings › Secure Storage to use AI Rewrite');
@@ -28530,6 +28576,19 @@ async function callAiByShape(shape,baseUrl,key,model,systemPrompt,userContent,ma
     if(!res.ok){const errBody=await res.json().catch(()=>({}));sakuraLog('ai',shape+' error body',errBody);const msg=errBody?.message||errBody?.error?.message||'Cerebras error '+res.status;if(res.status===401)throw new Error(msg);if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
     const data=await res.json();
     return (data?.choices?.[0]?.message?.content||'').trim();
+  } else if(shape==='hosted'){
+    // Sakura Hosted AI (docs/ai-hosted-vault-design.md): no user-supplied key or baseUrl here —
+    // `key`/`model` are unused (the sakura-vault Worker picks its own admin-configured provider
+    // chain), auth is a Firebase ID token instead of an API key. Contract: POST {systemPrompt?,
+    // userContent, maxTokens?} -> {text, provider} on success, {error, details?} otherwise.
+    if(!currentUser)throw new Error('Sign in to use Sakura Hosted AI');
+    if(!baseUrl||baseUrl==='/ai/complete')throw new Error("Sakura Hosted AI isn't configured yet.");
+    const token=await currentUser.getIdToken();
+    const res=await fetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({systemPrompt:systemPrompt||'',userContent,maxTokens})});
+    sakuraLog('ai',shape+' response status',{status:res.status});
+    if(!res.ok){const err=await res.json().catch(()=>({}));sakuraLog('ai',shape+' error body',err);const msg=err?.error||'Sakura Hosted AI error '+res.status;if(res.status===401)throw new Error('Sign in again to use Sakura Hosted AI — your session expired.');if(isRateLimitStatus(res.status,msg))throw new RateLimitError(msg);throw new FallbackableError(msg,res.status);}
+    const data=await res.json();
+    return (data?.text||'').trim();
   } else {
     const res=await fetch(baseUrl,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'user',content:(systemPrompt?systemPrompt+'\n\n':'')+userContent}]})});
     sakuraLog('ai',shape+' response status',{status:res.status});
@@ -28975,13 +29034,13 @@ async function flushAutoRewriteQueue(){
   // below) re-flushes them the moment a key becomes usable again — e.g. right after
   // unlocking — instead of losing edits someone was expecting to get rewritten. Toast once
   // on the transition into paused, not on every idle cycle while it stays paused.
-  if(!getAiKey()){
+  if(!hasUsableAiKey()){
     const wasAlreadyPaused=_autoRewritePausedNoKey;
     _autoRewritePausedNoKey=true;
     updateAutoRewriteStatusChip();
     if(!wasAlreadyPaused){
-      const locked=vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider);
-      const msg=locked?'Auto-rewrite paused — unlock Secure Storage to resume':'Auto-rewrite paused — no AI key set';
+      const locked=aiProvider!==AI_HOSTED_PROVIDER_ID&&vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider);
+      const msg=aiProvider===AI_HOSTED_PROVIDER_ID?'Auto-rewrite paused — sign in to use Sakura Hosted AI':(locked?'Auto-rewrite paused — unlock Secure Storage to resume':'Auto-rewrite paused — no AI key set');
       sakuraLog('ai','auto-rewrite paused',{reason:locked?'vault-locked':'no-key',queueSize:autoRewriteQueue.size});
       showToast(msg);
       // The status-bar chip (updateAutoRewriteStatusChip) already shows this ongoing, but only
@@ -29040,7 +29099,7 @@ async function flushAutoRewriteQueue(){
 // a flush. The nodes already sat through their idle wait once; no need to make them wait
 // again just because the key became available a few seconds late.
 function resumeAutoRewriteIfPaused(){
-  if(_autoRewritePausedNoKey&&autoRewriteEnabled&&autoRewriteQueue.size&&getAiKey()){
+  if(_autoRewritePausedNoKey&&autoRewriteEnabled&&autoRewriteQueue.size&&hasUsableAiKey()){
     sakuraLog('ai','auto-rewrite resuming after pause',{queueSize:autoRewriteQueue.size});
     flushAutoRewriteQueue();
   }
@@ -29807,11 +29866,53 @@ el('qb-ai-tags')?.addEventListener('click',()=>{if(selectedId!==null)suggestTags
 el('qb-ai-summarise')?.addEventListener('click',()=>summariseSelectionWithAi());
 function syncAiProviderOptions(){
   const sel=el('ai-provider-select'); if(!sel)return;
-  const all=getAllAiProviders();
+  const all=getAiSelectableProviders();
   sel.innerHTML='';
   all.forEach(p=>{const o=document.createElement('option'); o.value=p.id; o.textContent=p.label; sel.appendChild(o)});
-  if(!all.some(p=>p.id===aiProvider))aiProvider=all[0].id;
+  // Falls back to the first BYOK provider (Gemini), not hosted — an unrecognized saved id is a
+  // corrupted-state edge case, and landing silently on hosted (which needs sign-in and bills
+  // Robin's own quota) isn't the right default recovery for that; Gemini already was.
+  if(!all.some(p=>p.id===aiProvider))aiProvider=AI_BUILTIN_PROVIDERS[0].id;
   sel.value=aiProvider;
+}
+// Toggles the Provider panel between hosted mode (no key/model fields — the Worker picks its own
+// provider chain, sign-in status shown instead) and BYOK mode (key + model fields, as before).
+// Called on load, on provider switch, and on sign-in/sign-out so the sign-in status stays live.
+function applyAiProviderModeUI(){
+  const hosted=aiProvider===AI_HOSTED_PROVIDER_ID;
+  const modelRow=el('ai-model-settings-row'); if(modelRow)modelRow.style.display=hosted?'none':'';
+  const modelCustomWrap=el('ai-model-custom-wrap'); if(modelCustomWrap)modelCustomWrap.style.display=hosted?'none':'';
+  const byokRow=el('ai-byok-key-row'); if(byokRow)byokRow.style.display=hosted?'none':'';
+  const hostedRow=el('ai-hosted-status-row'); if(hostedRow)hostedRow.style.display=hosted?'':'none';
+  const helpByok=el('ai-provider-help-byok'); if(helpByok)helpByok.style.display=hosted?'none':'';
+  const helpHosted=el('ai-provider-help-hosted'); if(helpHosted)helpHosted.style.display=hosted?'':'none';
+  if(hosted)updateAiHostedStatusUI();
+}
+function updateAiHostedStatusUI(){
+  const signedOut=el('ai-hosted-signedout'), signedIn=el('ai-hosted-signedin'), line=el('ai-hosted-account-line');
+  if(!signedOut||!signedIn)return;
+  if(currentUser){
+    signedOut.style.display='none'; signedIn.style.display='flex';
+    if(line)line.textContent='Signed in as '+(currentUser.email||currentUser.displayName||'your account')+'. Usage counts against your daily quota.';
+  } else {
+    signedOut.style.display='flex'; signedIn.style.display='none';
+  }
+}
+async function testHostedAi(){
+  const btn=el('ai-hosted-test-btn'); if(!btn)return;
+  if(!currentUser){showToast('Sign in first'); return;}
+  const origLabel=btn.textContent; btn.textContent='Testing…'; btn.disabled=true;
+  try{
+    // Same deliberate bypass of the fallback wrapper and usage counter as testAiKey() below —
+    // this is a connectivity/auth check, not real feature usage.
+    await callAiByShape('hosted',getHostedAiProvider().baseUrl,'','','','Reply with the single word OK.',8);
+    showToast('Sakura Hosted AI: works ✓','success');
+  }catch(e){
+    const msg=(e&&e.message)?String(e.message):'Unknown error';
+    showToast('Hosted AI test failed: '+msg.slice(0,120));
+  }finally{
+    btn.textContent=origLabel; btn.disabled=false;
+  }
 }
 
 function renderFallbackOrderList(){
@@ -29914,7 +30015,9 @@ function setAiMaxTokens(n,persist=true){
 }
 el('ai-max-tokens-select')?.addEventListener('change',e=>setAiMaxTokens(e.target.value));
 el('ai-fallback-toggle')?.addEventListener('click',()=>{aiFallbackEnabled=!aiFallbackEnabled;saveAiFallbackPrefs();applyFallbackToggle();});
-el('ai-provider-select').addEventListener('change',e=>{aiModelByProvider[aiProvider]=aiModel; aiProvider=e.target.value; aiModel=aiModelByProvider[aiProvider]||defaultModelForProvider(aiProvider); saveAiPrefs(); updateAiKeyStatus(); syncAiModelOptions(); updateAiUsageDisplay();});
+el('ai-provider-select').addEventListener('change',e=>{aiModelByProvider[aiProvider]=aiModel; aiProvider=e.target.value; aiModel=aiModelByProvider[aiProvider]||defaultModelForProvider(aiProvider); saveAiPrefs(); updateAiKeyStatus(); syncAiModelOptions(); updateAiUsageDisplay(); applyAiProviderModeUI();});
+el('ai-hosted-signin-btn')?.addEventListener('click',()=>{document.querySelector('.settings-rail-btn[data-cat="account"]')?.click();});
+el('ai-hosted-test-btn')?.addEventListener('click',testHostedAi);
 el('ai-model-select').addEventListener('change',e=>{const customInput=el('ai-model-custom-input'); if(e.target.value==='__custom__'){ if(customInput){customInput.style.display='block'; customInput.value=customInput.value||''; customInput.focus()} aiModel=customInput?.value.trim()||aiModel; } else { if(customInput)customInput.style.display='none'; aiModel=e.target.value; } saveAiPrefs()});
 el('ai-model-custom-input')?.addEventListener('input',e=>{aiModel=e.target.value.trim(); saveAiPrefs()});
 el('ai-api-key-save-btn').addEventListener('click',()=>{const inp=el('ai-api-key-input'); const v=(inp?.value||'').trim(); if(!v){showToast('Key is empty'); return} saveAiKey(v); inp.value=''; updateAiKeyStatus(); if(aiFallbackEnabled)renderFallbackOrderList(); showToast('API key saved')});
