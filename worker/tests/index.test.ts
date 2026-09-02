@@ -5,6 +5,8 @@ import {
   handleAdminProvidersPost,
   handleAdminProvidersGet,
   handleAdminProvidersDelete,
+  handleAdminConfigGet,
+  handleAdminConfigPost,
   handleAiComplete,
   corsHeadersFor,
   type Env
@@ -192,6 +194,47 @@ describe('handleAdminProvidersDelete', () => {
   });
 });
 
+describe('handleAdminConfigGet / handleAdminConfigPost', () => {
+  it('GET rejects a non-admin', async () => {
+    const res = await handleAdminConfigGet(authedRequest('https://x/admin/config', userToken, { method: 'GET' }), makeEnv(fakeKv()), getKey);
+    expect(res.status).toBe(403);
+  });
+
+  it('GET returns the env-var default when nothing is set in KV', async () => {
+    const res = await handleAdminConfigGet(authedRequest('https://x/admin/config', adminToken, { method: 'GET' }), makeEnv(fakeKv(), { DAILY_AI_QUOTA: '20' }), getKey);
+    expect(await res.json()).toEqual({ dailyQuota: 20 });
+  });
+
+  it('POST rejects a non-admin', async () => {
+    const req = authedRequest('https://x/admin/config', userToken, { method: 'POST', body: JSON.stringify({ dailyQuota: 50 }) });
+    const res = await handleAdminConfigPost(req, makeEnv(fakeKv()), getKey);
+    expect(res.status).toBe(403);
+  });
+
+  it('POST rejects a non-positive-integer dailyQuota', async () => {
+    const env = makeEnv(fakeKv());
+    for (const bad of [0, -5, 3.5, 'twenty', null]) {
+      const req = authedRequest('https://x/admin/config', adminToken, { method: 'POST', body: JSON.stringify({ dailyQuota: bad }) });
+      const res = await handleAdminConfigPost(req, env, getKey);
+      expect(res.status).toBe(400);
+    }
+  });
+
+  it('POST sets the quota, and GET reflects it afterward — the admin can tune it without a redeploy', async () => {
+    const kv = fakeKv();
+    const env = makeEnv(kv, { DAILY_AI_QUOTA: '20' });
+    const postRes = await handleAdminConfigPost(
+      authedRequest('https://x/admin/config', adminToken, { method: 'POST', body: JSON.stringify({ dailyQuota: 75 }) }),
+      env,
+      getKey
+    );
+    expect(postRes.status).toBe(200);
+
+    const getRes = await handleAdminConfigGet(authedRequest('https://x/admin/config', adminToken, { method: 'GET' }), env, getKey);
+    expect(await getRes.json()).toEqual({ dailyQuota: 75 });
+  });
+});
+
 describe('handleAiComplete', () => {
   it('rejects an unauthenticated request', async () => {
     const req = new Request('https://x/ai/complete', { method: 'POST', body: JSON.stringify({ userContent: 'hi' }) });
@@ -273,6 +316,22 @@ describe('handleAiComplete', () => {
     const makeReq = () => authedRequest('https://x/ai/complete', userToken, { method: 'POST', body: JSON.stringify({ userContent: 'hi' }) });
     const first = await handleAiComplete(makeReq(), env, getKey, fakeFetch);
     expect(first.status).toBe(200);
+    const second = await handleAiComplete(makeReq(), env, getKey, fakeFetch);
+    expect(second.status).toBe(429);
+  });
+
+  it('an admin-set KV quota overrides the env-var default', async () => {
+    const kv = fakeKv();
+    const env = makeEnv(kv, { DAILY_AI_QUOTA: '20' });
+    await handleAdminProvidersPost(authedRequest('https://x/admin/providers', adminToken, { method: 'POST', body: validProviderBody() }), env, getKey);
+    await handleAdminConfigPost(authedRequest('https://x/admin/config', adminToken, { method: 'POST', body: JSON.stringify({ dailyQuota: 1 }) }), env, getKey);
+    const fakeFetch = (async () => new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 })) as typeof fetch;
+
+    const makeReq = () => authedRequest('https://x/ai/complete', userToken, { method: 'POST', body: JSON.stringify({ userContent: 'hi' }) });
+    const first = await handleAiComplete(makeReq(), env, getKey, fakeFetch);
+    expect(first.status).toBe(200);
+    // The env var says 20, but the admin just tuned it down to 1 via /admin/config — the
+    // second request should already be over quota, not the twentieth.
     const second = await handleAiComplete(makeReq(), env, getKey, fakeFetch);
     expect(second.status).toBe(429);
   });
