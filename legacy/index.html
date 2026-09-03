@@ -29905,12 +29905,20 @@ async function testHostedAi(){
   const origLabel=btn.textContent; btn.textContent='Testing…'; btn.disabled=true;
   try{
     // Same deliberate bypass of the fallback wrapper and usage counter as testAiKey() below —
-    // this is a connectivity/auth check, not real feature usage.
-    await callAiByShape('hosted',getHostedAiProvider().baseUrl,'','','','Reply with the single word OK.',8);
+    // this is a connectivity/auth check, not real feature usage. maxTokens is 64, not the
+    // bare-minimum 8 a one-word reply would need: hosted tries multiple admin-configured
+    // providers server-side, and a reasoning-capable model (e.g. Groq's gpt-oss, or a Gemini
+    // "thinking" model) can spend an 8-token budget entirely on internal reasoning before ever
+    // emitting visible text, surfacing as a false-negative "empty response" rather than a real
+    // failure.
+    await callAiByShape('hosted',getHostedAiProvider().baseUrl,'','','','Reply with the single word OK.',64);
     showToast('Sakura Hosted AI: works ✓','success');
   }catch(e){
-    const msg=(e&&e.message)?String(e.message):'Unknown error';
-    showToast('Hosted AI test failed: '+msg.slice(0,120));
+    // Full untruncated message via the same modal every real AI-call failure elsewhere in the
+    // app already uses (showAiErrorModal) — hosted's message can carry per-provider detail for
+    // all three chained providers at once, easily past what a toast can show without cutting it
+    // off mid-sentence.
+    showAiErrorModal('Sakura Hosted AI',e);
   }finally{
     btn.textContent=origLabel; btn.disabled=false;
   }
@@ -30039,11 +30047,15 @@ async function testAiKey(){
     // Deliberately bypasses the fallback wrapper and usage counter: this is a
     // connectivity/credentials check against the one provider selected, not
     // real feature usage, so it shouldn't count against the daily total shown above.
-    await callAiByShape(provider.shape,provider.baseUrl,key,model,'','Reply with the single word OK.',8);
+    // maxTokens 64, not a bare-minimum 8: a reasoning-capable model (e.g. Groq's gpt-oss) can
+    // spend a tiny budget entirely on internal reasoning before emitting visible text, showing
+    // up as a false-negative "empty response" rather than a real connectivity/key failure.
+    await callAiByShape(provider.shape,provider.baseUrl,key,model,'','Reply with the single word OK.',64);
     showToast(provider.label+': key works ✓','success');
   }catch(e){
-    const msg=(e&&e.message)?String(e.message):'Unknown error';
-    showToast(provider.label+' test failed: '+msg.slice(0,120));
+    // Full untruncated message via the same modal every real AI-call failure elsewhere in the
+    // app uses (showAiErrorModal), not a toast that can cut a longer provider error off mid-word.
+    showAiErrorModal(provider.label,e);
   }finally{
     btn.textContent=origLabel; btn.disabled=false;
   }
