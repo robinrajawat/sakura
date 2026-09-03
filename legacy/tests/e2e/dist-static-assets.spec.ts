@@ -44,6 +44,8 @@ test.describe('dist/ static passthrough assets (public/)', () => {
     'icon-192.png',
     'icon-192-dark.png',
     'icon-glyph-192.png',
+    'apple-touch-icon.png',
+    'apple-touch-icon-dark.png',
     'flower-glyph.svg',
     'social-card.png',
     'CNAME'
