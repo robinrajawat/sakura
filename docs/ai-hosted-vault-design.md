@@ -246,9 +246,22 @@ spend on his credentials.
   free tier the way Groq/Gemini's are, and this project has no way to guarantee any given admin's
   Cerebras account still has trial credit left. `AI_BUILTIN_PROVIDERS`' own Cerebras label was
   corrected the same way (dropped "(free tier)") for the same reason — BYOK users hit the exact
-  same account-dependent wall. Claude/ChatGPT/
-  OpenRouter/GitHub Models are deliberately not funded this way — paid-only, a shared low-limit
-  free tier, or tied to a personal account identity, respectively.
+  same account-dependent wall. Claude/ChatGPT/GitHub Models are deliberately not funded this way —
+  paid-only or tied to a personal account identity, respectively.
+- **OpenRouter specifically reconsidered as Cerebras's replacement, and rejected again**: it's
+  BYOK-only, deliberately not part of the funded chain, for a sharper reason than "low limit" —
+  its free tier is the wrong *shape* for a shared funded key, not just a smaller number. `:free`
+  models are capped per-account (roughly 50 requests/day unfunded, ~1000/day once $10+ of credit
+  has ever been purchased, per OpenRouter's own docs at the time this was last checked — verify
+  current numbers before relying on them) — one pool shared across *every* Sakura user who picks
+  hosted AI that day, unlike Groq/Gemini's per-key allowance that scales with Sakura's own account
+  regardless of how many Sakura users show up. A modest number of active hosted-AI users would
+  exhaust that shared cap and make OpenRouter the bottleneck for everyone, not a safety net. Also
+  unverified from this project (no live check done): whether OpenRouter's free-tier terms permit
+  the relay shape hosted AI needs at all — one key serving requests on behalf of many distinct
+  third-party end users, which some providers' free/hobby tiers restrict even without money
+  changing hands. Worth reading their ToS directly before reconsidering this, not assuming it's
+  fine because Groq/Gemini were.
 - ~~UID-only quota is gameable if sign-in is anonymous~~ — resolved, doesn't apply: "Open
   decisions" below settled on real Google/email sign-in only for hosted AI, no anonymous auth
   built. A real account is meaningfully harder to script repeated fresh UIDs from than a
