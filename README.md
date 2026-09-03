@@ -115,7 +115,7 @@ hub.html has its own web app manifest (`hub-manifest.json`, `display: "standalon
 AI features are entirely optional. Pick a mode at Settings → AI → Provider:
 
 - **Sakura Hosted AI (beta)** — sign in (Google or email) and use it immediately, no key to find or paste. Requests go through a small Cloudflare Worker running Sakura's own credentials, capped by a daily per-account quota; the request text passes through that Worker to a third-party provider Sakura selects and isn't stored on either side. See "Data & privacy" below for the full breakdown against the BYOK path.
-- **Bring your own key** — one of seven built-in providers (Gemini, Groq, Claude API, ChatGPT, OpenRouter, Cerebras, GitHub Models — all free-tier friendly except Claude/ChatGPT). This is a fixed list; Sakura doesn't support a custom/self-hosted endpoint, since an open-ended one would defeat the point of the Content-Security-Policy allowlist that only these seven origins are on.
+- **Bring your own key** — one of seven built-in providers (Gemini, Groq, Claude API, ChatGPT, OpenRouter, Cerebras, GitHub Models). Gemini, Groq, OpenRouter, and GitHub Models are free-tier friendly; Claude and ChatGPT require a paid account; Cerebras varies by account and model (its own "free trial" tier is time/credit-limited, not an ongoing free tier the way the others are — expect a payment-required error on some accounts). This is a fixed list; Sakura doesn't support a custom/self-hosted endpoint, since an open-ended one would defeat the point of the Content-Security-Policy allowlist that only these seven origins are on.
 
 Both modes are available side by side in the same dropdown, and every AI feature below shares whichever one is currently active.
 
