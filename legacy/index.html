@@ -5416,7 +5416,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="settings-section-title">Auto-rewrite on commit</div>
             <div class="settings-list">
               <div class="settings-list-row">
-                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite on commit</span><span class="settings-row-desc">Runs Rewrite automatically on nodes as you finish editing them — no manual click. Queued and sent as a single batched request after a short pause or once enough nodes have queued up (both configurable below), not one request per node, to avoid burning through provider rate limits during continuous note-taking. Uses the same Rewrite prompt configured above — there's no separate prompt for auto-rewrite. Requires an API key configured above; if one isn't available right now (none set, or Secure Storage is locked), queued nodes wait rather than being discarded and send automatically as soon as a key becomes usable again. Turns itself off after repeated AI-call failures rather than retrying silently forever — a separate case from simply not having a key yet. Shows a live status in the bottom status bar whenever it's on.</span></div>
+                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite on commit</span><span class="settings-row-desc">Runs Rewrite automatically on nodes as you finish editing them — no manual click. Queued and sent as a single batched request after a short pause or once enough nodes have queued up (both configurable below), not one request per node, to avoid burning through provider rate limits during continuous note-taking. Uses the same Rewrite prompt configured above — there's no separate prompt for auto-rewrite. Requires a usable active provider — an API key configured above for a BYOK provider, or just being signed in for Sakura Hosted AI; if that's not the case right now (no key set, Secure Storage is locked, or hosted is selected and you're signed out), queued nodes wait rather than being discarded and send automatically as soon as the provider becomes usable again. Turns itself off after repeated AI-call failures rather than retrying silently forever — a separate case from simply not having a key yet. Shows a live status in the bottom status bar whenever it's on.</span></div>
                 <button class="toggle-switch" type="button" role="switch" id="auto-rewrite-toggle" aria-checked="false" aria-label="Enable auto-rewrite on commit"></button>
               </div>
               <div id="auto-rewrite-sub-controls" class="is-disabled" style="padding:0 12px 10px;display:flex;flex-direction:column;gap:8px">
@@ -8858,7 +8858,11 @@ function updateVaultChip(){
   if(!vaultActive()||vaultUnlocked()||statusbarHiddenItems.includes('vault')){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
   chip.style.display=''; divider.style.display=''; chip.style.color='';
   chip.innerHTML=SB_VAULT_LOCKED_ICON+'<span>Locked</span>';
-  chip.dataset.tip='Secure Storage is locked — click to unlock and use AI Rewrite / Gist sync';
+  // "AI Rewrite" only belongs in this tip for a BYOK provider — requireAiKey()'s hosted branch
+  // never touches the vault at all (checks currentUser instead), so AI Rewrite keeps working
+  // while locked whenever Sakura Hosted AI is the active provider. Gist sync is vault-gated
+  // either way, so it's unconditional below.
+  chip.dataset.tip=aiProvider===AI_HOSTED_PROVIDER_ID?'Secure Storage is locked — click to unlock and use Gist sync':'Secure Storage is locked — click to unlock and use AI Rewrite / Gist sync';
   refreshStatusbarDividers();
 }
 el('sb-vault-chip')?.addEventListener('click',()=>{ if(vaultUnlocked())lockVault(); else unlockVault(); });
@@ -29888,6 +29892,11 @@ function applyAiProviderModeUI(){
   const helpByok=el('ai-provider-help-byok'); if(helpByok)helpByok.style.display=hosted?'none':'';
   const helpHosted=el('ai-provider-help-hosted'); if(helpHosted)helpHosted.style.display=hosted?'':'none';
   if(hosted)updateAiHostedStatusUI();
+  // The status-bar vault-lock chip's tooltip mentions "AI Rewrite" only when that's actually
+  // true (BYOK) — refresh it here too, not just on lock/unlock, so switching to/from hosted
+  // while already locked updates the tip immediately instead of waiting for the next
+  // lock-state change to happen to re-render it.
+  if(typeof updateVaultChip==='function')updateVaultChip();
 }
 function updateAiHostedStatusUI(){
   const signedOut=el('ai-hosted-signedout'), signedIn=el('ai-hosted-signedin'), line=el('ai-hosted-account-line');
