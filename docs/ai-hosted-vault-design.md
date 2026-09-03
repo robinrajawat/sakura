@@ -10,9 +10,9 @@ themselves (`index.ts`) — and is live at
 `legacy/index.html` has its own top-level Settings → Admin panel (its own rail category, not
 nested under Account — see "Admin UI" below) for managing the provider chain and the daily quota
 against those endpoints, and its `AI_VAULT_WORKER_URL` constant now points at the real deployed
-URL. **The fallback chain is funded**: Groq (order 0), Cerebras (order 1), and Gemini (order 2)
-are all configured through that admin panel, each with a real API key encrypted at rest — the
-same three named in "Cost and abuse control" below. **The user-facing client wiring is also
+URL. **The fallback chain is funded**: Groq (order 0) and Gemini (order 1) are configured through
+that admin panel, each with a real API key encrypted at rest. Cerebras was tried as a third
+funded provider and removed — see "Cost and abuse control" below for why. **The user-facing client wiring is also
 done**: "Sakura Hosted AI (beta)" is a real option in Settings → AI → Provider, sitting next to
 the seven BYOK providers rather than replacing them — see "Client UI" below for how mode-switching
 works. Every AI capability in the app (Rewrite, Generate Outline, Restructure Text, Q&A, to-do
@@ -236,10 +236,17 @@ spend on his credentials.
   undercounting by one). Accepted deliberately: a Durable Object would close that race but is real
   added complexity for a single-admin abuse-mitigation quota, not a financial ledger.
 - **Provider choice for the fallback chain**: fund it from providers with a genuinely free tier
-  at the volumes expected. Done: Groq (order 0), Cerebras (order 1), and Gemini (order 2) — all
-  three have their own dedicated free tier (not a shared aggregator quota the way OpenRouter's
-  `:free`-tagged models do), same labels as the current `AI_BUILTIN_PROVIDERS` list (still there —
-  BYOK stays; `legacy/index.html` ~line 8859: "free, fast" / "free tier" / "free"). Claude/ChatGPT/
+  at the volumes expected. Done: Groq (order 0) and Gemini (order 1) — both have their own
+  dedicated free tier (not a shared aggregator quota the way OpenRouter's `:free`-tagged models
+  do), same labels as the current `AI_BUILTIN_PROVIDERS` list (still there — BYOK stays;
+  `legacy/index.html` ~line 8859: "free, fast" / "free"). Cerebras (order 1, briefly) was tried as
+  a third and dropped: confirmed live that its `gpt-oss-120b` model returns "Payment required" on
+  a real account despite Cerebras's own docs describing GPT-OSS as free-tier-available — their
+  actual free offering is a time/credit-limited "free trial" plus pay-as-you-go, not an ongoing
+  free tier the way Groq/Gemini's are, and this project has no way to guarantee any given admin's
+  Cerebras account still has trial credit left. `AI_BUILTIN_PROVIDERS`' own Cerebras label was
+  corrected the same way (dropped "(free tier)") for the same reason — BYOK users hit the exact
+  same account-dependent wall. Claude/ChatGPT/
   OpenRouter/GitHub Models are deliberately not funded this way — paid-only, a shared low-limit
   free tier, or tied to a personal account identity, respectively.
 - ~~UID-only quota is gameable if sign-in is anonymous~~ — resolved, doesn't apply: "Open
