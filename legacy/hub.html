@@ -342,7 +342,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-subtask-check svg{width:10px;height:10px;opacity:0;transform:scale(.4);transition:opacity .15s ease}
 .todo-subtask-check.done{background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 92%, #fff 8%),color-mix(in srgb,var(--accent) 78%, #000 10%));box-shadow:none;color:#fff}
 .todo-subtask-check.done svg{opacity:1;transform:scale(1)}
-.todo-subtask-text{flex:1;min-width:0;font-size:14px;color:var(--fg);word-break:break-word}
+.todo-subtask-text{flex:1;min-width:0;font-size:14px;color:var(--fg);word-break:break-word;border:none;background:none;padding:0;font-family:inherit}
+.todo-subtask-text:focus{outline:none}
 .todo-subtask-text.done{color:var(--hint);text-decoration:line-through}
 .todo-subtask-remove{width:26px;height:26px;flex-shrink:0;border:none;background:none;color:var(--hint);font-size:16px;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .todo-subtask-remove:active{background:var(--hover)}
@@ -2185,7 +2186,7 @@ function renderTaskSubtasks(t){
   wrap.innerHTML=(t.subtasks||[]).map(function(s){
     return '<div class="todo-subtask-row" data-id="'+esc(s.id)+'">'
       +'<button type="button" class="todo-subtask-check'+(s.done?' done':'')+'" data-action="toggle" aria-label="Toggle subtask">'+(s.done?CHECK_SVG:'')+'</button>'
-      +'<div class="todo-subtask-text'+(s.done?' done':'')+'">'+esc(s.text)+'</div>'
+      +'<input type="text" class="todo-subtask-text'+(s.done?' done':'')+'" maxlength="300" value="'+esc(s.text)+'" data-action="rename" aria-label="Edit subtask">'
       +'<button type="button" class="todo-subtask-remove" data-action="remove" aria-label="Remove subtask">\u00d7</button>'
       +'</div>';
   }).join('');
@@ -2217,6 +2218,11 @@ function renderTaskSubtasks(t){
  * one script scope, not hand-written code (that distinction is why `templatesApply.ts` used
  * dependency injection for `makeNode` instead — see that module's own header for why the two
  * patterns aren't interchangeable).
+ *
+ * `renameSubtaskCore` mirrors `addSubtaskCore`'s validation order (trim, bail out on an empty
+ * result without mutating anything, then truncate to 300 characters) but returns a boolean
+ * rather than the subtask, and does not touch `repeat` — renaming an existing subtask doesn't
+ * change whether the task has subtasks at all.
  *
  * Explicitly NOT extracted here, and why:
  * - The three DOM event listeners themselves (element lookup, `closest()` hit-testing, reading/
@@ -2267,6 +2273,21 @@ function addSubtaskCore(task, rawText) {
     task.repeat = null;
     return sub;
 }
+/** Pure (beyond the in-place mutation): renames the subtask with the given id to `rawText`,
+ * trimmed and truncated to 300 characters — same validation order as `addSubtaskCore`. Returns
+ * whether the rename actually applied: false (and no mutation at all) both when no subtask
+ * matches `subtaskId` and when `rawText` is empty/whitespace-only, so a blank edit leaves the
+ * existing text untouched rather than clearing it. */
+function renameSubtaskCore(task, subtaskId, rawText) {
+    const sub = (task.subtasks || []).find((s) => s.id === subtaskId);
+    if (!sub)
+        return false;
+    const trimmed = (rawText || '').trim();
+    if (!trimmed)
+        return false;
+    sub.text = trimmed.slice(0, 300);
+    return true;
+}
 
 /* GENERATED:hubSubtasks:END */
 document.getElementById('task-detail-subtasks').addEventListener('click',function(e){
@@ -2280,6 +2301,19 @@ document.getElementById('task-detail-subtasks').addEventListener('click',functio
     if(!removeSubtaskCore(t,subId))return;
     saveTodos(); renderTodos(); renderTaskDetail();
   }
+});
+document.getElementById('task-detail-subtasks').addEventListener('change',function(e){
+  var input=e.target.closest('[data-action="rename"]'); if(!input)return;
+  var row=input.closest('.todo-subtask-row'); if(!row)return;
+  var t=findTodo(taskDetailId); if(!t)return;
+  renameSubtaskCore(t,row.dataset.id,input.value);
+  saveTodos(); renderTodos(); renderTaskDetail();
+});
+document.getElementById('task-detail-subtasks').addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  var input=e.target.closest('[data-action="rename"]'); if(!input)return;
+  e.preventDefault();
+  input.blur();
 });
 document.getElementById('task-subtask-input').addEventListener('keydown',function(e){
   if(e.key!=='Enter')return;
