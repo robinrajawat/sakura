@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { toggleSubtaskCore, removeSubtaskCore, addSubtaskCore, Subtask, SubtaskHost } from '../../src/state/hubSubtasks';
+import { toggleSubtaskCore, removeSubtaskCore, addSubtaskCore, renameSubtaskCore, Subtask, SubtaskHost } from '../../src/state/hubSubtasks';
 import { generateId } from '../../src/utils/generateId';
 
 // hubSubtasks.ts references subUid as an ambient global (a `declare function`, erased at
@@ -128,5 +128,54 @@ describe('addSubtaskCore', () => {
     const t = host([{ id: 'a', text: 'first', done: true }]);
     addSubtaskCore(t, 'second');
     expect(t.subtasks!.map((s) => s.text)).toEqual(['first', 'second']);
+  });
+});
+
+describe('renameSubtaskCore', () => {
+  it('renames the matching subtask to the trimmed text', () => {
+    const t = host([{ id: 'a', text: 'old', done: false }]);
+    expect(renameSubtaskCore(t, 'a', '  New text  ')).toBe(true);
+    expect(t.subtasks![0].text).toBe('New text');
+  });
+
+  it('only renames the matching subtask, leaving siblings untouched', () => {
+    const t = host([
+      { id: 'a', text: 'x', done: false },
+      { id: 'b', text: 'y', done: false },
+    ]);
+    renameSubtaskCore(t, 'b', 'z');
+    expect(t.subtasks![0].text).toBe('x');
+    expect(t.subtasks![1].text).toBe('z');
+  });
+
+  it('preserves the subtask done flag', () => {
+    const t = host([{ id: 'a', text: 'old', done: true }]);
+    renameSubtaskCore(t, 'a', 'new');
+    expect(t.subtasks![0].done).toBe(true);
+  });
+
+  it('returns false and mutates nothing for an unknown id', () => {
+    const t = host([{ id: 'a', text: 'x', done: false }]);
+    expect(renameSubtaskCore(t, 'nope', 'y')).toBe(false);
+    expect(t.subtasks![0].text).toBe('x');
+  });
+
+  it('returns false and leaves the text unchanged for empty/whitespace-only input', () => {
+    const t = host([{ id: 'a', text: 'x', done: false }]);
+    expect(renameSubtaskCore(t, 'a', '   ')).toBe(false);
+    expect(renameSubtaskCore(t, 'a', '')).toBe(false);
+    expect(t.subtasks![0].text).toBe('x');
+  });
+
+  it('truncates to 300 characters', () => {
+    const t = host([{ id: 'a', text: 'x', done: false }]);
+    const long = 'y'.repeat(400);
+    renameSubtaskCore(t, 'a', long);
+    expect(t.subtasks![0].text).toBe('y'.repeat(300));
+  });
+
+  it('handles a task with no subtasks array without throwing', () => {
+    const t: SubtaskHost = {};
+    expect(renameSubtaskCore(t, 'a', 'y')).toBe(false);
   });
 });

@@ -25,6 +25,11 @@
  * dependency injection for `makeNode` instead — see that module's own header for why the two
  * patterns aren't interchangeable).
  *
+ * `renameSubtaskCore` mirrors `addSubtaskCore`'s validation order (trim, bail out on an empty
+ * result without mutating anything, then truncate to 300 characters) but returns a boolean
+ * rather than the subtask, and does not touch `repeat` — renaming an existing subtask doesn't
+ * change whether the task has subtasks at all.
+ *
  * Explicitly NOT extracted here, and why:
  * - The three DOM event listeners themselves (element lookup, `closest()` hit-testing, reading/
  *   clearing the input's value, `saveTodos()`/`renderTodos()`/`renderTaskDetail()` calls) — real
@@ -88,4 +93,18 @@ export function addSubtaskCore(task: SubtaskHost, rawText: string): Subtask | nu
   task.subtasks.push(sub);
   task.repeat = null;
   return sub;
+}
+
+/** Pure (beyond the in-place mutation): renames the subtask with the given id to `rawText`,
+ * trimmed and truncated to 300 characters — same validation order as `addSubtaskCore`. Returns
+ * whether the rename actually applied: false (and no mutation at all) both when no subtask
+ * matches `subtaskId` and when `rawText` is empty/whitespace-only, so a blank edit leaves the
+ * existing text untouched rather than clearing it. */
+export function renameSubtaskCore(task: SubtaskHost, subtaskId: string, rawText: string): boolean {
+  const sub = (task.subtasks || []).find((s) => s.id === subtaskId);
+  if (!sub) return false;
+  const trimmed = (rawText || '').trim();
+  if (!trimmed) return false;
+  sub.text = trimmed.slice(0, 300);
+  return true;
 }
