@@ -43956,6 +43956,21 @@ function _addTagPopoverFromInput(){
     saveTodos();
     renderTodos();
   }
+  // Mirrors editTodoText's own contract: a blank edit deletes there, but a subtask has its
+  // own dedicated delete button already, so a blank edit here is just a no-op that leaves the
+  // existing text in place (matches hub.html's renameSubtaskCore). Deliberately doesn't call
+  // renderTodos() — same reason editTodoText doesn't: the contenteditable span already shows
+  // the committed text, and rebuilding the list here would steal focus right after this blur.
+  function editSubtaskText(parentId, subId, text){
+    const t=todos.find(x=>x.id===parentId);
+    if(!t || !t.subtasks) return;
+    const s=t.subtasks.find(x=>x.id===subId);
+    if(!s) return;
+    const trimmed=String(text||'').replace(/\u200B/g,'').trim();
+    if(!trimmed) return;
+    s.text=trimmed.slice(0,300);
+    saveTodos();
+  }
   function deleteSubtask(parentId, subId){
     const t=todos.find(x=>x.id===parentId);
     if(!t || !t.subtasks) return;
@@ -44691,6 +44706,19 @@ function _addTagPopoverFromInput(){
     body.querySelectorAll('.todo-subtask-rewrite').forEach(btn=>{
       btn.addEventListener('click',()=>rewriteSubtask(btn.getAttribute('data-parent'), btn.getAttribute('data-sub')));
     });
+    body.querySelectorAll('.todo-subtask-text').forEach(elx=>{
+      // Same minimal contract as .todo-text's own blur-commit below, without that field's
+      // @-suggest/undo-stack machinery — a subtask's text doesn't need any of that, just a
+      // way to fix a typo. Enter/Escape both just blur (matching .todo-text's own keydown
+      // handler, which doesn't revert on Escape either); the actual commit happens on blur.
+      elx.addEventListener('blur',()=>{
+        editSubtaskText(elx.getAttribute('data-parent'), elx.getAttribute('data-sub'), elx.textContent);
+      });
+      elx.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){ e.preventDefault(); elx.blur(); }
+        else if(e.key==='Escape'){ e.preventDefault(); elx.blur(); }
+      });
+    });
     body.querySelectorAll('.todo-textwrap').forEach(wrap=>{
       wrap.addEventListener('click', e=>{
         // Only for clicks that land on the wrapper itself, i.e. missed the (content-width)
@@ -44978,7 +45006,7 @@ function _addTagPopoverFromInput(){
       subs.forEach(s=>{
         html+=`<div class="todo-subtask-row" data-parent="${t.id}" data-sub="${s.id}">`
           +`<input type="checkbox" class="todo-subtask-check" data-parent="${t.id}" data-sub="${s.id}" ${s.done?'checked':''} aria-label="Mark subtask complete" />`
-          +`<span class="todo-subtask-text${s.done?' completed':''}">${esc(s.text)}</span>`
+          +`<span class="todo-subtask-text${s.done?' completed':''}" contenteditable="true" spellcheck="false" data-parent="${t.id}" data-sub="${s.id}">${esc(s.text)}</span>`
           +`<button type="button" class="todo-subtask-rewrite" data-parent="${t.id}" data-sub="${s.id}" data-tip="Rewrite with AI" aria-label="Rewrite subtask with AI"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>`
           +`<button type="button" class="todo-subtask-delete" data-parent="${t.id}" data-sub="${s.id}" aria-label="Delete subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
         +`</div>`;
