@@ -5,7 +5,8 @@ encryption (`vault.ts`), quota (`quota.ts`), Firebase auth + the admin check (`a
 encrypted provider storage (`providers.ts`), the per-provider request/response adapters
 (`providerShapes.ts`), admin-configurable runtime settings (`config.ts`), and the endpoints
 themselves (`index.ts`) — and is live at
-`https://sakura-vault.robinsinghrajawat.workers.dev`, deployed by
+`https://ai.sakura-notes.com` (custom domain in front of the
+`sakura-vault` Worker; previously `sakura-vault.robinsinghrajawat.workers.dev`), deployed by
 `.github/workflows/deploy-worker.yml` on every push to `main` that touches `worker/`.
 `legacy/index.html` has its own top-level Settings → Admin panel (its own rail category, not
 nested under Account — see "Admin UI" below) for managing the provider chain and the daily quota
@@ -179,7 +180,7 @@ Two things worth calling out about how the wiring actually works:
   into `updateAccountUI()` so a queue paused on "sign in to use hosted AI" actually resumes the
   moment sign-in completes, not just on the next manual settings interaction.
 - **No CSP change needed.** `/ai/complete` is served from the same origin
-  (`sakura-vault.robinsinghrajawat.workers.dev`) already allowlisted in `connect-src` for the
+  (`ai.sakura-notes.com`) already allowlisted in `connect-src` for the
   admin panel's `/admin/*` calls (see "Admin UI" above) — one Worker, one origin, both surfaces.
 
 ### `POST /ai/complete`
