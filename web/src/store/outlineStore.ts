@@ -983,17 +983,19 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
   },
 
   deleteNode: (id) => {
-    const { nodes } = get();
+    const { nodes, collapsedIds } = get();
     if (nodes.length <= 1) return;
     const idx = getIndex(nodes, id);
     if (idx < 0) return;
     pushUndo();
-    // Select whatever comes right before the deleted node in document order, or the next
-    // remaining node if it was first — a reasonable, simple choice for this slice; the real
-    // app's own delete-selection logic (nearest visible neighbor, respecting fold state) is
-    // more nuanced and deferred, same as multi-select delete (deleteRootIndexes already
-    // supports multiple root indexes at once — this wrapper only ever passes a single one
-    // for now).
+    // Select whatever comes right before the deleted node in VISIBLE (fold-aware) order, not
+    // flat document order -- matching legacy's own deleteEmptyNodeAndFocusPrev
+    // (legacy/index.html:21190-21202), which resolves the landing node via
+    // getVisibleNodeIndexes(nodes,collapsedIds) before splicing. Document order alone would
+    // land inside a collapsed previous sibling's hidden subtree (its last descendant, not the
+    // collapsed row itself) whenever that sibling is folded.
+    const vis = getVisibleNodeIndexes(nodes, collapsedIds);
+    const pos = vis.indexOf(idx);
     let next = nodes.map((n) => ({ ...n }));
     // Backlinks cleanup (Phase 6.4) -- collect the whole deleted subtree's texts BEFORE
     // mutating, same ordering legacy's own deleteEmptyNodeAndFocusPrev/deleteSelected use
@@ -1003,7 +1005,7 @@ export const useOutlineStore = create<OutlineState>((set, get) => {
     deleteRootIndexes(next, [idx]);
     if (deletedTexts.length) next = cleanupBacklinksFor(next, deletedTexts);
     rebuildParentIdsCore(next);
-    const fallbackSelection = idx > 0 ? nodes[idx - 1].id : next[0]?.id ?? null;
+    const fallbackSelection = pos > 0 ? nodes[vis[pos - 1]].id : next[0]?.id ?? null;
     set({
       nodes: next,
       selectedId: fallbackSelection,

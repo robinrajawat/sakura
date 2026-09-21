@@ -511,6 +511,18 @@ describe('outlineStore', () => {
     expect(selectedId).toBe(1);
   });
 
+  it('deleteNode lands the fallback selection on a collapsed preceding sibling itself, not its hidden last descendant', () => {
+    // node 2 ("child") gets its own child, id 100, then gets collapsed -- so node 100 sits
+    // between node 2 and node 3 in document order but is hidden from view.
+    useOutlineStore.getState().newChild(2);
+    useOutlineStore.getState().toggleCollapse(2);
+    expect(useOutlineStore.getState().collapsedIds.has(2)).toBe(true);
+    useOutlineStore.getState().deleteNode(3);
+    // Falling back to node 100 (hidden inside the collapsed subtree) would be wrong -- the
+    // visible row directly above node 3 is the collapsed node 2 itself.
+    expect(useOutlineStore.getState().selectedId).toBe(2);
+  });
+
   it('deleteNode removes the whole subtree, not just the node itself', () => {
     useOutlineStore.getState().newChild(2); // gives node 2 a child, id 100
     useOutlineStore.getState().deleteNode(2);
