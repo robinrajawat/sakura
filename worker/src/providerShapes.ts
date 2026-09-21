@@ -1,5 +1,5 @@
 /**
- * Per-provider request/response shape adapters — mirrors legacy/index.html's own
+ * Per-provider request/response shape adapters — mirrors web/index.html's own
  * callAiByShape (~line 28313) exactly, since that logic is already proven against real
  * provider APIs. Kept as pure functions (no fetch here) so they're fully testable without
  * network access; the actual HTTP call is the /ai/complete handler's own job (a later slice),

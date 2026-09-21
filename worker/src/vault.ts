@@ -3,7 +3,7 @@
  * (docs/ai-hosted-vault-design.md). The key-encryption-key (KEK) is a Worker secret — a raw
  * random 32-byte key, provisioned once via `wrangler secret put VAULT_KEK` (generate one with
  * `openssl rand -base64 32`) and never committed — imported here, not derived from a
- * passphrase: there's no human typing this key in, unlike legacy/src/state/vault.ts's
+ * passphrase: there's no human typing this key in, unlike web/src/state/vault.ts's
  * PBKDF2-derived client-side vault. This deliberately mirrors that module's wire format (a
  * random 12-byte IV prepended to the ciphertext, combined and base64-encoded as one string)
  * since it's a simple, already-proven shape — the two vaults are otherwise unrelated: this one

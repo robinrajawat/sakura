@@ -1,13 +1,9 @@
 name: Deploy
 
-# Publishes legacy/'s dist/ (the current production single-file app) via actions/deploy-pages.
+# Publishes web/'s dist/ (the production single-file app) via actions/deploy-pages.
 # www.sakura-notes.com is served from this workflow's output on every push to main.
 #
-# See docs/history/architecture-plan.md for Stage 1/2's full history, and
-# docs/history/web-migration/framework-migration-plan.md for the web/ React rewrite this
-# workflow briefly built and published alongside legacy at /web-preview/ during that migration.
-# The migration was discontinued (see that doc); the /web-preview/ build/publish steps were
-# removed here accordingly -- legacy/dist is the only thing this workflow ever ships again.
+# See docs/history/architecture-plan.md for Stage 1/2's full history.
 #
 # Runs on push to main only (not every branch/PR — that's what `verify` (ci.yml) is for), so
 # what's published always matches what's actually on main.
@@ -40,13 +36,13 @@ jobs:
       - name: Install dependencies (root — installs both workspaces)
         run: npm ci
 
-      - name: Build legacy/ (vite build; legacy/public/ handles static passthrough natively)
-        run: npm run build -w sakura-legacy
+      - name: Build web/ (vite build; web/public/ handles static passthrough natively)
+        run: npm run build -w sakura-web
 
-      - name: Upload legacy/dist as a Pages artifact
+      - name: Upload web/dist as a Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: legacy/dist
+          path: web/dist
 
   deploy:
     needs: build

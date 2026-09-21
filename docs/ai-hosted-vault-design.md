@@ -8,7 +8,7 @@ themselves (`index.ts`) — and is live at
 `https://ai.sakura-notes.com` (custom domain in front of the
 `sakura-vault` Worker; previously `sakura-vault.robinsinghrajawat.workers.dev`), deployed by
 `.github/workflows/deploy-worker.yml` on every push to `main` that touches `worker/`.
-`legacy/index.html` has its own top-level Settings → Admin panel (its own rail category, not
+`web/index.html` has its own top-level Settings → Admin panel (its own rail category, not
 nested under Account — see "Admin UI" below) for managing the provider chain and the daily quota
 against those endpoints, and its `AI_VAULT_WORKER_URL` constant now points at the real deployed
 URL. **The fallback chain is funded**: Groq (order 0) and Gemini (order 1) are configured through
@@ -24,11 +24,11 @@ was the entire integration, not fifteen separate call-site changes.
 
 ## Origin, and a real scope change since the first draft
 
-This started as the "AI key vault (Cloudflare Worker)" appendix in
-`docs/history/web-migration/phase6-full-parity-plan.md` — written while the `web/` React rewrite
-was still active, filed there only because that was the live planning doc at the time. `web/` is
-now discontinued; this proposal was never about `web/` specifically, and targets `legacy/` — the
-only live app — instead.
+This started as an "AI key vault (Cloudflare Worker)" appendix on a now-removed React rewrite's
+own planning doc, filed there only because that was the live planning doc at the time. That
+rewrite is long discontinued and its docs archived out of the repo (see docs/handoff-prompt.md's
+"Current state" for that history); this proposal was never about that rewrite specifically, and
+targets `web/` — the only live app — instead.
 
 **The first version of this doc proposed two goals: sync a user's own BYOK key across devices, and
 add hosted/keyless AI alongside it.** That's been superseded. The actual driver, on reflection: no
@@ -98,14 +98,14 @@ every later one, once those two secrets exist.
   number at runtime, no `wrangler.toml` edit or redeploy needed (resolves the "real daily quota
   number" open decision below by making it a runtime knob rather than a number to pick upfront).
 
-### Admin UI (`legacy/index.html`)
+### Admin UI (`web/index.html`)
 
 Built: "Admin" is its own top-level Settings rail category (not nested under Account — moved
 there after starting as an Account sub-section, since a rare, single-admin maintenance area
 sitting between everyday categories like Account and AI wasn't the right spot; it now sits right
 before "About", matching the "rare/meta stuff trails" pattern that section already followed). The
 whole category — Feedback Inbox, "Daily AI quota", and "AI Providers" — is visible under the same
-`isAdmin` flag that already gated it as an Account sub-section (see `legacy/src/state/admin.ts`),
+`isAdmin` flag that already gated it as an Account sub-section (see `web/src/state/admin.ts`),
 now extended to also toggle the rail button itself in real time (`getAdminRailButtonElement`), so
 a non-admin never sees an empty "Admin" tab. No separate modal or extra click layer for any of
 this, since it's short lists plus small forms. "AI Providers" shows the current provider chain
@@ -129,14 +129,14 @@ Two things worth calling out about how this is wired:
   headless-browser pass, including the empty/loading/error states and the add-provider
   round-trip, before the URL was set to the real value.
 - **Two real-world gaps surfaced once this actually ran against the live site**, both fixed:
-  the Worker's origin needed adding to `legacy/index.html`'s own CSP `connect-src` allowlist
+  the Worker's origin needed adding to `web/index.html`'s own CSP `connect-src` allowlist
   (the browser was blocking the request before it ever left the page), and the Worker itself
   needed real CORS support (`corsHeadersFor`/`withCors` in `index.ts`) — it had none before,
   since nothing called it cross-origin until this panel existed. CORS is a closed allowlist,
   same reasoning as the CSP: `https://www.sakura-notes.com` (the real production origin, from
-  `legacy/public/CNAME`) plus `http://localhost:5173` for local dev, not a wildcard.
+  `web/public/CNAME`) plus `http://localhost:5173` for local dev, not a wildcard.
 
-### Client UI (`legacy/index.html`)
+### Client UI (`web/index.html`)
 
 Built: "Sakura Hosted AI (beta)" is the first option in Settings → AI → Provider's dropdown
 (`getAiSelectableProviders()` = hosted + the seven `AI_BUILTIN_PROVIDERS`, unchanged from before).
@@ -193,7 +193,7 @@ Two things worth calling out about how the wiring actually works:
   rejects with 429 if exhausted.
 - Reads the admin-configured provider list from KV (`providers.ts`), tries each in `order`,
   decrypting that provider's key just for the duration of the request. Per-provider request/
-  response building is `providerShapes.ts`, which mirrors `legacy/index.html`'s own
+  response building is `providerShapes.ts`, which mirrors `web/index.html`'s own
   `callAiByShape` exactly for all four shapes (gemini/openai/cerebras/anthropic) rather than
   reinventing the wire format. On success, returns `{text, provider}`. If every provider fails,
   502 with per-provider error details; if none are configured at all, 503.
@@ -214,8 +214,8 @@ is pinned explicitly to RS256 against alg-confusion.
 
 ## Not touched by this doc: the existing client-side Secure Storage vault
 
-Sakura's client-side "Secure Storage" vault (`legacy/index.html`, `vaultCryptoKey`/`vaultEncrypt`/
-`vaultDecrypt`, extracted to `legacy/src/state/vault.ts`) protects more than just AI keys today —
+Sakura's client-side "Secure Storage" vault (`web/index.html`, `vaultCryptoKey`/`vaultEncrypt`/
+`vaultDecrypt`, extracted to `web/src/state/vault.ts`) protects more than just AI keys today —
 it also guards a Gist/Drive backup token, and (now that BYOK stays — see the "second reversal" in
 "Origin" above) continues to protect BYOK provider keys too, exactly as before. Nothing about this
 doc changes what Secure Storage protects or how; entirely untouched and out of scope here. Don't
@@ -240,7 +240,7 @@ spend on his credentials.
   at the volumes expected. Done: Groq (order 0) and Gemini (order 1) — both have their own
   dedicated free tier (not a shared aggregator quota the way OpenRouter's `:free`-tagged models
   do), same labels as the current `AI_BUILTIN_PROVIDERS` list (still there — BYOK stays;
-  `legacy/index.html` ~line 8859: "free, fast" / "free"). Cerebras (order 1, briefly) was tried as
+  `web/index.html` ~line 8859: "free, fast" / "free"). Cerebras (order 1, briefly) was tried as
   a third and dropped: confirmed live that its `gpt-oss-120b` model returns "Payment required" on
   a real account despite Cerebras's own docs describing GPT-OSS as free-tier-available — their
   actual free offering is a time/credit-limited "free trial" plus pay-as-you-go, not an ongoing
@@ -273,7 +273,7 @@ spend on his credentials.
 All three now resolved (kept here, not deleted, as a record of what was decided and why):
 
 - ~~Anonymous vs. real Firebase sign-in for AI access.~~ **Decided: real sign-in only** (Google or
-  email — Firebase anonymous auth doesn't exist anywhere in `legacy/index.html` today and won't be
+  email — Firebase anonymous auth doesn't exist anywhere in `web/index.html` today and won't be
   built for this; there's no existing sign-in flow to reuse, and BYOK already covers the
   no-account case, so the friction anonymous auth would have saved isn't needed). Building it
   would have meant new sign-in UI work for a path that's abuse-prone by nature (a free, disposable
@@ -296,14 +296,14 @@ All three now resolved (kept here, not deleted, as a record of what was decided 
   push to `main` that touches `worker/`, authenticated via a Workers-scoped Cloudflare API token
   held as a GitHub repo secret (never printed by the workflow, never touches the Worker's own
   secrets — those stay attached to the Worker independent of how its code ships).
-- ~~The *user-facing* `legacy/index.html` client wiring~~ — done: see "Client UI" above. Both the
+- ~~The *user-facing* `web/index.html` client wiring~~ — done: see "Client UI" above. Both the
   *admin*-facing side (`/admin/providers`, `/admin/config`) and the *user*-facing side
-  (`/ai/complete`) are wired into `legacy/index.html` now; nothing about this Worker's endpoints
+  (`/ai/complete`) are wired into `web/index.html` now; nothing about this Worker's endpoints
   remains unreachable from the app.
 
 ## Rollout shape
 
-The Worker and its endpoints were built and unit-tested independently of `legacy/index.html`
+The Worker and its endpoints were built and unit-tested independently of `web/index.html`
 (104 tests, `worker/tests/`), then verified for real against the actual deployed Worker (the one
 thing tests-against-fakes can't cover): `GET /health` returns `ok`, and a real signed-in user
 calling `POST /ai/complete` with `{userContent: 'Reply with the single word OK.'}` got back

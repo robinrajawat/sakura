@@ -283,13 +283,13 @@ Sakura works in any modern browser. Two features are the exception:
 
 After cloning, run `sh scripts/setup-git-identity.sh` once — it sets the correct commit author and enables a pre-commit guard (`.githooks/pre-commit`) that blocks any commit made under a different email. This exists because a placeholder email used in an earlier session turned out to belong to someone else's real GitHub account and got silently listed as a contributor; the guard catches that before it happens again.
 
-Starting a Claude session on this repo (including a fresh session after a usage limit, or from a different Claude account)? Paste `docs/legacy-handoff-prompt.md`'s fenced prompt block into the conversation — it has everything needed to pick up work with no other context.
+Starting a Claude session on this repo (including a fresh session after a usage limit, or from a different Claude account)? Paste `docs/handoff-prompt.md`'s fenced prompt block into the conversation — it has everything needed to pick up work with no other context.
 
 ### Deployment
 
 This section covers how the maintainer's copy is built and published — it doesn't change anything about running Sakura yourself (see [Overview](#overview): still just an `.html` file you open in a browser, no build step required).
 
-`www.sakura-notes.com` is published by `.github/workflows/deploy.yml`: every push to `main` runs `npm run build -w sakura-legacy` (a plain `vite build` — static assets like `sw.js`, both PWA manifests, and icons live in `legacy/public/`, Vite's own static-passthrough convention, so no custom copy step is needed) and publishes the result via GitHub Actions' native Pages deployment. There's no separate `dist/` branch or manual publish step; `legacy/index.html`/`legacy/hub.html` in the repo are the real source, and CI builds and serves them on every merge. A React rewrite (`web/`) was explored alongside this app for several months, then discontinued (2026-08-31, never deployed) and removed from the repo (2026-09-21) — see `docs/history/web-migration/framework-migration-plan.md` for that decision; this file (`legacy/`) remains production permanently. See `docs/history/architecture-plan.md`'s "Deployment mechanism" and "Repo hygiene" sections for the full history of how this was verified before being switched on.
+`www.sakura-notes.com` is published by `.github/workflows/deploy.yml`: every push to `main` runs `npm run build -w sakura-web` (a plain `vite build` — static assets like `sw.js`, both PWA manifests, and icons live in `web/public/`, Vite's own static-passthrough convention, so no custom copy step is needed) and publishes the result via GitHub Actions' native Pages deployment. There's no separate `dist/` branch or manual publish step; `web/index.html`/`web/hub.html` in the repo are the real source, and CI builds and serves them on every merge. See `docs/history/architecture-plan.md`'s "Deployment mechanism" and "Repo hygiene" sections for the full history of how this was verified before being switched on.
 
 ## License
 

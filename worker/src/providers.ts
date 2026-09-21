@@ -10,7 +10,7 @@ import { encryptWithKek, decryptWithKek } from './vault';
 export interface ProviderConfig {
   id: string;
   baseUrl: string;
-  /** Request/response shape adapter to use — matches legacy/index.html's AI_BUILTIN_PROVIDERS
+  /** Request/response shape adapter to use — matches web/index.html's AI_BUILTIN_PROVIDERS
    * convention ('openai' | 'gemini' | 'anthropic' | 'cerebras'), kept as a plain string here
    * since the adapters themselves are a separate, later slice. */
   shape: string;

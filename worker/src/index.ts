@@ -10,9 +10,9 @@
  * fetch) is thin dispatch logic, matching this project's core-vs-orchestration split
  * everywhere else. CORS is handled only in the router (corsHeadersFor/withCors below), wrapped
  * around whatever a handler returns, so the handlers themselves stay CORS-agnostic and directly
- * testable. legacy/index.html's admin panel (docs/ai-hosted-vault-design.md) is the one real
- * cross-origin caller today, from https://www.sakura-notes.com (legacy/public/CNAME) — the
- * allowlist below is closed to that plus local dev, same reasoning as legacy/index.html's own
+ * testable. web/index.html's admin panel (docs/ai-hosted-vault-design.md) is the one real
+ * cross-origin caller today, from https://www.sakura-notes.com (web/public/CNAME) — the
+ * allowlist below is closed to that plus local dev, same reasoning as web/index.html's own
  * CSP connect-src: a fixed, known set of origins is an actual boundary, a wildcard isn't.
  */
 
