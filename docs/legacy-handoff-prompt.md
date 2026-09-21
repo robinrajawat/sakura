@@ -25,12 +25,14 @@ outliner app (index.html/hub.html), served by GitHub Actions from CI-built
 `legacy/dist/` (.github/workflows/deploy.yml). It stays production
 permanently.
 
-The repo also contains `web/`, a React rewrite that was actively developed
-for several months and then explicitly DISCONTINUED (2026-08-31) — see
-docs/history/web-migration/framework-migration-plan.md's top section for the decision and what it
-means. It is not deployed anywhere and never will be. Do not touch `web/`,
-open PRs against it, or treat any of its old phase-plan docs as live work
-unless the project owner explicitly asks to restart the migration as a new,
+The repo used to also contain `web/`, a React rewrite that was actively
+developed for several months, explicitly DISCONTINUED (2026-08-31) without
+ever being deployed, and then removed from `main` entirely (2026-09-21) —
+see docs/history/web-migration/framework-migration-plan.md's top section
+for the decision, and this section's own "Current state" entry below for
+the removal. Its full source is still recoverable from git history (last
+commit that included it: `02ad593dda2ac3b6bd4daf68956f474549feaae5`) if the
+project owner ever explicitly asks to restart the migration as a new,
 separate decision — that hasn't happened. All real work from here on is in
 `legacy/`.
 
@@ -182,23 +184,29 @@ docs/history/architecture-plan.md for the full mechanism. Tests live in
 `tests/e2e/*` via Playwright for the built app). `legacy/scripts/` holds
 build-time codegen and the HTML structure validator.
 
-`web/` still exists in the repo (an npm workspace, `sakura-web`) but is
-discontinued — see docs/history/web-migration/framework-migration-plan.md. Don't edit it or run
-its workspace commands as part of normal work; it isn't part of this
-prompt's scope.
+`web/` was removed from `main` entirely on 2026-09-21 (see "Current state"
+below) — see docs/history/web-migration/framework-migration-plan.md for the
+migration's own history. It's no longer an npm workspace, and there's
+nothing left on disk to avoid touching.
 
 `.github/workflows/deploy.yml` builds and publishes `legacy/dist/` at the
-site root on every push to `main`. It currently ALSO builds `web/dist` and
-publishes it alongside legacy at `www.sakura-notes.com/web-preview/` — a
-leftover from the discontinued migration's own pre-cutover verification
-step, not something to maintain, and safe to remove as unrelated cleanup if
-you're ever touching that file for another reason, but not something to go
-out of your way to fix.
+site root on every push to `main` — that's the only thing it publishes now.
+It used to ALSO build `web/dist` and publish it alongside legacy at
+`www.sakura-notes.com/web-preview/`, a leftover from the discontinued
+migration's own pre-cutover verification step; that was removed in the same
+cleanup as `web/` itself.
 
 ## Current state
 
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
+
+**2026-09-21: `web/` removed from `main` entirely, and `deploy.yml`'s
+leftover `/web-preview/` publish step (live against production Firestore
+months after the migration was discontinued) removed with it.** Full
+`web/` source is still recoverable from git history at commit
+`02ad593dda2ac3b6bd4daf68956f474549feaae5`, the last commit that included
+it.
 
 **2026-08-31: the `web/` migration was discontinued and this prompt was created as the new
 day-to-day entry point.**
