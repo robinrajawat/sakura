@@ -1,16 +1,13 @@
 name: CI
 
 # Verification only — see .github/workflows/deploy.yml for the separate publish workflow
-# (production, www.sakura-notes.com, is served from legacy/'s CI-built dist/ via GitHub
+# (production, www.sakura-notes.com, is served from web/'s CI-built dist/ via GitHub
 # Actions as of Stage 2, docs/history/architecture-plan.md). This workflow's job is to make sure
-# every change is well-verified before it ever reaches deploy.yml. verify-legacy runs the full
-# existing gauntlet — typecheck, lint, unit tests, generated-code drift check, build, e2e tests,
-# and HTML structure validation — the four checks that would have caught this project's past
-# bugs (the FOLDERS_KEY-class TDZ crashes, and the RAWTEXT-hijack class
-# legacy/scripts/validate_html_structure.py guards against). A former verify-web job ran the
-# equivalent checks for the web/ React rewrite; removed after that migration was discontinued
-# (docs/history/web-migration/framework-migration-plan.md) — web/ is frozen and never
-# deployed, so there's no benefit to still paying its CI cost on every legacy/-only change.
+# every change is well-verified before it ever reaches deploy.yml. verify-web runs the full
+# gauntlet — typecheck, lint, unit tests, generated-code drift check, build, e2e tests, and HTML
+# structure validation — the four checks that would have caught this project's past bugs (the
+# FOLDERS_KEY-class TDZ crashes, and the RAWTEXT-hijack class
+# web/scripts/validate_html_structure.py guards against).
 # verify-worker covers worker/ (docs/ai-hosted-vault-design.md's Cloudflare Worker) —
 # typecheck/lint/unit tests only, no wrangler dev or deploy. The real deploy runs from a
 # separate workflow, deploy-worker.yml, triggered by a push to main that touches worker/ (not
@@ -23,7 +20,7 @@ on:
     branches: [main]
 
 jobs:
-  verify-legacy:
+  verify-web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,38 +33,38 @@ jobs:
       - name: Install dependencies (root — installs every workspace)
         run: npm ci
 
-      - name: Typecheck (legacy/src/)
-        run: npm run typecheck -w sakura-legacy
+      - name: Typecheck (web/src/)
+        run: npm run typecheck -w sakura-web
 
-      - name: Lint (legacy/src/, legacy/tests/)
-        run: npm run lint -w sakura-legacy
+      - name: Lint (web/src/, web/tests/)
+        run: npm run lint -w sakura-web
 
       - name: Unit tests
-        run: npm run test:unit -w sakura-legacy
+        run: npm run test:unit -w sakura-web
 
       - name: Verify generated code matches source (Phase 2 codegen)
-        run: npm run generate:verify -w sakura-legacy
+        run: npm run generate:verify -w sakura-web
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Build
-        run: npm run build -w sakura-legacy
+        run: npm run build -w sakura-web
 
       - name: End-to-end tests (includes build-output verification)
-        run: npm run test:e2e -w sakura-legacy
+        run: npm run test:e2e -w sakura-web
 
       - name: HTML structure validation (existing repo safeguard)
         run: |
           pip install html5lib --break-system-packages --quiet
-          cd legacy && python3 scripts/validate_html_structure.py
+          cd web && python3 scripts/validate_html_structure.py
 
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: legacy/playwright-report/
+          path: web/playwright-report/
           retention-days: 14
 
   verify-worker:

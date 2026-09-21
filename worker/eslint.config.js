@@ -1,4 +1,4 @@
-// Flat config (ESLint 9+), mirroring legacy/eslint.config.js's own rule choices — see that
+// Flat config (ESLint 9+), mirroring web/eslint.config.js's own rule choices — see that
 // file's comment for why no-use-before-define is the one deliberately-chosen rule here rather
 // than routine hygiene.
 import tsParser from '@typescript-eslint/parser';
