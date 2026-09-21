@@ -1,19 +1,15 @@
 {
   "name": "sakura-monorepo",
   "private": true,
-  "description": "Sakura's npm-workspaces monorepo. legacy/ is the production single-file app (index.html/hub.html) — deploy.yml builds and publishes legacy/ exclusively. web/ was a React rewrite, discontinued 2026-08-31 and never deployed (see docs/history/web-migration/framework-migration-plan.md), kept in the repo only as history. worker/ is a Cloudflare Worker proposed in docs/ai-hosted-vault-design.md, not yet deployed.",
+  "description": "Sakura's npm-workspaces monorepo. legacy/ is the production single-file app (index.html/hub.html) — deploy.yml builds and publishes legacy/ exclusively. A React rewrite (web/) was explored and discontinued 2026-08-31 without ever being deployed; its code was removed from main on 2026-09-21 (see docs/history/web-migration/framework-migration-plan.md — full source is still recoverable from git history at commit 02ad593dda2ac3b6bd4daf68956f474549feaae5, the last commit that included it). worker/ is a Cloudflare Worker proposed in docs/ai-hosted-vault-design.md, not yet deployed.",
   "workspaces": [
     "legacy",
-    "web",
     "worker"
   ],
   "scripts": {
     "legacy:dev": "npm run dev -w sakura-legacy",
     "legacy:build": "npm run build -w sakura-legacy",
     "legacy:test": "npm run test:unit -w sakura-legacy",
-    "web:dev": "npm run dev -w sakura-web",
-    "web:build": "npm run build -w sakura-web",
-    "web:test": "npm run test:unit -w sakura-web",
     "worker:dev": "npm run dev -w sakura-worker",
     "worker:test": "npm run test:unit -w sakura-worker"
   }
