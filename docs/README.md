@@ -3,13 +3,15 @@
 Start here. This folder mixes active planning docs with closed historical records — this page
 exists so that distinction is visible without opening every file.
 
-## The `web/` migration is discontinued (2026-08-31)
+## The `web/` migration is discontinued (2026-08-31) and removed from `main` (2026-09-21)
 
 **`history/web-migration/framework-migration-plan.md`** carries the actual decision at the top
 of the file — read that first if you're touching anything related to `web/`. Short version:
-`web/` (the React rewrite) will not be developed further and will never be deployed; `legacy/`
-is production permanently. The rest of `history/web-migration/` is the historical record of that
-stopped effort, not active work queues — kept for reference, not maintained further.
+`web/` (the React rewrite) was never deployed and will not be developed further; `legacy/` is
+production permanently. Its code was removed from `main` on 2026-09-21 (still recoverable from
+git history at commit `02ad593dda2ac3b6bd4daf68956f474549feaae5`, the last commit that included
+it). The rest of `history/web-migration/` is the historical record of that stopped effort, not
+active work queues — kept for reference, not maintained further.
 
 ## Active
 
