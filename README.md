@@ -31,7 +31,7 @@ Key capabilities:
 - Nested outline editing with indent/outdent, drag-and-drop reordering and nesting, duplication, and multi-select
 - Bold, italic, underline, strike, highlight, and text color formatting per node
 - Heading 1–6 per node, applied independent of tree depth, with its own color gradient and Preview support
-- Lightweight semantic styling via plain-text conventions: `[Section]`, `(note)`, `!alert`, and `` `code` ``
+- Lightweight semantic styling via plain-text conventions: `[Section]`, `(note)`, `!alert`, `` `code` ``, a leading `Label: ` (bolds the label), and `SAP Note 12345`/`OSS Note 12345` (auto-links to me.sap.com)
 - Fold/unfold subtrees, with a "+N hidden" badge that's clickable to expand
 - `#tags` on nodes, `[[@mention]]` backlinks between nodes, and a "Focus" mode to zoom into one branch
 - Companion panels per node or per document: rich-text Notes, Code blocks, a Decision Log, a whole-document Pad (with Notepad, Q&A, Diagrams, Mind Map, Files, and Remarks tabs)
@@ -58,6 +58,7 @@ Key capabilities:
 - **Right-click a node with children** — sort children A→Z, Z→A, or by depth
 - Click the fold arrow to collapse or expand a subtree; when collapsed, the "+N" badge is itself clickable to expand
 - Use `[Text]`, `(Text)`, `!Text`, and `` `Text` `` inline for section labels, muted notes, alerts, and inline code
+- A node or note starting with `Label: ` (any short word/phrase before the colon) bolds the label — e.g. `Customer: Acme Corp` bolds "Customer:". Starting instead with `Decision Log`, `Context`, `Decision`, `Rationale`, `Alternatives`, `Impact`, or `Status` colors the label to match its Decision Log field, even outside an actual Decision Log entry (toggle via Quick Assist → "Decision log colors", on by default). `SAP Note 12345` or `OSS Note 12345` (a 5–10 digit number) auto-links to that note on me.sap.com
 - Hover any node (Settings → Editing → "Node hover toolbar") to reveal quick Menu and Zoom-in buttons next to its bullet, without needing to select it first
 - **Checkboxes** — toolbar button (Insert group) or type `[ ] `/`[x] ` at the start of a node while editing (auto-converts on commit). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
 - `Ctrl/Cmd+Space` opens **Quick Insert** — a small menu for inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, or date/time without leaving the keyboard. Same menu, same shortcut, in every editable area of the app (nodes, Pad, Notes, Meeting Notes, To-Dos, Journal, the title field) — not just while editing a node
