@@ -21201,6 +21201,32 @@ function deleteEmptyNodeAndFocusPrev(id){
   rebuildParentIds();
   beginEdit(prevId,true)
 }
+// Backspace-merge (continuous-editor feel): when the caret sits collapsed at the very start of a
+// node's text -- not just an empty node, unlike deleteEmptyNodeAndFocusPrev above -- Backspace
+// instead appends that node's LIVE text (`liveText`, the uncommitted contenteditable content,
+// since nodes[idx].text may be stale mid-edit-session) onto the end of the previous VISIBLE
+// node, then deletes the now-merged node and lands the caret at the join point. "Previous
+// VISIBLE node" is the same fold-aware getVisibleNodeIndexes lookup deleteEmptyNodeAndFocusPrev
+// uses, so merging next to a collapsed node appends into that collapsed row itself, never its
+// hidden last descendant. Refuses on nodes with children (nothing to structurally do with them,
+// same guard as above) or when there's no previous visible row.
+function mergeNodeIntoPrevAndFocus(id,liveText){
+  const idx=getIndex(nodes,id); if(idx<0)return; if(nodeHasChildren(nodes,idx))return;
+  const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<=0)return;
+  const prevIdx=vis[pos-1]; const prevId=nodes[prevIdx].id;
+  const mergedText=liveText||''; const prevOldText=nodes[prevIdx].text||'';
+  const caretAt=prevOldText.length; const prevNewText=prevOldText+mergedText;
+  pushUndo(); markDirty();
+  const deletedTexts=mergedText?[mergedText]:[]; const deletedIds=[nodes[idx].id];
+  nodes[prevIdx]={...nodes[prevIdx],text:prevNewText};
+  nodes.splice(idx,1);
+  removeIdsFromAutoRewriteQueue(deletedIds);
+  cleanupBacklinksFor(deletedTexts);
+  if(backlinksEnabled&&prevOldText!==prevNewText)renameBacklinksFor(prevOldText,prevNewText);
+  cleanupOrphanedFeaturedTables(deletedIds);
+  rebuildParentIds();
+  beginEditAt(prevId,caretAt);
+}
 function deleteSelected(){
   if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); cleanupOrphanedFeaturedTables(allIds); render(); showToast('Cleared tree'); return}
   const roots=getSelectionRootIndexes(); if(!roots.length)return;
@@ -27334,8 +27360,15 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     return
   }
   if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'){ _lastArrowCol=null }
-  if(e.key==='Backspace'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&(e.target.textContent||'').length===0){
-    e.preventDefault(); deleteEmptyNodeAndFocusPrev(id); return
+  if(e.key==='Backspace'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
+    const ta=e.target;
+    if((ta.textContent||'').length===0){
+      e.preventDefault(); deleteEmptyNodeAndFocusPrev(id); return
+    }
+    const selRange=getEditableSelectionRange(ta);
+    if(selRange&&selRange.start===0&&selRange.end===0){
+      e.preventDefault(); mergeNodeIntoPrevAndFocus(id,ta.textContent||''); return
+    }
   }
   if(matchesShortcut(e,'bold')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('bold'); beginEdit(id,true); return} if(matchesShortcut(e,'italic')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('italic'); beginEdit(id,true); return} if(matchesShortcut(e,'underline')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('underline'); beginEdit(id,true); return} if(matchesShortcut(e,'strike')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('strike'); beginEdit(id,true); return} if(matchesShortcut(e,'highlight')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('highlight'); beginEdit(id,true); return} if(matchesShortcut(e,'textColor')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('color'); beginEdit(id,true); return} if(matchesShortcut(e,'heading1')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(1); beginEdit(id,true); return} if(matchesShortcut(e,'heading2')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(2); beginEdit(id,true); return} if(matchesShortcut(e,'heading3')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(3); beginEdit(id,true); return} if(matchesShortcut(e,'heading4')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(4); beginEdit(id,true); return} if(matchesShortcut(e,'heading5')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(5); beginEdit(id,true); return} if(matchesShortcut(e,'heading6')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(6); beginEdit(id,true); return} if(matchesShortcut(e,'headingClear')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(0); beginEdit(id,true); return} if(e.key==='Escape'){e.preventDefault(); cancelEdit(); return} if(e.key==='Enter'){e.preventDefault(); const input=e.target; const currentValue=String(input?.textContent||''); const currentNode=nodes[getIndex(nodes,id)]; const isEffectivelyEmpty=!currentValue.trim()&&!String(currentNode?.text||'').trim(); if(isEffectivelyEmpty){selectedId=id; inputCaret=getEditableCaretOffset(input)??0; beginEdit(id,true); return} if(e.shiftKey){
     commitEdit(); expandNode(id); forceInlineNoteId=id; render();
