@@ -460,6 +460,11 @@ body.feature-off-pad #editor-pad-toggle{display:none!important}
 body.feature-off-hovertoolbar #node-hover-rail{display:none!important}
 body.feature-off-quickassist #global-search-wrap{display:none!important}
 body.feature-off-templates #sb-templates-section,body.feature-off-templates #es-load-tpl,body.feature-off-templates #es-browse-tpl-btn{display:none!important}
+body.feature-off-todos #dock-tab-todos,body.feature-off-todos #todos-panel{display:none!important}
+body.feature-off-meetings #dock-tab-meetings,body.feature-off-meetings #meetings-panel{display:none!important}
+body.feature-off-journal #dock-tab-journal,body.feature-off-journal #journal-panel{display:none!important}
+body.feature-off-library #dock-tab-library,body.feature-off-library #library-panel{display:none!important}
+body.feature-off-report #dock-tab-report,body.feature-off-report #report-panel{display:none!important}
 .ai-rewrite-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 #dtb-generate.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .report-ai-icon{display:inline-flex;align-items:center;vertical-align:-2px;margin-right:4px}
@@ -52419,11 +52424,18 @@ const DOCK_TAB_TOGGLE={
   report: ()=>toggleActivityReport(),
   library: ()=>toggleLibraryPanel(),
 };
+// Defensive guard (same pattern as openNotePanel/enterFocus/openTagManager for their own
+// features, see the Feature Activation comment above): a keyboard shortcut or a
+// cross-reference dot can call openDockTab/toggleDockTab directly, bypassing the now-hidden
+// #dock-tab-* button, so the CSS alone isn't enough -- redirect to the first still-enabled
+// tab instead of opening one whose entry points are all hidden.
+function dockTabEnabled(tab){ const f=FEATURE_FLAGS[tab]; return !f||f.get(); }
+function firstEnabledDockTab(){ return ['todos','meetings','journal','library','report'].find(dockTabEnabled)||null; }
 let dockActiveTab=null;
 // Which tab reopens when the app-bar launcher is clicked with nothing currently open —
 // persisted so it's remembered across a reload, not just within the session.
 let dockLastTab='journal';
-try{ const saved=localStorage.getItem('sakura_dock_last_tab'); if(saved&&DOCK_TAB_PANEL_ID[saved])dockLastTab=saved; }catch(e){}
+try{ const saved=localStorage.getItem('sakura_dock_last_tab'); if(saved&&DOCK_TAB_PANEL_ID[saved]&&dockTabEnabled(saved))dockLastTab=saved; }catch(e){}
 // Maximize is one shared state across all four tabs (like width), not per-panel — switching
 // tabs while maximized should keep the panel maximized, not silently drop back to docked.
 let dockMaximized=false;
@@ -52471,6 +52483,7 @@ function dockMoveTabstripInto(tab){
 // Ensures `tab` ends up open and active, closing whichever other tab was showing first
 // (real open/close functions still do the work — this just sequences them).
 function openDockTab(tab){
+  if(!dockTabEnabled(tab)){ tab=firstEnabledDockTab(); if(!tab)return; }
   if(dockActiveTab&&dockActiveTab!==tab&&dockPanelIsOpen(dockActiveTab)){
     DOCK_TAB_TOGGLE[dockActiveTab]();
   }
@@ -52486,6 +52499,7 @@ function openDockTab(tab){
 // (dockPanelIsOpen) rather than trusting dockActiveTab blindly means this stays correct
 // even after the panel was closed some other way (Escape, outside click, its own X).
 function toggleDockTab(tab){
+  if(!dockTabEnabled(tab)){ tab=firstEnabledDockTab(); if(!tab)return; }
   if(dockActiveTab===tab&&dockPanelIsOpen(tab)){
     DOCK_TAB_TOGGLE[tab]();
     document.getElementById('dock-tabstrip')?.classList.remove('active');
