@@ -450,7 +450,7 @@ body.feature-off-paddiagrams #pad-tab-diagrams,body.feature-off-paddiagrams .nod
 body.feature-off-padmindmap #pad-tab-mindmap,body.feature-off-padmindmap #presenter-mindmap-btn,body.feature-off-padmindmap #preview-ctx-mindmap-item{display:none!important}
 body.feature-off-padfiles #pad-tab-files,body.feature-off-padfiles .node-file-dot{display:none!important}
 body.feature-off-padremarks #pad-tab-remarks,body.feature-off-padremarks .node-remark-dot{display:none!important}
-body.feature-off-pad #feat-padnotepad-row,body.feature-off-pad #feat-padqa-row,body.feature-off-pad #feat-decisionlog-row{display:none!important}
+body.feature-off-pad #feat-padnotepad-row,body.feature-off-pad #feat-padqa-row,body.feature-off-pad #feat-decisionlog-row,body.feature-off-pad #feat-paddiagrams-row,body.feature-off-pad #feat-padmindmap-row,body.feature-off-pad #feat-padfiles-row,body.feature-off-pad #feat-padremarks-row{display:none!important}
 body.feature-off-tagging #qb-tags,body.feature-off-tagging #itbsec-tags,body.feature-off-tagging .node-tag-chip,body.feature-off-tagging label:has(#ctxq-tags){display:none!important}
 body.feature-off-backlinks #bl-panel,body.feature-off-backlinks #note-panel-bl-badge{display:none!important}
 body.feature-off-focus #qb-zoom,body.feature-off-focus label:has(#ctxq-focus){display:none!important}
@@ -21227,6 +21227,25 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
   rebuildParentIds();
   beginEditAt(prevId,caretAt);
 }
+// Enter-split (continuous-editor feel, mirroring mergeNodeIntoPrevAndFocus above): pressing Enter
+// with the caret collapsed mid-text splits the node at that point instead of always appending a
+// blank sibling -- text before the caret stays on this node, text after it becomes a new sibling
+// inserted after the whole subtree (via getSubtreeEnd, same as insertSiblingAfter) so existing
+// children are never reparented. Caret lands at the start of the new sibling, matching where a
+// cursor would sit right after a real newline split.
+function splitNodeAtCursorAndFocus(id,beforeText,afterText){
+  const idx=getIndex(nodes,id); if(idx<0)return;
+  pushUndo(); markDirty();
+  const oldText=nodes[idx].text||'';
+  nodes[idx]={...nodes[idx],text:beforeText};
+  if(backlinksEnabled&&oldText!==beforeText)renameBacklinksFor(oldText,beforeText);
+  const nn=makeBlankNode(nodes[idx].depth,nodes[idx].parentId); nn.text=afterText;
+  nodes.splice(getSubtreeEnd(nodes,idx),0,nn);
+  rebuildParentIds();
+  setSingleSelection(nn.id);
+  flashNode(nn.id);
+  beginEditAt(nn.id,0);
+}
 function deleteSelected(){
   if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); cleanupOrphanedFeaturedTables(allIds); render(); showToast('Cleared tree'); return}
   const roots=getSelectionRootIndexes(); if(!roots.length)return;
@@ -27374,7 +27393,14 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     commitEdit(); expandNode(id); forceInlineNoteId=id; render();
     requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const len=ln.value.length; ln.setSelectionRange(len,len); } });
     return;
-  } commitEdit(); selectedId=id; if(e.ctrlKey||e.metaKey)insertChildFirst(id,true); else insertSiblingAfter(id,true); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); commitEdit(); selectedId=id; if(e.shiftKey)outdentSelected(); else indentSelected(); beginEdit(selectedId,true); return}
+  } if(!(e.ctrlKey||e.metaKey)){
+    const selRange=getEditableSelectionRange(input);
+    if(selRange&&selRange.start===selRange.end){
+      const splitAt=selRange.start; const beforeText=currentValue.slice(0,splitAt); const afterText=currentValue.slice(splitAt);
+      splitNodeAtCursorAndFocus(id,beforeText,afterText); return;
+    }
+  }
+  commitEdit(); selectedId=id; if(e.ctrlKey||e.metaKey)insertChildFirst(id,true); else insertSiblingAfter(id,true); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); commitEdit(); selectedId=id; if(e.shiftKey)outdentSelected(); else indentSelected(); beginEdit(selectedId,true); return}
 }
 function createRootAndEdit(firstChar=''){pushUndo(); markDirty(); const n=makeNode(firstChar,0,null,emptyStyles()); nodes=[n]; selectedId=n.id; editingId=n.id; editSessionOriginalText=n.text; autoRewritePasteTainted=false; selectAllMode=false; clearMultiSelection(); selectionAnchorId=n.id; flashNodeId=null; render()}
 function handleToolbarStyle(styleName){commitEdit(); toggleNodeStyle(styleName)}
