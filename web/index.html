@@ -5516,7 +5516,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Pad Panel</span><span class="settings-row-desc">Docked whole-document notepad, separate from per-node notes</span></div><button id="feat-pad-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Pad Panel"></button></div>
                 <div class="settings-list-row" id="feat-padnotepad-row"><div class="settings-row-text"><span class="settings-switch-text">Notepad</span><span class="settings-row-desc">The Pad's free-form notes tab</span></div><button id="feat-padnotepad-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Notepad tab"></button></div>
                 <div class="settings-list-row" id="feat-padqa-row"><div class="settings-row-text"><span class="settings-switch-text">Q&amp;A</span><span class="settings-row-desc">The Pad's structured question/answer tab</span></div><button id="feat-padqa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Q&amp;A tab"></button></div>
-                <div class="settings-list-row" id="feat-decisionlog-row"><div class="settings-row-text"><span class="settings-switch-text">Decision Log</span><span class="settings-row-desc">The Pad's structured decision-entry tab — insert button, right-click action, and Excel export. At least one of these three tabs must stay on</span></div><button id="feat-decisionlog-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Decision Log tab"></button></div>
+                <div class="settings-list-row" id="feat-decisionlog-row"><div class="settings-row-text"><span class="settings-switch-text">Decision Log</span><span class="settings-row-desc">The Pad's structured decision-entry tab — insert button, right-click action, and Excel export. At least one Pad tab must stay on</span></div><button id="feat-decisionlog-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Decision Log tab"></button></div>
                 <div class="settings-list-row" id="feat-paddiagrams-row"><div class="settings-row-text"><span class="settings-switch-text">Diagrams</span><span class="settings-row-desc">The Pad's draw.io diagram tab — create diagrams and link them to nodes so they appear in Preview and PDF exports</span></div><button id="feat-paddiagrams-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Diagrams tab"></button></div>
                 <div class="settings-list-row" id="feat-padmindmap-row"><div class="settings-row-text"><span class="settings-switch-text">Mind Map</span><span class="settings-row-desc">The Pad's Mind Map tab — any number of named freeform brainstorming canvases per document, each opening full-screen, plus the persistent Scratchpad Presenter mode's M key opens</span></div><button id="feat-padmindmap-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Mind Map tab"></button></div>
                 <div class="settings-list-row" id="feat-padfiles-row"><div class="settings-row-text"><span class="settings-switch-text">Files</span><span class="settings-row-desc">The Pad's Files tab — attach files (button, drag &amp; drop, or paste) up to 5 MB each, listed as downloadable chips, separate from the Notepad's own text</span></div><button id="feat-padfiles-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Files tab"></button></div>
@@ -13334,24 +13334,35 @@ function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlin
 // underlying functions themselves (openNotePanel, enterFocus,
 // openTagManager, generateOutlineWithAi) so a
 // keyboard shortcut can't slip past a hidden button.
+// Whether any Pad tab OTHER than `exceptKey` is currently enabled -- used by every Pad
+// tab's own FEATURE_FLAGS.set below to refuse turning off the last remaining one. Pad grew
+// from 3 tabs (Notepad/Q&A/Decision Log) to 7 (adding Diagrams/Mind Map/Files/Remarks)
+// without this check growing with it, so disabling all of the original 3 while, say,
+// Diagrams was the only tab left enabled used to wrongly refuse with "Keep at least one Pad
+// tab enabled" -- and the newer 4 had no such guard at all, so they could just as wrongly
+// silently drop the count to zero.
+function padOtherTabsEnabled(exceptKey){
+  const state={padnotepad:padNotepadTabEnabled,padqa:padQaTabEnabled,decisionlog:featureDecisionLogEnabled,paddiagrams:padDiagramsTabEnabled,padmindmap:padMindmapTabEnabled,padfiles:padFilesTabEnabled,padremarks:padRemarksTabEnabled};
+  return Object.keys(state).some(k=>k!==exceptKey&&state[k]);
+}
 const FEATURE_FLAGS={
   note:{get:()=>featureNoteEnabled,set:v=>{featureNoteEnabled=v; if(!v){try{closeNodePanel(true)}catch(e){}}}},
   codeblock:{get:()=>featureCodeEnabled,set:v=>{featureCodeEnabled=v; if(!v&&notePanelOpen&&notePanelMode==='code'){try{setNodePanelMode('note')}catch(e){}}}},
   pad:{get:()=>padEnabled,set:v=>{setPadEnabled(v); return}},
   ai:{get:()=>featureAiEnabled,set:v=>{featureAiEnabled=v; if(!v)clearAutoRewriteQueue();}},
-  decisionlog:{get:()=>featureDecisionLogEnabled,set:v=>{if(!v&&!padNotepadTabEnabled&&!padQaTabEnabled){showToast('Keep at least one Pad tab enabled'); return;} featureDecisionLogEnabled=v; padEnsureValidViewMode();}},
+  decisionlog:{get:()=>featureDecisionLogEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('decisionlog')){showToast('Keep at least one Pad tab enabled'); return;} featureDecisionLogEnabled=v; padEnsureValidViewMode();}},
   tagging:{get:()=>featureTaggingEnabled,set:v=>{featureTaggingEnabled=v;}},
   backlinks:{get:()=>backlinksEnabled,set:v=>{setBacklinksEnabled(v); return}},
   focus:{get:()=>featureFocusEnabled,set:v=>{featureFocusEnabled=v; if(!v&&focusedId!==null)exitFocus();}},
   quickassist:{get:()=>featureQuickAssistEnabled,set:v=>{featureQuickAssistEnabled=v; if(!v)setQaOpen(false);}},
   nodeqa:{get:()=>nodeQuickAssistEnabled,set:v=>{nodeQuickAssistEnabled=v; if(!v){closeNodeQuickAssist(); closeGenericQuickAssist();}}},
   hovertoolbar:{get:()=>hoverToolbarEnabled,set:v=>{setHoverToolbarEnabled(v); return}},
-  padnotepad:{get:()=>padNotepadTabEnabled,set:v=>{if(!v&&!padQaTabEnabled&&!featureDecisionLogEnabled){showToast('Keep at least one Pad tab enabled'); return;} padNotepadTabEnabled=v; padEnsureValidViewMode();}},
-  padqa:{get:()=>padQaTabEnabled,set:v=>{if(!v&&!padNotepadTabEnabled&&!featureDecisionLogEnabled){showToast('Keep at least one Pad tab enabled'); return;} padQaTabEnabled=v; padEnsureValidViewMode();}},
-  paddiagrams:{get:()=>padDiagramsTabEnabled,set:v=>{padDiagramsTabEnabled=v; padEnsureValidViewMode(); if(typeof renderDiagramsList==='function')renderDiagramsList();}},
-  padmindmap:{get:()=>padMindmapTabEnabled,set:v=>{padMindmapTabEnabled=v; padEnsureValidViewMode(); if(!v&&mindMapOpen&&typeof closeMindMapOverlay==='function')closeMindMapOverlay(); if(typeof renderMindMapsList==='function')renderMindMapsList();}},
-  padfiles:{get:()=>padFilesTabEnabled,set:v=>{padFilesTabEnabled=v; padEnsureValidViewMode(); if(typeof renderFilesList==='function')renderFilesList();}},
-  padremarks:{get:()=>padRemarksTabEnabled,set:v=>{padRemarksTabEnabled=v; padEnsureValidViewMode(); if(typeof renderRemarksList==='function')renderRemarksList();}},
+  padnotepad:{get:()=>padNotepadTabEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('padnotepad')){showToast('Keep at least one Pad tab enabled'); return;} padNotepadTabEnabled=v; padEnsureValidViewMode();}},
+  padqa:{get:()=>padQaTabEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('padqa')){showToast('Keep at least one Pad tab enabled'); return;} padQaTabEnabled=v; padEnsureValidViewMode();}},
+  paddiagrams:{get:()=>padDiagramsTabEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('paddiagrams')){showToast('Keep at least one Pad tab enabled'); return;} padDiagramsTabEnabled=v; padEnsureValidViewMode(); if(typeof renderDiagramsList==='function')renderDiagramsList();}},
+  padmindmap:{get:()=>padMindmapTabEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('padmindmap')){showToast('Keep at least one Pad tab enabled'); return;} padMindmapTabEnabled=v; padEnsureValidViewMode(); if(!v&&mindMapOpen&&typeof closeMindMapOverlay==='function')closeMindMapOverlay(); if(typeof renderMindMapsList==='function')renderMindMapsList();}},
+  padfiles:{get:()=>padFilesTabEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('padfiles')){showToast('Keep at least one Pad tab enabled'); return;} padFilesTabEnabled=v; padEnsureValidViewMode(); if(typeof renderFilesList==='function')renderFilesList();}},
+  padremarks:{get:()=>padRemarksTabEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('padremarks')){showToast('Keep at least one Pad tab enabled'); return;} padRemarksTabEnabled=v; padEnsureValidViewMode(); if(typeof renderRemarksList==='function')renderRemarksList();}},
   todos:{get:()=>(typeof window.sakuraTodosFeatureEnabled==='function'?window.sakuraTodosFeatureEnabled():true),set:v=>{if(typeof window.sakuraTodosSetFeatureEnabled==='function')window.sakuraTodosSetFeatureEnabled(v);}},
   meetings:{get:()=>(typeof window.sakuraMeetingsFeatureEnabled==='function'?window.sakuraMeetingsFeatureEnabled():true),set:v=>{if(typeof window.sakuraMeetingsSetFeatureEnabled==='function')window.sakuraMeetingsSetFeatureEnabled(v);}},
   journal:{get:()=>(typeof window.sakuraJournalFeatureEnabled==='function'?window.sakuraJournalFeatureEnabled():true),set:v=>{if(typeof window.sakuraJournalSetFeatureEnabled==='function')window.sakuraJournalSetFeatureEnabled(v);}},
