@@ -68,8 +68,9 @@ export function isFeedbackAdmin(user: AdminUser | null): boolean {
 }
 
 /**
- * Data-driven admin check: does an /admins/{uid} doc exist for this person? See firestore.rules
- * for the collection's own rule (a user may only read their OWN doc, existence-only, no listing).
+ * Data-driven admin check: does an /admins/{uid} doc exist for this person? See
+ * firebase/firestore.rules for the collection's own rule (a user may only read their OWN doc,
+ * existence-only, no listing).
  */
 async function checkIsCollectionAdmin(uid: string): Promise<boolean> {
   if (!uid) return false;
