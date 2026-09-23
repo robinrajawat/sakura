@@ -8635,19 +8635,31 @@ function updateVaultStatusUI(){
 // (see setupVaultPassphrase/unlockVault above), just re-sized to the app's small-icon
 // convention (13x13, stroke-width 2) so it reads consistently at status-bar scale.
 const SB_VAULT_LOCKED_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+// Whether unlocking would actually unblock anything right now. requireAiKey()'s hosted branch
+// never touches the vault (checks currentUser instead), so a BYOK key only matters for the
+// active provider or an enabled fallback provider; Gist sync only matters if a token was ever
+// saved at all. On Sakura Hosted AI with no fallback keys and no Gist token, the vault holds
+// nothing worth unlocking, so the status-bar chip has nothing useful to nudge toward.
+function vaultUnlockWouldHelp(){
+  if(loadCloudBackupPrefsRaw().gistToken)return true;
+  if(aiProvider!==AI_HOSTED_PROVIDER_ID&&hasRawAiKeyForProvider(aiProvider))return true;
+  if(aiFallbackEnabled&&aiFallbackOrder.some(entry=>entry.id!==AI_HOSTED_PROVIDER_ID&&entry.enabled&&hasRawAiKeyForProvider(entry.id)))return true;
+  return false;
+}
 function updateVaultChip(){
   const chip=el('sb-vault-chip'); const divider=el('sb-vault-divider');
   if(!chip||!divider)return;
-  // Only surfaced while locked — that's the one state that needs a nudge (AI Rewrite/Gist
-  // sync won't work until you unlock). Unlocked is the normal working state for the rest of
-  // the session, so there's nothing actionable left to show once you've unlocked.
-  if(!vaultActive()||vaultUnlocked()||statusbarHiddenItems.includes('vault')){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
+  // Only surfaced while locked AND there's something unlocking would actually help with.
+  // Unlocked is the normal working state for the rest of the session, so there's nothing
+  // actionable left to show once you've unlocked; and if nothing vault-gated is even in use
+  // (e.g. Sakura Hosted AI with no fallback keys and no Gist token saved), nagging to unlock
+  // is just noise.
+  if(!vaultActive()||vaultUnlocked()||statusbarHiddenItems.includes('vault')||!vaultUnlockWouldHelp()){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
   chip.style.display=''; divider.style.display=''; chip.style.color='';
   chip.innerHTML=SB_VAULT_LOCKED_ICON+'<span>Locked</span>';
   // "AI Rewrite" only belongs in this tip for a BYOK provider — requireAiKey()'s hosted branch
   // never touches the vault at all (checks currentUser instead), so AI Rewrite keeps working
-  // while locked whenever Sakura Hosted AI is the active provider. Gist sync is vault-gated
-  // either way, so it's unconditional below.
+  // while locked whenever Sakura Hosted AI is the active provider.
   chip.dataset.tip=aiProvider===AI_HOSTED_PROVIDER_ID?'Secure Storage is locked — click to unlock and use Gist sync':'Secure Storage is locked — click to unlock and use AI Rewrite / Gist sync';
   refreshStatusbarDividers();
 }
