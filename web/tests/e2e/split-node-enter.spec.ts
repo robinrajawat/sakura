@@ -124,7 +124,7 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     expect(result.parentIds).toEqual([null, 1, null]);
   });
 
-  test('real keyboard integration: Enter mid-text splits; Enter at the end of the last row adds a blank child', async ({ page }) => {
+  test('real keyboard integration: Enter mid-text splits; Enter at end still appends a blank sibling', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -162,9 +162,8 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     const newId = await page.evaluate(() => nodes[1].id);
     expect(afterSplit.editingId).toBe(newId);
 
-    // Enter at the end of the (now-focused, empty-caret-at-end) node -- which is now the last
-    // row in the whole document -- adds a blank CHILD rather than a same-depth sibling (see
-    // enter-child-outdent-cascade.spec.ts for the full behavior this enables).
+    // Enter at the end of the (now-focused, empty-caret-at-end) node still just appends a
+    // blank sibling -- unchanged from the pre-split-feature behavior.
     const input2 = page.locator(`#in-${newId}`);
     await expect(input2).toBeVisible();
     await input2.focus();
@@ -173,15 +172,9 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
 
     const afterTrailingEnter = await page.evaluate(() => ({
       // @ts-expect-error
-      texts: nodes.map((n: any) => n.text),
-      // @ts-expect-error
-      depths: nodes.map((n: any) => n.depth),
-      // @ts-expect-error
-      parentIds: nodes.map((n: any) => n.parentId)
+      texts: nodes.map((n: any) => n.text)
     }));
     expect(afterTrailingEnter.texts).toEqual(['Foo', 'Bar', '']);
-    expect(afterTrailingEnter.depths).toEqual([0, 0, 1]);
-    expect(afterTrailingEnter.parentIds).toEqual([null, null, newId]);
   });
 
   test('Ctrl/Cmd+Enter still creates a child, unaffected by the split behavior', async ({ page }) => {
@@ -222,5 +215,65 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     expect(result.texts).toEqual(['Parent', '']);
     expect(result.depths).toEqual([0, 1]);
     expect(result.parentIds).toEqual([null, 1]);
+  });
+
+  test('repeated blank Enter at the end of the document keeps adding sibling rows, never refuses or nests', async ({ page }) => {
+    // A blank row used to dead-end on Enter (no-op); it now just keeps adding further blank
+    // sibling rows at the same depth, exactly like Enter on non-blank text does -- an earlier
+    // attempt at this made the first blank Enter create a CHILD instead, which was a mistake
+    // (reverted): Enter should always produce a sibling, regardless of position in the document.
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Root', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      render();
+      // @ts-expect-error
+      beginEditAt(1, 'Root'.length);
+    });
+
+    const input1 = page.locator('#in-1');
+    await expect(input1).toBeVisible();
+    await input1.focus();
+    await page.keyboard.press('Enter'); // Root -> blank sibling at depth 0
+
+    let state = await page.evaluate(() => ({
+      // @ts-expect-error
+      texts: nodes.map((n: any) => n.text),
+      // @ts-expect-error
+      depths: nodes.map((n: any) => n.depth),
+      // @ts-expect-error
+      parentIds: nodes.map((n: any) => n.parentId)
+    }));
+    expect(state.texts).toEqual(['Root', '']);
+    expect(state.depths).toEqual([0, 0]);
+    expect(state.parentIds).toEqual([null, null]);
+
+    // @ts-expect-error
+    const blankId: number = await page.evaluate(() => nodes[1].id);
+    const blankInput = page.locator(`#in-${blankId}`);
+    await expect(blankInput).toBeVisible();
+    await blankInput.focus();
+    await page.keyboard.press('Enter'); // still blank, still the last row -- must add another sibling, not a child
+
+    state = await page.evaluate(() => ({
+      // @ts-expect-error
+      texts: nodes.map((n: any) => n.text),
+      // @ts-expect-error
+      depths: nodes.map((n: any) => n.depth),
+      // @ts-expect-error
+      parentIds: nodes.map((n: any) => n.parentId)
+    }));
+    expect(state.texts).toEqual(['Root', '', '']);
+    expect(state.depths).toEqual([0, 0, 0]);
+    expect(state.parentIds).toEqual([null, null, null]);
   });
 });
