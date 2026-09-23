@@ -343,9 +343,9 @@ input[type=number]{-moz-appearance:textfield}
 @supports not selector(::-webkit-scrollbar){
 .settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,#doc-tab-strip,.cs-rail,#shortcuts-rail,
 #sakura-modal-body,#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,
-.qa-dropdown,.history-modal-body,#sidebar-scroll,#pad-editor,#note-editor,
-.code-lang-menu,#code-editor-wrap,#code-editor,#code-view,#at-suggest,#node-qa-suggest,#answerer-suggest,#demo-chapters-menu,
-#demo-preview-body,#preview-toc,#preview-body,.pv-popover,.pv-inline-code-body,#ai-prompt-input,.todo-dd-menu,
+.qa-dropdown,.history-modal-body,#sidebar-scroll,#pad-editor,
+#at-suggest,#node-qa-suggest,#answerer-suggest,#demo-chapters-menu,
+#demo-preview-body,#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
 #diagram-anchor-suggest,#decision-anchor-suggest,#diagrams-tab-body,#mindmap-node-anchor-suggest,#mindmap-tab-body,#debug-log-view,#report-modal-body,#files-anchor-suggest,#files-tab-body,#remarks-anchor-suggest,#remarks-tab-body,#account-menu
 {scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
@@ -357,7 +357,7 @@ body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transitio
    container-level font-family (To-Dos panel did). Chrome (buttons, chips, labels, dialogs)
    is deliberately NOT tied to this — it stays Inter everywhere, same as the rest of the app,
    the same way surrounding UI chrome around the outline already does. Only .node-prefix (tree
-   lines), #code-editor, and .sem-code-inline are exempt on purpose — they're code/structure,
+   lines) and .sem-code-inline are exempt on purpose — they're code/structure,
    not prose, and must stay monospace regardless of this toggle. */
 :root{--content-font:'Public Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body.font-sans{--content-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
@@ -439,9 +439,7 @@ body{padding-top:env(titlebar-area-height,40px)}
 .ctxq-locked input{cursor:not-allowed}
 body.hide-tb-history #ag-history,body.hide-tb-structure #ag-structure,body.hide-tb-move #ag-move,body.hide-tb-format #ag-format,body.hide-tb-fold #ag-fold,body.hide-tb-inserts #ag-inserts,body.hide-tb-extras #ag-extras,body.hide-tb-ai #ag-ai,body.hide-tb-delete #ag-delete{display:none}
 /* === Feature Activation: hide every entry point for a deactivated feature === */
-body.feature-off-note #qb-note,body.feature-off-note #itbsec-note,body.feature-off-note .node-note-dot,body.feature-off-note #note-panel,body.feature-off-note #feat-codeblock-row{display:none!important}
-body.feature-off-codeblock #npanel-tab-code,body.feature-off-codeblock .node-code-badge{display:none!important}
-body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-rewrite),body.feature-off-ai label:has(#ntbsec-ai-summarise),body.feature-off-ai #ntb-ai-rewrite,body.feature-off-ai #ntb-ai-summarise,body.feature-off-ai #ptb-ai-rewrite,body.feature-off-ai #mindmap-ai-connect-btn,body.feature-off-ai #report-ai-summary-btn{display:none!important}
+body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai #ptb-ai-rewrite,body.feature-off-ai #mindmap-ai-connect-btn,body.feature-off-ai #report-ai-summary-btn{display:none!important}
 body.feature-off-decisionlog [data-save="decision-log-xlsx"],body.feature-off-decisionlog body.feature-off-decisionlog .dlog-decisionlog-marker,body.feature-off-decisionlog #export-divider-data,body.feature-off-decisionlog #export-label-data,body.feature-off-decisionlog label:has(#etbsec-decision-log-xlsx),body.feature-off-decisionlog #pad-tab-decision{display:none!important}
 body.feature-off-padnotepad #pad-tab-notes,body.feature-off-padnotepad #presenter-notes-tab-notes{display:none!important}
 body.feature-off-padqa #pad-tab-qa,body.feature-off-padqa #presenter-notes-tab-qa{display:none!important}
@@ -452,7 +450,6 @@ body.feature-off-padfiles #pad-tab-files,body.feature-off-padfiles .node-file-do
 body.feature-off-padremarks #pad-tab-remarks,body.feature-off-padremarks .node-remark-dot{display:none!important}
 body.feature-off-pad #feat-padnotepad-row,body.feature-off-pad #feat-padqa-row,body.feature-off-pad #feat-decisionlog-row,body.feature-off-pad #feat-paddiagrams-row,body.feature-off-pad #feat-padmindmap-row,body.feature-off-pad #feat-padfiles-row,body.feature-off-pad #feat-padremarks-row{display:none!important}
 body.feature-off-tagging #qb-tags,body.feature-off-tagging #itbsec-tags,body.feature-off-tagging .node-tag-chip,body.feature-off-tagging label:has(#ctxq-tags){display:none!important}
-body.feature-off-backlinks #bl-panel,body.feature-off-backlinks #note-panel-bl-badge{display:none!important}
 body.feature-off-focus #qb-zoom,body.feature-off-focus label:has(#ctxq-focus){display:none!important}
 body.feature-off-decisionlog [data-feature-item="decisionlog"]{display:none!important}
 body.feature-off-ai [data-feature-item="ai"]{display:none!important}
@@ -1366,7 +1363,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
   }
 
   /* Fold arrows and "+N hidden" badges are screen affordances, not content */
-  .fold-toggle, .fold-badge, .node-dlog-dot, .node-code-dot {
+  .fold-toggle, .fold-badge, .node-dlog-dot {
     display: none !important;
   }
   .node-note-dot:not(.node-note-dot-plain) {
@@ -1955,36 +1952,14 @@ body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
 body.qa-bulk-busy #qtb-bulk-rewrite:not(.ai-busy){pointer-events:none;opacity:.4}
 body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.4}
 /* Pad panel can now stay open in zen mode (toggle via its own button) */
-
-/* === Node Notes === */
-#note-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(420px,calc(100vw - 32px));max-height:min(72vh,540px);font-family:'Inter',sans-serif;overflow:hidden;transition:width .16s cubic-bezier(.22,.8,.34,1),left .16s cubic-bezier(.22,.8,.34,1),top .16s cubic-bezier(.22,.8,.34,1)}
-#note-panel.dragging{transition:none}
-#note-panel.open{display:flex}
-#note-panel-header{display:flex;align-items:center;gap:6px;padding:8px 8px 8px;border-bottom:1px solid var(--border);flex-shrink:0;cursor:move}
-#note-panel.maximized #note-panel-header{padding:8px 10px 8px 14px}
-#note-panel-header.dragging{cursor:grabbing}
-#note-panel.dragging{user-select:none}
 .panel-title-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--hint);flex-shrink:0}
-#note-panel-tabs{display:flex;align-items:center;gap:18px;flex:1;min-width:0}
-.note-panel-tab{appearance:none;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:8px 1px 6px;margin-bottom:-8px;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s}
-.note-panel-tab:hover{color:var(--fg)}
-.note-panel-tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
-.note-panel-tab.has-content:not([aria-selected="true"])::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle}
-#note-panel-subtitle{padding:6px 14px 6px;font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
-#note-panel-subtitle:empty{display:none}
-#note-panel.mode-code #note-panel-subtitle{padding-bottom:4px}
-#note-title-row{padding:0 14px 8px;flex-shrink:0}
-#note-title-input{width:100%;box-sizing:border-box;border:none;outline:none;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:0 0 6px;border-bottom:1px solid var(--border)}
-#note-title-input::placeholder{color:var(--hint);font-weight:400}
-#note-title-input:focus{border-bottom-color:var(--accent)}
-#note-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
-#note-panel-close:hover{color:var(--fg);background:var(--hover)}
-#note-toolbar{display:none;align-items:center;gap:4px;padding:2px 10px 8px;flex-shrink:0;flex-wrap:wrap}
-#note-panel.maximized #note-toolbar{display:flex}
+/* .note-tb-btn/.note-tb-sep: named after the now-removed Note panel's own toolbar, but still
+   Pad toolbar's real button/separator style (#pad-toolbar>.note-tb-btn) — keep. */
 .note-tb-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);font:500 13px 'Inter',sans-serif;padding:3px 7px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s,border-color .12s,box-shadow .12s;min-width:28px;display:inline-flex;align-items:center;justify-content:center;position:relative}
 .note-tb-btn:hover{background:var(--hover);color:var(--fg);border-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .note-tb-btn.active{color:var(--accent)}
 .note-tb-sep{width:1px;height:16px;background:var(--border);margin:0 3px;flex-shrink:0}
+
 /* Selection formatting popover — appears above selected text in the Note editor, the Pad's
    Notepad tab, and Meeting
    notes' Agenda/Notes fields, a quick Bold/Italic/Strike/Link row without reaching for a fixed
@@ -2000,10 +1975,6 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .selection-fmt-btn.sfmt-ai:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .selection-fmt-btn.sfmt-ai.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .selection-fmt-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
-#note-editor{flex:1;min-height:44px;max-height:160px;overflow-y:auto;margin:0 10px 10px;border:none;resize:none;border-radius:8px;padding:12px 14px;outline:none;font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.6;color:var(--fg);word-break:break-word;overflow-wrap:break-word;background:var(--canvas-bg)}
-#note-panel.maximized #note-editor{max-height:none;flex:1}
-#note-panel.note-bg-distinct #note-editor{background:var(--tb-bg)}
-#note-editor::placeholder{color:var(--hint)}
 .pv-diagram-row{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 14px;align-items:stretch}
 .pv-diagram-figure{margin:0;flex:1 1 320px;min-width:0;display:flex;flex-direction:column}
 .pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
@@ -2022,64 +1993,6 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-card-value{font:700 22px 'Inter',sans-serif;color:var(--fg);line-height:1.15}
 .pv-table-card-label{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
 
-
-#note-panel-footer{display:none;align-items:center;justify-content:flex-end;padding:4px 14px 10px;flex-shrink:0}
-#note-panel.maximized #note-panel-footer{display:flex}
-.note-footer-hint{font:400 11px 'Inter',sans-serif;color:var(--hint)}
-.note-footer-actions{display:flex;gap:6px}
-.panel-icon-btn{appearance:none;border:none;background:transparent;color:var(--hint);padding:4px 6px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-.panel-icon-btn:hover{color:var(--sem-alert);background:var(--hover)}
-/* Note AI buttons */
-#ntb-ai-rewrite,#ntb-ai-summarise{color:var(--accent);opacity:.75;transition:opacity .12s,background .12s,color .12s}
-#ntb-ai-rewrite:hover,#ntb-ai-summarise:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
-#ntb-ai-rewrite.ai-busy,#ntb-ai-summarise.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
-
-/* === Node Code Block === */
-#code-toolbar{display:flex;align-items:center;gap:6px;padding:2px 10px 8px;flex-shrink:0;flex-wrap:wrap}
-.code-lang-trigger{max-width:150px}
-.code-lang-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.code-lang-trigger-arrow{flex-shrink:0;opacity:.6}
-.code-lang-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:50;min-width:150px;max-height:240px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.22);padding:4px}
-
-
-.code-lang-option{padding:6px 10px;border-radius:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);cursor:pointer;white-space:nowrap;transition:background .1s,color .1s}
-.code-lang-option:hover{background:var(--hover)}
-.code-lang-option.selected{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
-.code-tb-sep{width:1px;height:16px;background:var(--border);margin:0 3px;flex-shrink:0}
-.code-tb-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);font:500 11px 'Inter',sans-serif;padding:4px 9px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s,border-color .12s;display:inline-flex;align-items:center;gap:5px;position:relative}
-.code-tb-btn:hover{background:var(--hover);color:var(--fg);border-color:var(--accent)}
-.code-tb-btn.active{color:var(--accent)}
-.code-tb-btn.copied{color:var(--fc-green);border-color:var(--fc-green)}
-#code-beautify-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
-#code-editor-wrap{position:relative;flex:1;min-height:44px;max-height:160px;margin:0 10px 10px;border-radius:8px;overflow:hidden;background:var(--canvas-bg)}
-#code-resize-handle{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:ns-resize;z-index:5;color:var(--hint);opacity:.55;transition:opacity .12s}
-#code-resize-handle:hover,#code-resize-handle.dragging{opacity:1;color:var(--accent)}
-#note-panel.maximized #code-resize-handle{display:none}
-#note-panel.code-bg-distinct #code-editor-wrap{background:var(--tb-bg)}
-#code-gutter{position:absolute;top:0;left:0;bottom:0;width:40px;padding:12px 0;box-sizing:border-box;overflow:hidden;text-align:right;font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;color:var(--hint);opacity:.5;user-select:none}
-#code-gutter span{display:block;padding-right:9px}
-#code-view{position:absolute;top:0;left:0;right:0;bottom:0;margin:0;box-sizing:border-box;padding:12px 14px 12px 50px;background:transparent;color:var(--fg);font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;white-space:pre;overflow:hidden;pointer-events:none}
-#code-view code{font:inherit;white-space:pre}
-#code-editor{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;box-sizing:border-box;border:none;outline:none;background:transparent;color:transparent;caret-color:var(--fg);font:400 12.5px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;padding:12px 14px 12px 50px;white-space:pre;overflow:auto;tab-size:2;resize:none}
-#code-editor::selection{background:color-mix(in srgb, var(--accent) 35%, transparent)}
-#code-editor::placeholder{color:var(--hint)}
-#code-panel-footer{display:flex;align-items:center;justify-content:flex-end;padding:4px 14px 10px;flex-shrink:0}
-.code-footer-hint{font:400 11px 'Inter',sans-serif;color:var(--hint)}
-
-/* Mode visibility: Note and Code tabs share one panel shell (header, drag, maximize,
-   positioning) — only the body swaps. Backlinks/timestamp badges are Note-only (Code
-   has no equivalent), hidden in Code mode via .panel-badge-btn's own mode-code rule above. */
-#note-panel.mode-code #note-toolbar,#note-panel.mode-code #note-editor,#note-panel.mode-code #bl-panel,#note-panel.mode-code #node-ts-panel,#note-panel.mode-code #note-panel-footer,#note-panel.mode-code #note-title-row{display:none}
-#note-panel.mode-note #code-toolbar,#note-panel.mode-note #code-editor-wrap,#note-panel.mode-note #code-panel-footer{display:none}
-/* ntb-ai-rewrite is hidden by id, not just via #note-toolbar's mode-code rule above —
-   Normal view physically relocates it into the header (see the maximize handler in JS),
-   so once that's happened, hiding #note-toolbar alone no longer reaches it. Same reasoning is
-   why Clear lives permanently in the header now instead of being relocated per-mode. */
-#note-panel.mode-code #ntb-ai-rewrite{display:none}
-/* Single per-node indicator dot: note-bubble icon by default, with a small accent-colored
-   </> badge overlaid when the node also has a non-empty code block — so one dot signals
-   both "has a note" and "has code", instead of two separate dots side by side. */
-.node-note-dot{position:relative}
 .node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font:0.82em/1.4 inherit;color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;border:none;resize:none;overflow:hidden;background:transparent}
 .node-note-line:focus{color:var(--fg)}
 .node-remark-line{position:relative;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:0.82em;line-height:1.4}
@@ -2103,27 +2016,9 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-qa-answer:hover,.node-qa-question:hover{opacity:1}
 .node-qa-answer:focus{opacity:1;color:var(--fg)}
 .node-qa-answer:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
-.pv-note-inline-preview{display:inline-block;max-width:clamp(220px,28vw,640px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;font-style:italic;font-size:0.76em;color:var(--muted);opacity:.75;margin-left:8px}
-.node-code-badge{position:absolute;right:-3px;bottom:-3px;display:inline-flex;align-items:center;justify-content:center;width:9px;height:9px;border-radius:3px;background:var(--accent);color:var(--bg)}
-.node-code-badge svg{width:6px;height:6px}
 .node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:4px;color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px;transition:opacity .12s}
 .node-arw-dot:hover{opacity:1}
 .node-row.selected .node-arw-dot,.node-row.primary-selection .node-arw-dot{opacity:.85}
-/* Token colors — mapped to existing theme variables, no new hardcoded colors */
-.tok-kw{color:var(--fc-purple)}
-.tok-str{color:var(--fc-green)}
-.tok-num{color:var(--fc-blue)}
-.tok-com{color:var(--muted);font-style:italic}
-.tok-tag{color:var(--fc-red)}
-.tok-attr{color:var(--fc-orange)}
-.tok-punct{color:var(--fc-gray)}
-.tok-heading{color:var(--fc-blue);font-weight:700}
-.tok-bold{color:var(--fg);font-weight:700}
-.tok-italic{color:var(--fg);font-style:italic}
-.tok-code{color:var(--fc-purple)}
-.tok-link{color:var(--fc-blue);text-decoration:underline}
-.tok-quote{color:var(--fc-gray);font-style:italic}
-#ntb-ai-rewrite:disabled,#ntb-ai-summarise:disabled{opacity:.25;pointer-events:none}
 
 /* Note indicator dot on node rows */
 .node-note-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;font-size:10px;cursor:pointer;border-radius:4px;transition:opacity .12s}
@@ -2204,18 +2099,6 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .nqa-item.icon-only{flex:0 0 auto;width:34px;height:34px;padding:0;justify-content:center;gap:0}
 .nqa-item.icon-only.at-active::before{display:none}
 .nqa-item.icon-only.at-active{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 55%,transparent)}
-#bl-panel{flex-shrink:0;border-top:1px solid var(--border);padding:8px 14px 10px;display:none}
-#node-ts-panel{flex-shrink:0;border-top:1px solid var(--border);padding:6px 14px 8px;display:none}
-#note-panel.maximized #node-ts-panel.visible,#note-panel.show-ts #node-ts-panel.visible{display:block}
-.node-ts-line{font:400 11px 'Inter',sans-serif;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.node-ts-line b{font-weight:500;color:var(--muted)}
-#note-panel.maximized #bl-panel.has-links,#note-panel.show-backlinks #bl-panel.has-links{display:block}
-#bl-panel-label{font:600 9.5px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);margin-bottom:6px;user-select:none}
-.bl-item{display:flex;align-items:baseline;gap:6px;padding:3px 0;cursor:pointer}
-.bl-item:hover .bl-item-text{color:var(--accent)}
-.bl-item-arrow{color:var(--hint);font-size:10px;flex-shrink:0}
-.bl-item-text{font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-.bl-item-text em{font-style:normal;color:var(--accent);font-weight:500}
 .node-cb{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;transition:background .1s,border-color .1s;flex-shrink:0;position:relative}
 .node-cb:hover{border-color:var(--accent)}
 .node-cb.cb-checked{background:color-mix(in srgb,var(--accent) 85%,transparent);border-color:var(--accent)}
@@ -2224,28 +2107,6 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-cb.cb-indeterminate::after{content:'';position:absolute;left:2px;top:5px;width:8px;height:2px;background:var(--accent);border-radius:1px;transform:translateY(-50%)}
 .node-row.cb-done .node-label{opacity:.55;text-decoration:line-through}
 .cb-progress{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:1px 6px;margin-left:5px;flex-shrink:0;cursor:default}
-
-/* Note panel maximize */
-#note-panel-maximize{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#note-panel-maximize:hover{color:var(--fg);background:var(--hover)}
-#note-panel.maximized{position:fixed;inset:0;width:100%!important;max-height:100%!important;border-radius:0;z-index:110;transform:none!important;left:0!important;top:0!important}
-#note-panel.maximized #code-editor-wrap{max-height:none;flex:1}
-
-/* Note panel: Normal view is the minimal one — toolbar, footer, backlinks, and
-   timestamps all stay out of the way (see the display:none base rules above),
-   and Rewrite lives up in the header (physically relocated there by JS, see
-   the maximize handler) so Normal reads as one tight row rather than a header
-   plus a near-empty toolbar row underneath. The two badges below are how
-   backlinks/timestamps stay reachable without leaving Normal: each only
-   appears when there's actually something behind it (a real backlink, or —
-   for timestamps, always, since every node has them) and toggles that one
-   panel open inline on click via #note-panel.show-backlinks/.show-ts. */
-.panel-badge-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;gap:3px;transition:color .12s,background .12s;flex-shrink:0}
-.panel-badge-btn:hover{color:var(--fg);background:var(--hover)}
-.panel-badge-btn[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-.panel-badge-count{font:600 10px 'Inter',sans-serif}
-#note-panel.maximized .panel-badge-btn{display:none!important}
-#note-panel.mode-code .panel-badge-btn{display:none}
 
 /* Main editor maximize (zen mode) — floats in the corner of the editor itself
    instead of living in the header, so it doesn't crowd the app bar.
@@ -3096,7 +2957,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-capture-person{width:100%;box-sizing:border-box;padding:0 0 6px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;outline:none;margin-bottom:6px}
 .pv-capture-person::placeholder{font-weight:400;color:var(--hint)}
 .pv-inline-edit-input{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%;padding:0;margin:0;border-bottom:1px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
-.node-note-dot.pv-dot-open,.node-code-dot.pv-dot-open{opacity:1;color:var(--accent)}
+.node-note-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
 .pv-quote-block{margin:4px 0 10px;display:grid;gap:4px}
 .pv-quote-line{color:var(--sem-quote);font-style:italic;font-size:12px;line-height:1.5;opacity:.85;padding-left:9px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
@@ -3150,9 +3011,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-note-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .pv-inline-note-body table{border-collapse:collapse;margin:6px 0;font-size:12px}
 .pv-inline-note-body table td,.pv-inline-note-body table th{border:1px solid var(--border);padding:4px 7px}
-.pv-inline-code-body{margin:0;padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 12px/1.6 ui-monospace,'SFMono-Regular',Consolas,monospace;white-space:pre;overflow-x:auto;tab-size:2;color:var(--fg)}
-.pv-inline-code-body.bg-distinct{background:var(--tb-bg)}
-.pv-inline-code-body code{font:inherit;white-space:pre}
 .pv-inline-qa-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--accent);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
 .pv-inline-qa-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-qa-row+.pv-inline-qa-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
@@ -3311,13 +3169,13 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    doesn't read correctly - so this is grouped by background rather than one blanket rule. */
 .settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
 #why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,.qa-dropdown,
-.history-modal-body,.code-lang-menu,#at-suggest,#node-qa-suggest,#demo-chapters-menu,#demo-preview-body,
+.history-modal-body,#at-suggest,#node-qa-suggest,#demo-chapters-menu,#demo-preview-body,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#meetings-body,#meeting-link-results,#meetings-template-menu,#link-pop-node-results,#diagram-gen-review-list
 {scrollbar-gutter:stable}
 .settings-content::-webkit-scrollbar,.settings-rail::-webkit-scrollbar,#shortcuts-modal-body::-webkit-scrollbar,.cs-rail::-webkit-scrollbar,#shortcuts-rail::-webkit-scrollbar,
 #cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,#qa-insert-modal::-webkit-scrollbar,#qa-insert-list::-webkit-scrollbar,#diagram-gen-review-modal::-webkit-scrollbar,#diagram-gen-review-list::-webkit-scrollbar,
 .app-modal-body::-webkit-scrollbar,.doc-tab-overview-menu::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
-.history-modal-body::-webkit-scrollbar,.code-lang-menu::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
+.history-modal-body::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#demo-preview-body::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
 .anchor-suggest-results::-webkit-scrollbar,#meetings-body::-webkit-scrollbar,#meeting-link-results::-webkit-scrollbar,#meetings-template-menu::-webkit-scrollbar,#link-pop-node-results::-webkit-scrollbar,#todo-link-popover::-webkit-scrollbar,
@@ -3326,7 +3184,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#qa-insert-modal::-webkit-scrollbar-thumb,#qa-insert-list::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
 .app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
-.history-modal-body::-webkit-scrollbar-thumb,.code-lang-menu::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
+.history-modal-body::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#demo-preview-body::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
 .anchor-suggest-results::-webkit-scrollbar-thumb,#meetings-body::-webkit-scrollbar-thumb,#meeting-link-results::-webkit-scrollbar-thumb,#meetings-template-menu::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
@@ -3342,11 +3200,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #files-tab-body::-webkit-scrollbar,#mindmap-tab-body::-webkit-scrollbar,#remarks-tab-body::-webkit-scrollbar{width:8px}
 #files-tab-body::-webkit-scrollbar-thumb,#mindmap-tab-body::-webkit-scrollbar-thumb,#remarks-tab-body::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
 /* --edit-bg surfaces */
-#pad-editor::-webkit-scrollbar,#note-editor::-webkit-scrollbar,#code-editor-wrap::-webkit-scrollbar,#qa-body::-webkit-scrollbar,#decision-body::-webkit-scrollbar,
-#code-editor::-webkit-scrollbar,#code-view::-webkit-scrollbar,.pv-inline-code-body::-webkit-scrollbar
+#pad-editor::-webkit-scrollbar,#qa-body::-webkit-scrollbar,#decision-body::-webkit-scrollbar
 {width:8px;height:8px}
-#pad-editor::-webkit-scrollbar-thumb,#note-editor::-webkit-scrollbar-thumb,#code-editor-wrap::-webkit-scrollbar-thumb,#qa-body::-webkit-scrollbar-thumb,#decision-body::-webkit-scrollbar-thumb,
-#code-editor::-webkit-scrollbar-thumb,#code-view::-webkit-scrollbar-thumb,.pv-inline-code-body::-webkit-scrollbar-thumb
+#pad-editor::-webkit-scrollbar-thumb,#qa-body::-webkit-scrollbar-thumb,#decision-body::-webkit-scrollbar-thumb
 {background:var(--scroll);border-radius:999px;border:2px solid var(--edit-bg);background-clip:padding-box}
 /* ── Generic PDF export overlay (Q&A / To-Dos / Meeting Notes standalone exports) ──────────
    Off-screen at all times except while body.printing-generic is active (set by
@@ -4871,33 +4727,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
               </div>
             </div>
           </div>
-          <div class="settings-section" data-cat="panels" id="settings-section-note">
-            <div class="settings-section-title">Note Panel</div>
+          <div class="settings-section" data-cat="panels" id="settings-section-backlinks">
+            <div class="settings-section-title">Backlinks</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backlinks</span><span class="settings-row-desc">@mention other nodes; existing [[mentions]] still render as links either way</span></div><button id="feat-backlinks-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Backlinks"></button></div>
-              <div class="settings-list-row" id="note-bg-match-row"><div class="settings-row-text"><span class="settings-switch-text">Match editor background</span><span class="settings-row-desc">On: the note's writing area matches the outline's canvas. Off: it matches the file explorer/toolbar tone instead, to read as clearly separate from the document</span></div><button id="note-bg-match-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Match editor background"></button></div>
-            </div>
-            <div class="settings-field" id="note-toolbar-buttons-field">
-              <button type="button" class="settings-collapsible-header" id="note-toolbar-buttons-header" aria-expanded="false" aria-controls="note-toolbar-buttons-body">
-                <span class="settings-collapsible-title">Toolbar buttons</span>
-                <span class="settings-collapsible-summary" id="note-toolbar-buttons-summary"></span>
-                <svg class="settings-collapsible-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="settings-collapsible-body" id="note-toolbar-buttons-body">
-                <span class="settings-row-desc">Hide buttons you don't use in the per-node note panel's toolbar</span>
-                <div class="settings-grid-actions"><button type="button" class="settings-mini-link" id="ntbsec-all-btn">Show all</button><button type="button" class="settings-mini-link" id="ntbsec-none-btn">Hide all</button></div>
-                <div class="settings-grid" id="note-toolbar-buttons-grid" style="margin-top:6px">
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-timestamp" checked /> Timestamp</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-ai-rewrite" checked /> AI Rewrite</label>
-                <label class="settings-checkbox-row"><input type="checkbox" id="ntbsec-ai-summarise" checked /> AI Summarise</label>
-              </div>
-              </div>
-            </div>
-            <div class="settings-subsection" id="settings-subsection-codeblock">
-              <div class="settings-subsection-title">Code</div>
-              <div class="settings-list">
-                <div class="settings-list-row" id="code-bg-match-row"><div class="settings-row-text"><span class="settings-switch-text">Match editor background</span><span class="settings-row-desc">On: the Code tab's writing area matches the outline's canvas. Off: it matches the file explorer/toolbar tone instead, to read as clearly separate from the document</span></div><button id="code-bg-match-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Match editor background"></button></div>
-              </div>
             </div>
           </div>
           <div class="settings-section" data-cat="hub" id="settings-section-todos">
@@ -5501,8 +5334,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
             <div class="settings-subsection">
               <div class="settings-subsection-title">Node content</div>
               <div class="settings-list">
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Note Panel</span><span class="settings-row-desc">Per-node notes and code attachments — toolbar button, right-click action, and the panel itself</span></div><button id="feat-note-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Note Panel"></button></div>
-                <div class="settings-list-row" id="feat-codeblock-row"><div class="settings-row-text"><span class="settings-switch-text">Code tab</span><span class="settings-row-desc">The Note panel's Code tab — syntax-highlighted per-node code attachment, opened from the same Note entry point as prose</span></div><button id="feat-codeblock-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Code tab"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Tagging</span><span class="settings-row-desc">#tags on nodes — insert button, right-click action, and the tag manager</span></div><button id="feat-tagging-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Tagging"></button></div>
               </div>
             </div>
@@ -5841,7 +5672,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <li><span class="sem-example">!Text</span> → <span class="sem-alert-inline">alert</span> — red warning</li>
 <li><span class="sem-example">`Text`</span> → <span class="sem-code-inline">code</span> — inline code</li>
 <li><span class="sem-example">SAP Note 123456</span> → <span class="sem-sap-note">SAP Note 123456</span> — auto-linked to me.sap.com, opens in a new tab. Also recognizes "OSS Note", case-insensitive. No markup to type — just write it naturally</li>
-<li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list. Open the Note panel on the target node to see all backlinks pointing to it</li>
+<li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 <li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
 <li>Tag icon in toolbar or right-click → Tags → tag popover (toggle existing tags or add new ones)</li>
 </ul>
@@ -6006,34 +5837,12 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-note">
-<h4>Note panel</h4>
+<h4>Notes</h4>
 <ul>
-<li>Every node can hold a rich-text note and, on its own tab, a code block — open the panel via the toolbar (<span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Note button), right-click → <span class="help-kbd">More</span> → Note, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">N</span> (jumps straight to the Note tab; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">K</span> does the same for Code). A node with a note also shows a small chat-bubble dot — click it to expand the note as its own line directly under the node, editable right there, click again to collapse (Settings → Editing → "Always expand inline" starts every note expanded instead — the dot still folds it back individually even with that on). A node with code but no note text has nothing to preview inline, so its dot opens the panel directly instead</li>
-<li>Note and Code share one floating, draggable window with a tab switch in its header — one dot on the node row instead of two, and no separate toolbar button or right-click entry for Code. A small <span class="help-kbd">&lt;/&gt;</span> badge on the dot signals the node also has code, even while you're looking at the Note tab. Drag the header to reposition the panel anywhere; click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> to expand to full-screen and click again to restore — maximize applies to whichever tab is active</li>
-<li>Note and Code open in a minimal <strong>Normal</strong> view by default — just the editor, with the toolbar, backlinks, and timestamps tucked away and Rewrite relocated up into the header, since most notes are a short remark rather than something needing the full toolbar. Click <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> to expand to <strong>Maximize</strong> — full toolbar, footer, and backlinks/timestamps all visible, Rewrite back in its usual toolbar spot — and click again to restore. Maximize applies to whichever tab is active</li>
-<li>Two small badges in the header — a clock and, only when the node is actually referenced elsewhere, a link icon with a count — reveal timestamps or backlinks inline in Normal view without leaving it, so they're reachable without a full Maximize. Both start collapsed each time the panel opens and hide automatically in Maximize, since everything's already showing there. Neither badge appears on the Code tab, which has no equivalent</li>
-<li>Toolbar: <strong>B I U S</strong> for bold / italic / underline / strikethrough; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> bullet list and <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></span> numbered list; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> insert or edit a link, with its own display-text field separate from the URL; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg></span> table icon inserts a 2×2 table; <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite rewrites the whole note or just selected text; the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg></span> summarise button reads the node's child subtree and appends a prose summary to the note</li>
-<li><span class="help-kbd">Tab</span> → indents a list item (when inside a list) or inserts spaces in plain text; <span class="help-kbd">Shift</span> + <span class="help-kbd">Tab</span> → outdent a list item</li>
-<li>Highlight any text in the note (Normal or Maximize view) and a small formatting popover appears above it — Bold, Italic, Strikethrough, Highlight (a yellow inline highlight, click again on already-highlighted text to remove it), Link, and Rewrite (AI, rewrites just the highlighted phrase — same underlying call as the toolbar's own AI Rewrite, just pre-scoped to the selection). A quicker route to the same commands as the toolbar above, without moving the cursor up to reach it. Settings → Editing → "Selection formatting popover" turns this off</li>
-<li>Rewriting with nothing selected replaces the note's entire content with plain AI-rewritten text, which would otherwise silently remove any images or tables in it — a confirmation prompt catches this and tells you what would be lost before it happens. Select just the text you want rewritten instead if you'd rather keep the rest untouched</li>
-<li>Paste images directly into the note — they embed inline and are stored with the note. Click a pasted image to select it, then drag the handle at its corner to resize; double-click it to reset back to its original size</li>
-<li><strong>Feature as diagram</strong> — right-click any image in a note and choose "Feature as diagram" (e.g. for architecture diagrams) to have it pulled out of the small collapsible note card in Preview and Presenter mode and shown instead as a large, always-visible figure right under the node's text — no click needed to reveal it. The image's alt text (if it has one) shows underneath as a caption. Right-click it again to turn this off and return it to normal note behavior. This also applies to PDF exports, since those render from the same Preview output</li>
-<li>Tables: drag the thin border handle between columns to resize column widths</li>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo edits made in this note while it's open — its own undo history, separate from the outline's and separate from the Code tab's, reset each time you open a note and cleared when you close it. The whole session still counts as one step on the outline's own undo when you close the panel. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Enter</span> or <span class="help-kbd">Esc</span> → close and save (whichever tab is active); "Clear note" removes the note text (undoable) and closes the panel</li>
-<li>A chat-bubble dot on a node row signals it has a note and/or code — click it to open the panel on its default tab; this also selects that node</li>
-<li><strong>Backlinks</strong> — if other nodes reference the current node via <span class="help-kbd">@mention</span>, a Backlinks section appears at the bottom of the Note tab. Click any entry to jump to that referencing node</li>
-<li><strong>Timestamps</strong> — the Note tab also shows when the node was created and last modified, on a single line at the bottom. Existing nodes show the time they were first loaded after this feature was added; new nodes and any node whose text is edited going forward will have accurate timestamps</li>
-</ul>
-</div>
-          <div class="help-section" data-cat="panels" id="help-section-codeblock">
-<h4>Code (in the Note panel)</h4>
-<ul>
-<li>Every node can also hold one code block, on its own <strong>Code</strong> tab inside the same panel as its Note — there's no separate popup, toolbar button, or right-click entry for it. Switch tabs with the header switch, or jump straight there with <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">K</span>. A node with code but no note text opens directly to the Code tab when you click its dot</li>
-<li>A real <span class="help-kbd">&lt;textarea&gt;</span> for editing, syntax-highlighted live as you type — no rich-text formatting, just plain code with color. Line numbers down the left edge. Drag the bottom edge to resize it vertically. Dragging the panel, maximizing it, and closing it all work the same as described above for the Note tab, since it's the same window</li>
-<li>Language picker: Plain text, ABAP, SQL, JavaScript, Python, JSON, XML/HTML, Markdown</li>
-<li><strong>Copy</strong> copies the raw code text (not HTML) to your clipboard</li>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> undo and redo edits made in this code block while it's open — its own undo history, separate from the Note tab's, reset each time you open a code block and cleared when you close it. The whole session still counts as one step on the outline's own undo when you close the panel. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Enter</span> or <span class="help-kbd">Esc</span> → close and save; "Clear code" removes it entirely (undoable) and closes the panel</li>
-<li>A small <span class="help-kbd">&lt;/&gt;</span> badge on the node's note dot signals it has a code block, whichever tab you last had open</li>
+<li>Every node can hold a plain-text note, shown and edited directly underneath the node in the outline itself — there's no separate panel to open. Add or open one via the toolbar (<span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> Note button), right-click → <span class="help-kbd">More</span> → Note, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">N</span></li>
+<li>A node with a note shows a small chat-bubble dot — click it to expand the note as its own line directly under the node, editable right there; click again to collapse it (Settings → Editing → "Always expand inline" starts every note expanded instead — the dot still folds it back individually even with that on)</li>
+<li>The note line grows automatically as you type multiple lines. Backspace at the start of an empty note deletes it</li>
+<li>Right-click the note line for AI Rewrite (rewrites the note's current text) or Delete note</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-pad-panel">
@@ -7302,68 +7111,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   </div>
 </div>
 
-<div id="note-panel" class="mode-note" role="dialog" aria-label="Node note and code">
-  <div id="note-panel-header">
-    <div id="note-panel-tabs" role="tablist" aria-label="Node panel">
-      <button type="button" class="note-panel-tab" id="npanel-tab-note" data-mode="note" role="tab" aria-selected="true">Note</button>
-      <button type="button" class="note-panel-tab" id="npanel-tab-code" data-mode="code" role="tab" aria-selected="false">Code</button>
-    </div>
-    <button id="note-panel-clear" class="panel-icon-btn" data-tip="Clear note" aria-label="Clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button>
-    <button id="note-panel-ts-badge" class="panel-badge-btn" data-tip="Show created/modified dates" aria-pressed="false" aria-label="Show timestamps"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></button>
-    <button id="note-panel-bl-badge" class="panel-badge-btn" data-tip="Show backlinks" aria-pressed="false" aria-label="Show backlinks" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span class="panel-badge-count" id="note-panel-bl-count"></span></button>
-    <button id="note-panel-maximize" data-tip="Expand to full view" aria-label="Maximize"><svg id="note-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
-    <button id="note-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-  </div>
-  <div id="note-panel-subtitle"></div>
-  <div id="note-title-row"><input type="text" id="note-title-input" placeholder="Add a title (optional)" maxlength="120" aria-label="Note title" /></div>
-  <div id="note-toolbar">
-    <button class="note-tb-btn" id="ntb-timestamp" data-tip="Insert date/time"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
-    <span class="note-tb-sep"></span>
-    <button class="note-tb-btn" id="ntb-ai-rewrite" data-tip="Rewrite note (AI) — rewrites selection or full note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
-    <button class="note-tb-btn" id="ntb-ai-summarise" data-tip="Summarise subtree into note (AI)" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg></button>
-  </div>
-  <textarea id="note-editor" spellcheck="true" placeholder="Add a note…"></textarea>
-  <div id="bl-panel"></div>
-  <div id="node-ts-panel"></div>
-  <div id="note-panel-footer">
-    <span class="note-footer-hint">Ctrl+Enter to close &amp; save</span>
-  </div>
-  <div id="code-toolbar">
-    <div class="select-wrap">
-      <button type="button" class="code-tb-btn code-lang-trigger" id="code-lang-trigger" data-tip="Language" aria-haspopup="listbox" aria-expanded="false"><span id="code-lang-trigger-label">Plain text</span><svg class="code-lang-trigger-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-      <select id="code-lang-select" aria-hidden="true" tabindex="-1" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
-        <option value="plain">Plain text</option>
-        <option value="abap">ABAP</option>
-        <option value="sql">SQL</option>
-        <option value="javascript">JavaScript</option>
-        <option value="python">Python</option>
-        <option value="json">JSON</option>
-        <option value="markup">XML / HTML</option>
-        <option value="markdown">Markdown</option>
-      </select>
-      <div class="code-lang-menu" id="code-lang-menu" role="listbox" aria-label="Code language" hidden></div>
-    </div>
-    <span class="code-tb-sep"></span>
-    <button class="code-tb-btn" id="code-beautify-btn" data-tip="Beautify / format code — JSON and XML/HTML format instantly, other languages use AI">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6"/><path d="M4 9h10"/><path d="M4 14h6"/><path d="M4 19h10"/></svg>
-      <span id="code-beautify-btn-label">Beautify</span>
-    </button>
-    <button class="code-tb-btn" id="code-copy-btn" data-tip="Copy code" aria-label="Copy code">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      <span id="code-copy-btn-label">Copy</span>
-    </button>
-  </div>
-  <div id="code-editor-wrap">
-    <div id="code-gutter"></div>
-    <pre id="code-view"><code id="code-view-code"></code></pre>
-    <textarea id="code-editor" spellcheck="false" placeholder="Paste or type code…"></textarea>
-    <div id="code-resize-handle" data-tip="Drag to resize"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="21" y1="9" x2="9" y2="21"/><line x1="21" y1="15" x2="15" y2="21"/></svg></div>
-  </div>
-  <div id="code-panel-footer">
-    <span class="code-footer-hint" id="code-footer-hint"></span>
-  </div>
-</div>
-
 <div id="at-suggest"></div>
 <div id="node-qa-suggest"></div>
 <div id="answerer-suggest"></div>
@@ -8325,7 +8072,7 @@ let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let decisionLogs=[]; let decisionExpandedId=null; let decisionSelectMode=false; let attachments=[]; let remarks=[]; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let noteSessionUndoStack=[]; let noteSessionRedoStack=[]; let codeSessionUndoStack=[]; let codeSessionRedoStack=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let alwaysExpandInlineEnabled=false; let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','remark','tags','qa','slide-divider']; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=false; let padFilesTabEnabled=false; let padRemarksTabEnabled=true; let padOpen=false; let padWidth=440; let padMatchEditorBg=false; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let decisionLogs=[]; let decisionExpandedId=null; let decisionSelectMode=false; let attachments=[]; let remarks=[]; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let currentFont='sans'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; let compactRows=true; let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let alwaysExpandInlineEnabled=false; let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','remark','tags','qa','slide-divider']; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=false; let padFilesTabEnabled=false; let padRemarksTabEnabled=true; let padOpen=false; let padWidth=440; let padMatchEditorBg=false; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=false; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let featureTemplatesEnabled=true; let featurePreviewEnabled=true; let featurePresenterEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; let hideTreeLines=true; let depthGuideLines=true; let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let nodeFontColorPreset='black'; let nodeDepthFadeEnabled=true; let accentCursorEnabled=false; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -9773,8 +9520,7 @@ function notePlainTextFromLegacyHtml(html){
   const text=(tmp.textContent||tmp.innerText||'');
   return text.split(marker).map(s=>s.replace(/[ \t]+/g,' ').trim()).filter(Boolean).join('\n');
 }
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:notePlainTextFromLegacyHtml(typeof n.note==='string'?n.note:''),noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',codeBlock:normalizeCodeBlock(n.codeBlock),decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
-function normalizeCodeBlock(cb){if(!cb||typeof cb!=='object')return null; const code=typeof cb.code==='string'?cb.code:''; if(!code)return null; const lang=CODE_LANGS.includes(cb.lang)?cb.lang:'plain'; return {lang,code}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:notePlainTextFromLegacyHtml(typeof n.note==='string'?n.note:''),noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 /* GENERATED:decisionLog:START — DO NOT EDIT BY HAND. Source of truth: src/state/decisionLog.ts (tests: tests/unit/decisionLog.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * Pure validation/normalization layer for the Decision Log domain — first slice of a domain not
@@ -9857,7 +9603,7 @@ function migrateNodeDecisionLogsToArray(){
     delete node.decisionLog;
   }
 }
-function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',codeBlock:null,tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
+function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
 function makeBlankNode(depth=0,parentId=null){return makeNode('',depth,parentId)}
 function snapshot(){return JSON.stringify({nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,currentFont,focusedId,remarks,qaItems})}
 // nextId is intentionally never allowed to move backward here (Math.max, not a straight
@@ -9884,19 +9630,6 @@ function redo(){if(!redoStack.length)return; undoStack.push(snapshot()); restore
 function pushPadUndo(){const editor=el('pad-editor'); if(!editor)return; padUndoStack.push(editor.innerHTML); if(padUndoStack.length>100)padUndoStack.shift(); padRedoStack=[]}
 function padUndo(){const editor=el('pad-editor'); if(!editor||!padUndoStack.length)return; padRedoStack.push(editor.innerHTML); editor.innerHTML=padUndoStack.pop(); markDirty(); _reinitPadEditorTables(); clearTimeout(_padIdleTimer); _padCheckpointPending=true}
 function padRedo(){const editor=el('pad-editor'); if(!editor||!padRedoStack.length)return; padUndoStack.push(editor.innerHTML); editor.innerHTML=padRedoStack.pop(); markDirty(); _reinitPadEditorTables(); clearTimeout(_padIdleTimer); _padCheckpointPending=true}
-// Note and Code get session-scoped undo stacks: reset every time their panel opens,
-// discarded on close. This is deliberately NOT the outline's shared undoStack — Ctrl+Z
-// while a panel is focused should only ever undo edits made in that panel this session,
-// not an unrelated tree edit that happens to be sitting on top of the shared stack. The
-// whole session still lands as one step on the outline's stack when the panel closes
-// (commitNoteEdit/commitCodeEdit's pushUndo()), so the two layers compose: fine-grained
-// while open, one coarse step once closed.
-function pushNoteSessionUndo(){const editor=el('note-editor'); if(!editor)return; noteSessionUndoStack.push(editor.value); if(noteSessionUndoStack.length>100)noteSessionUndoStack.shift(); noteSessionRedoStack=[]}
-function noteSessionUndo(){const editor=el('note-editor'); if(!editor||!noteSessionUndoStack.length)return; noteSessionRedoStack.push(editor.value); editor.value=noteSessionUndoStack.pop(); markDirty(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
-function noteSessionRedo(){const editor=el('note-editor'); if(!editor||!noteSessionRedoStack.length)return; noteSessionUndoStack.push(editor.value); editor.value=noteSessionRedoStack.pop(); markDirty(); clearTimeout(_noteIdleTimer); _noteCheckpointPending=true}
-function pushCodeSessionUndo(){const editor=el('code-editor'); if(!editor)return; codeSessionUndoStack.push(editor.value); if(codeSessionUndoStack.length>100)codeSessionUndoStack.shift(); codeSessionRedoStack=[]}
-function codeSessionUndo(){const editor=el('code-editor'); if(!editor||!codeSessionUndoStack.length)return; codeSessionRedoStack.push(editor.value); editor.value=codeSessionUndoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true; _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo()}
-function codeSessionRedo(){const editor=el('code-editor'); if(!editor||!codeSessionRedoStack.length)return; codeSessionUndoStack.push(editor.value); editor.value=codeSessionRedoStack.pop(); markDirty(); clearTimeout(_codeIdleTimer); _codeCheckpointPending=true; _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo()}
 // Contextual dispatcher: routes to whichever stack matches what's currently focused.
 // The keydown interceptions inside each editor are already naturally scoped this way
 // (only pad-editor's keydown can call padUndo(), etc.) — this dispatcher exists so the
@@ -9908,16 +9641,12 @@ function codeSessionRedo(){const editor=el('code-editor'); if(!editor||!codeSess
 function contextualUndo(){
   const ae=document.activeElement;
   if(ae && ae.id==='pad-editor'){ padUndo(); return; }
-  if(ae && ae.id==='note-editor'){ noteSessionUndo(); return; }
-  if(ae && ae.id==='code-editor'){ codeSessionUndo(); return; }
   if(ae && ae.classList && ae.classList.contains('todo-text')){ window.todosTextUndo?.(); return; }
   undo();
 }
 function contextualRedo(){
   const ae=document.activeElement;
   if(ae && ae.id==='pad-editor'){ padRedo(); return; }
-  if(ae && ae.id==='note-editor'){ noteSessionRedo(); return; }
-  if(ae && ae.id==='code-editor'){ codeSessionRedo(); return; }
   if(ae && ae.classList && ae.classList.contains('todo-text')){ window.todosTextRedo?.(); return; }
   redo();
 }
@@ -10268,7 +9997,6 @@ function saveToStorage(){
       }
     }
     if(typeof commitDecisionCardIfFocused==='function')commitDecisionCardIfFocused();
-    if(typeof commitOpenNodePanelEdits==='function')commitOpenNodePanelEdits();
     maybeAutoSnapshotBeforeSave(currentDocId);
     // Diagram XML + rendered SVG page thumbnails are the single heaviest thing any document
     // holds, and writing them into localStorage on every save is what actually exhausts its
@@ -10498,20 +10226,6 @@ function captureActiveTabSnapshot(){
 }
 
 function applyTabSnapshot(tab){
-  // Note and Code panels are per-node (notePanelNodeId/codePanelNodeId), and node IDs
-  // restart at 1 in every document (nextId is per-tab, not global) — so leaving either
-  // panel open across a document switch doesn't just show stale content, it leaves the
-  // panel's SAVE target pointed at whatever unrelated node happens to share that ID in
-  // the document being switched to. Closing here, before `nodes` below gets reassigned,
-  // means closeNodePanel's own commit-then-close still resolves against
-  // the document being left, not the one being entered. Every document-switch path
-  // (switchDoc, closeTab's fallback, template loading, cross-tab sync reload, and any
-  // future one) funnels through this one function, so fixing it here — rather than at
-  // each call site or each trigger (mouse click, tab click, Quick Assist navigation) —
-  // closes the hole for all of them at once, not just the one that happened to get
-  // noticed first. Pad doesn't need this: it's document-scoped, not node-scoped, and
-  // its content is already correctly swapped in via tab.pad below.
-  if(notePanelOpen) closeNodePanel(true);
   hideCrossTabWarning();
   nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; padUndoStack=tab.padUndoStack||[]; padRedoStack=tab.padRedoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
@@ -13333,7 +13047,7 @@ function setToolbarGroupHidden(group,hidden,persist=true){
   if(persist){savePrefs(); scheduleAutoSave()}
 }
 function setConfirmBeforeDelete(on,persist=true){confirmBeforeDelete=!!on; const toggle=el('confirm-delete-toggle'); if(toggle){toggle.classList.toggle('on',confirmBeforeDelete); toggle.setAttribute('aria-checked',String(confirmBeforeDelete))} if(persist){savePrefs(); scheduleAutoSave()}}
-function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled){closeAtSuggest(); const blPanel=el('bl-panel'); if(blPanel){blPanel.classList.remove('has-links'); blPanel.innerHTML=''} const blBadge=el('note-panel-bl-badge'); if(blBadge)blBadge.style.display='none';} else {const _np=el('note-panel'); if(_np&&_np.classList.contains('open')&&notePanelNodeId!==null){renderBacklinkPanel(notePanelNodeId)}} if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
+function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
 // Master on/off switches for the bigger, optional capabilities. Turning
@@ -13355,8 +13069,6 @@ function padOtherTabsEnabled(exceptKey){
   return Object.keys(state).some(k=>k!==exceptKey&&state[k]);
 }
 const FEATURE_FLAGS={
-  note:{get:()=>featureNoteEnabled,set:v=>{featureNoteEnabled=v; if(!v){try{closeNodePanel(true)}catch(e){}}}},
-  codeblock:{get:()=>featureCodeEnabled,set:v=>{featureCodeEnabled=v; if(!v&&notePanelOpen&&notePanelMode==='code'){try{setNodePanelMode('note')}catch(e){}}}},
   pad:{get:()=>padEnabled,set:v=>{setPadEnabled(v); return}},
   ai:{get:()=>featureAiEnabled,set:v=>{featureAiEnabled=v; if(!v)clearAutoRewriteQueue();}},
   decisionlog:{get:()=>featureDecisionLogEnabled,set:v=>{if(!v&&!padOtherTabsEnabled('decisionlog')){showToast('Keep at least one Pad tab enabled'); return;} featureDecisionLogEnabled=v; padEnsureValidViewMode();}},
@@ -13385,8 +13097,8 @@ const FEATURE_FLAGS={
   preview:{get:()=>featurePreviewEnabled,set:v=>{featurePreviewEnabled=v; if(!v&&previewActive)closePreview();}},
   presenter:{get:()=>featurePresenterEnabled,set:v=>{featurePresenterEnabled=v; if(!v&&previewPresenting)exitPresenterMode();}}
 };
-const FEATURE_SETTINGS_SECTIONS={note:['settings-section-note'],codeblock:['settings-subsection-codeblock'],ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],padnotepad:['settings-subsection-notepad'],padqa:['settings-subsection-qa'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],meetings:['settings-section-meetings'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-subsection-decisionlog'],paddiagrams:['settings-subsection-diagrams']};
-const FEATURE_HELP_SECTIONS={note:['help-section-note'],codeblock:['help-section-codeblock'],ai:['help-section-ai'],decisionlog:['help-section-decision-log'],paddiagrams:['help-section-diagrams'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad-panel','help-section-notepad','help-section-qa','help-section-decision-log','help-section-diagrams','help-section-mindmap','help-section-files','help-section-remarks'],padnotepad:['help-section-notepad'],padqa:['help-section-qa'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos'],meetings:['help-section-meetings'],journal:['help-section-journal'],report:['help-section-recap'],library:['help-section-library'],padmindmap:['help-section-mindmap'],padfiles:['help-section-files'],padremarks:['help-section-remarks']};
+const FEATURE_SETTINGS_SECTIONS={ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],pad:['settings-section-pad'],padnotepad:['settings-subsection-notepad'],padqa:['settings-subsection-qa'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],meetings:['settings-section-meetings'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar'],decisionlog:['settings-subsection-decisionlog'],paddiagrams:['settings-subsection-diagrams']};
+const FEATURE_HELP_SECTIONS={ai:['help-section-ai'],decisionlog:['help-section-decision-log'],paddiagrams:['help-section-diagrams'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],pad:['help-section-pad-panel','help-section-notepad','help-section-qa','help-section-decision-log','help-section-diagrams','help-section-mindmap','help-section-files','help-section-remarks'],padnotepad:['help-section-notepad'],padqa:['help-section-qa'],templates:['help-section-templates'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos'],meetings:['help-section-meetings'],journal:['help-section-journal'],report:['help-section-recap'],library:['help-section-library'],padmindmap:['help-section-mindmap'],padfiles:['help-section-files'],padremarks:['help-section-remarks']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
   ov.querySelectorAll('.cs-card[data-feature-requires]').forEach(card=>{
@@ -13449,7 +13161,6 @@ function applyFeatureVisibility(){
       FEATURE_SETTINGS_SECTIONS[key].forEach(id=>{const sec=el(id); if(sec)hideSectionExceptToggle(sec,el(FEATURE_SELF_TOGGLE_IDS[key]),on,false);});
     });
   }
-  try{const _np=el('note-panel'); if(backlinksEnabled&&_np&&_np.classList.contains('open')&&notePanelNodeId!==null){renderBacklinkPanel(notePanelNodeId)}}catch(e){}
 }
 // Decision Log, Focus, and Hover Toolbar each put their own enable switch inside the very
 // settings section that gets hidden when the feature is off — unlike Note/Code/AI/Pad/Quick
@@ -13499,8 +13210,6 @@ function ctxActionAllowed(actionId){
   // 'fold' only change this device's own view state (never saved for a viewer anyway, see
   // saveToStorage), and 'where-used'/'version-history' just open read-only viewers.
   if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
-  if(actionId==='note')return featureNoteEnabled;
-  if(actionId==='codeblock')return featureCodeEnabled;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='qa')return padEnabled&&padQaTabEnabled;
@@ -13516,8 +13225,6 @@ function hoverActionAllowed(actionId){
   // calling the other, since a future edit to either could otherwise silently stop covering the
   // other's surface (the hover toolbar) without any error to catch it.
   if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
-  if(actionId==='note')return featureNoteEnabled;
-  if(actionId==='codeblock')return featureCodeEnabled;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='qa')return padEnabled&&padQaTabEnabled;
@@ -13529,7 +13236,7 @@ function syncFeaturesBtnState(){
   const anyOff=Object.keys(FEATURE_FLAGS).some(k=>!FEATURE_FLAGS[k].get());
   btns.forEach(btn=>{btn.classList.toggle('has-off-features',anyOff); btn.dataset.tip=anyOff?'Features — some capabilities are off':'Features';});
 }
-const MINIMAL_KEYS=['note','codeblock','pad','ai','decisionlog','tagging','backlinks','quickassist','nodeqa','hovertoolbar','todos','meetings','padmindmap','templates'];
+const MINIMAL_KEYS=['pad','ai','decisionlog','tagging','backlinks','quickassist','nodeqa','hovertoolbar','todos','meetings','padmindmap','templates'];
 function isMinimalMode(){return MINIMAL_KEYS.every(k=>!FEATURE_FLAGS[k].get());}
 function initFeatureActivationPanel(){
   Object.keys(FEATURE_FLAGS).forEach(key=>{
@@ -17063,41 +16770,7 @@ function collectNoteMatches(q){
           label:noteText.slice(0,80),
           labelHtml:buildMatchSnippetHtml(noteText,q),
           meta:(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
-          action:()=>{closeAllPanelsExceptGlobalSearch(); revealNodeInDoc(d.id,n.id); openNodePanel(n.id,undefined,'note')}
-        });
-      }
-    }
-  }
-  scan(loadActiveDocsIndex(),false);
-  if(searchIncludesTrash&&out.length<4)scan(loadTrashedDocsIndex(),true);
-  return out;
-}
-// Code blocks are stored as raw text on the node, so no stripping is needed before matching.
-function collectCodeMatches(q){
-  if(!featureCodeEnabled)return [];
-  const out=[]; const tokens=qaTokenizeQuery(q);
-  function scan(docsIdx,isTrash){
-    for(const d of docsIdx){
-      if(out.length>=4)break;
-      const {docNodes,docTitle}=getDocNodesForSearch(d.id,d);
-      if(!Array.isArray(docNodes))continue;
-      let perDoc=0;
-      for(const n of docNodes){
-        if(perDoc>=2||out.length>=4)break;
-        const codeText=n.codeBlock&&typeof n.codeBlock.code==='string'?n.codeBlock.code:''; if(!codeText||!qaHayMatches(codeText,tokens))continue;
-        perDoc++;
-        out.push(isTrash?{
-          group:'Code',
-          label:codeText.slice(0,80),
-          labelHtml:buildMatchSnippetHtml(codeText,q),
-          meta:'In Trash · '+(docTitle||'Untitled'),
-          action:()=>{closeAllPanelsExceptGlobalSearch(); revealTrashedDocInSidebar(d.id)}
-        }:{
-          group:'Code',
-          label:codeText.slice(0,80),
-          labelHtml:buildMatchSnippetHtml(codeText,q),
-          meta:(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
-          action:()=>{closeAllPanelsExceptGlobalSearch(); revealNodeInDoc(d.id,n.id); openNodePanel(n.id,undefined,'code')}
+          action:()=>{closeAllPanelsExceptGlobalSearch(); revealNodeInDoc(d.id,n.id); openInlineNoteAndFocus(n.id)}
         });
       }
     }
@@ -17300,7 +16973,6 @@ function collectSearchGroups(q){
     {name:'Documents',items:collectDocMatches(q)},
     {name:'In documents',items:collectNodeTextMatches(q)},
     {name:'Notes',items:collectNoteMatches(q)},
-    {name:'Code',items:collectCodeMatches(q)},
     {name:'Tags',items:collectTagMatches(q)},
     {name:'Pad',items:collectPadMatches(q)},
     {name:'Q&A',items:collectQaMatches(q)},
@@ -17413,8 +17085,6 @@ const QA_COMMANDS=[
   // there would mean searching for that content ranks the toggle above the actual hit,
   // every time — commands always render before search results. "note panel" is likewise
   // not reused here since the Pad command above already claims it.
-  {id:'note-feature',label:'Note Panel',keywords:['note panel feature','note feature','notes feature'],get:()=>FEATURE_FLAGS.note.get(),set:v=>setFeatureEnabled('note',v)},
-  {id:'codeblock-feature',label:'Code Block',keywords:['code block feature','code feature'],get:()=>FEATURE_FLAGS.codeblock.get(),set:v=>setFeatureEnabled('codeblock',v)},
   {id:'tagging-feature',label:'Tagging',keywords:['tagging feature','tags feature'],get:()=>FEATURE_FLAGS.tagging.get(),set:v=>setFeatureEnabled('tagging',v)},
   {id:'decisionlog-feature',label:'Decision Log',keywords:['decision log feature','decision logging feature'],get:()=>FEATURE_FLAGS.decisionlog.get(),set:v=>setFeatureEnabled('decisionlog',v)},
   {id:'ai-feature',label:'AI Capabilities',keywords:['ai capabilities','ai feature','ai features'],get:()=>FEATURE_FLAGS.ai.get(),set:v=>setFeatureEnabled('ai',v)},
@@ -17446,8 +17116,8 @@ function qaBestPhrase(text,phrases){
 // as QA_COMMANDS: nothing destructive (reset, delete, empty trash) is ever reachable here —
 // only additive, undoable operations. requiresSelection means the action needs a target node;
 // qaRender() shows those as a disabled row with a reason rather than hiding them outright or
-// letting them silently no-op on click, for the same reason collectNoteMatches/collectCodeMatches
-// are gated by their feature flag — a visible-but-dead result is worse than an honest one.
+// letting them silently no-op on click, for the same reason collectNoteMatches is gated by
+// its feature flag — a visible-but-dead result is worse than an honest one.
 const QA_ACTIONS=[
   {id:'new-document',label:'New document',keywords:['new document','new doc','create document'],requiresSelection:false,
    run:()=>{ createDoc(); return true; }},
@@ -17585,7 +17255,6 @@ const QA_SEARCH_CATEGORIES=[
   {key:'templates',group:'Templates'},
   {key:'in-documents',group:'In documents'},
   {key:'notes',group:'Notes'},
-  {key:'code',group:'Code'},
   {key:'tags',group:'Tags'},
   {key:'pad',group:'Pad'},
   {key:'qa',group:'Q&A'},
@@ -18618,6 +18287,14 @@ function toggleSlideDivider(id){
 }
 function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); render()}}
 function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); scheduleAutoSave(); render()}}
+// Shared entry point for every "add/edit note" action (toolbar button, right-click menu, hover
+// toolbar, keyboard shortcut, Quick Assist search results, Preview's note dot) now that notes
+// are inline-only -- expands the node's inline note line and focuses it, mirroring the same
+// sequence Shift+Enter already uses while editing a node's own text.
+function openInlineNoteAndFocus(id){
+  commitEdit(); setSingleSelection(id); expandNode(id); forceInlineNoteId=id; render();
+  requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const len=ln.value.length; ln.setSelectionRange(len,len); } });
+}
 // inlineExpand*NodeIds Sets track deviation from the current alwaysExpandInlineEnabled default
 // (see the XOR check in render), not "is expanded" directly — so forcing a node visible after
 // creating a new inline item means different Set membership depending on that default, not
@@ -19745,7 +19422,7 @@ const NODE_QA_ACTION_META={
 const CTX_HIDE_KEYS=[...CTX_ACTION_ORDER,'sort-children'];
 const CTX_GROUP_ORDER=['insert','structure','ai','notes','delete']; // order for leftover items in the More panel
 
-function _ctxNoteLabelText(){const idx=getIndex(nodes,contextMenuNodeId??selectedId); if(idx<0)return 'Note…'; const n=nodes[idx]; const hasNote=!!(n.note&&n.note.trim()); const hasCode=!!(n.codeBlock&&n.codeBlock.code&&n.codeBlock.code.trim()); return (hasNote||hasCode)?'Edit note…':'Add note…'}
+function _ctxNoteLabelText(){const idx=getIndex(nodes,contextMenuNodeId??selectedId); if(idx<0)return 'Note…'; const n=nodes[idx]; const hasNote=!!(n.note&&n.note.trim()); return hasNote?'Edit note…':'Add note…'}
 function _ctxWhereUsedNodeIds(){
   const idx=getIndex(nodes,contextMenuNodeId??selectedId); if(idx<0)return [];
   const end=getSubtreeEnd(nodes,idx);
@@ -19930,422 +19607,6 @@ function renderContextQuickOrderList(){
   });
 }
 
-// === Node Code Block ===
-const CODE_LANGS=['plain','abap','sql','javascript','python','json','markup','markdown'];
-let codePanelNodeId=null;
-let codePanelOpen=false;
-
-// Lightweight dependency-free tokenizer. Each language is an ordered list of
-// [tokenType, regex] pairs scanned left-to-right with sticky ('y') regexes.
-// First match at the current position wins; unmatched characters fall through
-// as plain text. This intentionally trades completeness for robustness — it
-// will not handle every edge case of every language, but it never throws and
-// never corrupts the underlying text (the textarea always holds the raw
-// string; this only ever produces a read-only HTML view).
-const CODE_TOKEN_RULES={
-  javascript:[
-    ['com',/\/\/[^\n]*/y],['com',/\/\*[\s\S]*?\*\//y],
-    ['str',/`(?:\\.|[^`\\])*`/y],['str',/"(?:\\.|[^"\\])*"/y],['str',/'(?:\\.|[^'\\])*'/y],
-    ['num',/\b0[xX][0-9a-fA-F]+\b|\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/y],
-    ['kw',/\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|class|extends|new|this|super|import|export|default|from|as|try|catch|finally|throw|typeof|instanceof|in|of|async|await|yield|static|get|set|null|undefined|true|false|void|delete)\b/y],
-    ['punct',/[{}()\[\];,.:?]|=>|[+\-*/%=<>!&|^~]+/y]
-  ],
-  python:[
-    ['com',/#[^\n]*/y],
-    ['str',/'''[\s\S]*?'''|"""[\s\S]*?"""/y],['str',/"(?:\\.|[^"\\])*"/y],['str',/'(?:\\.|[^'\\])*'/y],
-    ['num',/\b\d+(?:\.\d+)?\b/y],
-    ['kw',/\b(?:def|class|return|if|elif|else|for|while|break|continue|pass|import|from|as|try|except|finally|raise|with|lambda|yield|global|nonlocal|del|assert|in|is|not|and|or|None|True|False|self)\b/y],
-    ['punct',/[{}()\[\];,.:]|[+\-*/%=<>!&|^~]+/y]
-  ],
-  sql:[
-    ['com',/--[^\n]*/y],['com',/\/\*[\s\S]*?\*\//y],
-    ['str',/'(?:''|[^'])*'/y],
-    ['num',/\b\d+(?:\.\d+)?\b/y],
-    ['kw',/\b(?:SELECT|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|OUTER|ON|GROUP|BY|ORDER|HAVING|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|ALTER|DROP|INDEX|VIEW|AS|AND|OR|NOT|NULL|IS|IN|LIKE|BETWEEN|UNION|ALL|DISTINCT|LIMIT|OFFSET|CASE|WHEN|THEN|ELSE|END|PRIMARY|KEY|FOREIGN|REFERENCES|DEFAULT|EXISTS|COUNT|SUM|AVG|MIN|MAX)\b/iy],
-    ['punct',/[{}()\[\];,.]|[+\-*/%=<>!]+/y]
-  ],
-  abap:[
-    ['com',/\*[^\n]*/y],['com',/"[^\n]*/y],
-    ['str',/'(?:''|[^'])*'/y],
-    ['num',/\b\d+(?:\.\d+)?\b/y],
-    ['kw',/\b(?:DATA|TYPES|CONSTANTS|FIELD-SYMBOLS|PARAMETERS|SELECT-OPTIONS|REPORT|FORM|ENDFORM|PERFORM|FUNCTION|ENDFUNCTION|METHOD|ENDMETHOD|CLASS|ENDCLASS|IF|ELSE|ELSEIF|ENDIF|LOOP|ENDLOOP|WHILE|ENDWHILE|DO|ENDDO|CASE|ENDCASE|WHEN|SELECT|INTO|FROM|WHERE|ENDSELECT|MOVE|WRITE|CALL|EXPORTING|IMPORTING|CHANGING|RETURNING|TABLES|VALUE|TYPE|LIKE|REF|TO|IS|NOT|AND|OR|INITIAL|BOUND|ABAP_TRUE|ABAP_FALSE)\b/iy],
-    ['punct',/[{}()\[\];,.:]|[+\-*/%=<>!]+/y]
-  ],
-  json:[
-    ['str',/"(?:\\.|[^"\\])*"\s*:/y],
-    ['str',/"(?:\\.|[^"\\])*"/y],
-    ['num',/-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/y],
-    ['kw',/\b(?:true|false|null)\b/y],
-    ['punct',/[{}\[\],:]/y]
-  ],
-  markup:[
-    ['com',/<!--[\s\S]*?-->/y],
-    ['tag',/<\/?[a-zA-Z][\w:-]*/y],
-    ['attr',/\s[a-zA-Z][\w:-]*(?==)/y],
-    ['str',/"(?:[^"])*"|'(?:[^'])*'/y],
-    ['punct',/\/?>/y]
-  ],
-  markdown:[
-    ['heading',/^#{1,6}[^\n]*/my],
-    ['code',/```[\s\S]*?```/y],['code',/`[^`\n]+`/y],
-    ['bold',/\*\*[^*\n]+\*\*|__[^_\n]+__/y],
-    ['italic',/\*[^*\n]+\*|_[^_\n]+_/y],
-    ['link',/!?\[[^\]]*\]\([^)]*\)/y],
-    ['quote',/^>[^\n]*/my],
-    ['punct',/^[-*+]\s|^\d+\.\s/my]
-  ]
-};
-function highlightCode(code,lang){
-  const rules=CODE_TOKEN_RULES[lang];
-  if(!rules||lang==='plain')return esc(code);
-  let out='', i=0; const len=code.length;
-  while(i<len){
-    let matched=false;
-    for(const [type,re] of rules){
-      re.lastIndex=i;
-      const m=re.exec(code);
-      if(m&&m.index===i&&m[0].length>0){
-        out+=`<span class="tok-${type}">${esc(m[0])}</span>`;
-        i+=m[0].length;
-        matched=true;
-        break;
-      }
-    }
-    if(!matched){
-      // No rule matched at this position — emit one raw character and advance,
-      // so a single bad character can never stall or break the highlighter.
-      out+=esc(code[i]);
-      i++;
-    }
-  }
-  return out;
-}
-
-// Loads a node's code content into the shared panel's Code tab. Does not open, position,
-// or focus the panel itself — openNodePanel (near the Note functions below) handles that
-// for both tabs at once, since Note and Code now share one panel shell.
-function _loadCodePanelContent(id){
-  const idx=getIndex(nodes,id); if(idx<0)return;
-  const cb=nodes[idx].codeBlock||{lang:'plain',code:''};
-  const editor=el('code-editor');
-  if(editor)editor.value=cb.code||'';
-  const sel=el('code-lang-select');
-  if(sel)sel.value=CODE_LANGS.includes(cb.lang)?cb.lang:'plain';
-  syncCodeLangTriggerUi();
-  _renderCodeHighlightView();
-  renderCodeGutter();
-  updateCodeFooterInfo();
-  // Fresh load — always start scrolled to the top rather than wherever the previous
-  // node's code happened to leave the scroll position.
-  if(editor){editor.scrollTop=0; editor.scrollLeft=0;}
-  syncCodeScroll();
-}
-
-function commitCodeEdit(){
-  if(codePanelNodeId===null)return;
-  const idx=getIndex(nodes,codePanelNodeId); if(idx<0)return;
-  const editor=el('code-editor'); if(!editor)return;
-  const sel=el('code-lang-select');
-  const lang=sel&&CODE_LANGS.includes(sel.value)?sel.value:'plain';
-  const code=editor.value;
-  const prev=nodes[idx].codeBlock;
-  const next=code?{lang,code}:null;
-  if((prev?prev.code:'')!==code||(prev?prev.lang:'plain')!==lang){
-    pushUndo();
-    nodes[idx].codeBlock=next;
-    nodes[idx].modifiedAt=Date.now();
-    markDirty();
-    sakuraLog('commit','commitCodeEdit changed',{nodeId:codePanelNodeId,lang,newLength:code.length});
-  }
-}
-
-// Renders the always-on syntax-highlighted layer that sits behind the (visually
-// transparent) textarea — see #code-editor's CSS: real typing/caret/selection happens
-// in the textarea, while what's actually visible is this highlighted <pre> showing
-// through underneath it. Called on every keystroke, so highlightCode's per-character
-// fallback (never throws, never stalls) matters more here than it did in the old
-// toggle-to-preview model.
-function _renderCodeHighlightView(){
-  const editor=el('code-editor'); const view=el('code-view-code');
-  if(!editor||!view)return;
-  const sel=el('code-lang-select');
-  const lang=sel&&CODE_LANGS.includes(sel.value)?sel.value:'plain';
-  view.innerHTML=highlightCode(editor.value,lang)||'&nbsp;';
-}
-
-// Line-number gutter, regenerated on every keystroke alongside the highlight layer.
-// Rebuilt wholesale rather than diffed — code blocks in a note-taking app are short
-// enough (a handful to a few hundred lines) that this is cheap, and it keeps the
-// logic simple rather than tracking incremental line insert/remove.
-function renderCodeGutter(){
-  const editor=el('code-editor'); const gutter=el('code-gutter');
-  if(!editor||!gutter)return;
-  const lineCount=editor.value.split('\n').length;
-  let html='';
-  for(let n=1;n<=lineCount;n++)html+=`<span>${n}</span>`;
-  gutter.innerHTML=html;
-}
-
-// The textarea (transparent text, visible caret) is the only actually-scrollable
-// surface — the highlighted <pre> and the gutter both sit underneath with
-// overflow:hidden and have their scrollTop/scrollLeft driven from here so the
-// highlighted text and line numbers track the real content precisely.
-function syncCodeScroll(){
-  const editor=el('code-editor'); const view=el('code-view'); const gutter=el('code-gutter');
-  if(!editor)return;
-  if(view){view.scrollTop=editor.scrollTop; view.scrollLeft=editor.scrollLeft;}
-  if(gutter)gutter.scrollTop=editor.scrollTop;
-}
-
-function updateCodeFooterInfo(){
-  const editor=el('code-editor'); const hint=el('code-footer-hint');
-  if(!editor||!hint)return;
-  const code=editor.value;
-  const lines=code?code.split('\n').length:0;
-  hint.textContent=lines?`${lines} line${lines===1?'':'s'}`:'';
-}
-
-el('code-editor')?.addEventListener('input',()=>{
-  _renderCodeHighlightView();
-  renderCodeGutter();
-  updateCodeFooterInfo();
-  syncCodeScroll();
-});
-el('code-editor')?.addEventListener('scroll',syncCodeScroll);
-
-// Custom drag-resize for the code editor — CSS's native `resize` property stopped
-// working once the editor became a stack of absolutely-positioned layers (textarea on
-// top for the live-highlight overlay): the browser's own resize grip lives on
-// #code-editor-wrap, but the full-coverage textarea above it swallows the mousedown
-// before it ever reaches that corner. A real handle, painted after the textarea in DOM
-// order so it's actually on top, sidesteps that entirely. Also switches the wrap out of
-// flex:1 auto-fit into an explicit height once dragged — flex-basis:0 would otherwise
-// just snap it straight back to the flex-computed size.
-(function initCodeResize(){
-  const handle=el('code-resize-handle'); const wrap=el('code-editor-wrap');
-  if(!handle||!wrap)return;
-  let dragging=false, startY=0, startH=0;
-  handle.addEventListener('mousedown',e=>{
-    dragging=true; startY=e.clientY; startH=wrap.getBoundingClientRect().height;
-    handle.classList.add('dragging');
-    document.body.style.userSelect='none';
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove',e=>{
-    if(!dragging)return;
-    const h=Math.max(44,Math.min(500,startH+(e.clientY-startY)));
-    wrap.style.flex='0 0 auto';
-    wrap.style.height=h+'px';
-  });
-  window.addEventListener('mouseup',()=>{
-    if(!dragging)return;
-    dragging=false; handle.classList.remove('dragging');
-    document.body.style.userSelect='';
-  });
-})();
-
-el('code-lang-select')?.addEventListener('change',()=>{
-  commitCodeEdit();
-  _renderCodeHighlightView();
-});
-
-
-function syncCodeLangTriggerUi(){
-  const sel=el('code-lang-select'); const label=el('code-lang-trigger-label'); const menu=el('code-lang-menu');
-  if(!sel||!label)return;
-  const opt=[...sel.options].find(o=>o.value===sel.value);
-  label.textContent=opt?opt.textContent:'Plain text';
-  if(menu)menu.querySelectorAll('.code-lang-option').forEach(o=>{
-    const isSel=o.dataset.value===sel.value;
-    o.classList.toggle('selected',isSel);
-    o.setAttribute('aria-selected',String(isSel));
-  });
-}
-function closeCodeLangMenu(){
-  const menu=el('code-lang-menu'); const trigger=el('code-lang-trigger');
-  if(menu)menu.hidden=true;
-  if(trigger)trigger.setAttribute('aria-expanded','false');
-  document.removeEventListener('click',_codeLangOutsideHandler,true);
-}
-function _codeLangOutsideHandler(e){
-  const wrap=el('code-lang-trigger')?.closest('.select-wrap');
-  if(wrap&&!wrap.contains(e.target))closeCodeLangMenu();
-}
-(function initCodeLangDropdown(){
-  const sel=el('code-lang-select'); const menu=el('code-lang-menu'); const trigger=el('code-lang-trigger');
-  if(!sel||!menu||!trigger)return;
-  [...sel.options].forEach(o=>{
-    const item=document.createElement('div');
-    item.className='code-lang-option'; item.setAttribute('role','option'); item.dataset.value=o.value;
-    item.textContent=o.textContent;
-    item.addEventListener('click',()=>{
-      sel.value=o.value;
-      syncCodeLangTriggerUi();
-      sel.dispatchEvent(new Event('change',{bubbles:true}));
-      closeCodeLangMenu();
-    });
-    menu.appendChild(item);
-  });
-  syncCodeLangTriggerUi();
-  trigger.addEventListener('click',e=>{
-    e.stopPropagation();
-    const willOpen=menu.hidden;
-    closeCodeLangMenu();
-    if(willOpen){
-      menu.hidden=false;
-      trigger.setAttribute('aria-expanded','true');
-      setTimeout(()=>document.addEventListener('click',_codeLangOutsideHandler,true),0);
-    }
-  });
-  window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!menu.hidden)closeCodeLangMenu(); });
-})();
-
-// === Beautify / format code ===
-// JSON and XML/HTML are reformatted locally — deterministic, instant, and there's no
-// risk of altering meaning since it's pure whitespace restructuring around a real parse.
-// Every other language (JS, Python, SQL, ABAP, Markdown, plain text) goes through the
-// same AI rewrite pipeline the rest of the app already uses for Rewrite, since a
-// trustworthy formatter for those is a real parser, not something worth hand-rolling here.
-function beautifyJson(code){
-  return JSON.stringify(JSON.parse(code), null, 2);
-}
-// Walks a parsed XML/HTML document and re-serializes it indented, 2 spaces per level.
-// An element whose only child is text collapses onto one line (`<tag>text</tag>`) rather
-// than three, matching how most XML formatters treat simple leaf elements; anything with
-// real element children gets its own open/close lines with children indented beneath.
-function _beautifyMarkupWalk(node, depth, out){
-  const ind='  '.repeat(depth);
-  for(const child of node.childNodes){
-    if(child.nodeType===1){
-      const tag=child.tagName;
-      const attrs=Array.from(child.attributes||[]).map(a=>` ${a.name}="${String(a.value).replace(/"/g,'&quot;')}"`).join('');
-      const kids=Array.from(child.childNodes).filter(n=>!(n.nodeType===3&&!n.textContent.trim()));
-      if(!kids.length){
-        out.push(`${ind}<${tag}${attrs}/>`);
-      } else if(kids.length===1&&kids[0].nodeType===3){
-        out.push(`${ind}<${tag}${attrs}>${esc(kids[0].textContent.trim())}</${tag}>`);
-      } else {
-        out.push(`${ind}<${tag}${attrs}>`);
-        _beautifyMarkupWalk(child,depth+1,out);
-        out.push(`${ind}</${tag}>`);
-      }
-    } else if(child.nodeType===3){
-      const t=child.textContent.trim();
-      if(t)out.push(`${ind}${esc(t)}`);
-    } else if(child.nodeType===8){
-      out.push(`${ind}<!--${child.textContent}-->`);
-    }
-  }
-}
-function beautifyMarkup(code){
-  let doc=new DOMParser().parseFromString(code,'application/xml');
-  const out=[];
-  if(!doc.querySelector('parsererror')){
-    _beautifyMarkupWalk(doc,0,out);
-  } else {
-    // Falls back to the browser's own lenient HTML parser for genuinely malformed
-    // XML/loose HTML — always "succeeds" (browsers never refuse to parse HTML), but
-    // uppercases tag names as a side effect of that parser, unlike the strict-XML path.
-    doc=new DOMParser().parseFromString(code,'text/html');
-    if(!doc||!doc.body)throw new Error('Could not parse as XML/HTML');
-    _beautifyMarkupWalk(doc.body,0,out);
-  }
-  if(!out.length)throw new Error('Nothing to format');
-  return out.join('\n');
-}
-const CODE_BEAUTIFY_SYSTEM_PROMPT='You reformat LANGUAGE source code for readability — consistent indentation, line breaks, and spacing. You do not change logic, values, identifiers, comments, or behavior in any way; this is a pure whitespace/formatting pass, not a rewrite. Respond with ONLY the reformatted code, no commentary, no explanation, and no code-fence markers before or after it.';
-async function beautifyCode(){
-  const editor=el('code-editor'); if(!editor)return;
-  const code=editor.value;
-  if(!code.trim()){ showToast('Nothing to beautify'); return; }
-  const sel=el('code-lang-select');
-  const lang=sel&&CODE_LANGS.includes(sel.value)?sel.value:'plain';
-  if(lang==='json'){
-    try{ applyCodeBeautify(beautifyJson(code)); }
-    catch(e){ showToast("Couldn't parse as JSON — check for a syntax error"); }
-    return;
-  }
-  if(lang==='markup'){
-    try{ applyCodeBeautify(beautifyMarkup(code)); }
-    catch(e){ showToast("Couldn't parse as XML/HTML"); }
-    return;
-  }
-  const btn=el('code-beautify-btn');
-  if(btn)btn.classList.add('ai-busy');
-  try{
-    const opt=sel&&[...sel.options].find(o=>o.value===lang);
-    const langLabel=opt?opt.textContent:'plain text';
-    const systemPrompt=CODE_BEAUTIFY_SYSTEM_PROMPT.replace('LANGUAGE',langLabel);
-    const result=await callAiApiWithPrompt(systemPrompt,code,2048);
-    if(!result)throw new Error('Empty response from AI');
-    applyCodeBeautify(result.trim());
-  }catch(err){ showAiErrorModal(aiProvider,err); }
-  finally{ if(btn)btn.classList.remove('ai-busy'); }
-}
-function applyCodeBeautify(newCode){
-  const editor=el('code-editor'); if(!editor)return;
-  const original=editor.value;
-  if(newCode===original){ showToast('Already formatted'); return; }
-  pushCodeSessionUndo();
-  editor.value=newCode;
-  _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo();
-  markDirty(); scheduleAutoSave();
-  showActionToast('Code beautified','Undo',()=>{ codeSessionUndo(); });
-}
-el('code-beautify-btn')?.addEventListener('click',beautifyCode);
-
-el('code-copy-btn')?.addEventListener('click',async()=>{
-  const editor=el('code-editor'); if(!editor)return;
-  const text=editor.value||'';
-  const btn=el('code-copy-btn'); const label=el('code-copy-btn-label');
-  try{
-    await navigator.clipboard.writeText(text);
-  }catch(e){
-    try{editor.select(); document.execCommand('copy');}catch(e2){}
-  }
-  if(btn){
-    btn.classList.add('copied');
-    const prevLabel=label?label.textContent:'';
-    if(label)label.textContent='Copied';
-    setTimeout(()=>{btn.classList.remove('copied'); if(label)label.textContent=prevLabel||'Copy'},1200);
-  }
-});
-
-el('code-editor')?.addEventListener('keydown',e=>{
-  // See note-editor's identical change — same reasoning: this now opens the mini
-  // character-insert menu instead of passing Ctrl/Cmd+Space through to the full Quick
-  // Assist search.
-  if (handleGenericQaKeydown(e, e.currentTarget)) return;
-  e.stopPropagation(); // don't fire global shortcuts while typing code
-  // Contextual undo/redo: fine-grained, scoped to this open Code session (reset on
-  // open, discarded on close), same pattern as Note. The whole session lands as one
-  // step on the outline's stack via commitCodeEdit()'s pushUndo() when the panel closes.
-  if (matchesShortcut(e,'undo')) { e.preventDefault(); codeSessionUndo(); return; }
-  if (matchesShortcut(e,'redo')) { e.preventDefault(); codeSessionRedo(); return; }
-  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault(); closeNodePanel(true); return}
-  if(e.key==='Escape'){e.preventDefault(); closeNodePanel(true); return}
-  if(e.key==='Tab'){
-    // Plain two-space insert — a real textarea, so no caret-offset tracking needed
-    e.preventDefault();
-    pushCodeSessionUndo();
-    const ta=e.target;
-    const start=ta.selectionStart, end=ta.selectionEnd;
-    ta.value=ta.value.slice(0,start)+'  '+ta.value.slice(end);
-    ta.selectionStart=ta.selectionEnd=start+2;
-    // Direct .value mutation doesn't fire a native 'input' event, so the highlight
-    // layer and gutter would otherwise go stale until the next real keystroke.
-    _renderCodeHighlightView(); renderCodeGutter(); updateCodeFooterInfo();
-  }
-});
-// Idle-debounce undo checkpointing for Code — same pattern as Pad/Note.
-let _codeIdleTimer = null;
-let _codeCheckpointPending = true;
-el('code-editor')?.addEventListener('beforeinput', () => {
-  if (_codeCheckpointPending) { pushCodeSessionUndo(); _codeCheckpointPending = false; }
-  clearTimeout(_codeIdleTimer);
-  _codeIdleTimer = setTimeout(() => { _codeCheckpointPending = true; }, 800);
-});
-
 // === Checkbox feature ===
 function isCheckboxNode(node){return !!node.isCheckbox}
 
@@ -20425,20 +19686,6 @@ function autoConvertHeadingSyntax(id){
   if(m){nodes[idx].styles.heading=m[1].length; nodes[idx].text=m[2]; markDirty();}
 }
 
-
-// === Node timestamps ===
-function renderNodeTsPanel(nodeId){
-  const panel=document.getElementById('node-ts-panel'); if(!panel)return;
-  const idx=getIndex(nodes,nodeId); if(idx<0){panel.classList.remove('visible'); return;}
-  const node=nodes[idx];
-  const fmt=ts=>(ts&&Number.isFinite(ts)&&ts>0)
-    ?new Date(ts).toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})
-    :'—';
-  panel.classList.add('visible');
-  const cre=fmt(node.createdAt); const mod=fmt(node.modifiedAt);
-  panel.innerHTML=`<div class="node-ts-line"><b>Created</b> ${cre}&ensp;·&ensp;<b>Modified</b> ${mod}</div>`;
-}
-
 // === Backlinks ===
 function getBacklinkRefs(text){
   const refs=[]; const re=/\[\[([\s\S]*?)\]\](?!\])/g; let m;
@@ -20511,29 +19758,6 @@ function getBacklinksTo(targetId){
     if(n.id===targetId)return false;
     return getBacklinkRefs(n.text||'').some(r=>{const rt=r.trim().toLowerCase(); return rt===targetText||stripSemanticMarkers(rt).trim().toLowerCase()===targetPlain;});
   }).map(n=>n.id);
-}
-
-function renderBacklinkPanel(nodeId){
-  const panel=el('bl-panel'); const badge=el('note-panel-bl-badge'); const countEl=el('note-panel-bl-count');
-  if(!panel)return;
-  if(!backlinksEnabled){panel.classList.remove('has-links'); panel.innerHTML=''; if(badge)badge.style.display='none'; return;}
-  const backlinkers=getBacklinksTo(nodeId);
-  if(!backlinkers.length){panel.classList.remove('has-links'); panel.innerHTML=''; if(badge)badge.style.display='none'; return;}
-  panel.classList.add('has-links');
-  if(badge)badge.style.display='';
-  if(countEl)countEl.textContent=String(backlinkers.length);
-  panel.innerHTML='<div id="bl-panel-label">Backlinks</div>';
-  backlinkers.forEach(bid=>{
-    const bidx=getIndex(nodes,bid); if(bidx<0)return;
-    const item=document.createElement('div'); item.className='bl-item';
-    const arrow=document.createElement('span'); arrow.className='bl-item-arrow'; arrow.textContent='↗';
-    const txt=document.createElement('span'); txt.className='bl-item-text';
-    const raw=String(nodes[bidx].text||'');
-    txt.innerHTML=esc(raw.slice(0,80)).replace(/\[\[([\s\S]*?)\]\](?!\])/g,'<em>[[$1]]</em>');
-    item.appendChild(arrow); item.appendChild(txt);
-    item.addEventListener('click',()=>{closeNodePanel(true); exitFocusIfOutsideCurrent(bid); setSingleSelection(bid); render(); scrollToNode(bid);});
-    panel.appendChild(item);
-  });
 }
 
 
@@ -20676,24 +19900,14 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated decision-log/diagram/meeting/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
-        if((node.note&&node.note.trim())||(featureCodeEnabled&&node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim())){
-          const hasNoteText=!!(node.note&&node.note.trim());
-          const hasCodeText=featureCodeEnabled&&!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim());
+        if(node.note&&node.note.trim()){
           const dot=document.createElement('span'); dot.className='node-note-dot'+((alwaysExpandInlineEnabled!==inlineExpandNoteNodeIds.has(node.id))?' pv-dot-open':'');
-          dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+(hasCodeText?'<span class="node-code-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l-5 16"/><polyline points="8.5 8 4 12 8.5 16"/><polyline points="15.5 8 20 12 15.5 16"/></svg></span>':'');
-          // Plain click toggles the note inline (same tree position, collapsed by default) when
-          // there's note text to show — a code-only node has nothing to preview inline, so that
-          // case still opens the panel directly, same as before. Ctrl/Cmd+Shift+N and right-click
-          // -> More -> Note remain full alternate paths into the panel either way.
-          dot.dataset.tip=hasNoteText?(hasCodeText?'This node has a note and code — click to expand the note, or open the panel for code':'This node has a note — click to expand inline'):'This node has code — click to open';
+          dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+          dot.dataset.tip='This node has a note — click to expand inline';
           dot.addEventListener('click',e=>{
             e.stopPropagation();
-            if(hasNoteText){
-              if(inlineExpandNoteNodeIds.has(node.id))inlineExpandNoteNodeIds.delete(node.id); else inlineExpandNoteNodeIds.add(node.id);
-              render();
-              return;
-            }
-            const _dotRect=dot.getBoundingClientRect(); setSingleSelection(node.id); render(); openNodePanel(node.id,_dotRect)
+            if(inlineExpandNoteNodeIds.has(node.id))inlineExpandNoteNodeIds.delete(node.id); else inlineExpandNoteNodeIds.add(node.id);
+            render();
           });
           row.appendChild(dot);
         }
@@ -20738,10 +19952,6 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.addEventListener('blur',()=>{ if(noteLine.dataset.deleting)return; const i=getIndex(nodes,node.id); if(i>=0)nodes[i].note=noteLine.value; if(forceInlineNoteId===node.id&&!noteLine.value.trim()){ forceInlineNoteId=null; render(); } });
     noteLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.value||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=result; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
     noteWrap.appendChild(noteLine);
-    const noteOpenPanelBtn=document.createElement('span'); noteOpenPanelBtn.className='node-inline-open-panel-btn'; noteOpenPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; noteOpenPanelBtn.dataset.tip='Open in Note panel'; noteOpenPanelBtn.style.position='absolute'; noteOpenPanelBtn.style.top='1px'; noteOpenPanelBtn.style.right='0';
-    noteOpenPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
-    noteOpenPanelBtn.addEventListener('click',e=>{ e.stopPropagation(); const _r=noteOpenPanelBtn.getBoundingClientRect(); setSingleSelection(node.id); render(); openNodePanel(node.id,_r); });
-    noteWrap.appendChild(noteOpenPanelBtn);
     if(hideTreeLines&&depthGuideLines){ const nVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); nVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*18+8*editorScale+8.25)+'px'; noteWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(noteDepth*18+8*editorScale+8.25)+'px'; noteWrap.appendChild(vgOwn) } }
     frag.appendChild(noteWrap)
   }
@@ -22441,7 +21651,7 @@ function serializeOpmlCore(scopeNodes, title, nodeContentExportEnabled, dateCrea
 /* GENERATED:serializeOpml:END */
 function nodesToOutlineXml(list,startIdx,parentDepth){return nodesToOutlineXmlCore(list,startIdx,parentDepth,nodeContentExportEnabled)}
 function serializeOpml(scopeNodes=nodes){return serializeOpmlCore(scopeNodes,getMeta().title,nodeContentExportEnabled)}
-function exportOpml(foldOverride){commitOpenNodePanelEdits(); const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.opml`,'text/x-opml;charset=utf-8',serializeOpml(getScopedNodes(true,foldOverride)))}
+function exportOpml(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.opml`,'text/x-opml;charset=utf-8',serializeOpml(getScopedNodes(true,foldOverride)))}
 
 // === Sakura Document (full-fidelity single-document share) ===
 // Every other export format is lossy by design (OPML/text: structure and text only; Word/PDF/
@@ -22455,7 +21665,6 @@ async function exportSakuraDocumentFile(){
   if(!currentDocId){ showToast('Open a document first'); return; }
   commitEdit();
   if(typeof commitDecisionCardIfFocused==='function') commitDecisionCardIfFocused();
-  if(typeof commitOpenNodePanelEdits==='function') commitOpenNodePanelEdits();
   const meta=getMeta();
   const title=String(meta.title||'Untitled');
   try{
@@ -25435,17 +24644,6 @@ async function docxNoteBlock(html,leftTwips){
   });
   return paras.join('');
 }
-function docxLinesToRuns(lines,fmt){
-  let out='';
-  lines.forEach((l,i)=>{ if(i>0)out+='<w:r><w:br/></w:r>'; out+=docxRun(l||' ',fmt); });
-  return out;
-}
-function docxCodeBlockPara(code,leftTwips){
-  const lines=String(code||'').split('\n');
-  if(!lines.some(l=>l.trim()))return '';
-  const runs=docxRun('CODE',{bold:true,size:14,color:'938F84'})+'<w:r><w:br/></w:r>'+docxLinesToRuns(lines,{code:true});
-  return `<w:p><w:pPr><w:pStyle w:val="CodeBlock"/><w:ind w:left="${leftTwips+120}"/></w:pPr>${runs}</w:p>`;
-}
 // Renders a Decision Log node group as a bordered/shaded block (a left accent bar plus top/bottom
 // rule across the whole run of paragraphs, colored by Status) — the closest static-document
 // equivalent of the "card" treatment Preview and the editor both use, so the export doesn't just
@@ -25608,7 +24806,6 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
         }
       }
     }
-    if(nodeContentExportEnabled&&n.codeBlock&&n.codeBlock.code&&n.codeBlock.code.trim()){ const cb=docxCodeBlockPara(n.codeBlock.code,left); if(cb)bodyParas.push(cb); }
     if(diagramExportEnabled&&Array.isArray(diagrams)&&diagrams.length){
       // Document-level diagrams (Pad → Diagrams tab) anchored to this node — same treatment
       // as the note-embedded diagram images above, since a reader shouldn't be able to tell
@@ -25682,7 +24879,6 @@ const docRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${previewPresenterBranding?'<Relationship Id="rIdFooterBranding" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>':''}${extraRelsXml}</Relationships>`;
 return docxZipStore([{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:rootRels},{name:'docProps/core.xml',data:coreXml},{name:'docProps/app.xml',data:appXml},{name:'word/document.xml',data:documentXml},{name:'word/styles.xml',data:stylesXml},{name:'word/settings.xml',data:settingsXml},{name:'word/_rels/document.xml.rels',data:docRels},...(previewPresenterBranding?[{name:'word/footer1.xml',data:footerXml}]:[]),..._docxMediaFiles])}
 async function exportDocx(foldOverride){
-  commitOpenNodePanelEdits();
   const meta=getMeta(); const title=(meta.title||'tree').replace(/[\\/:*?"<>|]+/g,'_');
   let bytes;
   try{
@@ -27081,7 +26277,6 @@ async function buildPptxPresentation(slidesData){
   return pres;
 }
 async function exportPptx(){
-  commitOpenNodePanelEdits();
   const wasPreviewActive=previewActive;
   // See exportPdfDirect's identical comment above — same fix, same reasoning: respect
   // Preview's own current fold state rather than silently re-deriving it from the outline
@@ -27142,7 +26337,6 @@ function getNodeQuickAssistCandidates(){
   return NODE_QA_ACTION_ORDER.filter(id=>{
     if(!nodeQuickAssistActions.includes(id))return false;
     if(id==='note'&&!featureNoteEnabled)return false;
-    if(id==='codeblock'&&!featureCodeEnabled)return false;
     if(id==='tags'&&!featureTaggingEnabled)return false;
     if(id==='ai-rewrite'&&!featureAiEnabled)return false;
     return true;
@@ -27592,7 +26786,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='ai-icon-all'){suggestIconsForAllNodes(); return}
   if(action==='note'){
     if(selectedId===null)return;
-    openNodePanel(selectedId,anchorRect);
+    openInlineNoteAndFocus(selectedId);
     return;
   }
   if(action==='qa'){
@@ -28072,8 +27266,7 @@ const SHORTCUTS = {
   newChild:       {combo:'mod+enter',     label:'Add child',                category:'Toolbar',          guarded:true,  action:()=>{if(selectedId!==null)insertChildFirst(selectedId,true);}},
   moveUp:         {combo:'alt+arrowup',   label:'Move node up',             category:'Toolbar',          guarded:true,  action:()=>moveSelected(-1)},
   moveDown:       {combo:'alt+arrowdown', label:'Move node down',           category:'Toolbar',          guarded:true,  action:()=>moveSelected(1)},
-  toggleNote:     {combo:'mod+shift+n',   label:'Open/close note',          category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='note'){closeNodePanel(true);}else{setNodePanelMode('note'); setTimeout(()=>el('note-editor')?.focus(),30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'note');}},
-  toggleCodeBlock:{combo:'mod+shift+k',   label:'Open/close code block',    category:'Pad & Notes',       guarded:false, action:()=>{if(notePanelOpen){if(notePanelMode==='code'){closeNodePanel(true);}else{setNodePanelMode('code'); setTimeout(()=>{el('code-editor')?.focus();},30);} return;} if(selectedId!==null)openNodePanel(selectedId,undefined,'code');}},
+  toggleNote:     {combo:'mod+shift+n',   label:'Add/edit note',            category:'Pad & Notes',       guarded:false, action:()=>{if(selectedId!==null)openInlineNoteAndFocus(selectedId);}},
   togglePad:      {combo:'mod+shift+p',   label:'Open/close pad',           category:'Pad & Notes',       guarded:false, action:()=>{if(!padEnabled)return; togglePad();}},
   toggleTodos:    {combo:'mod+shift+t',   label:'Open/close Todos',         category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDockTab==='function') toggleDockTab('todos');}},
   toggleMeetings: {combo:'mod+shift+m',   label:'Open/close Meeting Notes', category:'Pad & Notes',       guarded:false, action:()=>{if(typeof toggleDockTab==='function') toggleDockTab('meetings');}},
@@ -28772,6 +27965,13 @@ async function callAiApi(text){
   const key=requireAiKey();
   const provider=getAiProviderById(aiProvider);
   return await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,aiRewritePrompt,'Text: '+text,1024,provider.id);
+}
+
+// Generic low-level AI call that accepts an explicit prompt string (no aiRewritePrompt injection)
+async function callAiRaw(prompt, maxTokens = 1024) {
+  const key = requireAiKey();
+  const provider = getAiProviderById(aiProvider);
+  return await callAiByShapeWithFallback(provider.shape, provider.baseUrl, key, aiModel, '', prompt, maxTokens, provider.id);
 }
 
 const AI_BATCH_CHUNK_SIZE=30;
@@ -29994,6 +29194,31 @@ el('qb-ai-rewrite').addEventListener('click',()=>{
 el('qb-ai-outline').addEventListener('click',()=>generateOutlineWithAi(el('qb-ai-outline')));
 el('qb-ai-icon').addEventListener('click',()=>suggestIconForSelection());
 el('qb-ai-expand')?.addEventListener('click',()=>{if(selectedId!==null)expandNodeWithAi(selectedId);});
+// These four toolbar buttons lived right next to the Note Panel's own click-outside-to-close
+// listeners and got swept away with them when that panel was removed -- unrelated to notes,
+// restored here verbatim (qb-note repointed to the inline note entry point).
+el('qb-note')?.addEventListener('click', () => {
+  if (selectedId !== null) openInlineNoteAndFocus(selectedId);
+});
+el('qb-zoom')?.addEventListener('click', () => {
+  if (focusedId !== null) exitFocus();
+  else if (selectedId !== null) enterFocus(selectedId);
+});
+el('qb-checkbox')?.addEventListener('click', () => {
+  const targets = multiSelectedIds.length > 1 ? multiSelectedIds : (selectedId !== null ? [selectedId] : []);
+  if (!targets.length) return;
+  const anyChecked = targets.some(id => { const i = getIndex(nodes,id); return i >= 0 && nodes[i].isCheckbox; });
+  pushUndo();
+  targets.forEach(id => {
+    const i = getIndex(nodes,id); if (i < 0) return;
+    if (anyChecked) { nodes[i].isCheckbox = false; nodes[i].checked = false; }
+    else { nodes[i].isCheckbox = true; nodes[i].checked = false; }
+  });
+  markDirty(); render();
+});
+el('qb-tags')?.addEventListener('click', () => {
+  if (selectedId !== null) openTagManager(selectedId);
+});
 el('qb-ai-tags')?.addEventListener('click',()=>{if(selectedId!==null)suggestTagsWithAi(selectedId);});
 el('qb-ai-summarise')?.addEventListener('click',()=>summariseSelectionWithAi());
 // BYOK-only dropdown now — hosted lives in the separate AI Mode toggle above it, not as an 8th
@@ -33740,289 +32965,6 @@ function exportDecisionLogXlsx() {
   showToast(`Exported ${rows.length} decision log${rows.length === 1 ? '' : 's'}`);
 }
 
-// === Node Notes ===
-// notePanelNodeId/notePanelOpen are declared up in the main state block near the top of
-// the script, not here — applyTabSnapshot() (called during startup, before this point in
-// the file has executed) reads notePanelOpen, and a `let` declared this far down would
-// still be in the temporal dead zone at that point, throwing on every fresh page load.
-let _noteSaveTimer = null;
-let _notePanelSuppressClickOutside = false;
-
-function openNodePanel(id, anchorRectOverride, forcedMode) {
-  if (!featureNoteEnabled) return;
-  const idx = getIndex(nodes,id);
-  if (idx < 0) return;
-  const node = nodes[idx];
-  // If a panel is already open for a DIFFERENT node, commit whatever's still sitting
-  // uncommitted in its editors first — otherwise the lines right below (which reassign
-  // notePanelNodeId/codePanelNodeId and overwrite the editors' content with the new
-  // node's data) silently discard it. This is reachable from normal use: clicking a
-  // different node's note dot while one note/code panel is already open, without
-  // closing it first, used to just drop whatever hadn't been committed yet.
-  if (notePanelOpen && notePanelNodeId !== null && notePanelNodeId !== id) { sakuraLog('panel','openNodePanel switching nodes — committing previous first',{from:notePanelNodeId,to:id}); commitNoteEdit(); commitCodeEdit(); }
-  sakuraLog('panel','openNodePanel',{nodeId:id,forcedMode});
-  notePanelNodeId = id; codePanelNodeId = id;
-  notePanelOpen = true; codePanelOpen = true;
-  noteSessionUndoStack = []; noteSessionRedoStack = [];
-  codeSessionUndoStack = []; codeSessionRedoStack = [];
-  const panel = el('note-panel');
-  if (!panel) return;
-  const editor = el('note-editor');
-  if (editor) {
-    editor.value = node.note || '';
-    // move cursor to end
-    try {
-      const len = editor.value.length;
-      editor.setSelectionRange(len, len);
-    } catch(e) {}
-  }
-  _loadCodePanelContent(id);
-  const titleInput = el('note-title-input');
-  if (titleInput) titleInput.value = node.noteTitle || '';
-  // Subtitle shows the node's own text — shared context line under the Note/Code tabs,
-  // replacing the old per-panel "Note — <text>" / "Code — <text>" title now that one
-  // panel serves both.
-  const subtitleEl = el('note-panel-subtitle');
-  if (subtitleEl) subtitleEl.textContent = String(node.text || '').trim().slice(0, 60);
-  // update context label
-  const ctxLabel = el('ctx-note-label');
-  if (ctxLabel) ctxLabel.textContent = _ctxNoteLabelText();
-  // Show first so positionNodePanel can read real dimensions via offsetHeight
-  panel.classList.add('open');
-  // Badge-expand state is per-node, not carried across — always starts collapsed.
-  // Maximize state, on the other hand, does carry across (switching to a different
-  // node while the panel is already open keeps it maximized), so chrome placement
-  // follows whatever _noteMaximized currently is rather than assuming Normal.
-  panel.classList.remove('show-backlinks', 'show-ts');
-  _setNoteChromeForMax(_noteMaximized);
-  renderBacklinkPanel(id);
-  renderNodeTsPanel(id);
-  // Default tab: Note if it has prose, else Code if the node has code but no note text —
-  // otherwise Note (the more common empty-state starting point). An explicit forcedMode
-  // (from the toggleNote/toggleCodeBlock shortcuts) always wins over that heuristic.
-  const hasNoteText = !!(node.note && node.note.trim());
-  const hasCode = featureCodeEnabled && !!(node.codeBlock && node.codeBlock.code && node.codeBlock.code.trim());
-  const mode = (forcedMode==='code'||forcedMode==='note') ? forcedMode : (hasNoteText ? 'note' : (hasCode ? 'code' : 'note'));
-  setNodePanelMode(mode, id, anchorRectOverride);
-  updateNoteAiButtonStates();
-  setTimeout(() => { try {
-    if (notePanelMode==='code') { el('code-editor')?.focus(); }
-    else { el('note-editor')?.focus(); }
-  } catch(e) {} }, 60);
-}
-
-function closeNodePanel(save = true) {
-  sakuraLog('panel','closeNodePanel',{nodeId:notePanelNodeId,save});
-  if (save) { commitNoteEdit(); commitCodeEdit(); }
-  notePanelOpen = false; notePanelNodeId = null;
-  codePanelOpen = false; codePanelNodeId = null;
-  closeGenericQuickAssist();
-  const panel = el('note-panel');
-  if (panel) {
-    // Restore Rewrite to the toolbar before closing, regardless of current chrome
-    // state — otherwise it'd stay stranded in the header on next open.
-    _setNoteChromeForMax(true);
-    panel.classList.remove('open', 'maximized', 'show-backlinks', 'show-ts');
-    _noteMaximized = false;
-    _updateMaximizeIcon();
-  }
-  render();
-}
-
-// setNodePanelMode switches the shared panel between its Note and Code bodies — tab
-// clicks call this directly; openNodePanel calls it once up front with the node's default
-// tab. Repositions (mode-aware width) unless the panel is maximized, in which case the
-// fullscreen layout doesn't care which tab is active.
-function updateNodePanelTabDots(){
-  if(notePanelNodeId===null)return;
-  const idx=getIndex(nodes,notePanelNodeId); if(idx<0)return;
-  const node=nodes[idx];
-  const noteEditor=el('note-editor');
-  const hasNoteText = notePanelMode==='note'
-    ? !!(noteEditor && noteEditor.value.trim())
-    : !!(node.note && node.note.trim());
-  const codeEditor=el('code-editor');
-  const hasCode = featureCodeEnabled && (notePanelMode==='code'
-    ? !!(codeEditor && codeEditor.value.trim())
-    : !!(node.codeBlock && node.codeBlock.code && node.codeBlock.code.trim()));
-  el('npanel-tab-note')?.classList.toggle('has-content', hasNoteText);
-  el('npanel-tab-code')?.classList.toggle('has-content', hasCode);
-}
-function setNodePanelMode(mode, id, anchorRectOverride) {
-  notePanelMode = mode==='code' ? 'code' : 'note';
-  const panel = el('note-panel');
-  if (!panel) return;
-  panel.classList.toggle('mode-code', notePanelMode==='code');
-  panel.classList.toggle('mode-note', notePanelMode==='note');
-  document.querySelectorAll('.note-panel-tab').forEach(tab => {
-    tab.setAttribute('aria-selected', String(tab.dataset.mode===notePanelMode));
-  });
-  updateNodePanelTabDots();
-  const clearBtn = el('note-panel-clear');
-  if (clearBtn) { clearBtn.dataset.tip = notePanelMode==='code' ? 'Clear code' : 'Clear note'; clearBtn.setAttribute('aria-label', notePanelMode==='code' ? 'Clear code' : 'Clear note'); }
-  if (panel.classList.contains('maximized')) return;
-  if (id !== undefined) {
-    // Fresh open (from openNodePanel) — anchor next to the node the same way it
-    // always has.
-    positionNodePanel(id, anchorRectOverride);
-  } else if (panel.classList.contains('open')) {
-    // A tab click on an already-open panel — height still differs since Note/Code
-    // content differs, so jumping to a freshly re-anchored spot reads as two
-    // different popups swapping places rather than one panel changing content.
-    // Resize the existing corner in place instead, same technique the maximize
-    // toggle uses.
-    _noteResizeInPlace();
-  }
-}
-el('npanel-tab-note')?.addEventListener('click', () => { if(notePanelMode!=='note') setNodePanelMode('note'); setTimeout(()=>el('note-editor')?.focus(),30); });
-el('npanel-tab-code')?.addEventListener('click', () => { if(notePanelMode!=='code') setNodePanelMode('code'); setTimeout(()=>{ el('code-editor')?.focus(); },30); });
-
-// ── Note panel maximize ──────────────────────────────────────────────────────
-// Normal is the minimal view now (no separate compact toggle) — toolbar, footer,
-// and backlinks/timestamps all stay tucked away by default (see the CSS), and
-// Rewrite is physically relocated up into the header so Normal reads as one
-// tight row. Maximize is the only other state: it un-hides everything and moves
-// Rewrite back to its home in the toolbar.
-let _noteMaximized = false;
-function _updateMaximizeIcon() {
-  const btn = el('note-panel-maximize');
-  if (!btn) return;
-  if (_noteMaximized) {
-    btn.dataset.tip = 'Restore default view';
-    btn.querySelector('svg').innerHTML = '<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>';
-  } else {
-    btn.dataset.tip = 'Expand to full view';
-    btn.querySelector('svg').innerHTML = '<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
-  }
-}
-const _noteHeaderEl = el('note-panel-header');
-const _noteToolbarEl = el('note-toolbar');
-const _noteRewriteBtnEl = el('ntb-ai-rewrite');
-const _noteTsBadgeEl = el('note-panel-ts-badge');
-// Captured once, before anything ever moves, so restoring on exit puts Rewrite
-// back exactly where it started relative to its toolbar siblings (Summarise).
-const _noteRewriteRestoreAnchor = _noteRewriteBtnEl ? _noteRewriteBtnEl.nextElementSibling : null;
-function _setNoteChromeForMax(maximized) {
-  if (maximized) {
-    if (_noteRewriteBtnEl && _noteToolbarEl) _noteToolbarEl.insertBefore(_noteRewriteBtnEl, _noteRewriteRestoreAnchor);
-  } else {
-    if (_noteRewriteBtnEl && _noteHeaderEl && _noteTsBadgeEl) _noteHeaderEl.insertBefore(_noteRewriteBtnEl, _noteTsBadgeEl);
-  }
-}
-el('note-panel-maximize')?.addEventListener('click', () => {
-  const panel = el('note-panel');
-  if (!panel) return;
-  _noteMaximized = !_noteMaximized;
-  panel.classList.toggle('maximized', _noteMaximized);
-  _updateMaximizeIcon();
-  _setNoteChromeForMax(_noteMaximized);
-  // A manual code-editor resize (see initCodeResize) sets inline flex/height, which would
-  // otherwise outrank the .maximized CSS rule below it (inline always beats stylesheet).
-  // Clearing both here on every toggle keeps Normal's flex:1 auto-fit and Maximize's
-  // full-height layout each predictable, rather than carrying a stale manual size across.
-  const codeWrap = el('code-editor-wrap');
-  if (codeWrap) { codeWrap.style.flex = ''; codeWrap.style.height = ''; }
-  if (_noteMaximized) {
-    panel.style.left = '0'; panel.style.top = '0';
-    panel.style.transform = 'none'; panel.style.width = '100%';
-  } else {
-    if (notePanelNodeId !== null) positionNodePanel(notePanelNodeId);
-  }
-  setTimeout(() => { if(notePanelMode==='code'){ el('code-editor')?.focus(); } else { el('note-editor')?.focus(); } }, 40);
-});
-
-// ── Note panel: backlinks / timestamp badges ─────────────────────────────────
-// Both panels stay collapsed by default in Normal view (see CSS) and reveal
-// inline on click via a class on #note-panel — Maximize shows them unconditionally
-// instead, so the badges themselves hide there (nothing to toggle when everything's
-// already open). Per-node, not persisted: openNodePanel resets both on every open.
-function _toggleNoteBadge(className, btnId) {
-  const panel = el('note-panel'); const btn = el(btnId);
-  if (!panel || !btn) return;
-  const on = !panel.classList.contains(className);
-  panel.classList.toggle(className, on);
-  btn.setAttribute('aria-pressed', String(on));
-}
-el('note-panel-ts-badge')?.addEventListener('click', () => _toggleNoteBadge('show-ts', 'note-panel-ts-badge'));
-el('note-panel-bl-badge')?.addEventListener('click', () => _toggleNoteBadge('show-backlinks', 'note-panel-bl-badge'));
-
-// Resize the panel in place, keeping its current on-screen position, instead of
-// recomputing an anchor from the node row. Note/Code tab switches change the
-// panel's height (content differs), but that's not a fresh "open" — calling
-// positionNodePanel here would silently discard wherever the panel actually is
-// (the original anchor, a right-click point, or a manual drag) and snap it back
-// to the row, which is the bug being fixed.
-const NOTE_PANEL_WIDTH = 420;
-function _noteResizeInPlace() {
-  const panel = el('note-panel');
-  if (!panel || !panel.classList.contains('open') || panel.classList.contains('maximized')) return;
-  panel.style.width = Math.min(NOTE_PANEL_WIDTH, window.innerWidth - 32) + 'px';
-  // If the panel is in its initial "no anchor found" centered state (left/top:50%
-  // with a translate), leave that alone — it stays centered through the resize
-  // on its own. Otherwise re-clamp the existing corner to the viewport once the
-  // browser has applied the new width/height.
-  if (panel.style.transform && panel.style.transform.includes('translate')) return;
-  const margin = 12;
-  requestAnimationFrame(() => {
-    if (!panel.classList.contains('open') || panel.classList.contains('maximized')) return;
-    const w = panel.offsetWidth, h = panel.offsetHeight;
-    if (w <= 0 || h <= 0) return;
-    let l = parseFloat(panel.style.left) || 0;
-    let t = parseFloat(panel.style.top) || 0;
-    if (l + w > window.innerWidth  - margin) l = window.innerWidth  - w - margin;
-    if (l < margin) l = margin;
-    if (t + h > window.innerHeight - margin) t = window.innerHeight - h - margin;
-    if (t < margin) t = margin;
-    panel.style.left = l + 'px';
-    panel.style.top  = t + 'px';
-  });
-}
-
-// ── Note panel: drag to reposition ───────────────────────────────────────────
-// The panel still opens anchored next to the node you clicked (positionNodePanel),
-// but it no longer has to stay pinned there — drag the header to float it
-// anywhere on screen. Doesn't apply while maximized (there's nowhere to move to).
-(function setupNotePanelDrag() {
-  const header = el('note-panel-header');
-  const panel = el('note-panel');
-  if (!header || !panel) return;
-  let dragging = false, startX = 0, startY = 0, startLeft = 0, startTop = 0;
-  header.addEventListener('mousedown', e => {
-    if (e.target.closest('button')) return; // don't drag when clicking close/maximize
-    if (_noteMaximized) return;
-    dragging = true;
-    _imgResizeHide();
-    const rect = panel.getBoundingClientRect();
-    // Convert any centering transform into plain left/top before dragging
-    panel.style.transform = 'none';
-    panel.style.left = rect.left + 'px';
-    panel.style.top = rect.top + 'px';
-    startX = e.clientX; startY = e.clientY;
-    startLeft = rect.left; startTop = rect.top;
-    header.classList.add('dragging');
-    panel.classList.add('dragging');
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const rect = panel.getBoundingClientRect();
-    let left = startLeft + (e.clientX - startX);
-    let top = startTop + (e.clientY - startY);
-    // keep at least a sliver of the header on-screen so it can't be dragged away for good
-    left = Math.min(Math.max(left, 12 - rect.width + 60), window.innerWidth - 12);
-    top = Math.min(Math.max(top, 0), window.innerHeight - 24);
-    panel.style.left = left + 'px';
-    panel.style.top = top + 'px';
-  });
-  document.addEventListener('mouseup', () => {
-    if (!dragging) return;
-    dragging = false;
-    header.classList.remove('dragging');
-    panel.classList.remove('dragging');
-  });
-})();
-
-
 function _closeNoteCtx() {
   const m = el('note-ctx-menu');
   if (m) { m.classList.remove('open'); m.innerHTML = ''; }
@@ -34075,194 +33017,6 @@ function linkifySapNotesInElement(root){
   });
   return true;
 }
-function commitNoteEdit() {
-  if (notePanelNodeId === null) return;
-  const idx = getIndex(nodes,notePanelNodeId);
-  if (idx < 0) return;
-  const editor = el('note-editor');
-  if (!editor) return;
-  const text = editor.value || '';
-  const titleInput = el('note-title-input');
-  const title = titleInput ? titleInput.value.trim() : (nodes[idx].noteTitle || '');
-  // Only push undo + dirty if changed
-  if (nodes[idx].note !== text || nodes[idx].noteTitle !== title) {
-    pushUndo();
-    nodes[idx].note = text;
-    nodes[idx].noteTitle = title;
-    nodes[idx].modifiedAt = Date.now();
-    markDirty();
-    render();
-    sakuraLog('commit','commitNoteEdit changed',{nodeId:notePanelNodeId,newLength:text.length});
-  }
-}
-// Neither the Note nor Code panel syncs to the node live on every keystroke — the only two
-// places that ever call commitNoteEdit()/commitCodeEdit() are switching the panel to a
-// different node and closing it (see openNodePanel/closeNodePanel above). That leaves a real
-// gap: exporting or previewing the current document while either panel is open and mid-edit,
-// without first switching away or closing it, reads nodes[idx].note/codeBlock as it stood
-// *before* this editing session started. Call this at the start of anything that reads a
-// node's note/code content — every export format and Preview/PDF/Presenter — the same way
-// saveToStorage() already flushes an open Decision Log field for the same reason.
-function commitOpenNodePanelEdits(){ commitNoteEdit(); commitCodeEdit(); }
-
-// Bounding box of an element's actual rendered content (e.g. the glyphs of
-// its text), as opposed to el.getBoundingClientRect() which reflects the
-// element's box — and that box can be much wider than the content if it's
-// a flex/stretched element like .node-label.
-function _textContentRect(el) {
-  try {
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const rects = range.getClientRects();
-    if (rects.length) {
-      let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
-      for (const r of rects) {
-        if (r.width === 0 && r.height === 0) continue;
-        left = Math.min(left, r.left); right = Math.max(right, r.right);
-        top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom);
-      }
-      if (right > left) return { left, right, top, bottom, width: right - left, height: bottom - top };
-    }
-  } catch (e) {}
-  return el.getBoundingClientRect();
-}
-
-function positionNodePanel(id, anchorRectOverride) {
-  const panel = el('note-panel');
-  if (!panel) return;
-  const row = document.querySelector(`.node-row[data-id="${id}"]`);
-  if (!row && !anchorRectOverride) {
-    // fallback: center of screen
-    panel.style.left = '50%';
-    panel.style.top = '50%';
-    panel.style.transform = 'translate(-50%, -50%)';
-    return;
-  }
-  panel.style.transform = '';
-  const panelW = Math.min(NOTE_PANEL_WIDTH, window.innerWidth - 32);
-  // Use actual rendered height after the panel becomes visible; estimate if
-  // called before .open is set (first open). A rAF pass re-clamps if needed.
-  const panelH = panel.offsetHeight > 40 ? panel.offsetHeight : Math.min(220, window.innerHeight * 0.72);
-  const margin = 12;
-
-  // Anchor to the row by default — it's the most reliable reference regardless of
-  // how the node label's flex box stretches or whether the note-dot is present.
-  // When called from the mini node quick assist mid-edit, anchorRectOverride carries
-  // the actual caret position instead, captured before commitEdit() unmounted the
-  // textarea — the row itself would otherwise be a stale/misleading anchor there.
-  // We use the anchor rect and prefer opening to the right of it; if there's not
-  // enough room we try below, then above, then left.
-  const rowRect = anchorRectOverride || row.getBoundingClientRect();
-
-  // Preferred: open to the right of the row, vertically aligned with it
-  const roomRight = window.innerWidth - rowRect.right - margin;
-  const roomBelow = window.innerHeight - rowRect.bottom - margin;
-  const roomAbove = rowRect.top - margin;
-  const roomLeft  = rowRect.left - margin;
-
-  let left, top;
-
-  if (roomRight >= panelW) {
-    // Right of row, vertically centered on it
-    left = rowRect.right + 10;
-    top  = rowRect.top + rowRect.height / 2 - panelH / 2;
-  } else if (roomBelow >= panelH) {
-    // Below the row, left-aligned with it
-    left = rowRect.left;
-    top  = rowRect.bottom + 8;
-  } else if (roomAbove >= panelH) {
-    // Above the row, left-aligned with it
-    left = rowRect.left;
-    top  = rowRect.top - panelH - 8;
-  } else if (roomLeft >= panelW) {
-    // Left of row as last resort
-    left = rowRect.left - panelW - 10;
-    top  = rowRect.top + rowRect.height / 2 - panelH / 2;
-  } else {
-    // Viewport too small — centre the panel
-    left = (window.innerWidth  - panelW) / 2;
-    top  = (window.innerHeight - panelH) / 2;
-  }
-
-  // Clamp to keep the panel fully on-screen
-  if (left + panelW > window.innerWidth  - margin) left = window.innerWidth  - panelW - margin;
-  if (left < margin) left = margin;
-  if (top  + panelH > window.innerHeight - margin) top  = window.innerHeight - panelH - margin;
-  if (top  < margin) top  = margin;
-
-  panel.style.left  = left  + 'px';
-  panel.style.top   = top   + 'px';
-  panel.style.width = panelW + 'px';
-
-  // Re-clamp once the panel has actually rendered and we know its real height
-  requestAnimationFrame(() => {
-    if (!panel.classList.contains('open') || panel.classList.contains('maximized')) return;
-    const realH = panel.offsetHeight;
-    if (realH <= 40) return; // not yet rendered
-    let t = parseFloat(panel.style.top) || top;
-    if (t + realH > window.innerHeight - margin) t = window.innerHeight - realH - margin;
-    if (t < margin) t = margin;
-    panel.style.top = t + 'px';
-  });
-}
-
-el('ntb-timestamp')?.addEventListener('mousedown', e => {
-  e.preventDefault();
-  insertDateTime('note-editor');
-});
-
-el('note-editor')?.addEventListener('paste', e => {
-  // Stop this from bubbling to the document-level paste handler, which treats any
-  // un-prevented paste as "paste a tree into the outline". A plain textarea only ever
-  // accepts the clipboard's plain-text representation on its own, so nothing else needs
-  // handling here.
-  e.stopPropagation();
-});
-
-el('note-editor')?.addEventListener('keydown', e => {
-  // See code-editor's identical change — same reasoning: this now opens the mini
-  // character-insert menu instead of passing Ctrl/Cmd+Space through to the full Quick
-  // Assist search.
-  if (handleGenericQaKeydown(e, e.currentTarget)) return;
-  e.stopPropagation(); // don't fire global shortcuts
-  // Contextual undo/redo: fine-grained, scoped to this open Note session (reset on
-  // open, discarded on close), same pattern as Code. The whole session still lands as
-  // one step on the outline's own stack via commitNoteEdit()'s pushUndo() when the
-  // panel closes.
-  if (matchesShortcut(e,'undo')) { e.preventDefault(); noteSessionUndo(); return; }
-  if (matchesShortcut(e,'redo')) { e.preventDefault(); noteSessionRedo(); return; }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    e.preventDefault();
-    closeNodePanel(true);
-    return;
-  }
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    closeNodePanel(true);
-    return;
-  }
-  if (e.key === 'Tab') {
-    // Plain two-space insert — a real textarea, so no caret-offset tracking needed.
-    e.preventDefault();
-    pushNoteSessionUndo();
-    const ta = e.target;
-    const start = ta.selectionStart, end = ta.selectionEnd;
-    ta.value = ta.value.slice(0,start) + '  ' + ta.value.slice(end);
-    ta.selectionStart = ta.selectionEnd = start + 2;
-  }
-});
-
-// Idle-debounce undo checkpointing for Note — same pattern as Code's (see there for the
-// full reasoning): one step per burst of typing, captured before the mutating edit via
-// beforeinput, not one step per keystroke.
-let _noteIdleTimer = null;
-let _noteCheckpointPending = true;
-el('note-editor')?.addEventListener('beforeinput', () => {
-  if (_noteCheckpointPending) { pushNoteSessionUndo(); _noteCheckpointPending = false; }
-  clearTimeout(_noteIdleTimer);
-  _noteIdleTimer = setTimeout(() => { _noteCheckpointPending = true; }, 800);
-});
-
 // ── Column resize handles ────────────────────────────────────────────────────
 // Still used by Pad's own Notepad table feature (see ~line 41918/42868) even though
 // the Note editor that originally introduced this no longer has tables.
@@ -34332,238 +33086,15 @@ function _attachTableResizeHandles(table) {
 function _noteCtxTableMutated(table) {
   if (table) _attachTableResizeHandles(table);
 }
-
-el('note-panel-close')?.addEventListener('click', () => closeNodePanel(true));
-
-el('note-panel-clear')?.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  if (notePanelMode === 'code') {
-    const targetId = codePanelNodeId;
-    if (targetId !== null) {
-      const tidx = getIndex(nodes,targetId);
-      if (tidx >= 0 && nodes[tidx].codeBlock) {
-        pushUndo();
-        nodes[tidx].codeBlock = null;
-        markDirty();
-      }
-    }
-    const editor = el('code-editor'); if (editor) editor.value = '';
-    closeNodePanel(true);
-    showToast('Code block cleared');
-    return;
-  }
-  const targetId = notePanelNodeId;
-  if (targetId !== null) {
-    const tidx = getIndex(nodes,targetId);
-    if (tidx >= 0 && (nodes[tidx].note || nodes[tidx].noteTitle)) {
-      pushUndo();
-      nodes[tidx].note = '';
-      nodes[tidx].noteTitle = '';
-      markDirty();
-    }
-  }
-  const editor = el('note-editor');
-  if (editor) editor.value = '';
-  const titleInput = el('note-title-input');
-  if (titleInput) titleInput.value = '';
-  closeNodePanel(true);
-  showToast('Note cleared');
-});
-
-el('qb-note')?.addEventListener('click', () => {
-  if (notePanelOpen) { if(notePanelMode==='note'){closeNodePanel(true);}else{setNodePanelMode('note'); setTimeout(()=>el('note-editor')?.focus(),30);} return; }
-  if (selectedId !== null) openNodePanel(selectedId,undefined,'note');
-});
-
-el('qb-zoom')?.addEventListener('click', () => {
-  if (focusedId !== null) exitFocus();
-  else if (selectedId !== null) enterFocus(selectedId);
-});
-
-el('qb-checkbox')?.addEventListener('click', () => {
-  const targets = multiSelectedIds.length > 1 ? multiSelectedIds : (selectedId !== null ? [selectedId] : []);
-  if (!targets.length) return;
-  // If any target is already a checkbox, remove from all; otherwise convert all
-  const anyChecked = targets.some(id => { const i = getIndex(nodes,id); return i >= 0 && nodes[i].isCheckbox; });
-  pushUndo();
-  targets.forEach(id => {
-    const i = getIndex(nodes,id); if (i < 0) return;
-    if (anyChecked) { nodes[i].isCheckbox = false; nodes[i].checked = false; }
-    else { nodes[i].isCheckbox = true; nodes[i].checked = false; }
-  });
-  markDirty(); render();
-});
-
-el('qb-tags')?.addEventListener('click', () => {
-  if (selectedId !== null) openTagManager(selectedId);
-});
-
-// Close note panel when clicking outside it
-// Track where the interaction *started*, not just where it ends — dragging a text
-// selection inside the note editor and releasing the mouse past the panel's edge
-// still fires the eventual click with e.target outside #note-panel, which used to
-// read as "clicked outside" and close the panel mid-selection. Only treat it as a
-// real outside click if the mousedown that began the gesture was also outside.
-let _notePanelMouseDownInside = false;
-document.addEventListener('mousedown', e => {
-  if (!notePanelOpen) return;
-  const panel = el('note-panel');
-  _notePanelMouseDownInside = !!(panel && panel.contains(e.target));
-}, true);
-document.addEventListener('click', e => {
-  if (!notePanelOpen) return;
-  if (_notePanelSuppressClickOutside) return;
-  const panel = el('note-panel');
-  if (!panel) return;
-  if (panel.contains(e.target)) return;
-  if (_notePanelMouseDownInside) return;
-  if (e.target.closest('#qb-note')) return;
-  // Also don't close when clicking the shared note/code dot on a node row
-  if (e.target.closest('.node-note-dot')) return;
-  // The selection formatting popover is intentionally a sibling of #note-panel in the DOM
-  // (needed for position:fixed placement above an arbitrary selection rect), so panel.contains()
-  // above never sees clicks on it as "inside" — without this, every popover button click read as
-  // a click outside the panel and closed it before the button's own handler even ran.
-  if (e.target.closest('#selection-fmt-popover')) return;
-  closeNodePanel(true);
-}, true);
-
 // Ctrl+Shift+N global shortcut for note — combo lives in the SHORTCUTS registry (toggleNote)
 document.addEventListener('keydown', e => {
   if (isRecordingShortcut) return;
   if (matchesShortcut(e, 'toggleNote')) {
-    if (isControlTarget(e.target) && !el('note-editor')?.contains(e.target) && !e.target.closest('.node-note-line,.node-remark-text-inline,.node-qa-question,.node-qa-answer')) return;
+    if (isControlTarget(e.target) && !e.target.closest('.node-note-line,.node-remark-text-inline,.node-qa-question,.node-qa-answer')) return;
     e.preventDefault();
     fireShortcut('toggleNote');
   }
-}, true); // capture phase so it fires even with note editor focused
-
-// === Note Panel AI Actions ===
-
-function updateNoteAiButtonStates() {
-  const sumBtn = el('ntb-ai-summarise');
-  if (!sumBtn) return;
-  if (notePanelNodeId === null) { sumBtn.disabled = true; return; }
-  const idx = getIndex(nodes,notePanelNodeId);
-  sumBtn.disabled = idx < 0 || !nodeHasChildren(nodes,idx);
-}
-
-// Collect plain text of a node's subtree (root label + indented children)
-function getSubtreeText(nodeId) {
-  const idx = getIndex(nodes,nodeId);
-  if (idx < 0) return '';
-  const rootDepth = nodes[idx].depth;
-  const end = getSubtreeEnd(nodes,idx);
-  return nodes.slice(idx, end)
-    .map(n => '  '.repeat(n.depth - rootDepth) + (n.text || ''))
-    .join('\n');
-}
-
-// Generic low-level AI call that accepts an explicit prompt string (no aiRewritePrompt injection)
-async function callAiRaw(prompt, maxTokens = 1024) {
-  const key = requireAiKey();
-  const provider = getAiProviderById(aiProvider);
-  return await callAiByShapeWithFallback(provider.shape, provider.baseUrl, key, aiModel, '', prompt, maxTokens,provider.id);
-}
-
-// Rewrite: selection-aware — rewrites selected text in note, or full note if nothing selected
-el('ntb-ai-rewrite')?.addEventListener('click', async () => {
-  const editor = el('note-editor');
-  if (!editor) return;
-  const btn = el('ntb-ai-rewrite');
-
-  const selStart = editor.selectionStart, selEnd = editor.selectionEnd;
-  const hasSelection = selStart !== selEnd;
-  const inputText = (hasSelection ? editor.value.slice(selStart, selEnd) : editor.value).trim();
-
-  if (!inputText) return;
-
-  const requestNodeId = notePanelNodeId;
-  const valueAtRequestStart = editor.value;
-  btn.classList.add('ai-busy');
-  try {
-    const prompt = aiRewritePrompt + '\n\nText: ' + inputText;
-    const result = await callAiRaw(prompt, aiMaxTokens);
-    if (!result) throw new Error('Empty response from AI');
-
-    // The Note panel is a reused singleton — while this request was pending the user could have
-    // kept typing in this same note, or closed it and opened a different node's note into the
-    // same #note-editor entirely. Either way, applying the saved selection / replacing the whole
-    // value now would silently overwrite content that's no longer what this rewrite was
-    // requested against.
-    if (aiSnapshotChanged(requestNodeId,notePanelNodeId) || aiSnapshotChanged(valueAtRequestStart,editor.value)) {
-      showToast('This note changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
-      return;
-    }
-
-    editor.focus();
-    // Checkpoint the session stack before mutating — this is what makes the rewrite
-    // actually undoable via Ctrl+Z while the panel is still open.
-    pushNoteSessionUndo();
-    if (hasSelection) {
-      editor.value = editor.value.slice(0,selStart) + result + editor.value.slice(selEnd);
-      editor.setSelectionRange(selStart, selStart + result.length);
-    } else {
-      editor.value = result;
-    }
-    // Persist. pushUndo() here (previously missing) puts the rewrite on the
-    // app-level undo stack too — without it, commitNoteEdit()'s on-close diff
-    // check sees no change (this write already happened) and never pushes,
-    // so the rewrite was unrecoverable once the Note panel closed.
-    if (notePanelNodeId !== null) {
-      const idx = getIndex(nodes,notePanelNodeId);
-      if (idx >= 0) { pushUndo(); nodes[idx].note = editor.value; markDirty(); }
-    }
-    if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
-  } catch (err) {
-    showAiErrorModal(aiProvider, err);
-  } finally {
-    btn.classList.remove('ai-busy');
-  }
-});
-
-// Summarise: reads subtree, appends prose summary to the note
-el('ntb-ai-summarise')?.addEventListener('click', async () => {
-  if (notePanelNodeId === null) return;
-  const idx = getIndex(nodes,notePanelNodeId);
-  if (idx < 0 || !nodeHasChildren(nodes,idx)) return;
-
-  const editor = el('note-editor');
-  if (!editor) return;
-  const btn = el('ntb-ai-summarise');
-
-  const subtreeText = getSubtreeText(notePanelNodeId);
-  if (!subtreeText.trim()) return;
-
-  const prompt =
-    'You are a concise summariser. Read the following outline structure and write a short, clear prose summary (2–4 sentences) capturing the key points. ' +
-    'Return only the summary text, no preamble, no labels.\n\nOutline:\n' + subtreeText;
-
-  btn.classList.add('ai-busy');
-  try {
-    const result = await callAiRaw(prompt, 512);
-    if (!result) throw new Error('Empty response from AI');
-
-    editor.focus();
-    // Append with a blank line separator if note already has content
-    const hasContent = editor.value.trim().length > 0;
-    editor.value = hasContent ? (editor.value + '\n\n' + result) : result;
-    // Move cursor to end
-    const len = editor.value.length;
-    editor.setSelectionRange(len, len);
-
-    // Persist
-    if (notePanelNodeId !== null) {
-      const tidx = getIndex(nodes,notePanelNodeId);
-      if (tidx >= 0) { nodes[tidx].note = editor.value; markDirty(); }
-    }
-    showToast('Summary appended ✦', 'success');
-  } catch (err) {
-    showAiErrorModal(aiProvider, err);
-  } finally {
-    btn.classList.remove('ai-busy');
-  }
-});
+}, true); // capture phase so it fires even with an inline note line focused
 
 // === Guided tour ===
 const TOUR_SEEN_KEY='sakura_tour_seen';
@@ -37442,7 +35973,6 @@ function previewToggleCollapse(id){
   renderPreviewBody();
 }
 let previewOpenNoteIds=new Set();
-let previewOpenCodeIds=new Set();
 // True only for the duration of a PDF/PPTX export pass where "Include node Notes & Code in
 // exports" is off — hides the note/code indicator dots (and their folded-section chip
 // equivalents) too, not just the card content, so a disabled export doesn't still visibly
@@ -37452,10 +35982,6 @@ let previewOpenCodeIds=new Set();
 let _pvSuppressNoteCodeIndicators=false;
 function previewToggleNote(id){
   if(previewOpenNoteIds.has(id))previewOpenNoteIds.delete(id); else previewOpenNoteIds.add(id);
-  renderPreviewBody();
-}
-function previewToggleCode(id){
-  if(previewOpenCodeIds.has(id))previewOpenCodeIds.delete(id); else previewOpenCodeIds.add(id);
   renderPreviewBody();
 }
 let previewOpenQaIds=new Set();
@@ -37612,11 +36138,6 @@ function previewSubtreeHasNote(idx){
 function previewSubtreeHasQuote(idx){
   const end=getSubtreeEnd(nodes,idx);
   for(let i=idx+1;i<end;i++){ if(previewSplitQuotes(nodes[i].text||'').quotes.length)return true; }
-  return false;
-}
-function previewSubtreeHasCode(idx){
-  const end=getSubtreeEnd(nodes,idx);
-  for(let i=idx+1;i<end;i++){ const cb=nodes[i].codeBlock; if(cb&&cb.code&&cb.code.trim())return true; }
   return false;
 }
 function previewFold(node,idx,hasChildren){
@@ -37806,7 +36327,6 @@ function renderPreviewBody(){
     // the block below instead, where the title can actually sit next to the NOTE label.
     const hasNoteTitle = !!(node.noteTitle && node.noteTitle.trim());
     const isPlainNote = !nodeIsSection(node,sectionMarkersDepthZero) && !hasNoteTitle && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
-    const ownCode=!!(node.codeBlock&&node.codeBlock.code&&node.codeBlock.code.trim());
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
     if(folded&&hasChildren){
       const badge=document.createElement('span'); badge.className='fold-badge';
@@ -37824,12 +36344,6 @@ function renderPreviewBody(){
       if(!_pvSuppressNoteCodeIndicators&&(noteHasContent||previewSubtreeHasNote(idx))){
         const chip=document.createElement('span'); chip.className='pv-hidden-chip pv-hidden-chip-note'; chip.dataset.tip='Contains a note — click to expand';
         chip.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-        chip.addEventListener('click',e=>{ e.stopPropagation(); previewToggleCollapse(node.id); });
-        contentEl.appendChild(chip);
-      }
-      if(!_pvSuppressNoteCodeIndicators&&featureCodeEnabled&&(ownCode||previewSubtreeHasCode(idx))){
-        const chip=document.createElement('span'); chip.className='pv-hidden-chip pv-hidden-chip-code'; chip.dataset.tip='Contains a code block — click to expand';
-        chip.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l-5 16"/><polyline points="8.5 8 4 12 8.5 16"/><polyline points="15.5 8 20 12 15.5 16"/></svg>';
         chip.addEventListener('click',e=>{ e.stopPropagation(); previewToggleCollapse(node.id); });
         contentEl.appendChild(chip);
       }
@@ -37854,28 +36368,17 @@ function renderPreviewBody(){
           e.stopPropagation();
           if(previewPresenting){ previewOpenNotePopover(dot,node); }
           else {
-            // note-panel is z-index:100, the preview overlay is z-index:1050 — opening the
-            // panel without closing Preview first would render it invisibly behind the
-            // overlay. Close Preview, then let positionNodePanel find the row in the
-            // now-rendered editor pane itself rather than passing dot's rect, which belonged
-            // to Preview's completely different layout and would anchor nowhere sensible here.
+            // Close Preview first, then expand the node's inline note in the now-rendered
+            // editor pane — mirrors every other "add/edit note" entry point now that notes
+            // are inline-only.
             closePreview();
-            setSingleSelection(node.id);
-            render();
-            openNodePanel(node.id);
+            openInlineNoteAndFocus(node.id);
           }
         });
         contentEl.appendChild(dot);
         const inlineFull=document.createElement('span'); inlineFull.className='pv-note-inline-full';
         inlineFull.innerHTML=noteRestHtml;
         contentEl.appendChild(inlineFull);
-      }
-      if(!_pvSuppressNoteCodeIndicators&&featureCodeEnabled&&ownCode){
-        const isOpen=previewOpenCodeIds.has(node.id);
-        const dot=document.createElement('span'); dot.className='node-code-dot'+(isOpen?' pv-dot-open':''); dot.dataset.tip=isOpen?'Hide code':'This node has a code block — click to show';
-        dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l-5 16"/><polyline points="8.5 8 4 12 8.5 16"/><polyline points="15.5 8 20 12 15.5 16"/></svg>';
-        dot.addEventListener('click',e=>{ e.stopPropagation(); previewToggleCode(node.id); });
-        contentEl.appendChild(dot);
       }
       if(blIds.length){
         const dot=document.createElement('span'); dot.className='pv-backlink-dot'; dot.dataset.tip='Referenced by '+blIds.length+' node'+(blIds.length===1?'':'s')+' — click to view';
@@ -38043,15 +36546,6 @@ function renderPreviewBody(){
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
         inner.innerHTML=noteRestHtml;
         wrap.appendChild(label); wrap.appendChild(inner);
-        slideTarget.appendChild(wrap);
-      }
-      if(featureCodeEnabled&&ownCode&&previewOpenCodeIds.has(node.id)){
-        const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-        const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4l-5 16"/><polyline points="8.5 8 4 12 8.5 16"/><polyline points="15.5 8 20 12 15.5 16"/></svg><span>Code</span>';
-        const pre=document.createElement('pre'); pre.className='pv-inline-code-body'+(codeMatchEditorBg?'':' bg-distinct');
-        const codeEl=document.createElement('code'); codeEl.innerHTML=highlightCode(node.codeBlock.code,node.codeBlock.lang);
-        pre.appendChild(codeEl);
-        wrap.appendChild(label); wrap.appendChild(pre);
         slideTarget.appendChild(wrap);
       }
       if(padQaTabEnabled&&previewOpenQaIds.has(node.id)){
@@ -38525,7 +37019,7 @@ function showPopoverCaptureForm(nodeId,kind){
   pop.querySelector('[data-cap-action="cancel"]')?.addEventListener('click',()=>closePreviewPopover());
   pop.querySelector('[data-cap-action="delete"]')?.addEventListener('click',()=>{ deleteNodeNote(nodeId); });
   // Plain-text rewrite — deliberately not the same contenteditable/Markdown-preserving path
-  // ntb-ai-rewrite uses (see that handler), since this textarea has no rich formatting to lose
+  // the selection-fmt popover's rewrite uses, since this textarea has no rich formatting to lose
   // in the first place. Whole-field only (no partial-selection rewrite) since a plain <textarea>
   // doesn't expose the same kind of range/selection API a contenteditable does.
   pop.querySelector('[data-cap-action="ai-rewrite"]')?.addEventListener('click',async e=>{
@@ -38649,13 +37143,11 @@ function closePreviewCtxMenu(){ el('preview-ctx-menu')?.classList.remove('open')
 function openPreview(){
   if(!featurePreviewEnabled)return;
   commitEdit();
-  if(typeof commitOpenNodePanelEdits==='function') commitOpenNodePanelEdits();
   previewActive=true;
   previewInteractiveZoom=1;
   if(previewAlwaysExpand) previewCollapsedIds=new Set();
   else previewCollapsedIds=new Set(nodes.filter((n,i)=>(n.depth||0)===0&&nodeHasChildren(nodes,i)).map(n=>n.id));
   previewOpenNoteIds=new Set();
-  previewOpenCodeIds=new Set();
   previewOpenQaIds=new Set();
   previewSetLaser(false);
   renderPreviewBody();
@@ -39581,27 +38073,24 @@ el('preview-export-pdf-btn')?.addEventListener('click',()=>exportPdfDirect());
 // Fold state follows Preview's own previewCollapsedIds, same as PowerPoint and Word — see the
 // comment inside exportPdfDirect below for why, and Settings → Export & print → "Skip folded
 // sections" for the (deliberately different) behavior of Markdown/OPML/Text/Print.
-// PDF and PPTX both render from Preview's own note/code open state (previewOpenNoteIds/
-// previewOpenCodeIds) rather than raw node data, since Preview cards are collapsed by
-// default — a note or code block only actually prints if its card happens to be open on
-// screen. "Include node Notes & Code in exports" makes that deliberate instead of
-// accidental: on, every node with note/code content is force-opened for this one export
-// pass regardless of what's expanded on screen; off, everything is force-closed so none of
-// it prints. Either way the caller must restore the pre-export sets afterward (see the
-// restore() this returns) so an already-open Preview session isn't left in a different
-// state than the user had it.
+// PDF and PPTX both render from Preview's own note open state (previewOpenNoteIds) rather
+// than raw node data, since Preview cards are collapsed by default — a note only actually
+// prints if its card happens to be open on screen. "Include node Notes in exports" makes
+// that deliberate instead of accidental: on, every node with note content is force-opened
+// for this one export pass regardless of what's expanded on screen; off, everything is
+// force-closed so none of it prints. Either way the caller must restore the pre-export set
+// afterward (see the restore() this returns) so an already-open Preview session isn't left
+// in a different state than the user had it.
 function _applyNodeContentExportState(){
-  const prevNote=previewOpenNoteIds, prevCode=previewOpenCodeIds, prevSuppress=_pvSuppressNoteCodeIndicators;
+  const prevNote=previewOpenNoteIds, prevSuppress=_pvSuppressNoteCodeIndicators;
   if(nodeContentExportEnabled){
     previewOpenNoteIds=new Set(nodes.filter(n=>n.note&&n.note.trim()).map(n=>n.id));
-    previewOpenCodeIds=new Set(nodes.filter(n=>n.codeBlock&&n.codeBlock.code&&n.codeBlock.code.trim()).map(n=>n.id));
     _pvSuppressNoteCodeIndicators=false;
   } else {
     previewOpenNoteIds=new Set();
-    previewOpenCodeIds=new Set();
     _pvSuppressNoteCodeIndicators=true;
   }
-  return function restore(){ previewOpenNoteIds=prevNote; previewOpenCodeIds=prevCode; _pvSuppressNoteCodeIndicators=prevSuppress; };
+  return function restore(){ previewOpenNoteIds=prevNote; _pvSuppressNoteCodeIndicators=prevSuppress; };
 }
 function exportPdfDirect(){
   if(previewPresenting)exitPresenterMode();
@@ -39719,7 +38208,6 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview .pv-hidden-chip,
       body.printing-preview .pv-backlink-dot,
       body.printing-preview .node-note-dot:not(.node-note-dot-plain),
-      body.printing-preview .node-code-dot,
       body.printing-preview .node-qa-dot,
       body.printing-preview #preview-toc-close-btn { display:none !important; }
       body.printing-preview #preview-main{
@@ -48644,8 +47132,8 @@ document.addEventListener('mousedown',e=>{
   const pop=el('selection-fmt-popover');
   if(pop&&pop.classList.contains('open')&&!pop.contains(e.target))hideSelectionFmtPopover();
 });
-// Rewrite: same selection-aware AI call and undo/persist handling as the Note editor's own
-// ntb-ai-rewrite button and the Pad's own ptb-ai-rewrite button (see their handlers above) —
+// Rewrite: same selection-aware AI call and undo/persist handling as the Pad's own
+// ptb-ai-rewrite button (see its handler above) —
 // reused rather than duplicated wholesale, just parameterized by which of the four editors
 // triggered it. Meeting fields get an explicit checkpointMeetingField()/meetingFieldSyncModel()
 // call too, same reasoning as the rest of this popover's meeting-field handling below — not
