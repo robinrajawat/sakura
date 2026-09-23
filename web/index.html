@@ -26618,6 +26618,34 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     }
     return
   }
+  if(e.key==='ArrowLeft'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
+    const ta=e.target;
+    const selRange=getEditableSelectionRange(ta);
+    if(selRange&&selRange.start===0&&selRange.end===0){
+      const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+      if(pos>0){
+        e.preventDefault();
+        const prevId=nodes[vis[pos-1]].id;
+        const targetText=nodes[getIndex(nodes,prevId)].text||'';
+        commitEdit(); beginEditAt(prevId,targetText.length)
+      }
+      return
+    }
+  }
+  if(e.key==='ArrowRight'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
+    const ta=e.target;
+    const len=(ta.textContent||'').length;
+    const selRange=getEditableSelectionRange(ta);
+    if(selRange&&selRange.start===len&&selRange.end===len){
+      const curIdx=getIndex(nodes,id); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(curIdx);
+      if(pos>=0&&pos<vis.length-1){
+        e.preventDefault();
+        const nextId=nodes[vis[pos+1]].id;
+        commitEdit(); beginEditAt(nextId,0)
+      }
+      return
+    }
+  }
   if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'){ _lastArrowCol=null }
   if(e.key==='Backspace'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
     const ta=e.target;
