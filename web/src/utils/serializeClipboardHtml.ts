@@ -97,52 +97,44 @@ export function depthTextColorCore(depth: number, fg: string, muted: string): st
 }
 
 /** Pure: matches index.html's own `parseStyledTextForClipboard` exactly — renders one node's
- * text as clipboard-safe inline HTML, recognizing the same semantic-marker syntax the editor
- * itself uses: a leading `[Section]`/`(muted note)`/`!alert`/`` `code` `` token followed by
- * `= description` renders as a colored label plus a muted description (the "semantic guide"
- * shorthand); otherwise each inline `` `code` ``/`[section]`/`(note)`/`!alert` span found
- * anywhere in the text is individually colored, with everything else HTML-escaped plain text. */
+ * text as clipboard-safe inline HTML, recognizing the same markup the editor itself uses:
+ * `**bold**`/`__italic__` spans are rendered as `<b>`/`<i>`, a leading `[Section]` token followed
+ * by `= description` renders as a colored label plus a muted description (the "semantic guide"
+ * shorthand — the only marker with real structural meaning elsewhere, e.g. the Table of
+ * Contents), and any other `[section]` span found anywhere in the text is individually colored,
+ * with everything else HTML-escaped plain text. The `(note)`/`!alert`/`` `code` `` markers this
+ * once also styled were removed along with their editor-side chip rendering — plain punctuation
+ * now, so they're left as ordinary escaped text like anything else. */
 export function parseStyledTextForClipboardCore(text: string, colors: ClipboardColors): string {
   const src = String(text || '');
   const softSection = softenCore(colors.semSection, colors.muted);
-  const softAlert = softenCore(colors.semAlert, colors.muted);
-  const softCode = softenCore(colors.semCode, colors.muted);
-  const mutedStrong = softenCore(colors.fg, colors.muted);
   const descTone = softenCore(colors.muted, colors.fg);
-  const semanticGuide = src.match(/^(\[[^\]]+\]|\([^)]+\)|![^\s]+|`[^`]+`)\s*=\s*(.+)$/);
+  const semanticGuide = src.match(/^(\[[^\]]+\])\s*=\s*(.+)$/);
   if (semanticGuide) {
     const token = semanticGuide[1];
     const desc = semanticGuide[2];
-    if (token.startsWith('[') && token.endsWith(']'))
-      return (
-        `<span style="color:${softSection};">${escapeHtml(token.slice(1, -1))}</span>` +
-        `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`
-      );
-    if (token.startsWith('(') && token.endsWith(')'))
-      return (
-        `<span style="color:${mutedStrong};font-style:italic;">${escapeHtml(token.slice(1, -1))}</span>` +
-        `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`
-      );
-    if (token.startsWith('!'))
-      return (
-        `<span style="color:${softAlert};font-weight:600;">${escapeHtml(token.slice(1))}</span>` +
-        `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`
-      );
-    if (token.startsWith('`') && token.endsWith('`'))
-      return (
-        `<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${escapeHtml(token.slice(1, -1))}</span>` +
-        `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`
-      );
+    return (
+      `<span style="color:${softSection};">${escapeHtml(token.slice(1, -1))}</span>` +
+      `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`
+    );
   }
   let out = '';
   let i = 0;
   while (i < src.length) {
     const ch = src[i];
-    if (ch === '`') {
-      const end = src.indexOf('`', i + 1);
-      if (end > i + 1) {
-        out += `<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${escapeHtml(src.slice(i + 1, end))}</span>`;
-        i = end + 1;
+    if (ch === '*' && src[i + 1] === '*') {
+      const end = src.indexOf('**', i + 2);
+      if (end > i + 2) {
+        out += `<b>${escapeHtml(src.slice(i + 2, end))}</b>`;
+        i = end + 2;
+        continue;
+      }
+    }
+    if (ch === '_' && src[i + 1] === '_') {
+      const end = src.indexOf('__', i + 2);
+      if (end > i + 2) {
+        out += `<i>${escapeHtml(src.slice(i + 2, end))}</i>`;
+        i = end + 2;
         continue;
       }
     }
@@ -151,23 +143,6 @@ export function parseStyledTextForClipboardCore(text: string, colors: ClipboardC
       if (end > i + 1) {
         out += `<span style="color:${softSection};">${escapeHtml(src.slice(i + 1, end))}</span>`;
         i = end + 1;
-        continue;
-      }
-    }
-    if (ch === '(') {
-      const end = src.indexOf(')', i + 1);
-      if (end > i + 1) {
-        out += `<span style="color:${mutedStrong};font-style:italic;">${escapeHtml(src.slice(i + 1, end))}</span>`;
-        i = end + 1;
-        continue;
-      }
-    }
-    if (ch === '!' && (i === 0 || /\s/.test(src[i - 1]))) {
-      let end = i + 1;
-      while (end < src.length && !/\s/.test(src[end])) end++;
-      if (end > i + 1) {
-        out += `<span style="color:${softAlert};font-weight:600;">${escapeHtml(src.slice(i + 1, end))}</span>`;
-        i = end;
         continue;
       }
     }

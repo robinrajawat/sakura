@@ -357,8 +357,8 @@ body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transitio
    container-level font-family (To-Dos panel did). Chrome (buttons, chips, labels, dialogs)
    is deliberately NOT tied to this — it stays Inter everywhere, same as the rest of the app,
    the same way surrounding UI chrome around the outline already does. Only .node-prefix (tree
-   lines) and .sem-code-inline are exempt on purpose — they're code/structure,
-   not prose, and must stay monospace regardless of this toggle. */
+   lines) is exempt on purpose — it's code/structure, not prose, and must stay
+   monospace regardless of this toggle. */
 :root{--content-font:'Public Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body.font-sans{--content-font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 body.theme-light{color-scheme:light;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--scroll:#ccc9bf;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
@@ -624,7 +624,7 @@ body.no-word-wrap .node-row{min-width:max-content}
 .heading-option-clear{font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);margin-top:3px;padding-top:7px;border-radius:0 0 6px 6px}
 .heading-option.heading-option-active.heading-option-h1,.heading-option.heading-option-active.heading-option-h2,.heading-option.heading-option-active.heading-option-h3,.heading-option.heading-option-active.heading-option-h4,.heading-option.heading-option-active.heading-option-h5,.heading-option.heading-option-active.heading-option-h6,.heading-option.heading-option-active.heading-option-h7{color:var(--sel-fg)}
 #fc-color-bar,#hl-color-bar{transition:fill .12s}
-.sem-chip{display:inline;color:var(--sem-section);font-weight:400;vertical-align:baseline}.sem-meta{display:inline-flex;align-items:center;color:var(--muted);font-style:normal;font-weight:500;font-size:.82em;background:color-mix(in srgb,var(--muted) 13%,transparent);padding:1px 7px;border-radius:999px;margin:0 1px;vertical-align:middle;line-height:1.5}.sem-alert-inline{display:inline;color:var(--sem-alert);font-weight:400}.sem-code-inline{display:inline;font-family:'Fira Code',Consolas,'Courier New',monospace;color:var(--sem-code)}.sem-quote{display:inline;color:var(--sem-quote);font-style:italic;font-size:.9em;opacity:.85;padding-left:9px;margin-left:1px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}.sem-key{display:inline;font-weight:600}.sem-sap-note{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px;cursor:pointer}.sem-sap-note:hover{text-decoration-color:var(--accent)}
+.sem-quote{display:inline;color:var(--sem-quote);font-style:italic;font-size:.9em;opacity:.85;padding-left:9px;margin-left:1px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}.sem-key{display:inline;font-weight:600}.sem-sap-note{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px;cursor:pointer}.sem-sap-note:hover{text-decoration-color:var(--accent)}
 #app-icon svg{display:block;width:20px;height:20px}
 .node-row.has-kids{margin-top:0}
 .node-row.is-section{margin-top:0;position:relative}.node-row.is-section::before{content:'';position:absolute;left:1px;top:3px;bottom:3px;width:3px;border-radius:2px;background:color-mix(in srgb,var(--accent) 55%,transparent)}body.hide-section-markings .node-row.is-section::before{display:none}.node-emoji-icon{display:inline-flex;width:1.05em;height:1.05em;margin-right:.32em;vertical-align:-0.18em;color:inherit}.node-emoji-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -1269,7 +1269,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
   * {
     /* Browsers strip background colors from print/PDF output by default
        unless explicitly told to keep them — without this, the highlight
-       mark (and the inline code chip background) would silently vanish
+       mark (and other chip/badge backgrounds) would silently vanish
        on the printed page even though the markup and color are correct. */
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
@@ -5583,7 +5583,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 <h4>Appearance &amp; Display</h4>  
 <ul>  
 <li><strong>Theme &amp; accent</strong> — Settings → Appearance: Light/Dark theme, seven accent colours, and an intensity slider. <strong>Auto theme</strong> sits below it — Off (the Light/Dark switch only, changed by hand), System (follows your OS/browser's dark mode setting live, no polling needed), or Schedule (switches at hours you set, checked once a minute plus whenever the tab regains focus, to catch changes that happened while it was backgrounded or the machine was asleep). Manually clicking Light/Dark in System or Schedule mode holds as a temporary override until the schedule/system value naturally catches up and agrees with it again — e.g. forcing dark during a scheduled light window holds through the next scheduled dark transition and then continues following the schedule normally from there, rather than reverting within the next check. "Accent colour on branches" (Settings → Layout) tints the tree connector lines with the accent too; off by default so branches stay neutral</li>
-<li><strong>Content font</strong> (Settings → Appearance, below Theme) — Sans-serif (Inter) or Monospace (Fira Code) for the text you actually write: the outline, To-Dos, Pad, and Note all switch together, so it's one consistent choice rather than a per-panel setting. Tree-line connectors (│├└─), code blocks, and inline code always stay monospace regardless of which is picked — those are structure/code, not prose, and switching them would hurt rather than help. Sans-serif is the default; Monospace is the original look for anyone who prefers it</li>
+<li><strong>Content font</strong> (Settings → Appearance, below Theme) — Sans-serif (Inter) or Monospace (Fira Code) for the text you actually write: the outline, To-Dos, Pad, and Note all switch together, so it's one consistent choice rather than a per-panel setting. Tree-line connectors (│├└─) always stay monospace regardless of which is picked — those are structure, not prose, and switching them would hurt rather than help. Sans-serif is the default; Monospace is the original look for anyone who prefers it</li>
 <li><strong>Chrome background</strong> (Settings → Appearance, below Accent) — five presets: Default (follows the Light/Dark theme), Slate, Sand, Ink, and Rose. Recolors the toolbar, file explorer, status bar, app bar, settings, help, and menus; the editor/canvas writing surface is untouched, so your outline keeps reading against its own background regardless of which preset is picked. Independent of both the accent color and the Light/Dark theme — any combination of the three is valid</li>
 <li><strong>Text color</strong> (Settings → Appearance, below Chrome background) — four presets for node text specifically: Default, Black, Charcoal, and Slate. Separate from the accent color (which colors buttons, borders, and highlights, not node text) and from Chrome background (which colors app chrome, not the outline itself)</li>
 <li><strong>Status bar items</strong> (Settings → Bars &amp; Menus, under the Status bar switch) — which individual pieces show in the bottom strip: node count, max depth, word count, current depth, current node's word count, saved status, backup connection status, the auto-rewrite indicator, theme chip, text size control, and author field, each independently hideable. The master Status bar switch above still controls the whole strip; this is finer-grained, for keeping only what you actually use. The "⚠ Back up your data" reminder chip alone isn't in this list on purpose — it's an actionable alert that only appears when your backup is genuinely overdue, and permanently hiding an alert defeats it; if it fires too often, raise the reminder interval in Settings → Data &amp; backup instead</li>
@@ -5672,11 +5672,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <div class="help-section" data-cat="editing">
 <h4>Semantics</h4>
 <ul>
-<li><span class="sem-example">[Text]</span> → <span class="sem-chip">Section</span> — blue label</li>
-<li><span class="sem-example">(Text)</span> → <span class="sem-meta">note</span> — muted pill/chip</li>
-<li><span class="sem-example">!Text</span> → <span class="sem-alert-inline">alert</span> — red warning</li>
-<li><span class="sem-example">`Text`</span> → <span class="sem-code-inline">code</span> — inline code</li>
-<li><span class="sem-example">SAP Note 123456</span> → <span class="sem-sap-note">SAP Note 123456</span> — auto-linked to me.sap.com, opens in a new tab. Also recognizes "OSS Note", case-insensitive. No markup to type — just write it naturally</li>
+<li><span class="sem-example">**Text**</span> → <strong>bold</strong> — or select text and press Ctrl/Cmd+B to bold just that selection</li>
+<li><span class="sem-example">__Text__</span> → <em>italic</em> — or select text and press Ctrl/Cmd+I to italicize just that selection</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 <li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
 <li>Tag icon in toolbar or right-click → Tags → tag popover (toggle existing tags or add new ones)</li>
@@ -18741,7 +18738,7 @@ function highlightSearchInHtml(html,q){if(!q)return html;const lq=q.toLowerCase(
 const DL_LABEL_COLORS={'Context':'--fc-blue','Decision':'--fc-red','Rationale':'--fc-purple','Alternatives':'--fc-gray','Impact':'--fc-orange','Status':'--fc-green','Decision Log':'--fc-gray'};
 const DL_FIELD_TEXT_RE=/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/;
 function isDecisionLogFieldNode(n){ return DL_FIELD_TEXT_RE.test(getNodePlainText(n).trim()); }
-function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;const dlMatch=decisionLogColors?src.match(/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/):null;if(dlMatch&&DL_LABEL_COLORS[dlMatch[1]]){const colorVar=DL_LABEL_COLORS[dlMatch[1]];out+=`<span style="color:var(${colorVar});font-weight:600;">${esc(dlMatch[1])}</span>`;i=dlMatch[0].length}else{const keyMatch=src.match(/^[A-Za-z][A-Za-z0-9 /&'-]{0,50}:(?=\s)/);if(keyMatch){out+=`<span class="sem-key">${esc(keyMatch[0])}</span>`;i=keyMatch[0].length}}while(i<src.length){const ch=src[i];if(ch==='`'){const end=src.indexOf('`',i+1);if(end>i+1){out+=`<span class="sem-code-inline">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\[([^\]]+)\]/g,'$1').replace(/\(([^)]+)\)/g,'$1').replace(/`([^`]+)`/g,'$1').replace(/(?:^|\s)!(\S+)/g,' $1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${escAttr(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}if(ch==='['){const end=src.indexOf(']',i+1);if(end>i+1){out+=`<span class="sem-chip">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='('){const end=src.indexOf(')',i+1);if(end>i+1){out+=`<span class="sem-meta">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){let end=i+1;while(end<src.length&&!/\s/.test(src[end]))end++;if(end>i+1){out+=`<span class="sem-alert-inline">${esc(src.slice(i+1,end))}</span>`;i=end;continue}}if((ch==='S'||ch==='s'||ch==='O'||ch==='o')&&(i===0||/\s/.test(src[i-1]))){const noteMatch=src.slice(i).match(/^(SAP|OSS)\s+Note\s+(\d{5,10})\b/i);if(noteMatch){const num=noteMatch[2];out+=`<a class="sem-sap-note" href="https://me.sap.com/notes/${num}" target="_blank" rel="noopener noreferrer" title="Open SAP Note ${num} on me.sap.com">${esc(noteMatch[0])}</a>`;i+=noteMatch[0].length;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
+function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;const dlMatch=decisionLogColors?src.match(/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/):null;if(dlMatch&&DL_LABEL_COLORS[dlMatch[1]]){const colorVar=DL_LABEL_COLORS[dlMatch[1]];out+=`<span style="color:var(${colorVar});font-weight:600;">${esc(dlMatch[1])}</span>`;i=dlMatch[0].length}else{const keyMatch=src.match(/^[A-Za-z][A-Za-z0-9 /&'-]{0,50}:(?=\s)/);if(keyMatch){out+=`<span class="sem-key">${esc(keyMatch[0])}</span>`;i=keyMatch[0].length}}while(i<src.length){const ch=src[i];if(ch==='*'&&src[i+1]==='*'){const end=src.indexOf('**',i+2);if(end>i+2){out+=`<strong>${esc(src.slice(i+2,end))}</strong>`;i=end+2;continue}}if(ch==='_'&&src[i+1]==='_'){const end=src.indexOf('__',i+2);if(end>i+2){out+=`<em>${esc(src.slice(i+2,end))}</em>`;i=end+2;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\*\*([^*]+)\*\*/g,'$1').replace(/__([^_]+)__/g,'$1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${escAttr(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
 function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.styles.heading?('style-heading-'+node.styles.heading):''; const cls=['node-label',node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':'',headingCls].filter(Boolean).join(' '); const raw=node.text||'';
   const inner=parseStyledText(raw,searchQ)||'&nbsp;';
   const html=node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${inner}</span>`:inner;
@@ -20994,44 +20991,42 @@ function depthTextColorCore(depth, fg, muted) {
     return muted;
 }
 /** Pure: matches index.html's own `parseStyledTextForClipboard` exactly — renders one node's
- * text as clipboard-safe inline HTML, recognizing the same semantic-marker syntax the editor
- * itself uses: a leading `[Section]`/`(muted note)`/`!alert`/`` `code` `` token followed by
- * `= description` renders as a colored label plus a muted description (the "semantic guide"
- * shorthand); otherwise each inline `` `code` ``/`[section]`/`(note)`/`!alert` span found
- * anywhere in the text is individually colored, with everything else HTML-escaped plain text. */
+ * text as clipboard-safe inline HTML, recognizing the same markup the editor itself uses:
+ * `**bold**`/`__italic__` spans are rendered as `<b>`/`<i>`, a leading `[Section]` token followed
+ * by `= description` renders as a colored label plus a muted description (the "semantic guide"
+ * shorthand — the only marker with real structural meaning elsewhere, e.g. the Table of
+ * Contents), and any other `[section]` span found anywhere in the text is individually colored,
+ * with everything else HTML-escaped plain text. The `(note)`/`!alert`/`` `code` `` markers this
+ * once also styled were removed along with their editor-side chip rendering — plain punctuation
+ * now, so they're left as ordinary escaped text like anything else. */
 function parseStyledTextForClipboardCore(text, colors) {
     const src = String(text || '');
     const softSection = softenCore(colors.semSection, colors.muted);
-    const softAlert = softenCore(colors.semAlert, colors.muted);
-    const softCode = softenCore(colors.semCode, colors.muted);
-    const mutedStrong = softenCore(colors.fg, colors.muted);
     const descTone = softenCore(colors.muted, colors.fg);
-    const semanticGuide = src.match(/^(\[[^\]]+\]|\([^)]+\)|![^\s]+|`[^`]+`)\s*=\s*(.+)$/);
+    const semanticGuide = src.match(/^(\[[^\]]+\])\s*=\s*(.+)$/);
     if (semanticGuide) {
         const token = semanticGuide[1];
         const desc = semanticGuide[2];
-        if (token.startsWith('[') && token.endsWith(']'))
-            return (`<span style="color:${softSection};">${escapeHtml(token.slice(1, -1))}</span>` +
-                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
-        if (token.startsWith('(') && token.endsWith(')'))
-            return (`<span style="color:${mutedStrong};font-style:italic;">${escapeHtml(token.slice(1, -1))}</span>` +
-                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
-        if (token.startsWith('!'))
-            return (`<span style="color:${softAlert};font-weight:600;">${escapeHtml(token.slice(1))}</span>` +
-                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
-        if (token.startsWith('`') && token.endsWith('`'))
-            return (`<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${escapeHtml(token.slice(1, -1))}</span>` +
-                `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
+        return (`<span style="color:${softSection};">${escapeHtml(token.slice(1, -1))}</span>` +
+            `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
     }
     let out = '';
     let i = 0;
     while (i < src.length) {
         const ch = src[i];
-        if (ch === '`') {
-            const end = src.indexOf('`', i + 1);
-            if (end > i + 1) {
-                out += `<span style="color:${softCode};font-family:Consolas,'Courier New',monospace;background:${colors.codeBg};padding:1px 4px;border-radius:4px;">${escapeHtml(src.slice(i + 1, end))}</span>`;
-                i = end + 1;
+        if (ch === '*' && src[i + 1] === '*') {
+            const end = src.indexOf('**', i + 2);
+            if (end > i + 2) {
+                out += `<b>${escapeHtml(src.slice(i + 2, end))}</b>`;
+                i = end + 2;
+                continue;
+            }
+        }
+        if (ch === '_' && src[i + 1] === '_') {
+            const end = src.indexOf('__', i + 2);
+            if (end > i + 2) {
+                out += `<i>${escapeHtml(src.slice(i + 2, end))}</i>`;
+                i = end + 2;
                 continue;
             }
         }
@@ -21040,24 +21035,6 @@ function parseStyledTextForClipboardCore(text, colors) {
             if (end > i + 1) {
                 out += `<span style="color:${softSection};">${escapeHtml(src.slice(i + 1, end))}</span>`;
                 i = end + 1;
-                continue;
-            }
-        }
-        if (ch === '(') {
-            const end = src.indexOf(')', i + 1);
-            if (end > i + 1) {
-                out += `<span style="color:${mutedStrong};font-style:italic;">${escapeHtml(src.slice(i + 1, end))}</span>`;
-                i = end + 1;
-                continue;
-            }
-        }
-        if (ch === '!' && (i === 0 || /\s/.test(src[i - 1]))) {
-            let end = i + 1;
-            while (end < src.length && !/\s/.test(src[end]))
-                end++;
-            if (end > i + 1) {
-                out += `<span style="color:${softAlert};font-weight:600;">${escapeHtml(src.slice(i + 1, end))}</span>`;
-                i = end;
                 continue;
             }
         }
@@ -26729,7 +26706,22 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
       e.preventDefault(); mergeNextNodeIntoAndFocus(id,ta.textContent||''); return
     }
   }
-  if(matchesShortcut(e,'bold')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('bold'); beginEdit(id,true); return} if(matchesShortcut(e,'italic')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('italic'); beginEdit(id,true); return} if(matchesShortcut(e,'underline')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('underline'); beginEdit(id,true); return} if(matchesShortcut(e,'strike')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('strike'); beginEdit(id,true); return} if(matchesShortcut(e,'highlight')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('highlight'); beginEdit(id,true); return} if(matchesShortcut(e,'textColor')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('color'); beginEdit(id,true); return} if(matchesShortcut(e,'heading1')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(1); beginEdit(id,true); return} if(matchesShortcut(e,'heading2')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(2); beginEdit(id,true); return} if(matchesShortcut(e,'heading3')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(3); beginEdit(id,true); return} if(matchesShortcut(e,'heading4')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(4); beginEdit(id,true); return} if(matchesShortcut(e,'heading5')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(5); beginEdit(id,true); return} if(matchesShortcut(e,'heading6')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(6); beginEdit(id,true); return} if(matchesShortcut(e,'headingClear')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(0); beginEdit(id,true); return} if(e.key==='Escape'){e.preventDefault(); cancelEdit(); return} if(e.key==='Enter'){e.preventDefault(); const input=e.target; const currentValue=String(input?.textContent||''); const idx=getIndex(nodes,id); const currentNode=nodes[idx]; const isLastRow=idx===nodes.length-1; const isEffectivelyEmpty=!currentValue.trim()&&!String(currentNode?.text||'').trim(); if(isEffectivelyEmpty){
+  if(matchesShortcut(e,'bold')){
+    // Dynalist-style inline bold: with an actual text selection inside the row, wrap (or
+    // unwrap, toggling) just that substring in **markers** instead of bolding the whole node --
+    // same "raw markup while editing, styled only in view mode" model **already used for the
+    // [Section]/(note)/`code` semantic markers, kept consistent rather than live-converting**
+    // as you type (which is exactly the caret-corruption bug class a past session hit and fixed
+    // for those markers). No selection (collapsed caret) falls back to the existing whole-node
+    // style toggle, unchanged.
+    const boldSel=getEditableSelectionRange(e.target);
+    if(boldSel&&boldSel.start!==boldSel.end){e.preventDefault(); toggleInlineMarkupOnSelection('**'); return}
+    e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('bold'); beginEdit(id,true); return
+  } if(matchesShortcut(e,'italic')){
+    const italicSel=getEditableSelectionRange(e.target);
+    if(italicSel&&italicSel.start!==italicSel.end){e.preventDefault(); toggleInlineMarkupOnSelection('__'); return}
+    e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('italic'); beginEdit(id,true); return
+  } if(matchesShortcut(e,'underline')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('underline'); beginEdit(id,true); return} if(matchesShortcut(e,'strike')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('strike'); beginEdit(id,true); return} if(matchesShortcut(e,'highlight')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('highlight'); beginEdit(id,true); return} if(matchesShortcut(e,'textColor')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('color'); beginEdit(id,true); return} if(matchesShortcut(e,'heading1')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(1); beginEdit(id,true); return} if(matchesShortcut(e,'heading2')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(2); beginEdit(id,true); return} if(matchesShortcut(e,'heading3')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(3); beginEdit(id,true); return} if(matchesShortcut(e,'heading4')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(4); beginEdit(id,true); return} if(matchesShortcut(e,'heading5')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(5); beginEdit(id,true); return} if(matchesShortcut(e,'heading6')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(6); beginEdit(id,true); return} if(matchesShortcut(e,'headingClear')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(0); beginEdit(id,true); return} if(e.key==='Escape'){e.preventDefault(); cancelEdit(); return} if(e.key==='Enter'){e.preventDefault(); const input=e.target; const currentValue=String(input?.textContent||''); const idx=getIndex(nodes,id); const currentNode=nodes[idx]; const isLastRow=idx===nodes.length-1; const isEffectivelyEmpty=!currentValue.trim()&&!String(currentNode?.text||'').trim(); if(isEffectivelyEmpty){
     // Continuous-editing feel: a blank row no longer dead-ends on Enter. At the very end of
     // the whole document, repeated Enter walks a blank row back out one level at a time
     // instead of doing nothing, so a nested aside can be un-nested just by continuing to hit
@@ -29101,6 +29093,33 @@ async function suggestIconsForAllNodes(){
   await suggestIconsForNodeIds(nodes.map(n=>n.id));
 }
 
+// Inline bold/italic on just a text selection (Dynalist-style): wraps the selected substring in
+// **/__ markers, or unwraps it if it's already exactly wrapped (a toggle, matching how the
+// whole-node style toggle it sits next to already behaves). Mirrors rewriteSubTextSelection
+// below -- mutate node.text and the live contenteditable directly and reselect, rather than a
+// full render(), so this never disturbs anything outside the current row.
+function toggleInlineMarkupOnSelection(marker){
+  const input=getEditingInput(); if(!input)return false;
+  const range=getEditableSelectionRange(input); if(!range||range.start===range.end)return false;
+  const {start,end}=range; const mlen=marker.length;
+  const idx=getIndex(nodes,editingId); if(idx<0)return false;
+  const full=input.textContent||'';
+  const alreadyWrapped=full.slice(start-mlen,start)===marker&&full.slice(end,end+mlen)===marker;
+  let newText,newStart,newEnd;
+  if(alreadyWrapped){
+    newText=full.slice(0,start-mlen)+full.slice(start,end)+full.slice(end+mlen);
+    newStart=start-mlen; newEnd=end-mlen;
+  } else {
+    newText=full.slice(0,start)+marker+full.slice(start,end)+marker+full.slice(end);
+    newStart=start+mlen; newEnd=end+mlen;
+  }
+  pushUndo();
+  nodes[idx].text=newText; input.textContent=newText;
+  input.dispatchEvent(new Event('input'));
+  setEditableSelectionRange(input,newStart,newEnd);
+  scheduleAutoSave();
+  return true;
+}
 async function rewriteSubTextSelection(){
   const input=getEditingInput(); if(!input)return;
   const range=getEditableSelectionRange(input);
@@ -36121,7 +36140,7 @@ function previewDetectDecisionLogs(scopedNodes){
   });
   return {consumed,groups};
 }
-function previewParseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;const dlMatch=decisionLogColors?src.match(/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/):null;if(dlMatch&&DL_LABEL_COLORS[dlMatch[1]]){const colorVar=DL_LABEL_COLORS[dlMatch[1]];out+=`<span style="background:color-mix(in srgb, var(${colorVar}) 16%, transparent);color:var(${colorVar});border-radius:4px;padding:1px 4px;margin:0 -1px;">${esc(dlMatch[1])}</span>`;i=dlMatch[0].length}while(i<src.length){const ch=src[i];if(ch==='`'){const end=src.indexOf('`',i+1);if(end>i+1){out+=`<span class="sem-code-inline">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const lt=src.slice(i+2,end);out+=`<span style="color:var(--pv-heading-2);font-weight:400">${esc(lt)}</span>`;i=end+2;continue}}if(ch==='['){const end=src.indexOf(']',i+1);if(end>i+1){out+=`<span class="sem-chip">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='('){const end=src.indexOf(')',i+1);if(end>i+1){out+=`<span class="sem-meta">${esc(src.slice(i+1,end))}</span>`;i=end+1;continue}}if(ch==='!'&&(i===0||/\s/.test(src[i-1]))){let end=i+1;while(end<src.length&&!/\s/.test(src[end]))end++;if(end>i+1){out+=`<span class="sem-alert-inline">${esc(src.slice(i+1,end))}</span>`;i=end;continue}}if((ch==='S'||ch==='s'||ch==='O'||ch==='o')&&(i===0||/\s/.test(src[i-1]))){const noteMatch=src.slice(i).match(/^(SAP|OSS)\s+Note\s+(\d{5,10})\b/i);if(noteMatch){const num=noteMatch[2];out+=`<a class="sem-sap-note" href="https://me.sap.com/notes/${num}" target="_blank" rel="noopener noreferrer" title="Open SAP Note ${num} on me.sap.com">${esc(noteMatch[0])}</a>`;i+=noteMatch[0].length;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
+function previewParseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;const dlMatch=decisionLogColors?src.match(/^(Decision Log|Context|Decision|Rationale|Alternatives|Impact|Status)(?=:|\s\u00b7|$)/):null;if(dlMatch&&DL_LABEL_COLORS[dlMatch[1]]){const colorVar=DL_LABEL_COLORS[dlMatch[1]];out+=`<span style="background:color-mix(in srgb, var(${colorVar}) 16%, transparent);color:var(${colorVar});border-radius:4px;padding:1px 4px;margin:0 -1px;">${esc(dlMatch[1])}</span>`;i=dlMatch[0].length}while(i<src.length){const ch=src[i];if(ch==='*'&&src[i+1]==='*'){const end=src.indexOf('**',i+2);if(end>i+2){out+=`<strong>${esc(src.slice(i+2,end))}</strong>`;i=end+2;continue}}if(ch==='_'&&src[i+1]==='_'){const end=src.indexOf('__',i+2);if(end>i+2){out+=`<em>${esc(src.slice(i+2,end))}</em>`;i=end+2;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const lt=src.slice(i+2,end);out+=`<span style="color:var(--pv-heading-2);font-weight:400">${esc(lt)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
 function previewStyleClasses(node){
   return [node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':''].filter(Boolean).join(' ');
 }
@@ -45572,10 +45591,8 @@ function _addTagPopoverFromInput(){
       <div class="cs-card" data-cs-anchor="semantics">
         <h3>Semantics</h3>
         <ul>
-          <li><span class="cs-desc"><span class="help-kbd">[Text]</span> → <span style="color:var(--accent)">Section</span> label</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">(Text)</span> → <span style="color:var(--muted);font-style:italic">note</span> muted italic</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">!Text</span> → <span style="color:var(--alert,#c0392b);font-weight:500">alert</span> red warning</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">`Text`</span> → <span style="font-family:'Fira Code',monospace;font-size:10.5px">code</span> inline code</span></li>
+          <li><span class="cs-desc"><span class="help-kbd">**Text**</span> → <strong>bold</strong> (or select text + Ctrl/Cmd+B)</span></li>
+          <li><span class="cs-desc"><span class="help-kbd">__Text__</span> → <em>italic</em> (or select text + Ctrl/Cmd+I)</span></li>
           <li><span class="cs-desc"><span class="help-kbd">@Node name</span> → clickable backlink (type @ while editing to pick)</span></li>
           <li><span class="cs-desc"><span class="help-kbd">[ ] text</span> or <span class="help-kbd">[x] text</span> → auto-converts to checkbox on commit</span></li>
           <li><span class="cs-desc">Outline numbering — Settings → Editing → "Outline numbering" (1, 1.1, 1.1.1)</span></li>
