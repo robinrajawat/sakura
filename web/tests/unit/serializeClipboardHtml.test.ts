@@ -93,31 +93,25 @@ describe('parseStyledTextForClipboardCore', () => {
     expect(html).toContain('<span');
   });
 
-  it('renders a (note) = description semantic guide in italic', () => {
-    const html = parseStyledTextForClipboardCore('(aside) = extra context', colors);
-    expect(html).toContain('font-style:italic');
-  });
-
-  it('renders a !alert = description semantic guide', () => {
-    const html = parseStyledTextForClipboardCore('!warning = be careful', colors);
-    expect(html).toContain('font-weight:600');
-  });
-
-  it('renders a `code` = description semantic guide with monospace styling', () => {
-    const html = parseStyledTextForClipboardCore('`npm test` = run the suite', colors);
-    expect(html).toContain('Consolas');
-  });
-
-  it('renders inline `code` spans within ordinary text', () => {
-    const html = parseStyledTextForClipboardCore('run `npm test` now', colors);
-    expect(html).toContain('run ');
-    expect(html).toContain('Consolas');
-    expect(html).toContain('npm test');
-  });
-
   it('renders inline [bracket] spans within ordinary text', () => {
     const html = parseStyledTextForClipboardCore('see [Section] below', colors);
     expect(html).toContain('Section');
+  });
+
+  it('renders **bold** spans as <b>', () => {
+    const html = parseStyledTextForClipboardCore('this is **important** text', colors);
+    expect(html).toBe('this is <b>important</b> text');
+  });
+
+  it('renders __italic__ spans as <i>', () => {
+    const html = parseStyledTextForClipboardCore('this is __emphasized__ text', colors);
+    expect(html).toBe('this is <i>emphasized</i> text');
+  });
+
+  it('no longer gives (note)/!alert/`code` any special styling -- plain escaped text', () => {
+    const html = parseStyledTextForClipboardCore('(aside) !warning `code`', colors);
+    expect(html).toBe('(aside) !warning `code`');
+    expect(html).not.toContain('<span');
   });
 
   it('escapes plain text with no special markers', () => {

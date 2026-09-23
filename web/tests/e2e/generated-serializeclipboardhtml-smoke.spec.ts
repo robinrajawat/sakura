@@ -60,7 +60,7 @@ test.describe('generated serializeClipboardHtml block (src/utils/serializeClipbo
       // @ts-expect-error
       const depthColor = depthTextColor(1, colors.fg, colors.muted);
       // @ts-expect-error
-      const parsed = parseStyledTextForClipboard('run `npm test` now', colors);
+      const parsed = parseStyledTextForClipboard('run **npm test** now', colors);
       // @ts-expect-error
       const html = serializeClipboardHtml(nodes, false);
 
@@ -75,7 +75,7 @@ test.describe('generated serializeClipboardHtml block (src/utils/serializeClipbo
     expect(result.colors.fg).toBe('#1a1a1a');
     expect(result.mixed).toBe('rgb(128, 0, 128)');
     expect(typeof result.depthColor).toBe('string');
-    expect(result.parsed).toContain('Consolas');
+    expect(result.parsed).toBe('run <b>npm test</b> now');
     expect(result.html).toContain('<!doctype html>');
     expect(result.html).toContain('Root');
     expect(result.html).toContain('Child');
