@@ -20522,6 +20522,33 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
   rebuildParentIds();
   beginEditAt(prevId,caretAt);
 }
+// Forward-delete (continuous-editor feel, mirroring mergeNodeIntoPrevAndFocus above): pressing
+// Delete with the caret collapsed at the very end of a node's text pulls the next VISIBLE node's
+// text up onto the end of this one instead of doing nothing, then removes that now-absorbed next
+// node -- same "previous VISIBLE node" fold-aware lookup, mirrored to the next one, so this can
+// never reach into a collapsed node's hidden children. The join point is exactly where the caret
+// already was, so it doesn't move at all (unlike the backspace-merge case, which lands the caret
+// at the end of the row above -- here the row itself doesn't change position). A next node that's
+// empty is absorbed the same way, appending '' -- no separate empty-node branch needed. Refuses
+// when the next node has children (nothing to structurally do with them, same guard
+// mergeNodeIntoPrevAndFocus uses for the node it removes).
+function mergeNextNodeIntoAndFocus(id,liveText){
+  const idx=getIndex(nodes,id); if(idx<0)return;
+  const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0||pos>=vis.length-1)return;
+  const nextIdx=vis[pos+1]; if(nodeHasChildren(nodes,nextIdx))return;
+  const curOldText=liveText||''; const nextText=nodes[nextIdx].text||'';
+  const caretAt=curOldText.length; const curNewText=curOldText+nextText;
+  pushUndo(); markDirty();
+  const deletedTexts=nextText?[nextText]:[]; const deletedIds=[nodes[nextIdx].id];
+  nodes[idx]={...nodes[idx],text:curNewText};
+  nodes.splice(nextIdx,1);
+  removeIdsFromAutoRewriteQueue(deletedIds);
+  cleanupBacklinksFor(deletedTexts);
+  if(backlinksEnabled&&curOldText!==curNewText)renameBacklinksFor(curOldText,curNewText);
+  cleanupOrphanedFeaturedTables(deletedIds);
+  rebuildParentIds();
+  beginEditAt(id,caretAt);
+}
 // Enter-split (continuous-editor feel, mirroring mergeNodeIntoPrevAndFocus above): pressing Enter
 // with the caret collapsed mid-text splits the node at that point instead of always appending a
 // blank sibling -- text before the caret stays on this node, text after it becomes a new sibling
@@ -26696,6 +26723,13 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
       e.preventDefault(); mergeNodeIntoPrevAndFocus(id,ta.textContent||''); return
     }
   }
+  if(e.key==='Delete'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
+    const ta=e.target; const len=(ta.textContent||'').length;
+    const selRange=getEditableSelectionRange(ta);
+    if(selRange&&selRange.start===len&&selRange.end===len){
+      e.preventDefault(); mergeNextNodeIntoAndFocus(id,ta.textContent||''); return
+    }
+  }
   if(matchesShortcut(e,'bold')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('bold'); beginEdit(id,true); return} if(matchesShortcut(e,'italic')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('italic'); beginEdit(id,true); return} if(matchesShortcut(e,'underline')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('underline'); beginEdit(id,true); return} if(matchesShortcut(e,'strike')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('strike'); beginEdit(id,true); return} if(matchesShortcut(e,'highlight')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('highlight'); beginEdit(id,true); return} if(matchesShortcut(e,'textColor')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('color'); beginEdit(id,true); return} if(matchesShortcut(e,'heading1')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(1); beginEdit(id,true); return} if(matchesShortcut(e,'heading2')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(2); beginEdit(id,true); return} if(matchesShortcut(e,'heading3')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(3); beginEdit(id,true); return} if(matchesShortcut(e,'heading4')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(4); beginEdit(id,true); return} if(matchesShortcut(e,'heading5')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(5); beginEdit(id,true); return} if(matchesShortcut(e,'heading6')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(6); beginEdit(id,true); return} if(matchesShortcut(e,'headingClear')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(0); beginEdit(id,true); return} if(e.key==='Escape'){e.preventDefault(); cancelEdit(); return} if(e.key==='Enter'){e.preventDefault(); const input=e.target; const currentValue=String(input?.textContent||''); const idx=getIndex(nodes,id); const currentNode=nodes[idx]; const isLastRow=idx===nodes.length-1; const isEffectivelyEmpty=!currentValue.trim()&&!String(currentNode?.text||'').trim(); if(isEffectivelyEmpty){
     // Continuous-editing feel: a blank row no longer dead-ends on Enter. At the very end of
     // the whole document, repeated Enter walks a blank row back out one level at a time
@@ -26716,7 +26750,12 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
       splitNodeAtCursorAndFocus(id,beforeText,afterText); return;
     }
   }
-  commitEdit(); selectedId=id; if(e.ctrlKey||e.metaKey)insertChildFirst(id,true); else insertSiblingAfter(id,true); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); commitEdit(); selectedId=id; if(e.shiftKey)outdentSelected(); else indentSelected(); beginEdit(selectedId,true); return}
+  commitEdit(); selectedId=id; if(e.ctrlKey||e.metaKey)insertChildFirst(id,true); else insertSiblingAfter(id,true); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();
+    // Continuous-editing feel: indenting/outdenting never changes the row's own text, so the
+    // caret should stay exactly where it was -- not jump to the end the way a fresh beginEdit
+    // normally would.
+    const tabCaretOff=getEditableCaretOffset(e.target)??0;
+    commitEdit(); selectedId=id; if(e.shiftKey)outdentSelected(); else indentSelected(); beginEditAt(selectedId,tabCaretOff); return}
 }
 function createRootAndEdit(firstChar=''){pushUndo(); markDirty(); const n=makeNode(firstChar,0,null,emptyStyles()); nodes=[n]; selectedId=n.id; editingId=n.id; editSessionOriginalText=n.text; autoRewritePasteTainted=false; selectAllMode=false; clearMultiSelection(); selectionAnchorId=n.id; flashNodeId=null; render()}
 function handleToolbarStyle(styleName){commitEdit(); toggleNodeStyle(styleName)}
