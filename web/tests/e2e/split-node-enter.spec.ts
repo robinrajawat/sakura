@@ -124,7 +124,7 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     expect(result.parentIds).toEqual([null, 1, null]);
   });
 
-  test('real keyboard integration: Enter mid-text splits; Enter at end still appends a blank sibling', async ({ page }) => {
+  test('real keyboard integration: Enter mid-text splits; Enter at the end of the last row adds a blank child', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -162,8 +162,9 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     const newId = await page.evaluate(() => nodes[1].id);
     expect(afterSplit.editingId).toBe(newId);
 
-    // Enter at the end of the (now-focused, empty-caret-at-end) node still just appends a
-    // blank sibling -- unchanged from the pre-split-feature behavior.
+    // Enter at the end of the (now-focused, empty-caret-at-end) node -- which is now the last
+    // row in the whole document -- adds a blank CHILD rather than a same-depth sibling (see
+    // enter-child-outdent-cascade.spec.ts for the full behavior this enables).
     const input2 = page.locator(`#in-${newId}`);
     await expect(input2).toBeVisible();
     await input2.focus();
@@ -172,9 +173,15 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
 
     const afterTrailingEnter = await page.evaluate(() => ({
       // @ts-expect-error
-      texts: nodes.map((n: any) => n.text)
+      texts: nodes.map((n: any) => n.text),
+      // @ts-expect-error
+      depths: nodes.map((n: any) => n.depth),
+      // @ts-expect-error
+      parentIds: nodes.map((n: any) => n.parentId)
     }));
     expect(afterTrailingEnter.texts).toEqual(['Foo', 'Bar', '']);
+    expect(afterTrailingEnter.depths).toEqual([0, 0, 1]);
+    expect(afterTrailingEnter.parentIds).toEqual([null, null, newId]);
   });
 
   test('Ctrl/Cmd+Enter still creates a child, unaffected by the split behavior', async ({ page }) => {
