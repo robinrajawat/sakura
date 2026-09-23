@@ -538,7 +538,7 @@ body.feature-off-presenter #preview-present-btn{display:none!important}
    so it always ends right where that row's own bullet starts (shifts with depth,
    since indentation here is tree-line text width, not a CSS margin). Uses opacity
    (not display) for show/hide so its width can always be measured for that math. */
-.node-hover-rail{position:absolute;top:0;left:0;z-index:15;display:flex;flex-direction:row;gap:2px;padding:2px;background:var(--tb-bg);border:1px solid var(--border);border-radius:7px;box-shadow:0 4px 12px rgba(0,0,0,.16);opacity:0;pointer-events:none;transition:opacity .08s ease}
+.node-hover-rail{position:absolute;top:0;left:0;z-index:15;display:flex;flex-direction:row;gap:2px;padding:2px;background:var(--tb-bg);border:1px solid var(--border);border-radius:7px;box-shadow:0 4px 12px rgba(0,0,0,.16);opacity:0;pointer-events:none}
 .node-hover-rail.visible{opacity:1;pointer-events:auto}
 .node-hover-rail-btn{width:19px;height:19px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;border-radius:5px;cursor:pointer;color:var(--muted);padding:0;flex-shrink:0}
 .node-hover-rail-btn:hover,.node-hover-rail-btn.active{background:var(--hover);color:var(--fg)}
@@ -563,7 +563,7 @@ body.feature-off-presenter #preview-present-btn{display:none!important}
 .empty-state.doc-empty{position:absolute;inset:0;height:auto}
 .empty-state-illustration{margin-bottom:4px;opacity:.55;transition:opacity .2s}.empty-state:hover .empty-state-illustration{opacity:.72}
 .empty-state-actions{display:flex;gap:8px;justify-content:center;margin-top:10px}
-.node-row{display:flex;align-items:center;gap:0;min-height:calc(25px * var(--editor-scale) * var(--row-density));padding:calc(1px * var(--editor-scale) * var(--row-density)) calc(8px * var(--editor-scale));margin-bottom:calc(2px * var(--editor-scale) * var(--row-density));border-radius:6px;cursor:default;user-select:none;transition:background .12s ease,box-shadow .12s ease}
+.node-row{display:flex;align-items:center;gap:0;min-height:calc(25px * var(--editor-scale) * var(--row-density));padding:calc(1px * var(--editor-scale) * var(--row-density)) calc(8px * var(--editor-scale));margin-bottom:calc(2px * var(--editor-scale) * var(--row-density));border-radius:6px;cursor:default;user-select:none}
 /* Only rows with a citation switch off center-alignment — every other row (the overwhelming
    majority) stays pixel-identical to before. Without this, a row grown taller by its own
    node-quote-block below would vertically center the whole row's flex children (prefix, fold
@@ -571,8 +571,7 @@ body.feature-off-presenter #preview-present-btn{display:none!important}
    instead of staying pinned to it. */
 .node-row.has-citations{align-items:flex-start}
 .node-quote-block{margin:3px 0 1px;display:grid;gap:2px}
-.node-quote-line{color:var(--sem-quote);font-style:italic;font-size:.86em;line-height:1.4;opacity:.85;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)} body.row-hl-original .node-row.selected{background:color-mix(in srgb,var(--sel) 30%,transparent)} body.row-hl-original .node-row.primary-selection{background:color-mix(in srgb,var(--sel) 50%,transparent)} body.row-hl-original .node-row.primary-selection:not(.selected){background:transparent} body.row-hl-dot .node-row.selected::before{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--accent) 65%,transparent)} body.row-hl-dot .node-row.primary-selection::before{width:6px;height:6px;background:var(--accent)} body.row-hl-bar .node-row.selected{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--accent) 32%,transparent)} body.row-hl-bar .node-row.primary-selection{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 60%,transparent)} body.row-hl-outline .node-row.selected{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)} body.row-hl-outline .node-row.primary-selection{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)} .node-row.flash-new{animation:node-flash .9s ease-out}
-@keyframes node-flash{0%{background:color-mix(in srgb,var(--accent) 22%,transparent)}100%{background:transparent}}
+.node-quote-line{color:var(--sem-quote);font-style:italic;font-size:.86em;line-height:1.4;opacity:.85;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)} body.row-hl-original .node-row.selected{background:color-mix(in srgb,var(--sel) 30%,transparent)} body.row-hl-original .node-row.primary-selection{background:color-mix(in srgb,var(--sel) 50%,transparent)} body.row-hl-original .node-row.primary-selection:not(.selected){background:transparent} body.row-hl-dot .node-row.selected::before{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--accent) 65%,transparent)} body.row-hl-dot .node-row.primary-selection::before{width:6px;height:6px;background:var(--accent)} body.row-hl-bar .node-row.selected{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--accent) 32%,transparent)} body.row-hl-bar .node-row.primary-selection{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 60%,transparent)} body.row-hl-outline .node-row.selected{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)} body.row-hl-outline .node-row.primary-selection{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 
 .node-prefix{white-space:pre;font-family:'Fira Code',Consolas,'Courier New',monospace;font-variant-ligatures:none;user-select:none;color:var(--vert);margin-right:-1px;letter-spacing:0;line-height:inherit;align-self:center}.node-conn{color:inherit}.node-vert-faint{opacity:.32}body.accent-branches .node-prefix{color:color-mix(in srgb,var(--accent) 28%,var(--vert) 72%)} .node-label,.node-input{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;font-family:var(--content-font);line-height:calc(1.55 * var(--editor-scale));user-select:text} .node-input{border:none;background:transparent;color:var(--node-fg);padding:0;font:inherit;font-family:var(--content-font);line-height:calc(1.55 * var(--editor-scale));border-radius:0;box-shadow:none;font-variant-ligatures:none;resize:none;overflow:hidden;display:block;width:100%} .node-input:focus{outline:none;box-shadow:none}
 body.no-word-wrap .node-label,body.no-word-wrap .node-input{white-space:pre;word-break:normal}
@@ -996,7 +995,7 @@ body.toolbar-hidden #quick-bar{display:none}
    separate from it on purpose: .fold-toggle/.fold-dot act on mousedown (instant collapse/expand),
    so a press-and-drag gesture starting there would fire the toggle before a drag could ever be
    recognized. Hidden until the row is hovered so it doesn't clutter the tree at rest. */
-.node-drag-handle{display:inline-flex;width:10px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((21.7px * var(--editor-scale) - 18px) / 2);margin-right:3px;cursor:grab;color:var(--hint);opacity:0;transition:opacity .12s;user-select:none}
+.node-drag-handle{display:inline-flex;width:10px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((21.7px * var(--editor-scale) - 18px) / 2);margin-right:3px;cursor:grab;color:var(--hint);opacity:0;user-select:none}
 .node-row:hover .node-drag-handle,.node-row.pointer-hover .node-drag-handle{opacity:.55}
 .node-drag-handle:hover{opacity:1!important;color:var(--accent)}
 .node-row.dragging .node-drag-handle{opacity:1;cursor:grabbing}
@@ -2005,7 +2004,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font:0.82em/1.4 inherit;color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;border:none;resize:none;overflow:hidden;background:transparent}
 .node-note-line:focus{color:var(--fg)}
 .node-remark-line{position:relative;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:0.82em;line-height:1.4}
-.node-inline-open-panel-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;color:var(--hint);opacity:0;cursor:pointer;transition:opacity .12s,background .12s,color .12s;margin-top:1px}
+.node-inline-open-panel-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;color:var(--hint);opacity:0;cursor:pointer;margin-top:1px}
 .node-remark-line:hover .node-inline-open-panel-btn,.node-qa-line:hover .node-inline-open-panel-btn,.node-note-line-wrap:hover .node-inline-open-panel-btn{opacity:.6}
 .node-inline-open-panel-btn:hover{opacity:1!important;background:var(--hover);color:var(--accent)}
 .node-remark-avatar{flex:0 0 auto;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700;margin-top:1px}
@@ -2025,14 +2024,14 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-qa-answer:hover,.node-qa-question:hover{opacity:1}
 .node-qa-answer:focus{opacity:1;color:var(--fg)}
 .node-qa-answer:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
-.node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:4px;color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px;transition:opacity .12s}
+.node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:4px;color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px}
 .node-arw-dot:hover{opacity:1}
 .node-row.selected .node-arw-dot,.node-row.primary-selection .node-arw-dot{opacity:.85}
 
 /* Note indicator dot on node rows */
-.node-note-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;font-size:10px;cursor:pointer;border-radius:4px;transition:opacity .12s}
+.node-note-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;font-size:10px;cursor:pointer;border-radius:4px}
 .node-note-dot:hover{opacity:1}
-.node-marker-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;font-size:10px;cursor:pointer;border-radius:4px;transition:opacity .12s,background .12s;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+.node-marker-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;font-size:10px;cursor:pointer;border-radius:4px;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 .node-slide-divider-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;border-radius:4px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);cursor:default}
 .node-marker-badge:hover{background:color-mix(in srgb,var(--fc-gray) 26%,transparent)}
 .node-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
@@ -2043,11 +2042,11 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-marker-badge[data-color="orange"]:hover{background:color-mix(in srgb,var(--fc-orange) 26%,transparent)}
 .node-marker-badge.marker-active-filter{box-shadow:0 0 0 1.5px currentColor}
 .node-row.selected .node-note-dot,.node-row.primary-selection .node-note-dot{opacity:.75}
-.node-dlog-dot{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;margin-left:4px;opacity:.6;color:var(--fc-green);cursor:default;border-radius:3px;transition:opacity .12s}
+.node-dlog-dot{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;margin-left:4px;opacity:.6;color:var(--fc-green);cursor:default;border-radius:3px}
 .node-row.selected .node-dlog-dot,.node-row.primary-selection .node-dlog-dot{opacity:.85}
 
 /* === Tags === */
-.node-tag-chip{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%);white-space:nowrap;flex-shrink:0;margin-left:4px;cursor:pointer;transition:background .1s,border-color .1s}
+.node-tag-chip{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%);white-space:nowrap;flex-shrink:0;margin-left:4px;cursor:pointer}
 .node-tag-chip:hover{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent)}
 .node-tag-chip.tag-active-filter{background:color-mix(in srgb,var(--accent) 30%,transparent);border-color:var(--accent);color:var(--accent)}
 .tag-filter-chip-btn{display:inline-flex;align-items:center;gap:5px;font:500 11px 'Inter',sans-serif;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 18%,transparent);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);color:var(--accent);cursor:pointer;appearance:none;transition:background .12s}
@@ -2108,7 +2107,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .nqa-item.icon-only{flex:0 0 auto;width:34px;height:34px;padding:0;justify-content:center;gap:0}
 .nqa-item.icon-only.at-active::before{display:none}
 .nqa-item.icon-only.at-active{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 55%,transparent)}
-.node-cb{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;transition:background .1s,border-color .1s;flex-shrink:0;position:relative}
+.node-cb{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative}
 .node-cb:hover{border-color:var(--accent)}
 .node-cb.cb-checked{background:color-mix(in srgb,var(--accent) 85%,transparent);border-color:var(--accent)}
 .node-cb.cb-checked::after{content:'';position:absolute;left:2px;top:0px;width:6px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(42deg) scaleX(0.85)}
@@ -2915,7 +2914,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-tag-chip-static{cursor:default}
 .pv-backlink-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;cursor:pointer;border-radius:4px;transition:opacity .12s,background .12s;color:var(--accent)}
 .pv-backlink-dot:hover{opacity:1;background:var(--hover)}
-.node-qa-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;cursor:pointer;border-radius:4px;transition:opacity .12s,background .12s}
+.node-qa-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;cursor:pointer;border-radius:4px}
 .node-qa-dot:hover{opacity:1;background:var(--hover)}
 .pv-popover{position:fixed;z-index:1110;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 100%,#fff 4%),var(--bg));border:1px solid color-mix(in srgb,var(--border) 55%,transparent);border-radius:16px;box-shadow:0 24px 56px rgba(0,0,0,.24),0 4px 14px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);padding:14px 16px;max-width:320px;max-height:340px;overflow-y:auto;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55;animation:pv-popover-in .16s cubic-bezier(.22,.8,.34,1)}
 @keyframes pv-popover-in{from{opacity:0;transform:scale(.96) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
