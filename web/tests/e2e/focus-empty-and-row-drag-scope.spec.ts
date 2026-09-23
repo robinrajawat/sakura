@@ -144,7 +144,7 @@ test.describe('Node rows only initiate drag-reorder from the leading dot/fold ar
     expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(false);
   });
 
-  test('a mousedown on the leading node-dot marks the row draggable', async ({ page }) => {
+  test('a mousedown on the leading drag handle marks the row draggable', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -162,10 +162,49 @@ test.describe('Node rows only initiate drag-reorder from the leading dot/fold ar
     });
 
     const row = page.locator('.node-row[data-id="1"]');
-    const dot = row.locator('.node-dot');
-    await expect(dot).toBeVisible();
-    await dot.dispatchEvent('mousedown', { bubbles: true });
+    const handle = row.locator('.node-drag-handle');
+    await expect(handle).toBeVisible();
+    await handle.dispatchEvent('mousedown', { bubbles: true });
     expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(true);
+  });
+
+  test('a mousedown on the drag handle of a row WITH children arms dragging without toggling collapse', async ({ page }) => {
+    // This is the exact bug being fixed: .fold-toggle/.fold-dot mousedown handlers call
+    // toggleCollapse() instantly, so a row with children used to be effectively undraggable --
+    // any press-and-hold gesture there fired the collapse toggle before a drag could start. The
+    // dedicated .node-drag-handle sits outside that machinery entirely.
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 1, text: 'Child', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 3;
+      // @ts-expect-error
+      render();
+    });
+
+    const row = page.locator('.node-row[data-id="1"]');
+    const handle = row.locator('.node-drag-handle');
+    await expect(handle).toBeVisible();
+    await handle.dispatchEvent('mousedown', { bubbles: true });
+
+    const state = await row.evaluate((el) => (el as HTMLElement).draggable);
+    expect(state).toBe(true);
+
+    // @ts-expect-error
+    const collapsedAfter = await page.evaluate(() => Array.from(collapsedIds));
+    expect(collapsedAfter).toEqual([]);
+    // Child row must still be visible -- nothing collapsed.
+    await expect(page.locator('.node-row[data-id="2"]')).toBeVisible();
   });
 
   test('node label text is selectable (user-select is not none)', async ({ page }) => {
