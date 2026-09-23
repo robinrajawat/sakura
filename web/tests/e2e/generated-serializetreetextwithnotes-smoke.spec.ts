@@ -8,11 +8,13 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 // See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
-// Export domain — fourth slice. Exercises the real, unchanged serializeTreeTextWithNotes()
-// wrapper — the same call path generateQaQuestionsAI uses — against real nodes/treeIndentWidth/
-// hideTreeLines/outlineNumbering globals AND the real, unchanged, genuinely DOM-touching
+// Export domain — fourth slice. Exercises the real, unchanged serializeTreeTextWithNotesCore()
+// — the same function generateQaQuestionsAI's wrapper calls — against real nodes/
+// treeIndentWidth/outlineNumbering globals AND the real, unchanged, genuinely DOM-touching
 // stripHtmlToText (not a fake), proving the injected-dependency wiring resolves correctly
-// through the real call path, not just in isolation.
+// through the real call path, not just in isolation. hideTreeLines is now a fixed `true`
+// constant (no more Settings toggle) — the ASCII-connector (false) branch this test exercises
+// is called directly against the Core function rather than by mutating the (now-const) global.
 test.describe('generated serializeTreeTextWithNotes block (src/utils/serializeTreeTextWithNotes.ts spliced into index.html)', () => {
   test('serializeTreeTextWithNotes renders real ASCII tree + Note: lines via the real injected stripHtmlToText', async ({ page }) => {
     const unexpectedErrors: string[] = [];
@@ -48,12 +50,10 @@ test.describe('generated serializeTreeTextWithNotes block (src/utils/serializeTr
       // @ts-expect-error
       treeIndentWidth = 3;
       // @ts-expect-error
-      hideTreeLines = false;
-      // @ts-expect-error
       outlineNumbering = false;
 
       // @ts-expect-error
-      const outline = serializeTreeTextWithNotes(nodes, false);
+      const outline = serializeTreeTextWithNotesCore(nodes, false, outlineNumbering, treeIndentWidth, false, stripHtmlToText);
 
       // Comparison: the plain serializeTreeText (a real sibling wrapper, unaffected by this
       // slice) should NOT include note content, proving the two stay independently correct.

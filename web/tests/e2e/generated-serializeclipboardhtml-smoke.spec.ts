@@ -10,8 +10,9 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 
 // Export domain — third slice. Exercises the real, unchanged getClipboardExportColors/
 // depthTextColor/soften/parseStyledTextForClipboard/serializeClipboardHtml wrapper functions —
-// the same call path exportToClipboard uses — against real nodes/treeIndentWidth/hideTreeLines/
-// outlineNumbering globals, not the extracted *Core functions directly. Also confirms soften's
+// the same call path exportToClipboard uses — against real nodes/treeIndentWidth/outlineNumbering
+// globals (hideTreeLines is now a fixed `true` constant, no more Settings toggle), not the
+// extracted *Core functions directly. Also confirms soften's
 // other real, unchanged hand-written call site (image export's getImageExportColors chain)
 // still resolves correctly after the splice.
 test.describe('generated serializeClipboardHtml block (src/utils/serializeClipboardHtml.ts spliced into index.html)', () => {
@@ -48,8 +49,6 @@ test.describe('generated serializeClipboardHtml block (src/utils/serializeClipbo
       ];
       // @ts-expect-error
       treeIndentWidth = 3;
-      // @ts-expect-error
-      hideTreeLines = false;
       // @ts-expect-error
       outlineNumbering = false;
 

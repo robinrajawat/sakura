@@ -14,9 +14,11 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 // same commit — including a genuine positional-argument REORDER for buildPrefix/buildVertFlags
 // (scopedNodes moved from a trailing optional param to a required leading one), not just an
 // append. This test exercises that rendering path against the real DOM with a real multi-depth
-// tree, in both tree-line rendering modes (buildPrefix vs buildVertFlags), plus collapse/expand
-// (getSubtreeEnd/countDescendants), focus mode (getIndex/getParentIndex), and range selection
-// (getSelectionRangeIds/getVisibleNodeIndexes/isIdSelected) — not just "did it throw".
+// tree (hideTreeLines is now a fixed constant, so render() only ever takes the buildVertFlags
+// pixel-grid path in the live app — buildPrefix's own behavior is covered at the unit level),
+// plus collapse/expand (getSubtreeEnd/countDescendants), focus mode (getIndex/getParentIndex),
+// and range selection (getSelectionRangeIds/getVisibleNodeIndexes/isIdSelected) — not just "did
+// it throw".
 test.describe('generated nodeQueries block (src/core/nodeQueries.ts spliced into index.html)', () => {
   test('tree render, collapse/expand, focus mode, and range selection all work against a real multi-depth tree', async ({ page }) => {
     const unexpectedErrors: string[] = [];
@@ -72,31 +74,13 @@ test.describe('generated nodeQueries block (src/core/nodeQueries.ts spliced into
     });
     expect(rowCountAfterBuild).toBe(5);
 
-    // hideTreeLines=false forces the ASCII-connector path (buildPrefix), the one whose call
-    // sites needed a real positional reorder, not just an appended arg.
-    const asciiPrefixes = await page.evaluate(() => {
-      // @ts-expect-error
-      hideTreeLines = false;
-      // @ts-expect-error
-      render();
-      return Array.from(document.querySelectorAll('.node-row')).map(
-        (row) => row.querySelector('.node-conn')?.textContent ?? ''
-      );
-    });
-    // A1 and A2 are A's children; A1 has a later sibling (A2) so gets '├', A2 is the last child
-    // so gets '└'. A1a is A1's only child (no siblings) so also gets '└'. Root-depth nodes (A, B)
-    // have no connector at all (no .node-conn span rendered). This is exactly the
-    // tree-shape-dependent output buildPrefix computes via hasLaterSiblingAtDepth — a real
-    // behavioral check, not just "didn't crash". (treeIndentWidth defaults to 3, so the dash
-    // run is 1 character: Math.max(1, 3-2).)
-    expect(asciiPrefixes).toEqual(['', '├─ ', '└─ ', '└─ ', '']);
-
-    // hideTreeLines=true forces the pixel-grid path (buildVertFlags) — the other reordered
-    // function — and exercises the fold-badge count (countDescendants/getSubtreeEnd) via a real
-    // collapse.
+    // hideTreeLines is now a fixed `true` constant (no more Settings toggle), so render() only
+    // ever takes the pixel-grid path (buildVertFlags) in the live app — the ASCII-connector path
+    // (buildPrefix) it used to also exercise here via a real DOM render is dead code in
+    // production now. buildPrefix/hasLaterSiblingAtDepth's own behavior is still covered directly
+    // at the unit level in tests/unit/nodeQueries.test.ts.
+    // Exercises the fold-badge count (countDescendants/getSubtreeEnd) via a real collapse.
     const afterCollapse = await page.evaluate(() => {
-      // @ts-expect-error
-      hideTreeLines = true;
       // @ts-expect-error
       toggleCollapse(1); // collapse node A — hides A1 and A1a
       const rows = Array.from(document.querySelectorAll('.node-row')).map(
