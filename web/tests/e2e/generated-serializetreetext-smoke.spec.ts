@@ -10,7 +10,11 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 
 // Export domain — first slice. Exercises the real, unchanged serializeTreeText() wrapper — the
 // same call path exportTreeFormat/exportToClipboard use — against real nodes/treeIndentWidth/
-// hideTreeLines/outlineNumbering globals, not the extracted serializeTreeTextCore directly.
+// outlineNumbering globals, not the extracted serializeTreeTextCore directly. hideTreeLines is
+// now a fixed `true` constant (no more Settings toggle), so the wrapper can only ever be
+// exercised with that value live; the ASCII-connector (hideTreeLines=false) branch is still real,
+// shipped code in serializeTreeTextCore, so it's exercised by calling that Core function
+// directly instead of mutating the (now-const) global.
 test.describe('generated serializeTreeText block (src/utils/serializeTreeText.ts spliced into index.html)', () => {
   test('serializeTreeText renders a real ASCII tree, honoring rebaseDepth/outlineNumbering/hideTreeLines/treeIndentWidth', async ({ page }) => {
     const unexpectedErrors: string[] = [];
@@ -47,26 +51,24 @@ test.describe('generated serializeTreeText block (src/utils/serializeTreeText.ts
       // @ts-expect-error
       treeIndentWidth = 3;
       // @ts-expect-error
-      hideTreeLines = false;
-      // @ts-expect-error
       outlineNumbering = false;
 
+      // ASCII-connector rendering (hideTreeLines=false) is dead in the live app now, but the
+      // Core function backing the real wrapper still supports it — call it directly with the
+      // real, unchanged treeIndentWidth/outlineNumbering globals to prove that branch still works.
       // @ts-expect-error
-      const plain = serializeTreeText(nodes, false);
+      const plain = serializeTreeTextCore(nodes, false, outlineNumbering, treeIndentWidth, false);
 
       // @ts-expect-error
       outlineNumbering = true;
       // @ts-expect-error
-      const numbered = serializeTreeText(nodes, false);
+      const numbered = serializeTreeTextCore(nodes, false, outlineNumbering, treeIndentWidth, false);
       // @ts-expect-error
       outlineNumbering = false;
 
-      // @ts-expect-error
-      hideTreeLines = true;
+      // The real wrapper, exercised as the app actually calls it — hideTreeLines is fixed true.
       // @ts-expect-error
       const linesHidden = serializeTreeText(nodes, false);
-      // @ts-expect-error
-      hideTreeLines = false;
 
       // A subtree, rebased so its shallowest node renders at depth 0.
       // @ts-expect-error
