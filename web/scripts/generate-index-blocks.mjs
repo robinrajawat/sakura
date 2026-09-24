@@ -189,23 +189,6 @@ initVaultState({
     footer: ''
   },
   {
-    name: 'templatesIndex',
-    sourceFile: 'src/state/templatesIndex.ts',
-    testFile: 'tests/unit/templatesIndexState.test.ts',
-    footer: `
-// --- production wiring (also generated, not hand-written — see the header above) ---
-// Real ambient globals, referenced directly since this code shares the classic script's own
-// scope at runtime: localStorage, markMetaChanged, scheduleBackupWrite, lastAnyDataChangeAt.
-initTemplatesIndexState({
-  getLocalStorage:()=>{ try{ return localStorage; }catch(e){ return null; } },
-  markMetaChanged:(metaKey)=>markMetaChanged(metaKey),
-  scheduleBackupWrite:()=>{ if(typeof scheduleBackupWrite==='function')scheduleBackupWrite(); },
-  setLastAnyDataChangeAt:(ts)=>{ lastAnyDataChangeAt=ts; },
-  now:()=>Date.now()
-});
-`.trim()
-  },
-  {
     name: 'aiProviders',
     sourceFile: 'src/state/aiProviders.ts',
     testFile: 'tests/unit/aiProvidersState.test.ts',
@@ -278,20 +261,6 @@ initAiProvidersState({
     // itself; no DOM/undo-stack/render side effects), same reasoning as nodeQueries.ts. Both
     // real call sites (indentSelected/outdentSelected's own bodies) were updated in the same
     // commit that wired this block in.
-    footer: ''
-  },
-  {
-    // First of the "most promising, most novel" Phase 3 candidates flagged in
-    // templatesIndex.ts's own header: applyTemplateNodes is coupled to the ambient nextId
-    // counter via makeNode(). See templatesApply.ts's own header for why this is DI'd
-    // (injecting the real, hand-written makeNode/emptyStyles as parameters) rather than
-    // referenced via the declare-function ambient pattern used elsewhere.
-    name: 'templatesApply',
-    sourceFile: 'src/core/templatesApply.ts',
-    testFile: 'tests/unit/templatesApply.test.ts',
-    // No production wiring needed — pure function, deps passed directly by the one real call
-    // site (applyTemplateNodes's own wrapper body in index.html), updated in the same commit
-    // that wired this block in.
     footer: ''
   },
   {

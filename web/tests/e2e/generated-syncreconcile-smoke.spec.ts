@@ -11,7 +11,7 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 // Sync subsystem — Phase 4, second slice. Exercises the real, unchanged findIdsMissingFromCloud
 // function against a real DOM page (no Firestore/auth required, since the function itself is
 // pure) — proving it splices in correctly and is callable exactly as pullAndMergeFromCloud's own
-// two real call sites (the docs loop and the templates loop) use it.
+// docs loop uses it.
 test.describe('generated syncReconcile block (src/state/syncReconcile.ts spliced into index.html)', () => {
   test('findIdsMissingFromCloud returns local ids missing from the cloud set, through the real function', async ({ page }) => {
     const unexpectedErrors: string[] = [];

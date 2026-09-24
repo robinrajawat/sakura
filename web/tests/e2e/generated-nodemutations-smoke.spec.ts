@@ -128,11 +128,11 @@ test.describe('generated nodeMutations block (src/core/nodeMutations.ts spliced 
     expect(orchestrationResult.afterOutdent.depths).toEqual([0, 0, 0]);
     expect(orchestrationResult.afterOutdent.parentIds).toEqual([null, null, null]);
 
-    // 3. Proof the rest of the script still runs — same check used in the templatesIndex
-    // smoke test, the one that would have caught the serializeMarkdown import-statement bug.
+    // 3. Proof the rest of the script still runs — same check style used elsewhere in these
+    // smoke tests, the kind that would have caught the serializeMarkdown import-statement bug.
     const restOfScriptWorks = await page.evaluate(() => {
       // @ts-expect-error
-      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function' && typeof loadTemplatesIndex === 'function';
+      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function' && typeof loadDocsIndex === 'function';
     });
     expect(restOfScriptWorks).toBe(true);
 
@@ -279,7 +279,7 @@ test.describe('generated nodeMutations block (src/core/nodeMutations.ts spliced 
     // 3. Proof the rest of the script still runs.
     const restOfScriptWorks = await page.evaluate(() => {
       // @ts-expect-error
-      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function' && typeof loadTemplatesIndex === 'function' && typeof indentSelected === 'function';
+      return typeof getSelectionRangeIds === 'function' && typeof esc === 'function' && typeof loadDocsIndex === 'function' && typeof indentSelected === 'function';
     });
     expect(restOfScriptWorks).toBe(true);
 
