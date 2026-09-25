@@ -9,16 +9,16 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
 // Sync subsystem — Phase 4, first slice. Exercises the real applyIncomingDocData/
-// applyIncomingTemplateData/applyIncomingMetaData functions — the same call paths the periodic
-// pullAndMergeFromCloud and realtime onSnapshot listeners use — against real
-// localStorage/_lastPushedTs global state, proving all three real callers correctly delegate the
-// "should apply" decision to shouldApplyIncomingSyncCore and that the real storage writes still
-// happen when it says yes. applyIncomingDocData now takes (mod,db,id,cloud,viaRealtime) — mod/db
-// are only ever dereferenced when the incoming cloud doc has diagrams/attachments to hydrate from
-// their own subcollections (see hydrateCloudDocBlobs), which none of this test's payloads do, so
-// null stands in for both here rather than a real Firestore mod/db pair.
+// applyIncomingMetaData functions — the same call paths the periodic pullAndMergeFromCloud and
+// realtime onSnapshot listeners use — against real localStorage/_lastPushedTs global state,
+// proving both real callers correctly delegate the "should apply" decision to
+// shouldApplyIncomingSyncCore and that the real storage writes still happen when it says yes.
+// applyIncomingDocData now takes (mod,db,id,cloud,viaRealtime) — mod/db are only ever
+// dereferenced when the incoming cloud doc has diagrams/attachments to hydrate from their own
+// subcollections (see hydrateCloudDocBlobs), which none of this test's payloads do, so null
+// stands in for both here rather than a real Firestore mod/db pair.
 test.describe('generated syncApply block (src/state/syncApply.ts spliced into index.html)', () => {
-  test('applyIncomingDocData/applyIncomingTemplateData/applyIncomingMetaData correctly apply, reject stale, and reject echoes, through the real functions', async ({ page }) => {
+  test('applyIncomingDocData/applyIncomingMetaData correctly apply, reject stale, and reject echoes, through the real functions', async ({ page }) => {
     const unexpectedErrors: string[] = [];
     page.on('pageerror', (err) => {
       if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
@@ -63,16 +63,6 @@ test.describe('generated syncApply block (src/state/syncApply.ts spliced into in
       // @ts-expect-error
       const docEchoRejected = !(await applyIncomingDocData(null, null, 'test-uid', docId, { updatedAt: 999, title: 'Echo' }, false));
 
-      // --- Template: same "new item always applies" shape ---
-      // @ts-expect-error
-      const tplId = 'test-tpl-' + Date.now();
-      // @ts-expect-error
-      const tplApplied = applyIncomingTemplateData(tplId, { updatedAt: 500, title: 'New Template' });
-      // @ts-expect-error
-      const tplIndexAfter = loadTemplatesIndex().find((t) => t.id === tplId);
-      // @ts-expect-error
-      const tplStaleRejected = !applyIncomingTemplateData(tplId, { updatedAt: 1, title: 'Stale' });
-
       // --- Meta: real localStorage-backed key (prefs), no "new item" bypass ---
       // @ts-expect-error
       const metaApplied = await applyIncomingMetaData('prefs', { updatedAt: 500, value: { theme: 'dark' } });
@@ -86,9 +76,6 @@ test.describe('generated syncApply block (src/state/syncApply.ts spliced into in
         docIndexTitle: docIndexAfter?.title,
         docStaleRejected,
         docEchoRejected,
-        tplApplied,
-        tplIndexTitle: tplIndexAfter?.title,
-        tplStaleRejected,
         metaApplied,
         metaValueParsed: metaValue ? JSON.parse(metaValue) : null,
         metaStaleRejected,
@@ -99,10 +86,6 @@ test.describe('generated syncApply block (src/state/syncApply.ts spliced into in
     expect(result.docIndexTitle).toBe('New Doc');
     expect(result.docStaleRejected).toBe(true);
     expect(result.docEchoRejected).toBe(true);
-
-    expect(result.tplApplied).toBe(true);
-    expect(result.tplIndexTitle).toBe('New Template');
-    expect(result.tplStaleRejected).toBe(true);
 
     expect(result.metaApplied).toBe(true);
     expect(result.metaValueParsed).toEqual({ theme: 'dark' });
