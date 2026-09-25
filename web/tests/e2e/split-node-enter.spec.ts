@@ -276,4 +276,70 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     expect(state.depths).toEqual([0, 0, 0]);
     expect(state.parentIds).toEqual([null, null, null]);
   });
+
+  // Enter at caret position 0 used to be routed through the same splitNodeAtCursorAndFocus path
+  // as a mid-text split: beforeText='' and afterText=<the whole original text>. Since that
+  // function places the new "afterText" node at getSubtreeEnd(idx) -- i.e. after this node's
+  // OWN children, so a genuine mid-text split never reparents them -- a caret-at-0 Enter left
+  // THIS node blank in place (with its children still attached under it) and dropped a new node
+  // holding the real text after the whole subtree, then focused that one. On a folded node this
+  // was clearly wrong: the visible row went blank, its hidden children stayed right where they
+  // were, and a duplicate of its text popped up below them with the cursor jumping there. The
+  // fix special-cases position 0: insert a blank sibling BEFORE instead, leave this node (text,
+  // styles, children, fold state) completely untouched, and keep editing it at its own caret.
+  test('Enter at the start of a folded row with children shifts it down under a new blank row, cursor staying on it', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Folded parent', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} },
+        { id: 2, depth: 1, text: 'Hidden child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} }
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set([1]); // node 1 is folded -- its child is hidden
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 3;
+      // @ts-expect-error
+      render();
+      // @ts-expect-error
+      beginEditAt(1, 0); // caret at the very start of the folded parent's text
+    });
+
+    const input1 = page.locator('#in-1');
+    await expect(input1).toBeVisible();
+    await input1.focus();
+    await page.keyboard.press('Enter');
+
+    const result = await page.evaluate(() => ({
+      // @ts-expect-error
+      ids: nodes.map((n: any) => n.id),
+      // @ts-expect-error
+      texts: nodes.map((n: any) => n.text),
+      // @ts-expect-error
+      depths: nodes.map((n: any) => n.depth),
+      // @ts-expect-error
+      parentIds: nodes.map((n: any) => n.parentId),
+      // @ts-expect-error
+      editingId,
+      // @ts-expect-error
+      stillFolded: collapsedIds.has(1),
+      // @ts-expect-error
+      caretOffset: (() => { const inp = document.getElementById('in-1'); return inp ? getEditableCaretOffset(inp) : null; })(),
+    }));
+
+    // A brand-new blank row (id 3) lands BEFORE the original folded parent (id 1); node 1's own
+    // text, depth, and its hidden child (id 2, still parented to 1) are completely untouched.
+    expect(result.ids).toEqual([3, 1, 2]);
+    expect(result.texts).toEqual(['', 'Folded parent', 'Hidden child']);
+    expect(result.depths).toEqual([0, 0, 1]);
+    expect(result.parentIds).toEqual([null, null, 1]);
+    // The cursor stays on the original node (still folded), not on the new blank row.
+    expect(result.editingId).toBe(1);
+    expect(result.stillFolded).toBe(true);
+    expect(result.caretOffset).toBe(0);
+  });
 });
