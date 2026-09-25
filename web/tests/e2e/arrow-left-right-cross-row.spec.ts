@@ -203,11 +203,13 @@ test.describe('ArrowLeft/ArrowRight cross into the adjacent visible row at text 
     expect(state.caret).toBe('Parent'.length);
   });
 
-  test('ArrowRight on the last row and ArrowLeft on the first row are no-ops (nothing to cross into)', async ({ page }) => {
+  test('ArrowRight on the last row is a no-op (nothing to cross into); ArrowLeft on the first row crosses into the title', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
     await page.evaluate(() => {
+      const titleInput = document.getElementById('header-title') as HTMLInputElement;
+      titleInput.value = 'Doc title';
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'Only', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
@@ -241,15 +243,22 @@ test.describe('ArrowLeft/ArrowRight cross into the adjacent visible row at text 
       beginEditAt(1, 0);
     });
     await input1.focus();
-    await page.keyboard.press('ArrowLeft'); // start of the only (first) row -- nowhere to go
+    // Start of the only (first) row -- this now crosses into the title (its own "row -1"),
+    // landing at the title's end, instead of staying put.
+    await page.keyboard.press('ArrowLeft');
 
-    state = await page.evaluate(() => ({
-      // @ts-expect-error
-      editingId,
-      // @ts-expect-error
-      caret: getEditableCaretOffset(document.getElementById('in-1')),
-    }));
-    expect(state.editingId).toBe(1);
-    expect(state.caret).toBe(0);
+    state = await page.evaluate(() => {
+      const t = document.getElementById('header-title') as HTMLInputElement;
+      return {
+        // @ts-expect-error
+        editingId,
+        titleFocused: document.activeElement === t,
+        titleCaret: t.selectionStart,
+        titleLen: t.value.length,
+      };
+    });
+    expect(state.editingId).toBe(null);
+    expect(state.titleFocused).toBe(true);
+    expect(state.titleCaret).toBe(state.titleLen);
   });
 });
