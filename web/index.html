@@ -18054,7 +18054,7 @@ const ACCENT_BLEND_BASE={light:{text:{terracotta:44.0,teal:50.5,indigo:49.0,viol
 // status bar — 170+ uses across the stylesheet); overriding it here would have repainted the
 // entire UI, not just document text. Depth-3+ text is unaffected (hardcoded to var(--muted)
 // regardless) — that floor is only raised by the depth-fade formula in render(), not this.
-function applyNodeFontColor(){document.body.style.setProperty('--node-fg',currentTheme==='dark'?'#e8e5dc':'#3d3929');}
+function applyNodeFontColor(){document.body.style.setProperty('--node-fg',currentTheme==='dark'?'#fafafa':'#0a0a0a');}
 function applyAccentColor(){let color; if(accentPreset==='custom'){color=/^#[0-9a-fA-F]{6}$/.test(accentCustomColor)?accentCustomColor:'#c2553d'}else{const preset=ACCENT_PRESETS[accentPreset]||ACCENT_PRESETS.teal; color=preset[currentTheme==='dark'?'dark':'light']} document.body.style.setProperty('--accent',color); applyAccentBlend()}
 function applyAccentBlend(){const theme=currentTheme==='dark'?'dark':'light'; const table=ACCENT_BLEND_BASE[theme]; const factor=Math.max(0,(Number(accentIntensity)||100)/100); const pid=ACCENT_PRESETS[accentPreset]?accentPreset:'teal'; const textPct=Math.min(95,(table.text[pid]??table.text.teal)*factor); const borderPct=Math.min(95,(table.border[pid]??table.border.teal)*factor); const hintPct=Math.min(95,(table.hint[pid]??table.hint.teal)*factor); document.body.style.setProperty('--accent-text-blend',textPct.toFixed(1)+'%'); document.body.style.setProperty('--accent-border-blend',borderPct.toFixed(1)+'%'); document.body.style.setProperty('--accent-hint-blend',hintPct.toFixed(1)+'%')}
 function updateSliderFill(inputEl){if(!inputEl)return; const min=Number(inputEl.min)||0; const max=Number(inputEl.max)||100; const val=Number(inputEl.value)||0; const pct=max>min?((val-min)/(max-min))*100:0; inputEl.style.setProperty('--fill-percent',pct+'%')}
@@ -19173,7 +19173,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
   row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId??node.id; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,node.id); selectedId=node.id; render(); return} if(e.ctrlKey||e.metaKey){selectAllMode=false; const set=new Set(multiSelectedIds.length?multiSelectedIds:(selectedId!==null?[selectedId]:[])); if(set.has(node.id))set.delete(node.id); else set.add(node.id); multiSelectedIds=nodes.map(n=>n.id).filter(id=>set.has(id)); selectedId=node.id; selectionAnchorId=node.id; if(multiSelectedIds.length<=1){const remaining=multiSelectedIds[0]??node.id; setSingleSelection(remaining)} render(); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode))return; const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.draggable=false; row.addEventListener('mousedown',e=>{row.draggable=!!e.target.closest('.node-drag-handle')},true); row.addEventListener('dragstart',e=>{if(e.target.closest('.node-input')||e.target.closest('.node-note-line')||e.target.closest('.node-remark-text-inline')){e.preventDefault(); return} const isMultiDrag=multiSelectedIds.length>1&&multiSelectedIds.includes(node.id); const draggedIds=isMultiDrag?getSelectionRootIndexes().map(idx=>nodes[idx].id):[node.id]; dragState={draggedId:node.id,draggedIds,targetId:null,mode:null}; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(node.id))}catch(err){} row.classList.add('dragging'); if(draggedIds.length>1)draggedIds.forEach(did=>{document.querySelector(`.node-row[data-id="${did}"]`)?.classList.add('dragging')}); hideContextMenu()}); row.addEventListener('dragover',e=>{ const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); const draggedIds=(dragState.draggedIds&&dragState.draggedIds.length)?dragState.draggedIds:[draggedId]; if(!draggedId||draggedIds.includes(node.id))return; const targetIdx=getIndex(nodes,node.id); if(targetIdx<0)return; const invalid=draggedIds.some(did=>{const fromIdx=getIndex(nodes,did); return fromIdx<0||isDescendantIndex(nodes,targetIdx,fromIdx)}); if(invalid)return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); dragState.targetId=node.id; dragState.mode=mode; clearDragIndicators(); row.classList.add(mode==='above'?'drag-over-above':(mode==='below'?'drag-over-below':'drag-over-child'))}); row.addEventListener('dragleave',e=>{if(!row.contains(e.relatedTarget)){row.classList.remove('drag-over-above','drag-over-below','drag-over-child')}}); row.addEventListener('drop',e=>{const draggedId=dragState.draggedId||Number(e.dataTransfer?.getData('text/plain')||0); if(!draggedId)return; e.preventDefault(); const mode=getDropModeFromEvent(e,row); clearDragIndicators(); handleDrop(draggedId,node.id,mode)}); row.addEventListener('dragend',()=>{row.draggable=false; dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators()}); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); frag.appendChild(row);
-  if((forceInlineNoteId===node.id||(alwaysExpandInlineEnabled!==inlineExpandNoteNodeIds.has(node.id)))&&(!folded||forceInlineNoteId===node.id)&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
+  if((forceInlineNoteId===node.id||(alwaysExpandInlineEnabled!==inlineExpandNoteNodeIds.has(node.id)))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
     // A real <textarea> now, not contenteditable — Enter/paste/multi-line all "just work"
@@ -19185,7 +19185,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // textarea sidesteps the entire bug class, the same way the Note panel's own editor and
     // code-editor already do.)
     const noteLine=document.createElement('textarea'); noteLine.className='node-note-line'; noteLine.rows=1; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id); noteLine.id='note-line-'+node.id;
-    noteLine.style.paddingLeft=hideTreeLines?(noteDepth*24+8*editorScale+24)+'px':(8*editorScale+24)+'px';
+    noteLine.style.paddingLeft=hideTreeLines?(noteDepth*24+8*editorScale+36)+'px':(8*editorScale+24)+'px';
     noteLine.value=node.note||'';
     // Sized from explicit line breaks up front (cheap, no layout measurement needed since the
     // row isn't attached to the live DOM yet at this point) — autoGrowTextarea on focus/input
@@ -19206,12 +19206,12 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(hideTreeLines&&depthGuideLines){ const nVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); nVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*24+8*editorScale+22)+'px'; noteWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(noteDepth*24+8*editorScale+22)+'px'; noteWrap.appendChild(vgOwn) } }
     frag.appendChild(noteWrap)
   }
-  if((alwaysExpandInlineEnabled!==inlineExpandRemarksNodeIds.has(node.id))&&padRemarksTabEnabled&&Array.isArray(remarks)&&remarks.length&&!folded){
+  if((alwaysExpandInlineEnabled!==inlineExpandRemarksNodeIds.has(node.id))&&padRemarksTabEnabled&&Array.isArray(remarks)&&remarks.length){
     const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id);
     nodeRemarks.forEach(r=>{
       const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
       const rLine=document.createElement('div'); rLine.className='node-remark-line';
-      rLine.style.paddingLeft=hideTreeLines?(rDepth*24+8*editorScale+24)+'px':(8*editorScale+24)+'px';
+      rLine.style.paddingLeft=hideTreeLines?(rDepth*24+8*editorScale+36)+'px':(8*editorScale+24)+'px';
       const c=remarkAuthorColor(r.person);
       const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
       const personInput=document.createElement('span'); personInput.contentEditable='true'; personInput.className='node-remark-person-inline'; personInput.textContent=r.person||''; personInput.dataset.placeholder='Who said it'; personInput.spellcheck=false;
@@ -19241,12 +19241,12 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       frag.appendChild(rLine)
     })
   }
-  if((alwaysExpandInlineEnabled!==inlineExpandQaNodeIds.has(node.id))&&padQaTabEnabled&&Array.isArray(qaItems)&&qaItems.length&&!folded){
+  if((alwaysExpandInlineEnabled!==inlineExpandQaNodeIds.has(node.id))&&padQaTabEnabled&&Array.isArray(qaItems)&&qaItems.length){
     const nodeQaItems=qaItems.filter(it=>it.sourceNodeId===node.id&&!qaIsSection(it));
     nodeQaItems.forEach(item=>{
       const qDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
       const qaLine=document.createElement('div'); qaLine.className='node-qa-line'; qaLine.style.position='relative';
-      qaLine.style.paddingLeft=hideTreeLines?(qDepth*24+8*editorScale+24)+'px':(8*editorScale+24)+'px';
+      qaLine.style.paddingLeft=hideTreeLines?(qDepth*24+8*editorScale+36)+'px':(8*editorScale+24)+'px';
       const qLabel=document.createElement('span'); qLabel.className='node-qa-label'; qLabel.textContent='Q';
       const qText=document.createElement('div'); qText.className='node-qa-question'; qText.contentEditable='true'; qText.spellcheck=spellcheckEnabled; qText.dataset.qaId=item.id; qText.id='inline-qa-q-'+item.id;
       qText.innerHTML=sakuraSanitizeRichHtml(item.question||''); qText.dataset.tip='Question — click to edit inline';
@@ -37163,7 +37163,7 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview > *:not(#preview-overlay){ display:none !important; }
       body.printing-preview #preview-overlay{
         display:block !important; position:static !important;
-        background:white !important; color:#3d3929 !important;
+        background:white !important; color:#0a0a0a !important;
       }
       body.printing-preview #preview-head,
       body.printing-preview #preview-progress,
@@ -37280,7 +37280,7 @@ function exportPreviewAsPdf(onDone){
         max-width:100% !important; margin:0 !important;
         padding:28px 40px !important;
         --bg:#ffffff; --border:#d6d2c7; --fg:#1f1c14; --muted:#5c584f;
-        --node-fg:#3d3929;
+        --node-fg:#0a0a0a;
         --hint:#79756b; --accent:${liveAccent}; --edit-bg:#f9f9f7;
         --pv-heading:#2c4a6e; --pv-heading-2:#4a6f9e;
         --fc-red:#a8362a; --fc-orange:#a85f1a; --fc-green:#226b41;
