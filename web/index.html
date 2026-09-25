@@ -25903,15 +25903,15 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     if(selRange&&selRange.start===selRange.end){
       const splitAt=selRange.start;
       if(splitAt===0){
-        // Enter at the very start of a row: there's no "before" text to keep and no new
-        // "after" content either -- it's just an empty line above. splitNodeAtCursorAndFocus
-        // would otherwise turn THIS row into the empty one and shove the real text (and, via
+        // "after" content either -- it's just a blank row. splitNodeAtCursorAndFocus would
+        // otherwise turn THIS row into the empty one and shove the real text (and, via
         // getSubtreeEnd, this row's own children) into a freshly-made node placed after the
         // whole subtree -- exactly backwards for a row with (possibly folded) children, which
-        // is why it visibly duplicated the text below them. Insert the blank sibling BEFORE
-        // instead, leave this node (text, styles, children, fold state) untouched, and keep
-        // editing it right where the caret already was.
-        commitEdit(); insertSiblingBefore(id,false); beginEditAt(id,0); return;
+        // is why it visibly duplicated the text below them. Insert the blank row BEFORE
+        // instead (same as the "insert row above" quick-bar action -- see qb-above below) and
+        // land the cursor on THAT new row, leaving this node's text/styles/children/fold state
+        // completely untouched.
+        commitEdit(); insertSiblingBefore(id); return;
       }
       const beforeText=currentValue.slice(0,splitAt); const afterText=currentValue.slice(splitAt);
       splitNodeAtCursorAndFocus(id,beforeText,afterText); return;
