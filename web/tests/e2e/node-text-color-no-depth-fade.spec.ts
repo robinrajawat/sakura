@@ -76,8 +76,9 @@ test.describe('Node text color does not fade with depth', () => {
       return getComputedStyle(input).color;
     });
 
-    // rgb(10, 10, 10) === #0a0a0a, the flat --node-fg value applyNodeFontColor sets for the
-    // light theme -- not a color-mix()'d, lightened value.
-    expect(result).toBe('rgb(10, 10, 10)');
+    // rgb(34, 34, 34) === #222222, the flat --node-fg value applyNodeFontColor sets for the
+    // light theme (matching Dynalist's own measured text color) -- not a color-mix()'d,
+    // depth-dependent value.
+    expect(result).toBe('rgb(34, 34, 34)');
   });
 });
