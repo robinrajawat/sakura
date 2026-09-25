@@ -20,16 +20,16 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 }
 
 // Dynalist's outline indents each depth level by exactly one row's own bullet-to-text width, so
-// a child's bullet lands precisely under where its parent's text begins -- a clean recursive
-// alignment. Sakura's per-depth indent step (the `*N+8*editorScale` constant in render()) used
-// to be a value chosen by eye (18, then 24, then 28 across earlier rounds of feedback) that never
-// actually matched the row's own drag-handle+dot width, so every child's bullet landed a few
-// pixels past its parent's text start -- a small but compounding-looking misalignment that grew
-// more visible the deeper a document nested. The indent step must equal
-// (drag-handle width + margin) + (dot width + margin), i.e. exactly the same offset the row
-// itself uses to place its own label past its own padding-left, so this lines up at every depth.
-test.describe('Depth indentation recursively aligns a child bullet with its parent\'s text start', () => {
-  test('each child\'s bullet/fold-dot sits exactly under its parent\'s label start', async ({ page }) => {
+// a child's bullet lands precisely under where its parent's text begins. An earlier round matched
+// that exactly (indent step = drag-handle width + dot width, both in px), but a later explicit
+// request asked for one step further still: the child should begin under the parent's SECOND
+// character, not its first, so every level reads as "one character deeper" than pure text-start
+// alignment. The indent step is now (drag-handle + dot width) + one representative character's
+// width at the current content font/size (~9px for Inter 500 14.5px) -- concretely, a child's
+// bullet sits ~9px past its parent's own text start, at every depth, consistently. That 9px is
+// tied to the current font choice; revisit this constant if font-family/size changes again.
+test.describe('Depth indentation aligns a child bullet one character past its parent\'s text start', () => {
+  test('each child\'s bullet/fold-dot sits ~9px past its parent\'s label start, at every depth', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -60,7 +60,11 @@ test.describe('Depth indentation recursively aligns a child bullet with its pare
       return { depth0: info(1), depth1: info(2), depth2: info(3) };
     });
 
-    expect(result.depth1.dotLeft).toBeCloseTo(result.depth0.textLeft, 0);
-    expect(result.depth2.dotLeft).toBeCloseTo(result.depth1.textLeft, 0);
+    const depth1Offset = result.depth1.dotLeft - result.depth0.textLeft;
+    const depth2Offset = result.depth2.dotLeft - result.depth1.textLeft;
+    expect(depth1Offset).toBeCloseTo(9, 0);
+    expect(depth2Offset).toBeCloseTo(9, 0);
+    // The offset must be consistent across depths, not just individually close to 9.
+    expect(depth1Offset).toBeCloseTo(depth2Offset, 0);
   });
 });
