@@ -9399,6 +9399,23 @@ function htmlHasVisibleContent(html){
     return div.textContent.replace(/\u200b/g,'').trim().length>0;
   }catch(e){ return !!String(html).trim(); }
 }
+// node.note is guaranteed plain text: normalizeNode's notePlainTextFromLegacyHtml flattens any
+// legacy HTML on load, and the only way to edit it live is the plain <textarea> .node-note-line
+// -- but every consumer downstream of splitNoteDiagramImages (Presenter/Preview's inline and
+// card note rendering, Word's docxNoteBlocks, PPTX's noteBlockLines) was written for the OLD
+// rich-HTML note format and still treats its input as already-safe markup with real <br>/<div>/
+// <p> elements marking line breaks. A raw '\n' character has no visual effect when the text is
+// set via innerHTML the way all three of those do (unlike the live textarea, which preserves it
+// natively) -- so a genuinely multi-line note silently collapsed onto one run-on line in every
+// export and in Presenter/Preview alike, and the "is this a single-line note" classification in
+// renderPreviewBody never found anything to detect, since plain text never has the <br>/block
+// children it was checking for. Escaping the text and converting '\n' to real <br> tags once,
+// right here at the one choke point all three call sites already route through, makes every
+// downstream consumer correct without changing any of them -- they already handle real <br>
+// tags properly, they just never received any.
+function notePlainTextToSafeHtml(text){
+  return esc(String(text||'')).replace(/\n/g,'<br>');
+}
 function splitNoteDiagramImages(noteHtml){
   if(!noteHtml) return {diagrams:[], restHtml:noteHtml||''};
   try{
@@ -24008,7 +24025,7 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
       bodyParas.push(`<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:ind w:left="${left}"/><w:spacing w:before="0" w:after="60"/></w:pPr>${docxRun(n.tags.map(t=>'#'+t).join('  '),{size:18,color:'9B9890'})}</w:p>`);
     }
     if(nodeContentExportEnabled&&n.note&&n.note.trim()){
-      const split=splitNoteDiagramImages(n.note);
+      const split=splitNoteDiagramImages(notePlainTextToSafeHtml(n.note));
       const nb=await docxNoteBlock(split.restHtml,left); if(nb)bodyParas.push(nb);
       if(split.diagrams.length){
         const maxWidthEmu=Math.max(2743200, Math.round((9746-Math.min(left,4000))*635));
@@ -24554,7 +24571,7 @@ async function pptxGatherSlidesData(){
     if(padRemarksTabEnabled&&remarksExportEnabled&&Array.isArray(remarks)){
       remarks.filter(rm=>rm.anchorNodeId===node.id).forEach(rm=>{ items.push(pptxRemarkAsNoteItem(rm,0)); pptxRemarksRenderedInline.add(rm.id); });
     }
-    const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(node.note):null;
+    const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(notePlainTextToSafeHtml(node.note)):null;
     if(ownNoteSplit){
       const ownLines=noteBlockLines(ownNoteSplit.restHtml);
       if(ownLines.length) items.push({type:'note', lines:ownLines, indent:0});
@@ -35335,7 +35352,7 @@ function renderPreviewBody(){
     // chip and note dot above agree with the actual inline card below about whether there's
     // any non-diagram content — otherwise a diagram-only note shows an openable "has a note"
     // indicator that opens onto an empty card.
-    const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(node.note) : null;
+    const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(notePlainTextToSafeHtml(node.note)) : null;
     const noteHasContent = noteSplit ? htmlHasVisibleContent(noteSplit.restHtml) : ownNote;
     const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
     // A plain-text note (no image/table/list/heading/code — see noteIsPlainTextOnly) that's
