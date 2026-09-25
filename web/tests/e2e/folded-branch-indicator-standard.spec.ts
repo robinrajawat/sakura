@@ -108,4 +108,58 @@ test.describe('Folded-branch content indicators follow one standard: every type 
 
     expect(count).toBe(1);
   });
+
+  // Own-node dots (this node has X) are meant to read as colorful/accented, distinct from
+  // subtree dots (a hidden descendant has X), which stay muted green -- but only 4 of 9 own-dot
+  // types (decision log, diagram, file, remark) actually set an accent color; note, meeting ref,
+  // todo ref, Q&A ref, and mind-map ref left color unset, falling back to the same neutral tone
+  // as everything else. Every own-dot type now explicitly sets --accent so the own-vs-subtree
+  // color split is actually true, not true for 4 out of 9 types.
+  test('own-node dots (note, Q&A) are accent-colored; subtree dots stay muted green', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Own note + own Q&A', styles: {}, note: 'a note' },
+        { id: 2, depth: 1, text: 'Child with a diagram', styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set([1]);
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
+      // @ts-expect-error
+      qaItems = [{ id: 'q1', sourceNodeId: 1, question: 'Q', answer: 'A' }];
+      // @ts-expect-error
+      padQaTabEnabled = true;
+      // @ts-expect-error
+      diagrams = [{ id: 'd2', anchorNodeId: 2, title: 'Child diagram' }];
+      // @ts-expect-error
+      padDiagramsTabEnabled = true;
+      // @ts-expect-error
+      render();
+
+      const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+      const row = document.querySelector('.node-row[data-id="1"]')!;
+      const ownNoteDot = row.querySelector('.node-note-dot:not(.node-qa-dot)')!;
+      const ownQaDot = row.querySelector('.node-qa-dot')!;
+      const subtreeDiagramDot = row.querySelector('.node-diagram-dot')!;
+      return {
+        accent,
+        ownNoteColor: getComputedStyle(ownNoteDot).color,
+        ownQaColor: getComputedStyle(ownQaDot).color,
+        subtreeDiagramColor: getComputedStyle(subtreeDiagramDot).color,
+      };
+    });
+
+    const toRgb = (hex: string) => {
+      const m = hex.replace('#', '');
+      const r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+    expect(result.ownNoteColor).toBe(toRgb(result.accent));
+    expect(result.ownQaColor).toBe(toRgb(result.accent));
+    expect(result.subtreeDiagramColor).not.toBe(toRgb(result.accent));
+  });
 });
