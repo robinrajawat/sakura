@@ -220,4 +220,43 @@ test.describe('Inline **bold**/__italic__ markup and selection-scoped Ctrl+B/Ctr
     }));
     expect(state.text).toBe('Hello World');
   });
+
+  // .node-label sets font-variation-settings:'wght' 450 (needed to force Inter's true Medium
+  // instance rather than an ambiguous default). That's an inherited CSS property, so the
+  // <strong> parseStyledText renders for **bold** inherited the SAME 'wght' 450 from its
+  // .node-label ancestor -- and for a variable font, an explicit font-variation-settings value
+  // wins over what font-weight's own "bolder" computation would otherwise render. The <strong>
+  // tag was structurally correct (font-weight computed to 700) but visually indistinguishable
+  // from the surrounding text: Ctrl+B appeared to do nothing. Fixed with a `.node-label
+  // strong{font-variation-settings:'wght' 700}` rule, mirroring the one .style-bold already has.
+  test('inline **bold** actually renders bolder, not just structurally as <strong>', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Some **bold** text', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      render();
+      const label = document.querySelector('.node-row[data-id="1"] .node-label')!;
+      const strong = document.querySelector('.node-row[data-id="1"] .node-label strong')!;
+      return {
+        labelWeight: getComputedStyle(label).fontWeight,
+        strongWeight: getComputedStyle(strong).fontWeight,
+        labelVariation: getComputedStyle(label).fontVariationSettings,
+        strongVariation: getComputedStyle(strong).fontVariationSettings,
+      };
+    });
+
+    // The <strong> must be heavier than its surrounding text on BOTH axes a variable font
+    // actually renders from -- font-weight alone isn't enough proof, since Chrome prefers the
+    // explicit font-variation-settings value when one applies.
+    expect(Number(result.strongWeight)).toBeGreaterThan(Number(result.labelWeight));
+    expect(result.strongVariation).not.toBe(result.labelVariation);
+    expect(result.strongVariation).toContain('700');
+  });
 });
