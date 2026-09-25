@@ -805,7 +805,7 @@ body.no-word-wrap .node-row{min-width:max-content}
 .meta-inline:focus{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%, transparent)}
 #editor-title-row{flex:0 0 auto;padding:34px 24px 2px 40px;background:var(--canvas-bg)}
 #editor-title-inner{max-width:var(--editor-reading-width,none);margin:0 auto}
-#header-title{appearance:none;-webkit-appearance:none;-moz-appearance:none;display:block;width:100%;border:none;outline:none;background:transparent;padding:2px 2px 4px;font:800 28px/1.25 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);min-width:0;max-width:100%;border-radius:4px}
+#header-title{appearance:none;-webkit-appearance:none;-moz-appearance:none;display:block;width:100%;border:none;outline:none;background:transparent;padding:2px 2px 4px;font:800 28px/34px 'Inter',sans-serif;min-height:20px;color:var(--fg);min-width:0;max-width:100%;border-radius:4px;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 #header-title::placeholder{color:var(--hint);opacity:1}
 #header-title:focus{box-shadow:none}
 #header-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto;flex-wrap:nowrap;white-space:nowrap;width:auto;overflow:visible}
@@ -19676,15 +19676,24 @@ function deleteRootIndexes(nodes, rootIndexes) {
 /* GENERATED:nodeMutations:END */
 function indentSelected(){const roots=getSelectionRootIndexes(); if(!roots.length||roots.some(idx=>!canIndentAt(nodes,idx)))return; pushUndo(); markDirty(); indentRootIndexes(nodes,roots); rebuildParentIds(); render()}
 function outdentSelected(){const roots=getSelectionRootIndexes(); if(!roots.length||roots.every(idx=>nodes[idx].depth===0))return; pushUndo(); markDirty(); outdentRootIndexes(nodes,roots); rebuildParentIds(); render()}
+// The document title behaves like the outline's own "row -1" (Dynalist-style continuous flow):
+// focuses it and parks the caret at the very end of its text, mirroring what beginEdit(id,true)
+// does for a real node.
+function focusTitleAtEnd(){
+  const titleInput=el('header-title'); if(!titleInput)return;
+  titleInput.focus(); const len=titleInput.value.length; titleInput.setSelectionRange(len,len);
+}
 // Continuous-editor style Backspace-on-empty-line: quietly removes the current (childless, empty)
 // node and drops the caret at the end of the previous visible node's text, so backspacing through
 // an empty line feels like deleting a character, not a separate "delete node" action -- no toast,
 // no confirmation dialog, unlike deleteSelected(). Refuses on nodes with children so a subtree can
-// never be silently orphaned by a stray Backspace.
+// never be silently orphaned by a stray Backspace. When the empty node is the FIRST visible row
+// (no previous node to land on), the caret instead lands at the end of the document title, so the
+// title keeps acting as the outline's row -1 rather than the flow dead-ending here.
 function deleteEmptyNodeAndFocusPrev(id){
   const idx=getIndex(nodes,id); if(idx<0)return; if(nodeHasChildren(nodes,idx))return;
-  const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<=0)return;
-  const prevId=nodes[vis[pos-1]].id;
+  const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0)return;
+  const prevId=pos>0?nodes[vis[pos-1]].id:null;
   pushUndo(); markDirty();
   const deletedTexts=nodes[idx].text?[nodes[idx].text]:[]; const deletedIds=[nodes[idx].id];
   nodes.splice(idx,1);
@@ -19692,7 +19701,9 @@ function deleteEmptyNodeAndFocusPrev(id){
   cleanupBacklinksFor(deletedTexts);
   cleanupOrphanedFeaturedTables(deletedIds);
   rebuildParentIds();
-  beginEdit(prevId,true)
+  if(prevId!==null){ beginEdit(prevId,true); return }
+  editingId=null; selectedId=null; selectionAnchorId=null; clearMultiSelection(); render();
+  focusTitleAtEnd();
 }
 // Backspace-merge (continuous-editor feel): when the caret sits collapsed at the very start of a
 // node's text -- not just an empty node, unlike deleteEmptyNodeAndFocusPrev above -- Backspace
@@ -25780,6 +25791,16 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
       const targetLastLineStart=_lineStartOffset(ta,targetText,targetText.length);
       const targetOffset=Math.min(targetLastLineStart+column,targetText.length);
       commitEdit(); beginEditAt(prevId,targetOffset); _lastArrowCol=column
+    } else if(pos===0){
+      // Continuous flow into the title, its own row above the first node -- same sticky-column
+      // behavior as node-to-node ArrowUp, just landing in a plain <input> instead of beginEditAt.
+      e.preventDefault();
+      const caretOff=getEditableCaretOffset(ta)??0;
+      const column=(_lastArrowCol!=null)?_lastArrowCol:(caretOff-_lineStartOffset(ta,ta.textContent||'',caretOff));
+      commitEdit();
+      const titleInput=el('header-title');
+      if(titleInput){ titleInput.focus(); const tPos=Math.min(column,titleInput.value.length); titleInput.setSelectionRange(tPos,tPos); }
+      _lastArrowCol=column
     }
     return
   }
@@ -25808,6 +25829,11 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
         const prevId=nodes[vis[pos-1]].id;
         const targetText=nodes[getIndex(nodes,prevId)].text||'';
         commitEdit(); beginEditAt(prevId,targetText.length)
+      } else if(pos===0){
+        // Continuous flow: caret at the very start of the first row wraps left into the title,
+        // landing at its end -- same "arrive at the far edge" convention as node-to-node ArrowLeft.
+        e.preventDefault();
+        commitEdit(); focusTitleAtEnd()
       }
       return
     }
@@ -25942,7 +25968,25 @@ el('qb-up').addEventListener('click',()=>{commitEdit(); moveSelected(-1); focusP
 el('qb-down').addEventListener('click',()=>{commitEdit(); moveSelected(1); focusPane()});
 el('qb-delete').addEventListener('click',async()=>{commitEdit(); const ok=await confirmDeleteIfNeeded(); if(!ok)return; deleteSelected(); focusPane()});
 el('qb-collapse').addEventListener('click',()=>{commitEdit(); toggleFoldAll(); focusPane()});
-['doc-author','header-title'].forEach(id=>{const node=el(id); if(!node)return; ['mousedown','click','dblclick','keyup','focus'].forEach(evt=>node.addEventListener(evt,ev=>ev.stopPropagation())); node.addEventListener('keydown',ev=>{if(handleGenericQaKeydown(ev,node))return; if(matchesShortcut(ev,'save')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('save'); return} if(matchesShortcut(ev,'quickAssist')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('quickAssist'); return} if(matchesShortcut(ev,'newDoc')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('newDoc'); return} if(id==='header-title'&&ev.key==='Enter'){ev.preventDefault(); ev.stopPropagation(); if(!nodes.length){createRootAndEdit('')}else{selectedId=nodes[0].id; selectionAnchorId=selectedId; clearMultiSelection(); beginEdit(selectedId,false)} return} ev.stopPropagation()}); node.addEventListener('blur',()=>closeGenericQuickAssist()); node.addEventListener('input',()=>{ensureDocumentForEditing(); scheduleAutoSave()})});
+['doc-author','header-title'].forEach(id=>{const node=el(id); if(!node)return; ['mousedown','click','dblclick','keyup','focus'].forEach(evt=>node.addEventListener(evt,ev=>ev.stopPropagation())); node.addEventListener('keydown',ev=>{if(handleGenericQaKeydown(ev,node))return; if(matchesShortcut(ev,'save')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('save'); return} if(matchesShortcut(ev,'quickAssist')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('quickAssist'); return} if(matchesShortcut(ev,'newDoc')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('newDoc'); return} if(id==='header-title'&&ev.key==='Enter'){ev.preventDefault(); ev.stopPropagation(); if(!nodes.length){createRootAndEdit('')}else{selectedId=nodes[0].id; selectionAnchorId=selectedId; clearMultiSelection(); beginEdit(selectedId,false)} return}
+    // Continuous flow, mirrored from the node side (ArrowUp/ArrowLeft at the first row jump here):
+    // ArrowDown/ArrowRight from the title cross into the first row instead of dead-ending.
+    if(id==='header-title'&&ev.key==='ArrowDown'&&!ev.shiftKey&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey){
+      ev.preventDefault(); ev.stopPropagation();
+      if(!nodes.length){createRootAndEdit(''); return}
+      const vis=getVisibleNodeIndexes(nodes,collapsedIds); if(!vis.length)return;
+      const firstId=nodes[vis[0]].id; const column=node.selectionStart??0;
+      const targetText=nodes[vis[0]].text||'';
+      beginEditAt(firstId,Math.min(column,targetText.length)); _lastArrowCol=column; return
+    }
+    if(id==='header-title'&&ev.key==='ArrowRight'&&!ev.shiftKey&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey&&node.selectionStart===node.value.length&&node.selectionEnd===node.value.length){
+      ev.preventDefault(); ev.stopPropagation();
+      if(!nodes.length){createRootAndEdit(''); return}
+      const vis=getVisibleNodeIndexes(nodes,collapsedIds); if(!vis.length)return;
+      beginEditAt(nodes[vis[0]].id,0); return
+    }
+    if(id==='header-title'&&ev.key!=='ArrowUp'&&ev.key!=='ArrowDown'){_lastArrowCol=null}
+    ev.stopPropagation()}); node.addEventListener('blur',()=>closeGenericQuickAssist()); node.addEventListener('input',()=>{ensureDocumentForEditing(); scheduleAutoSave()})});
 el('toolbar-labels-toggle').addEventListener('click',()=>{if(!toolbarVisible)return; setToolbarLabels(!toolbarLabels)}); el('toolbar-labels-toggle').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&toolbarVisible){e.preventDefault(); setToolbarLabels(!toolbarLabels);}});
 el('word-wrap-toggle').addEventListener('click',()=>setWordWrap(!wordWrapEnabled)); el('word-wrap-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setWordWrap(!wordWrapEnabled);}});
 el('confirm-delete-toggle').addEventListener('click',()=>setConfirmBeforeDelete(!confirmBeforeDelete)); el('confirm-delete-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setConfirmBeforeDelete(!confirmBeforeDelete);}});
