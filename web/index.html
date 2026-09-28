@@ -42104,8 +42104,17 @@ function _addTagPopoverFromInput(){
     // AFTER the `html` string a few lines down was already built from the pre-edit text,
     // so even a successful commit wouldn't be reflected in what actually gets painted. Commit
     // explicitly, before any of that, so this can't depend on exactly when/whether blur fires.
+    //
+    // Excludes an element already marked committed='1': that flag means a caller (e.g.
+    // commitTodoAtSuggest, after inserting a chosen #tag/@mention) already wrote the correct,
+    // up-to-date text straight into the todos array itself moments ago -- it just hasn't
+    // reached this element's own live characters yet, because that only happens once the
+    // rebuild below actually repaints it. Without this check, that still-focused, stale-by-
+    // definition DOM text got saved right back over the correct value on every single commit,
+    // silently discarding the just-inserted tag/mention (the popup closed and looked like it
+    // worked, but the array reverted the instant this function ran).
     const activeText=document.activeElement;
-    if(activeText&&activeText.classList&&activeText.classList.contains('todo-text')&&body.contains(activeText)){
+    if(activeText&&activeText.classList&&activeText.classList.contains('todo-text')&&body.contains(activeText)&&activeText.dataset.committed!=='1'){
       activeText.dataset.committed='1';
       sakuraLog('commit','renderTodos caught mid-edit task text before rebuild',{todoId:activeText.getAttribute('data-id'),length:activeText.textContent.length});
       editTodoText(activeText.getAttribute('data-id'), activeText.textContent);
