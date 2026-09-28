@@ -146,6 +146,80 @@ test.describe('Inline **bold**/__italic__ markup and selection-scoped Ctrl+B/Ctr
     expect(state.text).toBe('Hello __World__');
   });
 
+  // Double-clicking the "word" inside "__word__" to select it (the natural way to re-select
+  // already-italicized text before toggling it off) commonly selects the WHOLE "__word__" token,
+  // markers included -- browsers' native word-selection treats '_' as part of the word, not a
+  // boundary (confirmed empirically: a real double-click there lands a selection of exactly
+  // "__word__", not "word"). toggleInlineMarkupOnSelection's "already wrapped" check only ever
+  // looked for the markers immediately OUTSIDE the selection, so this selection shape (markers
+  // INSIDE it at both ends) was never recognized as already-wrapped -- Ctrl+I wrapped it AGAIN
+  // ("____word____") instead of unwrapping it, appearing to do nothing useful.
+  test('Ctrl+I unwraps when the selection includes the __ markers themselves (double-click selects the whole token)', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Some __word__ text', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      render();
+      // @ts-expect-error
+      beginEditAt(1, 0);
+    });
+
+    const input = page.locator('#in-1');
+    await expect(input).toBeVisible();
+    await input.focus();
+    await page.evaluate(() => {
+      // @ts-expect-error -- the exact range a real double-click on "word" produces here
+      setEditableSelectionRange(document.getElementById('in-1'), 5, 13); // "__word__"
+    });
+    await page.keyboard.press('Control+i');
+
+    const state = await page.evaluate(() => ({
+      // @ts-expect-error
+      text: nodes[0].text,
+    }));
+    expect(state.text).toBe('Some word text');
+  });
+
+  test('Ctrl+B unwraps when the selection includes the ** markers themselves, same as Ctrl+I', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Some **word** text', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      render();
+      // @ts-expect-error
+      beginEditAt(1, 0);
+    });
+
+    const input = page.locator('#in-1');
+    await expect(input).toBeVisible();
+    await input.focus();
+    await page.evaluate(() => {
+      // @ts-expect-error
+      setEditableSelectionRange(document.getElementById('in-1'), 5, 13); // "**word**"
+    });
+    await page.keyboard.press('Control+b');
+
+    const state = await page.evaluate(() => ({
+      // @ts-expect-error
+      text: nodes[0].text,
+    }));
+    expect(state.text).toBe('Some word text');
+  });
+
   test('Ctrl+B with no selection (collapsed caret) falls back to the whole-node style toggle, unaffected', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);

@@ -28310,11 +28310,21 @@ function toggleInlineMarkupOnSelection(marker){
   const {start,end}=range; const mlen=marker.length;
   const idx=getIndex(nodes,editingId); if(idx<0)return false;
   const full=input.textContent||'';
-  const alreadyWrapped=full.slice(start-mlen,start)===marker&&full.slice(end,end+mlen)===marker;
+  // Double-clicking a marked-up word (e.g. the "word" in "__word__") commonly selects the WHOLE
+  // token including the marker characters themselves -- browsers' native word-selection treats
+  // '_' (and often '*') as part of the word, not a boundary -- not just the inner text between
+  // them. Detect both selection shapes: markers immediately OUTSIDE the selection (selecting just
+  // "word"), or markers INSIDE it at both ends (selecting "__word__" whole), so Ctrl+B/I still
+  // correctly unwraps either way instead of wrapping it a second time.
+  const outsideWrapped=full.slice(start-mlen,start)===marker&&full.slice(end,end+mlen)===marker;
+  const insideWrapped=!outsideWrapped&&end-start>=2*mlen&&full.slice(start,start+mlen)===marker&&full.slice(end-mlen,end)===marker;
   let newText,newStart,newEnd;
-  if(alreadyWrapped){
+  if(outsideWrapped){
     newText=full.slice(0,start-mlen)+full.slice(start,end)+full.slice(end+mlen);
     newStart=start-mlen; newEnd=end-mlen;
+  } else if(insideWrapped){
+    newText=full.slice(0,start)+full.slice(start+mlen,end-mlen)+full.slice(end);
+    newStart=start; newEnd=end-2*mlen;
   } else {
     newText=full.slice(0,start)+marker+full.slice(start,end)+marker+full.slice(end);
     newStart=start+mlen; newEnd=end+mlen;
