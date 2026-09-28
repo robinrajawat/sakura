@@ -68,14 +68,20 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     expect(after).not.toBe('none');
   });
 
-  test('an expanded row gets a stronger, accent-tinted border', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Expand check');
+  // There is no more click-to-expand state -- a row's unset chips (priority/status/due/link/
+  // repeat) and its action icons reveal on hover/focus alone, so a plain task never needs a
+  // click just to discover what can be set on it.
+  test('hovering a row reveals its unset chip placeholders, with no expand click required', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Hover reveal check');
     const id = await row.getAttribute('data-id');
-    const collapsedBorder = await row.evaluate(el => getComputedStyle(el).borderColor);
-    await page.click(`.todo-expand-toggle[data-id="${id}"]`);
+    const priorityBefore = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
+    await row.hover();
     await page.waitForTimeout(100);
-    const expandedBorder = await row.evaluate(el => getComputedStyle(el).borderColor);
-    expect(expandedBorder).not.toBe(collapsedBorder);
+    const priorityAfter = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
+    expect(priorityBefore).toBe('none');
+    // Computed as 'flex', not 'inline-flex' -- the declared inline-flex gets blockified because
+    // .todo-priority is itself a flex item of .todo-meta-row (CSS Display Level 3 blockification).
+    expect(priorityAfter).toBe('flex');
   });
 
   test('a completed row is visibly dimmed via opacity on the whole card', async ({ page }) => {
