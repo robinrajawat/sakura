@@ -3595,7 +3595,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row:hover{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .todo-row.completed{opacity:.65}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
-.todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:5px;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-check:hover{border-color:var(--accent)}
 .todo-check:checked{background:var(--accent);border-color:var(--accent)}
 .todo-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
@@ -3712,7 +3712,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtasks-list{display:flex;flex-direction:column;gap:2px;margin-top:3px;padding-left:4px;border-left:2px solid var(--border)}
 .todo-subtask-row{display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
 .todo-subtask-row:hover{background:var(--hover)}
-.todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;border-radius:4px;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-subtask-check:hover{border-color:var(--accent)}
 .todo-subtask-check:checked{background:var(--accent);border-color:var(--accent)}
 .todo-subtask-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:3px;height:6px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
@@ -42715,7 +42715,6 @@ function _addTagPopoverFromInput(){
     return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
-      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`<div class="todo-main">`
       +`<div class="todo-textwrap">`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
@@ -42756,6 +42755,7 @@ function _addTagPopoverFromInput(){
       +`</div>`
       + (showSubtask ? subtasksSectionHtml(t) : '')
       +`</div>`
+      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`</div>`;
   }
 

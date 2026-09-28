@@ -20,23 +20,24 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
   return page.locator('.todo-row').first();
 }
 
-// The To-Dos panel's own task-completion checkbox used a fully round border-radius, making it
-// look like a radio button (implying "pick one") rather than a checkbox (implying "mark this
-// done") -- inconsistent with every other checkbox in the app (.node-cb in the outliner,
-// .todo-select-check in this same panel's own select mode), which are all a rounded square with
-// a solid accent fill + white checkmark once checked. Both the primary .todo-check and the
-// per-subtask .todo-subtask-check are now that same shape and fill.
-test.describe('The To-Dos completion checkbox reads as a checkbox, not a radio button', () => {
-  test('the main task checkbox is a rounded square, not a circle', async ({ page }) => {
+// A bordered square checkbox sitting to the left of the task text read as a plain HTML form
+// control, not something that belonged on a card -- the completion control is now a circle
+// (an outline ring at rest, filling solid with the accent color + a white checkmark once
+// done), matching the Reminders/Things convention this is modeled on, and it moved from the
+// left edge (ahead of the text) to the top-right corner of the card, as a flex sibling after
+// .todo-main so it sits beside the first line of text rather than crowding the read order.
+// The per-subtask checkbox (.todo-subtask-check, in the nested checklist under a task) is a
+// different, denser context and keeps its original left-of-text position -- only its shape
+// was brought in line with the same circular language for visual consistency.
+test.describe('The To-Dos completion control is a circle in the top-right of the card', () => {
+  test('the main task control is a circle, not a bordered square', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Checkbox shape check');
     const id = await row.getAttribute('data-id');
     const radius = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderRadius);
-    expect(radius).not.toBe('50%');
-    expect(parseFloat(radius)).toBeGreaterThan(0);
-    expect(parseFloat(radius)).toBeLessThan(8);
+    expect(radius).toBe('50%');
   });
 
-  test('a checked task checkbox fills solid with the accent color and a white checkmark', async ({ page }) => {
+  test('a checked task control fills solid with the accent color and a white checkmark', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Checked fill check');
     const id = await row.getAttribute('data-id');
     await page.click(`.todo-check[data-id="${id}"]`);
@@ -54,7 +55,18 @@ test.describe('The To-Dos completion checkbox reads as a checkbox, not a radio b
     expect(result.bg).toBe(result.accentRgb);
   });
 
-  test('the per-subtask checkbox is also a rounded square, not a circle', async ({ page }) => {
+  test('the completion control sits to the right of the task text, not to its left', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Position check');
+    const id = await row.getAttribute('data-id');
+    const result = await page.evaluate((id) => {
+      const check = document.querySelector(`.todo-check[data-id="${id}"]`) as HTMLElement;
+      const text = document.querySelector(`.todo-text[data-id="${id}"]`) as HTMLElement;
+      return { checkLeft: check.getBoundingClientRect().left, textLeft: text.getBoundingClientRect().left };
+    }, id);
+    expect(result.checkLeft).toBeGreaterThan(result.textLeft);
+  });
+
+  test('the per-subtask checkbox is also a circle', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask checkbox shape check');
     const id = await row.getAttribute('data-id');
     await row.hover();
@@ -63,7 +75,6 @@ test.describe('The To-Dos completion checkbox reads as a checkbox, not a radio b
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
     await page.waitForTimeout(100);
     const radius = await page.locator('.todo-subtask-check').first().evaluate(el => getComputedStyle(el).borderRadius);
-    expect(radius).not.toBe('50%');
-    expect(parseFloat(radius)).toBeGreaterThan(0);
+    expect(radius).toBe('50%');
   });
 });
