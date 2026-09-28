@@ -107,4 +107,32 @@ test.describe('A multi-line plain-text note renders correctly in Presenter/Previ
 
     expect(result.blockText).toBe('Only valid if x < 5 and y > 10Second line');
   });
+
+  // notePlainTextToSafeHtml's <br> conversion (the fix above) puts the raw HTML in good shape --
+  // a literal leading space on a line, typed to visually indent it under the line above (e.g. an
+  // ASCII flowchart's connector characters), is correctly present right after the <br> in the
+  // markup. But .pv-inline-note-body had no white-space override, so it rendered under the
+  // browser's default white-space:normal, which collapses leading whitespace at the start of
+  // each line -- the space was there in the DOM, just never actually painted, so the indentation
+  // silently vanished on screen (and in print/PDF, built from the same DOM) even though the fix
+  // above was otherwise working correctly.
+  test('a leading space on a note line (manual indentation) is not collapsed away by default white-space rules', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await setUpDoc(page, 'Ad-hoc project-site address\n | Country + Postal Code\nRoute');
+
+    const result = await page.evaluate(() => {
+      const doc = document.getElementById('preview-body')!;
+      const block = doc.querySelector('.pv-inline-note-body')!;
+      return {
+        whiteSpace: getComputedStyle(block).whiteSpace,
+        innerHTML: block.innerHTML,
+      };
+    });
+
+    // pre-wrap is what actually makes the browser paint whitespace exactly as authored --
+    // without it, the leading space below would exist in the DOM but never render.
+    expect(result.whiteSpace).toBe('pre-wrap');
+    expect(result.innerHTML).toBe('Ad-hoc project-site address<br> | Country + Postal Code<br>Route');
+  });
 });
