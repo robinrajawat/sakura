@@ -3576,7 +3576,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-dd-item.selected{color:var(--accent)}
 .todo-dd-item .dd-check{width:13px;height:13px;flex:0 0 auto;color:var(--accent);opacity:0;display:inline-flex}
 .todo-dd-item.selected .dd-check{opacity:1}
-#todos-body{overflow-y:auto;overflow-x:hidden;padding:0 6px 12px;flex:1}
+#todos-body{overflow-y:auto;overflow-x:hidden;padding:8px 6px 12px;flex:1;display:flex;flex-direction:column;gap:6px}
 .todos-section-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:10px 10px 6px;user-select:none}
 .todos-section-collapse-btn{appearance:none;border:none;background:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .todos-section-collapse-btn:hover{color:var(--fg)}
@@ -3589,8 +3589,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    a little left padding on hover, but the action icons no longer reserve
    row-wide padding — they're a float inside .todo-textwrap (see below) that
    only narrows the first line. */
-.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:5px 8px;border-radius:8px;cursor:pointer;transition:background .12s,padding .16s ease}
-.todo-row:hover{background:var(--hover)}
+.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:9px 10px;border-radius:10px;cursor:pointer;background:var(--edit-bg);border:1px solid var(--border);transition:background .12s,border-color .15s,box-shadow .15s ease,padding .16s ease}
+.todo-row:hover{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.todo-row.expanded{border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
+.todo-row.completed{opacity:.65}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-check:hover{border-color:var(--accent)}
