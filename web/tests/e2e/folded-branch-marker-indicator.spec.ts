@@ -131,6 +131,59 @@ test.describe('Folded-branch node-marker indicator', () => {
     expect(colors).toEqual(['orange', 'red']);
   });
 
+  // The tooltip is the only place this count is surfaced -- no visible numeral badge, to stay
+  // consistent with every other folded-branch indicator (note/decision log/diagram/etc.), which
+  // are all plain presence dots with no count shown on the row itself.
+  test('the subtree dot tooltip counts how many hidden descendants carry that marker type', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Folded parent', styles: {} },
+        { id: 2, depth: 1, text: 'Child A', styles: {}, marker: 'issue' },
+        { id: 3, depth: 1, text: 'Child B', styles: {}, marker: 'issue' },
+        { id: 4, depth: 1, text: 'Child C', styles: {}, marker: 'issue' },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set([1]);
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
+      // @ts-expect-error
+      render();
+      const row = document.querySelector('.node-row[data-id="1"]')!;
+      const dot = row.querySelector('.node-marker-subtree-dot') as HTMLElement;
+      return dot.dataset.tip;
+    });
+
+    expect(result).toBe('This collapsed branch has 3 nodes marked Issue');
+  });
+
+  test('a single hidden descendant with a marker gets singular tooltip wording, not "1 nodes"', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Folded parent', styles: {} },
+        { id: 2, depth: 1, text: 'Child marked confirmed', styles: {}, marker: 'confirmed' },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set([1]);
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
+      // @ts-expect-error
+      render();
+      const row = document.querySelector('.node-row[data-id="1"]')!;
+      const dot = row.querySelector('.node-marker-subtree-dot') as HTMLElement;
+      return dot.dataset.tip;
+    });
+
+    expect(result).toBe('This collapsed branch has 1 node marked Confirmed');
+  });
+
   test('an expanded node (not folded) never shows a marker subtree dot, even with a marked child', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
