@@ -94,64 +94,29 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     expect(parseFloat(afterOpacity)).toBeLessThan(parseFloat(beforeOpacity));
   });
 
-  // Priority already had a small pill in the meta-row, but that's hover-revealed and easy to
-  // miss while scanning a list -- a colored left edge reads at a glance, and reuses the exact
-  // same color tokens as .todo-priority so the pill and the accent never disagree. It lives on
-  // .todo-header (title + chips), not the outer .todo-row, so it scopes to just the header's
-  // own height instead of running the full height of an expanded card with subtasks.
-  test('a high-priority row gets a colored accent border on its header, a plain row does not', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Priority accent check');
+  // Priority now reads at a glance via the completion circle's own ring color (see
+  // todos-checkbox-shape.spec.ts) instead of a separate accent bar on the card -- so the card's
+  // own border should stay neutral no matter what priority is set, even with subtasks expanded
+  // (a card-level accent bar would have run the full height of an expanded card; there's no
+  // such bar to run at all now).
+  test('the card border itself stays neutral regardless of priority, even with subtasks expanded', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Priority no-card-accent check');
     const id = await row.getAttribute('data-id');
-    const plainBorder = await page.locator(`.todo-header`).first().evaluate(el => getComputedStyle(el).borderLeftColor);
-    // .todo-priority is hover-revealed (display:none at rest), so it has to be hovered
-    // before Playwright will consider it clickable.
-    await row.hover();
-    // Cycle none -> low -> med -> high.
-    await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.waitForTimeout(100);
-    const result = await page.evaluate((id) => {
-      const row = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
-      const header = row.querySelector('.todo-header') as HTMLElement;
-      return {
-        color: getComputedStyle(header).borderLeftColor,
-        width: getComputedStyle(header).borderLeftWidth,
-        // The outer row itself should NOT carry the accent -- only its header should.
-        rowColor: getComputedStyle(row).borderLeftColor,
-      };
-    }, id);
-    expect(result.color).not.toBe(plainBorder);
-    expect(result.color).toBe('rgb(194, 85, 61)'); // #c2553d, the same token .todo-priority[data-priority="high"] uses
-    expect(parseFloat(result.width)).toBeGreaterThanOrEqual(3);
-    expect(result.rowColor).not.toBe('rgb(194, 85, 61)');
-  });
-
-  // The accent used to sit on the outer .todo-row, so an expanded card with several subtasks
-  // showed one long colored stripe running the whole card's height -- moving it to .todo-header
-  // means its box naturally stops at the header's own content, before the subtask list.
-  test('the priority accent stops before the subtask list, not running the full card height', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Priority accent height check');
-    const id = await row.getAttribute('data-id');
+    const plainBorder = await row.evaluate(el => getComputedStyle(el).borderLeftColor);
     await row.hover();
     await page.click(`.todo-priority[data-id="${id}"]`);
     await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.waitForTimeout(100);
-    await row.hover();
+    await page.click(`.todo-priority[data-id="${id}"]`); // now high priority
     await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
     await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
     await page.waitForTimeout(100);
     await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
-    const result = await page.evaluate((id) => {
-      const row = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
-      const header = row.querySelector('.todo-header') as HTMLElement;
-      const list = row.querySelector('.todo-subtasks-list') as HTMLElement;
-      return { headerBottom: header.getBoundingClientRect().bottom, listBottom: list.getBoundingClientRect().bottom };
-    }, id);
-    // The header (and its colored border) ends well above the now-expanded subtask list.
-    expect(result.headerBottom).toBeLessThan(result.listBottom);
+    await page.mouse.move(0, 0); // away from the row, so :hover doesn't also tint the border
+    await page.waitForTimeout(100);
+    const highBorder = await row.evaluate(el => getComputedStyle(el).borderLeftColor);
+    expect(highBorder).toBe(plainBorder);
+    expect(highBorder).not.toBe('rgb(194, 85, 61)'); // not the high-priority color
   });
 
   // The docked side panels (To-Dos among them) are position:fixed with bottom:0 against the
@@ -187,13 +152,12 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
   });
 
-  // Several subtasks used to blur into one undifferentiated block, so a divider was added
-  // between rows. It lives on .todo-subtask-text (not the whole row), so it's inset -- it
-  // starts after the checkbox and ends before the trailing action icons -- rather than
-  // running edge to edge, and there's no longer a separate left guide-line bar (the checkbox
-  // column, now back on the left, already anchors "this is a nested checklist" on its own).
-  test('multiple subtasks are visually separated by a subtle, inset divider between rows', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Subtask divider check');
+  // With the parent task's own completion circle back on the left, the subtask list's guide
+  // line now reads as a tree trunk descending from it, with each subtask a branch off it --
+  // indentation + the trunk + each subtask's own circle separate items clearly, the way a
+  // real file-tree does, without needing a separate horizontal divider between rows too.
+  test('the subtask list has a guide-line trunk, and no per-row divider', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask tree-line check');
     const id = await row.getAttribute('data-id');
     for (const text of ['First subtask', 'Second subtask']) {
       // Each addSubtask() call fully rebuilds the row's DOM, which loses :hover (no real
@@ -207,25 +171,22 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
     const rows = page.locator('.todo-subtask-row');
     await expect(rows).toHaveCount(2);
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate((id) => {
       const list = document.querySelector('.todo-subtasks-list') as HTMLElement;
+      const cardBorder = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
       const texts = Array.from(document.querySelectorAll('.todo-subtask-text')) as HTMLElement[];
-      const checks = Array.from(document.querySelectorAll('.todo-subtask-check')) as HTMLElement[];
       return {
-        // No more left guide-line on the list itself.
-        listBorderLeftWidth: parseFloat(getComputedStyle(list).borderLeftWidth),
+        listGuideWidth: parseFloat(getComputedStyle(list).borderLeftWidth),
+        listGuideColor: getComputedStyle(list).borderLeftColor,
+        cardBorderColor: getComputedStyle(cardBorder).borderTopColor,
         firstTopWidth: parseFloat(getComputedStyle(texts[0]).borderTopWidth),
         secondTopWidth: parseFloat(getComputedStyle(texts[1]).borderTopWidth),
-        // The divider (on the second row's text) starts to the right of its own checkbox,
-        // i.e. it's inset, not flush with the row's true left edge.
-        secondTextLeft: texts[1].getBoundingClientRect().left,
-        secondCheckLeft: checks[1].getBoundingClientRect().left,
       };
-    });
-    expect(result.listBorderLeftWidth).toBe(0);
-    // A divider sits between rows, not above the first one.
+    }, id);
+    expect(result.listGuideWidth).toBeGreaterThan(0);
+    expect(result.listGuideColor).not.toBe(result.cardBorderColor); // not the low-contrast --border token
+    // No divider between subtask rows -- the trunk + indentation already separate them.
     expect(result.firstTopWidth).toBe(0);
-    expect(result.secondTopWidth).toBeGreaterThan(0);
-    expect(result.secondTextLeft).toBeGreaterThan(result.secondCheckLeft);
+    expect(result.secondTopWidth).toBe(0);
   });
 });
