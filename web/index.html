@@ -3594,14 +3594,19 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:9px 10px;border-radius:10px;cursor:pointer;background:var(--edit-bg);border:1px solid var(--border);transition:background .12s,border-color .15s,box-shadow .15s ease,padding .16s ease}
 .todo-row:hover{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .todo-row.completed{opacity:.65}
-/* A priority accent on the card itself (not just the small pill in the meta-row) so a
-   high-priority task reads at a glance while scanning the list, not only once hovered or
-   read closely. Same color tokens as .todo-priority[data-priority] above, so the pill and
-   the card border always agree. Comes after :hover above so the accent survives hover
-   (same specificity, later wins) instead of being overwritten by its generic border-color. */
-.todo-row[data-priority="low"]{border-left:3px solid #6c9bd1;padding-left:8px}
-.todo-row[data-priority="med"]{border-left:3px solid #d1a23a;padding-left:8px}
-.todo-row[data-priority="high"]{border-left:3px solid #c2553d;padding-left:8px}
+/* A priority accent so a high-priority task reads at a glance while scanning the list, not
+   only once hovered or read closely -- same color tokens as .todo-priority[data-priority]
+   above, so the pill and this accent always agree. It lives on .todo-header (title + chips
+   only), NOT the outer .todo-row, so it scopes to a block-height that's naturally just the
+   header's own content -- no fragile fixed-height math needed, and it stops before the
+   subtask list instead of running the full height of an expanded card. .todo-subtasks-wrap
+   reserves the identical border-left+padding space, always transparent, purely so the
+   subtask list stays flush with the header above it instead of looking misaligned. */
+.todo-header{display:flex;flex-direction:column;gap:2px;min-width:0;border-left:3px solid transparent;padding-left:8px}
+.todo-subtasks-wrap{border-left:3px solid transparent;padding-left:8px}
+.todo-row[data-priority="low"] .todo-header{border-left-color:#6c9bd1}
+.todo-row[data-priority="med"] .todo-header{border-left-color:#d1a23a}
+.todo-row[data-priority="high"] .todo-header{border-left-color:#c2553d}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 /* var(--border) (the card's own border color) reads as almost invisible for an unchecked
    circle on a light card -- var(--hint) gives it enough weight at rest to read as a control,
@@ -42754,6 +42759,7 @@ function _addTagPopoverFromInput(){
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
       +`<div class="todo-main">`
+      +`<div class="todo-header">`
       +`<div class="todo-textwrap">`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`</div>`
@@ -42791,7 +42797,8 @@ function _addTagPopoverFromInput(){
           : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
         ):''}${(settings.aiSubtaskEnabled&&todosAiAvailable()&&!hasSubtasks&&!t.repeat&&!t.done)?`<button type="button" class="todo-subtask-ai" data-id="${t.id}" data-tip="Break into subtasks (AI)" aria-label="Break into subtasks"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><rect x="9" y="3" width="6" height="6" rx="1"/><path d="M9 15h3M9 11h5"/></svg></button>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`</div>`
-      + (showSubtask ? subtasksSectionHtml(t) : '')
+      +`</div>`
+      + (showSubtask ? `<div class="todo-subtasks-wrap">${subtasksSectionHtml(t)}</div>` : '')
       +`</div>`
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`</div>`;
