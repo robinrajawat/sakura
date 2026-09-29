@@ -187,10 +187,12 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
   });
 
-  // Several subtasks used to blur into one undifferentiated block: the shared left guide-line
-  // was low-contrast (var(--border)) and individual rows had no boundary of their own, so a
-  // 5-item checklist read as a single accent bar rather than a countable list.
-  test('multiple subtasks are visually separated by a divider, not just a shared faint guide-line', async ({ page }) => {
+  // Several subtasks used to blur into one undifferentiated block, so a divider was added
+  // between rows. It lives on .todo-subtask-text (not the whole row), so it's inset -- it
+  // starts after the checkbox and ends before the trailing action icons -- rather than
+  // running edge to edge, and there's no longer a separate left guide-line bar (the checkbox
+  // column, now back on the left, already anchors "this is a nested checklist" on its own).
+  test('multiple subtasks are visually separated by a subtle, inset divider between rows', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask divider check');
     const id = await row.getAttribute('data-id');
     for (const text of ['First subtask', 'Second subtask']) {
@@ -205,24 +207,25 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
     const rows = page.locator('.todo-subtask-row');
     await expect(rows).toHaveCount(2);
-    const result = await page.evaluate((id) => {
+    const result = await page.evaluate(() => {
       const list = document.querySelector('.todo-subtasks-list') as HTMLElement;
-      // .todo-row itself uses border:1px solid var(--border), so its own border color is the
-      // --border token rendered the same way getComputedStyle renders the list's border color
-      // (both as rgb()), making this an apples-to-apples comparison.
-      const cardBorder = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
-      const items = Array.from(document.querySelectorAll('.todo-subtask-row')) as HTMLElement[];
+      const texts = Array.from(document.querySelectorAll('.todo-subtask-text')) as HTMLElement[];
+      const checks = Array.from(document.querySelectorAll('.todo-subtask-check')) as HTMLElement[];
       return {
-        listGuideColor: getComputedStyle(list).borderLeftColor,
-        cardBorderColor: getComputedStyle(cardBorder).borderTopColor,
-        firstTopWidth: parseFloat(getComputedStyle(items[0]).borderTopWidth),
-        secondTopWidth: parseFloat(getComputedStyle(items[1]).borderTopWidth),
+        // No more left guide-line on the list itself.
+        listBorderLeftWidth: parseFloat(getComputedStyle(list).borderLeftWidth),
+        firstTopWidth: parseFloat(getComputedStyle(texts[0]).borderTopWidth),
+        secondTopWidth: parseFloat(getComputedStyle(texts[1]).borderTopWidth),
+        // The divider (on the second row's text) starts to the right of its own checkbox,
+        // i.e. it's inset, not flush with the row's true left edge.
+        secondTextLeft: texts[1].getBoundingClientRect().left,
+        secondCheckLeft: checks[1].getBoundingClientRect().left,
       };
-    }, id);
-    // The guide-line should no longer be the low-contrast --border token.
-    expect(result.listGuideColor).not.toBe(result.cardBorderColor);
+    });
+    expect(result.listBorderLeftWidth).toBe(0);
     // A divider sits between rows, not above the first one.
     expect(result.firstTopWidth).toBe(0);
     expect(result.secondTopWidth).toBeGreaterThan(0);
+    expect(result.secondTextLeft).toBeGreaterThan(result.secondCheckLeft);
   });
 });

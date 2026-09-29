@@ -26,10 +26,11 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // done), matching the Reminders/Things convention this is modeled on, and it moved from the
 // left edge (ahead of the text) to the top-right corner of the card, as a flex sibling after
 // .todo-main so it sits beside the first line of text rather than crowding the read order.
-// The per-subtask checkbox (.todo-subtask-check, in the nested checklist under a task) was
-// brought in line the same way -- same circular shape, and moved from before its subtask
-// text to after it -- so a subtask row doesn't read as an inconsistent leftover of the old
-// left-aligned design.
+// The per-subtask checkbox (.todo-subtask-check, in the nested checklist under a task) got
+// the same circular shape, but stayed to the left of its subtask text -- unlike the parent
+// task, a subtask row has no separate priority/status/due chips competing for the right
+// edge, so the checkbox itself is the row's natural leading anchor, and there's no longer a
+// left guide-line bar next to it (redundant once the checkbox itself marks the column).
 test.describe('The To-Dos completion control is a circle in the top-right of the card', () => {
   test('the main task control is a circle, not a bordered square', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Checkbox shape check');
@@ -82,7 +83,7 @@ test.describe('The To-Dos completion control is a circle in the top-right of the
     expect(radius).toBe('50%');
   });
 
-  test('the per-subtask checkbox sits to the right of its subtask text too', async ({ page }) => {
+  test('the per-subtask checkbox stays to the left of its subtask text', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask checkbox position check');
     const id = await row.getAttribute('data-id');
     await row.hover();
@@ -96,6 +97,29 @@ test.describe('The To-Dos completion control is a circle in the top-right of the
       const text = document.querySelector('.todo-subtask-text') as HTMLElement;
       return { checkLeft: check.getBoundingClientRect().left, textLeft: text.getBoundingClientRect().left };
     });
-    expect(result.checkLeft).toBeGreaterThan(result.textLeft);
+    expect(result.checkLeft).toBeLessThan(result.textLeft);
+  });
+
+  // .todo-subtask-row used align-items:center, so a subtask whose text wraps to several lines
+  // got its checkbox centered on the whole block -- floating away from the text it belongs to
+  // instead of marking its first line, unlike the parent task's own top-aligned .todo-check.
+  test('a wrapped, multi-line subtask keeps its checkbox aligned with the first line, not centered on the block', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask wrap alignment check');
+    const id = await row.getAttribute('data-id');
+    await row.hover();
+    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A genuinely long subtask description that will wrap across at least three separate lines once rendered inside the narrow To-Dos panel width');
+    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await page.waitForTimeout(100);
+    await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
+    const result = await page.evaluate(() => {
+      const check = document.querySelector('.todo-subtask-check') as HTMLElement;
+      const text = document.querySelector('.todo-subtask-text') as HTMLElement;
+      return { checkTop: check.getBoundingClientRect().top, textTop: text.getBoundingClientRect().top, textHeight: text.getBoundingClientRect().height };
+    });
+    // Confirm the text actually wrapped to more than one line (a single line wouldn't test
+    // anything here), then check the box sits near the text's own top, not its vertical center.
+    expect(result.textHeight).toBeGreaterThan(30);
+    expect(Math.abs(result.checkTop - result.textTop)).toBeLessThan(6);
   });
 });
