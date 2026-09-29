@@ -132,4 +132,23 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     });
     expect(result.panelBottom).toBeLessThanOrEqual(result.statusbarTop + 1); // +1 for sub-pixel rounding
   });
+
+  // A task with several subtasks used to always render its full checklist inline, making that
+  // one card dominate the list's height next to plain one-line tasks. Subtask lists now start
+  // collapsed (settings.subtasksCollapsedByDefault defaults to true), showing just the
+  // progress count until expanded, so card heights stay uniform at a glance.
+  test('a new subtask list starts collapsed, showing only the progress count', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask default-collapsed check');
+    const id = await row.getAttribute('data-id');
+    await row.hover();
+    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'First subtask');
+    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await page.waitForTimeout(100);
+    await expect(page.locator(`.todo-subtasks-progress-track`)).toBeVisible();
+    await expect(page.locator('.todo-subtask-row')).toHaveCount(0);
+    // Expanding via the chevron still reveals it.
+    await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
+    await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
+  });
 });

@@ -3603,7 +3603,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row[data-priority="med"]{border-left:3px solid #d1a23a;padding-left:8px}
 .todo-row[data-priority="high"]{border-left:3px solid #c2553d;padding-left:8px}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
-.todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+/* var(--border) (the card's own border color) reads as almost invisible for an unchecked
+   circle on a light card -- var(--hint) gives it enough weight at rest to read as a control,
+   not empty space, without being as loud as the accent color hover/checked states use. */
+.todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:2px solid var(--hint);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-check:hover{border-color:var(--accent)}
 .todo-check:checked{background:var(--accent);border-color:var(--accent)}
 .todo-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
@@ -3720,7 +3723,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtasks-list{display:flex;flex-direction:column;gap:2px;margin-top:3px;padding-left:4px;border-left:2px solid var(--border)}
 .todo-subtask-row{display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
 .todo-subtask-row:hover{background:var(--hover)}
-.todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--hint);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-subtask-check:hover{border-color:var(--accent)}
 .todo-subtask-check:checked{background:var(--accent);border-color:var(--accent)}
 .todo-subtask-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:3px;height:6px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
@@ -41325,7 +41328,7 @@ function _addTagPopoverFromInput(){
   let todosWidth=440; // default matches the shared dock-panel width all four tabs now share
   let completedOpen=null; // lazily initialized from settings.completedCollapsedByDefault on first render; then a per-session toggle
   const TODO_ELEMENT_KEYS=['priority','due','repeat','subtask','status','link'];
-  let settings={ expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', statusFilter:'all', dueFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:false, completedCollapsedByDefault:false, hiddenElements:[], aiExtractEnabled:true, aiSubtaskEnabled:true, aiSummaryEnabled:true, aiSummaryHighlight:true };
+  let settings={ expiryDays:0, capMax:0, featureEnabled:true, rowActionsMode:'hover', sortMode:'manual', priorityFilter:'all', statusFilter:'all', dueFilter:'all', showOverdueBadge:true, subtasksCollapsedByDefault:true, completedCollapsedByDefault:false, hiddenElements:[], aiExtractEnabled:true, aiSubtaskEnabled:true, aiSummaryEnabled:true, aiSummaryHighlight:true };
 
   function loadTodos(){
     try{
@@ -41422,7 +41425,7 @@ function _addTagPopoverFromInput(){
         settings.aiSummaryEnabled = d.aiSummaryEnabled===undefined ? true : !!d.aiSummaryEnabled;
         settings.aiSummaryHighlight = d.aiSummaryHighlight===undefined ? true : !!d.aiSummaryHighlight;
         settings.showOverdueBadge = d.showOverdueBadge===undefined ? true : !!d.showOverdueBadge;
-        settings.subtasksCollapsedByDefault = d.subtasksCollapsedByDefault===undefined ? false : !!d.subtasksCollapsedByDefault;
+        settings.subtasksCollapsedByDefault = d.subtasksCollapsedByDefault===undefined ? true : !!d.subtasksCollapsedByDefault;
         settings.completedCollapsedByDefault = d.completedCollapsedByDefault===undefined ? false : !!d.completedCollapsedByDefault;
         settings.hiddenElements = Array.isArray(d.hiddenElements) ? d.hiddenElements.filter(k=>TODO_ELEMENT_KEYS.includes(k)) : [];
       }

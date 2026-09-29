@@ -75,6 +75,9 @@ test.describe('The To-Dos completion control is a circle in the top-right of the
     await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
     await page.waitForTimeout(100);
+    // Subtask lists now start collapsed by default (see "Collapse sub-tasks by default" in
+    // Settings) -- expand it to reach the row.
+    await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
     const radius = await page.locator('.todo-subtask-check').first().evaluate(el => getComputedStyle(el).borderRadius);
     expect(radius).toBe('50%');
   });
@@ -87,6 +90,7 @@ test.describe('The To-Dos completion control is a circle in the top-right of the
     await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
     await page.waitForTimeout(100);
+    await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
     const result = await page.evaluate(() => {
       const check = document.querySelector('.todo-subtask-check') as HTMLElement;
       const text = document.querySelector('.todo-subtask-text') as HTMLElement;
