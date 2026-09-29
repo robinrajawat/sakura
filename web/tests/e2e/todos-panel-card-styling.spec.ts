@@ -95,13 +95,14 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
   });
 
   // Priority already had a small pill in the meta-row, but that's hover-revealed and easy to
-  // miss while scanning a list -- a colored left edge on the card itself reads at a glance,
-  // and reuses the exact same color tokens as .todo-priority so the pill and the card border
-  // never disagree.
-  test('a high-priority row gets a colored accent border, a plain row does not', async ({ page }) => {
+  // miss while scanning a list -- a colored left edge reads at a glance, and reuses the exact
+  // same color tokens as .todo-priority so the pill and the accent never disagree. It lives on
+  // .todo-header (title + chips), not the outer .todo-row, so it scopes to just the header's
+  // own height instead of running the full height of an expanded card with subtasks.
+  test('a high-priority row gets a colored accent border on its header, a plain row does not', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Priority accent check');
     const id = await row.getAttribute('data-id');
-    const plainBorder = await row.evaluate(el => getComputedStyle(el).borderLeftColor);
+    const plainBorder = await page.locator(`.todo-header`).first().evaluate(el => getComputedStyle(el).borderLeftColor);
     // .todo-priority is hover-revealed (display:none at rest), so it has to be hovered
     // before Playwright will consider it clickable.
     await row.hover();
@@ -111,12 +112,46 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await page.click(`.todo-priority[data-id="${id}"]`);
     await page.waitForTimeout(100);
     const result = await page.evaluate((id) => {
-      const el = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
-      return { color: getComputedStyle(el).borderLeftColor, width: getComputedStyle(el).borderLeftWidth };
+      const row = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
+      const header = row.querySelector('.todo-header') as HTMLElement;
+      return {
+        color: getComputedStyle(header).borderLeftColor,
+        width: getComputedStyle(header).borderLeftWidth,
+        // The outer row itself should NOT carry the accent -- only its header should.
+        rowColor: getComputedStyle(row).borderLeftColor,
+      };
     }, id);
     expect(result.color).not.toBe(plainBorder);
     expect(result.color).toBe('rgb(194, 85, 61)'); // #c2553d, the same token .todo-priority[data-priority="high"] uses
     expect(parseFloat(result.width)).toBeGreaterThanOrEqual(3);
+    expect(result.rowColor).not.toBe('rgb(194, 85, 61)');
+  });
+
+  // The accent used to sit on the outer .todo-row, so an expanded card with several subtasks
+  // showed one long colored stripe running the whole card's height -- moving it to .todo-header
+  // means its box naturally stops at the header's own content, before the subtask list.
+  test('the priority accent stops before the subtask list, not running the full card height', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Priority accent height check');
+    const id = await row.getAttribute('data-id');
+    await row.hover();
+    await page.click(`.todo-priority[data-id="${id}"]`);
+    await page.click(`.todo-priority[data-id="${id}"]`);
+    await page.click(`.todo-priority[data-id="${id}"]`);
+    await page.waitForTimeout(100);
+    await row.hover();
+    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
+    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await page.waitForTimeout(100);
+    await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
+    const result = await page.evaluate((id) => {
+      const row = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
+      const header = row.querySelector('.todo-header') as HTMLElement;
+      const list = row.querySelector('.todo-subtasks-list') as HTMLElement;
+      return { headerBottom: header.getBoundingClientRect().bottom, listBottom: list.getBoundingClientRect().bottom };
+    }, id);
+    // The header (and its colored border) ends well above the now-expanded subtask list.
+    expect(result.headerBottom).toBeLessThan(result.listBottom);
   });
 
   // The docked side panels (To-Dos among them) are position:fixed with bottom:0 against the
