@@ -3594,26 +3594,24 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:9px 10px;border-radius:10px;cursor:pointer;background:var(--edit-bg);border:1px solid var(--border);transition:background .12s,border-color .15s,box-shadow .15s ease,padding .16s ease}
 .todo-row:hover{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .todo-row.completed{opacity:.65}
-/* A priority accent so a high-priority task reads at a glance while scanning the list, not
-   only once hovered or read closely -- same color tokens as .todo-priority[data-priority]
-   above, so the pill and this accent always agree. It lives on .todo-header (title + chips
-   only), NOT the outer .todo-row, so it scopes to a block-height that's naturally just the
-   header's own content -- no fragile fixed-height math needed, and it stops before the
-   subtask list instead of running the full height of an expanded card. .todo-subtasks-wrap
-   reserves the identical border-left+padding space, always transparent, purely so the
-   subtask list stays flush with the header above it instead of looking misaligned. */
-.todo-header{display:flex;flex-direction:column;gap:2px;min-width:0;border-left:3px solid transparent;padding-left:8px}
-.todo-subtasks-wrap{border-left:3px solid transparent;padding-left:8px}
-.todo-row[data-priority="low"] .todo-header{border-left-color:#6c9bd1}
-.todo-row[data-priority="med"] .todo-header{border-left-color:#d1a23a}
-.todo-row[data-priority="high"] .todo-header{border-left-color:#c2553d}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 /* var(--border) (the card's own border color) reads as almost invisible for an unchecked
    circle on a light card -- var(--hint) gives it enough weight at rest to read as a control,
    not empty space, without being as loud as the accent color hover/checked states use. */
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:2px solid var(--hint);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
-.todo-check:hover{border-color:var(--accent)}
-.todo-check:checked{background:var(--accent);border-color:var(--accent)}
+/* The completion circle's own ring IS the priority signal (Todoist convention) -- no separate
+   accent bar needed elsewhere on the card. Same color tokens as .todo-priority[data-priority]
+   below, so the pill (still the control that cycles priority) and the ring always agree.
+   .todo-row[data-priority] .todo-check is a 3-selector descendant rule, more specific than a
+   bare .todo-check:hover/:checked (2 selectors) -- so :hover/:checked below are prefixed with
+   .todo-row too, matching that specificity, so a hover always previews the accent color and a
+   checked circle always fills solid accent regardless of priority (source order breaks the tie
+   in their favor); the ring color only matters at rest, unchecked. */
+.todo-row[data-priority="low"] .todo-check{border-color:#6c9bd1}
+.todo-row[data-priority="med"] .todo-check{border-color:#d1a23a}
+.todo-row[data-priority="high"] .todo-check{border-color:#c2553d}
+.todo-row .todo-check:hover{border-color:var(--accent)}
+.todo-row .todo-check:checked{background:var(--accent);border-color:var(--accent)}
 .todo-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
 @keyframes todo-check-pop{to{transform:rotate(40deg) scale(1)}}
 .todo-priority{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--border);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
@@ -3725,10 +3723,13 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row:hover .todo-subtask-add-btn,.todo-row:focus-within .todo-subtask-add-btn{display:inline-flex}
 .todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
 #todos-panel.actions-fixed .todo-subtask-add-btn{display:inline-flex}
-/* No guide-line here -- with the completion circle back on the left (see .todo-subtask-check
-   markup order below), the checkbox column itself is the visual anchor for "this is a nested
-   checklist," so a separate left accent bar next to it was redundant. */
-.todo-subtasks-list{display:flex;flex-direction:column;gap:4px;margin-top:3px;padding-left:4px}
+/* Now that the parent's own completion circle is back on the left (see .todo-check's markup
+   position below), this guide-line reads as a tree trunk descending from the parent task,
+   with each subtask a branch off it -- rather than an arbitrary decorative bar. That's also
+   why there's no separate divider between subtask rows anymore: indentation + the trunk line
+   + each subtask's own circle already separate items clearly, the way a real file-tree or
+   outline view does, without an extra horizontal rule per row. */
+.todo-subtasks-list{display:flex;flex-direction:column;gap:4px;margin-top:3px;padding-left:4px;border-left:2px solid var(--hint)}
 /* align-items:flex-start (not center) so a subtask whose text wraps to two lines still gets
    its checkbox aligned with the FIRST line, matching .todo-check's own top-aligned convention
    on the parent task -- centering on the whole (possibly multi-line) block instead reads as
@@ -3740,11 +3741,6 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtask-check:checked{background:var(--accent);border-color:var(--accent)}
 .todo-subtask-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:3px;height:6px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
 .todo-subtask-text{flex:1;font-family:var(--content-font);font-size:11.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere;outline:none;cursor:text}
-/* A divider between rows (not above the first or below the last), so each subtask still reads
-   as its own line-item at a glance. It lives on the text span, not the whole row, so it's
-   inset -- starting after the checkbox, ending before the trailing action icons -- rather than
-   running edge to edge, and var(--border) (the lightest token in use) keeps it understated. */
-.todo-subtask-row+.todo-subtask-row .todo-subtask-text{border-top:1px solid var(--border)}
 .todo-subtask-text.completed{color:var(--muted);text-decoration:line-through}
 .todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-row:hover .todo-subtask-delete{opacity:1}
@@ -42764,8 +42760,8 @@ function _addTagPopoverFromInput(){
     return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}" data-id="${t.id}" data-priority="${priority}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
+      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`<div class="todo-main">`
-      +`<div class="todo-header">`
       +`<div class="todo-textwrap">`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`</div>`
@@ -42803,10 +42799,8 @@ function _addTagPopoverFromInput(){
           : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
         ):''}${(settings.aiSubtaskEnabled&&todosAiAvailable()&&!hasSubtasks&&!t.repeat&&!t.done)?`<button type="button" class="todo-subtask-ai" data-id="${t.id}" data-tip="Break into subtasks (AI)" aria-label="Break into subtasks"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/><rect x="9" y="3" width="6" height="6" rx="1"/><path d="M9 15h3M9 11h5"/></svg></button>`:''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
       +`</div>`
+      + (showSubtask ? subtasksSectionHtml(t) : '')
       +`</div>`
-      + (showSubtask ? `<div class="todo-subtasks-wrap">${subtasksSectionHtml(t)}</div>` : '')
-      +`</div>`
-      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
       +`</div>`;
   }
 
