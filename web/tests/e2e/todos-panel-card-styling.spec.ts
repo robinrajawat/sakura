@@ -195,14 +195,13 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     expect(result.secondTopWidth).toBe(0);
   });
 
-  // Title and its chips share one compact line at rest (Linear-style density). Confirmed via a
-  // direct regression: sharing the row with the meta-row's reserved (always laid out, even at
-  // opacity:0) action-icon width could shrink the title's available width enough to force a
-  // wrap on even a short title -- and once wrapped, native End-key behavior goes to the end of
-  // the current visual line, not the true end, silently splitting typed text into the middle
-  // instead of appending it. Editing now gives the title back the full row width on its own
-  // line (chips drop below) specifically to prevent that.
-  test('editing the title gives it the full row width, not sharing the line with chips', async ({ page }) => {
+  // The title always gets its own full-width line, with chips/actions on a separate line below
+  // (never sharing width with the title) -- a regression test for a real bug this structurally
+  // prevents: sharing a line with the meta-row's reserved action-icon width could shrink the
+  // title's available width enough to force a wrap on even a short title, and once wrapped,
+  // native End-key behavior goes to the end of the current visual line, not the true end,
+  // silently splitting typed text into the middle instead of appending it.
+  test('typing after End appends to the true end of the title, not mid-string', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Title edit width check');
     const id = await row.getAttribute('data-id');
     await row.hover();
