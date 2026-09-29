@@ -3591,7 +3591,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    a little left padding on hover, but the action icons no longer reserve
    row-wide padding — they're a float inside .todo-textwrap (see below) that
    only narrows the first line. */
-.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:8px 10px;border-radius:8px;cursor:pointer;background:var(--edit-bg);border:1px solid var(--border);transition:background .12s,border-color .15s,box-shadow .15s ease,padding .16s ease}
+.todo-row{position:relative;display:flex;align-items:flex-start;gap:8px;padding:12px 14px;border-radius:10px;cursor:pointer;background:var(--edit-bg);border:1px solid var(--border);transition:background .12s,border-color .15s,box-shadow .15s ease,padding .16s ease}
 .todo-row:hover{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .todo-row.completed{opacity:.65}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
@@ -3668,37 +3668,18 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    scrollport (not just the outer modal) that the dropdown menu's clipping bounds actually depend
    on, since .todo-dd-wrap lives inside .app-modal-body, which has its own overflow-y:auto. */
 #feedback-inbox-modal-overlay .app-modal-body{flex:1}
-/* flex:0 0 auto -- .todo-meta-row now sits beside the title on one line (.todo-headline
-   below), not stacked on its own line underneath it, so an empty meta-row (nothing set,
-   .todo-actions sitting at opacity:0) just contributes near-zero trailing width next to the
-   title instead of needing the old max-height collapse trick to avoid an empty second line --
-   there's no second line for it to create anymore. */
-.todo-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px;flex:0 0 auto}
+.todo-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-/* Title and its chips/actions share one compact line (Linear-style density) instead of the
-   title getting its own line with chips wrapping below it. */
-.todo-headline{display:flex;align-items:center;gap:8px;min-width:0}
-/* While the title itself is actually being edited, give it back the FULL row width on its own
-   line (chips drop below) instead of still sharing the line with the meta-row/actions. Sharing
-   width during edit meant the title's available width shrank by however much the (always
-   laid out, even if opacity:0) action icons + gap reserved -- for a short title that's little
-   enough to force a wrap the moment you start typing, and once text wraps, native End-key
-   behavior goes to the end of the CURRENT visual line, not the end of the whole title,
-   silently splitting whatever you type into the middle of the text instead of appending it.
-   Reproduced and confirmed via direct caret-offset inspection before landing on this fix --
-   toggling white-space alone (an earlier attempt) didn't address the actual width contention
-   causing the wrap in the first place. :has(.todo-text:focus), not :focus-within, on purpose:
-   :focus-within would also fire from clicking any meta-row chip button (Chromium focuses
-   buttons on click), collapsing the compact one-line layout just from cycling priority/status
-   -- :has() scopes the column layout to only when the TITLE itself holds focus. */
-.todo-headline:has(.todo-text:focus){flex-direction:column;align-items:stretch;gap:2px}
+/* Minimal & clean layout: the title always gets its own full-width line, with chips/actions
+   on a separate line below (never sharing width with the title). This also structurally
+   rules out the earlier caret bug where a title sharing a narrow line with the meta-row's
+   reserved action-icon space could wrap even short text -- native End-key behavior then goes
+   to the end of the current visual line, not the true end, silently splitting typed text into
+   the middle instead of appending it. Reproduced and confirmed via direct caret-offset
+   inspection before landing on always-stacked instead of only-stacked-while-editing. */
+.todo-headline{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-width:0}
 .todo-textwrap{flex:1;min-width:0;display:block}
-/* Truncates to one line at rest (Linear-style density: title shares its line with chips
-   instead of wrapping below them) -- but expands to the full pre-wrap/multi-line behavior the
-   moment it's focused for editing, so a genuinely long or multi-line title is never actually
-   unreachable, only collapsed while just being scanned in the list. */
-.todo-text{display:inline-block;max-width:100%;font-family:var(--content-font);font-size:12.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none;cursor:text}
-.todo-text:focus{white-space:pre-wrap;overflow:visible;text-overflow:clip}
+.todo-text{display:block;font-family:var(--content-font);font-size:12.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none;cursor:text}
 .todo-row.completed .todo-text{color:var(--muted);text-decoration:line-through}
 .todo-due{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-due.set,.todo-row:hover .todo-due,.todo-row:focus-within .todo-due{display:inline-flex}
@@ -3729,9 +3710,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-bulk-btn:hover{color:var(--fg);background:var(--hover)}
 .todo-bulk-btn.danger:hover{color:var(--sem-alert);background:color-mix(in srgb,var(--sem-alert) 12%,transparent)}
 .todo-subtasks-toggle-row{display:flex;align-items:center;gap:8px;margin-top:2px}
-.todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
+.todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex:1;min-width:0;transition:color .12s,background .12s}
 .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
-.todo-subtasks-progress-track{width:26px;height:4px;flex:0 0 auto;border-radius:999px;background:var(--border);overflow:hidden;display:inline-block}
+/* flex:1 (not a fixed small pill) so the track reads as a full-width thin progress bar
+   spanning the row, matching the rest of the card's calmer, more generous spacing. */
+.todo-subtasks-progress-track{flex:1;min-width:24px;height:4px;border-radius:999px;background:var(--border);overflow:hidden;display:inline-block}
 .todo-subtasks-progress-fill{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease}
 .todo-subtasks-chevron{transition:transform .15s}
 .todo-subtasks-chevron.open{transform:rotate(90deg)}
