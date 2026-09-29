@@ -3720,8 +3720,14 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row:hover .todo-subtask-add-btn,.todo-row:focus-within .todo-subtask-add-btn{display:inline-flex}
 .todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
 #todos-panel.actions-fixed .todo-subtask-add-btn{display:inline-flex}
-.todo-subtasks-list{display:flex;flex-direction:column;gap:2px;margin-top:3px;padding-left:4px;border-left:2px solid var(--border)}
-.todo-subtask-row{display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
+/* var(--hint), not var(--border) -- the guide-line was barely visible against a light card,
+   which (combined with subtask rows having no boundary of their own) made several subtasks
+   read as one undifferentiated block instead of a countable list. */
+.todo-subtasks-list{display:flex;flex-direction:column;gap:4px;margin-top:3px;padding-left:4px;border-left:2px solid var(--hint)}
+.todo-subtask-row{display:flex;align-items:center;gap:6px;padding:4px;border-radius:6px;transition:background .12s}
+/* A divider between rows (not above the first or below the last) so each subtask reads as its
+   own line-item at a glance, rather than relying solely on the shared left guide-line. */
+.todo-subtask-row+.todo-subtask-row{border-top:1px solid var(--border)}
 .todo-subtask-row:hover{background:var(--hover)}
 .todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--hint);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-subtask-check:hover{border-color:var(--accent)}
