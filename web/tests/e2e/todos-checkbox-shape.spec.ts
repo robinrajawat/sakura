@@ -26,9 +26,10 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // done), matching the Reminders/Things convention this is modeled on, and it moved from the
 // left edge (ahead of the text) to the top-right corner of the card, as a flex sibling after
 // .todo-main so it sits beside the first line of text rather than crowding the read order.
-// The per-subtask checkbox (.todo-subtask-check, in the nested checklist under a task) is a
-// different, denser context and keeps its original left-of-text position -- only its shape
-// was brought in line with the same circular language for visual consistency.
+// The per-subtask checkbox (.todo-subtask-check, in the nested checklist under a task) was
+// brought in line the same way -- same circular shape, and moved from before its subtask
+// text to after it -- so a subtask row doesn't read as an inconsistent leftover of the old
+// left-aligned design.
 test.describe('The To-Dos completion control is a circle in the top-right of the card', () => {
   test('the main task control is a circle, not a bordered square', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Checkbox shape check');
@@ -76,5 +77,21 @@ test.describe('The To-Dos completion control is a circle in the top-right of the
     await page.waitForTimeout(100);
     const radius = await page.locator('.todo-subtask-check').first().evaluate(el => getComputedStyle(el).borderRadius);
     expect(radius).toBe('50%');
+  });
+
+  test('the per-subtask checkbox sits to the right of its subtask text too', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask checkbox position check');
+    const id = await row.getAttribute('data-id');
+    await row.hover();
+    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
+    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await page.waitForTimeout(100);
+    const result = await page.evaluate(() => {
+      const check = document.querySelector('.todo-subtask-check') as HTMLElement;
+      const text = document.querySelector('.todo-subtask-text') as HTMLElement;
+      return { checkLeft: check.getBoundingClientRect().left, textLeft: text.getBoundingClientRect().left };
+    });
+    expect(result.checkLeft).toBeGreaterThan(result.textLeft);
   });
 });

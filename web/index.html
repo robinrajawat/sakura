@@ -3594,6 +3594,14 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:9px 10px;border-radius:10px;cursor:pointer;background:var(--edit-bg);border:1px solid var(--border);transition:background .12s,border-color .15s,box-shadow .15s ease,padding .16s ease}
 .todo-row:hover{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .todo-row.completed{opacity:.65}
+/* A priority accent on the card itself (not just the small pill in the meta-row) so a
+   high-priority task reads at a glance while scanning the list, not only once hovered or
+   read closely. Same color tokens as .todo-priority[data-priority] above, so the pill and
+   the card border always agree. Comes after :hover above so the accent survives hover
+   (same specificity, later wins) instead of being overwritten by its generic border-color. */
+.todo-row[data-priority="low"]{border-left:3px solid #6c9bd1;padding-left:8px}
+.todo-row[data-priority="med"]{border-left:3px solid #d1a23a;padding-left:8px}
+.todo-row[data-priority="high"]{border-left:3px solid #c2553d;padding-left:8px}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-check:hover{border-color:var(--accent)}
@@ -4023,7 +4031,10 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    itself" instead of one steady panel. This block has to come after all four panels' own
    base rules above (not just have higher specificity) to reliably win the cascade — same
    ID-selector specificity either way, so whichever comes later in the file wins. */
-#report-panel,#todos-panel,#meetings-panel,#journal-panel,#library-panel{top:48px;right:0;bottom:0;max-height:none;width:min(440px,calc(100vw - 32px));border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
+/* bottom stops above the status bar (--statusbar-h, kept in sync with its real, possibly-
+   wrapped height by syncStatusbarHeight below) instead of the raw viewport edge, so the
+   panel doesn't extend behind/under it. */
+#report-panel,#todos-panel,#meetings-panel,#journal-panel,#library-panel{top:48px;right:0;bottom:var(--statusbar-h,34px);max-height:none;width:min(440px,calc(100vw - 32px));border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
 #journal-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
 #journal-panel.dragging{user-select:none}
 #journal-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
@@ -26937,6 +26948,24 @@ el('shortcuts-reset-all-btn')?.addEventListener('click', async()=>{
   renderShortcutsSettings();
 });
 
+/* ---- Keep --statusbar-h in sync with the status bar's real height ----
+   The docked side panels (Report/To-Dos/Meetings/Journal/Library) are position:fixed with
+   bottom:var(--statusbar-h), so they stop above the status bar instead of running behind
+   it. The status bar's height isn't a fixed constant -- it can wrap onto two lines on a
+   narrow window, or grow/shrink as status-bar items are toggled in settings -- so a
+   ResizeObserver on the element itself, rather than a guessed pixel value, is what keeps
+   this accurate. */
+document.addEventListener('DOMContentLoaded', function(){
+  const statusbar=document.getElementById('statusbar');
+  if(!statusbar) return;
+  function syncStatusbarHeight(){
+    document.documentElement.style.setProperty('--statusbar-h', statusbar.offsetHeight+'px');
+  }
+  syncStatusbarHeight();
+  if(window.ResizeObserver) new ResizeObserver(syncStatusbarHeight).observe(statusbar);
+  else window.addEventListener('resize', syncStatusbarHeight);
+});
+
 /* ---- Keyboard Shortcuts modal open/close (same pattern as the cheatsheet) ---- */
 document.addEventListener('DOMContentLoaded', function(){
   const openBtn = document.getElementById('shortcuts-open-modal-btn');
@@ -42582,8 +42611,8 @@ function _addTagPopoverFromInput(){
       html+=`<div class="todo-subtasks-list">`;
       subs.forEach(s=>{
         html+=`<div class="todo-subtask-row" data-parent="${t.id}" data-sub="${s.id}">`
-          +`<input type="checkbox" class="todo-subtask-check" data-parent="${t.id}" data-sub="${s.id}" ${s.done?'checked':''} aria-label="Mark subtask complete" />`
           +`<span class="todo-subtask-text${s.done?' completed':''}" contenteditable="true" spellcheck="false" data-parent="${t.id}" data-sub="${s.id}">${esc(s.text)}</span>`
+          +`<input type="checkbox" class="todo-subtask-check" data-parent="${t.id}" data-sub="${s.id}" ${s.done?'checked':''} aria-label="Mark subtask complete" />`
           +`<button type="button" class="todo-subtask-rewrite" data-parent="${t.id}" data-sub="${s.id}" data-tip="Rewrite with AI" aria-label="Rewrite subtask with AI"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>`
           +`<button type="button" class="todo-subtask-delete" data-parent="${t.id}" data-sub="${s.id}" aria-label="Delete subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
         +`</div>`;
@@ -42712,7 +42741,7 @@ function _addTagPopoverFromInput(){
     // for a plain checklist-style task, rather than leaving a same-height but visually-empty gap
     // under every task that has no priority/due/etc. set. See .todo-row-nochips below.
     const hasVisibleChips=(showPriority&&priority!=='none')||(showStatus&&status!=='none')||(showDue&&!!due)||(showLink&&hasAttachment)||!!meetingRef||(showRepeat&&!!t.repeat&&!hasSubtasks);
-    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
+    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}" data-id="${t.id}" data-priority="${priority}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
       +`<div class="todo-main">`

@@ -93,4 +93,43 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     const afterOpacity = await row.evaluate(el => getComputedStyle(el).opacity);
     expect(parseFloat(afterOpacity)).toBeLessThan(parseFloat(beforeOpacity));
   });
+
+  // Priority already had a small pill in the meta-row, but that's hover-revealed and easy to
+  // miss while scanning a list -- a colored left edge on the card itself reads at a glance,
+  // and reuses the exact same color tokens as .todo-priority so the pill and the card border
+  // never disagree.
+  test('a high-priority row gets a colored accent border, a plain row does not', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Priority accent check');
+    const id = await row.getAttribute('data-id');
+    const plainBorder = await row.evaluate(el => getComputedStyle(el).borderLeftColor);
+    // .todo-priority is hover-revealed (display:none at rest), so it has to be hovered
+    // before Playwright will consider it clickable.
+    await row.hover();
+    // Cycle none -> low -> med -> high.
+    await page.click(`.todo-priority[data-id="${id}"]`);
+    await page.click(`.todo-priority[data-id="${id}"]`);
+    await page.click(`.todo-priority[data-id="${id}"]`);
+    await page.waitForTimeout(100);
+    const result = await page.evaluate((id) => {
+      const el = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
+      return { color: getComputedStyle(el).borderLeftColor, width: getComputedStyle(el).borderLeftWidth };
+    }, id);
+    expect(result.color).not.toBe(plainBorder);
+    expect(result.color).toBe('rgb(194, 85, 61)'); // #c2553d, the same token .todo-priority[data-priority="high"] uses
+    expect(parseFloat(result.width)).toBeGreaterThanOrEqual(3);
+  });
+
+  // The docked side panels (To-Dos among them) are position:fixed with bottom:0 against the
+  // raw viewport, which let the panel run in behind the status bar at the foot of the window
+  // instead of stopping above it. It should now stop flush with the status bar's own top
+  // edge, tracked live via the --statusbar-h custom property.
+  test('the panel stops above the status bar instead of running behind it', async ({ page }) => {
+    await openTodosPanelWithTask(page, 'Status bar clearance check');
+    const result = await page.evaluate(() => {
+      const panel = document.getElementById('todos-panel')!;
+      const statusbar = document.getElementById('statusbar')!;
+      return { panelBottom: panel.getBoundingClientRect().bottom, statusbarTop: statusbar.getBoundingClientRect().top };
+    });
+    expect(result.panelBottom).toBeLessThanOrEqual(result.statusbarTop + 1); // +1 for sub-pixel rounding
+  });
 });
