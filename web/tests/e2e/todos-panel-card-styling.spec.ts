@@ -107,6 +107,10 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await page.click(`.todo-priority[data-id="${id}"]`);
     await page.click(`.todo-priority[data-id="${id}"]`);
     await page.click(`.todo-priority[data-id="${id}"]`); // now high priority
+    // Each click above calls renderTodos(), which rebuilds the row's DOM and loses :hover (no
+    // real mouse event fires on the newly-created element) -- re-hover before the next
+    // hover-gated (not .set) control.
+    await row.hover();
     await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
     await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
@@ -152,12 +156,12 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
   });
 
-  // With the parent task's own completion circle back on the left, the subtask list's guide
-  // line now reads as a tree trunk descending from it, with each subtask a branch off it --
-  // indentation + the trunk + each subtask's own circle separate items clearly, the way a
-  // real file-tree does, without needing a separate horizontal divider between rows too.
-  test('the subtask list has a guide-line trunk, and no per-row divider', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Subtask tree-line check');
+  // The subtask list now reads as a shaded nested block (Linear-style) instead of a guide-line
+  // or tree-line -- the background tint alone signals "this is a nested checklist," with no
+  // border/line needed and no per-row divider (the block's own edge + each subtask's own
+  // circle already separate items clearly).
+  test('the subtask list is a shaded block, with no guide-line or per-row divider', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask shaded-block check');
     const id = await row.getAttribute('data-id');
     for (const text of ['First subtask', 'Second subtask']) {
       // Each addSubtask() call fully rebuilds the row's DOM, which loses :hover (no real
@@ -173,20 +177,48 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await expect(rows).toHaveCount(2);
     const result = await page.evaluate((id) => {
       const list = document.querySelector('.todo-subtasks-list') as HTMLElement;
-      const cardBorder = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
+      const card = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
       const texts = Array.from(document.querySelectorAll('.todo-subtask-text')) as HTMLElement[];
       return {
         listGuideWidth: parseFloat(getComputedStyle(list).borderLeftWidth),
-        listGuideColor: getComputedStyle(list).borderLeftColor,
-        cardBorderColor: getComputedStyle(cardBorder).borderTopColor,
+        listBg: getComputedStyle(list).backgroundColor,
+        cardBg: getComputedStyle(card).backgroundColor,
         firstTopWidth: parseFloat(getComputedStyle(texts[0]).borderTopWidth),
         secondTopWidth: parseFloat(getComputedStyle(texts[1]).borderTopWidth),
       };
     }, id);
-    expect(result.listGuideWidth).toBeGreaterThan(0);
-    expect(result.listGuideColor).not.toBe(result.cardBorderColor); // not the low-contrast --border token
-    // No divider between subtask rows -- the trunk + indentation already separate them.
+    expect(result.listGuideWidth).toBe(0); // no left border/guide-line anymore
+    expect(result.listBg).not.toBe('rgba(0, 0, 0, 0)');
+    expect(result.listBg).not.toBe(result.cardBg); // distinct tint from the white card
+    // No divider between subtask rows -- the shaded block already separates them from the header.
     expect(result.firstTopWidth).toBe(0);
     expect(result.secondTopWidth).toBe(0);
+  });
+
+  // Title and its chips share one compact line at rest (Linear-style density). Confirmed via a
+  // direct regression: sharing the row with the meta-row's reserved (always laid out, even at
+  // opacity:0) action-icon width could shrink the title's available width enough to force a
+  // wrap on even a short title -- and once wrapped, native End-key behavior goes to the end of
+  // the current visual line, not the true end, silently splitting typed text into the middle
+  // instead of appending it. Editing now gives the title back the full row width on its own
+  // line (chips drop below) specifically to prevent that.
+  test('editing the title gives it the full row width, not sharing the line with chips', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Title edit width check');
+    const id = await row.getAttribute('data-id');
+    await row.hover();
+    await page.click(`.todo-priority[data-id="${id}"]`);
+    // cyclePriority() calls renderTodos(), rebuilding the row's DOM and losing :hover -- re-hover
+    // before the next hover-gated (not yet .set) control.
+    await row.hover();
+    await page.click(`.todo-status[data-id="${id}"]`);
+    const textEl = page.locator(`.todo-text[data-id="${id}"]`);
+    await textEl.click();
+    await page.keyboard.press('End');
+    await page.keyboard.type(' more words');
+    const result = await page.evaluate((id) => {
+      const el = document.querySelector(`.todo-text[data-id="${id}"]`) as HTMLElement;
+      return { text: el.textContent, offsetWidth: el.getBoundingClientRect().width };
+    }, id);
+    expect(result.text?.trim()).toBe('Title edit width check more words');
   });
 });
