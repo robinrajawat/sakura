@@ -132,4 +132,62 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     });
     expect(result.panelBottom).toBeLessThanOrEqual(result.statusbarTop + 1); // +1 for sub-pixel rounding
   });
+
+  // A task with several subtasks used to always render its full checklist inline, making that
+  // one card dominate the list's height next to plain one-line tasks. Subtask lists now start
+  // collapsed (settings.subtasksCollapsedByDefault defaults to true), showing just the
+  // progress count until expanded, so card heights stay uniform at a glance.
+  test('a new subtask list starts collapsed, showing only the progress count', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask default-collapsed check');
+    const id = await row.getAttribute('data-id');
+    await row.hover();
+    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'First subtask');
+    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await page.waitForTimeout(100);
+    await expect(page.locator(`.todo-subtasks-progress-track`)).toBeVisible();
+    await expect(page.locator('.todo-subtask-row')).toHaveCount(0);
+    // Expanding via the chevron still reveals it.
+    await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
+    await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
+  });
+
+  // Several subtasks used to blur into one undifferentiated block: the shared left guide-line
+  // was low-contrast (var(--border)) and individual rows had no boundary of their own, so a
+  // 5-item checklist read as a single accent bar rather than a countable list.
+  test('multiple subtasks are visually separated by a divider, not just a shared faint guide-line', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask divider check');
+    const id = await row.getAttribute('data-id');
+    for (const text of ['First subtask', 'Second subtask']) {
+      // Each addSubtask() call fully rebuilds the row's DOM, which loses :hover (no real
+      // mouse event fires on the newly-created element), so re-hover before every click.
+      await row.hover();
+      await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+      await page.fill(`.todo-subtask-input[data-id="${id}"]`, text);
+      await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+      await page.waitForTimeout(100);
+    }
+    await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
+    const rows = page.locator('.todo-subtask-row');
+    await expect(rows).toHaveCount(2);
+    const result = await page.evaluate((id) => {
+      const list = document.querySelector('.todo-subtasks-list') as HTMLElement;
+      // .todo-row itself uses border:1px solid var(--border), so its own border color is the
+      // --border token rendered the same way getComputedStyle renders the list's border color
+      // (both as rgb()), making this an apples-to-apples comparison.
+      const cardBorder = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
+      const items = Array.from(document.querySelectorAll('.todo-subtask-row')) as HTMLElement[];
+      return {
+        listGuideColor: getComputedStyle(list).borderLeftColor,
+        cardBorderColor: getComputedStyle(cardBorder).borderTopColor,
+        firstTopWidth: parseFloat(getComputedStyle(items[0]).borderTopWidth),
+        secondTopWidth: parseFloat(getComputedStyle(items[1]).borderTopWidth),
+      };
+    }, id);
+    // The guide-line should no longer be the low-contrast --border token.
+    expect(result.listGuideColor).not.toBe(result.cardBorderColor);
+    // A divider sits between rows, not above the first one.
+    expect(result.firstTopWidth).toBe(0);
+    expect(result.secondTopWidth).toBeGreaterThan(0);
+  });
 });
