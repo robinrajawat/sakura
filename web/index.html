@@ -1025,6 +1025,9 @@ body.toolbar-hidden #quick-bar{display:none}
 
 .fold-badge{display:inline-block;margin-left:10px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--muted) 14%,transparent);color:var(--muted);font:500 10px 'Inter',sans-serif;letter-spacing:.02em;vertical-align:middle;cursor:pointer}
 .fold-badge:hover{background:color-mix(in srgb,var(--accent) 24%,transparent)}
+/* Scoped to .node-row -- .fold-badge is reused inside Preview mode's inline text flow too,
+   where this offset isn't wanted (see .node-row .node-note-dot above). */
+.node-row .fold-badge{align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 11px) / 2)}
 
 .focus-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding:7px 10px;border-radius:9px;background:color-mix(in srgb,var(--accent) 7%,var(--bg) 93%);border:1px solid color-mix(in srgb,var(--accent) 18%,var(--border) 82%);font-size:.86em}
 .focus-bar-trail{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0;overflow:hidden}
@@ -2013,15 +2016,19 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-qa-answer:hover,.node-qa-question:hover{opacity:1}
 .node-qa-answer:focus{opacity:1;color:var(--fg)}
 .node-qa-answer:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
-.node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:4px;color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px}
+.node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:4px;color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px;align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 16px) / 2)}
 .node-arw-dot:hover{opacity:1}
 .node-row.selected .node-arw-dot,.node-row.primary-selection .node-arw-dot{opacity:.85}
 
 /* Note indicator dot on node rows */
 .node-note-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;font-size:10px;cursor:pointer;border-radius:4px}
 .node-note-dot:hover{opacity:1}
-.node-marker-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;font-size:10px;cursor:pointer;border-radius:4px;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
-.node-slide-divider-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;border-radius:4px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);cursor:default}
+/* Scoped to .node-row (not the bare class) -- this same class is reused inside Preview mode's
+   inline text flow (contentEl.appendChild), where it's not a flex sibling of a wrapping label
+   and this offset would just misalign it against the surrounding text baseline instead. */
+.node-row .node-note-dot{align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 18px) / 2)}
+.node-marker-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;font-size:10px;cursor:pointer;border-radius:4px;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 18px) / 2)}
+.node-slide-divider-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;border-radius:4px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);cursor:default;align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 18px) / 2)}
 .node-marker-badge:hover{background:color-mix(in srgb,var(--fc-gray) 26%,transparent)}
 .node-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .node-marker-badge[data-color="green"]:hover{background:color-mix(in srgb,var(--fc-green) 26%,transparent)}
@@ -2030,14 +2037,17 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-marker-badge[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .node-marker-badge[data-color="orange"]:hover{background:color-mix(in srgb,var(--fc-orange) 26%,transparent)}
 .node-marker-badge.marker-active-filter{box-shadow:0 0 0 1.5px currentColor}
-.node-marker-badge.node-marker-subtree-dot{width:14px;height:14px;font-size:9px;cursor:default;opacity:.6}
+.node-marker-badge.node-marker-subtree-dot{width:14px;height:14px;font-size:9px;cursor:default;opacity:.6;margin-top:calc((18.125px * var(--editor-scale) - 14px) / 2)}
 .node-row.selected .node-marker-badge.node-marker-subtree-dot,.node-row.primary-selection .node-marker-badge.node-marker-subtree-dot{opacity:.85}
 .node-row.selected .node-note-dot,.node-row.primary-selection .node-note-dot{opacity:.75}
-.node-dlog-dot{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;margin-left:4px;opacity:.6;color:var(--fc-green);cursor:default;border-radius:3px}
+.node-dlog-dot{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;margin-left:4px;opacity:.6;color:var(--fc-green);cursor:default;border-radius:3px;align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 14px) / 2)}
 .node-row.selected .node-dlog-dot,.node-row.primary-selection .node-dlog-dot{opacity:.85}
 
 /* === Tags === */
 .node-tag-chip{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%);white-space:nowrap;flex-shrink:0;margin-left:4px;cursor:pointer}
+/* Scoped to .node-row -- .node-tag-chip is reused as .pv-tag-chip-static in Preview mode's
+   inline text flow, where this offset isn't wanted (see .node-row .node-note-dot above). */
+.node-row .node-tag-chip{align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 15px) / 2)}
 .node-tag-chip:hover{background:color-mix(in srgb,var(--accent) 22%,transparent);border-color:var(--accent)}
 .node-tag-chip.tag-active-filter{background:color-mix(in srgb,var(--accent) 30%,transparent);border-color:var(--accent);color:var(--accent)}
 .tag-filter-chip-btn{display:inline-flex;align-items:center;gap:5px;font:500 11px 'Inter',sans-serif;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 18%,transparent);border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);color:var(--accent);cursor:pointer;appearance:none;transition:background .12s}
@@ -2098,14 +2108,14 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .nqa-item.icon-only{flex:0 0 auto;width:34px;height:34px;padding:0;justify-content:center;gap:0}
 .nqa-item.icon-only.at-active::before{display:none}
 .nqa-item.icon-only.at-active{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 55%,transparent)}
-.node-cb{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative}
+.node-cb{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative;align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 14px) / 2)}
 .node-cb:hover{border-color:var(--accent)}
 .node-cb.cb-checked{background:color-mix(in srgb,var(--accent) 85%,transparent);border-color:var(--accent)}
 .node-cb.cb-checked::after{content:'';position:absolute;left:2px;top:0px;width:6px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(42deg) scaleX(0.85)}
 .node-cb.cb-indeterminate{border-color:var(--accent)}
 .node-cb.cb-indeterminate::after{content:'';position:absolute;left:2px;top:5px;width:8px;height:2px;background:var(--accent);border-radius:1px;transform:translateY(-50%)}
 .node-row.cb-done .node-label{opacity:.55;text-decoration:line-through}
-.cb-progress{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:1px 6px;margin-left:5px;flex-shrink:0;cursor:default}
+.cb-progress{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:1px 6px;margin-left:5px;flex-shrink:0;cursor:default;align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 15px) / 2)}
 
 /* Main editor maximize (zen mode) — floats in the corner of the editor itself
    instead of living in the header, so it doesn't crowd the app bar.
@@ -2905,6 +2915,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-backlink-dot:hover{opacity:1;background:var(--hover)}
 .node-qa-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;cursor:pointer;border-radius:4px}
 .node-qa-dot:hover{opacity:1;background:var(--hover)}
+/* Scoped to .node-row -- .node-qa-dot is reused inside Preview mode's inline text flow too,
+   where this offset isn't wanted (see .node-row .node-note-dot above). */
+.node-row .node-qa-dot{align-self:flex-start;margin-top:calc((18.125px * var(--editor-scale) - 18px) / 2)}
 .pv-popover{position:fixed;z-index:1110;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 100%,#fff 4%),var(--bg));border:1px solid color-mix(in srgb,var(--border) 55%,transparent);border-radius:16px;box-shadow:0 24px 56px rgba(0,0,0,.24),0 4px 14px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);padding:14px 16px;max-width:320px;max-height:340px;overflow-y:auto;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55;animation:pv-popover-in .16s cubic-bezier(.22,.8,.34,1)}
 @keyframes pv-popover-in{from{opacity:0;transform:scale(.96) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .pv-popover-wide{max-width:380px;max-height:420px}
