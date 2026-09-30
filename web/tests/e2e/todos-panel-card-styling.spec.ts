@@ -94,9 +94,9 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     expect(parseFloat(afterOpacity)).toBeLessThan(parseFloat(beforeOpacity));
   });
 
-  // Priority now reads at a glance via the completion circle's own ring color (see
-  // todos-checkbox-shape.spec.ts) instead of a separate accent bar on the card -- so the card's
-  // own border should stay neutral no matter what priority is set, even with subtasks expanded
+  // Priority reads at a glance via the colored dot in the priority chip (below the title)
+  // instead of a separate accent bar on the card -- so the card's own border should stay
+  // neutral no matter what priority is set, even with subtasks expanded
   // (a card-level accent bar would have run the full height of an expanded card; there's no
   // such bar to run at all now).
   test('the card border itself stays neutral regardless of priority, even with subtasks expanded', async ({ page }) => {
@@ -156,11 +156,12 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
   });
 
-  // The subtask list now reads as a shaded nested block (Linear-style) instead of a guide-line
-  // or tree-line -- the background tint alone signals "this is a nested checklist," with no
-  // border/line needed and no per-row divider (the block's own edge + each subtask's own
-  // circle already separate items clearly).
-  test('the subtask list is a shaded block, with no guide-line or per-row divider', async ({ page }) => {
+  // The subtask list reads as a shaded nested block (the background tint alone signals "this is
+  // a nested checklist," no per-row divider needed) PLUS a branch connector: a vertical trunk
+  // down the gutter with a short horizontal stub reaching each subtask's own circle -- an actual
+  // tree structure, not a plain straight line down the block (tried and dropped earlier for
+  // reading as an arbitrary divider rather than a connector to anything).
+  test('the subtask list is a shaded block with a branch trunk connecting each subtask circle', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask shaded-block check');
     const id = await row.getAttribute('data-id');
     for (const text of ['First subtask', 'Second subtask']) {
@@ -178,19 +179,27 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     const result = await page.evaluate((id) => {
       const list = document.querySelector('.todo-subtasks-list') as HTMLElement;
       const card = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
+      const subtaskRows = Array.from(document.querySelectorAll('.todo-subtask-row')) as HTMLElement[];
       const texts = Array.from(document.querySelectorAll('.todo-subtask-text')) as HTMLElement[];
+      const trunk = getComputedStyle(list, '::before');
+      const stub0 = getComputedStyle(subtaskRows[0], '::before');
+      const stub1 = getComputedStyle(subtaskRows[1], '::before');
       return {
-        listGuideWidth: parseFloat(getComputedStyle(list).borderLeftWidth),
         listBg: getComputedStyle(list).backgroundColor,
         cardBg: getComputedStyle(card).backgroundColor,
+        trunkWidth: parseFloat(trunk.width),
+        stub0Width: parseFloat(stub0.width),
+        stub1Width: parseFloat(stub1.width),
         firstTopWidth: parseFloat(getComputedStyle(texts[0]).borderTopWidth),
         secondTopWidth: parseFloat(getComputedStyle(texts[1]).borderTopWidth),
       };
     }, id);
-    expect(result.listGuideWidth).toBe(0); // no left border/guide-line anymore
     expect(result.listBg).not.toBe('rgba(0, 0, 0, 0)');
     expect(result.listBg).not.toBe(result.cardBg); // distinct tint from the white card
-    // No divider between subtask rows -- the shaded block already separates them from the header.
+    expect(result.trunkWidth).toBe(1); // a thin 1px vertical trunk down the gutter
+    expect(result.stub0Width).toBe(8); // each subtask's own horizontal branch stub, reaching its circle
+    expect(result.stub1Width).toBe(8);
+    // Still no divider between subtask rows -- the branch is the only connector, not a border.
     expect(result.firstTopWidth).toBe(0);
     expect(result.secondTopWidth).toBe(0);
   });
