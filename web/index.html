@@ -3718,13 +3718,15 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-subtasks-toggle-row{display:flex;align-items:center;gap:8px;margin-top:12px}
 .todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 12px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;flex:1;min-width:0;transition:color .12s,background .12s}
 .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
-/* flex:1 (not a fixed small pill) so the track reads as a full-width thin progress bar
-   spanning the row, matching the rest of the card's calmer, more generous spacing. A fully
-   transparent track (tried first) left an awkward empty gap between the chevron and the "x/y"
-   count at 0% progress, with nothing readable as a bar at all. A pale tint of --accent itself
-   (not the neutral --border it used to be) reads as a single two-tone bar -- light track, solid
-   fill, same hue -- instead of a gray track with an unrelated colored fill dropped on top. */
-.todo-subtasks-progress-track{flex:1;min-width:24px;height:2px;border-radius:999px;background:color-mix(in srgb,var(--accent) 16%,transparent);overflow:hidden;display:inline-block}
+/* A fixed, modest width (not flex:1) -- stretching it to fill the whole row read as far too
+   long/prominent next to the reference's short, compact bar, and left it so faint at 16% tint
+   it barely registered as a bar at all against the row's remaining empty space. A fully
+   transparent track (tried first, before the tint) left an awkward empty gap between the
+   chevron and the "x/y" count at 0% progress, with nothing readable as a bar at all. A pale
+   tint of --accent itself (not the neutral --border it used to be) reads as a single two-tone
+   bar -- light track, solid fill, same hue -- instead of a gray track with an unrelated colored
+   fill dropped on top. */
+.todo-subtasks-progress-track{flex:0 0 auto;width:110px;height:2px;border-radius:999px;background:color-mix(in srgb,var(--accent) 28%,transparent);overflow:hidden;display:inline-block}
 .todo-subtasks-progress-fill{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease}
 .todo-subtasks-chevron{transition:transform .15s}
 .todo-subtasks-chevron.open{transform:rotate(90deg)}
