@@ -3724,7 +3724,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    count at 0% progress, with nothing readable as a bar at all. A pale tint of --accent itself
    (not the neutral --border it used to be) reads as a single two-tone bar -- light track, solid
    fill, same hue -- instead of a gray track with an unrelated colored fill dropped on top. */
-.todo-subtasks-progress-track{flex:1;min-width:24px;height:3px;border-radius:999px;background:color-mix(in srgb,var(--accent) 16%,transparent);overflow:hidden;display:inline-block}
+.todo-subtasks-progress-track{flex:1;min-width:24px;height:2px;border-radius:999px;background:color-mix(in srgb,var(--accent) 16%,transparent);overflow:hidden;display:inline-block}
 .todo-subtasks-progress-fill{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease}
 .todo-subtasks-chevron{transition:transform .15s}
 .todo-subtasks-chevron.open{transform:rotate(90deg)}
@@ -3746,14 +3746,17 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    end-to-end, a wrapped first or last item just leaves the trunk a few px short of its
    checkbox, not misaligned. */
 .todo-subtasks-list{position:relative;display:flex;flex-direction:column;gap:14px;margin-top:12px;padding:6px 8px}
-.todo-subtasks-list::before{content:'';position:absolute;left:14px;top:18.5px;bottom:18.5px;width:1px;background:var(--vert);opacity:.4}
+.todo-subtasks-list::before{content:'';position:absolute;left:14px;top:18.5px;bottom:18.5px;width:1px;border-radius:1px;background:var(--vert);opacity:.4}
 /* align-items:flex-start (not center) so a subtask whose text wraps to two lines still gets
    its checkbox aligned with the FIRST line, matching .todo-check's own top-aligned convention
    on the parent task -- centering on the whole (possibly multi-line) block instead reads as
    floating, disconnected from the text it belongs to. padding-left:14px (not the block's own
    6px) reserves the branch gutter the trunk/stub above are positioned in. */
 .todo-subtask-row{position:relative;display:flex;align-items:flex-start;gap:10px;padding:4px 4px 4px 14px;border-radius:6px;transition:background .12s}
-.todo-subtask-row::before{content:'';position:absolute;left:6px;top:12.5px;width:8px;height:1px;background:var(--vert);opacity:.4}
+/* width:6px (not reaching all the way to the checkbox at x:14) leaves a couple px of daylight
+   between the stub and the circle -- touching read as the branch being welded to the checkbox
+   rather than pointing at it. */
+.todo-subtask-row::before{content:'';position:absolute;left:6px;top:12.5px;width:6px;height:1px;background:var(--vert);opacity:.4}
 .todo-subtask-row:hover{background:var(--sel)}
 .todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;margin-top:2px;border-radius:50%;border:1.5px solid var(--hint);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-subtask-check:hover{border-color:var(--accent)}

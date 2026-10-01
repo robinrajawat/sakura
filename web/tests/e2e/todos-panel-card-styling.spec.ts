@@ -157,11 +157,11 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
   });
 
   // The subtask list has no background tint of its own -- the branch connector (a vertical
-  // trunk down the gutter with a short horizontal stub reaching each subtask's own circle) is
-  // what signals "this is a nested checklist" now, so a separate shaded panel would be a
-  // redundant second cue. Not a plain straight line down the block either (tried and dropped
-  // earlier for reading as an arbitrary divider rather than a connector to anything) -- an
-  // actual tree structure instead.
+  // trunk down the gutter with a short horizontal stub pointing at each subtask's own circle,
+  // stopping a couple px short of it rather than touching) is what signals "this is a nested
+  // checklist" now, so a separate shaded panel would be a redundant second cue. Not a plain
+  // straight line down the block either (tried and dropped earlier for reading as an arbitrary
+  // divider rather than a connector to anything) -- an actual tree structure instead.
   test('the subtask list has no background tint, just a branch trunk connecting each subtask circle', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask shaded-block check');
     const id = await row.getAttribute('data-id');
@@ -195,8 +195,8 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     });
     expect(result.listBg).toBe('rgba(0, 0, 0, 0)'); // no tint of its own -- the branch is the cue, not a shaded panel
     expect(result.trunkWidth).toBe(1); // a thin 1px vertical trunk down the gutter
-    expect(result.stub0Width).toBe(8); // each subtask's own horizontal branch stub, reaching its circle
-    expect(result.stub1Width).toBe(8);
+    expect(result.stub0Width).toBe(6); // each subtask's own horizontal branch stub -- short of the circle, not touching it
+    expect(result.stub1Width).toBe(6);
     // Still no divider between subtask rows -- the branch is the only connector, not a border.
     expect(result.firstTopWidth).toBe(0);
     expect(result.secondTopWidth).toBe(0);
