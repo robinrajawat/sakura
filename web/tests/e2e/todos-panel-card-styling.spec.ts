@@ -156,12 +156,13 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
   });
 
-  // The subtask list reads as a shaded nested block (the background tint alone signals "this is
-  // a nested checklist," no per-row divider needed) PLUS a branch connector: a vertical trunk
-  // down the gutter with a short horizontal stub reaching each subtask's own circle -- an actual
-  // tree structure, not a plain straight line down the block (tried and dropped earlier for
-  // reading as an arbitrary divider rather than a connector to anything).
-  test('the subtask list is a shaded block with a branch trunk connecting each subtask circle', async ({ page }) => {
+  // The subtask list has no background tint of its own -- the branch connector (a vertical
+  // trunk down the gutter with a short horizontal stub reaching each subtask's own circle) is
+  // what signals "this is a nested checklist" now, so a separate shaded panel would be a
+  // redundant second cue. Not a plain straight line down the block either (tried and dropped
+  // earlier for reading as an arbitrary divider rather than a connector to anything) -- an
+  // actual tree structure instead.
+  test('the subtask list has no background tint, just a branch trunk connecting each subtask circle', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask shaded-block check');
     const id = await row.getAttribute('data-id');
     for (const text of ['First subtask', 'Second subtask']) {
@@ -176,9 +177,8 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
     const rows = page.locator('.todo-subtask-row');
     await expect(rows).toHaveCount(2);
-    const result = await page.evaluate((id) => {
+    const result = await page.evaluate(() => {
       const list = document.querySelector('.todo-subtasks-list') as HTMLElement;
-      const card = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
       const subtaskRows = Array.from(document.querySelectorAll('.todo-subtask-row')) as HTMLElement[];
       const texts = Array.from(document.querySelectorAll('.todo-subtask-text')) as HTMLElement[];
       const trunk = getComputedStyle(list, '::before');
@@ -186,16 +186,14 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
       const stub1 = getComputedStyle(subtaskRows[1], '::before');
       return {
         listBg: getComputedStyle(list).backgroundColor,
-        cardBg: getComputedStyle(card).backgroundColor,
         trunkWidth: parseFloat(trunk.width),
         stub0Width: parseFloat(stub0.width),
         stub1Width: parseFloat(stub1.width),
         firstTopWidth: parseFloat(getComputedStyle(texts[0]).borderTopWidth),
         secondTopWidth: parseFloat(getComputedStyle(texts[1]).borderTopWidth),
       };
-    }, id);
-    expect(result.listBg).not.toBe('rgba(0, 0, 0, 0)');
-    expect(result.listBg).not.toBe(result.cardBg); // distinct tint from the white card
+    });
+    expect(result.listBg).toBe('rgba(0, 0, 0, 0)'); // no tint of its own -- the branch is the cue, not a shaded panel
     expect(result.trunkWidth).toBe(1); // a thin 1px vertical trunk down the gutter
     expect(result.stub0Width).toBe(8); // each subtask's own horizontal branch stub, reaching its circle
     expect(result.stub1Width).toBe(8);

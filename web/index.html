@@ -3728,18 +3728,20 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-row:hover .todo-subtask-add-btn,.todo-row:focus-within .todo-subtask-add-btn{display:inline-flex}
 .todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
 #todos-panel.actions-fixed .todo-subtask-add-btn{display:inline-flex}
-/* Shaded nested block (background tint reads as "this is a nested checklist") PLUS a branch
-   connector: a vertical trunk down the gutter with a short horizontal stub reaching each
-   checkbox -- an actual tree structure, not just a straight guide-line down the block (a bare
-   line was tried and dropped earlier for reading as an arbitrary divider rather than a
-   connector to anything). Trunk sits at the same x each row's stub reaches, both computed from
-   the same box-model constants so they always meet exactly:
-   list padding-left(8) + row padding-left-before-the-gutter(6) = 14px. The trunk's top/bottom
-   offset (18.5px = list padding-top 6 + row padding-top 4 + checkbox margin-top 2 + half the
-   13px checkbox 6.5) assumes a single-line first/last subtask; per the standing rule that this
-   kind of guide-line doesn't need to be pixel-exact end-to-end, a wrapped first or last item
-   just leaves the trunk a few px short of its checkbox, not misaligned. */
-.todo-subtasks-list{position:relative;display:flex;flex-direction:column;gap:2px;margin-top:4px;padding:6px 8px;border-radius:8px;background:var(--chip)}
+/* No background tint on the block itself -- the branch connector (a vertical trunk down the
+   gutter with a short horizontal stub reaching each checkbox) is what reads as "this is a
+   nested checklist" now, so a separate shaded panel behind it would be a redundant second cue
+   (and visually heavier than the reference this card's current direction is based on). A bare
+   straight line with no stubs was tried and dropped earlier for reading as an arbitrary divider
+   rather than a connector to anything -- this is an actual tree structure instead. Trunk sits
+   at the same x each row's stub reaches, both computed from the same box-model constants so
+   they always meet exactly: list padding-left(8) + row padding-left-before-the-gutter(6) =
+   14px. The trunk's top/bottom offset (18.5px = list padding-top 6 + row padding-top 4 +
+   checkbox margin-top 2 + half the 13px checkbox 6.5) assumes a single-line first/last
+   subtask; per the standing rule that this kind of guide-line doesn't need to be pixel-exact
+   end-to-end, a wrapped first or last item just leaves the trunk a few px short of its
+   checkbox, not misaligned. */
+.todo-subtasks-list{position:relative;display:flex;flex-direction:column;gap:2px;margin-top:4px;padding:6px 8px}
 .todo-subtasks-list::before{content:'';position:absolute;left:14px;top:18.5px;bottom:18.5px;width:1px;background:var(--vert);opacity:.4}
 /* align-items:flex-start (not center) so a subtask whose text wraps to two lines still gets
    its checkbox aligned with the FIRST line, matching .todo-check's own top-aligned convention
