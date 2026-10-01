@@ -23,12 +23,12 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // The completion control is a circle (an outline ring at rest, filling solid with the accent
 // color + a white checkmark once done), matching the Reminders/Things/Todoist convention this
 // is modeled on. After trying it on the right (top-right corner of the card) for a while, the
-// whole card was redesigned around Todoist's convention instead: the circle leads the row on
-// the LEFT, and its ring color at rest doubles as the priority signal (see the priority-ring
-// tests below) -- removing the need for a separate accent bar elsewhere on the card entirely.
-// The per-subtask checkbox (.todo-subtask-check) matches in shape and position (also left-led),
-// but stays neutral (--hint) since subtasks don't carry their own priority.
-test.describe('The To-Dos completion control is a left-led circle whose ring signals priority', () => {
+// card was redesigned with the circle leading the row on the LEFT. A later iteration also had
+// its ring color double as the priority signal (Todoist convention); that was reverted back to
+// a plain neutral ring -- priority is signaled once, by the colored dot in the priority chip
+// below the title, not doubled up on the checkbox too. The per-subtask checkbox
+// (.todo-subtask-check) matches in shape and position (also left-led) and was always neutral.
+test.describe('The To-Dos completion control is a left-led circle', () => {
   test('the main task control is a circle, not a bordered square', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Checkbox shape check');
     const id = await row.getAttribute('data-id');
@@ -65,10 +65,9 @@ test.describe('The To-Dos completion control is a left-led circle whose ring sig
     expect(result.checkLeft).toBeLessThan(result.textLeft);
   });
 
-  // The ring IS the priority signal now -- no separate accent bar elsewhere on the card. Same
-  // color tokens as .todo-priority[data-priority], so the pill (still the control that cycles
-  // priority) and the ring always agree.
-  test('an unchecked control\'s ring color reflects its priority', async ({ page }) => {
+  // Priority is signaled by the colored dot in the priority chip (below the title), not by the
+  // checkbox ring -- the ring stays the same neutral color at every priority level.
+  test('an unchecked control\'s ring color stays neutral regardless of priority', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Priority ring check');
     const id = await row.getAttribute('data-id');
     const plainColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
@@ -80,8 +79,7 @@ test.describe('The To-Dos completion control is a left-led circle whose ring sig
     await page.mouse.move(0, 0); // away from the row, so :hover doesn't mask the ring color
     await page.waitForTimeout(100);
     const highColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
-    expect(highColor).not.toBe(plainColor);
-    expect(highColor).toBe('rgb(194, 85, 61)'); // #c2553d, the same token .todo-priority[data-priority="high"] uses
+    expect(highColor).toBe(plainColor);
   });
 
   test('a checked control always fills solid accent, regardless of priority', async ({ page }) => {
