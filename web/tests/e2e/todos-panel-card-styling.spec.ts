@@ -20,52 +20,50 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
   return page.locator('.todo-row').first();
 }
 
-// Each task in the desktop To-Dos panel used to render as a bare, borderless row -- no
-// background, no border, no shadow, just 5px of padding directly against the panel's own
-// background, so a list of several tasks read as one continuous, undifferentiated block instead
-// of a set of distinct items. Now each row is its own card: a surface color distinct from the
-// panel background, a 1px border, and enough padding/gap to actually separate from its
-// neighbors -- an accent-tinted border + soft shadow on hover, a stronger accent border while
-// expanded, and reduced opacity once completed, so a row's state is legible from its card
-// treatment alone, not just its text styling.
-test.describe('To-Dos panel rows read as distinct cards, not a flat list', () => {
-  test('a row has its own surface color and border, distinct from the panel background', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Card styling check');
+// PR #402 gave each row its own card treatment (a surface color distinct from the panel, a 1px
+// border, box-shadow on hover) to replace what was previously a bare, borderless row. #407-#420
+// then spent about three weeks iterating on that card's spacing/type scale/chip sizing without
+// it ever landing -- a signal the card concept itself, not any one measurement, was the problem.
+// Reverted back to a flat list: no border, no background distinct from the panel, zero gap
+// between rows, just a plain hover highlight -- the same shape every row had before #402. The
+// real interaction/bug fixes that happened to land in the same run of commits (a proper
+// checkbox, hover-reveal chips instead of click-to-expand, collapsed-by-default subtasks, the
+// branch connector on subtasks, the #tag/@mention fix, the panel/status-bar clearance fix) are
+// covered by the tests below that remain unchanged.
+test.describe('To-Dos panel rows are a flat list, not individually bordered cards', () => {
+  test('a row has no border and no background distinct from the panel', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Flat row styling check');
     const result = await page.evaluate(() => {
-      const panel = document.getElementById('todos-panel')!;
       const r = document.querySelector('.todo-row')!;
       return {
-        panelBg: getComputedStyle(panel).backgroundColor,
         rowBg: getComputedStyle(r).backgroundColor,
         rowBorder: getComputedStyle(r).borderTopWidth,
-        rowRadius: getComputedStyle(r).borderRadius,
       };
     });
     expect(row).toBeTruthy();
-    expect(result.rowBg).not.toBe(result.panelBg);
-    expect(result.rowBg).not.toBe('rgba(0, 0, 0, 0)');
-    expect(parseFloat(result.rowBorder)).toBeGreaterThan(0);
-    expect(parseFloat(result.rowRadius)).toBeGreaterThan(0);
+    expect(result.rowBg).toBe('rgba(0, 0, 0, 0)');
+    expect(parseFloat(result.rowBorder)).toBe(0);
   });
 
-  test('adjacent rows have visible spacing between their cards, not zero gap', async ({ page }) => {
+  test('adjacent rows have zero gap between them -- separation comes from hover alone', async ({ page }) => {
     await openTodosPanelWithTask(page, 'First task');
     await page.fill('#todos-input', 'Second task');
     await page.press('#todos-input', 'Enter');
     await page.waitForTimeout(50);
 
     const gap = await page.evaluate(() => getComputedStyle(document.getElementById('todos-body')!).gap);
-    expect(parseFloat(gap)).toBeGreaterThan(0);
+    expect(parseFloat(gap)).toBe(0);
   });
 
-  test('hovering a row gives it an accent-tinted border and a shadow', async ({ page }) => {
+  test('hovering a row gives it a plain background highlight, no border or shadow', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Hover check');
-    const before = await row.evaluate(el => getComputedStyle(el).boxShadow);
+    const before = await row.evaluate(el => getComputedStyle(el).backgroundColor);
     await row.hover();
     await page.waitForTimeout(150);
-    const after = await row.evaluate(el => getComputedStyle(el).boxShadow);
-    expect(after).not.toBe(before);
-    expect(after).not.toBe('none');
+    const result = await row.evaluate(el => ({ bg: getComputedStyle(el).backgroundColor, shadow: getComputedStyle(el).boxShadow, border: getComputedStyle(el).borderTopWidth }));
+    expect(result.bg).not.toBe(before);
+    expect(result.shadow).toBe('none');
+    expect(parseFloat(result.border)).toBe(0);
   });
 
   // There is no more click-to-expand state -- a row's unset chips (priority/status/due/link/
@@ -84,7 +82,7 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     expect(priorityAfter).toBe('flex');
   });
 
-  test('a completed row is visibly dimmed via opacity on the whole card', async ({ page }) => {
+  test('a completed row is visibly dimmed via opacity on the whole row', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Complete check');
     const id = await row.getAttribute('data-id');
     const beforeOpacity = await row.evaluate(el => getComputedStyle(el).opacity);
@@ -94,15 +92,13 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     expect(parseFloat(afterOpacity)).toBeLessThan(parseFloat(beforeOpacity));
   });
 
-  // Priority reads at a glance via the colored dot in the priority chip (below the title)
-  // instead of a separate accent bar on the card -- so the card's own border should stay
-  // neutral no matter what priority is set, even with subtasks expanded
-  // (a card-level accent bar would have run the full height of an expanded card; there's no
-  // such bar to run at all now).
-  test('the card border itself stays neutral regardless of priority, even with subtasks expanded', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Priority no-card-accent check');
+  // Priority reads at a glance via the colored dot in the priority chip (below the title), not
+  // via any accent bar on the row -- a flat row has no border at all to carry one, at rest or
+  // with subtasks expanded.
+  test('a row has no border regardless of priority, even with subtasks expanded', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Priority no-border check');
     const id = await row.getAttribute('data-id');
-    const plainBorder = await row.evaluate(el => getComputedStyle(el).borderLeftColor);
+    const plainBorder = await row.evaluate(el => getComputedStyle(el).borderLeftWidth);
     await row.hover();
     await page.click(`.todo-priority[data-id="${id}"]`);
     await page.click(`.todo-priority[data-id="${id}"]`);
@@ -116,11 +112,11 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
     await page.waitForTimeout(100);
     await page.click(`.todo-subtasks-toggle[data-id="${id}"]`);
-    await page.mouse.move(0, 0); // away from the row, so :hover doesn't also tint the border
+    await page.mouse.move(0, 0);
     await page.waitForTimeout(100);
-    const highBorder = await row.evaluate(el => getComputedStyle(el).borderLeftColor);
+    const highBorder = await row.evaluate(el => getComputedStyle(el).borderLeftWidth);
+    expect(parseFloat(plainBorder)).toBe(0);
     expect(highBorder).toBe(plainBorder);
-    expect(highBorder).not.toBe('rgb(194, 85, 61)'); // not the high-priority color
   });
 
   // The docked side panels (To-Dos among them) are position:fixed with bottom:0 against the
@@ -138,9 +134,9 @@ test.describe('To-Dos panel rows read as distinct cards, not a flat list', () =>
   });
 
   // A task with several subtasks used to always render its full checklist inline, making that
-  // one card dominate the list's height next to plain one-line tasks. Subtask lists now start
+  // one row dominate the list's height next to plain one-line tasks. Subtask lists now start
   // collapsed (settings.subtasksCollapsedByDefault defaults to true), showing just the
-  // progress count until expanded, so card heights stay uniform at a glance.
+  // progress count until expanded, so row heights stay uniform at a glance.
   test('a new subtask list starts collapsed, showing only the progress count', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask default-collapsed check');
     const id = await row.getAttribute('data-id');

@@ -3591,7 +3591,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todo-dd-item.selected{color:var(--accent)}
 .todo-dd-item .dd-check{width:13px;height:13px;flex:0 0 auto;color:var(--accent);opacity:0;display:inline-flex}
 .todo-dd-item.selected .dd-check{opacity:1}
-#todos-body{overflow-y:auto;overflow-x:hidden;padding:8px 6px 12px;flex:1;display:flex;flex-direction:column;gap:6px}
+#todos-body{overflow-y:auto;overflow-x:hidden;padding:8px 6px 12px;flex:1;display:flex;flex-direction:column;gap:0}
 .todos-section-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:10px 10px 6px;user-select:none}
 .todos-section-collapse-btn{appearance:none;border:none;background:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .todos-section-collapse-btn:hover{color:var(--fg)}
@@ -3600,12 +3600,16 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .todos-clear-completed-btn{appearance:none;border:none;background:none;color:var(--hint);font:600 9.5px 'Inter',sans-serif;letter-spacing:.02em;text-transform:none;padding:2px 6px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s}
 .todos-clear-completed-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .todos-empty{font-size:12px;color:var(--hint);padding:6px 12px 10px}
-/* Row: minimal padding at rest so text uses full width. The drag handle needs
-   a little left padding on hover, but the action icons no longer reserve
-   row-wide padding — they're a float inside .todo-textwrap (see below) that
-   only narrows the first line. */
-.todo-row{position:relative;display:flex;align-items:flex-start;gap:10px;padding:16px 18px;border-radius:16px;cursor:pointer;background:var(--edit-bg);border:1px solid var(--border);transition:background .12s,border-color .15s,box-shadow .15s ease,padding .16s ease}
-.todo-row:hover{border-color:color-mix(in srgb,var(--accent) 32%,var(--border));box-shadow:0 2px 6px rgba(0,0,0,.06)}
+/* Reverted the card treatment (its own surface background, 1px border, box-shadow-on-hover,
+   16px radius) that PR #402 introduced and #407-#420 kept iterating on for about three weeks
+   without it landing -- back to a flat list: no border, no background distinct from the panel,
+   just padding and a plain hover highlight, same as every row was before #402. The real
+   interaction/bug fixes that happened to land in the same run of commits (a proper checkbox,
+   hover-reveal chips instead of click-to-expand, collapsed-by-default subtasks, the branch
+   connector on subtasks, the #tag/@mention fix, the panel/status-bar clearance fix) all stay --
+   only the visual card shell goes. */
+.todo-row{position:relative;display:flex;align-items:flex-start;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .12s}
+.todo-row:hover{background:var(--hover)}
 .todo-row.completed{opacity:.65}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 /* var(--border) (the card's own border color) reads as almost invisible for an unchecked
