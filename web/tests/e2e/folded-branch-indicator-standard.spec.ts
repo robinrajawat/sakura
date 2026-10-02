@@ -21,15 +21,16 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 
 // A folded branch used to render one small icon PER content type found anywhere inside it
 // (note/decision-log/diagram/file/remark/meeting/todo/qa/mindmap/marker) -- up to 9+ distinct
-// dots could stack on a single collapsed row, each its own shape, a few px apart, none more
-// than a vague "something's here" signal once there were more than one or two. Consolidated to
-// a single generic dot per folded row: its tooltip lists what's actually inside (comma-
-// separated), and the existing +N fold-badge still gives the hidden-node count. Own-node dots
-// (this node itself has X) are unaffected by that change, and separately now use a distinct
-// color per content type instead of all sharing --accent, so they're distinguishable from each
-// other without needing the tooltip.
-test.describe('Folded-branch content indicators are consolidated into one dot', () => {
-  test('a folded node with no own note but a descendant note shows the subtree dot, mentioning the note in its tooltip', async ({ page }) => {
+// dots could stack on a single collapsed row. First consolidated to one separate generic dot
+// next to the existing +N fold-badge; that was still two floating elements with a gap between
+// them for what's really one signal. Folded a step further: a tiny dot now prefixes the +N
+// badge itself (inheriting the badge's own muted color via currentColor) only when there's
+// something to report, and the badge's own tooltip names what's inside -- exactly one element
+// per folded row, never two. Own-node dots (this node itself has X) are unaffected by any of
+// this, and separately now use a distinct color per content type instead of all sharing
+// --accent, so they're distinguishable from each other without needing the tooltip.
+test.describe('Folded-branch content indicators are consolidated into the +N badge', () => {
+  test('a folded node with no own note but a descendant note gets a dot-prefixed badge, mentioning the note in its tooltip', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -46,20 +47,44 @@ test.describe('Folded-branch content indicators are consolidated into one dot', 
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const dot = row.querySelector('.node-subtree-dot');
-      return { found: !!dot, tip: dot?.getAttribute('data-tip') || '' };
+      const badge = row.querySelector('.fold-badge')!;
+      return { hasDot: !!badge.querySelector('.fold-badge-dot'), tip: badge.getAttribute('data-tip') || '' };
     });
 
-    expect(result.found).toBe(true);
+    expect(result.hasDot).toBe(true);
     expect(result.tip).toContain('a note');
+  });
+
+  test('a folded node with no hidden content beyond its children gets a plain badge, no dot', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Folded parent, nothing special', styles: {} },
+        { id: 2, depth: 1, text: 'Plain child', styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set([1]);
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
+      // @ts-expect-error
+      render();
+      const row = document.querySelector('.node-row[data-id="1"]')!;
+      const badge = row.querySelector('.fold-badge')!;
+      return { hasDot: !!badge.querySelector('.fold-badge-dot'), tip: badge.getAttribute('data-tip') || '' };
+    });
+
+    expect(result.hasDot).toBe(false);
+    expect(result.tip).not.toContain('contains');
   });
 
   // The diagram subtree check is deliberately skipped when the folded node already has its own
   // diagram (pre-existing guard, !diagrams.some(dg=>dg.anchorNodeId===node.id)) -- the own-node
   // diagram dot already covers "there's a diagram here", so a hidden descendant's diagram isn't
-  // separately surfaced in this one case. Still true after consolidation, since the suppression
-  // happens before anything reaches the shared subtreeKinds list.
-  test('a folded node with its own diagram AND a descendant diagram: the own-diagram dot shows, the descendant one is not separately called out', async ({ page }) => {
+  // separately surfaced in this one case. Still true after consolidation.
+  test('a folded node with its own diagram AND a descendant diagram: the own-diagram dot shows, the badge gets no dot for it', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -83,17 +108,18 @@ test.describe('Folded-branch content indicators are consolidated into one dot', 
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
+      const badge = row.querySelector('.fold-badge')!;
       return {
         ownDiagramDots: row.querySelectorAll('.node-diagram-dot').length,
-        subtreeDots: row.querySelectorAll('.node-subtree-dot').length,
+        badgeHasDot: !!badge.querySelector('.fold-badge-dot'),
       };
     });
 
     expect(result.ownDiagramDots).toBe(1);
-    expect(result.subtreeDots).toBe(0);
+    expect(result.badgeHasDot).toBe(false);
   });
 
-  test('several distinct hidden content types in one folded branch still produce exactly one subtree dot, listing all of them', async ({ page }) => {
+  test('several distinct hidden content types in one folded branch produce one dot-prefixed badge, tooltip listing all of them', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -115,19 +141,18 @@ test.describe('Folded-branch content indicators are consolidated into one dot', 
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const dots = row.querySelectorAll('.node-subtree-dot');
-      return { count: dots.length, tip: dots[0]?.getAttribute('data-tip') || '' };
+      const badges = row.querySelectorAll('.fold-badge');
+      return { count: badges.length, tip: badges[0]?.getAttribute('data-tip') || '' };
     });
 
-    expect(result.count).toBe(1);
+    expect(result.count).toBe(1); // exactly one badge, as always
     expect(result.tip).toContain('a note');
     expect(result.tip).toContain('a diagram');
   });
 
-  // Own-node dots now each carry a distinct color (so note/diagram/qa/etc. are tellable apart
-  // at a glance), while the subtree dot stays a single plain, muted indicator -- deliberately
-  // not colorful, since it no longer distinguishes content type itself (the tooltip does that).
-  test('own-node dots use distinct colors per type; the subtree dot stays a single muted indicator', async ({ page }) => {
+  // Own-node dots each carry a distinct color (so note/diagram/qa/etc. are tellable apart at a
+  // glance without reading the tooltip) -- unaffected by the folded-badge consolidation above.
+  test('own-node dots use distinct colors per type', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -135,10 +160,9 @@ test.describe('Folded-branch content indicators are consolidated into one dot', 
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'Own note + own Q&A', styles: {}, note: 'a note' },
-        { id: 2, depth: 1, text: 'Child with a diagram', styles: {} },
       ];
       // @ts-expect-error
-      collapsedIds = new Set([1]);
+      collapsedIds = new Set();
       // @ts-expect-error
       selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
       // @ts-expect-error
@@ -146,25 +170,17 @@ test.describe('Folded-branch content indicators are consolidated into one dot', 
       // @ts-expect-error
       padQaTabEnabled = true;
       // @ts-expect-error
-      diagrams = [{ id: 'd2', anchorNodeId: 2, title: 'Child diagram' }];
-      // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       render();
 
       const row = document.querySelector('.node-row[data-id="1"]')!;
       const ownNoteDot = row.querySelector('.node-note-dot:not(.node-qa-dot)')!;
       const ownQaDot = row.querySelector('.node-qa-dot')!;
-      const subtreeDot = row.querySelector('.node-subtree-dot')!;
       return {
         ownNoteColor: getComputedStyle(ownNoteDot).color,
         ownQaColor: getComputedStyle(ownQaDot).color,
-        subtreeColor: getComputedStyle(subtreeDot).color,
       };
     });
 
     expect(result.ownNoteColor).not.toBe(result.ownQaColor); // distinct types, distinct colors
-    expect(result.subtreeColor).not.toBe(result.ownNoteColor);
-    expect(result.subtreeColor).not.toBe(result.ownQaColor);
   });
 });

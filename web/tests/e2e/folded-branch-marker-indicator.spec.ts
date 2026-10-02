@@ -19,13 +19,12 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
   }
 }
 
-// Node markers used to get their own color-coded subtree dot (node-marker-subtree-dot),
-// separate from the other eight content types' own subtree dots -- one more icon stacking onto
-// an already-crowded folded row. Markers now feed into the same single consolidated
-// .node-subtree-dot as everything else (see folded-branch-indicator-standard.spec.ts): the
-// tooltip names which marker type and how many, rather than a dedicated colored dot.
-test.describe('Folded-branch node-marker indicator feeds the consolidated subtree dot', () => {
-  test('a folded node with no own marker but a descendant marker mentions it in the subtree dot tooltip', async ({ page }) => {
+// Node markers feed into the same consolidated +N fold-badge as every other content type (see
+// folded-branch-indicator-standard.spec.ts): a dot prefixes the badge when a hidden descendant
+// carries a marker, and the badge's own tooltip names which marker type and how many, rather
+// than a dedicated color-coded dot of its own.
+test.describe('Folded-branch node-marker indicator feeds the consolidated fold-badge', () => {
+  test('a folded node with no own marker but a descendant marker mentions it in the badge tooltip', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -42,19 +41,19 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated subtre
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const dot = row.querySelector('.node-subtree-dot');
-      return { found: !!dot, tip: dot?.getAttribute('data-tip') || '' };
+      const badge = row.querySelector('.fold-badge')!;
+      return { hasDot: !!badge.querySelector('.fold-badge-dot'), tip: badge.getAttribute('data-tip') || '' };
     });
 
-    expect(result.found).toBe(true);
+    expect(result.hasDot).toBe(true);
     expect(result.tip).toContain('marked Confirmed');
   });
 
-  test('a folded node whose own marker matches its descendant\'s marker type shows no subtree dot for it', async ({ page }) => {
+  test('a folded node whose own marker matches its descendant\'s marker type gets no dot for it', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    const found = await page.evaluate(() => {
+    const result = await page.evaluate(() => {
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'Folded parent, own confirmed', styles: {}, marker: 'confirmed' },
@@ -67,10 +66,11 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated subtre
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      return !!row.querySelector('.node-subtree-dot'); // nothing else hidden, so no dot at all
+      const badge = row.querySelector('.fold-badge')!;
+      return !!badge.querySelector('.fold-badge-dot'); // nothing else hidden, so no dot at all
     });
 
-    expect(found).toBe(false);
+    expect(result).toBe(false);
   });
 
   test('a folded node\'s own marker badge and a differently-typed descendant marker both show, as distinct indicators', async ({ page }) => {
@@ -90,15 +90,16 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated subtre
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const dot = row.querySelector('.node-subtree-dot');
+      const badge = row.querySelector('.fold-badge')!;
       return {
         ownBadgeShown: !!row.querySelector('.node-marker-badge'),
-        subtreeTip: dot?.getAttribute('data-tip') || '',
+        fold: { hasDot: !!badge.querySelector('.fold-badge-dot'), tip: badge.getAttribute('data-tip') || '' },
       };
     });
 
     expect(result.ownBadgeShown).toBe(true);
-    expect(result.subtreeTip).toContain('marked Issue');
+    expect(result.fold.hasDot).toBe(true);
+    expect(result.fold.tip).toContain('marked Issue');
   });
 
   test('several distinct marker types hidden in the subtree are all named in one shared tooltip', async ({ page }) => {
@@ -119,16 +120,16 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated subtre
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const dots = row.querySelectorAll('.node-subtree-dot');
-      return { count: dots.length, tip: dots[0]?.getAttribute('data-tip') || '' };
+      const badges = row.querySelectorAll('.fold-badge');
+      return { count: badges.length, tip: badges[0]?.getAttribute('data-tip') || '' };
     });
 
-    expect(result.count).toBe(1); // one dot total, not one per marker type
+    expect(result.count).toBe(1); // one badge total, not one per marker type
     expect(result.tip).toContain('marked Issue');
     expect(result.tip).toContain('marked Follow-up');
   });
 
-  test('the subtree dot tooltip counts how many hidden descendants carry that marker type', async ({ page }) => {
+  test('the badge tooltip counts how many hidden descendants carry that marker type', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -147,11 +148,11 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated subtre
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const dot = row.querySelector('.node-subtree-dot') as HTMLElement;
-      return dot.dataset.tip;
+      const badge = row.querySelector('.fold-badge') as HTMLElement;
+      return badge.dataset.tip;
     });
 
-    expect(result).toBe('This collapsed branch contains 3 nodes marked Issue');
+    expect(result).toBe('Click to expand · 3 hidden nodes — contains 3 nodes marked Issue');
   });
 
   test('a single hidden descendant with a marker gets singular tooltip wording, not "1 nodes"', async ({ page }) => {
@@ -171,14 +172,14 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated subtre
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const dot = row.querySelector('.node-subtree-dot') as HTMLElement;
-      return dot.dataset.tip;
+      const badge = row.querySelector('.fold-badge') as HTMLElement;
+      return badge.dataset.tip;
     });
 
-    expect(result).toBe('This collapsed branch contains 1 node marked Confirmed');
+    expect(result).toBe('Click to expand · 1 hidden node — contains 1 node marked Confirmed');
   });
 
-  test('an expanded node (not folded) never shows a subtree dot, even with a marked child', async ({ page }) => {
+  test('an expanded node (not folded) never shows a fold-badge, even with a marked child', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -195,7 +196,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated subtre
       // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      return !!row.querySelector('.node-subtree-dot');
+      return !!row.querySelector('.fold-badge');
     });
 
     expect(found).toBe(false);
