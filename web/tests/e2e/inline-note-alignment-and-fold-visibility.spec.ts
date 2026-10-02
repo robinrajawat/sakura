@@ -19,7 +19,7 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
   }
 }
 
-// Two related bugs in the inline Note/Remark/Q&A lines rendered directly under a row:
+// Three related bugs in the inline Note/Remark/Q&A lines rendered directly under a row:
 // 1. Their own paddingLeft formula used a trailing +24px offset left over from before the drag
 //    handle became a real layout element -- the row's own text actually starts 36px past the
 //    depth base (13px drag handle + 18px dot + 6px dot margin), not 24px, so every inline note/
@@ -28,6 +28,11 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 // 2. All three were unconditionally hidden whenever their node was folded (`&&!folded`), even
 //    though folding only hides a node's CHILDREN -- a note/remark/Q&A that belongs to the folded
 //    node itself has nothing to do with whether its children are shown.
+// 3. Both ways of opening a node's note (the toggleNote shortcut/toolbar/menu path via
+//    openInlineNoteAndFocus, and Shift+Enter while already editing the node's own text) called
+//    expandNode(id) before showing it -- forcing a folded node's hidden children open too, just
+//    to add a note that has nothing to do with them. Since (2) already means the note shows
+//    fine on a folded row, that expandNode call was pure unwanted side effect.
 test.describe('Inline note/remark/Q&A lines align with row text and survive folding', () => {
   test('an expanded inline note lines up exactly under the row\'s own text', async ({ page }) => {
     await page.goto('file://' + indexPath);
@@ -99,5 +104,68 @@ test.describe('Inline note/remark/Q&A lines align with row text and survive fold
     expect(result.noteVisible).toBe(true); // but the parent's own note/remark/Q&A stay visible
     expect(result.remarkVisible).toBe(true);
     expect(result.qaVisible).toBe(true);
+  });
+
+  test('opening a folded node\'s note via the shortcut/menu path does not expand its hidden children', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Folded parent', styles: {} },
+        { id: 2, depth: 1, text: 'Hidden child', styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set([1]);
+      // @ts-expect-error
+      selectedId = 1; multiSelectedIds = []; selectAllMode = false; focusedId = null;
+      // @ts-expect-error
+      openInlineNoteAndFocus(1);
+      return {
+        // @ts-expect-error
+        stillCollapsed: collapsedIds.has(1),
+        noteVisible: !!document.querySelector('.node-note-line[data-node-id="1"]'),
+        childVisible: !!document.querySelector('.node-row[data-id="2"]'),
+      };
+    });
+
+    expect(result.stillCollapsed).toBe(true);
+    expect(result.noteVisible).toBe(true);
+    expect(result.childVisible).toBe(false);
+  });
+
+  test('Shift+Enter while editing a folded node\'s own text opens its note without expanding its hidden children', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Folded parent', styles: {} },
+        { id: 2, depth: 1, text: 'Hidden child', styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set([1]);
+      // @ts-expect-error
+      selectedId = 1; multiSelectedIds = []; selectAllMode = false; focusedId = null;
+      // @ts-expect-error
+      render();
+    });
+    await page.dblclick('.node-row[data-id="1"] .node-label');
+    await page.keyboard.press('End');
+    await page.keyboard.press('Shift+Enter');
+    await page.waitForTimeout(100);
+
+    const result = await page.evaluate(() => ({
+      // @ts-expect-error
+      stillCollapsed: collapsedIds.has(1),
+      noteVisible: !!document.querySelector('.node-note-line[data-node-id="1"]'),
+      childVisible: !!document.querySelector('.node-row[data-id="2"]'),
+    }));
+
+    expect(result.stillCollapsed).toBe(true);
+    expect(result.noteVisible).toBe(true);
+    expect(result.childVisible).toBe(false);
   });
 });

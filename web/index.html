@@ -17583,9 +17583,13 @@ function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); schedu
 // Shared entry point for every "add/edit note" action (toolbar button, right-click menu, hover
 // toolbar, keyboard shortcut, Quick Assist search results, Preview's note dot) now that notes
 // are inline-only -- expands the node's inline note line and focuses it, mirroring the same
-// sequence Shift+Enter already uses while editing a node's own text.
+// sequence Shift+Enter already uses while editing a node's own text. Deliberately does NOT call
+// expandNode(id): that un-collapses the node's CHILDREN, which the note line has nothing to do
+// with -- a node's own row (and its own inline note) always renders regardless of whether its
+// children are folded, so forcing them open here was an unrelated, unwanted side effect (e.g.
+// Shift+Enter on a folded node used to reveal its whole hidden subtree just to add a note).
 function openInlineNoteAndFocus(id){
-  commitEdit(); setSingleSelection(id); expandNode(id); forceInlineNoteId=id; render();
+  commitEdit(); setSingleSelection(id); forceInlineNoteId=id; render();
   requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const len=ln.value.length; ln.setSelectionRange(len,len); } });
 }
 // inlineExpand*NodeIds Sets track deviation from the current alwaysExpandInlineEnabled default
@@ -25940,7 +25944,11 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     if(isLastRow&&currentNode.depth>0){ commitEdit(); selectedId=id; outdentSelected(); beginEdit(id,true); return }
     commitEdit(); selectedId=id; insertSiblingAfter(id,true); return
   } if(e.shiftKey){
-    commitEdit(); expandNode(id); forceInlineNoteId=id; render();
+    // Deliberately no expandNode(id) here -- that un-collapses the node's CHILDREN, which the
+    // note line has nothing to do with (see the comment on openInlineNoteAndFocus for the same
+    // fix applied there). A folded node's own row, and its own inline note, render regardless
+    // of whether its children are hidden.
+    commitEdit(); forceInlineNoteId=id; render();
     requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const len=ln.value.length; ln.setSelectionRange(len,len); } });
     return;
   } if(!(e.ctrlKey||e.metaKey)){
