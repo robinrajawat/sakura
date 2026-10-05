@@ -115,8 +115,8 @@ test.describe('Zooming into a childless node lets you actually add a first child
   });
 });
 
-test.describe('Node rows only initiate drag-reorder from the leading dot/fold area, not the whole row', () => {
-  test('a row is not draggable by default, and stays non-draggable when the press starts on the label', async ({ page }) => {
+test.describe('Node rows arm drag-reorder via a long press anywhere on the row, Dynalist-style, not a dedicated handle', () => {
+  test('a row is not draggable by default, before any press', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -138,13 +138,9 @@ test.describe('Node rows only initiate drag-reorder from the leading dot/fold ar
 
     const row = page.locator('.node-row[data-id="1"]');
     expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(false);
-
-    const label = row.locator('.node-label');
-    await label.dispatchEvent('mousedown', { bubbles: true });
-    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(false);
   });
 
-  test('a mousedown on the leading drag handle marks the row draggable', async ({ page }) => {
+  test('a brief press-and-release on the label, shorter than the long-press threshold, never arms dragging', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -162,17 +158,101 @@ test.describe('Node rows only initiate drag-reorder from the leading dot/fold ar
     });
 
     const row = page.locator('.node-row[data-id="1"]');
-    const handle = row.locator('.node-drag-handle');
-    await expect(handle).toBeVisible();
-    await handle.dispatchEvent('mousedown', { bubbles: true });
-    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(true);
+    const label = row.locator('.node-label');
+    await label.dispatchEvent('mousedown', { bubbles: true, clientX: 100, clientY: 100 });
+    await page.waitForTimeout(100);
+    await page.mouse.up();
+    await page.waitForTimeout(350);
+
+    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(false);
   });
 
-  test('a mousedown on the drag handle of a row WITH children arms dragging without toggling collapse', async ({ page }) => {
-    // This is the exact bug being fixed: .fold-toggle/.fold-dot mousedown handlers call
-    // toggleCollapse() instantly, so a row with children used to be effectively undraggable --
-    // any press-and-hold gesture there fired the collapse toggle before a drag could start. The
-    // dedicated .node-drag-handle sits outside that machinery entirely.
+  test('holding the press on the label past the long-press threshold, without moving, arms dragging', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Alpha', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      render();
+    });
+
+    const row = page.locator('.node-row[data-id="1"]');
+    const label = row.locator('.node-label');
+    await label.dispatchEvent('mousedown', { bubbles: true, clientX: 100, clientY: 100 });
+    await page.waitForTimeout(400);
+
+    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(true);
+    await expect(row).toHaveClass(/drag-armed/);
+  });
+
+  test('moving the pointer away before the long-press threshold elapses cancels arming', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Alpha', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      render();
+    });
+
+    const row = page.locator('.node-row[data-id="1"]');
+    const label = row.locator('.node-label');
+    await label.dispatchEvent('mousedown', { bubbles: true, clientX: 100, clientY: 100 });
+    await page.mouse.move(400, 400); // far past the cancel-distance threshold
+    await page.waitForTimeout(400); // well past the long-press threshold too
+
+    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(false);
+    await expect(row).not.toHaveClass(/drag-armed/);
+  });
+
+  test('releasing the press after arming resets the row back to non-draggable', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Alpha', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      render();
+    });
+
+    const row = page.locator('.node-row[data-id="1"]');
+    const label = row.locator('.node-label');
+    await label.dispatchEvent('mousedown', { bubbles: true, clientX: 100, clientY: 100 });
+    await page.waitForTimeout(400);
+    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(true);
+
+    await page.mouse.up();
+
+    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(false);
+    await expect(row).not.toHaveClass(/drag-armed/);
+  });
+
+  test('a long press on the fold icon of a row with children never arms dragging', async ({ page }) => {
+    // .fold-toggle/.fold-dot act on mousedown (instant collapse/expand) -- a press-and-hold
+    // gesture starting there is excluded from arming the long-press drag so it doesn't fight
+    // with that instant toggle.
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -193,18 +273,11 @@ test.describe('Node rows only initiate drag-reorder from the leading dot/fold ar
     });
 
     const row = page.locator('.node-row[data-id="1"]');
-    const handle = row.locator('.node-drag-handle');
-    await expect(handle).toBeVisible();
-    await handle.dispatchEvent('mousedown', { bubbles: true });
+    const foldToggle = row.locator('.fold-toggle, .fold-dot').first();
+    await foldToggle.dispatchEvent('mousedown', { bubbles: true });
+    await page.waitForTimeout(400);
 
-    const state = await row.evaluate((el) => (el as HTMLElement).draggable);
-    expect(state).toBe(true);
-
-    // @ts-expect-error
-    const collapsedAfter = await page.evaluate(() => Array.from(collapsedIds));
-    expect(collapsedAfter).toEqual([]);
-    // Child row must still be visible -- nothing collapsed.
-    await expect(page.locator('.node-row[data-id="2"]')).toBeVisible();
+    expect(await row.evaluate((el) => (el as HTMLElement).draggable)).toBe(false);
   });
 
   test('node label text is selectable (user-select is not none)', async ({ page }) => {
