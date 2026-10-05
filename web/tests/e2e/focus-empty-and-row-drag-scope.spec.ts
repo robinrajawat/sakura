@@ -518,6 +518,100 @@ test.describe('Node rows arm drag-reorder via a long press on the leading dot on
     expect(after.order).toEqual([1, 2]); // unchanged -- invalid drop target, no-op
   });
 
+  // Reported live, with a screenshot: dragging toward the top of the list showed the end-of-list
+  // indicator (the pane's own inset bottom border) and dropped at the bottom instead. Root cause:
+  // hovering the pane's own top padding -- or any blank space above the first row, or the gap
+  // between two rows -- never lands on a .node-row, and that used to be unconditionally treated
+  // as "drop at the very end", regardless of whether the pointer was actually near the top.
+  test('dragging into the blank space above the first row (not directly over any row) targets the TOP, not the end', async ({ page }) => {
+    await seedWelcomeSeen(page);
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Business Requirements', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 0, text: 'Business Case', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 3, depth: 0, text: 'High Level Task List', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 4;
+      // @ts-expect-error
+      render();
+    });
+
+    const lastDot = page.locator('.node-row[data-id="3"] .node-dot');
+    const lastBox = (await lastDot.boundingBox())!;
+    const firstRowBox = (await page.locator('.node-row[data-id="1"]').boundingBox())!;
+    const paneBox = (await page.locator('#editor-pane').boundingBox())!;
+    const aboveFirstRowY = Math.max(paneBox.y + 2, firstRowBox.y - 8); // the pane's own top padding, not any row
+
+    await page.mouse.move(lastBox.x + 3, lastBox.y + 3);
+    await page.mouse.down();
+    await page.waitForTimeout(400);
+    await page.mouse.move(firstRowBox.x + 10, aboveFirstRowY, { steps: 15 });
+    await page.waitForTimeout(50);
+
+    await expect(page.locator('#editor-pane')).not.toHaveClass(/drag-over-end/);
+    await expect(page.locator('.node-row[data-id="1"]')).toHaveClass(/drag-over-above/);
+    await page.mouse.up();
+
+    const after = await page.evaluate(() => ({
+      // @ts-expect-error
+      order: nodes.map((n: any) => n.id),
+    }));
+    expect(after.order).toEqual([3, 1, 2]);
+  });
+
+  test('dragging genuinely past the last row still targets the end of the list', async ({ page }) => {
+    await seedWelcomeSeen(page);
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Alpha', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 0, text: 'Beta', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 3, depth: 0, text: 'Gamma', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 4;
+      // @ts-expect-error
+      render();
+    });
+
+    const firstDot = page.locator('.node-row[data-id="1"] .node-dot');
+    const firstBox = (await firstDot.boundingBox())!;
+    const lastRowBox = (await page.locator('.node-row[data-id="3"]').boundingBox())!;
+    const paneBox = (await page.locator('#editor-pane').boundingBox())!;
+    const belowLastRowY = Math.min(paneBox.y + paneBox.height - 2, lastRowBox.y + lastRowBox.height + 20);
+
+    await page.mouse.move(firstBox.x + 3, firstBox.y + 3);
+    await page.mouse.down();
+    await page.waitForTimeout(400);
+    await page.mouse.move(lastRowBox.x + 10, belowLastRowY, { steps: 15 });
+    await page.waitForTimeout(50);
+
+    await expect(page.locator('#editor-pane')).toHaveClass(/drag-over-end/);
+    await page.mouse.up();
+
+    const after = await page.evaluate(() => ({
+      // @ts-expect-error
+      order: nodes.map((n: any) => n.id),
+    }));
+    expect(after.order).toEqual([2, 3, 1]);
+  });
+
   test('click-and-drag across rows selects the range between them, Dynalist-style', async ({ page }) => {
     await seedWelcomeSeen(page);
     await page.goto('file://' + indexPath);
