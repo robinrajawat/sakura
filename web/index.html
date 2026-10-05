@@ -41320,6 +41320,23 @@ function _addTagPopoverFromInput(){
   },true);
 })();
 
+// Hoisted ahead of the Todos/Meetings/Journal/Recap panel modules below (see the full Dock
+// panel tab strip orchestration comment further down, where these were originally declared):
+// each of those modules calls its own applyXLocation() at its own top-level boot time (e.g.
+// applyTodosLocation() a few hundred lines into the Todos module), which closes that panel via
+// closeXPanel() -> dockSyncRailVisibility() -> dockPanelIsOpen() whenever that feature is
+// disabled in settings. dockPanelIsOpen() reads DOCK_TAB_PANEL_ID -- a plain data map with no
+// dependencies of its own -- so declaring it only once script execution reached the Dock
+// module (hundreds of lines later) meant disabling Todos, Meetings, Journal, or Recap/Report
+// threw "Cannot access 'DOCK_TAB_PANEL_ID' before initialization" and aborted the rest of boot.
+// Reproduced directly: disabling the Meetings feature crashed on load with exactly that error.
+// Functions (dockPanelIsOpen, dockSyncRailVisibility, etc.) don't have this problem -- function
+// declarations are hoisted -- only these small id-map consts needed to move.
+const DOCK_TAB_PANEL_ID={journal:'journal-panel',meetings:'meetings-panel',todos:'todos-panel',report:'report-panel',library:'library-panel'};
+const DOCK_TAB_MAXIMIZE_ID={journal:'journal-panel-maximize',meetings:'meetings-panel-maximize',todos:'todos-panel-maximize',report:'report-panel-maximize',library:'library-panel-maximize'};
+const DOCK_TAB_MAXICON_ID={journal:'journal-max-icon',meetings:'meetings-max-icon',todos:'todos-max-icon',report:'report-max-icon',library:'library-max-icon'};
+const DOCK_TAB_CLOSE_ID={journal:'journal-panel-close',meetings:'meetings-panel-close',todos:'todos-panel-close',report:'report-panel-close',library:'library-panel-close'};
+
 // =====================================================================
 // === Todos panel (app-level, no document association) ================
 // =====================================================================
@@ -50004,10 +50021,10 @@ window.openActivityReport=openActivityReport;
 // anchor/drag/resize logic above is completely untouched — this layer only decides *when*
 // those functions get called (never more than one panel open at a time) and moves the
 // shared #dock-tabstrip header into whichever panel is currently showing.
-const DOCK_TAB_PANEL_ID={journal:'journal-panel',meetings:'meetings-panel',todos:'todos-panel',report:'report-panel',library:'library-panel'};
-const DOCK_TAB_MAXIMIZE_ID={journal:'journal-panel-maximize',meetings:'meetings-panel-maximize',todos:'todos-panel-maximize',report:'report-panel-maximize',library:'library-panel-maximize'};
-const DOCK_TAB_MAXICON_ID={journal:'journal-max-icon',meetings:'meetings-max-icon',todos:'todos-max-icon',report:'report-max-icon',library:'library-max-icon'};
-const DOCK_TAB_CLOSE_ID={journal:'journal-panel-close',meetings:'meetings-panel-close',todos:'todos-panel-close',report:'report-panel-close',library:'library-panel-close'};
+// DOCK_TAB_PANEL_ID/MAXIMIZE_ID/MAXICON_ID/CLOSE_ID used to be declared right here -- moved up
+// near the top of the Todos module instead, since each panel module's own top-level boot code
+// (applyTodosLocation() etc.) can call into dockPanelIsOpen(), which needs DOCK_TAB_PANEL_ID,
+// well before script execution ever reaches this point. See the comment at that new location.
 // toggleTodosPanel lives inside To-Dos' own module closure, reached only via window.;
 // the rest are ordinary top-level function declarations (already global).
 const DOCK_TAB_TOGGLE={
