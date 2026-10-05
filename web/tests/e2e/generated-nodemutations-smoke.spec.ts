@@ -55,7 +55,11 @@ test.describe('generated nodeMutations block (src/core/nodeMutations.ts spliced 
       indentRootIndexes(indentTestNodes, [1]);
 
       const outdentTestNodes = [{ depth: 0 }, { depth: 1 }, { depth: 1 }];
-      // @ts-expect-error — mixed-depth roots [0,1]: index 0 (depth 0) must be skipped, index 1 outdented
+      // @ts-expect-error — mixed-depth roots [0,1]: index 0 (depth 0) must be skipped, index 1
+      // outdented. Index 1 has a trailing same-depth sibling (index 2), so it also relocates past
+      // it (to the end of their old parent's children) rather than staying positioned in front of
+      // it — otherwise it would silently become that sibling's new parent (see outdentRootIndexes'
+      // own comment).
       outdentRootIndexes(outdentTestNodes, [0, 1]);
 
       return {
@@ -68,7 +72,9 @@ test.describe('generated nodeMutations block (src/core/nodeMutations.ts spliced 
     expect(pureResults.canIndentFirst).toBe(false);
     expect(pureResults.canIndentSecond).toBe(true);
     expect(pureResults.indentedDepths).toEqual([0, 1, 2, 0]);
-    expect(pureResults.outdentedDepths).toEqual([0, 0, 1]); // root 0 untouched, root 1 outdented
+    // root 0 untouched; root 1 outdented AND relocated past its trailing sibling (array order
+    // becomes [A, C, B] -- depths read in that order).
+    expect(pureResults.outdentedDepths).toEqual([0, 1, 0]);
 
     // 2. The real orchestration wrappers (indentSelected/outdentSelected), against real app
     // state: a 3-node tree, selecting the middle node and indenting it under the first. This

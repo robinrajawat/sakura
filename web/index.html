@@ -18625,9 +18625,16 @@ function getDropModeFromEvent(e,row){const rect=row.getBoundingClientRect(); con
 // That made long-press-then-drag silently do nothing for real users. Tracking the whole gesture
 // ourselves (mousemove/mouseup against dragState, reusing the same clearDragIndicators/
 // getDropModeFromEvent/handleDrop this file already had) sidesteps that timing requirement
-// entirely and is what lets the SAME press also become a click-and-drag multi-select when it
-// crosses into another row before the long-press threshold ever fires.
-function armNodeDrag(e,row,node,onTap){
+// entirely.
+//
+// allowReorder gates whether a long press here can arm a node-reorder at all: only the leading
+// dot (.fold-dot/.node-dot) passes true. Reordering from anywhere on the row's own text used to
+// be allowed too, but a long press on text is indistinguishable from the user just pausing while
+// reading/positioning the caret, and it's the one visible, dedicated "handle" spot anyway -- same
+// tradeoff the pre-#427 dedicated handle icon made, just relocated onto the existing dot instead
+// of a separate element. Crossing into another row before the long-press threshold fires still
+// starts a click-and-drag multi-select from anywhere on the row, reorder or not.
+function armNodeDrag(e,row,node,onTap,allowReorder){
   if(e.button!==0)return;
   const startX=e.clientX,startY=e.clientY;
   let lastX=startX,lastY=startY;
@@ -18636,9 +18643,9 @@ function armNodeDrag(e,row,node,onTap){
   // Only arms if the pointer is still roughly where it started: tolerates the natural hand
   // tremor of a genuine stationary hold, but a slow deliberate drag/text-selection that's still
   // within this row when the timer fires must not get hijacked into a node-reorder.
-  const timer=setTimeout(()=>{
+  const timer=allowReorder?setTimeout(()=>{
     if(Math.hypot(lastX-startX,lastY-startY)<=24){armed=true; row.classList.add('drag-armed')}
-  },300);
+  },300):null;
   const beginReorder=()=>{
     dragging=true; row.classList.remove('drag-armed');
     const isMultiDrag=multiSelectedIds.length>1&&multiSelectedIds.includes(node.id);
@@ -18688,7 +18695,7 @@ function armNodeDrag(e,row,node,onTap){
     const hoverRow=hit&&hit.closest&&hit.closest('.node-row');
     if(dragging){updateReorder(hit,hoverRow,me.clientY); return}
     if(selecting){updateSelect(hoverRow); return}
-    if(armed){beginReorder(); updateReorder(hit,hoverRow,me.clientY); return}
+    if(allowReorder&&armed){beginReorder(); updateReorder(hit,hoverRow,me.clientY); return}
     if(hoverRow&&hoverRow!==row){beginSelect(); updateSelect(hoverRow)}
   };
   const onUp=()=>{
@@ -19239,7 +19246,7 @@ function render(){ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds()
     if(liveInput&&document.activeElement===liveInput)_preservedCaretOffset=getEditableCaretOffset(liveInput);
   }
   const pane=el('editor-pane-inner'); pane.innerHTML=''; const focusIdx=focusedId!==null?getIndex(nodes,focusedId):-1; const focusActive=focusIdx>=0; const focusBaseDepth=focusActive?(nodes[focusIdx].depth+1):0; const focusEnd=focusActive?getSubtreeEnd(nodes,focusIdx):-1; if(focusActive)pane.appendChild(buildFocusBar(focusIdx)); if(focusActive && focusEnd<=focusIdx+1){const empty=document.createElement('div'); empty.className='empty-state focus-empty-state'; empty.innerHTML='<div style="font-size:.92em;opacity:.7;line-height:1.6;cursor:text">No sub-items yet. Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just start typing to add one.</div>'; empty.addEventListener('click',()=>{if(focusedId!==null)insertChildFirst(focusedId,true)}); pane.appendChild(empty);} else if(!nodes.length){const empty=document.createElement('div'); empty.className='empty-state doc-empty'; const hint='Press <kbd style="font-family:inherit;font-size:.85em;padding:1px 6px;border:1px solid var(--border);border-radius:5px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%)">Enter</kbd> or just type — or paste a tree.'; const greetName=getGreetingName(); const esTitle=greetName?`${esc(getGreetingTimePrefix())}, ${esc(greetName)}`:'Nothing here yet'; const esSubtitle=greetName?`Nothing here yet. ${hint}`:hint; empty.innerHTML=`<div><div class="empty-state-illustration"><svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg></div><div style="font-size:1.1em;margin-bottom:6px;color:var(--fg)">${esTitle}</div><div style="font-size:.88em;opacity:.7;line-height:1.6">${esSubtitle}</div><div class="empty-state-actions"><button class="btn primary" id="es-new-doc-btn">New document</button><button class="btn" id="es-ai-outline-btn">Generate with AI ✦</button></div></div>`; pane.appendChild(empty); const newDocBtn=document.getElementById('es-new-doc-btn'); if(newDocBtn)newDocBtn.addEventListener('click',()=>createDoc());
-const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(nodes,idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node,sectionMarkersDepthZero); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id,selectAllMode,multiSelectedIds,selectedId)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(hasChildren&&!isSectionNode?' has-kids':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); if(hideTreeLines){ const vDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); row.style.paddingLeft=(vDepth*32+0*editorScale)+'px'; if(depthGuideLines){ const vFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); vFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; row.appendChild(vg) } }) } } else { const prefix=focusActive?buildPrefix(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,treeIndentWidth,-focusBaseDepth):buildPrefix(nodes,idx,treeIndentWidth,0); const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx) } if(hasChildren&&hideTreeLines){ const foldBtn=document.createElement('span'); foldBtn.className='fold-dot'+(folded?' is-folded':''); foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=''}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>toggleCollapse(node.id))}); row.appendChild(foldBtn) } else if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){
+const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn)aiOutlineBtn.addEventListener('click',()=>generateOutlineWithAi(aiOutlineBtn));} else {const frag=document.createDocumentFragment(); const counters=[]; let skipDepth=null; nodes.forEach((node,idx)=>{ if(focusActive&&(idx<=focusIdx||idx>=focusEnd)){ return } if(skipDepth!==null){ if(node.depth>skipDepth){ return } else { skipDepth=null } } const folded=collapsedIds.has(node.id); const hasChildren=nodeHasChildren(nodes,idx); if(folded&&hasChildren) skipDepth=node.depth; let numberStr=''; if(outlineNumbering){ const depth=(node.depth||0)-(focusActive?focusBaseDepth:0); counters.length=depth+1; counters[depth]=(counters[depth]||0)+1; numberStr=counters.slice(0,depth+1).join('.') } const row=document.createElement('div'); const isSectionNode=nodeIsSection(node,sectionMarkersDepthZero); const isMatch=searchMatches.includes(node.id); const isCurrentMatch=isMatch&&searchMatches[searchIndex]===node.id; row.className='node-row'+(isIdSelected(node.id,selectAllMode,multiSelectedIds,selectedId)?' selected':'')+(node.id===selectedId?' primary-selection':'')+(node.id===flashNodeId?' flash-new':'')+(isSectionNode?' is-section':'')+(hasChildren&&!isSectionNode?' has-kids':'')+(isMatch?' search-match':'')+(isCurrentMatch?' search-current':''); row.dataset.id=String(node.id); if(hideTreeLines){ const vDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); row.style.paddingLeft=(vDepth*32+0*editorScale)+'px'; if(depthGuideLines){ const vFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); vFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; row.appendChild(vg) } }) } } else { const prefix=focusActive?buildPrefix(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,treeIndentWidth,-focusBaseDepth):buildPrefix(nodes,idx,treeIndentWidth,0); const pfx=document.createElement('span'); pfx.className='node-prefix'; pfx.innerHTML=(prefix.vert?`<span>${esc(prefix.vert)}</span>`:'')+(prefix.conn?`<span class="node-conn">${esc(prefix.conn)}</span>`:''); row.appendChild(pfx) } if(hasChildren&&hideTreeLines){ const foldBtn=document.createElement('span'); foldBtn.className='fold-dot'+(folded?' is-folded':''); foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=''}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,()=>toggleCollapse(node.id),true)}); row.appendChild(foldBtn) } else if(hasChildren){ const foldBtn=document.createElement('span'); foldBtn.className='fold-toggle'; foldBtn.textContent=folded?'▸':'▾'; foldBtn.dataset.tip=folded?'Expand subtree':'Collapse subtree'; foldBtn.addEventListener('mouseenter',()=>{foldBtn.classList.add('is-hover'); foldBtn.textContent=folded?'+':'−'}); foldBtn.addEventListener('mouseleave',()=>{foldBtn.classList.remove('is-hover'); foldBtn.textContent=folded?'▸':'▾'}); foldBtn.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); toggleCollapse(node.id)}); row.appendChild(foldBtn) } else if(hideTreeLines){ const dot=document.createElement('span'); dot.className='node-dot'; dot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); armNodeDrag(e,row,node,null,true)}); row.appendChild(dot) } if(numberStr){ const numEl=document.createElement('span'); numEl.className='node-number'; numEl.textContent=numberStr; row.appendChild(numEl) } if(node.id===editingId){
   const stCls=(node.styles.bold?' style-bold':'')+(node.styles.italic?' style-italic':'')+(node.styles.underline?' style-underline':'')+(node.styles.strike?' style-strike':'')+(node.styles.heading?' style-heading-'+node.styles.heading:'');
   const iColor=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)');
   const input=document.createElement('div'); input.className='node-input'+stCls; input.contentEditable='true'; input.style.color=iColor;
@@ -19288,7 +19295,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Dynalist-style note preview is now rendered as a sub-line directly under this row (see just
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
-  row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId??node.id; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,node.id); selectedId=node.id; render(); return} if(e.ctrlKey||e.metaKey){selectAllMode=false; const set=new Set(multiSelectedIds.length?multiSelectedIds:(selectedId!==null?[selectedId]:[])); if(set.has(node.id))set.delete(node.id); else set.add(node.id); multiSelectedIds=nodes.map(n=>n.id).filter(id=>set.has(id)); selectedId=node.id; selectionAnchorId=node.id; if(multiSelectedIds.length<=1){const remaining=multiSelectedIds[0]??node.id; setSingleSelection(remaining)} render(); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode))return; const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); frag.appendChild(row);
+  row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId??node.id; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,node.id); selectedId=node.id; render(); return} if(e.ctrlKey||e.metaKey){selectAllMode=false; const set=new Set(multiSelectedIds.length?multiSelectedIds:(selectedId!==null?[selectedId]:[])); if(set.has(node.id))set.delete(node.id); else set.add(node.id); multiSelectedIds=nodes.map(n=>n.id).filter(id=>set.has(id)); selectedId=node.id; selectionAnchorId=node.id; if(multiSelectedIds.length<=1){const remaining=multiSelectedIds[0]??node.id; setSingleSelection(remaining)} render(); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode))return; const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); frag.appendChild(row);
   if((forceInlineNoteId===node.id||(alwaysExpandInlineEnabled!==inlineExpandNoteNodeIds.has(node.id)))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
@@ -19520,18 +19527,43 @@ function indentRootIndexes(nodes, rootIndexes) {
     }
 }
 /** Mutates `nodes` in place, decrementing `.depth` by 1 for every node in each root index's
- * subtree — EXCEPT root indexes already at depth 0, which are individually skipped (preserved
- * from the original: a mixed-depth selection partially outdents, rather than being an
- * all-or-nothing operation the way the outer guard for whether to run at all is). See
- * indentRootIndexes's own comment for why this mutates in place and doesn't call
- * rebuildParentIds() itself. */
+ * subtree and relocating that subtree to the end of its OLD parent's children block — EXCEPT
+ * root indexes already at depth 0, which are individually skipped (preserved from the original:
+ * a mixed-depth selection partially outdents, rather than being an all-or-nothing operation the
+ * way the outer guard for whether to run at all is).
+ *
+ * The relocation is the fix for a real bug: parentId throughout this app is derived purely from
+ * array position + depth (the nearest preceding node at depth-1 — see rebuildParentIdsCore), not
+ * stored directly. An earlier version of this function only decremented depth in place, never
+ * moving the block — so outdenting a MIDDLE sibling (one with trailing same-depth siblings still
+ * after it) left it sitting positionally in front of those siblings at its new, shallower depth,
+ * silently making it their new parent. Reported live: outdenting a folded "High Level Task List"
+ * node pulled every sibling below it in as its children. Relocating the outdented block to right
+ * after the last trailing same-depth sibling (the end of the old parent's full children block)
+ * keeps those siblings correctly parented to the original parent; when there are no trailing
+ * siblings (the common case — outdenting the last child), this relocation is a no-op by
+ * construction, so single-item outdents are unaffected.
+ *
+ * Root indexes are tracked by node reference, not by the numeric index passed in, and
+ * re-resolved via indexOf before each iteration — relocating an earlier root in a multi-root call
+ * shifts the array positions of everything after it, so a later root's original numeric index
+ * would otherwise be stale by the time its turn comes. See indentRootIndexes's own comment for
+ * why this mutates in place and doesn't call rebuildParentIds() itself. */
 function outdentRootIndexes(nodes, rootIndexes) {
-    for (const idx of rootIndexes) {
-        if (nodes[idx].depth === 0)
+    const roots = rootIndexes.map(idx => nodes[idx]);
+    for (const rootNode of roots) {
+        if (rootNode.depth === 0)
             continue;
+        const idx = nodes.indexOf(rootNode);
         const end = getSubtreeEnd(nodes, idx);
-        for (let i = idx; i < end; i++)
-            nodes[i].depth -= 1;
+        const myDepth = rootNode.depth;
+        let groupEnd = end;
+        while (groupEnd < nodes.length && nodes[groupEnd].depth === myDepth)
+            groupEnd = getSubtreeEnd(nodes, groupEnd);
+        const block = nodes.splice(idx, end - idx);
+        for (const n of block)
+            n.depth -= 1;
+        nodes.splice(groupEnd - (end - idx), 0, ...block);
     }
 }
 /** Pure: can the node at `idx` move up past its preceding sibling? False for the very first
