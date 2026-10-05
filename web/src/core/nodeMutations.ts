@@ -84,16 +84,40 @@ export function indentRootIndexes(nodes: QueryableNode[], rootIndexes: number[])
 }
 
 /** Mutates `nodes` in place, decrementing `.depth` by 1 for every node in each root index's
- * subtree — EXCEPT root indexes already at depth 0, which are individually skipped (preserved
- * from the original: a mixed-depth selection partially outdents, rather than being an
- * all-or-nothing operation the way the outer guard for whether to run at all is). See
- * indentRootIndexes's own comment for why this mutates in place and doesn't call
- * rebuildParentIds() itself. */
+ * subtree and relocating that subtree to the end of its OLD parent's children block — EXCEPT
+ * root indexes already at depth 0, which are individually skipped (preserved from the original:
+ * a mixed-depth selection partially outdents, rather than being an all-or-nothing operation the
+ * way the outer guard for whether to run at all is).
+ *
+ * The relocation is the fix for a real bug: parentId throughout this app is derived purely from
+ * array position + depth (the nearest preceding node at depth-1 — see rebuildParentIdsCore), not
+ * stored directly. An earlier version of this function only decremented depth in place, never
+ * moving the block — so outdenting a MIDDLE sibling (one with trailing same-depth siblings still
+ * after it) left it sitting positionally in front of those siblings at its new, shallower depth,
+ * silently making it their new parent. Reported live: outdenting a folded "High Level Task List"
+ * node pulled every sibling below it in as its children. Relocating the outdented block to right
+ * after the last trailing same-depth sibling (the end of the old parent's full children block)
+ * keeps those siblings correctly parented to the original parent; when there are no trailing
+ * siblings (the common case — outdenting the last child), this relocation is a no-op by
+ * construction, so single-item outdents are unaffected.
+ *
+ * Root indexes are tracked by node reference, not by the numeric index passed in, and
+ * re-resolved via indexOf before each iteration — relocating an earlier root in a multi-root call
+ * shifts the array positions of everything after it, so a later root's original numeric index
+ * would otherwise be stale by the time its turn comes. See indentRootIndexes's own comment for
+ * why this mutates in place and doesn't call rebuildParentIds() itself. */
 export function outdentRootIndexes(nodes: QueryableNode[], rootIndexes: number[]): void {
-  for (const idx of rootIndexes) {
-    if (nodes[idx].depth === 0) continue;
+  const roots = rootIndexes.map(idx => nodes[idx]);
+  for (const rootNode of roots) {
+    if (rootNode.depth === 0) continue;
+    const idx = nodes.indexOf(rootNode);
     const end = getSubtreeEnd(nodes, idx);
-    for (let i = idx; i < end; i++) nodes[i].depth -= 1;
+    const myDepth = rootNode.depth;
+    let groupEnd = end;
+    while (groupEnd < nodes.length && nodes[groupEnd].depth === myDepth) groupEnd = getSubtreeEnd(nodes, groupEnd);
+    const block = nodes.splice(idx, end - idx);
+    for (const n of block) n.depth -= 1;
+    nodes.splice(groupEnd - (end - idx), 0, ...block);
   }
 }
 

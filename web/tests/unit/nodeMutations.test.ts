@@ -100,17 +100,49 @@ describe('outdentRootIndexes', () => {
   });
 
   it('skips a root already at depth 0, leaving it and its subtree untouched', () => {
-    // Oracle: matches the original outdentSelected's per-root `if(nodes[idx].depth===0)continue`
-    // — a mixed-depth multi-selection partially outdents rather than being all-or-nothing.
-    const nodes = tree([0, 1, 1]); // A(0) B(1) C(1), roots = [A, B] (mixed depths)
+    // Oracle: matches outdentSelected's per-root `if(nodes[idx].depth===0)continue` -- a mixed-
+    // depth multi-selection partially outdents rather than being all-or-nothing. B's only child
+    // here is its own (B1), not a trailing sibling of A's, so relocation is a no-op.
+    const nodes = tree([0, 1, 2]); // A(0) B(1) B1(2), roots = [A, B] (mixed depths)
     outdentRootIndexes(nodes, [0, 1]);
-    expect(nodes.map((n) => n.depth)).toEqual([0, 0, 1]); // A untouched, B outdented, C untouched
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 3]); // order unchanged
+    expect(nodes.map((n) => n.depth)).toEqual([0, 0, 1]); // A untouched, B+B1 outdented together
   });
 
   it('never produces a negative depth (only ever called on roots already confirmed depth > 0 by the guard, but the skip is defense in depth)', () => {
     const nodes = tree([0]);
     outdentRootIndexes(nodes, [0]);
     expect(nodes[0].depth).toBe(0);
+  });
+
+  // Regression: parentId throughout the app is derived purely from array position + depth (the
+  // nearest preceding node at depth-1 -- see rebuildParentIdsCore), not stored directly.
+  // Outdenting a MIDDLE sibling used to only decrement its depth without moving it, leaving it
+  // sitting positionally in front of its own former siblings at a shallower depth -- which
+  // silently made it their new parent. Reported live: outdenting a folded "High Level Task List"
+  // node pulled every sibling below it in as its children.
+  it('outdenting a middle sibling relocates it past its trailing same-depth siblings, instead of silently becoming their parent', () => {
+    // Cutover(0) > HighLevelTaskList(1), PricingRecords(1), RouteMaster(1) -- outdent HLTL.
+    const nodes = tree([0, 1, 1, 1]);
+    outdentRootIndexes(nodes, [1]);
+    expect(nodes.map((n) => n.id)).toEqual([1, 3, 4, 2]); // HLTL (id 2) lands after its old siblings
+    expect(nodes.map((n) => n.depth)).toEqual([0, 1, 1, 0]);
+  });
+
+  it('a relocated node carries its own children along with it, and those children do not leak into the trailing siblings', () => {
+    // Cutover(0) > HLTL(1) > HLTLchild(2), PricingRecords(1), RouteMaster(1) -- outdent HLTL.
+    const nodes = tree([0, 1, 2, 1, 1]);
+    outdentRootIndexes(nodes, [1]);
+    expect(nodes.map((n) => n.id)).toEqual([1, 4, 5, 2, 3]);
+    expect(nodes.map((n) => n.depth)).toEqual([0, 1, 1, 0, 1]); // HLTLchild still depth 1 under HLTL
+  });
+
+  it('multiple non-adjacent roots relocate independently without stale indices from earlier splices', () => {
+    // A(0) > B(1), C(1) ; D(0) > E(1), F(1) -- outdent both B and E in one call.
+    const nodes = tree([0, 1, 1, 0, 1, 1]);
+    outdentRootIndexes(nodes, [1, 4]);
+    expect(nodes.map((n) => n.id)).toEqual([1, 3, 2, 4, 6, 5]);
+    expect(nodes.map((n) => n.depth)).toEqual([0, 1, 0, 0, 1, 0]);
   });
 });
 
