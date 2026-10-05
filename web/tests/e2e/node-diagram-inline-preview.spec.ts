@@ -17,6 +17,10 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 }
 
 const FAKE_PREVIEW_SVG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="red"/></svg>');
+// A realistically-sized diagram export (typical draw.io dimensions), to prove the preview shows
+// the real diagram at something close to its own size rather than squashing it into a small
+// fixed-size thumbnail that's illegible for anything but the simplest diagram.
+const LARGE_PREVIEW_SVG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="800" height="500" fill="white" stroke="black"/><text x="40" y="40">Step 1</text></svg>');
 
 // Diagrams now preview inline the same way notes/remarks/Q&A already do, instead of the dot
 // jumping straight to the Pad panel + the full draw.io editor on every click. The dot toggles
@@ -150,6 +154,40 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
 
     const titles = await page.locator('.node-diagram-line .node-diagram-preview-title').allTextContents();
     expect(titles).toEqual(['Flow A', 'Flow B']);
+  });
+
+  test('the preview shows the real diagram at its own size, not a tiny fixed thumbnail', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Big Flow', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      padDiagramsTabEnabled = true;
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]);
+      // @ts-expect-error
+      render();
+    }, LARGE_PREVIEW_SVG);
+
+    const thumb = page.locator('.node-diagram-preview-thumb');
+    await expect(thumb).not.toHaveClass(/node-diagram-preview-empty/);
+    const img = thumb.locator('img');
+    const box = await img.boundingBox();
+    expect(box).not.toBeNull();
+    // Old behavior squashed every preview into a 240x150 box regardless of the real diagram's
+    // size. The real diagram here is 800x500 -- the rendered width must be well past the old
+    // thumbnail's cap, proving it's sized from the actual image, not a fixed small box.
+    expect(box!.width).toBeGreaterThan(300);
   });
 
   test('a node with no diagrams shows no diagram dot and no inline preview', async ({ page }) => {
