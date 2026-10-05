@@ -18656,24 +18656,45 @@ function armNodeDrag(e,row,node,onTap,allowReorder){
     window.getSelection()?.removeAllRanges();
     document.body.style.userSelect='none';
   };
-  const updateReorder=(hit,hoverRow,clientY)=>{
-    document.querySelectorAll('.node-row.drag-over-above,.node-row.drag-over-below,.node-row.drag-over-child').forEach(r=>r.classList.remove('drag-over-above','drag-over-below','drag-over-child'));
-    pane.classList.remove('drag-over-end');
+  const trySetRowTarget=(row,mode)=>{
     const draggedIds=(dragState.draggedIds&&dragState.draggedIds.length)?dragState.draggedIds:[dragState.draggedId];
-    if(!hoverRow){
-      if(hit&&pane.contains(hit)){dragState.targetId=null; dragState.mode='end'; pane.classList.add('drag-over-end')}
-      else {dragState.targetId=null; dragState.mode=null}
-      return;
-    }
-    const targetId=Number(hoverRow.dataset.id);
+    const targetId=Number(row.dataset.id);
     if(draggedIds.includes(targetId)){dragState.targetId=null; dragState.mode=null; return}
     const targetIdx=getIndex(nodes,targetId);
     if(targetIdx<0){dragState.targetId=null; dragState.mode=null; return}
     const invalid=draggedIds.some(did=>{const fromIdx=getIndex(nodes,did); return fromIdx<0||isDescendantIndex(nodes,targetIdx,fromIdx)});
     if(invalid){dragState.targetId=null; dragState.mode=null; return}
-    const mode=getDropModeFromEvent({clientY},hoverRow);
     dragState.targetId=targetId; dragState.mode=mode;
-    hoverRow.classList.add(mode==='above'?'drag-over-above':(mode==='below'?'drag-over-below':'drag-over-child'));
+    row.classList.add(mode==='above'?'drag-over-above':(mode==='below'?'drag-over-below':'drag-over-child'));
+  };
+  // When the pointer isn't directly over a row -- the title area, padding above the first row,
+  // a margin gap between two rows, anything inside the pane that isn't a .node-row -- this used
+  // to unconditionally treat it as "drop at the very end of the list", regardless of whether the
+  // pointer was actually near the TOP of the list. Reported live, with a screenshot: dragging
+  // toward the top showed the end-of-list indicator and dropped at the bottom instead. Resolve
+  // against the nearest actual row by position instead of assuming "end" just because no row was
+  // directly under the cursor.
+  const updateReorder=(hit,hoverRow,clientY)=>{
+    document.querySelectorAll('.node-row.drag-over-above,.node-row.drag-over-below,.node-row.drag-over-child').forEach(r=>r.classList.remove('drag-over-above','drag-over-below','drag-over-child'));
+    pane.classList.remove('drag-over-end');
+    if(hoverRow){
+      trySetRowTarget(hoverRow,getDropModeFromEvent({clientY},hoverRow));
+      return;
+    }
+    if(!hit||!pane.contains(hit)){dragState.targetId=null; dragState.mode=null; return}
+    const rows=Array.from(document.querySelectorAll('.node-row'));
+    if(!rows.length){dragState.targetId=null; dragState.mode=null; return}
+    if(clientY<rows[0].getBoundingClientRect().top){trySetRowTarget(rows[0],'above'); return}
+    const lastRect=rows[rows.length-1].getBoundingClientRect();
+    if(clientY>=lastRect.bottom){dragState.targetId=null; dragState.mode='end'; pane.classList.add('drag-over-end'); return}
+    let nearest=rows[0],nearestDist=Infinity;
+    for(const r of rows){
+      const rect=r.getBoundingClientRect();
+      const dist=Math.abs(clientY-(rect.top+rect.bottom)/2);
+      if(dist<nearestDist){nearestDist=dist; nearest=r}
+    }
+    const nearRect=nearest.getBoundingClientRect();
+    trySetRowTarget(nearest,clientY<(nearRect.top+nearRect.bottom)/2?'above':'below');
   };
   const beginSelect=()=>{
     selecting=true; clearTimeout(timer); row.classList.remove('drag-armed');
