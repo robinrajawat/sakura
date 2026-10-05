@@ -41325,17 +41325,28 @@ function _addTagPopoverFromInput(){
 // each of those modules calls its own applyXLocation() at its own top-level boot time (e.g.
 // applyTodosLocation() a few hundred lines into the Todos module), which closes that panel via
 // closeXPanel() -> dockSyncRailVisibility() -> dockPanelIsOpen() whenever that feature is
-// disabled in settings. dockPanelIsOpen() reads DOCK_TAB_PANEL_ID -- a plain data map with no
-// dependencies of its own -- so declaring it only once script execution reached the Dock
-// module (hundreds of lines later) meant disabling Todos, Meetings, Journal, or Recap/Report
-// threw "Cannot access 'DOCK_TAB_PANEL_ID' before initialization" and aborted the rest of boot.
-// Reproduced directly: disabling the Meetings feature crashed on load with exactly that error.
+// disabled in settings. dockPanelIsOpen() reads DOCK_TAB_PANEL_ID, and dockSyncRailVisibility()
+// itself reads/writes dockActiveTab -- plain data with no dependencies of their own -- so
+// declaring them only once script execution reached the Dock module (hundreds of lines later)
+// meant disabling Todos, Meetings, Journal, or Recap/Report threw "Cannot access ... before
+// initialization" and aborted the rest of boot.
+// Reproduced directly both times: disabling Meetings first threw on DOCK_TAB_PANEL_ID (fixed by
+// moving the four id-map consts below); the very next live report, still with Meetings
+// disabled, threw on dockActiveTab instead -- the same function's very next line, missed the
+// first time because dockSyncRailVisibility()'s only other dependency wasn't grep'd for with
+// the same care. Moved dockActiveTab here too and actually traced the function's full body this
+// time (and its only caller in this early path, dockPanelIsOpen) rather than fixing one crash
+// report at a time. dockLastTab/dockMaximized/DOCK_TAB_TOGGLE are NOT referenced anywhere in
+// this early-boot path (confirmed: dockSyncRailVisibility touches only dockActiveTab and calls
+// only dockPanelIsOpen, which touches only DOCK_TAB_PANEL_ID) -- left at their original
+// declaration site since moving them would be unneeded scope creep, not defensiveness.
 // Functions (dockPanelIsOpen, dockSyncRailVisibility, etc.) don't have this problem -- function
-// declarations are hoisted -- only these small id-map consts needed to move.
+// declarations are hoisted -- only plain-data let/const bindings needed to move.
 const DOCK_TAB_PANEL_ID={journal:'journal-panel',meetings:'meetings-panel',todos:'todos-panel',report:'report-panel',library:'library-panel'};
 const DOCK_TAB_MAXIMIZE_ID={journal:'journal-panel-maximize',meetings:'meetings-panel-maximize',todos:'todos-panel-maximize',report:'report-panel-maximize',library:'library-panel-maximize'};
 const DOCK_TAB_MAXICON_ID={journal:'journal-max-icon',meetings:'meetings-max-icon',todos:'todos-max-icon',report:'report-max-icon',library:'library-max-icon'};
 const DOCK_TAB_CLOSE_ID={journal:'journal-panel-close',meetings:'meetings-panel-close',todos:'todos-panel-close',report:'report-panel-close',library:'library-panel-close'};
+let dockActiveTab=null;
 
 // =====================================================================
 // === Todos panel (app-level, no document association) ================
@@ -50041,7 +50052,8 @@ const DOCK_TAB_TOGGLE={
 // tab instead of opening one whose entry points are all hidden.
 function dockTabEnabled(tab){ const f=FEATURE_FLAGS[tab]; return !f||f.get(); }
 function firstEnabledDockTab(){ return ['todos','meetings','journal','library','report'].find(dockTabEnabled)||null; }
-let dockActiveTab=null;
+// dockActiveTab used to be declared right here -- moved up near the top of the Todos module
+// alongside DOCK_TAB_PANEL_ID; see the comment there.
 // Which tab reopens when the app-bar launcher is clicked with nothing currently open —
 // persisted so it's remembered across a reload, not just within the session.
 let dockLastTab='journal';
