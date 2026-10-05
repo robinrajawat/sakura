@@ -6,13 +6,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Regression test: the depth guide lines (.node-vguide) are drawn at a fixed pixel offset per
-// indent level, independent of the drag handle (.node-drag-handle) that sits in front of each
-// row's dot/text. When the drag handle was added as a real layout element (10px wide + 3px
-// margin, taking normal-flow space before the dot rather than overlaying), the guide line's own
-// offset was never updated to match -- so every guide line rendered ~13.75px to the left of the
-// dot column it's supposed to run through, instead of passing straight through each ancestor's
-// dot center as intended.
-test.describe('Depth guide lines stay aligned with the drag handle present', () => {
+// indent level, which must track wherever the leading dot/fold-icon column actually sits -- any
+// change to what comes before it in the row (e.g. removing the separate drag-handle icon in favor
+// of a long-press-anywhere drag gesture) shifts that column and needs the guide offset updated to
+// match, or every guide line renders off to one side of the dot column it's supposed to run
+// through instead of passing straight through each ancestor's dot center as intended.
+test.describe('Depth guide lines stay aligned with each ancestor\'s dot center', () => {
   test('a depth guide line at column d sits exactly on the x-center of a dot at that same depth', async ({ page }) => {
     await page.goto('file://' + indexPath);
     const landing = page.locator('#sakura-landing-overlay');

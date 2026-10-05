@@ -20,11 +20,12 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 }
 
 // Three related bugs in the inline Note/Remark/Q&A lines rendered directly under a row:
-// 1. Their own paddingLeft formula used a trailing +24px offset left over from before the drag
-//    handle became a real layout element -- the row's own text actually starts 36px past the
-//    depth base (13px drag handle + 18px dot + 6px dot margin), not 24px, so every inline note/
-//    remark/Q&A line sat ~12px to the left of the text it's describing instead of lining up
-//    under it.
+// 1. Their own paddingLeft formula used a trailing offset that didn't match where the row's own
+//    text actually starts (the dot/fold-icon width plus its margin past the depth base), so every
+//    inline note/remark/Q&A line sat off to the left of the text it's describing instead of
+//    lining up under it. This constant needs revisiting any time the leading dot/icon area's
+//    own width changes (e.g. when the separate drag-handle icon was removed in favor of a
+//    long-press-anywhere drag gesture, which shifted every row's text start left).
 // 2. All three were unconditionally hidden whenever their node was folded (`&&!folded`), even
 //    though folding only hides a node's CHILDREN -- a note/remark/Q&A that belongs to the folded
 //    node itself has nothing to do with whether its children are shown.
