@@ -2016,12 +2016,16 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-qa-label{flex:0 0 auto;font-weight:700;color:var(--hint);width:12px;text-align:center;user-select:none}
 .node-qa-question{flex:1;min-width:0;color:var(--fg);cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
 .node-qa-answer{flex:1;min-width:0;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
-.node-diagram-line{position:relative;max-width:calc(100% - 16px);padding-top:4px;padding-bottom:6px}
-.node-diagram-preview-card{display:inline-flex;flex-direction:column;gap:4px;max-width:260px}
-.node-diagram-preview-thumb{width:240px;max-width:100%;height:150px;border-radius:8px;border:1px solid var(--border);background:var(--canvas-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--hint);cursor:pointer}
+.node-diagram-line{position:relative;max-width:calc(100% - 16px);padding-top:4px;padding-bottom:8px}
+.node-diagram-preview-card{display:block;max-width:100%}
+/* Shows the real diagram at its own natural size (not a tiny thumbnail — illegible for anything
+   but the simplest diagram) up to generous caps so one huge diagram can't take over the whole
+   pane. Only the empty/placeholder state (nothing to size from yet) gets a fixed small box. */
+.node-diagram-preview-thumb{display:inline-block;max-width:100%;border-radius:8px;border:1px solid var(--border);background:var(--canvas-bg);overflow:hidden;color:var(--hint);cursor:pointer;line-height:0}
 .node-diagram-preview-thumb:hover{border-color:var(--accent)}
-.node-diagram-preview-thumb img{width:100%;height:100%;object-fit:contain}
-.node-diagram-preview-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.node-diagram-preview-thumb img{display:block;max-width:100%;max-height:70vh;width:auto;height:auto}
+.node-diagram-preview-thumb.node-diagram-preview-empty{width:240px;height:150px;display:flex;align-items:center;justify-content:center}
+.node-diagram-preview-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:4px}
 .node-diagram-preview-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .node-qa-answer:hover,.node-qa-question:hover{opacity:1}
 .node-qa-answer:focus{opacity:1;color:var(--fg)}
@@ -19437,9 +19441,10 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'; thumb.dataset.tip='Click to open in the diagram editor';
       if(d.previewSvg){
         const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
-        img.addEventListener('error',()=>{ thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
+        img.addEventListener('error',()=>{ thumb.classList.add('node-diagram-preview-empty'); thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
         thumb.appendChild(img);
       } else {
+        thumb.classList.add('node-diagram-preview-empty');
         thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>';
         thumb.dataset.tip='No preview yet — click to open and generate one';
       }
