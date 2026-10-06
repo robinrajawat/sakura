@@ -371,4 +371,128 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     });
     expect(note).toMatch(/<(b|strong)>world<\/(b|strong)>/i);
   });
+
+  // The note's own right-click menu had no way to add a table at all -- only a paste could put
+  // one there. "Insert table" builds the exact same 2x2-to-start shape (real <thead><th> header,
+  // contentEditable cells) as Pad's own "Insert table" toolbar button, at the caret position the
+  // right-click itself landed on.
+  test('"Insert table" from the note\'s own right-click menu adds an editable 2x2 table at the caret', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, 'Before text', true);
+
+    await page.evaluate(() => {
+      const el = document.getElementById('note-line-1')!;
+      const textNode = el.firstChild!;
+      const rg = document.createRange(); rg.setStart(textNode, textNode.textContent!.length); rg.collapse(true);
+      const sel = window.getSelection()!; sel.removeAllRanges(); sel.addRange(rg);
+    });
+    await page.locator('#note-line-1').click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Insert table', { exact: true }).click();
+
+    const result = await page.evaluate(() => {
+      const el = document.getElementById('note-line-1')!;
+      const table = el.querySelector('table');
+      return {
+        hasThead: !!table?.querySelector('thead th'),
+        rowCount: table?.querySelectorAll('tr').length,
+        cellsEditable: table ? [...table.querySelectorAll('td,th')].every(c => c.getAttribute('contenteditable') === 'true') : false,
+        // @ts-expect-error
+        noteHasTable: /<table/i.test(nodes.find((n: any) => n.id === 1).note || ''),
+      };
+    });
+    expect(result.hasThead).toBe(true);
+    expect(result.rowCount).toBe(3); // header + 2 body rows
+    expect(result.cellsEditable).toBe(true);
+    expect(result.noteHasTable).toBe(true);
+  });
+
+  // _attachTableResizeHandles only ever looked inside <thead> for header cells to attach a handle
+  // to -- a pasted table (unlike one built via Pad's or the note's own "Insert table") commonly
+  // has no <thead> wrapper at all, leaving it with zero resize handles. Falls back to the first
+  // row's own cells (th or td alike) when there's no thead.
+  test('column resize handles attach even to a pasted table with no <thead>', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    // A plain table with no <thead> -- exactly what a simple paste commonly produces.
+    await seedNodeWithNote(page, '<table><tr><td>A</td><td>B</td></tr><tr><td>1</td><td>2</td></tr></table>');
+
+    const handleCount = await page.evaluate(() => {
+      const table = document.querySelector('#note-line-1 table')!;
+      // @ts-expect-error
+      _attachTableResizeHandles(table);
+      return table.querySelectorAll('.col-resize-handle').length;
+    });
+    expect(handleCount).toBe(2);
+  });
+
+  // The resize handle itself had no CSS anywhere -- a bare, unstyled <div> renders at its default
+  // content-based size (0x0, since it has no content), making the real drag logic behind it
+  // functionally invisible and ungrabbable. This isn't a note-only fix (the same handles back
+  // Pad's own tables), just exercised here since a note's table is the easiest to set up.
+  test('the column resize handle actually has a visible, grabbable size', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
+
+    const rect = await page.evaluate(() => {
+      const handle = document.querySelector('#note-line-1 .col-resize-handle')!;
+      const r = handle.getBoundingClientRect();
+      return { width: r.width, height: r.height };
+    });
+    expect(rect.width).toBeGreaterThan(0);
+    expect(rect.height).toBeGreaterThan(0);
+  });
+
+  // Pasted images had no way to resize at all. _setupImageResize/_imgResizeSelect/_imgResizePersist
+  // already back Pad's own images (click to select, drag the corner handle, double-click to
+  // reset) -- wired into the note-line's own click/dblclick instead of through that function
+  // directly, since it looks its editor up by a fixed id and each note-line is a fresh element
+  // with a new per-node id every render().
+  test('a pasted image can be selected and resized, persisting the new width to node.note', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">');
+
+    const img = page.locator('#note-line-1 img');
+    await img.click();
+    await expect(img).toHaveClass(/editor-img-selected/);
+
+    const handle = page.locator('#img-resize-handle');
+    await expect(handle).toBeVisible();
+    const box = (await img.boundingBox())!;
+    await page.mouse.move(box.x + box.width, box.y + box.height);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width + 60, box.y + box.height, { steps: 5 });
+    await page.mouse.up();
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      const note = nodes.find((n: any) => n.id === 1).note;
+      const div = document.createElement('div'); div.innerHTML = note;
+      return { styledWidth: div.querySelector('img')?.style.width, stillSelectedInSaved: /editor-img-selected/.test(note) };
+    });
+    expect(result.styledWidth).toMatch(/^\d+px$/);
+    expect(parseInt(result.styledWidth!, 10)).toBeGreaterThan(1);
+    expect(result.stillSelectedInSaved).toBe(false); // the transient selection class must never be persisted
+  });
+
+  // Was a bare stroked squiggle+dot with no outer circle, unlike every sibling dot icon (note's
+  // page shape, remark's person, diagram's rects) which fills a good portion of its 24x24 box --
+  // see qaDotIconSvg's own comment. Confirms it now matches the correct version already used by
+  // the right-click menu's "Add question…" entry (CTX_ACTION_META.qa).
+  test('the Q&A inline dot icon has an outer circle, matching the right-click menu\'s own question icon', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      const dotSvg = qaDotIconSvg(11);
+      // @ts-expect-error
+      const menuSvg = CTX_ACTION_META.qa.svg;
+      return { dotHasCircle: dotSvg.includes('<circle'), menuHasCircle: menuSvg.includes('<circle') };
+    });
+    expect(result.dotHasCircle).toBe(true);
+    expect(result.menuHasCircle).toBe(true);
+  });
 });
