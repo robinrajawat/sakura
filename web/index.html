@@ -12012,6 +12012,12 @@ function closeDiagramEditorInternal(){
   if(previewPresenting&&audienceMode==='whiteboard')setAudienceMode('slide');
   _diagramEditorState=null;
   renderDiagramsList();
+  // The title input (and anything else editable inside the embedded draw.io editor) only
+  // ever wrote to the diagram record itself -- nothing told the outline to redraw, so a
+  // renamed diagram's inline preview under its node kept showing the old title until the
+  // next unrelated render (or a full page reload). render() picks up d.title/d.previewSvg
+  // the same way it already does on every other diagram-affecting change.
+  render();
 }
 async function closeDiagramEditor(){
   if(!_diagramEditorState)return;

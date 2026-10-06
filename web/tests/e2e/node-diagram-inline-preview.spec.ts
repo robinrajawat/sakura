@@ -126,6 +126,48 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(page.locator('#diagram-editor-overlay')).toHaveClass(/open/);
   });
 
+  test('renaming the diagram in the full editor and closing it updates the inline preview immediately, no reload needed', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Old name', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      padDiagramsTabEnabled = true;
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]);
+      // @ts-expect-error
+      render();
+    }, FAKE_PREVIEW_SVG);
+
+    await page.locator('.node-diagram-preview-thumb').click();
+    await expect(page.locator('#diagram-editor-overlay')).toHaveClass(/open/);
+
+    const titleInput = page.locator('#diagram-editor-title-input');
+    await titleInput.fill('New name');
+    await titleInput.dispatchEvent('input');
+
+    // closeDiagramEditorInternal bypasses the unsaved-changes confirm dialog that
+    // closeDiagramEditor() shows -- this test is about the refresh-on-close behavior, not
+    // that dialog.
+    await page.evaluate(() => {
+      // @ts-expect-error
+      closeDiagramEditorInternal();
+    });
+
+    await expect(page.locator('#diagram-editor-overlay')).not.toHaveClass(/open/);
+    await expect(page.locator('.node-diagram-preview-title')).toHaveText('New name');
+  });
+
   test('a node with multiple diagrams gets one preview line per diagram', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
