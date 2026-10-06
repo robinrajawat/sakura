@@ -102,8 +102,11 @@ test.describe("A note's chart-featured table renders as a chart in Preview and i
     expect(note).not.toContain('data-feature-chart');
 
     // The onChange callback re-renders Preview itself (previewActive=true) -- confirm it actually
-    // flipped back to showing the real table, not just that node.note was updated correctly.
-    const nowShowsTable = await page.evaluate(() => !!document.querySelector('#preview-body .pv-inline-note-body table'));
+    // flipped back to showing the real table, not just that node.note was updated correctly. A
+    // note's own table (charted or not) renders as its own full-width figure now, same as a
+    // chart does, rather than inside .pv-inline-note-body (see splitNoteBlockVisuals) -- so this
+    // checks .pv-table-figure, not the note's own text box.
+    const nowShowsTable = await page.evaluate(() => !!document.querySelector('#preview-body .pv-table-figure table'));
     expect(nowShowsTable).toBe(true);
   });
 });
