@@ -92,10 +92,7 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
     }
   });
 
-  test('"Sort children" always appears in "More", with no setting to remove it', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    // Give the node children so Sort children is actually offered.
+  async function seedParentWithChild(page: import('@playwright/test').Page) {
     await page.evaluate(() => {
       // @ts-expect-error
       nodes = [
@@ -111,12 +108,42 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
       // @ts-expect-error
       render();
     });
+  }
+
+  test('"Sort children" appears in "More" by default, for a node that has children', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedParentWithChild(page);
 
     const row = page.locator('.node-row[data-id="1"]');
     await row.click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
     await expect(page.locator('#context-sort-label')).toBeVisible();
     await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toBeVisible();
+  });
+
+  // Like every other action in this menu, "Sort children" has its own Settings checkbox
+  // (ctxq-sort-children / contextSortChildrenEnabled) and follows the same "unchecked means
+  // gone everywhere" rule -- it isn't a permanent fixture exempt from it.
+  test('unchecking "Sort children" in Settings removes the whole group from "More"', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedParentWithChild(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      contextSortChildrenEnabled = false;
+    });
+
+    const row = page.locator('.node-row[data-id="1"]');
+    await row.click({ button: 'right' });
+    // With the default quick row exactly filling the 6-icon cap, Sort children is normally the
+    // only thing "More" ever has to offer for this node -- so with it off, "More" itself has
+    // nothing left to show and hides. Its toggle has no bounding box to click at that point, so
+    // dispatch the click directly (same listener the real click would reach if it were visible).
+    await page.evaluate(() => document.getElementById('context-more-toggle')?.click());
+    await expect(page.locator('#context-sort-label')).toHaveCount(0);
+    await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toHaveCount(0);
   });
 
   test('the settings summary just reports the quick-row count, not a "menu items shown" count', async ({ page }) => {

@@ -469,6 +469,102 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     expect(rect.height).toBeGreaterThan(0);
   });
 
+  // Only a table's column WIDTH was ever adjustable -- row height had no equivalent at all.
+  // Same drag pattern as the column handles, just along each row's bottom edge, setting an
+  // explicit height on the <tr> instead of a <col>.
+  test('a table row can be resized taller by dragging its row-resize handle', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
+
+    const handle = page.locator('#note-line-1 .row-resize-handle').first();
+    const handleRect = await handle.boundingBox();
+    expect(handleRect).not.toBeNull();
+    expect(handleRect!.width).toBeGreaterThan(0);
+    expect(handleRect!.height).toBeGreaterThan(0);
+
+    const rowBefore = await page.evaluate(() => document.querySelector('#note-line-1 tr')!.getBoundingClientRect().height);
+    await page.mouse.move(handleRect!.x + handleRect!.width / 2, handleRect!.y + handleRect!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleRect!.x + handleRect!.width / 2, handleRect!.y + 60, { steps: 5 });
+    await page.mouse.up();
+
+    const result = await page.evaluate(() => {
+      const row = document.querySelector('#note-line-1 tr') as HTMLElement;
+      return { height: row.getBoundingClientRect().height, styleHeight: row.style.height };
+    });
+    expect(result.styleHeight).toMatch(/^\d+px$/);
+    expect(result.height).toBeGreaterThan(rowBefore + 30);
+  });
+
+  // The column handle had the same bug the row handle just had (see above): a negative CSS offset
+  // (right:-3px) spilled it 3px into the next column's own cell, so under border-collapse a real
+  // click there hit the neighboring <th> instead of the handle, silently doing nothing -- the only
+  // existing coverage checked the handle's bounding-box size, never an actual drag. Fixed by
+  // keeping the handle fully inside its own cell's box (right:0), mirroring bottom:-3px -> bottom:0.
+  test('a table column can be resized wider by dragging its col-resize handle', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
+
+    const handle = page.locator('#note-line-1 .col-resize-handle').first();
+    const handleRect = await handle.boundingBox();
+    expect(handleRect).not.toBeNull();
+
+    const widthBefore = await page.evaluate(() => document.querySelector('#note-line-1 th')!.getBoundingClientRect().width);
+    await page.mouse.move(handleRect!.x + handleRect!.width / 2, handleRect!.y + handleRect!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleRect!.x + 60, handleRect!.y + handleRect!.height / 2, { steps: 5 });
+    await page.mouse.up();
+
+    const result = await page.evaluate(() => {
+      const th = document.querySelector('#note-line-1 th') as HTMLElement;
+      const col = document.querySelector('#note-line-1 col') as HTMLElement;
+      return { width: th.getBoundingClientRect().width, colStyleWidth: col?.style.width };
+    });
+    expect(result.colStyleWidth).toMatch(/^\d+px$/);
+    expect(result.width).toBeGreaterThan(widthBefore + 30);
+  });
+
+  // Column/row resize handles are real appended <div>s inside each cell, not a CSS-only overlay --
+  // left unstripped, they'd get saved as empty, non-editable elements baked into node.note itself
+  // (re-exported to Word/PPTX/Preview, and sitting in the way of the caret next time this exact
+  // HTML loads without going through _attachTableResizeHandles' own cleanup first). Every path
+  // that persists a note-line's HTML (typing, blur, the selection-formatting popover, image
+  // resize) must strip them via cleanEditorHtml first.
+  test('resize handles never leak into the persisted node.note HTML', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
+
+    // Typing (the 'input' listener's own persistence path) is enough to attach handles (via the
+    // initial render) and exercise the save path that used to skip cleanEditorHtml entirely.
+    await page.locator('#note-line-1 td').first().click();
+    await page.keyboard.type('x');
+
+    const note = await page.evaluate(() => {
+      // @ts-expect-error
+      return nodes.find((n: any) => n.id === 1).note;
+    });
+    expect(note).not.toContain('col-resize-handle');
+    expect(note).not.toContain('row-resize-handle');
+  });
+
+  // An empty cell (a freshly inserted row/column, or a table pasted with blank cells) had no
+  // min-height at all -- with no text to establish a line box, it could render far shorter than a
+  // cell that actually has content, reading as a squashed sliver of a row.
+  test('an empty table cell still has a sensible minimum height, not a collapsed sliver', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td></td><td></td></tr></table>');
+
+    const heights = await page.evaluate(() => {
+      const cells = [...document.querySelectorAll('#note-line-1 td')];
+      return cells.map(c => c.getBoundingClientRect().height);
+    });
+    for (const h of heights) expect(h).toBeGreaterThan(10);
+  });
+
   // Pasted images had no way to resize at all. _setupImageResize/_imgResizeSelect/_imgResizePersist
   // already back Pad's own images (click to select, drag the corner handle, double-click to
   // reset) -- wired into the note-line's own click/dblclick instead of through that function
