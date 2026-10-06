@@ -2892,7 +2892,7 @@ body.presenter-notes-match-audience #presenter-notes-resize-handle{display:none!
 .pv-qa-q{font:600 14px 'Inter',sans-serif;color:var(--fg);margin-bottom:5px}
 .pv-qa-a{font:400 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
 .pv-qa-a-empty{color:var(--hint)}
-@media print{#pv-qa-section{break-inside:avoid-page}.pv-qa-row{break-inside:avoid-page}.pv-remarks-section-item{break-inside:avoid-page}.pv-remark{break-inside:avoid-page}}
+@media print{#pv-qa-section{break-inside:avoid-page}.pv-qa-row{break-inside:avoid-page}.pv-remarks-section-item{break-inside:avoid-page}.pv-remark-entry{break-inside:avoid-page}}
 #preview-overlay.pv-presenting #pv-notepad-section{display:none}
 #pv-notepad-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
 .pv-notepad-heading{font:700 22px 'Inter',sans-serif;color:var(--pv-heading);margin-bottom:16px}
@@ -3007,12 +3007,16 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-block{margin:6px 0 14px}
 .pv-quote-block{margin:4px 0 10px;display:grid;gap:4px}
 .pv-quote-line{color:var(--sem-quote);font-style:italic;font-size:12px;line-height:1.5;opacity:.85;padding-left:9px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
-.pv-remark{margin:0}
+.pv-remark-entry{margin:0}
+/* Divider between several remarks grouped under one node's shared card (see
+   previewRenderRemarkGroup) -- same pattern as .pv-inline-qa-row+.pv-inline-qa-row. */
+.pv-remark-entry+.pv-remark-entry{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .pv-remark-text{color:var(--fg);font-style:italic;font-size:12.5px;line-height:1.55}
 .pv-remark-meta{display:flex;align-items:center;gap:6px;font:400 11px 'Inter',sans-serif;color:var(--muted);margin-top:6px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
 .pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
-.pv-remarks-section-item{margin-bottom:14px}
+.pv-remarks-section-item{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+.pv-remarks-section-item:last-child{border-bottom:none}
 .pv-inline-label{display:flex;align-items:baseline;gap:7px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;flex-wrap:wrap}
 .pv-inline-label svg{flex-shrink:0;align-self:center}
 /* Distinct label color per inline-object type (note/Q&A/remark) so the three read as different
@@ -35585,6 +35589,18 @@ let previewOpenNoteIds=new Set();
 // on-screen Preview/Presenter browsing, where the dots are the actual open/close control and
 // always need to stay clickable regardless of this export-only setting.
 let _pvSuppressNoteCodeIndicators=false;
+// Export-only, same lifecycle as _pvSuppressNoteCodeIndicators above (set/restored together by
+// _applyNodeContentExportState). On-screen Preview/Presenter deliberately render a plain single-
+// line note inline right after the node's own text (isPlainNote below) to stay compact while
+// browsing -- but that meant a PDF/PPTX export's own note output looked inconsistent from one
+// node to the next: a short plain note sat inline next to the row, a longer or richer one got
+// its own bordered card below, with a further plain-vs-boxed split *within* that card path too
+// (pv-note-plain). A reader of the exported document has no way to tell those apart as "notes
+// that render differently" rather than "different kinds of content" -- exporting should show
+// every note the same way regardless of length or formatting. true only for the duration of a
+// PDF/PPTX export pass; left false for ordinary on-screen Preview/Presenter browsing, where the
+// compact inline treatment is still worth keeping.
+let _pvForceFullNoteCard=false;
 function previewToggleNote(id){
   if(previewOpenNoteIds.has(id))previewOpenNoteIds.delete(id); else previewOpenNoteIds.add(id);
   renderPreviewBody();
@@ -35720,19 +35736,16 @@ function previewRenderDecisionCard(headerNode){
 // Shared by both the on-screen Preview and PDF export — PDF is a print of this same Preview
 // document, so there's exactly one renderer to write, not two. Deliberately lighter-weight than
 // previewRenderDecisionCard above (no status badge, no multi-field layout): a remark is a quote
-// plus who/when/where, not a structured record.
-function previewRenderRemarkCard(r){
-  // Wrapped in the same .pv-inline-block/.pv-inline-label shell as a note or Q&A card (see
-  // renderPreviewBody) so a remark reads as the same kind of inline object, not a lesser,
-  // unboxed one -- and carries the same colored author avatar the live Pad/node-row remark UI
-  // already uses (remarkAuthorColor/remarkAuthorInitials), which Preview/PDF previously dropped.
-  const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
-  const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
-  label.innerHTML=REMARK_DOT_SVG+'<span>Remark</span>';
-  const card=document.createElement('div'); card.className='pv-remark pv-inline-remark-body'+(noteMatchEditorBg?'':' bg-distinct');
+// plus who/when/where, not a structured record. Just the entry's own content (text + author
+// line) -- no outer card/label, since that's owned by whichever of its two callers is grouping
+// it: previewRenderRemarkGroup below (one or more remarks anchored to the same node, all inside
+// one shared card) or the leftover-remarks trailing section in renderPreviewBody (several
+// unrelated orphaned remarks already grouped under one "Remarks" heading).
+function previewRenderRemarkEntry(r){
+  const entry=document.createElement('div'); entry.className='pv-remark-entry';
   const text=document.createElement('div'); text.className='pv-remark-text';
   text.innerHTML=sakuraSanitizeRichHtml(r.text||'');
-  card.appendChild(text);
+  entry.appendChild(text);
   const meta=document.createElement('div'); meta.className='pv-remark-meta';
   const authorColor=remarkAuthorColor(r.person);
   const avatar=document.createElement('span'); avatar.className='pv-remark-avatar'; avatar.style.background=authorColor.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
@@ -35741,8 +35754,22 @@ function previewRenderRemarkCard(r){
   meta.appendChild(bEl);
   if(r.date){ meta.appendChild(document.createTextNode(' · '+formatRemarkDateDisplay(r.date))); }
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
-  card.appendChild(meta);
-  wrap.appendChild(label); wrap.appendChild(card);
+  entry.appendChild(meta);
+  return entry;
+}
+// Groups every remark anchored to the same node under ONE "Remark"/"Remarks" card, each as its
+// own entry separated by a divider -- previously every remark got its own repeated label+card
+// (see previewRenderRemarkEntry's comment), so two or three remarks on the same node read as
+// that many separate, seemingly unrelated cards stacked back to back instead of one place to
+// look for "what people said about this node." Mirrors the single-card/multiple-rows pattern
+// the inline Q&A card already uses for several questions linked to one node.
+function previewRenderRemarkGroup(remarksForNode){
+  const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
+  const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
+  label.innerHTML=REMARK_DOT_SVG+`<span>${remarksForNode.length>1?'Remarks':'Remark'}</span>`;
+  const body=document.createElement('div'); body.className='pv-inline-remark-body'+(noteMatchEditorBg?'':' bg-distinct');
+  remarksForNode.forEach(r=>body.appendChild(previewRenderRemarkEntry(r)));
+  wrap.appendChild(label); wrap.appendChild(body);
   return wrap;
 }
 function previewSubtreeHasNote(idx){
@@ -35942,7 +35969,7 @@ function renderPreviewBody(){
     // label row at all, just the raw text right after the node), so a titled note always gets
     // the block below instead, where the title can actually sit next to the NOTE label.
     const hasNoteTitle = !!(node.noteTitle && node.noteTitle.trim());
-    const isPlainNote = !nodeIsSection(node,sectionMarkersDepthZero) && !hasNoteTitle && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
+    const isPlainNote = !_pvForceFullNoteCard && !nodeIsSection(node,sectionMarkersDepthZero) && !hasNoteTitle && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
     if(folded&&hasChildren){
       const badge=document.createElement('span'); badge.className='fold-badge';
@@ -36088,12 +36115,12 @@ function renderPreviewBody(){
       }
       if(padRemarksTabEnabled&&remarksExportEnabled&&Array.isArray(remarks)&&remarks.length){
         const nodeRemarks=remarks.filter(rm=>rm.anchorNodeId===node.id);
-        nodeRemarks.forEach(rm=>{
-          const rCard=previewRenderRemarkCard(rm);
-          rCard.style.paddingLeft=inlinePad;
-          slideTarget.appendChild(rCard);
-          _previewRemarksRenderedInline.add(rm.id);
-        });
+        if(nodeRemarks.length){
+          const rGroup=previewRenderRemarkGroup(nodeRemarks);
+          rGroup.style.paddingLeft=inlinePad;
+          slideTarget.appendChild(rGroup);
+          nodeRemarks.forEach(rm=>_previewRemarksRenderedInline.add(rm.id));
+        }
       }
       if(noteSplit&&noteSplit.diagrams.length){
         const multi=noteSplit.diagrams.length>1;
@@ -36159,7 +36186,7 @@ function renderPreviewBody(){
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
         // A chart-featured table (same "Feature as chart" toggle Pad's own tables use) renders as
         // its chart here too, same as the live editor's own renderNoteDisplayHtml does -- without
         // this a note's chart silently reverted to showing the plain backing table the instant you
@@ -36235,9 +36262,14 @@ function renderPreviewBody(){
       const remarksSection=document.createElement('div'); remarksSection.id='pv-remarks-section';
       const remarksHeading=document.createElement('div'); remarksHeading.className='pv-qa-heading'; remarksHeading.textContent='Remarks';
       remarksSection.appendChild(remarksHeading);
+      // Flat entries here, not the full label+card shell previewRenderRemarkGroup builds --
+      // these are scattered, unrelated remarks (different nodes, some orphaned entirely), not a
+      // conversation about one node, and the section's own "Remarks" heading above already says
+      // what they are. Matches the equally flat #pv-qa-section list just above for the same
+      // reason: one shared heading, not a repeated per-item label.
       leftoverRemarks.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(rm=>{
         const item=document.createElement('div'); item.className='pv-remarks-section-item';
-        item.appendChild(previewRenderRemarkCard(rm));
+        item.appendChild(previewRenderRemarkEntry(rm));
         remarksSection.appendChild(item);
       });
       doc.appendChild(remarksSection);
@@ -37718,7 +37750,7 @@ el('preview-export-pdf-btn')?.addEventListener('click',()=>exportPdfDirect());
 // Q&A dot open in Preview during the same session — by default every linked question printed
 // only in the flat end-of-document Q&A list, disconnected from the node it was actually about.
 function _applyNodeContentExportState(){
-  const prevNote=previewOpenNoteIds, prevSuppress=_pvSuppressNoteCodeIndicators, prevQa=previewOpenQaIds;
+  const prevNote=previewOpenNoteIds, prevSuppress=_pvSuppressNoteCodeIndicators, prevQa=previewOpenQaIds, prevForceCard=_pvForceFullNoteCard;
   if(nodeContentExportEnabled){
     previewOpenNoteIds=new Set(nodes.filter(n=>n.note&&n.note.trim()).map(n=>n.id));
     _pvSuppressNoteCodeIndicators=false;
@@ -37726,8 +37758,11 @@ function _applyNodeContentExportState(){
     previewOpenNoteIds=new Set();
     _pvSuppressNoteCodeIndicators=true;
   }
+  // Always the same card treatment for every note in an export, regardless of how short/plain
+  // it is -- see _pvForceFullNoteCard's own comment above its declaration.
+  _pvForceFullNoteCard=true;
   previewOpenQaIds=qaExportEnabled?new Set(qaItems.filter(it=>(it.question||'').trim()&&it.sourceNodeId!=null).map(it=>it.sourceNodeId)):new Set();
-  return function restore(){ previewOpenNoteIds=prevNote; _pvSuppressNoteCodeIndicators=prevSuppress; previewOpenQaIds=prevQa; };
+  return function restore(){ previewOpenNoteIds=prevNote; _pvSuppressNoteCodeIndicators=prevSuppress; previewOpenQaIds=prevQa; _pvForceFullNoteCard=prevForceCard; };
 }
 function exportPdfDirect(){
   if(previewPresenting)exitPresenterMode();
@@ -37960,16 +37995,10 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview #pv-doc-header { margin-bottom:24px !important; }
       body.printing-preview .pv-tag-chip-static { background:transparent !important; border:1px solid #aaa !important; color:#555 !important; }
       body.printing-preview .pv-dlog { break-inside:avoid; page-break-inside:avoid; }
-      /* Same reasoning as Presenter mode's #preview-overlay.pv-presenting .pv-note-inline-full
-         rule (commit 4fa12c1): without this, a plain-text note sitting right next to a node's
-         own text reads as close to equally prominent, undermining the point of it being a
-         small secondary annotation. em-based so it stays proportionally smaller relative to
-         whatever line it's on (plain bullet or heading) rather than a fixed px size that would
-         look wrong at some depths. Icon shrunk to match for the same reason the presenter rule
-         shrinks it — the SVG's own width/height attributes don't respond to the container alone. */
-      body.printing-preview .pv-note-inline-full{ font-size:0.65em !important; }
-      body.printing-preview .node-note-dot-plain{ width:13px !important; height:13px !important; font-size:8px !important; }
-      body.printing-preview .node-note-dot-plain svg{ width:9px !important; height:9px !important; }
+      /* No .pv-note-inline-full/.node-note-dot-plain shrink override here (there used to be one)
+         -- _pvForceFullNoteCard (see renderPreviewBody) means an export never builds that inline-
+         teaser markup at all anymore, every note gets the same full card instead, so a rule
+         targeting it would never match anything in a printed document. */
     }
   `;
   document.head.appendChild(style);

@@ -34,12 +34,12 @@ function applyExportStateAndRender(page: import('@playwright/test').Page) {
   });
 }
 
-function seedDoc(page: import('@playwright/test').Page, opts: { qaItems?: any[]; remarks?: any[] }) {
+function seedDoc(page: import('@playwright/test').Page, opts: { qaItems?: any[]; remarks?: any[]; note?: string }) {
   return page.evaluate((opts) => {
     // @ts-expect-error
     nodes = [
       { id: 1, depth: 0, text: 'Parent row', parentId: null, isCheckbox: false, checked: false, note: '', noteTitle: '', tags: [], styles: {} },
-      { id: 2, depth: 1, text: 'A row with linked content', parentId: 1, isCheckbox: false, checked: false, note: '', noteTitle: '', tags: [], styles: {} },
+      { id: 2, depth: 1, text: 'A row with linked content', parentId: 1, isCheckbox: false, checked: false, note: opts.note || '', noteTitle: '', tags: [], styles: {} },
     ];
     // @ts-expect-error
     collapsedIds = new Set();
@@ -166,7 +166,11 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
     expect(result.avatarHasBackground).toBe(true);
   });
 
-  test('a remark anchored to a node not present in this export falls back to the trailing Remarks section, in the same card shape', async ({ page }) => {
+  // The trailing section already has its own "Remarks" heading grouping these -- a repeated
+  // per-item label+card (previewRenderRemarkGroup's shell) would say "Remark" a second,
+  // redundant time per orphaned entry, so these render as flat entries instead, same as the
+  // equally flat #pv-qa-section list right above it in renderPreviewBody.
+  test('a remark anchored to a node not present in this export falls back to the trailing Remarks section, as a flat entry (no repeated per-item label)', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedDoc(page, { remarks: [{ id: 'r1', anchorNodeId: 999, person: 'Jane Doe', text: 'Orphaned remark.', date: '2024-01-01' }] });
@@ -182,12 +186,127 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
       const section = document.getElementById('pv-remarks-section');
       return {
         sectionExists: !!section,
-        hasBoxedBody: !!section?.querySelector('.pv-inline-remark-body'),
+        hasEntry: !!section?.querySelector('.pv-remark-entry'),
         hasAvatar: !!section?.querySelector('.pv-remark-avatar'),
+        hasRepeatedLabel: !!section?.querySelector('.pv-inline-label-remark'),
       };
     });
     expect(result.sectionExists).toBe(true);
-    expect(result.hasBoxedBody).toBe(true);
+    expect(result.hasEntry).toBe(true);
     expect(result.hasAvatar).toBe(true);
+    expect(result.hasRepeatedLabel).toBe(false);
+  });
+
+  // Previously every remark anchored to a node got its own repeated "Remark" label+card, so two
+  // or three remarks on the same node read as that many separate, seemingly unrelated cards
+  // stacked back to back -- mirrors the single-card/multiple-rows pattern the inline Q&A card
+  // already uses for several questions linked to one node.
+  test('several remarks anchored to the same node group under one shared "Remarks" card, not one card each', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedDoc(page, {
+      remarks: [
+        { id: 'r1', anchorNodeId: 2, person: 'Jane Doe', text: 'First remark.', date: '2024-01-01' },
+        { id: 'r2', anchorNodeId: 2, person: 'John Smith', text: 'Second remark.', date: '2024-01-02' },
+      ],
+    });
+    await page.evaluate(() => {
+      // @ts-expect-error
+      previewActive = true;
+      // @ts-expect-error
+      renderPreviewBody();
+      document.getElementById('preview-overlay')?.classList.add('open');
+    });
+
+    const result = await page.evaluate(() => {
+      const body = document.getElementById('preview-body')!;
+      return {
+        blockCount: body.querySelectorAll('.pv-remark-block').length,
+        labelCount: body.querySelectorAll('.pv-inline-label-remark').length,
+        entryCount: body.querySelectorAll('.pv-remark-entry').length,
+        labelText: body.querySelector('.pv-inline-label-remark span')?.textContent,
+      };
+    });
+    expect(result.blockCount).toBe(1);
+    expect(result.labelCount).toBe(1);
+    expect(result.entryCount).toBe(2);
+    expect(result.labelText).toBe('Remarks');
+  });
+});
+
+// On-screen Preview/Presenter deliberately renders a plain single-line note inline right after
+// the node's own text (to stay compact while browsing), and a multi-line-but-still-plain note as
+// a thin unboxed rule -- only a richer note (table/image/heading/etc.) gets the full bordered
+// card. That meant an exported PDF/PPTX's own note output looked inconsistent from one node to
+// the next, with no way for a reader to tell "notes render differently" from "these are
+// different kinds of content." _pvForceFullNoteCard makes every note use the same full card
+// during an export pass specifically, without changing the on-screen behavior.
+test.describe('Every note renders the same way in PDF/PPTX export, regardless of length or formatting', () => {
+  test('a one-line plain note still renders inline next to the node text during ordinary on-screen Preview (unaffected)', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedDoc(page, { note: '<p>A short plain note.</p>' });
+    await page.evaluate(() => {
+      // @ts-expect-error
+      previewActive = true;
+      // @ts-expect-error
+      renderPreviewBody();
+      document.getElementById('preview-overlay')?.classList.add('open');
+    });
+
+    const result = await page.evaluate(() => ({
+      hasInlineTeaser: !!document.querySelector('#preview-body .pv-note-inline-full'),
+      hasFullCard: !!document.querySelector('#preview-body .pv-inline-note-body'),
+    }));
+    expect(result.hasInlineTeaser).toBe(true);
+    expect(result.hasFullCard).toBe(false);
+  });
+
+  test('that same one-line plain note renders as the full boxed card during a PDF/PPTX export pass instead', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedDoc(page, { note: '<p>A short plain note.</p>' });
+    await applyExportStateAndRender(page);
+
+    const result = await page.evaluate(() => {
+      const card = document.querySelector('#preview-body .pv-inline-note-body');
+      return {
+        hasInlineTeaser: !!document.querySelector('#preview-body .pv-note-inline-full'),
+        hasFullCard: !!card,
+        isPlainVariant: !!card?.classList.contains('pv-note-plain'),
+        labelHasNoteColorClass: !!document.querySelector('#preview-body .pv-inline-label-note'),
+      };
+    });
+    expect(result.hasInlineTeaser).toBe(false);
+    expect(result.hasFullCard).toBe(true);
+    expect(result.isPlainVariant).toBe(false);
+    expect(result.labelHasNoteColorClass).toBe(true);
+  });
+
+  test('a multi-paragraph plain note, which normally gets the thin unboxed "plain card" rule on screen, gets the full box during export too', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    const note = '<p>First paragraph.</p><p>Second paragraph.</p>';
+    await seedDoc(page, { note });
+
+    // On screen: full card path already (not single-line), but the lighter "plain card" variant.
+    await page.evaluate(() => {
+      // @ts-expect-error
+      previewActive = true;
+      // @ts-expect-error
+      renderPreviewBody();
+      document.getElementById('preview-overlay')?.classList.add('open');
+    });
+    const onScreen = await page.evaluate(() => !!document.querySelector('#preview-body .pv-inline-note-body.pv-note-plain'));
+    expect(onScreen).toBe(true);
+
+    // During export: same note, full box instead, no pv-note-plain.
+    await applyExportStateAndRender(page);
+    const exported = await page.evaluate(() => {
+      const card = document.querySelector('#preview-body .pv-inline-note-body');
+      return { hasCard: !!card, isPlainVariant: !!card?.classList.contains('pv-note-plain') };
+    });
+    expect(exported.hasCard).toBe(true);
+    expect(exported.isPlainVariant).toBe(false);
   });
 });
