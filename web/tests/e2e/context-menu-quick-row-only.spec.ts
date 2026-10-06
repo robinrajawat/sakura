@@ -35,9 +35,10 @@ async function seedOneNode(page: import('@playwright/test').Page) {
 // quick row vs "More") and "Menu items" (full removal from the menu entirely). Having both
 // was confusing and the second one was also the actual cause of a reported bug (a newly added
 // action missing its own checkbox there, silently making it un-removable to look for). Removed
-// entirely -- "Quick row" is now the only control, and nothing can be removed from the menu
-// outright, only repositioned between the quick row and "More".
-test.describe('Right-click menu has only one placement setting (Quick row), not a separate full-removal one', () => {
+// entirely -- "Quick row" is now the only control. An unchecked action doesn't appear anywhere
+// in the menu at all; a checked one shows as an icon in the quick row (the first 6, by the
+// user's own drag order) or as a text item under "More" (everything checked beyond that).
+test.describe('Right-click menu has only one setting (Quick row), controlling both placement and visibility', () => {
   test('the "Menu items" settings section no longer exists', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -47,7 +48,7 @@ test.describe('Right-click menu has only one placement setting (Quick row), not 
     await expect(page.locator('[id^="ctxh-"]')).toHaveCount(0);
   });
 
-  test('unchecking an action from Quick row moves it to "More" instead of removing it from the menu', async ({ page }) => {
+  test('unchecking an action removes it from the menu entirely -- it does not fall back to "More"', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedOneNode(page);
@@ -64,8 +65,31 @@ test.describe('Right-click menu has only one placement setting (Quick row), not 
     await expect(page.locator('#context-quickbar .pv-qm-btn[data-action="note"]')).toHaveCount(0);
     const moreToggle = page.locator('#context-more-toggle');
     await moreToggle.click();
-    // Still reachable -- just relocated, never fully removed.
-    await expect(page.locator('#context-more-panel [data-action="note"]')).toBeVisible();
+    await expect(page.locator('#context-more-panel [data-action="note"]')).toHaveCount(0);
+  });
+
+  // Unlike the quick row's own 6-icon cap (which still spills checked-but-overflowing actions
+  // into More, covered below), an action that was never checked at all has no business showing
+  // up anywhere -- "More" is the overflow for checked actions, not a catalog of everything.
+  test('"More" never lists an action that isn\'t checked in Settings, even ones with no feature gate at all', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedOneNode(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      setContextQuickActions(['note']);
+    });
+
+    const row = page.locator('.node-row[data-id="1"]');
+    await row.click({ button: 'right' });
+    await page.locator('#context-more-toggle').click();
+
+    // None of these are checked, and none are feature-gated -- under the old "More shows
+    // everything not in the quick row" rule they'd all still be reachable here.
+    for (const unchecked of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'delete']) {
+      await expect(page.locator(`#context-more-panel [data-action="${unchecked}"]`)).toHaveCount(0);
+    }
   });
 
   test('"Sort children" always appears in "More", with no setting to remove it', async ({ page }) => {
