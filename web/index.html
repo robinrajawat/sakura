@@ -19720,7 +19720,13 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     frag.appendChild(noteWrap)
   }
   if((alwaysExpandInlineEnabled!==inlineExpandRemarksNodeIds.has(node.id))&&padRemarksTabEnabled&&Array.isArray(remarks)&&remarks.length){
-    const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id);
+    // Newest first -- remarks.push (addRemark/saveNodeComment) always appends, so left in array
+    // order a node with several remarks read oldest-on-top, newest buried at the bottom, exactly
+    // backwards from "what's the latest on this node" being the thing you'd actually want to see
+    // first. createdAt (set by both remark-creation paths) is the real insertion order; a remark
+    // from before that field existed falls back to 0, sorting after every timestamped one but
+    // keeping its relative position among other untimestamped remarks (Array.sort is stable).
+    const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     nodeRemarks.forEach(r=>{
       const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
       const rLine=document.createElement('div'); rLine.className='node-remark-line';
@@ -36208,7 +36214,10 @@ function renderPreviewBody(){
         }
       }
       if(padRemarksTabEnabled&&remarksExportEnabled&&Array.isArray(remarks)&&remarks.length){
-        const nodeRemarks=remarks.filter(rm=>rm.anchorNodeId===node.id);
+        // Newest first -- same reasoning as the identical sort on the live editor's own inline
+        // remark rendering (see its own comment): remarks.push always appends, so unsorted array
+        // order reads oldest-on-top here too.
+        const nodeRemarks=remarks.filter(rm=>rm.anchorNodeId===node.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
         if(nodeRemarks.length){
           const rGroup=previewRenderRemarkGroup(nodeRemarks);
           rGroup.style.paddingLeft=inlinePad;
