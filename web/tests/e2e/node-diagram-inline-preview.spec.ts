@@ -214,4 +214,77 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(page.locator('.node-diagram-dot')).toHaveCount(0);
     await expect(page.locator('.node-diagram-line')).toHaveCount(0);
   });
+
+  test('the diagram title can be renamed directly in the inline preview', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Old name', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      padDiagramsTabEnabled = true;
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]);
+      // @ts-expect-error
+      render();
+    }, FAKE_PREVIEW_SVG);
+
+    const title = page.locator('.node-diagram-preview-title');
+    await expect(title).toHaveText('Old name');
+
+    // Select-all + type, the same way the remark/QA inline fields are edited.
+    await title.click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type('New name');
+    await title.blur();
+
+    await expect(title).toHaveText('New name');
+    // Doesn't jump to the editor or Pad panel -- renaming stays inline.
+    await expect(page.locator('#diagram-editor-overlay')).not.toHaveClass(/open/);
+    // @ts-expect-error
+    expect(await page.evaluate(() => diagrams[0].title)).toBe('New name');
+  });
+
+  test('Escape while renaming the inline diagram title reverts the edit', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Keep me', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      padDiagramsTabEnabled = true;
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]);
+      // @ts-expect-error
+      render();
+    }, FAKE_PREVIEW_SVG);
+
+    const title = page.locator('.node-diagram-preview-title');
+    await title.click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type('Discard this');
+    await page.keyboard.press('Escape');
+
+    await expect(title).toHaveText('Keep me');
+    // @ts-expect-error
+    expect(await page.evaluate(() => diagrams[0].title)).toBe('Keep me');
+  });
 });
