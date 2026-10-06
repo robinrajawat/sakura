@@ -3007,13 +3007,21 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-block{margin:6px 0 14px}
 .pv-quote-block{margin:4px 0 10px;display:grid;gap:4px}
 .pv-quote-line{color:var(--sem-quote);font-style:italic;font-size:12px;line-height:1.5;opacity:.85;padding-left:9px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
-.pv-remark{margin:6px 0 10px}
-.pv-remark-text{color:var(--sem-quote);font-style:italic;font-size:12.5px;line-height:1.55;padding-left:10px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
-.pv-remark-meta{display:flex;align-items:baseline;gap:5px;font:400 11px 'Inter',sans-serif;color:var(--muted);margin-top:4px;padding-left:10px}
+.pv-remark{margin:0}
+.pv-remark-text{color:var(--fg);font-style:italic;font-size:12.5px;line-height:1.55}
+.pv-remark-meta{display:flex;align-items:center;gap:6px;font:400 11px 'Inter',sans-serif;color:var(--muted);margin-top:6px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
+.pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
 .pv-remarks-section-item{margin-bottom:14px}
 .pv-inline-label{display:flex;align-items:baseline;gap:7px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;flex-wrap:wrap}
 .pv-inline-label svg{flex-shrink:0;align-self:center}
+/* Distinct label color per inline-object type (note/Q&A/remark) so the three read as different
+   things at a glance, on screen and on a printed page, instead of one generic "boxed callout"
+   style -- matches the colors their own node-row indicator dots already use elsewhere in the
+   app (node-qa-dot/node-remark-dot), so the association isn't a new color to learn. */
+.pv-inline-label-note{color:var(--hint)}
+.pv-inline-label-qa{color:var(--fc-purple)}
+.pv-inline-label-remark{color:var(--sem-quote)}
 .pv-inline-note-title{font:700 10px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--muted);overflow-wrap:break-word;min-width:0}
 .pv-inline-note-title-sep{color:var(--muted);margin:0 1px}
 .pv-inline-note-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--hint);font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.55;white-space:pre-wrap;word-break:break-word}
@@ -3029,6 +3037,13 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    Tables, code blocks, images, headings, and blockquotes still get the full card below, since
    those need an actual container (a grid, a monospace/contrast box, etc.) to read well. */
 .pv-inline-note-body.pv-note-plain{padding:1px 0 1px 10px;border-radius:0;background:transparent;border:none;border-left:2px solid var(--border)}
+/* Remark card -- same box family as .pv-inline-note-body/.pv-inline-qa-body (padding, radius,
+   border) so all three inline-object types read as one visual system, differing only by their
+   left-border accent color and label icon/color (see .pv-inline-label-remark above). Previously
+   remarks had no box at all (just a left-rule on the text), which read as a different, lesser
+   kind of content next to the boxed note/Q&A cards. */
+.pv-inline-remark-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--sem-quote)}
+.pv-inline-remark-body.bg-distinct{background:var(--tb-bg)}
 /* Full (untruncated) plain-note text shown inline right after the node's own text — see the
    isPlainNote branch in renderPreviewBody. Note content (whether from saveNodeComment's
    per-entry markup or freeform typing in the Pad's note editor) is naturally built from block-
@@ -3057,13 +3072,13 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-note-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .pv-inline-note-body table{border-collapse:collapse;margin:6px 0;font-size:12px}
 .pv-inline-note-body table td,.pv-inline-note-body table th{border:1px solid var(--border);padding:4px 7px}
-.pv-inline-qa-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--accent);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
+.pv-inline-qa-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--fc-purple);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
 .pv-inline-qa-body.bg-distinct{background:var(--tb-bg)}
 .pv-inline-qa-row+.pv-inline-qa-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .pv-inline-qa-line{display:flex;align-items:flex-start;gap:8px}
 .pv-inline-qa-line+.pv-inline-qa-line{margin-top:4px}
 .pv-inline-qa-tag{flex:0 0 auto;font:700 9px 'Inter',sans-serif;line-height:16px;text-align:center;text-transform:uppercase;letter-spacing:.02em;width:16px;height:16px;border-radius:4px;margin-top:1px}
-.pv-inline-qa-tag-q{background:color-mix(in srgb, var(--accent) 16%, transparent);color:var(--accent)}
+.pv-inline-qa-tag-q{background:color-mix(in srgb, var(--fc-purple) 16%, transparent);color:var(--fc-purple)}
 .pv-inline-qa-tag-a{background:var(--chip);color:var(--muted)}
 .pv-inline-qa-question{font-weight:600;color:var(--fg)}
 .pv-inline-qa-answer{color:var(--fg);margin-top:2px}
@@ -5126,7 +5141,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
             <div class="settings-section-title">Export &amp; print</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Skip folded sections</span><span class="settings-row-desc">Off: exports and printing always include everything. On: only what's currently expanded is included. Applies to Markdown, OPML, Text, and the header Print button — not PDF, PowerPoint, or Word, since those render from (or mirror) Preview/Presenter, which already has its own fold state under your direct control there (click any section to expand or collapse it) and is left exactly as you set it.</span></div><button id="skip-folded-exports-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Skip folded sections"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Include Q&amp;A in exports</span><span class="settings-row-desc">Appends the Pad's Q&amp;A list as a final section in Word, PDF, and PowerPoint exports — bold question, regular-weight answer, unanswered rows marked "No answer provided" (PowerPoint paginates this across as many slides as needed). Off: Q&amp;A stays in the Pad only, out of exported files.</span></div><button id="qa-export-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Include Q&amp;A in exports"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Include Q&amp;A in exports</span><span class="settings-row-desc">Word and PowerPoint append the Pad's Q&amp;A list as a final section — bold question, regular-weight answer, unanswered rows marked "No answer provided" (PowerPoint paginates this across as many slides as needed). PDF instead prints each question right under the node it's linked to, same as a note; only questions with no linked node (or linked to a node outside this export) fall back to a final section. Off: Q&amp;A stays in the Pad only, out of exported files.</span></div><button id="qa-export-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Include Q&amp;A in exports"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Include Notepad in exports</span><span class="settings-row-desc">Appends the Pad's whole-document Notepad content as a final section in Word, PDF, and PowerPoint exports (PowerPoint is text-only — lists and tables flatten to plain paragraphs there, unlike Word's version). Off: Notepad stays in the Pad only, out of exported files.</span></div><button id="pad-notepad-export-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Include Notepad in exports"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Include Decision Log in exports</span><span class="settings-row-desc">Includes each node's decision log card in Word, PDF, and PowerPoint exports. Off: decision logs stay visible in the app only, out of exported files — separate from the Decision Log feature toggle itself.</span></div><button id="decisionlog-export-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Include Decision Log in exports"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Include node Notes &amp; Code in exports</span><span class="settings-row-desc">Includes each node's attached Note and Code block in Word, PDF, and PowerPoint exports — every note/code card is included regardless of what's expanded on screen in Preview. (PowerPoint includes a note's text and its own embedded diagram images, shown with a <span class="cs-inline-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> icon alongside that node's bullet; code blocks still aren't included in PowerPoint.) Also controls whether OPML's per-node <code>_note</code> attribute is written. Off: excluded from all of the above entirely, including the small "has a note/code" indicator dots — nothing in the PDF hints that a hidden note exists. Preview itself is unaffected; this only changes what an exported file actually contains.</span></div><button id="node-content-export-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Include node Notes and Code in exports"></button></div>
@@ -5903,7 +5918,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
           <div class="help-section" data-cat="panels" id="help-section-qa">
 <h4>Q&amp;A</h4>
 <ul>
-<li>One of the Pad's tabs — a structured list: each row is a bold Question and a regular-weight Answer; hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?", plus questions found inside notes attached to nodes, and offers them as a checklist; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. It's selection-aware the same way the AI generate button is: a multi-selection scans just those rows, a single selected node scans that node's whole section, and nothing selected scans the whole document. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The Copy button (next to Export as PDF) is Import's counterpart going the other direction — copies every question, answer, and section header as that same "Q:"/"A:"/"Section:" text, so pasting it into Import on another document brings the whole thing across cleanly; the bulk toolbar's own Copy button (next to bulk Rewrite, once rows are selected) does the same for just the selected rows instead of everything. The toolbar groups these three (Import/Scan/Generate) together as "bring in content from elsewhere," set apart from the + button and its neighbor — one blank row, one section/topic header — which are for writing your own from scratch. New rows and sections both land at the end of the list regardless of where you're looking, so drag the grip to move a row under the section it belongs to, or hover a section row for a small "+" that inserts a new blank question at the end of that section directly, without a drag. Sections drag and delete like any other row but have no select checkbox of their own — deliberately, since a group heading isn't something you'd bulk-act on the same way a batch of real rows is — and don't count toward the answered total, and are dropped from view (rather than left as an empty label) whenever a filter or search leaves nothing under them. Past the filter/search group, the whole-list AI actions run in the order a person would actually use them — Group into sections first (Settings → AI → Q&amp;A AI → "Group into sections": reads every question and organizes them into a small number of named sections in one pass, replacing any existing grouping with a fresh one built from scratch, though every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change, and Undo restores the previous arrangement in one step), then Draft answers, then Summary. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — hover-only until a name's actually been typed in, same reveal-on-hover treatment as the follow-up chip, so an empty one doesn't sit on screen for every single answered row; once it holds a name it stays visible like any other row data. The date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Selecting several rows (see below) adds a bulk "Set Answered by" button next to bulk Rewrite — one name, applied to every selected row that already has an answer (skipping any that don't, rather than refusing the whole batch), with its own Undo. Turn on the select/reorder toggle (checklist icon in the toolbar) to reveal each row's drag grip and select checkbox — drag the grip to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. With the toggle on, Shift-click a row's checkbox for a range, or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Panels → Pad has "Include Q&amp;A in exports" (Word and PDF append it as a final section — bold question, regular-weight answer, unanswered rows marked "No answer provided" — turn off to keep Q&amp;A in the Pad only). Settings → Panels → Pad → "Row actions" switches field icons and the delete button between revealing on hover (compact) and staying always visible — separate from the select/reorder toggle above, which is always opt-in from the toolbar rather than a Settings default, since reordering and bulk-selecting are occasional, not everyday actions</li>
+<li>One of the Pad's tabs — a structured list: each row is a bold Question and a regular-weight Answer; hover either one for its own small Rewrite (AI) button, hover the row for its delete icon. A running "<em>n</em>/<em>n</em> answered" count sits in the toolbar. The scan icon scans the outline for nodes ending in "?", plus questions found inside notes attached to nodes, and offers them as a checklist; confirming adds them as new rows, and rescanning is safe since questions already added show disabled and unchecked instead of duplicating. It's selection-aware the same way the AI generate button is: a multi-selection scans just those rows, a single selected node scans that node's whole section, and nothing selected scans the whole document. Right next to it, the AI generate button (Settings → AI → Q&amp;A AI → "Generate questions") reads the document and suggests questions worth asking about it — gaps, ambiguities, things it implies but doesn't actually answer — rather than only picking up nodes that literally end in "?"; it's selection-aware, so with a node (or a multi-selection of several) selected in the outline it scopes to just that section rather than the whole document, which also helps on longer documents where feeding everything at once dilutes what the AI focuses on. It opens the same review checklist as Scan, so nothing's added until you confirm, and these rows have no source-node link since they're new questions rather than ones already written into the outline. The Import button opens a paste box for bringing in Q&amp;A from outside Sakura — it understands "Q:"/"A:" pairs (including Sakura's own Q&amp;A text export, so re-importing an exported .md file round-trips cleanly) and falls back to treating every "?"-ending line as a standalone question if there are no Q/A markers at all; it opens that same review checklist too. The Copy button (next to Export as PDF) is Import's counterpart going the other direction — copies every question, answer, and section header as that same "Q:"/"A:"/"Section:" text, so pasting it into Import on another document brings the whole thing across cleanly; the bulk toolbar's own Copy button (next to bulk Rewrite, once rows are selected) does the same for just the selected rows instead of everything. The toolbar groups these three (Import/Scan/Generate) together as "bring in content from elsewhere," set apart from the + button and its neighbor — one blank row, one section/topic header — which are for writing your own from scratch. New rows and sections both land at the end of the list regardless of where you're looking, so drag the grip to move a row under the section it belongs to, or hover a section row for a small "+" that inserts a new blank question at the end of that section directly, without a drag. Sections drag and delete like any other row but have no select checkbox of their own — deliberately, since a group heading isn't something you'd bulk-act on the same way a batch of real rows is — and don't count toward the answered total, and are dropped from view (rather than left as an empty label) whenever a filter or search leaves nothing under them. Past the filter/search group, the whole-list AI actions run in the order a person would actually use them — Group into sections first (Settings → AI → Q&amp;A AI → "Group into sections": reads every question and organizes them into a small number of named sections in one pass, replacing any existing grouping with a fresh one built from scratch, though every question keeps its answer, follow-up flag, and Answered by; only the ordering and section headers change, and Undo restores the previous arrangement in one step), then Draft answers, then Summary. A row added from a scan keeps a small link icon (hover the question) that jumps straight to that node in the outline; the icon disappears on its own if that node is later deleted, and when that happens an orange "<em>n</em> unlinked" chip appears next to the answered count — click it to show just those rows, the same way the answered count filters to unanswered ones (the two filters can combine). Each row also has a small chip (hover to reveal, stays visible once set) for flagging an answer as not yet trustworthy: click an unflagged row to mark it "Follow-up" (amber) for your own uncertain answers, or let AI-drafted answers flag themselves automatically as "AI draft" (accent-colored) — either way the chip only clears when you click it yourself, so editing the answer text doesn't silently mark it reviewed. A matching "<em>n</em> follow-up" chip in the toolbar filters to both flagged types together, same as the other two chips, and all three filters can combine. Once a row has an answer, a small "Answered by…" field and a date appear alongside the follow-up chip — hover-only until a name's actually been typed in, same reveal-on-hover treatment as the follow-up chip, so an empty one doesn't sit on screen for every single answered row; once it holds a name it stays visible like any other row data. The date is set automatically whenever the answer changes, but who answered is always typed in by hand, since it's frequently someone else (a colleague from business or IT) rather than whoever's typing it into Sakura; recently-used names show up as autocomplete suggestions so repeat entries are quick without ever being assumed. Selecting several rows (see below) adds a bulk "Set Answered by" button next to bulk Rewrite — one name, applied to every selected row that already has an answer (skipping any that don't, rather than refusing the whole batch), with its own Undo. Turn on the select/reorder toggle (checklist icon in the toolbar) to reveal each row's drag grip and select checkbox — drag the grip to reorder rows by hand, or click the "<em>n</em>/<em>n</em> answered" count to show only unanswered rows — the two don't mix: dragging is unavailable while that filter is active, since a hand-reorder inside a filtered view has no single sensible "real" position to save it at. Deleting a row — one at a time, or several at once — shows an Undo toast for a few seconds rather than deleting silently. With the toggle on, Shift-click a row's checkbox for a range, or use the checkbox above the list to select or deselect everything; once anything's selected, a delete icon appears next to that same header checkbox for a batch delete, also with Undo. <span class="help-kbd">Escape</span> clears the current selection and <span class="help-kbd">Delete</span>/<span class="help-kbd">Backspace</span> removes it, both only while focus isn't inside a question or answer field, so they never interfere with normal typing. Since Q&amp;A lives in the same Pad element that Presenter Notes relocates, it flips right along with it — press <span class="help-kbd">Q</span> in Presenter mode to open Presenter Notes straight into the Q&amp;A view (<span class="help-kbd">N</span> for Notepad) and work through questions without leaving fullscreen. Settings → Panels → Pad has "Include Q&amp;A in exports" (Word appends it as a final section — bold question, regular-weight answer, unanswered rows marked "No answer provided"; PDF instead prints a linked question right under its node, falling back to that same final section only for unlinked questions — turn off to keep Q&amp;A in the Pad only). Settings → Panels → Pad → "Row actions" switches field icons and the delete button between revealing on hover (compact) and staying always visible — separate from the select/reorder toggle above, which is always opt-in from the toolbar rather than a Settings default, since reordering and bulk-selecting are occasional, not everyday actions</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-decision-log">
@@ -35707,18 +35722,28 @@ function previewRenderDecisionCard(headerNode){
 // previewRenderDecisionCard above (no status badge, no multi-field layout): a remark is a quote
 // plus who/when/where, not a structured record.
 function previewRenderRemarkCard(r){
-  const card=document.createElement('div'); card.className='pv-remark';
+  // Wrapped in the same .pv-inline-block/.pv-inline-label shell as a note or Q&A card (see
+  // renderPreviewBody) so a remark reads as the same kind of inline object, not a lesser,
+  // unboxed one -- and carries the same colored author avatar the live Pad/node-row remark UI
+  // already uses (remarkAuthorColor/remarkAuthorInitials), which Preview/PDF previously dropped.
+  const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
+  const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
+  label.innerHTML=REMARK_DOT_SVG+'<span>Remark</span>';
+  const card=document.createElement('div'); card.className='pv-remark pv-inline-remark-body'+(noteMatchEditorBg?'':' bg-distinct');
   const text=document.createElement('div'); text.className='pv-remark-text';
   text.innerHTML=sakuraSanitizeRichHtml(r.text||'');
   card.appendChild(text);
   const meta=document.createElement('div'); meta.className='pv-remark-meta';
+  const authorColor=remarkAuthorColor(r.person);
+  const avatar=document.createElement('span'); avatar.className='pv-remark-avatar'; avatar.style.background=authorColor.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
+  meta.appendChild(avatar);
   const bEl=document.createElement('b'); bEl.textContent=r.person||'(unnamed)';
-  meta.appendChild(document.createTextNode('— '));
   meta.appendChild(bEl);
   if(r.date){ meta.appendChild(document.createTextNode(' · '+formatRemarkDateDisplay(r.date))); }
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
   card.appendChild(meta);
-  return card;
+  wrap.appendChild(label); wrap.appendChild(card);
+  return wrap;
 }
 function previewSubtreeHasNote(idx){
   const end=getSubtreeEnd(nodes,idx);
@@ -35793,6 +35818,7 @@ function renderPreviewBody(){
 
   const tocEntries=[];
   const _previewRemarksRenderedInline=new Set();
+  const _previewQaRenderedInline=new Set();
   const previewSlideList=[{nodeId:null,label:docTitle||'Title'}];
   let currentSlideWrap=null;
   let skipDepth=null;
@@ -36064,7 +36090,7 @@ function renderPreviewBody(){
         const nodeRemarks=remarks.filter(rm=>rm.anchorNodeId===node.id);
         nodeRemarks.forEach(rm=>{
           const rCard=previewRenderRemarkCard(rm);
-          rCard.style.marginLeft=inlinePad;
+          rCard.style.paddingLeft=inlinePad;
           slideTarget.appendChild(rCard);
           _previewRemarksRenderedInline.add(rm.id);
         });
@@ -36132,7 +36158,7 @@ function renderPreviewBody(){
       }
       if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-        const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
+        const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
         // A chart-featured table (same "Feature as chart" toggle Pad's own tables use) renders as
         // its chart here too, same as the live editor's own renderNoteDisplayHtml does -- without
@@ -36151,7 +36177,7 @@ function renderPreviewBody(){
         const qRefsInline=qaRefsForNode(node.id);
         if(qRefsInline.length){
           const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-          const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML=qaDotIconSvg(11)+`<span>${qRefsInline.length>1?'Questions':'Question'}</span>`;
+          const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-qa'; label.innerHTML=qaDotIconSvg(11)+`<span>${qRefsInline.length>1?'Questions':'Question'}</span>`;
           const inner=document.createElement('div'); inner.className='pv-inline-qa-body'+(noteMatchEditorBg?'':' bg-distinct');
           qRefsInline.forEach(item=>{
             const rowEl=document.createElement('div'); rowEl.className='pv-inline-qa-row';
@@ -36165,6 +36191,7 @@ function renderPreviewBody(){
             const aEl=document.createElement('div'); aEl.className='pv-inline-qa-answer'+(aTrimmed?'':' pv-inline-qa-unanswered'); aEl.textContent=aTrimmed||'No answer yet';
             aLine.appendChild(aEl); rowEl.appendChild(aLine);
             inner.appendChild(rowEl);
+            _previewQaRenderedInline.add(item.id);
           });
           wrap.appendChild(label); wrap.appendChild(inner);
           slideTarget.appendChild(wrap);
@@ -36182,7 +36209,12 @@ function renderPreviewBody(){
       doc.appendChild(notepadSection);
     }
   }
-  const qaValidItems=qaExportEnabled?qaItems.filter(it=>(it.question||'').trim()):[];
+  // Items already rendered inline under their linked node (see _previewQaRenderedInline just
+  // above -- populated whenever "Include Q&A in exports" force-opens a node's Q&A card for
+  // export, same mechanism notes already use via previewOpenNoteIds/nodeContentExportEnabled)
+  // are excluded here so a question doesn't print twice. What's left is genuinely unlinked
+  // questions, or ones linked to a node that isn't part of this document/export pass.
+  const qaValidItems=qaExportEnabled?qaItems.filter(it=>(it.question||'').trim()&&!_previewQaRenderedInline.has(it.id)):[];
   if(qaValidItems.length){
     const qaSection=document.createElement('div'); qaSection.id='pv-qa-section';
     const qaHeading=document.createElement('div'); qaHeading.className='pv-qa-heading'; qaHeading.textContent='Q&A';
@@ -37673,16 +37705,20 @@ el('preview-export-pdf-btn')?.addEventListener('click',()=>exportPdfDirect());
 // Fold state follows Preview's own previewCollapsedIds, same as PowerPoint and Word — see the
 // comment inside exportPdfDirect below for why, and Settings → Export & print → "Skip folded
 // sections" for the (deliberately different) behavior of Markdown/OPML/Text/Print.
-// PDF and PPTX both render from Preview's own note open state (previewOpenNoteIds) rather
-// than raw node data, since Preview cards are collapsed by default — a note only actually
-// prints if its card happens to be open on screen. "Include node Notes in exports" makes
-// that deliberate instead of accidental: on, every node with note content is force-opened
-// for this one export pass regardless of what's expanded on screen; off, everything is
-// force-closed so none of it prints. Either way the caller must restore the pre-export set
-// afterward (see the restore() this returns) so an already-open Preview session isn't left
-// in a different state than the user had it.
+// PDF and PPTX both render from Preview's own note/Q&A open state (previewOpenNoteIds/
+// previewOpenQaIds) rather than raw node data, since Preview cards are collapsed by default —
+// a note or a linked question only actually prints if its card happens to be open on screen.
+// "Include node Notes in exports"/"Include Q&A in exports" make that deliberate instead of
+// accidental: on, every node with note content (or linked Q&A) is force-opened for this one
+// export pass regardless of what's expanded on screen; off, everything is force-closed so none
+// of it prints. Either way the caller must restore the pre-export sets afterward (see the
+// restore() this returns) so an already-open Preview session isn't left in a different state
+// than the user had it. Q&A previously had no equivalent force-open step at all, so a node's
+// linked question(s) only ended up in a PDF if the user happened to have clicked that node's
+// Q&A dot open in Preview during the same session — by default every linked question printed
+// only in the flat end-of-document Q&A list, disconnected from the node it was actually about.
 function _applyNodeContentExportState(){
-  const prevNote=previewOpenNoteIds, prevSuppress=_pvSuppressNoteCodeIndicators;
+  const prevNote=previewOpenNoteIds, prevSuppress=_pvSuppressNoteCodeIndicators, prevQa=previewOpenQaIds;
   if(nodeContentExportEnabled){
     previewOpenNoteIds=new Set(nodes.filter(n=>n.note&&n.note.trim()).map(n=>n.id));
     _pvSuppressNoteCodeIndicators=false;
@@ -37690,7 +37726,8 @@ function _applyNodeContentExportState(){
     previewOpenNoteIds=new Set();
     _pvSuppressNoteCodeIndicators=true;
   }
-  return function restore(){ previewOpenNoteIds=prevNote; _pvSuppressNoteCodeIndicators=prevSuppress; };
+  previewOpenQaIds=qaExportEnabled?new Set(qaItems.filter(it=>(it.question||'').trim()&&it.sourceNodeId!=null).map(it=>it.sourceNodeId)):new Set();
+  return function restore(){ previewOpenNoteIds=prevNote; _pvSuppressNoteCodeIndicators=prevSuppress; previewOpenQaIds=prevQa; };
 }
 function exportPdfDirect(){
   if(previewPresenting)exitPresenterMode();
