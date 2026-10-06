@@ -1992,8 +1992,18 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-card-value{font:700 22px 'Inter',sans-serif;color:var(--fg);line-height:1.15}
 .pv-table-card-label{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
 
-.node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;font-family:var(--content-font);color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;border:none;resize:none;overflow:hidden;background:transparent}
+.node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;font-family:var(--content-font);color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;background:transparent;border-radius:4px}
 .node-note-line:focus{color:var(--fg)}
+.node-note-line img{max-width:100%;border-radius:6px;margin:4px 0;display:block}
+.node-note-line ul,.node-note-line ol{margin:6px 0;padding-left:26px}
+.node-note-line li{margin:2px 0;padding-left:2px}
+.node-note-line li ul,.node-note-line li ol{margin:2px 0}
+.node-note-line a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.node-note-line table{border-collapse:collapse;margin:6px 0;font-size:12px;table-layout:fixed;max-width:none}
+.node-note-line table td,.node-note-line table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
+.node-note-line table th{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600;color:var(--fg)}
+.node-note-line table td:focus,.node-note-line table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
+.node-note-line .pv-table-chart-figure svg{max-width:100%}
 .node-remark-line{position:relative;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:13px;line-height:1.4}
 .node-inline-open-panel-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;color:var(--hint);opacity:0;cursor:pointer;margin-top:1px}
 .node-remark-line:hover .node-inline-open-panel-btn,.node-qa-line:hover .node-inline-open-panel-btn,.node-note-line-wrap:hover .node-inline-open-panel-btn,.node-diagram-line:hover .node-inline-open-panel-btn{opacity:.6}
@@ -9413,22 +9423,29 @@ function htmlHasVisibleContent(html){
     return div.textContent.replace(/\u200b/g,'').trim().length>0;
   }catch(e){ return !!String(html).trim(); }
 }
-// node.note is guaranteed plain text: normalizeNode's notePlainTextFromLegacyHtml flattens any
-// legacy HTML on load, and the only way to edit it live is the plain <textarea> .node-note-line
-// -- but every consumer downstream of splitNoteDiagramImages (Presenter/Preview's inline and
-// card note rendering, Word's docxNoteBlocks, PPTX's noteBlockLines) was written for the OLD
-// rich-HTML note format and still treats its input as already-safe markup with real <br>/<div>/
-// <p> elements marking line breaks. A raw '\n' character has no visual effect when the text is
-// set via innerHTML the way all three of those do (unlike the live textarea, which preserves it
-// natively) -- so a genuinely multi-line note silently collapsed onto one run-on line in every
-// export and in Presenter/Preview alike, and the "is this a single-line note" classification in
-// renderPreviewBody never found anything to detect, since plain text never has the <br>/block
-// children it was checking for. Escaping the text and converting '\n' to real <br> tags once,
-// right here at the one choke point all three call sites already route through, makes every
-// downstream consumer correct without changing any of them -- they already handle real <br>
-// tags properly, they just never received any.
-function notePlainTextToSafeHtml(text){
-  return esc(String(text||'')).replace(/\n/g,'<br>');
+// node.note holds real HTML again (inline notes are rich text, see .node-note-line) -- every
+// consumer downstream of splitNoteDiagramImages (Presenter/Preview's inline and card note
+// rendering, Word's docxNoteBlocks, PPTX's noteBlockLines) was written for this format from the
+// start and reads it directly, no conversion step needed at the call sites.
+// A chart-featured table (data-feature-chart, see tableChartability/setTableFeatureChart) shows
+// as a live editable table while its note is focused, but as the rendered chart SVG otherwise --
+// the same split Preview/Presenter/PPTX already use for Pad's own charted tables. Swapped in by
+// the note-line's own blur handler (edit -> display) and focus handler (display -> edit); the
+// node's stored note HTML always keeps the real <table>, never the chart markup, so re-focusing
+// (or reading node.note anywhere else, e.g. in exports) never loses the underlying data.
+function renderNoteDisplayHtml(html){
+  if(!html||!/<table/i.test(html))return html||'';
+  try{
+    const div=document.createElement('div');
+    div.innerHTML=html;
+    div.querySelectorAll('table[data-feature-chart="1"]').forEach(table=>{
+      const svg=renderTableChartSvg(table);
+      if(!svg)return;
+      const figure=document.createElement('div'); figure.className='pv-table-chart-figure'; figure.innerHTML=svg;
+      table.replaceWith(figure);
+    });
+    return div.innerHTML;
+  }catch(e){ return html; }
 }
 function splitNoteDiagramImages(noteHtml){
   if(!noteHtml) return {diagrams:[], restHtml:noteHtml||''};
@@ -9460,28 +9477,7 @@ function setLastFontColor(c){if(!FONT_COLORS.includes(c))return; lastFontColor=c
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-// One-way migration for notes saved back when the Note panel was rich text (HTML): flattens
-// tags/images/tables down to their plain text, one line per block-level element, preserving line
-// breaks rather than collapsing everything to one run-on line the way stripHtmlToText does.
-// Deliberately does NOT drop .note-comment-stamp spans the way notePreviewPlainText/
-// noteBlockLines do for their own truncated-preview use case — this is the actual stored
-// content, dropping a timestamp here would be real, silent data loss, not just a display
-// simplification. Runs on every load (normalizeNode), so it's self-healing: any note that
-// somehow still has HTML in it (an old sync payload, an imported file) gets flattened the
-// next time it's touched, not just once at a one-time migration point. The no-tags fast path
-// matters since this runs for every node's note on every doc load.
-function notePlainTextFromLegacyHtml(html){
-  if(!html)return '';
-  if(!/[<>]/.test(html))return html; // already plain — skip the DOM round-trip
-  // U+E000 (Private Use Area) — same marker technique noteBlockLines uses; never appears in
-  // real content and HTML parsing leaves it untouched, unlike NUL.
-  const marker='';
-  const tmp=document.createElement('div');
-  tmp.innerHTML=String(html).replace(/<\/(div|p|li)>|<br\s*\/?>/gi,marker+'$&');
-  const text=(tmp.textContent||tmp.innerText||'');
-  return text.split(marker).map(s=>s.replace(/[ \t]+/g,' ').trim()).filter(Boolean).join('\n');
-}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:notePlainTextFromLegacyHtml(typeof n.note==='string'?n.note:''),noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 /* GENERATED:decisionLog:START — DO NOT EDIT BY HAND. Source of truth: src/state/decisionLog.ts (tests: tests/unit/decisionLog.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * Pure validation/normalization layer for the Decision Log domain — first slice of a domain not
@@ -17590,7 +17586,7 @@ function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); schedu
 // Shift+Enter on a folded node used to reveal its whole hidden subtree just to add a note).
 function openInlineNoteAndFocus(id){
   commitEdit(); setSingleSelection(id); forceInlineNoteId=id; render();
-  requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const len=ln.value.length; ln.setSelectionRange(len,len); } });
+  requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } });
 }
 // inlineExpand*NodeIds Sets track deviation from the current alwaysExpandInlineEnabled default
 // (see the XOR check in render), not "is expanded" directly — so forcing a node visible after
@@ -19332,32 +19328,113 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   if((forceInlineNoteId===node.id||(alwaysExpandInlineEnabled!==inlineExpandNoteNodeIds.has(node.id)))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
-    // A real <textarea> now, not contenteditable — Enter/paste/multi-line all "just work"
-    // natively and correctly. (An earlier contenteditable-based version tried to special-case
-    // Enter with a manually-inserted text-node newline: Chrome has a well-known caret-placement
-    // quirk when a text node's caret sits right after a *trailing* newline — subsequent native
-    // typing landed *before* that newline instead of after it, silently scrambling multi-line
-    // notes. Measured and confirmed directly; not worth chasing further workarounds for when a
-    // textarea sidesteps the entire bug class, the same way the Note panel's own editor and
-    // code-editor already do.)
-    const noteLine=document.createElement('textarea'); noteLine.className='node-note-line'; noteLine.rows=1; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id); noteLine.id='note-line-'+node.id;
+    // Rich text (contenteditable), same as remarks/Q&A/Pad -- notes can hold pasted images and
+    // tables, with a chart-featured table (see the note's own right-click menu) rendering as
+    // the chart while not focused (renderNoteDisplayHtml) and the real editable table while
+    // being edited. An earlier contenteditable version of this field was abandoned for a plain
+    // <textarea> because it special-cased Enter with a manually-inserted text-node newline --
+    // Chrome has a caret-placement quirk right after a *trailing* newline in a text node that
+    // silently scrambled subsequent typing. That bug was in the manual newline insertion itself,
+    // not in contenteditable generally -- this version never does that, letting the browser
+    // handle Enter natively (block elements, like Pad's own editor already does correctly).
+    const noteLine=document.createElement('div'); noteLine.className='node-note-line'; noteLine.contentEditable='true'; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id); noteLine.id='note-line-'+node.id;
     noteLine.style.paddingLeft=hideTreeLines?(noteDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
-    noteLine.value=node.note||'';
-    // Sized from explicit line breaks up front (cheap, no layout measurement needed since the
-    // row isn't attached to the live DOM yet at this point) — autoGrowTextarea on focus/input
-    // below refines it further for wrapped (not just explicit-newline) lines once it's live.
-    noteLine.rows=Math.max(1,String(node.note||'').split('\n').length);
+    noteLine.innerHTML=renderNoteDisplayHtml(node.note||'');
     noteLine.dataset.tip='Note — click to edit';
+    const commitNoteLine=()=>{ const html=sakuraSanitizeRichHtml(noteLine.innerHTML); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=html; nodes[i].modifiedAt=Date.now();} markDirty(); scheduleAutoSave(); return html; };
     noteLine.addEventListener('mousedown',e=>{e.stopPropagation()});
-    noteLine.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id}; autoGrowTextarea(noteLine); });
+    noteLine.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id}; noteLine.innerHTML=node.note||''; });
     noteLine.addEventListener('click',e=>{e.stopPropagation()});
     noteLine.addEventListener('keydown',e=>{
+      if(e.key==='Tab'){
+        // Not e.target -- a keydown's target is always the focused contenteditable HOST (noteLine
+        // itself), never whichever descendant the caret happens to sit in, unless that descendant
+        // carries its own independent contentEditable attribute (true only for a cell this same
+        // Tab-handling code just created via the "add a row" branch below, never an original
+        // pasted/typed cell). The live selection's anchor node is the only reliable way to find
+        // which cell the caret is actually in.
+        const anchor=window.getSelection()?.anchorNode;
+        const anchorEl=anchor?(anchor.nodeType===1?anchor:anchor.parentElement):null;
+        const cell=anchorEl&&anchorEl.closest?anchorEl.closest('td,th'):null;
+        if(cell){
+          e.preventDefault();
+          const table=cell.closest('table'); const allCells=table?Array.from(table.querySelectorAll('td,th')):[];
+          const cellIdx=allCells.indexOf(cell);
+          let targetCell=null;
+          if(e.shiftKey){ targetCell=cellIdx>0?allCells[cellIdx-1]:null; }
+          else if(cellIdx===allCells.length-1){
+            const lastRow=table.rows[table.rows.length-1]; const newRow=lastRow.cloneNode(false); const colCount=lastRow.cells.length;
+            for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); }
+            (table.tBodies[0]||table).appendChild(newRow); _attachTableResizeHandles(table); targetCell=newRow.cells[0];
+          } else { targetCell=allCells[cellIdx+1]; }
+          if(targetCell){ const rg=document.createRange(); rg.selectNodeContents(targetCell); rg.collapse(true); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); }
+          commitNoteLine();
+        } else { e.preventDefault(); }
+        return;
+      }
       if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
-      const wasEmpty=!(noteLine.value||'').trim(); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(noteLine.value||'').trim())doDelete(); },0);
+      const wasEmpty=!htmlHasVisibleContent(noteLine.innerHTML); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!htmlHasVisibleContent(noteLine.innerHTML))doDelete(); },0);
     });
-    noteLine.addEventListener('input',()=>{ autoGrowTextarea(noteLine); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=noteLine.value; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&noteLine.value.trim())forceInlineNoteId=null; });
-    noteLine.addEventListener('blur',()=>{ if(noteLine.dataset.deleting)return; const i=getIndex(nodes,node.id); if(i>=0)nodes[i].note=noteLine.value; if(forceInlineNoteId===node.id&&!noteLine.value.trim()){ forceInlineNoteId=null; render(); } });
-    noteLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.value||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=result; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
+    // Mirrors #pad-editor's own paste listener: genuine rich content (any text or HTML
+    // representation) is left to the browser's native paste, which is how a pasted table lands
+    // as real <table> markup; an image-only clipboard item (no text/html at all -- the common
+    // case for a screenshot) is the one thing intercepted and inserted manually.
+    noteLine.addEventListener('paste',e=>{
+      e.stopPropagation();
+      const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||'';
+      const hasRichContent=text.trim().length>0||html.replace(/<[^>]*>/g,'').trim().length>0;
+      if(hasRichContent){ setTimeout(()=>{ noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); commitNoteLine(); },0); return; }
+      const items=e.clipboardData?.items; if(!items)return;
+      for(const item of items){
+        if(item.type.startsWith('image/')){
+          e.preventDefault();
+          const file=item.getAsFile(); if(!file)continue;
+          const reader=new FileReader();
+          reader.onload=evt=>{ pushUndo(); document.execCommand('insertImage',false,evt.target.result); commitNoteLine(); };
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
+    });
+    noteLine.addEventListener('input',()=>{ const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=noteLine.innerHTML; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&htmlHasVisibleContent(noteLine.innerHTML))forceInlineNoteId=null; });
+    noteLine.addEventListener('blur',()=>{
+      if(noteLine.dataset.deleting)return;
+      const html=commitNoteLine();
+      noteLine.innerHTML=renderNoteDisplayHtml(html);
+      if(forceInlineNoteId===node.id&&!htmlHasVisibleContent(html)){ forceInlineNoteId=null; render(); }
+    });
+    noteLine.addEventListener('contextmenu',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const cell=e.target.closest&&e.target.closest('td,th');
+      const table=cell?cell.closest('table'):(e.target.closest&&e.target.closest('table'));
+      const items=[];
+      if(table&&cell){
+        items.push({label:'Add row below', onClick:()=>{ const row=cell.closest('tr'); if(!row)return; const newRow=row.cloneNode(false); const colCount=row.cells.length; for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); } row.insertAdjacentElement('afterend',newRow); _attachTableResizeHandles(table); commitNoteLine(); }});
+        items.push({label:'Add column right', onClick:()=>{ const cellIndex=cell.cellIndex; table.querySelectorAll('tr').forEach(row=>{ const isHead=row.closest('thead')!==null; const c=isHead?document.createElement('th'):document.createElement('td'); c.contentEditable='true'; if(isHead)c.textContent='Column'; const refCell=row.cells[cellIndex]; if(refCell)refCell.insertAdjacentElement('afterend',c); else row.appendChild(c); }); _attachTableResizeHandles(table); commitNoteLine(); }});
+        items.push({divider:true});
+        items.push({label:'Delete row', onClick:()=>{ const row=cell.closest('tr'); const tbody=row?.closest('tbody'); if(row&&tbody&&tbody.rows.length>1){ row.remove(); commitNoteLine(); } }});
+        items.push({label:'Delete column', onClick:()=>{ const ci=cell.cellIndex; let canDelete=true; table.querySelectorAll('tr').forEach(r=>{ if(r.cells.length<=1)canDelete=false; }); if(canDelete){ table.querySelectorAll('tr').forEach(r=>r.cells[ci]?.remove()); commitNoteLine(); } }});
+        items.push({label:'Delete table', danger:true, onClick:()=>{ table.remove(); commitNoteLine(); }});
+        items.push({divider:true});
+        const isCharted=isTableFeaturedAsChart(table);
+        if(isCharted||tableChartability(table).ok){
+          items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commitNoteLine(); }});
+        }
+      } else {
+        if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
+        items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }});
+      }
+      showSbContextMenu(e.clientX,e.clientY,items);
+      // The table-action items above close over live `cell`/`table` DOM references, captured at
+      // open time -- but the menu itself lives outside noteLine (document.body), so clicking any
+      // item would otherwise blur noteLine first (default mousedown focus-shift behavior), and
+      // noteLine's own blur handler resets its entire innerHTML from committed state, detaching
+      // those very references before the item's onClick gets to use them (same reasoning the
+      // selection-fmt-popover's own mousedown handler already documents for keeping a field's
+      // selection/focus alive across its own button clicks).
+      const sbMenu=document.querySelector('.sb-context-menu');
+      if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
+    });
     noteWrap.appendChild(noteLine);
     if(hideTreeLines&&depthGuideLines){ const nVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); nVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; noteWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(noteDepth*32+0*editorScale+9)+'px'; noteWrap.appendChild(vgOwn) } }
     frag.appendChild(noteWrap)
@@ -21042,13 +21119,13 @@ function exportTreeFormat(){const title=(getMeta().title||'tree').replace(/[\\/:
 function escAttrLocal(s) {
     return escapeHtml(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-/** Pure: matches index.html's own `nodesToOutlineXml` exactly — recursively renders `list`
- * starting at `startIdx`, emitting an `<outline>` element per node deeper than `parentDepth`
- * (self-closing for a leaf, wrapping nested `<outline>`s for a node with children), a leading
- * `[x] `/`[ ] ` checkbox-state prefix when `node.isCheckbox` is set, and — only when
- * `nodeContentExportEnabled` is true and the node has a non-blank note — a `_note` attribute
- * carrying the note text. */
-function nodesToOutlineXmlCore(list, startIdx, parentDepth, nodeContentExportEnabled) {
+/** Pure once `stripHtmlToText` is supplied: matches index.html's own `nodesToOutlineXml` exactly
+ * — recursively renders `list` starting at `startIdx`, emitting an `<outline>` element per node
+ * deeper than `parentDepth` (self-closing for a leaf, wrapping nested `<outline>`s for a node
+ * with children), a leading `[x] `/`[ ] ` checkbox-state prefix when `node.isCheckbox` is set,
+ * and — only when `nodeContentExportEnabled` is true and the node has a non-blank note — a
+ * `_note` attribute carrying the note's plain-texted (`stripHtmlToText`) content. */
+function nodesToOutlineXmlCore(list, startIdx, parentDepth, nodeContentExportEnabled, stripHtmlToText) {
     let xml = '';
     let i = startIdx;
     while (i < list.length && list[i].depth > parentDepth) {
@@ -21061,11 +21138,10 @@ function nodesToOutlineXmlCore(list, startIdx, parentDepth, nodeContentExportEna
             const label = getNodePlainText(node);
             const checkboxPrefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
             const text = escAttrLocal(checkboxPrefix + label);
-            const noteAttr = nodeContentExportEnabled && node.note && node.note.trim()
-                ? ` _note="${escAttrLocal(node.note)}"`
-                : '';
+            const noteText = node.note ? stripHtmlToText(node.note) : '';
+            const noteAttr = nodeContentExportEnabled && noteText ? ` _note="${escAttrLocal(noteText)}"` : '';
             xml += hasKids
-                ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, nodeContentExportEnabled)}</outline>`
+                ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, nodeContentExportEnabled, stripHtmlToText)}</outline>`
                 : `<outline text="${text}"${noteAttr}/>`;
             i = j;
         }
@@ -21080,20 +21156,20 @@ function nodesToOutlineXmlCore(list, startIdx, parentDepth, nodeContentExportEna
  * node sits at the OPML root, `<dateCreated>` from `dateCreated` (defaulting to `new Date()`,
  * see this module's own header for why). An empty `scopeNodes` still produces a valid, empty
  * OPML document with the title but no `<dateCreated>` — matching the original exactly. */
-function serializeOpmlCore(scopeNodes, title, nodeContentExportEnabled, dateCreated = new Date()) {
+function serializeOpmlCore(scopeNodes, title, nodeContentExportEnabled, stripHtmlToText, dateCreated = new Date()) {
     const safeTitle = escAttrLocal(title || 'Untitled');
     if (!scopeNodes.length) {
         return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head><title>${safeTitle}</title></head>\n<body></body>\n</opml>`;
     }
     const minDepth = Math.min(...scopeNodes.map((n) => n.depth));
     const rebased = scopeNodes.map((n) => ({ ...n, depth: n.depth - minDepth }));
-    const body = nodesToOutlineXmlCore(rebased, 0, -1, nodeContentExportEnabled);
+    const body = nodesToOutlineXmlCore(rebased, 0, -1, nodeContentExportEnabled, stripHtmlToText);
     return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head>\n<title>${safeTitle}</title>\n<dateCreated>${dateCreated.toUTCString()}</dateCreated>\n</head>\n<body>\n${body}\n</body>\n</opml>`;
 }
 
 /* GENERATED:serializeOpml:END */
-function nodesToOutlineXml(list,startIdx,parentDepth){return nodesToOutlineXmlCore(list,startIdx,parentDepth,nodeContentExportEnabled)}
-function serializeOpml(scopeNodes=nodes){return serializeOpmlCore(scopeNodes,getMeta().title,nodeContentExportEnabled)}
+function nodesToOutlineXml(list,startIdx,parentDepth){return nodesToOutlineXmlCore(list,startIdx,parentDepth,nodeContentExportEnabled,stripHtmlToText)}
+function serializeOpml(scopeNodes=nodes){return serializeOpmlCore(scopeNodes,getMeta().title,nodeContentExportEnabled,stripHtmlToText)}
 function exportOpml(foldOverride){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|]+/g,'_'); downloadBlob(`${title}.opml`,'text/x-opml;charset=utf-8',serializeOpml(getScopedNodes(true,foldOverride)))}
 
 // === Sakura Document (full-fidelity single-document share) ===
@@ -24239,7 +24315,7 @@ async function buildDocxPackage(foldOverride){const meta=getMeta(); const rawTit
       bodyParas.push(`<w:p><w:pPr><w:pStyle w:val="TreeNode"/><w:ind w:left="${left}"/><w:spacing w:before="0" w:after="60"/></w:pPr>${docxRun(n.tags.map(t=>'#'+t).join('  '),{size:18,color:'9B9890'})}</w:p>`);
     }
     if(nodeContentExportEnabled&&n.note&&n.note.trim()){
-      const split=splitNoteDiagramImages(notePlainTextToSafeHtml(n.note));
+      const split=splitNoteDiagramImages(n.note);
       const nb=await docxNoteBlock(split.restHtml,left); if(nb)bodyParas.push(nb);
       if(split.diagrams.length){
         const maxWidthEmu=Math.max(2743200, Math.round((9746-Math.min(left,4000))*635));
@@ -24785,7 +24861,7 @@ async function pptxGatherSlidesData(){
     if(padRemarksTabEnabled&&remarksExportEnabled&&Array.isArray(remarks)){
       remarks.filter(rm=>rm.anchorNodeId===node.id).forEach(rm=>{ items.push(pptxRemarkAsNoteItem(rm,0)); pptxRemarksRenderedInline.add(rm.id); });
     }
-    const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(notePlainTextToSafeHtml(node.note)):null;
+    const ownNoteSplit=(nodeContentExportEnabled&&node.note&&node.note.trim())?splitNoteDiagramImages(node.note):null;
     if(ownNoteSplit){
       const ownLines=noteBlockLines(ownNoteSplit.restHtml);
       if(ownLines.length) items.push({type:'note', lines:ownLines, indent:0});
@@ -26137,7 +26213,7 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     // fix applied there). A folded node's own row, and its own inline note, render regardless
     // of whether its children are hidden.
     commitEdit(); forceInlineNoteId=id; render();
-    requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const len=ln.value.length; ln.setSelectionRange(len,len); } });
+    requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } });
     return;
   } if(!(e.ctrlKey||e.metaKey)){
     const selRange=getEditableSelectionRange(input);
@@ -35604,7 +35680,7 @@ function renderPreviewBody(){
     // chip and note dot above agree with the actual inline card below about whether there's
     // any non-diagram content — otherwise a diagram-only note shows an openable "has a note"
     // indicator that opens onto an empty card.
-    const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(notePlainTextToSafeHtml(node.note)) : null;
+    const noteSplit = (featureNoteEnabled&&ownNote) ? splitNoteDiagramImages(node.note) : null;
     const noteHasContent = noteSplit ? htmlHasVisibleContent(noteSplit.restHtml) : ownNote;
     const noteRestHtml = noteSplit ? noteSplit.restHtml : node.note;
     // A plain-text note (no image/table/list/heading/code — see noteIsPlainTextOnly) that's
@@ -36355,10 +36431,11 @@ function saveNodeComment(nodeId,text){
   const node=nodes.find(n=>n.id===nodeId); if(!node)return;
   const trimmed=text.trim(); if(!trimmed)return;
   const stamp=new Date().toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-  // Notes are plain text — stamp fronts the entry's first line, multiple comments on one node
-  // stack as separate lines (blank line between entries) rather than needing their own markup.
-  const addition=`${stamp} ${trimmed}`;
-  node.note=node.note?(node.note.trim()+'\n\n'+addition):addition;
+  // One block per comment, stamp fronting it — see notePreviewPlainText/noteBlockLines, which
+  // already strip .note-comment-stamp and split on each .note-comment-entry for their own
+  // (timestamp-free, one-line-per-entry) consumers.
+  const addition=`<div class="note-comment-entry"><span class="note-comment-stamp">${esc(stamp)}</span><br>${esc(trimmed)}</div>`;
+  node.note=sakuraSanitizeRichHtml((node.note||'')+addition);
   node.modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   showToast('Comment added to node note');
@@ -37897,11 +37974,10 @@ async function copyPreviewAsRichText(){
       head.textContent='Note';
       noteCard.appendChild(head);
       const body=document.createElement('div');
-      body.style.whiteSpace='pre-wrap';
-      body.textContent=node.note;
+      body.innerHTML=sakuraSanitizeRichHtml(node.note);
       noteCard.appendChild(body);
       ownerEl.appendChild(noteCard);
-      plainLines.push('  Note: '+(node.note||'').trim());
+      plainLines.push('  Note: '+stripHtmlToText(node.note));
     }
     if(decisionLogForNode(node.id)&&!(folded&&hasChildren)){
       plainLines.push('  Decision Log');
@@ -46266,8 +46342,6 @@ document.querySelectorAll('.meeting-field-fmt-btn').forEach(btn=>{
 // (short of typing raw HTML) to add a link in meeting notes at all, since that field's own
 // toolbar only ever had bullet/numbered list and AI rewrite buttons. Settings → Editing →
 // "Selection formatting popover" turns it off if it gets in the way.
-// note-editor deliberately excluded — it's plain text now (no execCommand formatting applies
-// to a <textarea>), so the popover would show Bold/Italic/etc. buttons that do nothing.
 const SELECTION_FMT_EDITOR_IDS=['pad-editor','meeting-agenda','meeting-body-field','journal-body-field','library-body-field'];
 const SELECTION_HIGHLIGHT_COLOR='rgba(234,179,8,.35)'; // same hue as the node-highlight palette's yellow
 let _selectionFmtEditorId=null;
@@ -46276,8 +46350,10 @@ function selectionFmtEditorFor(node){
   while(n){
     if(n.nodeType===1){
       if(SELECTION_FMT_EDITOR_IDS.includes(n.id))return n.id;
-      // node-note-line deliberately excluded — same reasoning as note-editor above: notes are
-      // plain text now, so there's no formatting for this popover to apply.
+      // Notes aren't a singleton editor like Pad — there's one of these per node, each with its
+      // own id (note-line-<nodeId>, see the inline note-line's creation in render()) — so this
+      // checks the class instead of a fixed id list, same pattern as remarks just below.
+      if(n.classList&&n.classList.contains('node-note-line')&&n.id)return n.id;
       if(n.classList&&(n.classList.contains('node-qa-question')||n.classList.contains('node-qa-answer'))&&n.id)return n.id;
       // Remarks aren't a singleton editor like Pad/Note — there's one of these per remark, each
       // with its own generated id (see renderRemarksList) — so this checks the class instead of
@@ -46303,6 +46379,18 @@ function syncRemarkTextFromEditorIfApplicable(editor){
   const html=sakuraSanitizeRichHtml(editor.innerHTML);
   if(html===(r.text||''))return;
   r.text=html; markDirty(); scheduleAutoSave();
+}
+// Same reasoning as syncRemarkTextFromEditorIfApplicable just above -- the AI-rewrite popover's
+// execCommand('insertText') doesn't reliably fire a native 'input' event in every browser, so
+// the note-line's own input listener (which normally persists every keystroke) can't be trusted
+// as the only path here.
+function syncNoteTextFromEditorIfApplicable(editor){
+  if(!editor||!editor.classList||!editor.classList.contains('node-note-line'))return;
+  const nodeId=Number(editor.dataset.nodeId); if(!Number.isFinite(nodeId))return;
+  const i=getIndex(nodes,nodeId); if(i<0)return;
+  const html=sakuraSanitizeRichHtml(editor.innerHTML);
+  if(html===(nodes[i].note||''))return;
+  nodes[i].note=html; nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave();
 }
 function hideSelectionFmtPopover(){
   const pop=el('selection-fmt-popover'); if(pop)pop.classList.remove('open');
@@ -46423,6 +46511,7 @@ async function runSelectionFmtRewrite(editorId,btn){
       meetingFieldSyncModel(mfKey,editor);
     } else {
       syncRemarkTextFromEditorIfApplicable(editor);
+      syncNoteTextFromEditorIfApplicable(editor);
     }
     if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦','success');
   }catch(err){
@@ -46458,7 +46547,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
         const text=(result.text||'').trim()||url;
         document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
         if(mfKey)meetingFieldSyncModel(mfKey,editor);
-        else syncRemarkTextFromEditorIfApplicable(editor);
+        else { syncRemarkTextFromEditorIfApplicable(editor); syncNoteTextFromEditorIfApplicable(editor); }
       }
       hideSelectionFmtPopover();
     });
@@ -46469,7 +46558,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     if(mfKey)checkpointMeetingField(mfKey);
     document.execCommand('hiliteColor',false,selectionIsHighlighted()?'transparent':SELECTION_HIGHLIGHT_COLOR);
     if(mfKey)meetingFieldSyncModel(mfKey,editor);
-    else syncRemarkTextFromEditorIfApplicable(editor);
+    else { syncRemarkTextFromEditorIfApplicable(editor); syncNoteTextFromEditorIfApplicable(editor); }
     updateSelectionFmtButtonStates();
     return;
   }
@@ -46481,7 +46570,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   if(mfKey)checkpointMeetingField(mfKey);
   document.execCommand(cmd,false,null);
   if(mfKey)meetingFieldSyncModel(mfKey,editor);
-  else syncRemarkTextFromEditorIfApplicable(editor);
+  else { syncRemarkTextFromEditorIfApplicable(editor); syncNoteTextFromEditorIfApplicable(editor); }
   updateSelectionFmtButtonStates();
 });
 

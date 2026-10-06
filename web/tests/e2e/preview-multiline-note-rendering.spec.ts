@@ -40,22 +40,18 @@ function setUpDoc(page: import('@playwright/test').Page, note: string) {
   }, note);
 }
 
-// node.note is guaranteed plain text -- normalizeNode's notePlainTextFromLegacyHtml flattens any
-// legacy HTML on load, and the only way to edit it live is the plain <textarea> .node-note-line
-// -- but renderPreviewBody's note rendering (both the inline-plain and block-card paths) was
-// written for the OLD rich-HTML note format and set the raw text directly via innerHTML. A '\n'
-// character has no visual effect there (unlike the live textarea, which preserves it natively),
-// so a genuinely multi-line note -- several manual line breaks, or several saveNodeComment
-// entries joined with '\n\n' -- silently collapsed onto one run-on line in Presenter/Preview, and
-// the "is this a single-line note" classification never caught it either, since plain text never
-// has the <br>/block-children the check was looking for. Fixed by escaping the text and
-// converting '\n' to real <br> tags once, at the single choke point (splitNoteDiagramImages)
-// Presenter/Preview, Word export, and PPTX export all already route through.
-test.describe('A multi-line plain-text note renders correctly in Presenter/Preview', () => {
-  test('several manual line breaks render as a block card with real <br> line breaks, not squashed inline', async ({ page }) => {
+// node.note holds real HTML (the inline .node-note-line editor is contenteditable, same as
+// remarks/Q&A/Pad -- see its rewrite in render()), with real <br>/<div> elements marking line
+// breaks exactly the way the browser's own Enter/Shift+Enter handling produces them. Presenter/
+// Preview's note rendering (both the inline-plain and block-card paths, and the single
+// choke point splitNoteDiagramImages they share with Word/PPTX export) sets this HTML directly
+// via innerHTML with no conversion step -- these tests exercise noteIsPlainTextOnly/
+// noteIsSingleLine's classification of real HTML shapes, not a legacy plain-text bridge.
+test.describe('A multi-line rich-HTML note renders correctly in Presenter/Preview', () => {
+  test('several real <br> line breaks render as a block card, not squashed inline', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    await setUpDoc(page, 'Ad-hoc project-site address\nCountry + Postal Code\nTransportation-zone determination\nRoute');
+    await setUpDoc(page, 'Ad-hoc project-site address<br>Country + Postal Code<br>Transportation-zone determination<br>Route');
 
     const result = await page.evaluate(() => {
       const doc = document.getElementById('preview-body')!;
@@ -94,10 +90,16 @@ test.describe('A multi-line plain-text note renders correctly in Presenter/Previ
     expect(result.inlineText).toBe('A short one-line note');
   });
 
-  test('a literal "<" or ">" typed in a note is escaped, not parsed as markup', async ({ page }) => {
+  // A literal "<"/">" typed into the contenteditable note-line is just text content as far as the
+  // DOM is concerned -- reading it back via .innerHTML (exactly what the note-line's own input
+  // handler does to persist node.note) always serializes it back out as &lt;/&gt; entities, the
+  // same as any other HTML source. This confirms that already-escaped HTML renders back as the
+  // literal characters rather than being mangled by a second escaping (or de-escaping) pass
+  // somewhere between node.note and the screen.
+  test('a literal "<" or ">" already escaped as entities (as real contenteditable HTML would store it) renders as plain characters', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    await setUpDoc(page, 'Only valid if x < 5 and y > 10\nSecond line');
+    await setUpDoc(page, 'Only valid if x &lt; 5 and y &gt; 10<br>Second line');
 
     const result = await page.evaluate(() => {
       const doc = document.getElementById('preview-body')!;
@@ -108,18 +110,14 @@ test.describe('A multi-line plain-text note renders correctly in Presenter/Previ
     expect(result.blockText).toBe('Only valid if x < 5 and y > 10Second line');
   });
 
-  // notePlainTextToSafeHtml's <br> conversion (the fix above) puts the raw HTML in good shape --
-  // a literal leading space on a line, typed to visually indent it under the line above (e.g. an
-  // ASCII flowchart's connector characters), is correctly present right after the <br> in the
-  // markup. But .pv-inline-note-body had no white-space override, so it rendered under the
-  // browser's default white-space:normal, which collapses leading whitespace at the start of
-  // each line -- the space was there in the DOM, just never actually painted, so the indentation
-  // silently vanished on screen (and in print/PDF, built from the same DOM) even though the fix
-  // above was otherwise working correctly.
-  test('a leading space on a note line (manual indentation) is not collapsed away by default white-space rules', async ({ page }) => {
+  // .pv-inline-note-body's white-space:pre-wrap preserves a literal leading space right after a
+  // <br> (e.g. an ASCII flowchart's connector characters, manually indented) exactly as authored
+  // -- without it, the browser's default white-space:normal collapses leading whitespace at the
+  // start of each line, so the space would exist in the DOM but never actually paint.
+  test('a leading space right after a line break (manual indentation) is not collapsed away by default white-space rules', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    await setUpDoc(page, 'Ad-hoc project-site address\n | Country + Postal Code\nRoute');
+    await setUpDoc(page, 'Ad-hoc project-site address<br> | Country + Postal Code<br>Route');
 
     const result = await page.evaluate(() => {
       const doc = document.getElementById('preview-body')!;
