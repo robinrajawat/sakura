@@ -169,4 +169,116 @@ test.describe('Inline note/remark/Q&A lines align with row text and survive fold
     expect(result.noteVisible).toBe(true);
     expect(result.childVisible).toBe(false);
   });
+
+  // Shift+Enter's own handler (while editing a node's title) sets forceInlineNoteId and calls
+  // render() directly, rather than going through openInlineNoteAndFocus -- it was missing the
+  // forceInlineItemExpanded(inlineExpandNoteNodeIds,...) call that the other three "open a note"
+  // entry points (toggleNote shortcut, context menu, search-reveal) all make. forceInlineNoteId
+  // alone only keeps a genuinely EMPTY note visible; the note-line's own input handler clears it
+  // the instant real content lands (typed text or a pasted image) on the assumption something
+  // else is persisting the open state -- which this path never did. Net effect: a note opened via
+  // Shift+Enter and then typed into (or pasted into) would vanish, still safely saved in
+  // node.note, the moment anything else triggered a render.
+  test('a note opened via Shift+Enter (while editing the node\'s own text) stays visible after typing, across an unrelated render', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A row', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 0, text: 'Sibling', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 3;
+      // @ts-expect-error
+      inlineExpandNoteNodeIds = new Set();
+      // @ts-expect-error
+      render();
+    });
+    await page.dblclick('.node-row[data-id="1"] .node-label');
+    await page.keyboard.press('End');
+    await page.keyboard.press('Shift+Enter');
+    await page.waitForTimeout(100);
+
+    await page.locator('.node-note-line[data-node-id="1"]').click();
+    await page.keyboard.type('Just typed this');
+
+    // Any unrelated render -- selecting a different node is as ordinary as it gets -- must not
+    // make the note that was just typed disappear.
+    await page.evaluate(() => {
+      // @ts-expect-error
+      setSingleSelection(2);
+      // @ts-expect-error
+      render();
+    });
+
+    await expect(page.locator('.node-note-line[data-node-id="1"]')).toBeVisible();
+    const note = await page.evaluate(() => {
+      // @ts-expect-error
+      return nodes.find((n: any) => n.id === 1).note;
+    });
+    expect(note).toContain('Just typed this');
+  });
+
+  test('a note opened via Shift+Enter stays visible after pasting an image, across an unrelated render', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A row', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 0, text: 'Sibling', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 3;
+      // @ts-expect-error
+      inlineExpandNoteNodeIds = new Set();
+      // @ts-expect-error
+      render();
+    });
+    await page.dblclick('.node-row[data-id="1"] .node-label');
+    await page.keyboard.press('End');
+    await page.keyboard.press('Shift+Enter');
+    await page.waitForTimeout(100);
+
+    const noteLine = page.locator('.node-note-line[data-node-id="1"]');
+    await noteLine.click();
+    await page.evaluate(() => {
+      const el = document.querySelector('.node-note-line[data-node-id="1"]') as HTMLElement;
+      const pngBytes = atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+      const bytes = new Uint8Array(pngBytes.length);
+      for (let i = 0; i < pngBytes.length; i++) bytes[i] = pngBytes.charCodeAt(i);
+      const file = new File([bytes], 'shot.png', { type: 'image/png' });
+      const clipboardData = { getData: () => '', items: [{ type: 'image/png', getAsFile: () => file }] };
+      const ev = new Event('paste', { bubbles: true, cancelable: true });
+      Object.defineProperty(ev, 'clipboardData', { value: clipboardData });
+      el.dispatchEvent(ev);
+    });
+    await page.waitForTimeout(100);
+
+    // Any unrelated render after the paste has landed must not make the note disappear.
+    await page.evaluate(() => {
+      // @ts-expect-error
+      setSingleSelection(2);
+      // @ts-expect-error
+      render();
+    });
+
+    await expect(page.locator('.node-note-line[data-node-id="1"]')).toBeVisible();
+    const note = await page.evaluate(() => {
+      // @ts-expect-error
+      return nodes.find((n: any) => n.id === 1).note;
+    });
+    expect(note).toContain('<img');
+  });
 });

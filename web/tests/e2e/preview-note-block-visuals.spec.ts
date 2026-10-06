@@ -146,4 +146,55 @@ test.describe('Block-level tables and images in a note render as their own full-
     });
     expect(note).toContain('data-feature-chart="1"');
   });
+
+  // The synthetic <p><img></p> markup the other tests above use is one real shape a note's HTML
+  // can take, but not the actual shape document.execCommand('insertImage') produces (see the
+  // note-line's own paste handler) -- that inserts the <img> as a bare root-level child, no <p>
+  // wrapper at all, which is the normal, real-world way a picture ends up in a note. Pasting a
+  // real image through the live editor and checking what actually lands in node.note (then
+  // feeding that through splitNoteBlockVisuals, same as renderPreviewBody does) catches the gap
+  // the synthetic-markup tests above couldn't.
+  test('a real pasted image (the actual execCommand(\'insertImage\') shape, not a synthetic <p><img></p>) is also extracted', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'A row', parentId: null, isCheckbox: false, checked: false, note: '', noteTitle: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
+      // @ts-expect-error
+      inlineExpandNoteNodeIds = new Set([1]);
+      // @ts-expect-error
+      forceInlineNoteId = 1;
+      // @ts-expect-error
+      render();
+    });
+
+    await page.locator('#note-line-1').click();
+    await page.evaluate(() => {
+      const el = document.getElementById('note-line-1')!;
+      const pngBytes = atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+      const bytes = new Uint8Array(pngBytes.length);
+      for (let i = 0; i < pngBytes.length; i++) bytes[i] = pngBytes.charCodeAt(i);
+      const file = new File([bytes], 'shot.png', { type: 'image/png' });
+      const clipboardData = { getData: () => '', items: [{ type: 'image/png', getAsFile: () => file }] };
+      const ev = new Event('paste', { bubbles: true, cancelable: true });
+      Object.defineProperty(ev, 'clipboardData', { value: clipboardData });
+      el.dispatchEvent(ev);
+    });
+    await page.waitForTimeout(100);
+
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      const note = nodes.find((n: any) => n.id === 1).note;
+      // @ts-expect-error
+      const split = splitNoteBlockVisuals(note);
+      return { noteHtml: note, imageCount: split.images.length, textHtml: split.textHtml };
+    });
+    expect(result.noteHtml).not.toContain('<p>');
+    expect(result.imageCount).toBe(1);
+    expect(result.textHtml.trim()).toBe('');
+  });
 });
