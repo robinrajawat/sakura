@@ -102,4 +102,66 @@ test.describe('Right-click menu has only one placement setting (Quick row), not 
     const text = await page.evaluate(() => document.getElementById('rightclick-menu-summary-desc')?.textContent);
     expect(text).toMatch(/^\d+ in quick row$/);
   });
+
+  // contextQuickActions can hold more entries than are sensible to actually show as icons --
+  // checking every box in Settings is allowed, but the quick row itself caps at 6 (its own
+  // natural width before a context menu starts looking cluttered or running wider than the
+  // menu). Anything past the 6th, in the user's own drag-to-reorder sequence, falls through to
+  // "More" exactly as if it had never been checked.
+  test('only the first 6 checked quick-row actions render as icons; the rest fall through to "More"', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedOneNode(page);
+
+    const order = await page.evaluate(() => {
+      // All 8 notes/ai/structure actions that are allowed by default (no feature gates needed).
+      const nine = ['child','above','below','duplicate','up','down','ai-rewrite','note','qa'];
+      // @ts-expect-error
+      setContextQuickActions(nine);
+      // @ts-expect-error
+      return [...contextQuickActions];
+    });
+    expect(order.length).toBe(9);
+
+    const row = page.locator('.node-row[data-id="1"]');
+    await row.click({ button: 'right' });
+
+    const quickActions = await page.evaluate(() =>
+      // @ts-expect-error
+      [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map(b => b.dataset.action)
+    );
+    expect(quickActions).toEqual(order.slice(0, 6));
+
+    await page.locator('#context-more-toggle').click();
+    for (const overflowAction of order.slice(6)) {
+      await expect(page.locator(`#context-more-panel [data-action="${overflowAction}"]`)).toBeVisible();
+    }
+    // The 6 visible in the quick row must NOT also be duplicated into "More".
+    for (const visibleAction of order.slice(0, 6)) {
+      await expect(page.locator(`#context-more-panel [data-action="${visibleAction}"]`)).toHaveCount(0);
+    }
+  });
+
+  test('the default quick row is the 6-item curated set, matching "Reset" in Settings', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const initial = await page.evaluate(() =>
+      // @ts-expect-error
+      [...contextQuickActions]
+    );
+    expect(initial).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'tags']);
+
+    // Mess with it, then Reset should bring back exactly the same default.
+    await page.evaluate(() => {
+      // @ts-expect-error
+      setContextQuickActions(['delete']);
+      document.getElementById('ctxq-reset-btn')?.click();
+    });
+    const afterReset = await page.evaluate(() =>
+      // @ts-expect-error
+      [...contextQuickActions]
+    );
+    expect(afterReset).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'tags']);
+  });
 });
