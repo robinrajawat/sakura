@@ -12610,8 +12610,6 @@ function ctxActionAllowed(actionId){
   if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
-  if(actionId==='qa')return padEnabled&&padQaTabEnabled;
-  if(actionId==='diagram')return padEnabled&&padDiagramsTabEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
   return true;
 }
@@ -12622,8 +12620,6 @@ function hoverActionAllowed(actionId){
   if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
-  if(actionId==='qa')return padEnabled&&padQaTabEnabled;
-  if(actionId==='diagram')return padEnabled&&padDiagramsTabEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
   return true;
 }
@@ -17585,7 +17581,14 @@ function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); schedu
 // children are folded, so forcing them open here was an unrelated, unwanted side effect (e.g.
 // Shift+Enter on a folded node used to reveal its whole hidden subtree just to add a note).
 function openInlineNoteAndFocus(id){
-  commitEdit(); setSingleSelection(id); forceInlineNoteId=id; render();
+  // forceInlineNoteId alone only keeps a genuinely EMPTY note visible while it's being typed
+  // into for the first time (see its own clearing in the note-line's input handler, and the
+  // render() guard above) -- it was never meant to be the note's lasting visibility state, the
+  // same way forceInlineItemExpanded already persists remarks/Q&A/diagrams past their own
+  // creation moment. Without this, the instant you type a first character here, forceInlineNoteId
+  // clears and the note has no other reason to stay visible, so it vanishes on the very next
+  // unrelated render() (switching nodes, etc.) even though the content is safely saved.
+  commitEdit(); setSingleSelection(id); forceInlineNoteId=id; forceInlineItemExpanded(inlineExpandNoteNodeIds,id); render();
   requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } });
 }
 // inlineExpand*NodeIds Sets track deviation from the current alwaysExpandInlineEnabled default
@@ -26402,6 +26405,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   }
   if(action==='qa'){
     if(_ctxNodeId===null)return;
+    if(!padQaTabEnabled){ showToast('Q&A is off — turn it back on in Settings → Features → Pad Panel'); return; }
     expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandQaNodeIds,_ctxNodeId);
     const item={id:newQaId(),question:'',answer:'',sourceNodeId:_ctxNodeId,createdAt:Date.now()};

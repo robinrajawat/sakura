@@ -51,6 +51,55 @@ function seedNodeWithNote(page: import('@playwright/test').Page, note: string, f
 // Chromium has no accessible system clipboard), by dispatching synthetic paste/keyboard events
 // and by seeding node.note with HTML a real paste would have produced.
 test.describe('Inline node notes are rich text (contenteditable)', () => {
+  // openInlineNoteAndFocus (every "Add/edit note" entry point: keyboard shortcut, context menu,
+  // toolbar button, search-reveal) used to rely solely on the transient forceInlineNoteId to keep
+  // a brand-new note visible -- that flag clears itself the instant the note-line's input handler
+  // sees real content (see its own comment), with nothing else keeping the note expanded
+  // afterward. "Add remark"/"Add question"/"Add diagram" all call forceInlineItemExpanded at their
+  // own creation point for exactly this reason; openInlineNoteAndFocus never did, so a newly
+  // typed note would vanish (while still safely saved in node.note) the moment anything else
+  // triggered a render -- switching the selected node, for instance.
+  test('typing into a brand-new note keeps it visible across an unrelated render, not just while forceInlineNoteId is still set', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 0, text: 'Sibling', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 3;
+      // @ts-expect-error
+      inlineExpandNoteNodeIds = new Set();
+      // @ts-expect-error
+      openInlineNoteAndFocus(1);
+    });
+
+    await page.locator('#note-line-1').click();
+    await page.keyboard.type('Just typed this');
+
+    // Any unrelated render -- selecting a different node is as ordinary as it gets -- must not
+    // make the note that was just typed disappear.
+    await page.evaluate(() => {
+      // @ts-expect-error
+      setSingleSelection(2);
+      // @ts-expect-error
+      render();
+    });
+
+    await expect(page.locator('#note-line-1')).toBeVisible();
+    const note = await page.evaluate(() => {
+      // @ts-expect-error
+      return nodes.find((n: any) => n.id === 1).note;
+    });
+    expect(note).toContain('Just typed this');
+  });
+
   test('the note line is a contenteditable div, not a textarea', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
