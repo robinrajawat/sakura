@@ -164,4 +164,38 @@ test.describe('Right-click menu has only one placement setting (Quick row), not 
     );
     expect(afterReset).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'tags']);
   });
+
+  // "Add diagram..."/"Add question..." used to vanish from both the rendered quick row and the
+  // Settings drag-to-reorder list whenever Pad's Diagrams/QA tab happened to be off -- even
+  // though they stayed checked in the grid above the list, since the checkbox grid's own state
+  // only ever reflects contextQuickActions membership, never the Pad-tab gate. That made the
+  // quick row's own settings UI look broken (checked but invisible, with no explanation) and
+  // tied a right-click placement decision to an unrelated Pad Panel setting. They should behave
+  // exactly like "Add remark...", which was never gated this way: always present wherever the
+  // Quick row setting and the 6-icon cap put it, with the feature-off state (if any) surfaced by
+  // the action's own click handler instead.
+  test('"Add diagram..." and "Add question..." stay in the quick row and its reorder list even when Pad\'s Diagrams/QA tab is off', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedOneNode(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      padDiagramsTabEnabled = false; padQaTabEnabled = false;
+      // @ts-expect-error
+      setContextQuickActions(['diagram', 'qa']);
+    });
+
+    const row = page.locator('.node-row[data-id="1"]');
+    await row.click({ button: 'right' });
+    await expect(page.locator('#context-quickbar .pv-qm-btn[data-action="diagram"]')).toBeVisible();
+    await expect(page.locator('#context-quickbar .pv-qm-btn[data-action="qa"]')).toBeVisible();
+
+    const orderListKeys = await page.evaluate(() => {
+      // @ts-expect-error
+      renderContextQuickOrderList();
+      return [...document.querySelectorAll('#ctx-quickbar-order-list [data-key]')].map(el => (el as HTMLElement).dataset.key);
+    });
+    expect(orderListKeys).toEqual(['diagram', 'qa']);
+  });
 });

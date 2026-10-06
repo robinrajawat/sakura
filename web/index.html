@@ -1931,6 +1931,13 @@ body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
 #pad-editor table td,#pad-editor table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
 #pad-editor table th{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600;color:var(--fg)}
 #pad-editor table td:focus,#pad-editor table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
+/* Column-resize handle (_attachTableResizeHandles) -- shared by every editable table, Pad's and a
+   note's alike. Was never actually given a size or position anywhere, leaving the real drag logic
+   backing it functionally invisible/ungrabbable since the feature was first built; same thin-line-
+   on-hover language the panel resize handles (#sidebar-resize-handle etc.) already use. */
+.col-resize-handle{position:absolute;top:0;right:-3px;bottom:0;width:6px;cursor:col-resize;z-index:2}
+.col-resize-handle::after{content:'';position:absolute;right:2px;top:15%;bottom:15%;width:1px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
+.col-resize-handle:hover::after,.col-resize-handle.dragging::after{opacity:1}
 
 
 #ptb-ai-rewrite{color:var(--accent);opacity:.75;transition:opacity .12s,background .12s,color .12s}
@@ -3171,9 +3178,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #cheatsheet-foot{border-top:1px solid var(--border);padding:10px 20px;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
 #cheatsheet-to-shortcuts-btn{appearance:none;border:none;background:none;color:var(--accent);font:600 11px 'Inter',sans-serif;cursor:pointer;padding:2px 0;flex-shrink:0;white-space:nowrap}
 #cheatsheet-to-shortcuts-btn:hover{text-decoration:underline}
-/* === Pasted image resizing (Note & Pad editors) === */
-#note-editor img,#pad-editor img{cursor:pointer}
-#note-editor img.editor-img-selected,#pad-editor img.editor-img-selected{outline:2px solid var(--accent);outline-offset:2px;cursor:default}
+/* === Pasted image resizing (inline notes & Pad) === */
+.node-note-line img,#pad-editor img{cursor:pointer}
+.node-note-line img.editor-img-selected,#pad-editor img.editor-img-selected{outline:2px solid var(--accent);outline-offset:2px;cursor:default}
 #pad-editor table[data-feature-node]{outline:2px solid var(--accent);outline-offset:3px}
 #img-resize-handle{display:none;position:fixed;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:nwse-resize;z-index:1010;transform:translate(-50%,-50%)}
 #img-resize-label{display:none;position:fixed;z-index:1011;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 7px;font:500 11px 'Inter',sans-serif;color:var(--fg);box-shadow:0 4px 10px rgba(0,0,0,.18);pointer-events:none;transform:translate(-50%,-130%);white-space:nowrap}
@@ -9320,7 +9327,12 @@ function renderPieChartSvg(series,isDoughnut){
 // "Show as table"; right-clicking a table still shown as a plain table offers the same type
 // picks, and choosing one turns "Feature as chart" on in the same click rather than requiring
 // a separate step. See the contextmenu listener on #preview-overlay for where this is invoked.
-function openChartCtxMenu(table,x,y){
+// onChange is optional, called after every mutating action -- Pad's own tables live permanently
+// in #pad-editor, so mutating table's attributes directly IS the persisted state (markDirty()
+// alone, already called inside setTableFeatureChart/setTableChartType, covers it); a note's table
+// has no such live home (see noteTableByIndex), so its call site needs this extra step to write
+// the detached, mutated table back into node.note.
+function openChartCtxMenu(table,x,y,onChange){
   const menu=el('chart-ctx-menu'); if(!menu||!table)return;
   const isChart=isTableFeaturedAsChart(table);
   const current=getTableChartType(table);
@@ -9343,18 +9355,21 @@ function openChartCtxMenu(table,x,y){
       e.preventDefault();
       if(!isTableFeaturedAsChart(table))setTableFeatureChart(table,true);
       setTableChartType(table,item.dataset.chartType);
+      if(onChange)onChange();
       closeChartCtxMenu();
     });
   });
   menu.querySelector('[data-show-as-table]')?.addEventListener('mousedown',e=>{
     e.preventDefault();
     setTableFeatureChart(table,false);
+    if(onChange)onChange();
     closeChartCtxMenu();
   });
-  menu.querySelector('[data-suggest-card-icons]')?.addEventListener('mousedown',e=>{
+  menu.querySelector('[data-suggest-card-icons]')?.addEventListener('mousedown',async e=>{
     e.preventDefault();
-    suggestCardIconsWithAi(table);
     closeChartCtxMenu();
+    await suggestCardIconsWithAi(table);
+    if(onChange)onChange();
   });
   menu.classList.add('open');
   const mw=menu.offsetWidth||200, mh=menu.offsetHeight||150;
@@ -9428,11 +9443,12 @@ function htmlHasVisibleContent(html){
 // rendering, Word's docxNoteBlocks, PPTX's noteBlockLines) was written for this format from the
 // start and reads it directly, no conversion step needed at the call sites.
 // A chart-featured table (data-feature-chart, see tableChartability/setTableFeatureChart) shows
-// as a live editable table while its note is focused, but as the rendered chart SVG otherwise --
-// the same split Preview/Presenter/PPTX already use for Pad's own charted tables. Swapped in by
-// the note-line's own blur handler (edit -> display) and focus handler (display -> edit); the
-// node's stored note HTML always keeps the real <table>, never the chart markup, so re-focusing
-// (or reading node.note anywhere else, e.g. in exports) never loses the underlying data.
+// as a live editable table while its note is focused, but as the rendered chart SVG otherwise.
+// Swapped in by the note-line's own blur handler (edit -> display) and focus handler (display ->
+// edit); the node's stored note HTML always keeps the real <table>, never the chart markup, so
+// re-focusing (or reading node.note anywhere else, e.g. in exports) never loses the underlying
+// data. See noteChartDisplayHtml just below for the equivalent swap in Preview/Presenter/PDF,
+// which needs to additionally tag each chart for the right-click type-switcher to find.
 function renderNoteDisplayHtml(html){
   if(!html||!/<table/i.test(html))return html||'';
   try{
@@ -9446,6 +9462,54 @@ function renderNoteDisplayHtml(html){
     });
     return div.innerHTML;
   }catch(e){ return html; }
+}
+// Same chart swap as renderNoteDisplayHtml, for Preview/Presenter/PDF's own rendering of a note's
+// restHtml -- additionally tags each swapped-in chart figure with which table (by position among
+// ALL of this note's tables, charted or not) it came from, so a right-click on it can trace back
+// to the real table and offer the same type-switcher Pad's own charted tables already have (see
+// the contextmenu listener on #preview-overlay, and noteTableByIndex/persistNoteTableChange just
+// below it). A note's table has no live DOM home the way Pad's does (data-feature-node tables
+// live permanently in #pad-editor) -- only the node.note string -- so the resolver re-parses that
+// fresh rather than holding a reference across renders, the same reasoning the dataset comment on
+// Pad's own pv-table-figure gives for not holding one either.
+function noteChartDisplayHtml(html,nodeId){
+  if(!html||!/<table/i.test(html))return html||'';
+  try{
+    const div=document.createElement('div');
+    div.innerHTML=html;
+    let tIdx=-1;
+    div.querySelectorAll('table').forEach(table=>{
+      tIdx++;
+      if(table.getAttribute('data-feature-chart')!=='1')return;
+      const svg=renderTableChartSvg(table);
+      if(!svg)return;
+      const figure=document.createElement('div'); figure.className='pv-table-chart-figure';
+      figure.dataset.noteChartNodeId=String(nodeId); figure.dataset.noteChartTableIdx=String(tIdx);
+      figure.innerHTML=svg;
+      table.replaceWith(figure);
+    });
+    return div.innerHTML;
+  }catch(e){ return html; }
+}
+// Resolves a note's Nth table (by the same all-tables-in-document-order index
+// noteChartDisplayHtml assigns) by re-parsing the live nodes[idx].note -- there's no persistent
+// DOM element to hold onto the way Pad's featuredTablesForNode has. Returns the detached
+// container too, since persistNoteTableChange needs it to write the mutated table back into
+// node.note afterward.
+function noteTableByIndex(nodeId,tIdx){
+  const idx=getIndex(nodes,nodeId); if(idx<0)return null;
+  const container=document.createElement('div'); container.innerHTML=nodes[idx].note||'';
+  const table=container.querySelectorAll('table')[tIdx]; if(!table)return null;
+  return {idx,container,table};
+}
+// Writes a noteTableByIndex() table mutation (toggling/retyping its chart) back into node.note --
+// the detached container's own innerHTML, not the live editor, since the live note-line usually
+// isn't even open while right-clicking the Preview's own rendering of it.
+function persistNoteTableChange(idx,container){
+  nodes[idx].note=sakuraSanitizeRichHtml(container.innerHTML);
+  nodes[idx].modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  if(previewActive)renderPreviewBody();
 }
 function splitNoteDiagramImages(noteHtml){
   if(!noteHtml) return {diagrams:[], restHtml:noteHtml||''};
@@ -12610,8 +12674,6 @@ function ctxActionAllowed(actionId){
   if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
-  if(actionId==='qa')return padEnabled&&padQaTabEnabled;
-  if(actionId==='diagram')return padEnabled&&padDiagramsTabEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
   return true;
 }
@@ -12622,8 +12684,6 @@ function hoverActionAllowed(actionId){
   if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
-  if(actionId==='qa')return padEnabled&&padQaTabEnabled;
-  if(actionId==='diagram')return padEnabled&&padDiagramsTabEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
   return true;
 }
@@ -17375,8 +17435,14 @@ function mindMapNodeRefsForNode(nodeId){
 function mindmapDotIconSvg(size){
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.3"/><circle cx="20" cy="12" r="1.6"/><circle cx="16" cy="5.1" r="1.6"/><circle cx="8" cy="5.1" r="1.6"/><circle cx="4" cy="12" r="1.6"/><circle cx="8" cy="18.9" r="1.6"/><circle cx="16" cy="18.9" r="1.6"/><path d="M12 12 20 12M12 12 16 5.1M12 12 8 5.1M12 12 4 12M12 12 8 18.9M12 12 16 18.9"/></svg>`;
 }
+// Was missing its own outer circle -- every other dot's icon (note's page shape, remark's
+// person, diagram's rects) fills a good portion of its 24x24 box, but this one was just the
+// bare question-mark squiggle+dot floating in empty space, which reads as barely-there at the
+// 11px size these dots actually render at. CTX_ACTION_META's own 'qa' entry (the identical
+// question-mark icon used for "Add question…" in the right-click menu) already includes the
+// circle; this now matches it exactly instead of being a stripped-down one-off.
 function qaDotIconSvg(size){
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
 }
 function subtreeHasMeetingRef(idx){
   const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(meetingRefsForNode(nodes[i].id).length)return true} return false;
@@ -17585,7 +17651,14 @@ function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); schedu
 // children are folded, so forcing them open here was an unrelated, unwanted side effect (e.g.
 // Shift+Enter on a folded node used to reveal its whole hidden subtree just to add a note).
 function openInlineNoteAndFocus(id){
-  commitEdit(); setSingleSelection(id); forceInlineNoteId=id; render();
+  // forceInlineNoteId alone only keeps a genuinely EMPTY note visible while it's being typed
+  // into for the first time (see its own clearing in the note-line's input handler, and the
+  // render() guard above) -- it was never meant to be the note's lasting visibility state, the
+  // same way forceInlineItemExpanded already persists remarks/Q&A/diagrams past their own
+  // creation moment. Without this, the instant you type a first character here, forceInlineNoteId
+  // clears and the note has no other reason to stay visible, so it vanishes on the very next
+  // unrelated render() (switching nodes, etc.) even though the content is safely saved.
+  commitEdit(); setSingleSelection(id); forceInlineNoteId=id; forceInlineItemExpanded(inlineExpandNoteNodeIds,id); render();
   requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } });
 }
 // inlineExpand*NodeIds Sets track deviation from the current alwaysExpandInlineEnabled default
@@ -19341,10 +19414,43 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.style.paddingLeft=hideTreeLines?(noteDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
     noteLine.innerHTML=renderNoteDisplayHtml(node.note||'');
     noteLine.dataset.tip='Note — click to edit';
+    // Column resize handles are only ever attached as part of a live mutation (paste, Insert
+    // table, Add row/column) within the current session -- a table that was already saved in
+    // node.note (loaded from storage, or simply present the first time this row renders) gets
+    // none at all otherwise. Same reasoning Pad's own _reinitPadEditorTables documents for
+    // re-attaching whenever its editor opens.
+    noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t));
     const commitNoteLine=()=>{ const html=sakuraSanitizeRichHtml(noteLine.innerHTML); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=html; nodes[i].modifiedAt=Date.now();} markDirty(); scheduleAutoSave(); return html; };
     noteLine.addEventListener('mousedown',e=>{e.stopPropagation()});
-    noteLine.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id}; noteLine.innerHTML=node.note||''; });
-    noteLine.addEventListener('click',e=>{e.stopPropagation()});
+    noteLine.addEventListener('focus',()=>{
+      pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id};
+      // Only actually reset innerHTML (display -> edit) when a chart swap needs reverting --
+      // resetting unconditionally on every focus, even when nothing needs to change, recreates
+      // every DOM node in the note on the very first click, which raced with (and broke) that
+      // same click's own image-selection/table-context-menu handling: by the time the click
+      // event reached noteLine, the element it targeted was already a detached leftover of the
+      // node this reset had just replaced.
+      const raw=node.note||'';
+      if(renderNoteDisplayHtml(raw)!==raw){ noteLine.innerHTML=raw; noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); }
+    });
+    // Same click-to-select/drag-to-resize/double-click-to-reset image handling _setupImageResize
+    // wires up for Pad (see _imgResizeSelect/_imgResizePersist) -- inlined here rather than calling
+    // that function directly since it looks the target editor up by a fixed id, but each note-line
+    // is a fresh element with a new per-node id every render().
+    noteLine.addEventListener('click',e=>{
+      e.stopPropagation();
+      const img=e.target.closest&&e.target.closest('img');
+      if(img&&noteLine.contains(img)){ e.preventDefault(); _imgResizeSelect(img,noteLine.id); }
+      else if(_imgResizeEditorId===noteLine.id){ _imgResizeHide(); }
+    });
+    noteLine.addEventListener('dblclick',e=>{
+      const img=e.target.closest&&e.target.closest('img');
+      if(!img||!noteLine.contains(img))return;
+      e.preventDefault();
+      img.style.width=''; img.style.height='';
+      _imgResizeSelect(img,noteLine.id);
+      _imgResizePersist();
+    });
     noteLine.addEventListener('keydown',e=>{
       if(e.key==='Tab'){
         // Not e.target -- a keydown's target is always the focused contenteditable HOST (noteLine
@@ -19421,6 +19527,38 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commitNoteLine(); }});
         }
       } else {
+        // Caret position at the moment of the right-click, not whenever "Insert table" actually
+        // gets clicked -- the sb-context-menu's own mousedown preventDefault (just below) keeps
+        // this selection alive and unmoved in the meantime, the same way it already protects the
+        // table-action items' cell/table references above.
+        const sel0=window.getSelection();
+        const savedRange=(sel0&&sel0.rangeCount&&noteLine.contains(sel0.anchorNode))?sel0.getRangeAt(0).cloneRange():null;
+        items.push({label:'Insert table', onClick:()=>{
+          pushUndo();
+          // Same 2x2-to-start shape as Pad's own "Insert table" (ptb-table) -- a real <thead><th>
+          // header row so _attachTableResizeHandles' column handles and noteIsPlainTextOnly's
+          // table detection both see the structure they expect from the start, same as a pasted
+          // table already has.
+          const cols=2, defaultColW=120;
+          const newTable=document.createElement('table');
+          const cg=document.createElement('colgroup');
+          for(let i=0;i<cols;i++){ const col=document.createElement('col'); col.style.width=defaultColW+'px'; cg.appendChild(col); }
+          newTable.appendChild(cg);
+          const thead=newTable.createTHead(); const hrow=thead.insertRow();
+          ['Column 1','Column 2'].forEach(text=>{ const th=document.createElement('th'); th.contentEditable='true'; th.textContent=text; hrow.appendChild(th); });
+          const tbody=newTable.createTBody();
+          for(let r=0;r<2;r++){ const row=tbody.insertRow(); for(let c=0;c<cols;c++){ const td=row.insertCell(); td.contentEditable='true'; } }
+          noteLine.focus();
+          const sel=window.getSelection();
+          if(savedRange&&sel){ sel.removeAllRanges(); sel.addRange(savedRange); savedRange.collapse(false); savedRange.insertNode(newTable); }
+          else noteLine.appendChild(newTable);
+          const firstCell=tbody.rows[0].cells[0];
+          const rg=document.createRange(); rg.setStart(firstCell,0); rg.collapse(true);
+          if(sel){ sel.removeAllRanges(); sel.addRange(rg); }
+          _attachTableResizeHandles(newTable);
+          commitNoteLine();
+        }});
+        items.push({divider:true});
         if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
         items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }});
       }
@@ -26402,6 +26540,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   }
   if(action==='qa'){
     if(_ctxNodeId===null)return;
+    if(!padQaTabEnabled){ showToast('Q&A is off — turn it back on in Settings → Features → Pad Panel'); return; }
     expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandQaNodeIds,_ctxNodeId);
     const item={id:newQaId(),question:'',answer:'',sourceNodeId:_ctxNodeId,createdAt:Date.now()};
@@ -32417,10 +32556,14 @@ function _attachTableResizeHandles(table) {
   // Remove any existing handles first (idempotent)
   table.querySelectorAll('.col-resize-handle').forEach(h => h.remove());
 
-  // Attach a handle to every th, including the last one — now that the table
-  // isn't pinned to 100% width, dragging the last column's edge is how you
-  // grow or shrink the table's overall width, not just a no-op.
-  const ths = Array.from(table.querySelectorAll('thead th'));
+  // Attach a handle to every header cell, including the last one — now that the table isn't
+  // pinned to 100% width, dragging the last column's edge is how you grow or shrink the table's
+  // overall width, not just a no-op. Falls back to the first row's own cells when there's no
+  // <thead> at all (th or td alike) -- a table built by hand (Pad's own "Insert table", or a
+  // note's) always has one, but a pasted table commonly doesn't, which otherwise left it with no
+  // resize handles whatsoever.
+  const headerRow = table.querySelector('thead tr') || table.querySelector('tr');
+  const ths = headerRow ? Array.from(headerRow.children) : [];
   ths.forEach((th, i) => {
     const handle = document.createElement('div');
     handle.className = 'col-resize-handle';
@@ -35920,7 +36063,16 @@ function renderPreviewBody(){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
-        inner.innerHTML=noteRestHtml;
+        // A chart-featured table (same "Feature as chart" toggle Pad's own tables use) renders as
+        // its chart here too, same as the live editor's own renderNoteDisplayHtml does -- without
+        // this a note's chart silently reverted to showing the plain backing table the instant you
+        // opened Preview/Presenter/PDF, the one place actually seeing the chart matters most.
+        // data-note-chart-node-id/table-idx let the contextmenu listener on #preview-overlay (see
+        // openChartCtxMenu's own invocation just below) trace a right-clicked chart back to its
+        // table in node.note, the same way Pad's own data-chart-node-id/table-idx already do for
+        // featuredTablesForNode -- a note's table has no equivalent live DOM home to look it up
+        // in, only the node.note string, so noteTableByIndex re-parses it fresh instead.
+        inner.innerHTML=noteChartDisplayHtml(noteRestHtml,node.id);
         wrap.appendChild(label); wrap.appendChild(inner);
         slideTarget.appendChild(wrap);
       }
@@ -38045,6 +38197,21 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
     const table=Number.isFinite(nodeId)?featuredTablesForNode(nodeId)[idx]:null;
     if(table&&tableChartability(table).ok){ closePreviewCtxMenu(); openChartCtxMenu(table,e.clientX,e.clientY); return; }
   }
+  // Same right-click type-switcher, for a note's own chart (see noteChartDisplayHtml/
+  // noteTableByIndex) -- a different data-attribute pair from the Pad table figure just above
+  // since there's no live DOM table to look up by data-chart-node-id/table-idx, only node.note's
+  // string content, which noteTableByIndex re-parses fresh.
+  const noteChartFig=e.target.closest('.pv-table-chart-figure[data-note-chart-node-id]');
+  if(noteChartFig){
+    const nodeId=Number(noteChartFig.dataset.noteChartNodeId);
+    const tIdx=Number(noteChartFig.dataset.noteChartTableIdx);
+    const resolved=Number.isFinite(nodeId)&&Number.isFinite(tIdx)?noteTableByIndex(nodeId,tIdx):null;
+    if(resolved&&tableChartability(resolved.table).ok){
+      closePreviewCtxMenu();
+      openChartCtxMenu(resolved.table,e.clientX,e.clientY,()=>persistNoteTableChange(resolved.idx,resolved.container));
+      return;
+    }
+  }
   // While actually presenting, right-clicking a line opens the node popover (marks, Comment,
   // Question, Edit) instead of the laser-pointer menu — same gating the old left-click
   // interception used (blanked screen, overview grid open, and real controls/links/images are
@@ -38127,9 +38294,13 @@ function _imgResizeSelect(img,editorId){
   _imgResizePositionHandle();
 }
 function _imgResizePersist(){
-  if(_imgResizeEditorId==='note-editor'&&notePanelNodeId!==null){
-    const idx=getIndex(nodes,notePanelNodeId); const editor=el('note-editor');
-    if(idx>=0&&editor){ nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); }
+  // Inline per-node notes (.node-note-line, id note-line-<nodeId>) are the one editor whose id
+  // isn't a fixed singleton like 'pad-editor' -- resolved from the editor element's own
+  // data-node-id the same way commitNoteLine (see the note-line's own creation in render()) does.
+  const editor=el(_imgResizeEditorId);
+  if(editor&&editor.classList&&editor.classList.contains('node-note-line')){
+    const nodeId=Number(editor.dataset.nodeId); const idx=Number.isFinite(nodeId)?getIndex(nodes,nodeId):-1;
+    if(idx>=0){ nodes[idx].note=sakuraSanitizeRichHtml(cleanEditorHtml(editor)); nodes[idx].modifiedAt=Date.now(); }
   }
   markDirty();
 }
