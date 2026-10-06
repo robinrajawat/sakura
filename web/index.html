@@ -1928,7 +1928,17 @@ body.qa-bulk-busy #qtb-bulk-delete{pointer-events:none;opacity:.4}
 #pad-editor li ul,#pad-editor li ol{margin:2px 0}
 #pad-editor a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 #pad-editor table{border-collapse:collapse;margin:6px 0;font-size:12px;table-layout:fixed;max-width:none}
-#pad-editor table td,#pad-editor table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;min-height:1.4em;vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
+/* height, not min-height, plus box-sizing:border-box: Chromium ignores min-height on a table
+   cell that has no line box of its own -- which includes a cell that's visually empty but has a
+   real DOM child that doesn't establish one, like .row-resize-handle's own absolutely-positioned
+   div (every cell gets one, see _attachTableResizeHandles). A freshly inserted empty row/cell, or
+   a cell with its text deleted, collapsed down to just its padding+border as a result -- shorter
+   than any cell that still has a text node in it, and shorter again than plain height:1.4em alone
+   produces for an empty cell (that still omits padding/border from the total for some content-
+   dependent reason) -- border-box pins height to the full rendered box regardless of content, so
+   an empty cell and a one-line cell end up the same height. height/border-box both act as a
+   floor here, not a hard clamp: a cell with more content still grows past this normally. */
+#pad-editor table td,#pad-editor table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;box-sizing:border-box;height:calc(1.4em + 10px + 2px);vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
 #pad-editor table th{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600;color:var(--fg)}
 #pad-editor table td:focus,#pad-editor table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
 /* Column-resize handle (_attachTableResizeHandles) -- shared by every editable table, Pad's and a
@@ -2012,7 +2022,11 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-note-line li ul,.node-note-line li ol{margin:2px 0}
 .node-note-line a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .node-note-line table{border-collapse:collapse;margin:6px 0;font-size:12px;table-layout:fixed;max-width:none}
-.node-note-line table td,.node-note-line table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;min-height:1.4em;vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
+/* height/box-sizing, not min-height -- same Chromium quirk and same fix as #pad-editor's
+   identical rule above (see its comment): min-height is ignored on a cell with no line box of
+   its own, which a cell holding only .row-resize-handle's own absolutely-positioned div still
+   counts as, and plain height alone still omits padding/border from an empty cell's total. */
+.node-note-line table td,.node-note-line table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;box-sizing:border-box;height:calc(1.4em + 10px + 2px);vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
 .node-note-line table th{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600;color:var(--fg)}
 .node-note-line table td:focus,.node-note-line table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
 .node-note-line .pv-table-chart-figure svg{max-width:100%}
@@ -19470,7 +19484,16 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // re-attaching whenever its editor opens.
     noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t));
     const commitNoteLine=()=>{ const html=sakuraSanitizeRichHtml(cleanEditorHtml(noteLine)); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=html; nodes[i].modifiedAt=Date.now();} markDirty(); scheduleAutoSave(); return html; };
-    noteLine.addEventListener('mousedown',e=>{e.stopPropagation()});
+    // noteLine is permanently contenteditable (even while just displaying, unfocused) so clicking
+    // a real <a href> inside it never navigated -- Chromium (like other browsers) only follows a
+    // link clicked inside a contenteditable region on a modifier-click, not a plain one, treating
+    // a plain click as "place the caret here" instead. That's the right call once you're actually
+    // editing text near the link, but the very first click into a not-yet-focused note landing on
+    // a link is almost always "I want to open this," not "I want to start editing inside it" --
+    // captured here (before the focus handler above fires and changes activeElement) so the click
+    // handler below can tell which case it is.
+    let _noteLineWasFocused=false;
+    noteLine.addEventListener('mousedown',e=>{e.stopPropagation(); _noteLineWasFocused=document.activeElement===noteLine;});
     noteLine.addEventListener('focus',()=>{
       pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id};
       // Only actually reset innerHTML (display -> edit) when a chart swap needs reverting --
@@ -19488,6 +19511,15 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // is a fresh element with a new per-node id every render().
     noteLine.addEventListener('click',e=>{
       e.stopPropagation();
+      // A real (ctrl/cmd-held) modifier-click is left to the browser's own default handling,
+      // which already opens the link -- only the plain-click case needs this, and only while
+      // the note wasn't already focused (see the mousedown handler's own comment above).
+      const link=e.target.closest&&e.target.closest('a[href]');
+      if(link&&noteLine.contains(link)&&!_noteLineWasFocused&&!e.ctrlKey&&!e.metaKey){
+        e.preventDefault();
+        window.open(link.href,link.target||'_blank','noopener,noreferrer');
+        return;
+      }
       const img=e.target.closest&&e.target.closest('img');
       if(img&&noteLine.contains(img)){ e.preventDefault(); _imgResizeSelect(img,noteLine.id); }
       else if(_imgResizeEditorId===noteLine.id){ _imgResizeHide(); }

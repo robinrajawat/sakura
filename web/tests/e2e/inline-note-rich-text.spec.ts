@@ -552,17 +552,41 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
   // An empty cell (a freshly inserted row/column, or a table pasted with blank cells) had no
   // min-height at all -- with no text to establish a line box, it could render far shorter than a
-  // cell that actually has content, reading as a squashed sliver of a row.
-  test('an empty table cell still has a sensible minimum height, not a collapsed sliver', async ({ page }) => {
+  // cell that actually has content, reading as a squashed sliver of a row. min-height turned out
+  // not to fix this on its own (Chromium ignores min-height on a cell with no line box, which
+  // includes a cell holding only the row-resize-handle's own absolutely-positioned div -- see
+  // the CSS comment above .node-note-line table td's own rule); height+box-sizing:border-box does.
+  test('an empty table cell is exactly as tall as a cell with real text in it, not a collapsed sliver', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td></td><td></td></tr></table>');
+    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td></td><td>populated</td></tr></table>');
 
-    const heights = await page.evaluate(() => {
+    const result = await page.evaluate(() => {
       const cells = [...document.querySelectorAll('#note-line-1 td')];
       return cells.map(c => c.getBoundingClientRect().height);
     });
-    for (const h of heights) expect(h).toBeGreaterThan(10);
+    const [emptyHeight, populatedHeight] = result;
+    expect(emptyHeight).toBeGreaterThan(20);
+    expect(emptyHeight).toBe(populatedHeight);
+  });
+
+  // The actual bug report this came from: right-clicking a table and choosing "Add row below"
+  // inserted a new, genuinely empty row -- exactly the collapsed-sliver case the test above
+  // covers, just reached through the real menu action instead of a hand-written empty <td>.
+  test('a row inserted via "Add row below" renders at the same height as the existing rows, not collapsed', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><td>A</td><td>10</td></tr></tbody></table>');
+
+    const existingRowHeight = await page.evaluate(() => document.querySelector('#note-line-1 tbody tr')!.getBoundingClientRect().height);
+
+    const cell = page.locator('#note-line-1 td').first();
+    await cell.click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
+
+    const rowHeights = await page.evaluate(() => [...document.querySelectorAll('#note-line-1 tbody tr')].map(tr => tr.getBoundingClientRect().height));
+    expect(rowHeights).toHaveLength(2);
+    expect(rowHeights[1]).toBe(existingRowHeight);
   });
 
   // Pasted images had no way to resize at all. _setupImageResize/_imgResizeSelect/_imgResizePersist
@@ -615,5 +639,77 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     });
     expect(result.dotHasCircle).toBe(true);
     expect(result.menuHasCircle).toBe(true);
+  });
+
+  // The note-line div is permanently contenteditable, even while just displaying and unfocused
+  // (see noteLine.contentEditable='true' at its creation) -- browsers only follow a link clicked
+  // inside a contenteditable region on a modifier-click, treating a plain click as "place the
+  // caret here" instead, so a real <a href> in a note's rich text was simply unclickable. The
+  // very first click into a not-yet-focused note landing on a link is almost always "open this,"
+  // not "start editing inside it," so that specific case now opens the link directly.
+  test.describe('A link inside an inline note opens on the first click, before the note is focused', () => {
+    const linkNote = '<p>Check out <a href="https://example.com" target="_blank" rel="noopener noreferrer">this link</a> please.</p>';
+
+    async function stubWindowOpen(page: import('@playwright/test').Page) {
+      await page.evaluate(() => {
+        // @ts-expect-error
+        window._openCalls = [];
+        // @ts-expect-error
+        window.open = (...args) => { window._openCalls.push(args); return null; };
+      });
+    }
+
+    test('a plain click on the link opens it, instead of just placing the caret', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await stubWindowOpen(page);
+      await seedNodeWithNote(page, linkNote);
+
+      await page.locator('#note-line-1 a').click();
+
+      const result = await page.evaluate(() => ({
+        // @ts-expect-error
+        openCalls: window._openCalls,
+        noteIsFocused: document.activeElement?.id === 'note-line-1',
+      }));
+      expect(result.openCalls).toHaveLength(1);
+      expect(result.openCalls[0][0]).toBe('https://example.com/');
+      // Focusing the note as a side effect of the click is fine/expected -- the point is the link
+      // also actually opened, not that focus is somehow suppressed.
+      expect(result.noteIsFocused).toBe(true);
+    });
+
+    test('a second click on the link, once the note is already focused, edits normally and does not reopen it', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await stubWindowOpen(page);
+      await seedNodeWithNote(page, linkNote);
+
+      await page.locator('#note-line-1 a').click();
+      await page.locator('#note-line-1 a').click();
+
+      const openCallCount = await page.evaluate(() =>
+        // @ts-expect-error
+        window._openCalls.length
+      );
+      expect(openCallCount).toBe(1);
+    });
+
+    test('ctrl/cmd-click is left to the browser\'s own default link handling, not intercepted', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await stubWindowOpen(page);
+      await seedNodeWithNote(page, linkNote);
+
+      await page.locator('#note-line-1 a').click({ modifiers: ['Control'] });
+
+      // Our own window.open override is never called for a modifier-click -- that path is left
+      // alone so the browser's real ctrl/cmd-click-opens-link behavior still applies.
+      const openCallCount = await page.evaluate(() =>
+        // @ts-expect-error
+        window._openCalls.length
+      );
+      expect(openCallCount).toBe(0);
+    });
   });
 });
