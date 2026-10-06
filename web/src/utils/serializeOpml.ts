@@ -27,7 +27,11 @@ import type { QueryableNode } from '../core/nodeQueries';
  *
  * `getNodePlainText` (from `src/utils/stripSemanticMarkers.ts`, already generated) and
  * `escapeHtml` (from `src/utils/escapeHtml.ts`, already generated) are referenced as ambient
- * globals via `declare function`.
+ * globals via `declare function`. `node.note` itself holds rich HTML (inline notes are rich
+ * text, not plain text), so it needs plain-texting before going into an XML attribute the same
+ * way `serializeTreeTextWithNotesCore` already plain-texts it for its own "Note:" line —
+ * `stripHtmlToText` is hand-written and DOM-touching, so it's injected as an explicit parameter
+ * rather than referenced via `declare function`, matching that module's own established pattern.
  */
 
 declare function escapeHtml(value: unknown): string;
@@ -46,17 +50,18 @@ export interface OpmlNode extends QueryableNode {
   note?: string;
 }
 
-/** Pure: matches index.html's own `nodesToOutlineXml` exactly — recursively renders `list`
- * starting at `startIdx`, emitting an `<outline>` element per node deeper than `parentDepth`
- * (self-closing for a leaf, wrapping nested `<outline>`s for a node with children), a leading
- * `[x] `/`[ ] ` checkbox-state prefix when `node.isCheckbox` is set, and — only when
- * `nodeContentExportEnabled` is true and the node has a non-blank note — a `_note` attribute
- * carrying the note text. */
+/** Pure once `stripHtmlToText` is supplied: matches index.html's own `nodesToOutlineXml` exactly
+ * — recursively renders `list` starting at `startIdx`, emitting an `<outline>` element per node
+ * deeper than `parentDepth` (self-closing for a leaf, wrapping nested `<outline>`s for a node
+ * with children), a leading `[x] `/`[ ] ` checkbox-state prefix when `node.isCheckbox` is set,
+ * and — only when `nodeContentExportEnabled` is true and the node has a non-blank note — a
+ * `_note` attribute carrying the note's plain-texted (`stripHtmlToText`) content. */
 export function nodesToOutlineXmlCore(
   list: OpmlNode[],
   startIdx: number,
   parentDepth: number,
-  nodeContentExportEnabled: boolean
+  nodeContentExportEnabled: boolean,
+  stripHtmlToText: (html: string) => string
 ): string {
   let xml = '';
   let i = startIdx;
@@ -69,12 +74,10 @@ export function nodesToOutlineXmlCore(
       const label = getNodePlainText(node);
       const checkboxPrefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
       const text = escAttrLocal(checkboxPrefix + label);
-      const noteAttr =
-        nodeContentExportEnabled && node.note && node.note.trim()
-          ? ` _note="${escAttrLocal(node.note)}"`
-          : '';
+      const noteText = node.note ? stripHtmlToText(node.note) : '';
+      const noteAttr = nodeContentExportEnabled && noteText ? ` _note="${escAttrLocal(noteText)}"` : '';
       xml += hasKids
-        ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, nodeContentExportEnabled)}</outline>`
+        ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, nodeContentExportEnabled, stripHtmlToText)}</outline>`
         : `<outline text="${text}"${noteAttr}/>`;
       i = j;
     } else {
@@ -93,6 +96,7 @@ export function serializeOpmlCore(
   scopeNodes: OpmlNode[],
   title: string,
   nodeContentExportEnabled: boolean,
+  stripHtmlToText: (html: string) => string,
   dateCreated: Date = new Date()
 ): string {
   const safeTitle = escAttrLocal(title || 'Untitled');
@@ -101,6 +105,6 @@ export function serializeOpmlCore(
   }
   const minDepth = Math.min(...scopeNodes.map((n) => n.depth));
   const rebased = scopeNodes.map((n) => ({ ...n, depth: n.depth - minDepth }));
-  const body = nodesToOutlineXmlCore(rebased, 0, -1, nodeContentExportEnabled);
+  const body = nodesToOutlineXmlCore(rebased, 0, -1, nodeContentExportEnabled, stripHtmlToText);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head>\n<title>${safeTitle}</title>\n<dateCreated>${dateCreated.toUTCString()}</dateCreated>\n</head>\n<body>\n${body}\n</body>\n</opml>`;
 }
