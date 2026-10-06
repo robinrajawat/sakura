@@ -9569,6 +9569,64 @@ function splitNoteDiagramImages(noteHtml){
     return {diagrams, restHtml:div.innerHTML};
   }catch(e){ return {diagrams:[], restHtml:noteHtml}; }
 }
+// Pulls block-level visual content -- every table, and any <img> that's the sole content of its
+// own paragraph -- out of a note's rest-html (after splitNoteDiagramImages above has already
+// taken out note-embedded diagrams), leaving only actual text behind for the note's own card.
+// A table or a full-width picture squeezed into the same max-height:340px, scrollable text box
+// as a sentence read as cramped and out of place -- every OTHER visual in a note (a note-
+// embedded diagram, a Pad "Feature under node" table) already gets its own full-width figure
+// row instead. An inline image sitting mid-sentence (an icon, a small inline screenshot next to
+// a word) is left right where it is -- only a genuinely standalone one, the entire content of
+// its own paragraph, counts as "block-level" here. Table indices in the returned array are in
+// document order among ALL of this note's tables, matching what noteChartDisplayHtml/
+// noteTableByIndex already assume elsewhere, so right-click resolution keeps working unchanged.
+function splitNoteBlockVisuals(html){
+  if(!html) return {textHtml:html||'', tables:[], images:[]};
+  try{
+    const container=document.createElement('div');
+    container.innerHTML=html;
+    const tables=[...container.querySelectorAll('table')];
+    tables.forEach(t=>t.remove());
+    const images=[];
+    [...container.querySelectorAll('img')].forEach(img=>{
+      // container is a detached, never-appended div (same as noteChartDisplayHtml/noteTableByIndex
+      // use elsewhere for a note's HTML) -- nothing inside it is ever .isConnected, so that's not
+      // a usable "is this a real element" check here the way it would be for live DOM content.
+      const parent=img.parentElement;
+      if(!parent||parent===container)return;
+      if(parent.childNodes.length===1){
+        images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||''});
+        parent.remove();
+      }
+    });
+    // A table or lone image commonly sits inside its own <p>/<div> from paste or editor markup --
+    // drop whatever that wrapper leaves behind once empty, so pulling the table/image out doesn't
+    // leave a blank line in the text that remains.
+    [...container.querySelectorAll('p,div')].forEach(el=>{
+      if(el!==container && !el.textContent.trim() && !el.querySelector('img,table')) el.remove();
+    });
+    return {textHtml:container.innerHTML, tables, images};
+  }catch(e){ return {textHtml:html, tables:[], images:[]}; }
+}
+// Builds one table's own full-width figure -- chart or plain -- the same way featuredTablesForNode's
+// own rendering loop does for Pad's "Feature under node" tables (see renderPreviewBody), just
+// keyed by noteChartNodeId/noteChartTableIdx instead of Pad's chartNodeId/chartTableIdx, so the
+// right-click resolver (see the contextmenu listener on #preview-overlay) can tell which lookup
+// path -- featuredTablesForNode's live DOM table, or noteTableByIndex's re-parse of node.note --
+// a given figure actually needs, the same distinction noteChartDisplayHtml's own figures already
+// draw with that same dataset-key naming.
+function buildNoteTableFigure(table,nodeId,tIdx){
+  const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-table-figure';
+  if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
+    const svg=renderTableChartSvg(table);
+    if(svg){ fig.classList.add('pv-table-chart-figure'); fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx); fig.innerHTML=svg; return fig; }
+  }
+  const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart');
+  fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
+  if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
+  fig.appendChild(clone);
+  return fig;
+}
 const HIGHLIGHT_COLORS={yellow:'#eab308',green:'#22c55e',blue:'#0ea5e9',pink:'#ec4899'};
 const FONT_COLORS=['red','orange','green','blue','purple','gray'];
 // Moved up from its original spot much further down the file (near nodeMarkerLabel/Color/Glyph,
@@ -36002,6 +36060,10 @@ function renderPreviewBody(){
     // the block below instead, where the title can actually sit next to the NOTE label.
     const hasNoteTitle = !!(node.noteTitle && node.noteTitle.trim());
     const isPlainNote = !_pvForceFullNoteCard && !nodeIsSection(node,sectionMarkersDepthZero) && !hasNoteTitle && noteHasContent && noteIsPlainTextOnly(noteRestHtml) && noteIsSingleLine(noteRestHtml);
+    // isPlainNote notes are text-only by construction (noteIsPlainTextOnly already excludes
+    // img/table), so there's nothing to pull out of those -- only worth computing for the ones
+    // that are about to get the full card treatment below.
+    const blockVisuals = (!isPlainNote && noteHasContent) ? splitNoteBlockVisuals(noteRestHtml) : null;
     const blIds=backlinksEnabled?getBacklinksTo(node.id):[];
     if(folded&&hasChildren){
       const badge=document.createElement('span'); badge.className='fold-badge';
@@ -36184,6 +36246,26 @@ function renderPreviewBody(){
         });
         slideTarget.appendChild(row);
       }
+      // A note's own block-level tables and standalone images (split out by splitNoteBlockVisuals
+      // above) -- same full-width figure treatment as a note-embedded diagram or anchored diagram
+      // just above, so a table or picture that happens to live inside a note's rich text doesn't
+      // read as a lesser, cramped version of the exact same content type elsewhere on the page.
+      if(blockVisuals&&blockVisuals.tables.length){
+        const trow=document.createElement('div'); trow.className='pv-diagram-row'; trow.style.paddingLeft=inlinePad;
+        blockVisuals.tables.forEach((t,tIdx)=>trow.appendChild(buildNoteTableFigure(t,node.id,tIdx)));
+        slideTarget.appendChild(trow);
+      }
+      if(blockVisuals&&blockVisuals.images.length){
+        const multi=blockVisuals.images.length>1;
+        const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
+        blockVisuals.images.forEach(d=>{
+          const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
+          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'';
+          fig.appendChild(img);
+          row.appendChild(fig);
+        });
+        slideTarget.appendChild(row);
+      }
       // Tables in the Pad Notepad marked "Feature under selected node" and linked to this
       // node — same figure treatment as an anchored diagram just above, so a reader can't
       // tell which workflow produced it. Presenter mode and PDF both render from this same
@@ -36215,20 +36297,26 @@ function renderPreviewBody(){
           slideTarget.appendChild(trow);
         }
       }
-      if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&noteHasContent&&!isPlainNote){
+      // Tables and standalone images were already pulled out into their own figures above (see
+      // blockVisuals) -- what's left here is only the note's own text, via blockVisuals.textHtml
+      // when it ran (non-plain notes) or the untouched noteRestHtml otherwise (isPlainNote, which
+      // by construction never contains either). A note whose content turned out to be ENTIRELY a
+      // table/image once text is split out (blockVisuals ran but left nothing behind) skips this
+      // card too, unless it still has a title to show -- an empty box under a bare "Note" label
+      // would just be noise once its only real content already rendered as its own figure above.
+      const noteCardHtml = blockVisuals ? blockVisuals.textHtml : noteRestHtml;
+      const noteCardHasText = blockVisuals ? htmlHasVisibleContent(noteCardHtml) : noteHasContent;
+      if(!_pvSuppressNoteCodeIndicators&&featureNoteEnabled&&!isPlainNote&&(noteCardHasText||hasNoteTitle)){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
         const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteRestHtml)?' pv-note-plain':'');
-        // A chart-featured table (same "Feature as chart" toggle Pad's own tables use) renders as
-        // its chart here too, same as the live editor's own renderNoteDisplayHtml does -- without
-        // this a note's chart silently reverted to showing the plain backing table the instant you
-        // opened Preview/Presenter/PDF, the one place actually seeing the chart matters most.
-        // data-note-chart-node-id/table-idx let the contextmenu listener on #preview-overlay (see
-        // openChartCtxMenu's own invocation just below) trace a right-clicked chart back to its
-        // table in node.note, the same way Pad's own data-chart-node-id/table-idx already do for
-        // featuredTablesForNode -- a note's table has no equivalent live DOM home to look it up
-        // in, only the node.note string, so noteTableByIndex re-parses it fresh instead.
-        inner.innerHTML=noteChartDisplayHtml(noteRestHtml,node.id);
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteCardHtml)?' pv-note-plain':'');
+        // Any table left in noteCardHtml at this point (isPlainNote path only -- a non-plain
+        // note's own tables were already extracted into blockVisuals above) still needs the same
+        // chart swap renderNoteDisplayHtml gives the live editor's own unfocused display, via
+        // noteChartDisplayHtml/noteTableByIndex -- but isPlainNote can never actually contain a
+        // table (noteIsPlainTextOnly excludes it), so this is a no-op pass-through in practice,
+        // kept only so the call stays correct if that ever changes.
+        inner.innerHTML=noteChartDisplayHtml(noteCardHtml,node.id);
         wrap.appendChild(label); wrap.appendChild(inner);
         slideTarget.appendChild(wrap);
       }
@@ -38361,15 +38449,33 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
   // chart menu would never be reachable.
   const tableFig=e.target.closest('.pv-table-figure');
   if(tableFig){
-    const nodeId=Number(tableFig.dataset.chartNodeId);
-    const idx=Number(tableFig.dataset.chartTableIdx);
-    const table=Number.isFinite(nodeId)?featuredTablesForNode(nodeId)[idx]:null;
-    if(table&&tableChartability(table).ok){ closePreviewCtxMenu(); openChartCtxMenu(table,e.clientX,e.clientY); return; }
+    if(tableFig.dataset.noteChartNodeId!==undefined){
+      // A note's own plain (not-yet-charted) table, pulled out into its own figure by
+      // splitNoteBlockVisuals/buildNoteTableFigure -- same noteChartNodeId/noteChartTableIdx +
+      // noteTableByIndex lookup the already-charted case just below uses, since there's still no
+      // live DOM table to look up the Pad-table way, only node.note's string content. Previously
+      // a plain table like this had no right-click chart option at all while just inside the
+      // note's own text box (only the live editor's own table menu could feature it) -- now that
+      // it renders as its own figure, same as Pad's, it gets the same right-click too.
+      const nodeId=Number(tableFig.dataset.noteChartNodeId);
+      const tIdx=Number(tableFig.dataset.noteChartTableIdx);
+      const resolved=Number.isFinite(nodeId)&&Number.isFinite(tIdx)?noteTableByIndex(nodeId,tIdx):null;
+      if(resolved&&tableChartability(resolved.table).ok){
+        closePreviewCtxMenu();
+        openChartCtxMenu(resolved.table,e.clientX,e.clientY,()=>persistNoteTableChange(resolved.idx,resolved.container));
+        return;
+      }
+    } else {
+      const nodeId=Number(tableFig.dataset.chartNodeId);
+      const idx=Number(tableFig.dataset.chartTableIdx);
+      const table=Number.isFinite(nodeId)?featuredTablesForNode(nodeId)[idx]:null;
+      if(table&&tableChartability(table).ok){ closePreviewCtxMenu(); openChartCtxMenu(table,e.clientX,e.clientY); return; }
+    }
   }
-  // Same right-click type-switcher, for a note's own chart (see noteChartDisplayHtml/
-  // noteTableByIndex) -- a different data-attribute pair from the Pad table figure just above
-  // since there's no live DOM table to look up by data-chart-node-id/table-idx, only node.note's
-  // string content, which noteTableByIndex re-parses fresh.
+  // Same right-click type-switcher, for a note's own already-charted table (see
+  // noteChartDisplayHtml/noteTableByIndex) -- a different data-attribute pair from the Pad table
+  // figure above since there's no live DOM table to look up by data-chart-node-id/table-idx, only
+  // node.note's string content, which noteTableByIndex re-parses fresh.
   const noteChartFig=e.target.closest('.pv-table-chart-figure[data-note-chart-node-id]');
   if(noteChartFig){
     const nodeId=Number(noteChartFig.dataset.noteChartNodeId);
