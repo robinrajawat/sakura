@@ -139,4 +139,61 @@ test.describe('Hub feature toggles actually hide their tab + panel (and cannot b
     expect(result.anyOpen).toBe(false);
     expect(unexpectedErrors).toEqual([]);
   });
+
+  // The shared #dock-tabstrip replaces each panel's own title/maximize/close row (see the CSS
+  // comment above #todos-panel-header etc.) -- but with only one Hub feature enabled, there's
+  // nothing to switch to, so the whole strip (not just its tab button) is dropped entirely
+  // rather than wasting a whole row just to house maximize/close. Those two fall back to their
+  // normal spot in the panel's own header instead.
+  test('the whole tab strip hides when only one Hub feature is enabled, falling back to the panel\'s own maximize/close', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const onlyTodos = await page.evaluate((keys) => {
+      // @ts-expect-error
+      keys.filter((k) => k !== 'todos').forEach((k) => setFeatureEnabled(k, false));
+      // @ts-expect-error
+      openDockTab('todos');
+      const strip = document.getElementById('dock-tabstrip');
+      const ownMax = document.getElementById('todos-panel-maximize');
+      const ownClose = document.getElementById('todos-panel-close');
+      const ownTitle = document.getElementById('todos-panel-title');
+      return {
+        bodyHasClass: document.body.classList.contains('hub-single-tab'),
+        stripDisplay: strip ? getComputedStyle(strip).display : null,
+        ownMaxDisplay: ownMax ? getComputedStyle(ownMax).display : null,
+        ownCloseDisplay: ownClose ? getComputedStyle(ownClose).display : null,
+        // The title stays hidden either way -- only maximize/close fall back.
+        ownTitleDisplay: ownTitle ? getComputedStyle(ownTitle).display : null,
+      };
+    }, HUB_KEYS as unknown as string[]);
+    expect(onlyTodos.bodyHasClass).toBe(true);
+    expect(onlyTodos.stripDisplay).toBe('none');
+    expect(onlyTodos.ownMaxDisplay).not.toBe('none');
+    expect(onlyTodos.ownCloseDisplay).not.toBe('none');
+    expect(onlyTodos.ownTitleDisplay).toBe('none');
+
+    // Re-enabling a second feature while the panel is still open should bring the strip back
+    // (and hide the panel's own maximize/close again) immediately, not just on the next open.
+    const twoEnabled = await page.evaluate(() => {
+      // @ts-expect-error
+      setFeatureEnabled('meetings', true);
+      const strip = document.getElementById('dock-tabstrip');
+      const ownMax = document.getElementById('todos-panel-maximize');
+      return {
+        bodyHasClass: document.body.classList.contains('hub-single-tab'),
+        stripDisplay: strip ? getComputedStyle(strip).display : null,
+        ownMaxDisplay: ownMax ? getComputedStyle(ownMax).display : null,
+      };
+    });
+    expect(twoEnabled.bodyHasClass).toBe(false);
+    expect(twoEnabled.stripDisplay).not.toBe('none');
+    expect(twoEnabled.ownMaxDisplay).toBe('none');
+
+    // Restore state for any later test in this file/session.
+    await page.evaluate((keys) => {
+      // @ts-expect-error
+      keys.forEach((k) => setFeatureEnabled(k, true));
+    }, HUB_KEYS as unknown as string[]);
+  });
 });
