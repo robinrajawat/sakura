@@ -2026,7 +2026,9 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-diagram-preview-thumb img{display:block;max-width:100%;max-height:70vh;width:auto;height:auto}
 .node-diagram-preview-thumb.node-diagram-preview-empty{width:240px;height:150px;display:flex;align-items:center;justify-content:center}
 .node-diagram-preview-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:4px}
-.node-diagram-preview-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node-diagram-preview-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;outline:none;cursor:text;border-radius:4px;padding:0 2px}
+.node-diagram-preview-title:empty::before{content:attr(data-placeholder);color:var(--hint)}
+.node-diagram-preview-title:hover,.node-diagram-preview-title:focus{background:var(--hover);overflow:visible;white-space:normal}
 .node-qa-answer:hover,.node-qa-question:hover{opacity:1}
 .node-qa-answer:focus{opacity:1;color:var(--fg)}
 .node-qa-answer:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
@@ -2130,19 +2132,25 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 /* Main editor maximize (zen mode) — floats in the corner of the editor itself
    instead of living in the header, so it doesn't crowd the app bar.
    Docked bottom-right so it doesn't sit over the note/decision-log dots on
-   the first node. */
-#editor-zen-toggle{position:absolute;bottom:14px;right:18px;z-index:6;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
+   the first node.
+   The four toggles share one flex row (row-reverse, so DOM order zen/pad/
+   toolbar/preview still lands visually right-to-left as before) instead of
+   each being individually position:absolute at a hardcoded `right` offset —
+   that older layout left a gap where a feature-hidden button (e.g. Pad, via
+   body.feature-off-pad) used to sit, since display:none on one button didn't
+   shift its neighbors. A flex row collapses that gap for free. */
+#editor-floating-controls{position:absolute;bottom:14px;right:18px;z-index:6;display:flex;flex-direction:row-reverse;gap:8px}
+#editor-zen-toggle{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
 #editor-zen-toggle:hover{opacity:1;color:var(--fg);background:var(--hover)}
 #editor-zen-toggle.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
-#editor-pad-toggle{display:inline-flex;position:absolute;bottom:14px;right:54px;z-index:6;width:28px;height:28px;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
+#editor-pad-toggle{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
 #editor-pad-toggle:hover{opacity:1;color:var(--fg);background:var(--hover)}
 #editor-pad-toggle.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
 /* Toolbar toggle — a floating shortcut for the Settings > Toolbar > "Show
    toolbar" switch (toolbarVisible), positioned by the editor so it's at hand
    in zen mode too, where the regular header position would be hidden */
-#editor-toolbar-toggle{display:inline-flex;position:absolute;bottom:14px;right:90px;z-index:6;width:28px;height:28px;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
-#editor-preview-toggle{display:inline-flex;position:absolute;bottom:14px;right:126px;z-index:6;width:28px;height:28px;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
-#editor-controls-group{position:absolute;bottom:14px;right:18px;width:136px;height:28px;pointer-events:none;z-index:5}
+#editor-toolbar-toggle{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
+#editor-preview-toggle{display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;appearance:none;border:1px solid var(--border);background:color-mix(in srgb,var(--edit-bg) 88%, transparent);border-radius:7px;cursor:pointer;color:var(--hint);opacity:.55;transition:opacity .12s,color .12s,background .12s}
 #editor-preview-toggle:hover{opacity:1;color:var(--fg);background:var(--hover)}
 #editor-toolbar-toggle:hover{opacity:1;color:var(--fg);background:var(--hover)}
 #editor-toolbar-toggle.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
@@ -4202,7 +4210,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    independent of the status bar and of #sidebar's layout flow, so relocating it
    never touches the app's main flex layout. Vertically centered: stacking it in the
    bottom-right corner (an earlier version of this) put it directly above
-   #editor-controls-group's own row of icons, which read as two crowded, differently-
+   #editor-floating-controls's own row of icons, which read as two crowded, differently-
    sized clusters piled on top of each other in the same corner. Centering it avoids
    that; the collapse handle (see below) is there for when it sits over content someone
    wants to see. These panels anchor themselves directly above this rail's chips (see
@@ -4897,6 +4905,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-note" /> Note…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-qa" /> Add question…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-remark" /> Add remark…</label>
+                <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-diagram" /> Add diagram…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-where-used" /> Where used…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-date-time" /> Insert date/time</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-tags" /> Tags…</label>
@@ -6387,6 +6396,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
       </div></div></div><div id="shared-doc-banner" class="shared-doc-banner" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="shared-doc-banner-text"></span></div><div id="editor-pane" tabindex="0"><div id="editor-pane-inner"></div></div>
   <div id="node-hover-rail" class="node-hover-rail" role="toolbar" aria-label="Node quick actions"></div>
   <div id="node-hover-menu" class="node-hover-menu" role="menu" aria-label="Node actions menu"></div>
+  <div id="editor-floating-controls">
   <button id="editor-zen-toggle" data-tip="Maximize editor (hide file explorer &amp; chrome) (Ctrl/Cmd+Shift+E)" aria-label="Maximize editor" aria-pressed="false">
     <svg id="editor-zen-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg>
   </button>
@@ -6399,7 +6409,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
   <button id="editor-preview-toggle" data-tip="Preview (read-only)" aria-label="Preview document">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
   </button>
-  <div id="editor-controls-group" aria-hidden="true"></div>
+  </div>
     <div id="search-replace-wrap">
     <div class="search-bar" id="search-bar" hidden>
       <input id="search-input" type="text" placeholder="Search nodes…" autocomplete="off" />
@@ -7950,6 +7960,7 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-note" checked /> Note…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-qa" /> Add question…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-remark" /> Add remark…</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-diagram" checked /> Add diagram…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-where-used" /> Where used…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-date-time" /> Insert date/time</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-tags" checked /> Tags…</label>
@@ -8018,7 +8029,7 @@ let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 const QA_SPARKLE_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>';
 const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>';
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let decisionLogs=[]; let decisionExpandedId=null; let decisionSelectMode=false; let attachments=[]; let remarks=[]; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false; let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','remark','tags','qa','slide-divider']; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=false; let padFilesTabEnabled=false; let padRemarksTabEnabled=true; let padOpen=false; let padWidth=440; let padMatchEditorBg=false; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let decisionLogs=[]; let decisionExpandedId=null; let decisionSelectMode=false; let attachments=[]; let remarks=[]; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false; let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=['ai-rewrite','focus','note','remark','tags','qa','diagram','slide-divider']; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=false; let padFilesTabEnabled=false; let padRemarksTabEnabled=true; let padOpen=false; let padWidth=440; let padMatchEditorBg=false; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=false; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let featurePreviewEnabled=true; let featurePresenterEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -12620,6 +12631,7 @@ function ctxActionAllowed(actionId){
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='qa')return padEnabled&&padQaTabEnabled;
+  if(actionId==='diagram')return padEnabled&&padDiagramsTabEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
   return true;
 }
@@ -12635,6 +12647,7 @@ function hoverActionAllowed(actionId){
   if(actionId==='tags')return featureTaggingEnabled;
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='qa')return padEnabled&&padQaTabEnabled;
+  if(actionId==='diagram')return padEnabled&&padDiagramsTabEnabled;
   if(actionId==='ai-rewrite'||actionId==='ai-rewrite-all'||actionId==='ai-icon'||actionId==='ai-icon-all')return featureAiEnabled;
   return true;
 }
@@ -18787,13 +18800,14 @@ const CTX_ACTION_META={
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'notes'},
   qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'notes'},
   remark:{label:'Add remark…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'notes'},
+  diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'notes'},
   'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'notes'},
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'notes'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'notes'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'notes'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','slide-divider','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','qa','remark','where-used','date-time','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','slide-divider','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','qa','remark','diagram','where-used','date-time','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -19387,10 +19401,15 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       textEl.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(textEl.textContent||'').trim(); const doDelete=()=>{ const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(textEl.textContent||'').trim())doDelete(); },0); });
       textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); });
       textEl.addEventListener('blur',()=>{ r.text=sakuraSanitizeRichHtml(textEl.innerHTML); });
-      const openPanelBtn=document.createElement('span'); openPanelBtn.className='node-inline-open-panel-btn'; openPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; openPanelBtn.dataset.tip='Open in Remarks panel';
-      openPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
-      openPanelBtn.addEventListener('click',e=>{ e.stopPropagation(); jumpToNodeRemarkRefs(openPanelBtn,[r]); });
-      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl); rLine.appendChild(openPanelBtn);
+      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl);
+      // No Pad panel to jump to when it's off (Settings -> Features) -- the icon would just
+      // be dead weight on the inline preview.
+      if(padEnabled){
+        const openPanelBtn=document.createElement('span'); openPanelBtn.className='node-inline-open-panel-btn'; openPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; openPanelBtn.dataset.tip='Open in Remarks panel';
+        openPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
+        openPanelBtn.addEventListener('click',e=>{ e.stopPropagation(); jumpToNodeRemarkRefs(openPanelBtn,[r]); });
+        rLine.appendChild(openPanelBtn);
+      }
       rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete remark', onClick: async()=>{ pushUndo(); const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
       if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; rLine.appendChild(vg) } }); if(hasChildren){ const rDepth2=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(rDepth2*32+0*editorScale+9)+'px'; rLine.appendChild(vgOwn) } }
       frag.appendChild(rLine)
@@ -19421,10 +19440,15 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       aText.addEventListener('input',()=>{ item.answer=aText.innerHTML; markDirty(); scheduleAutoSave(); });
       aText.addEventListener('blur',()=>{ item.answer=sakuraSanitizeRichHtml(aText.innerHTML); if(padViewMode==='qa')renderQaList(); });
       const aRow=document.createElement('div'); aRow.style.display='flex'; aRow.style.gap='6px'; aRow.style.marginTop='2px'; aRow.appendChild(aLabel); aRow.appendChild(aText);
-      const openPanelBtn=document.createElement('span'); openPanelBtn.className='node-inline-open-panel-btn'; openPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; openPanelBtn.dataset.tip='Open in Q&A panel'; openPanelBtn.style.position='absolute'; openPanelBtn.style.top='2px'; openPanelBtn.style.right='0';
-      openPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
-      openPanelBtn.addEventListener('click',e=>{ e.stopPropagation(); jumpToNodeQaRefs([item]); });
-      qaLine.appendChild(qRow); qaLine.appendChild(aRow); qaLine.appendChild(openPanelBtn);
+      qaLine.appendChild(qRow); qaLine.appendChild(aRow);
+      // No Pad panel to jump to when it's off (Settings -> Features) -- the icon would just
+      // be dead weight on the inline preview.
+      if(padEnabled){
+        const openPanelBtn=document.createElement('span'); openPanelBtn.className='node-inline-open-panel-btn'; openPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; openPanelBtn.dataset.tip='Open in Q&A panel'; openPanelBtn.style.position='absolute'; openPanelBtn.style.top='2px'; openPanelBtn.style.right='0';
+        openPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
+        openPanelBtn.addEventListener('click',e=>{ e.stopPropagation(); jumpToNodeQaRefs([item]); });
+        qaLine.appendChild(openPanelBtn);
+      }
       const qaContextMenu=e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled&&qaAiAnswerEnabled){ items.push({label:'AI Answer ✦', onClick: async()=>{ const q=qText.textContent||''; if(!q.trim())return; try{ const result=await callAiApi(q); if(!result)return; item.answer=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete Q&A', onClick: async()=>{ pushUndo(); const qi=qaItems.findIndex(x=>x.id===item.id); if(qi>=0)qaItems.splice(qi,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); };
       qaLine.addEventListener('contextmenu',qaContextMenu);
       if(hideTreeLines&&depthGuideLines){ const qVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); qVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; qaLine.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(qDepth*32+0*editorScale+9)+'px'; qaLine.appendChild(vgOwn) } }
@@ -19451,7 +19475,23 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       thumb.addEventListener('mousedown',e=>e.stopPropagation());
       thumb.addEventListener('click',e=>{e.stopPropagation(); openDiagramEditor(d.id);});
       const meta=document.createElement('div'); meta.className='node-diagram-preview-meta';
-      const title=document.createElement('span'); title.className='node-diagram-preview-title'; title.textContent=d.title||'Untitled diagram';
+      const title=document.createElement('span'); title.className='node-diagram-preview-title'; title.contentEditable='true'; title.textContent=d.title||''; title.dataset.placeholder='Untitled diagram'; title.dataset.tip='Click to rename'; title.spellcheck=false;
+      title.addEventListener('mousedown',e=>e.stopPropagation());
+      title.addEventListener('click',e=>e.stopPropagation());
+      title.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){ e.preventDefault(); title.blur(); }
+        else if(e.key==='Escape'){ e.preventDefault(); title.textContent=d.title||''; title.blur(); }
+      });
+      title.addEventListener('blur',()=>{
+        const val=(title.textContent||'').trim();
+        title.textContent=val;
+        if(val===(d.title||''))return;
+        d.title=val; d.modifiedAt=Date.now();
+        markDirty(); scheduleAutoSave();
+        updateDiagramSummaryChip();
+        if(_diagramEditorState&&_diagramEditorState.diagramId===d.id){ const ti=el('diagram-editor-title-input'); if(ti)ti.value=val; }
+        if(padOpen&&padViewMode==='diagrams'&&typeof renderDiagramsList==='function')renderDiagramsList();
+      });
       const openPanelBtn=document.createElement('span'); openPanelBtn.className='node-inline-open-panel-btn'; openPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; openPanelBtn.dataset.tip='Open in the diagram editor';
       openPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
       openPanelBtn.addEventListener('click',e=>{e.stopPropagation(); openDiagramEditor(d.id);});
@@ -26319,6 +26359,16 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     addRemark(true);
     return;
   }
+  if(action==='diagram'){
+    if(_ctxNodeId===null)return;
+    if(!padDiagramsTabEnabled){ showToast('Diagrams is off — turn it back on in Settings → Features → Pad Panel'); return; }
+    setSingleSelection(_ctxNodeId);
+    render();
+    expandNode(_ctxNodeId);
+    forceInlineItemExpanded(inlineExpandDiagramNodeIds,_ctxNodeId);
+    createDiagram();
+    return;
+  }
   if(action==='where-used'){
     if(_ctxNodeId===null)return;
     const idx=getIndex(nodes,_ctxNodeId); if(idx<0)return;
@@ -32374,7 +32424,7 @@ const TOUR_STEPS=[
   {target:'#quick-bar',placement:'bottom',title:'Toolbar',bodyHtml:'<p>Formatting, structure, AI, and more — grouped by purpose. Hover an icon to see what it does.</p>'},
   {target:'#ag-inserts',placement:'bottom',title:'Decision logs, notes & tags',bodyHtml:'<p>Attach a <strong>decision log</strong> to capture context, rationale, and status on any node — exportable to Excel. Drop a <strong>note</strong> (Ctrl/Cmd+Shift+N) for longer thoughts that live alongside a node. Add <strong>tags</strong> to organize and filter your tree by topic.</p>'},
   {target:'#ag-ai',placement:'bottom',title:'AI features',bodyHtml:'<p>Generate a whole outline from a prompt, expand a node into a subtree, summarise a selection into a parent, rewrite a node, or suggest tags and an icon — all powered by your choice of AI provider, with automatic fallback if one fails.</p><p>Configure providers and keys in Settings.</p>'},
-  {target:'#editor-controls-group',placement:'left',title:'Editor controls',bodyHtml:'<p>Toggle the <strong>toolbar</strong>, open the <strong>pad</strong>, or <strong>maximize</strong> to hide the File Explorer and chrome — Esc brings it all back.</p>'},
+  {target:'#editor-floating-controls',placement:'left',title:'Editor controls',bodyHtml:'<p>Toggle the <strong>toolbar</strong>, open the <strong>pad</strong>, or <strong>maximize</strong> to hide the File Explorer and chrome — Esc brings it all back.</p>'},
   {target:'#editor-preview-toggle',placement:'left',title:'Preview & Presenter mode',bodyHtml:'<p>A clean, read-only render of the outline — foldable, with a table of contents. From there, one click goes fullscreen into <strong>Presenter mode</strong>: slide-by-slide, laser pointer, a running timer, and a Whiteboard for sketching mid-talk.</p>'},
   {target:'#pad-panel',placement:'left',title:'Pad panel',bodyHtml:'<p>A whole-document workspace, separate from per-node notes — seven tabs: a rich-text <strong>Notepad</strong>, a <strong>Q&amp;A</strong> list for open questions, a <strong>Decision Log</strong> view, <strong>Diagrams</strong> — a real embedded draw.io editor, including one persistent <strong>Whiteboard</strong> for freeform sketching — <strong>Mind Map</strong>, any number of freeform brainstorming canvases for this document — <strong>Files</strong>, a list of document attachments — and <strong>Remarks</strong>, a record of things people said.</p>',setup:()=>{ if(padEnabled&&!padOpen)setPadOpen(true,false,false); },teardown:()=>{ if(padEnabled&&padOpen)setPadOpen(false,false); }},
   {target:'#dock-panel-appbar-toggle',placement:'bottom',title:'Hub',bodyHtml:'<p><strong>Hub</strong> — five panels that aren\'t tied to any single document — <strong>To-Dos</strong> for tasks, <strong>Meeting Notes</strong> for agendas and minutes, a daily <strong>Journal</strong>, a <strong>Library</strong> of quick-reference notes and links, and <strong>Recap</strong> for a curated look back — all reachable from this one button, docked to the side wherever you are.</p>'},
