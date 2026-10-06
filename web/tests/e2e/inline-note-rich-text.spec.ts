@@ -214,6 +214,31 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(rowCount).toBe(2); // header + the one remaining row
     });
 
+    // Delete row used to only count rows inside <tbody> -- a header row in a REAL <thead> (as
+    // "Insert table" always produces, and as "Toggle header row" moves a row into) resolves
+    // row.closest('tbody') to null, so the deletion silently never ran at all, no matter how many
+    // rows the table actually had. A plain pasted table with no explicit thead/tbody tags doesn't
+    // reproduce this -- the HTML parser auto-wraps every bare <tr> (header-looking <th> row
+    // included) into one shared implicit <tbody>, which already has a real tbody ancestor. Only a
+    // genuine <thead> hits the bug, so this table spells it out explicitly. table.rows (thead+
+    // tbody together) fixes it.
+    test('Delete row also works on a real header row (inside <thead>), not just body rows', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><td>A</td><td>10</td></tr></tbody></table>');
+
+      const headerCell = page.locator('#note-line-1 th').first();
+      await headerCell.click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
+
+      const result = await page.evaluate(() => {
+        const table = document.querySelector('#note-line-1 table')!;
+        return { rowCount: table.querySelectorAll('tr').length, hasHeaderCell: !!table.querySelector('th') };
+      });
+      expect(result.rowCount).toBe(1);
+      expect(result.hasHeaderCell).toBe(false);
+    });
+
     test('Delete column removes that column from every row', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
