@@ -139,4 +139,57 @@ test.describe('Hub feature toggles actually hide their tab + panel (and cannot b
     expect(result.anyOpen).toBe(false);
     expect(unexpectedErrors).toEqual([]);
   });
+
+  // The shared #dock-tabstrip replaces each panel's own title/maximize/close row (see the CSS
+  // comment above #todos-panel-header etc.) -- but with only one Hub feature enabled, that
+  // strip's single always-active tab button is itself a redundant title repeating what the
+  // dock-rail button you just clicked already said. It should disappear, leaving just the
+  // maximize/close controls that still have no other home.
+  test('the tab strip hides its tab button(s) when only one Hub feature is enabled', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    const onlyTodos = await page.evaluate((keys) => {
+      // @ts-expect-error
+      keys.filter((k) => k !== 'todos').forEach((k) => setFeatureEnabled(k, false));
+      // @ts-expect-error
+      openDockTab('todos');
+      const strip = document.getElementById('dock-tabstrip');
+      const tabBtn = document.getElementById('dock-tab-todos');
+      const maxBtn = document.getElementById('dock-tabstrip-maximize');
+      const closeBtn = document.getElementById('dock-tabstrip-close');
+      return {
+        singleTabClass: strip ? strip.classList.contains('single-tab') : null,
+        tabBtnDisplay: tabBtn ? getComputedStyle(tabBtn).display : null,
+        maxBtnDisplay: maxBtn ? getComputedStyle(maxBtn).display : null,
+        closeBtnDisplay: closeBtn ? getComputedStyle(closeBtn).display : null,
+      };
+    }, HUB_KEYS as unknown as string[]);
+    expect(onlyTodos.singleTabClass).toBe(true);
+    expect(onlyTodos.tabBtnDisplay).toBe('none');
+    // Maximize/close are real controls with nowhere else to live -- they stay.
+    expect(onlyTodos.maxBtnDisplay).not.toBe('none');
+    expect(onlyTodos.closeBtnDisplay).not.toBe('none');
+
+    // Re-enabling a second feature while the panel is still open should bring the tab
+    // button(s) back immediately, not just on the next open.
+    const twoEnabled = await page.evaluate(() => {
+      // @ts-expect-error
+      setFeatureEnabled('meetings', true);
+      const strip = document.getElementById('dock-tabstrip');
+      const tabBtn = document.getElementById('dock-tab-todos');
+      return {
+        singleTabClass: strip ? strip.classList.contains('single-tab') : null,
+        tabBtnDisplay: tabBtn ? getComputedStyle(tabBtn).display : null,
+      };
+    });
+    expect(twoEnabled.singleTabClass).toBe(false);
+    expect(twoEnabled.tabBtnDisplay).not.toBe('none');
+
+    // Restore state for any later test in this file/session.
+    await page.evaluate((keys) => {
+      // @ts-expect-error
+      keys.forEach((k) => setFeatureEnabled(k, true));
+    }, HUB_KEYS as unknown as string[]);
+  });
 });

@@ -3537,6 +3537,8 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    swapping it between panels doesn't cause a visible jump. */
 #dock-tabstrip{display:none;align-items:center;gap:2px;padding:8px 8px 8px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;z-index:2}
 #dock-tabstrip.active{display:flex}
+/* Only one Hub panel enabled -- no title-as-tab to switch away to, so skip rendering it. */
+#dock-tabstrip.single-tab .dock-tab{display:none}
 #dock-tabstrip-spacer{flex:1}
 .dock-tab{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:6px;border:none;border-bottom:2px solid transparent;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:8px 2px 6px;margin:0 12px -1px 0;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s}
 .dock-tab:hover{color:var(--fg)}
@@ -12554,6 +12556,10 @@ function applyFeatureVisibility(){
     const on=FEATURE_FLAGS[key].get();
     body.classList.toggle('feature-off-'+key,!on);
   });
+  // Keeps the Hub tab strip's single-tab state correct even when a feature is toggled
+  // while that panel is already open (dockMoveTabstripInto only re-evaluates this on the
+  // next tab switch/open otherwise).
+  if(typeof enabledDockTabCount==='function')document.getElementById('dock-tabstrip')?.classList.toggle('single-tab',enabledDockTabCount()<=1);
   filterSettingsByFeatures();
   filterHelpByFeatures();
   // The auto-rewrite status-bar chip isn't gated by a feature-off-* CSS rule (it's a
@@ -50260,6 +50266,7 @@ const DOCK_TAB_TOGGLE={
 // tab instead of opening one whose entry points are all hidden.
 function dockTabEnabled(tab){ const f=FEATURE_FLAGS[tab]; return !f||f.get(); }
 function firstEnabledDockTab(){ return ['todos','meetings','journal','library','report'].find(dockTabEnabled)||null; }
+function enabledDockTabCount(){ return ['todos','meetings','journal','library','report'].filter(dockTabEnabled).length; }
 // dockActiveTab used to be declared right here -- moved up near the top of the Todos module
 // alongside DOCK_TAB_PANEL_ID; see the comment there.
 // Which tab reopens when the app-bar launcher is clicked with nothing currently open —
@@ -50294,6 +50301,12 @@ function dockMoveTabstripInto(tab){
   if(!strip||!panel)return;
   panel.insertBefore(strip,panel.firstChild);
   strip.classList.add('active');
+  // With only one Hub panel enabled (Settings -> Features), the tab strip would otherwise
+  // show a single tab button that's always active and has nothing to switch to -- a
+  // redundant title row repeating what the dock-rail button you just clicked already said.
+  // Hide just the tab button(s) in that case; maximize/close stay, since those are still
+  // real controls with no other home.
+  strip.classList.toggle('single-tab', enabledDockTabCount()<=1);
   document.querySelectorAll('.dock-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   // Bring this tab's maximize state in line with the shared one — click its own maximize
   // button (rather than toggling the class directly) so every side effect that button's
