@@ -3537,8 +3537,11 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
    swapping it between panels doesn't cause a visible jump. */
 #dock-tabstrip{display:none;align-items:center;gap:2px;padding:8px 8px 8px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;z-index:2}
 #dock-tabstrip.active{display:flex}
-/* Only one Hub panel enabled -- no title-as-tab to switch away to, so skip rendering it. */
-#dock-tabstrip.single-tab .dock-tab{display:none}
+/* Only one Hub panel enabled -- no tab to switch away to, so the whole strip would just be a
+   bar housing a single always-active tab button plus maximize/close. Drop it entirely instead
+   and let maximize/close fall back to their normal spot in the open panel's own header (see
+   body.hub-single-tab below) -- no separate bar just to hold two icons. */
+body.hub-single-tab #dock-tabstrip{display:none!important}
 #dock-tabstrip-spacer{flex:1}
 .dock-tab{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:6px;border:none;border-bottom:2px solid transparent;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:8px 2px 6px;margin:0 12px -1px 0;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s}
 .dock-tab:hover{color:var(--fg)}
@@ -3547,13 +3550,20 @@ body.diagram-sort-locked .diagram-row-drag-handle{display:none}
 .dock-tab span{white-space:nowrap}
 #dock-tabstrip-maximize,#dock-tabstrip-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
 #dock-tabstrip-maximize:hover,#dock-tabstrip-close:hover{color:var(--fg);background:var(--hover)}
-/* Each panel keeps its own action-button row (extract/import/export/history etc.) — only
-   the title (now shown as the active tab instead) and the maximize/close (now shared,
-   in the tab strip) are redundant once the tab strip is present. */
-#todos-panel-header .panel-title-icon,#todos-panel-title,#todos-panel-maximize,#todos-panel-close,
-#meetings-panel-header .panel-title-icon,#meetings-panel-title,#meetings-panel-maximize,#meetings-panel-close,
-#journal-panel-header .panel-title-icon,#journal-panel-title,#journal-panel-maximize,#journal-panel-close,
-#report-panel-header .panel-title-icon,#report-panel-title,#report-panel-maximize,#report-panel-close
+/* Each panel keeps its own action-button row (extract/import/export/history etc.) — the title
+   is never shown here (either the tab strip's active tab carries it, or with only one Hub panel
+   enabled there's nothing worth titling at all). Maximize/close are only redundant while the
+   tab strip is actually present (2+ panels enabled) -- with just one, body.hub-single-tab below
+   un-hides them to fall back to this row instead of the now-hidden strip. */
+#todos-panel-header .panel-title-icon,#todos-panel-title,
+#meetings-panel-header .panel-title-icon,#meetings-panel-title,
+#journal-panel-header .panel-title-icon,#journal-panel-title,
+#report-panel-header .panel-title-icon,#report-panel-title
+{display:none!important}
+body:not(.hub-single-tab) #todos-panel-maximize,body:not(.hub-single-tab) #todos-panel-close,
+body:not(.hub-single-tab) #meetings-panel-maximize,body:not(.hub-single-tab) #meetings-panel-close,
+body:not(.hub-single-tab) #journal-panel-maximize,body:not(.hub-single-tab) #journal-panel-close,
+body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #report-panel-close
 {display:none!important}
 #todos-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
 #todos-panel.anchored #todos-panel-header{cursor:default}
@@ -12559,7 +12569,7 @@ function applyFeatureVisibility(){
   // Keeps the Hub tab strip's single-tab state correct even when a feature is toggled
   // while that panel is already open (dockMoveTabstripInto only re-evaluates this on the
   // next tab switch/open otherwise).
-  if(typeof enabledDockTabCount==='function')document.getElementById('dock-tabstrip')?.classList.toggle('single-tab',enabledDockTabCount()<=1);
+  if(typeof enabledDockTabCount==='function')document.body.classList.toggle('hub-single-tab',enabledDockTabCount()<=1);
   filterSettingsByFeatures();
   filterHelpByFeatures();
   // The auto-rewrite status-bar chip isn't gated by a feature-off-* CSS rule (it's a
@@ -50301,12 +50311,11 @@ function dockMoveTabstripInto(tab){
   if(!strip||!panel)return;
   panel.insertBefore(strip,panel.firstChild);
   strip.classList.add('active');
-  // With only one Hub panel enabled (Settings -> Features), the tab strip would otherwise
-  // show a single tab button that's always active and has nothing to switch to -- a
-  // redundant title row repeating what the dock-rail button you just clicked already said.
-  // Hide just the tab button(s) in that case; maximize/close stay, since those are still
-  // real controls with no other home.
-  strip.classList.toggle('single-tab', enabledDockTabCount()<=1);
+  // With only one Hub panel enabled (Settings -> Features), the tab strip is dropped
+  // entirely (see body.hub-single-tab CSS) rather than kept around just to house a single
+  // always-active tab button plus maximize/close -- those fall back to the panel's own
+  // header instead.
+  document.body.classList.toggle('hub-single-tab', enabledDockTabCount()<=1);
   document.querySelectorAll('.dock-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   // Bring this tab's maximize state in line with the shared one — click its own maximize
   // button (rather than toggling the class directly) so every side effect that button's
