@@ -9593,11 +9593,32 @@ function splitNoteBlockVisuals(html){
       // use elsewhere for a note's HTML) -- nothing inside it is ever .isConnected, so that's not
       // a usable "is this a real element" check here the way it would be for live DOM content.
       const parent=img.parentElement;
-      if(!parent||parent===container)return;
-      if(parent.childNodes.length===1){
+      if(!parent)return;
+      if(parent===container){
+        // A direct child of the note's own root sits at the same level as every other block
+        // (each <p>) -- definitionally standalone, never inline with anything. This is also
+        // exactly what document.execCommand('insertImage') produces (see the note-line's own
+        // paste handler) when there's no enclosing block to insert into, which is the normal,
+        // real-world way a picture actually ends up in a note -- so this is the common case,
+        // not an edge case, and skipping it here was the main reason pasted images never
+        // actually broke out into their own figure the way a table already did.
         images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||''});
-        parent.remove();
+        img.remove();
+        return;
       }
+      // Nested inside a <p>/<div> -- standalone only if nothing else meaningful shares that same
+      // wrapper (ignoring pure whitespace text nodes and <br>, which real-world paste/editor
+      // markup commonly leaves alongside a lone image); otherwise it's genuinely inline, sitting
+      // mid-sentence next to real text, and should stay exactly where it is.
+      const hasOtherContent=[...parent.childNodes].some(n=>{
+        if(n===img)return false;
+        if(n.nodeType===Node.TEXT_NODE)return !!n.textContent.trim();
+        if(n.nodeType===Node.ELEMENT_NODE&&n.tagName==='BR')return false;
+        return true;
+      });
+      if(hasOtherContent)return;
+      images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||''});
+      parent.remove();
     });
     // A table or lone image commonly sits inside its own <p>/<div> from paste or editor markup --
     // drop whatever that wrapper leaves behind once empty, so pulling the table/image out doesn't
@@ -26498,7 +26519,7 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     // note line has nothing to do with (see the comment on openInlineNoteAndFocus for the same
     // fix applied there). A folded node's own row, and its own inline note, render regardless
     // of whether its children are hidden.
-    commitEdit(); forceInlineNoteId=id; render();
+    commitEdit(); forceInlineNoteId=id; forceInlineItemExpanded(inlineExpandNoteNodeIds,id); render();
     requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } });
     return;
   } if(!(e.ctrlKey||e.metaKey)){
