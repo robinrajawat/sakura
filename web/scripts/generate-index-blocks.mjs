@@ -623,6 +623,19 @@ initHubJournalState({
     // (the onSnapshot callback body inside startSharedDocRealtimeSyncIfNeeded) was updated in
     // the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // Not a Phase 2 code-migration slice like every block above (no src/*.ts, no tsc compile,
+    // no test file) — a plain DATA block (see `kind: 'data'` handling below). The Cards icon
+    // keyword→category rules (CARD_ICON_RULES) are pure data, meant to be hand-edited by
+    // whoever's using the app (adding "CXP" to the "cart" rule, say) without touching JS, so the
+    // source of truth is a plain JSON file rather than a tested TS module. CARD_ICON_CATALOG
+    // itself (the actual SVG icon paths) stays hand-written in index.html — not something to
+    // author as a keyword list.
+    name: 'cardIconRules',
+    kind: 'data',
+    dataFile: 'src/data/cardIconKeywords.json',
+    footer: ''
   }
 ];
 
@@ -698,8 +711,39 @@ function compileToPlainJs(sourceFile) {
   }
 }
 
+/**
+ * Compiles a `kind: 'data'` block's plain JSON data file into a JS `const` declaration, instead
+ * of compileToPlainJs's tsc pipeline — there's no logic here to type-check or unit-test, just a
+ * shape to validate before trusting it enough to splice into the shared script scope. Shape:
+ * `{ rules: [{ id: string, keys: string[] }, ...] }` (matching CARD_ICON_RULES' own shape in
+ * index.html) — extend this validation if a future data block needs a different shape, rather
+ * than loosening it.
+ */
+function compileDataBlock(dataFile) {
+  const raw = readFileSync(path.join(repoRoot, dataFile), 'utf8');
+  let json;
+  try {
+    json = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`${dataFile} is not valid JSON: ${e.message}`);
+  }
+  if (!Array.isArray(json.rules)) {
+    throw new Error(`${dataFile}: expected a top-level "rules" array.`);
+  }
+  for (const rule of json.rules) {
+    const keysOk = Array.isArray(rule.keys) && rule.keys.length > 0 && rule.keys.every((k) => typeof k === 'string' && k.length > 0);
+    if (typeof rule.id !== 'string' || !rule.id || !keysOk) {
+      throw new Error(`${dataFile}: each rule needs a non-empty string "id" and a non-empty string[] "keys" — got ${JSON.stringify(rule)}`);
+    }
+  }
+  const rulesLiteral = json.rules.map((rule) => `{id:${JSON.stringify(rule.id)},keys:${JSON.stringify(rule.keys)}}`).join(',');
+  return `const CARD_ICON_RULES=[${rulesLiteral}];`;
+}
+
 function buildGeneratedBlock(block, compiled) {
-  const startMarker = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Source of truth: ${block.sourceFile} (tests: ${block.testFile}). Regenerate with \`npm run generate\` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */`;
+  const sourceRef = block.kind === 'data' ? block.dataFile : block.sourceFile;
+  const testRef = block.kind === 'data' ? '' : ` (tests: ${block.testFile})`;
+  const startMarker = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Source of truth: ${sourceRef}${testRef}. Regenerate with \`npm run generate\` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */`;
   const endMarker = `/* GENERATED:${block.name}:END */`;
   const footerPart = block.footer ? `\n${block.footer}` : '';
   return `${startMarker}\n${compiled}${footerPart}\n${endMarker}`;
@@ -796,7 +840,10 @@ function generate() {
       throw new Error(`Unknown targetFile "${targetFile}" — add it to TARGET_FILE_PATHS at the top of this script.`);
     }
     let html = readFileSync(filePath, 'utf8');
-    const compiledByBlock = blocks.map((block) => ({ name: block.name, compiled: compileToPlainJs(block.sourceFile) }));
+    const compiledByBlock = blocks.map((block) => ({
+      name: block.name,
+      compiled: block.kind === 'data' ? compileDataBlock(block.dataFile) : compileToPlainJs(block.sourceFile)
+    }));
     checkForCrossBlockNameCollisions(compiledByBlock);
     for (let i = 0; i < blocks.length; i++) {
       html = spliceBlock(html, blocks[i], compiledByBlock[i].compiled);
