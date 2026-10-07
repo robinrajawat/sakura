@@ -1611,6 +1611,7 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .sb-context-item.sb-context-active{background:color-mix(in srgb,var(--accent) 10%,var(--hover))}
 .sb-context-item:hover{background:var(--hover)}
 .sb-context-item.danger:hover{color:#dc2626;background:color-mix(in srgb,#dc2626 10%,transparent)}
+.sb-context-item.disabled{opacity:.4;cursor:default;pointer-events:none}
 .sb-context-divider{height:1px;background:var(--border);margin:4px 2px}
 .sb-context-icon{width:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.8}
 /* Drag & drop between folders */
@@ -19689,6 +19690,23 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         if(isCharted||tableChartability(table).ok){
           items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commitNoteLine(); }});
         }
+        // Same per-type picks as the Pad's own table menu and the chart's own right-click menu in
+        // Preview/Presenter (see tableChartTypeAvailability) -- offered here too so the type can be
+        // set without leaving the note to go find the chart in Preview first. The current type, and
+        // any type that doesn't make sense for this table's shape (Pie/Doughnut/Cards on a
+        // multi-series table, Stacked bar on a single-series one), shows disabled with the reason on
+        // hover rather than just being omitted unexplained.
+        if(isCharted){
+          const curType=getTableChartType(table);
+          const typeAvail=tableChartTypeAvailability(table);
+          CHART_TYPES.forEach(type=>{
+            const isCurrent=type===curType; const avail=typeAvail[type];
+            items.push({label:CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), disabled:isCurrent||!avail.ok, title:!avail.ok?avail.reason:undefined, onClick:()=>{ setTableChartType(table,type); commitNoteLine(); }});
+          });
+          if(curType==='cards'){
+            items.push({label:'Suggest icons with AI', onClick: async()=>{ await suggestCardIconsWithAi(table); commitNoteLine(); }});
+          }
+        }
       } else {
         // Caret position at the moment of the right-click, not whenever "Insert table" actually
         // gets clicked -- the sb-context-menu's own mousedown preventDefault (just below) keeps
@@ -29844,8 +29862,9 @@ function showSbContextMenu(x,y,items){
   _sbContextButtons=[];
   items.forEach(it=>{
     if(it.divider){ const d=document.createElement('div'); d.className='sb-context-divider'; menu.appendChild(d); return; }
-    const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'');
+    const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'');
     btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span>'+esc(it.label)+'</span>';
+    if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; menu.appendChild(btn); return; }
     btn.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await it.onClick(); });
     btn.addEventListener('mouseenter',()=>{ _sbContextActiveIndex=_sbContextButtons.indexOf(btn); _sbContextUpdateHighlight(); });
     menu.appendChild(btn);
