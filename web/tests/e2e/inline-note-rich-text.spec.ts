@@ -283,6 +283,69 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await page.locator('#note-line-1 td').first().click({ button: 'right' });
       await expect(page.locator('.sb-context-menu').getByText('Remove chart feature', { exact: true })).toBeVisible();
     });
+
+    // Once a table is charted, the right-click menu picks up the same per-type options (Bar,
+    // Stacked bar, Line, Pie, Doughnut, Cards) the Pad's own table menu and the chart's own
+    // right-click menu in Preview/Presenter already offer -- so the type can be set without
+    // leaving the note to go find the chart in Preview first (see tableChartTypeAvailability).
+    test('once charted, the menu offers every chart type, with the current one disabled', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      // Two DATA columns (Label + Value1 + Value2 -- seriesCount 2) so Pie/Doughnut/Cards, which
+      // only make sense for a single data column, show up disabled rather than being hidden.
+      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value1</th><th>Value2</th></tr><tr><td>A</td><td>10</td><td>5</td></tr><tr><td>B</td><td>20</td><td>8</td></tr></table>');
+
+      // A charted table renders as its chart SVG while unfocused -- clicking into the note first
+      // (same as a real user would) swaps it back to the real, editable table underneath.
+      await page.locator('#note-line-1').click();
+      await page.locator('#note-line-1 td').first().click({ button: 'right' });
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.getByText('Bar chart (current)', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Stacked bar chart', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Line chart', { exact: true })).toBeVisible();
+      const pieItem = menu.locator('.sb-context-item.disabled', { hasText: 'Pie chart' });
+      await expect(pieItem).toBeVisible();
+
+      const currentItem = menu.locator('.sb-context-item.disabled', { hasText: 'Bar chart (current)' });
+      await expect(currentItem).toBeVisible();
+      // Stacked bar is enabled here (2+ data columns) -- unlike the single-data-column case.
+      const stackedItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Stacked bar chart' });
+      await expect(stackedItem).toBeVisible();
+    });
+
+    test('picking a chart type persists it to the table\'s data-chart-type attribute', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
+
+      await page.locator('#note-line-1').click();
+      await page.locator('#note-line-1 td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Line chart', { exact: true }).click();
+
+      const result = await page.evaluate(() => {
+        const table = document.querySelector('#note-line-1 table')!;
+        // @ts-expect-error
+        return { liveType: table.getAttribute('data-chart-type'), noteType: /data-chart-type="(\w+)"/.exec(nodes.find((n: any) => n.id === 1).note)?.[1] };
+      });
+      expect(result.liveType).toBe('line');
+      expect(result.noteType).toBe('line');
+    });
+
+    test('a single-data-column chart offers Pie/Doughnut/Cards enabled, and picking Cards offers "Suggest icons with AI"', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
+
+      await page.locator('#note-line-1').click();
+      await page.locator('#note-line-1 td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Cards', { exact: true }).click();
+
+      await page.locator('#note-line-1 td').first().click({ button: 'right' });
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.getByText('Suggest icons with AI', { exact: true })).toBeVisible();
+      const pieItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Pie chart' });
+      await expect(pieItem).toBeVisible();
+    });
   });
 
   test('Tab from the last cell adds a new row and moves the caret into it', async ({ page }) => {
