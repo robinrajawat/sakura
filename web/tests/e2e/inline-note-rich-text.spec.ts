@@ -346,6 +346,68 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       const pieItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Pie chart' });
       await expect(pieItem).toBeVisible();
     });
+
+    // Cards' offline keyword fallback (pickCardIconId/CARD_ICON_RULES) originally only knew
+    // generic KPI categories (security, speed, time, scope, cost, people, growth, quality) --
+    // useless for a project-estimate table whose rows are actual system names (ERP, EWM,
+    // nShift, webshop, cart, integrations), which all fell back to the same few recycled icons
+    // regardless of which system a row was about. Each system name now has its own catalog
+    // entry and keyword rule, matched case-insensitively against the row's label.
+    test('Cards recognizes common system names (ERP, EWM, nShift, webshop, cart, integrations) and picks a matching icon', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+
+      const ids = await page.evaluate(() => {
+        // @ts-expect-error -- bare global from index.html
+        return [
+          pickCardIconId('ERP - O2C - Functional', '10 days', 0),
+          pickCardIconId('ERP - ABAP', '6 days', 1),
+          pickCardIconId('EWM - ABAP', '5 days', 2),
+          pickCardIconId('EWM - Functional', '5 days', 3),
+          pickCardIconId('nShift', '5 days', 4),
+          pickCardIconId('Webshop checkout', '3 days', 5),
+          pickCardIconId('Cart abandonment flow', '2 days', 6),
+          pickCardIconId('Integrations layer', '4 days', 7),
+        ];
+      });
+      // Webshop and cart share one icon/category -- a storefront and its checkout read as the
+      // same system on a project-estimate card, not two things worth telling apart visually.
+      expect(ids).toEqual(['erp', 'erp', 'ewm', 'ewm', 'nshift', 'cart', 'cart', 'integrations']);
+    });
+
+    test('a Cards table with system-name rows renders each one\'s matching icon, not a generic/recycled one', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+
+      const result = await page.evaluate(() => {
+        const container = document.createElement('div');
+        container.innerHTML = '<table><tr><th>System</th><th>Estimate</th></tr><tr><td>ERP - ABAP</td><td>6 days</td></tr><tr><td>EWM - Functional</td><td>5 days</td></tr><tr><td>nShift</td><td>5 days</td></tr></table>';
+        const table = container.querySelector('table')!;
+        // @ts-expect-error -- bare globals from index.html
+        const html = renderCardsHtml(table);
+        const div = document.createElement('div'); div.innerHTML = html;
+        const cards = [...div.querySelectorAll('.pv-table-card')];
+        // @ts-expect-error
+        const catalog = CARD_ICON_CATALOG;
+        // Comparing a card's live (parsed-then-reserialized) SVG innerHTML directly against the
+        // catalog's raw self-closing-tag source string would never match -- the DOM serializer
+        // always rewrites a childless SVG element as <ellipse ...></ellipse>, not <ellipse .../>.
+        // Round-tripping the catalog path through the same div.innerHTML parse/reserialize makes
+        // the comparison apples-to-apples.
+        const normalize = (path: string) => {
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.innerHTML = path;
+          return svg.innerHTML;
+        };
+        return cards.map(c => ({
+          label: c.querySelector('.pv-table-card-label')?.textContent,
+          path: c.querySelector('.pv-table-card-icon svg')?.innerHTML,
+        })).map(c => ({ ...c, matchesErp: c.path === normalize(catalog.erp.path), matchesEwm: c.path === normalize(catalog.ewm.path), matchesNshift: c.path === normalize(catalog.nshift.path) }));
+      });
+      expect(result[0]).toMatchObject({ label: 'ERP - ABAP', matchesErp: true });
+      expect(result[1]).toMatchObject({ label: 'EWM - Functional', matchesEwm: true });
+      expect(result[2]).toMatchObject({ label: 'nShift', matchesNshift: true });
+    });
   });
 
   test('Tab from the last cell adds a new row and moves the caret into it', async ({ page }) => {
