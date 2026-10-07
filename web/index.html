@@ -9500,6 +9500,47 @@ function htmlHasVisibleContent(html){
 // chart's SVG or a Cards grid with no <table> left in this rendering at all. See
 // noteChartDisplayHtml just below for the equivalent swap in Preview/Presenter/PDF, which needs
 // its own dataset keys for that surface's own right-click chart-type switcher.
+// Self-heals a note whose stored HTML is -- somehow -- our OWN already-rendered Cards grid
+// markup (icons, label/value divs) instead of the real backing <table> renderNoteDisplayHtml's
+// own comment says node.note is always supposed to keep. This shape should never be producible by
+// the current code (rendering never writes back to node.note, only commitNoteLine -- and that only
+// ever runs against the real, focused table), but a note saved under an older version, before that
+// guarantee existed, can still be stuck this way: with no <table> left in it at all,
+// renderNoteDisplayHtml's own fast-path returns such a note's HTML completely unchanged -- showing
+// the stranded cards grid as plain (if nonsensical) editable content, with no figure wrapper for
+// the note-line's own right-click handler to recognize, so it falls back to the generic
+// "nothing under the caret" menu instead of Copy/Edit note. Each card's own visible label/value
+// text is the only data actually recoverable from this markup; reconstructing a plain table from
+// it (re-flagged for Cards) gets the note back to the normal, working shape going forward.
+function repairCorruptedCardsNote(html){
+  if(!html||!/pv-table-cards-grid/.test(html))return html;
+  try{
+    const div=document.createElement('div');
+    div.innerHTML=html;
+    let changed=false;
+    div.querySelectorAll('.pv-table-cards-grid').forEach(grid=>{
+      if(grid.closest('table'))return;
+      const cards=[...grid.querySelectorAll('.pv-table-card')];
+      if(!cards.length)return;
+      const table=document.createElement('table');
+      table.setAttribute('data-feature-chart','1');
+      table.setAttribute('data-chart-type','cards');
+      const thead=table.createTHead(); const hrow=thead.insertRow();
+      ['Label','Value'].forEach(t=>{ const th=document.createElement('th'); th.textContent=t; hrow.appendChild(th); });
+      const tbody=table.createTBody();
+      cards.forEach(card=>{
+        const label=card.querySelector('.pv-table-card-label')?.textContent||'';
+        const value=card.querySelector('.pv-table-card-value')?.textContent||'';
+        const row=tbody.insertRow();
+        row.insertCell().textContent=label;
+        row.insertCell().textContent=value;
+      });
+      grid.replaceWith(table);
+      changed=true;
+    });
+    return changed?div.innerHTML:html;
+  }catch(e){ return html; }
+}
 function renderNoteDisplayHtml(html){
   if(!html||(!/<table/i.test(html)&&!/<img/i.test(html)))return html||'';
   try{
@@ -9523,7 +9564,7 @@ function renderNoteDisplayHtml(html){
     if(images.length){
       const row=document.createElement('div'); row.className='pv-diagram-row';
       images.forEach(d=>{
-        const fig=document.createElement('div'); fig.className='pv-diagram-figure';
+        const fig=document.createElement('div'); fig.className='pv-diagram-figure'; fig.dataset.noteObjIdx=String(d.idx);
         const img=document.createElement('img'); img.src=d.src; img.alt=d.alt||'';
         fig.appendChild(img); row.appendChild(fig);
       });
@@ -9571,9 +9612,21 @@ function noteTableByIndex(nodeId,tIdx){
   const table=container.querySelectorAll('table')[tIdx]; if(!table)return null;
   return {idx,container,table};
 }
-// Writes a noteTableByIndex() table mutation (toggling/retyping its chart) back into node.note --
-// the detached container's own innerHTML, not the live editor, since the live note-line usually
-// isn't even open while right-clicking the Preview's own rendering of it.
+// Same re-parse-by-index lookup as noteTableByIndex, for a standalone picture instead of a table
+// -- used by the note-line's own "Delete" action on a read-only picture figure, which (like a
+// chart/Cards figure) has no live DOM backing to reach for directly. tIdx here is the image's
+// position among EVERY <img> in node.note (see splitNoteBlockVisuals' own idx field), not just
+// the standalone ones, so it stays correct however many inline images sit before it.
+function noteImageByIndex(nodeId,iIdx){
+  const idx=getIndex(nodes,nodeId); if(idx<0)return null;
+  const container=document.createElement('div'); container.innerHTML=nodes[idx].note||'';
+  const img=container.querySelectorAll('img')[iIdx]; if(!img)return null;
+  return {idx,container,img};
+}
+// Writes a noteTableByIndex()/noteImageByIndex() mutation (toggling/retyping a chart, or deleting
+// the table/image outright) back into node.note -- the detached container's own innerHTML, not the
+// live editor, since the live note-line usually isn't even open while right-clicking the Preview's
+// own rendering of it.
 function persistNoteTableChange(idx,container){
   nodes[idx].note=sakuraSanitizeRichHtml(container.innerHTML);
   nodes[idx].modifiedAt=Date.now();
@@ -9611,7 +9664,11 @@ function splitNoteBlockVisuals(html){
     const tables=[...container.querySelectorAll('table')];
     tables.forEach(t=>t.remove());
     const images=[];
-    [...container.querySelectorAll('img')].forEach(img=>{
+    // idx -- this image's position among every <img> in the ORIGINAL html (inline images
+    // included, not just the standalone ones actually extracted below) -- lets a later
+    // noteImageByIndex re-locate the exact same image after a fresh re-parse of node.note, the
+    // same way a table's own position among every <table> already does for noteTableByIndex.
+    [...container.querySelectorAll('img')].forEach((img,idx)=>{
       // container is a detached, never-appended div (same as noteChartDisplayHtml/noteTableByIndex
       // use elsewhere for a note's HTML) -- nothing inside it is ever .isConnected, so that's not
       // a usable "is this a real element" check here the way it would be for live DOM content.
@@ -9625,7 +9682,7 @@ function splitNoteBlockVisuals(html){
         // real-world way a picture actually ends up in a note -- so this is the common case,
         // not an edge case, and skipping it here was the main reason pasted images never
         // actually broke out into their own figure the way a table already did.
-        images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||''});
+        images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||'', idx});
         img.remove();
         return;
       }
@@ -9640,7 +9697,7 @@ function splitNoteBlockVisuals(html){
         return true;
       });
       if(hasOtherContent)return;
-      images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||''});
+      images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||'', idx});
       parent.remove();
     });
     // A table or lone image commonly sits inside its own <p>/<div> from paste or editor markup --
@@ -19611,6 +19668,11 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // handle Enter natively (block elements, like Pad's own editor already does correctly).
     const noteLine=document.createElement('div'); noteLine.className='node-note-line'; noteLine.contentEditable='true'; noteLine.spellcheck=spellcheckEnabled; noteLine.dataset.nodeId=String(node.id); noteLine.id='note-line-'+node.id;
     noteLine.style.paddingLeft=hideTreeLines?(noteDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
+    // One-time self-heal for a note stuck in the corrupted shape repairCorruptedCardsNote's own
+    // comment describes (saved rendered Cards markup, no real backing table) -- resaved here so
+    // every render after this one sees ordinary, correctly-shaped content.
+    const _repairedNote=repairCorruptedCardsNote(node.note||'');
+    if(_repairedNote!==(node.note||'')){ node.note=_repairedNote; node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
     noteLine.innerHTML=renderNoteDisplayHtml(node.note||'');
     noteLine.dataset.tip='Note — click to edit';
     // Column resize handles are only ever attached as part of a live mutation (paste, Insert
@@ -19639,6 +19701,18 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.addEventListener('mousedown',e=>{
       e.stopPropagation();
       _noteLineWasFocused=document.activeElement===noteLine;
+      // A right-click used only to open the context menu would otherwise still natively focus
+      // whatever contenteditable it lands on (same default behavior a left click gets) -- which,
+      // landing on an unfocused read-only object figure, swaps it to the real editable markup
+      // before the menu's own 'contextmenu' handler ever runs. That makes a mere right-click
+      // indistinguishable from actually choosing "Edit note" from the menu it's about to show,
+      // which isn't what right-clicking is for. Suppressed only for this exact case; a right-click
+      // anywhere else, or once the note is already focused, keeps focusing natively as always --
+      // preventDefault here doesn't stop the 'contextmenu' event that follows from firing normally.
+      if(e.button===2&&!_noteLineWasFocused&&e.target.closest&&e.target.closest('.pv-diagram-figure')){
+        e.preventDefault();
+        return;
+      }
       const img=e.target.closest&&e.target.closest('img');
       _pendingImgClickIndex=(img&&noteLine.contains(img))?[...noteLine.querySelectorAll('img')].indexOf(img):null;
     });
@@ -19797,8 +19871,43 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           }
         }
       } else if(readOnlyFigure){
+        const figIsPicture=!!readOnlyFigure.querySelector('img');
+        const figObjIdx=Number(readOnlyFigure.dataset.noteObjIdx);
+        if(!figIsPicture){
+          const figFound=Number.isFinite(figObjIdx)?noteTableByIndex(node.id,figObjIdx):null;
+          if(figFound&&(isTableFeaturedAsChart(figFound.table)||tableChartability(figFound.table).ok)){
+            // A shortcut for "focus the note, then right-click the table again" -- skips straight
+            // to the SAME chart-type menu that second right-click would show (Feature as chart/
+            // chart type picks/Suggest icons -- the `table&&cell` branch above), by focusing and
+            // then simulating that exact follow-up right-click on the now-real table's first cell,
+            // rather than duplicating any of that menu's own logic here.
+            items.push({label:'Edit card/chart', onClick:()=>{
+              noteLine.focus();
+              requestAnimationFrame(()=>{
+                const cell=noteLine.querySelector('td,th');
+                if(!cell)return;
+                const rect=cell.getBoundingClientRect();
+                cell.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:rect.x+4,clientY:rect.y+4}));
+              });
+            }});
+          }
+        }
         items.push({label:'Copy', onClick:()=>copyNoteReadOnlyFigure(readOnlyFigure,node)});
         items.push({label:'Edit note', onClick:()=>{ noteLine.focus(); }});
+        items.push({label:'Delete', danger:true, onClick:()=>{
+          if(figIsPicture){
+            const found=Number.isFinite(figObjIdx)?noteImageByIndex(node.id,figObjIdx):null;
+            if(!found)return;
+            found.img.remove();
+            persistNoteTableChange(found.idx,found.container);
+          } else {
+            const found=Number.isFinite(figObjIdx)?noteTableByIndex(node.id,figObjIdx):null;
+            if(!found)return;
+            found.table.remove();
+            persistNoteTableChange(found.idx,found.container);
+          }
+          render();
+        }});
       } else {
         // Caret position at the moment of the right-click, not whenever "Insert table" actually
         // gets clicked -- the sb-context-menu's own mousedown preventDefault (just below) keeps
