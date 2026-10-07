@@ -9146,26 +9146,9 @@ const CARD_ICON_CATALOG={
 // of this same assignment, which this remains the offline/no-key fallback for. Ordered
 // most-specific first since the first match wins (e.g. "response time" should read as speed,
 // not time).
-const CARD_ICON_RULES=[
-  // System/platform names checked first -- these are specific enough (ERP, EWM, nShift,
-  // webshop/cart, integrations) that there's no real risk of them shadowing the more generic
-  // KPI-category keywords below, but checking them first keeps intent explicit either way.
-  // Webshop and cart share one icon/category -- a storefront and its checkout are the same
-  // system from a project-estimate's point of view, not two things worth telling apart visually.
-  {id:'erp',keys:['erp']},
-  {id:'ewm',keys:['ewm']},
-  {id:'nshift',keys:['nshift','n-shift']},
-  {id:'cart',keys:['cart','webshop','web shop','online store']},
-  {id:'integrations',keys:['integration']},
-  {id:'shield',keys:['secur','standard','complian','protect','risk','governance','privacy']},
-  {id:'bolt',keys:['speed','response','latency','fast','throughput','load time']},
-  {id:'clock',keys:['time','duration','uptime','sla','deadline','schedule']},
-  {id:'target',keys:['scope','goal','target','coverage','objective','milestone']},
-  {id:'dollar',keys:['cost','price','budget','revenue','saving','spend','roi']},
-  {id:'people',keys:['user','customer','client','team','staff','satisfaction','nps']},
-  {id:'trend',keys:['growth','increase','trend','improve','uplift']},
-  {id:'check',keys:['clean','quality','resolved','complete','success','pass','accuracy','done','confirm','approve']}
-];
+/* GENERATED:cardIconRules:START — DO NOT EDIT BY HAND. Source of truth: src/data/cardIconKeywords.json. Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+const CARD_ICON_RULES=[{id:"erp",keys:["erp"]},{id:"ewm",keys:["ewm"]},{id:"nshift",keys:["nshift","n-shift"]},{id:"cart",keys:["cart","webshop","web shop","online store","cxp","basket","frontend"]},{id:"integrations",keys:["integration"]},{id:"shield",keys:["secur","standard","complian","protect","risk","governance","privacy"]},{id:"bolt",keys:["speed","response","latency","fast","throughput","load time"]},{id:"clock",keys:["time","duration","uptime","sla","deadline","schedule"]},{id:"target",keys:["scope","goal","target","coverage","objective","milestone"]},{id:"dollar",keys:["cost","price","budget","revenue","saving","spend","roi"]},{id:"people",keys:["user","customer","client","team","staff","satisfaction","nps"]},{id:"trend",keys:["growth","increase","trend","improve","uplift"]},{id:"check",keys:["clean","quality","resolved","complete","success","pass","accuracy","done","confirm","approve"]}];
+/* GENERATED:cardIconRules:END */
 // Fallback cycle — kept for cards whose text doesn't match any keyword rule (and that have no
 // cached AI result either), so those cards still get some visual variety instead of all
 // defaulting to the same generic icon.
@@ -9504,25 +9487,49 @@ function htmlHasVisibleContent(html){
 // consumer downstream of splitNoteDiagramImages (Presenter/Preview's inline and card note
 // rendering, Word's docxNoteBlocks, PPTX's noteBlockLines) was written for this format from the
 // start and reads it directly, no conversion step needed at the call sites.
-// A chart-featured table (data-feature-chart, see tableChartability/setTableFeatureChart) shows
-// as a live editable table while its note is focused, but as the rendered chart SVG otherwise.
+// Every table (chart-featured or not) and every standalone image shows as its own read-only
+// "object" figure -- the exact same breakout treatment Preview/PDF already give this content (see
+// splitNoteBlockVisuals/buildNoteTableFigure, reused here directly rather than duplicated) -- while
+// the note is just being viewed, not squeezed into the same cramped scrollable text box as prose.
 // Swapped in by the note-line's own blur handler (edit -> display) and focus handler (display ->
-// edit); the node's stored note HTML always keeps the real <table>, never the chart markup, so
-// re-focusing (or reading node.note anywhere else, e.g. in exports) never loses the underlying
-// data. See noteChartDisplayHtml just below for the equivalent swap in Preview/Presenter/PDF,
-// which needs to additionally tag each chart for the right-click type-switcher to find.
+// edit); the node's stored note HTML always keeps the real markup (table, img), never this
+// disposable rendering, so re-focusing (or reading node.note anywhere else, e.g. in exports) never
+// loses anything. Each table figure carries a data-note-obj-idx (position among every table in
+// this note, same order splitNoteBlockVisuals itself extracts them in) so a right-click "Copy" on
+// it can re-fetch the real table via noteTableByIndex even when what's actually showing is a
+// chart's SVG or a Cards grid with no <table> left in this rendering at all. See
+// noteChartDisplayHtml just below for the equivalent swap in Preview/Presenter/PDF, which needs
+// its own dataset keys for that surface's own right-click chart-type switcher.
 function renderNoteDisplayHtml(html){
-  if(!html||!/<table/i.test(html))return html||'';
+  if(!html||(!/<table/i.test(html)&&!/<img/i.test(html)))return html||'';
   try{
-    const div=document.createElement('div');
-    div.innerHTML=html;
-    div.querySelectorAll('table[data-feature-chart="1"]').forEach(table=>{
-      const svg=renderTableChartSvg(table);
-      if(!svg)return;
-      const figure=document.createElement('div'); figure.className='pv-table-chart-figure'; figure.innerHTML=svg;
-      table.replaceWith(figure);
-    });
-    return div.innerHTML;
+    const {textHtml,tables,images}=splitNoteBlockVisuals(html);
+    if(!tables.length&&!images.length)return html;
+    let result=textHtml;
+    if(tables.length){
+      const row=document.createElement('div'); row.className='pv-diagram-row';
+      tables.forEach((table,tIdx)=>{
+        const fig=document.createElement('div'); fig.className='pv-diagram-figure pv-table-figure'; fig.dataset.noteObjIdx=String(tIdx);
+        if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
+          const svg=renderTableChartSvg(table);
+          if(svg){ fig.classList.add('pv-table-chart-figure'); fig.innerHTML=svg; row.appendChild(fig); return; }
+        }
+        const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
+        fig.appendChild(clone);
+        row.appendChild(fig);
+      });
+      result+=row.outerHTML;
+    }
+    if(images.length){
+      const row=document.createElement('div'); row.className='pv-diagram-row';
+      images.forEach(d=>{
+        const fig=document.createElement('div'); fig.className='pv-diagram-figure';
+        const img=document.createElement('img'); img.src=d.src; img.alt=d.alt||'';
+        fig.appendChild(img); row.appendChild(fig);
+      });
+      result+=row.outerHTML;
+    }
+    return result;
   }catch(e){ return html; }
 }
 // Same chart swap as renderNoteDisplayHtml, for Preview/Presenter/PDF's own rendering of a note's
@@ -9663,6 +9670,40 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
   return fig;
+}
+// Right-clicking one of the live note-line's own read-only object figures (a plain table, a
+// chart, a Cards grid, or a picture -- see renderNoteDisplayHtml) offers "Copy" alongside "Edit
+// note". A picture figure's real <img> is right there in the live DOM to copy directly -- same
+// text/html+text/plain shape _editorCopyHandler already uses elsewhere for a custom-selected
+// image. A table-backed figure (plain, chart, or Cards) has no such live element to read once
+// it's rendered as a chart's SVG or a Cards grid -- data-note-obj-idx (set by
+// renderNoteDisplayHtml) names its position among this note's tables, so noteTableByIndex can
+// re-fetch the real table from node.note fresh, the same lookup Preview's own right-click
+// chart-type switcher already relies on for the identical problem.
+async function copyNoteReadOnlyFigure(fig,node){
+  const img=fig.querySelector('img');
+  let html,text,label;
+  if(img){
+    const styleAttr=img.getAttribute('style')?` style="${img.getAttribute('style')}"`:'';
+    html=`<img src="${img.getAttribute('src')}"${styleAttr}>`;
+    text=img.getAttribute('src')||'';
+    label='Image';
+  } else {
+    const tIdx=Number(fig.dataset.noteObjIdx);
+    const found=Number.isFinite(tIdx)?noteTableByIndex(node.id,tIdx):null;
+    if(!found){ showToast('Nothing to copy'); return; }
+    html=found.table.outerHTML;
+    text=found.table.innerText||found.table.textContent||'';
+    label='Table';
+  }
+  try{
+    if(navigator.clipboard&&window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);
+    } else if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(text);
+    } else throw new Error('Clipboard API unavailable');
+    showToast(label+' copied');
+  }catch(e){ showToast('Copy failed'); }
 }
 const HIGHLIGHT_COLORS={yellow:'#eab308',green:'#22c55e',blue:'#0ea5e9',pink:'#ec4899'};
 const FONT_COLORS=['red','orange','green','blue','purple','gray'];
@@ -19588,17 +19629,37 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // captured here (before the focus handler above fires and changes activeElement) so the click
     // handler below can tell which case it is.
     let _noteLineWasFocused=false;
-    noteLine.addEventListener('mousedown',e=>{e.stopPropagation(); _noteLineWasFocused=document.activeElement===noteLine;});
+    // A click landing on an <img> inside a read-only object figure (see renderNoteDisplayHtml)
+    // needs to resolve to the SAME picture once this mousedown's own focus swaps display -> edit
+    // just below -- captured here, before that swap, as this image's position among every image
+    // in the about-to-be-replaced content, since by the time 'click' fires afterward e.target is
+    // already a detached leftover of what the reset just replaced (same reasoning the focus
+    // handler's own comment gives for the swap itself).
+    let _pendingImgClickIndex=null;
+    noteLine.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      _noteLineWasFocused=document.activeElement===noteLine;
+      const img=e.target.closest&&e.target.closest('img');
+      _pendingImgClickIndex=(img&&noteLine.contains(img))?[...noteLine.querySelectorAll('img')].indexOf(img):null;
+    });
     noteLine.addEventListener('focus',()=>{
       pushUndo(); _pendingInlineFocus={kind:'note',nodeId:node.id};
-      // Only actually reset innerHTML (display -> edit) when a chart swap needs reverting --
-      // resetting unconditionally on every focus, even when nothing needs to change, recreates
-      // every DOM node in the note on the very first click, which raced with (and broke) that
-      // same click's own image-selection/table-context-menu handling: by the time the click
-      // event reached noteLine, the element it targeted was already a detached leftover of the
-      // node this reset had just replaced.
+      // Only actually reset innerHTML (display -> edit) when a table/chart/Cards/picture swap
+      // needs reverting -- resetting unconditionally on every focus, even when nothing needs to
+      // change, recreates every DOM node in the note on the very first click, which raced with
+      // (and broke) that same click's own image-selection/table-context-menu handling: by the
+      // time the click event reached noteLine, the element it targeted was already a detached
+      // leftover of the node this reset had just replaced.
       const raw=node.note||'';
-      if(renderNoteDisplayHtml(raw)!==raw){ noteLine.innerHTML=raw; noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); }
+      if(renderNoteDisplayHtml(raw)!==raw){
+        noteLine.innerHTML=raw;
+        noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t));
+        if(_pendingImgClickIndex!=null){
+          const freshImg=noteLine.querySelectorAll('img')[_pendingImgClickIndex];
+          if(freshImg)_imgResizeSelect(freshImg,noteLine.id);
+        }
+      }
+      _pendingImgClickIndex=null;
     });
     // Same click-to-select/drag-to-resize/double-click-to-reset image handling _setupImageResize
     // wires up for Pad (see _imgResizeSelect/_imgResizePersist) -- inlined here rather than calling
@@ -19688,7 +19749,20 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.addEventListener('contextmenu',e=>{
       e.preventDefault(); e.stopPropagation();
       const cell=e.target.closest&&e.target.closest('td,th');
-      const table=cell?cell.closest('table'):(e.target.closest&&e.target.closest('table'));
+      const rawTable=cell?cell.closest('table'):(e.target.closest&&e.target.closest('table'));
+      // Every table/chart/Cards/picture shows as its own read-only object figure while the note
+      // is unfocused (see renderNoteDisplayHtml) -- a PLAIN table's figure still contains a real
+      // (cloned) <table>, which would otherwise satisfy the live-table-editing branch below even
+      // though it's disposable, never-saved markup, not the actual editable table (that only
+      // exists directly inside noteLine once focus swaps the real markup back in). Right-clicking
+      // inside one of these read-only figures -- whichever content type it is -- used to either
+      // wrongly offer live table-editing actions against a clone, or (for a chart/Cards figure,
+      // which has no <table> left in its DOM at all) fall through to the generic "nothing under
+      // the caret" branch (Insert table / Rewrite with AI / Delete note), neither of which is
+      // what someone right-clicking a read-only object actually wants: just "Copy" its content,
+      // or "Edit note" to focus back into the real, editable markup.
+      const readOnlyFigure=e.target.closest&&e.target.closest('.pv-diagram-figure');
+      const table=(rawTable&&!readOnlyFigure)?rawTable:null;
       const items=[];
       if(table&&cell){
         items.push({label:'Add row below', onClick:()=>{ const row=cell.closest('tr'); if(!row)return; const newRow=row.cloneNode(false); const colCount=row.cells.length; for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); } row.insertAdjacentElement('afterend',newRow); _attachTableResizeHandles(table); commitNoteLine(); }});
@@ -19722,6 +19796,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
             items.push({label:'Suggest icons with AI', onClick: async()=>{ await suggestCardIconsWithAi(table); commitNoteLine(); }});
           }
         }
+      } else if(readOnlyFigure){
+        items.push({label:'Copy', onClick:()=>copyNoteReadOnlyFigure(readOnlyFigure,node)});
+        items.push({label:'Edit note', onClick:()=>{ noteLine.focus(); }});
       } else {
         // Caret position at the moment of the right-click, not whenever "Insert table" actually
         // gets clicked -- the sb-context-menu's own mousedown preventDefault (just below) keeps
@@ -46862,6 +46939,18 @@ function selectionFmtEditorFor(node){
   let n=node;
   while(n){
     if(n.nodeType===1){
+      // Only real prose text makes sense to Bold/Italic/Link from this popover -- a table cell's
+      // (or Cards/chart's) content is read back as plain text only by every consumer (tableCardsData,
+      // pptxChartSeriesFromTable, a plain table's own textContent/outerHTML when copied), so rich
+      // formatting applied to one is either silently discarded or, worse, visible only until the
+      // next re-render. An image has no text to format at all. Checked before any editor match
+      // below so it's excluded regardless of which editor's table/image it happens to be inside —
+      // a live, currently-focused table cell included, not just the disposable read-only
+      // chart/Cards/table rendering renderNoteDisplayHtml swaps in while unfocused (see there),
+      // which has no <table>/<img> left in its own DOM at all for a chart or Cards grid, hence the
+      // extra class check.
+      if(n.tagName==='TABLE'||n.tagName==='IMG')return null;
+      if(n.classList&&n.classList.contains('pv-diagram-figure'))return null;
       if(SELECTION_FMT_EDITOR_IDS.includes(n.id))return n.id;
       // Notes aren't a singleton editor like Pad — there's one of these per node, each with its
       // own id (note-line-<nodeId>, see the inline note-line's creation in render()) — so this

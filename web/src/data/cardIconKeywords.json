@@ -1,0 +1,18 @@
+{
+  "_readme": "Keyword rules for Cards' offline (no-AI) icon fallback -- pickCardIconId in index.html checks each card's label+value text (lowercased) against every rule in order and uses the FIRST match's icon; add a keyword to an existing rule's \"keys\" array to make Cards recognize another name for that same system (e.g. add \"CXP\" or \"Basket\" to the \"cart\" rule if your team calls the webshop checkout that). This file is the source of truth -- after editing it, run `npm run generate` (or ask Claude to) to regenerate the CARD_ICON_RULES block it produces inside index.html between the GENERATED:cardIconRules markers, then commit both files together. `npm run generate:verify` (part of the normal test gauntlet, and run in CI) fails if index.html ever drifts from what this file would produce. Order matters: since the first match wins, keep a narrow/specific id (like a system name) above any broader category it could otherwise be mistaken for. Adding a brand-new \"id\" here does nothing on its own -- a matching {id, path, desc} entry must also exist in CARD_ICON_CATALOG in index.html, which still has to be hand-edited (it holds the actual SVG icon, which isn't something to author as a plain keyword list).",
+  "rules": [
+    { "id": "erp", "keys": ["erp"] },
+    { "id": "ewm", "keys": ["ewm"] },
+    { "id": "nshift", "keys": ["nshift", "n-shift"] },
+    { "id": "cart", "keys": ["cart", "webshop", "web shop", "online store", "cxp", "basket", "frontend"] },
+    { "id": "integrations", "keys": ["integration"] },
+    { "id": "shield", "keys": ["secur", "standard", "complian", "protect", "risk", "governance", "privacy"] },
+    { "id": "bolt", "keys": ["speed", "response", "latency", "fast", "throughput", "load time"] },
+    { "id": "clock", "keys": ["time", "duration", "uptime", "sla", "deadline", "schedule"] },
+    { "id": "target", "keys": ["scope", "goal", "target", "coverage", "objective", "milestone"] },
+    { "id": "dollar", "keys": ["cost", "price", "budget", "revenue", "saving", "spend", "roi"] },
+    { "id": "people", "keys": ["user", "customer", "client", "team", "staff", "satisfaction", "nps"] },
+    { "id": "trend", "keys": ["growth", "increase", "trend", "improve", "uplift"] },
+    { "id": "check", "keys": ["clean", "quality", "resolved", "complete", "success", "pass", "accuracy", "done", "confirm", "approve"] }
+  ]
+}

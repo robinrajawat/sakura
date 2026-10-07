@@ -178,6 +178,9 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, tableNote);
 
+      // A plain table shows as its own read-only figure while the note is unfocused (see
+      // renderNoteDisplayHtml) -- clicking in first swaps back to the real, editable table.
+      await page.locator('#note-line-1').click();
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
@@ -191,6 +194,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, tableNote);
 
+      await page.locator('#note-line-1').click();
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Add column right', { exact: true }).click();
@@ -206,6 +210,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
 
+      await page.locator('#note-line-1').click();
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
@@ -227,6 +232,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><td>A</td><td>10</td></tr></tbody></table>');
 
+      await page.locator('#note-line-1').click();
       const headerCell = page.locator('#note-line-1 th').first();
       await headerCell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
@@ -244,6 +250,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, tableNote);
 
+      await page.locator('#note-line-1').click();
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete column', { exact: true }).click();
@@ -259,6 +266,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, tableNote);
 
+      await page.locator('#note-line-1').click();
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete table', { exact: true }).click();
@@ -273,6 +281,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       // A 2-column table with numeric data in the second column is chartable (tableChartability).
       await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
 
+      await page.locator('#note-line-1').click();
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Feature as chart', { exact: true }).click();
@@ -375,6 +384,27 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(ids).toEqual(['erp', 'erp', 'ewm', 'ewm', 'nshift', 'cart', 'cart', 'integrations']);
     });
 
+    // CARD_ICON_RULES is generated from src/data/cardIconKeywords.json (see
+    // scripts/generate-index-blocks.mjs's cardIconRules data block) specifically so more
+    // synonyms for an existing system can be added by editing that JSON file directly, without
+    // touching index.html's JS by hand. This locks in the keywords that JSON file actually adds
+    // today (CXP, Basket, Frontend, all aliasing the "cart" category) as a real behavioral
+    // contract, not just documentation.
+    test('CXP, Basket, and Frontend (added via src/data/cardIconKeywords.json) all map to the cart icon', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+
+      const ids = await page.evaluate(() => {
+        // @ts-expect-error -- bare global from index.html
+        return [
+          pickCardIconId('CXP release', '4 days', 0),
+          pickCardIconId('Basket & payments', '3 days', 1),
+          pickCardIconId('Frontend build', '2 days', 2),
+        ];
+      });
+      expect(ids).toEqual(['cart', 'cart', 'cart']);
+    });
+
     test('a Cards table with system-name rows renders each one\'s matching icon, not a generic/recycled one', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
@@ -407,6 +437,165 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(result[0]).toMatchObject({ label: 'ERP - ABAP', matchesErp: true });
       expect(result[1]).toMatchObject({ label: 'EWM - Functional', matchesEwm: true });
       expect(result[2]).toMatchObject({ label: 'nShift', matchesNshift: true });
+    });
+
+    // A charted table shows as its rendered chart/cards figure, not a real <table>, while the
+    // note is unfocused -- right-clicking it used to fall into the generic "nothing under the
+    // caret" branch (Insert table / Rewrite with AI / Delete note), none of which gets you back
+    // to the real table. It should instead offer exactly "Copy" and "Edit note".
+    // Dispatches a real `contextmenu` event directly on the element, rather than Playwright's
+    // own click({button:'right'}) -- that performs its own mouse-move/scroll/actionability pass
+    // first, which (on this nested, scrollable editor layout) can land the real click somewhere
+    // else entirely by the time it fires, same as this file's paste tests already dispatch a
+    // synthetic `paste` event directly rather than relying on a real OS clipboard interaction.
+    function rightClick(page: import('@playwright/test').Page, selector: string) {
+      return page.evaluate((sel) => {
+        const el = document.querySelector(sel)!;
+        const rect = el.getBoundingClientRect();
+        const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 });
+        el.dispatchEvent(ev);
+      }, selector);
+    }
+
+    test('right-clicking an unfocused chart figure offers only "Edit note", which focuses the note back to its real table', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
+
+      await expect(page.locator('#note-line-1 .pv-table-chart-figure')).toBeVisible();
+      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
+
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu).toBeVisible();
+      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+
+      await menu.getByText('Edit note', { exact: true }).click();
+      const result = await page.evaluate(() => {
+        const el = document.getElementById('note-line-1')!;
+        return { focused: document.activeElement === el, hasTable: !!el.querySelector('table'), hasFigure: !!el.querySelector('.pv-table-chart-figure') };
+      });
+      expect(result.focused).toBe(true);
+      expect(result.hasTable).toBe(true);
+      expect(result.hasFigure).toBe(false);
+    });
+
+    test('right-clicking an unfocused Cards figure also offers "Copy" and "Edit note"', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
+
+      await expect(page.locator('#note-line-1 .pv-table-card').first()).toBeVisible();
+      await rightClick(page, '#note-line-1 .pv-table-card');
+
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+    });
+
+    // A plain (not-charted) table and a standalone picture get the exact same read-only object
+    // treatment as a chart/Cards figure (see renderNoteDisplayHtml) -- right-clicking either
+    // should offer the same "Copy"/"Edit note" pair, not the live table-editing menu (which only
+    // makes sense once focus has already swapped the disposable clone for the real table).
+    test('right-clicking an unfocused plain table figure also offers "Copy" and "Edit note"', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+      await expect(page.locator('#note-line-1 .pv-table-figure')).toBeVisible();
+      await rightClick(page, '#note-line-1 .pv-table-figure');
+
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+    });
+
+    test('right-clicking an unfocused standalone picture also offers "Copy" and "Edit note"', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7" alt="pic"></p>');
+
+      await expect(page.locator('#note-line-1 .pv-diagram-figure img')).toBeVisible();
+      await rightClick(page, '#note-line-1 .pv-diagram-figure');
+
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+    });
+
+    // Stubs navigator.clipboard.write to record what was written, rather than relying on real OS
+    // clipboard access -- headless Chromium's clipboard permissions (and file:// being a
+    // non-secure context) make that unreliable to depend on in a test.
+    function stubClipboard(page: import('@playwright/test').Page) {
+      return page.evaluate(() => {
+        // @ts-expect-error
+        window.__clipboardWrites = [];
+        class FakeClipboardItem {
+          data: Record<string, Blob>;
+          constructor(data: Record<string, Blob>) { this.data = data; }
+        }
+        // @ts-expect-error
+        window.ClipboardItem = FakeClipboardItem;
+        // navigator.clipboard is a getter-only accessor on the real Navigator prototype -- a
+        // plain assignment silently no-ops in sloppy mode rather than throwing, leaving the REAL
+        // clipboard API in place (which then fails/rejects under headless Chromium + file://'s
+        // non-secure context, swallowed by copyNoteReadOnlyFigure's own try/catch). Overriding the
+        // property itself via defineProperty is what's actually needed to intercept the call.
+        Object.defineProperty(navigator, 'clipboard', {
+          configurable: true,
+          value: {
+            write: async (items: InstanceType<typeof FakeClipboardItem>[]) => {
+              const item = items[0];
+              const entry: Record<string, string> = {};
+              for (const [type, blob] of Object.entries(item.data)) entry[type] = await blob.text();
+              // @ts-expect-error
+              window.__clipboardWrites.push(entry);
+            },
+          },
+        });
+      });
+    }
+
+    test('"Copy" on a table-backed figure (chart, Cards, or plain table) copies the real table as HTML', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+      await stubClipboard(page);
+
+      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
+      await page.locator('.sb-context-menu').getByText('Copy', { exact: true }).click();
+      // copyNoteReadOnlyFigure's own clipboard write is async -- the menu item's click handler
+      // awaits it, but Playwright's .click() only waits for the click event to dispatch, not for
+      // the page's own in-flight promises to settle, which under load can still be pending here.
+      await page.waitForFunction(() => (window as any).__clipboardWrites.length > 0);
+
+      const writes = await page.evaluate(() => (window as any).__clipboardWrites);
+      expect(writes).toHaveLength(1);
+      expect(writes[0]['text/html']).toContain('<table');
+      expect(writes[0]['text/html']).toContain('data-feature-chart');
+      expect(writes[0]['text/plain']).toContain('Label');
+      expect(writes[0]['text/plain']).toContain('10');
+    });
+
+    test('"Copy" on a standalone picture copies the real image', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      const src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
+      await seedNodeWithNote(page, `<p><img src="${src}" alt="pic"></p>`);
+      await stubClipboard(page);
+
+      await rightClick(page, '#note-line-1 .pv-diagram-figure');
+      await page.locator('.sb-context-menu').getByText('Copy', { exact: true }).click();
+      await page.waitForFunction(() => (window as any).__clipboardWrites.length > 0);
+
+      const writes = await page.evaluate(() => (window as any).__clipboardWrites);
+      expect(writes).toHaveLength(1);
+      expect(writes[0]['text/html']).toContain(`<img src="${src}">`);
+      expect(writes[0]['text/plain']).toBe(src);
     });
   });
 
@@ -520,6 +709,66 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       return nodes.find((n: any) => n.id === 1).note;
     });
     expect(note).toMatch(/<(b|strong)>world<\/(b|strong)>/i);
+  });
+
+  // A charted table's rendered chart/Cards display (.pv-table-chart-figure) is disposable,
+  // regenerated markup, not the real table data -- selecting its visible text and formatting it
+  // would either no-op (tableCardsData reads plain textContent) or, worse, have the note-line's
+  // own input handler persist this throwaway rendering over the real table in node.note. The
+  // popover resolves its target editor via selectionFmtEditorFor, which must refuse to match
+  // here even though the figure sits nested inside the note-line it would otherwise match.
+  // selectionFmtEditorFor is called directly against a node reference here, rather than through a
+  // real window.getSelection()/addRange() -- setting a Selection inside a contenteditable element
+  // that doesn't already have focus has Chromium focus it as a side effect, which (since this
+  // content sits inside the note-line) synchronously fires the note-line's own focus handler and
+  // swaps the read-only chart/Cards figure for the real table before the selection ever "lands",
+  // making the scenario this test means to cover unreachable through the Selection API. The
+  // function's own contract (take a node, walk its ancestors) doesn't require a real Selection to
+  // exercise correctly.
+  test('the selection-formatting popover does not activate inside a rendered chart/Cards figure, a table cell, or an image', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+    const cardsLabelResult = await page.evaluate(() => {
+      const label = document.querySelector('#note-line-1 .pv-table-card-label')!;
+      // @ts-expect-error -- bare global from index.html
+      return selectionFmtEditorFor(label.firstChild);
+    });
+    expect(cardsLabelResult).toBeNull();
+
+    // A real, currently-focused table cell -- not just the disposable read-only display -- since
+    // its content is read back as plain text only (tableCardsData, a copied table's own
+    // textContent), formatting is pointless there too.
+    await page.locator('#note-line-1').click();
+    const tableCellResult = await page.evaluate(() => {
+      const cell = document.querySelector('#note-line-1 td')!;
+      // @ts-expect-error
+      return selectionFmtEditorFor(cell.firstChild || cell);
+    });
+    expect(tableCellResult).toBeNull();
+    // render() preserves a currently-focused note-line's live content rather than replacing it
+    // (protecting an in-progress edit from a background render) -- blur before re-seeding so the
+    // next seedNodeWithNote call actually takes effect instead of silently no-op'ing.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+
+    await seedNodeWithNote(page, '<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7" alt="pic"></p>');
+    const imageResult = await page.evaluate(() => {
+      const img = document.querySelector('#note-line-1 img')!;
+      // @ts-expect-error
+      return selectionFmtEditorFor(img);
+    });
+    expect(imageResult).toBeNull();
+
+    // Plain prose text in the SAME note still resolves normally -- this exclusion is scoped to
+    // tables/images, not the whole note-line.
+    await seedNodeWithNote(page, 'Hello world');
+    const textResult = await page.evaluate(() => {
+      const el = document.getElementById('note-line-1')!;
+      // @ts-expect-error
+      return selectionFmtEditorFor(el.firstChild);
+    });
+    expect(textResult).toBe('note-line-1');
   });
 
   // The note's own right-click menu had no way to add a table at all -- only a paste could put
@@ -705,6 +954,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
     const existingRowHeight = await page.evaluate(() => document.querySelector('#note-line-1 tbody tr')!.getBoundingClientRect().height);
 
+    await page.locator('#note-line-1').click();
     const cell = page.locator('#note-line-1 td').first();
     await cell.click({ button: 'right' });
     await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
