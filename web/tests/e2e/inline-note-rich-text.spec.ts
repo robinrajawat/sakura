@@ -430,6 +430,20 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(ids).toEqual(['cart', 'cart', 'cart']);
     });
 
+    test('a card labeled "Solution Architecture" or "Blueprint" picks the architecture icon', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+
+      const ids = await page.evaluate(() => {
+        // @ts-expect-error -- bare global from index.html
+        return [
+          pickCardIconId('Solution Architecture', '8 days', 0),
+          pickCardIconId('Target Landscape Blueprint', '5 days', 1),
+        ];
+      });
+      expect(ids).toEqual(['architecture', 'architecture']);
+    });
+
     test('a Cards table with system-name rows renders each one\'s matching icon, not a generic/recycled one', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
@@ -799,6 +813,69 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       });
       const rowMatches = note.match(/<tr>/g) || [];
       expect(rowMatches.length).toBeGreaterThanOrEqual(2);
+    });
+
+    // The actual bug report this covers: "Delete row" on the row holding the currently-focused
+    // cell (a real right-click's own mousedown already focused that cell before the menu ever
+    // opened) removed the row from the DOM, which forces its own native, synchronous focus change
+    // -- firing enterScopedTableEdit's onFocusOut (commit+exit) mid-handler, BEFORE this onClick's
+    // own trailing commit() call ran. That second, now-stale commit() saw a liveTable already
+    // detached by exit()'s render() and took the "the whole table was removed" branch by mistake,
+    // wiping the real table out of node.note entirely instead of just the one row.
+    test('"Delete row" inside a scoped "Edit card/chart" session removes only that row, not the whole table', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
+
+      await rightClick(page, '#note-line-1 .pv-table-card');
+      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
+
+      // A real click -- not the synthetic rightClick helper -- so its own native mousedown actually
+      // focuses this cell first, the same way the real bug report's right-click sequence did.
+      await page.locator('#note-line-1 td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
+
+      const state = await page.evaluate(() => ({
+        noteLineExists: !!document.getElementById('note-line-1'),
+        // @ts-expect-error
+        note: nodes.find((n: any) => n.id === 1).note,
+      }));
+      expect(state.noteLineExists).toBe(true);
+      expect(state.note).toContain('<table');
+      expect(state.note).toContain('B');
+      expect(state.note).toContain('20');
+      expect(state.note).not.toContain('>A<');
+      // _attachTableResizeHandles' own col/row-resize handle <div>s are real children of the
+      // scoped session's live table, not a CSS overlay -- commit() must strip them (via
+      // cleanEditorHtml) the same way the live table&&cell branch's own commitNoteLine already
+      // does, or they'd get baked straight into node.note on every scoped-edit save.
+      expect(state.note).not.toContain('col-resize-handle');
+      expect(state.note).not.toContain('row-resize-handle');
+    });
+
+    // Same bug class as "Delete row" above, for the column case -- a real right-click's own
+    // mousedown focuses the clicked cell before "Delete column" ever runs.
+    test('"Delete column" inside a scoped "Edit card/chart" session removes only that column, not the whole table', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th><th>Owner</th></tr><tr><td>A</td><td>10</td><td>Sam</td></tr></table>');
+
+      await rightClick(page, '#note-line-1 .pv-table-figure');
+      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
+
+      await page.locator('#note-line-1 td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Delete column', { exact: true }).click();
+
+      const state = await page.evaluate(() => ({
+        noteLineExists: !!document.getElementById('note-line-1'),
+        // @ts-expect-error
+        note: nodes.find((n: any) => n.id === 1).note,
+      }));
+      expect(state.noteLineExists).toBe(true);
+      expect(state.note).toContain('<table');
+      expect(state.note).toContain('10');
+      expect(state.note).toContain('Sam');
+      expect(state.note).not.toContain('>A<');
     });
 
     test('"Delete" on a table-backed figure (chart, Cards, or plain table) removes just that table, keeping the rest of the note', async ({ page }) => {

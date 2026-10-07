@@ -9086,8 +9086,37 @@ function buildTableEditItems(table,cell,commit){
     items.push({label:'Add row below', onClick:()=>{ const row=cell.closest('tr'); if(!row)return; const newRow=row.cloneNode(false); const colCount=row.cells.length; for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); } row.insertAdjacentElement('afterend',newRow); _attachTableResizeHandles(table); placeCaretIn(newRow.cells[0]); commit(); }});
     items.push({label:'Add column right', onClick:()=>{ const cellIndex=cell.cellIndex; const ownRow=cell.closest('tr'); let newCellInOwnRow=null; table.querySelectorAll('tr').forEach(row=>{ const isHead=row.closest('thead')!==null; const c=isHead?document.createElement('th'):document.createElement('td'); c.contentEditable='true'; if(isHead)c.textContent='Column'; const refCell=row.cells[cellIndex]; if(refCell)refCell.insertAdjacentElement('afterend',c); else row.appendChild(c); if(row===ownRow)newCellInOwnRow=c; }); _attachTableResizeHandles(table); placeCaretIn(newCellInOwnRow); commit(); }});
     items.push({divider:true});
-    items.push({label:'Delete row', onClick:()=>{ const row=cell.closest('tr'); if(row&&table.rows.length>1){ row.remove(); commit(); } }});
-    items.push({label:'Delete column', onClick:()=>{ const ci=cell.cellIndex; let canDelete=true; table.querySelectorAll('tr').forEach(r=>{ if(r.cells.length<=1)canDelete=false; }); if(canDelete){ table.querySelectorAll('tr').forEach(r=>r.cells[ci]?.remove()); commit(); } }});
+    // Moves the caret to a surviving cell BEFORE removing the row/column the current cell is in --
+    // removing a still-focused element forces its own native, synchronous focus change (to
+    // whatever's left, often outside the table entirely), which for enterScopedTableEdit's scoped
+    // session reads as focus leaving the figure altogether and tears the whole session down via its
+    // own onFocusOut before this handler's own commit() below ever gets to run against valid state
+    // (see enterScopedTableEdit's own exited-guard comment for what that corrupted). Focusing a
+    // cell that ISN'T about to be removed first means the removal never touches the focused element
+    // at all, so no such cascade fires in the first place.
+    items.push({label:'Delete row', onClick:()=>{
+      const row=cell.closest('tr');
+      if(!row||table.rows.length<=1)return;
+      const allRows=[...table.rows];
+      const rowIdx=allRows.indexOf(row);
+      const fallbackRow=allRows[rowIdx+1]||allRows[rowIdx-1];
+      const fallbackCell=fallbackRow?fallbackRow.cells[Math.min(cell.cellIndex,fallbackRow.cells.length-1)]:null;
+      if(fallbackCell)placeCaretIn(fallbackCell);
+      row.remove();
+      commit();
+    }});
+    items.push({label:'Delete column', onClick:()=>{
+      const ci=cell.cellIndex;
+      let canDelete=true;
+      table.querySelectorAll('tr').forEach(r=>{ if(r.cells.length<=1)canDelete=false; });
+      if(!canDelete)return;
+      const row=cell.closest('tr');
+      const fallbackIdx=ci>0?ci-1:ci+1;
+      const fallbackCell=row?row.cells[fallbackIdx]:null;
+      if(fallbackCell)placeCaretIn(fallbackCell);
+      table.querySelectorAll('tr').forEach(r=>r.cells[ci]?.remove());
+      commit();
+    }});
   }
   items.push({label:'Delete table', danger:true, onClick:()=>{ table.remove(); commit(); }});
   items.push({divider:true});
@@ -9142,7 +9171,20 @@ function enterScopedTableEdit(fig,node,tIdx,clickedCellIdx,noteLine){
   fig.classList.remove('pv-table-chart-figure');
   fig.appendChild(liveTable);
   _attachTableResizeHandles(liveTable);
+  // Removing a row/cell that happens to hold the current caret (e.g. "Delete row" on the
+  // currently-focused row) can force a native, SYNCHRONOUS focus change of its own, independent of
+  // whatever the menu action does next -- which fires onFocusOut (and its own commit()+exit()) in
+  // the middle of the very onClick handler that's still running. Without this guard, that handler's
+  // own trailing commit() call then runs AGAIN afterward against a liveTable that exit()'s render()
+  // has already detached from the document, taking commit()'s "table was removed" branch by
+  // mistake and wiping the real table out of node.note entirely -- the exact bug report this fixes
+  // ("deleting a row removes the whole table"). Once exited, every further commit()/exit() call
+  // (from the cascade, or from the menu action's own code finishing its sequence afterward) is a
+  // deliberate no-op rather than acting on stale state.
+  let exited=false;
   function exit(){
+    if(exited)return;
+    exited=true;
     ISOLATE_EVENTS.forEach(type=>fig.removeEventListener(type,stop));
     fig.removeEventListener('input',onInput);
     fig.removeEventListener('contextmenu',onCtx);
@@ -9151,10 +9193,15 @@ function enterScopedTableEdit(fig,node,tIdx,clickedCellIdx,noteLine){
     render();
   }
   function commit(){
+    if(exited)return;
     if(!liveTable.isConnected){ found.table.remove(); persistNoteTableChange(found.idx,found.container); exit(); return; }
     while(found.table.attributes.length)found.table.removeAttribute(found.table.attributes[0].name);
     [...liveTable.attributes].forEach(a=>found.table.setAttribute(a.name,a.value));
-    found.table.innerHTML=liveTable.innerHTML;
+    // cleanEditorHtml, not a raw innerHTML read -- _attachTableResizeHandles' own col/row-resize
+    // handle <div>s are real children of liveTable's cells, not a CSS-only overlay, and would
+    // otherwise get baked straight into node.note (same leak the live table&&cell branch's own
+    // commitNoteLine already guards against for the exact same reason).
+    found.table.innerHTML=cleanEditorHtml(liveTable);
     persistNoteTableChange(found.idx,found.container);
   }
   const ISOLATE_EVENTS=['keydown','keyup','click','mousedown','mouseup','dblclick','paste','cut','copy'];
@@ -9274,10 +9321,16 @@ const CARD_ICON_CATALOG={
   // stroke visibly poked past the badge's border. Redrawn with the same margin convention as the
   // rest of the catalog, same silhouette (basket+wheels / delivery box+cab+wheels) just inset.
   nshift:{path:'<rect x="3" y="5" width="11" height="10" rx="1"/><path d="M14 8h4l3 3v4h-7z"/><circle cx="6.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/>', desc:'nShift, shipping, delivery, carrier, fulfillment'},
-  cart:{path:'<circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M3 4h2l2.5 12.4a2 2 0 002 1.6h7.6a2 2 0 002-1.6L20 8H6.2"/>', desc:'shopping cart, webshop, storefront, online store, checkout, basket'},
+  // The margin-only fix above still left a shape with no visible basket -- a flat-topped,
+  // near-rectangular outline that read as a mug or a filing tray rather than a cart at this size.
+  // Redrawn as an actual tapered trapezoid (wide rim narrowing toward the wheels, the shape that
+  // actually reads as a shopping basket at a glance) with a distinct right-angle handle, rather
+  // than one continuous diagonal-to-diagonal outline.
+  cart:{path:'<circle cx="10" cy="19" r="1.6"/><circle cx="16" cy="19" r="1.6"/><path d="M4 4h2l1.3 4.5h11.4l-1.3 6.5H8.3L7.3 8.5"/>', desc:'shopping cart, webshop, storefront, online store, checkout, basket'},
   integrations:{path:'<path d="M10 13a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1-1"/>', desc:'integrations, connected systems, interfaces, APIs'},
   functional:{path:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3h6"/><path d="M8 9h8"/><path d="M8 13h8"/><path d="M8 17h5"/>', desc:'functional, business process, configuration, requirements, fit-gap'},
   abap:{path:'<polyline points="9 7 4 12 9 17"/><polyline points="15 7 20 12 15 17"/>', desc:'ABAP, technical, development, custom code, enhancements'},
+  architecture:{path:'<polygon points="12 3 3 8 12 13 21 8 12 3"/><polyline points="3 16 12 21 21 16"/><polyline points="3 11.5 12 16.5 21 11.5"/>', desc:'solution architecture, system design, blueprint, landscape'},
   generic:{path:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>', desc:'anything that doesn\u2019t fit another category'}
 };
 // A keyword → icon lookup, checked against each card's own label+value text before falling
@@ -9288,7 +9341,7 @@ const CARD_ICON_CATALOG={
 // most-specific first since the first match wins (e.g. "response time" should read as speed,
 // not time).
 /* GENERATED:cardIconRules:START — DO NOT EDIT BY HAND. Source of truth: src/data/cardIconKeywords.json. Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
-const CARD_ICON_RULES=[{id:"erp",keys:["erp"]},{id:"ewm",keys:["ewm"]},{id:"nshift",keys:["nshift","n-shift"]},{id:"cart",keys:["cart","webshop","web shop","online store","cxp","basket","frontend"]},{id:"integrations",keys:["integration"]},{id:"abap",keys:["abap","technical","custom code","enhancement","developer","development"]},{id:"functional",keys:["functional","business process","fit-gap","fit gap","configuration"]},{id:"shield",keys:["secur","standard","complian","protect","risk","governance","privacy"]},{id:"bolt",keys:["speed","response","latency","fast","throughput","load time"]},{id:"clock",keys:["time","duration","uptime","sla","deadline","schedule"]},{id:"target",keys:["scope","goal","target","coverage","objective","milestone"]},{id:"dollar",keys:["cost","price","budget","revenue","saving","spend","roi"]},{id:"people",keys:["user","customer","client","team","staff","satisfaction","nps"]},{id:"trend",keys:["growth","increase","trend","improve","uplift"]},{id:"check",keys:["clean","quality","resolved","complete","success","pass","accuracy","done","confirm","approve"]}];
+const CARD_ICON_RULES=[{id:"erp",keys:["erp"]},{id:"ewm",keys:["ewm"]},{id:"nshift",keys:["nshift","n-shift"]},{id:"cart",keys:["cart","webshop","web shop","online store","cxp","basket","frontend"]},{id:"integrations",keys:["integration"]},{id:"abap",keys:["abap","technical","custom code","enhancement","developer","development"]},{id:"functional",keys:["functional","business process","fit-gap","fit gap","configuration"]},{id:"architecture",keys:["architecture","solution design","technical design","blueprint","landscape"]},{id:"shield",keys:["secur","standard","complian","protect","risk","governance","privacy"]},{id:"bolt",keys:["speed","response","latency","fast","throughput","load time"]},{id:"clock",keys:["time","duration","uptime","sla","deadline","schedule"]},{id:"target",keys:["scope","goal","target","coverage","objective","milestone"]},{id:"dollar",keys:["cost","price","budget","revenue","saving","spend","roi"]},{id:"people",keys:["user","customer","client","team","staff","satisfaction","nps"]},{id:"trend",keys:["growth","increase","trend","improve","uplift"]},{id:"check",keys:["clean","quality","resolved","complete","success","pass","accuracy","done","confirm","approve"]}];
 /* GENERATED:cardIconRules:END */
 // Fallback cycle — kept for cards whose text doesn't match any keyword rule (and that have no
 // cached AI result either), so those cards still get some visual variety instead of all
