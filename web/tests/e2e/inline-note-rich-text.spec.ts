@@ -44,6 +44,30 @@ function seedNodeWithNote(page: import('@playwright/test').Page, note: string, f
   }, { note, forceInline });
 }
 
+// Dispatches a real `contextmenu` event directly on the element, rather than Playwright's own
+// click({button:'right'}) -- that performs its own mouse-move/scroll/actionability pass first,
+// which (on this nested, scrollable editor layout) can land the real click somewhere else
+// entirely by the time it fires, same as this file's paste tests already dispatch a synthetic
+// `paste` event directly rather than relying on a real OS clipboard interaction.
+function rightClick(page: import('@playwright/test').Page, selector: string) {
+  return page.evaluate((sel) => {
+    const el = document.querySelector(sel)!;
+    const rect = el.getBoundingClientRect();
+    const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 });
+    el.dispatchEvent(ev);
+  }, selector);
+}
+
+// A plain click on a table/chart/Cards/picture figure is intentionally a no-op while the note is
+// unfocused (clicking a card should never silently drop you into editing it) -- "Edit note" from
+// the right-click menu is the one remaining way into the whole note's live/raw edit mode,
+// replacing what used to be a plain `page.locator('#note-line-1').click()` throughout this file's
+// existing tests.
+async function editNote(page: import('@playwright/test').Page) {
+  await rightClick(page, '#note-line-1 .pv-diagram-figure');
+  await page.locator('.sb-context-menu').getByText('Edit note', { exact: true }).click();
+}
+
 // Inline notes were reverted from plain text (PR #326) back to rich HTML -- .node-note-line is a
 // contenteditable div again, same family as remarks/Q&A/Pad, so it can hold pasted images and
 // tables (with a chart-featured table rendering as its chart while not focused). These tests
@@ -180,7 +204,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       // A plain table shows as its own read-only figure while the note is unfocused (see
       // renderNoteDisplayHtml) -- clicking in first swaps back to the real, editable table.
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
@@ -194,7 +218,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, tableNote);
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Add column right', { exact: true }).click();
@@ -210,7 +234,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
@@ -232,7 +256,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><td>A</td><td>10</td></tr></tbody></table>');
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       const headerCell = page.locator('#note-line-1 th').first();
       await headerCell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
@@ -250,7 +274,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, tableNote);
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete column', { exact: true }).click();
@@ -266,7 +290,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, tableNote);
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Delete table', { exact: true }).click();
@@ -281,7 +305,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       // A 2-column table with numeric data in the second column is chartable (tableChartability).
       await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       const cell = page.locator('#note-line-1 td').first();
       await cell.click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Feature as chart', { exact: true }).click();
@@ -304,9 +328,10 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       // only make sense for a single data column, show up disabled rather than being hidden.
       await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value1</th><th>Value2</th></tr><tr><td>A</td><td>10</td><td>5</td></tr><tr><td>B</td><td>20</td><td>8</td></tr></table>');
 
-      // A charted table renders as its chart SVG while unfocused -- clicking into the note first
-      // (same as a real user would) swaps it back to the real, editable table underneath.
-      await page.locator('#note-line-1').click();
+      // A charted table renders as its chart SVG while unfocused -- "Edit note" first (same as a
+      // real user picking that menu item would) swaps it back to the real, editable table
+      // underneath (a plain click on the figure itself is intentionally a no-op now).
+      await editNote(page);
       await page.locator('#note-line-1 td').first().click({ button: 'right' });
       const menu = page.locator('.sb-context-menu');
       await expect(menu.getByText('Bar chart (current)', { exact: true })).toBeVisible();
@@ -327,7 +352,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       await page.locator('#note-line-1 td').first().click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Line chart', { exact: true }).click();
 
@@ -345,7 +370,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
 
-      await page.locator('#note-line-1').click();
+      await editNote(page);
       await page.locator('#note-line-1 td').first().click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Cards', { exact: true }).click();
 
@@ -443,20 +468,6 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     // note is unfocused -- right-clicking it used to fall into the generic "nothing under the
     // caret" branch (Insert table / Rewrite with AI / Delete note), none of which gets you back
     // to the real table. It should instead offer exactly "Copy" and "Edit note".
-    // Dispatches a real `contextmenu` event directly on the element, rather than Playwright's
-    // own click({button:'right'}) -- that performs its own mouse-move/scroll/actionability pass
-    // first, which (on this nested, scrollable editor layout) can land the real click somewhere
-    // else entirely by the time it fires, same as this file's paste tests already dispatch a
-    // synthetic `paste` event directly rather than relying on a real OS clipboard interaction.
-    function rightClick(page: import('@playwright/test').Page, selector: string) {
-      return page.evaluate((sel) => {
-        const el = document.querySelector(sel)!;
-        const rect = el.getBoundingClientRect();
-        const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 });
-        el.dispatchEvent(ev);
-      }, selector);
-    }
-
     // A real right-click fires 'mousedown' BEFORE 'contextmenu' -- and a mousedown's own native
     // default action (focusing whatever contenteditable it lands on) happens whether or not the
     // menu this test cares about ever opens. rightClick above only dispatches 'contextmenu' in
@@ -674,7 +685,53 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(writes[0]['text/plain']).toBe(src);
     });
 
-    test('"Edit card/chart" focuses the note and opens the chart-type menu in one step', async ({ page }) => {
+    // "Edit card/chart" used to focus the WHOLE note (same as "Edit note") and fake a follow-up
+    // right-click to open the chart-type menu -- which meant the whole note dropped into edit mode
+    // just to tweak one figure's data, and could reportedly leave the note stuck mid-edit (focus
+    // "moving out" into readonly) the moment a structural menu action like "Add row below" ran,
+    // since clicking that menu button blurred noteLine before the mutation applied. It now edits
+    // just the clicked figure's own table directly in place via enterScopedTableEdit -- the rest
+    // of the note, and noteLine's own focus state, are untouched.
+    test('"Edit card/chart" makes just that figure directly editable, without touching the rest of the note', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<p>Keep this text.</p><table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+      await rightClick(page, '#note-line-1 .pv-table-card');
+      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
+
+      const state = await page.evaluate(() => {
+        const noteLine = document.getElementById('note-line-1')!;
+        const active = document.activeElement as HTMLElement | null;
+        return {
+          noteLineEditable: noteLine.contentEditable,
+          activeTag: active?.tagName,
+          activeInsideNoteLine: active ? noteLine.contains(active) : false,
+          hasLiveTable: !!noteLine.querySelector('.pv-diagram-figure table'),
+          hasText: noteLine.textContent?.includes('Keep this text.'),
+        };
+      });
+      // noteLine itself is deliberately NOT the focused element (and not even contenteditable) for
+      // the duration -- only the figure's own clone is, so noteLine's own focus handler can't fire
+      // mid-edit and wipe this scoped structure back to raw note HTML. The Cards figure has no
+      // actual cell under the click position (it's rendered as cards, not a real grid of visible
+      // td/th), so this lands on the stored table's own first cell -- a TH here, since the table's
+      // first row is its header row.
+      expect(state.noteLineEditable).toBe('false');
+      expect(['TD', 'TH']).toContain(state.activeTag);
+      expect(state.activeInsideNoteLine).toBe(true);
+      expect(state.hasLiveTable).toBe(true);
+      expect(state.hasText).toBe(true);
+
+      // Right-clicking within the now-live table opens the same chart-type menu the live
+      // table&&cell branch itself would.
+      await rightClick(page, '#note-line-1 td');
+      const chartMenu = page.locator('.sb-context-menu');
+      await expect(chartMenu.getByText('Remove chart feature', { exact: true })).toBeVisible();
+      await expect(chartMenu.getByText('Bar chart', { exact: true })).toBeVisible();
+    });
+
+    test('typing inside a scoped "Edit card/chart" session persists live, and exiting restores the read-only figure', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
@@ -682,11 +739,66 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await rightClick(page, '#note-line-1 .pv-table-card');
       await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
 
-      const chartMenu = page.locator('.sb-context-menu');
-      await expect(chartMenu.getByText('Remove chart feature', { exact: true })).toBeVisible();
-      await expect(chartMenu.getByText('Bar chart', { exact: true })).toBeVisible();
-      const focused = await page.evaluate(() => document.activeElement?.id);
-      expect(focused).toBe('note-line-1');
+      await page.evaluate(() => {
+        const cell = document.activeElement as HTMLElement;
+        cell.textContent = 'Renamed';
+        cell.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      });
+
+      const midEdit = await page.evaluate(() => {
+        // @ts-expect-error
+        return nodes.find((n: any) => n.id === 1).note;
+      });
+      expect(midEdit).toContain('Renamed');
+
+      // Blurring the cell (focus leaving the figure entirely) is what exits the scoped session --
+      // not every small adjustment inside it, which used to drop the note into readonly mid-edit.
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+
+      const after = await page.evaluate(() => {
+        const noteLine = document.getElementById('note-line-1')!;
+        return {
+          noteLineEditable: noteLine.contentEditable,
+          hasCardsFigure: !!noteLine.querySelector('.pv-table-chart-figure'),
+        };
+      });
+      expect(after.noteLineEditable).toBe('true');
+      expect(after.hasCardsFigure).toBe(true);
+    });
+
+    test('a structural edit ("Add row below") inside a scoped "Edit card/chart" session doesn\'t get cut short by the submenu\'s own click', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
+      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
+
+      await rightClick(page, '#note-line-1 td');
+      await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
+
+      // The scoped session must still be live after a structural menu action -- not already kicked
+      // back to readonly by the menu button's own default mousedown focus-shift (see
+      // enterScopedTableEdit's onCtx), which used to blur the table before "Add row below" ever ran.
+      // 3, not 2: with no explicit thead/tbody tags, the parser auto-wraps BOTH the header-looking
+      // row and the data row into one shared implicit <tbody> to begin with, same gotcha the
+      // "Delete row also works on a real header row" test above documents.
+      const state = await page.evaluate(() => {
+        const noteLine = document.getElementById('note-line-1')!;
+        return {
+          noteLineEditable: noteLine.contentEditable,
+          rowCount: noteLine.querySelectorAll('tbody tr').length,
+        };
+      });
+      expect(state.noteLineEditable).toBe('false');
+      expect(state.rowCount).toBe(3);
+
+      const note = await page.evaluate(() => {
+        // @ts-expect-error
+        return nodes.find((n: any) => n.id === 1).note;
+      });
+      const rowMatches = note.match(/<tr>/g) || [];
+      expect(rowMatches.length).toBeGreaterThanOrEqual(2);
     });
 
     test('"Delete" on a table-backed figure (chart, Cards, or plain table) removes just that table, keeping the rest of the note', async ({ page }) => {
@@ -838,7 +950,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     expect(unfocused.hasChart).toBe(true);
     expect(unfocused.hasTable).toBe(false);
 
-    await page.locator('#note-line-1').click();
+    await editNote(page);
     const focused = await page.evaluate(() => {
       const el = document.getElementById('note-line-1')!;
       return { hasChart: !!el.querySelector('.pv-table-chart-figure'), hasTable: !!el.querySelector('table[data-feature-chart="1"]') };
@@ -925,7 +1037,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     // A real, currently-focused table cell -- not just the disposable read-only display -- since
     // its content is read back as plain text only (tableCardsData, a copied table's own
     // textContent), formatting is pointless there too.
-    await page.locator('#note-line-1').click();
+    await editNote(page);
     const tableCellResult = await page.evaluate(() => {
       const cell = document.querySelector('#note-line-1 td')!;
       // @ts-expect-error
@@ -1139,7 +1251,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
     const existingRowHeight = await page.evaluate(() => document.querySelector('#note-line-1 tbody tr')!.getBoundingClientRect().height);
 
-    await page.locator('#note-line-1').click();
+    await editNote(page);
     const cell = page.locator('#note-line-1 td').first();
     await cell.click({ button: 'right' });
     await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
@@ -1147,6 +1259,51 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     const rowHeights = await page.evaluate(() => [...document.querySelectorAll('#note-line-1 tbody tr')].map(tr => tr.getBoundingClientRect().height));
     expect(rowHeights).toHaveLength(2);
     expect(rowHeights[1]).toBe(existingRowHeight);
+  });
+
+  // The bug report this covers: after "Add row below"/"Add column right", the caret was left
+  // wherever it happened to be before the menu opened (the ORIGINAL cell, now possibly shifted),
+  // rather than landing in the cell that was just created -- looking "wrong"/stale to whoever just
+  // asked for a new row or column. Checked via the live Selection range, not document.activeElement
+  // -- noteLine is already the focused element here (the note was live-focused via "Edit note"
+  // before either menu action), and calling .focus() on one of its own already-live cells (true
+  // nested inside the ALREADY true noteLine, unlike enterScopedTableEdit's own true-in-FALSE
+  // scoping) doesn't move activeElement off noteLine itself; the caret still visibly lands via the
+  // Range this placement sets, which is what actually matters to whoever's looking at it.
+  test('"Add row below" and "Add column right" land the caret in the newly-created cell', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+    await editNote(page);
+    await page.locator('#note-line-1 td').first().click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
+
+    const afterAddRow = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('#note-line-1 tbody tr')];
+      const anchor = window.getSelection()?.anchorNode || null;
+      const anchorEl = anchor ? (anchor.nodeType === 1 ? anchor as Element : anchor.parentElement) : null;
+      const cell = anchorEl?.closest('td,th') || null;
+      return { cellTag: cell?.tagName, cellIsInLastRow: cell ? rows[rows.length - 1].contains(cell) : false };
+    });
+    expect(afterAddRow.cellTag).toBe('TD');
+    expect(afterAddRow.cellIsInLastRow).toBe(true);
+
+    // Right-clicking the row's own LAST cell (not just any cell) so "right" unambiguously means
+    // the end of the row -- clicking an earlier column and adding "to its right" correctly lands
+    // the new cell in the middle of the row, which isn't what this assertion means to cover.
+    await page.locator('#note-line-1 tbody tr').nth(1).locator('td').last().click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Add column right', { exact: true }).click();
+
+    const afterAddColumn = await page.evaluate(() => {
+      const anchor = window.getSelection()?.anchorNode || null;
+      const anchorEl = anchor ? (anchor.nodeType === 1 ? anchor as Element : anchor.parentElement) : null;
+      const cell = anchorEl?.closest('td,th') || null;
+      const row = cell?.closest('tr') || null;
+      return { cellTag: cell?.tagName, isLastCellInItsRow: row ? cell === row.lastElementChild : false };
+    });
+    expect(afterAddColumn.cellTag).toBe('TD');
+    expect(afterAddColumn.isLastCellInItsRow).toBe(true);
   });
 
   // Pasted images had no way to resize at all. _setupImageResize/_imgResizeSelect/_imgResizePersist
@@ -1159,6 +1316,10 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     await dismissOverlays(page);
     await seedNodeWithNote(page, '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">');
 
+    // A standalone picture shows as its own read-only figure while the note is unfocused -- a
+    // plain click there is intentionally a no-op now, so "Edit note" first swaps the real <img>
+    // back into noteLine directly (matching how a real user would get to resizing it).
+    await editNote(page);
     const img = page.locator('#note-line-1 img');
     await img.click();
     await expect(img).toHaveClass(/editor-img-selected/);

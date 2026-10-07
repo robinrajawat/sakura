@@ -2742,6 +2742,13 @@ body.sakura-audience-window #presenter-notes-resize-handle{display:none!importan
 .pv-ctx-item.active .pv-ctx-check{opacity:1}
 #preview-laser-dot{display:none;position:fixed;z-index:5001;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)}
 #preview-laser-dot.on{display:block}
+/* Same laser pointer as Preview/Presenter's own (#preview-laser-dot), offered from the note-line's
+   right-click menu too for pointing at things while screen-sharing the outline editor itself, not
+   just while presenting. A separate element+class rather than reusing the Preview one since this
+   one needs to track the mouse across the whole app, not just inside #preview-overlay. */
+#app-laser-dot{display:none;position:fixed;z-index:9001;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle,rgba(255,70,60,1) 0%,rgba(255,70,60,1) 65%,rgba(224,49,47,0) 100%);pointer-events:none;transform:translate(-50%,-50%);box-shadow:0 0 5px 1px rgba(224,49,47,.6)}
+#app-laser-dot.on{display:block}
+body.app-laser-active{cursor:none}
 #preview-body{flex:1;overflow:auto;padding:28px 0 90px}
 
 
@@ -6136,7 +6143,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
           <div class="export-section-label">From a file</div>
           <button class="export-item" data-import="opml"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg></span><span class="export-label">OPML <span class="export-ext">.opml</span></span></button>
           <button class="export-item" data-import="docx"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="export-label">Word <span class="export-ext">.docx</span></span></button>
-          <button class="export-item" data-import="sakura-json" data-tip="A full document shared by another Sakura user — imports as a new document, doesn't touch anything else in your workspace."><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20c1.5-4 3-6.5 5.5-8.5S15 8 18 5"/><circle cx="18" cy="5" r="2.1"/><circle cx="10.5" cy="11.5" r="1.7"/></svg></span><span class="export-label">Sakura Document <span class="export-ext">.json</span></span></button>
+          <button class="export-item" data-import="sakura-json" data-tip="A full document shared by another Sakura user — imports as a new document, doesn't touch anything else in your workspace."><span class="export-icon"><svg width="14" height="14" viewBox="0 0 512 512"><circle cx="256" cy="152" r="71" fill="#ddaea1" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.19"/><circle cx="122" cy="240" r="67" fill="#e3bcb2" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.01"/><circle cx="390" cy="240" r="67" fill="#e2baae" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.01"/><circle cx="166" cy="360" r="63" fill="#e6c9bb" stroke="#c2553d" stroke-opacity="0.804" stroke-width="2.83"/><circle cx="346" cy="360" r="67" fill="#e5c8b9" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.01"/><circle cx="256" cy="256" r="37" fill="#e9cec5" stroke="#c2553d" stroke-opacity="0.804" stroke-width="1.67"/></svg></span><span class="export-label">Sakura Document <span class="export-ext">.json</span></span></button>
           <div class="export-divider"></div>
           <div class="export-section-label">From pasted text</div>
           <button class="export-item" id="import-ai-restructure" data-import="ai-restructure"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="20" y2="6"/><line x1="11" y1="12" x2="20" y2="12"/><line x1="14" y1="18" x2="20" y2="18"/><line x1="4" y1="6" x2="4.01" y2="6"/><line x1="4" y1="12" x2="4.01" y2="12"/><line x1="4" y1="18" x2="4.01" y2="18"/></svg></span><span class="export-label">Restructure text ✦</span></button>
@@ -6158,7 +6165,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
           <button class="export-item" data-save="opml"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg></span><span class="export-label">OPML <span class="export-ext">.opml</span></span></button>
           <div class="export-divider" id="export-divider-share"></div>
           <div class="export-section-label" id="export-label-share">Send a copy</div>
-          <button class="export-item" data-save="sakura-json" data-tip="Everything — notes, decision logs, diagrams, Q&amp;A, mind maps. For another Sakura user to import."><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20c1.5-4 3-6.5 5.5-8.5S15 8 18 5"/><circle cx="18" cy="5" r="2.1"/><circle cx="10.5" cy="11.5" r="1.7"/></svg></span><span class="export-label">Sakura Document <span class="export-ext">.json</span></span></button>
+          <button class="export-item" data-save="sakura-json" data-tip="Everything — notes, decision logs, diagrams, Q&amp;A, mind maps. For another Sakura user to import."><span class="export-icon"><svg width="14" height="14" viewBox="0 0 512 512"><circle cx="256" cy="152" r="71" fill="#ddaea1" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.19"/><circle cx="122" cy="240" r="67" fill="#e3bcb2" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.01"/><circle cx="390" cy="240" r="67" fill="#e2baae" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.01"/><circle cx="166" cy="360" r="63" fill="#e6c9bb" stroke="#c2553d" stroke-opacity="0.804" stroke-width="2.83"/><circle cx="346" cy="360" r="67" fill="#e5c8b9" stroke="#c2553d" stroke-opacity="0.804" stroke-width="3.01"/><circle cx="256" cy="256" r="37" fill="#e9cec5" stroke="#c2553d" stroke-opacity="0.804" stroke-width="1.67"/></svg></span><span class="export-label">Sakura Document <span class="export-ext">.json</span></span></button>
           <div class="export-divider" id="export-divider-data"></div>
           <div class="export-section-label" id="export-label-data">Data</div>
           <button class="export-item" data-save="decision-log-xlsx"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg></span><span class="export-label">Decision Log <span class="export-ext">.xlsx</span></span></button>
@@ -7457,6 +7464,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
     <div id="mindmap-ctx-menu"></div>
   </div>
   <div id="toast"></div>
+  <div id="app-laser-dot"></div>
   <div id="welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="welcome-modal-heading">
     <div id="welcome-modal">
       <div id="welcome-modal-brand">
@@ -9052,6 +9060,132 @@ function setTableChartType(table,type){
   showToast(CHART_TYPE_LABELS[clean]);
   if(previewActive)renderPreviewBody();
 }
+// Builds the structure-editing menu items (row/column add+delete, feature-as-chart, chart type
+// picks) for a table, shared by the note-line's live table&&cell right-click branch (table is a
+// real DOM node already inside the focused note, cell is whatever was under the cursor) and
+// enterScopedTableEdit's own submenu (table is the real stored table fetched via
+// noteTableByIndex, not necessarily inside any focused editor at all). `commit` is called after
+// every mutation and owns however that caller actually persists/re-renders -- commitNoteLine for
+// the live case, persistNoteTableChange+render for the scoped one. Row/column items are only
+// offered when a cell is given; a caller with no concrete cell to anchor "add row below"/"add
+// column right" on (a chart's SVG has none to click) just omits them.
+function buildTableEditItems(table,cell,commit){
+  const items=[];
+  // Lands the caret inside the newly-added row/column's own cell rather than leaving it wherever
+  // it happened to be before the menu opened -- without this, the selection stays on the
+  // now-stale `cell` reference (shifted position, or for "Add column right" the ORIGINAL column
+  // rather than the new one beside it), which is what "the cursor doesn't look right" after
+  // adding a row was actually a symptom of.
+  const placeCaretIn=el=>{
+    if(!el)return;
+    const rg=document.createRange(); rg.selectNodeContents(el); rg.collapse(true);
+    const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+    el.focus&&el.focus();
+  };
+  if(cell){
+    items.push({label:'Add row below', onClick:()=>{ const row=cell.closest('tr'); if(!row)return; const newRow=row.cloneNode(false); const colCount=row.cells.length; for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); } row.insertAdjacentElement('afterend',newRow); _attachTableResizeHandles(table); placeCaretIn(newRow.cells[0]); commit(); }});
+    items.push({label:'Add column right', onClick:()=>{ const cellIndex=cell.cellIndex; const ownRow=cell.closest('tr'); let newCellInOwnRow=null; table.querySelectorAll('tr').forEach(row=>{ const isHead=row.closest('thead')!==null; const c=isHead?document.createElement('th'):document.createElement('td'); c.contentEditable='true'; if(isHead)c.textContent='Column'; const refCell=row.cells[cellIndex]; if(refCell)refCell.insertAdjacentElement('afterend',c); else row.appendChild(c); if(row===ownRow)newCellInOwnRow=c; }); _attachTableResizeHandles(table); placeCaretIn(newCellInOwnRow); commit(); }});
+    items.push({divider:true});
+    items.push({label:'Delete row', onClick:()=>{ const row=cell.closest('tr'); if(row&&table.rows.length>1){ row.remove(); commit(); } }});
+    items.push({label:'Delete column', onClick:()=>{ const ci=cell.cellIndex; let canDelete=true; table.querySelectorAll('tr').forEach(r=>{ if(r.cells.length<=1)canDelete=false; }); if(canDelete){ table.querySelectorAll('tr').forEach(r=>r.cells[ci]?.remove()); commit(); } }});
+  }
+  items.push({label:'Delete table', danger:true, onClick:()=>{ table.remove(); commit(); }});
+  items.push({divider:true});
+  const isCharted=isTableFeaturedAsChart(table);
+  if(isCharted||tableChartability(table).ok){
+    items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commit(); }});
+  }
+  if(isCharted){
+    const curType=getTableChartType(table);
+    const typeAvail=tableChartTypeAvailability(table);
+    CHART_TYPES.forEach(type=>{
+      const isCurrent=type===curType; const avail=typeAvail[type];
+      items.push({label:CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), disabled:isCurrent||!avail.ok, title:!avail.ok?avail.reason:undefined, onClick:()=>{ setTableChartType(table,type); commit(); }});
+    });
+    if(curType==='cards'){
+      items.push({label:'Suggest icons with AI', onClick: async()=>{ await suggestCardIconsWithAi(table); commit(); }});
+    }
+  }
+  return items;
+}
+// "Edit card/chart" on a read-only figure (see the note-line's own contextmenu handler) -- makes
+// just THIS figure's table directly editable in place, leaving the rest of the note untouched,
+// rather than swapping the whole note into edit mode the way "Edit note" does. The actual editable
+// element is a CLONE of the stored table, never found.table itself -- found.table has to stay
+// exactly where noteTableByIndex found it, as a child of found.container, since that's the node
+// persistNoteTableChange serializes to get the rest of the note's HTML back; moving it into the
+// live figure would tear it out of that container and silently drop the table from node.note on
+// the next save. Every commit() instead copies the clone's current attributes+innerHTML onto
+// found.table in place, then persists.
+//
+// noteLine itself is forced contenteditable=false for the duration -- it's ALWAYS true otherwise
+// (even while just displaying read-only figures, see noteLine's own creation), so leaving it true
+// here would nest this clone's contenteditable=true cells true-in-true inside it, which browsers
+// don't treat as an independently focusable island: focus (and this clone's own events) would
+// resolve to noteLine itself, firing noteLine's own 'focus' handler mid-edit and wiping this whole
+// scoped structure back to raw note HTML -- exactly the "focus moved out and the note went
+// readonly" failure this avoids. true-in-FALSE is the browser-supported nested-editable pattern,
+// so cell edits stay scoped to just this clone and noteLine's own focus/blur handling never
+// triggers for them at all. Isolated the same way from noteLine's input/paste/keydown handling
+// (which expects to own the WHOLE note's HTML and would otherwise bake this figure's wrapper
+// markup into node.note on the very first keystroke -- the same corruption repairCorruptedCardsNote
+// exists to undo). Exits back to the normal read-only figure (re-applying chart rendering if
+// applicable, and restoring noteLine's own contenteditable) the moment focus leaves the clone for
+// anything outside it, or immediately after "Delete table" removes it.
+function enterScopedTableEdit(fig,node,tIdx,clickedCellIdx,noteLine){
+  const found=noteTableByIndex(node.id,tIdx);
+  if(!found)return;
+  noteLine.contentEditable='false';
+  const liveTable=found.table.cloneNode(true);
+  liveTable.querySelectorAll('td,th').forEach(c=>c.contentEditable='true');
+  fig.innerHTML='';
+  fig.classList.remove('pv-table-chart-figure');
+  fig.appendChild(liveTable);
+  _attachTableResizeHandles(liveTable);
+  function exit(){
+    ISOLATE_EVENTS.forEach(type=>fig.removeEventListener(type,stop));
+    fig.removeEventListener('input',onInput);
+    fig.removeEventListener('contextmenu',onCtx);
+    fig.removeEventListener('focusout',onFocusOut);
+    noteLine.contentEditable='true';
+    render();
+  }
+  function commit(){
+    if(!liveTable.isConnected){ found.table.remove(); persistNoteTableChange(found.idx,found.container); exit(); return; }
+    while(found.table.attributes.length)found.table.removeAttribute(found.table.attributes[0].name);
+    [...liveTable.attributes].forEach(a=>found.table.setAttribute(a.name,a.value));
+    found.table.innerHTML=liveTable.innerHTML;
+    persistNoteTableChange(found.idx,found.container);
+  }
+  const ISOLATE_EVENTS=['keydown','keyup','click','mousedown','mouseup','dblclick','paste','cut','copy'];
+  const stop=e=>e.stopPropagation();
+  ISOLATE_EVENTS.forEach(type=>fig.addEventListener(type,stop));
+  const onInput=e=>{ e.stopPropagation(); commit(); };
+  fig.addEventListener('input',onInput);
+  const onCtx=e=>{
+    e.preventDefault(); e.stopPropagation();
+    const cell=e.target.closest&&e.target.closest('td,th');
+    showSbContextMenu(e.clientX,e.clientY,buildTableEditItems(liveTable,cell,commit));
+    // Without this, the menu's own default mousedown behavior would blur the clone FIRST (menu
+    // buttons live outside fig, in document.body) -- firing onFocusOut, which commits+exits and
+    // tears this whole structure down via render() -- before the clicked item's onClick (e.g. "Add
+    // row below") ever runs, leaving it to mutate an already-detached liveTable. Same fix
+    // showSbContextMenu's other callers already need for the identical reason (see the note-line's
+    // own contextmenu handler, just below this function's caller).
+    const sbMenu=document.querySelector('.sb-context-menu');
+    if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
+  };
+  fig.addEventListener('contextmenu',onCtx);
+  const onFocusOut=e=>{ if(fig.contains(e.relatedTarget))return; commit(); exit(); };
+  fig.addEventListener('focusout',onFocusOut);
+  const allCells=liveTable.querySelectorAll('td,th');
+  const focusCell=(clickedCellIdx>=0?allCells[clickedCellIdx]:null)||allCells[0];
+  if(focusCell){
+    const rg=document.createRange(); rg.selectNodeContents(focusCell); rg.collapse(true);
+    const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+    focusCell.focus();
+  }
+}
 // Reads a featured+charted table into pptxgenjs chart series data. Two shapes, matching
 // tableChartability's two chartable cases:
 //  - 2+ columns: column A is category labels, every column after it is its own series (its
@@ -9134,9 +9268,16 @@ const CARD_ICON_CATALOG={
   check:{path:'<path d="M20 6L9 17l-5-5"/>', desc:'quality, resolved, completion, success, accuracy'},
   erp:{path:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>', desc:'ERP system, enterprise resource planning, core business data'},
   ewm:{path:'<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>', desc:'warehouse, EWM, inventory, logistics, stock management'},
-  nshift:{path:'<rect x="1" y="7" width="13" height="10" rx="1"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="5.5" cy="19" r="1.7"/><circle cx="17.5" cy="19" r="1.7"/>', desc:'nShift, shipping, delivery, carrier, fulfillment'},
-  cart:{path:'<circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 002 1.6h9.7a2 2 0 002-1.6L23 6H6"/>', desc:'shopping cart, webshop, storefront, online store, checkout, basket'},
+  // Both of these used to run almost edge-to-edge in the 24x24 viewBox (cart's basket rim hit
+  // x=23, nshift's cargo box started at x=1) -- every other icon here keeps a ~3-4 unit margin on
+  // all sides so its stroke has room inside the circular badge, but these two didn't, so their
+  // stroke visibly poked past the badge's border. Redrawn with the same margin convention as the
+  // rest of the catalog, same silhouette (basket+wheels / delivery box+cab+wheels) just inset.
+  nshift:{path:'<rect x="3" y="5" width="11" height="10" rx="1"/><path d="M14 8h4l3 3v4h-7z"/><circle cx="6.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/>', desc:'nShift, shipping, delivery, carrier, fulfillment'},
+  cart:{path:'<circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M3 4h2l2.5 12.4a2 2 0 002 1.6h7.6a2 2 0 002-1.6L20 8H6.2"/>', desc:'shopping cart, webshop, storefront, online store, checkout, basket'},
   integrations:{path:'<path d="M10 13a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1-1"/>', desc:'integrations, connected systems, interfaces, APIs'},
+  functional:{path:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3h6"/><path d="M8 9h8"/><path d="M8 13h8"/><path d="M8 17h5"/>', desc:'functional, business process, configuration, requirements, fit-gap'},
+  abap:{path:'<polyline points="9 7 4 12 9 17"/><polyline points="15 7 20 12 15 17"/>', desc:'ABAP, technical, development, custom code, enhancements'},
   generic:{path:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>', desc:'anything that doesn\u2019t fit another category'}
 };
 // A keyword → icon lookup, checked against each card's own label+value text before falling
@@ -9147,7 +9288,7 @@ const CARD_ICON_CATALOG={
 // most-specific first since the first match wins (e.g. "response time" should read as speed,
 // not time).
 /* GENERATED:cardIconRules:START — DO NOT EDIT BY HAND. Source of truth: src/data/cardIconKeywords.json. Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
-const CARD_ICON_RULES=[{id:"erp",keys:["erp"]},{id:"ewm",keys:["ewm"]},{id:"nshift",keys:["nshift","n-shift"]},{id:"cart",keys:["cart","webshop","web shop","online store","cxp","basket","frontend"]},{id:"integrations",keys:["integration"]},{id:"shield",keys:["secur","standard","complian","protect","risk","governance","privacy"]},{id:"bolt",keys:["speed","response","latency","fast","throughput","load time"]},{id:"clock",keys:["time","duration","uptime","sla","deadline","schedule"]},{id:"target",keys:["scope","goal","target","coverage","objective","milestone"]},{id:"dollar",keys:["cost","price","budget","revenue","saving","spend","roi"]},{id:"people",keys:["user","customer","client","team","staff","satisfaction","nps"]},{id:"trend",keys:["growth","increase","trend","improve","uplift"]},{id:"check",keys:["clean","quality","resolved","complete","success","pass","accuracy","done","confirm","approve"]}];
+const CARD_ICON_RULES=[{id:"erp",keys:["erp"]},{id:"ewm",keys:["ewm"]},{id:"nshift",keys:["nshift","n-shift"]},{id:"cart",keys:["cart","webshop","web shop","online store","cxp","basket","frontend"]},{id:"integrations",keys:["integration"]},{id:"abap",keys:["abap","technical","custom code","enhancement","developer","development"]},{id:"functional",keys:["functional","business process","fit-gap","fit gap","configuration"]},{id:"shield",keys:["secur","standard","complian","protect","risk","governance","privacy"]},{id:"bolt",keys:["speed","response","latency","fast","throughput","load time"]},{id:"clock",keys:["time","duration","uptime","sla","deadline","schedule"]},{id:"target",keys:["scope","goal","target","coverage","objective","milestone"]},{id:"dollar",keys:["cost","price","budget","revenue","saving","spend","roi"]},{id:"people",keys:["user","customer","client","team","staff","satisfaction","nps"]},{id:"trend",keys:["growth","increase","trend","improve","uplift"]},{id:"check",keys:["clean","quality","resolved","complete","success","pass","accuracy","done","confirm","approve"]}];
 /* GENERATED:cardIconRules:END */
 // Fallback cycle — kept for cards whose text doesn't match any keyword rule (and that have no
 // cached AI result either), so those cards still get some visual variety instead of all
@@ -19701,15 +19842,17 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.addEventListener('mousedown',e=>{
       e.stopPropagation();
       _noteLineWasFocused=document.activeElement===noteLine;
-      // A right-click used only to open the context menu would otherwise still natively focus
-      // whatever contenteditable it lands on (same default behavior a left click gets) -- which,
-      // landing on an unfocused read-only object figure, swaps it to the real editable markup
-      // before the menu's own 'contextmenu' handler ever runs. That makes a mere right-click
-      // indistinguishable from actually choosing "Edit note" from the menu it's about to show,
-      // which isn't what right-clicking is for. Suppressed only for this exact case; a right-click
-      // anywhere else, or once the note is already focused, keeps focusing natively as always --
-      // preventDefault here doesn't stop the 'contextmenu' event that follows from firing normally.
-      if(e.button===2&&!_noteLineWasFocused&&e.target.closest&&e.target.closest('.pv-diagram-figure')){
+      // Any click -- left or right -- landing on an unfocused read-only object figure would
+      // otherwise still natively focus whatever contenteditable it lands on, swapping it to the
+      // real editable markup before anything else gets to react: a right-click's own 'contextmenu'
+      // handler would see an already-swapped note instead of the figure it meant to show a menu
+      // for, and a plain left-click would silently drop you into full note-edit just for touching a
+      // card. Clicking a figure should never do anything on its own -- only an explicit menu choice
+      // ("Edit note", "Edit card/chart") does -- so native focus is suppressed here for both.
+      // Once a figure has been swapped into enterScopedTableEdit's own live table, mousedown is
+      // stopped from propagating this far at all (see its ISOLATE_EVENTS), so this guard never
+      // fires against that case; preventDefault here doesn't stop 'contextmenu' from firing normally.
+      if(!_noteLineWasFocused&&e.target.closest&&e.target.closest('.pv-diagram-figure')){
         e.preventDefault();
         return;
       }
@@ -19839,57 +19982,22 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const table=(rawTable&&!readOnlyFigure)?rawTable:null;
       const items=[];
       if(table&&cell){
-        items.push({label:'Add row below', onClick:()=>{ const row=cell.closest('tr'); if(!row)return; const newRow=row.cloneNode(false); const colCount=row.cells.length; for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); } row.insertAdjacentElement('afterend',newRow); _attachTableResizeHandles(table); commitNoteLine(); }});
-        items.push({label:'Add column right', onClick:()=>{ const cellIndex=cell.cellIndex; table.querySelectorAll('tr').forEach(row=>{ const isHead=row.closest('thead')!==null; const c=isHead?document.createElement('th'):document.createElement('td'); c.contentEditable='true'; if(isHead)c.textContent='Column'; const refCell=row.cells[cellIndex]; if(refCell)refCell.insertAdjacentElement('afterend',c); else row.appendChild(c); }); _attachTableResizeHandles(table); commitNoteLine(); }});
-        items.push({divider:true});
-        // table.rows spans thead+tbody together -- not tbody.rows alone, which silently refused
-        // to delete a header row at all (tbody.closest('tbody') is null for a <thead> row, so the
-        // guard below it never ran), the same latent bug Pad's own identical menu item has.
-        items.push({label:'Delete row', onClick:()=>{ const row=cell.closest('tr'); if(row&&table.rows.length>1){ row.remove(); commitNoteLine(); } }});
-        items.push({label:'Delete column', onClick:()=>{ const ci=cell.cellIndex; let canDelete=true; table.querySelectorAll('tr').forEach(r=>{ if(r.cells.length<=1)canDelete=false; }); if(canDelete){ table.querySelectorAll('tr').forEach(r=>r.cells[ci]?.remove()); commitNoteLine(); } }});
-        items.push({label:'Delete table', danger:true, onClick:()=>{ table.remove(); commitNoteLine(); }});
-        items.push({divider:true});
-        const isCharted=isTableFeaturedAsChart(table);
-        if(isCharted||tableChartability(table).ok){
-          items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commitNoteLine(); }});
-        }
-        // Same per-type picks as the Pad's own table menu and the chart's own right-click menu in
-        // Preview/Presenter (see tableChartTypeAvailability) -- offered here too so the type can be
-        // set without leaving the note to go find the chart in Preview first. The current type, and
-        // any type that doesn't make sense for this table's shape (Pie/Doughnut/Cards on a
-        // multi-series table, Stacked bar on a single-series one), shows disabled with the reason on
-        // hover rather than just being omitted unexplained.
-        if(isCharted){
-          const curType=getTableChartType(table);
-          const typeAvail=tableChartTypeAvailability(table);
-          CHART_TYPES.forEach(type=>{
-            const isCurrent=type===curType; const avail=typeAvail[type];
-            items.push({label:CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), disabled:isCurrent||!avail.ok, title:!avail.ok?avail.reason:undefined, onClick:()=>{ setTableChartType(table,type); commitNoteLine(); }});
-          });
-          if(curType==='cards'){
-            items.push({label:'Suggest icons with AI', onClick: async()=>{ await suggestCardIconsWithAi(table); commitNoteLine(); }});
-          }
-        }
+        items.push(...buildTableEditItems(table,cell,commitNoteLine));
       } else if(readOnlyFigure){
         const figIsPicture=!!readOnlyFigure.querySelector('img');
         const figObjIdx=Number(readOnlyFigure.dataset.noteObjIdx);
         if(!figIsPicture){
           const figFound=Number.isFinite(figObjIdx)?noteTableByIndex(node.id,figObjIdx):null;
           if(figFound&&(isTableFeaturedAsChart(figFound.table)||tableChartability(figFound.table).ok)){
-            // A shortcut for "focus the note, then right-click the table again" -- skips straight
-            // to the SAME chart-type menu that second right-click would show (Feature as chart/
-            // chart type picks/Suggest icons -- the `table&&cell` branch above), by focusing and
-            // then simulating that exact follow-up right-click on the now-real table's first cell,
-            // rather than duplicating any of that menu's own logic here.
-            items.push({label:'Edit card/chart', onClick:()=>{
-              noteLine.focus();
-              requestAnimationFrame(()=>{
-                const cell=noteLine.querySelector('td,th');
-                if(!cell)return;
-                const rect=cell.getBoundingClientRect();
-                cell.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:rect.x+4,clientY:rect.y+4}));
-              });
-            }});
+            // Edits this exact figure's data directly -- see enterScopedTableEdit -- rather than
+            // focusing the whole note the way "Edit note" does. `cell` here (if any) is a node
+            // inside rawTable, the figure's own disposable clone -- passed across as a flat index
+            // among every cell rather than the DOM node itself, since enterScopedTableEdit does its
+            // own separate noteTableByIndex re-parse and needs a position, not a reference into a
+            // different document fragment. A chart's SVG has no clickable cell at all, so the index
+            // is -1 and enterScopedTableEdit falls back to the stored table's own first cell.
+            const targetCellIdx=(cell&&rawTable)?[...rawTable.querySelectorAll('td,th')].indexOf(cell):-1;
+            items.push({label:'Edit card/chart', onClick:()=>{ enterScopedTableEdit(readOnlyFigure,node,figObjIdx,targetCellIdx,noteLine); }});
           }
         }
         items.push({label:'Copy', onClick:()=>copyNoteReadOnlyFigure(readOnlyFigure,node)});
@@ -19943,6 +20051,10 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         items.push({divider:true});
         if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
         items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }});
+        items.push({divider:true});
+        // Same laser pointer Preview/Presenter already offers on right-click -- useful here too
+        // while screen-sharing the outline itself, not just while presenting it.
+        items.push({label:appLaserOn?'Stop laser pointer':'Laser pointer', onClick:()=>setAppLaser(!appLaserOn)});
       }
       showSbContextMenu(e.clientX,e.clientY,items);
       // The table-action items above close over live `cell`/`table` DOM references, captured at
@@ -37173,6 +37285,22 @@ function previewSetLaser(on){
   el('preview-laser-toggle')?.classList.toggle('active',on);
   if(audienceWinLive())presenterAudienceWin.document.getElementById('preview-laser-dot')?.classList.toggle('on',on);
 }
+// Same laser pointer, offered from the note-line's own right-click menu for pointing at the
+// outline itself while screen-sharing -- not tied to #preview-overlay the way previewSetLaser is,
+// since it needs to track the mouse across the whole document. Toggled off on Escape, same as
+// closing out of any other transient overlay state.
+let appLaserOn=false;
+function setAppLaser(on){
+  appLaserOn=on;
+  document.body.classList.toggle('app-laser-active',on);
+  el('app-laser-dot')?.classList.toggle('on',on);
+}
+document.addEventListener('mousemove',e=>{
+  if(!appLaserOn)return;
+  const dot=el('app-laser-dot'); if(!dot)return;
+  dot.style.left=e.clientX+'px'; dot.style.top=e.clientY+'px';
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&appLaserOn)setAppLaser(false); });
 function closePreviewCtxMenu(){ el('preview-ctx-menu')?.classList.remove('open'); }
 function openPreview(){
   if(!featurePreviewEnabled)return;
@@ -38365,6 +38493,14 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview #pv-doc-header { margin-bottom:24px !important; }
       body.printing-preview .pv-tag-chip-static { background:transparent !important; border:1px solid #aaa !important; color:#555 !important; }
       body.printing-preview .pv-dlog { break-inside:avoid; page-break-inside:avoid; }
+      /* A chart/Cards/table/picture figure breaking mid-way across a page boundary -- e.g. the
+         first few cards of a Cards grid on one page, the rest continuing on the next -- is worse
+         than just pushing the whole figure onto a fresh page, which is what this gets instead.
+         .pv-row's own break-inside:avoid above only protects the note as a whole when it's short
+         enough to fit a page on its own; a figure that's the tall part of a longer note still needs
+         its own rule so it isn't what actually splits. Won't help a figure taller than a full page
+         (nothing can avoid that), but that's a rarer case than a normal-sized one being split. */
+      body.printing-preview .pv-diagram-figure { break-inside:avoid; page-break-inside:avoid; }
       /* No .pv-note-inline-full/.node-note-dot-plain shrink override here (there used to be one)
          -- _pvForceFullNoteCard (see renderPreviewBody) means an export never builds that inline-
          teaser markup at all anymore, every note gets the same full card instead, so a rule
