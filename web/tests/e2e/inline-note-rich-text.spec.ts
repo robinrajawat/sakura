@@ -496,16 +496,40 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(after.isEditing).toBe(false);
     });
 
-    test('right-clicking an unfocused table object (display mode) offers only "Copy" and "Delete"', async ({ page }) => {
+    test('right-clicking an unfocused table object (display mode) offers "Copy", "Feature as chart" and "Delete" -- no row/column edit items', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
 
       await rightClick(page, '.node-table-line');
       const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.locator('.sb-context-item')).toHaveCount(3);
       await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Feature as chart', { exact: true })).toBeVisible();
       await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Add row below', { exact: true })).toHaveCount(0);
+    });
+
+    // "How should I feature it as chart or card?" was a real discoverability gap -- this used to
+    // only be reachable after clicking into edit mode and right-clicking a specific cell. Letting
+    // it work straight from the read-only display-mode menu (above) means a fresh parse of
+    // node.tables[tIdx], not the disposable display clone, so this confirms the write-back actually
+    // lands on the real node.tables entry, not a throwaway DOM clone.
+    test('"Feature as chart" from the display-mode menu persists straight to node.tables, no edit-mode round-trip needed', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await rightClick(page, '.node-table-line');
+      await page.locator('.sb-context-menu').getByText('Feature as chart', { exact: true }).click();
+
+      const result = await page.evaluate(() => {
+        // @ts-expect-error
+        const table = nodes.find((n: any) => n.id === 1).tables[0];
+        return { table, hasChartFigure: !!document.querySelector('.node-table-line.pv-table-chart-figure svg') };
+      });
+      expect(result.table).toContain('data-feature-chart="1"');
+      expect(result.hasChartFigure).toBe(true);
     });
 
     test('"Copy" on a table object copies the real table as HTML', async ({ page }) => {
@@ -737,6 +761,47 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
         const n = nodes.find((x: any) => x.id === 1);
         return { tablesLen: n.tables.length, hasTableLine: !!document.querySelector('.node-table-line') };
       });
+      expect(result.tablesLen).toBe(1);
+      expect(result.hasTableLine).toBe(true);
+    });
+
+    test('a node-table-dot appears on the row when the node has a table, and clicking it scrolls/flashes the table object into view', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      const dot = page.locator('.node-row[data-id="1"] .node-table-dot');
+      await expect(dot).toBeVisible();
+      await dot.click();
+      await expect(page.locator('.node-table-line.qa-flash')).toHaveCount(1);
+    });
+
+    // A copied Excel/Sheets table's plain-text clipboard representation is tab/newline-separated
+    // text -- without the table-detection branch in the global paste handler, parseTextToTreeNodes
+    // would treat that as outline content and shred it into one sibling node per row instead of
+    // landing it as a real table object.
+    test('pasting a table copied from outside (e.g. Excel) while a node is selected adds it as a node.tables object, not shredded into sibling nodes', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, []);
+      await page.evaluate(() => {
+        // @ts-expect-error
+        selectedId = 1; editingId = null; multiSelectedIds = [];
+      });
+
+      await page.evaluate(() => {
+        const html = '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>';
+        const clipboardData = { getData: (type: string) => (type === 'text/html' ? html : 'Label\tValue\nA\t10') };
+        const ev = new Event('paste', { bubbles: true, cancelable: true });
+        Object.defineProperty(ev, 'clipboardData', { value: clipboardData });
+        document.dispatchEvent(ev);
+      });
+
+      const result = await page.evaluate(() => {
+        // @ts-expect-error
+        return { nodeCount: nodes.length, tablesLen: (nodes[0].tables || []).length, hasTableLine: !!document.querySelector('.node-table-line') };
+      });
+      expect(result.nodeCount).toBe(1);
       expect(result.tablesLen).toBe(1);
       expect(result.hasTableLine).toBe(true);
     });
