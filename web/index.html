@@ -2004,7 +2004,7 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
 .pv-table-figure{flex:1 1 100%}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
-.pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left}
+.pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
 .pv-table-chart-figure{flex:1 1 100%}
 .pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
@@ -2015,6 +2015,13 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-table-card-value{font:700 22px 'Inter',sans-serif;color:var(--fg);line-height:1.15}
 .pv-table-card-label{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
 
+/* A table/chart/Cards object on node.tables -- a sibling of the note, not embedded inside it (see
+   buildNodeTableObject/migrateNoteTablesToNode) -- reuses .pv-table-figure/.pv-table-chart-figure
+   for its actual table/chart styling (border, header shading, SVG sizing), same as Preview/PDF
+   already get for free; these two classes just place it correctly in the outline's own layout. */
+.node-table-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
+.node-table-line{cursor:pointer;border-radius:6px}
+.node-table-line:has(td[contenteditable="true"],th[contenteditable="true"]){cursor:text}
 .node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;font-family:var(--content-font);color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;background:transparent;border-radius:4px}
 .node-note-line:focus{color:var(--fg)}
 .node-note-line img{max-width:100%;border-radius:6px;margin:4px 0;display:block}
@@ -4977,6 +4984,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-qa" /> Add question…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-remark" /> Add remark…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-diagram" /> Add diagram…</label>
+                <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-table" /> Add table…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-where-used" /> Where used…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-date-time" /> Insert date/time</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-tags" /> Tags…</label>
@@ -8033,6 +8041,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-qa" /> Add question…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-remark" /> Add remark…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-diagram" checked /> Add diagram…</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-table" checked /> Add table…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-where-used" /> Where used…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-date-time" /> Insert date/time</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-tags" checked /> Tags…</label>
@@ -8072,7 +8081,7 @@ const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" s
 // button, so there's exactly one definition of what "the default" means instead of two that can
 // quietly drift apart. Six items -- right at CTX_QUICK_ROW_MAX, so nothing here ever overflows
 // into "More" by default.
-const CTX_QUICK_ROW_DEFAULT=['ai-rewrite','note','remark','qa','diagram','tags'];
+const CTX_QUICK_ROW_DEFAULT=['ai-rewrite','note','remark','qa','diagram','table','tags'];
 let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let decisionLogs=[]; let decisionExpandedId=null; let decisionSelectMode=false; let attachments=[]; let remarks=[]; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false; let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=CTX_QUICK_ROW_DEFAULT.slice(); let contextSortChildrenEnabled=true; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=false; let padFilesTabEnabled=false; let padRemarksTabEnabled=true; let padOpen=false; let padWidth=440; let padMatchEditorBg=false; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=false; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let featurePreviewEnabled=true; let featurePresenterEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
@@ -9233,6 +9242,149 @@ function enterScopedTableEdit(fig,node,tIdx,clickedCellIdx,noteLine){
     focusCell.focus();
   }
 }
+// Copies a node.tables object's real table to the clipboard -- same shape/approach as
+// copyNoteReadOnlyFigure's own table branch (HTML as a real <table>, plain text as its innerText).
+async function copyNodeTableObject(node,tIdx){
+  const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
+  const table=div.querySelector('table');
+  if(!table){ showToast('Nothing to copy'); return; }
+  const html=table.outerHTML;
+  const text=table.innerText||table.textContent||'';
+  try{
+    if(navigator.clipboard&&window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);
+    } else if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(text);
+    } else throw new Error('Clipboard API unavailable');
+    showToast('Table copied');
+  }catch(e){ showToast('Copy failed'); }
+}
+// A table/chart/Cards object living directly on node.tables[tIdx] -- NOT embedded in node.note
+// (see migrateNoteTablesToNode), so unlike enterScopedTableEdit this needs no ambient
+// contentEditable host to coexist with, no isolation from a note-line's own input/paste/keydown
+// handling, and no guard against true-in-true contentEditable nesting: this element sits directly
+// in the outline's own layout, nothing else around it is ever editable. It's a small, always-
+// present object: a read-only display (chart SVG / Cards grid / plain table clone) until clicked,
+// swapping to a live, directly-editable <table> while focused, and back to display on blur --
+// clicking it IS the edit action, the same directness a much earlier bug report in this file's
+// history asked for and a note-embedded table could never safely give without risking the note's
+// own text being silently edited along with it.
+function buildNodeTableObject(node,tIdx){
+  const wrap=document.createElement('div');
+  wrap.className='node-table-line pv-diagram-figure pv-table-figure';
+  wrap.dataset.nodeId=String(node.id);
+  function showDisplay(){
+    wrap.classList.remove('editing');
+    const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
+    const table=div.querySelector('table');
+    wrap.innerHTML='';
+    wrap.classList.remove('pv-table-chart-figure');
+    if(!table)return;
+    if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
+      const svg=renderTableChartSvg(table);
+      if(svg){ wrap.classList.add('pv-table-chart-figure'); wrap.innerHTML=svg; return; }
+    }
+    const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
+    wrap.appendChild(clone);
+  }
+  function enterEdit(clickedCellFlatIdx){
+    const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
+    const liveTable=div.querySelector('table');
+    if(!liveTable)return;
+    liveTable.querySelectorAll('td,th').forEach(c=>c.contentEditable='true');
+    wrap.innerHTML='';
+    wrap.classList.remove('pv-table-chart-figure');
+    // An explicit flag, not "does this contain a contenteditable cell" -- cleanEditorHtml doesn't
+    // strip the contenteditable attribute itself (only resize-handle <div>s), so a table that was
+    // ever edited keeps that attribute baked into its stored HTML forever after, and every later
+    // display-mode clone of it (showDisplay clones node.tables[tIdx] as-is) would otherwise always
+    // look like it's "still editing" to a DOM-sniffing check, permanently breaking the click-to-
+    // edit/right-click-menu guards below.
+    wrap.classList.add('editing');
+    wrap.appendChild(liveTable);
+    _attachTableResizeHandles(liveTable);
+    // Same double-commit hazard enterScopedTableEdit's own exited-guard documents: removing a
+    // row/column that holds the current caret forces its own native, synchronous focus change,
+    // which can fire onFocusOut's commit()+exit() mid-handler, before the menu action's own
+    // trailing commit() call runs against now-stale state. Idempotent once exited for the same
+    // reason.
+    let exited=false;
+    function exit(){
+      if(exited)return;
+      exited=true;
+      wrap.removeEventListener('input',onInput);
+      wrap.removeEventListener('contextmenu',onCtx);
+      wrap.removeEventListener('focusout',onFocusOut);
+      showDisplay();
+    }
+    function commit(){
+      if(exited)return;
+      if(!liveTable.isConnected){
+        exited=true;
+        wrap.removeEventListener('input',onInput);
+        wrap.removeEventListener('contextmenu',onCtx);
+        wrap.removeEventListener('focusout',onFocusOut);
+        node.tables.splice(tIdx,1);
+        node.modifiedAt=Date.now();
+        markDirty(); scheduleAutoSave();
+        render();
+        return;
+      }
+      node.tables[tIdx]=sakuraSanitizeRichHtml(cleanEditorHtml(wrap));
+      node.modifiedAt=Date.now();
+      markDirty(); scheduleAutoSave();
+      if(previewActive)renderPreviewBody();
+    }
+    const onInput=e=>{ e.stopPropagation(); commit(); };
+    wrap.addEventListener('input',onInput);
+    const onCtx=e=>{
+      e.preventDefault(); e.stopPropagation();
+      const cell=e.target.closest&&e.target.closest('td,th');
+      showSbContextMenu(e.clientX,e.clientY,buildTableEditItems(liveTable,cell,commit));
+      const sbMenu=document.querySelector('.sb-context-menu');
+      if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
+    };
+    wrap.addEventListener('contextmenu',onCtx);
+    const onFocusOut=e=>{ if(wrap.contains(e.relatedTarget))return; commit(); exit(); };
+    wrap.addEventListener('focusout',onFocusOut);
+    const allCells=liveTable.querySelectorAll('td,th');
+    const focusCell=(clickedCellFlatIdx>=0?allCells[clickedCellFlatIdx]:null)||allCells[0];
+    if(focusCell){
+      const rg=document.createRange(); rg.selectNodeContents(focusCell); rg.collapse(true);
+      const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+      focusCell.focus();
+    }
+  }
+  showDisplay();
+  // Both stopPropagation calls matter: without them, this click/mousedown bubbles up to the
+  // outline's own pane-level click handling (which manages keyboard-nav focus/selection for the
+  // whole document) and steals focus right back off whatever enterEdit() just focused, the same
+  // reasoning the note-line's own mousedown/click handlers already stopPropagation for.
+  wrap.addEventListener('mousedown',e=>{ e.stopPropagation(); });
+  wrap.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(wrap.classList.contains('editing'))return;
+    // The display clone (plain-table case) is a direct, unmodified clone of the exact table a
+    // fresh parse of node.tables[tIdx] would produce -- same td/th order, same count -- so a flat
+    // index computed against it is already valid against the live re-parsed table too, no
+    // cross-referencing between two separately-tracked DOM trees needed.
+    const clickedCell=e.target.closest&&e.target.closest('td,th');
+    const flatIdx=clickedCell?[...wrap.querySelectorAll('td,th')].indexOf(clickedCell):-1;
+    enterEdit(flatIdx);
+  });
+  wrap.addEventListener('contextmenu',e=>{
+    if(wrap.classList.contains('editing'))return;
+    e.preventDefault(); e.stopPropagation();
+    const items=[
+      {label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)},
+      {label:'Delete', danger:true, onClick:()=>{ node.tables.splice(tIdx,1); node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); }},
+    ];
+    showSbContextMenu(e.clientX,e.clientY,items);
+    const sbMenu=document.querySelector('.sb-context-menu');
+    if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
+  });
+  return wrap;
+}
 // Reads a featured+charted table into pptxgenjs chart series data. Two shapes, matching
 // tableChartability's two chartable cases:
 //  - 2+ columns: column A is category labels, every column after it is its own series (its
@@ -9735,6 +9887,29 @@ function repairCorruptedCardsNote(html){
     return changed?div.innerHTML:html;
   }catch(e){ return html; }
 }
+// One-time, self-healing migration: tables/charts/Cards used to live embedded in node.note's rich
+// HTML (see splitNoteBlockVisuals/renderNoteDisplayHtml below) -- they're now their own first-class
+// node.tables objects instead, rendered in their own inline block in render(), independent of the
+// note's own focus/edit lifecycle entirely (no more read/raw swap, no more scoped-edit session --
+// each table object is simply always its own small editable element). A node whose note still has
+// an embedded table (anything saved before this change existed) gets it moved out automatically
+// the first time that node is rendered, same self-heal approach repairCorruptedCardsNote already
+// uses for its own one-time fix. Order is preserved among tables but NOT relative to surrounding
+// text -- every table in a note ends up appended after node.tables' existing entries, and the note's
+// remaining text is whatever's left once they're pulled out, regardless of where exactly they used
+// to sit in the reading order.
+function migrateNoteTablesToNode(node){
+  if(!node.note||!/<table/i.test(node.note))return;
+  try{
+    const {textHtml,tables}=splitNoteBlockVisuals(node.note);
+    if(!tables.length)return;
+    if(!Array.isArray(node.tables))node.tables=[];
+    tables.forEach(t=>node.tables.push(t.outerHTML));
+    node.note=textHtml;
+    node.modifiedAt=Date.now();
+    markDirty(); scheduleAutoSave();
+  }catch(e){}
+}
 function renderNoteDisplayHtml(html){
   if(!html||(!/<table/i.test(html)&&!/<img/i.test(html)))return html||'';
   try{
@@ -9823,6 +9998,26 @@ function noteImageByIndex(nodeId,iIdx){
 // own rendering of it.
 function persistNoteTableChange(idx,container){
   nodes[idx].note=sakuraSanitizeRichHtml(container.innerHTML);
+  nodes[idx].modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  if(previewActive)renderPreviewBody();
+}
+// Same re-parse-by-index lookup as noteTableByIndex, for a node.tables object instead of a
+// note-embedded one -- used by Preview's own right-click chart-type switcher when it lands on a
+// .pv-table-figure/.pv-table-chart-figure built from node.tables (see buildNoteTableFigure's own
+// noteChartNodeId/noteChartTableIdx tagging in renderPreviewBody), which has no live DOM table to
+// read directly since Preview only ever sees the already-rendered SVG/clone.
+function nodeTableObjByIndex(nodeId,tIdx){
+  const idx=getIndex(nodes,nodeId); if(idx<0)return null;
+  const container=document.createElement('div'); container.innerHTML=nodes[idx].tables?.[tIdx]||'';
+  const table=container.querySelector('table'); if(!table)return null;
+  return {idx,tIdx,container,table};
+}
+// Writes a nodeTableObjByIndex() mutation back into node.tables[tIdx] directly -- not node.note,
+// and not a re-parse of the WHOLE node.tables array, since each entry is independent (unlike
+// persistNoteTableChange's container, which re-serializes the whole note around one table).
+function persistNodeTableObjChange(idx,tIdx,container){
+  nodes[idx].tables[tIdx]=sakuraSanitizeRichHtml(container.innerHTML);
   nodes[idx].modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   if(previewActive)renderPreviewBody();
@@ -9974,7 +10169,7 @@ function setLastFontColor(c){if(!FONT_COLORS.includes(c))return; lastFontColor=c
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string'):[],decisionLog:normalizeDecisionLog(n.decisionLog),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',slideDivider:!!n.slideDivider,createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 /* GENERATED:decisionLog:START — DO NOT EDIT BY HAND. Source of truth: src/state/decisionLog.ts (tests: tests/unit/decisionLog.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * Pure validation/normalization layer for the Decision Log domain — first slice of a domain not
@@ -10057,7 +10252,7 @@ function migrateNodeDecisionLogsToArray(){
     delete node.decisionLog;
   }
 }
-function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
+function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
 function makeBlankNode(depth=0,parentId=null){return makeNode('',depth,parentId)}
 function snapshot(){return JSON.stringify({nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,focusedId,remarks,qaItems})}
 // nextId is intentionally never allowed to move backward here (Math.max, not a straight
@@ -19283,13 +19478,14 @@ const CTX_ACTION_META={
   qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'notes'},
   remark:{label:'Add remark…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'notes'},
   diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'notes'},
+  table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'notes'},
   'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'notes'},
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'notes'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'notes'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'notes'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','slide-divider','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','qa','remark','diagram','where-used','date-time','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','slide-divider','ai-rewrite','ai-rewrite-all','ai-icon','ai-icon-all','note','qa','remark','diagram','table','where-used','date-time','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -19782,6 +19978,12 @@ function handleAtInput(inputEl, nodeId) {
 }
 
 function render(){ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); if(typeof hideHoverRailNow==='function')hideHoverRailNow();
+  // Runs over EVERY node, not just the ones the per-row loop below actually builds DOM for --
+  // a node inside a collapsed branch never reaches that loop at all, and renderPreviewBody() reads
+  // node.tables directly rather than re-deriving it from node.note, so a table living inside a
+  // currently-collapsed node's note would otherwise simply never get migrated (and so never show
+  // up in Preview) until that branch happened to be expanded at least once.
+  nodes.forEach(migrateNoteTablesToNode);
   // Continuous-editing feel: render() rebuilds every row's DOM from scratch even for a re-render
   // that has nothing to do with the current edit (e.g. flashNode's own delayed re-render, ~700ms
   // later, purely to drop the flash-new class) -- but the tail of this function unconditionally
@@ -20070,38 +20272,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           render();
         }});
       } else {
-        // Caret position at the moment of the right-click, not whenever "Insert table" actually
-        // gets clicked -- the sb-context-menu's own mousedown preventDefault (just below) keeps
-        // this selection alive and unmoved in the meantime, the same way it already protects the
-        // table-action items' cell/table references above.
-        const sel0=window.getSelection();
-        const savedRange=(sel0&&sel0.rangeCount&&noteLine.contains(sel0.anchorNode))?sel0.getRangeAt(0).cloneRange():null;
-        items.push({label:'Insert table', onClick:()=>{
-          pushUndo();
-          // Same 2x2-to-start shape as Pad's own "Insert table" (ptb-table) -- a real <thead><th>
-          // header row so _attachTableResizeHandles' column handles and noteIsPlainTextOnly's
-          // table detection both see the structure they expect from the start, same as a pasted
-          // table already has.
-          const cols=2, defaultColW=120;
-          const newTable=document.createElement('table');
-          const cg=document.createElement('colgroup');
-          for(let i=0;i<cols;i++){ const col=document.createElement('col'); col.style.width=defaultColW+'px'; cg.appendChild(col); }
-          newTable.appendChild(cg);
-          const thead=newTable.createTHead(); const hrow=thead.insertRow();
-          ['Column 1','Column 2'].forEach(text=>{ const th=document.createElement('th'); th.contentEditable='true'; th.textContent=text; hrow.appendChild(th); });
-          const tbody=newTable.createTBody();
-          for(let r=0;r<2;r++){ const row=tbody.insertRow(); for(let c=0;c<cols;c++){ const td=row.insertCell(); td.contentEditable='true'; } }
-          noteLine.focus();
-          const sel=window.getSelection();
-          if(savedRange&&sel){ sel.removeAllRanges(); sel.addRange(savedRange); savedRange.collapse(false); savedRange.insertNode(newTable); }
-          else noteLine.appendChild(newTable);
-          const firstCell=tbody.rows[0].cells[0];
-          const rg=document.createRange(); rg.setStart(firstCell,0); rg.collapse(true);
-          if(sel){ sel.removeAllRanges(); sel.addRange(rg); }
-          _attachTableResizeHandles(newTable);
-          commitNoteLine();
-        }});
-        items.push({divider:true});
+        // Tables no longer insert into the note itself -- node.tables (see buildNodeTableObject)
+        // is the only place a new one belongs now; "Add table…" on the node's own right-click menu
+        // is the equivalent of this old "Insert table" item.
         if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
         items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }});
         items.push({divider:true});
@@ -20123,6 +20296,17 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteWrap.appendChild(noteLine);
     if(hideTreeLines&&depthGuideLines){ const nVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); nVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; noteWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(noteDepth*32+0*editorScale+9)+'px'; noteWrap.appendChild(vgOwn) } }
     frag.appendChild(noteWrap)
+  }
+  if(Array.isArray(node.tables)&&node.tables.length){
+    // Independent of whether the note itself is inline-expanded above -- a table/chart/Cards
+    // object is its own thing now, not part of the note's own expand/collapse state.
+    const tablesDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
+    node.tables.forEach((html,tIdx)=>{
+      const tWrap=document.createElement('div'); tWrap.className='node-table-line-wrap';
+      tWrap.style.paddingLeft=hideTreeLines?(tablesDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
+      tWrap.appendChild(buildNodeTableObject(node,tIdx));
+      frag.appendChild(tWrap);
+    });
   }
   if((alwaysExpandInlineEnabled!==inlineExpandRemarksNodeIds.has(node.id))&&padRemarksTabEnabled&&Array.isArray(remarks)&&remarks.length){
     // Newest first -- remarks.push (addRemark/saveNodeComment) always appends, so left in array
@@ -20797,7 +20981,7 @@ function deleteSelected(){
   cleanupOrphanedFeaturedTables(deletedIds);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`);
 }
-function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'')); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
+function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables)); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
 function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const insertIdx=getIndex(nodes,selectedId);
   // parseTextToTreeNodes (and friends) always normalize the parsed block's own top-level
@@ -20811,7 +20995,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   // point's own depth makes pasted content land as siblings of the node being edited, which
   // is what every other insertion path in this file already does.
   const offsetDepth=computePasteOffsetDepth(nodes,insertIdx);
-  const mapped=parsed.map(n=>makeNode(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'')); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
+  const mapped=parsed.map(n=>makeNode(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'',false,n.tables)); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
   let dlAdded=0,dgAdded=0;
   if(Array.isArray(clipExtras)&&clipExtras.length){
     clipExtras.forEach(ex=>{
@@ -24422,7 +24606,7 @@ function importOpmlText(xmlText){
   // splices into the *current* document instead — inconsistent with every other import path.
   createDoc();
   pushUndo(); markDirty();
-  const mapped=parsed.map(n=>makeNode(n.text||'',n.depth,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox));
+  const mapped=parsed.map(n=>makeNode(n.text||'',n.depth,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox,n.tables));
   // makeNode() has no `checked` parameter (every new node starts unchecked) — apply the
   // checkbox state parsed out of the OPML text as a second pass instead of losing it.
   mapped.forEach((node,i)=>{ if(parsed[i].isCheckbox && parsed[i].checked) node.checked=true; });
@@ -27122,6 +27306,23 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandDiagramNodeIds,_ctxNodeId);
     createDiagram();
+    return;
+  }
+  if(action==='table'){
+    if(_ctxNodeId===null)return;
+    const idx=getIndex(nodes,_ctxNodeId); if(idx<0)return;
+    pushUndo();
+    // Same 2x2-to-start shape "Insert table"/Pad's own ptb-table already use -- a real
+    // <thead><th> header row so _attachTableResizeHandles' column handles and buildNodeTableObject
+    // both see the structure they expect from the start.
+    const html='<table><colgroup><col style="width:120px"><col style="width:120px"></colgroup><thead><tr><th>Column 1</th><th>Column 2</th></tr></thead><tbody><tr><td></td><td></td></tr><tr><td></td><td></td></tr></tbody></table>';
+    if(!Array.isArray(nodes[idx].tables))nodes[idx].tables=[];
+    nodes[idx].tables.push(html);
+    nodes[idx].modifiedAt=Date.now();
+    markDirty(); scheduleAutoSave();
+    setSingleSelection(_ctxNodeId);
+    expandNode(_ctxNodeId);
+    render();
     return;
   }
   if(action==='where-used'){
@@ -36296,6 +36497,14 @@ function previewFold(node,idx,hasChildren){
 }
 function renderPreviewBody(){
   const body=el('preview-body'); if(!body)return;
+  // Preview/PDF can run before the outline's own render() ever has (opening Preview right after a
+  // document loads, or a test driving renderPreviewBody() directly) -- migrateNoteTablesToNode is
+  // otherwise only ever called from render()'s own per-node loop, so without this, a node.note
+  // that still has an embedded table (anything saved before node.tables existed) would simply
+  // never show up here at all, since this reads node.tables directly rather than re-deriving it
+  // from note HTML. Idempotent and cheap (a fast regex bail-out) to call again if render() already
+  // did it.
+  nodes.forEach(migrateNoteTablesToNode);
   const _scrollBeforeRebuild=previewPresenting?body.scrollTop:0;
   const docTitle=String(el('header-title')?.value||'Untitled');
   el('preview-head-title').textContent=docTitle;
@@ -36661,15 +36870,22 @@ function renderPreviewBody(){
         });
         slideTarget.appendChild(row);
       }
-      // A note's own block-level tables and standalone images (split out by splitNoteBlockVisuals
-      // above) -- same full-width figure treatment as a note-embedded diagram or anchored diagram
-      // just above, so a table or picture that happens to live inside a note's rich text doesn't
-      // read as a lesser, cramped version of the exact same content type elsewhere on the page.
-      if(blockVisuals&&blockVisuals.tables.length){
+      // A node's own table/chart/Cards objects (node.tables -- see buildNodeTableObject,
+      // migrateNoteTablesToNode) -- same full-width figure treatment as a note-embedded diagram or
+      // anchored diagram just above, so a table doesn't read as a lesser, cramped version of the
+      // exact same content type elsewhere on the page. No longer sourced from the note's own HTML
+      // (blockVisuals.tables) -- a table is its own node-level object now, not note content.
+      if(Array.isArray(node.tables)&&node.tables.length){
         const trow=document.createElement('div'); trow.className='pv-diagram-row'; trow.style.paddingLeft=inlinePad;
-        blockVisuals.tables.forEach((t,tIdx)=>trow.appendChild(buildNoteTableFigure(t,node.id,tIdx)));
-        slideTarget.appendChild(trow);
+        node.tables.forEach((html,tIdx)=>{
+          const div=document.createElement('div'); div.innerHTML=html;
+          const t=div.querySelector('table');
+          if(t)trow.appendChild(buildNoteTableFigure(t,node.id,tIdx));
+        });
+        if(trow.children.length)slideTarget.appendChild(trow);
       }
+      // A note's own standalone images (split out by splitNoteBlockVisuals above) -- same
+      // full-width figure treatment, images stay note content (unlike tables above).
       if(blockVisuals&&blockVisuals.images.length){
         const multi=blockVisuals.images.length>1;
         const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
@@ -38889,19 +39105,19 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
   const tableFig=e.target.closest('.pv-table-figure');
   if(tableFig){
     if(tableFig.dataset.noteChartNodeId!==undefined){
-      // A note's own plain (not-yet-charted) table, pulled out into its own figure by
-      // splitNoteBlockVisuals/buildNoteTableFigure -- same noteChartNodeId/noteChartTableIdx +
-      // noteTableByIndex lookup the already-charted case just below uses, since there's still no
-      // live DOM table to look up the Pad-table way, only node.note's string content. Previously
-      // a plain table like this had no right-click chart option at all while just inside the
-      // note's own text box (only the live editor's own table menu could feature it) -- now that
-      // it renders as its own figure, same as Pad's, it gets the same right-click too.
+      // A node.tables object, pulled into its own figure by buildNoteTableFigure -- same
+      // noteChartNodeId/noteChartTableIdx tagging the already-charted case just below uses, since
+      // there's still no live DOM table to look up the Pad-table way, only node.tables[tIdx]'s
+      // string content (nodeTableObjByIndex). Previously a plain table like this had no right-click
+      // chart option at all while just inside the note's own text box (only the live editor's own
+      // table menu could feature it) -- now that it renders as its own figure, same as Pad's, it
+      // gets the same right-click too.
       const nodeId=Number(tableFig.dataset.noteChartNodeId);
       const tIdx=Number(tableFig.dataset.noteChartTableIdx);
-      const resolved=Number.isFinite(nodeId)&&Number.isFinite(tIdx)?noteTableByIndex(nodeId,tIdx):null;
+      const resolved=Number.isFinite(nodeId)&&Number.isFinite(tIdx)?nodeTableObjByIndex(nodeId,tIdx):null;
       if(resolved&&tableChartability(resolved.table).ok){
         closePreviewCtxMenu();
-        openChartCtxMenu(resolved.table,e.clientX,e.clientY,()=>persistNoteTableChange(resolved.idx,resolved.container));
+        openChartCtxMenu(resolved.table,e.clientX,e.clientY,()=>persistNodeTableObjChange(resolved.idx,resolved.tIdx,resolved.container));
         return;
       }
     } else {
@@ -38911,18 +39127,18 @@ el('preview-overlay')?.addEventListener('contextmenu',e=>{
       if(table&&tableChartability(table).ok){ closePreviewCtxMenu(); openChartCtxMenu(table,e.clientX,e.clientY); return; }
     }
   }
-  // Same right-click type-switcher, for a note's own already-charted table (see
-  // noteChartDisplayHtml/noteTableByIndex) -- a different data-attribute pair from the Pad table
-  // figure above since there's no live DOM table to look up by data-chart-node-id/table-idx, only
-  // node.note's string content, which noteTableByIndex re-parses fresh.
+  // Same right-click type-switcher, for an already-charted node.tables object (see
+  // nodeTableObjByIndex) -- a different data-attribute pair from the Pad table figure above since
+  // there's no live DOM table to look up by data-chart-node-id/table-idx, only
+  // node.tables[tIdx]'s string content, which nodeTableObjByIndex re-parses fresh.
   const noteChartFig=e.target.closest('.pv-table-chart-figure[data-note-chart-node-id]');
   if(noteChartFig){
     const nodeId=Number(noteChartFig.dataset.noteChartNodeId);
     const tIdx=Number(noteChartFig.dataset.noteChartTableIdx);
-    const resolved=Number.isFinite(nodeId)&&Number.isFinite(tIdx)?noteTableByIndex(nodeId,tIdx):null;
+    const resolved=Number.isFinite(nodeId)&&Number.isFinite(tIdx)?nodeTableObjByIndex(nodeId,tIdx):null;
     if(resolved&&tableChartability(resolved.table).ok){
       closePreviewCtxMenu();
-      openChartCtxMenu(resolved.table,e.clientX,e.clientY,()=>persistNoteTableChange(resolved.idx,resolved.container));
+      openChartCtxMenu(resolved.table,e.clientX,e.clientY,()=>persistNodeTableObjChange(resolved.idx,resolved.tIdx,resolved.container));
       return;
     }
   }

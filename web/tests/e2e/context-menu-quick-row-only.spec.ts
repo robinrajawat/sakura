@@ -193,7 +193,7 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
     }
   });
 
-  test('the default quick row is the 6-item curated set, matching "Reset" in Settings', async ({ page }) => {
+  test('the default quick row is the 7-item curated set, matching "Reset" in Settings', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -201,7 +201,7 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
       // @ts-expect-error
       [...contextQuickActions]
     );
-    expect(initial).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'tags']);
+    expect(initial).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'tags']);
 
     // Mess with it, then Reset should bring back exactly the same default.
     await page.evaluate(() => {
@@ -213,7 +213,7 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
       // @ts-expect-error
       [...contextQuickActions]
     );
-    expect(afterReset).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'tags']);
+    expect(afterReset).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'tags']);
   });
 
   // "Add diagram..."/"Add question..." used to vanish from both the rendered quick row and the
