@@ -70,7 +70,7 @@ test.describe("A note's chart-featured table renders as a chart in Preview and i
     expect(result.tableIdx).toBe('0');
   });
 
-  test('right-clicking the chart opens the type-switcher, and picking a type persists to node.note', async ({ page }) => {
+  test('right-clicking the chart opens the type-switcher, and picking a type persists to node.tables', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await setUpDoc(page, chartNote);
@@ -79,12 +79,15 @@ test.describe("A note's chart-featured table renders as a chart in Preview and i
     await expect(page.locator('#chart-ctx-menu.open')).toBeVisible();
     await page.locator('#chart-ctx-menu .chart-type-item[data-chart-type="line"]').click();
 
-    const note = await page.evaluate(() => {
+    // The table itself is a node.tables object now, not note content (see
+    // migrateNoteTablesToNode) -- nodeTableObjByIndex/persistNodeTableObjChange are what this
+    // right-click menu's onChange callback actually writes back to.
+    const table = await page.evaluate(() => {
       // @ts-expect-error
-      return nodes.find((n: any) => n.id === 2).note;
+      return nodes.find((n: any) => n.id === 2).tables[0];
     });
-    expect(note).toContain('data-chart-type="line"');
-    expect(note).toContain('data-feature-chart="1"');
+    expect(table).toContain('data-chart-type="line"');
+    expect(table).toContain('data-feature-chart="1"');
   });
 
   test('"Show as table" turns the chart feature off, persisting back to a plain table', async ({ page }) => {
@@ -95,11 +98,11 @@ test.describe("A note's chart-featured table renders as a chart in Preview and i
     await page.locator('.pv-table-chart-figure[data-note-chart-node-id]').click({ button: 'right' });
     await page.locator('#chart-ctx-menu [data-show-as-table]').click();
 
-    const note = await page.evaluate(() => {
+    const table = await page.evaluate(() => {
       // @ts-expect-error
-      return nodes.find((n: any) => n.id === 2).note;
+      return nodes.find((n: any) => n.id === 2).tables[0];
     });
-    expect(note).not.toContain('data-feature-chart');
+    expect(table).not.toContain('data-feature-chart');
 
     // The onChange callback re-renders Preview itself (previewActive=true) -- confirm it actually
     // flipped back to showing the real table, not just that node.note was updated correctly. A

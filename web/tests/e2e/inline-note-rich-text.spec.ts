@@ -68,6 +68,55 @@ async function editNote(page: import('@playwright/test').Page) {
   await page.locator('.sb-context-menu').getByText('Edit note', { exact: true }).click();
 }
 
+// A real right-click fires 'mousedown' BEFORE 'contextmenu' -- and a mousedown's own native
+// default action (focusing whatever contenteditable it lands on) happens whether or not the menu
+// this test cares about ever opens. rightClick above only dispatches 'contextmenu' in isolation,
+// which happens to never exercise that native focus side effect at all -- a real blind spot that
+// let a real bug ship without a failing test. This dispatches the real sequence, mousedown(button
+// 2) then contextmenu, so a target's own mousedown handler actually runs.
+function realRightClick(page: import('@playwright/test').Page, selector: string) {
+  return page.evaluate((sel) => {
+    const el = document.querySelector(sel)!;
+    const rect = el.getBoundingClientRect();
+    const opts = { bubbles: true, cancelable: true, button: 2, clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 };
+    el.dispatchEvent(new MouseEvent('mousedown', opts));
+    el.dispatchEvent(new MouseEvent('contextmenu', opts));
+  }, selector);
+}
+
+// Stubs navigator.clipboard.write to record what was written, rather than relying on real OS
+// clipboard access -- headless Chromium's clipboard permissions (and file:// being a non-secure
+// context) make that unreliable to depend on in a test.
+function stubClipboard(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    // @ts-expect-error
+    window.__clipboardWrites = [];
+    class FakeClipboardItem {
+      data: Record<string, Blob>;
+      constructor(data: Record<string, Blob>) { this.data = data; }
+    }
+    // @ts-expect-error
+    window.ClipboardItem = FakeClipboardItem;
+    // navigator.clipboard is a getter-only accessor on the real Navigator prototype -- a plain
+    // assignment silently no-ops in sloppy mode rather than throwing, leaving the REAL clipboard
+    // API in place (which then fails/rejects under headless Chromium + file://'s non-secure
+    // context, swallowed by the copy handler's own try/catch). Overriding the property itself via
+    // defineProperty is what's actually needed to intercept the call.
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        write: async (items: InstanceType<typeof FakeClipboardItem>[]) => {
+          const item = items[0];
+          const entry: Record<string, string> = {};
+          for (const [type, blob] of Object.entries(item.data)) entry[type] = await blob.text();
+          // @ts-expect-error
+          window.__clipboardWrites.push(entry);
+        },
+      },
+    });
+  });
+}
+
 // Inline notes were reverted from plain text (PR #326) back to rich HTML -- .node-note-line is a
 // contenteditable div again, same family as remarks/Q&A/Pad, so it can hold pasted images and
 // tables (with a chart-featured table rendering as its chart while not focused). These tests
@@ -194,192 +243,17 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     expect(result.noteHasImg).toBe(true);
   });
 
-  test.describe('Table context menu (right-click inside a pasted table)', () => {
-    const tableNote = '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>';
-
-    test('Add row below inserts a new row with the same column count', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, tableNote);
-
-      // A plain table shows as its own read-only figure while the note is unfocused (see
-      // renderNoteDisplayHtml) -- clicking in first swaps back to the real, editable table.
-      await editNote(page);
-      const cell = page.locator('#note-line-1 td').first();
-      await cell.click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
-
-      const rowCount = await page.evaluate(() => document.querySelectorAll('#note-line-1 table tr').length);
-      expect(rowCount).toBe(3); // header + original row + new row
-    });
-
-    test('Add column right inserts a new cell in every row', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, tableNote);
-
-      await editNote(page);
-      const cell = page.locator('#note-line-1 td').first();
-      await cell.click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Add column right', { exact: true }).click();
-
-      const colCounts = await page.evaluate(() =>
-        [...document.querySelectorAll('#note-line-1 table tr')].map(r => r.children.length)
-      );
-      expect(colCounts).toEqual([3, 3]);
-    });
-
-    test('Delete row removes the clicked row but keeps the table', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-      await editNote(page);
-      const cell = page.locator('#note-line-1 td').first();
-      await cell.click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
-
-      const rowCount = await page.evaluate(() => document.querySelectorAll('#note-line-1 table tr').length);
-      expect(rowCount).toBe(2); // header + the one remaining row
-    });
-
-    // Delete row used to only count rows inside <tbody> -- a header row in a REAL <thead> (as
-    // "Insert table" always produces, and as "Toggle header row" moves a row into) resolves
-    // row.closest('tbody') to null, so the deletion silently never ran at all, no matter how many
-    // rows the table actually had. A plain pasted table with no explicit thead/tbody tags doesn't
-    // reproduce this -- the HTML parser auto-wraps every bare <tr> (header-looking <th> row
-    // included) into one shared implicit <tbody>, which already has a real tbody ancestor. Only a
-    // genuine <thead> hits the bug, so this table spells it out explicitly. table.rows (thead+
-    // tbody together) fixes it.
-    test('Delete row also works on a real header row (inside <thead>), not just body rows', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><td>A</td><td>10</td></tr></tbody></table>');
-
-      await editNote(page);
-      const headerCell = page.locator('#note-line-1 th').first();
-      await headerCell.click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
-
-      const result = await page.evaluate(() => {
-        const table = document.querySelector('#note-line-1 table')!;
-        return { rowCount: table.querySelectorAll('tr').length, hasHeaderCell: !!table.querySelector('th') };
-      });
-      expect(result.rowCount).toBe(1);
-      expect(result.hasHeaderCell).toBe(false);
-    });
-
-    test('Delete column removes that column from every row', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, tableNote);
-
-      await editNote(page);
-      const cell = page.locator('#note-line-1 td').first();
-      await cell.click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete column', { exact: true }).click();
-
-      const colCounts = await page.evaluate(() =>
-        [...document.querySelectorAll('#note-line-1 table tr')].map(r => r.children.length)
-      );
-      expect(colCounts).toEqual([1, 1]);
-    });
-
-    test('Delete table removes the whole table from the note', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, tableNote);
-
-      await editNote(page);
-      const cell = page.locator('#note-line-1 td').first();
-      await cell.click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete table', { exact: true }).click();
-
-      const hasTable = await page.evaluate(() => !!document.querySelector('#note-line-1 table'));
-      expect(hasTable).toBe(false);
-    });
-
-    test('Feature as chart flags the table, and its label flips to "Remove chart feature"', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      // A 2-column table with numeric data in the second column is chartable (tableChartability).
-      await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-      await editNote(page);
-      const cell = page.locator('#note-line-1 td').first();
-      await cell.click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Feature as chart', { exact: true }).click();
-
-      const flagged = await page.evaluate(() => document.querySelector('#note-line-1 table')?.getAttribute('data-feature-chart'));
-      expect(flagged).toBe('1');
-
-      await page.locator('#note-line-1 td').first().click({ button: 'right' });
-      await expect(page.locator('.sb-context-menu').getByText('Remove chart feature', { exact: true })).toBeVisible();
-    });
-
-    // Once a table is charted, the right-click menu picks up the same per-type options (Bar,
-    // Stacked bar, Line, Pie, Doughnut, Cards) the Pad's own table menu and the chart's own
-    // right-click menu in Preview/Presenter already offer -- so the type can be set without
-    // leaving the note to go find the chart in Preview first (see tableChartTypeAvailability).
-    test('once charted, the menu offers every chart type, with the current one disabled', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      // Two DATA columns (Label + Value1 + Value2 -- seriesCount 2) so Pie/Doughnut/Cards, which
-      // only make sense for a single data column, show up disabled rather than being hidden.
-      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value1</th><th>Value2</th></tr><tr><td>A</td><td>10</td><td>5</td></tr><tr><td>B</td><td>20</td><td>8</td></tr></table>');
-
-      // A charted table renders as its chart SVG while unfocused -- "Edit note" first (same as a
-      // real user picking that menu item would) swaps it back to the real, editable table
-      // underneath (a plain click on the figure itself is intentionally a no-op now).
-      await editNote(page);
-      await page.locator('#note-line-1 td').first().click({ button: 'right' });
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu.getByText('Bar chart (current)', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Stacked bar chart', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Line chart', { exact: true })).toBeVisible();
-      const pieItem = menu.locator('.sb-context-item.disabled', { hasText: 'Pie chart' });
-      await expect(pieItem).toBeVisible();
-
-      const currentItem = menu.locator('.sb-context-item.disabled', { hasText: 'Bar chart (current)' });
-      await expect(currentItem).toBeVisible();
-      // Stacked bar is enabled here (2+ data columns) -- unlike the single-data-column case.
-      const stackedItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Stacked bar chart' });
-      await expect(stackedItem).toBeVisible();
-    });
-
-    test('picking a chart type persists it to the table\'s data-chart-type attribute', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-      await editNote(page);
-      await page.locator('#note-line-1 td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Line chart', { exact: true }).click();
-
-      const result = await page.evaluate(() => {
-        const table = document.querySelector('#note-line-1 table')!;
-        // @ts-expect-error
-        return { liveType: table.getAttribute('data-chart-type'), noteType: /data-chart-type="(\w+)"/.exec(nodes.find((n: any) => n.id === 1).note)?.[1] };
-      });
-      expect(result.liveType).toBe('line');
-      expect(result.noteType).toBe('line');
-    });
-
-    test('a single-data-column chart offers Pie/Doughnut/Cards enabled, and picking Cards offers "Suggest icons with AI"', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-      await editNote(page);
-      await page.locator('#note-line-1 td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Cards', { exact: true }).click();
-
-      await page.locator('#note-line-1 td').first().click({ button: 'right' });
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu.getByText('Suggest icons with AI', { exact: true })).toBeVisible();
-      const pieItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Pie chart' });
-      await expect(pieItem).toBeVisible();
-    });
+  // Tables/charts/Cards are no longer embedded in node.note's rich HTML at all -- they're their
+  // own first-class node.tables objects, rendered and edited inline right where a table used to
+  // sit in the note's reading order (see migrateNoteTablesToNode/buildNodeTableObject in
+  // index.html). The tests that exercised the OLD "pasted table inside a note" shape -- right-click
+  // a figure, "Edit note"/"Edit card/chart" to enter a scoped session, etc. -- have been replaced by
+  // the "Table/chart/Cards objects (node.tables)" describe block further down, which exercises the
+  // exact same behaviors (add/delete row & column, feature as chart, chart type picks, Copy/Delete,
+  // the resize-handle-leak and delete-row-wipes-the-whole-table regressions) through the new entry
+  // point. pickCardIconId/renderCardsHtml's own icon-assignment behavior doesn't depend on where
+  // the table lives either way, so those tests stay as they were.
+  test.describe('Cards data/icon helpers (not tied to where the table lives)', () => {
 
     // Cards' offline keyword fallback (pickCardIconId/CARD_ICON_RULES) originally only knew
     // generic KPI categories (security, speed, time, scope, cost, people, growth, quality) --
@@ -478,447 +352,6 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(result[2]).toMatchObject({ label: 'nShift', matchesNshift: true });
     });
 
-    // A charted table shows as its rendered chart/cards figure, not a real <table>, while the
-    // note is unfocused -- right-clicking it used to fall into the generic "nothing under the
-    // caret" branch (Insert table / Rewrite with AI / Delete note), none of which gets you back
-    // to the real table. It should instead offer exactly "Copy" and "Edit note".
-    // A real right-click fires 'mousedown' BEFORE 'contextmenu' -- and a mousedown's own native
-    // default action (focusing whatever contenteditable it lands on) happens whether or not the
-    // menu this test cares about ever opens. rightClick above only dispatches 'contextmenu' in
-    // isolation, which happens to never exercise that native focus side effect at all -- a real
-    // blind spot that let a real bug (right-clicking a read-only figure silently focused and
-    // swapped it to the real table before the menu's own handler ever ran, same as actually
-    // choosing "Edit note") ship without a failing test. This dispatches the real sequence,
-    // mousedown(button 2) then contextmenu, so the note-line's own mousedown handler actually runs.
-    function realRightClick(page: import('@playwright/test').Page, selector: string) {
-      return page.evaluate((sel) => {
-        const el = document.querySelector(sel)!;
-        const rect = el.getBoundingClientRect();
-        const opts = { bubbles: true, cancelable: true, button: 2, clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 };
-        el.dispatchEvent(new MouseEvent('mousedown', opts));
-        el.dispatchEvent(new MouseEvent('contextmenu', opts));
-      }, selector);
-    }
-
-    test('right-clicking an unfocused chart figure offers "Edit card/chart", "Copy", "Edit note", and "Delete"', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-      await expect(page.locator('#note-line-1 .pv-table-chart-figure')).toBeVisible();
-      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
-
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu).toBeVisible();
-      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
-      await expect(menu.getByText('Edit card/chart', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
-
-      await menu.getByText('Edit note', { exact: true }).click();
-      const result = await page.evaluate(() => {
-        const el = document.getElementById('note-line-1')!;
-        return { focused: document.activeElement === el, hasTable: !!el.querySelector('table'), hasFigure: !!el.querySelector('.pv-table-chart-figure') };
-      });
-      expect(result.focused).toBe(true);
-      expect(result.hasTable).toBe(true);
-      expect(result.hasFigure).toBe(false);
-    });
-
-    test('right-clicking an unfocused Cards figure also offers "Edit card/chart", "Copy", "Edit note", and "Delete"', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-      await expect(page.locator('#note-line-1 .pv-table-card').first()).toBeVisible();
-      await rightClick(page, '#note-line-1 .pv-table-card');
-
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
-      await expect(menu.getByText('Edit card/chart', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
-    });
-
-    // A plain (not-yet-charted, but chartable) table gets the same "Edit card/chart" shortcut as
-    // an already-charted one -- it jumps straight to "Feature as chart" + the type picks, same as
-    // the already-charted case's menu, just with the toggle showing "Feature as chart" instead of
-    // "Remove chart feature" once you're actually in it.
-    test('right-clicking an unfocused plain (but chartable) table figure also offers "Edit card/chart", "Copy", "Edit note", and "Delete"', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-
-      await expect(page.locator('#note-line-1 .pv-table-figure')).toBeVisible();
-      await rightClick(page, '#note-line-1 .pv-table-figure');
-
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
-      await expect(menu.getByText('Edit card/chart', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
-    });
-
-    // A single-column, non-numeric table isn't chartable at all (tableChartability) -- "Edit
-    // card/chart" would offer nothing useful beyond "Edit note" itself, so it's left out rather
-    // than shown as a dead end.
-    test('right-clicking an unfocused, non-chartable plain table figure omits "Edit card/chart"', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table><tr><td>Just one text column</td></tr><tr><td>Another row</td></tr></table>');
-
-      await expect(page.locator('#note-line-1 .pv-table-figure')).toBeVisible();
-      await rightClick(page, '#note-line-1 .pv-table-figure');
-
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(3);
-      await expect(menu.getByText('Edit card/chart', { exact: true })).toHaveCount(0);
-      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
-    });
-
-    // A picture has no "chart" to jump into, so it only ever gets Copy/Edit note/Delete.
-    test('right-clicking an unfocused standalone picture offers "Copy", "Edit note", and "Delete" (no "Edit card/chart")', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7" alt="pic"></p>');
-
-      await expect(page.locator('#note-line-1 .pv-diagram-figure img')).toBeVisible();
-      await rightClick(page, '#note-line-1 .pv-diagram-figure');
-
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(3);
-      await expect(menu.getByText('Edit card/chart', { exact: true })).toHaveCount(0);
-      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
-    });
-
-    test('a real right-click (mousedown then contextmenu) on an unfocused Cards figure does NOT focus/swap it first -- only choosing "Edit note" does', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-
-      await realRightClick(page, '#note-line-1 .pv-table-card');
-
-      // The menu itself must be right (same contract as the synthetic-contextmenu test above)...
-      const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
-      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
-      // ...but critically, the right-click itself must not have already focused/swapped the note --
-      // merely opening the menu is not the same as choosing "Edit note" from it.
-      const afterMenuOpen = await page.evaluate(() => {
-        const el = document.getElementById('note-line-1')!;
-        return { focused: document.activeElement === el, stillShowingCards: !!el.querySelector('.pv-table-cards-grid') };
-      });
-      expect(afterMenuOpen.focused).toBe(false);
-      expect(afterMenuOpen.stillShowingCards).toBe(true);
-
-      await menu.getByText('Edit note', { exact: true }).click();
-      const afterEditNote = await page.evaluate(() => {
-        const el = document.getElementById('note-line-1')!;
-        return { focused: document.activeElement === el, hasTable: !!el.querySelector('table') };
-      });
-      expect(afterEditNote.focused).toBe(true);
-      expect(afterEditNote.hasTable).toBe(true);
-    });
-
-    // Stubs navigator.clipboard.write to record what was written, rather than relying on real OS
-    // clipboard access -- headless Chromium's clipboard permissions (and file:// being a
-    // non-secure context) make that unreliable to depend on in a test.
-    function stubClipboard(page: import('@playwright/test').Page) {
-      return page.evaluate(() => {
-        // @ts-expect-error
-        window.__clipboardWrites = [];
-        class FakeClipboardItem {
-          data: Record<string, Blob>;
-          constructor(data: Record<string, Blob>) { this.data = data; }
-        }
-        // @ts-expect-error
-        window.ClipboardItem = FakeClipboardItem;
-        // navigator.clipboard is a getter-only accessor on the real Navigator prototype -- a
-        // plain assignment silently no-ops in sloppy mode rather than throwing, leaving the REAL
-        // clipboard API in place (which then fails/rejects under headless Chromium + file://'s
-        // non-secure context, swallowed by copyNoteReadOnlyFigure's own try/catch). Overriding the
-        // property itself via defineProperty is what's actually needed to intercept the call.
-        Object.defineProperty(navigator, 'clipboard', {
-          configurable: true,
-          value: {
-            write: async (items: InstanceType<typeof FakeClipboardItem>[]) => {
-              const item = items[0];
-              const entry: Record<string, string> = {};
-              for (const [type, blob] of Object.entries(item.data)) entry[type] = await blob.text();
-              // @ts-expect-error
-              window.__clipboardWrites.push(entry);
-            },
-          },
-        });
-      });
-    }
-
-    test('"Copy" on a table-backed figure (chart, Cards, or plain table) copies the real table as HTML', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-      await stubClipboard(page);
-
-      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
-      await page.locator('.sb-context-menu').getByText('Copy', { exact: true }).click();
-      // copyNoteReadOnlyFigure's own clipboard write is async -- the menu item's click handler
-      // awaits it, but Playwright's .click() only waits for the click event to dispatch, not for
-      // the page's own in-flight promises to settle, which under load can still be pending here.
-      await page.waitForFunction(() => (window as any).__clipboardWrites.length > 0);
-
-      const writes = await page.evaluate(() => (window as any).__clipboardWrites);
-      expect(writes).toHaveLength(1);
-      expect(writes[0]['text/html']).toContain('<table');
-      expect(writes[0]['text/html']).toContain('data-feature-chart');
-      expect(writes[0]['text/plain']).toContain('Label');
-      expect(writes[0]['text/plain']).toContain('10');
-    });
-
-    test('"Copy" on a standalone picture copies the real image', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      const src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
-      await seedNodeWithNote(page, `<p><img src="${src}" alt="pic"></p>`);
-      await stubClipboard(page);
-
-      await rightClick(page, '#note-line-1 .pv-diagram-figure');
-      await page.locator('.sb-context-menu').getByText('Copy', { exact: true }).click();
-      await page.waitForFunction(() => (window as any).__clipboardWrites.length > 0);
-
-      const writes = await page.evaluate(() => (window as any).__clipboardWrites);
-      expect(writes).toHaveLength(1);
-      expect(writes[0]['text/html']).toContain(`<img src="${src}">`);
-      expect(writes[0]['text/plain']).toBe(src);
-    });
-
-    // "Edit card/chart" used to focus the WHOLE note (same as "Edit note") and fake a follow-up
-    // right-click to open the chart-type menu -- which meant the whole note dropped into edit mode
-    // just to tweak one figure's data, and could reportedly leave the note stuck mid-edit (focus
-    // "moving out" into readonly) the moment a structural menu action like "Add row below" ran,
-    // since clicking that menu button blurred noteLine before the mutation applied. It now edits
-    // just the clicked figure's own table directly in place via enterScopedTableEdit -- the rest
-    // of the note, and noteLine's own focus state, are untouched.
-    test('"Edit card/chart" makes just that figure directly editable, without touching the rest of the note', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<p>Keep this text.</p><table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-
-      await rightClick(page, '#note-line-1 .pv-table-card');
-      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
-
-      const state = await page.evaluate(() => {
-        const noteLine = document.getElementById('note-line-1')!;
-        const active = document.activeElement as HTMLElement | null;
-        return {
-          noteLineEditable: noteLine.contentEditable,
-          activeTag: active?.tagName,
-          activeInsideNoteLine: active ? noteLine.contains(active) : false,
-          hasLiveTable: !!noteLine.querySelector('.pv-diagram-figure table'),
-          hasText: noteLine.textContent?.includes('Keep this text.'),
-        };
-      });
-      // noteLine itself is deliberately NOT the focused element (and not even contenteditable) for
-      // the duration -- only the figure's own clone is, so noteLine's own focus handler can't fire
-      // mid-edit and wipe this scoped structure back to raw note HTML. The Cards figure has no
-      // actual cell under the click position (it's rendered as cards, not a real grid of visible
-      // td/th), so this lands on the stored table's own first cell -- a TH here, since the table's
-      // first row is its header row.
-      expect(state.noteLineEditable).toBe('false');
-      expect(['TD', 'TH']).toContain(state.activeTag);
-      expect(state.activeInsideNoteLine).toBe(true);
-      expect(state.hasLiveTable).toBe(true);
-      expect(state.hasText).toBe(true);
-
-      // Right-clicking within the now-live table opens the same chart-type menu the live
-      // table&&cell branch itself would.
-      await rightClick(page, '#note-line-1 td');
-      const chartMenu = page.locator('.sb-context-menu');
-      await expect(chartMenu.getByText('Remove chart feature', { exact: true })).toBeVisible();
-      await expect(chartMenu.getByText('Bar chart', { exact: true })).toBeVisible();
-    });
-
-    test('typing inside a scoped "Edit card/chart" session persists live, and exiting restores the read-only figure', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-
-      await rightClick(page, '#note-line-1 .pv-table-card');
-      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
-
-      await page.evaluate(() => {
-        const cell = document.activeElement as HTMLElement;
-        cell.textContent = 'Renamed';
-        cell.dispatchEvent(new InputEvent('input', { bubbles: true }));
-      });
-
-      const midEdit = await page.evaluate(() => {
-        // @ts-expect-error
-        return nodes.find((n: any) => n.id === 1).note;
-      });
-      expect(midEdit).toContain('Renamed');
-
-      // Blurring the cell (focus leaving the figure entirely) is what exits the scoped session --
-      // not every small adjustment inside it, which used to drop the note into readonly mid-edit.
-      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-
-      const after = await page.evaluate(() => {
-        const noteLine = document.getElementById('note-line-1')!;
-        return {
-          noteLineEditable: noteLine.contentEditable,
-          hasCardsFigure: !!noteLine.querySelector('.pv-table-chart-figure'),
-        };
-      });
-      expect(after.noteLineEditable).toBe('true');
-      expect(after.hasCardsFigure).toBe(true);
-    });
-
-    test('a structural edit ("Add row below") inside a scoped "Edit card/chart" session doesn\'t get cut short by the submenu\'s own click', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-
-      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
-      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
-
-      await rightClick(page, '#note-line-1 td');
-      await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
-
-      // The scoped session must still be live after a structural menu action -- not already kicked
-      // back to readonly by the menu button's own default mousedown focus-shift (see
-      // enterScopedTableEdit's onCtx), which used to blur the table before "Add row below" ever ran.
-      // 3, not 2: with no explicit thead/tbody tags, the parser auto-wraps BOTH the header-looking
-      // row and the data row into one shared implicit <tbody> to begin with, same gotcha the
-      // "Delete row also works on a real header row" test above documents.
-      const state = await page.evaluate(() => {
-        const noteLine = document.getElementById('note-line-1')!;
-        return {
-          noteLineEditable: noteLine.contentEditable,
-          rowCount: noteLine.querySelectorAll('tbody tr').length,
-        };
-      });
-      expect(state.noteLineEditable).toBe('false');
-      expect(state.rowCount).toBe(3);
-
-      const note = await page.evaluate(() => {
-        // @ts-expect-error
-        return nodes.find((n: any) => n.id === 1).note;
-      });
-      const rowMatches = note.match(/<tr>/g) || [];
-      expect(rowMatches.length).toBeGreaterThanOrEqual(2);
-    });
-
-    // The actual bug report this covers: "Delete row" on the row holding the currently-focused
-    // cell (a real right-click's own mousedown already focused that cell before the menu ever
-    // opened) removed the row from the DOM, which forces its own native, synchronous focus change
-    // -- firing enterScopedTableEdit's onFocusOut (commit+exit) mid-handler, BEFORE this onClick's
-    // own trailing commit() call ran. That second, now-stale commit() saw a liveTable already
-    // detached by exit()'s render() and took the "the whole table was removed" branch by mistake,
-    // wiping the real table out of node.note entirely instead of just the one row.
-    test('"Delete row" inside a scoped "Edit card/chart" session removes only that row, not the whole table', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-      await rightClick(page, '#note-line-1 .pv-table-card');
-      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
-
-      // A real click -- not the synthetic rightClick helper -- so its own native mousedown actually
-      // focuses this cell first, the same way the real bug report's right-click sequence did.
-      await page.locator('#note-line-1 td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
-
-      const state = await page.evaluate(() => ({
-        noteLineExists: !!document.getElementById('note-line-1'),
-        // @ts-expect-error
-        note: nodes.find((n: any) => n.id === 1).note,
-      }));
-      expect(state.noteLineExists).toBe(true);
-      expect(state.note).toContain('<table');
-      expect(state.note).toContain('B');
-      expect(state.note).toContain('20');
-      expect(state.note).not.toContain('>A<');
-      // _attachTableResizeHandles' own col/row-resize handle <div>s are real children of the
-      // scoped session's live table, not a CSS overlay -- commit() must strip them (via
-      // cleanEditorHtml) the same way the live table&&cell branch's own commitNoteLine already
-      // does, or they'd get baked straight into node.note on every scoped-edit save.
-      expect(state.note).not.toContain('col-resize-handle');
-      expect(state.note).not.toContain('row-resize-handle');
-    });
-
-    // Same bug class as "Delete row" above, for the column case -- a real right-click's own
-    // mousedown focuses the clicked cell before "Delete column" ever runs.
-    test('"Delete column" inside a scoped "Edit card/chart" session removes only that column, not the whole table', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th><th>Owner</th></tr><tr><td>A</td><td>10</td><td>Sam</td></tr></table>');
-
-      await rightClick(page, '#note-line-1 .pv-table-figure');
-      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
-
-      await page.locator('#note-line-1 td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete column', { exact: true }).click();
-
-      const state = await page.evaluate(() => ({
-        noteLineExists: !!document.getElementById('note-line-1'),
-        // @ts-expect-error
-        note: nodes.find((n: any) => n.id === 1).note,
-      }));
-      expect(state.noteLineExists).toBe(true);
-      expect(state.note).toContain('<table');
-      expect(state.note).toContain('10');
-      expect(state.note).toContain('Sam');
-      expect(state.note).not.toContain('>A<');
-    });
-
-    test('"Delete" on a table-backed figure (chart, Cards, or plain table) removes just that table, keeping the rest of the note', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await seedNodeWithNote(page, '<p>Keep this text.</p><table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-
-      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
-      await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).click();
-
-      const result = await page.evaluate(() => {
-        // @ts-expect-error
-        const note = nodes.find((n: any) => n.id === 1).note;
-        const el = document.getElementById('note-line-1')!;
-        return { note, hasFigure: !!el.querySelector('.pv-table-chart-figure'), hasText: el.textContent?.includes('Keep this text.') };
-      });
-      expect(result.note).not.toContain('<table');
-      expect(result.note).toContain('Keep this text.');
-      expect(result.hasFigure).toBe(false);
-      expect(result.hasText).toBe(true);
-    });
-
-    test('"Delete" on a standalone picture removes just that image, keeping the rest of the note', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      const src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
-      await seedNodeWithNote(page, `<p>Keep this text.</p><p><img src="${src}" alt="pic"></p>`);
-
-      await rightClick(page, '#note-line-1 .pv-diagram-figure');
-      await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).click();
-
-      const result = await page.evaluate(() => {
-        // @ts-expect-error
-        const note = nodes.find((n: any) => n.id === 1).note;
-        const el = document.getElementById('note-line-1')!;
-        return { note, hasImg: !!el.querySelector('img'), hasText: el.textContent?.includes('Keep this text.') };
-      });
-      expect(result.note).not.toContain('<img');
-      expect(result.note).toContain('Keep this text.');
-      expect(result.hasImg).toBe(false);
-      expect(result.hasText).toBe(true);
-    });
-
     // node.note is only ever supposed to hold the real table, never the rendered Cards/chart
     // markup (see renderNoteDisplayHtml's own comment) -- but a note saved before that guarantee
     // existed can be stuck holding exactly that: bare .pv-table-cards-grid HTML with no <table>
@@ -973,23 +406,340 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     });
   });
 
-  test('Tab from the last cell adds a new row and moves the caret into it', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><td>A</td><td>B</td></tr></table>');
+  test.describe('Table/chart/Cards objects (node.tables)', () => {
+    // Seeds node 1 directly with a node.tables array, bypassing migrateNoteTablesToNode entirely --
+    // used by tests that aren't themselves testing migration.
+    function seedNodeWithTables(page: import('@playwright/test').Page, tables: string[], note = '') {
+      return page.evaluate(({ tables, note }) => {
+        // @ts-expect-error -- bare globals from index.html
+        nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note, tables, tags: [], styles: {} }];
+        // @ts-expect-error
+        collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
+        // @ts-expect-error
+        render();
+      }, { tables, note });
+    }
+    const tableNote = '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>';
 
-    await page.evaluate(() => {
-      // Focus first, then set the selection -- focusing an unfocused contenteditable can itself
-      // reset/collapse a selection set beforehand, so the order matters here.
-      document.getElementById('note-line-1')!.focus();
-      const lastCell = document.querySelector('#note-line-1 td:last-child')!;
-      const rg = document.createRange(); rg.selectNodeContents(lastCell); rg.collapse(true);
-      const sel = window.getSelection()!; sel.removeAllRanges(); sel.addRange(rg);
+    test('a note with an embedded table migrates it into node.tables, leaving the note as plain text', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<p>Keep this text.</p>' + tableNote);
+
+      const result = await page.evaluate(() => {
+        // @ts-expect-error
+        const n = nodes.find((x: any) => x.id === 1);
+        return { note: n.note, tables: n.tables, hasTableLine: !!document.querySelector('.node-table-line') };
+      });
+      expect(result.note).not.toContain('<table');
+      expect(result.note).toContain('Keep this text.');
+      expect(result.tables).toHaveLength(1);
+      expect(result.tables[0]).toContain('<table');
+      expect(result.hasTableLine).toBe(true);
     });
-    await page.keyboard.press('Tab');
 
-    const rowCount = await page.evaluate(() => document.querySelectorAll('#note-line-1 table tr').length);
-    expect(rowCount).toBe(2);
+    test('a plain table object displays as a plain table, a chart-featured one as its chart SVG, a Cards one as a card grid', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await page.evaluate(() => {
+        // @ts-expect-error
+        nodes = [
+          { id: 1, depth: 0, text: 'Plain', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>'], tags: [], styles: {} },
+          { id: 2, depth: 0, text: 'Chart', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>'], tags: [], styles: {} },
+          { id: 3, depth: 0, text: 'Cards', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>'], tags: [], styles: {} },
+        ];
+        // @ts-expect-error
+        collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 4;
+        // @ts-expect-error
+        render();
+      });
+      // Not a plain "has an <svg>" check -- a Cards grid has its own small per-card icon <svg>s, so
+      // that alone can't tell a real chart apart from Cards. pv-table-chart-figure itself is added
+      // for BOTH (same as buildNoteTableFigure's own convention) -- renderTableChartSvg returns
+      // Cards' own grid markup for the 'cards' type rather than a literal <svg>, which is what
+      // actually distinguishes the two, not the class.
+      const result = await page.evaluate(() =>
+        [...document.querySelectorAll('.node-table-line')].map(l => ({
+          hasTable: !!l.querySelector('table'),
+          isChartFigure: l.classList.contains('pv-table-chart-figure'),
+          hasCardsGrid: !!l.querySelector('.pv-table-cards-grid'),
+        }))
+      );
+      expect(result[0]).toMatchObject({ hasTable: true, isChartFigure: false, hasCardsGrid: false });
+      expect(result[1]).toMatchObject({ isChartFigure: true, hasCardsGrid: false });
+      expect(result[2]).toMatchObject({ isChartFigure: true, hasCardsGrid: true });
+    });
+
+    test('clicking a table object enters edit mode; typing and blurring persists it and returns to display', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await page.locator('.node-table-line td').first().click();
+      const whileEditing = await page.evaluate(() => {
+        const active = document.activeElement as HTMLElement | null;
+        return { activeTag: active?.tagName, isEditing: document.querySelector('.node-table-line.editing') !== null };
+      });
+      expect(whileEditing.activeTag).toBe('TD');
+      expect(whileEditing.isEditing).toBe(true);
+
+      await page.keyboard.press('End');
+      await page.keyboard.type('XYZ');
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+
+      const after = await page.evaluate(() => ({
+        // @ts-expect-error
+        table: nodes.find((n: any) => n.id === 1).tables[0],
+        isEditing: document.querySelector('.node-table-line.editing') !== null,
+      }));
+      expect(after.table).toContain('AXYZ');
+      expect(after.isEditing).toBe(false);
+    });
+
+    test('right-clicking an unfocused table object (display mode) offers only "Copy" and "Delete"', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await rightClick(page, '.node-table-line');
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
+    });
+
+    test('"Copy" on a table object copies the real table as HTML', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, ['<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>']);
+      await stubClipboard(page);
+
+      await rightClick(page, '.node-table-line');
+      await page.locator('.sb-context-menu').getByText('Copy', { exact: true }).click();
+      await page.waitForFunction(() => (window as any).__clipboardWrites.length > 0);
+
+      const writes = await page.evaluate(() => (window as any).__clipboardWrites);
+      expect(writes).toHaveLength(1);
+      expect(writes[0]['text/html']).toContain('<table');
+      expect(writes[0]['text/html']).toContain('data-feature-chart');
+      expect(writes[0]['text/plain']).toContain('Label');
+      expect(writes[0]['text/plain']).toContain('10');
+    });
+
+    test('"Delete" on a table object removes just that object, not the whole node', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await rightClick(page, '.node-table-line');
+      await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).click();
+
+      const result = await page.evaluate(() => ({
+        // @ts-expect-error
+        tables: nodes.find((n: any) => n.id === 1).tables,
+        hasTableLine: !!document.querySelector('.node-table-line'),
+        nodeStillExists: document.querySelectorAll('.node-row').length,
+      }));
+      expect(result.tables).toHaveLength(0);
+      expect(result.hasTableLine).toBe(false);
+      expect(result.nodeStillExists).toBe(1);
+    });
+
+    test('"Add row below" and "Add column right" land the caret in the newly-created cell', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.locator('.node-table-line td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
+
+      const afterAddRow = await page.evaluate(() => {
+        const rows = [...document.querySelectorAll('.node-table-line tbody tr')];
+        const active = document.activeElement;
+        return { activeTag: active?.tagName, activeIsInLastRow: rows[rows.length - 1].contains(active) };
+      });
+      expect(afterAddRow.activeTag).toBe('TD');
+      expect(afterAddRow.activeIsInLastRow).toBe(true);
+
+      await page.locator('.node-table-line tbody tr').nth(1).locator('td').last().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Add column right', { exact: true }).click();
+
+      const afterAddColumn = await page.evaluate(() => {
+        const active = document.activeElement as HTMLElement | null;
+        const row = active?.closest('tr') || null;
+        return { activeTag: active?.tagName, isLastCellInItsRow: row ? active === row.lastElementChild : false };
+      });
+      expect(afterAddColumn.activeTag).toBe('TD');
+      expect(afterAddColumn.isLastCellInItsRow).toBe(true);
+    });
+
+    // The actual bug report this covers: "Delete row" on the row holding the currently-focused
+    // cell (a real click already focused that cell before the menu ever opened) removed the row
+    // from the DOM, which forces its own native, synchronous focus change -- firing
+    // buildNodeTableObject's own onFocusOut (commit+exit) mid-handler, BEFORE this onClick's own
+    // trailing commit() call ran. That second, now-stale commit() saw a liveTable already detached
+    // by exit()'s showDisplay() and (without the idempotent-exit guard) would take the "the whole
+    // table was removed" branch by mistake, wiping the real table out of node.tables entirely
+    // instead of just the one row.
+    test('"Delete row" does not wipe the whole table (regression)', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, ['<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>']);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.locator('.node-table-line td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
+
+      const state = await page.evaluate(() => ({
+        hasTableLine: !!document.querySelector('.node-table-line'),
+        // @ts-expect-error
+        table: nodes.find((n: any) => n.id === 1).tables[0],
+      }));
+      expect(state.hasTableLine).toBe(true);
+      expect(state.table).toContain('<table');
+      expect(state.table).toContain('B');
+      expect(state.table).toContain('20');
+      expect(state.table).not.toContain('>A<');
+      // _attachTableResizeHandles' own col/row-resize handle <div>s are real children of the live
+      // table, not a CSS overlay -- commit() must strip them (via cleanEditorHtml) or they'd get
+      // baked straight into node.tables on every edit.
+      expect(state.table).not.toContain('col-resize-handle');
+      expect(state.table).not.toContain('row-resize-handle');
+    });
+
+    test('"Delete column" does not wipe the whole table (regression)', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, ['<table><tr><th>Label</th><th>Value</th><th>Owner</th></tr><tr><td>A</td><td>10</td><td>Sam</td></tr></table>']);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.locator('.node-table-line td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Delete column', { exact: true }).click();
+
+      const state = await page.evaluate(() => ({
+        hasTableLine: !!document.querySelector('.node-table-line'),
+        // @ts-expect-error
+        table: nodes.find((n: any) => n.id === 1).tables[0],
+      }));
+      expect(state.hasTableLine).toBe(true);
+      expect(state.table).toContain('<table');
+      expect(state.table).toContain('10');
+      expect(state.table).toContain('Sam');
+      expect(state.table).not.toContain('>A<');
+    });
+
+    test('Feature as chart flags the table and offers chart type picks, with the current type disabled', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, ['<table><tr><th>Label</th><th>Value1</th><th>Value2</th></tr><tr><td>A</td><td>10</td><td>5</td></tr><tr><td>B</td><td>20</td><td>8</td></tr></table>']);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.locator('.node-table-line td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Feature as chart', { exact: true }).click();
+
+      const flagged = await page.evaluate(() => {
+        // @ts-expect-error
+        return /data-feature-chart="1"/.test(nodes.find((n: any) => n.id === 1).tables[0]);
+      });
+      expect(flagged).toBe(true);
+
+      await page.locator('.node-table-line td').first().click({ button: 'right' });
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.getByText('Bar chart (current)', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Stacked bar chart', { exact: true })).toBeVisible();
+      const currentItem = menu.locator('.sb-context-item.disabled', { hasText: 'Bar chart (current)' });
+      await expect(currentItem).toBeVisible();
+    });
+
+    test('a single-data-column chart offers Pie/Doughnut/Cards, and picking Cards offers "Suggest icons with AI"', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, ['<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>']);
+
+      await page.locator('.node-table-line').click();
+      await page.locator('.node-table-line td').first().click({ button: 'right' });
+      await page.locator('.sb-context-menu').getByText('Cards', { exact: true }).click();
+
+      await page.locator('.node-table-line td').first().click({ button: 'right' });
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.getByText('Suggest icons with AI', { exact: true })).toBeVisible();
+      const pieItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Pie chart' });
+      await expect(pieItem).toBeVisible();
+    });
+
+    test('resize handles never leak into the persisted node.tables HTML', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, ['<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>']);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.keyboard.type('x');
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+
+      const table = await page.evaluate(() => {
+        // @ts-expect-error
+        return nodes.find((n: any) => n.id === 1).tables[0];
+      });
+      expect(table).not.toContain('col-resize-handle');
+      expect(table).not.toContain('row-resize-handle');
+    });
+
+    test('an empty table cell is exactly as tall as a cell with real text in it, not a collapsed sliver', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, ['<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td></td></tr></table>']);
+
+      const heights = await page.evaluate(() => {
+        const cells = [...document.querySelectorAll('.node-table-line td')];
+        return cells.map(c => c.getBoundingClientRect().height);
+      });
+      expect(heights[0]).toBeGreaterThan(0);
+      expect(Math.abs(heights[0] - heights[1])).toBeLessThan(1);
+    });
+
+    test('column resize handles attach, and a row/column can be resized by dragging its handle', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await page.locator('.node-table-line td').first().click();
+      const colHandle = page.locator('.node-table-line .col-resize-handle').first();
+      await expect(colHandle).toHaveCount(1, { timeout: 2000 }).catch(() => {});
+      const handleCount = await page.locator('.node-table-line .col-resize-handle').count();
+      expect(handleCount).toBeGreaterThan(0);
+
+      const rowHandle = page.locator('.node-table-line .row-resize-handle').first();
+      const box = await rowHandle.boundingBox();
+      expect(box).not.toBeNull();
+      const startHeight = await page.evaluate(() => document.querySelector('.node-table-line tbody tr')!.getBoundingClientRect().height);
+      await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2 + 40, { steps: 5 });
+      await page.mouse.up();
+      const endHeight = await page.evaluate(() => document.querySelector('.node-table-line tbody tr')!.getBoundingClientRect().height);
+      expect(endHeight).toBeGreaterThan(startHeight);
+    });
+
+    test('"Add table…" quick action adds a blank 2x2 table object to the node', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '');
+
+      const row = page.locator('.node-row[data-id="1"]');
+      await row.click({ button: 'right' });
+      const tableBtn = page.locator('#context-quickbar .pv-qm-btn[data-action="table"]');
+      await expect(tableBtn).toBeVisible();
+      await tableBtn.click();
+
+      const result = await page.evaluate(() => {
+        // @ts-expect-error
+        const n = nodes.find((x: any) => x.id === 1);
+        return { tablesLen: n.tables.length, hasTableLine: !!document.querySelector('.node-table-line') };
+      });
+      expect(result.tablesLen).toBe(1);
+      expect(result.hasTableLine).toBe(true);
+    });
   });
 
   test('Backspace on an empty note deletes it and returns focus to the node\'s own text', async ({ page }) => {
@@ -1009,38 +759,6 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     }));
     expect(result.note).toBe('');
     expect(result.editingTheRow).toBe(true);
-  });
-
-  // renderNoteDisplayHtml swaps a chart-featured table for its rendered chart SVG while the note
-  // isn't focused, and the focus handler restores the real editable table -- node.note itself
-  // always keeps the real <table> markup either way (see the focus handler setting innerHTML
-  // straight from node.note, not from the displayed chart).
-  test('a chart-featured table shows as a chart when unfocused, and as a real editable table when focused', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-    const unfocused = await page.evaluate(() => {
-      const el = document.getElementById('note-line-1')!;
-      return { hasChart: !!el.querySelector('.pv-table-chart-figure'), hasTable: !!el.querySelector('table') };
-    });
-    expect(unfocused.hasChart).toBe(true);
-    expect(unfocused.hasTable).toBe(false);
-
-    await editNote(page);
-    const focused = await page.evaluate(() => {
-      const el = document.getElementById('note-line-1')!;
-      return { hasChart: !!el.querySelector('.pv-table-chart-figure'), hasTable: !!el.querySelector('table[data-feature-chart="1"]') };
-    });
-    expect(focused.hasChart).toBe(false);
-    expect(focused.hasTable).toBe(true);
-
-    await page.locator('#note-line-1').blur();
-    const reblurred = await page.evaluate(() => {
-      const el = document.getElementById('note-line-1')!;
-      return { hasChart: !!el.querySelector('.pv-table-chart-figure') };
-    });
-    expect(reblurred.hasChart).toBe(true);
   });
 
   // The selection-formatting popover (Bold/Italic/Strikethrough/Link) was previously excluded
@@ -1087,25 +805,30 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
   // A charted table's rendered chart/Cards display (.pv-table-chart-figure) is disposable,
   // regenerated markup, not the real table data -- selecting its visible text and formatting it
-  // would either no-op (tableCardsData reads plain textContent) or, worse, have the note-line's
-  // own input handler persist this throwaway rendering over the real table in node.note. The
-  // popover resolves its target editor via selectionFmtEditorFor, which must refuse to match
-  // here even though the figure sits nested inside the note-line it would otherwise match.
-  // selectionFmtEditorFor is called directly against a node reference here, rather than through a
-  // real window.getSelection()/addRange() -- setting a Selection inside a contenteditable element
-  // that doesn't already have focus has Chromium focus it as a side effect, which (since this
-  // content sits inside the note-line) synchronously fires the note-line's own focus handler and
-  // swaps the read-only chart/Cards figure for the real table before the selection ever "lands",
-  // making the scenario this test means to cover unreachable through the Selection API. The
-  // function's own contract (take a node, walk its ancestors) doesn't require a real Selection to
-  // exercise correctly.
+  // would either no-op (tableCardsData reads plain textContent) or, worse, have the table object's
+  // own input handler persist this throwaway rendering over the real data. The popover resolves
+  // its target editor via selectionFmtEditorFor, which must refuse to match here even though the
+  // figure sits nested inside .node-table-line (which carries .pv-diagram-figure, excluded the
+  // same way a note-embedded one used to be). selectionFmtEditorFor is called directly against a
+  // node reference here, rather than through a real window.getSelection()/addRange() -- setting a
+  // Selection inside a contenteditable element that doesn't already have focus has Chromium focus
+  // it as a side effect, which would synchronously swap the read-only chart/Cards figure for the
+  // real table before the selection ever "lands". The function's own contract (take a node, walk
+  // its ancestors) doesn't require a real Selection to exercise correctly.
   test('the selection-formatting popover does not activate inside a rendered chart/Cards figure, a table cell, or an image', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+    await page.evaluate(() => {
+      // @ts-expect-error -- bare globals from index.html
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>'], tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
+      // @ts-expect-error
+      render();
+    });
 
     const cardsLabelResult = await page.evaluate(() => {
-      const label = document.querySelector('#note-line-1 .pv-table-card-label')!;
+      const label = document.querySelector('.node-table-line .pv-table-card-label')!;
       // @ts-expect-error -- bare global from index.html
       return selectionFmtEditorFor(label.firstChild);
     });
@@ -1113,17 +836,16 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
     // A real, currently-focused table cell -- not just the disposable read-only display -- since
     // its content is read back as plain text only (tableCardsData, a copied table's own
-    // textContent), formatting is pointless there too.
-    await editNote(page);
+    // textContent), formatting is pointless there too. Clicking the Cards display itself (there's
+    // no td/th visible in Cards' own card-grid markup to click directly) enters edit mode and
+    // swaps in the real table underneath.
+    await page.locator('.node-table-line').click();
     const tableCellResult = await page.evaluate(() => {
-      const cell = document.querySelector('#note-line-1 td')!;
+      const cell = document.querySelector('.node-table-line td')!;
       // @ts-expect-error
       return selectionFmtEditorFor(cell.firstChild || cell);
     });
     expect(tableCellResult).toBeNull();
-    // render() preserves a currently-focused note-line's live content rather than replacing it
-    // (protecting an in-progress edit from a background render) -- blur before re-seeding so the
-    // next seedNodeWithNote call actually takes effect instead of silently no-op'ing.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
     await seedNodeWithNote(page, '<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7" alt="pic"></p>');
@@ -1143,244 +865,6 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       return selectionFmtEditorFor(el.firstChild);
     });
     expect(textResult).toBe('note-line-1');
-  });
-
-  // The note's own right-click menu had no way to add a table at all -- only a paste could put
-  // one there. "Insert table" builds the exact same 2x2-to-start shape (real <thead><th> header,
-  // contentEditable cells) as Pad's own "Insert table" toolbar button, at the caret position the
-  // right-click itself landed on.
-  test('"Insert table" from the note\'s own right-click menu adds an editable 2x2 table at the caret', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, 'Before text', true);
-
-    await page.evaluate(() => {
-      const el = document.getElementById('note-line-1')!;
-      const textNode = el.firstChild!;
-      const rg = document.createRange(); rg.setStart(textNode, textNode.textContent!.length); rg.collapse(true);
-      const sel = window.getSelection()!; sel.removeAllRanges(); sel.addRange(rg);
-    });
-    await page.locator('#note-line-1').click({ button: 'right' });
-    await page.locator('.sb-context-menu').getByText('Insert table', { exact: true }).click();
-
-    const result = await page.evaluate(() => {
-      const el = document.getElementById('note-line-1')!;
-      const table = el.querySelector('table');
-      return {
-        hasThead: !!table?.querySelector('thead th'),
-        rowCount: table?.querySelectorAll('tr').length,
-        cellsEditable: table ? [...table.querySelectorAll('td,th')].every(c => c.getAttribute('contenteditable') === 'true') : false,
-        // @ts-expect-error
-        noteHasTable: /<table/i.test(nodes.find((n: any) => n.id === 1).note || ''),
-      };
-    });
-    expect(result.hasThead).toBe(true);
-    expect(result.rowCount).toBe(3); // header + 2 body rows
-    expect(result.cellsEditable).toBe(true);
-    expect(result.noteHasTable).toBe(true);
-  });
-
-  // _attachTableResizeHandles only ever looked inside <thead> for header cells to attach a handle
-  // to -- a pasted table (unlike one built via Pad's or the note's own "Insert table") commonly
-  // has no <thead> wrapper at all, leaving it with zero resize handles. Falls back to the first
-  // row's own cells (th or td alike) when there's no thead.
-  test('column resize handles attach even to a pasted table with no <thead>', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    // A plain table with no <thead> -- exactly what a simple paste commonly produces.
-    await seedNodeWithNote(page, '<table><tr><td>A</td><td>B</td></tr><tr><td>1</td><td>2</td></tr></table>');
-
-    const handleCount = await page.evaluate(() => {
-      const table = document.querySelector('#note-line-1 table')!;
-      // @ts-expect-error
-      _attachTableResizeHandles(table);
-      return table.querySelectorAll('.col-resize-handle').length;
-    });
-    expect(handleCount).toBe(2);
-  });
-
-  // The resize handle itself had no CSS anywhere -- a bare, unstyled <div> renders at its default
-  // content-based size (0x0, since it has no content), making the real drag logic behind it
-  // functionally invisible and ungrabbable. This isn't a note-only fix (the same handles back
-  // Pad's own tables), just exercised here since a note's table is the easiest to set up.
-  test('the column resize handle actually has a visible, grabbable size', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
-
-    const rect = await page.evaluate(() => {
-      const handle = document.querySelector('#note-line-1 .col-resize-handle')!;
-      const r = handle.getBoundingClientRect();
-      return { width: r.width, height: r.height };
-    });
-    expect(rect.width).toBeGreaterThan(0);
-    expect(rect.height).toBeGreaterThan(0);
-  });
-
-  // Only a table's column WIDTH was ever adjustable -- row height had no equivalent at all.
-  // Same drag pattern as the column handles, just along each row's bottom edge, setting an
-  // explicit height on the <tr> instead of a <col>.
-  test('a table row can be resized taller by dragging its row-resize handle', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
-
-    const handle = page.locator('#note-line-1 .row-resize-handle').first();
-    const handleRect = await handle.boundingBox();
-    expect(handleRect).not.toBeNull();
-    expect(handleRect!.width).toBeGreaterThan(0);
-    expect(handleRect!.height).toBeGreaterThan(0);
-
-    const rowBefore = await page.evaluate(() => document.querySelector('#note-line-1 tr')!.getBoundingClientRect().height);
-    await page.mouse.move(handleRect!.x + handleRect!.width / 2, handleRect!.y + handleRect!.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(handleRect!.x + handleRect!.width / 2, handleRect!.y + 60, { steps: 5 });
-    await page.mouse.up();
-
-    const result = await page.evaluate(() => {
-      const row = document.querySelector('#note-line-1 tr') as HTMLElement;
-      return { height: row.getBoundingClientRect().height, styleHeight: row.style.height };
-    });
-    expect(result.styleHeight).toMatch(/^\d+px$/);
-    expect(result.height).toBeGreaterThan(rowBefore + 30);
-  });
-
-  // The column handle had the same bug the row handle just had (see above): a negative CSS offset
-  // (right:-3px) spilled it 3px into the next column's own cell, so under border-collapse a real
-  // click there hit the neighboring <th> instead of the handle, silently doing nothing -- the only
-  // existing coverage checked the handle's bounding-box size, never an actual drag. Fixed by
-  // keeping the handle fully inside its own cell's box (right:0), mirroring bottom:-3px -> bottom:0.
-  test('a table column can be resized wider by dragging its col-resize handle', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
-
-    const handle = page.locator('#note-line-1 .col-resize-handle').first();
-    const handleRect = await handle.boundingBox();
-    expect(handleRect).not.toBeNull();
-
-    const widthBefore = await page.evaluate(() => document.querySelector('#note-line-1 th')!.getBoundingClientRect().width);
-    await page.mouse.move(handleRect!.x + handleRect!.width / 2, handleRect!.y + handleRect!.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(handleRect!.x + 60, handleRect!.y + handleRect!.height / 2, { steps: 5 });
-    await page.mouse.up();
-
-    const result = await page.evaluate(() => {
-      const th = document.querySelector('#note-line-1 th') as HTMLElement;
-      const col = document.querySelector('#note-line-1 col') as HTMLElement;
-      return { width: th.getBoundingClientRect().width, colStyleWidth: col?.style.width };
-    });
-    expect(result.colStyleWidth).toMatch(/^\d+px$/);
-    expect(result.width).toBeGreaterThan(widthBefore + 30);
-  });
-
-  // Column/row resize handles are real appended <div>s inside each cell, not a CSS-only overlay --
-  // left unstripped, they'd get saved as empty, non-editable elements baked into node.note itself
-  // (re-exported to Word/PPTX/Preview, and sitting in the way of the caret next time this exact
-  // HTML loads without going through _attachTableResizeHandles' own cleanup first). Every path
-  // that persists a note-line's HTML (typing, blur, the selection-formatting popover, image
-  // resize) must strip them via cleanEditorHtml first.
-  test('resize handles never leak into the persisted node.note HTML', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>');
-
-    // Typing (the 'input' listener's own persistence path) is enough to attach handles (via the
-    // initial render) and exercise the save path that used to skip cleanEditorHtml entirely.
-    await page.locator('#note-line-1 td').first().click();
-    await page.keyboard.type('x');
-
-    const note = await page.evaluate(() => {
-      // @ts-expect-error
-      return nodes.find((n: any) => n.id === 1).note;
-    });
-    expect(note).not.toContain('col-resize-handle');
-    expect(note).not.toContain('row-resize-handle');
-  });
-
-  // An empty cell (a freshly inserted row/column, or a table pasted with blank cells) had no
-  // min-height at all -- with no text to establish a line box, it could render far shorter than a
-  // cell that actually has content, reading as a squashed sliver of a row. min-height turned out
-  // not to fix this on its own (Chromium ignores min-height on a cell with no line box, which
-  // includes a cell holding only the row-resize-handle's own absolutely-positioned div -- see
-  // the CSS comment above .node-note-line table td's own rule); height+box-sizing:border-box does.
-  test('an empty table cell is exactly as tall as a cell with real text in it, not a collapsed sliver', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><th>A</th><th>B</th></tr><tr><td></td><td>populated</td></tr></table>');
-
-    const result = await page.evaluate(() => {
-      const cells = [...document.querySelectorAll('#note-line-1 td')];
-      return cells.map(c => c.getBoundingClientRect().height);
-    });
-    const [emptyHeight, populatedHeight] = result;
-    expect(emptyHeight).toBeGreaterThan(20);
-    expect(emptyHeight).toBe(populatedHeight);
-  });
-
-  // The actual bug report this came from: right-clicking a table and choosing "Add row below"
-  // inserted a new, genuinely empty row -- exactly the collapsed-sliver case the test above
-  // covers, just reached through the real menu action instead of a hand-written empty <td>.
-  test('a row inserted via "Add row below" renders at the same height as the existing rows, not collapsed', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><thead><tr><th>Label</th><th>Value</th></tr></thead><tbody><tr><td>A</td><td>10</td></tr></tbody></table>');
-
-    const existingRowHeight = await page.evaluate(() => document.querySelector('#note-line-1 tbody tr')!.getBoundingClientRect().height);
-
-    await editNote(page);
-    const cell = page.locator('#note-line-1 td').first();
-    await cell.click({ button: 'right' });
-    await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
-
-    const rowHeights = await page.evaluate(() => [...document.querySelectorAll('#note-line-1 tbody tr')].map(tr => tr.getBoundingClientRect().height));
-    expect(rowHeights).toHaveLength(2);
-    expect(rowHeights[1]).toBe(existingRowHeight);
-  });
-
-  // The bug report this covers: after "Add row below"/"Add column right", the caret was left
-  // wherever it happened to be before the menu opened (the ORIGINAL cell, now possibly shifted),
-  // rather than landing in the cell that was just created -- looking "wrong"/stale to whoever just
-  // asked for a new row or column. Checked via the live Selection range, not document.activeElement
-  // -- noteLine is already the focused element here (the note was live-focused via "Edit note"
-  // before either menu action), and calling .focus() on one of its own already-live cells (true
-  // nested inside the ALREADY true noteLine, unlike enterScopedTableEdit's own true-in-FALSE
-  // scoping) doesn't move activeElement off noteLine itself; the caret still visibly lands via the
-  // Range this placement sets, which is what actually matters to whoever's looking at it.
-  test('"Add row below" and "Add column right" land the caret in the newly-created cell', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
-
-    await editNote(page);
-    await page.locator('#note-line-1 td').first().click({ button: 'right' });
-    await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
-
-    const afterAddRow = await page.evaluate(() => {
-      const rows = [...document.querySelectorAll('#note-line-1 tbody tr')];
-      const anchor = window.getSelection()?.anchorNode || null;
-      const anchorEl = anchor ? (anchor.nodeType === 1 ? anchor as Element : anchor.parentElement) : null;
-      const cell = anchorEl?.closest('td,th') || null;
-      return { cellTag: cell?.tagName, cellIsInLastRow: cell ? rows[rows.length - 1].contains(cell) : false };
-    });
-    expect(afterAddRow.cellTag).toBe('TD');
-    expect(afterAddRow.cellIsInLastRow).toBe(true);
-
-    // Right-clicking the row's own LAST cell (not just any cell) so "right" unambiguously means
-    // the end of the row -- clicking an earlier column and adding "to its right" correctly lands
-    // the new cell in the middle of the row, which isn't what this assertion means to cover.
-    await page.locator('#note-line-1 tbody tr').nth(1).locator('td').last().click({ button: 'right' });
-    await page.locator('.sb-context-menu').getByText('Add column right', { exact: true }).click();
-
-    const afterAddColumn = await page.evaluate(() => {
-      const anchor = window.getSelection()?.anchorNode || null;
-      const anchorEl = anchor ? (anchor.nodeType === 1 ? anchor as Element : anchor.parentElement) : null;
-      const cell = anchorEl?.closest('td,th') || null;
-      const row = cell?.closest('tr') || null;
-      return { cellTag: cell?.tagName, isLastCellInItsRow: row ? cell === row.lastElementChild : false };
-    });
-    expect(afterAddColumn.cellTag).toBe('TD');
-    expect(afterAddColumn.isLastCellInItsRow).toBe(true);
   });
 
   // Pasted images had no way to resize at all. _setupImageResize/_imgResizeSelect/_imgResizePersist

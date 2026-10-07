@@ -140,11 +140,14 @@ test.describe('Block-level tables and images in a note render as their own full-
     await expect(page.locator('#chart-ctx-menu.open')).toBeVisible();
     await page.locator('#chart-ctx-menu .chart-type-item[data-chart-type="bar"]').click();
 
-    const note = await page.evaluate(() => {
+    // The table itself (not the note's own HTML) carries the flag now -- it's a node.tables
+    // object, migrated out of the note's rich text the moment this doc rendered (see
+    // migrateNoteTablesToNode).
+    const table = await page.evaluate(() => {
       // @ts-expect-error
-      return nodes.find((n: any) => n.id === 2).note;
+      return nodes.find((n: any) => n.id === 2).tables[0];
     });
-    expect(note).toContain('data-feature-chart="1"');
+    expect(table).toContain('data-feature-chart="1"');
   });
 
   // The synthetic <p><img></p> markup the other tests above use is one real shape a note's HTML
