@@ -457,7 +457,25 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       }, selector);
     }
 
-    test('right-clicking an unfocused chart figure offers only "Edit note", which focuses the note back to its real table', async ({ page }) => {
+    // A real right-click fires 'mousedown' BEFORE 'contextmenu' -- and a mousedown's own native
+    // default action (focusing whatever contenteditable it lands on) happens whether or not the
+    // menu this test cares about ever opens. rightClick above only dispatches 'contextmenu' in
+    // isolation, which happens to never exercise that native focus side effect at all -- a real
+    // blind spot that let a real bug (right-clicking a read-only figure silently focused and
+    // swapped it to the real table before the menu's own handler ever ran, same as actually
+    // choosing "Edit note") ship without a failing test. This dispatches the real sequence,
+    // mousedown(button 2) then contextmenu, so the note-line's own mousedown handler actually runs.
+    function realRightClick(page: import('@playwright/test').Page, selector: string) {
+      return page.evaluate((sel) => {
+        const el = document.querySelector(sel)!;
+        const rect = el.getBoundingClientRect();
+        const opts = { bubbles: true, cancelable: true, button: 2, clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 };
+        el.dispatchEvent(new MouseEvent('mousedown', opts));
+        el.dispatchEvent(new MouseEvent('contextmenu', opts));
+      }, selector);
+    }
+
+    test('right-clicking an unfocused chart figure offers "Edit card/chart", "Copy", "Edit note", and "Delete"', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
@@ -467,9 +485,11 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       const menu = page.locator('.sb-context-menu');
       await expect(menu).toBeVisible();
-      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
+      await expect(menu.getByText('Edit card/chart', { exact: true })).toBeVisible();
       await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
       await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
 
       await menu.getByText('Edit note', { exact: true }).click();
       const result = await page.evaluate(() => {
@@ -481,7 +501,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(result.hasFigure).toBe(false);
     });
 
-    test('right-clicking an unfocused Cards figure also offers "Copy" and "Edit note"', async ({ page }) => {
+    test('right-clicking an unfocused Cards figure also offers "Edit card/chart", "Copy", "Edit note", and "Delete"', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
@@ -490,16 +510,18 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await rightClick(page, '#note-line-1 .pv-table-card');
 
       const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
+      await expect(menu.getByText('Edit card/chart', { exact: true })).toBeVisible();
       await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
       await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
     });
 
-    // A plain (not-charted) table and a standalone picture get the exact same read-only object
-    // treatment as a chart/Cards figure (see renderNoteDisplayHtml) -- right-clicking either
-    // should offer the same "Copy"/"Edit note" pair, not the live table-editing menu (which only
-    // makes sense once focus has already swapped the disposable clone for the real table).
-    test('right-clicking an unfocused plain table figure also offers "Copy" and "Edit note"', async ({ page }) => {
+    // A plain (not-yet-charted, but chartable) table gets the same "Edit card/chart" shortcut as
+    // an already-charted one -- it jumps straight to "Feature as chart" + the type picks, same as
+    // the already-charted case's menu, just with the toggle showing "Feature as chart" instead of
+    // "Remove chart feature" once you're actually in it.
+    test('right-clicking an unfocused plain (but chartable) table figure also offers "Edit card/chart", "Copy", "Edit note", and "Delete"', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
@@ -508,12 +530,34 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await rightClick(page, '#note-line-1 .pv-table-figure');
 
       const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
+      await expect(menu.getByText('Edit card/chart', { exact: true })).toBeVisible();
       await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
       await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
     });
 
-    test('right-clicking an unfocused standalone picture also offers "Copy" and "Edit note"', async ({ page }) => {
+    // A single-column, non-numeric table isn't chartable at all (tableChartability) -- "Edit
+    // card/chart" would offer nothing useful beyond "Edit note" itself, so it's left out rather
+    // than shown as a dead end.
+    test('right-clicking an unfocused, non-chartable plain table figure omits "Edit card/chart"', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table><tr><td>Just one text column</td></tr><tr><td>Another row</td></tr></table>');
+
+      await expect(page.locator('#note-line-1 .pv-table-figure')).toBeVisible();
+      await rightClick(page, '#note-line-1 .pv-table-figure');
+
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.locator('.sb-context-item')).toHaveCount(3);
+      await expect(menu.getByText('Edit card/chart', { exact: true })).toHaveCount(0);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
+    });
+
+    // A picture has no "chart" to jump into, so it only ever gets Copy/Edit note/Delete.
+    test('right-clicking an unfocused standalone picture offers "Copy", "Edit note", and "Delete" (no "Edit card/chart")', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithNote(page, '<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7" alt="pic"></p>');
@@ -522,9 +566,41 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await rightClick(page, '#note-line-1 .pv-diagram-figure');
 
       const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(2);
+      await expect(menu.locator('.sb-context-item')).toHaveCount(3);
+      await expect(menu.getByText('Edit card/chart', { exact: true })).toHaveCount(0);
       await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
       await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
+    });
+
+    test('a real right-click (mousedown then contextmenu) on an unfocused Cards figure does NOT focus/swap it first -- only choosing "Edit note" does', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+      await realRightClick(page, '#note-line-1 .pv-table-card');
+
+      // The menu itself must be right (same contract as the synthetic-contextmenu test above)...
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
+      // ...but critically, the right-click itself must not have already focused/swapped the note --
+      // merely opening the menu is not the same as choosing "Edit note" from it.
+      const afterMenuOpen = await page.evaluate(() => {
+        const el = document.getElementById('note-line-1')!;
+        return { focused: document.activeElement === el, stillShowingCards: !!el.querySelector('.pv-table-cards-grid') };
+      });
+      expect(afterMenuOpen.focused).toBe(false);
+      expect(afterMenuOpen.stillShowingCards).toBe(true);
+
+      await menu.getByText('Edit note', { exact: true }).click();
+      const afterEditNote = await page.evaluate(() => {
+        const el = document.getElementById('note-line-1')!;
+        return { focused: document.activeElement === el, hasTable: !!el.querySelector('table') };
+      });
+      expect(afterEditNote.focused).toBe(true);
+      expect(afterEditNote.hasTable).toBe(true);
     });
 
     // Stubs navigator.clipboard.write to record what was written, rather than relying on real OS
@@ -596,6 +672,115 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(writes).toHaveLength(1);
       expect(writes[0]['text/html']).toContain(`<img src="${src}">`);
       expect(writes[0]['text/plain']).toBe(src);
+    });
+
+    test('"Edit card/chart" focuses the note and opens the chart-type menu in one step', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+      await rightClick(page, '#note-line-1 .pv-table-card');
+      await page.locator('.sb-context-menu').getByText('Edit card/chart', { exact: true }).click();
+
+      const chartMenu = page.locator('.sb-context-menu');
+      await expect(chartMenu.getByText('Remove chart feature', { exact: true })).toBeVisible();
+      await expect(chartMenu.getByText('Bar chart', { exact: true })).toBeVisible();
+      const focused = await page.evaluate(() => document.activeElement?.id);
+      expect(focused).toBe('note-line-1');
+    });
+
+    test('"Delete" on a table-backed figure (chart, Cards, or plain table) removes just that table, keeping the rest of the note', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithNote(page, '<p>Keep this text.</p><table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>');
+
+      await rightClick(page, '#note-line-1 .pv-table-chart-figure');
+      await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).click();
+
+      const result = await page.evaluate(() => {
+        // @ts-expect-error
+        const note = nodes.find((n: any) => n.id === 1).note;
+        const el = document.getElementById('note-line-1')!;
+        return { note, hasFigure: !!el.querySelector('.pv-table-chart-figure'), hasText: el.textContent?.includes('Keep this text.') };
+      });
+      expect(result.note).not.toContain('<table');
+      expect(result.note).toContain('Keep this text.');
+      expect(result.hasFigure).toBe(false);
+      expect(result.hasText).toBe(true);
+    });
+
+    test('"Delete" on a standalone picture removes just that image, keeping the rest of the note', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      const src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
+      await seedNodeWithNote(page, `<p>Keep this text.</p><p><img src="${src}" alt="pic"></p>`);
+
+      await rightClick(page, '#note-line-1 .pv-diagram-figure');
+      await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).click();
+
+      const result = await page.evaluate(() => {
+        // @ts-expect-error
+        const note = nodes.find((n: any) => n.id === 1).note;
+        const el = document.getElementById('note-line-1')!;
+        return { note, hasImg: !!el.querySelector('img'), hasText: el.textContent?.includes('Keep this text.') };
+      });
+      expect(result.note).not.toContain('<img');
+      expect(result.note).toContain('Keep this text.');
+      expect(result.hasImg).toBe(false);
+      expect(result.hasText).toBe(true);
+    });
+
+    // node.note is only ever supposed to hold the real table, never the rendered Cards/chart
+    // markup (see renderNoteDisplayHtml's own comment) -- but a note saved before that guarantee
+    // existed can be stuck holding exactly that: bare .pv-table-cards-grid HTML with no <table>
+    // left in it at all. With no <table>/<img> to match, renderNoteDisplayHtml's own fast-path
+    // returns such a note's HTML completely unchanged, which (a) shows the stranded cards as
+    // directly-editable plain content instead of a read-only figure, and (b) gives the note-line's
+    // right-click handler no .pv-diagram-figure to recognize, so it falls back to the generic
+    // "nothing under the caret" menu (Insert table / Rewrite with AI / Delete note) instead of
+    // Copy/Edit note. repairCorruptedCardsNote reconstructs a real table from each card's own
+    // visible label/value text -- the only data actually recoverable from this markup -- the first
+    // time such a note renders, after which it behaves like any other Cards-featured note.
+    test('a note whose saved HTML is bare rendered Cards markup (no backing table) self-heals into a real table on render', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+
+      const corruptedNote = await page.evaluate(() => {
+        const container = document.createElement('div');
+        container.innerHTML = '<table><tr><th>Label</th><th>Value</th></tr><tr><td>ERP - O2C - Functional</td><td>10 days</td></tr><tr><td>EWM - ABAP</td><td>5 days</td></tr></table>';
+        const table = container.querySelector('table')!;
+        // @ts-expect-error -- bare global from index.html
+        return renderCardsHtml(table); // bare "<div class="pv-table-cards-grid">...</div>", no <table> at all
+      });
+      expect(corruptedNote).not.toContain('<table');
+
+      await seedNodeWithNote(page, corruptedNote);
+
+      const result = await page.evaluate(() => {
+        // @ts-expect-error
+        const note = nodes.find((n: any) => n.id === 1).note;
+        const el = document.getElementById('note-line-1')!;
+        return {
+          repairedNoteHasTable: /<table[^>]*data-feature-chart="1"[^>]*data-chart-type="cards"/.test(note),
+          repairedNoteRowText: note,
+          displayHasFigure: !!el.querySelector('.pv-diagram-figure'),
+          displayHasCardsGrid: !!el.querySelector('.pv-table-cards-grid'),
+        };
+      });
+      expect(result.repairedNoteHasTable).toBe(true);
+      expect(result.repairedNoteRowText).toContain('ERP - O2C - Functional');
+      expect(result.repairedNoteRowText).toContain('10 days');
+      expect(result.repairedNoteRowText).toContain('EWM - ABAP');
+      expect(result.displayHasFigure).toBe(true);
+      expect(result.displayHasCardsGrid).toBe(true);
+
+      // And now behaves like any ordinary Cards note -- right-click offers the full read-only
+      // object menu, not the generic "nothing under the caret" menu the corrupted shape fell into.
+      await realRightClick(page, '#note-line-1 .pv-table-card');
+      const menu = page.locator('.sb-context-menu');
+      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
+      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Edit note', { exact: true })).toBeVisible();
     });
   });
 
