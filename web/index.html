@@ -8083,7 +8083,13 @@ const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" s
 // quietly drift apart. Six items -- right at CTX_QUICK_ROW_MAX, so nothing here ever overflows
 // into "More" by default.
 const CTX_QUICK_ROW_DEFAULT=['ai-rewrite','note','remark','qa','diagram','table','tags'];
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let decisionLogs=[]; let decisionExpandedId=null; let decisionSelectMode=false; let attachments=[]; let remarks=[]; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false; let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=CTX_QUICK_ROW_DEFAULT.slice(); let contextSortChildrenEnabled=true; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=false; let padFilesTabEnabled=false; let padRemarksTabEnabled=true; let padOpen=false; let padWidth=440; let padMatchEditorBg=false; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let decisionLogs=[]; let decisionExpandedId=null; let decisionSelectMode=false; let attachments=[]; let remarks=[]; let mindMaps=[]; let mindMapActiveId=null; let mindMap=null; let mindMapOpen=false; let mindMapSelectedId=null; let mindMapSelectedIds=new Set(); let mindMapEditingId=null; let mindMapPan={x:0,y:0}; let mindMapZoom=1; let mmSearchOpen=false; let mmSearchQuery=''; let mmSearchMatches=[]; let mmSearchIndex=-1; let mmAiBusyNodeId=null; let padViewMode='notes'; let qaExportEnabled=true; let padNotepadExportEnabled=true; let decisionLogExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false;
+// Unlike the inlineExpand*NodeIds sets above (which track DEVIATION from alwaysExpandInlineEnabled's
+// closed-by-default convention), a table/chart/Cards object has always rendered inline
+// unconditionally -- open by default, with no prior collapsed state for any existing document to
+// suddenly fall back to. So this tracks the opposite: which nodes someone has explicitly folded
+// away, not which have opted into being shown. Session-only, like the other four.
+let collapsedTableNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let accentIntensity=100; let accentCustomColor='#c2553d'; let chromePreset='default'; let skipFoldedInExports=true; let exportMenuFoldNoteEnabled=true; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let decisionLogAskAuthor=true; let decisionLogColors=true; let lastDecisionAuthor=''; let decisionLogHiddenFields=[]; let decisionLogSplitToSlide=true; let decisionLogSplitThreshold=200; let decisionLogInPad=true; let decisionListOpenOnly=false; let decisionListAuthorFilter=''; let contextQuickActions=CTX_QUICK_ROW_DEFAULT.slice(); let contextSortChildrenEnabled=true; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let padEnabled=true; let padNotepadTabEnabled=true; let padQaTabEnabled=true; let padDiagramsTabEnabled=true; let padMindmapTabEnabled=false; let padFilesTabEnabled=false; let padRemarksTabEnabled=true; let padOpen=false; let padWidth=440; let padMatchEditorBg=false; let padDefaultView='notes'; let qaCompactRows=false; let qaRowActionsMode='hover'; let qaAiAnswerEnabled=true; let qaAiBulkAnswerEnabled=false; let qaAiSummaryEnabled=false; let qaAiGenerateEnabled=true; let qaAiGroupEnabled=true; let padHiddenButtons=[]; let presenterNotesHiddenButtons=['bold','italic','underline','strike','ol','link','table','image','timestamp']; let exportHiddenButtons=['clipboard','image','md','txt','opml','decision-log-xlsx']; let insertHiddenButtons=['smart-paste']; let noteHiddenButtons=[]; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewDlFields=['context','decision','rationale','alternatives','impact']; let previewAlwaysExpand=true; let previewTocOpen=true; let previewHeadingDepthFallback={}; let previewTocMaxLevel=2; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true; let previewReadingWidth=1080; let previewSepiaTheme=false; let previewSerifBody=true; let previewPdfMargin='normal';
 const PDF_MARGIN_MM={narrow:10,normal:20,wide:32}; let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureDecisionLogEnabled=false; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let featureMindMapEnabled=true; let featurePreviewEnabled=true; let featurePresenterEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let previewPdfFooterEnabled=true; let wordWrapEnabled=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let statusbarVisible=true; let tabbarVisible=true; let appbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true; let sessionBackupPromptMode='strict'; const sessionStartAt=Date.now(); let sessionBackupPromptDismissed=false; let sessionBackupPromptShowing=false; let sessionBackupPromptShownOnHide=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/Presenter code, specifically so loadPrefs() restoring
@@ -9297,7 +9303,7 @@ function buildNodeTableObject(node,tIdx){
     const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
     wrap.appendChild(clone);
   }
-  function enterEdit(clickedCellFlatIdx){
+  function enterEdit(clickedCellFlatIdx,clickX,clickY){
     const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
     const liveTable=div.querySelector('table');
     if(!liveTable)return;
@@ -9318,22 +9324,31 @@ function buildNodeTableObject(node,tIdx){
     // which can fire onFocusOut's commit()+exit() mid-handler, before the menu action's own
     // trailing commit() call runs against now-stale state. Idempotent once exited for the same
     // reason.
+    const placeCaretIn=el=>{
+      if(!el)return;
+      const rg=document.createRange(); rg.selectNodeContents(el); rg.collapse(false);
+      const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+      el.focus&&el.focus();
+    };
     let exited=false;
-    function exit(){
-      if(exited)return;
-      exited=true;
+    const detach=()=>{
       wrap.removeEventListener('input',onInput);
       wrap.removeEventListener('contextmenu',onCtx);
       wrap.removeEventListener('focusout',onFocusOut);
+      wrap.removeEventListener('paste',onPaste);
+      wrap.removeEventListener('keydown',onKeyDown);
+    };
+    function exit(){
+      if(exited)return;
+      exited=true;
+      detach();
       showDisplay();
     }
     function commit(){
       if(exited)return;
       if(!liveTable.isConnected){
         exited=true;
-        wrap.removeEventListener('input',onInput);
-        wrap.removeEventListener('contextmenu',onCtx);
-        wrap.removeEventListener('focusout',onFocusOut);
+        detach();
         node.tables.splice(tIdx,1);
         node.modifiedAt=Date.now();
         markDirty(); scheduleAutoSave();
@@ -9357,13 +9372,88 @@ function buildNodeTableObject(node,tIdx){
     wrap.addEventListener('contextmenu',onCtx);
     const onFocusOut=e=>{ if(wrap.contains(e.relatedTarget))return; commit(); exit(); };
     wrap.addEventListener('focusout',onFocusOut);
+    // A cell holds one data value, not a rich document -- there's no toolbar reachable here (the
+    // selection-formatting popover already excludes table cells) and typing alone can't produce
+    // anything but plain text, so the ONLY way rich content or an image used to get in was a paste
+    // bringing along the source's own formatting/images. Flattened to plain text here instead,
+    // inserted at the caret like any plain-text paste rather than letting the browser's default
+    // (full HTML, images included) land. A literal newline is also flattened to a space -- a cell
+    // is one line, so a multi-line paste reads as a run-on value instead of silently growing the
+    // row height with no way to tell there's hidden content below the fold.
+    const onPaste=e=>{
+      e.preventDefault(); e.stopPropagation();
+      const text=(e.clipboardData?.getData('text/plain')||'').replace(/\r\n|\r|\n/g,' ');
+      if(!text)return;
+      document.execCommand('insertText',false,text);
+    };
+    wrap.addEventListener('paste',onPaste);
+    // Each cell is its own independent contenteditable (not the whole table, unlike the old
+    // note-embedded live table) -- so e.target here IS the focused td/th directly, no selection-
+    // anchor resolution needed the way the note-line's own Tab handler required. Tab/Shift+Tab
+    // move between cells (wrapping to a fresh row past the last cell); Enter moves straight down a
+    // column instead of inserting a block element inside the cell, since a table object's cells are
+    // single-line data, not paragraphs -- this also sidesteps the caret-placement oddities a
+    // paragraph-in-a-td accumulating over repeated edits used to cause. Escape commits and exits
+    // back to display mode, same as clicking away does.
+    const onKeyDown=e=>{
+      const cell=e.target.closest&&e.target.closest('td,th');
+      if(!cell)return;
+      if(e.key==='Escape'){ e.preventDefault(); commit(); exit(); return; }
+      if(e.key==='Tab'){
+        e.preventDefault();
+        const allCells=[...liveTable.querySelectorAll('td,th')];
+        const i=allCells.indexOf(cell);
+        if(e.shiftKey){ placeCaretIn(allCells[i-1]); return; }
+        if(i===allCells.length-1){
+          const lastRow=liveTable.rows[liveTable.rows.length-1];
+          const newRow=lastRow.cloneNode(false);
+          const colCount=lastRow.cells.length;
+          for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); }
+          (liveTable.tBodies[0]||liveTable).appendChild(newRow);
+          _attachTableResizeHandles(liveTable);
+          placeCaretIn(newRow.cells[0]);
+          commit();
+          return;
+        }
+        placeCaretIn(allCells[i+1]);
+        return;
+      }
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const allCells=[...liveTable.querySelectorAll('td,th')];
+        const colCount=cell.closest('tr').cells.length;
+        const below=allCells[allCells.indexOf(cell)+colCount];
+        if(below)placeCaretIn(below); else { commit(); exit(); }
+        return;
+      }
+    };
+    wrap.addEventListener('keydown',onKeyDown);
     const allCells=liveTable.querySelectorAll('td,th');
     const focusCell=(clickedCellFlatIdx>=0?allCells[clickedCellFlatIdx]:null)||allCells[0];
-    if(focusCell){
-      const rg=document.createRange(); rg.selectNodeContents(focusCell); rg.collapse(true);
-      const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
-      focusCell.focus();
+    if(!focusCell)return;
+    // Clicking existing text used to always snap the caret to one end of the cell regardless of
+    // where in the text was actually clicked -- the display-mode clone gets torn down and replaced
+    // with this freshly-parsed live cell right here, so the original click's own native caret
+    // placement is gone by the time focus lands, unless it's recovered from the click's own
+    // coordinates against the now-laid-out live cell (same text, so the same point resolves to the
+    // same offset). Falls back to the old collapse-to-end behavior when there's no click point to
+    // go on (keyboard-driven entry, a brand new row/column's empty cell) or the point doesn't
+    // actually resolve inside this cell (the API refusing, or the click having landed on chrome
+    // like a resize handle rather than text).
+    let placed=false;
+    if(Number.isFinite(clickX)&&Number.isFinite(clickY)){
+      let rg=null;
+      try{
+        if(typeof document.caretRangeFromPoint==='function')rg=document.caretRangeFromPoint(clickX,clickY);
+        else if(typeof document.caretPositionFromPoint==='function'){ const pos=document.caretPositionFromPoint(clickX,clickY); if(pos){ rg=document.createRange(); rg.setStart(pos.offsetNode,pos.offset); rg.collapse(true); } }
+      }catch(e){}
+      if(rg&&focusCell.contains(rg.startContainer)){
+        const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+        focusCell.focus();
+        placed=true;
+      }
     }
+    if(!placed)placeCaretIn(focusCell);
   }
   showDisplay();
   // Both stopPropagation calls matter: without them, this click/mousedown bubbles up to the
@@ -9380,7 +9470,7 @@ function buildNodeTableObject(node,tIdx){
     // cross-referencing between two separately-tracked DOM trees needed.
     const clickedCell=e.target.closest&&e.target.closest('td,th');
     const flatIdx=clickedCell?[...wrap.querySelectorAll('td,th')].indexOf(clickedCell):-1;
-    enterEdit(flatIdx);
+    enterEdit(flatIdx,e.clientX,e.clientY);
   });
   wrap.addEventListener('contextmenu',e=>{
     if(wrap.classList.contains('editing'))return;
@@ -18325,7 +18415,7 @@ function pruneCollapsedIds(){if(!collapsedIds.size)return; let changed=false; co
 // these aren't persisted (session-only), so there's no scheduleAutoSave() needed here, just
 // keeping the Sets from silently accumulating ids for nodes that no longer exist.
 function pruneInlineExpandIds(){
-  [inlineExpandNoteNodeIds,inlineExpandRemarksNodeIds,inlineExpandQaNodeIds,inlineExpandDiagramNodeIds].forEach(set=>{
+  [inlineExpandNoteNodeIds,inlineExpandRemarksNodeIds,inlineExpandQaNodeIds,inlineExpandDiagramNodeIds,collapsedTableNodeIds].forEach(set=>{
     if(!set.size)return;
     set.forEach(id=>{ if(getIndex(nodes,id)<0)set.delete(id); });
   });
@@ -20064,22 +20154,18 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           });
           row.appendChild(dot);
         }
-        // Tables/charts/Cards (node.tables) always render inline right below the note, independent
-        // of any expand/collapse state -- so unlike the note dot above, this one has nothing to
-        // toggle. It just makes the node's own row advertise the content without having to scroll
-        // down to it, and clicking scrolls/flashes the actual object into view (same pattern
-        // flashFileRow/flashRemarkRow already use for their own "jump to it" dots).
+        // Fold/toggle -- open by default (see collapsedTableNodeIds' own comment), clicking the dot
+        // folds it away and clicking again brings it back, same show/hide behavior every other
+        // inline-content dot already has.
         if(Array.isArray(node.tables)&&node.tables.length){
-          const tdot=document.createElement('span'); tdot.className='node-note-dot node-table-dot'; tdot.style.color='var(--fc-blue)';
+          const tableOpen=!collapsedTableNodeIds.has(node.id);
+          const tdot=document.createElement('span'); tdot.className='node-note-dot node-table-dot'+(tableOpen?' pv-dot-open':''); tdot.style.color='var(--fc-blue)';
           tdot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>';
-          tdot.dataset.tip=node.tables.length>1?'This node has '+node.tables.length+' tables/charts — click to scroll to it':'This node has a table/chart — click to scroll to it';
+          tdot.dataset.tip=(node.tables.length>1?'This node has '+node.tables.length+' tables/charts':'This node has a table/chart')+' — click to '+(tableOpen?'fold':'unfold')+' it';
           tdot.addEventListener('click',e=>{
             e.stopPropagation();
-            const target=document.querySelector('.node-table-line[data-node-id="'+node.id+'"]');
-            if(!target)return;
-            target.scrollIntoView({block:'center',behavior:'smooth'});
-            target.classList.add('qa-flash');
-            setTimeout(()=>target.classList.remove('qa-flash'),1100);
+            if(collapsedTableNodeIds.has(node.id))collapsedTableNodeIds.delete(node.id); else collapsedTableNodeIds.add(node.id);
+            render();
           });
           row.appendChild(tdot);
         }
@@ -20341,9 +20427,11 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(hideTreeLines&&depthGuideLines){ const nVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); nVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; noteWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(noteDepth*32+0*editorScale+9)+'px'; noteWrap.appendChild(vgOwn) } }
     frag.appendChild(noteWrap)
   }
-  if(Array.isArray(node.tables)&&node.tables.length){
+  if(!collapsedTableNodeIds.has(node.id)&&Array.isArray(node.tables)&&node.tables.length){
     // Independent of whether the note itself is inline-expanded above -- a table/chart/Cards
-    // object is its own thing now, not part of the note's own expand/collapse state.
+    // object is its own thing now, not part of the note's own expand/collapse state, but it has
+    // the exact same fold/toggle behavior as every other inline-content dot (see the node-table-dot
+    // above and collapsedTableNodeIds' declaration).
     const tablesDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     node.tables.forEach((html,tIdx)=>{
       const tWrap=document.createElement('div'); tWrap.className='node-table-line-wrap';

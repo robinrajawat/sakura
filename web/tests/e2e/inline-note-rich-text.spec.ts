@@ -765,15 +765,28 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(result.hasTableLine).toBe(true);
     });
 
-    test('a node-table-dot appears on the row when the node has a table, and clicking it scrolls/flashes the table object into view', async ({ page }) => {
+    // A table/chart/Cards object is open (visible) by default -- it has no prior collapsed state
+    // any existing document could fall back to, unlike notes/remarks/diagrams which default
+    // closed. The dot's job is folding it away and back, not scrolling to something already
+    // visible (that was the literal bug report: "click on table dot indicator doesn't fold the
+    // table").
+    test('the node-table-dot folds the table away on click, and unfolds it again on a second click', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
 
+      await expect(page.locator('.node-table-line')).toBeVisible();
       const dot = page.locator('.node-row[data-id="1"] .node-table-dot');
       await expect(dot).toBeVisible();
+      await expect(dot).toHaveClass(/pv-dot-open/);
+
       await dot.click();
-      await expect(page.locator('.node-table-line.qa-flash')).toHaveCount(1);
+      await expect(page.locator('.node-table-line')).toHaveCount(0);
+      await expect(dot).not.toHaveClass(/pv-dot-open/);
+
+      await dot.click();
+      await expect(page.locator('.node-table-line')).toBeVisible();
+      await expect(dot).toHaveClass(/pv-dot-open/);
     });
 
     // A copied Excel/Sheets table's plain-text clipboard representation is tab/newline-separated
@@ -804,6 +817,106 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(result.nodeCount).toBe(1);
       expect(result.tablesLen).toBe(1);
       expect(result.hasTableLine).toBe(true);
+    });
+
+    // The redesigned editing experience: cells are plain single-line data, not a nested rich-text
+    // document -- Tab/Shift+Tab/Enter navigate like a spreadsheet instead of leaving Tab to tab out
+    // of the table entirely (the old note-embedded table had its own Tab handler; buildNodeTableObject
+    // never did) or Enter inserting a block element inside a td.
+    test('Tab moves to the next cell, Shift+Tab to the previous, and Tab from the last cell adds a new row', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.keyboard.press('Tab');
+      let active = await page.evaluate(() => (document.activeElement as HTMLElement)?.textContent);
+      expect(active).toBe('10');
+
+      await page.keyboard.press('Shift+Tab');
+      active = await page.evaluate(() => (document.activeElement as HTMLElement)?.textContent);
+      expect(active).toBe('A');
+
+      // tableNote is a 2-row, 2-column table (header + one data row) -- its last cell is row 2's
+      // second td ("10"). Tabbing from there must grow the table, not escape it.
+      await page.locator('.node-table-line td').last().click();
+      await page.keyboard.press('Tab');
+      const result = await page.evaluate(() => {
+        const active2 = document.activeElement as HTMLElement | null;
+        return {
+          activeTag: active2?.tagName,
+          stillEditing: document.querySelector('.node-table-line.editing') !== null,
+          rowCount: document.querySelectorAll('.node-table-line tr').length,
+        };
+      });
+      expect(result.activeTag).toBe('TD');
+      expect(result.stillEditing).toBe(true);
+      expect(result.rowCount).toBe(3);
+    });
+
+    test('Enter moves straight down a column instead of inserting a line break in the cell', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      const twoRowTable = '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>';
+      await seedNodeWithTables(page, [twoRowTable]);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.keyboard.press('Enter');
+      const result = await page.evaluate(() => {
+        const active = document.activeElement as HTMLElement | null;
+        // The resize-handle overlay divs (_attachTableResizeHandles) are expected in every cell
+        // during edit mode -- only a div/p/br beyond those would mean Enter leaked a block element
+        // into the cell.
+        return { activeTag: active?.tagName, text: active?.textContent, hasNestedBlock: !!active?.querySelector('div:not(.col-resize-handle):not(.row-resize-handle),p,br') };
+      });
+      expect(result.activeTag).toBe('TD');
+      expect(result.text).toBe('B');
+      expect(result.hasNestedBlock).toBe(false);
+    });
+
+    test('Escape commits the edit and returns to display mode', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.keyboard.type('Z');
+      await page.keyboard.press('Escape');
+
+      const result = await page.evaluate(() => ({
+        // @ts-expect-error
+        table: nodes.find((n: any) => n.id === 1).tables[0],
+        isEditing: document.querySelector('.node-table-line.editing') !== null,
+      }));
+      expect(result.isEditing).toBe(false);
+      expect(result.table).toContain('Z');
+    });
+
+    // "table allows paste of images in it, seems like too much rich text" -- a cell holds one data
+    // value, not a document, so a paste is flattened to plain text (images and all formatting
+    // dropped) instead of letting the browser insert the clipboard's rich HTML/images as-is.
+    test('pasting rich HTML (with an image) into a table cell lands as plain text only, no image, no formatting', async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
+
+      await page.locator('.node-table-line td').first().click();
+      await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement;
+        const html = '<b>bold</b> text <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7">';
+        const clipboardData = { getData: (type: string) => (type === 'text/html' ? html : 'bold text ') };
+        const ev = new Event('paste', { bubbles: true, cancelable: true });
+        Object.defineProperty(ev, 'clipboardData', { value: clipboardData });
+        el.dispatchEvent(ev);
+      });
+
+      const result = await page.evaluate(() => {
+        const active = document.activeElement as HTMLElement | null;
+        return { hasImg: !!active?.querySelector('img'), hasBold: !!active?.querySelector('b'), text: active?.textContent };
+      });
+      expect(result.hasImg).toBe(false);
+      expect(result.hasBold).toBe(false);
+      expect(result.text).toContain('bold text');
     });
   });
 
