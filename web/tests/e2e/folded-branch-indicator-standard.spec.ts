@@ -20,7 +20,7 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 }
 
 // A folded branch used to render one small icon PER content type found anywhere inside it
-// (note/decision-log/diagram/file/remark/meeting/todo/qa/mindmap/marker) -- up to 9+ distinct
+// (note/decision-log/diagram/file/remark/meeting/todo/qa/marker) -- up to 8+ distinct
 // dots could stack on a single collapsed row. First consolidated to one separate generic dot
 // next to the existing +N fold-badge; that was still two floating elements with a gap between
 // them for what's really one signal. Folded a step further: a tiny dot now prefixes the +N
