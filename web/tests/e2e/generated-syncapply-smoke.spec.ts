@@ -14,9 +14,9 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 // proving both real callers correctly delegate the "should apply" decision to
 // shouldApplyIncomingSyncCore and that the real storage writes still happen when it says yes.
 // applyIncomingDocData now takes (mod,db,id,cloud,viaRealtime) — mod/db are only ever
-// dereferenced when the incoming cloud doc has diagrams/attachments to hydrate from their own
-// subcollections (see hydrateCloudDocBlobs), which none of this test's payloads do, so null
-// stands in for both here rather than a real Firestore mod/db pair.
+// dereferenced when the incoming cloud doc has diagrams to hydrate from their own subcollection
+// (see hydrateCloudDocBlobs), which none of this test's payloads do, so null stands in for both
+// here rather than a real Firestore mod/db pair.
 test.describe('generated syncApply block (src/state/syncApply.ts spliced into index.html)', () => {
   test('applyIncomingDocData/applyIncomingMetaData correctly apply, reject stale, and reject echoes, through the real functions', async ({ page }) => {
     const unexpectedErrors: string[] = [];
