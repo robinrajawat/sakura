@@ -72,4 +72,40 @@ test.describe('Depth guide lines stay aligned with each ancestor\'s dot center',
     expect(result.a1aGuides[0]).toBeCloseTo(result.depth0DotCenter, 1);
     expect(result.a1aGuides[1]).toBeCloseTo(result.depth1DotCenter, 1);
   });
+
+  // A table/chart/Cards object renders in its own .node-table-line-wrap block between two rows,
+  // same as a note/remark/Q&A/diagram's own inline block does -- every one of those already
+  // redraws the guide line through its own height so the line down the page doesn't visibly break
+  // at a row with inline content, except node.tables' own wrap never did.
+  test('the depth guide line continues through a node-table-line-wrap block, not just rows', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    const landing = page.locator('#sakura-landing-overlay');
+    if (await landing.isVisible().catch(() => false)) {
+      await page.evaluate(() => { const el = document.getElementById('sakura-landing-overlay'); if (el) el.style.display = 'none'; });
+    }
+    const welcome = page.locator('#welcome-overlay');
+    if (await welcome.isVisible().catch(() => false)) {
+      await page.evaluate(() => document.getElementById('welcome-overlay')?.classList.remove('open'));
+    }
+
+    await page.evaluate(() => {
+      const tableHtml = '<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>';
+      // A has a later sibling (B) -- the depth-0 guide must run through A1's own table block.
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', styles: {} },
+        { id: 2, depth: 1, text: 'A1', styles: {}, tables: [tableHtml] },
+        { id: 3, depth: 0, text: 'B', styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
+      // @ts-expect-error
+      render();
+    });
+
+    const guideCount = await page.evaluate(() => document.querySelectorAll('.node-table-line-wrap .node-vguide').length);
+    expect(guideCount).toBeGreaterThan(0);
+  });
 });
