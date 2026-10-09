@@ -15,9 +15,9 @@ import type { QueryableNode } from '../core/nodeQueries';
  * injected as an explicit parameter — the second real instance of the pattern
  * `templatesApply.ts` established with its injected `makeNode`/`emptyStyles` (the first
  * hand-written function injected as a dependency rather than referenced ambiently). Worth the
- * DI machinery here, unlike `decisionRowSnippet`'s own 4-line case (`decisionLogQueries.ts`'s
- * third slice): this function has real structure — a tree walk reusing three already-generated
- * ambient functions — where `decisionRowSnippet` had none.
+ * DI machinery here, unlike other trivial one-off helpers elsewhere in this migration: this
+ * function has real structure — a tree walk reusing three already-generated ambient functions —
+ * where those had none.
  *
  * `buildPrefix`/`hasLaterSiblingAtDepth` (from `src/core/nodeQueries.ts`), `computeOutlineNumbers`
  * (from `src/utils/serializeMarkdown.ts`), and `getNodePlainText` (from

@@ -44,9 +44,9 @@ test.describe('generated diagramGenNodeMeta block (src/state/diagramGenNodeMeta.
       // root itself gets a shape guess from its 'database' tag.
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: ['database'], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'Leaf A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 3, text: 'Leaf B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: ['database'], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'Leaf A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 3, text: 'Leaf B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
 
       // @ts-expect-error

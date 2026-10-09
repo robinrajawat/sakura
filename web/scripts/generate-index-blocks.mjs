@@ -433,31 +433,6 @@ initHubJournalState({
     footer: ''
   },
   {
-    // First slice of the Decision Log domain — a domain not touched elsewhere in this
-    // migration. normalizeDecisionLog validates/coerces an arbitrary raw object into a safe
-    // DecisionLog shape, called from normalizeNode's own decisionLog field normalization.
-    // Genuinely standalone, no pure-code-motion commit needed.
-    name: 'decisionLog',
-    sourceFile: 'src/state/decisionLog.ts',
-    testFile: 'tests/unit/decisionLog.test.ts',
-    // No production wiring needed — pure function, zero dependencies. The one real call site
-    // (normalizeNode's own body) was updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Second slice of the Decision Log domain — the pure lookup/anchor-label/status-query layer
-    // (see this module's own header for full scope notes). Already contiguous in index.html, no
-    // pure-code-motion commit needed.
-    name: 'decisionLogQueries',
-    sourceFile: 'src/state/decisionLogQueries.ts',
-    testFile: 'tests/unit/decisionLogQueries.test.ts',
-    // No production wiring needed — pure functions, no DOM/side effects. All five real call
-    // sites (findDecisionLog/decisionLogForNode/decisionStatusLabel/decisionStatusOf/
-    // decisionLogAnchorLabel wrapper bodies in index.html) were updated in the same commit that
-    // wired this block in.
-    footer: ''
-  },
-  {
     // Export domain — first slice. Pure once traced: every function it calls is already a
     // generated ambient global (buildPrefix/hasLaterSiblingAtDepth from nodeQueries.ts,
     // computeOutlineNumbers from serializeMarkdown.ts, getNodePlainText from

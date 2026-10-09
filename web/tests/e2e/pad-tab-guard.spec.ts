@@ -23,12 +23,13 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 // Remarks) without the "keep at least one Pad tab enabled" guard growing with it: Notepad/
 // Q&A/Decision Log's own setters only ever checked each OTHER, ignoring the newer tabs -- so
 // disabling all three while, say, Diagrams was the only tab left enabled wrongly refused --
-// and the newer tabs had no guard at all, so they could silently drop the count to zero. Files
-// and Mind Map have since been removed from the app entirely (separate cutdown PRs), leaving 5.
-test.describe('Pad "keep at least one tab enabled" guard recognizes all 5 Pad tabs', () => {
-  const ALL_PAD_KEYS = ['padnotepad', 'padqa', 'decisionlog', 'paddiagrams', 'padremarks'];
+// and the newer tabs had no guard at all, so they could silently drop the count to zero. Files,
+// Mind Map, and Decision Log have since been removed from the app entirely (separate cutdown
+// PRs), leaving 4.
+test.describe('Pad "keep at least one tab enabled" guard recognizes all 4 Pad tabs', () => {
+  const ALL_PAD_KEYS = ['padnotepad', 'padqa', 'paddiagrams', 'padremarks'];
 
-  test('disabling Notepad/Q&A/Decision Log is allowed when a newer tab (Diagrams) is still enabled', async ({ page }) => {
+  test('disabling Notepad/Q&A is allowed when a newer tab (Diagrams) is still enabled', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -41,16 +42,12 @@ test.describe('Pad "keep at least one tab enabled" guard recognizes all 5 Pad ta
       setFeatureEnabled('padnotepad', false);
       // @ts-expect-error
       setFeatureEnabled('padqa', false);
-      // @ts-expect-error
-      setFeatureEnabled('decisionlog', false);
 
       const out = {
         // @ts-expect-error
         padnotepad: FEATURE_FLAGS.padnotepad.get(),
         // @ts-expect-error
         padqa: FEATURE_FLAGS.padqa.get(),
-        // @ts-expect-error
-        decisionlog: FEATURE_FLAGS.decisionlog.get(),
         // @ts-expect-error
         paddiagrams: FEATURE_FLAGS.paddiagrams.get()
       };
@@ -62,7 +59,6 @@ test.describe('Pad "keep at least one tab enabled" guard recognizes all 5 Pad ta
 
     expect(result.padnotepad).toBe(false);
     expect(result.padqa).toBe(false);
-    expect(result.decisionlog).toBe(false);
     expect(result.paddiagrams).toBe(true); // untouched, and correctly recognized as "still one enabled"
   });
 
@@ -72,7 +68,7 @@ test.describe('Pad "keep at least one tab enabled" guard recognizes all 5 Pad ta
       await dismissOverlays(page);
 
       const result = await page.evaluate((k) => {
-        const keys = ['padnotepad', 'padqa', 'decisionlog', 'paddiagrams', 'padremarks'];
+        const keys = ['padnotepad', 'padqa', 'paddiagrams', 'padremarks'];
         // Only `k` enabled, everything else off.
         // @ts-expect-error
         keys.forEach((key) => { FEATURE_FLAGS[key].set(key === k); });

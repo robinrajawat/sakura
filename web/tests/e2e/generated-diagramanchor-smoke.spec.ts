@@ -42,7 +42,7 @@ test.describe('generated diagramAnchor block (src/state/diagramAnchor.ts spliced
     // diagram objects, through the real (unchanged) wrapper functions.
     const anchorResult = await page.evaluate(() => {
       // @ts-expect-error — bare globals from index.html
-      nodes = [{ id: 1, text: '[Project Plan] overview', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }];
+      nodes = [{ id: 1, text: '[Project Plan] overview', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }];
 
       const linked = { id: 'd1', anchorNodeId: 1 };
       const unlinked = { id: 'd2', anchorNodeId: null };

@@ -39,7 +39,7 @@ test.describe('generated diagramDisplayList block (src/state/diagramDisplayList.
 
     const result = await page.evaluate(() => {
       // @ts-expect-error — bare globals from index.html
-      nodes = [{ id: 1, text: 'Real node', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }];
+      nodes = [{ id: 1, text: 'Real node', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }];
 
       // @ts-expect-error
       diagrams = [

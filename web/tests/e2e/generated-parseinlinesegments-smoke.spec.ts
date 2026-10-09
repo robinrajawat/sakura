@@ -44,7 +44,7 @@ test.describe('generated parseInlineSegments block (src/utils/parseInlineSegment
 
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'Root with `code` and [Section]', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'Root with `code` and [Section]', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
       // @ts-expect-error — measureTreeImage is genuinely canvas-bound, still calls the real
       // parseInlineSegments wrapper internally
