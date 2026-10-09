@@ -2002,6 +2002,15 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
 .pv-diagram-row-multi .pv-diagram-img{max-height:var(--pv-diagram-max-h-multi,42vh)}
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
+/* The outline editor's own read-only rendering of a note's pictures (renderNoteDisplayHtml) reuses
+   .pv-diagram-figure for its base layout, but NOT Preview/PDF's own deliberate "stretch to fill the
+   row" treatment (.pv-diagram-figure's flex:1 1 320px plus the column flex container's default
+   align-items:stretch) -- that reads right for an exported document's diagrams/images, but in the
+   live editor it was pushing even a small originally-inserted image to the full editor width.
+   flex:0 1 auto sizes the figure to its own content (the image's natural width) instead of growing
+   to fill the row; max-width:100% on the image still caps an oversized original from overflowing. */
+.node-note-image-figure{flex:0 1 auto;align-items:flex-start}
+.node-note-image-figure img{max-width:100%;display:block}
 .pv-table-figure{flex:1 1 100%}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
@@ -2022,6 +2031,33 @@ body.qa-bulk-busy #qtb-ai-answer-all:not(.ai-busy){pointer-events:none;opacity:.
 .node-table-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
 .node-table-line{cursor:pointer;border-radius:6px}
 .node-table-line:has(td[contenteditable="true"],th[contenteditable="true"]){cursor:text}
+/* .pv-table-figure table's own font/padding (14px, 7px/12px) is a fine, deliberately fixed size for
+   a static Preview/PDF export, but the live outline editor scales everything else in a row off
+   --editor-scale (see #editor-pane's own font-size) -- left unscaled here, the table (and the text
+   caret sitting in it, which takes its height from the cell's own font-size) stayed pinned at that
+   literal export size regardless of the user's actual editor scale, reading as too small/misaligned
+   next to the rest of an already-scaled-up row, almost like a leftover fragment of some other
+   (smaller, fixed-size) editor surface rather than this table's own. */
+.node-table-line table{font-size:calc(14px * var(--editor-scale))}
+.node-table-line td,.node-table-line th{padding:calc(7px * var(--editor-scale)) calc(12px * var(--editor-scale))}
+/* .pv-table-figure table's own width:100% is right for Preview/PDF (a static export always wants
+   the table to use the full column it's given), but in the live editor it silently neutered column
+   resizing: with the table pinned to 100% regardless of what the colgroup's own widths said, the
+   browser's layout algorithm redistributed the "missing" width across columns on every drag (most
+   visibly the last one, which just absorbed whatever was left) rather than actually shrinking or
+   growing the table's own footprint the way _attachTableResizeHandles' own drag logic intends.
+   table-layout:fixed with width:auto sizes the table to the real sum of its <col> widths instead,
+   capped by max-width so an intentionally wide table still can't overflow past the editor itself. */
+.node-table-line table{width:auto;max-width:100%;table-layout:fixed}
+.node-table-line td,.node-table-line th{overflow:hidden;word-break:break-word}
+/* .node-table-line itself inherits .pv-diagram-figure's own display:flex;flex-direction:column --
+   fine for a chart's SVG or a Cards grid (both want to fill the figure), but for a PLAIN table its
+   default cross-axis align-items:stretch was overriding the table's own width:auto/table-layout:fixed
+   sizing above, stretching it to the wrap's full width regardless of what the colgroup said -- the
+   same flex-stretch mechanism node-note-image-figure's own fix just below addresses for pictures.
+   Scoped off :not(.pv-table-chart-figure), the class a chart OR Cards grid always carries (see
+   buildNodeTableObject/buildNoteTableFigure), so neither of those is affected. */
+.node-table-line:not(.pv-table-chart-figure){align-items:flex-start}
 .node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;font-family:var(--content-font);color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;background:transparent;border-radius:4px}
 .node-note-line:focus{color:var(--fg)}
 .node-note-line img{max-width:100%;border-radius:6px;margin:4px 0;display:block}
@@ -10047,7 +10083,7 @@ function renderNoteDisplayHtml(html){
     if(images.length){
       const row=document.createElement('div'); row.className='pv-diagram-row';
       images.forEach(d=>{
-        const fig=document.createElement('div'); fig.className='pv-diagram-figure'; fig.dataset.noteObjIdx=String(d.idx);
+        const fig=document.createElement('div'); fig.className='pv-diagram-figure node-note-image-figure'; fig.dataset.noteObjIdx=String(d.idx);
         const img=document.createElement('img'); img.src=d.src; img.alt=d.alt||'';
         fig.appendChild(img); row.appendChild(fig);
       });
@@ -19729,6 +19765,22 @@ function renderContextMorePanel(){
   // the generic system already rendered.)
   addGroupRemaining('notes');
   addGroupRemaining('delete');
+  // Laser pointer is a view-wide presentation toggle, not a per-node action -- it has no node data
+  // of its own to gate on contextQuickActions/Settings the way every other item here does (same
+  // reasoning "Sort children" above is its own always-present group rather than a catalog entry),
+  // so it's just always here. Previously only reachable by right-clicking plain text inside an
+  // already-open note (buried enough that it read as "not working, can't find it"); this is the
+  // same action Preview/Presenter's own right-click already offers, just reachable from the
+  // ordinary per-row menu too now.
+  addDivider();
+  (()=>{
+    const btn=document.createElement('button'); btn.type='button'; btn.className='context-item'; btn.dataset.action='laser'; btn.setAttribute('role','menuitem');
+    const icon=document.createElement('span'); icon.className='context-icon';
+    icon.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>';
+    const label=document.createElement('span'); label.className='context-label'; label.textContent=appLaserOn?'Stop laser pointer':'Laser pointer';
+    btn.appendChild(icon); btn.appendChild(label); panel.appendChild(btn);
+  })();
+  any=true;
   // Nothing landed in the panel (e.g. every eligible action is in the quick row,
   // or everything else is hidden via Settings → Right-click menu) — don't show a
   // "More" button that opens onto an empty panel.
@@ -20436,6 +20488,11 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     node.tables.forEach((html,tIdx)=>{
       const tWrap=document.createElement('div'); tWrap.className='node-table-line-wrap';
       tWrap.style.paddingLeft=hideTreeLines?(tablesDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
+      // Same vertical tree-line continuation every other inline-content block (note/remark/Q&A/
+      // diagram) already draws through itself -- without this, the depth guide running down the
+      // page visibly breaks at every row that has a table, since tWrap sits between two rows but
+      // never carried the line through its own height.
+      if(hideTreeLines&&depthGuideLines){ const tVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); tVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; tWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(tablesDepth*32+0*editorScale+9)+'px'; tWrap.appendChild(vgOwn) } }
       tWrap.appendChild(buildNodeTableObject(node,tIdx));
       frag.appendChild(tWrap);
     });
@@ -27398,6 +27455,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='fold'){if(selectedId!==null){const _fi=getIndex(nodes,selectedId); if(_fi>=0&&nodeHasChildren(nodes,_fi))toggleCollapse(selectedId);} return}
   if(action==='slide-divider'){if(_ctxNodeId!==null)toggleSlideDivider(_ctxNodeId); return}
   if(action==='sort-az'||action==='sort-za'||action==='sort-depth'){const idx=getIndex(nodes,selectedId); if(idx>=0)sortChildBlocks(idx,action.replace('sort-','')); return}
+  if(action==='laser'){setAppLaser(!appLaserOn); return}
   if(action==='ai-rewrite'){if(multiSelectedIds.length>1)rewriteMultipleNodes(multiSelectedIds); else if(selectedId!==null)rewriteNodeText(selectedId); return}
   if(action==='ai-rewrite-all'){rewriteAllNodes(); return}
   if(action==='ai-icon'){suggestIconForSelection(); return}
@@ -38970,6 +39028,14 @@ function exportPreviewAsPdf(onDone){
     document.title=originalTitle;
     document.body.classList.remove('printing-preview');
     Object.keys(PRINT_LIGHT_VARS).forEach(k=>document.body.style.removeProperty(k));
+    // --accent is the one PRINT_LIGHT_VARS key that isn't purely a print-time override --
+    // applyAccentColor (the normal theme/settings path) also sets it as this same inline
+    // document.body.style property, not a stylesheet rule. removeProperty above doesn't "restore
+    // the prior value", it just deletes the property outright, so the live accent was getting wiped
+    // along with the print override -- falling back to the stylesheet's own default color until a
+    // refresh re-ran applyAccentColor(). Re-applying it here (not just for '--accent' but to keep
+    // its own derived --accent-* blend vars in sync too) puts the real color straight back.
+    applyAccentColor();
     style.remove();
     window.removeEventListener('afterprint',cleanup);
     mq?.removeEventListener?.('change',mqHandler);
