@@ -24,8 +24,7 @@ import type { QueryableNode } from '../core/nodeQueries';
  *
  * `serializeTreeTextWithNotes` (near-identical, but appends each node's `note` via the
  * DOM-dependent `stripHtmlToText`) stays hand-written — genuinely different in kind, same split
- * decisionLogQueries.ts's third slice used for `decisionRowSnippet` vs.
- * `getDecisionAnchorCandidates`.
+ * pattern used elsewhere in this migration between a DOM-dependent sibling and its pure core.
  */
 
 declare function buildPrefix(

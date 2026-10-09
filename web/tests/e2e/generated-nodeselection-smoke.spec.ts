@@ -47,9 +47,9 @@ test.describe('generated nodeSelection block (src/core/nodeSelection.ts spliced 
     const selectionResult = await page.evaluate(() => {
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'A', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'B', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 3, text: 'C', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'A', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'B', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 3, text: 'C', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
       // @ts-expect-error
       selectAllMode = false;

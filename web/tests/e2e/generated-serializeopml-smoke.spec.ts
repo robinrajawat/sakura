@@ -46,8 +46,8 @@ test.describe('generated serializeOpml block (src/utils/serializeOpml.ts spliced
 
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: '[Section] Todos', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'Buy milk', depth: 1, parentId: 1, styles: {}, note: 'urgent', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: true, marker: '', slideDivider: false }
+        { id: 1, text: '[Section] Todos', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'Buy milk', depth: 1, parentId: 1, styles: {}, note: 'urgent', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: true, marker: '', slideDivider: false }
       ];
       // @ts-expect-error
       nodeContentExportEnabled = true;

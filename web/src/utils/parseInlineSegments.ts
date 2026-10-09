@@ -17,7 +17,7 @@
  *
  * Single real call site (`measureTreeImage`), but substantial enough — real branching structure
  * across seven segment types — to be worth its own tested module rather than staying
- * hand-written the way `decisionRowSnippet`'s four trivial lines did.
+ * hand-written the way a handful of trivial one-off helpers elsewhere in this migration did.
  */
 
 export type InlineSegmentType = 'link' | 'code' | 'section' | 'note' | 'quote' | 'alert' | 'text';

@@ -44,9 +44,9 @@ test.describe('generated nodeSearch block (src/core/nodeSearch.ts spliced into i
     const result = await page.evaluate(() => {
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'Apple pie recipe', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'Banana bread', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 3, text: 'apple crumble', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'Apple pie recipe', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'Banana bread', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 3, text: 'apple crumble', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
       // @ts-expect-error
       searchQuery = 'apple';

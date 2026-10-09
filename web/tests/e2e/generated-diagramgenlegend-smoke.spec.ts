@@ -40,8 +40,8 @@ test.describe('generated diagramGenLegend block (src/state/diagramGenLegend.ts s
     const result = await page.evaluate(() => {
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'UI Layer', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: 'confirmed', slideDivider: false },
-        { id: 2, text: 'Approve?', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'UI Layer', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: 'confirmed', slideDivider: false },
+        { id: 2, text: 'Approve?', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
       // @ts-expect-error
       const nodeMeta = new Map([

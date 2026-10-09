@@ -44,9 +44,9 @@ test.describe('generated diagramGenFinishGenerate block (src/state/diagramGenFin
     const result = await page.evaluate(() => {
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: '[Section] Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: ['important'], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'Branch A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: 'confirmed', slideDivider: false },
-        { id: 3, text: 'Branch B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: '[Section] Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: ['important'], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'Branch A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: 'confirmed', slideDivider: false },
+        { id: 3, text: 'Branch B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
       // @ts-expect-error
       diagrams = [];

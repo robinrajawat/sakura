@@ -44,9 +44,9 @@ test.describe('generated diagramGenColors block (src/state/diagramGenColors.ts s
       // root, with a's explicit marker outranking anything else and b picking up a tag color.
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: 'issue', slideDivider: false },
-        { id: 3, text: 'B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: ['billing'], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: 'issue', slideDivider: false },
+        { id: 3, text: 'B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: ['billing'], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
 
       // @ts-expect-error
@@ -112,9 +112,9 @@ test.describe('generated diagramGenColors block (src/state/diagramGenColors.ts s
       // scope (a), so b's leftover branch hue falls back to gray.
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 3, text: 'B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 3, text: 'B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
 
       const colorByIdx = new Map([[1, 'purple'], [2, 'teal']]);

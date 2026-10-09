@@ -42,9 +42,9 @@ test.describe('generated diagramGenLayout block (src/state/diagramGenLayout.ts s
       // Tree: root(0) -> a(1), b(2) — a genuine fan-out, both real leaves.
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 3, text: 'B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, decisionLog: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
+        { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
+        { id: 3, text: 'B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false }
       ];
 
       const dimsByIdx = new Map([
