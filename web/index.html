@@ -7443,7 +7443,7 @@ const QA_WAND_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" s
 // quietly drift apart. Six items -- right at CTX_QUICK_ROW_MAX, so nothing here ever overflows
 // into "More" by default.
 const CTX_QUICK_ROW_DEFAULT=['ai-rewrite','note','remark','qa','diagram','table','tags'];
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let padUndoStack=[]; let padRedoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let remarks=[]; let padViewMode='qa'; let qaExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false;
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let qaItems=[]; let diagrams=[]; let diagramSearchOpen=false; let diagramSearchQuery=''; let diagramUnlinkedOnly=false; let diagramSortMode='manual'; let diagramSelectedIds=new Set(); let diagramSelectionAnchorId=null; let diagramSelectMode=false; let remarks=[]; let padViewMode='qa'; let qaExportEnabled=true; let nodeContentExportEnabled=true; let diagramExportEnabled=true; let remarksExportEnabled=true; let diagramGenSkipReviewEnabled=false; let qaSelectedIds=new Set(); let qaSelectionAnchorId=null; let qaSelectMode=false; let qaSearchOpen=false; let qaSearchQuery=''; let qaUnansweredOnly=false; let qaUnlinkedOnly=false; let qaFollowUpOnly=false; let qaRecentAnswerers=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let lastAnyDataChangeAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false;
 // Unlike the inlineExpand*NodeIds sets above (which track DEVIATION from alwaysExpandInlineEnabled's
 // closed-by-default convention), a table/chart/Cards object has always rendered inline
 // unconditionally -- open by default, with no prior collapsed state for any existing document to
@@ -9597,34 +9597,20 @@ function restoreFromSnapshot(s){const d=JSON.parse(s);nodes=(d.nodes||[]).map(no
 function pushUndo(){undoStack.push(snapshot()); if(undoStack.length>200)undoStack.shift(); redoStack=[]}
 function undo(){if(!undoStack.length)return; redoStack.push(snapshot()); restoreFromSnapshot(undoStack.pop()); dirty=true; render()}
 function redo(){if(!redoStack.length)return; undoStack.push(snapshot()); restoreFromSnapshot(redoStack.pop()); dirty=true; render()}
-// Pad has its own undo/redo stack, separate from the outline's. Pad content was never
-// part of snapshot() (see restoreFromSnapshot above — it only touches nodes/selection/etc.),
-// and native contenteditable undo isn't reliable across programmatic content replacement
-// (AI rewrite, Clear pad), so Pad gets an explicit stack instead of leaning on either.
-// Checkpoints are pushed by: (1) pushPadUndo() called explicitly before any programmatic
-// full-content replacement, and (2) an idle-debounce listener on pad-editor (below) that
-// checkpoints normal typing in bursts, mirroring the outline's "one undo step per edit
-// session" principle rather than one step per keystroke.
-function pushPadUndo(){const editor=el('pad-editor'); if(!editor)return; padUndoStack.push(editor.innerHTML); if(padUndoStack.length>100)padUndoStack.shift(); padRedoStack=[]}
-function padUndo(){const editor=el('pad-editor'); if(!editor||!padUndoStack.length)return; padRedoStack.push(editor.innerHTML); editor.innerHTML=padUndoStack.pop(); markDirty(); _reinitPadEditorTables(); clearTimeout(_padIdleTimer); _padCheckpointPending=true}
-function padRedo(){const editor=el('pad-editor'); if(!editor||!padRedoStack.length)return; padUndoStack.push(editor.innerHTML); editor.innerHTML=padRedoStack.pop(); markDirty(); _reinitPadEditorTables(); clearTimeout(_padIdleTimer); _padCheckpointPending=true}
 // Contextual dispatcher: routes to whichever stack matches what's currently focused.
-// The keydown interceptions inside each editor are already naturally scoped this way
-// (only pad-editor's keydown can call padUndo(), etc.) — this dispatcher exists so the
-// visible toolbar Undo/Redo buttons behave identically to the keyboard shortcut instead
-// of always hitting the outline stack regardless of where focus actually is, which would
-// silently contradict "contextual" the moment someone reaches for the button instead of
-// Ctrl+Z. Todos' functions are defined inside their own module and exposed via
-// window.todosTextUndo/Redo (same pattern the module already uses for toggleTodosPanel).
+// This dispatcher exists so the visible toolbar Undo/Redo buttons behave identically to the
+// keyboard shortcut instead of always hitting the outline stack regardless of where focus
+// actually is, which would silently contradict "contextual" the moment someone reaches for
+// the button instead of Ctrl+Z. Todos' functions are defined inside their own module and
+// exposed via window.todosTextUndo/Redo (same pattern the module already uses for
+// toggleTodosPanel).
 function contextualUndo(){
   const ae=document.activeElement;
-  if(ae && ae.id==='pad-editor'){ padUndo(); return; }
   if(ae && ae.classList && ae.classList.contains('todo-text')){ window.todosTextUndo?.(); return; }
   undo();
 }
 function contextualRedo(){
   const ae=document.activeElement;
-  if(ae && ae.id==='pad-editor'){ padRedo(); return; }
   if(ae && ae.classList && ae.classList.contains('todo-text')){ window.todosTextRedo?.(); return; }
   redo();
 }
@@ -10154,7 +10140,7 @@ function warnGhostDocFallback(id,context){
 function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
-  tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.padUndoStack=padUndoStack; tab.padRedoStack=padRedoStack; tab.dirty=dirty;
+  tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.dirty=dirty;
   tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.docLinkedUrl=docLinkedUrl; tab.docLinkedUrlLabel=docLinkedUrlLabel; tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.remarks=Array.isArray(remarks)?remarks.slice():[];
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
@@ -10162,7 +10148,7 @@ function captureActiveTabSnapshot(){
 
 function applyTabSnapshot(tab){
   hideCrossTabWarning();
-  nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; padUndoStack=tab.padUndoStack||[]; padRedoStack=tab.padRedoStack||[]; dirty=!!tab.dirty;
+  nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
   setDocStatus(typeof tab.docStatus==='string'?tab.docStatus:'',false);
@@ -10190,7 +10176,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'', docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], remarks:Array.isArray(d.remarks)?d.remarks:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], padUndoStack:[], padRedoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'', docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], remarks:Array.isArray(d.remarks)?d.remarks:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
 
@@ -10260,7 +10246,7 @@ function switchDoc(id){
   if(!tab){
     tab=loadTabFromStorageObj(id);
     if(!tab){
-      tab={docId:id,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+      tab={docId:id,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
       if(loadActiveDocsIndex().some(d=>d.id===id)){ tab._ghostFallback=true; warnGhostDocFallback(id,'switchDoc'); }
     }
     openTabs.push(tab);
@@ -10463,7 +10449,7 @@ function restoreOpenTabsOnStartup(forceActiveId){
     // silently stamp the built-in sample content over a slot that used to hold real work.
     let t=loadTabFromStorageObj(currentDocId);
     if(!t){
-      t={docId:currentDocId,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+      t={docId:currentDocId,title:'',author:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
       if(validIds.has(currentDocId)){ t._ghostFallback=true; warnGhostDocFallback(currentDocId,'restoreOpenTabsOnStartup'); }
     }
     openTabs.push(t); activeId=currentDocId;
@@ -10496,7 +10482,7 @@ function ensureDocumentForEditing(){
   const payload={nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:resolvedAuthor};
   try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
   touchDocIndex(id,'Untitled');
-  const tab={docId:id,title:'',author:resolvedAuthor,docStatus:'',docLinkedUrl:'',docLinkedUrlLabel:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+  const tab={docId:id,title:'',author:resolvedAuthor,docStatus:'',docLinkedUrl:'',docLinkedUrlLabel:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
   openTabs.push(tab);
   currentDocId=id; activeTabDocId=id; saveCurrentDocId(id);
   // Sync the actual input the rest of the app reads from (template stamping, save, status
@@ -10512,12 +10498,11 @@ function ensureDocumentForEditing(){
 // Clears all in-memory document state and brings the UI to the empty welcome screen with no
 // document open — used when the last tab is closed, or on startup if nothing was restored.
 function clearToNoDocumentState(){
-  nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; padUndoStack=[]; padRedoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
+  nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
   setDocStatus('',false);
   setDocLinkedUrl('','',false);
-  if(el('pad-editor'))el('pad-editor').innerHTML='';
   currentDocId=null; activeTabDocId=null; try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
   render(); updateDirtyIndicator(); updateAuthorDisplay();
   if(typeof updatePadVisibility==='function') updatePadVisibility();
@@ -13416,7 +13401,7 @@ async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmai
         mergedDiagrams=mergedDiagrams.map(dg=>blobs[dg.id]?{...dg,xml:blobs[dg.id].xml}:dg);
       }catch(e){ console.warn('[sakura] openSharedDocument: diagrams subcollection fetch failed:',e); }
     }
-    tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:mergedDiagrams,remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),focusedId:null,undoStack:[],redoStack:[],padUndoStack:[],padRedoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+    tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:mergedDiagrams,remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),focusedId:null,undoStack:[],redoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
     // Mirrors loadDocFromStorage's own identical line — without this, applyTabSnapshot (called
     // below) has no equivalent step of its own, so hydrateDiagramBlobsForDoc would treat every
     // one of these as un-hydrated and go looking for it in THIS device's local IndexedDB
@@ -19195,8 +19180,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // Column resize handles are only ever attached as part of a live mutation (paste, Insert
     // table, Add row/column) within the current session -- a table that was already saved in
     // node.note (loaded from storage, or simply present the first time this row renders) gets
-    // none at all otherwise. Same reasoning Pad's own _reinitPadEditorTables documents for
-    // re-attaching whenever its editor opens.
+    // none at all otherwise, so it's re-attached explicitly here too.
     noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t));
     const commitNoteLine=()=>{ const html=sakuraSanitizeRichHtml(cleanEditorHtml(noteLine)); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=html; nodes[i].modifiedAt=Date.now();} markDirty(); scheduleAutoSave(); return html; };
     // noteLine is permanently contenteditable (even while just displaying, unfocused) so clicking
@@ -25417,7 +25401,7 @@ function handleGenericQaKeydown(e,target){
   return false;
 }
 // Quick Insert (the node-editing version) closes itself via each node textarea's own
-// blur handler — but note-editor/pad-editor/code-editor/todo-text/todos-input have no
+// blur handler — but note-editor/code-editor/todo-text/todos-input have no
 // equivalent blur-driven cleanup for this generic version, so without this, clicking
 // anywhere outside the popup (rather than pressing a key) left it stuck open indefinitely.
 document.addEventListener('mousedown',e=>{
@@ -35526,7 +35510,7 @@ function syncAudienceLaser(clientX,clientY){
     let xPct=clientX/window.innerWidth, yPct=clientY/window.innerHeight;
     if(audienceNotesVisible){
       const panel=el('presenter-notes-panel');
-      const contentId=padViewMode==='qa'?'qa-body':'pad-editor';
+      const contentId=padViewMode==='qa'?'qa-body':null;
       const content=panel&&panel.classList.contains('open')?el(contentId):null;
       const box=content?content.getBoundingClientRect():null;
       if(box&&box.width>0&&box.height>0&&clientX>=box.left&&clientX<=box.right&&clientY>=box.top&&clientY<=box.bottom){
@@ -35786,22 +35770,19 @@ function syncAudiencePadContent(){
 // scrolling down here to reveal more notes or questions never carried across, effectively
 // capping what the room could ever see at one screenful. Mirrors scrollTop directly rather than
 // a proportional ratio since both sides render identical content (same synced innerHTML /
-// qaItems), so an absolute copy lines them up exactly. Only the currently-visible view (Notes
-// vs Q&A) is synced — the other is offscreen on both ends, so touching its scroll would just be
-// wasted work that can't be seen anyway.
+// qaItems), so an absolute copy lines them up exactly. Only the currently-visible view (Q&A) is
+// synced — the others (Diagrams/Remarks) are offscreen on both ends, so touching their scroll
+// would just be wasted work that can't be seen anyway.
 function syncAudiencePadScroll(){
   if(!audienceWinLive()||!audienceNotesVisible)return;
   try{
     const win=presenterAudienceWin;
-    if(padViewMode==='notes'){
-      const mainEditor=el('pad-editor'), aEditor=win.document.getElementById('pad-editor');
-      if(mainEditor&&aEditor&&aEditor.scrollTop!==mainEditor.scrollTop)aEditor.scrollTop=mainEditor.scrollTop;
-    } else if(padViewMode==='qa'){
+    if(padViewMode==='qa'){
       const mainQa=el('qa-body'), aQa=win.document.getElementById('qa-body');
       if(mainQa&&aQa&&aQa.scrollTop!==mainQa.scrollTop)aQa.scrollTop=mainQa.scrollTop;
     }
   }catch(e){
-    // Fires on every scroll event while sharing (see the listeners just below) — logging only
+    // Fires on every scroll event while sharing (see the listener just below) — logging only
     // the error, never a per-call trace, same restraint already applied to the laser and zoom
     // sync, both of which can run at the same frequency.
     sakuraLog('audience','syncAudiencePadScroll threw',{message:e&&e.message});
@@ -35812,7 +35793,6 @@ function syncAudiencePadScroll(){
 // second. The poll (below) remains as a catch-all for scroll-position drift from non-scroll
 // causes (e.g. content shrinking while the audience side was scrolled further down than the
 // new content allows).
-el('pad-editor')?.addEventListener('scroll',()=>{ if(padViewMode==='notes')syncAudiencePadScroll(); },{passive:true});
 el('qa-body')?.addEventListener('scroll',()=>{ if(padViewMode==='qa')syncAudiencePadScroll(); },{passive:true});
 let _audiencePadPollTimer=null;
 function startAudiencePadPoll(){
@@ -36682,7 +36662,7 @@ function _imgResizeSelect(img,editorId){
 }
 function _imgResizePersist(){
   // Inline per-node notes (.node-note-line, id note-line-<nodeId>) are the one editor whose id
-  // isn't a fixed singleton like 'pad-editor' -- resolved from the editor element's own
+  // isn't a fixed singleton like 'note-editor' -- resolved from the editor element's own
   // data-node-id the same way commitNoteLine (see the note-line's own creation in render()) does.
   const editor=el(_imgResizeEditorId);
   if(editor&&editor.classList&&editor.classList.contains('node-note-line')){
@@ -36812,7 +36792,6 @@ function _editorCopyHandler(e, editorId) {
   } catch(_) {}
 }
 el('note-editor')?.addEventListener('copy', e => _editorCopyHandler(e, 'note-editor'));
-el('pad-editor')?.addEventListener('copy', e => _editorCopyHandler(e, 'pad-editor'));
 
 document.addEventListener('mousedown',e=>{
   if(!_imgResizeTarget)return;
@@ -36883,7 +36862,6 @@ function setPadOpen(open, persist=true, focusEditor=true){
   }
   if(persist) savePadOpenState();
   updatePadVisibility();
-  if(padOpen && padEnabled && currentDocId && focusEditor) setTimeout(()=>{ try{ el('pad-editor')?.focus(); _reinitPadEditorTables(); }catch(e){} }, 60);
 }
 function togglePad(){ if(!(padEnabled && currentDocId)) return; setPadOpen(!padOpen); }
 
@@ -38043,11 +38021,11 @@ el('pad-panel-close-header')?.addEventListener('click',()=>setPadOpen(false));
 })();
 applyPadWidth(padWidth);
 
-// Ctrl/Cmd+Shift+P — toggle Pad. Combo lives in the SHORTCUTS registry (togglePad). Capture phase so it fires even with the Pad editor focused.
+// Ctrl/Cmd+Shift+P — toggle Pad. Combo lives in the SHORTCUTS registry (togglePad).
 document.addEventListener('keydown', e=>{
   if(isRecordingShortcut) return;
   if(matchesShortcut(e, 'togglePad')){
-    if(isControlTarget(e.target) && !el('pad-editor')?.contains(e.target)) return;
+    if(isControlTarget(e.target)) return;
     if(!padEnabled) return;
     e.preventDefault();
     fireShortcut('togglePad');
@@ -38098,203 +38076,6 @@ document.addEventListener('keydown', e=>{
     fireShortcut('toggleJournal');
   }
 }, true);
-
-// Pad toolbar commands
-function padExecCmd(cmd, value){
-  el('pad-editor')?.focus();
-  document.execCommand(cmd, false, value || null);
-  updatePadTbState();
-}
-function padQuoteAncestor(){
-  const sel=window.getSelection();
-  if(!sel||!sel.anchorNode)return null;
-  const node=sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentElement;
-  return node?node.closest('#pad-editor blockquote.pad-quote'):null;
-}
-function updatePadTbState(){
-  ['bold','italic','underline','strikeThrough'].forEach(cmd=>{
-    const map={bold:'ptb-bold',italic:'ptb-italic',underline:'ptb-underline',strikeThrough:'ptb-strike'};
-    const btn=el(map[cmd]);
-    if(btn) btn.classList.toggle('active', document.queryCommandState(cmd));
-  });
-  el('ptb-quote')?.classList.toggle('active', !!padQuoteAncestor());
-}
-document.querySelectorAll('#pad-toolbar .note-tb-btn[data-cmd]').forEach(btn=>{
-  btn.addEventListener('mousedown', e=>{
-    e.preventDefault();
-    padExecCmd(btn.dataset.cmd);
-  });
-});
-
-el('ptb-timestamp')?.addEventListener('mousedown', e=>{
-  e.preventDefault();
-  insertDateTime('pad-editor');
-});
-
-el('ptb-link')?.addEventListener('mousedown', e=>{
-  e.preventDefault();
-  const editor=el('pad-editor');
-  editor?.focus();
-  const sel=window.getSelection();
-  const range = sel && sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
-  const existing=sel && sel.anchorNode ? sel.anchorNode.parentElement?.closest('a') : null;
-  const selectedText = sel ? sel.toString() : '';
-  const defaultUrl=existing ? existing.href : '';
-  const defaultText = existing ? existing.textContent : selectedText;
-  sakuraLinkPrompt({title:'Insert Link', text: defaultText, url: defaultUrl}).then(result=>{
-    if(!result) return;
-    editor?.focus();
-    if (existing) {
-      const r = document.createRange(); r.selectNode(existing);
-      sel.removeAllRanges(); sel.addRange(r);
-    } else if (range) {
-      sel.removeAllRanges(); sel.addRange(range);
-    }
-    const url=(result.url||'').trim();
-    // execCommand('unlink'/'insertHTML') doesn't reliably fire beforeinput — measured directly —
-    // so the idle-debounce checkpoint below never captures a pre-edit state for either branch.
-    pushPadUndo();
-    if(!url){
-      document.execCommand('unlink', false, null);
-    } else {
-      const text=(result.text||'').trim() || url;
-      document.execCommand('insertHTML', false, `<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
-    }
-    markDirty();
-  });
-});
-
-el('ptb-quote')?.addEventListener('mousedown', e=>{
-  e.preventDefault();
-  const editor=el('pad-editor'); if(!editor) return;
-  editor.focus();
-  const existingQuote=padQuoteAncestor();
-  if(existingQuote){
-    // Toggle off — same expectation Bold/Italic already set: click again to remove the
-    // formatting. Only unwraps the quoted text itself back to a plain paragraph; the citation
-    // line (if any) is left alone rather than auto-deleted, since it may hold real text the
-    // person typed in and silently discarding that on an unrelated click would be a bad
-    // surprise. Raw DOM swap (replaceWith), not execCommand, so it needs its own checkpoint.
-    pushPadUndo();
-    const p=document.createElement('p');
-    p.innerHTML=existingQuote.innerHTML;
-    existingQuote.replaceWith(p);
-    const newRange=document.createRange();
-    newRange.selectNodeContents(p);
-    newRange.collapse(false);
-    const sel0=window.getSelection();
-    sel0.removeAllRanges(); sel0.addRange(newRange);
-    markDirty();
-    updatePadTbState();
-    return;
-  }
-  const sel=window.getSelection();
-  const hasSelection=sel&&sel.rangeCount&&!sel.getRangeAt(0).collapsed;
-  const selectedText=hasSelection?sel.toString():'';
-  const quoteText=selectedText||'Quoted text';
-  // execCommand('insertHTML') delegates block-splitting to the browser's own editing engine,
-  // same as the Link/Image buttons above — important here since a caret sitting mid-paragraph
-  // means a plain Range.insertNode would nest the blockquote inside that paragraph's text node
-  // (invalid <p><blockquote>…</blockquote></p> markup that reparses differently once it
-  // round-trips through save/reload than it looked like the moment it was inserted).
-  // Unlike execCommand('indent'), insertHTML does NOT reliably fire beforeinput in Chrome — measured
-  // directly, not assumed — so the idle-debounce checkpoint above never captures a pre-edit state for
-  // it and Ctrl+Z silently no-ops. Needs the same explicit checkpoint the table button uses.
-  pushPadUndo();
-  document.execCommand('insertHTML', false, `<blockquote class="pad-quote">${esc(quoteText)}</blockquote><p class="pad-quote-cite">\u2014 </p>`);
-  const cite=[...editor.querySelectorAll('.pad-quote-cite')].pop();
-  const bq=[...editor.querySelectorAll('blockquote.pad-quote')].pop();
-  if(cite&&bq){
-    const newRange=document.createRange();
-    if(selectedText){
-      // Text was already picked to quote — jump straight to the citation line so the next
-      // thing typed is the source, not "click into the block first".
-      newRange.setStart(cite.firstChild,cite.firstChild.length);
-      newRange.collapse(true);
-    } else {
-      // Nothing selected — select the "Quoted text" placeholder so typing immediately
-      // replaces it, same as a form field placeholder.
-      newRange.selectNodeContents(bq);
-    }
-    sel.removeAllRanges(); sel.addRange(newRange);
-  }
-  markDirty();
-  updatePadTbState();
-});
-el('ptb-table')?.addEventListener('mousedown', e=>{
-  e.preventDefault();
-  const editor=el('pad-editor');
-  if(!editor) return;
-  editor.focus();
-  // Raw DOM insert below (createElement/insertNode), not execCommand — bypasses
-  // beforeinput, so it needs its own explicit checkpoint.
-  pushPadUndo();
-
-  const cols=2, defaultColW=120;
-  const table=document.createElement('table');
-  const cg=document.createElement('colgroup');
-  for(let i=0;i<cols;i++){ const col=document.createElement('col'); col.style.width=defaultColW+'px'; cg.appendChild(col); }
-  table.appendChild(cg);
-
-  const thead=table.createTHead(); const hrow=thead.insertRow();
-  ['Column 1','Column 2'].forEach(text=>{
-    const th=document.createElement('th'); th.contentEditable='true'; th.textContent=text; hrow.appendChild(th);
-  });
-  const tbody=table.createTBody();
-  for(let r=0;r<2;r++){
-    const row=tbody.insertRow();
-    for(let c=0;c<cols;c++){ const td=row.insertCell(); td.contentEditable='true'; }
-  }
-
-  const sel=window.getSelection();
-  if(sel && sel.rangeCount){
-    const range=sel.getRangeAt(0);
-    range.collapse(false);
-    range.insertNode(table);
-    const firstCell=tbody.rows[0].cells[0];
-    const newRange=document.createRange();
-    newRange.setStart(firstCell, 0);
-    newRange.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(newRange);
-  } else {
-    editor.appendChild(table);
-  }
-
-  _attachTableResizeHandles(table);
-  markDirty();
-});
-
-// Re-attach column resize handles whenever the Pad opens (for saved content with tables)
-function _reinitPadEditorTables(){
-  const editor=el('pad-editor');
-  if(!editor) return;
-  editor.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t));
-}
-
-el('ptb-image')?.addEventListener('click', () => {
-  const input=document.createElement('input');
-  input.type='file';
-  input.accept='image/*';
-  input.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
-  document.body.appendChild(input);
-  input.addEventListener('change', () => {
-    const file=input.files?.[0];
-    if(!file){ input.remove(); return; }
-    const reader=new FileReader();
-    reader.onload=evt=>{
-      el('pad-editor')?.focus();
-      // execCommand('insertImage') doesn't reliably fire beforeinput — measured directly — so
-      // the idle-debounce checkpoint never captures a pre-edit state for it.
-      pushPadUndo();
-      document.execCommand('insertImage', false, evt.target.result);
-      input.remove();
-      markDirty();
-    };
-    reader.readAsDataURL(file);
-  });
-  input.click();
-});
 
 // ── Remarks tab ───────────────────────────────────────────────────────────
 // A record of what someone said, attributed to a person and optionally a moment in the outline,
@@ -38825,129 +38606,6 @@ function jumpToNodeRemarkRefs(anchorEl,refs){
   openRemarkRefJumpPopover(anchorEl,refs);
 }
 function subtreeHasRemark(idx){if(!Array.isArray(remarks)||!remarks.length)return false; const end=getSubtreeEnd(nodes,idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return remarks.some(r=>ids.has(r.anchorNodeId))}
-el('pad-editor')?.addEventListener('paste', e => {
-  // See the equivalent handler on the node Note editor for why this only intercepts
-  // genuine image-only pastes and otherwise lets the browser's native paste through.
-  e.stopPropagation();
-  const html=e.clipboardData?.getData('text/html') || '';
-  const text=e.clipboardData?.getData('text/plain') || '';
-  const hasRichContent=text.trim().length > 0 || html.replace(/<[^>]*>/g, '').trim().length > 0;
-  if(hasRichContent){
-    setTimeout(() => { _reinitPadEditorTables(); markDirty(); }, 0);
-    return;
-  }
-  const items=e.clipboardData?.items;
-  if(!items) return;
-  for(const item of items){
-    if(item.type.startsWith('image/')){
-      e.preventDefault();
-      const file=item.getAsFile();
-      if(!file) continue;
-      const reader=new FileReader();
-      reader.onload=evt=>{ pushPadUndo(); document.execCommand('insertImage', false, evt.target.result); markDirty(); };
-      reader.readAsDataURL(file);
-      return;
-    }
-  }
-  // A copied file (e.g. from Finder/Explorer) with no image representation also shows up as a
-  // plain file item here — simply ignored, since pasting here is text/image territory only.
-});
-
-el('pad-editor')?.addEventListener('keydown', e => {
-  // See note-editor's identical change above — same reasoning, same fix.
-  if (handleGenericQaKeydown(e, e.currentTarget)) return;
-  // Presenter notes reuses this same element while presenting (see openPresenterNotes) — Escape
-  // there needs to close the notes panel specifically, which the stopPropagation right below
-  // would otherwise prevent from ever reaching the presenter mode keydown handler.
-  if(previewPresenting && e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closePresenterNotes(); return; }
-  e.stopPropagation(); // don't fire global shortcuts while typing in the Pad
-  // Contextual undo/redo: Pad has its own stack (padUndoStack/padRedoStack), separate
-  // from the outline's, since Pad content was never part of the outline's snapshot().
-  // Handled here explicitly rather than relying on native contenteditable undo, which
-  // doesn't survive programmatic content replacement (AI rewrite, Clear pad).
-  if (matchesShortcut(e,'undo')) { e.preventDefault(); padUndo(); return; }
-  if (matchesShortcut(e,'redo')) { e.preventDefault(); padRedo(); return; }
-  if(e.key === 'Tab'){
-    e.preventDefault();
-    const sel=window.getSelection();
-    if(!sel || !sel.rangeCount) return;
-    const range=sel.getRangeAt(0);
-    // Table cell navigation takes priority over the list-indent/space-insert behavior below —
-    // a Tab landed inside a <td>/<th> means "move to the next cell", spreadsheet-style, not
-    // "indent this line". Shift+Tab reverses direction; Tab from the very last cell appends a
-    // new row and lands in its first cell, so a fast typist can keep tabbing through a growing
-    // table without reaching for the context menu's "Add row below" each time.
-    const anchorEl=sel.anchorNode?.nodeType===1?sel.anchorNode:sel.anchorNode?.parentElement;
-    const cell=anchorEl?.closest?.('td,th');
-    if(cell){
-      const table=cell.closest('table');
-      const allCells=table?Array.from(table.querySelectorAll('td,th')):[];
-      const cellIdx=allCells.indexOf(cell);
-      let targetCell=null;
-      if(e.shiftKey){
-        targetCell=cellIdx>0?allCells[cellIdx-1]:null;
-      } else if(cellIdx===allCells.length-1){
-        pushPadUndo();
-        const lastRow=table.rows[table.rows.length-1];
-        const newRow=lastRow.cloneNode(false);
-        const colCount=lastRow.cells.length;
-        for(let i=0;i<colCount;i++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); }
-        (table.tBodies[0]||table).appendChild(newRow);
-        _attachTableResizeHandles(table);
-        targetCell=newRow.cells[0];
-      } else {
-        targetCell=allCells[cellIdx+1];
-      }
-      if(targetCell){
-        const newRange=document.createRange();
-        newRange.selectNodeContents(targetCell);
-        newRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      }
-      markDirty();
-      return;
-    }
-    const li=sel.anchorNode?.closest?.('li') || (sel.anchorNode?.parentElement?.closest?.('li'));
-    if(li){
-      document.execCommand(e.shiftKey ? 'outdent' : 'indent');
-    } else if(!e.shiftKey){
-      // execCommand/indent above fires beforeinput and gets checkpointed by the idle-debounce
-      // listener; this raw insertNode path doesn't, so it needs its own explicit checkpoint.
-      pushPadUndo();
-      const spaces=document.createTextNode('\u00a0\u00a0\u00a0\u00a0');
-      range.deleteContents();
-      range.insertNode(spaces);
-      range.setStartAfter(spaces);
-      range.setEndAfter(spaces);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-    markDirty();
-    return;
-  }
-  updatePadTbState();
-});
-el('pad-editor')?.addEventListener('keyup', updatePadTbState);
-el('pad-editor')?.addEventListener('mouseup', updatePadTbState);
-el('pad-editor')?.addEventListener('input', () => markDirty());
-// Pad has no separate commit-on-blur step — its content is read live from the DOM whenever it's
-// saved — so this blur listener exists purely to trigger SAP Note linkification at a natural
-// settle point, same reasoning as commitNoteEdit's call to the same function.
-el('pad-editor')?.addEventListener('blur', () => { if(linkifySapNotesInElement(el('pad-editor')))markDirty(); });
-// Idle-debounce undo checkpointing for Pad. beforeinput fires before the DOM mutates,
-// so padCheckpointPending (true) captures the pre-edit state as this burst's undo point;
-// it then stays false — no further pushes — until 800ms of inactivity flips it back to
-// true, ready for the next burst. Mirrors the outline's "one undo step per edit session"
-// principle, adapted for a field with no open/close boundary to hang a session off of.
-let _padIdleTimer=null;
-let _padCheckpointPending=true;
-el('pad-editor')?.addEventListener('beforeinput', () => {
-  if(_padCheckpointPending){ pushPadUndo(); _padCheckpointPending=false; }
-  clearTimeout(_padIdleTimer);
-  _padIdleTimer=setTimeout(()=>{ _padCheckpointPending=true; }, 800);
-});
-el('pad-editor')?.addEventListener('focus', () => { clearTimeout(_padIdleTimer); _padCheckpointPending=true; });
 
 el('pad-clear-btn')?.addEventListener('click', async (e) => {
   e.stopPropagation();
@@ -38962,83 +38620,6 @@ el('pad-clear-btn')?.addEventListener('click', async (e) => {
     renderQaList();
     markDirty(); scheduleAutoSave();
   });
-});
-
-// Pad AI rewrite — selection-aware, same model as the node Note's rewrite action
-el('ptb-ai-rewrite')?.addEventListener('click', async () => {
-  const editor=el('pad-editor');
-  if(!editor) return;
-  const btn=el('ptb-ai-rewrite');
-
-  const sel=window.getSelection();
-  const hasSelection=sel && sel.rangeCount > 0 && !sel.isCollapsed && editor.contains(sel.anchorNode);
-
-  let inputText='';
-  let savedRange=null;
-  if(hasSelection){
-    savedRange=sel.getRangeAt(0).cloneRange();
-    inputText=savedRange.toString().trim();
-  } else {
-    // Markdown extraction (mdBlocksFromHtml), not innerText — innerText discards all
-    // structure, so a bulleted/numbered list, bold/italic, or headings had nothing left
-    // for aiRewritePrompt's preservation instructions to actually preserve. Selection-based
-    // rewrite (above) is left as plain text for now — reconstructing HTML back into an
-    // arbitrary mid-document selection range is a separate, harder problem.
-    inputText=mdBlocksFromHtml(editor.innerHTML,0).trim();
-  }
-  if(!inputText) return;
-
-  // Rewriting with nothing selected replaces the ENTIRE editor — lists, bold/italic, and
-  // headings now survive the round-trip via Markdown (see extraction above), but images and
-  // tables still don't since mdBlocksFromHtml has no representation for them. This confirms
-  // first rather than losing them without warning.
-  if(!hasSelection){
-    const nImg=editor.querySelectorAll('img').length;
-    const nTable=editor.querySelectorAll('table').length;
-    if(nImg||nTable){
-      const parts=[];
-      if(nImg) parts.push(`${nImg} image${nImg===1?'':'s'}`);
-      if(nTable) parts.push(`${nTable} table${nTable===1?'':'s'}`);
-      const ok=await sakuraConfirm({
-        icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',
-        title:'Rewrite the whole Pad?',
-        body:`This replaces all of the Pad's content with AI-rewritten text, which will remove ${parts.join(', ')} (other formatting like lists and bold text is preserved). Select just the text you want rewritten instead if you'd like to keep them.`,
-        confirmLabel:'Replace everything', confirmCls:'danger', cancelLabel:'Cancel'
-      });
-      if(!ok) return;
-    }
-  }
-
-  btn.classList.add('ai-busy');
-  try {
-    const prompt=aiRewritePrompt + '\n\nText: ' + inputText;
-    const result=await callAiRaw(prompt, aiMaxTokens);
-    if(!result) throw new Error('Empty response from AI');
-
-    editor.focus();
-    // Explicit checkpoint on Pad's own stack — this is now the actual mechanism that
-    // makes a rewrite undoable (Ctrl+Z routes to padUndo() above), not the execCommand
-    // calls below. Those stay because they still give better in-place cursor/selection
-    // behavior than raw DOM writes; they're no longer load-bearing for undo itself.
-    pushPadUndo();
-    if(hasSelection && savedRange){
-      const selRestore=window.getSelection();
-      selRestore.removeAllRanges();
-      selRestore.addRange(savedRange);
-      document.execCommand('insertText', false, result);
-    } else {
-      // Parse the AI's Markdown response back into real HTML instead of selecting-all +
-      // execCommand('insertText', result) — that always inserts a flat text node, which is
-      // exactly what used to destroy list/bold/heading structure on every whole-pad rewrite.
-      editor.innerHTML=sakuraSanitizeRichHtml(mdTextToHtml(result));
-    }
-    markDirty();
-    if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
-  } catch(err) {
-    showAiErrorModal(aiProvider, err);
-  } finally {
-    btn.classList.remove('ai-busy');
-  }
 });
 
 // Init
@@ -44285,7 +43866,7 @@ document.querySelectorAll('.meeting-field-fmt-btn').forEach(btn=>{
 // (short of typing raw HTML) to add a link in meeting notes at all, since that field's own
 // toolbar only ever had bullet/numbered list and AI rewrite buttons. Settings → Editing →
 // "Selection formatting popover" turns it off if it gets in the way.
-const SELECTION_FMT_EDITOR_IDS=['pad-editor','meeting-agenda','meeting-body-field','journal-body-field','library-body-field'];
+const SELECTION_FMT_EDITOR_IDS=['meeting-agenda','meeting-body-field','journal-body-field','library-body-field'];
 const SELECTION_HIGHLIGHT_COLOR='rgba(234,179,8,.35)'; // same hue as the node-highlight palette's yellow
 let _selectionFmtEditorId=null;
 function selectionFmtEditorFor(node){
@@ -44433,7 +44014,6 @@ async function runSelectionFmtRewrite(editorId,btn){
   // one that's still safe to apply. The saved Range itself is exactly this fragile: if the DOM
   // underneath it changed while waiting, restoring it and inserting there is unreliable at best.
   const requestNoteId=editorId==='note-editor'?notePanelNodeId:null;
-  const requestDocId=editorId==='pad-editor'?currentDocId:null;
   const requestMeetingId=meetingFieldKeyForEditorId(editorId)?meetingExpandedId:null;
   const htmlBefore=editor.innerHTML;
   if(btn)btn.classList.add('ai-busy');
@@ -44442,7 +44022,6 @@ async function runSelectionFmtRewrite(editorId,btn){
     const result=await callAiRaw(prompt,aiMaxTokens);
     if(!result)throw new Error('Empty response from AI');
     const identityChanged=(editorId==='note-editor'&&aiSnapshotChanged(requestNoteId,notePanelNodeId))
-      ||(editorId==='pad-editor'&&aiSnapshotChanged(requestDocId,currentDocId))
       ||(!!meetingFieldKeyForEditorId(editorId)&&aiSnapshotChanged(requestMeetingId,meetingExpandedId));
     if(identityChanged||aiSnapshotChanged(htmlBefore,editor.innerHTML)){
       showToast('This changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
@@ -44454,14 +44033,11 @@ async function runSelectionFmtRewrite(editorId,btn){
     selRestore.addRange(savedRange);
     const mfKey=meetingFieldKeyForEditorId(editorId);
     if(editorId==='note-editor')pushNoteSessionUndo();
-    else if(editorId==='pad-editor')pushPadUndo();
     else if(mfKey)checkpointMeetingField(mfKey);
     document.execCommand('insertText',false,result);
     if(editorId==='note-editor'&&notePanelNodeId!==null){
       const idx=getIndex(nodes,notePanelNodeId);
       if(idx>=0){ pushUndo(); nodes[idx].note=cleanEditorHtml(editor); nodes[idx].modifiedAt=Date.now(); markDirty(); }
-    } else if(editorId==='pad-editor'){
-      markDirty();
     } else if(mfKey){
       meetingFieldSyncModel(mfKey,editor);
     } else {
@@ -44496,8 +44072,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
       if(url){
         if(mfKey)checkpointMeetingField(mfKey);
         // Same gap as the toolbar's own Link button — execCommand('insertHTML') doesn't
-        // reliably fire beforeinput, so Pad/Note's idle-debounce checkpoint never catches it.
-        else if(editorId==='pad-editor'&&typeof pushPadUndo==='function')pushPadUndo();
+        // reliably fire beforeinput, so Note's idle-debounce checkpoint never catches it.
         else if(editorId==='note-editor'&&typeof pushNoteSessionUndo==='function')pushNoteSessionUndo();
         const text=(result.text||'').trim()||url;
         document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
