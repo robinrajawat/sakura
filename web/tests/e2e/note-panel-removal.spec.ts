@@ -5,9 +5,6 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
-const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
-
 async function dismissOverlays(page: import('@playwright/test').Page) {
   const landing = page.locator('#sakura-landing-overlay');
   if (await landing.isVisible().catch(() => false)) {
@@ -124,36 +121,14 @@ test.describe('Note Panel + Code Block removal', () => {
     await expect(noteLine).toBeFocused();
   });
 
-  test('Pad\'s own right-click context menu (which shares note-panel-named helpers) still opens without error', async ({ page }) => {
-    // Regression test: the shared _noteCtxItem()/_closeNoteCtx() helpers, despite their name,
-    // are Pad's own context-menu building blocks, not Note-Panel-exclusive -- removing the Note
-    // Panel must not take them with it.
-    const errors: string[] = [];
-    page.on('pageerror', (err) => {
-      if (!KNOWN_NOISE.test(err.message)) errors.push(err.message);
-    });
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-
-    // togglePad() no-ops without an open document -- give it one so the button actually opens Pad.
-    await page.evaluate(() => {
-      // @ts-expect-error -- bare global from index.html
-      currentDocId = 'test-doc';
-      // @ts-expect-error
-      setPadOpen(true);
-    });
-    const padEditor = page.locator('#pad-editor');
-    await expect(padEditor).toBeVisible();
-    await padEditor.click();
-    await page.keyboard.type('some pad text');
-    await padEditor.click({ button: 'right' });
-
-    const menu = page.locator('#pad-ctx-menu');
-    await expect(menu).toHaveClass(/open/);
-    const itemCount = await menu.locator('.note-ctx-item').count();
-    expect(itemCount).toBeGreaterThan(0);
-    expect(errors).toEqual([]);
-  });
+  // A prior test here covered Pad's own right-click context menu (#pad-ctx-menu), which shared
+  // the _noteCtxItem()/_closeNoteCtx() helpers with the Note Panel this file is about -- a
+  // regression guard that removing the Note Panel must not take those shared helpers with it.
+  // The Notepad tab removal (a separate, later cutdown PR) removed Pad's own editable rich-text
+  // surface (#pad-editor) and its context menu entirely, which was the only remaining caller of
+  // _noteCtxItem()/_closeNoteCtx()/_noteCtxDivider()/_noteCtxGroupLabel() -- those helpers (and
+  // #pad-ctx-menu, and the now-fully-unused .note-ctx-* CSS) were removed alongside it, so there
+  // is nothing left for this test to exercise.
 
   test('Quick Assist search still has a Notes category but no longer has a Code category', async ({ page }) => {
     await page.goto('file://' + indexPath);
