@@ -29,9 +29,9 @@ import type { QueryableNode } from '../core/nodeQueries';
  * `escapeHtml` (from `src/utils/escapeHtml.ts`, already generated) are referenced as ambient
  * globals via `declare function`. `node.note` itself holds rich HTML (inline notes are rich
  * text, not plain text), so it needs plain-texting before going into an XML attribute the same
- * way `serializeTreeTextWithNotesCore` already plain-texts it for its own "Note:" line —
- * `stripHtmlToText` is hand-written and DOM-touching, so it's injected as an explicit parameter
- * rather than referenced via `declare function`, matching that module's own established pattern.
+ * way the (since-removed) `serializeTreeTextWithNotesCore` plain-texted it for its own "Note:"
+ * line — `stripHtmlToText` is hand-written and DOM-touching, so it's injected as an explicit
+ * parameter rather than referenced via `declare function`, the pattern that module established.
  */
 
 declare function escapeHtml(value: unknown): string;

@@ -22,9 +22,9 @@ import type { QueryableNode } from '../core/nodeQueries';
  * "no silent default for a live user-preference toggle" reasoning `computeOutlineNumbers`'s own
  * header already established for `outlineNumbering`.
  *
- * `serializeTreeTextWithNotes` (near-identical, but appends each node's `note` via the
- * DOM-dependent `stripHtmlToText`) stays hand-written — genuinely different in kind, same split
- * pattern used elsewhere in this migration between a DOM-dependent sibling and its pure core.
+ * A near-identical sibling that also appended each node's `note` (`serializeTreeTextWithNotes`)
+ * existed only for the Pad Q&A list's AI "Generate questions" action, and was removed along with
+ * that list.
  */
 
 declare function buildPrefix(

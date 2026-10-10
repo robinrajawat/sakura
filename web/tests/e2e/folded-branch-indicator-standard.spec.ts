@@ -104,8 +104,6 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
         { id: 'd2', anchorNodeId: 2, title: 'Child diagram' },
       ];
       // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
       const badge = row.querySelector('.fold-badge')!;
@@ -137,8 +135,6 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
       // @ts-expect-error
       diagrams = [{ id: 'd3', anchorNodeId: 3, title: 'Child diagram' }];
       // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
       const badges = row.querySelectorAll('.fold-badge');
@@ -167,8 +163,6 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
       selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
       // @ts-expect-error
       qaItems = [{ id: 'q1', sourceNodeId: 1, question: 'Q', answer: 'A' }];
-      // @ts-expect-error
-      padQaTabEnabled = true;
       // @ts-expect-error
       render();
 

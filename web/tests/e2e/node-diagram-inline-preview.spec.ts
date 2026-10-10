@@ -23,7 +23,7 @@ const FAKE_PREVIEW_SVG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns=
 const LARGE_PREVIEW_SVG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="800" height="500" fill="white" stroke="black"/><text x="40" y="40">Step 1</text></svg>');
 
 // Diagrams now preview inline the same way notes/remarks/Q&A already do, instead of the dot
-// jumping straight to the Pad panel + the full draw.io editor on every click. The dot toggles
+// jumping straight to the full draw.io editor on every click. The dot toggles
 // an inline preview card (thumbnail + title); actually editing the diagram still requires
 // opening the real editor, reached by clicking the preview itself or its "open" icon.
 test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () => {
@@ -43,8 +43,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       // @ts-expect-error
       diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'My Flow', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
       // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       render();
     }, FAKE_PREVIEW_SVG);
 
@@ -60,9 +58,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(preview.locator('.node-diagram-preview-title')).toHaveText('My Flow');
     await expect(preview.locator('.node-diagram-preview-thumb img')).toHaveCount(1);
 
-    // Pad never opened -- this is a lightweight inline preview, not a jump to the panel.
-    // @ts-expect-error
-    expect(await page.evaluate(() => padOpen)).toBe(false);
+    // Nothing opened -- this is a lightweight inline preview, not a jump to the editor.
     await expect(page.locator('#diagram-editor-overlay')).not.toHaveClass(/open/);
 
     // Toggling again collapses it.
@@ -85,8 +81,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       nextId = 2;
       // @ts-expect-error
       diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'My Flow', xml: '', previewSvg: '', pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
-      // @ts-expect-error
-      padDiagramsTabEnabled = true;
       // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error
@@ -115,8 +109,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       // @ts-expect-error
       diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'My Flow', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
       // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error
       render();
@@ -141,8 +133,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       nextId = 2;
       // @ts-expect-error
       diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Old name', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
-      // @ts-expect-error
-      padDiagramsTabEnabled = true;
       // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error
@@ -187,8 +177,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
         { id: 'd2', anchorNodeId: 1, title: 'Flow B', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true },
       ];
       // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error
       render();
@@ -213,8 +201,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       nextId = 2;
       // @ts-expect-error
       diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Big Flow', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
-      // @ts-expect-error
-      padDiagramsTabEnabled = true;
       // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error
@@ -248,8 +234,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       // @ts-expect-error
       diagrams = [];
       // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       render();
     });
 
@@ -273,8 +257,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       // @ts-expect-error
       diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Old name', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
       // @ts-expect-error
-      padDiagramsTabEnabled = true;
-      // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error
       render();
@@ -290,7 +272,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await title.blur();
 
     await expect(title).toHaveText('New name');
-    // Doesn't jump to the editor or Pad panel -- renaming stays inline.
+    // Doesn't jump to the editor -- renaming stays inline.
     await expect(page.locator('#diagram-editor-overlay')).not.toHaveClass(/open/);
     // @ts-expect-error
     expect(await page.evaluate(() => diagrams[0].title)).toBe('New name');
@@ -311,8 +293,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       nextId = 2;
       // @ts-expect-error
       diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Keep me', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
-      // @ts-expect-error
-      padDiagramsTabEnabled = true;
       // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error

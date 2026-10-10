@@ -11,7 +11,7 @@
  *
  * `diagramGenFinishGenerate` itself stays hand-written — the final `if(existing){...}else{...}`
  * block is genuine orchestration (mutating the `diagrams` array, `markDirty`/`scheduleAutoSave`,
- * opening the Pad panel, re-rendering the diagrams list, regenerating a thumbnail, a toast) with
+ * re-rendering the outline, regenerating a thumbnail, a toast) with
  * no pure logic left in it once this slice's XML-assembly core is factored out. The wrapper
  * becomes a thin pass-through: call this module's `diagramGenFinishGenerateXmlCore` for the
  * `xml` string, `diagramGenNodeMetaToPlain` (already ambient, unaffected) for the saved
