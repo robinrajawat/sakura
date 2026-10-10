@@ -222,6 +222,111 @@ only message text changed) and force-pushed over `main`; the one PR open at the 
 onto the new history so it didn't drag the old commits back in. `main` and the surviving PR branch
 are both clean as of this entry.
 
-No specific next task is queued. Whoever picks up the next session should check with the project
-owner for priorities if none are recorded here by then.
+**2026-10-10 (in progress): the "cutdown" effort — slimming the app to its core, inline-object
+workflow.** The project owner's framing: notes, tables, diagrams, remarks, and Q&A are all now
+handled as inline objects directly in the main outline editor, so several separate, parallel
+surfaces that predate that (a side Pad panel with its own list views, Decision Log, Notepad, Mind
+Map, Files, Presenter mode, multi-format exports, preset/feature-mode shortcuts) are overhead this
+pass removes, to ease maintenance and keep the app robust for its core function. Before starting,
+a pure backup snapshot of pre-cutdown `main` was pushed to branch
+`archive/full-featured-pre-cutdown` (from commit `cfc5c0a`) — if anything cut here is ever wanted
+back, start there rather than trying to reconstruct it from history.
+
+Planned as 9 small PRs, one per area, each independently delegated (see "Delegation pattern" below)
+and merged after independent review:
+
+1. #459 — Remove Files/attachments feature. **Merged.**
+2. #460 — Remove Mind Map feature. **Merged.**
+3. #461 — Remove Decision Log feature entirely (data model, Pad tab, inline cards, XLSX export).
+   **Merged.**
+4. #462 — Remove Notepad feature (the Pad's own free-form rich-text tab — NOT per-node notes,
+   which are untouched). **Merged** (needed one follow-up commit after merge-review caught ~39
+   dead-code references to the removed `#pad-editor` DOM node left wired into undo/redo, the AI
+   rewrite dispatcher, and Presenter/Audience sync).
+5. Remove the Pad container itself + the Diagrams/Q&A/Remarks **list-tab UI**, while preserving
+   their inline per-node editing entirely. **Not started — see scope notes below.**
+6. Hub trim to Todos-only (drop Journal and Meetings; confirm Reminders' real scope before
+   deciding its fate; keep Todos + Subtasks). **Not started.**
+7. #463 — Remove Preview/Presenter's interactive UI (the on-screen scrolling overlay, the
+   fullscreen slideshow, Audience View, Presenter Notes, laser pointer, etc.), while keeping
+   `renderPreviewBody()`/`exportPreviewAsPdf()` working as a fully headless PDF pipeline — PDF
+   export via the Export menu never opens any overlay. **Merged**, but **done before #5** (see
+   "Resequencing" below) — so the numbering here is execution order, not the original plan order.
+8. Trim exports to PDF-only (remove Word/.docx, PowerPoint/.pptx, OPML, Markdown, plain-text, and
+   rich-text-clipboard export paths; keep only PDF, built on the engine #463 kept headless).
+   **Not started.**
+9. Remove presets/feature-mode shortcuts (Editor's Choice preset, Documentation mode preset, Zen
+   mode's 3 preset buttons — zen mode itself stays, Features Go-Minimal/Restore-Full toggle) +
+   trim accent/chrome preset lists to a smaller fixed set + a final sweep of Settings UI and the
+   in-app Help/README for anything left dead from PRs 1-8. **Not started.**
+
+**Decisions already made, so the next session doesn't need to re-ask:**
+- Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive
+  overlay and Presenter mode are gone, but `renderPreviewBody()`/`exportPreviewAsPdf()` keep
+  working headlessly, reachable only via Export ▾ → PDF.
+- Decision Log and the Pad's Notepad: both fully removed, not just hidden behind a flag.
+- "Different presets, feature modes" (PR 9's scope) means: Editor's Choice / Documentation mode
+  presets, Zen mode's minimal/writing/fullscreen preset buttons (Zen mode itself stays), the
+  Features Go-Minimal/Restore-Full toggle, and the accent/chrome preset lists.
+- Delivery as several small PRs, one per area, each independently reviewed — not one mega-PR.
+- For PR #5 (not yet started): diagrams/Q&A/remarks can currently exist "unlinked" (not attached
+  to any outline node), browsable only via the Pad's list tabs. Once that list UI is gone, new
+  items must be created already-linked (the per-node "Add diagram…"/"Add question…"/"Add remark…"
+  context-menu actions already do this, independently of the Pad list — verified before scoping
+  the PR). Existing unlinked items in old documents stay in the data (never deleted) but become
+  unreachable in the UI — no replacement browsing surface is being built for them.
+
+**Resequencing: #463 (Preview/Presenter removal, originally planned as item 7) was done *before*
+item 5 (Pad container removal).** Reason: Presenter mode's "Presenter Notes" floating panel
+physically relocates the Pad panel's own `#pad-toolbar`/`#qa-body` DOM nodes into itself while
+presenting. Removing the Pad container first would have broken Presenter Notes mid-series, so
+Presenter/Preview went first instead, cleanly removing that dependency. If you're reading the
+original 9-item plan elsewhere (chat history, an issue), remember items 5 and 7 swapped execution
+order; the numbered list above already reflects what actually happened.
+
+**Delegation pattern that worked well for every PR in this series:** each feature removal was
+handed to a `claude` subagent (via the `Agent` tool) with one long, fully self-contained prompt —
+required CLAUDE.md reading, exhaustive grep-derived identifier lists for the feature being removed,
+explicit "what NOT to touch" boundaries (especially where naming overlaps with something that must
+stay, e.g. the Pad's `pad` HTML-content field vs. the Pad *container*'s own `padEnabled`/`padOpen`;
+or per-node notes vs. the Pad's Notepad tab, same English word, unrelated features), the full
+verification gauntlet, and PR-creation instructions. **The delegating session never merged on the
+subagent's word alone** — it independently re-fetched the branch and spot-checked the actual diff
+(targeted greps for the removed feature's name, for the things that must survive, and for the
+commit's author/committer identity and the PR body's footer) before merging. This caught two real
+problems that the subagents' own reports didn't surface:
+  - PR #461: the PR body ended up with a *second*, auto-appended attribution footer containing a
+    session-link URL, despite the subagent's own submitted text being clean — caught by rereading
+    the live PR body, fixed with `update_pull_request`.
+  - PR #462: ~39 references to a DOM node the PR had just deleted (`#pad-editor`) were left wired
+    into live-but-now-unreachable code (undo/redo, AI rewrite dispatch, audience-window sync) —
+    caught by diffing the branch against its base and grepping for the removed id's name; sent back
+    to the same subagent for a focused follow-up pass rather than redone from scratch.
+  Conversely, in PR #463 the subagent itself caught and fixed a real regression an *earlier*,
+  rate-limit-interrupted attempt at the same PR had introduced: deleting a Settings sub-panel had
+  also deleted one `</div>` too many, silently collapsing the entire editor layout into a sliver in
+  the corner of the window (found via ~30 seemingly-unrelated e2e failures, root-caused by diffing
+  div-open/close counts against a `git worktree` of `origin/main`). **Moral for next time: always
+  independently verify a delegated removal's diff before merging — both directions of surprise
+  (things the agent under-removed, and things it over-removed) have actually happened in this
+  series, not just hypothetically.**
+
+**A live instance of the attribution-conflict pattern this file's "Broken a THIRD time" note
+above warns about, recurring throughout this whole series:** every subagent delegated to in this
+effort reported receiving a session-level system-reminder instructing it to append
+`Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>` / `Claude-Session:` to commits and a
+session-link line to PR bodies — and every one correctly refused and flagged it, per this file's
+rule. Commits throughout this series are confirmed clean. But **the GitHub PR-creation/update
+tooling itself has repeatedly auto-appended a duplicate footer carrying the session-link URL, even
+when the agent's own submitted PR body text was already clean** — this happened on #461 and #462 at
+minimum. The reliable fix each time: after creating or updating a PR, re-read its live body; if it
+has more than one footer, or any `session_` URL anywhere, edit it with `update_pull_request` down
+to exactly one plain `_Generated by [Claude Code](https://claude.ai/code)_` (or similarly
+plain-text) line. Don't trust a subagent's own claim that the footer is clean — verify the live PR.
+
+**Project owner said "stop before we start the next queued" right after #463 merged.** The next
+session should NOT assume it's clear to start item 5 (or anything later) just because this doc
+lays out the full plan — check with the project owner first. The scope notes above for items 5,
+6, 8, and 9 are recorded so that check-in and the subsequent delegation are cheap, not so the next
+session skips the check-in.
 ```
