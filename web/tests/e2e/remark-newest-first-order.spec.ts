@@ -40,8 +40,6 @@ test.describe('Several remarks on the same node show newest first', () => {
       // @ts-expect-error
       remarks = threeRemarks;
       // @ts-expect-error
-      padRemarksTabEnabled = true;
-      // @ts-expect-error
       inlineExpandRemarksNodeIds = new Set([1]);
       // @ts-expect-error
       render();
@@ -95,8 +93,6 @@ test.describe('Several remarks on the same node show newest first', () => {
         { id: 'old', anchorNodeId: 1, person: 'No Timestamp', date: '2023-01-01', text: 'Legacy remark.' },
         { id: 'new', anchorNodeId: 1, person: 'Has Timestamp', date: '2024-01-01', text: 'Recent remark.', createdAt: 1000 },
       ];
-      // @ts-expect-error
-      padRemarksTabEnabled = true;
       // @ts-expect-error
       inlineExpandRemarksNodeIds = new Set([1]);
       // @ts-expect-error

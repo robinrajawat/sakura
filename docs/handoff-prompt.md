@@ -173,8 +173,16 @@ and merged after independent review:
    which are untouched). **Merged** (needed one follow-up commit after merge-review caught ~39
    dead-code references to the removed `#pad-editor` DOM node left wired into undo/redo, the AI
    rewrite dispatcher, and Presenter/Audience sync).
-5. Remove the Pad container itself + the Diagrams/Q&A/Remarks **list-tab UI**, while preserving
-   their inline per-node editing entirely. **Not started — see scope notes below.**
+5. #466 — Remove the Pad container itself + the Diagrams/Q&A/Remarks **list-tab UI**, while
+   preserving their inline per-node editing entirely. **Done in PR #466 (open, awaiting review —
+   not merged).** Two judgment calls worth checking at review: (a) the Pad's per-tab feature flags
+   (`padQaTabEnabled`/`padDiagramsTabEnabled`/`padRemarksTabEnabled`) also gated the inline
+   features, so with them gone inline Q&A/Diagrams/Remarks are simply always on; (b) diagram
+   generation's only entry point was the Pad's Diagrams-tab Generate button, so it was re-homed as
+   a new right-click quick action, "Generate diagram" (`diagram-gen`, under "More" by default),
+   rather than deleted. Everything reachable only from the Pad (Q&A scan/import/AI generate/group/
+   bulk-draft/summary/copy/PDF, diagram import + AI-prompt export + whiteboard + paste, the lists'
+   search/sort/select/bulk controls, the remarks node-picker) went with it.
 6. Hub trim to Todos-only (drop Journal and Meetings; confirm Reminders' real scope before
    deciding its fate; keep Todos + Subtasks). **Not started.**
 7. #463 — Remove Preview/Presenter's interactive UI (the on-screen scrolling overlay, the

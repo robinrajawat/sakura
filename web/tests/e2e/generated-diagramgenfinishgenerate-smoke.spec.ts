@@ -63,7 +63,7 @@ test.describe('generated diagramGenFinishGenerate block (src/state/diagramGenFin
       const created = diagrams[diagrams.length - 1];
 
       // Path 2: regenerate an existing diagram — the existing.xml/pageCount/modifiedAt/
-      // nodeMeta mutation + markDirty/scheduleAutoSave/renderDiagramsList orchestration branch,
+      // nodeMeta mutation + markDirty/scheduleAutoSave orchestration branch,
       // never exercised by diagramGenRects.ts's own smoke test.
       const labels2 = new Map([[0, 'Root'], [1, 'Branch A'], [2, 'Branch B']]);
       const beforeModifiedAt = created.modifiedAt;

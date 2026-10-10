@@ -5,6 +5,14 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
+// The welcome modal opens on a ~500ms timer whenever no documents exist yet (these tests seed
+// in-memory nodes without creating one), so it could appear mid-test -- after the one-time
+// dismissOverlays() check -- and intercept clicks/drags. Marking it as already seen before the
+// page loads removes that race for this whole file.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.setItem('sakura_welcome_seen', '1'); } catch { /* storage unavailable: nothing to pre-seed */ } });
+});
+
 async function dismissOverlays(page: import('@playwright/test').Page) {
   const landing = page.locator('#sakura-landing-overlay');
   if (await landing.isVisible().catch(() => false)) {
