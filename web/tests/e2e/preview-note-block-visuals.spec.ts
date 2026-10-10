@@ -131,24 +131,12 @@ test.describe('Block-level tables and images in a note render as their own full-
     expect(result.hasSvg).toBe(true);
   });
 
-  test('a plain (not-yet-charted) table pulled into its own figure can still be right-clicked to feature it as a chart', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await setUpDoc(page, '<p>Some text.</p><table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>');
-
-    await page.locator('.pv-table-figure').click({ button: 'right' });
-    await expect(page.locator('#chart-ctx-menu.open')).toBeVisible();
-    await page.locator('#chart-ctx-menu .chart-type-item[data-chart-type="bar"]').click();
-
-    // The table itself (not the note's own HTML) carries the flag now -- it's a node.tables
-    // object, migrated out of the note's rich text the moment this doc rendered (see
-    // migrateNoteTablesToNode).
-    const table = await page.evaluate(() => {
-      // @ts-expect-error
-      return nodes.find((n: any) => n.id === 2).tables[0];
-    });
-    expect(table).toContain('data-feature-chart="1"');
-  });
+  // A right-click-to-feature-as-chart test used to live here, exercising openChartCtxMenu/
+  // #chart-ctx-menu -- Preview-overlay-only chrome removed along with the rest of the
+  // interactive Preview overlay (#preview-body is now headless, permanently display:none
+  // outside exportPreviewAsPdf's own print pass, so there is nothing on screen to right-click).
+  // The same "feature as chart" action on a table pulled out of a note is still covered via the
+  // live editor's own right-click menu in tests/e2e/inline-note-rich-text.spec.ts.
 
   // The synthetic <p><img></p> markup the other tests above use is one real shape a note's HTML
   // can take, but not the actual shape document.execCommand('insertImage') produces (see the
