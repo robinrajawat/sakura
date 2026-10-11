@@ -229,7 +229,7 @@ window.addEventListener('unhandledrejection',e=>{
     // a first paint) and gets physically moved into #appbar-qa-slot by JS. Without this, it
     // visibly sits in the status bar for a frame on every load/reload before that move runs.
     if (qaLocation === 'appbar') cls.push('presetup-qa-appbar-pending');
-    // Same flash problem for a collapsed dock rail (To-Dos/Library/Recap) — the
+    // Same flash problem for a collapsed dock rail (To-Dos) — the
     // buttons are static markup, so they'd paint open for a frame before setDockRailCollapsed
     // (which runs later, alongside the rest of the panel wiring) reads the saved state.
     if (dockRailCollapsed) cls.push('presetup-dockrail-collapsed');
@@ -348,7 +348,7 @@ input[type=number]{-moz-appearance:textfield}
 .qa-dropdown,.history-modal-body,#sidebar-scroll,
 #at-suggest,#node-qa-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#debug-log-view,#report-modal-body,#account-menu{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+#diagram-anchor-suggest,#debug-log-view,#account-menu{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 /* --content-font is the single source of truth for "what font is the text I actually write
@@ -434,7 +434,7 @@ body{padding-top:env(titlebar-area-height,40px)}
 .is-disabled-wrap{cursor:not-allowed;display:inline-flex}.is-disabled-wrap .is-disabled{pointer-events:none}
 body.hide-tb-history #ag-history,body.hide-tb-structure #ag-structure,body.hide-tb-move #ag-move,body.hide-tb-format #ag-format,body.hide-tb-fold #ag-fold,body.hide-tb-inserts #ag-inserts,body.hide-tb-extras #ag-extras,body.hide-tb-ai #ag-ai,body.hide-tb-delete #ag-delete{display:none}
 /* === Feature Activation: hide every entry point for a deactivated feature === */
-body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai #ptb-ai-rewrite,body.feature-off-ai #report-ai-summary-btn{display:none!important}
+body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite,body.feature-off-ai #qb-ai-tags,body.feature-off-ai #qb-ai-icon,body.feature-off-ai #import-ai-restructure,body.feature-off-ai label:has(#tbsec-ai),body.feature-off-ai label:has(#ctxq-ai-rewrite),body.feature-off-ai label:has(#ctxq-ai-rewrite-all),body.feature-off-ai label:has(#ctxq-ai-icon),body.feature-off-ai label:has(#ptbsec-ai-rewrite),body.feature-off-ai #ptb-ai-rewrite{display:none!important}
 body.feature-off-paddiagrams .node-diagram-dot{display:none!important}
 body.feature-off-padremarks .node-remark-dot{display:none!important}
 body.feature-off-tagging #qb-tags,body.feature-off-tagging #itbsec-tags,body.feature-off-tagging .node-tag-chip,body.feature-off-tagging label:has(#ctxq-tags){display:none!important}
@@ -442,14 +442,8 @@ body.feature-off-focus #qb-zoom,body.feature-off-focus label:has(#ctxq-focus){di
 body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 body.feature-off-hovertoolbar #node-hover-rail{display:none!important}
 body.feature-off-quickassist #global-search-wrap{display:none!important}
-body.feature-off-todos #dock-tab-todos,body.feature-off-todos #todos-panel{display:none!important}
-body.feature-off-library #dock-tab-library,body.feature-off-library #library-panel{display:none!important}
-body.feature-off-report #dock-tab-report,body.feature-off-report #report-panel{display:none!important}
+body.feature-off-todos #dock-panel-appbar-toggle,body.feature-off-todos #todos-panel{display:none!important}
 .ai-rewrite-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
-.report-ai-icon{display:inline-flex;align-items:center;vertical-align:-2px;margin-right:4px}
-#report-ai-summary-btn.ai-busy{pointer-events:none;opacity:.75}
-#report-ai-summary-btn.ai-busy .report-ai-icon{animation:report-ai-pulse 1.6s ease-in-out infinite}
-@keyframes report-ai-pulse{0%,100%{opacity:.45;transform:scale(.88)}50%{opacity:1;transform:scale(1.08)}}
 @keyframes ai-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .data-io-btn{min-width:84px;text-align:center}
 .backup-btn{min-width:120px}
@@ -1447,46 +1441,6 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .share-result-name{font:500 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .share-result-email{font:400 11px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .history-modal-footer-hint{flex:1;font:400 11px 'Inter',sans-serif;color:var(--muted)}
-#report-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(480px,calc(100vw - 32px));max-height:min(72vh,640px);font-family:'Inter',sans-serif;overflow:hidden;top:64px;right:16px}
-#report-panel.open{display:flex}
-#report-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
-#report-panel.dragging{user-select:none}
-#report-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
-#report-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
-#report-resize-handle:hover::after,#report-resize-handle.dragging::after{opacity:1}
-#report-panel.maximized #report-resize-handle{display:none}
-#report-panel-header{display:none}
-#report-panel.anchored #report-panel-header{cursor:default}
-#report-panel-header.dragging{cursor:grabbing}
-#report-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
-#report-panel-maximize,#report-panel-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#report-panel-maximize:hover,#report-panel-close:hover{color:var(--fg);background:var(--hover)}
-#report-panel-subheader{padding:10px 14px 0;flex-shrink:0}
-#report-modal-body{flex:1;min-height:60px;overflow-y:auto;padding:0 14px}
-#report-panel-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-#report-panel-footer .history-modal-footer-hint{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-#report-panel-footer #report-ai-summary-btn{flex-shrink:0}
-.report-tabs{display:flex;gap:4px;margin-bottom:8px;flex-shrink:0;background:var(--hover);border-radius:8px;padding:3px}
-.report-tab{flex:1;appearance:none;border:none;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
-.report-tab:hover{color:var(--fg)}
-.report-tab.active{background:var(--bg);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.report-range-label{font:400 11px 'Inter',sans-serif;color:var(--muted);margin:0 0 12px 2px}
-.report-doc-group{margin-bottom:16px}
-.report-doc-title{display:flex;align-items:center;gap:6px;font:600 12.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
-.report-doc-icon{display:inline-flex;flex-shrink:0;color:var(--muted)}
-.report-work-list{display:flex;flex-direction:column;gap:2px}
-.report-work-item{display:flex;align-items:flex-start;gap:7px;padding:3px 4px;border-radius:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.45}
-.report-work-glyph{flex-shrink:0;width:13px;display:flex;align-items:center;justify-content:center;padding-top:2px}
-.report-item-text{flex:1;overflow-wrap:break-word;word-break:break-word}
-.report-doc-title[data-nav]{cursor:pointer;margin:-2px -4px 3px;padding:2px 4px 6px;border-radius:6px 6px 0 0}
-.report-doc-title[data-nav]:hover{color:var(--accent);background:var(--hover)}
-.report-work-item[data-nav]{cursor:pointer}
-.report-work-item[data-nav]:hover{background:var(--hover)}
-.report-work-item[data-nav]:hover .report-item-text{text-decoration:underline;text-decoration-color:var(--border)}
-.report-work-item.report-item-more{color:var(--muted);font-size:11.5px;padding-left:24px}
-.report-summary-line{display:flex;align-items:flex-start;gap:9px;padding:5px 2px;line-height:1.55}
-.report-summary-line+.report-summary-line{border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
-.report-empty{font:400 12.5px 'Inter',sans-serif;color:var(--muted);text-align:center;padding:28px 8px}
 .sb-hint-bar.visible{display:flex}
 .sb-hint-bar .sb-hint-text{flex:1}
 .sb-hint-bar .sb-hint-dismiss{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;font-size:11px;padding:0 2px;flex-shrink:0;line-height:1.4;display:inline-flex;align-items:center;justify-content:center}
@@ -1626,8 +1580,8 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 #ptb-ai-rewrite.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .panel-title-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--hint);flex-shrink:0}
 
-/* Selection formatting popover — appears above selected text in notes, remarks, Q&A, and the
-   Library editor, a quick Bold/Italic/Strike/Link row without reaching for a fixed
+/* Selection formatting popover — appears above selected text in notes, remarks, and Q&A, a
+   quick Bold/Italic/Strike/Link row without reaching for a fixed
    toolbar. Positioned via JS (top/left set inline); z-index above .context-menu (160) since it
    can appear while a note panel sits over other chrome. */
 .selection-fmt-popover{position:fixed;z-index:200;display:none;align-items:center;gap:1px;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 10px 22px rgba(0,0,0,.16);padding:3px}
@@ -2456,7 +2410,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #demo-chapters-menu::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
 .anchor-suggest-results::-webkit-scrollbar,#link-pop-node-results::-webkit-scrollbar,#todo-link-popover::-webkit-scrollbar,
-#debug-log-view::-webkit-scrollbar,#report-modal-body::-webkit-scrollbar,#library-body::-webkit-scrollbar,#account-menu::-webkit-scrollbar,#notif-menu::-webkit-scrollbar{width:8px;height:8px}
+#debug-log-view::-webkit-scrollbar,#account-menu::-webkit-scrollbar,#notif-menu::-webkit-scrollbar{width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
 .app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
@@ -2464,7 +2418,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #demo-chapters-menu::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
 .anchor-suggest-results::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
-#debug-log-view::-webkit-scrollbar-thumb,#report-modal-body::-webkit-scrollbar-thumb,#library-body::-webkit-scrollbar-thumb,#account-menu::-webkit-scrollbar-thumb,#notif-menu::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
+#debug-log-view::-webkit-scrollbar-thumb,#account-menu::-webkit-scrollbar-thumb,#notif-menu::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
 #doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
 #doc-tab-strip::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
@@ -2606,34 +2560,10 @@ body.printing-generic #gpe-overlay{
 
 #todos-panel.open{display:flex}
 #todos-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important;transform:none!important}
-/* Shared dock-panel tab strip — see the HTML comment above #dock-tabstrip for why this
-   exists. Same visual weight as the panel headers it replaces (same padding/border), so
-   swapping it between panels doesn't cause a visible jump. */
-#dock-tabstrip{display:none;align-items:center;gap:2px;padding:8px 8px 8px 10px;flex-shrink:0;border-bottom:1px solid var(--border);position:relative;z-index:2}
-#dock-tabstrip.active{display:flex}
-/* Only one Hub panel enabled -- no tab to switch away to, so the whole strip would just be a
-   bar housing a single always-active tab button plus maximize/close. Drop it entirely instead
-   and let maximize/close fall back to their normal spot in the open panel's own header (see
-   body.hub-single-tab below) -- no separate bar just to hold two icons. */
-body.hub-single-tab #dock-tabstrip{display:none!important}
-#dock-tabstrip-spacer{flex:1}
-.dock-tab{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;gap:6px;border:none;border-bottom:2px solid transparent;background:none;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:8px 2px 6px;margin:0 12px -1px 0;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s}
-.dock-tab:hover{color:var(--fg)}
-.dock-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.dock-tab svg{flex-shrink:0}
-.dock-tab span{white-space:nowrap}
-#dock-tabstrip-maximize,#dock-tabstrip-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px 6px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
-#dock-tabstrip-maximize:hover,#dock-tabstrip-close:hover{color:var(--fg);background:var(--hover)}
-/* Each panel keeps its own action-button row (extract/import/export/history etc.) — the title
-   is never shown here (either the tab strip's active tab carries it, or with only one Hub panel
-   enabled there's nothing worth titling at all). Maximize/close are only redundant while the
-   tab strip is actually present (2+ panels enabled) -- with just one, body.hub-single-tab below
-   un-hides them to fall back to this row instead of the now-hidden strip. */
-#todos-panel-header .panel-title-icon,#todos-panel-title,
-#report-panel-header .panel-title-icon,#report-panel-title
-{display:none!important}
-body:not(.hub-single-tab) #todos-panel-maximize,body:not(.hub-single-tab) #todos-panel-close,
-body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #report-panel-close
+/* The To-Dos panel keeps its own action-button row (extract/import/export/history etc.) plus
+   maximize/close — the title itself isn't shown (it's the only Hub panel, so there's nothing
+   worth titling; the app-bar launcher already says To-Dos). */
+#todos-panel-header .panel-title-icon,#todos-panel-title
 {display:none!important}
 #todos-panel-header{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
 #todos-panel.anchored #todos-panel-header{cursor:default}
@@ -2953,32 +2883,8 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
 #todos-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
 #todos-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ===== Shared Hub dock-panel pieces ===== */
+/* ===== Hub dock-panel pieces ===== */
 .dock-toolbar-spacer{flex:1}
-/* Rich-text body field (label row + format/AI tools + contenteditable body) — used by the
-   Library panel's note field. */
-.hub-field{margin-top:12px;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
-.hub-field:first-of-type{margin-top:0;padding-top:0;border-top:none}
-.hub-field-label{font:700 10.5px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.hub-field-label-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.hub-field-label-row .hub-field-label{margin-bottom:0}
-.hub-field-rewrite{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:4px;display:inline-flex;opacity:0;transition:opacity .12s,color .12s,background .12s}
-.hub-field:hover .hub-field-rewrite,.hub-field-rewrite:focus{opacity:.6}
-.hub-field-rewrite:hover{opacity:1;color:var(--accent);background:var(--hover)}
-.hub-field-rewrite.ai-busy{opacity:1;color:var(--accent);animation:qa-pulse 1s ease-in-out infinite}
-.hub-field-tools{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.hub-field-fmt-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:4px;display:inline-flex;opacity:0;transition:opacity .12s,color .12s,background .12s}
-.hub-field:hover .hub-field-fmt-btn,.hub-field-fmt-btn:focus{opacity:.6}
-.hub-field-fmt-btn:hover{opacity:1;color:var(--accent);background:var(--hover)}
-.hub-field-body ul,.hub-field-body ol{margin:6px 0;padding-left:24px}
-.hub-field-body li{margin:2px 0}
-.hub-field-body{outline:none;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.6;font-family:var(--content-font);min-height:1.6em;max-width:100%;overflow-x:auto}
-.hub-field-body img{max-width:100%;height:auto;border-radius:6px;margin:4px 0;display:block}
-.hub-field-body table{max-width:100%;display:block;overflow-x:auto}
-.hub-field-body:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
-.hub-field-body b,.hub-field-body strong{font-weight:600}
-.hub-field-body ul,.hub-field-body ol{margin:4px 0 4px 20px;padding:0}
-.hub-field-body li{margin:2px 0}
 /* Small fixed-position dropdown menus (To-Dos Export) */
 #todos-export-menu{display:none;position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;width:200px;font-family:'Inter',sans-serif}
 #todos-export-menu.open{display:block}
@@ -2991,105 +2897,15 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
    shadowed only on the left edge (no screen edge to round/shadow against on the other
    three sides). Inspired by Outlook's Calendar/To Do panel: one launcher in the app bar,
    panel docks to the side rather than floating over the middle of the document.
-   One fixed width shared by all of them (rather than each panel keeping its own) so
-   switching tabs doesn't visibly resize the panel — that read as each tab "adjusting
-   itself" instead of one steady panel. This block has to come after the panels' own
-   base rules above (not just have higher specificity) to reliably win the cascade — same
-   ID-selector specificity either way, so whichever comes later in the file wins. */
+   This block has to come after the panel's own base rules above (not just have higher
+   specificity) to reliably win the cascade — same ID-selector specificity either way, so
+   whichever comes later in the file wins. */
 /* bottom stops above the status bar (--statusbar-h, kept in sync with its real, possibly-
    wrapped height by syncStatusbarHeight below) instead of the raw viewport edge, so the
    panel doesn't extend behind/under it. */
-#report-panel,#todos-panel,#library-panel{top:48px;right:0;bottom:var(--statusbar-h,34px);max-height:none;width:min(440px,calc(100vw - 32px));border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
+#todos-panel{top:48px;right:0;bottom:var(--statusbar-h,34px);max-height:none;width:min(440px,calc(100vw - 32px));border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
 
-/* ── Library (Hub tab: app-wide quick-reference notes, optional URL, tags, rich body) ──
-   List + single-card detail, one rich body field — Library entries are one free-form note
-   each, not a multi-field record. Uses the shared .hub-field-* classes for the body field. */
-#library-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;font-family:'Inter',sans-serif;overflow:hidden}
-#library-panel.open{display:flex}
-#library-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important}
-#library-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
-#library-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
-#library-resize-handle:hover::after,#library-resize-handle.dragging::after{opacity:1}
-#library-panel.maximized #library-resize-handle{display:none}
-#library-panel-header{display:none}
-#library-panel.anchored #library-panel-header{cursor:default}
-#library-panel-title{flex:1;font:500 13px 'Inter',sans-serif;color:var(--fg);user-select:none}
-#library-history-btn,#library-panel-maximize,#library-panel-close,#library-export-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#library-history-btn:hover,#library-panel-maximize:hover,#library-panel-close:hover,#library-export-btn:hover{color:var(--fg);background:var(--hover)}
-#library-toolbar-row{display:flex;align-items:center;gap:4px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
-#library-toolbar-row button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#library-toolbar-row button:hover{color:var(--fg);background:var(--hover)}
-#library-toolbar-row button[aria-pressed="true"]{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-#library-count-label{margin-left:6px;font:400 11px 'Inter',sans-serif;color:var(--hint)}
-#library-search-row{display:flex;align-items:center;gap:6px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);color:var(--hint)}
-#library-search-row input{flex:1;appearance:none;border:none;background:none;color:var(--fg);font:400 12.5px 'Inter',sans-serif;outline:none}
-#library-search-row input::placeholder{color:var(--hint)}
-#library-search-clear-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:2px;border-radius:5px;display:inline-flex}
-#library-search-clear-btn:hover{color:var(--fg)}
-#library-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
-#library-empty{display:none;color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
-#library-body.is-empty #library-empty{display:block}
-#library-body.is-empty #library-list{display:none}
-#library-no-results-msg{color:var(--muted);font-size:12.5px;font-style:italic;text-align:center;padding:28px 12px;line-height:1.5}
-#library-tag-filter-chip{appearance:none;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font:600 10.5px 'Inter',sans-serif;padding:3px 6px 3px 9px;border-radius:99px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-left:6px}
-#library-tag-filter-chip:hover{background:color-mix(in srgb,var(--accent) 20%,transparent)}
-.library-row{display:flex;align-items:flex-start;gap:8px;padding:8px 8px;margin:0 -2px 2px;border-radius:8px;cursor:pointer;transition:background .12s;position:relative}
-.library-row:hover{background:var(--hover)}
-.library-row.expanded{background:var(--hover)}
-.library-row-icon{flex-shrink:0;width:18px;display:flex;align-items:center;justify-content:center;padding-top:3px;color:var(--hint)}
-.library-row-main{flex:1;min-width:0;padding-right:50px}
-.library-row-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.library-row-title:empty::before{content:'Untitled';color:var(--hint);font-style:italic}
-.library-row-url{font:400 11px 'Inter',sans-serif;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;display:block;text-decoration:none;width:fit-content;max-width:100%}
-.library-row-url:hover{text-decoration:underline}
-.library-row-snippet{font:400 11.5px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
-.library-row-tags{margin-top:3px;display:flex;gap:4px;flex-wrap:wrap}
-.library-row-tag{appearance:none;font:600 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:2px 8px;border-radius:99px;cursor:pointer;transition:background .12s}
-.library-row-tag:hover{background:color-mix(in srgb,var(--accent) 26%,transparent)}
-.library-row-tag.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.library-row-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;opacity:0;position:absolute;top:6px;right:6px;transition:opacity .12s,color .12s,background .12s}
-.library-row:hover .library-row-delete{opacity:1}
-.library-row-delete:hover{color:var(--fc-red);background:var(--hover)}
-.library-row-favorite{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;position:absolute;top:6px;right:32px;opacity:0;transition:opacity .12s,color .12s,background .12s}
-.library-row:hover .library-row-favorite{opacity:1}
-.library-row-favorite.active{opacity:1;color:#e0a020}
-.library-row-favorite.active svg{fill:currentColor}
-.library-row-favorite:hover{color:#e0a020;background:var(--hover)}
-#library-favorite-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
-#library-favorite-btn:hover{color:#e0a020;background:var(--hover)}
-#library-favorite-btn[aria-pressed="true"]{color:#e0a020}
-#library-favorite-btn[aria-pressed="true"] svg{fill:currentColor}
-#library-card{display:none;background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:10px;padding:16px 18px 14px;margin-top:2px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
-#library-card-top-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-#library-title-input{flex:1;min-width:0;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
-#library-title-input:hover{background:var(--hover)}
-#library-title-input:focus{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
-#library-delete-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;transition:color .12s,background .12s}
-#library-back-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:5px;border-radius:6px;flex-shrink:0;display:inline-flex;transition:color .12s,background .12s}
-#library-back-btn:hover{color:var(--fg);background:var(--hover)}
-#library-delete-btn:hover{color:var(--fc-red);background:var(--hover)}
-#library-url-row{display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:0 2px}
-#library-url-row svg{flex-shrink:0;color:var(--hint)}
-#library-url-input{flex:1;min-width:0;appearance:none;border:none;background:none;color:var(--accent);font:400 12px 'Inter',sans-serif;outline:none;padding:3px 0}
-#library-url-input::placeholder{color:var(--hint);font-style:italic}
-#library-url-open-btn{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px;border-radius:5px;flex-shrink:0;display:inline-flex;transition:color .12s,background .12s}
-#library-url-open-btn:hover{color:var(--accent);background:var(--hover)}
-#library-url-label-row{padding:0 2px 8px 21px;margin-top:-6px}
-#library-url-label-input{width:100%;box-sizing:border-box;appearance:none;border:none;background:none;color:var(--muted);font:400 11.5px 'Inter',sans-serif;outline:none;padding:2px 0}
-#library-url-label-input::placeholder{color:var(--hint);font-style:italic}
-#library-url-label-input:focus{color:var(--fg)}
-#library-tags-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-bottom:12px}
-#library-tag-chips{display:flex;flex-wrap:wrap;gap:5px}
-.library-tag-chip{display:inline-flex;align-items:center;gap:4px;font:600 11px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:3px 4px 3px 9px;border-radius:99px}
-.library-tag-chip button{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:1px;display:inline-flex;border-radius:50%}
-.library-tag-chip button:hover{color:var(--fc-red)}
-#library-tag-input{flex:1;min-width:90px;appearance:none;border:none;background:none;color:var(--fg);font:400 11.5px 'Inter',sans-serif;padding:3px 2px;outline:none}
-#library-tag-input::placeholder{color:var(--hint)}
-#library-timestamp{margin-top:12px;font:400 11px 'Inter',sans-serif;color:var(--hint);text-align:right}
-#library-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
-#library-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
-#library-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* Floating dock rail (To-Dos/Library/Recap) — fixed to the right edge,
+/* Floating dock rail (To-Dos) — fixed to the right edge,
    independent of the status bar and of #sidebar's layout flow, so relocating it
    never touches the app's main flex layout. Vertically centered: stacking it in the
    bottom-right corner (an earlier version of this) put it directly above
@@ -3295,7 +3111,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
     </div>
     <div id="header-actions">
       <div id="appbar-qa-slot"></div>
-      <button class="btn" id="dock-panel-appbar-toggle" data-tip="Hub — To-Dos, Library &amp; Recap" aria-label="Open Hub"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
+      <button class="btn" id="dock-panel-appbar-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)" aria-label="Open To-Dos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
       <div class="export-wrap" id="appbar-more-wrap">
         <button class="btn" id="appbar-more-toggle" data-tip="Import, Export &amp; Print">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
@@ -3674,7 +3490,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
           </div>
           <div class="settings-section" data-cat="editing" id="settings-section-selection-fmt">
             <div class="settings-section-title">Selection formatting popover</div>
-            <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Show on text selection</span><span class="settings-row-desc">A small Bold/Italic/Strikethrough/Highlight/Link/Rewrite row appears above selected text in notes, remarks, Q&amp;A, and the Library editor — a quick way to format or AI-rewrite a highlighted phrase without reaching for the toolbar above. On by default.</span></div><button id="selection-fmt-popover-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show selection formatting popover"></button></div>
+            <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Show on text selection</span><span class="settings-row-desc">A small Bold/Italic/Strikethrough/Highlight/Link/Rewrite row appears above selected text in notes, remarks, and Q&amp;A — a quick way to format or AI-rewrite a highlighted phrase without reaching for the toolbar above. On by default.</span></div><button id="selection-fmt-popover-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Show selection formatting popover"></button></div>
           </div>
           <div class="settings-section" data-cat="editing" id="settings-section-hover-toolbar">
             <div class="settings-section-title">Node hover toolbar</div>
@@ -4084,8 +3900,6 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
               <div class="settings-subsection-title">Hub</div>
               <div class="settings-list">
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">To-Dos</span><span class="settings-row-desc">App-level task list, separate from documents — its tab in the Hub (opened from the app bar) and the To-Dos panel itself</span></div><button id="feat-todos-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable To-Dos"></button></div>
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Recap</span><span class="settings-row-desc">The Recap dock button and its Today / This Week / Last Week curated summary of work across all documents and To-Dos — including the optional AI bullet-summary for standups</span></div><button id="feat-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Recap"></button></div>
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Library</span><span class="settings-row-desc">App-level quick-reference notes, separate from documents — its tab in the Hub (opened from the app bar) and the Library panel itself. Each entry can hold a title, an optional URL, tags, and a rich note (supports pasted images and AI Rewrite)</span></div><button id="feat-library-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Library"></button></div>
               </div>
             </div>
             <div class="settings-subsection">
@@ -4096,7 +3910,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
             <div class="settings-subsection">
               <div class="settings-subsection-title">Interaction</div>
               <div class="settings-list">
-                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Insert</span><span class="settings-row-desc">Ctrl/Cmd+Space opens a small character-insert menu — em dash, en dash, arrow, check mark, cross mark, middle dot, date/time — while editing a node, or any other editable text area in the app (Pad, Note panel, Code block, To-Dos, Library). Same menu everywhere, same shortcut everywhere. For actions on a specific node — Note, Tags, Add question, Rewrite, Version history — use the right-click menu instead. Off: Ctrl/Cmd+Space does nothing while editing</span></div><button id="feat-nodeqa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Insert"></button></div>
+                <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Insert</span><span class="settings-row-desc">Ctrl/Cmd+Space opens a small character-insert menu — em dash, en dash, arrow, check mark, cross mark, middle dot, date/time — while editing a node, or any other editable text area in the app (Note panel, Code block, To-Dos). Same menu everywhere, same shortcut everywhere. For actions on a specific node — Note, Tags, Add question, Rewrite, Version history — use the right-click menu instead. Off: Ctrl/Cmd+Space does nothing while editing</span></div><button id="feat-nodeqa-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Insert"></button></div>
                 <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist</span><span class="settings-row-desc">Ctrl/Cmd+K command box — type plain-English instructions like "hide file explorer" and they run immediately, run one-off actions like "new document" or "duplicate node," run AI actions like "rewrite document" or "expand node" (each reuses the same AI feature as its toolbar button, so it needs an API key configured under AI Rewrite and respects AI Capabilities being on), or type anything else to search documents, notes, tags, settings, and help. Toggles, one-off actions, and settings changes are instant and reversible with Undo; AI actions are the exception — they call the configured AI provider and can take a few seconds or fail like any other AI call, but their results are still added to Undo once they land</span></div><button id="feat-quickassist-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Quick Assist"></button></div>
               </div>
             </div>
@@ -4140,7 +3954,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
               <svg width="56" height="56" viewBox="4.5 0.5 63 63" aria-hidden="true" style="display:block;margin:0 auto 6px"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg>
               <span style="font-weight:600">Sakura</span>
             </div>
-            <div class="muted-help" style="margin-top:0">A knowledge-management workspace for structured documents and everyday personal productivity — To-Dos, Recap, and Library in the Hub.</div>
+            <div class="muted-help" style="margin-top:0">A knowledge-management workspace for structured documents and everyday personal productivity — To-Dos in the Hub.</div>
             <div class="muted-help">Single-file, no build step, works offline once loaded, no account required — sign in (Google or email) if you want your documents to follow you across devices, and use optional AI features (rewrite, expand, outline generation, diagram generation, action-item extraction, tagging, and more) with a provider of your choice.</div>
             <div class="muted-help">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">License</a></div>
             <div class="muted-help">Import/export features use three open-source libraries — SheetJS, mammoth.js, and PptxGenJS — and diagram editing embeds draw.io/diagrams.net. <a href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">Full attribution →</a></div>
@@ -4150,7 +3964,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
             <div class="muted-help" style="margin-top:0">Everything is stored locally in your browser by default — nothing leaves this tab unless you turn on one of the following.</div>
             <div class="muted-help">AI features send the relevant text (a node, selection, or document, depending on the feature) to an AI provider; Cloud Backup (Gist/Drive) uploads a copy to that service; and signing in (Google or email) syncs your documents and settings to Sakura's own cloud storage so they follow you across devices. Each of these only happens while connected, and only when you actually use that feature.</div>
             <div class="muted-help">Which AI provider depends on which mode you've picked in Settings → AI → Provider. With your own API key (the seven built-in providers), that text goes directly from your browser to the provider you configured, using your own key and account — Sakura's own server is never involved. With Sakura Hosted AI, that text instead goes to Sakura's own server first, which forwards it to a third-party provider Sakura selects (currently Groq, Cerebras, or Gemini) using Sakura's own credentials, and returns the response — Sakura's server doesn't store that text either way, only a per-day request count against your account's quota.</div>
-            <div class="muted-help">An account holds your documents, templates, and app settings — including the full Hub (To-Dos and Library) — and nothing else. No analytics or tracking anywhere in Sakura, and other users can never access your data.</div>
+            <div class="muted-help">An account holds your documents, templates, and app settings — including the full Hub (To-Dos) — and nothing else. No analytics or tracking anywhere in Sakura, and other users can never access your data.</div>
             <div class="muted-help">Signing in with Google only shares your name, email, and profile picture — the same info shown in the account menu, not stored anywhere beyond that. Email sign-in needs only the email and password themselves, handled directly by Firebase Authentication — no separate profile data involved. Google Drive backup, if you turn it on separately, only ever gets access to the files it creates itself, never the rest of your Drive.</div>
           </div>
           <div class="settings-section" data-cat="about" id="settings-section-about-support">
@@ -4261,12 +4075,12 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
 <li>Typing just a bare word — "show," "hide," "toggle," or "run," nothing else — lists everything of that kind instead of requiring you to already know a specific setting's name: "show" lists everything currently hidden that could be shown, "hide" lists everything currently shown that could be hidden, "toggle" lists everything either way regardless of its current state, and "run" lists every available Run action ("new document," "duplicate node," "editor's choice preset," "documentation mode preset," and the AI actions covered below). Keep typing after the bare word to narrow the list further by name — "show tool" narrows to just toolbar-related results, the same as typing "show toolbar" would, just built up in two steps instead of one</li>
 <li>On a Mac, if the system's own Spotlight is bound to Cmd+Space (its default), it takes priority over the browser and this shortcut won't fire — either change Spotlight's shortcut in macOS System Settings → Keyboard, or remap this one from Settings → Keyboard Shortcuts</li>
 <li>Toggles and search are rule-based, not AI — a fixed set of recognized phrases (show/get/enable/turn on… vs. hide/remove/get rid of/turn off…) matched against a fixed list of settings. Nothing is sent anywhere for these, no API key needed, and it never improvises — if it doesn't recognize a phrase, it says so rather than guessing. The AI Run actions below are the one exception: those do call your configured AI provider, the same as clicking their toolbar/right-click equivalent would</li>
-<li>Covers the everyday visibility toggles: toolbar (and its group labels), file explorer (and its filter box), zen mode, dark/light mode, auto-rewrite on commit, timestamps on hover, spellcheck, backlinks, word wrap, outline numbering, the Quick Assist search box itself and its icon-only mode, icon-only Import/Export in the app bar, the hover toolbar, delete confirmation, accent-colored branches, expanded toolbar, and the startup tab/blank-session preferences — plus every on/off switch for a whole capability, whether it lives in Settings → Features (To-Dos, Recap, Library, AI Capabilities, Tagging, Quick Assist, Quick Insert) or inside that panel's own section (Focus, Backlinks, Hover Toolbar). It does not cover destructive actions (reset, delete, empty trash) or multi-value settings (themes, sliders) — those still live in Settings, on purpose</li>
+<li>Covers the everyday visibility toggles: toolbar (and its group labels), file explorer (and its filter box), zen mode, dark/light mode, auto-rewrite on commit, timestamps on hover, spellcheck, backlinks, word wrap, outline numbering, the Quick Assist search box itself and its icon-only mode, icon-only Import/Export in the app bar, the hover toolbar, delete confirmation, accent-colored branches, expanded toolbar, and the startup tab/blank-session preferences — plus every on/off switch for a whole capability, whether it lives in Settings → Features (To-Dos, AI Capabilities, Tagging, Quick Assist, Quick Insert) or inside that panel's own section (Focus, Backlinks, Hover Toolbar). It does not cover destructive actions (reset, delete, empty trash) or multi-value settings (themes, sliders) — those still live in Settings, on purpose</li>
 <li>Tagging is reachable with a slightly longer phrase than you might expect — "tags feature" — rather than its bare name. That's deliberate: that bare word is also what Quick Assist searches for as content, so a short keyword there would rank a toggle above the search hit you were actually looking for. Pad Panel is qualified too ("pad feature") for a different reason — bare "pad" is already claimed by the command that opens or closes the Pad panel for this session, which is a separate thing from turning the whole feature on or off</li>
 <li>Below command matches, a separate row type labeled <strong>Run</strong> covers one-off actions instead of toggles: "new document," "duplicate node," "duplicate," "editor's choice preset" (or "apply editor's choice"), and "documentation mode preset" (or "apply documentation mode") — or type the bare word "run" with nothing else to list all of them at once, the same way a bare "show" or "hide" lists every matching toggle. These don't have an on/off state to show or an existing value to report — they just do the thing once, the same as clicking the equivalent toolbar or Settings button would. Only safe, additive, undoable operations are ever reachable this way; nothing destructive is offered as a Run action, same rule as the toggles above. "Duplicate node" needs a node selected first — if nothing's selected, it still shows up (so you know it exists) but greyed out with "select a node first" instead of a working button, rather than either hiding it or letting a click do nothing unexplained. Undo means different things per action: for "new document" and "duplicate node" it's the regular document Undo; "editor's choice preset" instead restores every setting it touched (toolbar, file explorer, Pad, hover toolbar, accent, text color, right-click menu) back to what they were immediately before, since none of those live on the document undo stack</li>
 <li><strong>AI Run actions</strong> — also listed under "run," these are the exception to "rule-based, not AI" above: "rewrite document" (the whole open document, same as right-click → Rewrite document), "rewrite this node" / "rewrite selected" (current selection, single or multiple nodes), "expand node" / "expand into subtree" (needs exactly one node selected), "summarise selection" (needs 2 or more nodes selected), "suggest tags" (needs exactly one node selected), "generate outline" (opens the same topic-prompt dialog as its toolbar button), and "restructure text" (opens the same paste-text dialog). Each needs an API key configured in Settings → AI → Provider and disappears entirely if AI Capabilities (Settings → Features) is off — same requirement as the toolbar buttons they reuse. Unlike the rule-based actions above, these take a moment to run and can fail (expired key, provider rate limit) exactly like clicking their toolbar equivalent would — a missing key or a failed call surfaces the same error dialog either way, not a silent no-op. Undo works the regular way once a result lands, since each reuses the exact same function — and therefore the exact same <span class="help-kbd">pushUndo()</span> call — as its toolbar/right-click counterpart</li>
-<li>Below any command and action matches, the same box also surfaces matching documents, node text, notes, tags, folders, templates, each document's Q&amp;A, Diagrams, and Remarks, plus To-Dos, Library, and settings/help topics. These rows are labeled <strong>Go to</strong> instead of Show/Hide, since picking one navigates you there rather than changing anything, and each shows a short snippet of where the match sits so you're not guessing what you're about to open</li>
-<li>Clicking a "Go to" result does the right thing for its type: a node-text match jumps to that node and highlights the match; a Notes match expands that node's inline note and focuses it; a Tags match jumps to the tagged node; a Q&amp;A or Remarks match opens that document, expands the node it's linked to, and puts the cursor in it (unlinked ones, which have nowhere to be shown, are left out); a Diagrams match opens that specific diagram; a To-Dos/Library match opens the Hub to that entry</li>
+<li>Below any command and action matches, the same box also surfaces matching documents, node text, notes, tags, folders, templates, each document's Q&amp;A, Diagrams, and Remarks, plus To-Dos, and settings/help topics. These rows are labeled <strong>Go to</strong> instead of Show/Hide, since picking one navigates you there rather than changing anything, and each shows a short snippet of where the match sits so you're not guessing what you're about to open</li>
+<li>Clicking a "Go to" result does the right thing for its type: a node-text match jumps to that node and highlights the match; a Notes match expands that node's inline note and focuses it; a Tags match jumps to the tagged node; a Q&amp;A or Remarks match opens that document, expands the node it's linked to, and puts the cursor in it (unlinked ones, which have nowhere to be shown, are left out); a Diagrams match opens that specific diagram; a To-Dos match opens the Hub to that entry</li>
 <li>Skips Trash by default. Settings → Trash → "Include Trash in search" surfaces matches there too, across every content type above, clearly marked "In Trash"; clicking one reveals it in the Trash section rather than opening it directly, since restoring is a deliberate choice</li>
 <li>Rich-text fields (Notes, Q&amp;A, Remarks) are stripped to plain text before matching, so a search never hits raw HTML markup and snippets always show readable text</li>
 <li>The file explorer's own filter box only matches document names, not their contents — for anything inside a document, this box is the one that actually looks</li>
@@ -4280,7 +4094,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
           <div class="help-section" data-cat="general" id="help-section-nodeqa">
 <h4>Quick Insert</h4>
 <ul>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing any text — a node, a Note, a To-Do, a Library note, anywhere — opens a small character-insert menu. Same shortcut, same menu, everywhere you're editing text; the full Quick Assist is a separate shortcut (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span>) and stays free even mid-edit, so the two are never in competition for the same key</li>
+<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing any text — a node, a Note, a To-Do, anywhere — opens a small character-insert menu. Same shortcut, same menu, everywhere you're editing text; the full Quick Assist is a separate shortcut (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span>) and stays free even mid-edit, so the two are never in competition for the same key</li>
 <li>Actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time. Which of these appear (and their fixed order) is configured in Settings → Editing → Quick Insert → Menu items</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the text you're editing, which this avoids touching</li>
 <li>Settings → Editing → Quick Insert → <strong>Icon-only row</strong> switches the menu from a vertical icon+label list to a compact wrapping row of icons — same actions, same order, same keyboard navigation, just a smaller footprint. Hover an icon for its name</li>
@@ -4613,42 +4427,12 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
 <li>Quick Assist searches your tasks too — type a task's text, or scope it with <code>todo: milk</code> — and clicking a result opens the panel and flashes the match</li>
 </ul>
 </div>
-          <div class="help-section" data-cat="hub" id="help-section-recap">
-<h4>Recap</h4>
-<ul>
-<li>A curated look back at what actually got done — not a stats dashboard. Open it from the Hub button in the app bar (it's the last tab in that panel); it reads across <em>everything</em>: every document (not just the one currently open) and To-Dos</li>
-<li>Three tabs — <strong>Today</strong>, <strong>This Week</strong>, and <strong>Last Week</strong> — with the actual date range shown just underneath so it's clear what window you're looking at (weeks run Monday–Sunday)</li>
-<li>Content is grouped by document (plus To-Dos), most recently active first — each group's own icon is shown if the document has one set. Within a group, items are short plain-language lines: a green check for something completed, a blue plus for something new, and a muted pencil for an edit — capped at a few lines each with a quiet "+N more" rather than dumping everything</li>
-<li>Editing a node's <strong>Note</strong> counts as activity here too, same as editing its main text — so work that happened entirely in a note (not the outline line itself) still shows up. Diagrams and Q&amp;A questions count too, each labeled by type (e.g. "Diagram: …") within its document's group</li>
-<li>Click any line to jump straight to it — a document item opens that document and scrolls to/flashes the node, and a to-do opens To-Dos and highlights it. Click a document's own title (icon + name) to just switch to that document without picking a specific line</li>
-<li><strong>Summarize with AI</strong> (bottom of the panel) turns whatever the current tab is showing into a status-meeting-ready bullet list — grouped by document the same way the panel itself is, with a bullet (or a couple, for a genuinely busy group) per document/To-Dos, written with enough specifics to actually say out loud in a meeting rather than compressed into a bare label. Also picks up Diagram and Q&amp;A activity, same as the panel itself. Needs AI configured (Settings → AI Rewrite) and the AI feature on; Regenerate and Copy are both available in the summary that opens</li>
-<li>Settings → Features → Recap turns the whole feature (dock button and panel, including the AI summary) off</li>
-</ul>
-</div>
-          <div class="help-section" data-cat="hub" id="help-section-library">
-<h4>Library</h4>
-<ul>
-<li>An app-level repository for quick-reference notes — not tied to any document. Same idea as To-Dos, but built for things you want to find again later rather than a log of what happened: a saved link, a snippet you paste in often, a short how-to, a screenshot with context</li>
-<li>Open it from the Hub button in the app bar. Entries are listed favorites-first, then newest-first by when they were last edited, each row showing its title, link (if set), a one-line preview of the note, and any tags; click a row to open it, or the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span> button to start a new one. Every row uses the same book-and-lines icon regardless of content — it doesn't change based on whether a link is set</li>
-<li>Each entry has a <strong>title</strong>, an optional <strong>URL</strong> with its own optional <strong>label</strong> (a plain-language name for the link, shown in place of the raw URL everywhere it appears once set — the list row, search results, both), free-form <strong>tags</strong> (type one, press <span class="help-kbd">Enter</span> or <span class="help-kbd">,</span> to add it), and a rich-text <strong>note</strong> — type "1. " or "- " at the start of a line for a real list, or use the bullet/numbered buttons next to the field's label. Paste an image directly into the note (a screenshot, or an image copied from elsewhere) and it's embedded inline, scaled to fit the panel width</li>
-<li>In the list, a row's link (its label if set, otherwise the raw URL) is itself clickable — opens directly in a new tab without needing to open the entry first</li>
-<li><strong>Favorites</strong>: the star icon on a row (appears on hover, stays visible once set) or in an open entry's header marks it as a favorite — favorited entries always sort to the top of the list. The toolbar's own star button filters the list to favorites only, and combines with an active search or tag filter rather than replacing it</li>
-<li><strong>Tags</strong> in the list are clickable — clicking one filters the list to just that tag, shown as a dismissible chip next to the entry count (click the tag again, or the chip's ×, to clear it). Combines with the favorites-only filter and the search box the same way — all active filters narrow the list together, not one-at-a-time</li>
-<li>A small AI-rewrite icon appears on hover next to the note's label — rewrites the whole note, preserving lists/bold/italic structure (pasted images are left alone either way). Highlight any text in the note and a small formatting popover appears above it instead — Bold, Italic, Strikethrough, Highlight, Link, and Rewrite (AI, scoped to just the highlighted phrase). Settings → Editing → "Selection formatting popover" turns this off if it's not wanted</li>
-<li>The magnifying-glass icon searches across title, URL, link label, tags, and note content at once. If a search or filter combination matches nothing, the list explains which filters are active rather than just showing an empty panel</li>
-<li>Delete an entry from its card (trash icon) or from its row in the list — with a confirm dialog first, since there's no separate Undo toast for this one</li>
-<li>The clock icon in the panel header restores the most recent saved version of the whole Library — a version is saved automatically roughly every 10 minutes a change is made. Unlike To-Dos, there isn't yet a browsable list of every past version to pick from — just the single most recent one, with a confirmation first</li>
-<li>Library entries are included in global search and Quick Assist — type <span class="help-kbd">library:</span> or <span class="help-kbd">lib:</span> before a query to search Library only</li>
-<li>Settings → Features → Library turns the whole feature (dock button and panel) off</li>
-</ul>
-</div>
           <div class="help-section" data-cat="features" id="help-section-features">
 <h4>Feature activation</h4>
 <ul>
-<li>Settings → <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg></span> Features — on/off switches for the handful of capabilities most people actually turn off (To-Dos, Recap, Library, AI, Tagging, Quick Assist). Panel-specific extras like Focus, Backlinks, and Hover Toolbar have their own enable switch inside that panel's own Settings section instead — see each one's Help entry below for details. A small dot appears next to "Features" in the rail when any capability here is off, as a reminder</li>
+<li>Settings → <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><circle cx="12" cy="4" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="20" r="2"/></svg></span> Features — on/off switches for the handful of capabilities most people actually turn off (To-Dos, AI, Tagging, Quick Assist). Panel-specific extras like Focus, Backlinks, and Hover Toolbar have their own enable switch inside that panel's own Settings section instead — see each one's Help entry below for details. A small dot appears next to "Features" in the rail when any capability here is off, as a reminder</li>
 <li><strong>To-Dos</strong> — the app-level task list, not tied to any document. Off: the To-Dos tab and its content are hidden from the Hub, and the Settings → To-Dos section is hidden. Existing tasks are preserved</li>
-<li><strong>Recap</strong> — the curated Today/This Week/Last Week look-back across every document and To-Dos, with an optional AI bullet-summary. Off: the Recap tab and its content are hidden from the Hub</li>
-<li><strong>AI Capabilities</strong> — the Rewrite, Expand, Summarise, Generate outline, Suggest icon, Suggest tags, and Restructure text (Import menu) features, plus the AI actions inside Recap, To-Dos, and Q&amp;A. Off: the AI toolbar group, all matching right-click items, the "Restructure text" entry in Import ▾, and every section under Settings → AI are hidden. Word import (Import ▾ → Word) still works while this is off, but loses its automatic AI fallback for documents that have no heading styles to extract — those import as a flat list instead. Requires a provider API key (Settings → AI → Provider) before anything will run — select a provider and the key hint shows where to get one</li>
+<li><strong>AI Capabilities</strong> — the Rewrite, Expand, Summarise, Generate outline, Suggest icon, Suggest tags, and Restructure text (Import menu) features, plus the AI actions inside To-Dos and Q&amp;A. Off: the AI toolbar group, all matching right-click items, the "Restructure text" entry in Import ▾, and every section under Settings → AI are hidden. Word import (Import ▾ → Word) still works while this is off, but loses its automatic AI fallback for documents that have no heading styles to extract — those import as a flat list instead. Requires a provider API key (Settings → AI → Provider) before anything will run — select a provider and the key hint shows where to get one</li>
 <li><strong>Tagging</strong> — #tag chips on nodes. Off: the tag toolbar button, right-click action, and tag chips on all nodes are hidden. Tags are still stored in the document data; turning the feature back on restores them</li>
 <li><strong>Quick Assist</strong> — the search box in the status bar (Ctrl/Cmd+K), which handles both plain-English commands and general search in one place. Off: the shortcut does nothing, the box disappears from the status bar, and any open dropdown closes immediately. Search-result behavior inside it (on/off, category filter, result cap) has its own dedicated section at Settings → Bars & Menus → Quick Assist</li>
 <li>Turning a feature off hides every entry point for it (toolbar, right-click, Settings sub-section, Help sub-section). The underlying data is never deleted — toggling a feature is non-destructive in both directions. Feature states are saved alongside your other preferences and restored on the next launch</li>
@@ -5052,31 +4836,15 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
       </div></div>
   </div>
 
-<!-- Floating dock rail — To-Dos/Library/Recap, moved out of the status bar so
+<!-- Floating dock rail — To-Dos, moved out of the status bar so
      workspace navigation isn't mixed in with passive save/lock/auto-rewrite state.
      Same button IDs as before, so every existing click handler, badge updater, and
      anchor-to-chip panel-positioning function keeps working unchanged. -->
 <div id="status-util-group" role="toolbar" aria-label="Hub">
   <div class="dock-rail-buttons" id="dock-rail-buttons">
   <button class="dock-btn" id="todos-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span class="dock-btn-label">To-Dos</span></button>
-  <button class="dock-btn" id="library-toggle" data-tip="Library — quick-reference notes, links, and snippets"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h6M9 11h4"/></svg><span class="dock-btn-label">Library</span></button>
-  <button class="dock-btn" id="report-toggle" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span class="dock-btn-label">Recap</span></button>
   </div>
   <button type="button" id="dock-rail-collapse-btn" class="dock-rail-handle" data-tip="Hide these panel buttons" aria-label="Hide workspace panel rail" aria-expanded="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-</div>
-
-<!-- Shared dock-panel tab strip — moved by JS to be the first child of whichever of
-     To-Dos/Library/Recap is currently open, so they read as one tabbed
-     panel instead of separately-chrome'd windows. Each panel keeps its own action
-     buttons (extract/import/export/history etc.) in its existing header row below this;
-     only the title/maximize/close portion of that row is hidden once this is present. -->
-<div id="dock-tabstrip">
-  <button type="button" class="dock-tab" id="dock-tab-todos" data-tab="todos" data-tip="To-Dos (Ctrl/Cmd+Shift+T)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/></svg><span>To-Dos</span></button>
-  <button type="button" class="dock-tab" id="dock-tab-library" data-tab="library" data-tip="Library — quick-reference notes, links, and snippets"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h6M9 11h4"/></svg><span>Library</span></button>
-  <button type="button" class="dock-tab" id="dock-tab-report" data-tab="report" data-tip="Recap — a curated look at what you've done today, this week, or last week"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>Recap</span></button>
-  <span id="dock-tabstrip-spacer"></span>
-  <button type="button" id="dock-tabstrip-maximize" data-tip="Expand to full view" aria-label="Maximize"><svg id="dock-tabstrip-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
-  <button type="button" id="dock-tabstrip-close" data-tip="Close (Esc)" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
 </div>
 
 <!-- Node Note Panel -->
@@ -5640,101 +5408,7 @@ body:not(.hub-single-tab) #report-panel-maximize,body:not(.hub-single-tab) #repo
       </div>
     </div>
   </div>
-  <div id="report-panel" role="dialog" aria-label="Recap">
-    <div id="report-resize-handle" data-tip="Drag to resize"></div>
-    <div id="report-panel-header">
-      <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
-      <span id="report-panel-title">Recap</span>
-      <button id="report-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Recap"><svg id="report-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
-      <button id="report-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-    </div>
-    <div id="report-panel-subheader">
-      <div class="report-tabs" role="tablist">
-        <button class="report-tab" data-period="today" role="tab">Today</button>
-        <button class="report-tab" data-period="week" role="tab">This Week</button>
-        <button class="report-tab" data-period="lastWeek" role="tab">Last Week</button>
-      </div>
-      <div id="report-range-label" class="report-range-label"></div>
-    </div>
-    <div id="report-modal-body"></div>
-    <div id="report-panel-footer">
-      <span class="history-modal-footer-hint" data-tip="Across every document (notes, diagrams, Q&amp;A) and to-dos">Across every document (notes, diagrams, Q&amp;A) and to-dos</span>
-      <button type="button" class="btn" id="report-ai-summary-btn"><span class="report-ai-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg></span><span id="report-ai-summary-btn-label">Summarize with AI</span></button>
-    </div>
-  </div>
-  <div id="report-summary-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Recap Summary">
-    <div class="app-modal" style="width:min(480px,94vw)">
-      <div class="app-modal-head">
-        <div><h2 style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>Recap Summary</h2><div class="cs-sub" id="report-summary-modal-sub">AI-generated — handy for status updates or standups</div></div>
-        <button class="app-modal-close-btn" id="report-summary-modal-close-btn" aria-label="Close summary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-      </div>
-      <div class="app-modal-body">
-        <div id="report-summary-modal-body" style="font:400 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.7;white-space:pre-wrap;margin:0"></div>
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
-          <button type="button" class="btn" id="report-summary-regenerate-btn">Regenerate</button>
-          <button type="button" class="btn primary" id="report-summary-copy-btn">Copy</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-<!-- Library — app-wide quick-reference notes (optional URL, tags, rich body w/ pasted images).
-     List + single-card detail, one rich body
-     field. Ids are prefixed hub-library-only where they'd otherwise collide with the unrelated
-     #icon-library-* SVG-icon picker in Settings — everything else follows the library-* prefix
-     since no other collision exists. -->
-<div id="library-panel" role="dialog" aria-label="Library">
-  <div id="library-resize-handle" data-tip="Drag to resize"></div>
-  <div id="library-panel-header">
-    <span class="panel-title-icon" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-    <span id="library-panel-title">Library</span>
-    <button id="library-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Library"><svg id="library-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
-    <button id="library-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-  </div>
-  <div id="library-toolbar-row">
-    <button type="button" id="library-add-btn" data-tip="New library entry"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-    <button type="button" id="library-search-toggle" data-tip="Find an entry" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-    <button type="button" id="library-favorites-toggle" data-tip="Show favorites only" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6L22 9.6l-5 4.9 1.2 7-6.2-3.5L5.8 21.5 7 14.5l-5-4.9 7.1-1z"/></svg></button>
-    <span id="library-count-label"></span>
-    <span class="dock-toolbar-spacer"></span>
-    <button id="library-history-btn" data-tip="Version history" aria-label="Version history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
-  </div>
-  <div id="library-search-row" style="display:none">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input id="library-search-input" type="text" placeholder="Find an entry…" autocomplete="off" spellcheck="false" maxlength="200" aria-label="Find an entry" />
-    <button type="button" id="library-search-clear-btn" data-tip="Clear" aria-label="Clear search" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-  </div>
-  <div id="library-body">
-    <div id="library-list"></div>
-    <div id="library-empty">No library entries yet.<br>Click + to add a quick reference note.</div>
-    <div id="library-card">
-      <div id="library-card-top-row">
-        <button type="button" id="library-back-btn" data-tip="Back to list" aria-label="Back to list"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-        <input id="library-title-input" type="text" placeholder="Title" maxlength="160" autocomplete="off" />
-        <button type="button" id="library-favorite-btn" data-tip="Favorite this entry" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6L22 9.6l-5 4.9 1.2 7-6.2-3.5L5.8 21.5 7 14.5l-5-4.9 7.1-1z"/></svg></button>
-        <button type="button" id="library-delete-btn" data-tip="Delete this entry"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
-      </div>
-      <div id="library-url-row">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        <input id="library-url-input" type="url" placeholder="Add a URL (optional)" autocomplete="off" maxlength="2000" />
-        <button type="button" id="library-url-open-btn" data-tip="Open link" aria-label="Open link" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>
-      </div>
-      <div id="library-url-label-row" style="display:none">
-        <input id="library-url-label-input" type="text" placeholder="Label for this link (optional)" autocomplete="off" maxlength="120" />
-      </div>
-      <div id="library-tags-row">
-        <div id="library-tag-chips"></div>
-        <input id="library-tag-input" type="text" placeholder="+ Add tag" autocomplete="off" maxlength="40" />
-      </div>
-      <div class="hub-field" style="margin-top:0;padding-top:0;border-top:none">
-        <div class="hub-field-label-row"><span class="hub-field-label" style="color:var(--fc-purple)">Note</span><div class="hub-field-tools"><button type="button" class="hub-field-fmt-btn" data-cmd="insertUnorderedList" data-target="library-body-field" data-tip="Bullet list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.4" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="hub-field-fmt-btn" data-cmd="insertOrderedList" data-target="library-body-field" data-tip="Numbered list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><text x="1.5" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">1</text><text x="1.5" y="14.5" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">2</text><text x="1.5" y="21" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif">3</text><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/></svg></button><button type="button" class="hub-field-rewrite" id="library-rewrite-body" data-tip="Rewrite with AI"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button></div></div>
-        <div id="library-body-field" class="hub-field-body" contenteditable="true" data-placeholder="Paste a snippet, a screenshot, or jot a quick reference note…"></div>
-      </div>
-      <div id="library-timestamp"></div>
-    </div>
-  </div>
-  <div id="library-toast" role="status" aria-live="polite"></div>
-</div>
 
 <div id="tag-popover">
   <div id="tag-popover-input-row">
@@ -10198,11 +9872,9 @@ const FEATURE_FLAGS={
   nodeqa:{get:()=>nodeQuickAssistEnabled,set:v=>{nodeQuickAssistEnabled=v; if(!v){closeNodeQuickAssist(); closeGenericQuickAssist();}}},
   hovertoolbar:{get:()=>hoverToolbarEnabled,set:v=>{setHoverToolbarEnabled(v); return}},
   todos:{get:()=>(typeof window.sakuraTodosFeatureEnabled==='function'?window.sakuraTodosFeatureEnabled():true),set:v=>{if(typeof window.sakuraTodosSetFeatureEnabled==='function')window.sakuraTodosSetFeatureEnabled(v);}},
-  report:{get:()=>(typeof window.sakuraReportFeatureEnabled==='function'?window.sakuraReportFeatureEnabled():true),set:v=>{if(typeof window.sakuraReportSetFeatureEnabled==='function')window.sakuraReportSetFeatureEnabled(v);}},
-  library:{get:()=>(typeof window.sakuraLibraryFeatureEnabled==='function'?window.sakuraLibraryFeatureEnabled():true),set:v=>{if(typeof window.sakuraLibrarySetFeatureEnabled==='function')window.sakuraLibrarySetFeatureEnabled(v);}}
 };
 const FEATURE_SETTINGS_SECTIONS={ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],quickassist:['settings-section-quickassist'],todos:['settings-section-todos'],nodeqa:['settings-section-nodeqa'],focus:['settings-section-focus'],hovertoolbar:['settings-section-hover-toolbar']};
-const FEATURE_HELP_SECTIONS={ai:['help-section-ai'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos'],report:['help-section-recap'],library:['help-section-library']};
+const FEATURE_HELP_SECTIONS={ai:['help-section-ai'],tagging:['help-section-tags'],backlinks:['help-section-backlinks'],focus:['help-section-focus'],quickassist:['help-section-quick-assist'],nodeqa:['help-section-nodeqa'],hovertoolbar:['help-section-hover-toolbar'],todos:['help-section-todos']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
   ov.querySelectorAll('.cs-card[data-feature-requires]').forEach(card=>{
@@ -10240,10 +9912,6 @@ function applyFeatureVisibility(){
     const on=FEATURE_FLAGS[key].get();
     body.classList.toggle('feature-off-'+key,!on);
   });
-  // Keeps the Hub tab strip's single-tab state correct even when a feature is toggled
-  // while that panel is already open (dockMoveTabstripInto only re-evaluates this on the
-  // next tab switch/open otherwise).
-  if(typeof enabledDockTabCount==='function')document.body.classList.toggle('hub-single-tab',enabledDockTabCount()<=1);
   filterSettingsByFeatures();
   filterHelpByFeatures();
   // The auto-rewrite status-bar chip isn't gated by a feature-off-* CSS rule (it's a
@@ -10936,20 +10604,17 @@ function restoreAccountSessionIfNeeded(){
 //  - AI_PREFS_KEY (provider API keys). "Settings" sync covers PREFS_KEY only — credentials
 //    don't belong in Firestore even under a locked-down security rule; that's a different risk
 //    profile than the rest of the app's settings.
-function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,prefs:PREFS_KEY,todos:'sakura_todos_v1',todosSettings:'sakura_todos_settings_v1',todosRevisions:'sakura_todos_revisions_v1',librarySettings:LIBRARY_SETTINGS_KEY,reportSettings:REPORT_SETTINGS_KEY};}
-// Hub items (Library) whose primary store is IndexedDB, not localStorage
-// — their bodies can hold pasted images/long text with no size cap there, unlike localStorage.
-// Synced with the exact same push/pull/realtime machinery as the localStorage-backed meta keys
-// above, just read/written via idbGet/idbSet instead of localStorage.getItem/setItem. Same
-// Firestore 1MB-per-document risk as everything else in this sync engine (see the docs
-// exclusion note above for diagrams) — a very large Library history could in principle hit
-// that ceiling; not handled here, same as it isn't for docs.
-// Meeting Notes and Journal (and their settings/revision keys) used to sync here too; both
-// features were removed, so any 'meetings'/'journal'/'meetingsRevisions'/'journalRevisions'/
-// 'meetingsSettings'/'journalSettings' meta docs still sitting in a user's cloud account (or
-// pushed by an older client) are simply not in either key map anymore — markMetaChanged and
-// the incoming-apply path both no-op on unknown keys, so they're ignored, never deleted.
-function getIdbSyncMetaKeys(){return {library:LIBRARY_KEY,libraryRevisions:LIBRARY_REVISION_KEY};}
+function getSyncMetaKeys(){return {docsIndex:DOCS_INDEX_KEY,folders:FOLDERS_KEY,docFolderMap:DOC_FOLDER_KEY,docOrder:DOC_ORDER_KEY,prefs:PREFS_KEY,todos:'sakura_todos_v1',todosSettings:'sakura_todos_settings_v1',todosRevisions:'sakura_todos_revisions_v1'};}
+// Meta keys whose primary store is IndexedDB rather than localStorage, synced with the same
+// push/pull/realtime machinery as the localStorage-backed keys above, just read/written via
+// idbGet/idbSet. Currently none: every Hub item that used this path (Meeting Notes, Journal,
+// Library) has been removed. The IndexedDB branches in pushMetaToCloud/the incoming-apply path
+// are kept as-is so the engine still supports such a key if one is ever added back.
+// Removed features' meta keys ('meetings'/'journal'/'library' and their *Revisions/*Settings,
+// plus 'reportSettings' for Recap) still sitting in a user's cloud account (or pushed by an
+// older client) are simply not in either key map anymore — markMetaChanged and the incoming-
+// apply path both no-op on unknown keys, so they're ignored, never deleted.
+function getIdbSyncMetaKeys(){return {};}
 const SYNC_LOCAL_TS_KEY='sakura_sync_local_ts_v1';
 function _loadSyncLocalTs(){ try{const r=localStorage.getItem(SYNC_LOCAL_TS_KEY); return r?JSON.parse(r):{}}catch(e){return {}} }
 function _saveSyncLocalTs(m){ try{localStorage.setItem(SYNC_LOCAL_TS_KEY,JSON.stringify(m))}catch(e){} }
@@ -12787,15 +12452,15 @@ async function pushMetaToCloud(mod,db,metaKey){
   if(idbKeyName){
     // A read failure or "not found yet" here must NOT be treated as "the user wants this
     // deleted" — but that's exactly what pushing {value:null} with a fresh timestamp did
-    // previously. Library always idbSets a real value (even an empty array)
-    // immediately before markMetaChanged ever fires (see saveLibraryItems),
+    // previously. An IndexedDB-backed item's save always idbSets a real value (even an
+    // empty array) immediately before markMetaChanged ever fires,
     // so by the time a push actually runs, idbGet coming back undefined or throwing means
     // something transient went wrong reading IndexedDB (a connection hiccup, the tab
     // backgrounding mid-read, storage pressure, private-browsing quirks) — not a genuine
     // empty state. Pushing null in that moment overwrites the cloud's real data with nothing,
     // and every other device (or this same device on its next reload) then pulls that null
     // and deletes its own local copy too, having done nothing wrong. This was almost
-    // certainly the actual mechanism behind Hub data (e.g. Library) disappearing with no
+    // certainly the actual mechanism behind Hub data (Meeting Notes/Library, since removed) disappearing with no
     // apparent cause. Abort the push instead — the item stays effectively unsynced this
     // round, but nothing gets destroyed, and the next real edit re-marks it changed anyway.
     let v, readFailed=false;
@@ -12958,7 +12623,7 @@ async function applyIncomingMetaData(metaKey,cloud){
   localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
   return true;
 }
-// Hub panels (Todos/Library) keep their data in an in-memory array/module
+// The To-Dos panel keeps its data in an in-memory array/module
 // state loaded once at startup — unlike prefs/folders, which are read fresh from localStorage
 // on every use. Applying an incoming sync change to storage alone would leave an already-open
 // panel showing stale data until the next reload, so each of these needs its module state
@@ -12967,14 +12632,11 @@ async function applyIncomingMetaData(metaKey,cloud){
 async function refreshHubPanelAfterSync(metaKey){
   try{
     if(metaKey==='todos'){ if(typeof window.sakuraTodosReloadFromStorage==='function')window.sakuraTodosReloadFromStorage(); }
-    else if(metaKey==='library'){ await loadLibraryItems(); if(typeof renderLibraryList==='function')renderLibraryList(); }
     // Settings/revision keys: just refresh in-memory state, no list re-render needed beyond
     // what each loader's own side effects (feature toggle visibility, etc.) already do. Revision
     // history lists are read on-demand when the version-history panel opens, so no live reload
     // hook is needed for those — the fresh copy in storage is enough.
     else if(metaKey==='todosSettings'){ if(typeof window.sakuraTodosReloadSettingsFromStorage==='function')window.sakuraTodosReloadSettingsFromStorage(); }
-    else if(metaKey==='librarySettings'){ if(typeof loadLibrarySettings==='function')loadLibrarySettings(); }
-    else if(metaKey==='reportSettings'){ if(typeof loadReportSettings==='function')loadReportSettings(); }
   }catch(e){ console.warn('[sakura] Hub panel refresh after sync failed:',e); }
 }
 
@@ -13918,7 +13580,6 @@ function collectSearchGroups(q){
     {name:'Diagrams',items:collectDiagramMatches(q)},
     {name:'Remarks',items:collectRemarkMatches(q)},
     {name:'To-Dos',items:(typeof collectTodoMatches==='function'?collectTodoMatches(q):[])},
-    {name:'Library',items:(typeof collectLibraryMatches==='function'?collectLibraryMatches(q):[])},
     {name:'Folders',items:collectFolderMatches(q)},
     {name:'Settings',items:collectSettingsMatches(q)},
     {name:'Features',items:collectFeatureMatches(q)},
@@ -14016,7 +13677,6 @@ const QA_COMMANDS=[
   {id:'quickassist-feature',label:'Quick Assist',keywords:['quick assist','command box','command palette'],get:()=>FEATURE_FLAGS.quickassist.get(),set:v=>setFeatureEnabled('quickassist',v)},
   {id:'nodeqa-feature',label:'Quick Insert',keywords:['quick insert','node quick assist','node assist'],get:()=>FEATURE_FLAGS.nodeqa.get(),set:v=>setFeatureEnabled('nodeqa',v)},
   {id:'todos-feature',label:'To-Dos',keywords:['todos feature','tasks feature','todo list feature'],get:()=>FEATURE_FLAGS.todos.get(),set:v=>setFeatureEnabled('todos',v)},
-  {id:'report-feature',label:'Recap',keywords:['recap feature'],get:()=>FEATURE_FLAGS.report.get(),set:v=>setFeatureEnabled('report',v)},
   {id:'backlinks-feature',label:'Backlinks',keywords:['backlinks feature','backlink feature'],get:()=>FEATURE_FLAGS.backlinks.get(),set:v=>setFeatureEnabled('backlinks',v)},
   {id:'hovertoolbar-feature',label:'Hover Toolbar',keywords:['hover toolbar feature','node hover toolbar feature'],get:()=>FEATURE_FLAGS.hovertoolbar.get(),set:v=>setFeatureEnabled('hovertoolbar',v)},
 ];
@@ -14181,7 +13841,6 @@ const QA_SEARCH_CATEGORIES=[
   {key:'diagrams',group:'Diagrams'},
   {key:'remarks',group:'Remarks'},
   {key:'todos',group:'To-Dos'},
-  {key:'library',group:'Library'},
   {key:'settings',group:'Settings'},
   {key:'features',group:'Features'},
   {key:'help',group:'Help'}
@@ -14203,7 +13862,6 @@ const QA_CATEGORY_PREFIXES={
   diagram:'diagrams', diagrams:'diagrams',
   remark:'remarks', remarks:'remarks',
   todo:'todos', todos:'todos',
-  library:'library', lib:'library',
   setting:'settings', settings:'settings',
   feature:'features', features:'features',
   help:'help'
@@ -15106,8 +14764,7 @@ function openInlineNoteAndFocus(id){
 // just always adding the id.
 function forceInlineItemExpanded(set,id){ if(alwaysExpandInlineEnabled)set.delete(id); else set.add(id); }
 // Brings a node's inline Q&A row or remark into view and focuses it -- the replacement for the
-// removed Pad list tabs' "jump to row" behavior, used by Where used, global search, and the
-// activity report's links. Expands the node's ancestors and its own inline items first, since
+// removed Pad list tabs' "jump to row" behavior, used by Where used and global search. Expands the node's ancestors and its own inline items first, since
 // either can be hiding the target. An item whose node is missing (never linked, or the node was
 // deleted) has nowhere to be shown, so that case just says so.
 function revealInlineObject(kind,id){
@@ -18578,74 +18235,9 @@ function downloadRtf(filename,bodyRtf,titleText){
 function rtfSafeFilename(name){
   return String(name||'Untitled').replace(/[\\\/:*?"<>|]+/g,'_').slice(0,120);
 }
-// ── Shared Markdown (.md) export library ─────────────────────────────────
-// Same idea as the RTF library above, but the output is a .md file using Markdown syntax
-// (**bold**, *italic*, ~~strike~~, # headings, - bullets, [text](url) links). Any
-// Markdown-aware text editor renders that as real formatting — but only
-// keeps the rendered formatting on save if the file is actually named .md; saving the same
-// content as .txt strips it back to raw symbols, so .md is the extension that actually works
-// here, not just a nice-to-have. Reuses rtfCollectRuns for DOM walking since that step is
-// format-agnostic — only the run-to-text and escaping steps differ from the RTF path.
-function escMd(text){
-  const s=String(text==null?'':text);
-  return s.replace(/[\\`*_~\[\]]/g,'\\$&');
-}
-function mdRunsToText(runs){
-  let out='';
-  runs.forEach(r=>{
-    if(r.text==='\n'){ out+='  \n'; return; }
-    let body=escMd(r.text);
-    if(r.bold&&r.italic) body='***'+body+'***';
-    else if(r.bold) body='**'+body+'**';
-    else if(r.italic) body='*'+body+'*';
-    if(r.strike) body='~~'+body+'~~';
-    if(r.href) body='['+body+']('+r.href+')';
-    out+=body;
-  });
-  return out;
-}
-// Converts rich-text HTML into Markdown blocks: real headings (#-######), bullet/numbered lists,
-// and inline formatting via mdRunsToText above. Mirrors rtfBlocksFromHtml's structure/behavior.
-function mdBlocksFromHtml(html,headingOffset){
-  const container=document.createElement('div');
-  container.innerHTML=(typeof sakuraSanitizeRichHtml==='function'?sakuraSanitizeRichHtml(html||''):(html||''));
-  let out='';
-  function para(node){
-    const runs=rtfCollectRuns(node);
-    const text=mdRunsToText(runs).trim();
-    if(!text)return;
-    out+=text+'\n\n';
-  }
-  function walk(node){
-    Array.from(node.childNodes).forEach(child=>{
-      if(child.nodeType===3){ if(child.textContent.trim())para(child); return; }
-      if(child.nodeType!==1)return;
-      const tag=child.tagName.toLowerCase();
-      if(tag==='ul'){
-        Array.from(child.children).forEach(li=>{ if(li.tagName==='LI'){ const text=mdRunsToText(rtfCollectRuns(li)).trim(); if(text)out+='- '+text+'\n'; } });
-        out+='\n';
-      } else if(tag==='ol'){
-        let n=1;
-        Array.from(child.children).forEach(li=>{ if(li.tagName==='LI'){ const text=mdRunsToText(rtfCollectRuns(li)).trim(); if(text)out+=(n++)+'. '+text+'\n'; } });
-        out+='\n';
-      } else if(/^h[1-6]$/.test(tag)){
-        const text=mdRunsToText(rtfCollectRuns(child)).trim();
-        // Headings the person actually typed inside a note (Agenda/Notes body) shouldn't come
-        // out the same size as the export's own title/section headings — headingOffset nudges
-        // them down a level or two so they nest visually under those, capped at H6 (Markdown's
-        // smallest) rather than silently doing nothing past that point.
-        const level=Math.min(6,Number(tag[1])+(headingOffset||0));
-        if(text)out+='#'.repeat(level)+' '+text+'\n\n';
-      } else if(tag==='p'||tag==='div'){
-        walk(child);
-      } else {
-        para(child);
-      }
-    });
-  }
-  walk(container);
-  return out.trimEnd()+'\n';
-}
+// ── Shared Markdown (.md) export helper ──────────────────────────────────
+// Its HTML-to-Markdown converter (mdBlocksFromHtml/mdRunsToText/escMd) was removed along with
+// its last caller, the Library panel's AI rewrite.
 function downloadMd(filename,content){
   downloadBlob(filename,'text/markdown;charset=utf-8',content);
 }
@@ -18689,62 +18281,6 @@ function printHtmlAsPdf(filenameTitle,titleHtml,bodyHtml,onDone){
   mq?.addEventListener?.('change',mqHandler);
   setTimeout(cleanup,15000);
   requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
-}
-// ── Reverse of mdBlocksFromHtml, above — used so AI rewrite of rich-text fields (Library
-// body, Node Note) can round-trip through Markdown instead of flattening
-// to plain text on the way out and dumping plain text back on the way in (the previous
-// behavior, which silently destroyed bullet/numbered lists, bold/italic, and headings on every
-// rewrite). Deliberately mirrors mdBlocksFromHtml's exact syntax (**bold**, *italic*, ***both***,
-// ~~strike~~, [text](url), #-###### headings, - bullets, N. numbered) rather than a generic
-// Markdown dialect, since that's the only syntax this app ever emits or asks the AI to preserve.
-// Inline scan (not regex-replace) so a literal "\*" survives as a literal "*" rather than being
-// mistaken for emphasis — same char-by-char approach parseStyledText already uses elsewhere.
-function mdInlineToHtml(text){
-  const src=String(text||''); let out=''; let i=0;
-  while(i<src.length){
-    if(src[i]==='\\'&&i+1<src.length){ out+=esc(src[i+1]); i+=2; continue; }
-    if(src.startsWith('***',i)){ const end=src.indexOf('***',i+3); if(end>i+3){ out+='<b><i>'+esc(src.slice(i+3,end))+'</i></b>'; i=end+3; continue; } }
-    if(src.startsWith('**',i)){ const end=src.indexOf('**',i+2); if(end>i+2){ out+='<b>'+esc(src.slice(i+2,end))+'</b>'; i=end+2; continue; } }
-    if(src.startsWith('~~',i)){ const end=src.indexOf('~~',i+2); if(end>i+2){ out+='<s>'+esc(src.slice(i+2,end))+'</s>'; i=end+2; continue; } }
-    if(src[i]==='*'){ const end=src.indexOf('*',i+1); if(end>i+1){ out+='<i>'+esc(src.slice(i+1,end))+'</i>'; i=end+1; continue; } }
-    if(src[i]==='['){
-      const close=src.indexOf(']',i+1);
-      if(close>i+1&&src[close+1]==='('){
-        const parenEnd=src.indexOf(')',close+2);
-        if(parenEnd>close+2){ out+='<a href="'+escAttr(src.slice(close+2,parenEnd))+'" target="_blank" rel="noopener">'+esc(src.slice(i+1,close))+'</a>'; i=parenEnd+1; continue; }
-      }
-    }
-    out+=esc(src[i]); i++;
-  }
-  return out;
-}
-function mdTextToHtml(md){
-  const lines=String(md||'').replace(/\r\n/g,'\n').split('\n');
-  let html=''; let i=0; const paraBuf=[];
-  function flushPara(){ if(paraBuf.length){ html+='<p>'+paraBuf.map(mdInlineToHtml).join('<br>')+'</p>'; paraBuf.length=0; } }
-  while(i<lines.length){
-    const line=lines[i];
-    const headingM=line.match(/^(#{1,6})\s+(.*)$/);
-    const bulletM=line.match(/^[-*•]\s+(.*)$/);
-    const numM=line.match(/^(\d+)\.\s+(.*)$/);
-    if(headingM){ flushPara(); const lvl=headingM[1].length; html+='<h'+lvl+'>'+mdInlineToHtml(headingM[2])+'</h'+lvl+'>'; i++; continue; }
-    if(bulletM){
-      flushPara(); const items=[];
-      while(i<lines.length){ const m2=lines[i].match(/^[-*•]\s+(.*)$/); if(!m2)break; items.push(m2[1]); i++; }
-      html+='<ul>'+items.map(t=>'<li>'+mdInlineToHtml(t)+'</li>').join('')+'</ul>';
-      continue;
-    }
-    if(numM){
-      flushPara(); const items=[]; const startN=parseInt(numM[1],10);
-      while(i<lines.length){ const m2=lines[i].match(/^(\d+)\.\s+(.*)$/); if(!m2)break; items.push(m2[2]); i++; }
-      html+='<ol'+(startN!==1?' start="'+startN+'"':'')+'>'+items.map(t=>'<li>'+mdInlineToHtml(t)+'</li>').join('')+'</ol>';
-      continue;
-    }
-    if(line.trim()===''){ flushPara(); i++; continue; }
-    paraBuf.push(line); i++;
-  }
-  flushPara();
-  return html||'<p></p>';
 }
 // Diagrams live in their own per-document array (keyed by anchorNodeId),
 // not on the node object itself — so a plain text/HTML clipboard copy never carried them.
@@ -24011,8 +23547,8 @@ el('shortcuts-reset-all-btn')?.addEventListener('click', async()=>{
 });
 
 /* ---- Keep --statusbar-h in sync with the status bar's real height ----
-   The docked side panels (Report/To-Dos/Library) are position:fixed with
-   bottom:var(--statusbar-h), so they stop above the status bar instead of running behind
+   The docked To-Dos panel is position:fixed with
+   bottom:var(--statusbar-h), so it stops above the status bar instead of running behind
    it. The status bar's height isn't a fixed constant -- it can wrap onto two lines on a
    narrow window, or grow/shrink as status-bar items are toggled in settings -- so a
    ResizeObserver on the element itself, rather than a guessed pixel value, is what keeps
@@ -24518,7 +24054,7 @@ async function summariseSelectionWithAi(){
 // === Shared AI in-flight-edit guard =========================================================
 // Every AI action that rewrites/applies a result to existing content shares the same risk: the
 // request is async, so whatever it's editing can change — or, for a reused singleton panel
-// (Note, Library body), switch identity to a completely different node/document/item —
+// (Note), switch identity to a completely different node/document —
 // before the response lands. Applying the result unconditionally at that point silently
 // overwrites a newer edit with a rewrite of stale content. This exact bug was found and fixed
 // independently in 10 places across the app in one audit pass; these two helpers exist so the
@@ -27220,12 +26756,12 @@ async function idbGet(key){ const db=await idbOpen(); return await new Promise((
 async function idbSet(key,value){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).put(value,key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ sakuraLog('storage','idbSet failed',{key,message:e&&e.message}); return false } }
 async function idbDelete(key){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readwrite'); tx.objectStore(SAKURA_BACKUP_STORE).delete(key); tx.oncomplete=()=>resolve(true); tx.onerror=()=>reject(tx.error) }) }catch(e){ sakuraLog('storage','idbDelete failed',{key,message:e&&e.message}); return false } }
 // Used only by the full-backup builder, to enumerate what's in the overflow store (diagram
-// blobs, Library items, document revisions — see "Overflow storage" below) so backups/exports
+// blobs, document revisions — see "Overflow storage" below) so backups/exports
 // stay complete without needing a separately-maintained index of what's in there.
 async function idbGetAllKeys(){ try{ const db=await idbOpen(); return await new Promise((resolve,reject)=>{ const tx=db.transaction(SAKURA_BACKUP_STORE,'readonly'); const req=tx.objectStore(SAKURA_BACKUP_STORE).getAllKeys(); req.onsuccess=()=>resolve(req.result||[]); req.onerror=()=>reject(req.error) }) }catch(e){ return [] } }
 
 // Prefix marking a backup key as belonging to the IndexedDB overflow store (diagram blobs,
-// Library items/revisions, document revisions — see "Overflow storage" section above) rather
+// document revisions — see "Overflow storage" section above) rather
 // than localStorage, so a restore knows which store to write each key back into. Machinery
 // keys used by the backup system itself (fsHandle, preRestoreSnapshot, localStorageMirror,
 // fsBackupHistory) are deliberately excluded — those describe *this browser's* backup
@@ -27911,7 +27447,7 @@ async function importAllDataFromPayload(payload,opts={}){
   // store (idb::-prefixed keys — see buildFullBackupPayload/applyBackupDataEntries). Only the
   // localStorage-bound portion needs the staging-and-verify treatment below: IndexedDB's quota
   // is large enough that pre-checking it the same way isn't the concern here, and staging the
-  // *entire* payload (including diagram/Library/revision blobs) into one localStorage key would
+  // *entire* payload (including diagram/revision blobs) into one localStorage key would
   // itself overflow the very quota this split exists to stay under.
   const localData={}, idbData={};
   for(const [k,v] of Object.entries(payload.data)){
@@ -28637,7 +28173,7 @@ const TOUR_STEPS=[
   {target:'#ag-inserts',placement:'bottom',title:'Notes & tags',bodyHtml:'<p>Drop a <strong>note</strong> (Ctrl/Cmd+Shift+N) for longer thoughts that live alongside a node. Add <strong>tags</strong> to organize and filter your tree by topic.</p>'},
   {target:'#ag-ai',placement:'bottom',title:'AI features',bodyHtml:'<p>Generate a whole outline from a prompt, expand a node into a subtree, summarise a selection into a parent, rewrite a node, or suggest tags and an icon — all powered by your choice of AI provider, with automatic fallback if one fails.</p><p>Configure providers and keys in Settings.</p>'},
   {target:'#editor-floating-controls',placement:'left',title:'Editor controls',bodyHtml:'<p>Toggle the <strong>toolbar</strong>, or <strong>maximize</strong> to hide the File Explorer and chrome — Esc brings it all back.</p>'},
-  {target:'#dock-panel-appbar-toggle',placement:'bottom',title:'Hub',bodyHtml:'<p><strong>Hub</strong> — three panels that aren\'t tied to any single document — <strong>To-Dos</strong> for tasks, a <strong>Library</strong> of quick-reference notes and links, and <strong>Recap</strong> for a curated look back — all reachable from this one button, docked to the side wherever you are.</p>'},
+  {target:'#dock-panel-appbar-toggle',placement:'bottom',title:'To-Dos',bodyHtml:'<p><strong>To-Dos</strong> — one task list that isn\'t tied to any single document, with due dates, priorities, and subtasks — reachable from this one button, docked to the side wherever you are.</p>'},
   {target:'#settings-toggle',placement:'bottom',title:'Settings',bodyHtml:'<p>Theme, accent color, toolbar layout, and a lot more. Everything is stored locally in this browser.</p>'},
   {target:'#help-toggle',placement:'bottom',title:'Help',bodyHtml:'<p>Every shortcut and feature, in detail. Come back here anytime to replay this tour.</p>'},
   {target:null,placement:'center',title:"You’re set",bodyHtml:'<p>Start typing, or grow your first branch with AI.</p><p>Sakura is built on one belief.</p><span class="tour-quote">“Simplicity is the ultimate sophistication.”<span class="tour-attribution">— Leonardo da Vinci</span></span>'}
@@ -32033,32 +31569,13 @@ function _addTagPopoverFromInput(){
   },true);
 })();
 
-// Hoisted ahead of the Todos/Library/Recap panel modules below (see the full Dock
-// panel tab strip orchestration comment further down, where these were originally declared):
-// each of those modules calls its own applyXLocation() at its own top-level boot time (e.g.
-// applyTodosLocation() a few hundred lines into the Todos module), which closes that panel via
-// closeXPanel() -> dockSyncRailVisibility() -> dockPanelIsOpen() whenever that feature is
-// disabled in settings. dockPanelIsOpen() reads DOCK_TAB_PANEL_ID, and dockSyncRailVisibility()
-// itself reads/writes dockActiveTab -- plain data with no dependencies of their own -- so
-// declaring them only once script execution reached the Dock module (hundreds of lines later)
-// meant disabling a Hub feature (at the time: Todos, Meetings, Journal, or Recap/Report) threw "Cannot access ... before
-// initialization" and aborted the rest of boot.
-// Reproduced directly both times: disabling Meetings first threw on DOCK_TAB_PANEL_ID (fixed by
-// moving the four id-map consts below); the very next live report, still with Meetings
-// disabled, threw on dockActiveTab instead -- the same function's very next line, missed the
-// first time because dockSyncRailVisibility()'s only other dependency wasn't grep'd for with
-// the same care. Moved dockActiveTab here too and actually traced the function's full body this
-// time (and its only caller in this early path, dockPanelIsOpen) rather than fixing one crash
-// report at a time. dockLastTab/dockMaximized/DOCK_TAB_TOGGLE are NOT referenced anywhere in
-// this early-boot path (confirmed: dockSyncRailVisibility touches only dockActiveTab and calls
-// only dockPanelIsOpen, which touches only DOCK_TAB_PANEL_ID) -- left at their original
-// declaration site since moving them would be unneeded scope creep, not defensiveness.
-// Functions (dockPanelIsOpen, dockSyncRailVisibility, etc.) don't have this problem -- function
-// declarations are hoisted -- only plain-data let/const bindings needed to move.
-const DOCK_TAB_PANEL_ID={todos:'todos-panel',report:'report-panel',library:'library-panel'};
-const DOCK_TAB_MAXIMIZE_ID={todos:'todos-panel-maximize',report:'report-panel-maximize',library:'library-panel-maximize'};
-const DOCK_TAB_MAXICON_ID={todos:'todos-max-icon',report:'report-max-icon',library:'library-max-icon'};
-const DOCK_TAB_CLOSE_ID={todos:'todos-panel-close',report:'report-panel-close',library:'library-panel-close'};
+// Hoisted ahead of the To-Dos module below: its own top-level boot code (applyTodosLocation())
+// closes the panel via closeTodosPanel() -> dockSyncRailVisibility() whenever To-Dos is
+// disabled in settings, and dockSyncRailVisibility() reads/writes dockActiveTab. Declaring this
+// plain-data binding only once script execution reached the dock code further down used to
+// throw "Cannot access ... before initialization" and abort the rest of boot (back when the
+// dock also held Meetings/Journal/Library/Recap, with a set of tab-id maps hoisted here too).
+// Functions don't have this problem — function declarations are hoisted.
 let dockActiveTab=null;
 
 // =====================================================================
@@ -32820,7 +32337,7 @@ let dockActiveTab=null;
   // so the person doesn't need to open the panel just to find out something's overdue.
   function updateOverdueBadge(){
     const count=settings.showOverdueBadge ? todos.filter(t=>!t.done&&isOverdue(t.dueDate,t.done)).length : 0;
-    document.querySelectorAll('#todos-toggle, #dock-tab-todos, #dock-panel-appbar-toggle').forEach(btn=>{
+    document.querySelectorAll('#todos-toggle, #dock-panel-appbar-toggle').forEach(btn=>{
       let badge=btn.querySelector('.todo-overdue-badge');
       if(count>0){
         if(!badge){ badge=document.createElement('span'); badge.className='todo-overdue-badge'; btn.appendChild(badge); }
@@ -34374,10 +33891,9 @@ let dockActiveTab=null;
     _updateTodosMaximizeIcon();
   }
 
-  // Anchors a floating dock panel (To-Dos/Library/Recap) above its own dock-rail chip,
+  // Anchors the floating To-Dos dock panel above its own dock-rail chip,
   // clamped so it always stays fully on-screen. Must be called AFTER anything that changes
-  // the panel's rendered size (applyTodosWidth()/renderTodos() and their Library/Recap
-  // equivalents) — it reads the panel's actual offsetHeight, and a conservative "worst-case
+  // the panel's rendered size (applyTodosWidth()/renderTodos()) — it reads the panel's actual offsetHeight, and a conservative "worst-case
   // CSS max-height" stand-in was tried instead (to avoid that ordering requirement) but
   // overshoots badly for short content: it clamps as if the panel were near its tallest
   // possible, pushing even a nearly-empty panel down far enough to overlap the chip above
@@ -34387,9 +33903,9 @@ let dockActiveTab=null;
   // status-bar corner) and collapsible, tethering panel position to "wherever the rail
   // currently is" meant panels opened in a different spot depending on rail state, which
   // read as unpredictable rather than direct-manipulation-y. Panels are also fully
-  // draggable/resizable now (see sakuraInitPanelDragResize below), so they don't need a
+  // draggable/resizable now (see initTodosDrag/initTodosResize), so they don't need a
   // contextual starting position to be discoverable or usable.
-  // Every dock panel's own base CSS already defaults to top:64px;right:16px (that was
+  // The dock panel's own base CSS already defaults to top:64px;right:16px (that was
   // the position before dock-chip anchoring existed at all) — this just makes sure a
   // reopen always lands back there, clearing any inline position a previous drag/resize
   // in the same session left behind, rather than reusing the anchor math. The chip
@@ -34401,79 +33917,6 @@ let dockActiveTab=null;
     panel.style.top='';
     panel.style.right='';
     panel.style.bottom='';
-  };
-  // Gives a dock panel the same drag-to-move + drag-to-resize behavior To-Dos already
-  // has, so Library and Recap don't feel like a different, more static kind of
-  // panel next to it. cfg: {panelId, headerId, handleId, closeId, maximizeId,
-  // widthKey, widthMin, widthMax}. Dragging is disabled while anchored (tethered to the
-  // dock chip) or maximized, same rule To-Dos already follows. Width is persisted;
-  // position during a drag is not actually restored on reopen either — matching
-  // restoreTodosPosition(), which is defined but never called,
-  // so a drag only lasts the session there too. Kept that way here for consistency rather
-  // than quietly giving Library/Recap a capability To-Dos doesn't really have.
-  window.sakuraInitPanelDragResize=function(cfg){
-    const panel=document.getElementById(cfg.panelId);
-    const header=document.getElementById(cfg.headerId);
-    if(!panel||!header)return;
-    let dragging=false,startX=0,startY=0,startLeft=0,startTop=0;
-    header.addEventListener('mousedown',e=>{
-      if(cfg.closeId&&e.target.closest('#'+cfg.closeId))return;
-      if(cfg.maximizeId&&e.target.closest('#'+cfg.maximizeId))return;
-      if(panel.classList.contains('maximized'))return;
-      if(panel.classList.contains('anchored'))return; // tethered to the dock chip — not freely draggable
-      dragging=true;
-      const rect=panel.getBoundingClientRect();
-      startX=e.clientX; startY=e.clientY; startLeft=rect.left; startTop=rect.top;
-      panel.style.left=startLeft+'px'; panel.style.top=startTop+'px'; panel.style.right='auto'; panel.style.bottom='auto';
-      header.classList.add('dragging'); panel.classList.add('dragging');
-      e.preventDefault();
-    });
-    document.addEventListener('mousemove',e=>{
-      if(!dragging)return;
-      const dx=e.clientX-startX, dy=e.clientY-startY;
-      panel.style.left=Math.max(4,Math.min(window.innerWidth-40,startLeft+dx))+'px';
-      panel.style.top=Math.max(4,Math.min(window.innerHeight-40,startTop+dy))+'px';
-    });
-    document.addEventListener('mouseup',()=>{
-      if(!dragging)return;
-      dragging=false;
-      header.classList.remove('dragging'); panel.classList.remove('dragging');
-    });
-    if(!cfg.handleId)return;
-    const handle=document.getElementById(cfg.handleId);
-    if(!handle)return;
-    let rdragging=false,rstartX=0,rstartWidth=0;
-    handle.addEventListener('mousedown',e=>{
-      if(panel.classList.contains('maximized'))return;
-      rdragging=true;
-      rstartX=e.clientX; rstartWidth=panel.getBoundingClientRect().width;
-      handle.classList.add('dragging'); panel.classList.add('dragging');
-      document.body.style.userSelect='none';
-      e.preventDefault(); e.stopPropagation();
-    });
-    document.addEventListener('mousemove',e=>{
-      if(!rdragging)return;
-      const dx=e.clientX-rstartX;
-      const maxW=Math.min(cfg.widthMax, window.innerWidth-24);
-      panel.style.width=Math.max(cfg.widthMin, Math.min(maxW, rstartWidth-dx))+'px';
-    });
-    document.addEventListener('mouseup',()=>{
-      if(!rdragging)return;
-      rdragging=false;
-      handle.classList.remove('dragging'); panel.classList.remove('dragging');
-      document.body.style.userSelect='';
-      try{ localStorage.setItem(cfg.widthKey, String(Math.round(panel.getBoundingClientRect().width))); }catch(e){}
-    });
-  };
-  // Applies a dock panel's saved width (or its default), clamped to min/max and to the
-  // viewport — same clamp shape as applyTodosWidth().
-  window.sakuraApplyPanelWidth=function(panelId,widthKey,widthMin,widthMax,defaultWidth){
-    const panel=document.getElementById(panelId);
-    if(!panel||panel.classList.contains('maximized'))return;
-    let w=defaultWidth;
-    try{ const raw=localStorage.getItem(widthKey); if(raw){ const n=parseInt(raw,10); if(Number.isFinite(n))w=n; } }catch(e){}
-    const clamped=Math.max(widthMin, Math.min(widthMax, Math.min(w, window.innerWidth-24)));
-    panel.style.width=clamped+'px';
   };
   function anchorTodosToStatusbarChip(){
     const panel=document.getElementById('todos-panel');
@@ -35328,15 +34771,6 @@ let dockActiveTab=null;
 
 
 
-      <div class="cs-card" data-feature-requires="report" data-cs-anchor="recap">
-        <h3>Recap</h3>
-        <ul>
-          <li><span class="cs-desc">A curated look at what got done — Today / This Week / Last Week (with the ISO week number shown) — across every document and To-Dos, not just one document</span></li>
-          <li><span class="cs-desc">Grouped by document (most recently active first), each line marked done / added / edited — click any line to jump straight to it, or a group's title to just open that document</span></li>
-          <li><span class="cs-desc">Editing a node's Note counts as activity here too, same as its main text — Diagram and Q&amp;A activity count too</span></li>
-          <li><span class="cs-desc"><strong>Summarize with AI</strong> turns the current tab into status-meeting-ready bullets, grouped by document — Regenerate and Copy included</span></li>
-        </ul>
-      </div>
 
       <div class="cs-card" data-feature-requires="ai" data-cs-anchor="ai">
         <h3>AI Features</h3>
@@ -35442,10 +34876,9 @@ let dockActiveTab=null;
 <script>
 // ── Selection formatting popover ──────────────────────────────────────────
 // A small floating Bold/Italic/Strikethrough/Link row that appears above selected text in
-// per-node notes, remarks, inline Q&A, and the Library body field — a quicker, more
+// per-node notes, remarks, and inline Q&A — a quicker, more
 // discoverable way to format a highlighted phrase than reaching for a toolbar. Settings →
 // Editing → "Selection formatting popover" turns it off if it gets in the way.
-const SELECTION_FMT_EDITOR_IDS=['library-body-field'];
 const SELECTION_HIGHLIGHT_COLOR='rgba(234,179,8,.35)'; // same hue as the node-highlight palette's yellow
 let _selectionFmtEditorId=null;
 function selectionFmtEditorFor(node){
@@ -35464,7 +34897,6 @@ function selectionFmtEditorFor(node){
       // extra class check.
       if(n.tagName==='TABLE'||n.tagName==='IMG')return null;
       if(n.classList&&n.classList.contains('pv-diagram-figure'))return null;
-      if(SELECTION_FMT_EDITOR_IDS.includes(n.id))return n.id;
       // Notes aren't a singleton editor like Pad — there's one of these per node, each with its
       // own id (note-line-<nodeId>, see the inline note-line's creation in render()) — so this
       // checks the class instead of a fixed id list, same pattern as remarks just below.
@@ -35666,588 +35098,18 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   updateSelectionFmtButtonStates();
 });
 
-// Shared by To-Dos' own applyTodosLocation and the Library/Recap modules — every dock button
-// shares one floating rail wrapper (#status-util-group, fixed to the right edge, no longer
-// living inside the status bar), so it takes every feature's visibility into account:
-// hidden only when none of the buttons are showing, otherwise an empty rail would float
-// there with nothing in it.
+// Called by To-Dos' own applyTodosLocation — the To-Dos dock button lives in the floating
+// rail wrapper (#status-util-group), which is hidden whenever that button isn't showing,
+// so an empty rail never floats there with nothing in it.
 function updateStatusUtilGroupVisibility(){
-  const anyVisible=['todos-toggle','library-toggle','report-toggle'].some(id=>{
-    const btn=document.getElementById(id);
-    return !!btn&&btn.style.display!=='none';
-  });
+  const btn=document.getElementById('todos-toggle');
+  const anyVisible=!!btn&&btn.style.display!=='none';
   const group=document.getElementById('status-util-group');
   if(group)group.style.display=anyVisible?'flex':'none';
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// ── Library — app-wide quick-reference notes ──
-// A Hub dock tab: list + single-card detail, one rich body field, IndexedDB overflow
-// storage — each entry is one free-form note, not a multi-field record. Also: an optional
-// URL field, freeform tags (own tag-chip implementation, styled to match the rest of the
-// panel), and pasted-image support in the body field (reusing note-editor's paste handling).
-// ══════════════════════════════════════════════════════════════════════════
-const LIBRARY_KEY='sakura_library_v1';
-let libraryItems=[];
-let libraryPanelOpen=false;
-let libraryExpandedId=null;
-let librarySearchOpen=false;
-let librarySearchQuery='';
-let libraryTagFilter=null;
-let libraryFavoritesOnly=false;
-
-function libUid(){ return 'lib'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-
-function normalizeLibraryItem(it){
-  const now=Date.now();
-  return {
-    id:(it&&typeof it.id==='string')?it.id:libUid(),
-    title:(it&&typeof it.title==='string')?it.title:'',
-    url:(it&&typeof it.url==='string')?it.url:'',
-    urlLabel:(it&&typeof it.urlLabel==='string')?it.urlLabel:'',
-    body:(it&&typeof it.body==='string')?it.body:'',
-    tags:(it&&Array.isArray(it.tags))?it.tags.filter(t=>typeof t==='string'&&t.trim()).map(t=>t.trim()):[],
-    favorite:!!(it&&it.favorite),
-    createdAt:(it&&Number.isFinite(it.createdAt))?it.createdAt:now,
-    modifiedAt:(it&&Number.isFinite(it.modifiedAt))?it.modifiedAt:now
-  };
-}
-
-// Migration shape: IndexedDB first (rich bodies
-// with pasted images can get large — no size cap there, unlike localStorage), falling back
-// to and migrating off an older localStorage copy if one exists.
-async function loadLibraryItems(){
-  try{
-    const idbItems=await idbGet(LIBRARY_KEY);
-    if(Array.isArray(idbItems)){ libraryItems=idbItems.map(normalizeLibraryItem); return; }
-  }catch(e){}
-  try{
-    const raw=localStorage.getItem(LIBRARY_KEY);
-    if(!raw)return;
-    const data=JSON.parse(raw);
-    if(Array.isArray(data)){
-      libraryItems=data.map(normalizeLibraryItem);
-      try{ await idbSet(LIBRARY_KEY,libraryItems); localStorage.removeItem(LIBRARY_KEY); }catch(e){}
-    }
-  }catch(e){}
-}
-function saveLibraryItems(){
-  maybeAutoSnapshotLibrary().catch(()=>{});
-  try{
-    idbSet(LIBRARY_KEY,libraryItems).catch(()=>{ showLibraryToast('Storage full — this change was not saved'); });
-    // Same hook as saveTodos: Library lives outside the per-document
-    // save path, so without this a session that only touched Library never updates
-    // lastSavedAt or triggers the backup-write scheduler.
-    lastAnyDataChangeAt=Date.now();
-    scheduleBackupWrite();
-    markMetaChanged('library');
-  }catch(e){ showLibraryToast('Storage full — this change was not saved'); }
-}
-function findLibraryItem(id){ return libraryItems.find(i=>i.id===id)||null; }
-
-// ── Version history — own key, own snapshot cadence, same shape as To-Dos ──
-const LIBRARY_REVISION_KEY='sakura_library_revisions_v1';
-const LIBRARY_REVISION_MAX=20;
-const LIBRARY_REVISION_MIN_GAP_MS=10*60*1000;
-async function loadLibraryRevisions(){
-  try{ const existing=await idbGet(LIBRARY_REVISION_KEY); if(Array.isArray(existing))return existing; }catch(e){}
-  return [];
-}
-async function saveLibraryRevisions(list){ try{ await idbSet(LIBRARY_REVISION_KEY,list) }catch(e){} markMetaChanged('libraryRevisions'); }
-async function recordLibraryRevision(snapshotItems,reason){
-  if(!Array.isArray(snapshotItems))return;
-  const list=await loadLibraryRevisions();
-  list.push({ts:Date.now(),reason:reason||'Auto',items:JSON.parse(JSON.stringify(snapshotItems))});
-  while(list.length>LIBRARY_REVISION_MAX)list.shift();
-  await saveLibraryRevisions(list);
-}
-async function maybeAutoSnapshotLibrary(){
-  try{
-    const prev=await idbGet(LIBRARY_KEY);
-    if(!Array.isArray(prev)||!prev.length)return;
-    const revisions=await loadLibraryRevisions();
-    const last=revisions[revisions.length-1];
-    if(last&&JSON.stringify(last.items)===JSON.stringify(prev))return;
-    if(last&&(Date.now()-last.ts)<LIBRARY_REVISION_MIN_GAP_MS)return;
-    await recordLibraryRevision(prev,'Auto');
-  }catch(e){}
-}
-
-// ── Toast ──
-function showLibraryToast(msg){
-  const t=el('library-toast'); if(!t)return;
-  t.innerHTML=''; const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
-  t.classList.add('show');
-  clearTimeout(showLibraryToast._tm);
-  showLibraryToast._tm=setTimeout(()=>t.classList.remove('show'),2200);
-}
-
-function anchorLibraryToDockChip(){
-  const panel=el('library-panel');
-  const chip=el('library-toggle');
-  if(!panel||!chip)return;
-  panel.classList.add('anchored');
-  window.sakuraAnchorPanelAboveChip(panel,chip);
-}
-
-// ── Panel open/close/maximize ──
-function openLibraryPanel(){
-  libraryPanelOpen=true;
-  el('library-panel')?.classList.add('open');
-  document.querySelectorAll('#library-toggle').forEach(b=>b.classList.add('is-active'));
-  window.sakuraApplyPanelWidth('library-panel','sakura_dock_panel_width_v1',320,720,440);
-  renderLibraryList();
-  showLibraryCardView(!!libraryExpandedId);
-  anchorLibraryToDockChip();
-}
-function closeLibraryPanel(){
-  libraryPanelOpen=false;
-  el('library-panel')?.classList.remove('open');
-  document.querySelectorAll('#library-toggle').forEach(b=>b.classList.remove('is-active'));
-  if(typeof dockSyncRailVisibility==='function')dockSyncRailVisibility();
-}
-function toggleLibraryPanel(){
-  el('library-toggle')?.blur();
-  if(!libraryPanelOpen){ openLibraryPanel(); return; }
-  closeLibraryPanel();
-}
-function toggleLibraryMaximize(){
-  const panel=el('library-panel'); if(!panel)return;
-  const goingMax=!panel.classList.contains('maximized');
-  panel.classList.toggle('maximized',goingMax);
-  el('library-panel-maximize')?.setAttribute('aria-pressed',String(goingMax));
-  if(!goingMax){ window.sakuraApplyPanelWidth('library-panel','sakura_dock_panel_width_v1',320,720,440); anchorLibraryToDockChip(); }
-}
-window.toggleLibraryPanel=toggleLibraryPanel;
-window.sakuraInitPanelDragResize({panelId:'library-panel',headerId:'library-panel-header',handleId:'library-resize-handle',closeId:'library-panel-close',maximizeId:'library-panel-maximize',widthKey:'sakura_dock_panel_width_v1',widthMin:320,widthMax:720});
-el('library-panel-maximize')?.addEventListener('click',toggleLibraryMaximize);
-
-// ── List / card view switching ──
-function showLibraryCardView(showCard){
-  const body=el('library-body'); const list=el('library-list'); const card=el('library-card');
-  if(!body||!list||!card)return;
-  card.style.display=showCard?'block':'none';
-  list.style.display=showCard?'none':'block';
-}
-function stripHtmlToSnippet(html){
-  try{ const d=document.createElement('div'); d.innerHTML=html||''; return (d.textContent||'').replace(/\s+/g,' ').trim(); }catch(e){ return ''; }
-}
-
-// ── List rendering ──
-function librarySearchMatches(item,q){
-  if(!q)return true;
-  const hay=(item.title+' '+item.url+' '+(item.urlLabel||'')+' '+stripHtmlToSnippet(item.body)+' '+(item.tags||[]).join(' ')).toLowerCase();
-  return hay.includes(q.toLowerCase());
-}
-function setLibraryTagFilter(tag){
-  libraryTagFilter=(libraryTagFilter===tag)?null:tag; // clicking the active filter again clears it
-  renderLibraryList();
-}
-function renderLibraryList(){
-  const wrap=el('library-list'); const body=el('library-body');
-  if(!wrap||!body)return;
-  wrap.innerHTML='';
-  const q=librarySearchQuery.trim();
-  const visible=libraryItems.filter(it=>librarySearchMatches(it,q)&&(!libraryTagFilter||(it.tags||[]).includes(libraryTagFilter))&&(!libraryFavoritesOnly||it.favorite))
-    .slice().sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0)||(b.modifiedAt||0)-(a.modifiedAt||0));
-  const noEntriesAtAll=libraryItems.length===0;
-  const noResultsForFilter=!noEntriesAtAll&&visible.length===0;
-  body.classList.toggle('is-empty',noEntriesAtAll);
-  body.classList.toggle('no-results',noResultsForFilter);
-  const countLabel=el('library-count-label'); if(countLabel)countLabel.textContent=libraryItems.length?String(libraryItems.length):'';
-  // Active tag filter shows as a dismissible chip in the toolbar, same idea as the outline's
-  // own tag-filter chip elsewhere in the app - independent of the search box, so both can be
-  // active together (AND'd, see the filter() call above).
-  let filterChip=el('library-tag-filter-chip');
-  if(libraryTagFilter){
-    if(!filterChip){
-      filterChip=document.createElement('button'); filterChip.type='button'; filterChip.id='library-tag-filter-chip';
-      el('library-toolbar-row')?.insertBefore(filterChip, el('library-count-label'));
-    }
-    filterChip.innerHTML='#'+esc(libraryTagFilter)+' <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
-    filterChip.onclick=()=>setLibraryTagFilter(libraryTagFilter);
-  } else if(filterChip){
-    filterChip.remove();
-  }
-  if(noResultsForFilter){
-    const msg=document.createElement('div'); msg.id='library-no-results-msg';
-    const parts=[]; if(q)parts.push(`"${q}"`); if(libraryTagFilter)parts.push(`#${libraryTagFilter}`); if(libraryFavoritesOnly)parts.push('favorites only');
-    msg.textContent=parts.length?`No entries match ${parts.join(' + ')}.`:'No entries found.';
-    wrap.appendChild(msg);
-    return;
-  }
-  visible.forEach(it=>{
-    const row=document.createElement('div'); row.className='library-row'; row.dataset.libraryId=it.id;
-    const icon=document.createElement('div'); icon.className='library-row-icon';
-    icon.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h6M9 11h4"/></svg>';
-    const main=document.createElement('div'); main.className='library-row-main';
-    const title=document.createElement('div'); title.className='library-row-title'; title.textContent=it.title||'';
-    main.appendChild(title);
-    if(it.url){
-      // Clickable straight to the link - no need to open the entry first just to follow it.
-      // Still stops propagation so it doesn't also open the detail card underneath.
-      const u=document.createElement('a'); u.className='library-row-url'; u.textContent=it.urlLabel||it.url;
-      let href=it.url; if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(href))href='https://'+href;
-      u.href=href; u.target='_blank'; u.rel='noopener';
-      u.addEventListener('click',e=>{ e.stopPropagation(); });
-      main.appendChild(u);
-    }
-    const snippet=stripHtmlToSnippet(it.body);
-    if(snippet){ const s=document.createElement('div'); s.className='library-row-snippet'; s.textContent=snippet; main.appendChild(s); }
-    if((it.tags||[]).length){
-      const tagsRow=document.createElement('div'); tagsRow.className='library-row-tags';
-      it.tags.forEach(tag=>{
-        const t=document.createElement('button'); t.type='button'; t.className='library-row-tag'+(libraryTagFilter===tag?' active':''); t.textContent='#'+tag;
-        t.addEventListener('click',e=>{ e.stopPropagation(); setLibraryTagFilter(tag); });
-        tagsRow.appendChild(t);
-      });
-      main.appendChild(tagsRow);
-    }
-    const fav=document.createElement('button'); fav.type='button'; fav.className='library-row-favorite'+(it.favorite?' active':''); fav.setAttribute('aria-label',it.favorite?'Remove from favorites':'Add to favorites');
-    fav.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.6L22 9.6l-5 4.9 1.2 7-6.2-3.5L5.8 21.5 7 14.5l-5-4.9 7.1-1z"/></svg>';
-    fav.addEventListener('click',e=>{ e.stopPropagation(); toggleLibraryFavorite(it.id); });
-    const del=document.createElement('button'); del.type='button'; del.className='library-row-delete'; del.setAttribute('aria-label','Delete entry');
-    del.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
-    del.addEventListener('click',e=>{ e.stopPropagation(); deleteLibraryItemWithConfirm(it.id); });
-    row.appendChild(icon); row.appendChild(main); row.appendChild(fav); row.appendChild(del);
-    row.addEventListener('click',()=>openLibraryItem(it.id));
-    wrap.appendChild(row);
-  });
-}
-function toggleLibraryFavorite(id){
-  const it=findLibraryItem(id); if(!it)return;
-  it.favorite=!it.favorite; it.modifiedAt=Date.now();
-  saveLibraryItems();
-  renderLibraryList();
-  if(libraryExpandedId===id){
-    const btn=el('library-favorite-btn');
-    if(btn){ btn.setAttribute('aria-pressed',String(it.favorite)); btn.dataset.tip=it.favorite?'Remove from favorites':'Favorite this entry'; }
-  }
-}
-function refreshLibraryRowInList(){ if(libraryPanelOpen)renderLibraryList(); }
-
-// ── Open / create / delete ──
-function openLibraryItem(id){
-  const it=findLibraryItem(id); if(!it)return;
-  libraryExpandedId=id;
-  populateLibraryCard(it);
-  showLibraryCardView(true);
-}
-function createLibraryItem(){
-  const it=normalizeLibraryItem({});
-  libraryItems.push(it);
-  saveLibraryItems();
-  libraryExpandedId=it.id;
-  populateLibraryCard(it);
-  showLibraryCardView(true);
-  refreshLibraryRowInList();
-  setTimeout(()=>el('library-title-input')?.focus(),30);
-}
-function deleteLibraryItemWithConfirm(id){
-  const it=findLibraryItem(id); if(!it)return;
-  const label=it.title.trim()||'this entry';
-  sakuraConfirm({
-    icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
-    title:'Delete library entry?',
-    body:`This permanently deletes "${label}". This can't be undone.`,
-    confirmLabel:'Delete', confirmCls:'danger', cancelLabel:'Cancel'
-  }).then(ok=>{
-    if(!ok)return;
-    libraryItems=libraryItems.filter(i=>i.id!==id);
-    saveLibraryItems();
-    if(libraryExpandedId===id){ libraryExpandedId=null; showLibraryCardView(false); }
-    renderLibraryList();
-  });
-}
-el('library-delete-btn')?.addEventListener('click',()=>{ if(libraryExpandedId)deleteLibraryItemWithConfirm(libraryExpandedId); });
-el('library-add-btn')?.addEventListener('click',createLibraryItem);
-el('library-back-btn')?.addEventListener('click',()=>{ libraryExpandedId=null; showLibraryCardView(false); renderLibraryList(); });
-el('library-favorites-toggle')?.addEventListener('click',()=>{
-  libraryFavoritesOnly=!libraryFavoritesOnly;
-  el('library-favorites-toggle')?.setAttribute('aria-pressed',String(libraryFavoritesOnly));
-  renderLibraryList();
-});
-
-// ── Card population ──
-function populateLibraryCard(it){
-  const titleInput=el('library-title-input'); if(titleInput)titleInput.value=it.title||'';
-  const favBtn=el('library-favorite-btn'); if(favBtn){ favBtn.setAttribute('aria-pressed',String(!!it.favorite)); favBtn.dataset.tip=it.favorite?'Remove from favorites':'Favorite this entry'; }
-  const urlInput=el('library-url-input'); if(urlInput)urlInput.value=it.url||'';
-  const openBtn=el('library-url-open-btn'); if(openBtn)openBtn.style.display=it.url?'inline-flex':'none';
-  const labelRow=el('library-url-label-row'); if(labelRow)labelRow.style.display=it.url?'block':'none';
-  const labelInput=el('library-url-label-input'); if(labelInput)labelInput.value=it.urlLabel||'';
-  const bodyField=el('library-body-field'); if(bodyField)bodyField.innerHTML=sakuraSanitizeRichHtml(it.body||'');
-  renderLibraryTags(it);
-  const ts=el('library-timestamp'); if(ts)ts.textContent='Last updated '+formatTimestamp(it.modifiedAt);
-}
-el('library-title-input')?.addEventListener('input',e=>{
-  if(!libraryExpandedId)return;
-  const it=findLibraryItem(libraryExpandedId); if(!it)return;
-  it.title=e.target.value; it.modifiedAt=Date.now();
-  saveLibraryItems(); refreshLibraryRowInList();
-});
-el('library-favorite-btn')?.addEventListener('click',()=>{
-  if(!libraryExpandedId)return;
-  toggleLibraryFavorite(libraryExpandedId);
-});
-el('library-url-input')?.addEventListener('input',e=>{
-  if(!libraryExpandedId)return;
-  const it=findLibraryItem(libraryExpandedId); if(!it)return;
-  it.url=e.target.value.trim(); it.modifiedAt=Date.now();
-  const openBtn=el('library-url-open-btn'); if(openBtn)openBtn.style.display=it.url?'inline-flex':'none';
-  const labelRow=el('library-url-label-row'); if(labelRow)labelRow.style.display=it.url?'block':'none';
-  saveLibraryItems(); refreshLibraryRowInList();
-});
-el('library-url-label-input')?.addEventListener('input',e=>{
-  if(!libraryExpandedId)return;
-  const it=findLibraryItem(libraryExpandedId); if(!it)return;
-  it.urlLabel=e.target.value; it.modifiedAt=Date.now();
-  saveLibraryItems(); refreshLibraryRowInList();
-});
-el('library-url-open-btn')?.addEventListener('click',()=>{
-  const it=libraryExpandedId?findLibraryItem(libraryExpandedId):null; if(!it||!it.url)return;
-  let href=it.url; if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(href))href='https://'+href;
-  window.open(href,'_blank','noopener');
-});
-
-// ── Tags ──
-function renderLibraryTags(it){
-  const wrap=el('library-tag-chips'); if(!wrap)return;
-  wrap.innerHTML='';
-  (it.tags||[]).forEach(tag=>{
-    const chip=document.createElement('span'); chip.className='library-tag-chip';
-    const label=document.createElement('span'); label.textContent=tag;
-    const rm=document.createElement('button'); rm.type='button'; rm.setAttribute('aria-label','Remove tag'); rm.innerHTML='<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
-    rm.addEventListener('click',()=>{
-      const entry=findLibraryItem(libraryExpandedId); if(!entry)return;
-      entry.tags=(entry.tags||[]).filter(t=>t!==tag); entry.modifiedAt=Date.now();
-      saveLibraryItems(); renderLibraryTags(entry); refreshLibraryRowInList();
-    });
-    chip.appendChild(label); chip.appendChild(rm); wrap.appendChild(chip);
-  });
-}
-el('library-tag-input')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'||e.key===','){
-    e.preventDefault();
-    const input=e.currentTarget; const val=input.value.trim().replace(/^#/,'');
-    if(!val||!libraryExpandedId)return;
-    const it=findLibraryItem(libraryExpandedId); if(!it)return;
-    if(!it.tags.includes(val)){ it.tags.push(val); showLibraryToast('Tag added'); }
-    else{ showLibraryToast('Tag already added'); }
-    it.modifiedAt=Date.now();
-    saveLibraryItems();
-    renderLibraryTags(it); refreshLibraryRowInList();
-    input.value='';
-  }
-});
-
-// ── Body field: typing, and pasted images ──
-// Image-paste handling mirrors #note-editor's own paste listener exactly (see its definition
-// above): rich HTML/text paste is left to the browser's native handler (which already inlines
-// any embedded images from e.g. Word/OneNote), and only a genuine image-only clipboard (a raw
-// screenshot with no html/text representation) is handled manually via FileReader→data URI.
-el('library-body-field')?.addEventListener('keydown',e=>{
-  if(typeof handleGenericQaKeydown==='function'&&handleGenericQaKeydown(e,e.currentTarget))return;
-  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='b'){ e.preventDefault(); document.execCommand('bold'); return; }
-  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey&&e.key.toLowerCase()==='i'){ e.preventDefault(); document.execCommand('italic'); return; }
-});
-el('library-body-field')?.addEventListener('paste',e=>{
-  e.stopPropagation();
-  const html=e.clipboardData?.getData('text/html')||'';
-  const text=e.clipboardData?.getData('text/plain')||'';
-  const hasRichContent=text.trim().length>0||html.replace(/<[^>]*>/g,'').trim().length>0;
-  if(hasRichContent)return; // let native paste insert html/text (incl. any embedded images) as-is
-  const items=e.clipboardData?.items;
-  if(!items)return;
-  for(const item of items){
-    if(item.type.startsWith('image/')){
-      e.preventDefault();
-      const file=item.getAsFile(); if(!file)continue;
-      const reader=new FileReader();
-      reader.onload=evt=>{ document.execCommand('insertImage',false,evt.target.result); };
-      reader.readAsDataURL(file);
-      return;
-    }
-  }
-});
-el('library-body-field')?.addEventListener('input',()=>{
-  if(!libraryExpandedId)return;
-  const it=findLibraryItem(libraryExpandedId); if(!it)return;
-  it.body=sakuraSanitizeRichHtml(el('library-body-field').innerHTML);
-  it.modifiedAt=Date.now();
-  const ts=el('library-timestamp'); if(ts)ts.textContent='Last updated '+formatTimestamp(it.modifiedAt);
-  saveLibraryItems();
-  refreshLibraryRowInList();
-});
-
-// Toast with an inline Undo action, targeting #library-toast.
-function showLibraryActionToast(msg,actionLabel,actionFn){
-  const t=el('library-toast'); if(!t)return;
-  t.innerHTML='';
-  const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
-  const btn=document.createElement('button'); btn.type='button'; btn.textContent=actionLabel;
-  btn.style.cssText='appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px \'Inter\',sans-serif;cursor:pointer;flex-shrink:0;';
-  btn.addEventListener('click',()=>{ t.classList.remove('show'); actionFn(); });
-  t.appendChild(btn);
-  t.classList.add('show');
-  clearTimeout(t._hideTimer);
-  t._hideTimer=setTimeout(()=>t.classList.remove('show'),6000);
-}
-// AI rewrite for the whole note body: extract as Markdown so
-// list/bold/italic structure survives the round-trip, bail if the entry changed underneath the
-// in-flight request (reused singleton field), one-click Undo.
-async function rewriteLibraryField(){
-  if(!libraryExpandedId)return;
-  const requestId=libraryExpandedId;
-  const it=findLibraryItem(requestId); if(!it)return;
-  const field=el('library-body-field');
-  const text=(field?.textContent||'').trim();
-  if(!text){ showLibraryToast('Nothing to rewrite yet'); return; }
-  const originalHtml=it.body||'';
-  const inputMd=mdBlocksFromHtml(originalHtml,0).trim();
-  const btn=el('library-rewrite-body'); if(btn)btn.classList.add('ai-busy');
-  try{
-    const result=await callAiApi(inputMd||text);
-    if(!result)throw new Error('Empty response from AI');
-    const current=findLibraryItem(requestId);
-    if(!current||aiSnapshotChanged(originalHtml,current.body||'')||aiSnapshotChanged(requestId,libraryExpandedId)){
-      showLibraryToast('This changed while rewriting — AI result discarded so it wouldn\'t overwrite it');
-      return;
-    }
-    const rebuiltHtml=sakuraSanitizeRichHtml(mdTextToHtml(result));
-    if(field&&libraryExpandedId===requestId)field.innerHTML=rebuiltHtml;
-    current.body=rebuiltHtml;
-    current.modifiedAt=Date.now();
-    const ts=el('library-timestamp'); if(ts&&libraryExpandedId===requestId)ts.textContent='Last updated '+formatTimestamp(current.modifiedAt);
-    saveLibraryItems();
-    refreshLibraryRowInList();
-    showLibraryActionToast('Entry rewritten','Undo',()=>{
-      const cur=findLibraryItem(requestId); if(!cur)return;
-      cur.body=originalHtml;
-      const f2=el('library-body-field');
-      if(f2&&libraryExpandedId===requestId)f2.innerHTML=sakuraSanitizeRichHtml(originalHtml);
-      cur.modifiedAt=Date.now();
-      saveLibraryItems();
-      refreshLibraryRowInList();
-    });
-  }catch(e){ showLibraryToast('Rewrite failed — '+(e.message||'try again')); }
-  finally{ if(btn)btn.classList.remove('ai-busy'); }
-}
-el('library-rewrite-body')?.addEventListener('click',rewriteLibraryField);
-// Bullet/numbered list buttons in a .hub-field's tool row — a discoverable click affordance for
-// the same list commands typing "- " / "1. " would otherwise need. mousedown (not click) +
-// preventDefault keeps the field's own selection/focus intact so the list command applies
-// where the cursor already was.
-document.querySelectorAll('.hub-field-fmt-btn').forEach(btn=>{
-  btn.addEventListener('mousedown',e=>{
-    e.preventDefault();
-    const field=el(btn.dataset.target); if(!field)return;
-    field.focus();
-    document.execCommand(btn.dataset.cmd);
-  });
-});
-
-// ── Search ──
-el('library-search-toggle')?.addEventListener('click',()=>{
-  librarySearchOpen=!librarySearchOpen;
-  el('library-search-toggle')?.setAttribute('aria-pressed',String(librarySearchOpen));
-  const row=el('library-search-row'); if(row)row.style.display=librarySearchOpen?'flex':'none';
-  if(librarySearchOpen)setTimeout(()=>el('library-search-input')?.focus(),20);
-  else{ librarySearchQuery=''; const inp=el('library-search-input'); if(inp)inp.value=''; renderLibraryList(); }
-});
-el('library-search-input')?.addEventListener('input',e=>{
-  librarySearchQuery=e.target.value;
-  const clearBtn=el('library-search-clear-btn'); if(clearBtn)clearBtn.style.display=librarySearchQuery?'inline-flex':'none';
-  renderLibraryList();
-});
-el('library-search-clear-btn')?.addEventListener('click',()=>{
-  librarySearchQuery=''; const inp=el('library-search-input'); if(inp){inp.value=''; inp.focus();}
-  el('library-search-clear-btn').style.display='none';
-  renderLibraryList();
-});
-
-// ── Version history ──
-// v1 note: To-Dos has its own full browsable history overlay (a whole separate modal) with
-// per-snapshot preview and pick-any-point restore. Library's revisions are already being recorded (see
-// recordLibraryRevision/maybeAutoSnapshotLibrary above, same 10-minute auto-snapshot cadence),
-// but the browsable-list UI for them is a separate follow-up, not built here. For now this
-// button restores the single most recent auto-snapshot, with a confirmation first.
-el('library-history-btn')?.addEventListener('click',async()=>{
-  const revisions=await loadLibraryRevisions();
-  if(!revisions.length){ showLibraryToast('No earlier version to restore yet'); return; }
-  const last=revisions[revisions.length-1];
-  const ok=await sakuraConfirm({
-    icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',
-    title:'Restore last saved version?',
-    body:`This replaces all current Library entries with the version saved ${formatTimestamp(last.ts)}. Current changes since then will be lost.`,
-    confirmLabel:'Restore', confirmCls:'danger', cancelLabel:'Cancel'
-  });
-  if(!ok)return;
-  libraryItems=(last.items||[]).map(normalizeLibraryItem);
-  saveLibraryItems();
-  libraryExpandedId=null; showLibraryCardView(false); renderLibraryList();
-  showLibraryToast('Restored');
-});
-
-// ── Feature toggle (Settings → Features → Library) ──
-const LIBRARY_SETTINGS_KEY='sakura_library_settings_v1';
-let libraryFeatureEnabled=true;
-window.sakuraLibraryFeatureEnabled=function(){ return libraryFeatureEnabled; };
-function loadLibrarySettings(){
-  try{ const raw=localStorage.getItem(LIBRARY_SETTINGS_KEY); if(raw){ const d=JSON.parse(raw); libraryFeatureEnabled=d.featureEnabled===undefined?true:!!d.featureEnabled; } }catch(e){}
-}
-function saveLibrarySettings(){ try{ localStorage.setItem(LIBRARY_SETTINGS_KEY, JSON.stringify({featureEnabled:libraryFeatureEnabled})); }catch(e){} markMetaChanged('librarySettings'); }
-function applyLibraryLocation(){
-  const dockBtn=el('library-toggle');
-  const hideAll=!libraryFeatureEnabled;
-  if(dockBtn)dockBtn.style.display=hideAll?'none':'';
-  if(hideAll)closeLibraryPanel();
-  if(typeof updateStatusUtilGroupVisibility==='function')updateStatusUtilGroupVisibility();
-}
-function setLibraryFeatureEnabled(on){
-  libraryFeatureEnabled=!!on;
-  saveLibrarySettings();
-  applyLibraryLocation();
-}
-window.sakuraLibrarySetFeatureEnabled=setLibraryFeatureEnabled;
-window.sakuraOpenLibraryFromRef=function(id){
-  if(!findLibraryItem(id))return false;
-  openDockTab('library');
-  openLibraryItem(id);
-  return true;
-};
-// Same shape as window.collectTodoMatches — Quick Assist / Global Search visibility into
-// Library, which lives in its own storage key outside the per-document search path. Matches
-// title, URL, tags, and the plain-text content of the body.
-window.collectLibraryMatches=function(q){
-  if(!libraryFeatureEnabled) return [];
-  const out=[];
-  const tokens=(typeof qaTokenizeQuery==='function')?qaTokenizeQuery(q):String(q||'').split(/\s+/).filter(Boolean);
-  const hayMatch=(typeof qaHayMatches==='function')?qaHayMatches:((hay,toks)=>toks.every(t=>hay.toLowerCase().includes(t.toLowerCase())));
-  const snippet=(typeof buildMatchSnippetHtml==='function')?buildMatchSnippetHtml:((text)=>esc(text));
-  const sorted=libraryItems.slice().sort((a,b)=>(b.modifiedAt||0)-(a.modifiedAt||0));
-  for(const it of sorted){
-    if(out.length>=6) break;
-    const bodyText=stripHtmlToText(it.body||'');
-    const hay=[it.title,it.url,it.urlLabel,(it.tags||[]).join(' '),bodyText].join(' ');
-    if(!hayMatch(hay, tokens)) continue;
-    const label=(it.title.trim()||bodyText.trim()||'Untitled').slice(0,80);
-    out.push({
-      group:'Library',
-      label,
-      labelHtml:snippet(label,q),
-      meta: (it.urlLabel||it.url)||(it.tags||[]).map(t=>'#'+t).join(' ')||'',
-      action:()=>{ if(typeof closeAllPanelsExceptGlobalSearch==='function') closeAllPanelsExceptGlobalSearch(); window.sakuraOpenLibraryFromRef(it.id); }
-    });
-  }
-  return out;
-};
-loadLibrarySettings();
-applyLibraryLocation();
-if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('library',libraryFeatureEnabled);
-
 // ── Dock rail collapse/expand ──
-// Lets the To-Dos/Library/Recap rail be tucked away when it's sitting over
+// Lets the To-Dos rail be tucked away when it's sitting over
 // something the person wants to see, without touching each feature's own on/off switch in
 // Settings — those still control the feature itself, not just this rail's visibility.
 // Persisted in its own dedicated localStorage key (same pattern as sakura_sidebar_open)
@@ -36262,7 +35124,7 @@ function setDockRailCollapsed(collapsed){
   if(group)group.classList.toggle('collapsed',!!collapsed);
   if(btn){
     btn.setAttribute('aria-expanded',String(!collapsed));
-    btn.dataset.tip=collapsed?'Show To-Dos, Library & Recap':'Hide these panel buttons';
+    btn.dataset.tip=collapsed?'Show To-Dos':'Hide these panel buttons';
   }
   try{ localStorage.setItem(DOCK_RAIL_COLLAPSED_KEY, collapsed?'true':'false'); }catch(e){}
 }
@@ -36283,522 +35145,49 @@ el('dock-rail-collapse-btn')?.addEventListener('click',(e)=>{
   e.currentTarget.blur();
 });
 
-loadLibraryItems().then(()=>{ renderLibraryList(); }).catch(()=>{});
 
-// === Recap (formerly "Activity Report" — renamed for tone; internal identifiers kept as report* to avoid a risky mass-rename) ===
-// A read-only, on-demand scan across every document (current in-memory doc plus every other
-// doc's saved localStorage payload), plus the app-wide To-Dos store, bucketed into Today / This Week / Last Week. Nothing here is cached or kept live —
-// it re-scans each time the modal opens or the tab changes, which is cheap at normal
-// document counts and keeps this feature from needing its own persisted index to stay in sync.
-let reportModalPeriod='today';
-function reportStartOfDay(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.getTime(); }
-function getReportRange(period){
-  const now=new Date();
-  const todayStart=reportStartOfDay(now);
-  const todayEnd=todayStart+86400000;
-  if(period==='today') return {start:todayStart,end:todayEnd};
-  const dow=now.getDay(); // 0=Sun..6=Sat
-  const diffToMonday=(dow===0?6:dow-1);
-  const thisWeekStart=todayStart-diffToMonday*86400000;
-  if(period==='week') return {start:thisWeekStart,end:thisWeekStart+7*86400000};
-  return {start:thisWeekStart-7*86400000,end:thisWeekStart}; // lastWeek
-}
-function reportInRange(ts,range){ return Number.isFinite(ts)&&ts>=range.start&&ts<range.end; }
-function reportPreviewText(s,max){
-  const t=stripSemanticMarkers(String(s||'')).replace(/\s+/g,' ').trim();
-  if(!t)return '(untitled)';
-  return t.length>max?t.slice(0,max-1)+'…':t;
-}
-
-// Returns every doc's node array without disturbing the currently-open document's in-memory
-// state: the active doc reads straight from `nodes` (freshest, including unsaved edits this
-// session), every other doc reads its last-saved payload directly out of localStorage.
-function reportGetAllDocNodeSets(){
-  const out=[];
-  loadActiveDocsIndex().forEach(d=>{
-    if(d.id===currentDocId){
-      out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes,diagrams:(typeof diagrams!=='undefined'?diagrams:[]),qaItems:(typeof qaItems!=='undefined'?qaItems:[])});
-      return;
-    }
-    try{
-      const raw=localStorage.getItem(docKey(d.id));
-      const parsed=raw?JSON.parse(raw):null;
-      out.push({
-        docId:d.id,title:d.title||(parsed&&parsed.title)||'Untitled',icon:d.icon||null,
-        nodes:(parsed&&Array.isArray(parsed.nodes))?parsed.nodes:[],
-        diagrams:(parsed&&Array.isArray(parsed.diagrams))?parsed.diagrams:[],
-        qaItems:(parsed&&Array.isArray(parsed.qa))?parsed.qa:[]
-      });
-    }catch(e){ out.push({docId:d.id,title:d.title||'Untitled',icon:d.icon||null,nodes:[],diagrams:[],qaItems:[]}); }
-  });
-  return out;
-}
-function reportGetTodosList(){
-  try{
-    const raw=localStorage.getItem('sakura_todos_v1');
-    const arr=raw?JSON.parse(raw):[];
-    return Array.isArray(arr)?arr:[];
-  }catch(e){ return []; }
-}
-function buildActivityReport(period){
-  const range=getReportRange(period);
-  const tasksCompleted=[], itemsCreated=[], itemsEdited=[];
-  const docsTouched=new Set();
-  const docIcons=new Map();
-
-  reportGetAllDocNodeSets().forEach(({docId,title,icon,nodes:docNodes,diagrams:docDiagrams,qaItems:docQa})=>{
-    docIcons.set(docId,icon);
-    (docNodes||[]).forEach(n=>{
-      const createdIn=reportInRange(n.createdAt,range);
-      const modifiedIn=reportInRange(n.modifiedAt,range)&&n.modifiedAt!==n.createdAt;
-      const completedIn=n.isCheckbox&&n.checked&&reportInRange(n.completedAt,range);
-      if(createdIn){ itemsCreated.push({text:n.text,ts:n.createdAt,doc:title,docId,nodeId:n.id}); docsTouched.add(docId); }
-      if(modifiedIn){ itemsEdited.push({text:n.text,ts:n.modifiedAt,doc:title,docId,nodeId:n.id}); docsTouched.add(docId); }
-      if(completedIn){ tasksCompleted.push({text:n.text,ts:n.completedAt,doc:title,docId,nodeId:n.id,source:'doc'}); docsTouched.add(docId); }
-    });
-    (docDiagrams||[]).forEach(dg=>{
-      const label='Diagram: '+(dg.title||'(untitled diagram)');
-      const createdIn=reportInRange(dg.createdAt,range);
-      const modifiedIn=reportInRange(dg.modifiedAt,range)&&dg.modifiedAt!==dg.createdAt;
-      if(createdIn){ itemsCreated.push({text:label,ts:dg.createdAt,doc:title,docId,diagramId:dg.id}); docsTouched.add(docId); }
-      if(modifiedIn){ itemsEdited.push({text:label,ts:dg.modifiedAt,doc:title,docId,diagramId:dg.id}); docsTouched.add(docId); }
-    });
-    (docQa||[]).forEach(it=>{
-      if(it.type==='section'||!Number.isFinite(it.createdAt))return; // sections aren't "activity"; items saved before this tracking existed have no timestamp to go on
-      const label='Question: '+(it.question||'(blank question)');
-      const createdIn=reportInRange(it.createdAt,range);
-      const modifiedIn=Number.isFinite(it.modifiedAt)&&reportInRange(it.modifiedAt,range)&&it.modifiedAt!==it.createdAt;
-      if(createdIn){ itemsCreated.push({text:label,ts:it.createdAt,doc:title,docId,qaId:it.id}); docsTouched.add(docId); }
-      if(modifiedIn){ itemsEdited.push({text:label,ts:it.modifiedAt,doc:title,docId,qaId:it.id}); docsTouched.add(docId); }
-    });
-  });
-
-  reportGetTodosList().forEach(t=>{
-    if(t.done&&reportInRange(t.completedAt,range)) tasksCompleted.push({text:t.text,ts:t.completedAt,doc:'To-Dos',docId:'__todos',todoId:t.id,source:'todo'});
-    else if(reportInRange(t.createdAt,range)) itemsCreated.push({text:t.text,ts:t.createdAt,doc:'To-Dos',docId:'__todos',todoId:t.id});
-  });
-
-  const byTsDesc=(a,b)=>(b.ts||0)-(a.ts||0);
-  tasksCompleted.sort(byTsDesc); itemsCreated.sort(byTsDesc); itemsEdited.sort(byTsDesc);
-
-  return {
-    range,docIcons,
-    stats:{docsTouched:docsTouched.size,tasksCompleted:tasksCompleted.length,itemsCreated:itemsCreated.length,itemsEdited:itemsEdited.length},
-    tasksCompleted,itemsCreated,itemsEdited
-  };
-}
-function reportGroupByDoc(r){
-  const groups=new Map(); // group key -> {doc,docId,icon,completed:[],created:[],edited:[],lastTs}
-  const touch=(doc,docId,bucket,item)=>{
-    const key=docId||doc;
-    if(!groups.has(key))groups.set(key,{doc,docId,icon:docId?r.docIcons.get(docId):null,completed:[],created:[],edited:[],lastTs:0});
-    const g=groups.get(key);
-    g[bucket].push(item);
-    g.lastTs=Math.max(g.lastTs,item.ts||0);
-  };
-  r.tasksCompleted.forEach(it=>touch(it.doc,it.docId,'completed',it));
-  r.itemsCreated.forEach(it=>touch(it.doc,it.docId,'created',it));
-  r.itemsEdited.forEach(it=>touch(it.doc,it.docId,'edited',it));
-  return [...groups.values()].sort((a,b)=>b.lastTs-a.lastTs);
-}
-// Small monoline glyphs, colored to match the app's existing text-color palette (--fc-*),
-// so a completed task, a new item, and an edit read apart at a glance without resorting to
-// a legend or plain ✓/+/✎ characters.
-const REPORT_GLYPHS={
-  done:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fc-green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6"/></svg>`,
-  added:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fc-blue)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
-  edited:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`
-};
-const REPORT_GROUP_ICONS={
-  todos:`<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.6" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.6" fill="currentColor" stroke="none"/><path d="M2.5 18l1 1 2-2"/>`,
-  doc:`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>`
-};
-function reportGroupIconHtml(g){
-  if(g.doc==='To-Dos')return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${REPORT_GROUP_ICONS.todos}</svg>`;
-  const custom=g.icon&&typeof docIconSvg==='function'?docIconSvg(g.icon,13):null;
-  return custom||`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${REPORT_GROUP_ICONS.doc}</svg>`;
-}
-// Encodes enough info in a data-nav attribute for the single delegated click handler
-// (reportHandleNavClick) to jump straight to the source — a node in its document, a to-do,
-// a diagram, or a question — reusing the app's existing jump machinery rather than
-// building a parallel navigation path.
-function reportNavAttr(it){
-  if(it.nodeId!==undefined&&it.nodeId!==null) return ` data-nav="node|${esc(String(it.docId))}|${it.nodeId}"`;
-  if(it.todoId!==undefined&&it.todoId!==null) return ` data-nav="todo|${esc(String(it.todoId))}"`;
-  if(it.diagramId!==undefined&&it.diagramId!==null) return ` data-nav="diagram|${esc(String(it.docId))}|${esc(String(it.diagramId))}"`;
-  if(it.qaId!==undefined&&it.qaId!==null) return ` data-nav="qa|${esc(String(it.docId))}|${esc(String(it.qaId))}"`;
-  return '';
-}
-function reportWorkItemsHtml(items,kind,cap){
-  if(!items.length)return '';
-  const shown=items.slice(0,cap||6);
-  const rows=shown.map(it=>`<div class="report-work-item ${kind}"${reportNavAttr(it)}><span class="report-work-glyph">${REPORT_GLYPHS[kind]}</span><span class="report-item-text">${esc(reportPreviewText(it.text,90))}</span></div>`).join('');
-  const more=items.length>shown.length?`<div class="report-work-item report-item-more">+${items.length-shown.length} more</div>`:'';
-  return rows+more;
-}
-// ISO 8601 week number (Monday-start weeks, week 1 is the week containing the year's first
-// Thursday) — the standard definition most people mean by "week 29", matching the Monday–
-// Sunday week boundaries Recap already uses for its This Week / Last Week tabs.
-function reportIsoWeekNumber(ts){
-  const d=new Date(ts);
-  d.setHours(0,0,0,0);
-  d.setDate(d.getDate()+3-((d.getDay()+6)%7)); // shift to this week's Thursday
-  const firstThursday=new Date(d.getFullYear(),0,4);
-  firstThursday.setDate(firstThursday.getDate()+3-((firstThursday.getDay()+6)%7));
-  return 1+Math.round((d-firstThursday)/(7*86400000));
-}
-function reportRangeLabel(period,range){
-  const fmt=(ts)=>new Date(ts).toLocaleDateString([], {month:'short',day:'numeric'});
-  if(period==='today')return new Date(range.start).toLocaleDateString([], {weekday:'long',month:'short',day:'numeric'});
-  return fmt(range.start)+' – '+fmt(range.end-86400000)+' · Week '+reportIsoWeekNumber(range.start);
-}
-function renderActivityReport(){
-  const body=el('report-modal-body'); if(!body)return;
-  document.querySelectorAll('.report-tab').forEach(btn=>{ const active=btn.dataset.period===reportModalPeriod; btn.classList.toggle('active',active); btn.setAttribute('aria-selected',String(active)); });
-  const r=buildActivityReport(reportModalPeriod);
-  const rangeEl=el('report-range-label'); if(rangeEl)rangeEl.textContent=reportRangeLabel(reportModalPeriod,r.range);
-  const totalItems=r.stats.tasksCompleted+r.stats.itemsCreated+r.stats.itemsEdited;
-  if(!totalItems){
-    const label=reportModalPeriod==='today'?'today':(reportModalPeriod==='week'?'this week':'last week');
-    const brandMark='<svg width="1em" height="1em" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:-0.15em" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg>';
-    body.innerHTML=`<div class="report-empty">Nothing recorded for ${esc(label)} yet — get to work! ${brandMark}</div>`;
-    return;
-  }
-  const docGroups=reportGroupByDoc(r);
-  const docsHtml=docGroups.map(g=>{
-    const navAttr=(g.docId&&g.doc!=='To-Dos')?` data-nav="doc|${esc(String(g.docId))}"`:'';
-    return `<div class="report-doc-group">
-    <div class="report-doc-title"${navAttr}><span class="report-doc-icon">${reportGroupIconHtml(g)}</span>${esc(g.doc)}</div>
-    <div class="report-work-list">${reportWorkItemsHtml(g.completed,'done')}${reportWorkItemsHtml(g.created,'added')}${reportWorkItemsHtml(g.edited,'edited')}</div>
-  </div>`;
-  }).join('');
-  body.innerHTML=docsHtml;
-}
-// Single delegated click handler for the whole modal body (content is re-rendered via
-// innerHTML each tab switch, so per-item listeners would be thrown away every time) — reuses
-// the app's existing jump machinery instead of building a parallel navigation path.
-function reportHandleNavClick(e){
-  const target=e.target.closest('[data-nav]'); if(!target)return;
-  const parts=(target.dataset.nav||'').split('|');
-  const type=parts[0];
-  closeActivityReport();
-  if(typeof closeAllPanelsExceptGlobalSearch==='function')closeAllPanelsExceptGlobalSearch();
-  if(type==='node'){
-    const docId=parts[1], nodeId=Number(parts[2]);
-    if(typeof revealNodeInDoc==='function')revealNodeInDoc(docId,nodeId);
-  } else if(type==='doc'){
-    if(parts[1]&&parts[1]!==currentDocId&&typeof switchDoc==='function')switchDoc(parts[1]);
-  } else if(type==='todo'){
-    if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(parts[1]);
-  } else if(type==='diagram'||type==='qa'){
-    const docId=parts[1], itemId=parts[2];
-    if(docId&&docId!==currentDocId&&typeof switchDoc==='function')switchDoc(docId);
-    if(type==='diagram'){
-      if(typeof openDiagramEditor==='function')openDiagramEditor(itemId);
-    } else if(type==='qa'){
-      revealInlineObject('qa',itemId);
-    }
-  }
-}
-el('report-modal-body')?.addEventListener('click',reportHandleNavClick);
-function anchorReportToDockChip(){
-  const panel=el('report-panel');
-  const chip=el('report-toggle');
-  if(!panel||!chip)return;
-  panel.classList.add('anchored');
-  window.sakuraAnchorPanelAboveChip(panel,chip);
-}
-function openActivityReport(){
-  const panel=el('report-panel'); if(!panel)return;
-  window.sakuraApplyPanelWidth('report-panel','sakura_dock_panel_width_v1',320,720,440);
-  renderActivityReport();
-  panel.classList.add('open');
-  document.querySelectorAll('#report-toggle').forEach(b=>b.classList.add('is-active'));
-  anchorReportToDockChip();
-}
-function closeActivityReport(){
-  const panel=el('report-panel');
-  if(panel){ panel.classList.remove('open'); panel.classList.remove('maximized'); }
-  document.querySelectorAll('#report-toggle').forEach(b=>b.classList.remove('is-active'));
-  if(typeof dockSyncRailVisibility==='function')dockSyncRailVisibility();
-}
-function toggleActivityReport(){
-  el('report-toggle')?.blur();
-  const panel=el('report-panel');
-  if(panel&&panel.classList.contains('open')){ closeActivityReport(); return; }
-  openActivityReport();
-}
-function toggleReportMaximize(){
-  const panel=el('report-panel'); if(!panel)return;
-  const goingMax=!panel.classList.contains('maximized');
-  panel.classList.toggle('maximized',goingMax);
-  const btn=el('report-panel-maximize');
-  if(btn){
-    btn.dataset.tip=goingMax?'Restore default view':'Expand to full view';
-    btn.querySelector('svg').innerHTML=goingMax
-      ?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>'
-      :'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
-  }
-  if(!goingMax){ window.sakuraApplyPanelWidth('report-panel','sakura_dock_panel_width_v1',320,720,440); anchorReportToDockChip(); }
-}
-document.getElementById('report-toggle')?.addEventListener('click',()=>toggleDockTab('report'));
-document.getElementById('report-panel-close')?.addEventListener('click',closeActivityReport);
-document.getElementById('report-panel-maximize')?.addEventListener('click',toggleReportMaximize);
-window.sakuraInitPanelDragResize({panelId:'report-panel',headerId:'report-panel-header',handleId:'report-resize-handle',closeId:'report-panel-close',maximizeId:'report-panel-maximize',widthKey:'sakura_dock_panel_width_v1',widthMin:320,widthMax:720});
-// Outside-click-closes was removed here: this is a persistent docked panel now (not a
-// transient popover), so an accidental click anywhere in the document while writing
-// shouldn't dismiss it. Closing is explicit only — the X button, Esc, or clicking the
-// same rail/app-bar chip again.
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('report-panel')?.classList.contains('open')&&!el('report-summary-modal-overlay')?.classList.contains('open')&&!el('sakura-modal-overlay')?.classList.contains('open')){
-    e.preventDefault(); e.stopPropagation(); closeActivityReport();
-  }
-});
-document.querySelectorAll('.report-tab').forEach(btn=>{
-  btn.addEventListener('click',()=>{ reportModalPeriod=btn.dataset.period; renderActivityReport(); anchorReportToDockChip(); });
-});
-window.openActivityReport=openActivityReport;
-
-
-// ── Dock panel tab strip orchestration ──
-// Ties To-Dos/Library/Recap together so they read as one tabbed panel
-// instead of independently floating windows, which is what was letting them overlap
-// each other and the dock rail inconsistently. Each panel's own open/close/maximize/
-// anchor/drag/resize logic above is completely untouched — this layer only decides *when*
-// those functions get called (never more than one panel open at a time) and moves the
-// shared #dock-tabstrip header into whichever panel is currently showing.
-// DOCK_TAB_PANEL_ID/MAXIMIZE_ID/MAXICON_ID/CLOSE_ID used to be declared right here -- moved up
-// near the top of the Todos module instead, since each panel module's own top-level boot code
-// (applyTodosLocation() etc.) can call into dockPanelIsOpen(), which needs DOCK_TAB_PANEL_ID,
-// well before script execution ever reaches this point. See the comment at that new location.
-// toggleTodosPanel lives inside To-Dos' own module closure, reached only via window.;
-// the rest are ordinary top-level function declarations (already global).
-const DOCK_TAB_TOGGLE={
-  todos: ()=>window.toggleTodosPanel(),
-  report: ()=>toggleActivityReport(),
-  library: ()=>toggleLibraryPanel(),
-};
-// Defensive guard (same pattern as openNotePanel/enterFocus/openTagManager for their own
-// features, see the Feature Activation comment above): a keyboard shortcut or a
-// cross-reference dot can call openDockTab/toggleDockTab directly, bypassing the now-hidden
-// #dock-tab-* button, so the CSS alone isn't enough -- redirect to the first still-enabled
-// tab instead of opening one whose entry points are all hidden.
-function dockTabEnabled(tab){ const f=FEATURE_FLAGS[tab]; return !f||f.get(); }
-function firstEnabledDockTab(){ return ['todos','library','report'].find(dockTabEnabled)||null; }
-function enabledDockTabCount(){ return ['todos','library','report'].filter(dockTabEnabled).length; }
-// dockActiveTab used to be declared right here -- moved up near the top of the Todos module
-// alongside DOCK_TAB_PANEL_ID; see the comment there.
-// Which tab reopens when the app-bar launcher is clicked with nothing currently open —
-// persisted so it's remembered across a reload, not just within the session.
-let dockLastTab='todos';
-try{ const saved=localStorage.getItem('sakura_dock_last_tab'); if(saved&&DOCK_TAB_PANEL_ID[saved]&&dockTabEnabled(saved))dockLastTab=saved; }catch(e){}
-// Maximize is one shared state across all tabs (like width), not per-panel — switching
-// tabs while maximized should keep the panel maximized, not silently drop back to docked.
-let dockMaximized=false;
-function dockPanelIsOpen(tab){
-  const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
+// ── Hub dock (To-Dos) ──
+// To-Dos is the only dock panel left (Meeting Notes, Journal, Library, and Recap were all
+// removed), so there's no tab strip and no "which tab is open" orchestration anymore — these
+// stay as small named entry points because the To-Dos module, its keyboard shortcut, Quick
+// Assist, and the app-bar launcher all call them. A tab argument, if passed, is ignored: it
+// always means To-Dos. dockActiveTab itself is declared earlier (hoisted ahead of the To-Dos
+// module — see the comment there). toggleTodosPanel lives inside To-Dos' own module closure,
+// reached only via window.
+function dockTabEnabled(){ const f=FEATURE_FLAGS.todos; return !f||f.get(); }
+function dockPanelIsOpen(){
+  const panel=document.getElementById('todos-panel');
   return !!(panel&&panel.classList.contains('open'));
 }
-// Re-evaluates rail visibility (and clears dockActiveTab) from real DOM state rather than
-// only from the orchestrator's own open/close calls — needed because a panel can also
-// close via Escape, an outside click, or its own (now-hidden) X button, none of which go
-// through toggleDockTab/openDockTab. Called from each panel's actual close function below
-// (closeTodosPanel/closeLibraryPanel/closeActivityReport) since those
-// are the one choke point every closing path already runs through, however it was
-// triggered — cheaper and more robust than trying to intercept every trigger separately.
+// Re-evaluates rail state (and clears dockActiveTab) from real DOM state rather than only
+// from openDockTab/toggleDockTab — the panel can also close via Escape or its own X button.
+// Called from closeTodosPanel, the one choke point every closing path runs through.
 function dockSyncRailVisibility(){
-  const anyOpen=['todos','report','library'].some(dockPanelIsOpen);
+  const anyOpen=dockPanelIsOpen();
   document.getElementById('status-util-group')?.classList.toggle('panel-open',anyOpen);
-  if(!anyOpen){
-    document.getElementById('dock-tabstrip')?.classList.remove('active');
-    dockActiveTab=null;
-  }
+  if(!anyOpen)dockActiveTab=null;
 }
-function dockMoveTabstripInto(tab){
-  const strip=document.getElementById('dock-tabstrip');
-  const panel=document.getElementById(DOCK_TAB_PANEL_ID[tab]);
-  if(!strip||!panel)return;
-  panel.insertBefore(strip,panel.firstChild);
-  strip.classList.add('active');
-  // With only one Hub panel enabled (Settings -> Features), the tab strip is dropped
-  // entirely (see body.hub-single-tab CSS) rather than kept around just to house a single
-  // always-active tab button plus maximize/close -- those fall back to the panel's own
-  // header instead.
-  document.body.classList.toggle('hub-single-tab', enabledDockTabCount()<=1);
-  document.querySelectorAll('.dock-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  // Bring this tab's maximize state in line with the shared one — click its own maximize
-  // button (rather than toggling the class directly) so every side effect that button's
-  // own handler does (icon swap, width re-apply on restore, etc.) still runs correctly.
-  if(panel.classList.contains('maximized')!==dockMaximized){
-    document.getElementById(DOCK_TAB_MAXIMIZE_ID[tab])?.click();
-  }
-  const maxBtn=document.getElementById('dock-tabstrip-maximize');
-  const dstIcon=document.getElementById('dock-tabstrip-max-icon');
-  const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[tab]);
-  if(maxBtn&&srcIcon&&dstIcon){
-    const isMax=panel.classList.contains('maximized');
-    maxBtn.dataset.tip=isMax?'Restore default view':'Expand to full view';
-    dstIcon.innerHTML=srcIcon.innerHTML;
-  }
-}
-// Ensures `tab` ends up open and active, closing whichever other tab was showing first
-// (real open/close functions still do the work — this just sequences them).
-function openDockTab(tab){
-  if(!dockTabEnabled(tab)){ tab=firstEnabledDockTab(); if(!tab)return; }
-  if(dockActiveTab&&dockActiveTab!==tab&&dockPanelIsOpen(dockActiveTab)){
-    DOCK_TAB_TOGGLE[dockActiveTab]();
-  }
-  dockActiveTab=tab;
-  dockLastTab=tab;
-  try{ localStorage.setItem('sakura_dock_last_tab',tab); }catch(e){}
-  if(!dockPanelIsOpen(tab))DOCK_TAB_TOGGLE[tab]();
-  dockMoveTabstripInto(tab);
+function openDockTab(){
+  if(!dockTabEnabled())return;
+  dockActiveTab='todos';
+  if(!dockPanelIsOpen())window.toggleTodosPanel();
   document.getElementById('status-util-group')?.classList.add('panel-open');
 }
-// Used by the rail's own launcher buttons: same as clicking a chip always has — open it,
-// or close it again if it's already the one showing. Reading real DOM state
-// (dockPanelIsOpen) rather than trusting dockActiveTab blindly means this stays correct
-// even after the panel was closed some other way (Escape, outside click, its own X).
-function toggleDockTab(tab){
-  if(!dockTabEnabled(tab)){ tab=firstEnabledDockTab(); if(!tab)return; }
-  if(dockActiveTab===tab&&dockPanelIsOpen(tab)){
-    DOCK_TAB_TOGGLE[tab]();
-    document.getElementById('dock-tabstrip')?.classList.remove('active');
+function toggleDockTab(){
+  if(!dockTabEnabled())return;
+  if(dockPanelIsOpen()){
+    window.toggleTodosPanel();
     document.getElementById('status-util-group')?.classList.remove('panel-open');
     dockActiveTab=null;
     return;
   }
-  openDockTab(tab);
+  openDockTab();
 }
-document.querySelectorAll('.dock-tab').forEach(btn=>{
-  // Tabs inside the open panel only switch — closing is the rail chip's job (or the
-  // shared close button), not something clicking a tab you're already looking at should do.
-  btn.addEventListener('click',()=>openDockTab(btn.dataset.tab));
-});
-document.getElementById('dock-tabstrip-maximize')?.addEventListener('click',()=>{
-  if(!dockActiveTab)return;
-  document.getElementById(DOCK_TAB_MAXIMIZE_ID[dockActiveTab])?.click();
-  // Re-sync the shared icon/tooltip with whatever that click just toggled, and record the
-  // new state so switching to another tab carries it over instead of resetting to docked.
-  const panel=document.getElementById(DOCK_TAB_PANEL_ID[dockActiveTab]);
-  const maxBtn=document.getElementById('dock-tabstrip-maximize');
-  const dstIcon=document.getElementById('dock-tabstrip-max-icon');
-  const srcIcon=document.getElementById(DOCK_TAB_MAXICON_ID[dockActiveTab]);
-  if(panel&&maxBtn&&srcIcon&&dstIcon){
-    dockMaximized=panel.classList.contains('maximized');
-    maxBtn.dataset.tip=dockMaximized?'Restore default view':'Expand to full view';
-    dstIcon.innerHTML=srcIcon.innerHTML;
-  }
-});
-document.getElementById('dock-tabstrip-close')?.addEventListener('click',()=>{
-  if(dockActiveTab)toggleDockTab(dockActiveTab);
-});
-// App bar launcher — single button, replacing the floating rail as the primary way to
-// open this panel. Toggles like any other chip: opens dockActiveTab (falling back to
-// whichever tab was open last, remembered across reloads) if nothing's open, closes it
-// if that same tab is already showing.
+// App bar launcher — opens To-Dos, or closes it if it's already showing.
 document.getElementById('dock-panel-appbar-toggle')?.addEventListener('click',(e)=>{
-  toggleDockTab(dockActiveTab||dockLastTab);
+  toggleDockTab();
   e.currentTarget.blur();
 });
 
-
-// === Recap: AI bullet summary ===
-// Condenses the currently-displayed period's raw activity into a short, skimmable bullet list
-// phrased for a status update or daily standup — reuses the same generic AI call path every
-// other AI feature in the app goes through (callAiApiWithPrompt), so it automatically respects
-// whichever provider/model/key the user has configured in Settings → AI.
-const AI_REPORT_SUMMARY_SYSTEM_PROMPT='You write a status-meeting-ready summary from a raw activity log that is already grouped by document/project (plus To-Dos, Diagrams, and Q&A as their own groups), each group listing what was completed, added, or edited. Respond with ONLY plain bullet points, one line each starting with "- ". Each group gets its own bullet or, if there is genuinely more than one distinct piece of work in it, a couple of bullets — do not force everything in a group into a single over-compressed line, and do not pad a group with filler to make it longer than the source material supports. Start each bullet with the group\'s name as a short bold-style label followed by a colon (e.g. "- Project Alpha: shipped the auth flow; drafted the rollout doc and flagged two open risks in the rollout plan"), except a lone one-item group can skip the label if it reads fine without it. Bullets should read like something you would actually say out loud in a status meeting — specific enough to be useful (what changed, what was decided, what is now unblocked or still open), not a generic label. Aim for roughly 12-30 words per bullet; do not artificially truncate to hit a low word count, but do not pad either. Skip empty or placeholder-looking groups, and drop groups that are pure noise (e.g. a single trivial edit with nothing to say about it). No headers, no preamble like "Here is a summary", no closing remarks, nothing except the bullet lines themselves.';
-function buildReportSummaryUserMsg(r,periodLabel){
-  const lines=[`Period: ${periodLabel}`];
-  reportGroupByDoc(r).forEach(g=>{
-    lines.push('',`${g.doc}:`);
-    g.completed.forEach(it=>lines.push(`- done: ${reportPreviewText(it.text,120)}`));
-    g.created.forEach(it=>lines.push(`- added: ${reportPreviewText(it.text,120)}`));
-    g.edited.forEach(it=>lines.push(`- edited: ${reportPreviewText(it.text,120)}`));
-  });
-  return lines.join('\n');
-}
-function reportPeriodLabel(period){ return period==='today'?'Today':(period==='week'?'This Week':'Last Week'); }
-function generateReportSummary(){
-  if(!(typeof reportFeatureEnabled==='undefined'?true:reportFeatureEnabled)){ showToast('Recap is off — Settings → Features'); return; }
-  if(typeof featureAiEnabled!=='undefined'&&!featureAiEnabled){ showToast('AI Capabilities is off — Settings → Features'); return; }
-  if(typeof callAiApiWithPrompt!=='function'){ showToast('AI is not available'); return; }
-  const r=buildActivityReport(reportModalPeriod);
-  const totalItems=r.stats.tasksCompleted+r.stats.itemsCreated+r.stats.itemsEdited;
-  if(!totalItems){ showToast('Nothing to summarize for this period'); return; }
-  const periodLabel=reportPeriodLabel(reportModalPeriod);
-  const btn=el('report-ai-summary-btn');
-  const btnLabel=el('report-ai-summary-btn-label');
-  const regenBtn=el('report-summary-regenerate-btn');
-  if(btn)btn.classList.add('ai-busy');
-  if(btnLabel)btnLabel.textContent='Summarizing…';
-  if(regenBtn){ regenBtn.disabled=true; regenBtn.textContent='Regenerating…'; }
-  const sub=el('report-summary-modal-sub'); if(sub)sub.textContent=periodLabel+' — AI-generated, handy for status updates or standups';
-  const maxTok=Math.max(typeof aiMaxTokens==='number'?aiMaxTokens:1024,2048);
-  callAiApiWithPrompt(AI_REPORT_SUMMARY_SYSTEM_PROMPT, buildReportSummaryUserMsg(r,periodLabel), maxTok).then(raw=>{
-    if(!raw)throw new Error('Empty response from AI');
-    showReportSummaryModal(raw.trim());
-  }).catch(e=>{
-    if(typeof showAiErrorModal==='function')showAiErrorModal(typeof aiProvider!=='undefined'?aiProvider:'',e);
-    else showToast('AI summary failed');
-  }).finally(()=>{
-    if(btn)btn.classList.remove('ai-busy');
-    if(btnLabel)btnLabel.textContent='Summarize with AI';
-    if(regenBtn){ regenBtn.disabled=false; regenBtn.textContent='Regenerate'; }
-  });
-}
-let _reportSummaryLines=[];
-function showReportSummaryModal(text){
-  const overlay=el('report-summary-modal-overlay'), body=el('report-summary-modal-body');
-  if(!overlay||!body)return;
-  const lines=String(text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.replace(/^[-•*]\s*/,''));
-  _reportSummaryLines=lines.length?lines:[String(text||'').trim()];
-  const bulletDot='<svg width="7" height="7" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:6px"><circle cx="12" cy="12" r="10" fill="var(--accent)"/></svg>';
-  body.innerHTML=_reportSummaryLines.map(bullet=>`<div class="report-summary-line">${bulletDot}<span>${mdInlineToHtml(bullet)}</span></div>`).join('');
-  overlay.classList.add('open');
-}
-function closeReportSummaryModal(){ el('report-summary-modal-overlay')?.classList.remove('open'); }
-el('report-ai-summary-btn')?.addEventListener('click',generateReportSummary);
-el('report-summary-regenerate-btn')?.addEventListener('click',generateReportSummary);
-el('report-summary-modal-close-btn')?.addEventListener('click',closeReportSummaryModal);
-el('report-summary-copy-btn')?.addEventListener('click',()=>{
-  const text=_reportSummaryLines.map(l=>'- '+l).join('\n');
-  (navigator.clipboard?.writeText?navigator.clipboard.writeText(text):Promise.reject()).then(()=>showToast('Copied')).catch(()=>{
-    const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('Copied');
-  });
-});
-if(typeof onOverlayBackdropClick==='function')onOverlayBackdropClick(el('report-summary-modal-overlay'),closeReportSummaryModal);
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&el('report-summary-modal-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopPropagation(); closeReportSummaryModal(); }
-});
-
-// === Recap: feature activation toggle (Settings → Features) ===
-// Same self-contained module pattern as Library/To-Dos: its own tiny settings key,
-// a getter exposed on window for FEATURE_FLAGS to read, and a setter that hides the dock
-// button (and closes the panel if open) rather than relying on a shared feature-off-* CSS rule.
-const REPORT_SETTINGS_KEY='sakura_report_settings_v1';
-let reportFeatureEnabled=true;
-window.sakuraReportFeatureEnabled=function(){ return reportFeatureEnabled; };
-function loadReportSettings(){
-  try{ const raw=localStorage.getItem(REPORT_SETTINGS_KEY); if(raw){ const d=JSON.parse(raw); reportFeatureEnabled=d.featureEnabled===undefined?true:!!d.featureEnabled; } }catch(e){}
-}
-function saveReportSettings(){ try{ localStorage.setItem(REPORT_SETTINGS_KEY, JSON.stringify({featureEnabled:reportFeatureEnabled})); }catch(e){} markMetaChanged('reportSettings'); }
-function applyReportLocation(){
-  const dockBtn=el('report-toggle');
-  const hideAll=!reportFeatureEnabled;
-  if(dockBtn)dockBtn.style.display=hideAll?'none':'';
-  if(hideAll)closeActivityReport();
-  if(typeof updateStatusUtilGroupVisibility==='function')updateStatusUtilGroupVisibility();
-}
-function setReportFeatureEnabled(on){
-  reportFeatureEnabled=!!on;
-  saveReportSettings();
-  applyReportLocation();
-}
-window.sakuraReportSetFeatureEnabled=setReportFeatureEnabled;
-loadReportSettings();
-applyReportLocation();
-if(typeof syncFeatureToggleUi==='function')syncFeatureToggleUi('report',reportFeatureEnabled);
 </script>
 </body></html>

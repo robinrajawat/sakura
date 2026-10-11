@@ -19,181 +19,115 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
   }
 }
 
-const HUB_KEYS = ['todos', 'library', 'report'] as const;
-
-// Turning a Hub sub-feature (To-Dos/Library/Recap) off in Settings used to
-// have no visible effect: the setFeatureEnabled plumbing was real, but nothing hid the actual
-// Hub tab button (#dock-tab-<key>) or its content panel (#<key>-panel), and openDockTab/
-// toggleDockTab (the single choke point every open path -- keyboard shortcuts, cross-reference
-// dots, the tab buttons themselves -- runs through) had no awareness of the flag either.
-test.describe('Hub feature toggles actually hide their tab + panel (and cannot be opened around)', () => {
-  for (const key of HUB_KEYS) {
-    test(`disabling "${key}" hides #dock-tab-${key} and #${key}-panel, re-enabling restores them`, async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-
-      // The panel itself is only visible while open (its base CSS hides it when closed
-      // regardless of the feature flag), so open it first to get a meaningful baseline --
-      // the real assertion is that the feature-off rule can hide it even while open.
-      const initial = await page.evaluate((k) => {
-        // @ts-expect-error — bare globals from index.html
-        openDockTab(k);
-        const tab = document.getElementById(`dock-tab-${k}`);
-        const panel = document.getElementById(`${k}-panel`);
-        return {
-          tabDisplay: tab ? getComputedStyle(tab).display : null,
-          panelDisplay: panel ? getComputedStyle(panel).display : null,
-          panelOpen: panel ? panel.classList.contains('open') : false
-        };
-      }, key);
-      expect(initial.tabDisplay).not.toBe('none');
-      expect(initial.panelOpen).toBe(true);
-      expect(initial.panelDisplay).not.toBe('none');
-
-      const disabled = await page.evaluate((k) => {
-        // @ts-expect-error — bare global from index.html
-        setFeatureEnabled(k, false);
-        const tab = document.getElementById(`dock-tab-${k}`);
-        const panel = document.getElementById(`${k}-panel`);
-        return {
-          bodyHasClass: document.body.classList.contains(`feature-off-${k}`),
-          tabDisplay: tab ? getComputedStyle(tab).display : null,
-          panelDisplay: panel ? getComputedStyle(panel).display : null
-        };
-      }, key);
-      expect(disabled.bodyHasClass).toBe(true);
-      expect(disabled.tabDisplay).toBe('none');
-      expect(disabled.panelDisplay).toBe('none');
-
-      const reenabled = await page.evaluate((k) => {
-        // @ts-expect-error
-        setFeatureEnabled(k, true);
-        // @ts-expect-error
-        openDockTab(k);
-        const tab = document.getElementById(`dock-tab-${k}`);
-        const panel = document.getElementById(`${k}-panel`);
-        return {
-          bodyHasClass: document.body.classList.contains(`feature-off-${k}`),
-          tabDisplay: tab ? getComputedStyle(tab).display : null,
-          panelDisplay: panel ? getComputedStyle(panel).display : null
-        };
-      }, key);
-      expect(reenabled.bodyHasClass).toBe(false);
-      expect(reenabled.tabDisplay).not.toBe('none');
-      expect(reenabled.panelDisplay).not.toBe('none');
-    });
-  }
-
-  test('openDockTab/toggleDockTab refuse to open a disabled tab and fall back to an enabled one', async ({ page }) => {
+// To-Dos is the only Hub dock panel left (Meeting Notes, Journal, Library, and Recap were all
+// removed), so these cover the one feature toggle the dock still has.
+//
+// Turning To-Dos off in Settings used to have no visible effect: the setFeatureEnabled
+// plumbing was real, but nothing hid its entry point or its content panel, and openDockTab/
+// toggleDockTab (the single choke point every open path -- keyboard shortcut, cross-reference
+// dots, the app-bar launcher -- runs through) had no awareness of the flag either.
+test.describe('To-Dos feature toggle hides its launcher + panel (and cannot be opened around)', () => {
+  test('disabling To-Dos hides #dock-panel-appbar-toggle and #todos-panel, re-enabling restores them', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
+
+    // The panel itself is only visible while open (its base CSS hides it when closed
+    // regardless of the feature flag), so open it first to get a meaningful baseline --
+    // the real assertion is that the feature-off rule can hide it even while open.
+    const read = () => page.evaluate(() => {
+      const launcher = document.getElementById('dock-panel-appbar-toggle');
+      const panel = document.getElementById('todos-panel');
+      return {
+        bodyHasClass: document.body.classList.contains('feature-off-todos'),
+        launcherDisplay: launcher ? getComputedStyle(launcher).display : null,
+        panelDisplay: panel ? getComputedStyle(panel).display : null,
+        panelOpen: panel ? panel.classList.contains('open') : false
+      };
+    });
+
+    // @ts-expect-error — bare global from index.html
+    await page.evaluate(() => openDockTab());
+    const initial = await read();
+    expect(initial.launcherDisplay).not.toBe('none');
+    expect(initial.panelOpen).toBe(true);
+    expect(initial.panelDisplay).not.toBe('none');
+
+    // @ts-expect-error
+    await page.evaluate(() => setFeatureEnabled('todos', false));
+    const disabled = await read();
+    expect(disabled.bodyHasClass).toBe(true);
+    expect(disabled.launcherDisplay).toBe('none');
+    expect(disabled.panelDisplay).toBe('none');
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      setFeatureEnabled('todos', true);
+      // @ts-expect-error
+      openDockTab();
+    });
+    const reenabled = await read();
+    expect(reenabled.bodyHasClass).toBe(false);
+    expect(reenabled.launcherDisplay).not.toBe('none');
+    expect(reenabled.panelDisplay).not.toBe('none');
+  });
+
+  test('openDockTab/toggleDockTab are safe no-ops while To-Dos is disabled', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    const unexpectedErrors: string[] = [];
+    page.on('pageerror', (err) => unexpectedErrors.push('pageerror: ' + err.message));
 
     const result = await page.evaluate(() => {
       // @ts-expect-error
       setFeatureEnabled('todos', false);
-      // @ts-expect-error — todos disabled: openDockTab must redirect, never open the hidden panel
-      openDockTab('todos');
       // @ts-expect-error
-      const todosOpenAfterOpenCall = dockPanelIsOpen('todos');
+      openDockTab();
       // @ts-expect-error
-      const activeAfterOpenCall = dockActiveTab;
-
+      toggleDockTab();
       // @ts-expect-error
-      toggleDockTab('todos');
+      const open = dockPanelIsOpen();
       // @ts-expect-error
-      const todosOpenAfterToggleCall = dockPanelIsOpen('todos');
-
+      const active = dockActiveTab;
       // @ts-expect-error
       setFeatureEnabled('todos', true);
-      return { todosOpenAfterOpenCall, activeAfterOpenCall, todosOpenAfterToggleCall };
+      return { open, active };
     });
-
-    expect(result.todosOpenAfterOpenCall).toBe(false);
-    expect(result.activeAfterOpenCall).not.toBe('todos');
-    expect(result.activeAfterOpenCall).not.toBeNull();
-    expect(result.todosOpenAfterToggleCall).toBe(false);
-  });
-
-  test('disabling every Hub feature makes openDockTab/toggleDockTab safe no-ops', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-
-    const unexpectedErrors: string[] = [];
-    page.on('pageerror', (err) => unexpectedErrors.push('pageerror: ' + err.message));
-
-    const result = await page.evaluate((keys) => {
-      // @ts-expect-error
-      keys.forEach((k) => setFeatureEnabled(k, false));
-      // @ts-expect-error
-      openDockTab('library');
-      // @ts-expect-error
-      toggleDockTab('todos');
-      // @ts-expect-error
-      const anyOpen = keys.some((k) => dockPanelIsOpen(k));
-      // Restore state for any later test in this file/session.
-      // @ts-expect-error
-      keys.forEach((k) => setFeatureEnabled(k, true));
-      return { anyOpen };
-    }, HUB_KEYS as unknown as string[]);
-
-    expect(result.anyOpen).toBe(false);
+    expect(result.open).toBe(false);
+    expect(result.active).toBeNull();
     expect(unexpectedErrors).toEqual([]);
   });
 
-  // The shared #dock-tabstrip replaces each panel's own title/maximize/close row (see the CSS
-  // comment above #todos-panel-header etc.) -- but with only one Hub feature enabled, there's
-  // nothing to switch to, so the whole strip (not just its tab button) is dropped entirely
-  // rather than wasting a whole row just to house maximize/close. Those two fall back to their
-  // normal spot in the panel's own header instead.
-  test('the whole tab strip hides when only one Hub feature is enabled, falling back to the panel\'s own maximize/close', async ({ page }) => {
+  // With only one dock panel there's nothing to switch between, so there's no tab strip at
+  // all -- the To-Dos panel's own header carries maximize/close instead.
+  test('there is no dock tab strip, and the To-Dos panel shows its own maximize/close; the launcher toggles it', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    const onlyTodos = await page.evaluate((keys) => {
-      // @ts-expect-error
-      keys.filter((k) => k !== 'todos').forEach((k) => setFeatureEnabled(k, false));
-      // @ts-expect-error
-      openDockTab('todos');
-      const strip = document.getElementById('dock-tabstrip');
-      const ownMax = document.getElementById('todos-panel-maximize');
-      const ownClose = document.getElementById('todos-panel-close');
-      const ownTitle = document.getElementById('todos-panel-title');
+    const opened = await page.evaluate(() => {
+      document.getElementById('dock-panel-appbar-toggle')?.click();
+      const max = document.getElementById('todos-panel-maximize');
+      const close = document.getElementById('todos-panel-close');
       return {
-        bodyHasClass: document.body.classList.contains('hub-single-tab'),
-        stripDisplay: strip ? getComputedStyle(strip).display : null,
-        ownMaxDisplay: ownMax ? getComputedStyle(ownMax).display : null,
-        ownCloseDisplay: ownClose ? getComputedStyle(ownClose).display : null,
-        // The title stays hidden either way -- only maximize/close fall back.
-        ownTitleDisplay: ownTitle ? getComputedStyle(ownTitle).display : null,
-      };
-    }, HUB_KEYS as unknown as string[]);
-    expect(onlyTodos.bodyHasClass).toBe(true);
-    expect(onlyTodos.stripDisplay).toBe('none');
-    expect(onlyTodos.ownMaxDisplay).not.toBe('none');
-    expect(onlyTodos.ownCloseDisplay).not.toBe('none');
-    expect(onlyTodos.ownTitleDisplay).toBe('none');
-
-    // Re-enabling a second feature while the panel is still open should bring the strip back
-    // (and hide the panel's own maximize/close again) immediately, not just on the next open.
-    const twoEnabled = await page.evaluate(() => {
-      // @ts-expect-error
-      setFeatureEnabled('library', true);
-      const strip = document.getElementById('dock-tabstrip');
-      const ownMax = document.getElementById('todos-panel-maximize');
-      return {
-        bodyHasClass: document.body.classList.contains('hub-single-tab'),
-        stripDisplay: strip ? getComputedStyle(strip).display : null,
-        ownMaxDisplay: ownMax ? getComputedStyle(ownMax).display : null,
+        strip: !!document.getElementById('dock-tabstrip'),
+        tabs: document.querySelectorAll('.dock-tab').length,
+        // @ts-expect-error
+        open: dockPanelIsOpen(),
+        maxDisplay: max ? getComputedStyle(max).display : null,
+        closeDisplay: close ? getComputedStyle(close).display : null
       };
     });
-    expect(twoEnabled.bodyHasClass).toBe(false);
-    expect(twoEnabled.stripDisplay).not.toBe('none');
-    expect(twoEnabled.ownMaxDisplay).toBe('none');
+    expect(opened.strip).toBe(false);
+    expect(opened.tabs).toBe(0);
+    expect(opened.open).toBe(true);
+    expect(opened.maxDisplay).not.toBe('none');
+    expect(opened.closeDisplay).not.toBe('none');
 
-    // Restore state for any later test in this file/session.
-    await page.evaluate((keys) => {
+    const closed = await page.evaluate(() => {
+      document.getElementById('dock-panel-appbar-toggle')?.click();
       // @ts-expect-error
-      keys.forEach((k) => setFeatureEnabled(k, true));
-    }, HUB_KEYS as unknown as string[]);
+      return { open: dockPanelIsOpen(), active: dockActiveTab };
+    });
+    expect(closed.open).toBe(false);
+    expect(closed.active).toBeNull();
   });
 });
