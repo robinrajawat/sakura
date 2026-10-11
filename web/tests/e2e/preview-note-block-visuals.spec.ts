@@ -83,7 +83,9 @@ test.describe('Block-level tables and images in a note render as their own full-
     expect(result.imgInsideBox).toBe(false);
   });
 
-  test('an inline image sitting mid-sentence stays right where it is, not extracted', async ({ page }) => {
+  // Every picture with a usable src is a node.images object now (migrateNoteImagesToNode), even
+  // one that sat mid-sentence: it becomes the node's figure, and the sentence's text stays intact.
+  test('an inline image sitting mid-sentence moves to node.images, leaving the sentence text intact', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await setUpDoc(page, `<p>Look at this <img src="${img1x1}" alt="inline"> icon right here.</p>`);
@@ -91,13 +93,19 @@ test.describe('Block-level tables and images in a note render as their own full-
     const result = await page.evaluate(() => {
       const body = document.getElementById('preview-body')!;
       const noteBody = body.querySelector('.pv-inline-note-body');
+      // With the picture gone the note is one plain line, so the PDF shows it inline after the
+      // node's text rather than as a separate card.
       return {
         imgInsideBox: !!noteBody?.querySelector('img'),
-        figureCount: body.querySelectorAll('.pv-diagram-figure').length,
+        figureCount: body.querySelectorAll('.pv-node-image-figure').length,
+        imgsOutsideFigures: [...body.querySelectorAll('img')].filter((i) => !i.closest('.pv-node-image-figure')).length,
+        text: body.textContent?.replace(/\s+/g, ' '),
       };
     });
-    expect(result.imgInsideBox).toBe(true);
-    expect(result.figureCount).toBe(0);
+    expect(result.imgInsideBox).toBe(false);
+    expect(result.figureCount).toBe(1);
+    expect(result.imgsOutsideFigures).toBe(0);
+    expect(result.text).toContain('Look at this icon right here.');
   });
 
   test('a note that is entirely a table, with no text at all, renders only the figure -- no empty "Note" card', async ({ page }) => {
@@ -145,7 +153,7 @@ test.describe('Block-level tables and images in a note render as their own full-
   // real image through the live editor and checking what actually lands in node.note (then
   // feeding that through splitNoteBlockVisuals, same as renderPreviewBody does) catches the gap
   // the synthetic-markup tests above couldn't.
-  test('a real pasted image (the actual execCommand(\'insertImage\') shape, not a synthetic <p><img></p>) is also extracted', async ({ page }) => {
+  test('a real pasted image lands in node.images and renders as a PDF figure, never inside the note card', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await page.evaluate(() => {
@@ -175,17 +183,21 @@ test.describe('Block-level tables and images in a note render as their own full-
       Object.defineProperty(ev, 'clipboardData', { value: clipboardData });
       el.dispatchEvent(ev);
     });
-    await page.waitForTimeout(100);
+    await expect.poll(() => page.evaluate(() => {
+      // @ts-expect-error
+      return (nodes.find((n: any) => n.id === 1).images || []).length;
+    })).toBe(1);
 
     const result = await page.evaluate(() => {
       // @ts-expect-error
       const note = nodes.find((n: any) => n.id === 1).note;
       // @ts-expect-error
-      const split = splitNoteBlockVisuals(note);
-      return { noteHtml: note, imageCount: split.images.length, textHtml: split.textHtml };
+      renderPreviewBody();
+      const body = document.getElementById('preview-body')!;
+      return { noteHtml: note, figures: body.querySelectorAll('.pv-node-image-figure img').length, noteCard: !!body.querySelector('.pv-inline-label-note') };
     });
-    expect(result.noteHtml).not.toContain('<p>');
-    expect(result.imageCount).toBe(1);
-    expect(result.textHtml.trim()).toBe('');
+    expect(result.noteHtml).not.toContain('<img');
+    expect(result.figures).toBe(1);
+    expect(result.noteCard).toBe(false);
   });
 });

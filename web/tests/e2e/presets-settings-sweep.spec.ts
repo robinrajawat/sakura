@@ -340,7 +340,8 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
       'chromePreset', 'accentIntensity', 'accentCustomColor']) {
       expect(state.prefs, k).not.toHaveProperty(k);
     }
-    expect(state.quick).toEqual(['ai-rewrite', 'note']);
+    // 'image' ("Add image…") is appended once to menus saved before it existed (ctxImageActionAdded).
+    expect(state.quick).toEqual(['ai-rewrite', 'note', 'image']);
     expect(state.hover).toEqual(['child']);
     // 'plum' is no longer offered — falls back to the default accent; no chrome preset applies.
     expect(state.accent).toBe('terracotta');

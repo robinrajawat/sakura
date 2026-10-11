@@ -522,6 +522,16 @@ initHubTodosState({
     // (the onSnapshot callback body inside startSharedDocRealtimeSyncIfNeeded) was updated in
     // the same commit that wired this block in.
     footer: ''
+  },
+  {
+    // node.images (screenshots as per-node objects) -- pure decisions only: normalization of the
+    // stored array, copy-with-new-ids, downscale sizing, animated-GIF detection, encode choice,
+    // data-URL sizing. Canvas/decoding/DOM migration stay hand-written next to normalizeNode in
+    // index.html. No production wiring needed -- pure functions.
+    name: 'nodeImages',
+    sourceFile: 'src/utils/nodeImages.ts',
+    testFile: 'tests/unit/nodeImages.test.ts',
+    footer: ''
   }
 ];
 

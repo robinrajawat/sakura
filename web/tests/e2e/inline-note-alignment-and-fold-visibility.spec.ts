@@ -225,7 +225,10 @@ test.describe('Inline note/remark/Q&A lines align with row text and survive fold
     expect(note).toContain('Just typed this');
   });
 
-  test('a note opened via Shift+Enter stays visible after pasting an image, across an unrelated render', async ({ page }) => {
+  // Pictures are node.images objects now: an image pasted into a freshly opened (still empty)
+  // note goes to the node's thumbnail strip, which must survive an unrelated render -- and the
+  // note itself never receives an <img>.
+  test('an image pasted into a note opened via Shift+Enter lands in node.images and survives an unrelated render', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -274,11 +277,11 @@ test.describe('Inline note/remark/Q&A lines align with row text and survive fold
       render();
     });
 
-    await expect(page.locator('.node-note-line[data-node-id="1"]')).toBeVisible();
+    await expect(page.locator('.node-image-strip[data-node-id="1"] .node-image-thumb')).toHaveCount(1);
     const note = await page.evaluate(() => {
       // @ts-expect-error
       return nodes.find((n: any) => n.id === 1).note;
     });
-    expect(note).toContain('<img');
+    expect(note).not.toContain('<img');
   });
 });
