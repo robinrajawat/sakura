@@ -58,7 +58,7 @@ function trackErrors(page: import('@playwright/test').Page) {
 // container is really gone (no dead DOM/flags left behind) and that every surviving way into
 // those objects -- right-click actions, Where used, generation -- still works without it.
 test.describe('Pad container removal', () => {
-  test('no Pad DOM, toggle, settings, or feature flags remain; Go Minimal still works', async ({ page }) => {
+  test('no Pad DOM, toggle, settings, or feature flags remain', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -75,19 +75,9 @@ test.describe('Pad container removal', () => {
     const flags = await page.evaluate(() => {
       // @ts-expect-error
       const keys = Object.keys(FEATURE_FLAGS);
-      // @ts-expect-error
-      const minimalBefore = isMinimalMode();
-      document.getElementById('features-preset-btn')?.click();
-      // @ts-expect-error
-      const minimalAfter = isMinimalMode();
-      document.getElementById('features-preset-btn')?.click();
-      // @ts-expect-error
-      return { keys, minimalBefore, minimalAfter, minimalRestored: isMinimalMode() };
+      return { keys };
     });
     expect(flags.keys.filter((k: string) => k.startsWith('pad'))).toEqual([]);
-    expect(flags.minimalBefore).toBe(false);
-    expect(flags.minimalAfter).toBe(true);
-    expect(flags.minimalRestored).toBe(false);
     expect(errors).toEqual([]);
   });
 

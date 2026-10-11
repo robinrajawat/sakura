@@ -10,9 +10,8 @@
  * is ever applied silently at render time — `diagramGenTopology.ts`'s functions read only
  * confirmed nodeMeta, once a person has reviewed and accepted or edited the proposal.
  * `diagramGenNodeMetaFromPlain`/`ToPlain` are the plain Map<->JSON-object bridge used when
- * persisting/loading a diagram's confirmed nodeMeta. `diagramGenValidateGuideline`/
- * `diagramGenLegend*` (AI-response validation and legend-XML generation) are deliberately
- * excluded — different concerns, not attempted in this pass either.
+ * persisting/loading a diagram's confirmed nodeMeta. `diagramGenLegend*` (legend-XML
+ * generation) is deliberately excluded — a different concern, not attempted in this pass either.
  *
  * Lives in `src/state/`, matching `diagramAnchor.ts`/`diagramDisplayList.ts`/
  * `diagramGenTopology.ts`: Diagrams-domain logic reading the outline `nodes` array read-only for

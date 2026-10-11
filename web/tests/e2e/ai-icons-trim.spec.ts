@@ -68,7 +68,7 @@ const REMOVED_FUNCTIONS = [
 ];
 const KEPT_FUNCTIONS = [
   'generateOutlineWithAi', 'insertAiOutline', 'rewriteNodeText', 'rewriteMultipleNodes', 'rewriteSubTextSelection',
-  'rewriteAllNodes', 'setAutoRewriteEnabled', 'queueAutoRewrite', 'flushAutoRewriteQueue', 'callAiApi', 'callAiRaw',
+  'setAutoRewriteEnabled', 'queueAutoRewrite', 'flushAutoRewriteQueue', 'callAiApi', 'callAiRaw',
   'callAiApiBatch', 'diagramGenTrimText', 'generateDiagramFromOutline', 'computeOutlineNumbers', 'renderCardsHtml'
 ];
 
@@ -113,8 +113,9 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     expect(state.removedPresent).toEqual([]);
     expect(state.keptMissing).toEqual([]);
     expect(state.aiTbButtons).toEqual(['outline', 'rewrite']);
-    expect(state.ctxOrder).toEqual(['ai-rewrite', 'ai-rewrite-all']);
-    expect(state.qaAiIds).toEqual(['ai-rewrite-document', 'ai-rewrite-node', 'ai-generate-outline']);
+    // 'ai-rewrite-all' / 'ai-rewrite-document' (Rewrite document) were removed later, in cutdown 9b.
+    expect(state.ctxOrder).toEqual(['ai-rewrite']);
+    expect(state.qaAiIds).toEqual(['ai-rewrite-node', 'ai-generate-outline']);
     expect(state.shortcuts).toEqual({ generateOutline: true, restructureText: false });
     expect(errors).toEqual([]);
   });
@@ -138,7 +139,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await seedDoc(page);
     await page.evaluate(() => {
       // @ts-expect-error -- bare globals from index.html
-      contextQuickActions = ['ai-rewrite', 'ai-rewrite-all', 'note']; showContextMenu(200, 200, 1);
+      contextQuickActions = ['ai-rewrite', 'note']; showContextMenu(200, 200, 1);
     });
     const menu = page.locator('#context-menu');
     await expect(menu).toBeVisible();

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
+const probePath = path.resolve(__dirname, 'fixtures/storage-probe.html');
 
 // Cutdown item 8b: data backup is simplified. Signed in, Firestore sync is the live copy
 // (unchanged). Signed out, backup is fully manual — Settings → Data keeps only "Backup all data",
@@ -53,6 +54,71 @@ async function setDocText(page: import('@playwright/test').Page, rootText: strin
     // @ts-expect-error
     render(); saveToStorage();
   }, rootText);
+}
+
+// Writes a two-node document straight into storage before the first page load, exactly as an
+// earlier session would have left it, and opens it on startup. Creating the starting document
+// in-page and then reloading (or letting the restore flow reload) raced under heavy parallel load:
+// Chromium can navigate before a just-written localStorage entry is committed, so the reload came
+// back with an empty store (see also gotoWithSharedStorage). Guarded by a sessionStorage flag so later reloads in the same test
+// (restore, undo restore, an explicit page.reload()) don't re-seed over what the app wrote.
+// `extra` is a map of further localStorage keys seeded the same way.
+async function seedStoredDoc(page: import('@playwright/test').Page, rootText: string, extra: Record<string, string> = {}) {
+  await page.addInitScript(({ text, extraKeys }) => {
+    if (sessionStorage.getItem('seededBackupDoc')) return;
+    sessionStorage.setItem('seededBackupDoc', '1');
+    const docId = 'backupdoc1';
+    localStorage.setItem('sakura_doc_v1_' + docId, JSON.stringify({
+      nodes: [
+        { id: 1, depth: 0, text, parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 1, text: text + ' child', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }
+      ],
+      nextId: 3, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Backup test', author: ''
+    }));
+    localStorage.setItem('sakura_docs_index_v1', JSON.stringify([{ id: docId, title: 'Backup test', updatedAt: Date.now() }]));
+    localStorage.setItem('sakura_current_doc_v1', docId);
+    localStorage.setItem('sakura_open_tabs_v1', JSON.stringify({ tabs: [docId], pinned: [], active: docId }));
+    for (const [k, v] of Object.entries(extraKeys)) localStorage.setItem(k, v);
+  }, { text: rootText, extraKeys: extra });
+}
+
+// Reads `key` from a second, freshly loaded page in the same browser context (same file://
+// origin, separate document) — i.e. what a reload of `page` would actually find.
+async function readSharedStorage(page: import('@playwright/test').Page, key: string): Promise<string> {
+  const probe = await page.context().newPage();
+  try {
+    await probe.goto('file://' + probePath);
+    return await probe.evaluate((k) => localStorage.getItem(k) || '', key);
+  } finally {
+    await probe.close();
+  }
+}
+
+// Opens the app and makes sure this document's localStorage is the context's shared store before
+// the test writes anything a later reload depends on. Under heavy parallel load (8 workers) the
+// first document in a fresh context occasionally got a localStorage area that never reached the
+// shared store: the page itself saw its own writes (the seeded document rendered fine), but after
+// page.reload() — or the restore flow's own reload — localStorage came back holding only what the
+// app writes on boot, while sessionStorage survived. Waiting doesn't help (a second page never
+// sees those writes), so a document that fails the check is simply replaced by a fresh navigation,
+// with the seed guard cleared so seedStoredDoc's init script seeds the new document again.
+async function gotoWithSharedStorage(page: import('@playwright/test').Page) {
+  for (let attempt = 1; ; attempt++) {
+    await page.goto('file://' + indexPath);
+    const marker = 'm' + Date.now() + '-' + attempt;
+    await page.evaluate((m) => localStorage.setItem('sakura_e2e_storage_probe', m), marker);
+    let shared = false;
+    for (let i = 0; i < 20 && !shared; i++) {
+      shared = (await readSharedStorage(page, 'sakura_e2e_storage_probe')) === marker;
+      if (!shared) await page.waitForTimeout(150);
+    }
+    if (shared || attempt >= 5) {
+      expect(shared, 'page localStorage never reached the shared store').toBe(true);
+      await page.evaluate(() => localStorage.removeItem('sakura_e2e_storage_probe'));
+      return;
+    }
+    await page.evaluate(() => sessionStorage.removeItem('seededBackupDoc'));
+  }
 }
 
 async function docTexts(page: import('@playwright/test').Page): Promise<string[]> {
@@ -114,9 +180,10 @@ test.describe('Simplified data backup (manual when signed out)', () => {
 
   test('a manual Backup all data file restores a document (round trip), and Undo last restore reverts it', async ({ page }) => {
     const errors = trackErrors(page);
-    await page.goto('file://' + indexPath);
+    await seedStoredDoc(page, 'Round trip original');
+    await gotoWithSharedStorage(page);
     await dismissOverlays(page);
-    await setDocText(page, 'Round trip original');
+    await expect.poll(() => docTexts(page), { timeout: 15000 }).toContain('Round trip original');
 
     await openDataSettings(page);
     const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#sb-export-all-btn').click()]);
@@ -132,7 +199,7 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     expect(await docTexts(page)).toContain('Changed after backup');
 
     await restoreFile(page, file);
-    await expect.poll(() => docTexts(page)).toContain('Round trip original');
+    await expect.poll(() => docTexts(page), { timeout: 15000 }).toContain('Round trip original');
 
     // Undo last restore brings back what was there right before the restore.
     await openDataSettings(page);
@@ -142,15 +209,16 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     await expect(undo).toBeVisible();
     await Promise.all([page.waitForEvent('load'), undo.click()]);
     await dismissOverlays(page);
-    await expect.poll(() => docTexts(page)).toContain('Changed after backup');
+    await expect.poll(() => docTexts(page), { timeout: 15000 }).toContain('Changed after backup');
     expect(errors).toEqual([]);
   });
 
   test('an OLD-format backup carrying Gist/Drive, FS-backup, reminder and close-warning fields restores without error', async ({ page }) => {
     const errors = trackErrors(page);
-    await page.goto('file://' + indexPath);
+    await seedStoredDoc(page, 'Old format document');
+    await gotoWithSharedStorage(page);
     await dismissOverlays(page);
-    await setDocText(page, 'Old format document');
+    await expect.poll(() => docTexts(page), { timeout: 15000 }).toContain('Old format document');
     const payload = await page.evaluate(async () => {
       // @ts-expect-error -- bare global from index.html
       const p = await buildFullBackupPayload();
@@ -173,7 +241,7 @@ test.describe('Simplified data backup (manual when signed out)', () => {
 
     await setDocText(page, 'Overwritten');
     await restoreFile(page, file);
-    await expect.poll(() => docTexts(page)).toContain('Old format document');
+    await expect.poll(() => docTexts(page), { timeout: 15000 }).toContain('Old format document');
 
     // Removed status-bar chips never appear; a stale reminder setting can't resurrect one.
     await expect(page.locator('#sb-backup-reminder-chip, #sb-fs-status-chip')).toHaveCount(0);
@@ -198,17 +266,20 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     const errors = trackErrors(page);
     const dialogs: string[] = [];
     page.on('dialog', async (d) => { dialogs.push(d.type()); await d.dismiss(); });
-    await page.goto('file://' + indexPath);
+    // Stale localStorage keys are seeded before the first load (see seedStoredDoc), not written
+    // in-page right before a reload.
+    await seedStoredDoc(page, 'Stale keys document', {
+      sakura_fsBackupConnected: '1',
+      sakura_last_fsbackup_v1: '1',
+      sakura_cloud_backup_v1: JSON.stringify({ gistToken: 'ghp_stale', gistAutoSync: true, driveAutoSync: true }),
+      sakura_v001_prefs: JSON.stringify({ backupReminderDays: 1, sessionBackupPromptMode: 'passive', statusbarHiddenItems: [] })
+    });
+    await gotoWithSharedStorage(page);
     await dismissOverlays(page);
-    await setDocText(page, 'Stale keys document');
+    await expect.poll(() => docTexts(page), { timeout: 15000 }).toContain('Stale keys document');
     await page.evaluate(async () => {
-      localStorage.setItem('sakura_fsBackupConnected', '1');
-      localStorage.setItem('sakura_last_fsbackup_v1', '1');
-      localStorage.setItem('sakura_cloud_backup_v1', JSON.stringify({ gistToken: 'ghp_stale', gistAutoSync: true, driveAutoSync: true }));
-      const prefs = JSON.parse(localStorage.getItem('sakura_v001_prefs') || '{}');
-      Object.assign(prefs, { backupReminderDays: 1, sessionBackupPromptMode: 'passive', statusbarHiddenItems: [] });
-      localStorage.setItem('sakura_v001_prefs', JSON.stringify(prefs));
-      // What the removed features left in IndexedDB: a stored handle record, the safety-copy
+      // What the removed features left in IndexedDB (awaited transactions, so committed before the
+      // reload below): a stored handle record, the safety-copy
       // mirror, and FS backup history. None of it may be read or trigger anything on boot.
       // @ts-expect-error -- bare globals from index.html
       await idbSet('fsHandle', { kind: 'file', name: 'sakura-backup.json' });
@@ -219,11 +290,13 @@ test.describe('Simplified data backup (manual when signed out)', () => {
       // @ts-expect-error
       suppressSaveToStorageOnUnload = true; suppressPrefsSaveOnUnload = true;
     });
+    expect(await readSharedStorage(page, 'sakura_doc_v1_backupdoc1')).toContain('Stale keys document');
+    expect(await readSharedStorage(page, 'sakura_v001_prefs')).toContain('backupReminderDays');
 
     await page.reload();
     await dismissOverlays(page);
     await page.waitForTimeout(800); // the old FS-backup init retried after 150ms and toasted; give anything like it time to fire
-    expect(await docTexts(page)).toContain('Stale keys document');
+    await expect.poll(() => docTexts(page), { timeout: 15000 }).toContain('Stale keys document');
     await expect(page.locator('#sb-backup-reminder-chip, #sb-fs-status-chip')).toHaveCount(0);
     const statusText = (await page.locator('#statusbar').textContent()) || '';
     expect(statusText).not.toMatch(/Back up your data|Connect backup|Reconnect backup/);

@@ -15,7 +15,8 @@ import type { QueryableNode } from '../core/nodeQueries';
  *
  * `nodesToOutlineXml` (the recursive per-node XML-emission helper) turned out to be genuinely
  * pure once traced: no DOM, only reads `node.isCheckbox`/`node.checked`/`node.note`/`node.text`
- * plus the `nodeContentExportEnabled` user-preference global — promoted to an explicit required
+ * plus an `includeNotes` flag (once the "Include node Notes & Code in exports" preference; that
+ * setting was removed and the app now always passes `true`) — an explicit required
  * parameter, same pattern this file uses for `title`. Both are exported so the wrapper can call
  * either directly if ever needed, though only `serializeOpmlCore` has a real external call site.
  *
@@ -54,13 +55,13 @@ export interface OpmlNode extends QueryableNode {
  * — recursively renders `list` starting at `startIdx`, emitting an `<outline>` element per node
  * deeper than `parentDepth` (self-closing for a leaf, wrapping nested `<outline>`s for a node
  * with children), a leading `[x] `/`[ ] ` checkbox-state prefix when `node.isCheckbox` is set,
- * and — only when `nodeContentExportEnabled` is true and the node has a non-blank note — a
+ * and — only when `includeNotes` is true and the node has a non-blank note — a
  * `_note` attribute carrying the note's plain-texted (`stripHtmlToText`) content. */
 export function nodesToOutlineXmlCore(
   list: OpmlNode[],
   startIdx: number,
   parentDepth: number,
-  nodeContentExportEnabled: boolean,
+  includeNotes: boolean,
   stripHtmlToText: (html: string) => string
 ): string {
   let xml = '';
@@ -75,9 +76,9 @@ export function nodesToOutlineXmlCore(
       const checkboxPrefix = node.isCheckbox ? (node.checked ? '[x] ' : '[ ] ') : '';
       const text = escAttrLocal(checkboxPrefix + label);
       const noteText = node.note ? stripHtmlToText(node.note) : '';
-      const noteAttr = nodeContentExportEnabled && noteText ? ` _note="${escAttrLocal(noteText)}"` : '';
+      const noteAttr = includeNotes && noteText ? ` _note="${escAttrLocal(noteText)}"` : '';
       xml += hasKids
-        ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, nodeContentExportEnabled, stripHtmlToText)}</outline>`
+        ? `<outline text="${text}"${noteAttr}>${nodesToOutlineXmlCore(list, i + 1, parentDepth + 1, includeNotes, stripHtmlToText)}</outline>`
         : `<outline text="${text}"${noteAttr}/>`;
       i = j;
     } else {
@@ -95,7 +96,7 @@ export function nodesToOutlineXmlCore(
 export function serializeOpmlCore(
   scopeNodes: OpmlNode[],
   title: string,
-  nodeContentExportEnabled: boolean,
+  includeNotes: boolean,
   stripHtmlToText: (html: string) => string,
   dateCreated: Date = new Date()
 ): string {
@@ -105,6 +106,6 @@ export function serializeOpmlCore(
   }
   const minDepth = Math.min(...scopeNodes.map((n) => n.depth));
   const rebased = scopeNodes.map((n) => ({ ...n, depth: n.depth - minDepth }));
-  const body = nodesToOutlineXmlCore(rebased, 0, -1, nodeContentExportEnabled, stripHtmlToText);
+  const body = nodesToOutlineXmlCore(rebased, 0, -1, includeNotes, stripHtmlToText);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head>\n<title>${safeTitle}</title>\n<dateCreated>${dateCreated.toUTCString()}</dateCreated>\n</head>\n<body>\n${body}\n</body>\n</opml>`;
 }

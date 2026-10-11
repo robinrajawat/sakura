@@ -116,19 +116,6 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
     expect(result.inlineCardCount).toBe(1);
   });
 
-  test('turning off "Include Q&A in exports" hides both the inline card and the trailing section', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedDoc(page, { qaItems: [{ id: 'q1', question: 'Why this approach?', answer: '', sourceNodeId: 2 }] });
-    await page.evaluate(() => {
-      // @ts-expect-error
-      qaExportEnabled = false;
-    });
-    await applyExportStateAndRender(page);
-
-    await expect(page.locator('#preview-body .pv-inline-qa-body')).toHaveCount(0);
-    await expect(page.locator('#pv-qa-section')).toHaveCount(0);
-  });
 });
 
 // Remarks previously rendered as plain italic text with a "— Name · date" line and no box at all,

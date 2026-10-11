@@ -55,12 +55,12 @@ describe('nodesToOutlineXmlCore', () => {
     expect(unchecked).toBe('<outline text="[ ] Todo"/>');
   });
 
-  it('includes a _note attribute when nodeContentExportEnabled is true and the note is non-blank', () => {
+  it('includes a _note attribute when includeNotes is true and the note is non-blank', () => {
     const xml = nodesToOutlineXmlCore([node(0, 'Root', { note: 'a note' })], 0, -1, true, stripHtmlToText);
     expect(xml).toBe('<outline text="Root" _note="a note"/>');
   });
 
-  it('omits the _note attribute when nodeContentExportEnabled is false', () => {
+  it('omits the _note attribute when includeNotes is false', () => {
     const xml = nodesToOutlineXmlCore([node(0, 'Root', { note: 'a note' })], 0, -1, false, stripHtmlToText);
     expect(xml).toBe('<outline text="Root"/>');
   });

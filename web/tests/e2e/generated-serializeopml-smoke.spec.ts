@@ -9,11 +9,11 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
 // Export domain — second slice. Exercises the real, unchanged nodesToOutlineXml/serializeOpml
-// wrapper functions — the same call path exportOpml uses — against real nodes/
-// nodeContentExportEnabled globals and the real getMeta() DOM read, not the extracted
-// *Core functions directly.
+// wrapper functions — the same call path exportOpml uses — against the real nodes global and
+// the real getMeta() DOM read, not the extracted *Core functions directly. Notes are always
+// written (the old "Include node Notes & Code in exports" setting is gone).
 test.describe('generated serializeOpml block (src/utils/serializeOpml.ts spliced into index.html)', () => {
-  test('serializeOpml renders a real OPML document via the real wrapper, honoring getMeta() and nodeContentExportEnabled', async ({ page }) => {
+  test('serializeOpml renders a real OPML document via the real wrapper, honoring getMeta() and always writing notes', async ({ page }) => {
     const unexpectedErrors: string[] = [];
     page.on('pageerror', (err) => {
       if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
@@ -46,34 +46,25 @@ test.describe('generated serializeOpml block (src/utils/serializeOpml.ts spliced
 
       // @ts-expect-error — bare globals from index.html
       nodes = [
-        { id: 1, text: '[Section] Todos', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '', slideDivider: false },
-        { id: 2, text: 'Buy milk', depth: 1, parentId: 1, styles: {}, note: 'urgent', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: true, marker: '', slideDivider: false }
+        { id: 1, text: '[Section] Todos', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '' },
+        { id: 2, text: 'Buy milk', depth: 1, parentId: 1, styles: {}, note: 'urgent', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: true, marker: '' }
       ];
       // @ts-expect-error
-      nodeContentExportEnabled = true;
-
-      // @ts-expect-error
       const withNotes = serializeOpml(nodes);
-
       // @ts-expect-error
-      nodeContentExportEnabled = false;
-      // @ts-expect-error
-      const withoutNotes = serializeOpml(nodes);
-      // @ts-expect-error
-      nodeContentExportEnabled = true;
+      const prefExists = typeof nodeContentExportEnabled !== 'undefined';
 
       // @ts-expect-error
       const empty = serializeOpml([]);
 
-      return { withNotes, withoutNotes, empty };
+      return { withNotes, prefExists, empty };
     });
 
     expect(result.withNotes).toContain('<title>My Real Document</title>');
     expect(result.withNotes).toContain('<outline text="Section Todos">');
     expect(result.withNotes).toContain('<outline text="[ ] Buy milk" _note="urgent"/>');
 
-    expect(result.withoutNotes).toContain('<outline text="[ ] Buy milk"/>');
-    expect(result.withoutNotes).not.toContain('_note');
+    expect(result.prefExists).toBe(false);
 
     expect(result.empty).toContain('<title>My Real Document</title>');
     expect(result.empty).toContain('<body></body>');
