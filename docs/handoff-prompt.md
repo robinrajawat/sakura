@@ -174,8 +174,8 @@ and merged after independent review:
    dead-code references to the removed `#pad-editor` DOM node left wired into undo/redo, the AI
    rewrite dispatcher, and Presenter/Audience sync).
 5. #466 — Remove the Pad container itself + the Diagrams/Q&A/Remarks **list-tab UI**, while
-   preserving their inline per-node editing entirely. **Done in PR #466 (open, awaiting review —
-   not merged).** Two judgment calls worth checking at review: (a) the Pad's per-tab feature flags
+   preserving their inline per-node editing entirely. **Merged.** Two judgment calls made
+   there: (a) the Pad's per-tab feature flags
    (`padQaTabEnabled`/`padDiagramsTabEnabled`/`padRemarksTabEnabled`) also gated the inline
    features, so with them gone inline Q&A/Diagrams/Remarks are simply always on; (b) diagram
    generation's only entry point was the Pad's Diagrams-tab Generate button, so it was re-homed as
@@ -183,8 +183,23 @@ and merged after independent review:
    rather than deleted. Everything reachable only from the Pad (Q&A scan/import/AI generate/group/
    bulk-draft/summary/copy/PDF, diagram import + AI-prompt export + whiteboard + paste, the lists'
    search/sort/select/bulk controls, the remarks node-picker) went with it.
-6. Hub trim to Todos-only (drop Journal and Meetings; confirm Reminders' real scope before
-   deciding its fate; keep Todos + Subtasks). **Not started.**
+6. Hub trim to To-Dos only: remove Journal and Meeting Notes (in both index.html and hub.html)
+   and the Hub's due-date Reminders; keep To-Dos + Subtasks. **Done in PR #TBD (open, awaiting
+   review — not merged).** Reminders' real scope was confirmed first: it was purely hub.html's
+   To-Do due-date browser notifications (account-menu toggle + 5-minute check while open) — the
+   project owner chose to remove it too. The unrelated *backup* reminder in index.html and the
+   diagram note's "private reminder" text are untouched. Judgment calls worth checking at review:
+   (a) Library and Recap were NOT removed (outside this item's stated scope) — the index.html
+   Hub dock is now To-Dos / Library / Recap; hub.html is To-Dos only, so its tab bar was removed
+   entirely; (b) everything that existed only to feed Meetings went with it — Outlook Calendar
+   import (and its Microsoft origins in the CSP), .ics import/export, meeting ref dots on outline
+   nodes, the To-Dos "from meeting" chip (`meetingRef`), and the landing demo's meeting card;
+   (c) shared pieces were kept and de-meetingified — the selection-format popover, the
+   `.hub-field-*` body-field classes Library uses (renamed from `.meeting-field-*`), the To-Dos
+   export dropdown's menu-item classes (`.dock-menu-*`), `updateStatusUtilGroupVisibility`,
+   `printHtmlAsPdf`, `qaRecordAnswerer`; (d) old data is never deleted — leftover
+   `sakura_meetings*`/`sakura_journal*` keys and their cloud meta docs are just no longer read or
+   synced, and backups still round-trip them verbatim.
 7. #463 — Remove Preview/Presenter's interactive UI (the on-screen scrolling overlay, the
    fullscreen slideshow, Audience View, Presenter Notes, laser pointer, etc.), while keeping
    `renderPreviewBody()`/`exportPreviewAsPdf()` working as a fully headless PDF pipeline — PDF

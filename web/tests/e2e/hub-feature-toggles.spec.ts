@@ -19,9 +19,9 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
   }
 }
 
-const HUB_KEYS = ['todos', 'meetings', 'journal', 'library', 'report'] as const;
+const HUB_KEYS = ['todos', 'library', 'report'] as const;
 
-// Turning a Hub sub-feature (To-Dos/Meetings/Journal/Library/Recap) off in Settings used to
+// Turning a Hub sub-feature (To-Dos/Library/Recap) off in Settings used to
 // have no visible effect: the setFeatureEnabled plumbing was real, but nothing hid the actual
 // Hub tab button (#dock-tab-<key>) or its content panel (#<key>-panel), and openDockTab/
 // toggleDockTab (the single choke point every open path -- keyboard shortcuts, cross-reference
@@ -125,7 +125,7 @@ test.describe('Hub feature toggles actually hide their tab + panel (and cannot b
       // @ts-expect-error
       keys.forEach((k) => setFeatureEnabled(k, false));
       // @ts-expect-error
-      openDockTab('journal');
+      openDockTab('library');
       // @ts-expect-error
       toggleDockTab('todos');
       // @ts-expect-error
@@ -177,7 +177,7 @@ test.describe('Hub feature toggles actually hide their tab + panel (and cannot b
     // (and hide the panel's own maximize/close again) immediately, not just on the next open.
     const twoEnabled = await page.evaluate(() => {
       // @ts-expect-error
-      setFeatureEnabled('meetings', true);
+      setFeatureEnabled('library', true);
       const strip = document.getElementById('dock-tabstrip');
       const ownMax = document.getElementById('todos-panel-maximize');
       return {

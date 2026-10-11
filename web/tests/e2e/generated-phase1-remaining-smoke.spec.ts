@@ -11,7 +11,7 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 // Covers the 5 remaining Phase 1 blocks wired in together: escapeHtml, generateId,
 // formatRelativeTime, stripSemanticMarkers, serializeMarkdown. Lower risk than the nodeQueries
 // cutover — no interleaving with off-limits stateful code, and most call sites needed zero
-// changes thanks to thin hand-written wrappers (esc/genDocId/mnUid) preserving
+// changes thanks to thin hand-written wrappers (esc/genDocId, plus mnUid until Meeting Notes was removed) preserving
 // the original names. Only computeOutlineNumbers/serializeMarkdown needed real call-site
 // updates (6 sites, an appended arg, no reordering). This test exercises the wrappers'
 // delegation and the real Markdown-export path against actual app state, not just "did it
@@ -50,18 +50,20 @@ test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTi
     });
     expect(escResult).toBe('&lt;b&gt;a &amp; b&lt;/b&gt;');
 
-    // 2. genDocId/mnUid both delegate to the generated generateId() with the right prefix and
-    // suffix length — real id-shape verification, not just "returns a string".
+    // 2. genDocId delegates to the generated generateId() with the right prefix and suffix
+    // length — real id-shape verification, not just "returns a string". The 6-char-suffix
+    // variant (formerly exercised via mnUid, removed with Meeting Notes) is checked by calling
+    // the generated generateId() directly with the same arguments that wrapper used.
     const idShapes = await page.evaluate(() => {
       // @ts-expect-error
       const d = genDocId();
       // @ts-expect-error
-      const mn = mnUid();
+      const mn = generateId('mn', 6);
       return { d, mn };
     });
     expect(idShapes.d).toMatch(/^d[0-9a-z]+$/);
     expect(idShapes.mn).toMatch(/^mn[0-9a-z]+$/);
-    // genDocId uses a 5-char random suffix, mnUid uses 6 — verify the actual random-suffix
+    // genDocId uses a 5-char random suffix, generateId(prefix, 6) uses 6 — verify the actual random-suffix
     // length survived the cutover (this is the one behavioral difference between the two
     // original functions, deliberately preserved per generateId.ts's own comment).
     const timestampLen = Date.now().toString(36).length;

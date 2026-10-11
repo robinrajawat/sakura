@@ -257,7 +257,7 @@ initAiProvidersState({
     // hub.html's own generated-blocks pilot — the first block targeting a file other than
     // index.html, proving the generator's multi-file support with the lowest possible risk:
     // reusing an ALREADY-TESTED source module (generateId.ts, Phase 1) rather than writing new
-    // source, since hub.html's todoUid/jnUid/subUid turned out to be exact matches for
+    // source, since hub.html's todoUid/subUid turned out to be exact matches for
     // generateId(prefix, 6) — same `.slice(2,8)` (suffix length 6), just different prefixes.
     // Zero new tests needed; the existing tests/unit/generateId.test.ts already covers this
     // exact function. See this file's header for why targetFile defaults to 'index.html' and
@@ -266,11 +266,10 @@ initAiProvidersState({
     sourceFile: 'src/utils/generateId.ts',
     testFile: 'tests/unit/generateId.test.ts',
     targetFile: 'hub.html',
-    // todoUid/jnUid/subUid all become thin wrappers, same names/signatures — zero call sites
-    // in hub.html needed to change.
+    // todoUid/subUid both become thin wrappers, same names/signatures — zero call sites
+    // in hub.html needed to change. (A third, jnUid, was dropped along with the Hub's Journal.)
     footer: `
 function todoUid(){return generateId('t',6);}
-function jnUid(){return generateId('jn',6);}
 function subUid(){return generateId('sub',6);}
 `.trim()
   },
@@ -295,27 +294,6 @@ initHubTodosState({
 `.trim()
   },
   {
-    // Second Hub feature-domain slice.
-    name: 'hubJournal',
-    sourceFile: 'src/state/hubJournal.ts',
-    testFile: 'tests/unit/hubJournal.test.ts',
-    targetFile: 'hub.html',
-    footer: `
-// --- production wiring (also generated, not hand-written — see the header above) ---
-// Real ambient globals, referenced directly since this code shares hub.html's own classic
-// script scope at runtime: idbGet, idbSet, bumpSyncTimestamp, pushMetaToCloud, jnUid, todayStr.
-initHubJournalState({
-  idbGet:function(key){ return idbGet(key); },
-  idbSet:function(key,value){ return idbSet(key,value); },
-  bumpSyncTimestamp:function(metaKey){ bumpSyncTimestamp(metaKey); },
-  pushMetaToCloud:function(metaKey,value){ pushMetaToCloud(metaKey,value); },
-  now:function(){ return Date.now(); },
-  today:function(){ return todayStr(); },
-  generateJournalId:function(){ return jnUid(); }
-});
-`.trim()
-  },
-  {
     // Third Hub feature-domain slice — subtask CRUD, flagged as "genuinely separate... not
     // investigated" in hubTodos.ts's own header. subUid comes from the already-generated
     // hubGenerateId block (declare function, not DI — see this module's own header for why).
@@ -327,18 +305,6 @@ initHubJournalState({
     // convention as nodeMutations.ts/tabOrder.ts/diagramAnchor.ts; no DOM/storage side effects
     // of their own). The three real call sites (the subtask toggle/remove click handler and the
     // subtask-input keydown handler) were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Fourth Hub feature-domain slice — due-date reminder checking, the last domain flagged as
-    // "not investigated" in hubTodos.ts's own header.
-    name: 'hubReminders',
-    sourceFile: 'src/state/hubReminders.ts',
-    testFile: 'tests/unit/hubReminders.test.ts',
-    targetFile: 'hub.html',
-    // No production wiring needed — pure function (no DOM/Notification-API/storage side effects
-    // of its own). The one real call site (checkDueReminders's own body) was updated in the
-    // same commit that wired this block in.
     footer: ''
   },
   {

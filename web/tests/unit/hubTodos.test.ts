@@ -41,7 +41,6 @@ describe('createTodo (pure)', () => {
       link: null,
       linkLabel: null,
       nodeRef: null,
-      meetingRef: null,
       repeat: null,
       subtasks: [],
       subtasksOpen: true

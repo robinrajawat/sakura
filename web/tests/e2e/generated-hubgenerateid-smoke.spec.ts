@@ -15,7 +15,7 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 // tests/e2e/generated-phase1-remaining-smoke.spec.ts for the same function's index.html-side
 // coverage), rather than introducing new source or new test surface.
 test.describe('generated hubGenerateId block (src/utils/generateId.ts spliced into hub.html)', () => {
-  test('todoUid/jnUid/subUid produce correctly-prefixed ids via the real wrapper functions', async ({ page }) => {
+  test('todoUid/subUid produce correctly-prefixed ids via the real wrapper functions', async ({ page }) => {
     const unexpectedErrors: string[] = [];
     page.on('pageerror', (err) => {
       if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
@@ -34,8 +34,6 @@ test.describe('generated hubGenerateId block (src/utils/generateId.ts spliced in
         // @ts-expect-error — bare globals from hub.html
         todo: todoUid(),
         // @ts-expect-error
-        journal: jnUid(),
-        // @ts-expect-error
         sub: subUid(),
         // @ts-expect-error
         generateIdType: typeof generateId
@@ -45,7 +43,6 @@ test.describe('generated hubGenerateId block (src/utils/generateId.ts spliced in
     expect(result.generateIdType).toBe('function');
     // Prefix + base36 timestamp + 6-char random suffix, matching generateId(prefix, 6) exactly.
     expect(result.todo).toMatch(/^t[0-9a-z]+[0-9a-z]{6}$/);
-    expect(result.journal).toMatch(/^jn[0-9a-z]+[0-9a-z]{6}$/);
     expect(result.sub).toMatch(/^sub[0-9a-z]+[0-9a-z]{6}$/);
 
     // Two calls in immediate succession still produce distinct ids (the random suffix, not
