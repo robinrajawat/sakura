@@ -163,10 +163,10 @@ describe('stateful notifications (initNotificationsState + lifecycle)', () => {
   });
 
   it('pushLocalNotification adds an item, persists it, and updates the bell', () => {
-    pushLocalNotification('backup_reminder', 'Back up your stuff');
+    pushLocalNotification('test_notice', 'Something happened');
     const items = combinedNotifItems();
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ id: 'local_1000000_rid0', type: 'backup_reminder', message: 'Back up your stuff', read: false });
+    expect(items[0]).toMatchObject({ id: 'local_1000000_rid0', type: 'test_notice', message: 'Something happened', read: false });
     expect(badgeEl.textContent).toBe('1');
     expect(badgeEl.style.display).toBe('flex');
     // Persisted for next load.

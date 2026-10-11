@@ -3,27 +3,27 @@
  *
  * Phase 2 (docs/architecture-plan.md) — fourth state-consolidation slice, same generator
  * pipeline as presence/notifications/admin. Optional, opt-in passphrase-based encryption for
- * API keys/tokens at rest (AES-GCM 256, key derived via PBKDF2). Off by default — everything
+ * AI provider keys at rest (AES-GCM 256, key derived via PBKDF2). Off by default — everything
  * here is a no-op until the user sets a passphrase in Settings.
  *
  * Scope decision, narrower than the other three slices: this module holds ONLY the session
- * state (vaultCryptoKey/decryptedKeyCache/decryptedGistTokenCache) and the pure Web Crypto
+ * state (vaultCryptoKey/decryptedKeyCache) and the pure Web Crypto
  * primitives (b64FromBytes/bytesFromB64/deriveVaultKey/vaultEncrypt/vaultDecrypt) plus the two
  * small status checks (vaultActive/vaultUnlocked). Deliberately NOT extracted:
  * setupVaultPassphrase/unlockVault/lockVault/disableVaultEncryption/updateVaultStatusUI/
  * updateVaultChip, which stay hand-written in index.html exactly where they were. Those
  * functions orchestrate passphrase dialogs (sakuraPasswordPrompt/sakuraConfirm), localStorage
- * migration across two other subsystems' storage keys (AI_PREFS_KEY, CLOUD_BACKUP_KEY), and
+ * migration of another subsystem's storage key (AI_PREFS_KEY), and
  * several DOM updates — real value in isolating them would require dependency-injecting all of
  * that, and getting any of it wrong risks the one thing this subsystem exists to protect
- * (someone's API keys/tokens). The actual security-critical, error-prone logic — the
+ * (someone's API keys). The actual security-critical, error-prone logic — the
  * cryptographic operations themselves — is what benefits most from real tests and gets them
  * here; the orchestration around it stays as already-battle-tested code.
  *
- * Compatibility note: vaultCryptoKey/decryptedKeyCache/decryptedGistTokenCache keep their exact
+ * Compatibility note: vaultCryptoKey/decryptedKeyCache keep their exact
  * original names and are NOT exported (matching admin.ts's isAdmin precedent) specifically so
  * every external call site that reads/writes them directly as bare identifiers — saveAiKey,
- * resetAiSettingsToDefault, loadCloudBackupPrefs, the Gist-token-save click handler, all
+ * resetAiSettingsToDefault, unlockVault/lockVault/disableVaultEncryption, all
  * unchanged elsewhere in index.html — keeps working with zero edits. Same for
  * vaultActive/vaultUnlocked/vaultEncrypt/vaultDecrypt/deriveVaultKey: every hand-written
  * function left behind (and every one of those external call sites) calls them as bare
@@ -48,20 +48,17 @@ let vaultDeps: VaultDeps | null = null;
 let vaultCryptoKey: CryptoKey | null = null; // in-memory CryptoKey; null = locked (or vault not set up)
 // Reset here for session-start consistency, but never read/written from *inside* this module:
 // the hand-written code left in index.html (saveAiKey, resetAiSettingsToDefault,
-// loadCloudBackupPrefs, the Gist-token-save click handler — see the file header) reads/writes
-// these directly as bare identifiers. That's real, load-bearing usage at runtime; ESLint just
+// unlockVault/lockVault/disableVaultEncryption — see the file header) reads/writes
+// it directly as bare identifiers. That's real, load-bearing usage at runtime; ESLint just
 // can't see across the splice boundary.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let decryptedKeyCache: Record<string, string> = {}; // {'key_groq': 'plaintext', ...} populated on unlock
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- same as decryptedKeyCache above.
-let decryptedGistTokenCache = '';
 
 /** Called once to provide real (or fake, in tests) dependencies before any other function here is used. */
 export function initVaultState(injected: VaultDeps): void {
   vaultDeps = injected;
   vaultCryptoKey = null;
   decryptedKeyCache = {};
-  decryptedGistTokenCache = '';
 }
 
 function requireVaultDeps(): VaultDeps {

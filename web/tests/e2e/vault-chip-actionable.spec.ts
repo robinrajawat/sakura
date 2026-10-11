@@ -22,10 +22,11 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 // The status-bar "Locked" chip used to appear any time Secure Storage was set up and locked,
 // regardless of whether unlocking it would actually do anything. On Sakura Hosted AI (which
 // never touches the vault for AI calls -- see requireAiKey()'s hosted branch), that meant the
-// chip nagged to unlock even when nothing vault-gated was in use at all: no Gist token saved,
-// no BYOK fallback key saved. It now only shows itself while locked AND unlocking would
-// unblock something real (a saved Gist token, or a saved BYOK key for the active/an enabled
-// fallback provider).
+// chip nagged to unlock even when nothing vault-gated was in use at all: no BYOK fallback key
+// saved. It now only shows itself while locked AND unlocking would unblock something real (a
+// saved BYOK key for the active/an enabled fallback provider). Secure Storage used to cover the
+// GitHub Gist token too; Gist Cloud Backup was removed, so a leftover token in the old
+// sakura_cloud_backup_v1 blob must no longer make the chip appear (or mention Gist at all).
 test.describe('The Secure Storage status-bar chip only nags when unlocking would actually help', () => {
   async function setLocked(page: import('@playwright/test').Page) {
     await page.evaluate(() => {
@@ -35,7 +36,7 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
     });
   }
 
-  test('stays hidden on Sakura Hosted AI with no Gist token and no fallback keys saved', async ({ page }) => {
+  test('stays hidden on Sakura Hosted AI with no fallback keys saved', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await setLocked(page);
@@ -53,13 +54,13 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
     await expect(chip).toBeHidden();
   });
 
-  test('shows, mentioning only Gist sync, when Hosted AI is active but a Gist token is saved', async ({ page }) => {
+  test('stays hidden on Hosted AI when only a leftover Gist token from the removed Cloud Backup is saved', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await setLocked(page);
 
     await page.evaluate(() => {
-      localStorage.setItem('sakura_cloud_backup_v1', JSON.stringify({ gistToken: 'ciphertext' }));
+      localStorage.setItem('sakura_cloud_backup_v1', JSON.stringify({ gistToken: 'ciphertext', gistAutoSync: true }));
       // @ts-expect-error
       aiProvider = AI_HOSTED_PROVIDER_ID;
       // @ts-expect-error
@@ -69,11 +70,10 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
     });
 
     const chip = page.locator('#sb-vault-chip');
-    await expect(chip).toBeVisible();
-    await expect(chip).toHaveAttribute('data-tip', 'Secure Storage is locked — click to unlock and use Gist sync');
+    await expect(chip).toBeHidden();
   });
 
-  test('shows, mentioning AI Rewrite and Gist sync, when a BYOK key is saved for the active provider', async ({ page }) => {
+  test('shows, mentioning AI Rewrite, when a BYOK key is saved for the active provider', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await setLocked(page);
@@ -90,7 +90,7 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
 
     const chip = page.locator('#sb-vault-chip');
     await expect(chip).toBeVisible();
-    await expect(chip).toHaveAttribute('data-tip', 'Secure Storage is locked — click to unlock and use AI Rewrite / Gist sync');
+    await expect(chip).toHaveAttribute('data-tip', 'Secure Storage is locked — click to unlock and use AI Rewrite');
   });
 
   test('shows on Hosted AI when an enabled fallback provider has a saved BYOK key', async ({ page }) => {
@@ -112,6 +112,8 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
 
     const chip = page.locator('#sb-vault-chip');
     await expect(chip).toBeVisible();
+    await expect(chip).toHaveAttribute('data-tip', 'Secure Storage is locked — click to unlock your saved AI fallback keys');
+    expect(await chip.getAttribute('data-tip')).not.toContain('Gist');
   });
 
   test('stays hidden once unlocked, regardless of what is saved', async ({ page }) => {
@@ -120,7 +122,7 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
 
     await page.evaluate(() => {
       localStorage.setItem('sakura_vault_meta_v1', JSON.stringify({ salt: 'x', verifier: 'y' }));
-      localStorage.setItem('sakura_cloud_backup_v1', JSON.stringify({ gistToken: 'ciphertext' }));
+      localStorage.setItem('sakura_ai_prefs_v1', JSON.stringify({ key_openai: 'ciphertext' }));
       // @ts-expect-error
       vaultCryptoKey = {};
       // @ts-expect-error
