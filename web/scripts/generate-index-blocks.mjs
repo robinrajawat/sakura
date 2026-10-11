@@ -526,7 +526,8 @@ initHubTodosState({
   {
     // node.images (screenshots as per-node objects) -- pure decisions only: normalization of the
     // stored array, copy-with-new-ids, downscale sizing, animated-GIF detection, encode choice,
-    // data-URL sizing. Canvas/decoding/DOM migration stay hand-written next to normalizeNode in
+    // data-URL sizing, and the markup editor's annotation model (validation/clamping, moving,
+    // arrowhead geometry, SVG markup for the viewer/thumbnail/PDF overlays). Canvas/decoding/DOM migration stay hand-written next to normalizeNode in
     // index.html. No production wiring needed -- pure functions.
     name: 'nodeImages',
     sourceFile: 'src/utils/nodeImages.ts',

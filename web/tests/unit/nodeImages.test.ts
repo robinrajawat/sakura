@@ -1,5 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
+  ANNOTATION_COLORS,
+  DEFAULT_ANNOTATION_COLOR,
+  DEFAULT_ANNOTATION_STROKE,
+  DEFAULT_ANNOTATION_TEXT_SIZE,
+  MAX_IMAGE_ANNOTATIONS,
+  ANNOTATION_TEXT_MAX,
+  annotationHaloColor,
+  annotationsToSvg,
+  arrowGeometry,
+  boxFromPoints,
+  normalizeAnnotationColor,
+  normalizeImageAnnotation,
+  normalizeImageAnnotations,
+  translateAnnotation,
   IMAGE_WIDTH_PRESETS,
   NODE_IMAGE_MAX_LONG_SIDE,
   captionFromLegacyAlt,
@@ -71,14 +85,14 @@ describe('normalizeNodeImages', () => {
   it('keeps valid entries in order, filling defaults', () => {
     const out = normalizeNodeImages(
       [
-        { id: 'a', src: 'data:image/png;base64,AAAA', caption: 'One', width: 60, annotations: [{ t: 'rect', x: 0.1 }], createdAt: 5 },
+        { id: 'a', src: 'data:image/png;base64,AAAA', caption: 'One', width: 60, annotations: [{ id: 'm', type: 'rect', x: 0.1, y: 0.1, w: 0.2, h: 0.2, color: '#2f7cf6', strokeWidth: 0.004 }], createdAt: 5 },
         { src: 'data:image/webp;base64,BBBB' }
       ],
       100,
       idMaker()
     );
     expect(out).toEqual([
-      { id: 'a', src: 'data:image/png;base64,AAAA', caption: 'One', width: 60, annotations: [{ t: 'rect', x: 0.1 }], createdAt: 5 },
+      { id: 'a', src: 'data:image/png;base64,AAAA', caption: 'One', width: 60, annotations: [{ id: 'm', type: 'rect', x: 0.1, y: 0.1, w: 0.2, h: 0.2, color: '#2f7cf6', strokeWidth: 0.004 }], createdAt: 5 },
       { id: 'img1', src: 'data:image/webp;base64,BBBB', caption: '', annotations: [], createdAt: 100 }
     ]);
     expect('width' in out[1]).toBe(false);
@@ -92,9 +106,9 @@ describe('normalizeNodeImages', () => {
     expect(out[0].id).toBe('x');
     expect(out[1].id).toBe('img1');
   });
-  it('passes annotations through untouched (future markup data round-trips)', () => {
-    const ann = [{ type: 'arrow', from: [0.1, 0.2], to: [0.5, 0.5], color: 'red', future: { anything: true } }];
-    const out = normalizeNodeImages([{ id: 'a', src: 'https://e/a', annotations: ann }], 1, idMaker());
+  it('keeps valid annotations as-is (a copy) and drops malformed ones', () => {
+    const ann = [{ id: 'a1', type: 'arrow', x1: 0.1, y1: 0.2, x2: 0.5, y2: 0.5, color: '#e8384f', strokeWidth: 0.004 }];
+    const out = normalizeNodeImages([{ id: 'a', src: 'https://e/a', annotations: [...ann, { type: 'arrow', from: [0.1, 0.2] }] }], 1, idMaker());
     expect(out[0].annotations).toEqual(ann);
     expect(out[0].annotations).not.toBe(ann);
   });
@@ -107,11 +121,12 @@ describe('normalizeNodeImages', () => {
 
 describe('cloneNodeImagesWithNewIds', () => {
   it('copies everything but the id, deep-copying annotations', () => {
-    const src = [{ id: 'a', src: 'https://e/a', caption: 'C', width: 35, annotations: [{ k: [1, 2] }], createdAt: 7 }];
+    const ann = { id: 't', type: 'text', x: 0.1, y: 0.2, text: 'Hi', size: 0.03, color: '#ffffff' };
+    const src = [{ id: 'a', src: 'https://e/a', caption: 'C', width: 35, annotations: [ann], createdAt: 7 }];
     const out = cloneNodeImagesWithNewIds(src, 99, idMaker());
-    expect(out).toEqual([{ id: 'img1', src: 'https://e/a', caption: 'C', width: 35, annotations: [{ k: [1, 2] }], createdAt: 7 }]);
-    (out[0].annotations[0] as { k: number[] }).k.push(3);
-    expect(src[0].annotations[0].k).toEqual([1, 2]);
+    expect(out).toEqual([{ id: 'img1', src: 'https://e/a', caption: 'C', width: 35, annotations: [ann], createdAt: 7 }]);
+    (out[0].annotations[0] as { text: string }).text = 'changed';
+    expect(ann.text).toBe('Hi');
   });
 });
 
@@ -201,5 +216,119 @@ describe('captionFromLegacyAlt', () => {
     expect(captionFromLegacyAlt('image.png')).toBe('');
     expect(captionFromLegacyAlt('Screenshot 2026-01-01 at 10.00.00.png')).toBe('');
     expect(captionFromLegacyAlt(undefined)).toBe('');
+  });
+});
+
+describe('image annotations (markup)', () => {
+  it('normalizes each shape type, keeping ids and clamping to the image', () => {
+    const mk = idMaker();
+    expect(normalizeImageAnnotation({ id: 'r1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#2F7CF6', strokeWidth: 0.006 }, mk)).toEqual({
+      id: 'r1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#2f7cf6', strokeWidth: 0.006
+    });
+    expect(normalizeImageAnnotation({ type: 'highlight', x: 0.8, y: -0.5, w: 0.5, h: 1, color: '#ff0' }, mk)).toEqual({
+      id: 'img1', type: 'highlight', x: 0.8, y: 0, w: 0.2, h: 0.5, color: '#ffff00'
+    });
+    expect(normalizeImageAnnotation({ id: 'a', type: 'arrow', x1: -1, y1: 0.5, x2: 2, y2: 0.123456789 }, mk)).toEqual({
+      id: 'a', type: 'arrow', x1: 0, y1: 0.5, x2: 1, y2: 0.1235, color: DEFAULT_ANNOTATION_COLOR, strokeWidth: DEFAULT_ANNOTATION_STROKE
+    });
+    expect(normalizeImageAnnotation({ id: 't', type: 'text', x: 0.5, y: 1.5, text: '  Click\nhere  ', size: 9 }, mk)).toEqual({
+      id: 't', type: 'text', x: 0.5, y: 1, text: 'Click here', size: 0.25, color: DEFAULT_ANNOTATION_COLOR
+    });
+  });
+  it('flips a negative width/height into a proper box', () => {
+    const a = normalizeImageAnnotation({ id: 'r', type: 'rect', x: 0.5, y: 0.5, w: -0.2, h: -0.1 }, idMaker());
+    expect(a).toMatchObject({ x: 0.3, y: 0.4, w: 0.2, h: 0.1 });
+  });
+  it('drops malformed marks: unknown type, missing/NaN coordinates, zero size, empty text, non-objects', () => {
+    const mk = idMaker();
+    for (const bad of [null, 1, 'x', [], { keep: 1 }, { type: 'blur', x: 0, y: 0, w: 1, h: 1 }, { type: 'rect', x: 0, y: 0, w: 0, h: 0.2 },
+      { type: 'rect', x: 'a', y: 0, w: 0.1, h: 0.1 }, { type: 'rect', x: NaN, y: 0, w: 0.1, h: 0.1 }, { type: 'highlight', x: 2, y: 0, w: 0.1, h: 0.1 },
+      { type: 'arrow', x1: 0.2, y1: 0.2, x2: 0.2, y2: 0.2 }, { type: 'arrow', x1: 0, y1: 0 }, { type: 'text', x: 0, y: 0, text: '   ' }, { type: 'text', x: 0, y: 0 }]) {
+      expect(normalizeImageAnnotation(bad, mk)).toBeNull();
+    }
+  });
+  it('colours: only hex survives (it goes straight into SVG attributes)', () => {
+    expect(normalizeAnnotationColor('#ABCDEF')).toBe('#abcdef');
+    expect(normalizeAnnotationColor('#abc')).toBe('#aabbcc');
+    for (const bad of ['red', 'url(#x)', '" onload="x', '#12345', 5, null]) expect(normalizeAnnotationColor(bad)).toBe(DEFAULT_ANNOTATION_COLOR);
+    expect(ANNOTATION_COLORS.length).toBeGreaterThanOrEqual(5);
+    expect(ANNOTATION_COLORS.every((c) => normalizeAnnotationColor(c.hex) === c.hex)).toBe(true);
+  });
+  it('clamps stroke width and text size, defaulting when missing', () => {
+    const mk = idMaker();
+    expect(normalizeImageAnnotation({ type: 'rect', x: 0, y: 0, w: 0.1, h: 0.1, strokeWidth: 5 }, mk)).toMatchObject({ strokeWidth: 0.05 });
+    expect(normalizeImageAnnotation({ type: 'rect', x: 0, y: 0, w: 0.1, h: 0.1, strokeWidth: -1 }, mk)).toMatchObject({ strokeWidth: DEFAULT_ANNOTATION_STROKE });
+    expect(normalizeImageAnnotation({ type: 'text', x: 0, y: 0, text: 'a', size: 0.00001 }, mk)).toMatchObject({ size: 0.004 });
+    expect(normalizeImageAnnotation({ type: 'text', x: 0, y: 0, text: 'a' }, mk)).toMatchObject({ size: DEFAULT_ANNOTATION_TEXT_SIZE });
+    expect((normalizeImageAnnotation({ type: 'text', x: 0, y: 0, text: 'x'.repeat(500) }, mk) as { text: string }).text).toHaveLength(ANNOTATION_TEXT_MAX);
+  });
+  it('normalizeImageAnnotations drops junk, de-duplicates ids, caps the count and is idempotent', () => {
+    const mk = idMaker();
+    const raw = [{ id: 'a', type: 'rect', x: 0, y: 0, w: 0.1, h: 0.1 }, { keep: 1 }, { id: 'a', type: 'highlight', x: 0, y: 0, w: 0.1, h: 0.1 }];
+    const once = normalizeImageAnnotations(raw, mk);
+    expect(once.map((a) => a.id)).toEqual(['a', 'img1']);
+    expect(normalizeImageAnnotations(once, mk)).toEqual(once);
+    expect(normalizeImageAnnotations('nope', mk)).toEqual([]);
+    const many = Array.from({ length: 500 }, (_, i) => ({ id: 'm' + i, type: 'rect', x: 0, y: 0, w: 0.1, h: 0.1 }));
+    expect(normalizeImageAnnotations(many, mk)).toHaveLength(MAX_IMAGE_ANNOTATIONS);
+  });
+  it('normalizeNodeImages normalizes annotations; cloneNodeImagesWithNewIds deep-copies them', () => {
+    const mk = idMaker();
+    const imgs = normalizeNodeImages([{ id: 'i', src: 'data:image/png;base64,AAA=', annotations: [{ junk: true }, { id: 'r', type: 'rect', x: 0.1, y: 0.1, w: 0.2, h: 0.2 }] }], 1, mk);
+    expect(imgs[0].annotations).toEqual([{ id: 'r', type: 'rect', x: 0.1, y: 0.1, w: 0.2, h: 0.2, color: DEFAULT_ANNOTATION_COLOR, strokeWidth: DEFAULT_ANNOTATION_STROKE }]);
+    const copies = cloneNodeImagesWithNewIds(imgs, 1, mk);
+    expect(copies[0].annotations).toEqual(imgs[0].annotations);
+    expect(copies[0].annotations[0]).not.toBe(imgs[0].annotations[0]);
+  });
+  it('boxFromPoints accepts corners in any order', () => {
+    expect(boxFromPoints(0.6, 0.7, 0.2, 0.1)).toEqual({ x: 0.2, y: 0.1, w: 0.4, h: 0.6 });
+    expect(boxFromPoints(-1, -1, 2, 2)).toEqual({ x: 0, y: 0, w: 1, h: 1 });
+  });
+  it('translateAnnotation moves marks but keeps them inside the image', () => {
+    const box = normalizeImageAnnotation({ id: 'b', type: 'rect', x: 0.7, y: 0.1, w: 0.2, h: 0.2 }, idMaker())!;
+    expect(translateAnnotation(box, 0.5, -0.5)).toMatchObject({ x: 0.8, y: 0, w: 0.2, h: 0.2 });
+    const arrow = normalizeImageAnnotation({ id: 'a', type: 'arrow', x1: 0.1, y1: 0.1, x2: 0.3, y2: 0.4 }, idMaker())!;
+    expect(translateAnnotation(arrow, -0.5, 0.1)).toMatchObject({ x1: 0, y1: 0.2, x2: 0.2, y2: 0.5 });
+    const text = normalizeImageAnnotation({ id: 't', type: 'text', x: 0.9, y: 0.5, text: 'hi' }, idMaker())!;
+    expect(translateAnnotation(text, 0.5, 0.1)).toMatchObject({ x: 1, y: 0.6 });
+  });
+  it('arrowGeometry puts the tip at the end point and the shaft stops inside the head', () => {
+    const g = arrowGeometry(0, 0, 100, 0, 4);
+    expect(g.points[0]).toEqual([100, 0]);
+    expect(g.base[0]).toBeLessThan(100);
+    expect(g.base[0]).toBeGreaterThan(80);
+    expect(g.points[1][1]).toBeCloseTo(-g.points[2][1]);
+    // a very short arrow gets a proportionally smaller head
+    const s = arrowGeometry(0, 0, 5, 0, 4);
+    expect(s.points[1][0]).toBeGreaterThanOrEqual(0);
+  });
+  it('text halos contrast with the label colour', () => {
+    expect(annotationHaloColor('#ffffff')).toBe('#1b1b1f');
+    expect(annotationHaloColor('#f5b800')).toBe('#1b1b1f');
+    expect(annotationHaloColor('#1b1b1f')).toBe('#ffffff');
+    expect(annotationHaloColor('#e8384f')).toBe('#ffffff');
+  });
+  it('annotationsToSvg renders every type in pixel space, escaping text and skipping junk', () => {
+    const svg = annotationsToSvg([
+      { id: 'r', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#2f7cf6', strokeWidth: 0.01 },
+      { id: 'h', type: 'highlight', x: 0, y: 0, w: 0.5, h: 0.1, color: '#f5b800' },
+      { id: 'a', type: 'arrow', x1: 0.1, y1: 0.1, x2: 0.9, y2: 0.9 },
+      { id: 't', type: 'text', x: 0.5, y: 0.5, text: '<script>&"x"', size: 0.05, color: '#ffffff' },
+      { type: 'blur', x: 0, y: 0, w: 1, h: 1 }
+    ], 1000, 500);
+    expect(svg.match(/<g data-annot-id/g)).toHaveLength(4);
+    expect(svg).toContain('<rect x="100" y="100" width="300" height="200"');
+    expect(svg).toContain('stroke-width="10"');
+    expect(svg).toContain('fill-opacity="0.35"');
+    expect(svg).toContain('<polygon points="900,450');
+    expect(svg).toContain('font-size="50"');
+    expect(svg).toContain('&lt;script&gt;&amp;&quot;x&quot;');
+    expect(svg).not.toContain('<script>');
+    expect(svg).not.toContain('annot-hit');
+    expect(annotationsToSvg([{ id: 'r', type: 'rect', x: 0, y: 0, w: 0.5, h: 0.5 }], 100, 100, { hitAreas: true })).toContain('annot-hit');
+  });
+  it('annotationsToSvg applies a minimum stroke (for tiny thumbnails)', () => {
+    const svg = annotationsToSvg([{ id: 'r', type: 'rect', x: 0, y: 0, w: 0.5, h: 0.5, strokeWidth: 0.001 }], 1000, 1000, { minStroke: 12 });
+    expect(svg).toContain('stroke-width="12"');
   });
 });

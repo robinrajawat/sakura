@@ -1585,8 +1585,9 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .node-image-thumb.drop-before{box-shadow:-3px 0 0 var(--accent)}
 .node-image-thumb.drop-after{box-shadow:3px 0 0 var(--accent)}
 .node-row.image-drop-target{outline:2px dashed var(--accent);outline-offset:-2px;border-radius:6px}
-/* Enlarged viewer (openNodeImageViewer). .niv-tools and .niv-annot-layer are the markup editor's
-   seam: an empty toolbar slot and an SVG overlay sized exactly to the picture. */
+/* Enlarged viewer (openNodeImageViewer). .niv-tools holds the markup editor's "Mark up" toggle;
+   .niv-annot-layer is the SVG overlay sized exactly to the picture that draws (and, while marking,
+   takes pointer input for) the image's annotations. */
 #node-image-viewer{position:fixed;inset:0;z-index:2600;display:none;align-items:center;justify-content:center;background:rgba(15,14,12,.72);padding:24px;box-sizing:border-box}
 #node-image-viewer.open{display:flex}
 .niv-panel{display:flex;flex-direction:column;width:min(1200px,100%);max-height:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
@@ -1608,7 +1609,48 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .niv-figure{position:relative;line-height:0;max-width:100%;margin:auto}
 .niv-img{display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .niv-figure:not(.niv-auto) .niv-img{width:100%;height:auto;max-height:none}
-.niv-annot-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.niv-annot-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+/* Markup editor (setNodeImageMarkupMode): the "Mark up" toggle lives in .niv-tools; marking mode
+   adds the .niv-markup-bar row and lets the overlay take pointer input (touch-action:none so a
+   finger/pen drag draws instead of scrolling). */
+.niv-markup-toggle{all:unset;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer}
+.niv-markup-toggle:hover{background:var(--hover)}
+.niv-markup-toggle.active{background:color-mix(in srgb,var(--accent) 16%,transparent);border-color:color-mix(in srgb,var(--accent) 45%,var(--border));color:var(--accent);font-weight:600}
+.niv-markup-toggle:focus-visible,.niv-mk-btn:focus-visible,.niv-mk-text-btn:focus-visible,.niv-mk-swatch:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.niv-markup-count:not(:empty){min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:color-mix(in srgb,var(--fg) 10%,transparent);font:600 10px/16px 'Inter',sans-serif;text-align:center;color:var(--muted)}
+.niv-markup-bar{display:none;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--fg) 2.5%,var(--bg))}
+#node-image-viewer.niv-marking .niv-markup-bar{display:flex}
+.niv-mk-group{display:inline-flex;align-items:center;gap:2px}
+.niv-mk-sep{width:1px;height:20px;background:var(--border);margin:0 6px}
+.niv-mk-spacer{flex:1}
+.niv-mk-btn{all:unset;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;color:var(--fg);cursor:pointer}
+.niv-mk-btn:hover:not(:disabled){background:var(--hover)}
+.niv-mk-btn.active{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.niv-mk-btn:disabled{opacity:.35;cursor:default}
+.niv-mk-swatch{all:unset;box-sizing:border-box;width:20px;height:20px;margin:0 3px;border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px color-mix(in srgb,var(--fg) 35%,transparent)}
+.niv-mk-swatch.active{outline:2px solid var(--accent);outline-offset:2px}
+.niv-mk-text-btn{all:unset;font:500 12px 'Inter',sans-serif;color:var(--fg);padding:6px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.niv-mk-text-btn:hover:not(:disabled){background:var(--hover)}
+.niv-mk-text-btn:disabled{opacity:.4;cursor:default}
+.niv-mk-done{background:var(--accent);color:#fff;font-weight:600;margin-left:4px}
+.niv-mk-done:hover{background:var(--accent)!important;filter:brightness(1.08)}
+.niv-mk-clear-wrap{display:inline-flex;align-items:center}
+.niv-mk-confirm{display:none;align-items:center;gap:2px}
+.niv-mk-clear-wrap.confirming .niv-mk-clear{display:none}
+.niv-mk-clear-wrap.confirming .niv-mk-confirm{display:inline-flex}
+.niv-mk-confirm-q{font:500 12px 'Inter',sans-serif;color:var(--muted);padding:0 4px}
+.niv-mk-clear-yes{color:var(--fc-red,#c0392b);font-weight:600}
+#node-image-viewer.niv-marking .niv-annot-layer{pointer-events:auto;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none}
+#node-image-viewer.niv-marking[data-tool="select"] .niv-annot-layer{cursor:default}
+#node-image-viewer.niv-marking[data-tool="select"] .niv-annot-layer [data-annot-id]{cursor:move}
+#node-image-viewer.niv-marking[data-tool="text"] .niv-annot-layer{cursor:text}
+.niv-annot-sel{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 4;pointer-events:none}
+.niv-mk-text-input{position:absolute;z-index:2;margin:0;padding:0 3px;border:1px dashed var(--accent);border-radius:3px;outline:none;font-family:Inter,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-weight:700;line-height:1.15;background:color-mix(in srgb,var(--halo,#fff) 72%,transparent);box-sizing:content-box;min-width:3em;transform:translate(-3px,-1px)}
+.niv-mk-text-input::placeholder{color:inherit;opacity:.45}
+/* Marks over a thumbnail: same shapes, scaled down with the picture (preserveAspectRatio slice
+   mirrors the thumbnail's object-fit:cover anchored top-left). */
+.node-image-thumb{position:relative}
+.node-image-thumb-marks{position:absolute;left:0;top:0;width:100%;height:calc(82px * var(--editor-scale));pointer-events:none}
 .niv-nav{all:unset;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--bg);border:1px solid var(--border);color:var(--fg);cursor:pointer}
 .niv-nav:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
 .niv-nav:disabled{opacity:.3;cursor:default}
@@ -1621,6 +1663,11 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-node-image-figure{flex:none;max-width:100%;margin:0;break-inside:avoid;page-break-inside:avoid}
 .pv-node-image-figure .pv-node-image{width:100%;height:auto;max-height:none;object-fit:contain}
 .pv-node-image-auto .pv-node-image{width:auto;max-width:100%;max-height:var(--pv-diagram-max-h,70vh)}
+/* An image with marks: picture + SVG overlay in one positioned box, so the overlay covers exactly
+   the picture at its chosen width. Unmarked images keep the plain <img> output. */
+.pv-node-image-box{position:relative;line-height:0;max-width:100%}
+.pv-node-image-auto .pv-node-image-box{align-self:center}
+.pv-node-image-marks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;font-family:var(--content-font);color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;background:transparent;border-radius:4px}
 .node-note-line:focus{color:var(--fg)}
 .node-note-line img{max-width:100%;border-radius:6px;margin:4px 0;display:block}
@@ -4006,6 +4053,7 @@ body.printing-generic #gpe-overlay{
 <li>Add them by pasting a screenshot (<span class="help-kbd">Ctrl/Cmd+V</span>) while the node is selected, being edited, or its note line has the cursor; by dropping image files onto the node; or right-click → <strong>Add image…</strong> (under "More" by default) to pick one or more files</li>
 <li>New images are shrunk to at most 1600px on the long side and saved as WebP (JPEG where the browser can't make WebP), which keeps documents small enough to sync; SVGs and animated GIFs are kept exactly as they are</li>
 <li>Click a thumbnail to open the enlarged viewer: edit the caption under the picture, step through the node's images with <span class="help-kbd">←</span>/<span class="help-kbd">→</span> or the side arrows, pick a display size (<strong>Auto</strong>, <strong>Small</strong>, <strong>Medium</strong>, <strong>Full</strong> — used in the viewer and in PDF exports), or Delete it. <span class="help-kbd">Esc</span> or clicking outside closes it</li>
+<li><strong>Mark up</strong> in the viewer (or <span class="help-kbd">M</span>) to draw on a screenshot without changing the picture: rectangle (<span class="help-kbd">R</span>), arrow (<span class="help-kbd">A</span>), translucent highlighter (<span class="help-kbd">H</span>), and text labels (<span class="help-kbd">T</span> — click, type, <span class="help-kbd">Enter</span>; double-click a label to edit it), in six colours. The select tool (<span class="help-kbd">V</span>) moves a mark (drag, or the arrow keys), recolours it, or deletes it (<span class="help-kbd">Delete</span>). Undo/redo inside the editor with <span class="help-kbd">Ctrl/Cmd+Z</span> / <span class="help-kbd">Ctrl/Cmd+Shift+Z</span>; <strong>Clear markings</strong> removes them all. <span class="help-kbd">Esc</span> backs out one step at a time; <strong>Done</strong> finishes. Marks stay in place at any display size, show on the thumbnails and in PDF exports, and a whole marking session is one step of the document's undo</li>
 <li>Right-click a thumbnail for Open, Edit caption, Move left/right, or Delete image; drag a thumbnail onto another to reorder. Everything is undoable with <span class="help-kbd">Ctrl/Cmd+Z</span></li>
 <li>A small picture dot appears on a node with images — click it to fold or unfold the thumbnails. A folded branch's "+N hidden" badge mentions images inside it</li>
 <li>Copying nodes (<span class="help-kbd">Ctrl/Cmd+C</span>) carries their images when pasted back into Sakura; duplicating a node copies them too. PDF exports show each image under its node with its caption; OPML can't hold images, so they're left out there</li>
@@ -6901,8 +6949,8 @@ function migrateNoteTablesToNode(node){
 // src/utils/nodeImages.ts for the shape and the pure helpers), NOT inside node.note's HTML any
 // more: like node.tables they render in their own inline block under the row (a compact strip of
 // thumbnails, see buildNodeImageStrip), open in an enlarged viewer (openNodeImageViewer), and
-// export as figures in the PDF. `annotations` is reserved for the markup editor and is never read
-// here beyond the viewer's (currently empty) overlay layer -- it just round-trips.
+// export as figures in the PDF. `annotations` holds the markup editor's shapes (see "Markup
+// editor" below, and annotationsToSvg in src/utils/nodeImages.ts).
 
 // One-time, self-healing migration, same contract as migrateNoteTablesToNode just above: every
 // <img> with a usable src (data:image or http(s) -- see isUsableImageSrc) still embedded in an
@@ -7104,6 +7152,14 @@ function buildNodeImageStrip(node){
     thumb.setAttribute('aria-label',img.caption?('Image: '+img.caption):('Image '+(i+1)+' of '+node.images.length));
     const pic=document.createElement('img'); pic.src=img.src; pic.alt=img.caption||''; pic.loading='lazy'; pic.draggable=false;
     thumb.appendChild(pic);
+    if(Array.isArray(img.annotations)&&img.annotations.length){
+      const marks=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      marks.setAttribute('class','node-image-thumb-marks'); marks.setAttribute('aria-hidden','true');
+      marks.setAttribute('preserveAspectRatio','xMinYMin slice');
+      thumb.appendChild(marks);
+      // Keep marks visible at thumbnail scale: at least ~1.5 screen px of stroke.
+      paintImageMarks(marks,pic,img.annotations,{minStroke:(w,h)=>1.5/Math.max(132/w,82/h)});
+    }
     if(img.caption){ const cap=document.createElement('span'); cap.className='node-image-caption'; cap.textContent=img.caption; thumb.appendChild(cap); }
     thumb.addEventListener('click',e=>{ e.stopPropagation(); openNodeImageViewer(node.id,img.id); });
     thumb.addEventListener('contextmenu',e=>{
@@ -7145,15 +7201,343 @@ function buildNodeImageStrip(node){
 // --- Enlarged viewer (lightbox) ---
 // Full-size image, caption editable in place, Auto/Small/Medium/Full display width (node image
 // `width`, used here and in the PDF), Delete, ←/→ or the side buttons to step through this node's
-// pictures, Esc/click on the backdrop to close. PR B's markup editor plugs in at the
-// `.niv-annot-layer` SVG (drawn over the picture from img.annotations, coordinates relative to the
-// image size) and the empty `.niv-tools` toolbar slot -- see renderNodeImageAnnotations.
+// pictures, Esc/click on the backdrop to close, and "Mark up" (the markup editor below), which
+// draws img.annotations into the `.niv-annot-layer` SVG over the picture.
 let _nivState=null; // {nodeId,imageId,captionUndoPushed}
+// --- Markup overlay painting (viewer, thumbnails, PDF) ---
+// Marks are stored relative to the image (see src/utils/nodeImages.ts: annotationsToSvg), so every
+// overlay is an <svg viewBox="0 0 naturalWidth naturalHeight"> laid exactly over its <img> -- which
+// is why painting waits for the picture's natural size. A generation counter keeps a late `load`
+// from an earlier paint (stepping quickly through images) from overwriting a newer one.
+function paintImageMarks(svg,pic,annotations,opts){
+  const gen=(svg._markGen=(svg._markGen||0)+1);
+  const draw=()=>{
+    if(svg._markGen!==gen)return;
+    const w=pic.naturalWidth, h=pic.naturalHeight; if(!w||!h)return;
+    svg.setAttribute('viewBox','0 0 '+w+' '+h);
+    const minStroke=opts&&typeof opts.minStroke==='function'?opts.minStroke(w,h):0;
+    svg.innerHTML=annotationsToSvg(annotations,w,h,{minStroke,hitAreas:!!(opts&&opts.hitAreas)});
+    if(opts&&typeof opts.after==='function')opts.after(w,h);
+  };
+  if(pic.complete&&pic.naturalWidth)draw(); else pic.addEventListener('load',draw,{once:true});
+}
 function renderNodeImageAnnotations(svg,img){
-  // Seam for the markup editor (rectangle/arrow/highlighter/text). Today annotations are only
-  // carried through untouched; nothing is drawn yet.
-  svg.innerHTML='';
-  svg.dataset.count=String(Array.isArray(img.annotations)?img.annotations.length:0);
+  const list=Array.isArray(img.annotations)?img.annotations:[];
+  const shown=_nivMk&&_nivMk.preview?_nivMk.preview:list;
+  svg.dataset.count=String(list.length);
+  const pic=svg.parentNode.querySelector('.niv-img');
+  paintImageMarks(svg,pic,shown,{hitAreas:!!_nivMk,after:()=>_nivMkDrawSelection(svg)});
+}
+
+// --- Markup editor ---
+// "Mark up" in the viewer's toolbar switches the viewer into marking mode: a second toolbar row
+// (tools, colours, undo/redo, delete, clear, Done) and the overlay starts taking pointer input.
+// Each mark is a shape in img.annotations; the picture's src is never touched. One marking
+// session (per image, from entering Mark up / stepping to it until Done / close / stepping away)
+// pushes exactly ONE app-level undo entry, on its first change -- same rule as caption edits --
+// while the editor keeps its own fine-grained undo/redo history for the session.
+const NIV_MK_TOOLS=[
+  {key:'select',label:'Select / move',kbd:'V',svg:'<path d="M5 3l14 8-6 1.5L10 19z"/>'},
+  {key:'rect',label:'Rectangle',kbd:'R',svg:'<rect x="4" y="6" width="16" height="12" rx="1.5"/>'},
+  {key:'arrow',label:'Arrow',kbd:'A',svg:'<line x1="5" y1="19" x2="18" y2="6"/><polyline points="10 6 18 6 18 14"/>'},
+  {key:'highlight',label:'Highlighter',kbd:'H',svg:'<rect x="3" y="8" width="18" height="8" rx="1" fill="currentColor" fill-opacity=".35" stroke="none"/><path d="M3 8h18M3 16h18" stroke-opacity=".5"/>'},
+  {key:'text',label:'Text label',kbd:'T',svg:'<polyline points="5 7 5 5 19 5 19 7"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="9" y1="19" x2="15" y2="19"/>'}
+];
+let _nivMk=null; // {tool,color,selectedId,hist,hIdx,undoPushed,drag,preview,text,confirmClear}
+let _nivMkTool='rect', _nivMkColor=null; // remembered between sessions (colour defaults lazily: the palette constants are defined further down)
+function newAnnotationId(){return generateId('mk',6)}
+function _nivRef(){ return _nivState?_nodeImageRef(_nivState.nodeId,_nivState.imageId):null; }
+function _nivReadOnly(){ return typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc(); }
+function _nivMkStartSession(){
+  const ref=_nivRef(); if(!ref||!_nivMk)return;
+  _nivMk.hist=[JSON.stringify(ref.img.annotations||[])]; _nivMk.hIdx=0; _nivMk.undoPushed=false;
+  _nivMk.selectedId=null; _nivMk.drag=null; _nivMk.preview=null; _nivMk.confirmClear=false;
+}
+function nodeImageMarkupIsActive(){ return !!_nivMk; }
+function setNodeImageMarkupMode(on){
+  const ov=el('node-image-viewer'); if(!ov||!_nivState)return;
+  if(on&&_nivReadOnly())return;
+  if(on&&!_nivMk){
+    _nivMk={tool:_nivMkTool,color:_nivMkColor||DEFAULT_ANNOTATION_COLOR};
+    _nivMkStartSession();
+  } else if(!on&&_nivMk){
+    _nivMkEndText(true);
+    _nivMk=null;
+    render(); // thumbnails pick up the session's marks
+  }
+  ov.classList.toggle('niv-marking',!!_nivMk);
+  refreshNodeImageViewer();
+}
+function _nivMkSetTool(tool){
+  if(!_nivMk)return;
+  _nivMkEndText(true);
+  _nivMk.tool=_nivMkTool=tool;
+  if(tool!=='select')_nivMk.selectedId=null;
+  _nivMk.confirmClear=false;
+  refreshNodeImageViewer();
+}
+function _nivMkSetColor(hex){
+  if(!_nivMk)return;
+  _nivMk.color=_nivMkColor=hex;
+  const ref=_nivRef();
+  if(ref&&_nivMk.selectedId){
+    const list=(ref.img.annotations||[]).map(a=>a.id===_nivMk.selectedId?{...a,color:hex}:a);
+    _nivMkCommit(list); return;
+  }
+  refreshNodeImageViewer();
+}
+// Writes a new annotation list for the open image: one app-level undo entry per session (pushed
+// before the first real change), plus a step in the editor's own history.
+function _nivMkCommit(list){
+  const ref=_nivRef(); if(!ref||!_nivMk)return;
+  const next=normalizeImageAnnotations(list,newAnnotationId);
+  _nivMk.preview=null;
+  if(JSON.stringify(next)===JSON.stringify(ref.img.annotations||[])){ refreshNodeImageViewer(); return; }
+  if(!_nivMk.undoPushed){ pushUndo(); _nivMk.undoPushed=true; }
+  ref.img.annotations=next;
+  _touchNodeImages(ref.idx);
+  _nivMk.hist=_nivMk.hist.slice(0,_nivMk.hIdx+1); _nivMk.hist.push(JSON.stringify(next));
+  if(_nivMk.hist.length>200)_nivMk.hist.shift();
+  _nivMk.hIdx=_nivMk.hist.length-1;
+  if(_nivMk.selectedId&&!next.some(a=>a.id===_nivMk.selectedId))_nivMk.selectedId=null;
+  refreshNodeImageViewer();
+}
+function _nivMkHistoryStep(delta){
+  if(!_nivMk)return;
+  _nivMkEndText(true);
+  const ref=_nivRef(); if(!ref)return;
+  const to=_nivMk.hIdx+delta; if(to<0||to>=_nivMk.hist.length)return;
+  _nivMk.hIdx=to;
+  ref.img.annotations=normalizeImageAnnotations(JSON.parse(_nivMk.hist[to]),newAnnotationId);
+  _touchNodeImages(ref.idx);
+  if(_nivMk.selectedId&&!ref.img.annotations.some(a=>a.id===_nivMk.selectedId))_nivMk.selectedId=null;
+  refreshNodeImageViewer();
+}
+function _nivMkDeleteSelected(){
+  const ref=_nivRef(); if(!ref||!_nivMk||!_nivMk.selectedId)return;
+  const id=_nivMk.selectedId; _nivMk.selectedId=null;
+  _nivMkCommit((ref.img.annotations||[]).filter(a=>a.id!==id));
+}
+function _nivMkClearAll(){
+  const ref=_nivRef(); if(!ref||!_nivMk)return;
+  _nivMk.confirmClear=false; _nivMk.selectedId=null;
+  _nivMkCommit([]);
+  showToast('Markings cleared — Undo brings them back');
+}
+// Dashed box around the selected mark (screen-space stroke, so it looks the same at any zoom).
+function _nivMkDrawSelection(svg){
+  if(!_nivMk||!_nivMk.selectedId)return;
+  const g=[...svg.querySelectorAll('[data-annot-id]')].find(x=>x.getAttribute('data-annot-id')===_nivMk.selectedId); if(!g)return;
+  let b; try{ b=g.getBBox(); }catch(e){ return; }
+  const vb=svg.viewBox.baseVal; const r=svg.getBoundingClientRect();
+  const pad=r.width?6*vb.width/r.width:6;
+  const sel=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  sel.setAttribute('class','niv-annot-sel');
+  sel.setAttribute('x',String(b.x-pad)); sel.setAttribute('y',String(b.y-pad));
+  sel.setAttribute('width',String(b.width+pad*2)); sel.setAttribute('height',String(b.height+pad*2));
+  sel.setAttribute('vector-effect','non-scaling-stroke');
+  svg.appendChild(sel);
+}
+function _nivMkPoint(svg,e){
+  const r=svg.getBoundingClientRect();
+  return {x:clamp01((e.clientX-r.left)/(r.width||1)),y:clamp01((e.clientY-r.top)/(r.height||1)),dispW:r.width||1,dispH:r.height||1};
+}
+function _nivMkDraft(d){
+  const t=d.type, a=d.a, b=d.b, sw=d.strokeWidth;
+  if(t==='arrow')return {id:'__draft',type:'arrow',x1:a.x,y1:a.y,x2:b.x,y2:b.y,color:d.color,strokeWidth:sw};
+  const box=boxFromPoints(a.x,a.y,b.x,b.y);
+  return t==='highlight'?{id:'__draft',type:'highlight',...box,color:d.color}:{id:'__draft',type:'rect',...box,color:d.color,strokeWidth:sw};
+}
+function _nivMkOnPointerDown(e){
+  if(!_nivMk||!_nivState)return;
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  const svg=e.currentTarget;
+  e.preventDefault(); e.stopPropagation();
+  if(_nivMk.text){ _nivMkEndText(true); return; }
+  _nivMk.confirmClear=false;
+  const ref=_nivRef(); if(!ref)return;
+  const p=_nivMkPoint(svg,e);
+  const hit=e.target&&e.target.closest?e.target.closest('[data-annot-id]'):null;
+  const hitId=hit?hit.getAttribute('data-annot-id'):null;
+  const hitAnn=hitId?(ref.img.annotations||[]).find(a=>a.id===hitId):null;
+  // Double-click/double-tap a text label (any tool) edits it. Detected here rather than with a
+  // dblclick listener: the first press re-renders the overlay (selection), so the element under
+  // the pointer is a fresh node by the second press and the browser's dblclick lands on the <svg>.
+  const now=Date.now(), last=_nivMk.lastDown;
+  _nivMk.lastDown={t:now,id:hitId,x:e.clientX,y:e.clientY};
+  if(hitAnn&&hitAnn.type==='text'&&last&&last.id===hitAnn.id&&now-last.t<450&&Math.hypot(e.clientX-last.x,e.clientY-last.y)<10){
+    _nivMk.lastDown=null; _nivMk.drag=null;
+    _nivMkBeginText({edit:hitAnn});
+    return;
+  }
+  if(_nivMk.tool==='select'){
+    _nivMk.selectedId=hitAnn?hitAnn.id:null;
+    if(hitAnn){
+      _nivMk.drag={kind:'move',id:hitAnn.id,start:p,orig:hitAnn,moved:false};
+      try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+    }
+    refreshNodeImageViewer();
+    return;
+  }
+  if(_nivMk.tool==='text'){
+    if(hitAnn&&hitAnn.type==='text'){ _nivMkBeginText({edit:hitAnn}); return; }
+    // Synchronous, so keys typed right after the click land in the label; the pointerdown's
+    // preventDefault above keeps the press itself from moving focus away from the new input.
+    _nivMkBeginText({x:p.x,y:p.y,size:18/p.dispW});
+    return;
+  }
+  _nivMk.drag={kind:'draw',type:_nivMk.tool,a:p,b:p,color:_nivMk.color,strokeWidth:(_nivMk.tool==='arrow'?3.5:3)/p.dispW,dispW:p.dispW,dispH:p.dispH};
+  try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+}
+function _nivMkOnPointerMove(e){
+  if(!_nivMk||!_nivMk.drag)return;
+  const svg=e.currentTarget; const ref=_nivRef(); if(!ref)return;
+  e.preventDefault();
+  const p=_nivMkPoint(svg,e); const d=_nivMk.drag;
+  const list=ref.img.annotations||[];
+  if(d.kind==='draw'){
+    d.b=p;
+    _nivMk.preview=list.concat([_nivMkDraft(d)]);
+  } else if(d.kind==='move'){
+    const dx=p.x-d.start.x, dy=p.y-d.start.y;
+    if(!d.moved&&Math.hypot(dx*p.dispW,dy*p.dispH)<2)return;
+    d.moved=true;
+    const moved=translateAnnotation(d.orig,dx,dy);
+    _nivMk.preview=list.map(a=>a.id===d.id?moved:a);
+  }
+  renderNodeImageAnnotations(svg,ref.img);
+}
+function _nivMkOnPointerUp(e){
+  if(!_nivMk||!_nivMk.drag)return;
+  const svg=e.currentTarget; const d=_nivMk.drag; _nivMk.drag=null;
+  try{ svg.releasePointerCapture(e.pointerId); }catch(err){}
+  const ref=_nivRef(); if(!ref)return;
+  const list=ref.img.annotations||[];
+  if(e.type==='pointercancel'){ _nivMk.preview=null; refreshNodeImageViewer(); return; }
+  if(d.kind==='draw'){
+    const p=_nivMkPoint(svg,e); d.b=p;
+    // A click (or a tiny accidental drag) isn't a mark.
+    if(Math.abs(d.b.x-d.a.x)*d.dispW<4&&Math.abs(d.b.y-d.a.y)*d.dispH<4){ _nivMk.preview=null; refreshNodeImageViewer(); return; }
+    const draft=_nivMkDraft(d); draft.id=newAnnotationId();
+    _nivMkCommit(list.concat([draft]));
+  } else if(d.kind==='move'){
+    if(!d.moved||!_nivMk.preview){ _nivMk.preview=null; refreshNodeImageViewer(); return; }
+    _nivMkCommit(_nivMk.preview);
+  }
+}
+// Inline text entry for the text tool: an <input> placed where the label's top-left will be, at
+// the label's on-screen size. Enter commits, Esc cancels, clicking elsewhere commits.
+function _nivMkBeginText(opts){
+  if(!_nivMk)return;
+  _nivMkEndText(true);
+  const ov=el('node-image-viewer'); const fig=ov&&ov.querySelector('.niv-figure'); const svg=fig&&fig.querySelector('.niv-annot-layer');
+  const ref=_nivRef(); if(!fig||!svg||!ref)return;
+  const edit=opts.edit||null;
+  const x=edit?edit.x:opts.x, y=edit?edit.y:opts.y;
+  const size=normalizeImageAnnotation({type:'text',x:0,y:0,text:'x',size:edit?edit.size:opts.size},newAnnotationId).size;
+  const color=edit?edit.color:_nivMk.color;
+  const r=svg.getBoundingClientRect();
+  const input=document.createElement('input');
+  input.type='text'; input.className='niv-mk-text-input'; input.maxLength=ANNOTATION_TEXT_MAX; input.spellcheck=true;
+  input.setAttribute('aria-label','Label text'); input.placeholder='Label';
+  input.value=edit?edit.text:'';
+  input.style.left=(x*100)+'%'; input.style.top=(y*100)+'%';
+  input.style.fontSize=Math.max(10,size*(r.width||1))+'px';
+  input.style.color=color;
+  input.style.setProperty('--halo',annotationHaloColor(color));
+  const fit=()=>{ input.size=Math.max(6,input.value.length+2); };
+  fit(); input.addEventListener('input',fit);
+  input.addEventListener('blur',()=>{ if(_nivMk&&_nivMk.text&&_nivMk.text.input===input)_nivMkEndText(true); });
+  _nivMk.text={input,edit,x,y,size,color};
+  if(edit){ _nivMk.selectedId=null; _nivMk.preview=(ref.img.annotations||[]).filter(a=>a.id!==edit.id); renderNodeImageAnnotations(svg,ref.img); }
+  fig.appendChild(input);
+  input.focus(); if(edit)input.select();
+}
+function _nivMkEndText(commit){
+  if(!_nivMk||!_nivMk.text)return;
+  const t=_nivMk.text; _nivMk.text=null;
+  const val=normalizeAnnotationText(t.input.value);
+  t.input.remove();
+  _nivMk.preview=null;
+  const ref=_nivRef(); if(!ref){ return; }
+  const list=ref.img.annotations||[];
+  if(commit){
+    if(t.edit){
+      if(!val){ _nivMkCommit(list.filter(a=>a.id!==t.edit.id)); return; }
+      if(val!==t.edit.text){ _nivMkCommit(list.map(a=>a.id===t.edit.id?{...a,text:val}:a)); return; }
+    } else if(val){
+      _nivMkCommit(list.concat([{id:newAnnotationId(),type:'text',x:t.x,y:t.y,text:val,size:t.size,color:t.color}]));
+      return;
+    }
+  }
+  refreshNodeImageViewer();
+}
+function _nivMkNudge(dxPx,dyPx){
+  const ref=_nivRef(); if(!ref||!_nivMk||!_nivMk.selectedId)return;
+  const svg=el('node-image-viewer').querySelector('.niv-annot-layer'); const r=svg.getBoundingClientRect();
+  _nivMkCommit((ref.img.annotations||[]).map(a=>a.id===_nivMk.selectedId?translateAnnotation(a,dxPx/(r.width||1),dyPx/(r.height||1)):a));
+}
+function _nivMkBarHtml(){
+  const icon=inner=>'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';
+  return '<div class="niv-mk-group" role="group" aria-label="Markup tools">'+
+      NIV_MK_TOOLS.map(t=>'<button type="button" class="niv-mk-btn niv-mk-tool" data-tool="'+t.key+'" aria-label="'+t.label+'" data-tip="'+t.label+' ('+t.kbd+')">'+icon(t.svg)+'</button>').join('')+
+    '</div><span class="niv-mk-sep"></span>'+
+    '<div class="niv-mk-group" role="group" aria-label="Colour">'+
+      ANNOTATION_COLORS.map(c=>'<button type="button" class="niv-mk-swatch" data-color="'+c.hex+'" style="background:'+c.hex+'" aria-label="'+c.label+'" data-tip="'+c.label+'"></button>').join('')+
+    '</div><span class="niv-mk-sep"></span>'+
+    '<div class="niv-mk-group">'+
+      '<button type="button" class="niv-mk-btn niv-mk-undo" aria-label="Undo mark" data-tip="Undo (Ctrl/Cmd+Z)">'+icon('<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>')+'</button>'+
+      '<button type="button" class="niv-mk-btn niv-mk-redo" aria-label="Redo mark" data-tip="Redo (Ctrl/Cmd+Shift+Z)">'+icon('<path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>')+'</button>'+
+      '<button type="button" class="niv-mk-btn niv-mk-del" aria-label="Delete selected mark" data-tip="Delete selected mark (Delete)">'+icon('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>')+'</button>'+
+    '</div>'+
+    '<span class="niv-mk-spacer"></span>'+
+    '<span class="niv-mk-clear-wrap"><button type="button" class="niv-mk-text-btn niv-mk-clear" data-tip="Remove every mark from this image">Clear markings</button>'+
+      '<span class="niv-mk-confirm"><span class="niv-mk-confirm-q">Remove all marks?</span><button type="button" class="niv-mk-text-btn niv-mk-clear-yes">Clear</button><button type="button" class="niv-mk-text-btn niv-mk-clear-no">Cancel</button></span></span>'+
+    '<button type="button" class="niv-mk-text-btn niv-mk-done" data-tip="Finish marking up (Esc)">Done</button>';
+}
+function _nivMkWire(ov){
+  const svg=ov.querySelector('.niv-annot-layer');
+  svg.addEventListener('pointerdown',_nivMkOnPointerDown);
+  svg.addEventListener('pointermove',_nivMkOnPointerMove);
+  svg.addEventListener('pointerup',_nivMkOnPointerUp);
+  svg.addEventListener('pointercancel',_nivMkOnPointerUp);
+  svg.addEventListener('click',e=>{ if(_nivMk)e.stopPropagation(); });
+  ov.querySelector('.niv-markup-toggle').addEventListener('click',()=>setNodeImageMarkupMode(!_nivMk));
+  const bar=ov.querySelector('.niv-markup-bar');
+  bar.addEventListener('pointerdown',()=>{ if(_nivMk)_nivMk.lastDown=null; }); // a double-press on a label means two presses in a row, nothing in between
+  bar.addEventListener('mousedown',e=>{ if(e.target.closest('button'))e.preventDefault(); }); // keep a text label's input focused until the click lands
+  bar.querySelectorAll('.niv-mk-tool').forEach(b=>b.addEventListener('click',()=>_nivMkSetTool(b.dataset.tool)));
+  bar.querySelectorAll('.niv-mk-swatch').forEach(b=>b.addEventListener('click',()=>{
+    if(_nivMk&&_nivMk.text){ const t=_nivMk.text; t.color=b.dataset.color; t.input.style.color=t.color; t.input.style.setProperty('--halo',annotationHaloColor(t.color)); _nivMk.color=_nivMkColor=t.color; refreshNodeImageViewer(); t.input.focus(); return; }
+    _nivMkSetColor(b.dataset.color);
+  }));
+  bar.querySelector('.niv-mk-undo').addEventListener('click',()=>_nivMkHistoryStep(-1));
+  bar.querySelector('.niv-mk-redo').addEventListener('click',()=>_nivMkHistoryStep(1));
+  bar.querySelector('.niv-mk-del').addEventListener('click',()=>_nivMkDeleteSelected());
+  bar.querySelector('.niv-mk-clear').addEventListener('click',()=>{ if(!_nivMk)return; _nivMkEndText(true); _nivMk.confirmClear=true; refreshNodeImageViewer(); bar.querySelector('.niv-mk-clear-no').focus(); });
+  bar.querySelector('.niv-mk-clear-no').addEventListener('click',()=>{ if(!_nivMk)return; _nivMk.confirmClear=false; refreshNodeImageViewer(); });
+  bar.querySelector('.niv-mk-clear-yes').addEventListener('click',()=>_nivMkClearAll());
+  bar.querySelector('.niv-mk-done').addEventListener('click',()=>setNodeImageMarkupMode(false));
+}
+function _nivMkRefreshBar(ov,ref){
+  const readOnly=_nivReadOnly();
+  const toggle=ov.querySelector('.niv-markup-toggle');
+  toggle.style.display=readOnly?'none':'';
+  toggle.classList.toggle('active',!!_nivMk);
+  toggle.setAttribute('aria-pressed',_nivMk?'true':'false');
+  const n=Array.isArray(ref.img.annotations)?ref.img.annotations.length:0;
+  toggle.querySelector('.niv-markup-count').textContent=n?String(n):'';
+  if(readOnly&&_nivMk){ _nivMk=null; ov.classList.remove('niv-marking'); }
+  ov.classList.toggle('niv-marking',!!_nivMk);
+  if(!_nivMk)return;
+  ov.dataset.tool=_nivMk.tool;
+  ov.querySelectorAll('.niv-mk-tool').forEach(b=>{ const on=b.dataset.tool===_nivMk.tool; b.classList.toggle('active',on); b.setAttribute('aria-pressed',on?'true':'false'); });
+  ov.querySelectorAll('.niv-mk-swatch').forEach(b=>{ const on=b.dataset.color===_nivMk.color; b.classList.toggle('active',on); b.setAttribute('aria-pressed',on?'true':'false'); });
+  ov.querySelector('.niv-mk-undo').disabled=_nivMk.hIdx<=0;
+  ov.querySelector('.niv-mk-redo').disabled=_nivMk.hIdx>=_nivMk.hist.length-1;
+  ov.querySelector('.niv-mk-del').disabled=!_nivMk.selectedId;
+  ov.querySelector('.niv-mk-clear').disabled=!n;
+  ov.querySelector('.niv-mk-clear-wrap').classList.toggle('confirming',!!_nivMk.confirmClear&&n>0);
 }
 function openNodeImageViewer(nodeId,imageId,opts){
   const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
@@ -7165,11 +7549,12 @@ function openNodeImageViewer(nodeId,imageId,opts){
       '<div class="niv-panel">'+
         '<div class="niv-head">'+
           '<span class="niv-counter"></span>'+
-          '<div class="niv-tools" data-seam="markup"></div>'+
+          '<div class="niv-tools"><button type="button" class="niv-markup-toggle" aria-pressed="false" data-tip="Mark up this image — rectangles, arrows, highlighter, text (M)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Mark up</span><span class="niv-markup-count"></span></button></div>'+
           '<div class="niv-size" role="group" aria-label="Display size">'+IMAGE_WIDTH_PRESETS.map(p=>'<button type="button" class="niv-size-btn" data-size="'+p.key+'" data-tip="'+(p.value?('Show at '+p.value+'% width here and in the PDF'):'Natural size, up to the full width')+'">'+p.label+'</button>').join('')+'</div>'+
           '<button type="button" class="niv-btn niv-delete" data-tip="Delete image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>'+
           '<button type="button" class="niv-btn niv-close" data-tip="Close (Esc)" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>'+
         '</div>'+
+        '<div class="niv-markup-bar" role="toolbar" aria-label="Markup">'+_nivMkBarHtml()+'</div>'+
         '<div class="niv-stage">'+
           '<button type="button" class="niv-nav niv-prev" aria-label="Previous image" data-tip="Previous (←)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
           '<div class="niv-frame"><div class="niv-figure"><img class="niv-img" alt=""><svg class="niv-annot-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"></svg></div></div>'+
@@ -7179,16 +7564,20 @@ function openNodeImageViewer(nodeId,imageId,opts){
       '</div>';
     document.body.appendChild(ov);
     ov.addEventListener('mousedown',e=>{ if(e.target===ov){ e.preventDefault(); } });
-    ov.addEventListener('click',e=>{ if(e.target===ov||e.target.classList.contains('niv-stage')||e.target.classList.contains('niv-frame'))closeNodeImageViewer(); });
+    // While marking up, a stray click beside the picture must not throw the viewer (and the
+    // session) away -- Done / Esc / the close button end it instead.
+    ov.addEventListener('click',e=>{ if(_nivMk)return; if(e.target===ov||e.target.classList.contains('niv-stage')||e.target.classList.contains('niv-frame'))closeNodeImageViewer(); });
+    _nivMkWire(ov);
     ov.querySelector('.niv-close').addEventListener('click',()=>closeNodeImageViewer());
     ov.querySelector('.niv-prev').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(-1); });
     ov.querySelector('.niv-next').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(1); });
     ov.querySelector('.niv-delete').addEventListener('click',()=>{
       if(!_nivState)return;
+      _nivMkEndText(false);
       const ref=_nodeImageRef(_nivState.nodeId,_nivState.imageId); if(!ref)return closeNodeImageViewer();
       const next=ref.list[ref.i+1]||ref.list[ref.i-1]||null;
       deleteNodeImage(_nivState.nodeId,_nivState.imageId);
-      if(next){ _nivState.imageId=next.id; _nivState.captionUndoPushed=false; refreshNodeImageViewer(); } else closeNodeImageViewer();
+      if(next){ _nivState.imageId=next.id; _nivState.captionUndoPushed=false; if(_nivMk)_nivMkStartSession(); refreshNodeImageViewer(); } else closeNodeImageViewer();
       showToast('Image deleted — Ctrl/Cmd+Z to undo');
     });
     ov.querySelectorAll('.niv-size-btn').forEach(btn=>btn.addEventListener('click',()=>{
@@ -7207,10 +7596,12 @@ function openNodeImageViewer(nodeId,imageId,opts){
     cap.addEventListener('blur',()=>{ if(_nivState){ _nivState.captionUndoPushed=false; render(); } });
   }
   _nivState={nodeId,imageId,captionUndoPushed:false,returnFocus:document.activeElement};
+  _nivMk=null; ov.classList.remove('niv-marking');
   ov.classList.add('open');
   document.body.classList.add('node-image-viewer-open');
   window.addEventListener('keydown',_nivKeyHandler,true);
   refreshNodeImageViewer();
+  if(opts&&opts.markup&&!_nivReadOnly())setNodeImageMarkupMode(true);
   if(opts&&opts.focusCaption){ const cap=ov.querySelector('.niv-caption'); if(!cap.disabled){ cap.focus(); cap.select(); } }
   else ov.querySelector('.niv-close').focus({preventScroll:true});
 }
@@ -7224,7 +7615,6 @@ function refreshNodeImageViewer(){
   const fig=ov.querySelector('.niv-figure');
   fig.style.width=img.width?img.width+'%':'';
   fig.classList.toggle('niv-auto',!img.width);
-  renderNodeImageAnnotations(ov.querySelector('.niv-annot-layer'),img);
   ov.querySelector('.niv-counter').textContent=(ref.i+1)+' / '+ref.list.length;
   const cap=ov.querySelector('.niv-caption');
   if(document.activeElement!==cap)cap.value=img.caption||'';
@@ -7235,6 +7625,8 @@ function refreshNodeImageViewer(){
   ov.querySelector('.niv-prev').disabled=ref.i<=0;
   ov.querySelector('.niv-next').disabled=ref.i>=ref.list.length-1;
   ov.classList.toggle('niv-single',ref.list.length<2);
+  _nivMkRefreshBar(ov,ref);
+  renderNodeImageAnnotations(ov.querySelector('.niv-annot-layer'),img);
 }
 function stepNodeImageViewer(delta){
   if(!_nivState)return;
@@ -7242,7 +7634,9 @@ function stepNodeImageViewer(delta){
   const next=ref.list[ref.i+delta]; if(!next)return;
   const cap=el('node-image-viewer')?.querySelector('.niv-caption');
   if(cap&&document.activeElement===cap)cap.blur();
+  _nivMkEndText(true);
   _nivState.imageId=next.id; _nivState.captionUndoPushed=false;
+  if(_nivMk)_nivMkStartSession();
   refreshNodeImageViewer();
 }
 function closeNodeImageViewer(){
@@ -7250,9 +7644,11 @@ function closeNodeImageViewer(){
   window.removeEventListener('keydown',_nivKeyHandler,true);
   const cap=ov?.querySelector('.niv-caption');
   if(cap&&document.activeElement===cap)cap.blur();
+  _nivMkEndText(true);
+  _nivMk=null;
   const ret=_nivState?.returnFocus;
   _nivState=null;
-  if(ov)ov.classList.remove('open');
+  if(ov)ov.classList.remove('open','niv-marking');
   document.body.classList.remove('node-image-viewer-open');
   render();
   if(ret&&ret.isConnected&&typeof ret.focus==='function'){ try{ ret.focus({preventScroll:true}); }catch(e){} }
@@ -7264,15 +7660,52 @@ function _nivKeyHandler(e){
   if(!_nivState)return;
   const ov=el('node-image-viewer');
   const inCaption=e.target&&e.target.classList&&e.target.classList.contains('niv-caption');
-  if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeNodeImageViewer(); return; }
+  const inMkText=e.target&&e.target.classList&&e.target.classList.contains('niv-mk-text-input');
   const mod=e.ctrlKey||e.metaKey;
+  if(_nivMk)_nivMk.lastDown=null;
+  // Typing a text label: Enter commits, Esc cancels just the label; everything else is typing.
+  if(inMkText){
+    e.stopPropagation();
+    if(e.key==='Escape'){ e.preventDefault(); _nivMkEndText(false); return; }
+    if(e.key==='Enter'){ e.preventDefault(); _nivMkEndText(true); return; }
+    return;
+  }
+  if(e.key==='Escape'){
+    e.preventDefault(); e.stopPropagation();
+    // Esc unwinds one level at a time while marking up: an in-progress drag, a pending "Clear?",
+    // the selection, then marking mode itself -- only then does it close the viewer.
+    if(_nivMk&&!inCaption){
+      if(_nivMk.drag){ _nivMk.drag=null; _nivMk.preview=null; refreshNodeImageViewer(); return; }
+      if(_nivMk.confirmClear){ _nivMk.confirmClear=false; refreshNodeImageViewer(); return; }
+      if(_nivMk.selectedId){ _nivMk.selectedId=null; refreshNodeImageViewer(); return; }
+      setNodeImageMarkupMode(false); return;
+    }
+    closeNodeImageViewer(); return;
+  }
   if(mod&&!e.altKey&&(e.key==='z'||e.key==='Z'||e.key==='y'||e.key==='Y')&&!inCaption){
     e.preventDefault(); e.stopPropagation();
-    if(e.key==='y'||e.key==='Y'||e.shiftKey)redo(); else undo();
+    const isRedo=e.key==='y'||e.key==='Y'||e.shiftKey;
+    // While marking up, Ctrl/Cmd+Z walks the editor's own history (one mark at a time); outside
+    // it, it's the app's undo as before.
+    if(_nivMk){ _nivMkHistoryStep(isRedo?1:-1); return; }
+    if(isRedo)redo(); else undo();
     refreshNodeImageViewer();
     return;
   }
   if(inCaption){ e.stopPropagation(); return; }
+  if(_nivMk){
+    // Marking mode: arrow keys nudge the selected mark (Shift = 10px) and never step to another
+    // image; Delete/Backspace remove it; V/R/A/H/T pick a tool.
+    const arrows={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+    if(arrows[e.key]){ e.preventDefault(); e.stopPropagation(); const k=e.shiftKey?10:1; _nivMkNudge(arrows[e.key][0]*k,arrows[e.key][1]*k); return; }
+    if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault(); e.stopPropagation(); _nivMkDeleteSelected(); return; }
+    if(!mod&&!e.altKey){
+      const tool=NIV_MK_TOOLS.find(t=>t.kbd.toLowerCase()===String(e.key).toLowerCase());
+      if(tool){ e.preventDefault(); e.stopPropagation(); _nivMkSetTool(tool.key); return; }
+    }
+  } else if(!mod&&!e.altKey&&(e.key==='m'||e.key==='M')&&!_nivReadOnly()){
+    e.preventDefault(); e.stopPropagation(); setNodeImageMarkupMode(true); return;
+  }
   if(e.key==='ArrowLeft'){ e.preventDefault(); e.stopPropagation(); stepNodeImageViewer(-1); return; }
   if(e.key==='ArrowRight'){ e.preventDefault(); e.stopPropagation(); stepNodeImageViewer(1); return; }
   // Tab/Enter/Space still operate the viewer's own buttons natively (no preventDefault); nothing
@@ -7520,14 +7953,262 @@ function newNodeImageId(){return generateId('img',6)}
  *   by the enlarged viewer and the PDF. Absent means "Auto" (natural size, capped at 100%). The
  *   viewer offers Small/Medium/Full presets (see IMAGE_WIDTH_PRESETS) but any integer in range
  *   round-trips, so a later slider can reuse the field unchanged.
- * - `annotations` is reserved for the markup editor (rectangles/arrows/highlights/text). It is
- *   copied through verbatim — never inspected, never dropped — so data written by a newer
- *   version survives a round trip through this one.
+ * - `annotations` holds the markup editor's marks (rectangles, arrows, highlighter boxes, text
+ *   labels) as plain shapes over the picture — the picture itself (`src`) is never modified.
+ *   Every coordinate is relative to the image (0–1 of its natural width/height), and stroke
+ *   width / text size are relative to the image's width, so marks stay aligned and in proportion
+ *   at any display size. See ImageAnnotation / normalizeImageAnnotations / annotationsToSvg.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `nodeImages` block. Everything
  * DOM/canvas-specific (decoding, drawing, toDataURL, note-HTML parsing for the migration) stays
  * hand-written in index.html; only the decisions live here so they can be unit tested.
  */
+/** Hard cap on marks per image — far beyond any real screenshot markup, small enough that a
+ * corrupt or hostile document can't make rendering crawl. Extra entries are dropped. */
+const MAX_IMAGE_ANNOTATIONS = 200;
+/** A text label is a short callout, not a paragraph. */
+const ANNOTATION_TEXT_MAX = 200;
+/** Highlighter fill opacity (marker-style: the picture stays readable underneath). */
+const HIGHLIGHT_OPACITY = 0.35;
+const DEFAULT_ANNOTATION_STROKE = 0.004;
+const DEFAULT_ANNOTATION_TEXT_SIZE = 0.025;
+const STROKE_MIN = 0.0005;
+const STROKE_MAX = 0.05;
+const TEXT_SIZE_MIN = 0.004;
+const TEXT_SIZE_MAX = 0.25;
+/** Fixed palette, picked to read on both light and dark screenshots (saturated mid-tones, plus
+ * black and white for the cases where colour would clash). First entry is the default. */
+const ANNOTATION_COLORS = [
+    { key: 'red', label: 'Red', hex: '#e8384f' },
+    { key: 'yellow', label: 'Yellow', hex: '#f5b800' },
+    { key: 'green', label: 'Green', hex: '#2fb344' },
+    { key: 'blue', label: 'Blue', hex: '#2f7cf6' },
+    { key: 'black', label: 'Black', hex: '#1b1b1f' },
+    { key: 'white', label: 'White', hex: '#ffffff' }
+];
+const DEFAULT_ANNOTATION_COLOR = ANNOTATION_COLORS[0].hex;
+const round4 = (n) => Math.round(n * 10000) / 10000;
+function finite(v) {
+    return typeof v === 'number' && Number.isFinite(v);
+}
+function clamp01(n) {
+    return Math.min(1, Math.max(0, n));
+}
+/** A colour is kept only as a #rgb/#rrggbb hex (lower-cased, expanded) — it's written straight
+ * into SVG attributes, so nothing else gets through. Anything else falls back to the default. */
+function normalizeAnnotationColor(c) {
+    if (typeof c !== 'string')
+        return DEFAULT_ANNOTATION_COLOR;
+    const t = c.trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(t))
+        return t;
+    if (/^#[0-9a-f]{3}$/.test(t))
+        return '#' + t[1] + t[1] + t[2] + t[2] + t[3] + t[3];
+    return DEFAULT_ANNOTATION_COLOR;
+}
+function normalizeStroke(v) {
+    if (!finite(v) || v <= 0)
+        return DEFAULT_ANNOTATION_STROKE;
+    return round4(Math.min(STROKE_MAX, Math.max(STROKE_MIN, v)));
+}
+function normalizeTextSize(v) {
+    if (!finite(v) || v <= 0)
+        return DEFAULT_ANNOTATION_TEXT_SIZE;
+    return round4(Math.min(TEXT_SIZE_MAX, Math.max(TEXT_SIZE_MIN, v)));
+}
+/** Label text: single line, trimmed, capped. */
+function normalizeAnnotationText(t) {
+    if (typeof t !== 'string')
+        return '';
+    return t.replace(/[\r\n\t]+/g, ' ').trim().slice(0, ANNOTATION_TEXT_MAX);
+}
+/** Box (rect/highlight) from any two corner points, clamped inside the image. */
+function boxFromPoints(ax, ay, bx, by) {
+    const x1 = clamp01(Math.min(ax, bx));
+    const y1 = clamp01(Math.min(ay, by));
+    const x2 = clamp01(Math.max(ax, bx));
+    const y2 = clamp01(Math.max(ay, by));
+    return { x: round4(x1), y: round4(y1), w: round4(x2 - x1), h: round4(y2 - y1) };
+}
+/** One stored mark → a clean ImageAnnotation, or null if it's malformed (unknown type, missing
+ * or non-numeric coordinates, zero size, empty text). Coordinates are clamped to the image,
+ * a negative width/height is flipped, numbers are rounded to 4 decimals (sub-pixel at 1600px). */
+function normalizeImageAnnotation(raw, makeId) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw))
+        return null;
+    const e = raw;
+    const a = normalizeAnnotationShape(e);
+    if (!a)
+        return null;
+    return { ...a, id: typeof e.id === 'string' && e.id ? e.id.slice(0, 64) : makeId() };
+}
+function normalizeAnnotationShape(e) {
+    const id = '';
+    const color = normalizeAnnotationColor(e.color);
+    if (e.type === 'rect' || e.type === 'highlight') {
+        if (!finite(e.x) || !finite(e.y) || !finite(e.w) || !finite(e.h))
+            return null;
+        const b = boxFromPoints(e.x, e.y, e.x + e.w, e.y + e.h);
+        if (b.w <= 0 || b.h <= 0)
+            return null;
+        if (e.type === 'highlight')
+            return { id, type: 'highlight', ...b, color };
+        return { id, type: 'rect', ...b, color, strokeWidth: normalizeStroke(e.strokeWidth) };
+    }
+    if (e.type === 'arrow') {
+        if (!finite(e.x1) || !finite(e.y1) || !finite(e.x2) || !finite(e.y2))
+            return null;
+        const a = {
+            id,
+            type: 'arrow',
+            x1: round4(clamp01(e.x1)),
+            y1: round4(clamp01(e.y1)),
+            x2: round4(clamp01(e.x2)),
+            y2: round4(clamp01(e.y2)),
+            color,
+            strokeWidth: normalizeStroke(e.strokeWidth)
+        };
+        if (a.x1 === a.x2 && a.y1 === a.y2)
+            return null;
+        return a;
+    }
+    if (e.type === 'text') {
+        if (!finite(e.x) || !finite(e.y))
+            return null;
+        const text = normalizeAnnotationText(e.text);
+        if (!text)
+            return null;
+        return { id, type: 'text', x: round4(clamp01(e.x)), y: round4(clamp01(e.y)), text, size: normalizeTextSize(e.size), color };
+    }
+    return null;
+}
+/** Whatever was stored in `image.annotations` → a clean list: malformed entries dropped,
+ * duplicate/missing ids replaced, at most MAX_IMAGE_ANNOTATIONS kept (the oldest ones — later
+ * marks are drawn on top, and the cap only ever bites on corrupt data). */
+function normalizeImageAnnotations(raw, makeId) {
+    if (!Array.isArray(raw))
+        return [];
+    const out = [];
+    const seen = new Set();
+    for (const entry of raw) {
+        if (out.length >= MAX_IMAGE_ANNOTATIONS)
+            break;
+        const a = normalizeImageAnnotation(entry, makeId);
+        if (!a)
+            continue;
+        if (seen.has(a.id))
+            a.id = makeId();
+        seen.add(a.id);
+        out.push(a);
+    }
+    return out;
+}
+/** Moves a mark by (dx, dy) image fractions, stopping at the image's edges so the whole shape
+ * (or, for text, its anchor point) stays inside. Returns a new object. */
+function translateAnnotation(a, dx, dy) {
+    if (a.type === 'arrow') {
+        const minX = Math.min(a.x1, a.x2), maxX = Math.max(a.x1, a.x2);
+        const minY = Math.min(a.y1, a.y2), maxY = Math.max(a.y1, a.y2);
+        const ddx = Math.min(1 - maxX, Math.max(-minX, dx));
+        const ddy = Math.min(1 - maxY, Math.max(-minY, dy));
+        return { ...a, x1: round4(a.x1 + ddx), y1: round4(a.y1 + ddy), x2: round4(a.x2 + ddx), y2: round4(a.y2 + ddy) };
+    }
+    if (a.type === 'text') {
+        return { ...a, x: round4(clamp01(a.x + dx)), y: round4(clamp01(a.y + dy)) };
+    }
+    const b = a;
+    const ddx = Math.min(1 - (b.x + b.w), Math.max(-b.x, dx));
+    const ddy = Math.min(1 - (b.y + b.h), Math.max(-b.y, dy));
+    return { ...a, x: round4(b.x + ddx), y: round4(b.y + ddy) };
+}
+/** Arrowhead triangle for an arrow from (x1,y1) to (x2,y2) in pixel space with stroke width
+ * `stroke`: the tip sits exactly at (x2,y2); `base` is where the shaft should stop so the line's
+ * thick end never pokes out past the head. The head shrinks on very short arrows. */
+function arrowGeometry(x1, y1, x2, y2, stroke) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const headLen = Math.min(Math.max(stroke * 4, 6), len * 0.6);
+    const halfW = headLen * 0.55;
+    const bx = x2 - ux * headLen;
+    const by = y2 - uy * headLen;
+    const r = (n) => Math.round(n * 100) / 100;
+    return {
+        base: [r(x2 - ux * headLen * 0.7), r(y2 - uy * headLen * 0.7)],
+        points: [
+            [r(x2), r(y2)],
+            [r(bx - uy * halfW), r(by + ux * halfW)],
+            [r(bx + uy * halfW), r(by - ux * halfW)]
+        ]
+    };
+}
+/** Relative luminance (0 = black, 1 = white) of a #rrggbb colour. */
+function colorLuminance(hex) {
+    const h = normalizeAnnotationColor(hex);
+    const ch = (i) => {
+        const v = parseInt(h.slice(i, i + 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5);
+}
+/** Halo/outline drawn behind a text label so it stays legible on any background: dark behind
+ * light text (white, yellow), white behind everything else. */
+function annotationHaloColor(hex) {
+    return colorLuminance(hex) > 0.4 ? '#1b1b1f' : '#ffffff';
+}
+function escXml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+/** SVG inner markup for `annotations` drawn over an image of `width` x `height` pixels — the
+ * caller puts it in an <svg viewBox="0 0 width height"> laid exactly over the picture. Each mark
+ * is a <g data-annot-id="…" data-annot-type="…">. Input is normalized first, so stored garbage
+ * can never reach the markup. */
+function annotationsToSvg(annotations, width, height, opts = {}) {
+    const W = finite(width) && width > 0 ? width : 1;
+    const H = finite(height) && height > 0 ? height : 1;
+    let n = 0;
+    const list = normalizeImageAnnotations(annotations, () => 'a' + ++n);
+    const r = (v) => Math.round(v * 100) / 100;
+    const minStroke = finite(opts.minStroke) && opts.minStroke > 0 ? opts.minStroke : 0;
+    const hitW = Math.max(W, H) * 0.012;
+    const parts = [];
+    for (const a of list) {
+        const open = '<g data-annot-id="' + escXml(a.id) + '" data-annot-type="' + a.type + '">';
+        if (a.type === 'rect' || a.type === 'highlight') {
+            const x = r(a.x * W), y = r(a.y * H), w = r(a.w * W), h = r(a.h * H);
+            if (a.type === 'highlight') {
+                parts.push(open + '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + a.color + '" fill-opacity="' + HIGHLIGHT_OPACITY + '"' + (opts.hitAreas ? ' pointer-events="all"' : '') + '/></g>');
+            }
+            else {
+                const sw = r(Math.max(minStroke, (a.strokeWidth ?? DEFAULT_ANNOTATION_STROKE) * W));
+                const rx = r(Math.min(sw * 1.5, w / 4, h / 4));
+                let g = open + '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + rx + '" fill="none" stroke="' + a.color + '" stroke-width="' + sw + '" stroke-linejoin="round"/>';
+                if (opts.hitAreas)
+                    g += '<rect class="annot-hit" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="none" stroke="transparent" stroke-width="' + r(Math.max(sw, hitW)) + '" pointer-events="stroke"/>';
+                parts.push(g + '</g>');
+            }
+        }
+        else if (a.type === 'arrow') {
+            const sw = Math.max(minStroke, a.strokeWidth * W);
+            const x1 = a.x1 * W, y1 = a.y1 * H, x2 = a.x2 * W, y2 = a.y2 * H;
+            const geo = arrowGeometry(x1, y1, x2, y2, sw);
+            let g = open + '<line x1="' + r(x1) + '" y1="' + r(y1) + '" x2="' + geo.base[0] + '" y2="' + geo.base[1] + '" stroke="' + a.color + '" stroke-width="' + r(sw) + '" stroke-linecap="round"/>' +
+                '<polygon points="' + geo.points.map((p) => p[0] + ',' + p[1]).join(' ') + '" fill="' + a.color + '" stroke="' + a.color + '" stroke-width="' + r(sw * 0.5) + '" stroke-linejoin="round"/>';
+            if (opts.hitAreas)
+                g += '<line class="annot-hit" x1="' + r(x1) + '" y1="' + r(y1) + '" x2="' + r(x2) + '" y2="' + r(y2) + '" stroke="transparent" stroke-width="' + r(Math.max(sw * 3, hitW)) + '" pointer-events="stroke"/>';
+            parts.push(g + '</g>');
+        }
+        else if (a.type === 'text') {
+            const fs = a.size * W;
+            const halo = annotationHaloColor(a.color);
+            // Baseline ~0.8em below the stored top edge, so (x,y) is where the label's top-left sits.
+            parts.push(open + '<text x="' + r(a.x * W) + '" y="' + r(a.y * H + fs * 0.8) + '" font-size="' + r(fs) + '" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif" font-weight="700" fill="' + a.color + '" stroke="' + halo + '" stroke-width="' + r(fs * 0.2) + '" stroke-linejoin="round" paint-order="stroke"' + (opts.hitAreas ? ' pointer-events="all"' : '') + ' xml:space="preserve">' + escXml(a.text) + '</text></g>');
+        }
+    }
+    return parts.join('');
+}
 /** Longest side, in pixels, a newly added image is downscaled to. */
 const NODE_IMAGE_MAX_LONG_SIDE = 1600;
 /** Lossy encode quality used for WebP (and the JPEG fallback). */
@@ -7568,8 +8249,8 @@ function normalizeCaption(caption) {
 }
 /** Normalizes whatever was stored in `node.images` into a clean array. Entries without a
  * non-empty string src are dropped (nothing to show); everything else is kept. A missing or
- * duplicate id is replaced via `makeId`; `annotations` is passed through as-is (shallow-copied
- * array) so future markup data round-trips untouched. */
+ * duplicate id is replaced via `makeId`; `annotations` goes through normalizeImageAnnotations
+ * (malformed marks dropped, coordinates clamped, capped at MAX_IMAGE_ANNOTATIONS). */
 function normalizeNodeImages(raw, now, makeId) {
     if (!Array.isArray(raw))
         return [];
@@ -7589,7 +8270,7 @@ function normalizeNodeImages(raw, now, makeId) {
             id,
             src: e.src,
             caption: normalizeCaption(e.caption),
-            annotations: Array.isArray(e.annotations) ? e.annotations.slice() : [],
+            annotations: normalizeImageAnnotations(e.annotations, makeId),
             createdAt: typeof e.createdAt === 'number' && Number.isFinite(e.createdAt) && e.createdAt > 0 ? e.createdAt : now
         };
         const w = normalizeImageWidth(e.width);
@@ -25722,7 +26403,14 @@ function renderPreviewBody(){
           const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-node-image-figure'; fig.dataset.imageId=im.id||'';
           if(im.width)fig.style.width=im.width+'%'; else fig.classList.add('pv-node-image-auto');
           const img=document.createElement('img'); img.className='pv-diagram-img pv-node-image'; img.src=im.src; img.alt=im.caption||'';
-          fig.appendChild(img);
+          if(Array.isArray(im.annotations)&&im.annotations.length){
+            // Marked-up picture: overlay its marks (relative coordinates) exactly over the image.
+            const box=document.createElement('div'); box.className='pv-node-image-box';
+            const marks=document.createElementNS('http://www.w3.org/2000/svg','svg');
+            marks.setAttribute('class','pv-node-image-marks'); marks.setAttribute('preserveAspectRatio','none'); marks.setAttribute('aria-hidden','true');
+            box.appendChild(img); box.appendChild(marks); fig.appendChild(box);
+            paintImageMarks(marks,img,im.annotations);
+          } else fig.appendChild(img);
           if(im.caption){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=im.caption; fig.appendChild(cap); }
           irow.appendChild(fig);
         });
@@ -30075,6 +30763,7 @@ let dockActiveTab=null;
           <li><span class="cs-desc">Notes: B I U S, lists, link, table, image paste, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI rewrite</span></li>
           <li><span class="cs-desc">Right-click a node → Add question… / Add remark… / Add diagram… — each lives inline under that node; click the node's dot to show or hide them</span></li>
           <li><span class="cs-desc">Paste or drop a screenshot on a node (or right-click → Add image…) — thumbnails under the node; click one to enlarge, caption, or resize for the PDF</span></li>
+          <li><span class="help-kbd">M</span> <span class="cs-desc">in the image viewer: Mark up — rectangle <span class="help-kbd">R</span>, arrow <span class="help-kbd">A</span>, highlighter <span class="help-kbd">H</span>, text <span class="help-kbd">T</span>, select/move <span class="help-kbd">V</span></span></li>
           <li><span class="cs-desc"><strong>Diagrams</strong> — a real draw.io editor per diagram, linked to a node; embeds as a picture in PDF exports. Right-click → Generate diagram drafts one from a branch</span></li>
         </ul>
       </div>

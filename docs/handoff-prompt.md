@@ -454,14 +454,46 @@ and merged after independent review:
    the `sakura-dl` clip payload as `imgs`, fresh ids on paste), Backspace/Delete-merge (absorbed
    row's images move to the survivor). PDF renders each image as a captioned figure at its width;
    OPML skips images silently.
-   **11A — Done in PR #473 (not merged).** Data model, migration, compression, thumbnails, viewer
+   **11A — Merged (#473).** Data model, migration, compression, thumbnails, viewer
    (with an empty `.niv-tools` toolbar slot and an `.niv-annot-layer` SVG overlay +
    `renderNodeImageAnnotations()` as the seam for PR B), dot, paste/drop/file-pick, PDF, docs.
    Covered by `tests/e2e/node-images.spec.ts` + `tests/unit/nodeImages.test.ts`.
-   **11B — Markup editor. Not started.** In the enlarged viewer: rectangle, arrow, translucent
-   highlighter, text label; colours; undo; "clear markings". All are non-destructive shapes stored
-   in `annotations` with coordinates relative to the image size (so they survive any display
-   size), rendered in the viewer and the PDF.
+   **11B — Markup editor. Done in PR #474 (not merged).** Owner decisions: rectangle (outline),
+   arrow, translucent highlighter (filled box, 35% opacity), text label, select/move/delete; **no
+   blur**; small fixed palette; editor undo/redo + "Clear markings" (confirm); one app-level undo
+   step per marking session; non-destructive; read-only in view-only shared docs.
+   **Data:** `image.annotations` = `[{id,type:'rect',x,y,w,h,color,strokeWidth} |
+   {id,type:'highlight',x,y,w,h,color} | {id,type:'arrow',x1,y1,x2,y2,color,strokeWidth} |
+   {id,type:'text',x,y,text,size,color}]`; positions are 0–1 fractions of the image's natural
+   width/height, `strokeWidth`/`size` are fractions of its width; colour is a validated hex.
+   `normalizeImageAnnotations` (in `nodeImages.ts`, run by `normalizeNodeImages`, i.e. on every
+   load/undo/paste) drops malformed entries, clamps to the image, rounds to 4 decimals, de-dupes
+   ids, caps at 200 per image — so PR A's "annotations round-trip verbatim" contract is replaced by
+   "valid marks round-trip; junk is dropped". Rendering is one pure builder, `annotationsToSvg`
+   (pixel-space markup for an `<svg viewBox="0 0 naturalW naturalH">` laid over the `<img>`; the
+   arrowhead is a computed polygon, not an SVG marker, so many overlays on one page never clash on
+   ids; text gets a contrasting `paint-order:stroke` halo), used by the viewer, the thumbnails
+   (`preserveAspectRatio="xMinYMin slice"` mirrors the thumbnail's `object-fit:cover` top-left crop,
+   with a 1.5px minimum stroke) and the PDF (`.pv-node-image-box` wrapper only when the image has
+   marks — unmarked PDF output is unchanged). Overlays paint once the `<img>` knows its natural
+   size (PDF export already waits for image loads before printing).
+   **UX:** a "Mark up" toggle (count badge) in `.niv-tools` (`M`) opens a second toolbar row —
+   tools (`V`/`R`/`A`/`H`/`T`), six swatches (red, yellow, green, blue, black, white), editor
+   undo/redo/delete, Clear markings (inline confirm, because the app's modal sits below the
+   viewer's z-index and its keys would be eaten by the viewer's capture handler), Done. Pointer
+   events (mouse/pen/touch; `touch-action:none`). Text: click → inline input, Enter commits, Esc
+   cancels, double-press a label to edit (detected in pointerdown, not `dblclick`, because the
+   first press re-renders the overlay). Arrow keys nudge the selection and never step images while
+   marking; Esc unwinds drag → clear-confirm → selection → marking mode → viewer. Backdrop clicks
+   don't close the viewer while marking. Ctrl/Cmd+Z inside marking mode is the editor's history;
+   the app-level `pushUndo()` happens once, before a session's first change (session = one image
+   from entering Mark up or stepping onto it until Done/close/step away).
+   Covered by `tests/e2e/image-markup.spec.ts` + new cases in `tests/unit/nodeImages.test.ts`.
+12. **Follow-up for the owner to decide (pre-existing, not changed):** Backspace/Delete-merging two
+   rows keeps the absorbed row's text and (since #473) its images, but silently drops the absorbed
+   row's **note and tables** (`nodes[prevIdx]={...nodes[prevIdx],text,images}` in the merge
+   handlers). Options: append them to the survivor, refuse the merge when the absorbed row has
+   them, or leave as is.
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive

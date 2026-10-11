@@ -121,7 +121,7 @@ test.describe('Images as node objects', () => {
             note: `<p>Intro text.</p><p><img src="${png}" alt="Login screen"></p><p>Look <img src="${gif}" alt="icon.gif"> here.</p><p><img src="blob:https://x/gone"></p>` },
           { id: 2, depth: 0, text: 'Image-only note', parentId: null, isCheckbox: false, checked: false, tags: [], styles: {}, note: `<img src="${png}">` },
           { id: 3, depth: 0, text: 'Already migrated', parentId: null, isCheckbox: false, checked: false, tags: [], styles: {}, note: '<p>plain</p>',
-            images: [{ id: 'keep1', src: png, caption: 'Kept', width: 60, annotations: [{ type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4 }], createdAt: 5 }] }
+            images: [{ id: 'keep1', src: png, caption: 'Kept', width: 60, annotations: [{ id: 'm1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }], createdAt: 5 }] }
         ],
         nextId: 4, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Migration test', author: ''
       }));
@@ -155,7 +155,7 @@ test.describe('Images as node objects', () => {
     expect(result.n1Note).toContain('blob:https://x/gone'); // no usable src: left alone
     expect(result.n2Images).toBe(1);
     expect(result.n2Note).toBe('');
-    expect(result.n3Images).toEqual([{ id: 'keep1', src: PNG_1x1, caption: 'Kept', width: 60, annotations: [{ type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4 }], createdAt: 5 }]);
+    expect(result.n3Images).toEqual([{ id: 'keep1', src: PNG_1x1, caption: 'Kept', width: 60, annotations: [{ id: 'm1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }], createdAt: 5 }]);
     expect(result.again).toBe(false);
 
     await expect(page.locator('.node-row[data-id="1"] .node-image-dot')).toHaveCount(1);
@@ -171,7 +171,7 @@ test.describe('Images as node objects', () => {
     });
     expect(stored.nodes[0].images).toHaveLength(2);
     expect(stored.nodes[0].note).not.toContain('data:image');
-    expect(stored.nodes[2].images[0].annotations).toEqual([{ type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4 }]);
+    expect(stored.nodes[2].images[0].annotations).toEqual([{ id: 'm1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }]);
     // The deliberately unusable blob: picture left in the note fails to load -- expected.
     expect(errors.filter((e) => !/blob:https:\/\/x\/gone/.test(e))).toEqual([]);
   });
@@ -301,7 +301,7 @@ test.describe('Images as node objects', () => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedDoc(page, [{ id: 4, depth: 0, text: 'Three shots', parentId: null, note: '', tags: [], styles: {}, images: [
-      { id: 'i1', src: PNG_1x1, caption: 'First', annotations: [{ keep: 1 }] },
+      { id: 'i1', src: PNG_1x1, caption: 'First', annotations: [{ id: 'm1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }] },
       { id: 'i2', src: GIF_1x1, caption: '' },
       { id: 'i3', src: PNG_1x1, caption: 'Third' },
     ] }]);
@@ -358,7 +358,7 @@ test.describe('Images as node objects', () => {
       return nodes.find((n: any) => n.id === 4).images.map((i: any) => ({ caption: i.caption, ann: i.annotations }));
     });
     expect(imgs[1].caption).toBe('');
-    expect(imgs[0].ann).toEqual([{ keep: 1 }]);
+    expect(imgs[0].ann).toEqual([{ id: 'm1', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }]);
     // click outside closes; thumbnail right-click menu deletes
     await page.locator('.node-image-strip[data-node-id="4"] .node-image-thumb').nth(1).click();
     await expect(viewer).toHaveClass(/open/);
@@ -398,7 +398,7 @@ test.describe('Images as node objects', () => {
     await seedDoc(page);
     await page.evaluate((png) => {
       // @ts-expect-error
-      nodes[1].images = [{ id: 'c1', src: png, caption: 'Copied', width: 35, annotations: [{ a: 1 }], createdAt: 1 }]; render();
+      nodes[1].images = [{ id: 'c1', src: png, caption: 'Copied', width: 35, annotations: [{ id: 'm2', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }], createdAt: 1 }]; render();
     }, PNG_1x1);
     // Real copy path, capturing what it writes to the clipboard.
     const clip = await page.evaluate(async () => {
@@ -426,7 +426,7 @@ test.describe('Images as node objects', () => {
       return n ? n.images.map((i: any) => ({ id: i.id, caption: i.caption, width: i.width, ann: i.annotations })) : null;
     });
     expect(pasted).toHaveLength(1);
-    expect(pasted![0]).toMatchObject({ caption: 'Copied', width: 35, ann: [{ a: 1 }] });
+    expect(pasted![0]).toMatchObject({ caption: 'Copied', width: 35, ann: [{ id: 'm2', type: 'rect', x: 0.1, y: 0.2, w: 0.3, h: 0.4, color: '#e8384f', strokeWidth: 0.004 }] });
     expect(pasted![0].id).not.toBe('c1');
 
     // duplicate
