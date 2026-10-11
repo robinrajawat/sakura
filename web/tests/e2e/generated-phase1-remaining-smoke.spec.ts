@@ -9,15 +9,16 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
 // Covers the 5 remaining Phase 1 blocks wired in together: escapeHtml, generateId,
-// formatRelativeTime, stripSemanticMarkers, serializeMarkdown. Lower risk than the nodeQueries
+// formatRelativeTime, stripSemanticMarkers, serializeMarkdown (now computeOutlineNumbers only —
+// serializeMarkdown itself was later removed with its last caller). Lower risk than the nodeQueries
 // cutover — no interleaving with off-limits stateful code, and most call sites needed zero
 // changes thanks to thin hand-written wrappers (esc/genDocId, plus mnUid until Meeting Notes was removed) preserving
 // the original names. Only computeOutlineNumbers/serializeMarkdown needed real call-site
 // updates (6 sites, an appended arg, no reordering). This test exercises the wrappers'
-// delegation and the real Markdown serialization path against actual app state, not just "did it
+// delegation and outline numbering against actual app state, not just "did it
 // throw".
-test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTime/stripSemanticMarkers/serializeMarkdown)', () => {
-  test('wrapper functions delegate correctly and Markdown serialization produces real output', async ({ page }) => {
+test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTime/stripSemanticMarkers/computeOutlineNumbers)', () => {
+  test('wrapper functions delegate correctly and outline numbering produces real output', async ({ page }) => {
     const unexpectedErrors: string[] = [];
     page.on('pageerror', (err) => {
       if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
@@ -86,10 +87,10 @@ test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTi
     });
     expect(stripped).toBe('Section code aside link');
 
-    // 5. serializeMarkdown + computeOutlineNumbers, exercised together with outlineNumbering
-    // both on and off — the exact parameter that had to become explicit at every real call
-    // site in this cutover. Real multi-depth tree, real Markdown bullet-list output.
-    const mdResults = await page.evaluate(() => {
+    // 5. computeOutlineNumbers, with outlineNumbering both on and off — the exact parameter
+    // that had to become explicit at every real call site in this cutover. (serializeMarkdown,
+    // which used to be tested here alongside it, was removed with its last caller.)
+    const numResults = await page.evaluate(() => {
       const testNodes = [
         { id: 1, depth: 0, text: 'A' },
         { id: 2, depth: 1, text: 'A1' },
@@ -97,13 +98,16 @@ test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTi
       ];
       return {
         // @ts-expect-error
-        withoutNumbers: serializeMarkdown(testNodes, false, false),
+        withoutNumbers: computeOutlineNumbers(testNodes, false),
         // @ts-expect-error
-        withNumbers: serializeMarkdown(testNodes, false, true)
+        withNumbers: computeOutlineNumbers(testNodes, true),
+        // @ts-expect-error
+        serializeMarkdownGone: typeof serializeMarkdown === 'undefined'
       };
     });
-    expect(mdResults.withoutNumbers).toBe('- A\n  - A1\n- B');
-    expect(mdResults.withNumbers).toBe('- 1 A\n  - 1.1 A1\n- 2 B');
+    expect(numResults.withoutNumbers).toEqual(['', '', '']);
+    expect(numResults.withNumbers).toEqual(['1', '1.1', '2']);
+    expect(numResults.serializeMarkdownGone).toBe(true);
 
     expect(unexpectedErrors).toEqual([]);
   });

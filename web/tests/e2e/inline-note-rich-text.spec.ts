@@ -259,105 +259,41 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
   // the "Table/chart/Cards objects (node.tables)" describe block further down, which exercises the
   // exact same behaviors (add/delete row & column, feature as chart, chart type picks, Copy/Delete,
   // the resize-handle-leak and delete-row-wipes-the-whole-table regressions) through the new entry
-  // point. pickCardIconId/renderCardsHtml's own icon-assignment behavior doesn't depend on where
-  // the table lives either way, so those tests stay as they were.
-  test.describe('Cards data/icon helpers (not tied to where the table lives)', () => {
+  // point. renderCardsHtml's own output doesn't depend on where the table lives either way.
+  test.describe('Cards rendering helpers (not tied to where the table lives)', () => {
 
-    // Cards' offline keyword fallback (pickCardIconId/CARD_ICON_RULES) originally only knew
-    // generic KPI categories (security, speed, time, scope, cost, people, growth, quality) --
-    // useless for a project-estimate table whose rows are actual system names (ERP, EWM,
-    // nShift, webshop, cart, integrations), which all fell back to the same few recycled icons
-    // regardless of which system a row was about. Each system name now has its own catalog
-    // entry and keyword rule, matched case-insensitively against the row's label.
-    test('Cards recognizes common system names (ERP, EWM, nShift, webshop, cart, integrations) and picks a matching icon', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-
-      const ids = await page.evaluate(() => {
-        // @ts-expect-error -- bare global from index.html
-        return [
-          pickCardIconId('ERP - O2C - Functional', '10 days', 0),
-          pickCardIconId('ERP - ABAP', '6 days', 1),
-          pickCardIconId('EWM - ABAP', '5 days', 2),
-          pickCardIconId('EWM - Functional', '5 days', 3),
-          pickCardIconId('nShift', '5 days', 4),
-          pickCardIconId('Webshop checkout', '3 days', 5),
-          pickCardIconId('Cart abandonment flow', '2 days', 6),
-          pickCardIconId('Integrations layer', '4 days', 7),
-        ];
-      });
-      // Webshop and cart share one icon/category -- a storefront and its checkout read as the
-      // same system on a project-estimate card, not two things worth telling apart visually.
-      expect(ids).toEqual(['erp', 'erp', 'ewm', 'ewm', 'nshift', 'cart', 'cart', 'integrations']);
-    });
-
-    // CARD_ICON_RULES is generated from src/data/cardIconKeywords.json (see
-    // scripts/generate-index-blocks.mjs's cardIconRules data block) specifically so more
-    // synonyms for an existing system can be added by editing that JSON file directly, without
-    // touching index.html's JS by hand. This locks in the keywords that JSON file actually adds
-    // today (CXP, Basket, Frontend, all aliasing the "cart" category) as a real behavioral
-    // contract, not just documentation.
-    test('CXP, Basket, and Frontend (added via src/data/cardIconKeywords.json) all map to the cart icon', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-
-      const ids = await page.evaluate(() => {
-        // @ts-expect-error -- bare global from index.html
-        return [
-          pickCardIconId('CXP release', '4 days', 0),
-          pickCardIconId('Basket & payments', '3 days', 1),
-          pickCardIconId('Frontend build', '2 days', 2),
-        ];
-      });
-      expect(ids).toEqual(['cart', 'cart', 'cart']);
-    });
-
-    test('a card labeled "Solution Architecture" or "Blueprint" picks the architecture icon', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-
-      const ids = await page.evaluate(() => {
-        // @ts-expect-error -- bare global from index.html
-        return [
-          pickCardIconId('Solution Architecture', '8 days', 0),
-          pickCardIconId('Target Landscape Blueprint', '5 days', 1),
-        ];
-      });
-      expect(ids).toEqual(['architecture', 'architecture']);
-    });
-
-    test('a Cards table with system-name rows renders each one\'s matching icon, not a generic/recycled one', async ({ page }) => {
+    // Cards used to carry a keyword/AI-chosen icon badge per card (pickCardIconId,
+    // CARD_ICON_CATALOG, "Suggest icons with AI"); that whole icon setup was removed. Each card
+    // now renders just its value and label, with its series color as a left accent stripe.
+    test('a Cards table renders one value/label card per row, with no icon badge', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
 
       const result = await page.evaluate(() => {
         const container = document.createElement('div');
-        container.innerHTML = '<table><tr><th>System</th><th>Estimate</th></tr><tr><td>ERP - ABAP</td><td>6 days</td></tr><tr><td>EWM - Functional</td><td>5 days</td></tr><tr><td>nShift</td><td>5 days</td></tr></table>';
+        container.innerHTML = '<table data-card-icons=\'["erp","ewm"]\'><tr><th>System</th><th>Estimate</th></tr><tr><td>ERP - ABAP</td><td>6 days</td></tr><tr><td>EWM - Functional</td><td>5 days</td></tr></table>';
         const table = container.querySelector('table')!;
         // @ts-expect-error -- bare globals from index.html
         const html = renderCardsHtml(table);
         const div = document.createElement('div'); div.innerHTML = html;
-        const cards = [...div.querySelectorAll('.pv-table-card')];
-        // @ts-expect-error
-        const catalog = CARD_ICON_CATALOG;
-        // Comparing a card's live (parsed-then-reserialized) SVG innerHTML directly against the
-        // catalog's raw self-closing-tag source string would never match -- the DOM serializer
-        // always rewrites a childless SVG element as <ellipse ...></ellipse>, not <ellipse .../>.
-        // Round-tripping the catalog path through the same div.innerHTML parse/reserialize makes
-        // the comparison apples-to-apples.
-        const normalize = (path: string) => {
-          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svg.innerHTML = path;
-          return svg.innerHTML;
+        const cards = [...div.querySelectorAll('.pv-table-card')] as HTMLElement[];
+        return {
+          cards: cards.map(c => ({
+            label: c.querySelector('.pv-table-card-label')?.textContent,
+            value: c.querySelector('.pv-table-card-value')?.textContent,
+            hasSvg: !!c.querySelector('svg'),
+            hasStripe: /border-left/.test(c.getAttribute('style') || ''),
+          })),
+          iconBadges: div.querySelectorAll('.pv-table-card-icon').length,
+          helpersGone: ['pickCardIconId', 'getCardIconIds', 'suggestCardIconsWithAi', 'callAiCardIconBatch'].every(n => typeof (window as any)[n] === 'undefined'),
         };
-        return cards.map(c => ({
-          label: c.querySelector('.pv-table-card-label')?.textContent,
-          path: c.querySelector('.pv-table-card-icon svg')?.innerHTML,
-        })).map(c => ({ ...c, matchesErp: c.path === normalize(catalog.erp.path), matchesEwm: c.path === normalize(catalog.ewm.path), matchesNshift: c.path === normalize(catalog.nshift.path) }));
       });
-      expect(result[0]).toMatchObject({ label: 'ERP - ABAP', matchesErp: true });
-      expect(result[1]).toMatchObject({ label: 'EWM - Functional', matchesEwm: true });
-      expect(result[2]).toMatchObject({ label: 'nShift', matchesNshift: true });
+      expect(result.cards).toEqual([
+        { label: 'ERP - ABAP', value: '6 days', hasSvg: false, hasStripe: true },
+        { label: 'EWM - Functional', value: '5 days', hasSvg: false, hasStripe: true },
+      ]);
+      expect(result.iconBadges).toBe(0);
+      expect(result.helpersGone).toBe(true);
     });
 
     // node.note is only ever supposed to hold the real table, never the rendered Cards/chart
@@ -684,7 +620,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await expect(currentItem).toBeVisible();
     });
 
-    test('a single-data-column chart offers Pie/Doughnut/Cards, and picking Cards offers "Suggest icons with AI"', async ({ page }) => {
+    test('a single-data-column chart offers Pie/Doughnut/Cards, and picking Cards adds no AI icon item', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithTables(page, ['<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>']);
@@ -695,7 +631,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       await page.locator('.node-table-line td').first().click({ button: 'right' });
       const menu = page.locator('.sb-context-menu');
-      await expect(menu.getByText('Suggest icons with AI', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Cards (current)', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Suggest icons with AI', { exact: true })).toHaveCount(0);
       const pieItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Pie chart' });
       await expect(pieItem).toBeVisible();
     });

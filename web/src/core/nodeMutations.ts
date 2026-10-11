@@ -46,7 +46,7 @@
  * This is NOT a real import — see the serializeMarkdown cutover's own lesson on why a real
  * value import would silently kill the whole script if it survived compilation. `QueryableNode`
  * (the node-shape type) IS a real `import type` — genuinely erased, same as nodeQueries.ts's
- * own reference to serializeMarkdown.ts's types — reusing it here rather than redefining an
+ * own reference to computeOutlineNumbers.ts's types — reusing it here rather than redefining an
  * equivalent interface keeps one source of truth for what a "queryable node" shape is.
  */
 

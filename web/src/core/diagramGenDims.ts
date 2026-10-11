@@ -27,8 +27,8 @@
  * entirely since there's nothing to inject.
  *
  * `DIAGRAM_GEN_MIN_W`/`MAX_W`/`PAD`/`CHAR_PX`/`ONE_LINE_H`/`TWO_LINE_H` are index.html's own
- * top-level consts, also read by hand-written code this slice doesn't touch (the AI-shortening
- * `diagramGenTrimText`, `DIAGRAM_GEN_CHAR_BUDGET`'s own computation) — so they can't be
+ * top-level consts, also read by hand-written code this slice doesn't touch
+ * (`diagramGenTrimText`, `DIAGRAM_GEN_CHAR_BUDGET`'s own computation) — so they can't be
  * relocated out of index.html entirely. Duplicated here as private literals instead, same
  * precedent as `diagramDisplayList.ts` duplicating `DIAGRAM_STATUSES`: every generated block
  * shares one script scope with the rest of index.html, so reusing the real names here would be

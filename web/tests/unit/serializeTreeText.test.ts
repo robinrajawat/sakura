@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { serializeTreeTextCore } from '../../src/utils/serializeTreeText';
 import { buildPrefix } from '../../src/core/nodeQueries';
-import { computeOutlineNumbers } from '../../src/utils/serializeMarkdown';
+import { computeOutlineNumbers } from '../../src/utils/computeOutlineNumbers';
 import { getNodePlainText } from '../../src/utils/stripSemanticMarkers';
 import type { QueryableNode } from '../../src/core/nodeQueries';
 

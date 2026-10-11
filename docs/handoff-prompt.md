@@ -162,7 +162,7 @@ a pure backup snapshot of pre-cutdown `main` was pushed to branch
 `archive/full-featured-pre-cutdown` (from commit `cfc5c0a`) — if anything cut here is ever wanted
 back, start there rather than trying to reconstruct it from history.
 
-Planned as 9 small PRs, one per area, each independently delegated (see "Delegation pattern" below)
+Planned as 9 small PRs (item 9 later split into 9a/9b), one per area, each independently delegated (see "Delegation pattern" below)
 and merged after independent review:
 
 1. #459 — Remove Files/attachments feature. **Merged.**
@@ -255,7 +255,7 @@ and merged after independent review:
    tree back collapses it into one node whenever the clipboard has text/html —
    `parseTreeClipboardHtml` reads `innerText` from a detached element, which drops the
    `white-space:pre` line breaks. Plain-text paste works. Worth a small follow-up fix.
-8b. Simplify data backup. **Done in PR #469 (open, awaiting review — not merged).** Project-owner
+8b. Simplify data backup. **Merged** (#469). Project-owner
    decisions: signed in, data keeps auto-syncing to Firebase/Firestore (unchanged — nothing removed
    was on the sync path; `queueSync`/`flushSyncQueue`/pull-merge untouched); signed out, backup is
    fully manual. Settings → Data now holds only **Backup all data**, **Restore from backup**, **Undo
@@ -295,37 +295,84 @@ and merged after independent review:
    `tests/e2e/backup-simplified.spec.ts`. Known leftover, not changed: an old encrypted Gist token
    stays as ciphertext in `sakura_cloud_backup_v1` (and so rides along in full backups) if the
    vault is later turned off — harmless, never read.
-9. Remove presets/feature-mode shortcuts (Editor's Choice preset, Documentation mode preset, Zen
-   mode's 3 preset buttons — zen mode itself stays, Features Go-Minimal/Restore-Full toggle) +
-   trim accent/chrome preset lists to a smaller fixed set + a final sweep of Settings UI and the
-   in-app Help/README for anything left dead from PRs 1-8. **Not started.** Scope extended by
-   project-owner decisions:
-   - **Remove the whole node icon setup:** per-node icons, the icon picker (`icon-picker-popover` /
-     `IconPickerPopover`), keyword auto-icons (`src/data/cardIconKeywords.json` + its
-     `cardIconRules` generator entry in web/scripts/generate-index-blocks.mjs), and AI icon
-     suggestion ("Suggest icon (AI)", `CardIconsWithAi`/`CardIconBatch*`).
-   - **AI: final kept set** — Generate outline (incl. the empty-doc "Generate with AI" button),
-     Rewrite node, Rewrite selection, note-line right-click "AI Rewrite", To-Do subtask "Rewrite
-     with AI", Auto-rewrite (status-bar toggle + its settings), plus the infrastructure they need
-     (master AI toggle, providers/keys, Sakura Hosted AI + quota). **Remove everything else:**
-     Expand node into subtree, Summarise selected nodes into a parent, Suggest tags, Extract
-     action items, Status summary, To-Dos "Break into subtasks (AI)", "Restructure text (AI)"
-     (Ctrl/Cmd+Shift+R + Quick Assist `ai-restructure-text`; its Import-menu entry already went in
-     #8), inline Q&A "AI Answer ✦" (`qaAiAnswerEnabled` + its toggle), and Generate diagram's AI
-     label shortening (`diagramGenTrimText`'s AI path — Generate diagram itself stays and keeps
-     full labels). Nothing is left open for the AI scope. Removing Extract action items leaves
-     `serializeMarkdown` (src/utils/serializeMarkdown.ts) with no caller — check, then remove it
-     with its tests/generator entry (keep `computeOutlineNumbers` if anything else uses it).
-   - **Simplify Settings** generally; AI settings sections for removed features go with them.
-   - Remove the empty "Presentation" group heading in Settings → Features (left by #463).
-   - Leftovers found during #8, left for this sweep: `previewSlideDepth`,
-     `previewPdfMargin`/`setPreviewPdfMargin`, and `previewPdfFooterEnabled` have no Settings UI
-     any more (orphaned by #463) but still feed the PDF; `body.app-laser-active` CSS is dead;
-     index.html's og:/twitter:description still says "presents live, no PowerPoint needed";
-     the Branding row says "Off by default" while `previewBrandingEnabled` defaults to true;
-     README still describes Presenter Mode, Preview, Decision Log, Notepad, Mind Maps, and Files in
-     several sections; the To-Dos export dropdown overflows the viewport's right edge by ~12px
-     (pre-existing positioning).
+9a. Trim AI to Generate outline + Rewrite; remove node icons. **Done in PR #TBD (open, awaiting
+   review — not merged).** Project-owner decisions, all settled:
+   **AI kept:** Generate outline (toolbar + empty-doc "Generate with AI" + Ctrl/Cmd+Shift+O + Quick
+   Assist), Rewrite node / selection / document (toolbar, right-click, Quick Assist), note-line and
+   remark-line right-click "Rewrite with AI", To-Do task and subtask "Rewrite with AI", Auto-rewrite
+   (status-bar chip + Settings), and the infrastructure (AI Capabilities toggle, providers/keys,
+   Sakura Hosted AI + quota, fallback, Secure Storage). "Rewrite document" and the remark-line
+   rewrite weren't on either list and stayed as part of the Rewrite family.
+   **AI removed:** Expand node, Summarise selection into parent, Suggest tags, Suggest icon (+ "for
+   all nodes"), To-Dos Extract action items / Status summary (+ its modal and highlight CSS) /
+   Break into subtasks, the Settings → AI → "To-Dos AI" section (its four toggles drove only those
+   three buttons + summary highlighting — subtask rewrite was never gated by them) and the Hub
+   "Open in AI settings" jump row, Restructure text (Ctrl/Cmd+Shift+R, Quick Assist entry, its
+   textarea dialog — `sakuraTextareaPrompt` and `_openModal`'s whole textarea mode went with it, its
+   only user), inline Q&A "AI Answer" (`qaAiAnswerEnabled`; its Settings toggle was already gone
+   with the Pad), and Generate diagram's AI label shortening (`diagramGenTrimText` is now local
+   word-boundary truncation only; `generateDiagramFromOutline` is no longer async). Also their
+   prompts, `AI_CAPABILITY_PREFIXES` entries, shortcut, Quick Assist actions, toolbar/hover/
+   right-click entries, "AI buttons" grid entries (now Generate outline + Rewrite node only, both
+   shown by default), Help/cheatsheet/tour/README text, dead CSS. `serializeMarkdown` lost its last
+   caller: `src/utils/serializeMarkdown.ts` became `src/utils/computeOutlineNumbers.ts` (only
+   `computeOutlineNumbers` + the `OutlineNode` type, still used by tree-text/clipboard serializers
+   and nodeQueries), generator block renamed `computeOutlineNumbers`, tests trimmed to match.
+   **Node icons removed:** a node "icon" was never a separate field — it was a leading emoji in
+   `node.text`, so existing text is untouched (emoji just stay as text). Removed the icon picker
+   popover, keyword/historical/AI icon suggestion, and Cards' icon badges (`CARD_ICON_CATALOG`,
+   `cardIconRules` + `src/data/cardIconKeywords.json` + the generator's whole `kind: 'data'` block
+   support, which only existed for it, keyword/AI pick, "Suggest icons with AI" on a Cards table);
+   each card now shows value + label with its series color as a left accent stripe; an old
+   table's `data-card-icons` attribute is ignored. **Doc icons are a separate feature** (sidebar
+   document-level `DOC_ICON_SET` / `setDocIcon` / `showDocIconMenu`, e.g. "Meeting") — no shared
+   code with node icons, left untouched.
+   **To-Dos panel bar (owner request, same PR):** with the AI header buttons gone, the header row
+   and the "Add a task…" row are one bar — input (flexible, shrinks) + add button, then History /
+   Export / Maximize / Close; the (hidden) title/icon spans and the spacer went; dragging the
+   floating panel by the bar ignores presses on the input/buttons. hub.html has a different
+   (mobile sticky-bar) layout and was left alone.
+   **Back-compat:** old prefs (`aiHiddenButtons` with removed keys, `contextQuickActions`/
+   `hoverToolbarActions` with `ai-icon`/`ai-icon-all`, `qaAiAnswerEnabled`, a `restructureText`
+   shortcut override, the four To-Dos AI settings) load harmlessly and drop on the next save.
+   Covered by `tests/e2e/ai-icons-trim.spec.ts`.
+   **Leftovers found, not changed (for 9b):** `requestDiagramGenGuideline` (+
+   `AI_DIAGRAM_GEN_SYSTEM_PROMPT`/`diagramGenValidateGuideline`) has no caller — already true on
+   main before 9a — and is now the only caller of `callAiApiWithPrompt`; `NOTE_TB_BUTTONS`/
+   `noteHiddenButtons` (incl. an `'ai-summarise'` key) are a dead Note-panel pref, only loaded/
+   saved; the right-click "More" menu still offers "Laser pointer" and a "Slide divider" action
+   (Presenter leftovers from #463); README's Note/Code Block sections still describe the removed
+   floating Note panel.
+9b. Presets + Settings sweep + docs/leftovers. **Not started.** Scope, by project-owner decisions:
+   - Remove presets/feature-mode shortcuts: Editor's Choice preset, Documentation mode preset,
+     Zen mode's 3 preset buttons (zen mode itself stays), Features Go-Minimal/Restore-Full toggle;
+     trim accent/chrome preset lists to a smaller fixed set.
+   - **Simplify Settings** generally; final sweep of Settings UI and in-app Help/README for
+     anything left dead from PRs 1-9a (see 9a's leftovers above). Remove the empty "Presentation"
+     group heading in Settings → Features (left by #463).
+   - **Remove these Settings, fixed behaviour afterwards:** "Skip folded sections", "Include Q&A
+     in exports", "Include node Notes & Code in exports", "Include Remarks in exports", and
+     "Folded-content notice in Export menu" — exports (PDF, OPML) and Ctrl/Cmd+C copy then
+     ALWAYS include folded sections, Q&A, notes and remarks, and the Export menu's folded-content
+     notice goes away.
+   - **Remove "Hide status bar", "Hide app bar", and "Use browser fullscreen"** (apparently Zen-
+     mode options — confirm where each lives). Afterwards the status bar and app bar are ALWAYS
+     visible, including in Zen mode (no setting or mode hides them), and "Use browser fullscreen"
+     is effectively always on wherever it applied (e.g. entering Zen mode always requests browser
+     fullscreen).
+   - **No more "Preview":** every remaining Settings item under a "Preview" section/heading moves
+     into the Export & copy section, reworded to talk about the PDF export; settings that no longer
+     do anything after the move are removed instead. Decide in the same pass whether the
+     no-UI PDF prefs (`previewSlideDepth`, `previewPdfMargin`/`setPreviewPdfMargin`,
+     `previewPdfFooterEnabled`, orphaned by #463) get a home in Export & copy or become fixed
+     defaults, and report the choice.
+   - For every removed setting: old saved values load harmlessly and drop on the next save.
+   - Other leftovers found during #8: `body.app-laser-active` CSS is dead; index.html's og:/
+     twitter:description still says "presents live, no PowerPoint needed"; the Branding row says
+     "Off by default" while `previewBrandingEnabled` defaults to true; README still describes
+     Presenter Mode, Preview, Decision Log, Notepad, Mind Maps, and Files in several sections; the
+     To-Dos export dropdown overflows the viewport's right edge by ~12px (pre-existing
+     positioning).
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive
@@ -336,6 +383,13 @@ and merged after independent review:
   presets, Zen mode's minimal/writing/fullscreen preset buttons (Zen mode itself stays), the
   Features Go-Minimal/Restore-Full toggle, and the accent/chrome preset lists.
 - Delivery as several small PRs, one per area, each independently reviewed — not one mega-PR.
+- **Merging cutdown PRs:** the project owner has authorized the delegating session to merge
+  cutdown PRs itself once CI is green and its own independent verification of the diff passes
+  (see "Delegation pattern" below), without asking each time.
+- **Google sign-in CSP origins:** `accounts.google.com` and `oauth2.googleapis.com` stay in
+  index.html's CSP until a live Google sign-in has been verified to work without them. The owner
+  wants them removed if they're unneeded — whoever can test sign-in on the live site should try
+  removing them and confirm.
 - For PR #5 (not yet started): diagrams/Q&A/remarks can currently exist "unlinked" (not attached
   to any outline node), browsable only via the Pad's list tabs. Once that list UI is gone, new
   items must be created already-linked (the per-node "Add diagram…"/"Add question…"/"Add remark…"

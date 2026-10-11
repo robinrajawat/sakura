@@ -9,7 +9,7 @@ import {
   type ClipboardColors,
 } from '../../src/utils/serializeClipboardHtml';
 import { buildPrefix } from '../../src/core/nodeQueries';
-import { computeOutlineNumbers } from '../../src/utils/serializeMarkdown';
+import { computeOutlineNumbers } from '../../src/utils/computeOutlineNumbers';
 import { escapeHtml } from '../../src/utils/escapeHtml';
 
 // serializeClipboardHtml.ts references buildPrefix/computeOutlineNumbers/escapeHtml as ambient
