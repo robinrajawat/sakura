@@ -2,8 +2,8 @@ import type { QueryableNode } from '../core/nodeQueries';
 
 /**
  * Export domain — first slice. `serializeTreeText` renders the outline as the plain-text ASCII
- * tree used by the ".txt" export and the plaintext half of copy-to-clipboard (via
- * `exportToClipboard`'s `plain` value). Genuinely pure once traced: every function it calls is
+ * tree used as the plaintext half of the Ctrl/Cmd+C node copy (via `copyNodesToClipboard`'s
+ * `plain` value; the ".txt" file export was removed). Genuinely pure once traced: every function it calls is
  * already a generated ambient global —
  *
  * - `buildPrefix`/`hasLaterSiblingAtDepth` (from `src/core/nodeQueries.ts`, already generated;
