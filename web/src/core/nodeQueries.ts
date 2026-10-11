@@ -1,8 +1,8 @@
-import type { OutlineNode as BaseOutlineNode } from '../utils/serializeMarkdown';
+import type { OutlineNode as BaseOutlineNode } from '../utils/computeOutlineNumbers';
 
 /**
  * The minimal node shape these tree-query functions need: `id` (for identity/lookup) plus
- * everything `OutlineNode` (from serializeMarkdown.ts) already requires (`depth`, and `text`
+ * everything `OutlineNode` (from computeOutlineNumbers.ts) already requires (`depth`, and `text`
  * via `PlainTextNode`). Deliberately not index.html's full ~12-field node shape — same reasoning
  * as OutlineNode's own comment: narrower is more honest about what these functions actually
  * touch, and easier to construct in tests.

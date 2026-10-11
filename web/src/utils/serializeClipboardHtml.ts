@@ -16,7 +16,7 @@ import type { QueryableNode } from '../core/nodeQueries';
  * have since been removed).
  *
  * `buildPrefix`/`hasLaterSiblingAtDepth` (from `src/core/nodeQueries.ts`), `computeOutlineNumbers`
- * (from `src/utils/serializeMarkdown.ts`), and `escapeHtml` (from `src/utils/escapeHtml.ts`) are
+ * (from `src/utils/computeOutlineNumbers.ts`), and `escapeHtml` (from `src/utils/escapeHtml.ts`) are
  * already generated elsewhere and referenced as ambient globals via `declare function` — the
  * `esc()` hand-written one-liner wrapping `escapeHtml` is bypassed the same way `escAttr` was in
  * the since-removed `serializeOpml.ts` slice, calling `escapeHtml` directly instead.

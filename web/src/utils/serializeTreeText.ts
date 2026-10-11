@@ -8,7 +8,7 @@ import type { QueryableNode } from '../core/nodeQueries';
  *
  * - `buildPrefix`/`hasLaterSiblingAtDepth` (from `src/core/nodeQueries.ts`, already generated;
  *   `buildPrefix` computes the `├──`/`└──`/`│` tree-connector prefix for one row)
- * - `computeOutlineNumbers` (from `src/utils/serializeMarkdown.ts`, already generated)
+ * - `computeOutlineNumbers` (from `src/utils/computeOutlineNumbers.ts`, already generated)
  * - `getNodePlainText` (from `src/utils/stripSemanticMarkers.ts`, already generated)
  *
  * all referenced as ambient globals via `declare function` — the pattern reserved for functions
@@ -17,7 +17,7 @@ import type { QueryableNode } from '../core/nodeQueries';
  *
  * The original read `treeIndentWidth`/`hideTreeLines` (user-preference globals) and
  * `outlineNumbering` directly; `outlineNumbering` was already passed explicitly by the time this
- * slice started (see `serializeMarkdown.ts`'s own header — it was updated in that commit).
+ * slice started (see `computeOutlineNumbers.ts`'s own header).
  * `treeIndentWidth`/`hideTreeLines` are promoted to explicit required parameters here, same
  * "no silent default for a live user-preference toggle" reasoning `computeOutlineNumbers`'s own
  * header already established for `outlineNumbering`.

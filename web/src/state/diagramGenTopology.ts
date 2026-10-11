@@ -37,7 +37,7 @@
  *
  * `DIAGRAM_GEN_CHAR_BUDGET` is index.html's own top-level const (`2 * Math.floor((MAX_W - PAD) /
  * CHAR_PX)`, currently 66), also read by hand-written code this slice doesn't touch
- * (`diagramGenTrimText`'s AI-shortening path). Duplicated here as a private literal, computed
+ * (`diagramGenTrimText`'s truncation). Duplicated here as a private literal, computed
  * the same way from the same duplicated inputs `diagramGenDims.ts` already uses — same reasoning
  * as that module's own header: every generated block shares one script scope with the rest of
  * index.html, so reusing the real name would be a duplicate top-level `const`. This comment is
