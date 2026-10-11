@@ -220,7 +220,7 @@ and merged after independent review:
    `renderPreviewBody()`/`exportPreviewAsPdf()` working as a fully headless PDF pipeline — PDF
    export via the Export menu never opens any overlay. **Merged**, but **done before #5** (see
    "Resequencing" below) — so the numbering here is execution order, not the original plan order.
-8. Trim exports and imports. **Done in PR #<n> (open, awaiting review — not merged).** Final scope,
+8. Trim exports and imports. **Done in PR #468 (open, awaiting review — not merged).** Final scope,
    all settled project-owner decisions (the item started as "PDF-only" and was revised mid-PR):
    **Export ▾ = PDF + OPML; Import ▾ = OPML only.** Removed: Word (.docx), PowerPoint (.pptx),
    Markdown, Tree .txt, Copy as Text, **Copy as Image**, and **Sakura Document (.sakura.json) share
