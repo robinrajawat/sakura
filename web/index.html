@@ -16624,7 +16624,39 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null; render();
   const extrasLabel=dgAdded?` (incl. ${dgAdded} diagram${dgAdded===1?'':'s'})`:'';
   showToast(`${toastVerb} ${mapped.length} node${mapped.length===1?'':'s'}${extrasLabel}`)}
-function parseTreeClipboardHtml(html){if(!html||!html.trim())return []; const d=document.createElement('div'); d.innerHTML=html; const text=(d.innerText||d.textContent||'').trim(); return text?parseTextToTreeNodes(text):[]}
+// Turns clipboard HTML into the line-per-row text parseTextToTreeNodes expects. innerText can't be
+// used here: on an element that isn't in the rendered page it degrades to textContent, which runs
+// block-level rows together -- Sakura's own copy (one white-space:pre <div> per node) used to
+// paste back as a single collapsed node. This walks the markup instead: block elements and <br>
+// end a line, and whitespace is kept verbatim only inside <pre> or an inline white-space:pre*
+// style (collapsed elsewhere, like a browser would). DOMParser gives an inert document, so the
+// pasted markup never loads images or runs anything while being read.
+const CLIP_BLOCK_TAGS=new Set(['ADDRESS','ARTICLE','ASIDE','BLOCKQUOTE','BODY','DD','DIV','DL','DT','FIGCAPTION','FIGURE','FOOTER','H1','H2','H3','H4','H5','H6','HEADER','HR','LI','MAIN','NAV','OL','P','PRE','SECTION','TABLE','TR','UL']);
+function clipboardHtmlToText(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  let out='';
+  const breakLine=()=>{ if(out&&!out.endsWith('\n'))out+='\n'; };
+  const walk=(n,pre)=>{
+    if(n.nodeType===3){
+      if(pre){ out+=n.nodeValue; return }
+      let t=n.nodeValue.replace(/[ \t\r\n\f]+/g,' ');
+      if(!out||out.endsWith('\n'))t=t.replace(/^ /,''); // source indentation isn't tree depth
+      out+=t; return;
+    }
+    if(n.nodeType!==1)return;
+    const tag=n.tagName;
+    if(tag==='BR'){ out+='\n'; return }
+    if(tag==='SCRIPT'||tag==='STYLE'||tag==='TEMPLATE'||tag==='HEAD')return;
+    const keep=pre||tag==='PRE'||/white-space\s*:\s*pre/i.test(n.getAttribute('style')||'');
+    const block=CLIP_BLOCK_TAGS.has(tag);
+    if(block)breakLine();
+    for(const c of n.childNodes)walk(c,keep);
+    if(block)breakLine();
+  };
+  if(doc.body)walk(doc.body,false);
+  return out.replace(/\u00a0/g,' ').split('\n').map(l=>/^\s*$/.test(l)?'':l.replace(/\s+$/,'')).join('\n');
+}
+function parseTreeClipboardHtml(html){if(!html||!html.trim())return []; const text=clipboardHtmlToText(html).trim(); return text?parseTextToTreeNodes(text):[]}
 async function smartPasteFromClipboard(){
   // Returns true if it actually pasted something, false if the caller should
   // fall back to letting the native paste event handle it instead.

@@ -210,13 +210,12 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     expect(clip['text/html']).toContain('Charlie child');
 
     // Paste the copied tree back onto a selected node through the same document paste handler a
-    // real Ctrl/Cmd+V hits. Only the plain-text half is replayed: the text/html half currently
-    // collapses into a single node on paste (parseTreeClipboardHtml reads innerText from a
-    // detached element, which drops the white-space:pre line breaks) -- a pre-existing behavior
-    // on main, unrelated to the export trim, so it isn't pinned here.
+    // real Ctrl/Cmd+V hits, replaying both halves exactly as a real clipboard carries them. The
+    // paste handler prefers text/html, which used to collapse Sakura's own copy into one node.
     await page.evaluate((data) => {
       const dt = new DataTransfer();
       dt.setData('text/plain', data['text/plain']);
+      dt.setData('text/html', data['text/html']);
       // @ts-expect-error
       selectedId = 3; editingId = null;
       document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
@@ -229,6 +228,42 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     expect(texts.length).toBe(6);
     expect(texts.filter((t: string) => t === 'Alpha root').length).toBe(2);
     expect(texts.filter((t: string) => t === 'Bravo child').length).toBe(2);
+    // The pasted copy keeps its shape: a root with two children one level below it.
+    const pasted = await page.evaluate(() => {
+      // @ts-expect-error
+      const all = nodes as Array<{ text: string; depth: number }>;
+      const at = all.map((n) => n.text).lastIndexOf('Alpha root');
+      return all.slice(at, at + 3).map((n) => ({ text: n.text, rel: n.depth - all[at].depth }));
+    });
+    expect(pasted).toEqual([
+      { text: 'Alpha root', rel: 0 },
+      { text: 'Bravo child', rel: 1 },
+      { text: 'Charlie child', rel: 1 }
+    ]);
+    expect(errors).toEqual([]);
+  });
+
+  test('pasting multi-line HTML from outside Sakura gives one node per line, not one collapsed node', async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await page.evaluate(() => {
+      // @ts-expect-error -- bare globals from index.html
+      ensureDocumentForEditing();
+    });
+    await seedNodes(page);
+    const texts = await page.evaluate(() => {
+      const dt = new DataTransfer();
+      const html = '<html><body>\n  <p>First <b>idea</b></p>\n  <div>Second line</div>Third<br>Fourth\n</body></html>';
+      dt.setData('text/html', html);
+      dt.setData('text/plain', 'First idea Second line Third Fourth');
+      // @ts-expect-error
+      selectedId = 3; editingId = null;
+      document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+      // @ts-expect-error
+      return (nodes as Array<{ text: string }>).map((n) => n.text);
+    });
+    expect(texts.slice(3)).toEqual(['First idea', 'Second line', 'Third', 'Fourth']);
     expect(errors).toEqual([]);
   });
 
