@@ -10,6 +10,7 @@ import {
   buildPrefix,
   buildVertFlags,
   isSectionNodeText,
+  sectionHeadingParts,
   nodeIsSection,
   isIdSelected,
   getSelectionRangeIds,
@@ -210,6 +211,25 @@ describe('buildPrefix / buildVertFlags', () => {
   it('the root has no connector; a deeper node does', () => {
     expect(buildPrefix(nestedTree, 0, 3).conn).toBe('');
     expect(buildPrefix(nestedTree, 1, 3).conn).not.toBe('');
+  });
+});
+
+describe('sectionHeadingParts', () => {
+  it('lifts a leading [label] out of the text, keeping the rest intact', () => {
+    expect(sectionHeadingParts('[Release 2.4] Plan')).toEqual({ label: 'Release 2.4', rest: 'Plan', title: 'Release 2.4 · Plan' });
+    expect(sectionHeadingParts('  [Risks]   Open questions ')).toEqual({ label: 'Risks', rest: 'Open questions', title: 'Risks · Open questions' });
+    expect(sectionHeadingParts('[A] and [B]')).toEqual({ label: 'A', rest: 'and [B]', title: 'A · and [B]' });
+  });
+  it('a whole-text [Section] marker is just its label', () => {
+    expect(sectionHeadingParts('[Intro]')).toEqual({ label: 'Intro', rest: '', title: 'Intro' });
+  });
+  it('text without a leading label is returned whole (no stray bracket trimming)', () => {
+    expect(sectionHeadingParts('Plan [draft]')).toEqual({ label: '', rest: 'Plan [draft]', title: 'Plan [draft]' });
+    expect(sectionHeadingParts('Overview')).toEqual({ label: '', rest: 'Overview', title: 'Overview' });
+    expect(sectionHeadingParts('[[Linked node]] notes')).toEqual({ label: '', rest: '[[Linked node]] notes', title: '[[Linked node]] notes' });
+    expect(sectionHeadingParts('[unclosed text')).toEqual({ label: '', rest: '[unclosed text', title: '[unclosed text' });
+    expect(sectionHeadingParts('')).toEqual({ label: '', rest: '', title: '' });
+    expect(sectionHeadingParts(null)).toEqual({ label: '', rest: '', title: '' });
   });
 });
 

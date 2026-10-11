@@ -489,7 +489,7 @@ and merged after independent review:
    the app-level `pushUndo()` happens once, before a session's first change (session = one image
    from entering Mark up or stepping onto it until Done/close/step away).
    Covered by `tests/e2e/image-markup.spec.ts` + new cases in `tests/unit/nodeImages.test.ts`.
-12. Row merges keep the absorbed row's content. **Done in its own PR (not merged).** Owner chose
+12. Row merges keep the absorbed row's content. **Merged (#475).** Owner chose
    "append them to the survivor". Backspace/Delete-merging two rows used to keep only the absorbed
    row's text (and, since #473, images), dropping its note and tables and orphaning anything linked
    to it. Now `mergedNodeContent` moves note (joined with `<br>` unless either side is block-level),
@@ -499,6 +499,30 @@ and merged after independent review:
    `window.sakuraTodosRepointNode` bridge) to it. Q&A and remarks are in the undo snapshot, so one
    Undo restores them to the original row; diagrams and to-dos live outside it and stay on the
    surviving row (still reachable). Covered by `tests/e2e/merge-rows-keeps-content.spec.ts`.
+13. **Tables, Cards and PDF improvements** (three PRs, owner-approved plan).
+   **PR 1 — four bug fixes. Done in PR #476 (not merged).** (a) PDF section headings/Contents
+   for a section whose text starts with a `[label]` (e.g. `[Release 2.4] Plan`) printed "Release
+   2.4] Plan" — now "Release 2.4 · Plan" (label in the accent colour, via the pure
+   `sectionHeadingParts` in `src/core/nodeQueries.ts`); (b) clicking into a table no longer
+   re-lays it out — `_attachTableResizeHandles` creates its `<colgroup>` lazily from the measured
+   widths only when a column drag starts (it used to split widths evenly on entry and that got
+   saved), and cells use `overflow-wrap:break-word` instead of `word-break:break-word` so words
+   never break mid-word; (c) **Edit data** on a chart's/Cards' right-click menu (and double-click)
+   opens the same in-place table editing session, re-rendering the chart/Cards on exit; every
+   table editing session is now one undo step (plain-table edits previously pushed none);
+   (d) PDF tables repeat their header row on each page (`thead` → `table-header-group`, a first
+   row of all `<th>` is moved into a `<thead>` in the PDF copy only), rows don't split, and the
+   table row avoids a break right after its node. Covered by `tests/e2e/tables-pdf-bugs.spec.ts`.
+   **PR 2 — table editing. Not started.** Menu: add row/column above/left too, move rows/columns,
+   sort by column, header-row toggle; Tab/Shift+Tab between cells, Tab in the last cell adds a
+   row, Enter moves down; grid-size picker on "Add table…"; paste a copied spreadsheet range into
+   selected cells; per-column alignment with numbers right-aligned automatically.
+   **PR 3 — charts, Cards and PDF layout. Not started.** Nice round axis ticks + thousands
+   separators, optional chart title, Small/Medium/Full chart size; Cards: optional third "change"
+   column shown as ▲/▼ coloured, balanced card rows (e.g. 4 or 2×2, not 3+1); PDF: skip/compact
+   the Contents page when there are few sections or put it on the cover, don't repeat the title
+   right after the cover, print a node's note directly under its text before its tables/images,
+   consistent widths for charts/tables, tighter Cards.
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive
