@@ -458,7 +458,7 @@ and merged after independent review:
    (with an empty `.niv-tools` toolbar slot and an `.niv-annot-layer` SVG overlay +
    `renderNodeImageAnnotations()` as the seam for PR B), dot, paste/drop/file-pick, PDF, docs.
    Covered by `tests/e2e/node-images.spec.ts` + `tests/unit/nodeImages.test.ts`.
-   **11B — Markup editor. Done in PR #474 (not merged).** Owner decisions: rectangle (outline),
+   **11B — Markup editor. Merged (#474).** Owner decisions: rectangle (outline),
    arrow, translucent highlighter (filled box, 35% opacity), text label, select/move/delete; **no
    blur**; small fixed palette; editor undo/redo + "Clear markings" (confirm); one app-level undo
    step per marking session; non-destructive; read-only in view-only shared docs.
@@ -489,11 +489,16 @@ and merged after independent review:
    the app-level `pushUndo()` happens once, before a session's first change (session = one image
    from entering Mark up or stepping onto it until Done/close/step away).
    Covered by `tests/e2e/image-markup.spec.ts` + new cases in `tests/unit/nodeImages.test.ts`.
-12. **Follow-up for the owner to decide (pre-existing, not changed):** Backspace/Delete-merging two
-   rows keeps the absorbed row's text and (since #473) its images, but silently drops the absorbed
-   row's **note and tables** (`nodes[prevIdx]={...nodes[prevIdx],text,images}` in the merge
-   handlers). Options: append them to the survivor, refuse the merge when the absorbed row has
-   them, or leave as is.
+12. Row merges keep the absorbed row's content. **Done in its own PR (not merged).** Owner chose
+   "append them to the survivor". Backspace/Delete-merging two rows used to keep only the absorbed
+   row's text (and, since #473, images), dropping its note and tables and orphaning anything linked
+   to it. Now `mergedNodeContent` moves note (joined with `<br>` unless either side is block-level),
+   tables, images and tags (unioned) onto the surviving row (note title only if the survivor has
+   none), and `repointNodeLinks` re-points Q&A (`sourceNodeId`), remarks and diagrams
+   (`anchorNodeId`), inline-expand state, and to-dos (`nodeRef`, via the new
+   `window.sakuraTodosRepointNode` bridge) to it. Q&A and remarks are in the undo snapshot, so one
+   Undo restores them to the original row; diagrams and to-dos live outside it and stay on the
+   surviving row (still reachable). Covered by `tests/e2e/merge-rows-keeps-content.spec.ts`.
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive

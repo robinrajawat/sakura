@@ -6998,6 +6998,41 @@ function mergedNodeImages(keep,absorbed){
   const b=Array.isArray(absorbed?.images)?absorbed.images:[];
   return b.length?a.concat(b):a;
 }
+// Backspace/Delete row merges: everything the absorbed row carried moves onto the row that stays
+// (its own content first), instead of vanishing with it. Notes are joined with a line break unless
+// one side already ends/starts with a block element; tags are unioned; the note title is only
+// taken over when the surviving row has none.
+function isNoteHtmlEmpty(html){return !html||(!stripHtmlToText(html).trim()&&!/<(img|table|hr)\b/i.test(html))}
+function mergedNodeNote(keep,absorbed){
+  const a=keep?.note||'', b=absorbed?.note||'';
+  if(isNoteHtmlEmpty(b))return a;
+  if(isNoteHtmlEmpty(a))return b;
+  const blockEnd=/<\/(div|p|ul|ol|li|blockquote|pre|h[1-6])>\s*$/i.test(a), blockStart=/^\s*<(div|p|ul|ol|blockquote|pre|h[1-6])\b/i.test(b);
+  return a+(blockEnd||blockStart?'':'<br>')+b;
+}
+function mergedNodeContent(keep,absorbed){
+  const tagsA=Array.isArray(keep?.tags)?keep.tags:[], tagsB=Array.isArray(absorbed?.tags)?absorbed.tags:[];
+  return {
+    note:mergedNodeNote(keep,absorbed),
+    noteTitle:(keep?.noteTitle||'').trim()?keep.noteTitle:(absorbed?.noteTitle||''),
+    tables:(Array.isArray(keep?.tables)?keep.tables:[]).concat(Array.isArray(absorbed?.tables)?absorbed.tables:[]),
+    images:mergedNodeImages(keep,absorbed),
+    tags:tagsA.concat(tagsB.filter(t=>!tagsA.includes(t))),
+    modifiedAt:Date.now()
+  };
+}
+// Q&A, remarks and diagrams are linked to a row by its id, and to-dos by {docId,nodeId}; when a
+// merge removes a row they follow its content onto the surviving row rather than being left
+// orphaned. (Q&A and remarks are in the undo snapshot, so Undo puts them back; diagrams and
+// to-dos live outside it and stay on the surviving row, which keeps them reachable either way.)
+function repointNodeLinks(fromId,toId){
+  if(fromId==null||toId==null||fromId===toId)return;
+  if(Array.isArray(qaItems))qaItems.forEach(q=>{ if(q&&q.sourceNodeId===fromId)q.sourceNodeId=toId; });
+  if(Array.isArray(remarks))remarks.forEach(r=>{ if(r&&r.anchorNodeId===fromId)r.anchorNodeId=toId; });
+  if(Array.isArray(diagrams))diagrams.forEach(d=>{ if(d&&d.anchorNodeId===fromId)d.anchorNodeId=toId; });
+  [inlineExpandNoteNodeIds,inlineExpandRemarksNodeIds,inlineExpandQaNodeIds,inlineExpandDiagramNodeIds].forEach(s=>{ if(s&&s.has(fromId))s.add(toId); });
+  if(currentDocId&&typeof window.sakuraTodosRepointNode==='function')window.sakuraTodosRepointNode(currentDocId,fromId,toId);
+}
 function subtreeHasImage(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(Array.isArray(nodes[i].images)&&nodes[i].images.length)return true} return false}
 
 // --- Compression on insert ---
@@ -17878,7 +17913,8 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
   const deletedTexts=mergedText?[mergedText]:[]; const deletedIds=[nodes[idx].id];
   // The absorbed node's pictures move onto the surviving row (appended after its own) rather
   // than vanishing with it -- node.images is user content, never silently dropped.
-  nodes[prevIdx]={...nodes[prevIdx],text:prevNewText,images:mergedNodeImages(nodes[prevIdx],nodes[idx])};
+  nodes[prevIdx]={...nodes[prevIdx],text:prevNewText,...mergedNodeContent(nodes[prevIdx],nodes[idx])};
+  repointNodeLinks(nodes[idx].id,prevId);
   nodes.splice(idx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
@@ -17904,7 +17940,8 @@ function mergeNextNodeIntoAndFocus(id,liveText){
   const caretAt=curOldText.length; const curNewText=curOldText+nextText;
   pushUndo(); markDirty();
   const deletedTexts=nextText?[nextText]:[]; const deletedIds=[nodes[nextIdx].id];
-  nodes[idx]={...nodes[idx],text:curNewText,images:mergedNodeImages(nodes[idx],nodes[nextIdx])};
+  nodes[idx]={...nodes[idx],text:curNewText,...mergedNodeContent(nodes[idx],nodes[nextIdx])};
+  repointNodeLinks(nodes[nextIdx].id,id);
   nodes.splice(nextIdx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
@@ -30217,6 +30254,14 @@ let dockActiveTab=null;
   window.sakuraTodoRefsForNode=function(docId,nodeId){
     if(nodeId==null||!docId)return [];
     return todos.filter(t=>t.nodeRef&&t.nodeRef.docId===docId&&t.nodeRef.nodeId===nodeId);
+  };
+  // Write bridge for row merges (repointNodeLinks, main scope): a to-do linked to a row that a
+  // Backspace/Delete merge removes follows that row's content onto the surviving row.
+  window.sakuraTodosRepointNode=function(docId,fromId,toId){
+    if(!docId||fromId==null||toId==null)return;
+    let changed=false;
+    todos.forEach(t=>{ if(t.nodeRef&&t.nodeRef.docId===docId&&t.nodeRef.nodeId===fromId){ t.nodeRef.nodeId=toId; changed=true; } });
+    if(changed){ saveTodos(); renderTodos(); }
   };
   window.sakuraTodoRefsForWholeDoc=function(docId){
     if(!docId)return [];
