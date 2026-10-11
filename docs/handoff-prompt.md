@@ -184,7 +184,7 @@ and merged after independent review:
    bulk-draft/summary/copy/PDF, diagram import + AI-prompt export + whiteboard + paste, the lists'
    search/sort/select/bulk controls, the remarks node-picker) went with it.
 6. Hub trim to To-Dos only: remove Journal and Meeting Notes (in both index.html and hub.html)
-   and the Hub's due-date Reminders; keep To-Dos + Subtasks. **Done in PR #TBD (open, awaiting
+   and the Hub's due-date Reminders; keep To-Dos + Subtasks. **Done in PR #467 (open, awaiting
    review — not merged).** Reminders' real scope was confirmed first: it was purely hub.html's
    To-Do due-date browser notifications (account-menu toggle + 5-minute check while open) — the
    project owner chose to remove it too. The unrelated *backup* reminder in index.html and the
