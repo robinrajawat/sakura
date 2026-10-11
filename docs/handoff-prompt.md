@@ -458,7 +458,7 @@ and merged after independent review:
    (with an empty `.niv-tools` toolbar slot and an `.niv-annot-layer` SVG overlay +
    `renderNodeImageAnnotations()` as the seam for PR B), dot, paste/drop/file-pick, PDF, docs.
    Covered by `tests/e2e/node-images.spec.ts` + `tests/unit/nodeImages.test.ts`.
-   **11B — Markup editor. Done in PR #<n> (not merged).** Owner decisions: rectangle (outline),
+   **11B — Markup editor. Done in PR #474 (not merged).** Owner decisions: rectangle (outline),
    arrow, translucent highlighter (filled box, 35% opacity), text label, select/move/delete; **no
    blur**; small fixed palette; editor undo/redo + "Clear markings" (confirm); one app-level undo
    step per marking session; non-destructive; read-only in view-only shared docs.
