@@ -454,7 +454,7 @@ and merged after independent review:
    the `sakura-dl` clip payload as `imgs`, fresh ids on paste), Backspace/Delete-merge (absorbed
    row's images move to the survivor). PDF renders each image as a captioned figure at its width;
    OPML skips images silently.
-   **11A — Done in PR #TBD (not merged).** Data model, migration, compression, thumbnails, viewer
+   **11A — Done in PR #473 (not merged).** Data model, migration, compression, thumbnails, viewer
    (with an empty `.niv-tools` toolbar slot and an `.niv-annot-layer` SVG overlay +
    `renderNodeImageAnnotations()` as the seam for PR B), dot, paste/drop/file-pick, PDF, docs.
    Covered by `tests/e2e/node-images.spec.ts` + `tests/unit/nodeImages.test.ts`.
