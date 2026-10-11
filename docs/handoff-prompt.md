@@ -255,7 +255,7 @@ and merged after independent review:
    tree back collapses it into one node whenever the clipboard has text/html —
    `parseTreeClipboardHtml` reads `innerText` from a detached element, which drops the
    `white-space:pre` line breaks. Plain-text paste works. Worth a small follow-up fix.
-8b. Simplify data backup. **Done in PR #PRNUM (open, awaiting review — not merged).** Project-owner
+8b. Simplify data backup. **Done in PR #469 (open, awaiting review — not merged).** Project-owner
    decisions: signed in, data keeps auto-syncing to Firebase/Firestore (unchanged — nothing removed
    was on the sync path; `queueSync`/`flushSyncQueue`/pull-merge untouched); signed out, backup is
    fully manual. Settings → Data now holds only **Backup all data**, **Restore from backup**, **Undo
