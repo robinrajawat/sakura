@@ -134,6 +134,21 @@ export function isSectionNodeText(text: string | null | undefined): boolean {
   return /^\[[^\]]+\]$/.test(String(text || '').trim());
 }
 
+/** Pure: splits a section node's raw text into its leading `[label]` and the rest, for the PDF's
+ * section heading and Contents entry. `[Release 2.4] Plan` → `{label:'Release 2.4', rest:'Plan'}`,
+ * `[Intro]` → `{label:'Intro', rest:''}`, `Plan [draft]` → `{label:'', rest:'Plan [draft]'}` (only a
+ * LEADING bracketed token is a label — the same token the clipboard/copy renderer lifts out as a
+ * coloured label without its brackets). A `[[wikilink]]` is never a label. `title` is the
+ * one-line plain form: `label · rest`, or whichever part is non-empty. */
+export function sectionHeadingParts(text: string | null | undefined): { label: string; rest: string; title: string } {
+  const src = String(text || '').trim();
+  const m = src.startsWith('[[') ? null : src.match(/^\[([^\]]+)\]\s*([\s\S]*)$/);
+  const label = m ? m[1].trim() : '';
+  const rest = m ? m[2].trim() : src;
+  const title = label && rest ? label + ' · ' + rest : label || rest;
+  return { label, rest, title };
+}
+
 /** Whether a node should render/export as a section header — either explicit `[Section]` markup,
  * or (when the `sectionMarkersDepthZero` preference is on) simply being a top-level node. */
 export function nodeIsSection(node: QueryableNode | null | undefined, sectionMarkersDepthZero: boolean): boolean {

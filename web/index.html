@@ -1563,7 +1563,11 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
    table-layout:fixed with width:auto sizes the table to the real sum of its <col> widths instead,
    capped by max-width so an intentionally wide table still can't overflow past the editor itself. */
 .node-table-line table{width:auto;max-width:100%;table-layout:fixed}
-.node-table-line td,.node-table-line th{overflow:hidden;word-break:break-word}
+/* overflow-wrap:break-word, not word-break:break-word -- the latter also shrinks a cell's min-content
+   width below its longest word, so the column layout could squeeze a header like "Workstream" into
+   "Workstr/eam". overflow-wrap only breaks a word that can't fit on a line of its own (a column the
+   person dragged narrower than it). */
+.node-table-line td,.node-table-line th{overflow:hidden;word-break:normal;overflow-wrap:break-word}
 /* .node-table-line itself inherits .pv-diagram-figure's own display:flex;flex-direction:column --
    fine for a chart's SVG or a Cards grid (both want to fill the figure), but for a PLAIN table its
    default cross-axis align-items:stretch was overriding the table's own width:auto/table-layout:fixed
@@ -1572,6 +1576,7 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
    Scoped off :not(.pv-table-chart-figure), the class a chart OR Cards grid always carries (see
    buildNodeTableObject/buildNoteTableFigure), so neither of those is affected. */
 .node-table-line:not(.pv-table-chart-figure){align-items:flex-start}
+.node-table-line.editing-chart-data::before{content:'Chart data \2014  Esc or click outside to show the chart';font:500 11px 'Inter',sans-serif;color:var(--muted);margin:0 0 4px}
 /* node.images -- a node's pictures/screenshots as their own per-node objects (see
    buildNodeImageStrip): a compact, wrapping strip of thumbnails under the row (placed like
    .node-table-line-wrap), each with its caption truncated beneath; click one for the viewer. */
@@ -1679,7 +1684,7 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 /* height/box-sizing, not min-height: min-height is ignored on a cell with no line box of
    its own, which a cell holding only .row-resize-handle's own absolutely-positioned div still
    counts as, and plain height alone still omits padding/border from an empty cell's total. */
-.node-note-line table td,.node-note-line table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;box-sizing:border-box;height:calc(1.4em + 10px + 2px);vertical-align:top;outline:none;overflow:hidden;word-break:break-word;position:relative}
+.node-note-line table td,.node-note-line table th{border:1px solid var(--border);padding:5px 8px;min-width:32px;box-sizing:border-box;height:calc(1.4em + 10px + 2px);vertical-align:top;outline:none;overflow:hidden;word-break:normal;overflow-wrap:break-word;position:relative}
 .node-note-line table th{background:color-mix(in srgb,var(--accent) 10%,transparent);font-weight:600;color:var(--fg)}
 .node-note-line table td:focus,.node-note-line table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
 .node-note-line .pv-table-chart-figure svg{max-width:100%}
@@ -2099,6 +2104,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #pv-doc-subtitle{margin-top:10px;font:500 15px 'Inter',sans-serif;color:var(--muted);line-height:1.4;word-break:break-word}
 .pv-section{flex:1;min-width:60px;display:flex;align-items:center;gap:10px;margin:0 0 6px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
 .pv-section::after{content:'';flex:1;height:1px;background:var(--border)}
+.pv-section-label{color:var(--accent)}.pv-section-sep{color:var(--muted)}
 .pv-bullet{flex:0 0 auto;width:16px;display:flex;justify-content:center;color:var(--hint);font-size:14.5px}
 .pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
 .pv-cb:hover{border-color:var(--accent)}
@@ -6415,7 +6421,7 @@ function buildNodeTableObject(node,tIdx){
   wrap.className='node-table-line pv-diagram-figure pv-table-figure';
   wrap.dataset.nodeId=String(node.id);
   function showDisplay(){
-    wrap.classList.remove('editing');
+    wrap.classList.remove('editing','editing-chart-data');
     const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
     const table=div.querySelector('table');
     wrap.innerHTML='';
@@ -6442,8 +6448,18 @@ function buildNodeTableObject(node,tIdx){
     // look like it's "still editing" to a DOM-sniffing check, permanently breaking the click-to-
     // edit/right-click-menu guards below.
     wrap.classList.add('editing');
+    // A chart/Cards figure being edited shows its underlying table ("Edit data"); the class only
+    // drives a CSS ::before hint above it, so nothing extra ends up in the serialized table.
+    wrap.classList.toggle('editing-chart-data',isTableFeaturedAsChart(liveTable));
     wrap.appendChild(liveTable);
     _attachTableResizeHandles(liveTable);
+    // One app-level undo step per editing session, taken just before the session's FIRST real
+    // change (same contract as the image markup editor): a session that only clicks in and out
+    // changes nothing and pushes nothing, and Ctrl/Cmd+Z afterwards restores the table (or the
+    // chart/Cards it's rendered as) exactly as it was before the session started.
+    let lastCommitted=sakuraSanitizeRichHtml(cleanEditorHtml(wrap));
+    let undoPushed=false;
+    const ensureUndo=()=>{ if(!undoPushed){ undoPushed=true; pushUndo(); } };
     // Same double-commit hazard enterScopedTableEdit's own exited-guard documents: removing a
     // row/column that holds the current caret forces its own native, synchronous focus change,
     // which can fire onFocusOut's commit()+exit() mid-handler, before the menu action's own
@@ -6474,13 +6490,18 @@ function buildNodeTableObject(node,tIdx){
       if(!liveTable.isConnected){
         exited=true;
         detach();
+        ensureUndo();
         node.tables.splice(tIdx,1);
         node.modifiedAt=Date.now();
         markDirty(); scheduleAutoSave();
         render();
         return;
       }
-      node.tables[tIdx]=sakuraSanitizeRichHtml(cleanEditorHtml(wrap));
+      const html=sakuraSanitizeRichHtml(cleanEditorHtml(wrap));
+      if(html===lastCommitted)return;
+      ensureUndo();
+      lastCommitted=html;
+      node.tables[tIdx]=html;
       node.modifiedAt=Date.now();
       markDirty(); scheduleAutoSave();
     }
@@ -6596,6 +6617,13 @@ function buildNodeTableObject(node,tIdx){
     const flatIdx=clickedCell?[...wrap.querySelectorAll('td,th')].indexOf(clickedCell):-1;
     enterEdit(flatIdx,e.clientX,e.clientY);
   });
+  // Double-click is the explicit "Edit data" gesture on a chart/Cards figure (a single click on one
+  // already opens it too); on a plain table it's the same as the click that already entered edit.
+  wrap.addEventListener('dblclick',e=>{
+    e.stopPropagation();
+    if(wrap.classList.contains('editing'))return;
+    enterEdit(-1);
+  });
   wrap.addEventListener('contextmenu',e=>{
     if(wrap.classList.contains('editing'))return;
     e.preventDefault(); e.stopPropagation();
@@ -6615,6 +6643,10 @@ function buildNodeTableObject(node,tIdx){
     const items=[
       {label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)},
     ];
+    // "Edit data": shows a chart's/Cards' underlying table in the same editing session a plain
+    // table gets on click (cells editable, the row/column menu on right-click), and re-renders the
+    // chart/Cards from the edited values when it ends (Esc, click outside).
+    if(table&&isTableFeaturedAsChart(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
     if(table)items.push(...buildChartFeatureItems(table,commit));
     items.push({label:'Delete', danger:true, onClick:()=>{ node.tables.splice(tIdx,1); node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); }});
     showSbContextMenu(e.clientX,e.clientY,items);
@@ -7914,6 +7946,19 @@ function splitNoteBlockVisuals(html){
 // featuredTablesForNode's live DOM table, or noteTableByIndex's re-parse of node.note -- a given
 // figure actually needs, the same distinction noteChartDisplayHtml's own figures already draw
 // with that same dataset-key naming.
+// PDF rendering only (called on a clone, never on stored data): a table with no <thead> whose first
+// row is all <th> cells -- typical of a pasted table -- gets that row moved into a <thead>, so the
+// print stylesheet's display:table-header-group repeats it on every page the table spans, exactly
+// like a table that was built with a real <thead>.
+function promoteHeaderRowToThead(table){
+  if(!table||table.tHead)return;
+  const first=table.rows[0];
+  if(!first||!first.cells.length||![...first.cells].every(c=>c.tagName==='TH'))return;
+  const thead=document.createElement('thead');
+  table.insertBefore(thead,first.parentElement===table?first:first.parentElement);
+  thead.appendChild(first);
+  [...table.tBodies].forEach(tb=>{ if(!tb.rows.length)tb.remove(); });
+}
 function buildNoteTableFigure(table,nodeId,tIdx){
   const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-table-figure';
   if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
@@ -7921,6 +7966,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
     if(svg){ fig.classList.add('pv-table-chart-figure'); fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx); fig.innerHTML=svg; return fig; }
   }
   const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart');
+  promoteHeaderRowToThead(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
@@ -15073,6 +15119,20 @@ function buildVertFlags(scopedNodes, idx, depthOffset = 0) {
 /** Pure: does this raw node text look like a `[Section]` marker? */
 function isSectionNodeText(text) {
     return /^\[[^\]]+\]$/.test(String(text || '').trim());
+}
+/** Pure: splits a section node's raw text into its leading `[label]` and the rest, for the PDF's
+ * section heading and Contents entry. `[Release 2.4] Plan` → `{label:'Release 2.4', rest:'Plan'}`,
+ * `[Intro]` → `{label:'Intro', rest:''}`, `Plan [draft]` → `{label:'', rest:'Plan [draft]'}` (only a
+ * LEADING bracketed token is a label — the same token the clipboard/copy renderer lifts out as a
+ * coloured label without its brackets). A `[[wikilink]]` is never a label. `title` is the
+ * one-line plain form: `label · rest`, or whichever part is non-empty. */
+function sectionHeadingParts(text) {
+    const src = String(text || '').trim();
+    const m = src.startsWith('[[') ? null : src.match(/^\[([^\]]+)\]\s*([\s\S]*)$/);
+    const label = m ? m[1].trim() : '';
+    const rest = m ? m[2].trim() : src;
+    const title = label && rest ? label + ' · ' + rest : label || rest;
+    return { label, rest, title };
 }
 /** Whether a node should render/export as a section header — either explicit `[Section]` markup,
  * or (when the `sectionMarkersDepthZero` preference is on) simply being a top-level node. */
@@ -25096,22 +25156,26 @@ function linkifySapNotesInElement(root){
 // Used by note and node table editing, even though the Note editor that originally
 // introduced this no longer accepts tables directly as plain-text input.
 function _attachTableResizeHandles(table) {
-  // Ensure colgroup exists with explicit widths
+  // The <colgroup> with explicit widths is only created when a column drag actually starts, and
+  // then from each column's CURRENT rendered width -- never up front. Creating it eagerly (with the
+  // table's width split evenly across its columns, as this used to) made every click into a table
+  // without one snap all columns to equal widths and wrap its words differently mid-edit, and since
+  // a commit serializes the table, that even split was then saved into the document, so the table
+  // never went back to its natural layout after Esc either.
   let cg = table.querySelector('colgroup');
-  if (!cg) {
+  const ensureColgroup = () => {
+    if (cg && table.contains(cg)) return cg;
     cg = document.createElement('colgroup');
     const firstRow = table.querySelector('tr');
-    const colCount = firstRow ? firstRow.cells.length : 0;
-    // Measure actual rendered widths when available, else distribute evenly
-    const tableW = table.offsetWidth || 240;
-    const w = Math.max(48, Math.floor(tableW / (colCount || 1)));
-    for (let i = 0; i < colCount; i++) {
+    const cells = firstRow ? Array.from(firstRow.cells) : [];
+    cells.forEach(c => {
       const col = document.createElement('col');
-      col.style.width = w + 'px';
+      col.style.width = Math.max(32, Math.round(c.getBoundingClientRect().width || c.offsetWidth || 120)) + 'px';
       cg.appendChild(col);
-    }
+    });
     table.insertBefore(cg, table.firstChild);
-  }
+    return cg;
+  };
 
   // Remove any existing handles first (idempotent)
   table.querySelectorAll('.col-resize-handle').forEach(h => h.remove());
@@ -25134,7 +25198,7 @@ function _attachTableResizeHandles(table) {
     handle.addEventListener('mousedown', ev => {
       ev.preventDefault();
       ev.stopPropagation();
-      const cols = Array.from(cg.querySelectorAll('col'));
+      const cols = Array.from(ensureColgroup().querySelectorAll('col'));
       startX = ev.clientX;
       startW = cols[i] ? (parseFloat(cols[i].style.width) || th.offsetWidth) : th.offsetWidth;
       handle.classList.add('dragging');
@@ -26189,11 +26253,18 @@ function renderPreviewBody(){
       lastHeadingLevel='section';
       hrow.appendChild(foldEl);
       const div=document.createElement('div'); div.className='pv-section';
-      const sectionText=String(pvMainText||'').trim().replace(/^\[|\]$/g,'');
-      div.textContent=sectionText;
+      // A leading `[label]` is the section's label (the outline's own `[Text]` section-label
+      // convention, rendered without its brackets like the copy/clipboard renderer does); any text
+      // after it is the section's name: `[Release 2.4] Plan` → "Release 2.4 · Plan".
+      const secParts=sectionHeadingParts(pvMainText);
+      const secText=document.createElement('span'); secText.className='pv-section-text';
+      if(secParts.label){ const lab=document.createElement('span'); lab.className='pv-section-label'; lab.textContent=secParts.label; secText.appendChild(lab); }
+      if(secParts.label&&secParts.rest){ const sep=document.createElement('span'); sep.className='pv-section-sep'; sep.textContent=' · '; secText.appendChild(sep); }
+      if(secParts.rest)secText.appendChild(document.createTextNode(secParts.rest));
+      div.appendChild(secText);
       hrow.appendChild(div);
       mainEl=hrow; contentEl=div;
-      tocEntries.push({id:node.id,text:stripSemanticMarkers(sectionText).trim()||sectionText,level:1,kind:'section'});
+      tocEntries.push({id:node.id,text:stripSemanticMarkers(secParts.title).trim()||secParts.title,level:1,kind:'section'});
     } else if(headingLevel>0){
       const hrow=document.createElement('div'); hrow.className='pv-h-row pv-h-row-heading'; hrow.id='pv-anchor-'+node.id;
       hrow.style.paddingLeft=depth===0?'0px':((Math.min(depth,7)-1)*18)+'px';
@@ -26422,7 +26493,7 @@ function renderPreviewBody(){
       // exact same content type elsewhere on the page. No longer sourced from the note's own HTML
       // (blockVisuals.tables) -- a table is its own node-level object now, not note content.
       if(Array.isArray(node.tables)&&node.tables.length){
-        const trow=document.createElement('div'); trow.className='pv-diagram-row'; trow.style.paddingLeft=inlinePad;
+        const trow=document.createElement('div'); trow.className='pv-diagram-row pv-table-row'; trow.style.paddingLeft=inlinePad;
         node.tables.forEach((html,tIdx)=>{
           const div=document.createElement('div'); div.innerHTML=html;
           const t=div.querySelector('table');
@@ -26893,6 +26964,19 @@ function exportPreviewAsPdf(onDone){
          its own rule so it isn't what actually splits. Won't help a figure taller than a full page
          (nothing can avoid that), but that's a rarer case than a normal-sized one being split. */
       body.printing-preview .pv-diagram-figure { break-inside:avoid; page-break-inside:avoid; }
+      /* Plain tables are the exception: a long one has to be able to run across pages (pushing it
+         whole onto a fresh page left its heading stranded at the bottom of the previous one, and
+         split it anyway once it was taller than a page). Rows never split, the header row repeats
+         at the top of every page the table spans, and the table row avoids a break straight after
+         whatever precedes it (the node's own row, or its note), so the heading keeps its table's
+         first rows with it where they fit. Block layout rather than the screen's flex row, so the
+         table fragments as an ordinary block-level table. Charts and Cards keep break-inside:avoid. */
+      body.printing-preview .pv-diagram-row.pv-table-row { display:block !important; break-before:avoid; page-break-before:avoid; }
+      body.printing-preview .pv-table-row > .pv-table-figure { margin:0 0 14px !important; }
+      body.printing-preview .pv-table-row > .pv-table-figure:not(.pv-table-chart-figure) { display:block !important; }
+      body.printing-preview .pv-table-figure:not(.pv-table-chart-figure) { break-inside:auto; page-break-inside:auto; }
+      body.printing-preview .pv-table-figure thead { display:table-header-group; }
+      body.printing-preview .pv-table-figure tr { break-inside:avoid; page-break-inside:avoid; }
       /* No .pv-note-inline-full/.node-note-dot-plain shrink override here (there used to be one)
          -- _pvForceFullNoteCard (see renderPreviewBody) means an export never builds that inline-
          teaser markup at all anymore, every note gets the same full card instead, so a rule
