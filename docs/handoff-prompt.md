@@ -343,8 +343,8 @@ and merged after independent review:
    saved; the right-click "More" menu still offers "Laser pointer" and a "Slide divider" action
    (Presenter leftovers from #463); README's Note/Code Block sections still describe the removed
    floating Note panel.
-9b. Presets + Settings sweep + docs/leftovers. **Done in PR #471 (open, awaiting review — not
-   merged).** Project-owner decisions, all settled:
+9b. Presets + Settings sweep + docs/leftovers. **Merged (#471).** Project-owner decisions, all
+   settled:
    **Presets/modes removed:** Editor's Choice and Documentation mode presets (Settings cards, Undo
    snapshots, Quick Assist Run actions + hint phrase, welcome-screen link), Zen's three preset
    buttons, Features "Go Minimal / Restore Full" (`isMinimalMode`). The "Presets & modes" Settings
@@ -406,10 +406,18 @@ and merged after independent review:
    (→ terracotta), and old Editor's Choice/Doc mode undo keys load harmlessly; removed prefs drop on
    the next save (old localStorage keys are never deleted). Covered by
    `tests/e2e/presets-settings-sweep.spec.ts`.
-10. Fix paste of Sakura's own copied tree. **Not started.** Pasting Sakura's own copied tree back
-   collapses it into one node whenever the clipboard has text/html — `parseTreeClipboardHtml` reads
-   `innerText` from a detached element, which drops `white-space:pre` line breaks; plain-text paste
-   works. (Found during #468.)
+10. Fix paste of Sakura's own copied tree. **Done in its own PR (not merged).** Pasting Sakura's
+   own copied tree back collapsed it into one node whenever the clipboard had text/html —
+   `parseTreeClipboardHtml` read `innerText` from a detached element, which degrades to
+   `textContent` and runs the one-`white-space:pre`-`<div>`-per-node rows together. (Found during
+   #468.) Fixed with `clipboardHtmlToText`: an inert `DOMParser` document walked so block elements
+   and `<br>` end a line, whitespace is kept only inside `<pre>`/inline `white-space:pre*` and
+   collapsed elsewhere. Same fix makes multi-line HTML pasted from outside Sakura become one node
+   per line instead of one collapsed node (it also now splits into nodes when pasted while editing
+   a node, matching how multi-line plain text already behaved).
+
+**Next, to discuss with the owner before any work:** images inside inline notes should become
+their own object type (like diagrams/Q&A/remarks, e.g. `node.images`). Not scoped yet.
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive
