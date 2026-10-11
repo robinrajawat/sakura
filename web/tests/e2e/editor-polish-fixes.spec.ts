@@ -19,38 +19,6 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
   }
 }
 
-// "Laser pointer" (setAppLaser) used to be reachable only by right-clicking plain text inside an
-// already-open, empty-of-figures note -- a narrow, easy-to-miss target buried deep in a different
-// menu's own fallback branch. It's a view-wide presentation toggle, the same one Preview/Presenter's
-// own right-click already offers, so it now also lives in the ordinary per-row context menu's
-// "More" panel -- reachable from any node, not just from inside a note.
-test.describe('Laser pointer is reachable from the ordinary per-row right-click menu', () => {
-  test('"Laser pointer" appears in the row context menu\'s More panel and toggles app-laser-active on click', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await page.evaluate(() => {
-      // @ts-expect-error -- bare globals from index.html
-      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
-      // @ts-expect-error
-      collapsedIds = new Set();
-      // @ts-expect-error
-      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
-      // @ts-expect-error
-      render();
-    });
-
-    await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
-    await page.locator('#context-more-toggle').click();
-    const laserBtn = page.locator('#context-more-panel [data-action="laser"]');
-    await expect(laserBtn).toBeVisible();
-    await expect(laserBtn).toContainText('Laser pointer');
-
-    await laserBtn.click();
-    const laserOn = await page.evaluate(() => document.body.classList.contains('app-laser-active'));
-    expect(laserOn).toBe(true);
-  });
-});
-
 // node.tables objects reuse .pv-diagram-figure/.pv-table-figure for their own styling in the live
 // outline editor, not just in a static Preview/PDF export -- but that export deliberately stretches
 // a figure to fill its row (width:100%, no table-layout), which only makes sense for a page that's
@@ -125,20 +93,22 @@ test.describe('Exporting to PDF does not permanently reset the accent color', ()
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    const distinctiveAccent = '#123456';
-    await page.evaluate((color) => {
+    // A non-default preset (custom accent colors were removed in cutdown 9b), so the restored
+    // value is distinguishable from the stylesheet's terracotta default.
+    const distinctiveAccent = '#2e8479';
+    await page.evaluate(() => {
       // @ts-expect-error
       nodes = [{ id: 1, depth: 0, text: 'A', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
       // @ts-expect-error
       collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
       // @ts-expect-error
-      accentPreset = 'custom'; accentCustomColor = color;
+      setTheme('light', false, false); accentPreset = 'teal';
       // @ts-expect-error
       applyAccentColor();
       // @ts-expect-error
       previewActive = true; renderPreviewBody();
       document.getElementById('preview-overlay')?.classList.add('open');
-    }, distinctiveAccent);
+    });
 
     const before = await page.evaluate(() => getComputedStyle(document.body).getPropertyValue('--accent').trim());
     expect(before).toBe(distinctiveAccent);

@@ -295,8 +295,8 @@ and merged after independent review:
    `tests/e2e/backup-simplified.spec.ts`. Known leftover, not changed: an old encrypted Gist token
    stays as ciphertext in `sakura_cloud_backup_v1` (and so rides along in full backups) if the
    vault is later turned off — harmless, never read.
-9a. Trim AI to Generate outline + Rewrite; remove node icons. **Done in PR #470 (open, awaiting
-   review — not merged).** Project-owner decisions, all settled:
+9a. Trim AI to Generate outline + Rewrite; remove node icons. **Merged** (#470).
+   Project-owner decisions, all settled:
    **AI kept:** Generate outline (toolbar + empty-doc "Generate with AI" + Ctrl/Cmd+Shift+O + Quick
    Assist), Rewrite node / selection / document (toolbar, right-click, Quick Assist), note-line and
    remark-line right-click "Rewrite with AI", To-Do task and subtask "Rewrite with AI", Auto-rewrite
@@ -343,36 +343,73 @@ and merged after independent review:
    saved; the right-click "More" menu still offers "Laser pointer" and a "Slide divider" action
    (Presenter leftovers from #463); README's Note/Code Block sections still describe the removed
    floating Note panel.
-9b. Presets + Settings sweep + docs/leftovers. **Not started.** Scope, by project-owner decisions:
-   - Remove presets/feature-mode shortcuts: Editor's Choice preset, Documentation mode preset,
-     Zen mode's 3 preset buttons (zen mode itself stays), Features Go-Minimal/Restore-Full toggle;
-     trim accent/chrome preset lists to a smaller fixed set.
-   - **Simplify Settings** generally; final sweep of Settings UI and in-app Help/README for
-     anything left dead from PRs 1-9a (see 9a's leftovers above). Remove the empty "Presentation"
-     group heading in Settings → Features (left by #463).
-   - **Remove these Settings, fixed behaviour afterwards:** "Skip folded sections", "Include Q&A
-     in exports", "Include node Notes & Code in exports", "Include Remarks in exports", and
-     "Folded-content notice in Export menu" — exports (PDF, OPML) and Ctrl/Cmd+C copy then
-     ALWAYS include folded sections, Q&A, notes and remarks, and the Export menu's folded-content
-     notice goes away.
-   - **Remove "Hide status bar", "Hide app bar", and "Use browser fullscreen"** (apparently Zen-
-     mode options — confirm where each lives). Afterwards the status bar and app bar are ALWAYS
-     visible, including in Zen mode (no setting or mode hides them), and "Use browser fullscreen"
-     is effectively always on wherever it applied (e.g. entering Zen mode always requests browser
-     fullscreen).
-   - **No more "Preview":** every remaining Settings item under a "Preview" section/heading moves
-     into the Export & copy section, reworded to talk about the PDF export; settings that no longer
-     do anything after the move are removed instead. Decide in the same pass whether the
-     no-UI PDF prefs (`previewSlideDepth`, `previewPdfMargin`/`setPreviewPdfMargin`,
-     `previewPdfFooterEnabled`, orphaned by #463) get a home in Export & copy or become fixed
-     defaults, and report the choice.
-   - For every removed setting: old saved values load harmlessly and drop on the next save.
-   - Other leftovers found during #8: `body.app-laser-active` CSS is dead; index.html's og:/
-     twitter:description still says "presents live, no PowerPoint needed"; the Branding row says
-     "Off by default" while `previewBrandingEnabled` defaults to true; README still describes
-     Presenter Mode, Preview, Decision Log, Notepad, Mind Maps, and Files in several sections; the
-     To-Dos export dropdown overflows the viewport's right edge by ~12px (pre-existing
-     positioning).
+9b. Presets + Settings sweep + docs/leftovers. **Done in PR #PRNUM (open, awaiting review — not
+   merged).** Project-owner decisions, all settled:
+   **Presets/modes removed:** Editor's Choice and Documentation mode presets (Settings cards, Undo
+   snapshots, Quick Assist Run actions + hint phrase, welcome-screen link), Zen's three preset
+   buttons, Features "Go Minimal / Restore Full" (`isMinimalMode`). The "Presets & modes" Settings
+   and Help categories are gone: Zen mode moved under Bars & menus (`#settings-section-zen`), the
+   Preview section folded into Data → Export & copy. **Accents** trimmed to six: Terracotta
+   (default, first), Teal, Indigo, Violet, Moss, Amber (Plum dropped); the no-UI custom accent color
+   and intensity slider state went too. **Chrome presets** (Slate/Sand/Ink/Rose) had no Settings UI
+   left at all, so the only "essential" option kept is Default (follows the theme):
+   `CHROME_PRESETS`/`setChromePreset`/`applyChromeColors` removed (the theme-color meta sync they
+   did survives as `syncThemeColorMeta`).
+   **Export settings removed, fixed "on":** Skip folded sections, Include Q&A / node Notes & Code /
+   Remarks in exports, Folded-content notice in Export menu (`applyFoldFilter`,
+   `updateExportMenuFoldNote`, `_pvSuppressNoteCodeIndicators` gone). PDF and OPML and Ctrl/Cmd+C
+   always include folded sections; PDF always includes notes, Q&A and remarks; OPML always writes
+   `_note` (`serializeOpml`'s param renamed `includeNotes`, passed `true`). Judgment call: Q&A and
+   remarks were never part of OPML or copy, and weren't added — the removed toggles only ever
+   governed PDF (and `_note` for OPML), and adding note/Q&A lines to the copied text would break
+   pasting Sakura's own copy back. Also made `previewAlwaysExpand` (no UI) fixed-on, since a stale
+   `false` could still collapse depth-0 branches in the PDF.
+   **Bars:** removed Zen's "Hide status bar", "Hide app bar", "Use browser fullscreen" (all three
+   lived in Settings → Zen mode) **and** the Bars section's master "Status bar"/"App bar" switches,
+   the right-click "Hide status bar"/"Show/Hide app bar" items, and the `toggleAppbar` shortcut
+   (Ctrl/Cmd+Shift+A) — the status bar and app bar are always visible, Zen included; Zen always
+   requests browser fullscreen and exits it on leave. Also gone: the reveal/peek machinery
+   (`revealStatusbar`, `zenRevealAppbar`, …), Zen's Quick Assist relocation into the status bar, and
+   Zen's status-bar trimming (Zen now shows the same status-bar items as outside it). Kept:
+   individual status-bar item visibility/order, app-bar item visibility, Tab bar switch, Zen's
+   hide-toolbar/File Explorer/tab-bar options.
+   **Preview → Export & copy:** "Branding" + "Branding text" moved there as "PDF branding" / "PDF
+   branding text" (description now says "On by default", matching `previewBrandingEnabled`'s real
+   default; the text row hides while branding is off). No-UI PDF prefs became **fixed defaults**:
+   `previewSlideDepth` (no visible effect), `previewPdfMargin` (20mm), `previewPdfFooterEnabled`
+   (footer always on), plus `previewHeadingDepthFallback` (none) and `previewTocMaxLevel` (2) and
+   the dead `previewTocOpen`. Kept `previewTocIncludeSections`/`sectionMarkersDepthZero` (Quick
+   Assist commands).
+   **Removed:** Rewrite document (right-click/More `ai-rewrite-all`, Quick Assist
+   `ai-rewrite-document`, `rewriteAllNodes`, Help/README/cheatsheet); every other Rewrite path and
+   Auto-rewrite kept. **Slide divider removed entirely** (owner decision, overriding the earlier
+   "keep/rename" option): right-click action, row badge, `toggleSlideDivider`, its PDF divider
+   heading + Contents entry, the vestigial slide-wrapper/title-slide markup in `renderPreviewBody`.
+   Old documents' `slideDivider` flags are dropped by the node normalizer and render as ordinary
+   nodes (no split, no error). Leftovers: Laser pointer (row More + note-line menus, `#app-laser-dot`,
+   `body.app-laser-active`), `NOTE_TB_BUTTONS`/`noteHiddenButtons`, `requestDiagramGenGuideline` +
+   `AI_DIAGRAM_GEN_SYSTEM_PROMPT` + `diagramGenValidateGuideline` + `callAiApiWithPrompt` (+ the
+   dead `code-beautify` AI prefix and unused `DIAGRAM_GEN_LAYER_WHITELIST`), `previewPresenting` and
+   `SAKURA_AUDIENCE_MODE` (Presenter/Audience leftovers), the empty Features "Presentation" heading,
+   og/twitter/meta descriptions, README sections for Presenter/Preview/Decision Log/Notepad/Mind
+   Map/Files/floating Note + Code Block.
+   **Fixes:** To-Dos Export dropdown overflowed the right edge because its positioning used a
+   caller-supplied 180px while the menu renders 202px wide — `openSimpleDropdown` now measures the
+   real width. `tests/e2e/backup-simplified.spec.ts` flake root-caused: under 8-worker load the
+   first document in a fresh context occasionally gets a localStorage area that never reaches the
+   shared store (a second page never sees its writes; after a reload localStorage comes back with
+   only boot-time keys, sessionStorage intact), so waiting can't fix it. The spec now seeds its
+   documents via addInitScript and verifies the shared store with a probe page
+   (`tests/e2e/fixtures/storage-probe.html`) before relying on any reload, re-navigating if needed.
+   **Back-compat:** every removed pref, `contextQuickActions`/`hoverToolbarActions` entries
+   (`slide-divider`, `ai-rewrite-all`), a `toggleAppbar` shortcut override, `accentPreset:'plum'`
+   (→ terracotta), and old Editor's Choice/Doc mode undo keys load harmlessly; removed prefs drop on
+   the next save (old localStorage keys are never deleted). Covered by
+   `tests/e2e/presets-settings-sweep.spec.ts`.
+10. Fix paste of Sakura's own copied tree. **Not started.** Pasting Sakura's own copied tree back
+   collapses it into one node whenever the clipboard has text/html — `parseTreeClipboardHtml` reads
+   `innerText` from a detached element, which drops `white-space:pre` line breaks; plain-text paste
+   works. (Found during #468.)
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive

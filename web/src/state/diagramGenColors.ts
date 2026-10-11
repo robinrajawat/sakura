@@ -16,9 +16,9 @@
  * `assignDiagramGenColors` sharing the same domain and one of the same duplicated constants
  * (`DIAGRAM_GEN_MARKER_COLOR`).
  *
- * `diagramGenLegend*`/`diagramGenValidateGuideline` (legend-XML generation and AI-response
- * validation, which read several of the same color constants plus several more not needed here)
- * are deliberately excluded — different concerns, not attempted in this pass either.
+ * `diagramGenLegend*` (legend-XML generation, which reads several of the same color constants
+ * plus several more not needed here) is deliberately excluded — a different concern, not
+ * attempted in this pass either.
  *
  * Lives in `src/state/`, matching every other Diagrams-domain slice in this subsystem
  * (Diagrams-domain logic reading the outline `nodes` array read-only for context, not

@@ -249,11 +249,8 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    // Surviving prefs from the same blob still apply.
-    expect(await page.evaluate(() => (
-      // @ts-expect-error
-      skipFoldedInExports
-    ))).toBe(false);
+    // Surviving prefs from the same blob still apply. (skipFoldedInExports itself was removed
+    // later, in cutdown 9b — exports and copy now always include folded sections.)
     expect(await page.evaluate(() => (
       // @ts-expect-error
       appbarHiddenButtons
@@ -268,7 +265,7 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
       savePrefs();
       return JSON.parse(localStorage.getItem('sakura_v001_prefs') || '{}');
     });
-    for (const k of ['exportHiddenButtons', 'diagramExportEnabled', 'previewClosingSlideEnabled', 'previewClosingSlideText', 'previewClosingSlideSubtitle']) {
+    for (const k of ['exportHiddenButtons', 'diagramExportEnabled', 'previewClosingSlideEnabled', 'previewClosingSlideText', 'previewClosingSlideSubtitle', 'skipFoldedInExports']) {
       expect(saved, k).not.toHaveProperty(k);
     }
     expect(saved.appbarHiddenButtons).toEqual(['help']);

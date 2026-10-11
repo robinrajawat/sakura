@@ -408,7 +408,7 @@ initHubTodosState({
     // Export domain — second slice. serializeOpml/nodesToOutlineXml turned out pure once
     // traced: getMeta() (DOM) and new Date() (impure) promoted to explicit params (title,
     // dateCreated — the latter with an injectable-clock default matching
-    // formatRelativeTime.ts's established pattern), nodeContentExportEnabled promoted the same
+    // formatRelativeTime.ts's established pattern), the include-notes flag promoted the same
     // way treeIndentWidth/hideTreeLines were for serializeTreeText.
     name: 'serializeOpml',
     sourceFile: 'src/utils/serializeOpml.ts',

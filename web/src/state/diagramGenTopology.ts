@@ -7,7 +7,7 @@
  * leaf/chain-group/container/sequence status, and edge-label attachment — once nodeMeta has been
  * confirmed via the review screen. The much larger XML-emission/tree-layout/color-assignment/AI-
  * classification remainder is still a genuinely separate, dedicated future scoping session — not
- * attempted here. `diagramGenProposeNodeMeta`/`diagramGenValidateGuideline`/`diagramGenLegend*`
+ * attempted here. `diagramGenProposeNodeMeta`/`diagramGenLegend*`
  * (the review-screen proposal/validation/legend layer) are also deliberately excluded: a
  * different concern (classification heuristics and AI-response validation, not render topology)
  * with its own scoping question, not attempted in this pass either.
