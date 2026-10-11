@@ -1,7 +1,7 @@
 import { getNodePlainText, type PlainTextNode } from './stripSemanticMarkers';
 
 /**
- * A minimal shape for an outline node used by outline-numbering and Markdown export —
+ * A minimal shape for an outline node used by outline-numbering and Markdown serialization —
  * `depth` plus everything `PlainTextNode` needs. See stripSemanticMarkers.ts's own comment
  * on why this is intentionally narrower than index.html's full node shape.
  */
@@ -22,7 +22,7 @@ export interface OutlineNode extends PlainTextNode {
  * guessing a default here would risk masking whatever the app's actual current setting is,
  * which is worse than forcing every caller to pass it explicitly. The functions that used to
  * read the global directly (serializeTreeText, serializeTreeTextWithNotes,
- * serializeClipboardHtml, and a docx-export call site) were updated in the same commit that
+ * serializeClipboardHtml, and a since-removed Word-export call site) were updated in the same commit that
  * wired this block in, to pass `outlineNumbering` explicitly.
  */
 export function computeOutlineNumbers(list: OutlineNode[], outlineNumbering: boolean): string[] {
@@ -46,9 +46,10 @@ export function computeOutlineNumbers(list: OutlineNode[], outlineNumbering: boo
  * `scopeNodes` to the live global `nodes` array and read the `outlineNumbering` global
  * indirectly via `computeOutlineNumbers()` — both removed here in favor of explicit, required
  * parameters, for the same reason given above: a pure leaf function shouldn't reach into
- * global state, and the exact node list / setting value must come from the caller. Its two
- * real call sites (exportMarkdown and one other) were updated in the same commit that wired
- * this block in, to pass `outlineNumbering` explicitly. computeOutlineNumbers/serializeMarkdown
+ * global state, and the exact node list / setting value must come from the caller. Its one
+ * remaining real call site (the To-Dos panel's AI "Extract action items", which feeds the
+ * Markdown into the AI prompt; the Markdown file export was removed) passes `outlineNumbering`
+ * explicitly. computeOutlineNumbers/serializeMarkdown
  * needed a small relocation pass first, since they were originally interleaved with un-extracted
  * sibling functions (serializeTreeText, serializeClipboardHtml) in index.html.
  */

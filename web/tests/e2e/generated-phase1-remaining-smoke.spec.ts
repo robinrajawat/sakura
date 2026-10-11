@@ -14,10 +14,10 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 // changes thanks to thin hand-written wrappers (esc/genDocId, plus mnUid until Meeting Notes was removed) preserving
 // the original names. Only computeOutlineNumbers/serializeMarkdown needed real call-site
 // updates (6 sites, an appended arg, no reordering). This test exercises the wrappers'
-// delegation and the real Markdown-export path against actual app state, not just "did it
+// delegation and the real Markdown serialization path against actual app state, not just "did it
 // throw".
 test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTime/stripSemanticMarkers/serializeMarkdown)', () => {
-  test('wrapper functions delegate correctly and Markdown export produces real output', async ({ page }) => {
+  test('wrapper functions delegate correctly and Markdown serialization produces real output', async ({ page }) => {
     const unexpectedErrors: string[] = [];
     page.on('pageerror', (err) => {
       if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);

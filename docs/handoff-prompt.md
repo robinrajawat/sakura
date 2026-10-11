@@ -184,8 +184,9 @@ and merged after independent review:
    bulk-draft/summary/copy/PDF, diagram import + AI-prompt export + whiteboard + paste, the lists'
    search/sort/select/bulk controls, the remarks node-picker) went with it.
 6. Hub trim to To-Dos only: remove Journal, Meeting Notes, Library, and Recap (in both
-   index.html and hub.html) and the Hub's due-date Reminders; keep To-Dos + Subtasks. **Done in
-   PR #467 (open, awaiting review — not merged).** Scope grew twice, both by the project owner's
+   index.html and hub.html) and the Hub's due-date Reminders; keep To-Dos + Subtasks. **Merged**
+   (#467) — note it also removed Library and Recap (beyond the item's original wording), per the
+   project owner's decision. Scope grew twice, both by the project owner's
    decision: (1) Reminders' real scope was confirmed first — it was purely hub.html's To-Do
    due-date browser notifications (account-menu toggle + 5-minute check while open) — and the
    owner chose to remove it too; (2) after the first pass kept Library and Recap (outside the
@@ -219,13 +220,83 @@ and merged after independent review:
    `renderPreviewBody()`/`exportPreviewAsPdf()` working as a fully headless PDF pipeline — PDF
    export via the Export menu never opens any overlay. **Merged**, but **done before #5** (see
    "Resequencing" below) — so the numbering here is execution order, not the original plan order.
-8. Trim exports to PDF-only (remove Word/.docx, PowerPoint/.pptx, OPML, Markdown, plain-text, and
-   rich-text-clipboard export paths; keep only PDF, built on the engine #463 kept headless).
-   **Not started.**
+8. Trim exports and imports. **Done in PR #468 (open, awaiting review — not merged).** Final scope,
+   all settled project-owner decisions (the item started as "PDF-only" and was revised mid-PR):
+   **Export ▾ = PDF + OPML; Import ▾ = OPML only.** Removed: Word (.docx), PowerPoint (.pptx),
+   Markdown, Tree .txt, Copy as Text, **Copy as Image**, and **Sakura Document (.sakura.json) share
+   export and its matching Import ▾ → Sakura Document** (sharing documents between users as files
+   goes away); **Word (.docx) import** and the Import menu's "Restructure text (AI)" entry (the
+   feature itself stays reachable via Ctrl/Cmd+Shift+R and Quick Assist until item 9 removes it);
+   the **Print** button (header, app-bar More menu, App bar items toggle, Help); the To-Dos dock's
+   Sakura To-Dos .json share export and its "Import a to-do list shared by another Sakura user"
+   button (To-Dos Export is PDF-only). Also gone with them: the Settings "Export ▾ menu items"
+   grid (`exportHiddenButtons`), the Copy-as-image shortcut, the dead-after-this settings
+   "Closing slide" (+text/subtitle) and "Include Diagrams in exports" (they only fed
+   Word/PowerPoint), pptxgenjs + mammoth (script tags, SW precache, THIRD-PARTY-NOTICES) and their
+   CSP origins (`cdn.jsdelivr.net`, `cdnjs.cloudflare.com` — nothing else used them), the stale
+   xlsx SW precache entry, and `src/utils/parseInlineSegments.ts` (+ tests, generator entry; only
+   Copy as Image used it). Judgment calls worth checking at review:
+   (a) Ctrl/Cmd+C on nodes was literally `exportToClipboard(false)`, so that function survives as
+   `copyNodesToClipboard` (only the menu's Copy-as-Text entry went); serializeTreeText and
+   serializeClipboardHtml stay for it, serializeMarkdown stays for To-Dos "Extract action items"
+   (removable once item 9 removes that), serializeOpml stays for OPML export;
+   (b) print: the `@media print` stylesheet, `printHtmlAsPdf`, and `exportPreviewAsPdf`'s
+   `window.print()` stay (PDF depends on them); removed only the Print button, `handlePrint`, its
+   injected print header (+ its CSS and the title-row hide rule that existed because of it), and
+   the beforeprint/afterprint fold hooks — native Ctrl/Cmd+P was never intercepted and is left to
+   the browser;
+   (c) "Skip folded sections" stays (now under Settings → Export & copy, renamed from "Export &
+   print") — it governs OPML export and Ctrl/Cmd+C copy; PDF ignores it (always full document);
+   (d) old prefs (`exportHiddenButtons`, `appbarHiddenButtons:['print']`, closing-slide and
+   diagram-export keys, a `copyAsImage` shortcut override) load harmlessly and are dropped on the
+   next save; OPML is now always shown in Export ▾ even though the old default hid it;
+   (e) Data & backup (backup export/restore, FS backup, reminders, cloud/Gist sync) untouched.
+   Known pre-existing issue found while testing (not changed here): pasting Sakura's own copied
+   tree back collapses it into one node whenever the clipboard has text/html —
+   `parseTreeClipboardHtml` reads `innerText` from a detached element, which drops the
+   `white-space:pre` line breaks. Plain-text paste works. Worth a small follow-up fix.
+8b. Simplify data backup. **Not started** (docs-only so far — another PR implements it).
+   Project-owner decisions:
+   - Signed in: data keeps auto-syncing to Firebase (unchanged).
+   - Not signed in: backup is fully manual — keep "Backup all data" (manual export file) and
+     "Restore from backup", plus "Undo last restore".
+   - Remove: Cloud Backup (GitHub Gist and Google Drive), "Auto-backup to file" (File System
+     Access) and its Backup history snapshots, the "Remind me to back up" status-bar reminder
+     (`backupReminderDays`/`checkBackupReminder`/`#sb-backup-reminder-chip`), the "Warn if this
+     session isn't backed up" close-tab warning, and the automatic "Local safety copy".
+   - Open question to trace when implementing: Secure Storage currently encrypts AI keys AND the
+     Gist token — keep it for AI keys, drop the Gist parts.
 9. Remove presets/feature-mode shortcuts (Editor's Choice preset, Documentation mode preset, Zen
    mode's 3 preset buttons — zen mode itself stays, Features Go-Minimal/Restore-Full toggle) +
    trim accent/chrome preset lists to a smaller fixed set + a final sweep of Settings UI and the
-   in-app Help/README for anything left dead from PRs 1-8. **Not started.**
+   in-app Help/README for anything left dead from PRs 1-8. **Not started.** Scope extended by
+   project-owner decisions:
+   - **Remove the whole node icon setup:** per-node icons, the icon picker (`icon-picker-popover` /
+     `IconPickerPopover`), keyword auto-icons (`src/data/cardIconKeywords.json` + its
+     `cardIconRules` generator entry in web/scripts/generate-index-blocks.mjs), and AI icon
+     suggestion ("Suggest icon (AI)", `CardIconsWithAi`/`CardIconBatch*`).
+   - **AI: final kept set** — Generate outline (incl. the empty-doc "Generate with AI" button),
+     Rewrite node, Rewrite selection, note-line right-click "AI Rewrite", To-Do subtask "Rewrite
+     with AI", Auto-rewrite (status-bar toggle + its settings), plus the infrastructure they need
+     (master AI toggle, providers/keys, Sakura Hosted AI + quota). **Remove everything else:**
+     Expand node into subtree, Summarise selected nodes into a parent, Suggest tags, Extract
+     action items, Status summary, To-Dos "Break into subtasks (AI)", "Restructure text (AI)"
+     (Ctrl/Cmd+Shift+R + Quick Assist `ai-restructure-text`; its Import-menu entry already went in
+     #8), inline Q&A "AI Answer ✦" (`qaAiAnswerEnabled` + its toggle), and Generate diagram's AI
+     label shortening (`diagramGenTrimText`'s AI path — Generate diagram itself stays and keeps
+     full labels). Nothing is left open for the AI scope. Removing Extract action items leaves
+     `serializeMarkdown` (src/utils/serializeMarkdown.ts) with no caller — check, then remove it
+     with its tests/generator entry (keep `computeOutlineNumbers` if anything else uses it).
+   - **Simplify Settings** generally; AI settings sections for removed features go with them.
+   - Remove the empty "Presentation" group heading in Settings → Features (left by #463).
+   - Leftovers found during #8, left for this sweep: `previewSlideDepth`,
+     `previewPdfMargin`/`setPreviewPdfMargin`, and `previewPdfFooterEnabled` have no Settings UI
+     any more (orphaned by #463) but still feed the PDF; `body.app-laser-active` CSS is dead;
+     index.html's og:/twitter:description still says "presents live, no PowerPoint needed";
+     the Branding row says "Off by default" while `previewBrandingEnabled` defaults to true;
+     README still describes Presenter Mode, Preview, Decision Log, Notepad, Mind Maps, and Files in
+     several sections; the To-Dos export dropdown overflows the viewport's right edge by ~12px
+     (pre-existing positioning).
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive

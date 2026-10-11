@@ -8,15 +8,14 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 // See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
-// Export domain — third slice. Exercises the real, unchanged getClipboardExportColors/
-// depthTextColor/soften/parseStyledTextForClipboard/serializeClipboardHtml wrapper functions —
-// the same call path exportToClipboard uses — against real nodes/treeIndentWidth/outlineNumbering
-// globals (hideTreeLines is now a fixed `true` constant, no more Settings toggle), not the
-// extracted *Core functions directly. Also confirms soften's
-// other real, unchanged hand-written call site (image export's getImageExportColors chain)
-// still resolves correctly after the splice.
+// Export domain — third slice. Exercises the real getClipboardExportColors/
+// parseStyledTextForClipboard/serializeClipboardHtml wrapper functions — the same call path the
+// Ctrl/Cmd+C node copy (copyNodesToClipboard) uses — against real nodes/treeIndentWidth/
+// outlineNumbering globals (hideTreeLines is now a fixed `true` constant, no more Settings
+// toggle). softenCore/depthTextColorCore are checked directly: their hand-written wrappers went
+// away with the image export, their only other caller.
 test.describe('generated serializeClipboardHtml block (src/utils/serializeClipboardHtml.ts spliced into index.html)', () => {
-  test('clipboard HTML wrapper functions all work through real nodes/prefs, and soften still resolves for its other hand-written callers', async ({ page }) => {
+  test('clipboard HTML wrapper functions all work through real nodes/prefs, and the spliced color helpers resolve', async ({ page }) => {
     const unexpectedErrors: string[] = [];
     page.on('pageerror', (err) => {
       if (!KNOWN_NOISE.test(err.message)) unexpectedErrors.push('pageerror: ' + err.message);
@@ -55,20 +54,15 @@ test.describe('generated serializeClipboardHtml block (src/utils/serializeClipbo
       // @ts-expect-error
       const colors = getClipboardExportColors();
       // @ts-expect-error
-      const mixed = soften('#ff0000', '#0000ff', 0.5);
+      const mixed = softenCore('#ff0000', '#0000ff', 0.5);
       // @ts-expect-error
-      const depthColor = depthTextColor(1, colors.fg, colors.muted);
+      const depthColor = depthTextColorCore(1, colors.fg, colors.muted);
       // @ts-expect-error
       const parsed = parseStyledTextForClipboard('run **npm test** now', colors);
       // @ts-expect-error
       const html = serializeClipboardHtml(nodes, false);
 
-      // Prove soften still resolves correctly for its OTHER real hand-written call site
-      // (image export's color pipeline) — not just serializeClipboardHtml's own internal use.
-      // @ts-expect-error
-      const imageColors = getImageExportColors();
-
-      return { colors, mixed, depthColor, parsed, html, imageColorsOk: !!imageColors && typeof imageColors === 'object' };
+      return { colors, mixed, depthColor, parsed, html };
     });
 
     expect(result.colors.fg).toBe('#1a1a1a');
@@ -79,7 +73,6 @@ test.describe('generated serializeClipboardHtml block (src/utils/serializeClipbo
     expect(result.html).toContain('Root');
     expect(result.html).toContain('Child');
     expect(result.html).toContain('font-weight:700');
-    expect(result.imageColorsOk).toBe(true);
 
     // Proof the rest of the script still runs — an unrelated, physically-distant function is
     // still callable, the standard check for every cutover.
