@@ -44,7 +44,7 @@ function setUpDoc(page: import('@playwright/test').Page, note: string) {
 // remarks/Q&A/Pad -- see its rewrite in render()), with real <br>/<div> elements marking line
 // breaks exactly the way the browser's own Enter/Shift+Enter handling produces them. Presenter/
 // Preview's note rendering (both the inline-plain and block-card paths, and the single
-// choke point splitNoteDiagramImages they share with Word/PPTX export) sets this HTML directly
+// choke point splitNoteDiagramImages the PDF export also uses) sets this HTML directly
 // via innerHTML with no conversion step -- these tests exercise noteIsPlainTextOnly/
 // noteIsSingleLine's classification of real HTML shapes, not a legacy plain-text bridge.
 test.describe('A multi-line rich-HTML note renders correctly in Presenter/Preview', () => {

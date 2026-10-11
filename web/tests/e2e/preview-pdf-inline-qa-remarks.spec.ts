@@ -19,7 +19,7 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
   }
 }
 
-// Mirrors what exportPdfDirect/exportPptx actually do: force-open the note/Q&A export state,
+// Mirrors what exportPdfDirect actually does: force-open the note/Q&A export state,
 // then re-render the Preview body from it -- the same mechanism a real "Export as PDF" click
 // goes through, without needing to drive window.print().
 function applyExportStateAndRender(page: import('@playwright/test').Page) {
@@ -55,9 +55,9 @@ function seedDoc(page: import('@playwright/test').Page, opts: { qaItems?: any[];
 // Q&A linked to a node used to only ever appear in one flat "Q&A" list at the very end of the
 // document, disconnected from the node it was actually about -- the per-node inline Q&A card
 // already existed in the renderer but was gated behind previewOpenQaIds, an ephemeral on-screen
-// toggle that PDF/PPTX export never force-populated (unlike notes, via previewOpenNoteIds).
+// toggle that PDF export never force-populated (unlike notes, via previewOpenNoteIds).
 // _applyNodeContentExportState now does the same force-open for Q&A that it already did for notes.
-test.describe('Linked Q&A prints inline under its node in PDF/PPTX export, not just in a disconnected trailing list', () => {
+test.describe('Linked Q&A prints inline under its node in PDF export, not just in a disconnected trailing list', () => {
   test('a question linked to a node renders as its own inline card under that node', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -237,11 +237,11 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
 // On-screen Preview/Presenter deliberately renders a plain single-line note inline right after
 // the node's own text (to stay compact while browsing), and a multi-line-but-still-plain note as
 // a thin unboxed rule -- only a richer note (table/image/heading/etc.) gets the full bordered
-// card. That meant an exported PDF/PPTX's own note output looked inconsistent from one node to
+// card. That meant an exported PDF's own note output looked inconsistent from one node to
 // the next, with no way for a reader to tell "notes render differently" from "these are
 // different kinds of content." _pvForceFullNoteCard makes every note use the same full card
 // during an export pass specifically, without changing the on-screen behavior.
-test.describe('Every note renders the same way in PDF/PPTX export, regardless of length or formatting', () => {
+test.describe('Every note renders the same way in PDF export, regardless of length or formatting', () => {
   test('a one-line plain note still renders inline next to the node text during ordinary on-screen Preview (unaffected)', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -262,7 +262,7 @@ test.describe('Every note renders the same way in PDF/PPTX export, regardless of
     expect(result.hasFullCard).toBe(false);
   });
 
-  test('that same one-line plain note renders as the full boxed card during a PDF/PPTX export pass instead', async ({ page }) => {
+  test('that same one-line plain note renders as the full boxed card during a PDF export pass instead', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedDoc(page, { note: '<p>A short plain note.</p>' });

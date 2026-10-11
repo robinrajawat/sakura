@@ -14,7 +14,7 @@
  * `escXmlAttr` — a hand-written one-liner (HTML-entity-escapes `&`/`<`/`>`/`"` for a safe XML
  * attribute value) — has real other callers outside this slice (`diagramGenFinishGenerate`,
  * deliberately not touched here), so it's inlined directly rather than referenced via
- * `declare function`, same reasoning `serializeOpml.ts`'s slice used for `escAttr`.
+ * `declare function`, same reasoning the since-removed `serializeOpml.ts` slice used for `escAttr`.
  *
  * `DIAGRAM_GEN_PALETTE`/`DIAGRAM_GEN_LAYER_ORDER`/`DIAGRAM_GEN_SHAPE_COLOR`/
  * `DIAGRAM_GEN_SHAPE_LABEL`/`DIAGRAM_GEN_NOTE_COLOR`/`DIAGRAM_GEN_EXCLUDED_COLOR`/

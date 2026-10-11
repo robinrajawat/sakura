@@ -7,10 +7,9 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Known-noise error substrings that are expected artifacts of loading index.html directly
 // via file:// in a headless test harness — not real application bugs. ServiceWorker
-// registration is rejected because the file:// origin ('null') doesn't support it; the
-// cdnjs/jsdelivr CORS failures are optional export-library scripts (xlsx, mammoth,
-// pptxgenjs) that fail to load cross-origin from a file:// page, which the app already
-// tolerates (those features simply aren't used in this test).
+// registration is rejected because the file:// origin ('null') doesn't support it. The
+// cdnjs/jsdelivr patterns are leftovers from CDN-loaded export/import libraries that have since
+// been removed; they're harmless to keep matching.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
 test.describe('generated presence block (src/state/presence.ts spliced into index.html)', () => {

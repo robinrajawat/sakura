@@ -2,7 +2,7 @@ import type { QueryableNode } from '../core/nodeQueries';
 
 /**
  * Export domain — third slice. `serializeClipboardHtml` renders the rich-text (HTML) half of
- * copy-to-clipboard — the `text/html` clipboard item `exportToClipboard` writes alongside
+ * copy-to-clipboard — the `text/html` clipboard item `copyNodesToClipboard` writes alongside
  * `serializeTreeText`'s plain-text version.
  *
  * Investigated as a whole before scoping, per the doc's own "investigate before assuming"
@@ -11,17 +11,15 @@ import type { QueryableNode } from '../core/nodeQueries';
  * `serializeClipboardHtml` never calls `stripHtmlToText` at all; tracing its real dependencies
  * (`getClipboardExportColors`, `depthTextColor`, `soften`, `parseStyledTextForClipboard`) finds
  * zero DOM calls anywhere in the chain — every one is plain string/math manipulation. All four
- * are included in this slice since they exist for no purpose other than this call chain, except
- * `soften`/`getClipboardExportColors`, which turn out to already be reused by several other
- * hand-written call sites elsewhere (image export, decision-log card rendering) — extracting
- * them doesn't touch those call sites, since every generated block is available as an ambient
- * global to hand-written code exactly the same way it is to other generated blocks.
+ * are included in this slice since they exist for no purpose other than this call chain (the
+ * image export and decision-log cards that once also called `soften`/`getClipboardExportColors`
+ * have since been removed).
  *
  * `buildPrefix`/`hasLaterSiblingAtDepth` (from `src/core/nodeQueries.ts`), `computeOutlineNumbers`
  * (from `src/utils/serializeMarkdown.ts`), and `escapeHtml` (from `src/utils/escapeHtml.ts`) are
  * already generated elsewhere and referenced as ambient globals via `declare function` — the
  * `esc()` hand-written one-liner wrapping `escapeHtml` is bypassed the same way `escAttr` was in
- * `serializeOpml.ts`'s own slice, calling `escapeHtml` directly instead.
+ * the since-removed `serializeOpml.ts` slice, calling `escapeHtml` directly instead.
  *
  * `treeIndentWidth`/`hideTreeLines`/`outlineNumbering` are promoted to explicit required
  * parameters, same "no silent default for a live user-preference toggle" reasoning this domain's
@@ -160,7 +158,7 @@ export interface ClipboardNode extends QueryableNode {
 }
 
 /** Pure: matches index.html's own `serializeClipboardHtml` exactly — renders `scopeNodes` as a
- * self-contained HTML document (the `text/html` clipboard payload `exportToClipboard` writes
+ * self-contained HTML document (the `text/html` clipboard payload `copyNodesToClipboard` writes
  * alongside `serializeTreeText`'s plain-text version): one `<div>` per node, each showing the
  * same ASCII tree-connector prefix `serializeTreeText` uses (rendered as literal `&nbsp;`-padded
  * text so it survives a paste), an optional outline-number span, and the node's text rendered

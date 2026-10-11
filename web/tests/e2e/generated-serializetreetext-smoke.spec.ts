@@ -9,7 +9,7 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
 // Export domain — first slice. Exercises the real, unchanged serializeTreeText() wrapper — the
-// same call path exportTreeFormat/exportToClipboard use — against real nodes/treeIndentWidth/
+// same call path copyNodesToClipboard (Ctrl/Cmd+C) uses — against real nodes/treeIndentWidth/
 // outlineNumbering globals, not the extracted serializeTreeTextCore directly. hideTreeLines is
 // now a fixed `true` constant (no more Settings toggle), so the wrapper can only ever be
 // exercised with that value live; the ASCII-connector (hideTreeLines=false) branch is still real,

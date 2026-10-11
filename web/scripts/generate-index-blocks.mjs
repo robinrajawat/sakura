@@ -399,10 +399,10 @@ initHubTodosState({
     name: 'serializeTreeText',
     sourceFile: 'src/utils/serializeTreeText.ts',
     testFile: 'tests/unit/serializeTreeText.test.ts',
-    // No production wiring needed — pure function, no DOM/side effects. Both real call sites
-    // (exportToClipboard, exportTreeFormat) were updated in the same commit that wired this
-    // block in, to call the hand-written serializeTreeText wrapper which now just forwards to
-    // serializeTreeTextCore with treeIndentWidth/hideTreeLines passed explicitly.
+    // No production wiring needed — pure function, no DOM/side effects. Its real call site
+    // (copyNodesToClipboard, the Ctrl/Cmd+C node copy) calls the hand-written serializeTreeText
+    // wrapper, which just forwards to serializeTreeTextCore with treeIndentWidth/hideTreeLines
+    // passed explicitly.
     footer: ''
   },
   {
@@ -423,16 +423,14 @@ initHubTodosState({
     // Export domain — third slice. serializeClipboardHtml and its color/parsing helpers
     // (getClipboardExportColors, depthTextColor, soften, parseStyledTextForClipboard) turned
     // out to have zero DOM dependency once traced — an earlier status note wrongly lumped this
-    // together with serializeTreeTextWithNotes as DOM-dependent. soften/getClipboardExportColors
-    // are also reused by several hand-written call sites elsewhere (image export, decision-log
-    // cards) — unaffected, since ambient globals work identically for hand-written callers.
+    // together with serializeTreeTextWithNotes as DOM-dependent. Feeds the text/html half of the
+    // Ctrl/Cmd+C node copy (copyNodesToClipboard).
     name: 'serializeClipboardHtml',
     sourceFile: 'src/utils/serializeClipboardHtml.ts',
     testFile: 'tests/unit/serializeClipboardHtml.test.ts',
-    // No production wiring needed — pure functions, no DOM/side effects. All five real call
-    // sites (getClipboardExportColors/depthTextColor/soften/parseStyledTextForClipboard/
-    // serializeClipboardHtml wrapper bodies in index.html) were updated in the same commit that
-    // wired this block in.
+    // No production wiring needed — pure functions, no DOM/side effects. The hand-written
+    // wrappers in index.html (getClipboardExportColors/parseStyledTextForClipboard/
+    // serializeClipboardHtml) forward to the Core functions.
     footer: ''
   },
   {
@@ -465,19 +463,6 @@ initHubTodosState({
     // No production wiring needed — pure function, no DOM/side effects. diagramGenFinishGenerate
     // (the hand-written orchestration wrapper) was updated in the same commit that wired this
     // block in to call diagramGenFinishGenerateXmlCore for the xml string.
-    footer: ''
-  },
-  {
-    // Image export — first slice. parseInlineSegments turned out genuinely pure once traced —
-    // an earlier "canvas-dependent" blanket label for image export didn't apply uniformly; this
-    // one function has zero DOM dependency, unlike measureTreeImage/exportTreeAsImage around it
-    // (deliberately not touched, genuinely canvas-bound).
-    name: 'parseInlineSegments',
-    sourceFile: 'src/utils/parseInlineSegments.ts',
-    testFile: 'tests/unit/parseInlineSegments.test.ts',
-    // No production wiring needed — pure function, no DOM/side effects. The one real call site
-    // (parseInlineSegments wrapper body, called from measureTreeImage) was updated in the same
-    // commit that wired this block in.
     footer: ''
   },
   {
