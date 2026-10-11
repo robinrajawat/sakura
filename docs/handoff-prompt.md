@@ -343,7 +343,7 @@ and merged after independent review:
    saved; the right-click "More" menu still offers "Laser pointer" and a "Slide divider" action
    (Presenter leftovers from #463); README's Note/Code Block sections still describe the removed
    floating Note panel.
-9b. Presets + Settings sweep + docs/leftovers. **Done in PR #PRNUM (open, awaiting review — not
+9b. Presets + Settings sweep + docs/leftovers. **Done in PR #471 (open, awaiting review — not
    merged).** Project-owner decisions, all settled:
    **Presets/modes removed:** Editor's Choice and Documentation mode presets (Settings cards, Undo
    snapshots, Quick Assist Run actions + hint phrase, welcome-screen link), Zen's three preset
@@ -394,7 +394,7 @@ and merged after independent review:
    og/twitter/meta descriptions, README sections for Presenter/Preview/Decision Log/Notepad/Mind
    Map/Files/floating Note + Code Block.
    **Fixes:** To-Dos Export dropdown overflowed the right edge because its positioning used a
-   caller-supplied 180px while the menu renders 202px wide — `openSimpleDropdown` now measures the
+   caller-supplied 180px while the menu renders 200px wide — `openSimpleDropdown` now measures the
    real width. `tests/e2e/backup-simplified.spec.ts` flake root-caused: under 8-worker load the
    first document in a fresh context occasionally gets a localStorage area that never reaches the
    shared store (a second page never sees its writes; after a reload localStorage comes back with
