@@ -12,8 +12,7 @@
  * - `findTodo` — a trivial one-line ambient lookup (`todos.find(...)`), no real logic to test,
  *   same reasoning as `getAllAiProviders`/`getAiProviderById` staying out of `aiProviders.ts`.
  * - `renderTodos`/swipe-list wiring — DOM construction, stays hand-written.
- * - Subtask CRUD — since extracted separately, see `src/state/hubSubtasks.ts`. Due-date
- *   reminder checking — since extracted separately, see `src/state/hubReminders.ts`.
+ * - Subtask CRUD — since extracted separately, see `src/state/hubSubtasks.ts`.
  *   `nextRepeatDate` WAS added in a follow-up pass, once identified as pure date arithmetic
  *   with no such coupling.
  *
@@ -37,7 +36,6 @@ export interface Todo {
   link: string | null;
   linkLabel: string | null;
   nodeRef: unknown;
-  meetingRef: unknown;
   repeat: unknown;
   subtasks: unknown[];
   subtasksOpen: boolean;
@@ -84,7 +82,6 @@ export function createTodo(text: string): Todo {
     link: null,
     linkLabel: null,
     nodeRef: null,
-    meetingRef: null,
     repeat: null,
     subtasks: [],
     subtasksOpen: true

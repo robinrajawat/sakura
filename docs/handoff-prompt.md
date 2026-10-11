@@ -174,8 +174,8 @@ and merged after independent review:
    dead-code references to the removed `#pad-editor` DOM node left wired into undo/redo, the AI
    rewrite dispatcher, and Presenter/Audience sync).
 5. #466 — Remove the Pad container itself + the Diagrams/Q&A/Remarks **list-tab UI**, while
-   preserving their inline per-node editing entirely. **Done in PR #466 (open, awaiting review —
-   not merged).** Two judgment calls worth checking at review: (a) the Pad's per-tab feature flags
+   preserving their inline per-node editing entirely. **Merged.** Two judgment calls made
+   there: (a) the Pad's per-tab feature flags
    (`padQaTabEnabled`/`padDiagramsTabEnabled`/`padRemarksTabEnabled`) also gated the inline
    features, so with them gone inline Q&A/Diagrams/Remarks are simply always on; (b) diagram
    generation's only entry point was the Pad's Diagrams-tab Generate button, so it was re-homed as
@@ -183,8 +183,37 @@ and merged after independent review:
    rather than deleted. Everything reachable only from the Pad (Q&A scan/import/AI generate/group/
    bulk-draft/summary/copy/PDF, diagram import + AI-prompt export + whiteboard + paste, the lists'
    search/sort/select/bulk controls, the remarks node-picker) went with it.
-6. Hub trim to Todos-only (drop Journal and Meetings; confirm Reminders' real scope before
-   deciding its fate; keep Todos + Subtasks). **Not started.**
+6. Hub trim to To-Dos only: remove Journal, Meeting Notes, Library, and Recap (in both
+   index.html and hub.html) and the Hub's due-date Reminders; keep To-Dos + Subtasks. **Done in
+   PR #467 (open, awaiting review — not merged).** Scope grew twice, both by the project owner's
+   decision: (1) Reminders' real scope was confirmed first — it was purely hub.html's To-Do
+   due-date browser notifications (account-menu toggle + 5-minute check while open) — and the
+   owner chose to remove it too; (2) after the first pass kept Library and Recap (outside the
+   original item's wording), the owner decided they go as well, so the index.html dock is now
+   To-Dos only. The unrelated *backup* reminder and the diagram note's "private reminder" text
+   are untouched. Judgment calls worth checking at review:
+   (a) with one dock panel left, the dock tab strip and its multi-tab orchestration (tab-id
+   maps, remembered last tab, shared maximize state, `hub-single-tab`) were removed, mirroring
+   hub.html's removed tab bar — `openDockTab`/`toggleDockTab`/`dockPanelIsOpen`/
+   `dockSyncRailVisibility` survive as tiny To-Dos-only entry points because the To-Dos module,
+   its shortcut, Quick Assist, and the app-bar launcher call them; the To-Dos panel now shows its
+   own maximize/close, and the launcher is hidden when To-Dos is switched off;
+   (b) everything that existed only to feed a removed panel went with it — Outlook Calendar
+   import (and its Microsoft origins in the CSP), .ics import/export, meeting ref dots, the
+   To-Dos "from meeting" chip (`meetingRef`), the landing demo's meeting card, the recent-
+   answerer autocomplete (meetings were its last caller), the `.hub-field-*` body-field classes
+   and their list-button handler (Library was their last user), the panel drag/resize/width
+   helpers only Journal/Library/Recap used, and the HTML→Markdown converter + Markdown→HTML
+   parser (`mdBlocksFromHtml`/`mdTextToHtml`/`mdInlineToHtml`) only Library's AI rewrite and
+   Recap's summary used;
+   (c) kept: the selection-format popover (notes/remarks/Q&A), `.dock-menu-*` (To-Dos Export
+   menu), `updateStatusUtilGroupVisibility` (now To-Dos only), `printHtmlAsPdf`,
+   `#ref-jump-popover`, `revealNodeInDoc`/`revealInlineObject`/`sakuraFlashTodo` (still used by
+   Where-used and global search); `getIdbSyncMetaKeys()` now returns `{}` but the IndexedDB sync
+   branches were left in place rather than refactoring the sync engine;
+   (d) old data is never deleted — leftover `sakura_meetings*`/`sakura_journal*`/
+   `sakura_library*`/`sakura_report_settings_v1`/`sakura_dock_last_tab` keys and their cloud
+   meta docs are just no longer read or synced, and backups still round-trip them verbatim.
 7. #463 — Remove Preview/Presenter's interactive UI (the on-screen scrolling overlay, the
    fullscreen slideshow, Audience View, Presenter Notes, laser pointer, etc.), while keeping
    `renderPreviewBody()`/`exportPreviewAsPdf()` working as a fully headless PDF pipeline — PDF

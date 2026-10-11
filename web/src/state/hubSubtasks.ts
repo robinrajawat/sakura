@@ -4,7 +4,7 @@
  * listeners each fusing a one-to-few-line mutation with real orchestration (`saveTodos()`,
  * `renderTodos()`, `renderTaskDetail()`).
  *
- * Third Hub feature-domain slice, after `hubTodos.ts`/`hubJournal.ts`'s storage layers.
+ * Hub feature-domain slice, after `hubTodos.ts`'s storage layer.
  * `hubTodos.ts`'s own header flagged this as "genuinely separate... not investigated" at the
  * time — investigated here. Each operation's actual logic is small (flip a boolean, filter an
  * array, push an object) but real enough to be worth pinning: `addSubtaskCore` in particular
@@ -35,8 +35,6 @@
  *   clearing the input's value, `saveTodos()`/`renderTodos()`/`renderTaskDetail()` calls) — real
  *   orchestration, stays hand-written, same split as every prior slice.
  * - `renderTaskSubtasks`/`renderTaskChips` — DOM construction, stays hand-written.
- * - Due-date reminders (real `Notification` API + DOM click handler) — a genuinely separate
- *   piece of the todos domain, still not investigated; left for its own future slice.
  */
 
 export interface Subtask {

@@ -128,7 +128,7 @@ test.describe('generated hubSubtasks block (src/state/hubSubtasks.ts spliced int
     // cutover.
     const restOfScriptWorks = await page.evaluate(() => {
       // @ts-expect-error
-      return typeof todayStr === 'function' && typeof esc === 'function' && typeof jnUid === 'function';
+      return typeof todayStr === 'function' && typeof esc === 'function' && typeof subUid === 'function';
     });
     expect(restOfScriptWorks).toBe(true);
 

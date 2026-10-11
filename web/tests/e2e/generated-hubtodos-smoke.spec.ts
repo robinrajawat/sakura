@@ -93,7 +93,7 @@ test.describe('generated hubTodos block (src/state/hubTodos.ts spliced into hub.
     // cutover, now proven for hub.html's own separate script scope too.
     const restOfScriptWorks = await page.evaluate(() => {
       // @ts-expect-error
-      return typeof todayStr === 'function' && typeof esc === 'function' && typeof jnUid === 'function';
+      return typeof todayStr === 'function' && typeof esc === 'function' && typeof subUid === 'function';
     });
     expect(restOfScriptWorks).toBe(true);
 
