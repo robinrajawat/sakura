@@ -500,7 +500,7 @@ and merged after independent review:
    Undo restores them to the original row; diagrams and to-dos live outside it and stay on the
    surviving row (still reachable). Covered by `tests/e2e/merge-rows-keeps-content.spec.ts`.
 13. **Tables, Cards and PDF improvements** (three PRs, owner-approved plan).
-   **PR 1 — four bug fixes. Done in PR #PRNUM (not merged).** (a) PDF section headings/Contents
+   **PR 1 — four bug fixes. Done in PR #476 (not merged).** (a) PDF section headings/Contents
    for a section whose text starts with a `[label]` (e.g. `[Release 2.4] Plan`) printed "Release
    2.4] Plan" — now "Release 2.4 · Plan" (label in the accent colour, via the pure
    `sectionHeadingParts` in `src/core/nodeQueries.ts`); (b) clicking into a table no longer
