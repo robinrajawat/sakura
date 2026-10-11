@@ -187,13 +187,25 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
         qaAiAnswerEnabled: false
       }));
       localStorage.setItem('sakura-shortcut-overrides', JSON.stringify({ restructureText: 'mod+alt+r' }));
+      // The legacy document is written straight into storage before the first load, exactly as an
+      // older build would have left it, instead of being created in-page and then reloaded: under
+      // heavy parallel load Chromium can navigate before a just-written localStorage entry is
+      // committed, which made the reload come back with an empty store.
+      const docId = 'legacy9adoc';
+      localStorage.setItem('sakura_doc_v1_' + docId, JSON.stringify({
+        nodes: [
+          { id: 1, depth: 0, text: '🛒 Webshop checkout', parentId: null, isCheckbox: false, checked: false, note: '', tags: ['shop'], styles: {}, icon: '🛒' },
+          { id: 2, depth: 1, text: 'Payment provider integration', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {}, icon: 'cart' }
+        ],
+        nextId: 3, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Legacy icons', author: ''
+      }));
+      localStorage.setItem('sakura_docs_index_v1', JSON.stringify([{ id: docId, title: 'Legacy icons', updatedAt: Date.now() }]));
+      localStorage.setItem('sakura_current_doc_v1', docId);
+      localStorage.setItem('sakura_open_tabs_v1', JSON.stringify({ tabs: [docId], pinned: [], active: docId }));
     });
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    await seedDoc(page);
-    await page.reload();
-    await dismissOverlays(page);
-    // Wait for the reloaded document to actually render before reading app state.
+    // Wait for the stored document to actually render before reading app state.
     await expect(page.locator('.node-row')).toHaveCount(2, { timeout: 15000 });
 
     const after = await page.evaluate(() => {
