@@ -406,7 +406,7 @@ and merged after independent review:
    (→ terracotta), and old Editor's Choice/Doc mode undo keys load harmlessly; removed prefs drop on
    the next save (old localStorage keys are never deleted). Covered by
    `tests/e2e/presets-settings-sweep.spec.ts`.
-10. Fix paste of Sakura's own copied tree. **Done in its own PR (not merged).** Pasting Sakura's
+10. Fix paste of Sakura's own copied tree. **Merged (#472).** Pasting Sakura's
    own copied tree back collapsed it into one node whenever the clipboard had text/html —
    `parseTreeClipboardHtml` read `innerText` from a detached element, which degrades to
    `textContent` and runs the one-`white-space:pre`-`<div>`-per-node rows together. (Found during
@@ -416,8 +416,52 @@ and merged after independent review:
    per line instead of one collapsed node (it also now splits into nodes when pasted while editing
    a node, matching how multi-line plain text already behaved).
 
-**Next, to discuss with the owner before any work:** images inside inline notes should become
-their own object type (like diagrams/Q&A/remarks, e.g. `node.images`). Not scoped yet.
+11. **Images as node objects** (new feature, after the cutdown; two PRs). Project-owner
+   decisions, all settled:
+   **Model:** pictures (mainly screenshots, several per node) are their own per-node object like
+   `node.tables`: `node.images` = `[{id, src, caption, width?, annotations: [], createdAt}]`. `src`
+   is a data URL stored in the document itself (no external storage). `width` is an optional
+   display size as a percentage (10–100) of the available width; absent = "Auto" (natural size,
+   capped at full width). `annotations` is reserved for PR B and must round-trip untouched through
+   save/load/sync/backup/undo/copy (the normalizer passes it through verbatim). Pure logic lives in
+   `src/utils/nodeImages.ts` (generator block `nodeImages`, unit-tested).
+   **Migration:** automatic on document load/render, same call sites and contract as
+   `migrateNoteTablesToNode` (`migrateNoteImagesToNode`): every `<img>` with a usable src
+   (`data:image/…` or http(s)) in `node.note` moves into `node.images` in document order, the
+   note's text stays intact (only the `<img>` and any wrapper it leaves empty are removed),
+   idempotent, never drops data; alt text becomes the caption unless it's a bare file name; an
+   `<img>` without a usable src (blob:, relative, empty) is left in the note. Migrated images are
+   NOT re-compressed.
+   **Compression on insert:** every newly added image (paste, drop, file pick) is downscaled to max
+   1600px on the long side and re-encoded to WebP q0.8, falling back to JPEG (on white) when
+   `canvas.toDataURL('image/webp')` doesn't actually return WebP; the original is kept only if it
+   needed no downscale and is already smaller. SVG and animated GIFs are kept as-is. Reason:
+   signed-in docs sync to Firestore, 1MB per-document cap.
+   **Layout:** a compact, wrapping strip of thumbnails under the node (where tables/diagrams
+   render), caption truncated beneath; click → enlarged viewer (lightbox) with the caption editable,
+   ←/→ and side buttons to step through the node's images, Esc/click-outside to close, an
+   **Auto / Small (35%) / Medium (60%) / Full (100%)** width control (stored as `width`, used in the
+   viewer and the PDF), and Delete. Thumbnail right-click: Open, Edit caption…, Move left/right,
+   Delete image; drag a thumbnail to reorder. New row dot `node-note-dot node-image-dot` (open by
+   default, click folds the strip like the table dot; folded-branch badge says "an image").
+   **Adding:** paste/drop an image while a node row is selected/edited or its note line is focused →
+   `node.images` (never note HTML any more — the old `execCommand('insertImage')` path is gone);
+   right-click → "Add image…" (multiple files; in "More" by default; also offered in the hover
+   toolbar settings). Existing users' saved right-click menus get "Add image…" appended once
+   (`ctxImageActionAdded` pref).
+   **Wired like `node.tables`:** normalizer/`makeNode`, undo/redo snapshots, autosave, Version
+   History, sync, backup/restore (all carry whole nodes), Duplicate, Ctrl/Cmd+C/V (images ride in
+   the `sakura-dl` clip payload as `imgs`, fresh ids on paste), Backspace/Delete-merge (absorbed
+   row's images move to the survivor). PDF renders each image as a captioned figure at its width;
+   OPML skips images silently.
+   **11A — Done in PR #473 (not merged).** Data model, migration, compression, thumbnails, viewer
+   (with an empty `.niv-tools` toolbar slot and an `.niv-annot-layer` SVG overlay +
+   `renderNodeImageAnnotations()` as the seam for PR B), dot, paste/drop/file-pick, PDF, docs.
+   Covered by `tests/e2e/node-images.spec.ts` + `tests/unit/nodeImages.test.ts`.
+   **11B — Markup editor. Not started.** In the enlarged viewer: rectangle, arrow, translucent
+   highlighter, text label; colours; undo; "clear markings". All are non-destructive shapes stored
+   in `annotations` with coordinates relative to the image size (so they survive any display
+   size), rendered in the viewer and the PDF.
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive

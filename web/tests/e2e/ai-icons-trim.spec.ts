@@ -241,7 +241,8 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     expect(after.icons.length).toBe(2);
     expect(after.aiHidden).toEqual([]);
     expect(after.prefsAiHidden).toEqual([]);
-    expect(after.quick).toEqual(['ai-rewrite', 'note']);
+    // 'image' ("Add image…") is appended once to menus saved before it existed (ctxImageActionAdded).
+    expect(after.quick).toEqual(['ai-rewrite', 'note', 'image']);
     expect(after.hover).toEqual(['child']);
     expect(after.prefsHasQaAi).toBe(false);
     expect(after.overrideInMemory).toBeUndefined();

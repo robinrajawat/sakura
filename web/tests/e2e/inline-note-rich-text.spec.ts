@@ -66,16 +66,6 @@ function rightClick(page: import('@playwright/test').Page, selector: string) {
   }, selector);
 }
 
-// A plain click on a table/chart/Cards/picture figure is intentionally a no-op while the note is
-// unfocused (clicking a card should never silently drop you into editing it) -- "Edit note" from
-// the right-click menu is the one remaining way into the whole note's live/raw edit mode,
-// replacing what used to be a plain `page.locator('#note-line-1').click()` throughout this file's
-// existing tests.
-async function editNote(page: import('@playwright/test').Page) {
-  await rightClick(page, '#note-line-1 .pv-diagram-figure');
-  await page.locator('.sb-context-menu').getByText('Edit note', { exact: true }).click();
-}
-
 // A real right-click fires 'mousedown' BEFORE 'contextmenu' -- and a mousedown's own native
 // default action (focusing whatever contenteditable it lands on) happens whether or not the menu
 // this test cares about ever opens. rightClick above only dispatches 'contextmenu' in isolation,
@@ -211,11 +201,9 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
   });
 
   // The note-line's own paste handler intercepts an image-only clipboard item (no text/html at
-  // all -- the common screenshot case) and inserts it manually via FileReader + insertImage,
-  // since that's the one path native browser paste can't be relied on for in every context. This
-  // is the part of the paste handler that's actually our own code (not dependent on the browser's
-  // native paste insertion), so it's the part worth exercising directly.
-  test('pasting an image-only clipboard item inserts an <img> and persists it', async ({ page }) => {
+  // all -- the common screenshot case). Pictures are node objects now (node.images), so it lands
+  // there -- never as an <img> inside the note's HTML.
+  test('pasting an image-only clipboard item adds it to node.images, not the note', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedNodeWithNote(page, '', true);
@@ -237,18 +225,18 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       Object.defineProperty(ev, 'clipboardData', { value: clipboardData });
       el.dispatchEvent(ev);
     });
-    await page.waitForTimeout(100);
+    await expect.poll(() => page.evaluate(() => {
+      // @ts-expect-error
+      return (nodes.find((n: any) => n.id === 1).images || []).length;
+    })).toBe(1);
 
-    const result = await page.evaluate(() => {
-      const el = document.getElementById('note-line-1')!;
-      return {
-        hasImg: !!el.querySelector('img'),
-        // @ts-expect-error
-        noteHasImg: /<img/i.test(nodes.find((n: any) => n.id === 1).note || ''),
-      };
-    });
-    expect(result.hasImg).toBe(true);
-    expect(result.noteHasImg).toBe(true);
+    const result = await page.evaluate(() => ({
+      // @ts-expect-error
+      noteHasImg: /<img/i.test(nodes.find((n: any) => n.id === 1).note || ''),
+      thumbs: document.querySelectorAll('.node-image-strip[data-node-id="1"] .node-image-thumb').length,
+    }));
+    expect(result.noteHasImg).toBe(false);
+    expect(result.thumbs).toBe(1);
   });
 
   // Tables/charts/Cards are no longer embedded in node.note's rich HTML at all -- they're their
@@ -971,7 +959,9 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     expect(tableCellResult).toBeNull();
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
-    await seedNodeWithNote(page, '<p><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7" alt="pic"></p>');
+    // A picture with a usable src would migrate out of the note into node.images; one without
+    // (a relative src here) is the only kind that can still sit inside a note.
+    await seedNodeWithNote(page, '<p><img src="missing-pic.gif" alt="pic"></p>');
     const imageResult = await page.evaluate(() => {
       const img = document.querySelector('#note-line-1 img')!;
       // @ts-expect-error
@@ -990,42 +980,10 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     expect(textResult).toBe('note-line-1');
   });
 
-  // Pasted images had no way to resize at all. _setupImageResize/_imgResizeSelect/_imgResizePersist
-  // already back Pad's own images (click to select, drag the corner handle, double-click to
-  // reset) -- wired into the note-line's own click/dblclick instead of through that function
-  // directly, since it looks its editor up by a fixed id and each note-line is a fresh element
-  // with a new per-node id every render().
-  test('a pasted image can be selected and resized, persisting the new width to node.note', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodeWithNote(page, '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=">');
-
-    // A standalone picture shows as its own read-only figure while the note is unfocused -- a
-    // plain click there is intentionally a no-op now, so "Edit note" first swaps the real <img>
-    // back into noteLine directly (matching how a real user would get to resizing it).
-    await editNote(page);
-    const img = page.locator('#note-line-1 img');
-    await img.click();
-    await expect(img).toHaveClass(/editor-img-selected/);
-
-    const handle = page.locator('#img-resize-handle');
-    await expect(handle).toBeVisible();
-    const box = (await img.boundingBox())!;
-    await page.mouse.move(box.x + box.width, box.y + box.height);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width + 60, box.y + box.height, { steps: 5 });
-    await page.mouse.up();
-
-    const result = await page.evaluate(() => {
-      // @ts-expect-error
-      const note = nodes.find((n: any) => n.id === 1).note;
-      const div = document.createElement('div'); div.innerHTML = note;
-      return { styledWidth: div.querySelector('img')?.style.width, stillSelectedInSaved: /editor-img-selected/.test(note) };
-    });
-    expect(result.styledWidth).toMatch(/^\d+px$/);
-    expect(parseInt(result.styledWidth!, 10)).toBeGreaterThan(1);
-    expect(result.stillSelectedInSaved).toBe(false); // the transient selection class must never be persisted
-  });
+  // (A test for click-to-select/drag-to-resize of a picture inside a note used to live here.
+  // Pictures with a usable src are node.images objects now -- migrated out of the note on render --
+  // and their display size is the viewer's Auto/Small/Medium/Full control; see
+  // tests/e2e/node-images.spec.ts.)
 
   // Was a bare stroked squiggle+dot with no outer circle, unlike every sibling dot icon (note's
   // page shape, remark's person, diagram's rects) which fills a good portion of its 24x24 box --

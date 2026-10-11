@@ -53,11 +53,11 @@ test.describe('A table object renders at its own real size in the outline editor
   });
 });
 
-// A note's own standalone picture reused Preview/PDF's own "stretch the figure to fill the row"
-// figure styling in the live outline editor too -- fine for a static export, wrong for the editor,
-// where even a tiny originally-inserted image was being pushed out to the full editor width.
-test.describe('A note\'s standalone picture renders at its natural size in the outline editor, not stretched full-width', () => {
-  test('the image figure does not flex-grow to fill its row', async ({ page }) => {
+// Pictures used to live inside a note and render as a (once over-stretched) figure there. They're
+// node.images objects now -- an older note's picture migrates on render -- and show as a compact
+// thumbnail strip under the row: a small fixed-size thumbnail, never stretched to the row's width.
+test.describe('A node\'s pictures render as compact thumbnails in the outline editor, not stretched full-width', () => {
+  test('a migrated note picture becomes a fixed-size thumbnail that does not fill its row', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     const img1x1 = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
@@ -74,11 +74,14 @@ test.describe('A note\'s standalone picture renders at its natural size in the o
       render();
     }, img1x1);
 
-    const flexGrow = await page.evaluate(() => {
-      const fig = document.querySelector('.node-note-image-figure') as HTMLElement;
-      return fig ? getComputedStyle(fig).flexGrow : null;
+    const sizes = await page.evaluate(() => {
+      const thumb = document.querySelector('.node-image-strip .node-image-thumb') as HTMLElement;
+      const wrap = document.querySelector('.node-image-line-wrap') as HTMLElement;
+      return thumb && wrap ? { thumb: thumb.getBoundingClientRect().width, wrap: wrap.getBoundingClientRect().width } : null;
     });
-    expect(flexGrow).toBe('0');
+    expect(sizes).not.toBeNull();
+    expect(sizes!.thumb).toBeLessThan(200);
+    expect(sizes!.thumb).toBeLessThan(sizes!.wrap * 0.5);
   });
 });
 

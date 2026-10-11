@@ -201,7 +201,7 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
     }
   });
 
-  test('the default quick row is the 8-item curated set, matching "Reset" in Settings', async ({ page }) => {
+  test('the default quick row is the 9-item curated set, matching "Reset" in Settings', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -209,7 +209,7 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
       // @ts-expect-error
       [...contextQuickActions]
     );
-    expect(initial).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'tags', 'diagram-gen']);
+    expect(initial).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'image', 'tags', 'diagram-gen']);
 
     // Mess with it, then Reset should bring back exactly the same default.
     await page.evaluate(() => {
@@ -221,6 +221,6 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
       // @ts-expect-error
       [...contextQuickActions]
     );
-    expect(afterReset).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'tags', 'diagram-gen']);
+    expect(afterReset).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'image', 'tags', 'diagram-gen']);
   });
 });

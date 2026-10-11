@@ -1526,15 +1526,6 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-diagram-img{max-width:100%;max-height:var(--pv-diagram-max-h,70vh);display:block;margin:0 auto}
 .pv-diagram-row-multi .pv-diagram-img{max-height:var(--pv-diagram-max-h-multi,42vh)}
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
-/* The outline editor's own read-only rendering of a note's pictures (renderNoteDisplayHtml) reuses
-   .pv-diagram-figure for its base layout, but NOT Preview/PDF's own deliberate "stretch to fill the
-   row" treatment (.pv-diagram-figure's flex:1 1 320px plus the column flex container's default
-   align-items:stretch) -- that reads right for an exported document's diagrams/images, but in the
-   live editor it was pushing even a small originally-inserted image to the full editor width.
-   flex:0 1 auto sizes the figure to its own content (the image's natural width) instead of growing
-   to fill the row; max-width:100% on the image still caps an oversized original from overflowing. */
-.node-note-image-figure{flex:0 1 auto;align-items:flex-start}
-.node-note-image-figure img{max-width:100%;display:block}
 .pv-table-figure{flex:1 1 100%}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
@@ -1577,10 +1568,59 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
    fine for a chart's SVG or a Cards grid (both want to fill the figure), but for a PLAIN table its
    default cross-axis align-items:stretch was overriding the table's own width:auto/table-layout:fixed
    sizing above, stretching it to the wrap's full width regardless of what the colgroup said -- the
-   same flex-stretch mechanism node-note-image-figure's own fix just below addresses for pictures.
+   classic flex-stretch problem.
    Scoped off :not(.pv-table-chart-figure), the class a chart OR Cards grid always carries (see
    buildNodeTableObject/buildNoteTableFigure), so neither of those is affected. */
 .node-table-line:not(.pv-table-chart-figure){align-items:flex-start}
+/* node.images -- a node's pictures/screenshots as their own per-node objects (see
+   buildNodeImageStrip): a compact, wrapping strip of thumbnails under the row (placed like
+   .node-table-line-wrap), each with its caption truncated beneath; click one for the viewer. */
+.node-image-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
+.node-image-strip{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.node-image-thumb{all:unset;box-sizing:border-box;display:flex;flex-direction:column;width:calc(132px * var(--editor-scale));border:1px solid var(--border);border-radius:7px;overflow:hidden;cursor:zoom-in;background:color-mix(in srgb,var(--fg) 3%,var(--bg));transition:border-color .12s,box-shadow .12s}
+.node-image-thumb:hover,.node-image-thumb:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.node-image-thumb img{display:block;width:100%;height:calc(82px * var(--editor-scale));object-fit:cover;object-position:top left;background:var(--bg)}
+.node-image-caption{display:block;padding:3px 7px 4px;font:500 11px 'Inter',sans-serif;line-height:1.35;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid var(--border)}
+.node-image-thumb.dragging{opacity:.4}
+.node-image-thumb.drop-before{box-shadow:-3px 0 0 var(--accent)}
+.node-image-thumb.drop-after{box-shadow:3px 0 0 var(--accent)}
+.node-row.image-drop-target{outline:2px dashed var(--accent);outline-offset:-2px;border-radius:6px}
+/* Enlarged viewer (openNodeImageViewer). .niv-tools and .niv-annot-layer are the markup editor's
+   seam: an empty toolbar slot and an SVG overlay sized exactly to the picture. */
+#node-image-viewer{position:fixed;inset:0;z-index:2600;display:none;align-items:center;justify-content:center;background:rgba(15,14,12,.72);padding:24px;box-sizing:border-box}
+#node-image-viewer.open{display:flex}
+.niv-panel{display:flex;flex-direction:column;width:min(1200px,100%);max-height:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+.niv-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.niv-counter{font:600 12px 'Inter',sans-serif;color:var(--muted);min-width:44px;padding-left:4px}
+.niv-tools{flex:1;display:flex;gap:4px;min-width:0}
+.niv-size{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
+.niv-size-btn{all:unset;font:500 12px 'Inter',sans-serif;color:var(--fg);padding:5px 11px;cursor:pointer}
+.niv-size-btn+.niv-size-btn{border-left:1px solid var(--border)}
+.niv-size-btn:hover{background:var(--hover)}
+.niv-size-btn.active{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-weight:600}
+.niv-size-btn:disabled{opacity:.5;cursor:default}
+.niv-size-btn:focus-visible,.niv-btn:focus-visible,.niv-nav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.niv-btn{all:unset;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;color:var(--muted);cursor:pointer}
+.niv-btn:hover{background:var(--hover);color:var(--fg)}
+.niv-delete:hover{color:var(--fc-red,#c0392b)}
+.niv-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;gap:8px;padding:14px 10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg))}
+.niv-frame{flex:1;min-width:0;display:flex;align-items:flex-start;justify-content:center;overflow:auto;max-height:calc(100vh - 200px)}
+.niv-figure{position:relative;line-height:0;max-width:100%;margin:auto}
+.niv-img{display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.niv-figure:not(.niv-auto) .niv-img{width:100%;height:auto;max-height:none}
+.niv-annot-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.niv-nav{all:unset;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--bg);border:1px solid var(--border);color:var(--fg);cursor:pointer}
+.niv-nav:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.niv-nav:disabled{opacity:.3;cursor:default}
+.niv-single .niv-nav{visibility:hidden}
+.niv-caption{border:0;border-top:1px solid var(--border);padding:11px 16px;font:400 14px 'Inter',sans-serif;color:var(--fg);background:var(--bg);outline:none}
+.niv-caption:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.niv-caption:disabled{color:var(--muted)}
+/* PDF: one figure per picture, centred, at its chosen width (% of the content width). */
+.pv-node-images{display:flex;flex-direction:column;align-items:center;gap:14px;margin:6px 0 12px}
+.pv-node-image-figure{flex:none;max-width:100%;margin:0;break-inside:avoid;page-break-inside:avoid}
+.pv-node-image-figure .pv-node-image{width:100%;height:auto;max-height:none;object-fit:contain}
+.pv-node-image-auto .pv-node-image{width:auto;max-width:100%;max-height:var(--pv-diagram-max-h,70vh)}
 .node-note-line{display:block;position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);font-size:0.82em;line-height:1.4;font-family:var(--content-font);color:var(--muted);cursor:text;padding-top:1px;padding-bottom:3px;word-break:break-word;outline:none;background:transparent;border-radius:4px}
 .node-note-line:focus{color:var(--fg)}
 .node-note-line img{max-width:100%;border-radius:6px;margin:4px 0;display:block}
@@ -3280,6 +3320,7 @@ body.printing-generic #gpe-overlay{
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-diagram" /> Add diagram…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-diagram-gen" /> Generate diagram</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-table" /> Add table…</label>
+                <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-image" /> Add image…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-where-used" /> Where used…</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-date-time" /> Insert date/time</label>
                 <label class="settings-checkbox-row"><input type="checkbox" id="hoverq-tags" /> Tags…</label>
@@ -3956,6 +3997,19 @@ body.printing-generic #gpe-overlay{
 <li>Right-click a Q&amp;A line for Delete Q&amp;A; emptying the question and pressing Backspace removes it too</li>
 <li>A small question-mark dot appears on a node with linked questions — click it to show or hide them inline. The same icon appears next to a folded node's "+N hidden" badge when a question is linked somewhere inside its collapsed subtree, and Where used… lists them alongside the node's other linked content</li>
 <li>Always included in PDF exports: each question prints right under the node it's linked to, same as a note; questions with no linked node are appended as a final section — bold question, regular-weight answer, unanswered ones marked "No answer provided"</li>
+</ul>
+</div>
+          <div class="help-section" data-cat="panels" id="help-section-images">
+<h4>Images</h4>
+<ul>
+<li>Screenshots and pictures belong to a node as their own objects (not inside its note): a node can hold any number, shown as a compact row of thumbnails directly under it, each with its caption underneath</li>
+<li>Add them by pasting a screenshot (<span class="help-kbd">Ctrl/Cmd+V</span>) while the node is selected, being edited, or its note line has the cursor; by dropping image files onto the node; or right-click → <strong>Add image…</strong> (under "More" by default) to pick one or more files</li>
+<li>New images are shrunk to at most 1600px on the long side and saved as WebP (JPEG where the browser can't make WebP), which keeps documents small enough to sync; SVGs and animated GIFs are kept exactly as they are</li>
+<li>Click a thumbnail to open the enlarged viewer: edit the caption under the picture, step through the node's images with <span class="help-kbd">←</span>/<span class="help-kbd">→</span> or the side arrows, pick a display size (<strong>Auto</strong>, <strong>Small</strong>, <strong>Medium</strong>, <strong>Full</strong> — used in the viewer and in PDF exports), or Delete it. <span class="help-kbd">Esc</span> or clicking outside closes it</li>
+<li>Right-click a thumbnail for Open, Edit caption, Move left/right, or Delete image; drag a thumbnail onto another to reorder. Everything is undoable with <span class="help-kbd">Ctrl/Cmd+Z</span></li>
+<li>A small picture dot appears on a node with images — click it to fold or unfold the thumbnails. A folded branch's "+N hidden" badge mentions images inside it</li>
+<li>Copying nodes (<span class="help-kbd">Ctrl/Cmd+C</span>) carries their images when pasted back into Sakura; duplicating a node copies them too. PDF exports show each image under its node with its caption; OPML can't hold images, so they're left out there</li>
+<li>Pictures that older versions kept inside a note move into the node's images automatically the first time the document opens — the note's text stays as it was</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-diagrams">
@@ -5153,6 +5207,7 @@ body.printing-generic #gpe-overlay{
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-diagram" checked /> Add diagram…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-diagram-gen" /> Generate diagram</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-table" checked /> Add table…</label>
+          <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-image" checked /> Add image…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-where-used" /> Where used…</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-date-time" /> Insert date/time</label>
           <label class="settings-checkbox-row"><input type="checkbox" id="ctxq-tags" checked /> Tags…</label>
@@ -5183,15 +5238,15 @@ let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 // Shared by contextQuickActions' own initial value and the quick-row settings grid's "Reset"
 // button, so there's exactly one definition of what "the default" means instead of two that can
 // quietly drift apart. Only the first CTX_QUICK_ROW_MAX entries render as quick-row icons; the
-// rest (currently 'tags' and 'diagram-gen') are still enabled, just listed under "More".
-const CTX_QUICK_ROW_DEFAULT=['ai-rewrite','note','remark','qa','diagram','table','tags','diagram-gen'];
+// rest (currently 'image', 'tags' and 'diagram-gen') are still enabled, just listed under "More".
+const CTX_QUICK_ROW_DEFAULT=['ai-rewrite','note','remark','qa','diagram','table','image','tags','diagram-gen'];
 let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let qaItems=[]; let diagrams=[]; let remarks=[]; let diagramGenSkipReviewEnabled=false; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let toolbarLabels=true; let confirmBeforeDelete=true; let expandedToolbar=false; let toolbarVisible=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set(); let alwaysExpandInlineEnabled=false;
 // Unlike the inlineExpand*NodeIds sets above (which track DEVIATION from alwaysExpandInlineEnabled's
 // closed-by-default convention), a table/chart/Cards object has always rendered inline
 // unconditionally -- open by default, with no prior collapsed state for any existing document to
 // suddenly fall back to. So this tracks the opposite: which nodes someone has explicitly folded
 // away, not which have opted into being shown. Session-only, like the other four.
-let collapsedTableNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let contextQuickActions=CTX_QUICK_ROW_DEFAULT.slice(); let contextSortChildrenEnabled=true; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let insertHiddenButtons=['smart-paste']; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
+let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let toolbarHiddenGroups=['fold','extras']; let contextQuickActions=CTX_QUICK_ROW_DEFAULT.slice(); let contextSortChildrenEnabled=true; let hoverToolbarEnabled=false; let selectionFmtPopoverEnabled=true; let hoverToolbarActions=['child','above','below']; let insertHiddenButtons=['smart-paste']; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
 let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureTaggingEnabled=true; let featureFocusEnabled=true; let featureQuickAssistEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let nqaIconOnly=true; let qaSearchHiddenCategories=[]; let editorFloatingHiddenButtons=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let wordWrapEnabled=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let tabbarVisible=true; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let appbarHiddenButtons=[]; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false; let nodeTimestampHoverEnabled=true;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/export code, specifically so loadPrefs() restoring
@@ -6841,11 +6896,428 @@ function migrateNoteTablesToNode(node){
     markDirty(); scheduleAutoSave();
   }catch(e){}
 }
-function renderNoteDisplayHtml(html){
-  if(!html||(!/<table/i.test(html)&&!/<img/i.test(html)))return html||'';
+// === node.images -- screenshots/pictures as per-node objects ===
+// A node's pictures live in node.images ({id,src,caption,width?,annotations,createdAt} -- see
+// src/utils/nodeImages.ts for the shape and the pure helpers), NOT inside node.note's HTML any
+// more: like node.tables they render in their own inline block under the row (a compact strip of
+// thumbnails, see buildNodeImageStrip), open in an enlarged viewer (openNodeImageViewer), and
+// export as figures in the PDF. `annotations` is reserved for the markup editor and is never read
+// here beyond the viewer's (currently empty) overlay layer -- it just round-trips.
+
+// One-time, self-healing migration, same contract as migrateNoteTablesToNode just above: every
+// <img> with a usable src (data:image or http(s) -- see isUsableImageSrc) still embedded in an
+// older document's node.note moves into node.images, in document order, appended after any
+// images the node already has. The note's text is left exactly as it was (only the <img> itself,
+// plus a wrapper it leaves completely empty, is removed). An <img> without a usable src (blob:,
+// relative, empty) is left in the note untouched -- moving it would only create a broken object.
+// Migrated pictures are NOT re-compressed (no silent quality change to existing data); a legacy
+// alt text that's a real description (not a bare file name) becomes the caption. Idempotent:
+// once nothing usable is left, the regex/parse finds nothing to do.
+function migrateNoteImagesToNode(node){
+  if(!node||!node.note||!/<img/i.test(node.note))return false;
   try{
-    const {textHtml,tables,images}=splitNoteBlockVisuals(html);
-    if(!tables.length&&!images.length)return html;
+    // <template> content is inert -- unlike a detached <div>, parsing into it never starts
+    // fetching an http(s) src just because we looked at the note.
+    const tpl=document.createElement('template'); tpl.innerHTML=node.note;
+    const root=tpl.content;
+    const imgs=[...root.querySelectorAll('img')].filter(img=>isUsableImageSrc(img.getAttribute('src')));
+    if(!imgs.length)return false;
+    const now=Date.now();
+    const moved=imgs.map(img=>({id:newNodeImageId(),src:String(img.getAttribute('src')).trim(),caption:captionFromLegacyAlt(img.getAttribute('alt')),annotations:[],createdAt:now}));
+    const WRAPPERS=new Set(['P','DIV','SPAN','A','FIGURE','PICTURE','B','I','EM','STRONG','U','S','CENTER','FONT','MARK','LI']);
+    imgs.forEach(img=>{
+      let parent=img.parentNode;
+      img.remove();
+      // Walk up through wrappers the picture leaves completely empty (no text, no other media) --
+      // e.g. the <p> a paste put around it -- so the note doesn't keep a blank line where it was.
+      // A wrapper that still holds any text (an inline image mid-sentence) stays exactly as is.
+      while(parent&&parent!==root&&parent.nodeType===1&&WRAPPERS.has(parent.tagName)&&!parent.textContent.trim()&&!parent.querySelector('img,table,video,iframe,svg,canvas,hr,input')){
+        const up=parent.parentNode; parent.remove(); parent=up;
+      }
+    });
+    if(!Array.isArray(node.images))node.images=[];
+    node.images.push(...moved);
+    const rest=tpl.innerHTML;
+    node.note=htmlHasVisibleContent(rest)?rest:'';
+    node.modifiedAt=Date.now();
+    markDirty(); scheduleAutoSave();
+    return true;
+  }catch(e){ return false; }
+}
+// Backspace/Delete-merge: the absorbed node's pictures follow its text onto the surviving row.
+function mergedNodeImages(keep,absorbed){
+  const a=Array.isArray(keep?.images)?keep.images:[];
+  const b=Array.isArray(absorbed?.images)?absorbed.images:[];
+  return b.length?a.concat(b):a;
+}
+function subtreeHasImage(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(Array.isArray(nodes[i].images)&&nodes[i].images.length)return true} return false}
+
+// --- Compression on insert ---
+// Every NEWLY added picture (paste, drop, file pick) is downscaled to NODE_IMAGE_MAX_LONG_SIDE on
+// its long side and re-encoded as WebP at NODE_IMAGE_ENCODE_QUALITY -- or JPEG (on white, since
+// JPEG has no alpha) where the browser can't encode WebP (checked on the actual output: an
+// unsupported type silently comes back as PNG). The original is kept instead when it needed no
+// downscale and is already smaller (pickEncodedImage). SVG and animated GIF are kept byte-for-byte.
+// Why: signed-in documents sync to Firestore, which caps one document at 1MB -- a raw retina
+// screenshot alone is often bigger than that.
+function _readFileAsDataUrl(file){
+  return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(String(r.result||'')); r.onerror=()=>reject(r.error||new Error('read failed')); r.readAsDataURL(file); });
+}
+async function _decodeImageForCanvas(file){
+  if(typeof createImageBitmap==='function'){
+    try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }catch(e){}
+  }
+  const url=URL.createObjectURL(file);
+  try{
+    const img=new Image();
+    await new Promise((resolve,reject)=>{ img.onload=resolve; img.onerror=()=>reject(new Error('decode failed')); img.src=url; });
+    return img;
+  } finally { setTimeout(()=>URL.revokeObjectURL(url),0); }
+}
+async function encodeImageFileForNode(file){
+  const mime=String(file?.type||'').toLowerCase();
+  const original=await _readFileAsDataUrl(file);
+  let animated=false;
+  if(mime==='image/gif'){ try{ animated=isAnimatedGif(new Uint8Array(await file.arrayBuffer())); }catch(e){} }
+  if(!shouldReencodeImage(mime,animated))return {src:original,reencoded:false};
+  try{
+    const bmp=await _decodeImageForCanvas(file);
+    const natW=bmp.naturalWidth||bmp.width, natH=bmp.naturalHeight||bmp.height;
+    const target=computeImageTargetSize(natW,natH,NODE_IMAGE_MAX_LONG_SIDE);
+    const canvas=document.createElement('canvas'); canvas.width=target.width; canvas.height=target.height;
+    const ctx=canvas.getContext('2d'); if(!ctx)return {src:original,reencoded:false};
+    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+    ctx.drawImage(bmp,0,0,target.width,target.height);
+    if(typeof bmp.close==='function')bmp.close();
+    let enc=canvas.toDataURL('image/webp',NODE_IMAGE_ENCODE_QUALITY);
+    if(dataUrlMime(enc)!=='image/webp'){
+      ctx.globalCompositeOperation='destination-over'; ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,target.width,target.height);
+      enc=canvas.toDataURL('image/jpeg',NODE_IMAGE_ENCODE_QUALITY);
+      if(dataUrlMime(enc)!=='image/jpeg')enc='';
+    }
+    const choice=pickEncodedImage({bytes:file.size||dataUrlByteLength(original),mime},enc?{bytes:dataUrlByteLength(enc),mime:dataUrlMime(enc)}:null,target.scaled);
+    sakuraLog('images','encodeImageFileForNode',{mime,natW,natH,w:target.width,h:target.height,origBytes:file.size,encBytes:enc?dataUrlByteLength(enc):0,choice});
+    return choice==='original'?{src:original,reencoded:false}:{src:enc,reencoded:true};
+  }catch(e){
+    // Undecodable here (an exotic format the browser can show but not draw, say) -- keep the
+    // original rather than losing the picture.
+    return {src:original,reencoded:false};
+  }
+}
+// Image files on a paste event's clipboard -- clipboardData.files where the browser fills it,
+// else the image/* items (some browsers only expose a screenshot that way).
+function clipboardImageFiles(cd){
+  if(!cd)return [];
+  const fromFiles=_imageFilesFrom(cd.files);
+  if(fromFiles.length)return fromFiles;
+  const out=[];
+  [...(cd.items||[])].forEach(item=>{ if(item&&item.kind!=='string'&&String(item.type||'').toLowerCase().startsWith('image/')){ const f=item.getAsFile&&item.getAsFile(); if(f)out.push(f); } });
+  return out;
+}
+function _imageFilesFrom(list){ return [...(list||[])].filter(f=>f&&String(f.type||'').toLowerCase().startsWith('image/')); }
+// Adds every image file in `files` to node `nodeId`'s node.images (compressed, see above), as ONE
+// undo step, unfolding the node's image strip so the new thumbnails are visible. Resolves to the
+// number added.
+async function addImageFilesToNode(nodeId,files){
+  const imgs=_imageFilesFrom(files); if(!imgs.length)return 0;
+  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast('This document is view-only'); return 0; }
+  const docAtStart=currentDocId;
+  const encoded=[];
+  for(const f of imgs){ try{ const r=await encodeImageFileForNode(f); if(r&&r.src)encoded.push(r.src); }catch(e){} }
+  if(!encoded.length){ showToast('Could not read that image'); return 0; }
+  // The tab may have changed while decoding (a large batch takes a moment) -- never write into
+  // whatever document happens to be open now.
+  if(currentDocId!==docAtStart)return 0;
+  const idx=getIndex(nodes,nodeId); if(idx<0)return 0;
+  pushUndo();
+  const now=Date.now();
+  if(!Array.isArray(nodes[idx].images))nodes[idx].images=[];
+  encoded.forEach(src=>nodes[idx].images.push({id:newNodeImageId(),src,caption:'',annotations:[],createdAt:now}));
+  nodes[idx].modifiedAt=now;
+  collapsedImageNodeIds.delete(nodeId);
+  markDirty(); scheduleAutoSave();
+  render();
+  showToast(encoded.length===1?'Image added':encoded.length+' images added');
+  return encoded.length;
+}
+// Hidden <input type=file multiple> for right-click → "Add image…".
+function openNodeImagePicker(nodeId){
+  let input=el('node-image-file-input');
+  if(!input){
+    input=document.createElement('input'); input.type='file'; input.id='node-image-file-input'; input.accept='image/*'; input.multiple=true; input.style.display='none';
+    document.body.appendChild(input);
+  }
+  input.value='';
+  input.onchange=()=>{ const files=[...(input.files||[])]; input.value=''; if(files.length)addImageFilesToNode(nodeId,files); };
+  input.click();
+}
+function _nodeImageRef(nodeId,imageId){
+  const idx=getIndex(nodes,nodeId); if(idx<0)return null;
+  const list=Array.isArray(nodes[idx].images)?nodes[idx].images:[];
+  const i=list.findIndex(im=>im.id===imageId); if(i<0)return null;
+  return {idx,i,list,img:list[i]};
+}
+function _touchNodeImages(idx){ nodes[idx].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
+function deleteNodeImage(nodeId,imageId){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return false;
+  pushUndo();
+  ref.list.splice(ref.i,1);
+  _touchNodeImages(ref.idx); render();
+  return true;
+}
+function setNodeImageWidth(nodeId,imageId,width){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
+  const w=normalizeImageWidth(width);
+  if(ref.img.width===w)return;
+  pushUndo();
+  if(w===undefined)delete ref.img.width; else ref.img.width=w;
+  _touchNodeImages(ref.idx); render();
+}
+// Caption edits: the caller pushes ONE undo entry per editing session (first keystroke), not one
+// per character -- see the viewer's caption input.
+function setNodeImageCaption(nodeId,imageId,caption){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
+  const c=String(caption||'').replace(/[\r\n\t]+/g,' ').slice(0,NODE_IMAGE_CAPTION_MAX);
+  if(ref.img.caption===c)return;
+  ref.img.caption=c;
+  _touchNodeImages(ref.idx);
+}
+function moveNodeImage(nodeId,imageId,toIndex){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
+  const to=Math.max(0,Math.min(ref.list.length-1,toIndex));
+  if(to===ref.i)return;
+  pushUndo();
+  const [m]=ref.list.splice(ref.i,1); ref.list.splice(to,0,m);
+  _touchNodeImages(ref.idx); render();
+}
+
+// --- Outline: compact thumbnail strip under the row ---
+function buildNodeImageStrip(node){
+  const strip=document.createElement('div'); strip.className='node-image-strip'; strip.dataset.nodeId=String(node.id);
+  const readOnly=typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc();
+  // Keeps the row's own press-and-drag/range-select (armNodeDrag) from starting off a thumbnail.
+  strip.addEventListener('mousedown',e=>e.stopPropagation());
+  let dragImageId=null;
+  node.images.forEach((img,i)=>{
+    const thumb=document.createElement('button'); thumb.type='button'; thumb.className='node-image-thumb'; thumb.dataset.imageId=img.id; thumb.dataset.index=String(i);
+    thumb.dataset.tip=(img.caption?img.caption+' — ':'')+'click to enlarge';
+    thumb.setAttribute('aria-label',img.caption?('Image: '+img.caption):('Image '+(i+1)+' of '+node.images.length));
+    const pic=document.createElement('img'); pic.src=img.src; pic.alt=img.caption||''; pic.loading='lazy'; pic.draggable=false;
+    thumb.appendChild(pic);
+    if(img.caption){ const cap=document.createElement('span'); cap.className='node-image-caption'; cap.textContent=img.caption; thumb.appendChild(cap); }
+    thumb.addEventListener('click',e=>{ e.stopPropagation(); openNodeImageViewer(node.id,img.id); });
+    thumb.addEventListener('contextmenu',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const items=[{label:'Open', onClick:()=>openNodeImageViewer(node.id,img.id)}];
+      if(!readOnly){
+        items.push({label:'Edit caption…', onClick:()=>openNodeImageViewer(node.id,img.id,{focusCaption:true})});
+        if(node.images.length>1){
+          if(i>0)items.push({label:'Move left', onClick:()=>moveNodeImage(node.id,img.id,i-1)});
+          if(i<node.images.length-1)items.push({label:'Move right', onClick:()=>moveNodeImage(node.id,img.id,i+1)});
+        }
+        items.push({divider:true});
+        items.push({label:'Delete image', danger:true, onClick:()=>deleteNodeImage(node.id,img.id)});
+      }
+      showSbContextMenu(e.clientX,e.clientY,items);
+    });
+    // Drag a thumbnail onto another to reorder (same node only).
+    if(!readOnly){
+      thumb.draggable=true;
+      thumb.addEventListener('dragstart',e=>{ dragImageId=img.id; try{ e.dataTransfer.setData('application/x-sakura-node-image',img.id); e.dataTransfer.effectAllowed='move'; }catch(err){} thumb.classList.add('dragging'); });
+      thumb.addEventListener('dragend',()=>{ dragImageId=null; strip.querySelectorAll('.node-image-thumb').forEach(t=>t.classList.remove('dragging','drop-before','drop-after')); });
+      thumb.addEventListener('dragover',e=>{ if(!dragImageId)return; e.preventDefault(); e.stopPropagation(); const r=thumb.getBoundingClientRect(); const after=e.clientX>r.left+r.width/2; thumb.classList.toggle('drop-after',after); thumb.classList.toggle('drop-before',!after); });
+      thumb.addEventListener('dragleave',()=>thumb.classList.remove('drop-before','drop-after'));
+      thumb.addEventListener('drop',e=>{
+        if(!dragImageId)return;
+        e.preventDefault(); e.stopPropagation();
+        const r=thumb.getBoundingClientRect(); const after=e.clientX>r.left+r.width/2;
+        const from=node.images.findIndex(x=>x.id===dragImageId); if(from<0)return;
+        let to=i+(after?1:0); if(from<to)to--;
+        const moving=dragImageId; dragImageId=null;
+        moveNodeImage(node.id,moving,to);
+      });
+    }
+    strip.appendChild(thumb);
+  });
+  return strip;
+}
+
+// --- Enlarged viewer (lightbox) ---
+// Full-size image, caption editable in place, Auto/Small/Medium/Full display width (node image
+// `width`, used here and in the PDF), Delete, ←/→ or the side buttons to step through this node's
+// pictures, Esc/click on the backdrop to close. PR B's markup editor plugs in at the
+// `.niv-annot-layer` SVG (drawn over the picture from img.annotations, coordinates relative to the
+// image size) and the empty `.niv-tools` toolbar slot -- see renderNodeImageAnnotations.
+let _nivState=null; // {nodeId,imageId,captionUndoPushed}
+function renderNodeImageAnnotations(svg,img){
+  // Seam for the markup editor (rectangle/arrow/highlighter/text). Today annotations are only
+  // carried through untouched; nothing is drawn yet.
+  svg.innerHTML='';
+  svg.dataset.count=String(Array.isArray(img.annotations)?img.annotations.length:0);
+}
+function openNodeImageViewer(nodeId,imageId,opts){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
+  if(typeof closeSbContextMenu==='function')closeSbContextMenu();
+  let ov=el('node-image-viewer');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='node-image-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','Image viewer');
+    ov.innerHTML=
+      '<div class="niv-panel">'+
+        '<div class="niv-head">'+
+          '<span class="niv-counter"></span>'+
+          '<div class="niv-tools" data-seam="markup"></div>'+
+          '<div class="niv-size" role="group" aria-label="Display size">'+IMAGE_WIDTH_PRESETS.map(p=>'<button type="button" class="niv-size-btn" data-size="'+p.key+'" data-tip="'+(p.value?('Show at '+p.value+'% width here and in the PDF'):'Natural size, up to the full width')+'">'+p.label+'</button>').join('')+'</div>'+
+          '<button type="button" class="niv-btn niv-delete" data-tip="Delete image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>'+
+          '<button type="button" class="niv-btn niv-close" data-tip="Close (Esc)" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>'+
+        '</div>'+
+        '<div class="niv-stage">'+
+          '<button type="button" class="niv-nav niv-prev" aria-label="Previous image" data-tip="Previous (←)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
+          '<div class="niv-frame"><div class="niv-figure"><img class="niv-img" alt=""><svg class="niv-annot-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"></svg></div></div>'+
+          '<button type="button" class="niv-nav niv-next" aria-label="Next image" data-tip="Next (→)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'+
+        '</div>'+
+        '<input type="text" class="niv-caption" placeholder="Add a caption…" maxlength="'+NODE_IMAGE_CAPTION_MAX+'" spellcheck="true" aria-label="Caption">'+
+      '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('mousedown',e=>{ if(e.target===ov){ e.preventDefault(); } });
+    ov.addEventListener('click',e=>{ if(e.target===ov||e.target.classList.contains('niv-stage')||e.target.classList.contains('niv-frame'))closeNodeImageViewer(); });
+    ov.querySelector('.niv-close').addEventListener('click',()=>closeNodeImageViewer());
+    ov.querySelector('.niv-prev').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(-1); });
+    ov.querySelector('.niv-next').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(1); });
+    ov.querySelector('.niv-delete').addEventListener('click',()=>{
+      if(!_nivState)return;
+      const ref=_nodeImageRef(_nivState.nodeId,_nivState.imageId); if(!ref)return closeNodeImageViewer();
+      const next=ref.list[ref.i+1]||ref.list[ref.i-1]||null;
+      deleteNodeImage(_nivState.nodeId,_nivState.imageId);
+      if(next){ _nivState.imageId=next.id; _nivState.captionUndoPushed=false; refreshNodeImageViewer(); } else closeNodeImageViewer();
+      showToast('Image deleted — Ctrl/Cmd+Z to undo');
+    });
+    ov.querySelectorAll('.niv-size-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      if(!_nivState)return;
+      const p=IMAGE_WIDTH_PRESETS.find(x=>x.key===btn.dataset.size); if(!p)return;
+      setNodeImageWidth(_nivState.nodeId,_nivState.imageId,p.value);
+      refreshNodeImageViewer();
+    }));
+    const cap=ov.querySelector('.niv-caption');
+    cap.addEventListener('input',()=>{
+      if(!_nivState)return;
+      if(!_nivState.captionUndoPushed){ pushUndo(); _nivState.captionUndoPushed=true; }
+      setNodeImageCaption(_nivState.nodeId,_nivState.imageId,cap.value);
+    });
+    cap.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); cap.blur(); } });
+    cap.addEventListener('blur',()=>{ if(_nivState){ _nivState.captionUndoPushed=false; render(); } });
+  }
+  _nivState={nodeId,imageId,captionUndoPushed:false,returnFocus:document.activeElement};
+  ov.classList.add('open');
+  document.body.classList.add('node-image-viewer-open');
+  window.addEventListener('keydown',_nivKeyHandler,true);
+  refreshNodeImageViewer();
+  if(opts&&opts.focusCaption){ const cap=ov.querySelector('.niv-caption'); if(!cap.disabled){ cap.focus(); cap.select(); } }
+  else ov.querySelector('.niv-close').focus({preventScroll:true});
+}
+function refreshNodeImageViewer(){
+  const ov=el('node-image-viewer'); if(!ov||!_nivState)return;
+  const ref=_nodeImageRef(_nivState.nodeId,_nivState.imageId);
+  if(!ref){ closeNodeImageViewer(); return; }
+  const readOnly=typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc();
+  const img=ref.img;
+  const pic=ov.querySelector('.niv-img'); if(pic.getAttribute('src')!==img.src)pic.src=img.src; pic.alt=img.caption||'';
+  const fig=ov.querySelector('.niv-figure');
+  fig.style.width=img.width?img.width+'%':'';
+  fig.classList.toggle('niv-auto',!img.width);
+  renderNodeImageAnnotations(ov.querySelector('.niv-annot-layer'),img);
+  ov.querySelector('.niv-counter').textContent=(ref.i+1)+' / '+ref.list.length;
+  const cap=ov.querySelector('.niv-caption');
+  if(document.activeElement!==cap)cap.value=img.caption||'';
+  cap.disabled=readOnly; cap.placeholder=readOnly?'':'Add a caption…';
+  const key=imageWidthPresetKey(img.width);
+  ov.querySelectorAll('.niv-size-btn').forEach(b=>{ b.classList.toggle('active',b.dataset.size===key); b.disabled=readOnly; });
+  ov.querySelector('.niv-delete').style.display=readOnly?'none':'';
+  ov.querySelector('.niv-prev').disabled=ref.i<=0;
+  ov.querySelector('.niv-next').disabled=ref.i>=ref.list.length-1;
+  ov.classList.toggle('niv-single',ref.list.length<2);
+}
+function stepNodeImageViewer(delta){
+  if(!_nivState)return;
+  const ref=_nodeImageRef(_nivState.nodeId,_nivState.imageId); if(!ref)return;
+  const next=ref.list[ref.i+delta]; if(!next)return;
+  const cap=el('node-image-viewer')?.querySelector('.niv-caption');
+  if(cap&&document.activeElement===cap)cap.blur();
+  _nivState.imageId=next.id; _nivState.captionUndoPushed=false;
+  refreshNodeImageViewer();
+}
+function closeNodeImageViewer(){
+  const ov=el('node-image-viewer');
+  window.removeEventListener('keydown',_nivKeyHandler,true);
+  const cap=ov?.querySelector('.niv-caption');
+  if(cap&&document.activeElement===cap)cap.blur();
+  const ret=_nivState?.returnFocus;
+  _nivState=null;
+  if(ov)ov.classList.remove('open');
+  document.body.classList.remove('node-image-viewer-open');
+  render();
+  if(ret&&ret.isConnected&&typeof ret.focus==='function'){ try{ ret.focus({preventScroll:true}); }catch(e){} }
+}
+function nodeImageViewerIsOpen(){ return !!_nivState; }
+// Capture-phase while open, so the outline's own global shortcuts (arrow keys move the selection,
+// Delete removes nodes, Enter edits...) never fire behind the viewer.
+function _nivKeyHandler(e){
+  if(!_nivState)return;
+  const ov=el('node-image-viewer');
+  const inCaption=e.target&&e.target.classList&&e.target.classList.contains('niv-caption');
+  if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeNodeImageViewer(); return; }
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod&&!e.altKey&&(e.key==='z'||e.key==='Z'||e.key==='y'||e.key==='Y')&&!inCaption){
+    e.preventDefault(); e.stopPropagation();
+    if(e.key==='y'||e.key==='Y'||e.shiftKey)redo(); else undo();
+    refreshNodeImageViewer();
+    return;
+  }
+  if(inCaption){ e.stopPropagation(); return; }
+  if(e.key==='ArrowLeft'){ e.preventDefault(); e.stopPropagation(); stepNodeImageViewer(-1); return; }
+  if(e.key==='ArrowRight'){ e.preventDefault(); e.stopPropagation(); stepNodeImageViewer(1); return; }
+  // Tab/Enter/Space still operate the viewer's own buttons natively (no preventDefault); nothing
+  // reaches the outline's document-level handlers either way.
+  if(mod&&!['c','C'].includes(e.key))e.preventDefault();
+  e.stopPropagation();
+}
+// Drop image files onto a node row (or its note/table/image lines) → that node's images. Anything
+// dropped elsewhere in the editor is still kept from navigating the tab away to the file.
+function _nodeIdFromDropTarget(t){
+  if(!t||!t.closest)return null;
+  const row=t.closest('.node-row'); if(row&&row.dataset.id)return Number(row.dataset.id);
+  const strip=t.closest('.node-image-strip'); if(strip&&strip.dataset.nodeId)return Number(strip.dataset.nodeId);
+  const noteLine=t.closest('.node-note-line'); if(noteLine&&noteLine.dataset.nodeId)return Number(noteLine.dataset.nodeId);
+  const table=t.closest('.node-table-line'); if(table&&table.dataset.nodeId)return Number(table.dataset.nodeId);
+  return null;
+}
+function _dragHasFiles(e){ const types=e.dataTransfer?.types; return !!types&&[...types].includes('Files'); }
+document.addEventListener('dragover',e=>{
+  if(!_dragHasFiles(e))return;
+  const pane=el('editor-pane'); if(!pane||!pane.contains(e.target))return;
+  e.preventDefault();
+  const id=_nodeIdFromDropTarget(e.target);
+  e.dataTransfer.dropEffect=id!=null?'copy':'none';
+  document.querySelectorAll('.node-row.image-drop-target').forEach(r=>{ if(Number(r.dataset.id)!==id)r.classList.remove('image-drop-target'); });
+  if(id!=null)document.querySelector(`.node-row[data-id="${id}"]`)?.classList.add('image-drop-target');
+});
+document.addEventListener('dragleave',e=>{ if(!e.relatedTarget)document.querySelectorAll('.node-row.image-drop-target').forEach(r=>r.classList.remove('image-drop-target')); });
+document.addEventListener('drop',e=>{
+  if(!_dragHasFiles(e))return;
+  const pane=el('editor-pane'); if(!pane||!pane.contains(e.target))return;
+  e.preventDefault();
+  document.querySelectorAll('.node-row.image-drop-target').forEach(r=>r.classList.remove('image-drop-target'));
+  const files=_imageFilesFrom(e.dataTransfer.files);
+  if(!files.length)return;
+  const id=_nodeIdFromDropTarget(e.target);
+  if(id==null){ showToast('Drop the image onto a node to attach it'); return; }
+  e.stopPropagation();
+  addImageFilesToNode(id,files);
+});
+function renderNoteDisplayHtml(html){
+  if(!html||!/<table/i.test(html))return html||'';
+  try{
+    const {textHtml,tables}=splitNoteBlockVisuals(html);
+    if(!tables.length)return html;
     let result=textHtml;
     if(tables.length){
       const row=document.createElement('div'); row.className='pv-diagram-row';
@@ -6858,15 +7330,6 @@ function renderNoteDisplayHtml(html){
         const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
         fig.appendChild(clone);
         row.appendChild(fig);
-      });
-      result+=row.outerHTML;
-    }
-    if(images.length){
-      const row=document.createElement('div'); row.className='pv-diagram-row';
-      images.forEach(d=>{
-        const fig=document.createElement('div'); fig.className='pv-diagram-figure node-note-image-figure'; fig.dataset.noteObjIdx=String(d.idx);
-        const img=document.createElement('img'); img.src=d.src; img.alt=d.alt||'';
-        fig.appendChild(img); row.appendChild(fig);
       });
       result+=row.outerHTML;
     }
@@ -6910,18 +7373,7 @@ function noteTableByIndex(nodeId,tIdx){
   const table=container.querySelectorAll('table')[tIdx]; if(!table)return null;
   return {idx,container,table};
 }
-// Same re-parse-by-index lookup as noteTableByIndex, for a standalone picture instead of a table
-// -- used by the note-line's own "Delete" action on a read-only picture figure, which (like a
-// chart/Cards figure) has no live DOM backing to reach for directly. tIdx here is the image's
-// position among EVERY <img> in node.note (see splitNoteBlockVisuals' own idx field), not just
-// the standalone ones, so it stays correct however many inline images sit before it.
-function noteImageByIndex(nodeId,iIdx){
-  const idx=getIndex(nodes,nodeId); if(idx<0)return null;
-  const container=document.createElement('div'); container.innerHTML=nodes[idx].note||'';
-  const img=container.querySelectorAll('img')[iIdx]; if(!img)return null;
-  return {idx,container,img};
-}
-// Writes a noteTableByIndex()/noteImageByIndex() mutation (toggling/retyping a chart, or deleting
+// Writes a noteTableByIndex() mutation (toggling/retyping a chart, or deleting
 // the table/image outright) back into node.note -- the detached container's own innerHTML, not the
 // live editor, since the live note-line usually isn't even open while right-clicking the Preview's
 // own rendering of it.
@@ -6961,69 +7413,31 @@ function splitNoteDiagramImages(noteHtml){
     return {diagrams, restHtml:div.innerHTML};
   }catch(e){ return {diagrams:[], restHtml:noteHtml}; }
 }
-// Pulls block-level visual content -- every table, and any <img> that's the sole content of its
-// own paragraph -- out of a note's rest-html (after splitNoteDiagramImages above has already
-// taken out note-embedded diagrams), leaving only actual text behind for the note's own card.
-// A table or a full-width picture squeezed into the same max-height:340px, scrollable text box
-// as a sentence read as cramped and out of place -- every OTHER visual in a note (a note-
-// embedded diagram, a Pad "Feature under node" table) already gets its own full-width figure
-// row instead. An inline image sitting mid-sentence (an icon, a small inline screenshot next to
-// a word) is left right where it is -- only a genuinely standalone one, the entire content of
-// its own paragraph, counts as "block-level" here. Table indices in the returned array are in
-// document order among ALL of this note's tables, matching what noteChartDisplayHtml/
-// noteTableByIndex already assume elsewhere, so right-click resolution keeps working unchanged.
+// Pulls every table out of a note's rest-html (after splitNoteDiagramImages above has already
+// taken out note-embedded diagrams), leaving only the note's other content behind for its own
+// card. A table squeezed into the same max-height:340px, scrollable text box as a sentence read
+// as cramped -- tables get their own full-width figure instead (and, since node.tables exists,
+// migrateNoteTablesToNode moves them out of the note for good). Pictures are no longer handled
+// here at all: they're node.images objects now (see migrateNoteImagesToNode), so any <img> still
+// left in a note is one without a usable src, which simply stays in the text where it is. Table
+// indices in the returned array are in document order among ALL of this note's tables, matching
+// what noteChartDisplayHtml/noteTableByIndex assume elsewhere.
 function splitNoteBlockVisuals(html){
-  if(!html) return {textHtml:html||'', tables:[], images:[]};
+  if(!html) return {textHtml:html||'', tables:[]};
   try{
     const container=document.createElement('div');
     container.innerHTML=html;
     const tables=[...container.querySelectorAll('table')];
     tables.forEach(t=>t.remove());
-    const images=[];
-    // idx -- this image's position among every <img> in the ORIGINAL html (inline images
-    // included, not just the standalone ones actually extracted below) -- lets a later
-    // noteImageByIndex re-locate the exact same image after a fresh re-parse of node.note, the
-    // same way a table's own position among every <table> already does for noteTableByIndex.
-    [...container.querySelectorAll('img')].forEach((img,idx)=>{
-      // container is a detached, never-appended div (same as noteChartDisplayHtml/noteTableByIndex
-      // use elsewhere for a note's HTML) -- nothing inside it is ever .isConnected, so that's not
-      // a usable "is this a real element" check here the way it would be for live DOM content.
-      const parent=img.parentElement;
-      if(!parent)return;
-      if(parent===container){
-        // A direct child of the note's own root sits at the same level as every other block
-        // (each <p>) -- definitionally standalone, never inline with anything. This is also
-        // exactly what document.execCommand('insertImage') produces (see the note-line's own
-        // paste handler) when there's no enclosing block to insert into, which is the normal,
-        // real-world way a picture actually ends up in a note -- so this is the common case,
-        // not an edge case, and skipping it here was the main reason pasted images never
-        // actually broke out into their own figure the way a table already did.
-        images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||'', idx});
-        img.remove();
-        return;
-      }
-      // Nested inside a <p>/<div> -- standalone only if nothing else meaningful shares that same
-      // wrapper (ignoring pure whitespace text nodes and <br>, which real-world paste/editor
-      // markup commonly leaves alongside a lone image); otherwise it's genuinely inline, sitting
-      // mid-sentence next to real text, and should stay exactly where it is.
-      const hasOtherContent=[...parent.childNodes].some(n=>{
-        if(n===img)return false;
-        if(n.nodeType===Node.TEXT_NODE)return !!n.textContent.trim();
-        if(n.nodeType===Node.ELEMENT_NODE&&n.tagName==='BR')return false;
-        return true;
+    // A table commonly sits inside its own <p>/<div> from paste or editor markup -- drop whatever
+    // that wrapper leaves behind once empty, so pulling it out doesn't leave a blank line.
+    if(tables.length){
+      [...container.querySelectorAll('p,div')].forEach(el=>{
+        if(el!==container && !el.textContent.trim() && !el.querySelector('img,table')) el.remove();
       });
-      if(hasOtherContent)return;
-      images.push({src:img.getAttribute('src')||'', alt:img.getAttribute('alt')||'', idx});
-      parent.remove();
-    });
-    // A table or lone image commonly sits inside its own <p>/<div> from paste or editor markup --
-    // drop whatever that wrapper leaves behind once empty, so pulling the table/image out doesn't
-    // leave a blank line in the text that remains.
-    [...container.querySelectorAll('p,div')].forEach(el=>{
-      if(el!==container && !el.textContent.trim() && !el.querySelector('img,table')) el.remove();
-    });
-    return {textHtml:container.innerHTML, tables, images};
-  }catch(e){ return {textHtml:html, tables:[], images:[]}; }
+    }
+    return {textHtml:container.innerHTML, tables};
+  }catch(e){ return {textHtml:html, tables:[]}; }
 }
 // Builds one table's own full-width figure -- chart or plain -- the same way featuredTablesForNode's
 // own rendering loop does for Pad's "Feature under node" tables (see renderPreviewBody), just
@@ -7093,11 +7507,254 @@ let lastHighlightColor=(()=>{try{const v=localStorage.getItem('sakura_lastHighli
 let lastFontColor=(()=>{try{const v=localStorage.getItem('sakura_lastFontColor'); return FONT_COLORS.includes(v)?v:'gray'}catch(e){return 'gray'}})();
 function setLastHighlightColor(c){if(!HIGHLIGHT_COLORS[c])return; lastHighlightColor=c; try{localStorage.setItem('sakura_lastHighlightColor',c)}catch(e){}}
 function setLastFontColor(c){if(!FONT_COLORS.includes(c))return; lastFontColor=c; try{localStorage.setItem('sakura_lastFontColor',c)}catch(e){}}
+function newNodeImageId(){return generateId('img',6)}
+/* GENERATED:nodeImages:START — DO NOT EDIT BY HAND. Source of truth: src/utils/nodeImages.ts (tests: tests/unit/nodeImages.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure helpers for `node.images` — screenshots/pictures attached to an outline node as their own
+ * per-node objects (siblings of `node.note`/`node.tables`, never embedded in note HTML).
+ *
+ * Shape of one entry: `{ id, src, caption, width?, annotations: [], createdAt }`.
+ * - `src` is a data URL (or, for a migrated legacy note image, possibly an http(s) URL) stored
+ *   in the document itself — no external storage.
+ * - `width` is an optional display size, as a percentage (10–100) of the available width, used
+ *   by the enlarged viewer and the PDF. Absent means "Auto" (natural size, capped at 100%). The
+ *   viewer offers Small/Medium/Full presets (see IMAGE_WIDTH_PRESETS) but any integer in range
+ *   round-trips, so a later slider can reuse the field unchanged.
+ * - `annotations` is reserved for the markup editor (rectangles/arrows/highlights/text). It is
+ *   copied through verbatim — never inspected, never dropped — so data written by a newer
+ *   version survives a round trip through this one.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `nodeImages` block. Everything
+ * DOM/canvas-specific (decoding, drawing, toDataURL, note-HTML parsing for the migration) stays
+ * hand-written in index.html; only the decisions live here so they can be unit tested.
+ */
+/** Longest side, in pixels, a newly added image is downscaled to. */
+const NODE_IMAGE_MAX_LONG_SIDE = 1600;
+/** Lossy encode quality used for WebP (and the JPEG fallback). */
+const NODE_IMAGE_ENCODE_QUALITY = 0.8;
+/** Caption length cap — a caption is a label, not a note. */
+const NODE_IMAGE_CAPTION_MAX = 500;
+const IMAGE_WIDTH_PRESETS = [
+    { key: 'auto', label: 'Auto', value: undefined },
+    { key: 'small', label: 'Small', value: 35 },
+    { key: 'medium', label: 'Medium', value: 60 },
+    { key: 'full', label: 'Full', value: 100 }
+];
+/** A src worth moving out of a note / keeping as an image object: an inline data:image URL or
+ * an absolute http(s) URL. blob:, file:, relative and empty srcs are not (they don't survive a
+ * reload or another device), so a legacy note image with one of those is left where it is. */
+function isUsableImageSrc(src) {
+    if (typeof src !== 'string')
+        return false;
+    const s = src.trim();
+    return /^data:image\/[a-z0-9.+-]+(?:;[^,]*)?,./i.test(s) || /^https?:\/\/\S+$/i.test(s);
+}
+/** Clamps a stored display width to an integer percentage in [10, 100]; anything else
+ * (missing, non-numeric, non-finite) means "Auto" and comes back undefined. */
+function normalizeImageWidth(width) {
+    if (typeof width !== 'number' || !Number.isFinite(width))
+        return undefined;
+    return Math.min(100, Math.max(10, Math.round(width)));
+}
+/** Which preset (if any) a stored width corresponds to — Auto for undefined. */
+function imageWidthPresetKey(width) {
+    const hit = IMAGE_WIDTH_PRESETS.find((p) => p.value === width);
+    return hit ? hit.key : null;
+}
+function normalizeCaption(caption) {
+    if (typeof caption !== 'string')
+        return '';
+    return caption.replace(/[\r\n\t]+/g, ' ').slice(0, NODE_IMAGE_CAPTION_MAX);
+}
+/** Normalizes whatever was stored in `node.images` into a clean array. Entries without a
+ * non-empty string src are dropped (nothing to show); everything else is kept. A missing or
+ * duplicate id is replaced via `makeId`; `annotations` is passed through as-is (shallow-copied
+ * array) so future markup data round-trips untouched. */
+function normalizeNodeImages(raw, now, makeId) {
+    if (!Array.isArray(raw))
+        return [];
+    const seen = new Set();
+    const out = [];
+    for (const entry of raw) {
+        if (!entry || typeof entry !== 'object')
+            continue;
+        const e = entry;
+        if (typeof e.src !== 'string' || !e.src.trim())
+            continue;
+        let id = typeof e.id === 'string' && e.id ? e.id : '';
+        if (!id || seen.has(id))
+            id = makeId();
+        seen.add(id);
+        const img = {
+            id,
+            src: e.src,
+            caption: normalizeCaption(e.caption),
+            annotations: Array.isArray(e.annotations) ? e.annotations.slice() : [],
+            createdAt: typeof e.createdAt === 'number' && Number.isFinite(e.createdAt) && e.createdAt > 0 ? e.createdAt : now
+        };
+        const w = normalizeImageWidth(e.width);
+        if (w !== undefined)
+            img.width = w;
+        out.push(img);
+    }
+    return out;
+}
+/** Deep copy for duplicating/copy-pasting a node: same pictures, captions, widths and
+ * annotations, but fresh ids so the copies are independent objects. */
+function cloneNodeImagesWithNewIds(images, now, makeId) {
+    const normalized = normalizeNodeImages(images, now, makeId);
+    return normalized.map((img) => {
+        const copy = {
+            ...img,
+            id: makeId(),
+            annotations: JSON.parse(JSON.stringify(img.annotations))
+        };
+        return copy;
+    });
+}
+/** Size to draw a `width` x `height` picture at so its long side is at most `maxLongSide`,
+ * keeping aspect ratio; `scaled` is false when it already fits. Degenerate input (zero/NaN)
+ * comes back unscaled at 1x1 minimum so a caller never builds a 0-size canvas. */
+function computeImageTargetSize(width, height, maxLongSide = NODE_IMAGE_MAX_LONG_SIDE) {
+    const w = Number.isFinite(width) && width > 0 ? Math.round(width) : 1;
+    const h = Number.isFinite(height) && height > 0 ? Math.round(height) : 1;
+    const long = Math.max(w, h);
+    if (long <= maxLongSide)
+        return { width: w, height: h, scaled: false };
+    const k = maxLongSide / long;
+    return { width: Math.max(1, Math.round(w * k)), height: Math.max(1, Math.round(h * k)), scaled: true };
+}
+/** True for a GIF with more than one frame. Walks the block structure (header, logical screen
+ * descriptor, optional global colour table, then extension/image blocks) counting image
+ * descriptors; stops as soon as a second frame is seen. Malformed/truncated data counts as
+ * whatever frames were found before the damage. */
+function isAnimatedGif(bytes) {
+    if (!bytes || bytes.length < 13)
+        return false;
+    const sig = String.fromCharCode(bytes[0], bytes[1], bytes[2]);
+    if (sig !== 'GIF')
+        return false;
+    let p = 13;
+    const lsdFlags = bytes[10];
+    if (lsdFlags & 0x80)
+        p += 3 * (1 << ((lsdFlags & 0x07) + 1));
+    let frames = 0;
+    const skipSubBlocks = () => {
+        while (p < bytes.length) {
+            const size = bytes[p];
+            p += 1;
+            if (size === 0)
+                return true;
+            p += size;
+        }
+        return false;
+    };
+    while (p < bytes.length) {
+        const b = bytes[p];
+        if (b === 0x3b)
+            break; // trailer
+        if (b === 0x21) {
+            p += 2; // introducer + label
+            if (!skipSubBlocks())
+                break;
+        }
+        else if (b === 0x2c) {
+            frames += 1;
+            if (frames > 1)
+                return true;
+            if (p + 10 > bytes.length)
+                break;
+            const flags = bytes[p + 9];
+            p += 10;
+            if (flags & 0x80)
+                p += 3 * (1 << ((flags & 0x07) + 1));
+            p += 1; // LZW minimum code size
+            if (!skipSubBlocks())
+                break;
+        }
+        else {
+            break;
+        }
+    }
+    return false;
+}
+/** Whether a newly added file of this MIME type should be downscaled/re-encoded at all. SVG is
+ * vector (rasterising it would lose that) and an animated GIF would lose its animation, so both
+ * are kept byte-for-byte; every other image/* type is re-encoded. */
+function shouldReencodeImage(mime, animatedGif) {
+    const m = String(mime || '').toLowerCase();
+    if (!m.startsWith('image/'))
+        return false;
+    if (m === 'image/svg+xml')
+        return false;
+    if (m === 'image/gif' && animatedGif)
+        return false;
+    return true;
+}
+/** Decoded byte size of a data URL's payload (base64 or percent-encoded). 0 for non-data URLs. */
+function dataUrlByteLength(dataUrl) {
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:'))
+        return 0;
+    const comma = dataUrl.indexOf(',');
+    if (comma < 0)
+        return 0;
+    const meta = dataUrl.slice(5, comma);
+    const payload = dataUrl.slice(comma + 1);
+    if (/;base64$/i.test(meta)) {
+        const clean = payload.replace(/\s+/g, '');
+        const pad = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0;
+        return Math.max(0, Math.floor((clean.length * 3) / 4) - pad);
+    }
+    try {
+        return decodeURIComponent(payload).length;
+    }
+    catch {
+        return payload.length;
+    }
+}
+/** The MIME type a data URL actually carries (lower-cased), or '' if it isn't one. Used to check
+ * that `canvas.toDataURL('image/webp')` really produced WebP — browsers that can't encode it
+ * silently return PNG instead. */
+function dataUrlMime(dataUrl) {
+    const m = /^data:([^;,]+)[;,]/i.exec(String(dataUrl || ''));
+    return m ? m[1].toLowerCase() : '';
+}
+/** Picks between the original file and the re-encoded (WebP, or JPEG fallback) version. When
+ * the picture had to be downscaled the re-encoded one always wins (the original is too big by
+ * definition). Otherwise the original is kept only if it is a web-safe raster type
+ * (PNG/JPEG/WebP) and already no larger than the re-encode — e.g. a tiny flat-colour PNG. */
+function pickEncodedImage(original, encoded, scaled) {
+    if (!encoded || !encoded.bytes)
+        return 'original';
+    if (scaled)
+        return 'encoded';
+    const keepable = ['image/png', 'image/jpeg', 'image/webp'].includes(String(original.mime).toLowerCase());
+    if (keepable && original.bytes > 0 && original.bytes <= encoded.bytes)
+        return 'original';
+    return 'encoded';
+}
+/** Caption for a picture moved out of a legacy note: its alt text, trimmed — unless that's
+ * empty or just a file name (what most paste paths put there), which isn't a caption. */
+function captionFromLegacyAlt(alt) {
+    if (typeof alt !== 'string')
+        return '';
+    const t = alt.trim();
+    if (!t)
+        return '';
+    if (/^[\w\-. ]+\.(png|jpe?g|gif|webp|bmp|svg|avif|heic)$/i.test(t))
+        return '';
+    return normalizeCaption(t);
+}
+
+/* GENERATED:nodeImages:END */
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string'):[],tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
-function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string'):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
+// images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
+// creating a NEW node from an existing one's content (duplicate, paste), so the copy's pictures
+// must be independent objects, not shared references into the source node.
+function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables,images){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],images:Array.isArray(images)?cloneNodeImagesWithNewIds(images,_now,newNodeImageId):[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
 function makeBlankNode(depth=0,parentId=null){return makeNode('',depth,parentId)}
 function snapshot(){return JSON.stringify({nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,focusedId,remarks,qaItems})}
 // nextId is intentionally never allowed to move backward here (Math.max, not a straight
@@ -9156,7 +9813,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,toolbarLabels,confirmBeforeDelete,expandedToolbar,toolbarVisible,treeIndentWidth,spellcheckEnabled,alwaysExpandInlineEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,toolbarHiddenGroups,contextQuickActions,contextSortChildrenEnabled,hoverToolbarEnabled,selectionFmtPopoverEnabled,hoverToolbarActions,insertHiddenButtons,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureTaggingEnabled,featureFocusEnabled,featureQuickAssistEnabled,qaSearchResultsEnabled,nodeQuickAssistEnabled,nodeQuickAssistActions,nqaIconOnly,qaSearchHiddenCategories,editorFloatingHiddenButtons,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,diagramGenSkipReviewEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,wordWrapEnabled,historyHiddenButtons,structureHiddenButtons,moveHiddenButtons,formatHiddenButtons,foldHiddenButtons,aiHiddenButtons,extrasHiddenButtons,deleteHiddenButtons,zenHideToolbar,zenHideSidebar,zenHideTabbar,tabbarVisible,appbarDecluttered,appbarIconOnlyExportImport,appbarHiddenButtons,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,autoRewriteExclusions,autoRewriteMinWords,autoRewriteIdleSec,autoRewriteBatchCap,statusbarHiddenItems,nodeTimestampHoverEnabled,statusbarRightOrder,qaLocation,autoRewriteChipShowQueued,debugLoggingEnabled,typewriterModeEnabled,autoErrorReportEnabled};
+    const payload={theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,toolbarLabels,confirmBeforeDelete,expandedToolbar,toolbarVisible,treeIndentWidth,spellcheckEnabled,alwaysExpandInlineEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,toolbarHiddenGroups,contextQuickActions,ctxImageActionAdded:true,contextSortChildrenEnabled,hoverToolbarEnabled,selectionFmtPopoverEnabled,hoverToolbarActions,insertHiddenButtons,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureTaggingEnabled,featureFocusEnabled,featureQuickAssistEnabled,qaSearchResultsEnabled,nodeQuickAssistEnabled,nodeQuickAssistActions,nqaIconOnly,qaSearchHiddenCategories,editorFloatingHiddenButtons,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,diagramGenSkipReviewEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,wordWrapEnabled,historyHiddenButtons,structureHiddenButtons,moveHiddenButtons,formatHiddenButtons,foldHiddenButtons,aiHiddenButtons,extrasHiddenButtons,deleteHiddenButtons,zenHideToolbar,zenHideSidebar,zenHideTabbar,tabbarVisible,appbarDecluttered,appbarIconOnlyExportImport,appbarHiddenButtons,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,autoRewriteExclusions,autoRewriteMinWords,autoRewriteIdleSec,autoRewriteBatchCap,statusbarHiddenItems,nodeTimestampHoverEnabled,statusbarRightOrder,qaLocation,autoRewriteChipShowQueued,debugLoggingEnabled,typewriterModeEnabled,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -9179,7 +9836,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?false:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysExpandInlineEnabled=!!d.alwaysExpandInlineEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions} contextSortChildrenEnabled=d.contextSortChildrenEnabled===undefined?true:!!d.contextSortChildrenEnabled; hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; selectionFmtPopoverEnabled=d.selectionFmtPopoverEnabled===undefined?true:!!d.selectionFmtPopoverEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} 
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; toolbarLabels=d.toolbarLabels===undefined?true:!!d.toolbarLabels; confirmBeforeDelete=d.confirmBeforeDelete===undefined?true:!!d.confirmBeforeDelete; expandedToolbar=!!d.expandedToolbar; toolbarVisible=d.toolbarVisible===undefined?false:!!d.toolbarVisible; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysExpandInlineEnabled=!!d.alwaysExpandInlineEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; toolbarHiddenGroups=Array.isArray(d.toolbarHiddenGroups)?d.toolbarHiddenGroups.filter(g=>TOOLBAR_GROUPS.includes(g)):[]; if(Array.isArray(d.contextQuickActions)){const filtered=d.contextQuickActions.filter(a=>CTX_ACTION_ORDER.includes(a)); contextQuickActions=filtered.length?filtered:contextQuickActions; /* One-time: menus saved before "Add image…" existed get it appended (lands under More), so existing users can find it; ctxImageActionAdded then records that, so unchecking it later sticks. */ if(!d.ctxImageActionAdded&&!contextQuickActions.includes('image'))contextQuickActions=contextQuickActions.concat('image')} contextSortChildrenEnabled=d.contextSortChildrenEnabled===undefined?true:!!d.contextSortChildrenEnabled; hoverToolbarEnabled=d.hoverToolbarEnabled===undefined?true:!!d.hoverToolbarEnabled; selectionFmtPopoverEnabled=d.selectionFmtPopoverEnabled===undefined?true:!!d.selectionFmtPopoverEnabled; if(Array.isArray(d.hoverToolbarActions)){hoverToolbarActions=d.hoverToolbarActions.filter(a=>CTX_ACTION_ORDER.includes(a)&&a!=='focus')} 
 insertHiddenButtons=Array.isArray(d.insertHiddenButtons)?d.insertHiddenButtons.filter(k=>INSERT_TB_BUTTONS.includes(k)):['smart-paste']; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureTaggingEnabled=d.featureTaggingEnabled===undefined?true:!!d.featureTaggingEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; featureQuickAssistEnabled=d.featureQuickAssistEnabled===undefined?true:!!d.featureQuickAssistEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; nodeQuickAssistEnabled=d.nodeQuickAssistEnabled===undefined?true:!!d.nodeQuickAssistEnabled; nqaIconOnly=d.nqaIconOnly===undefined?true:!!d.nqaIconOnly; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; editorFloatingHiddenButtons=Array.isArray(d.editorFloatingHiddenButtons)?d.editorFloatingHiddenButtons.filter(k=>EDITOR_FLOATING_BUTTONS.includes(k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; diagramGenSkipReviewEnabled=!!d.diagramGenSkipReviewEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; wordWrapEnabled=d.wordWrapEnabled===undefined?true:!!d.wordWrapEnabled; historyHiddenButtons=Array.isArray(d.historyHiddenButtons)?d.historyHiddenButtons.filter(k=>HISTORY_TB_BUTTONS.includes(k)):[]; structureHiddenButtons=Array.isArray(d.structureHiddenButtons)?d.structureHiddenButtons.filter(k=>STRUCTURE_TB_BUTTONS.includes(k)):[]; moveHiddenButtons=Array.isArray(d.moveHiddenButtons)?d.moveHiddenButtons.filter(k=>MOVE_TB_BUTTONS.includes(k)):[]; formatHiddenButtons=Array.isArray(d.formatHiddenButtons)?d.formatHiddenButtons.filter(k=>FORMAT_TB_BUTTONS.includes(k)):[]; foldHiddenButtons=Array.isArray(d.foldHiddenButtons)?d.foldHiddenButtons.filter(k=>FOLD_TB_BUTTONS.includes(k)):['zoom']; aiHiddenButtons=Array.isArray(d.aiHiddenButtons)?d.aiHiddenButtons.filter(k=>AI_TB_BUTTONS.includes(k)):[]; extrasHiddenButtons=Array.isArray(d.extrasHiddenButtons)?d.extrasHiddenButtons.filter(k=>EXTRAS_TB_BUTTONS.includes(k)):[]; deleteHiddenButtons=Array.isArray(d.deleteHiddenButtons)?d.deleteHiddenButtons.filter(k=>DELETE_TB_BUTTONS.includes(k)):[]; zenHideToolbar=!!d.zenHideToolbar; zenHideSidebar=d.zenHideSidebar===undefined?true:!!d.zenHideSidebar; zenHideTabbar=d.zenHideTabbar===undefined?false:!!d.zenHideTabbar; tabbarVisible=d.tabbarVisible===undefined?true:!!d.tabbarVisible; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; appbarHiddenButtons=Array.isArray(d.appbarHiddenButtons)?d.appbarHiddenButtons.filter(k=>APPBAR_HIDEABLE_BUTTONS.includes(k)):[]; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; autoRewriteExclusions=Array.isArray(d.autoRewriteExclusions)?d.autoRewriteExclusions.filter(k=>AUTO_REWRITE_EXCLUSION_KEYS.includes(k)):AUTO_REWRITE_EXCLUSION_KEYS.slice(); autoRewriteMinWords=Number.isFinite(Number(d.autoRewriteMinWords))?Math.max(0,Math.min(20,Math.round(Number(d.autoRewriteMinWords)))):5; autoRewriteIdleSec=Number.isFinite(Number(d.autoRewriteIdleSec))?Math.max(1,Math.min(300,Math.round(Number(d.autoRewriteIdleSec)))):120; autoRewriteBatchCap=Number.isFinite(Number(d.autoRewriteBatchCap))?Math.max(2,Math.min(50,Math.round(Number(d.autoRewriteBatchCap)))):5; statusbarHiddenItems=Array.isArray(d.statusbarHiddenItems)?d.statusbarHiddenItems.filter(k=>STATUSBAR_ITEM_KEYS.includes(k)):['nodecount','maxdepth','nodewords','theme','scale']; if(Array.isArray(d.statusbarRightOrder)){statusbarRightOrder=d.statusbarRightOrder.filter(k=>STATUSBAR_RIGHT_ORDER_KEYS.includes(k))} ensureStatusbarRightOrder(); nodeTimestampHoverEnabled=d.nodeTimestampHoverEnabled===undefined?true:!!d.nodeTimestampHoverEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; autoRewriteChipShowQueued=d.autoRewriteChipShowQueued===undefined?true:!!d.autoRewriteChipShowQueued; autoRewriteChipShowCountdown=autoRewriteChipShowQueued; debugLoggingEnabled=!!d.debugLoggingEnabled; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}function updateToolbarSubControls(){[el('toolbar-labels-row'),el('expanded-toolbar-row'),el('toolbar-sections-field')].forEach(row=>{if(row)row.classList.toggle('is-disabled',!toolbarVisible)})}
 function setToolbarVisible(on,persist=true){toolbarVisible=!!on; document.body.classList.toggle('toolbar-hidden',!toolbarVisible); const toggle=el('toolbar-visible-toggle'); if(toggle){toggle.classList.toggle('on',toolbarVisible); toggle.setAttribute('aria-checked',String(toolbarVisible))} const fbtn=el('editor-toolbar-toggle'); if(fbtn){fbtn.classList.toggle('is-active',toolbarVisible); fbtn.setAttribute('aria-pressed',String(toolbarVisible)); fbtn.dataset.tip=(toolbarVisible?'Hide toolbar':'Show toolbar')+' (Ctrl/Cmd+Shift+X)'} updateToolbarSubControls(); if(persist){savePrefs(); scheduleAutoSave()}}
 function setExpandedToolbar(on,persist=true){expandedToolbar=!!on; document.body.classList.toggle('expanded-toolbar',expandedToolbar); const toggle=el('expanded-toolbar-toggle'); if(toggle){toggle.classList.toggle('on',expandedToolbar); toggle.setAttribute('aria-checked',String(expandedToolbar))} if(persist){savePrefs(); scheduleAutoSave()}}
@@ -11710,7 +12367,7 @@ async function pushDocToCloud(mod,db,docId){
     if(/longer than \d+ bytes|exceeds? maximum size|document exceeds[^.]*size|1,?048,?576/i.test(msg)){
       if(!_docTooLargeToastShown.has(docId)){
         _docTooLargeToastShown.add(docId);
-        showToast('This document is too large to sync to the cloud (over Firestore\u2019s 1MB limit) \u2014 try simplifying a diagram. Your local copy is unaffected; it just won\u2019t reach the cloud or anyone it\u2019s shared with until it\u2019s smaller.',null,false,6000);
+        showToast('This document is too large to sync to the cloud (over Firestore\u2019s 1MB limit) \u2014 try simplifying a diagram or removing some images. Your local copy is unaffected; it just won\u2019t reach the cloud or anyone it\u2019s shared with until it\u2019s smaller.',null,false,6000);
       }
     }
     throw e; // still surfaces to flushSyncQueue's own catch, which needs it for the sync-status dot regardless of which toast (if either) already fired
@@ -13736,6 +14393,7 @@ function getSelectionRangeIds(nodes, collapsedIds, fromId, toId) {
 function subtreeHasNote(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(nodes[i].note&&nodes[i].note.trim())return true} return false}
 function subtreeMarkerTypes(idx){const end=getSubtreeEnd(nodes,idx); const found=new Map(); for(let i=idx+1;i<end;i++){const m=nodes[i].marker; if(m)found.set(m,(found.get(m)||0)+1)} return found}
 function subtreeHasDiagram(idx){if(!Array.isArray(diagrams)||!diagrams.length)return false; const end=getSubtreeEnd(nodes,idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return diagrams.some(d=>ids.has(d.anchorNodeId))}
+const NODE_IMAGE_DOT_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/></svg>';
 function subtreeHasTable(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(Array.isArray(nodes[i].tables)&&nodes[i].tables.length)return true} return false}
 // A node "has a citation" when its text contains a '>quoted…' segment — same detection previewSplitQuotes
 // uses for Preview/PDF/exports, kept in sync so the editor's collapsed-branch indicator below
@@ -13975,7 +14633,7 @@ function pruneCollapsedIds(){if(!collapsedIds.size)return; let changed=false; co
 // these aren't persisted (session-only), so there's no scheduleAutoSave() needed here, just
 // keeping the Sets from silently accumulating ids for nodes that no longer exist.
 function pruneInlineExpandIds(){
-  [inlineExpandNoteNodeIds,inlineExpandRemarksNodeIds,inlineExpandQaNodeIds,inlineExpandDiagramNodeIds,collapsedTableNodeIds].forEach(set=>{
+  [inlineExpandNoteNodeIds,inlineExpandRemarksNodeIds,inlineExpandQaNodeIds,inlineExpandDiagramNodeIds,collapsedTableNodeIds,collapsedImageNodeIds].forEach(set=>{
     if(!set.size)return;
     set.forEach(id=>{ if(getIndex(nodes,id)<0)set.delete(id); });
   });
@@ -15098,13 +15756,14 @@ const CTX_ACTION_META={
   diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'notes'},
   'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'notes'},
   table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'notes'},
+  image:{label:'Add image…',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>',group:'notes'},
   'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'notes'},
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'notes'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'notes'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'notes'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','qa','remark','diagram','diagram-gen','table','where-used','date-time','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','qa','remark','diagram','diagram-gen','table','image','where-used','date-time','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -15600,7 +16259,9 @@ function render(){ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds()
   // a node inside a collapsed branch never reaches that loop at all, and renderPreviewBody() reads
   // node.tables directly rather than re-deriving it from node.note, so a table living inside a
   // currently-collapsed node's note would otherwise simply never get migrated (and so never show
-  // up in Preview) until that branch happened to be expanded at least once.
+  // up in Preview) until that branch happened to be expanded at least once. Same for pictures
+  // still embedded in an older note (migrateNoteImagesToNode -> node.images).
+  nodes.forEach(migrateNoteImagesToNode);
   nodes.forEach(migrateNoteTablesToNode);
   // Continuous-editing feel: render() rebuilds every row's DOM from scratch even for a re-render
   // that has nothing to do with the current edit (e.g. flashNode's own delayed re-render, ~700ms
@@ -15642,7 +16303,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+((alwaysExpandInlineEnabled!==inlineExpandDiagramNodeIds.has(node.id))?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); rdot.className='node-note-dot node-remark-dot'+((alwaysExpandInlineEnabled!==inlineExpandRemarksNodeIds.has(node.id))?' pv-dot-open':''); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG; rdot.dataset.tip=nodeRemarks.length>1?'This node has '+nodeRemarks.length+' remarks — click to expand inline':'This node has a remark from '+esc(nodeRemarks[0].person||'someone')+' — click to expand inline'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tFeatureOn=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled()); const tRefs=tFeatureOn?todoRefsForNode(node.id):[]; if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=qaRefsForNode(node.id); if(qRefs.length){const qdot=document.createElement('span'); qdot.className='node-note-dot node-qa-dot'+((alwaysExpandInlineEnabled!==inlineExpandQaNodeIds.has(node.id))?' pv-dot-open':''); qdot.style.color='var(--fc-purple)'; qdot.innerHTML=qaDotIconSvg(11); qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to expand inline':'Linked to a Q&A question — click to expand inline'; qdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandQaNodeIds.has(node.id))inlineExpandQaNodeIds.delete(node.id); else inlineExpandQaNodeIds.add(node.id); render();}); row.appendChild(qdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a remark'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+((alwaysExpandInlineEnabled!==inlineExpandDiagramNodeIds.has(node.id))?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); rdot.className='node-note-dot node-remark-dot'+((alwaysExpandInlineEnabled!==inlineExpandRemarksNodeIds.has(node.id))?' pv-dot-open':''); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG; rdot.dataset.tip=nodeRemarks.length>1?'This node has '+nodeRemarks.length+' remarks — click to expand inline':'This node has a remark from '+esc(nodeRemarks[0].person||'someone')+' — click to expand inline'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tFeatureOn=(typeof window.sakuraTodosFeatureEnabled!=='function'||window.sakuraTodosFeatureEnabled()); const tRefs=tFeatureOn?todoRefsForNode(node.id):[]; if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=qaRefsForNode(node.id); if(qRefs.length){const qdot=document.createElement('span'); qdot.className='node-note-dot node-qa-dot'+((alwaysExpandInlineEnabled!==inlineExpandQaNodeIds.has(node.id))?' pv-dot-open':''); qdot.style.color='var(--fc-purple)'; qdot.innerHTML=qaDotIconSvg(11); qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to expand inline':'Linked to a Q&A question — click to expand inline'; qdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandQaNodeIds.has(node.id))inlineExpandQaNodeIds.delete(node.id); else inlineExpandQaNodeIds.add(node.id); render();}); row.appendChild(qdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a remark'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -15671,6 +16332,19 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
             render();
           });
           row.appendChild(tdot);
+        }
+        // Same open-by-default fold/toggle for the node's picture strip (node.images).
+        if(Array.isArray(node.images)&&node.images.length){
+          const imagesOpen=!collapsedImageNodeIds.has(node.id);
+          const idot=document.createElement('span'); idot.className='node-note-dot node-image-dot'+(imagesOpen?' pv-dot-open':''); idot.style.color='var(--fc-green)';
+          idot.innerHTML=NODE_IMAGE_DOT_SVG;
+          idot.dataset.tip=(node.images.length>1?'This node has '+node.images.length+' images':'This node has an image')+' — click to '+(imagesOpen?'fold':'unfold')+(node.images.length>1?' them':' it');
+          idot.addEventListener('click',e=>{
+            e.stopPropagation();
+            if(collapsedImageNodeIds.has(node.id))collapsedImageNodeIds.delete(node.id); else collapsedImageNodeIds.add(node.id);
+            render();
+          });
+          row.appendChild(idot);
         }
         // Small italic preview of this node's Note, appended right after its own note dot above —
         // lbl's flex:1/flex-basis:0 already pushes every later sibling to the row's right edge,
@@ -15823,25 +16497,17 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const wasEmpty=!htmlHasVisibleContent(noteLine.innerHTML); const doDelete=()=>{ noteLine.dataset.deleting='1'; const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!htmlHasVisibleContent(noteLine.innerHTML))doDelete(); },0);
     });
     // Genuine rich content (any text or HTML representation) is left to the browser's native
-    // paste, which is how a pasted table lands as real <table> markup; an image-only clipboard
-    // item (no text/html at all -- the common case for a screenshot) is the one thing
-    // intercepted and inserted manually.
+    // paste, which is how a pasted table lands as real <table> markup. A picture never goes into
+    // the note itself any more: an image-only clipboard item (the common screenshot case) is
+    // added to the node's own node.images (compressed -- see addImageFilesToNode), and any <img>
+    // a rich paste carried in is moved out the same way right after (migrateNoteImagesToNode).
     noteLine.addEventListener('paste',e=>{
       e.stopPropagation();
       const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||'';
       const hasRichContent=text.trim().length>0||html.replace(/<[^>]*>/g,'').trim().length>0;
-      if(hasRichContent){ setTimeout(()=>{ noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); commitNoteLine(); },0); return; }
-      const items=e.clipboardData?.items; if(!items)return;
-      for(const item of items){
-        if(item.type.startsWith('image/')){
-          e.preventDefault();
-          const file=item.getAsFile(); if(!file)continue;
-          const reader=new FileReader();
-          reader.onload=evt=>{ pushUndo(); document.execCommand('insertImage',false,evt.target.result); commitNoteLine(); };
-          reader.readAsDataURL(file);
-          return;
-        }
-      }
+      if(hasRichContent){ setTimeout(()=>{ noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); commitNoteLine(); const i=getIndex(nodes,node.id); if(i>=0&&migrateNoteImagesToNode(nodes[i])){ _pendingInlineFocus={kind:'note',nodeId:node.id}; render(); } },0); return; }
+      const files=clipboardImageFiles(e.clipboardData);
+      if(files.length){ e.preventDefault(); addImageFilesToNode(node.id,files); }
     });
     noteLine.addEventListener('input',()=>{ const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=cleanEditorHtml(noteLine); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&htmlHasVisibleContent(noteLine.innerHTML))forceInlineNoteId=null; });
     noteLine.addEventListener('blur',()=>{
@@ -15871,9 +16537,10 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       if(table&&cell){
         items.push(...buildTableEditItems(table,cell,commitNoteLine));
       } else if(readOnlyFigure){
-        const figIsPicture=!!readOnlyFigure.querySelector('img');
+        // Only tables/charts/Cards render as read-only figures in a note now -- pictures are
+        // node.images objects with their own strip/viewer (see buildNodeImageStrip).
         const figObjIdx=Number(readOnlyFigure.dataset.noteObjIdx);
-        if(!figIsPicture){
+        {
           const figFound=Number.isFinite(figObjIdx)?noteTableByIndex(node.id,figObjIdx):null;
           if(figFound&&(isTableFeaturedAsChart(figFound.table)||tableChartability(figFound.table).ok)){
             // Edits this exact figure's data directly -- see enterScopedTableEdit -- rather than
@@ -15890,17 +16557,10 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         items.push({label:'Copy', onClick:()=>copyNoteReadOnlyFigure(readOnlyFigure,node)});
         items.push({label:'Edit note', onClick:()=>{ noteLine.focus(); }});
         items.push({label:'Delete', danger:true, onClick:()=>{
-          if(figIsPicture){
-            const found=Number.isFinite(figObjIdx)?noteImageByIndex(node.id,figObjIdx):null;
-            if(!found)return;
-            found.img.remove();
-            persistNoteTableChange(found.idx,found.container);
-          } else {
-            const found=Number.isFinite(figObjIdx)?noteTableByIndex(node.id,figObjIdx):null;
-            if(!found)return;
-            found.table.remove();
-            persistNoteTableChange(found.idx,found.container);
-          }
+          const found=Number.isFinite(figObjIdx)?noteTableByIndex(node.id,figObjIdx):null;
+          if(!found)return;
+          found.table.remove();
+          persistNoteTableChange(found.idx,found.container);
           render();
         }});
       } else {
@@ -15942,6 +16602,16 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       tWrap.appendChild(buildNodeTableObject(node,tIdx));
       frag.appendChild(tWrap);
     });
+  }
+  if(!collapsedImageNodeIds.has(node.id)&&Array.isArray(node.images)&&node.images.length){
+    // node.images -- one compact, wrapping strip of thumbnails (click one for the enlarged
+    // viewer), placed exactly like the table block above, with the same tree-line continuation.
+    const imgDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
+    const iWrap=document.createElement('div'); iWrap.className='node-image-line-wrap';
+    iWrap.style.paddingLeft=hideTreeLines?(imgDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
+    if(hideTreeLines&&depthGuideLines){ const iVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx+1,focusEnd),idx-focusIdx-1,-focusBaseDepth):buildVertFlags(nodes,idx,0); iVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; iWrap.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(imgDepth*32+0*editorScale+9)+'px'; iWrap.appendChild(vgOwn) } }
+    iWrap.appendChild(buildNodeImageStrip(node));
+    frag.appendChild(iWrap);
   }
   if((alwaysExpandInlineEnabled!==inlineExpandRemarksNodeIds.has(node.id))&&Array.isArray(remarks)&&remarks.length){
     // Newest first -- remarks.push (addRemark/saveNodeComment) always appends, so left in array
@@ -16525,7 +17195,9 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
   const caretAt=prevOldText.length; const prevNewText=prevOldText+mergedText;
   pushUndo(); markDirty();
   const deletedTexts=mergedText?[mergedText]:[]; const deletedIds=[nodes[idx].id];
-  nodes[prevIdx]={...nodes[prevIdx],text:prevNewText};
+  // The absorbed node's pictures move onto the surviving row (appended after its own) rather
+  // than vanishing with it -- node.images is user content, never silently dropped.
+  nodes[prevIdx]={...nodes[prevIdx],text:prevNewText,images:mergedNodeImages(nodes[prevIdx],nodes[idx])};
   nodes.splice(idx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
@@ -16551,7 +17223,7 @@ function mergeNextNodeIntoAndFocus(id,liveText){
   const caretAt=curOldText.length; const curNewText=curOldText+nextText;
   pushUndo(); markDirty();
   const deletedTexts=nextText?[nextText]:[]; const deletedIds=[nodes[nextIdx].id];
-  nodes[idx]={...nodes[idx],text:curNewText};
+  nodes[idx]={...nodes[idx],text:curNewText,images:mergedNodeImages(nodes[idx],nodes[nextIdx])};
   nodes.splice(nextIdx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
@@ -16592,7 +17264,7 @@ function deleteSelected(){
   cleanupBacklinksFor(deletedTexts);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`);
 }
-function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables)); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
+function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images)); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
 function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const insertIdx=getIndex(nodes,selectedId);
   // parseTextToTreeNodes (and friends) always normalize the parsed block's own top-level
@@ -16607,10 +17279,16 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   // is what every other insertion path in this file already does.
   const offsetDepth=computePasteOffsetDepth(nodes,insertIdx);
   const mapped=parsed.map(n=>makeNode(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'',false,n.tables)); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
-  let dgAdded=0;
+  let dgAdded=0; let imgAdded=0;
   if(Array.isArray(clipExtras)&&clipExtras.length){
     clipExtras.forEach(ex=>{
       const targetNode=mapped[ex.i]; if(!targetNode)return;
+      if(Array.isArray(ex.imgs)&&ex.imgs.length){
+        const copies=cloneNodeImagesWithNewIds(ex.imgs,Date.now(),newNodeImageId);
+        if(!Array.isArray(targetNode.images))targetNode.images=[];
+        targetNode.images.push(...copies);
+        imgAdded+=copies.length;
+      }
       if(Array.isArray(ex.dgs)&&ex.dgs.length){
         ex.dgs.forEach(dg=>{
           const ts=Date.now();
@@ -16619,10 +17297,10 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
         });
       }
     });
-    if(dgAdded)scheduleAutoSave();
+    if(dgAdded||imgAdded)scheduleAutoSave();
   }
   selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null; render();
-  const extrasLabel=dgAdded?` (incl. ${dgAdded} diagram${dgAdded===1?'':'s'})`:'';
+  const extrasLabel=clipExtrasToastLabel(dgAdded,imgAdded);
   showToast(`${toastVerb} ${mapped.length} node${mapped.length===1?'':'s'}${extrasLabel}`)}
 // Turns clipboard HTML into the line-per-row text parseTextToTreeNodes expects. innerText can't be
 // used here: on an element that isn't in the rendered page it degrades to textContent, which runs
@@ -17033,13 +17711,24 @@ function buildNodeClipboardPayload(scopeNodes){
   const extras=[];
   scopeNodes.forEach((n,i)=>{
     const dgs=Array.isArray(diagrams)?diagrams.filter(dg=>dg.anchorNodeId===n.id):[];
-    if(!dgs.length)return;
+    // node.images rides along the same way (its data URLs can't survive the plain text/html
+    // serializers either) -- pasteParsedNodes re-attaches them to the matching new node with
+    // fresh ids. Older builds ignore the unknown `imgs` key.
+    const imgs=Array.isArray(n.images)?n.images:[];
+    if(!dgs.length&&!imgs.length)return;
     extras.push({
       i,
+      ...(imgs.length?{imgs:JSON.parse(JSON.stringify(imgs))}:{}),
       dgs:dgs.map(dg=>({title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||''}))
     });
   });
   return extras.length?{v:1,extras}:null;
+}
+function clipExtrasToastLabel(dgCount,imgCount){
+  const parts=[];
+  if(dgCount)parts.push(dgCount+' diagram'+(dgCount===1?'':'s'));
+  if(imgCount)parts.push(imgCount+' image'+(imgCount===1?'':'s'));
+  return parts.length?` (incl. ${parts.join(', ')})`:'';
 }
 function encodeSakuraClipComment(payload){
   try{ return `<!--sakura-dl:${btoa(unescape(encodeURIComponent(JSON.stringify(payload))))}-->` }catch(e){ return '' }
@@ -17054,7 +17743,7 @@ function extractSakuraClipPayload(html){
   }catch(e){}
   return null;
 }
-async function copyNodesToClipboard(forceFull=false){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const extrasLabel=dgCount?` (incl. ${dgCount} diagram${dgCount===1?'':'s'})`:''; const toastLabel=(isSubset?`Copied ${scopeNodes.length} node${scopeNodes.length===1?'':'s'}`:'Tree copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
+async function copyNodesToClipboard(forceFull=false){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const imgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.imgs?x.imgs.length:0),0):0; const extrasLabel=clipExtrasToastLabel(dgCount,imgCount); const toastLabel=(isSubset?`Copied ${scopeNodes.length} node${scopeNodes.length===1?'':'s'}`:'Tree copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
 function downloadBlob(filename,mime,content){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([content],{type:mime}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),500)}
 // === OPML ===
 // Recursively walks a flat depth-tagged node list (already rebased so the first
@@ -19659,6 +20348,15 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     render();
     return;
   }
+  // Pictures/screenshots as node.images objects -- multiple files allowed, each compressed on the
+  // way in (see addImageFilesToNode).
+  if(action==='image'){
+    if(_ctxNodeId===null)return;
+    setSingleSelection(_ctxNodeId);
+    render();
+    openNodeImagePicker(_ctxNodeId);
+    return;
+  }
   if(action==='where-used'){
     if(_ctxNodeId===null)return;
     const idx=getIndex(nodes,_ctxNodeId); if(idx<0)return;
@@ -19862,8 +20560,23 @@ let hideNodeTooltip=function(){};
   // bespoke hide-tooltip call added to each button that might remove itself.
   document.addEventListener('mousedown',()=>{ hoveredEl=null; tip.classList.remove('visible'); },true);
 })();
+// A clipboard that's a picture and nothing else meaningful (a screenshot, an image copied from a
+// web page or file manager) pasted while a node row is selected or being edited becomes one of
+// that node's node.images -- never text, never note HTML. Anything with real text keeps going
+// through the tree/text paste paths below unchanged.
+function pasteImagesIntoNodeIfImageOnly(e,nodeId){
+  if(nodeId===null||nodeId===undefined)return false;
+  const files=clipboardImageFiles(e.clipboardData); if(!files.length)return false;
+  const text=e.clipboardData?.getData('text/plain')||'';
+  if(text.trim())return false;
+  e.preventDefault();
+  addImageFilesToNode(nodeId,files);
+  return true;
+}
 document.addEventListener('paste',e=>{
+  if(nodeImageViewerIsOpen())return;
   if(editingId!==null && e.target===getEditingInput()){
+    if(pasteImagesIntoNodeIfImageOnly(e,editingId))return;
     const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim();
     if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){
       const opmlParsed=parseOpmlToTreeNodes(text);
@@ -19873,7 +20586,7 @@ document.addEventListener('paste',e=>{
     if(parsed.length>1){ e.preventDefault(); commitEdit(); const clipExtras=extractSakuraClipPayload(html); pasteParsedNodes(parsed,undefined,clipExtras); return }
     return; // single line (or nothing parseable) -- let the browser paste it normally into the active node
   }
-  if(isControlTarget(e.target))return; if(editingId!==null)return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}}
+  if(isControlTarget(e.target))return; if(editingId!==null)return; if(!multiSelectedIds.length&&pasteImagesIntoNodeIfImageOnly(e,selectedId))return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}}
   // A table copied from outside (Excel, Sheets, a web page) lands as a node.tables object on the
   // selected node -- the same shape "Add table..." creates -- rather than falling through to
   // parseTextToTreeNodes below, which would otherwise shred its tab/newline-separated cell text
@@ -24706,7 +25419,8 @@ function renderPreviewBody(){
   // that still has an embedded table (anything saved before node.tables existed) would simply
   // never show up here at all, since this reads node.tables directly rather than re-deriving it
   // from note HTML. Idempotent and cheap (a fast regex bail-out) to call again if render() already
-  // did it.
+  // did it. Same for a legacy note's embedded pictures (migrateNoteImagesToNode -> node.images).
+  nodes.forEach(migrateNoteImagesToNode);
   nodes.forEach(migrateNoteTablesToNode);
   const docTitle=String(el('header-title')?.value||'Untitled');
   if(el('preview-head-title'))el('preview-head-title').textContent=docTitle;
@@ -24998,18 +25712,21 @@ function renderPreviewBody(){
         });
         if(trow.children.length)doc.appendChild(trow);
       }
-      // A note's own standalone images (split out by splitNoteBlockVisuals above) -- same
-      // full-width figure treatment, images stay note content (unlike tables above).
-      if(blockVisuals&&blockVisuals.images.length){
-        const multi=blockVisuals.images.length>1;
-        const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
-        blockVisuals.images.forEach(d=>{
-          const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
-          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'';
+      // A node's own pictures (node.images -- see migrateNoteImagesToNode/buildNodeImageStrip):
+      // one figure each, stacked, at the image's chosen display width (a percentage of the page's
+      // content width; "Auto" = natural size up to the full width), caption underneath.
+      if(Array.isArray(node.images)&&node.images.length){
+        const irow=document.createElement('div'); irow.className='pv-node-images'; irow.style.paddingLeft=inlinePad;
+        node.images.forEach(im=>{
+          if(!im||!im.src)return;
+          const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-node-image-figure'; fig.dataset.imageId=im.id||'';
+          if(im.width)fig.style.width=im.width+'%'; else fig.classList.add('pv-node-image-auto');
+          const img=document.createElement('img'); img.className='pv-diagram-img pv-node-image'; img.src=im.src; img.alt=im.caption||'';
           fig.appendChild(img);
-          row.appendChild(fig);
+          if(im.caption){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=im.caption; fig.appendChild(cap); }
+          irow.appendChild(fig);
         });
-        doc.appendChild(row);
+        if(irow.children.length)doc.appendChild(irow);
       }
       // Tables and standalone images were already pulled out into their own figures above (see
       // blockVisuals) -- what's left here is only the note's own text, via blockVisuals.textHtml
@@ -29357,6 +30074,7 @@ let dockActiveTab=null;
           <li><span class="cs-desc">Floating, draggable, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> to expand full-screen</span></li>
           <li><span class="cs-desc">Notes: B I U S, lists, link, table, image paste, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI rewrite</span></li>
           <li><span class="cs-desc">Right-click a node → Add question… / Add remark… / Add diagram… — each lives inline under that node; click the node's dot to show or hide them</span></li>
+          <li><span class="cs-desc">Paste or drop a screenshot on a node (or right-click → Add image…) — thumbnails under the node; click one to enlarge, caption, or resize for the PDF</span></li>
           <li><span class="cs-desc"><strong>Diagrams</strong> — a real draw.io editor per diagram, linked to a node; embeds as a picture in PDF exports. Right-click → Generate diagram drafts one from a branch</span></li>
         </ul>
       </div>
