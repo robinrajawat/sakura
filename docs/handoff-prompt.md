@@ -295,7 +295,7 @@ and merged after independent review:
    `tests/e2e/backup-simplified.spec.ts`. Known leftover, not changed: an old encrypted Gist token
    stays as ciphertext in `sakura_cloud_backup_v1` (and so rides along in full backups) if the
    vault is later turned off — harmless, never read.
-9a. Trim AI to Generate outline + Rewrite; remove node icons. **Done in PR #TBD (open, awaiting
+9a. Trim AI to Generate outline + Rewrite; remove node icons. **Done in PR #470 (open, awaiting
    review — not merged).** Project-owner decisions, all settled:
    **AI kept:** Generate outline (toolbar + empty-doc "Generate with AI" + Ctrl/Cmd+Shift+O + Quick
    Assist), Rewrite node / selection / document (toolbar, right-click, Quick Assist), note-line and
