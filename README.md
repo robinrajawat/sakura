@@ -45,7 +45,7 @@ Key capabilities:
 - Multiple documents open as independent tabs
 - Deep theming: Light/Dark/System/Schedule auto-theme, seven accent colors, five Chrome background presets, and node-text color presets
 - Installable as a desktop/mobile app (PWA) in supporting browsers
-- Two-tier automatic backup (live file backup + a local safety copy), in addition to manual export/import
+- Manual full-data backup to a file (and restore, with one-step undo); signed in, your data also syncs to your account automatically
 - Optional account sign-in (Google or email) syncs documents, folders, templates, and settings across devices, and lets you share individual documents with other Sakura accounts as viewer or editor
 - Version History for documents and the To-Dos list — periodic snapshots you can restore from independently of the undo stack
 
@@ -158,7 +158,7 @@ The install icon itself is genuinely transparent (real alpha, not a flattened op
 
 Signing in (Google or email, from the account button top-right) is entirely optional — everything above keeps working fully offline and locally without it. Signing in does two things:
 
-- **Sync** — your documents, folders, templates, and settings sync to your account and follow you to another browser or device (newer-wins per item, not a field-level merge). A status-bar dot shows sync health; a "no backup taken this session" warning elsewhere in Settings stays quiet whenever sync is signed in and healthy, since that already is a continuous, live off-device backup.
+- **Sync** — your documents, folders, templates, and settings sync to your account and follow you to another browser or device (newer-wins per item, not a field-level merge). A status-bar dot shows sync health. While signed in, this sync is your live, continuous off-device copy — there's nothing extra to set up.
 - **Sharing** — share an individual document with another Sakura account as **Can view** or **Can edit**. A "Share" chip appears under a document's title once you're signed in; type a name or email to search (only accounts with **Profile visibility** set to Public, Settings → Account, Private by default, show up in results), pick a role, and click a result to share immediately. Documents shared with you appear in a **Shared** section in the file explorer, alongside who shared them and your access level. A bell icon next to the account button notifies you when someone shares something with you.
 
 Sharing is deliberately simple in this version: access is per-document, not per-folder; a shared document opens as a normal tab but doesn't persist across a page reload the way your own documents do (reopen it from the Shared section); and there's no live co-editing — two people editing the same shared document at once still follow the same newer-wins sync model as your own devices do, not real-time collaboration.
@@ -167,16 +167,19 @@ Sharing is deliberately simple in this version: access is per-document, not per-
 
 Everything is stored locally in the browser, scoped to this exact file. Opening a different copy or a newer version of the file starts with empty storage — this is a browser limitation (local storage is partitioned per file URL), not a bug.
 
-Sakura offers four layers of protection, from lightest to most durable:
+How your data is protected depends on whether you're signed in:
 
-0. **Account sync** (see [Account, Sync & Sharing](#account-sync--sharing) above) — signing in is itself a live, continuous, off-device backup, on top of whatever it's also used for. Everything below still matters even signed in — an account can't help if it's ever deleted or unreachable — but the "Warn if this session isn't backed up" prompt below stays quiet while sync is healthy, since there's nothing extra to warn about on top of it.
-1. **Local safety copy** (Settings → Data) — a copy of your data is automatically mirrored into a separate browser storage area (IndexedDB) on every save. If the primary storage is ever cleared, "Restore" can recover from this copy. This is still inside the same browser, not an external backup.
-2. **Auto-backup to file** (Settings → Data) — connects a real file on disk and writes a live backup to it as you work, using the File System Access API. Available in Chrome and Edge only. If the browser's file permission lapses (it can, by design, after a reload or restart), the status bar shows a chip to reconnect in one click. If you disconnect it yourself, that same chip stays visible with a plain "Connect" prompt rather than disappearing. Since the live file always overwrites itself, a **Backup history** list underneath keeps up to 5 timestamped snapshots (at least 15 minutes apart) as an independent way back to an earlier point.
-3. **Export / Import** (Settings → Data & Backup) — saves everything (documents, folders, templates) to a single downloadable JSON file, and restores from one. This is the only option that produces a file outside the browser, and the only reliable way to move *all* your data between different files, browsers, or computers. Importing **replaces the entire app's contents** with the file's — for sending just one document to someone else, use either **Sakura Document** (Export ▾ → Send a copy → Sakura Document — a file they import themselves) or, if they also have a Sakura account, the account-based **Share** chip under the title (see [Account, Sync & Sharing](#account-sync--sharing)) instead. Deliberately only reachable from Settings, not duplicated as a one-click shortcut elsewhere — Restore replaces everything currently in the app, so it's worth the extra couple of clicks to get there. Restoring a backup file while signed in is specifically guarded against overwriting newer synced work: the next sync pull reconciles against your account before anything local gets pushed back up.
+- **Signed in — automatic.** Your documents, folders, templates, and settings sync to your account continuously (see [Account, Sync & Sharing](#account-sync--sharing) above). That is a live, off-device copy with nothing to configure.
+- **Signed out — manual.** Everything lives only in this browser until you back it up yourself:
+  - **Backup all data** (Settings → Data) saves everything — documents, folders, templates, settings, and AI provider keys (encrypted if Secure Storage is on, plain text otherwise; handle the file like a password) — to a single downloadable JSON file. It's the only copy outside the browser, and the only reliable way to move *all* your data between different files, browsers, or computers.
+  - **Restore from backup** (Settings → Data) reads one back and **replaces the entire app's contents** with the file's. For handing a single document to someone else, use the account-based **Share** chip under the title instead. Both live only in Settings, not as one-click shortcuts — Restore replaces everything, so it's worth the extra clicks. Restoring while signed in is guarded against overwriting newer synced work: the next sync pull reconciles against your account before anything local gets pushed back up. Backup files from older versions restore fine; settings for features that no longer exist are simply ignored.
+  - **Undo last restore** (Settings → Data, appears only once you've restored) — every Restore first snapshots whatever's currently in the app, so this reverses the most recent restore if the file you picked turns out to have been the wrong one.
 
-Every Restore action — from a backup file, the Local safety copy, or a Backup history entry — first snapshots whatever's currently in the app. **Undo last restore** (Settings → Data, appears only once a snapshot exists) reverses that most recent restore if the file you picked turns out to have been the wrong one.
+**Secure Storage** (Settings → Data) optionally encrypts your AI provider keys at rest with a passphrase only you know — in this browser and in backup files. Once set up, a status-bar chip appears while it's locked and a saved key needs it; click to unlock.
 
-**Recommended workflow when moving to a new copy of this file:** Export from the old copy, open the new copy, then Import immediately.
+(Earlier versions also offered Cloud Backup to GitHub Gist / Google Drive, Auto-backup to a file on disk with Backup history, an automatic Local safety copy, a "Remind me to back up" status-bar chip, and a "Warn if this session isn't backed up" close-tab prompt. These were removed to keep backup simple: sign in for automatic sync, or back up manually.)
+
+**Recommended workflow when moving to a new copy of this file:** Backup all data from the old copy, open the new copy, then Restore immediately.
 
 ## Feedback & Crash Reports
 
@@ -204,8 +207,6 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | To-Dos | Features | On | App-level task list; independent of any single document |
 | Node hover toolbar | Editing | Off | Menu + Zoom-in buttons on hover, without selecting the node first |
 | Focus | Editing | On | Zoom into a branch; can be turned off entirely |
-| Auto-backup to file | Data & Backup | Off (not connected) | Chrome/Edge only; see Data & Backup above |
-| Local safety copy | Data & Backup | Always on | Automatic; "Restore" button is the only manual action |
 | Debug logging | Data & Backup | Off | Rolling in-memory log (last 500 entries) of app events — save, restore, panel, import/export, AI, and more. Uncaught errors are recorded regardless of this setting; the toggle controls the more detailed breadcrumb trail and whether the log viewer is shown. Never includes your note/task/document text, only metadata (node IDs, lengths, which action ran) — useful to turn on when troubleshooting a specific issue, then use "Copy log" to share it |
 | Skip folded sections | Data & Backup | On | Collapsed subtrees are left out of OPML export and when copying nodes (Ctrl/Cmd+C); PDF export always renders the full document |
 | Use accent color in exports | Data & Backup | On | Off: PDF exports (documents and To-Dos) use one fixed color instead of your live accent, for consistent branding when sharing |
@@ -248,15 +249,14 @@ If a shortcut is intercepted by the OS or browser before it reaches the page (no
 
 ## Browser Support
 
-Sakura works in any modern browser. Two features are the exception:
+Sakura works in any modern browser. One feature is the exception:
 
-- **Auto-backup to file** requires the File System Access API, supported in Chrome and Edge. In Safari and Firefox, the control is disabled with an explanation, and the **Local safety copy** and manual **Export** remain available as alternatives.
 - **Installing as an app (PWA)** depends on the browser's own install support — Chrome and Edge on desktop, and Chrome on mobile ("Add to Home screen"), are the most consistently supported. Safari and Firefox have more limited or absent PWA install support; the app still works normally as a regular browser tab either way.
 
 ## Known Limitations
 
-- Storage is scoped per file URL. A renamed, moved, or re-downloaded copy of this file starts with empty storage — export/import is the way to carry data across.
-- The local safety copy and auto-backup both protect against accidental data loss within normal use, but neither replaces taking an occasional Export as a true external backup.
+- Storage is scoped per file URL. A renamed, moved, or re-downloaded copy of this file starts with empty storage — Backup all data / Restore is the way to carry data across.
+- Signed out, nothing backs your data up automatically: take an occasional Backup all data, since browser storage alone can be cleared.
 - Account sync (see [Account, Sync & Sharing](#account-sync--sharing)) is optional, newer-item-wins, and per-document — there is no real-time/live co-editing. Two people (or two of your own devices) editing the same document at the same moment still resolve by whichever save lands last, the same as any other sync conflict here, not a merge. Sharing itself is per-document, not per-folder, and a document shared with you doesn't stay open across a page reload — reopen it from the Shared section in the file explorer.
 - AI features send node/selection text to a third-party provider — with your own key, straight from your browser to the provider you configured (review that provider's own data-handling terms if that matters); with Sakura Hosted AI, through Sakura's own server first, to a provider Sakura selects, using Sakura's credentials (not stored on that server either way — see Settings → About → Privacy & data in-app for the full breakdown). The in-app "Usage today" counter is a local approximation, not an authoritative quota reading, and Sakura Hosted AI is additionally capped by a real daily per-account quota enforced server-side.
 - Below 768px, this file redirects to hub.html, which requires signing in (no local-only mode there — see Mobile Hub above for why) and covers To-Dos only — the outliner itself isn't reachable from a phone-sized screen at all. hub.html's sign-in screen points to a computer for all of that instead of offering a non-working link back here. This is an intentional, staged rollout, not a bug, but someone who's never signed in has no mobile Hub access until they do.

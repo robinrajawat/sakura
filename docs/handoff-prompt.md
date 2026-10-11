@@ -220,7 +220,7 @@ and merged after independent review:
    `renderPreviewBody()`/`exportPreviewAsPdf()` working as a fully headless PDF pipeline — PDF
    export via the Export menu never opens any overlay. **Merged**, but **done before #5** (see
    "Resequencing" below) — so the numbering here is execution order, not the original plan order.
-8. Trim exports and imports. **Done in PR #468 (open, awaiting review — not merged).** Final scope,
+8. Trim exports and imports. **Merged** (#468). Final scope,
    all settled project-owner decisions (the item started as "PDF-only" and was revised mid-PR):
    **Export ▾ = PDF + OPML; Import ▾ = OPML only.** Removed: Word (.docx), PowerPoint (.pptx),
    Markdown, Tree .txt, Copy as Text, **Copy as Image**, and **Sakura Document (.sakura.json) share
@@ -255,17 +255,46 @@ and merged after independent review:
    tree back collapses it into one node whenever the clipboard has text/html —
    `parseTreeClipboardHtml` reads `innerText` from a detached element, which drops the
    `white-space:pre` line breaks. Plain-text paste works. Worth a small follow-up fix.
-8b. Simplify data backup. **Not started** (docs-only so far — another PR implements it).
-   Project-owner decisions:
-   - Signed in: data keeps auto-syncing to Firebase (unchanged).
-   - Not signed in: backup is fully manual — keep "Backup all data" (manual export file) and
-     "Restore from backup", plus "Undo last restore".
-   - Remove: Cloud Backup (GitHub Gist and Google Drive), "Auto-backup to file" (File System
-     Access) and its Backup history snapshots, the "Remind me to back up" status-bar reminder
-     (`backupReminderDays`/`checkBackupReminder`/`#sb-backup-reminder-chip`), the "Warn if this
-     session isn't backed up" close-tab warning, and the automatic "Local safety copy".
-   - Open question to trace when implementing: Secure Storage currently encrypts AI keys AND the
-     Gist token — keep it for AI keys, drop the Gist parts.
+8b. Simplify data backup. **Done in PR #469 (open, awaiting review — not merged).** Project-owner
+   decisions: signed in, data keeps auto-syncing to Firebase/Firestore (unchanged — nothing removed
+   was on the sync path; `queueSync`/`flushSyncQueue`/pull-merge untouched); signed out, backup is
+   fully manual. Settings → Data now holds only **Backup all data**, **Restore from backup**, **Undo
+   last restore** (+ a rewritten "Why this matters" note and Reset to default settings), with
+   Secure Storage, Trash, Export & copy, and Debug Log as the other Data sections.
+   **Removed:** Cloud Backup (GitHub Gist + Google Drive: settings section, token/client-id UI,
+   Gist/Drive API calls, auto-sync timers, conflict notice, GIS script loader, Quick Assist
+   "auto-sync to Gist" toggle, `buildCloudSafeBackupPayload`/`CLOUD_UNSAFE_KEYS`, and
+   `importAllDataFromPayload`'s `preserveKeys` option that only cloud loads used); Auto-backup to
+   file (File System Access handle, status-bar connection chip + its `fsstatus` status-bar item,
+   "Back up now"/Connect, reconnect toast) and its Backup history snapshots; the "Remind me to back
+   up" status-bar chip (`backupReminderDays`, 5-minute ticker, notification); the "Warn if this
+   session isn't backed up" Strict/Passive close-tab prompt; the automatic Local safety copy
+   (IndexedDB `localStorageMirror` + its Restore row); the debounced `scheduleBackupWrite` that
+   fed all of them; `cloudBackupIsHealthy`/`_lastSyncStatus` (only the reminder/warning read them);
+   `_openModal`'s `stackActions` option + its CSS (the warning dialog was its only user); dead CSS;
+   Help/README/Privacy/landing text. CSP: dropped `api.github.com` (Gist only) and
+   `www.googleapis.com` (Drive REST only — Firebase Auth 10.14.1 uses identitytoolkit/securetoken
+   instead, checked against the @firebase/auth 1.7.9 package source); **kept** `accounts.google.com`
+   and `oauth2.googleapis.com` (Google identity hosts also listed in hub.html's sign-in-only CSP; a
+   live Google sign-in can't be tested here, so not worth the risk) and `models.github.ai` (GitHub
+   Models AI). hub.html's CSP untouched (no backup code there).
+   **Kept:** Secure Storage for AI provider keys only — `src/state/vault.ts` lost
+   `decryptedGistTokenCache`; setup/unlock/lock/disable no longer touch the Gist blob; backup files
+   still carry AI keys encrypted/plain exactly as before. The vault status-bar chip no longer
+   mentions Gist ("…unlock and use AI Rewrite" / "…unlock your saved AI fallback keys") and a
+   leftover Gist token no longer makes it appear. The `beforeunload` handler keeps save/prefs/tab
+   flushing, `suppressBeforeUnloadOnce`, and the unsaved-edit + queued-auto-rewrite native
+   prompt — only the backup-warning branch went; `visibilitychange` keeps its save flush.
+   **Back-compat:** old backup files with Gist/Drive settings, FS/reminder/close-warning prefs,
+   etc. restore without error (keys written back verbatim, never read); old prefs load harmlessly
+   (`fsstatus`/`backupreminder` filtered out of status-bar lists) and drop on the next save; leftover
+   `sakura_cloud_backup_v1`/`sakura_fsBackupConnected`/`sakura_last_fsbackup_v1` keys and IndexedDB
+   `fsHandle`/`localStorageMirror`/`fsBackupHistory` entries are no longer read or written and are
+   never deleted (the IndexedDB ones stay excluded from backup files); a stored FS handle can't
+   trigger a permission prompt since nothing reads it. Covered by
+   `tests/e2e/backup-simplified.spec.ts`. Known leftover, not changed: an old encrypted Gist token
+   stays as ciphertext in `sakura_cloud_backup_v1` (and so rides along in full backups) if the
+   vault is later turned off — harmless, never read.
 9. Remove presets/feature-mode shortcuts (Editor's Choice preset, Documentation mode preset, Zen
    mode's 3 preset buttons — zen mode itself stays, Features Go-Minimal/Restore-Full toggle) +
    trim accent/chrome preset lists to a smaller fixed set + a final sweep of Settings UI and the
