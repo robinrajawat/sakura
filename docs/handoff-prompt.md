@@ -238,7 +238,7 @@ not per column (possible follow-up). Pure helpers `valuesLookLikeFractions`, `pr
 (`chartSvgWithTitle` grows the viewBox upward and centres a `<text class="pv-chart-svg-title">`);
 Cards keep the HTML `.pv-table-chart-title` heading. Chart SVGs use
 `preserveAspectRatio="xMinYMin meet"` so a height-capped chart stays at the left edge instead of
-drifting to the centre of its full-width box. Next agreed: timeline,
+drifting to the centre of its full-width box. Merged as #500. Next agreed: timeline,
 then status board (owner wants to see a mockup first).
 
 **Where used removed; version history clock (owner decisions).** The right-click "Where used…" item
