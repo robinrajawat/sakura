@@ -67,7 +67,10 @@ test.describe('Card icons', () => {
     // Top level stays short: icon, accent and chart type are submenus.
     await expect(page.locator('.sb-context-menu > .sb-context-item', { hasText: 'Total' })).toHaveCount(0);
     await page.locator('.sb-context-item', { hasText: 'Card icon' }).hover();
-    await page.locator('.sb-context-submenu .sb-context-item', { hasText: 'Total' }).click();
+    // Icons are a grouped tile grid; each tile is named by its aria-label / hover tip.
+    await expect(page.locator('.sb-context-submenu .sb-context-heading')).toHaveText(['General', 'Systems', 'Logistics']);
+    await expect(page.locator('.sb-context-submenu .sb-context-tile')).toHaveCount(25);
+    await page.locator('.sb-context-submenu .sb-context-tile[aria-label="Total"]').click();
     const cards = page.locator('.pv-table-card');
     await expect(cards.nth(1).locator('.pv-table-card-icon')).toHaveCount(1);
     await expect(cards.nth(0).locator('.pv-table-card-icon')).toHaveCount(0);
