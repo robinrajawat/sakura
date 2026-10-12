@@ -310,6 +310,14 @@ Number/currency force right-align in `applyTableAutoAlign`; Text disables auto a
 input otherwise blurs out and ends the session). Status board prefers a Status-typed column and a
 Date-typed column for due. Covered by `tests/e2e/table-column-types.spec.ts`.
 
+**Pros & cons + check icons (owner request).** `data-table-display="proscons"`, Show as › after Status
+board; `tableProsConsInfo` uses `prosConsColumn` (header pairs, either order; pros always rendered
+first). `applyTableCheckIcons` (display clones only, after status pills) iconises cells in columns where
+`isCheckColumn` holds (≥2 filled, ≥60% `checkValue`); whole-cell values only; skipped for any typed
+column. Weight column was offered but not built (ambiguous per-row). Covered by
+`tests/e2e/table-proscons-checks.spec.ts`. Next agreed: currency picker (searchable, all ISO codes incl.
+DKK; parseCellNumber must learn codes / "kr").
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

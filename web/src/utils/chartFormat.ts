@@ -262,3 +262,48 @@ export function statusPickerOptions(values: string[]): string[] {
   });
   return [...std, ...extra];
 }
+
+const PROS_CONS_PAIRS: [string, string][] = [
+  ['pros', 'cons'], ['pro', 'con'], ['advantages', 'disadvantages'], ['for', 'against'],
+  ['benefits', 'risks'], ['benefits', 'drawbacks'], ['strengths', 'weaknesses'], ['upsides', 'downsides']
+];
+const headerWord = (h: string) => String(h ?? '').toLowerCase().replace(/[^a-z]+/g, ' ').trim();
+
+/**
+ * Which of two column headers holds the pros: 0 when they read Pros / Cons (or Advantages /
+ * Disadvantages, For / Against, Benefits / Risks, Strengths / Weaknesses, Upsides / Downsides),
+ * 1 when the same pair is written the other way round, -1 when they aren't such a pair.
+ */
+export function prosConsColumn(a: string, b: string): number {
+  const x = headerWord(a), y = headerWord(b);
+  for (const [p, c] of PROS_CONS_PAIRS) {
+    if (x === p && y === c) return 0;
+    if (x === c && y === p) return 1;
+  }
+  return -1;
+}
+
+export type CheckValue = 'yes' | 'no' | 'partial';
+
+/**
+ * A comparison cell written as a tick, cross or "partly": ✓ / ✔ / ✅ / yes / y / true, ✗ / ✘ /
+ * ✕ / ❌ / no / n / false, ~ / partial / partly / some / limited. The whole cell must be just that
+ * word or mark (case ignored); anything longer ("yes, from Q2") is left as text (null).
+ */
+export function checkValue(raw: string): CheckValue | null {
+  const s = String(raw ?? '').trim().toLowerCase().replace(/[.!]+$/, '');
+  if (!s) return null;
+  if (['✓', '✔', '✔️', '✅', '☑', '☑️', 'yes', 'y', 'true'].includes(s)) return 'yes';
+  if (['✗', '✘', '✕', '❌', '✖', '✖️', 'no', 'n', 'false'].includes(s)) return 'no';
+  if (['~', 'partial', 'partly', 'some', 'limited'].includes(s)) return 'partial';
+  return null;
+}
+
+/**
+ * Whether a column reads as ticks and crosses: at least two filled cells, and at least 60% of the
+ * filled cells are check values (see checkValue), so one stray "yes" in a text column isn't iconised.
+ */
+export function isCheckColumn(values: string[]): boolean {
+  const filled = values.map((v) => String(v ?? '').trim()).filter(Boolean);
+  return filled.length >= 2 && filled.filter((v) => checkValue(v) !== null).length / filled.length >= 0.6;
+}
