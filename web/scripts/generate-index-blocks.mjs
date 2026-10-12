@@ -544,6 +544,16 @@ initHubTodosState({
     sourceFile: 'src/utils/tableData.ts',
     testFile: 'tests/unit/tableData.test.ts',
     footer: ''
+  },
+  {
+    // Charts and Cards of featured tables -- pure decisions only: round value-axis ticks, axis
+    // number formatting (thousands separators, M/B), balanced Cards grid columns, and a Cards
+    // "change" cell's direction. The SVG/HTML builders stay hand-written in index.html next to
+    // renderTableChartSvg. No production wiring needed -- pure functions.
+    name: 'chartFormat',
+    sourceFile: 'src/utils/chartFormat.ts',
+    testFile: 'tests/unit/chartFormat.test.ts',
+    footer: ''
   }
 ];
 
