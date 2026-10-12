@@ -244,8 +244,9 @@ then status board (owner wants to see a mockup first).
 **Where used removed; version history clock (owner decisions).** The right-click "Where used…" item
 and `openWhereUsedPopover` are gone — every linked item already has its own row dot, and a folded
 row's "+N" badge names what's hidden. `collectLinkedContentForNodeIds`/`linkedContentSummaryParts`
-stay (delete-confirmation warnings use them). Document version history got a clock chip
-(`#doc-history-chip`) in `#editor-meta-row`, next to Status/Author/Link.
+stay (delete-confirmation warnings use them). Document version history got a "History" chip
+(`#doc-history-chip`, clock icon + label, same style as Add link) in `#editor-meta-row`, next to
+Status/Author/Link.
 
 **Cover page: owner chose the original centred cover.** An editorial cover shipped in #501 and was
 reverted at the owner's request after they compared mockups of centred and editorial variants. The cover is the pre-#501 design: centred wordmark, title, accent rule, author,
