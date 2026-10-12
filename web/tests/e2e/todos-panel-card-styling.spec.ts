@@ -130,6 +130,23 @@ test.describe('To-Dos panel: open tasks are light cards with click-to-expand', (
     expect(await page.locator('.todo-subtask-text.completed').evaluate(el => getComputedStyle(el).textDecorationLine)).toBe('none');
   });
 
+  test('a multi-line subtask keeps its circle on the first line of text', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask alignment check');
+    const id = await row.getAttribute('data-id');
+    await page.click(`.todo-expand-toggle[data-id="${id}"]`);
+    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'High level solution design and architecture and the submission in LeanIX for the architecture review board, plus enough words to wrap');
+    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    const m = await page.locator('.todo-subtask-row').first().evaluate((r) => {
+      const c = r.querySelector('.todo-subtask-check')!.getBoundingClientRect();
+      const t = r.querySelector('.todo-subtask-text')!;
+      const tr = t.getBoundingClientRect(); const lh = parseFloat(getComputedStyle(t).lineHeight);
+      return { lines: Math.round(tr.height / lh), offset: Math.abs((c.top + c.height / 2) - (tr.top + lh / 2)) };
+    });
+    expect(m.lines).toBeGreaterThan(1);
+    expect(m.offset).toBeLessThanOrEqual(2);
+  });
+
   // The subtask progress indicator is a small, plain gray bar (not a wide accent-tinted one).
   test('the subtask progress bar is small and gray, not accent-tinted', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask progress bar check');
