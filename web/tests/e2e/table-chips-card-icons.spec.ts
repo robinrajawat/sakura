@@ -21,15 +21,17 @@ async function openWith(page: import('@playwright/test').Page, tables: string[])
   }, tables);
 }
 
-async function pickMenu(page: import('@playwright/test').Page, label: string) {
-  await page.locator('.sb-context-menu .sb-context-item', { hasText: label }).first().click();
+// Displays live in one "Show as ›" submenu.
+async function pickShowAs(page: import('@playwright/test').Page, label: string) {
+  await page.locator('.sb-context-menu').getByText('Show as', { exact: true }).hover();
+  await page.locator('.sb-context-submenu').getByText(label, { exact: true }).click();
 }
 
 test.describe('Show a two-column table as chips', () => {
   test('menu toggles chips on and off; text-only tables qualify', async ({ page }) => {
     await openWith(page, [SHIP]);
     await page.locator('.node-table-line').first().click({ button: 'right', force: true });
-    await pickMenu(page, 'Show as chips');
+    await pickShowAs(page, 'Chips');
     const chips = page.locator('.pv-table-chip');
     await expect(chips).toHaveCount(2);
     await expect(chips.first().locator('.pv-table-chip-key')).toHaveText('ZN');
@@ -37,7 +39,7 @@ test.describe('Show a two-column table as chips', () => {
     // @ts-expect-error
     expect(await page.evaluate(() => nodes[0].tables[0])).toContain('data-table-display="chips"');
     await page.locator('.node-table-line').first().click({ button: 'right', force: true });
-    await pickMenu(page, 'Show as table');
+    await pickShowAs(page, 'Table');
     await expect(page.locator('.pv-table-chip')).toHaveCount(0);
     await expect(page.locator('.node-table-line table')).toHaveCount(1);
   });
@@ -45,7 +47,7 @@ test.describe('Show a two-column table as chips', () => {
   test('chips and chart are mutually exclusive', async ({ page }) => {
     await openWith(page, [EST]);
     await page.locator('.pv-table-card').first().click({ button: 'right', force: true });
-    await pickMenu(page, 'Show as chips');
+    await pickShowAs(page, 'Chips');
     // @ts-expect-error
     const html = await page.evaluate(() => nodes[0].tables[0]);
     expect(html).toContain('data-table-display="chips"');

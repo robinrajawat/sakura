@@ -6412,8 +6412,10 @@ function buildTableEditItems(table,cell,commit){
   } else {
     groups.push([{label:'Delete table', danger:true, onClick:deleteTable}]);
   }
+  // How the table shows (Show as, title, size, heat-map) sits just above the Delete group, which
+  // stays last.
   const chartItems=buildChartFeatureItems(table,commit);
-  if(chartItems.length)groups.push(chartItems);
+  if(chartItems.length)groups.splice(groups.length-1,0,chartItems);
   const items=[];
   groups.forEach((g,i)=>{ if(i)items.push({divider:true}); items.push(...g); });
   return items;
@@ -6422,45 +6424,72 @@ function buildTableEditItems(table,cell,commit){
 // above (buildTableEditItems, which needs a `cell` for its own row/column items but not for these)
 // and the read-only display-mode menu (buildNodeTableObject) -- letting someone feature a table as
 // a chart or Cards without first having to enter edit mode at all.
+// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, then the chart
+// shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
+// (a chart or Cards), size (a chart). Anything that doesn't apply is listed but disabled, with the
+// reason on hover, so the menu never changes shape.
+function currentTableDisplay(table){
+  if(isTableShownAsChips(table))return 'chips';
+  if(isTableShownAsProgress(table))return 'progress';
+  if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
+  return 'table';
+}
+function setTableDisplay(table,mode){
+  if(!table)return;
+  if(mode==='chips'){ setTableChips(table,true); return; }
+  if(mode==='progress'){ setTableProgress(table,true); return; }
+  table.removeAttribute('data-table-display');
+  if(mode==='table'){ table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as table'); return; }
+  const type=mode==='cards'?'cards':mode.slice(6);
+  table.setAttribute('data-feature-chart','1'); table.setAttribute('data-chart-type',type);
+  table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse');
+  showToast('Showing as '+(type==='cards'?'Cards':CHART_TYPE_LABELS[type].toLowerCase()));
+}
 function buildChartFeatureItems(table,commit){
   const items=[];
-  const isCharted=isTableFeaturedAsChart(table);
-  const shownAs=isTableShownAsChips(table)?'chips':isTableShownAsProgress(table)?'progress':'';
-  if(shownAs)items.push({label:'Show as table', onClick:()=>{ shownAs==='chips'?setTableChips(table,false):setTableProgress(table,false); commit(); }});
-  if(shownAs!=='chips'&&tableChipsEligible(table))items.push({label:'Show as chips', onClick:()=>{ setTableChips(table,true); commit(); }});
-  if(shownAs!=='progress'&&tableProgressEligible(table))items.push({label:'Show as progress bars', onClick:()=>{ setTableProgress(table,true); commit(); }});
-  // Heat-map shades a table shown as a table, so it's only offered when it isn't featured.
-  if(!shownAs&&!isTableFeaturedAsChart(table)&&tableHasNumericData(table,0)){
+  const cur=currentTableDisplay(table);
+  const typeAvail=tableChartTypeAvailability(table);
+  // The current display carries a check mark (and does nothing on click); only displays that
+  // don't fit the table are greyed out.
+  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const opt=(mode,label,ok,reason)=>cur===mode
+    ? {label, icon:CHECK, current:true, onClick:()=>{}}
+    : {label, disabled:!ok, title:ok?undefined:reason, onClick:()=>{ setTableDisplay(table,mode); commit(); }};
+  const showAs=[
+    opt('table','Table',true),
+    opt('chips','Chips',tableChipsEligible(table),'Chips need a two-column table: a short code and its description.'),
+    opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
+    opt('progress','Progress bars',tableProgressEligible(table),'Progress bars need a label column and a percentage (or a value and a goal) column.'),
+    {heading:'Chart'},
+    ...CHART_TYPES.filter(t=>t!=='cards').map(t=>opt('chart:'+t,CHART_TYPE_LABELS[t].replace(/ chart$/,''),typeAvail[t].ok,typeAvail[t].reason))
+  ];
+  items.push({label:'Show as', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/></svg>', submenu:showAs});
+  // Display options are always listed, in the same place; one that doesn't apply to the current
+  // display (or the table's content) is greyed out with the reason on hover rather than hidden.
+  const isChart=cur.startsWith('chart:'), titled=isChart||cur==='cards';
+  const na=(label,reason)=>({label, disabled:true, title:reason});
+  if(cur==='table'&&tableHasNumericData(table,0)){
     const heat=isTableHeatmap(table), reverse=table.getAttribute('data-heatmap-reverse')==='1';
     items.push({label:'Heat-map', submenu:[
       {label:'Off'+(heat?'':' (current)'), disabled:!heat, onClick:()=>{ setTableHeatmap(table,false); commit(); }},
       {label:'Higher is darker'+(heat&&!reverse?' (current)':''), disabled:heat&&!reverse, onClick:()=>{ setTableHeatmap(table,true,false); commit(); }},
       {label:'Lower is darker'+(heat&&reverse?' (current)':''), disabled:heat&&reverse, onClick:()=>{ setTableHeatmap(table,true,true); commit(); }}
     ]});
-  }
-  if(isCharted||tableChartability(table).ok){
-    items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commit(); }});
-  }
-  if(isCharted){
-    const curType=getTableChartType(table);
-    const typeAvail=tableChartTypeAvailability(table);
-    items.push({label:'Chart type', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/></svg>', submenu:CHART_TYPES.map(type=>{
-      const isCurrent=type===curType; const avail=typeAvail[type];
-      return {label:CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), disabled:isCurrent||!avail.ok, title:!avail.ok?avail.reason:undefined, onClick:()=>{ setTableChartType(table,type); commit(); }};
-    })});
+  } else items.push(na('Heat-map',cur==='table'?'Heat-map shades numbers, and this table has none.':'Heat-map shades a table shown as a table.'));
+  if(titled){
     const curTitle=getTableChartTitle(table);
     items.push({label:curTitle?'Edit title\u2026':'Add title\u2026', onClick:async()=>{
-      const v=await sakuraPrompt({title:curTitle?'Edit title':'Add title', body:'Shown above the '+(curType==='cards'?'cards':'chart')+', in the document and the PDF. Leave empty to remove it.', defaultValue:curTitle, confirmLabel:'Save'});
+      const v=await sakuraPrompt({title:curTitle?'Edit title':'Add title', body:'Shown above the '+(cur==='cards'?'cards':'chart')+', in the document and the PDF. Leave empty to remove it.', defaultValue:curTitle, confirmLabel:'Save'});
       if(v===null)return;
       setTableChartTitle(table,v); commit();
     }});
-    if(curType!=='cards'){
-      const curSize=getTableChartSize(table);
-      items.push({label:'Chart size', submenu:[['', 'Auto'],...Object.entries(CHART_SIZES).map(([k,v])=>[k,v.label])].map(([key,label])=>({
-        label:label+(curSize===key?' (current)':''), disabled:curSize===key, onClick:()=>{ setTableChartSize(table,key); commit(); }
-      }))});
-    }
-  }
+  } else items.push(na('Add title\u2026','A title goes above a chart or Cards.'));
+  if(isChart){
+    const curSize=getTableChartSize(table);
+    items.push({label:'Chart size', submenu:[['', 'Auto'],...Object.entries(CHART_SIZES).map(([k,v])=>[k,v.label])].map(([key,label])=>({
+      label:label+(curSize===key?' (current)':''), disabled:curSize===key, onClick:()=>{ setTableChartSize(table,key); commit(); }
+    }))});
+  } else items.push(na('Chart size','Size applies to charts.'));
   return items;
 }
 // "Edit card/chart" on a read-only figure (see the note-line's own contextmenu handler) -- makes
@@ -6936,14 +6965,14 @@ function buildNodeTableObject(node,tIdx){
     if(cardEl&&table&&getTableChartType(table)==='cards'){
       items.push(...buildCardIconItems(table,cardEl.dataset.cardLabel||'',commit),{divider:true});
     }
-    items.push(
-      {label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)}
-    );
+    // Order: how it shows (Show as + its options), then working with the data (Edit data, Copy),
+    // then Delete on its own.
+    if(table)items.push(...buildChartFeatureItems(table,commit),{divider:true});
     // "Edit data": shows a chart's/Cards' underlying table in the same editing session a plain
     // table gets on click (cells editable, the row/column menu on right-click), and re-renders the
     // chart/Cards from the edited values when it ends (Esc, click outside).
     if(table&&isTableFeatured(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
-    if(table)items.push(...buildChartFeatureItems(table,commit));
+    items.push({label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)},{divider:true});
     items.push({label:'Delete', danger:true, onClick:()=>{ pushUndo(); node.tables.splice(tIdx,1); node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); showToast('Table deleted — Ctrl/Cmd+Z to undo'); }});
     showSbContextMenu(e.clientX,e.clientY,items);
     const sbMenu=document.querySelector('.sb-context-menu');

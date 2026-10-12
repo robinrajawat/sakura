@@ -428,19 +428,18 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(after.isEditing).toBe(false);
     });
 
-    test('right-clicking an unfocused table object (display mode) offers "Copy", "Show as chips", "Show as progress bars", "Heat-map", "Feature as chart" and "Delete" -- no row/column edit items', async ({ page }) => {
+    test('right-clicking an unfocused table object (display mode) offers "Copy", "Show as", "Heat-map" and "Delete" -- no row/column edit items', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
 
       await rightClick(page, '.node-table-line');
       const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(6);
-      await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Show as chips', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Show as progress bars', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Heat-map', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Feature as chart', { exact: true })).toBeVisible();
+      // Fixed order: how it shows, then the data, then Delete. Options that don't apply to a plain
+      // table (title, size) are listed but disabled rather than hidden.
+      const labels = await menu.evaluate((m) => [...m.children].map((c) => c.classList.contains('sb-context-divider') ? '---'
+        : (c.textContent || '').trim() + (c.classList.contains('disabled') ? ' (off)' : '')));
+      expect(labels).toEqual(['Show as', 'Heat-map', 'Add title… (off)', 'Chart size (off)', '---', 'Copy', '---', 'Delete']);
       await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
       await expect(menu.getByText('Add row below', { exact: true })).toHaveCount(0);
     });
@@ -450,13 +449,14 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     // it work straight from the read-only display-mode menu (above) means a fresh parse of
     // node.tables[tIdx], not the disposable display clone, so this confirms the write-back actually
     // lands on the real node.tables entry, not a throwaway DOM clone.
-    test('"Feature as chart" from the display-mode menu persists straight to node.tables, no edit-mode round-trip needed', async ({ page }) => {
+    test('"Show as › Bar" from the display-mode menu persists straight to node.tables, no edit-mode round-trip needed', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
 
       await rightClick(page, '.node-table-line');
-      await page.locator('.sb-context-menu').getByText('Feature as chart', { exact: true }).click();
+      await page.locator('.sb-context-menu').getByText('Show as', { exact: true }).hover();
+      await page.locator('.sb-context-submenu').getByText('Bar', { exact: true }).click();
 
       const result = await page.evaluate(() => {
         // @ts-expect-error
@@ -588,14 +588,15 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(state.table).not.toContain('>A<');
     });
 
-    test('Feature as chart flags the table and offers chart type picks, with the current type disabled', async ({ page }) => {
+    test('Show as › Bar flags the table, and the current display carries a check mark', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithTables(page, ['<table><tr><th>Label</th><th>Value1</th><th>Value2</th></tr><tr><td>A</td><td>10</td><td>5</td></tr><tr><td>B</td><td>20</td><td>8</td></tr></table>']);
 
       await page.locator('.node-table-line td').first().click();
       await page.locator('.node-table-line td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Feature as chart', { exact: true }).click();
+      await page.locator('.sb-context-menu').getByText('Show as', { exact: true }).hover();
+      await page.locator('.sb-context-submenu').getByText('Bar', { exact: true }).click();
 
       const flagged = await page.evaluate(() => {
         // @ts-expect-error
@@ -605,12 +606,12 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       await page.locator('.node-table-line td').first().click({ button: 'right' });
       const menu = page.locator('.sb-context-menu');
-      // Chart types live in a "Chart type" submenu.
-      await menu.getByText('Chart type', { exact: true }).hover();
-      await expect(menu.getByText('Bar chart (current)', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Stacked bar chart', { exact: true })).toBeVisible();
-      const currentItem = menu.locator('.sb-context-item.disabled', { hasText: 'Bar chart (current)' });
-      await expect(currentItem).toBeVisible();
+      // Every display lives in one "Show as" submenu; chart shapes sit under a "Chart" heading.
+      await menu.getByText('Show as', { exact: true }).hover();
+      const sub = page.locator('.sb-context-submenu');
+      const bar = sub.locator('.sb-context-item', { hasText: /^Bar$/ });
+      await expect(bar.locator('svg')).toHaveCount(1); // check mark on the current display
+      await expect(sub.locator('.sb-context-item:not(.disabled)', { hasText: /^Stacked bar$/ })).toBeVisible();
     });
 
     test('a single-data-column chart offers Pie/Doughnut/Cards, and picking Cards adds no AI icon item', async ({ page }) => {
@@ -621,15 +622,16 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       // A chart opens its data on double-click (a single click leaves it a chart).
       await page.locator('.node-table-line').dblclick();
       await page.locator('.node-table-line td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Chart type', { exact: true }).hover();
+      await page.locator('.sb-context-menu').getByText('Show as', { exact: true }).hover();
       await page.locator('.sb-context-submenu').getByText('Cards', { exact: true }).click();
 
       await page.locator('.node-table-line td').first().click({ button: 'right' });
       const menu = page.locator('.sb-context-menu');
-      await menu.getByText('Chart type', { exact: true }).hover();
-      await expect(menu.getByText('Cards (current)', { exact: true })).toBeVisible();
+      await menu.getByText('Show as', { exact: true }).hover();
+      const sub = page.locator('.sb-context-submenu');
+      await expect(sub.locator('.sb-context-item', { hasText: /^Cards$/ }).locator('svg')).toHaveCount(1);
       await expect(menu.getByText('Suggest icons with AI', { exact: true })).toHaveCount(0);
-      const pieItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Pie chart' });
+      const pieItem = sub.locator('.sb-context-item:not(.disabled)', { hasText: /^Pie$/ });
       await expect(pieItem).toBeVisible();
     });
 

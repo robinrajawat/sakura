@@ -94,7 +94,7 @@ test('chart menu: title and size items; Cards allowed with a change column', asy
       title: bar.getAttribute('data-chart-title'), tableCount: tables.length
     };
   });
-  expect(r.labels).toEqual(expect.arrayContaining(['Chart type', 'Add title…', 'Chart size']));
+  expect(r.labels).toEqual(expect.arrayContaining(['Show as', 'Add title…', 'Chart size']));
   expect(r.sizes).toEqual(['Auto (current)', 'Small', 'Medium', 'Full']);
   expect(r.cards3).toBe(true);
   expect(r.cards4).toBe(false);
