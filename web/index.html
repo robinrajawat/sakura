@@ -1313,6 +1313,10 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .table-grid-picker-cell{border:1px solid var(--border);border-radius:3px;background:var(--bg);cursor:pointer}
 .table-grid-picker-cell.on{background:color-mix(in srgb,var(--accent) 22%,var(--bg));border-color:color-mix(in srgb,var(--accent) 70%,var(--border))}
 .table-grid-picker-hint{font:400 11px 'Inter',sans-serif;color:var(--muted);text-align:center}
+.sb-context-label{flex:1 1 auto}
+.sb-context-chevron{flex:0 0 auto;margin-left:10px;opacity:.55}
+.sb-context-item.sb-context-submenu-open{background:var(--hover)}
+.sb-context-submenu{z-index:171;max-height:min(70vh,520px);overflow-y:auto}
 .sb-context-divider{height:1px;background:var(--border);margin:4px 2px}
 .sb-context-icon{width:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.8}
 /* Drag & drop between folders */
@@ -6133,10 +6137,10 @@ function buildChartFeatureItems(table,commit){
   if(isCharted){
     const curType=getTableChartType(table);
     const typeAvail=tableChartTypeAvailability(table);
-    CHART_TYPES.forEach(type=>{
+    items.push({label:'Chart type', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/></svg>', submenu:CHART_TYPES.map(type=>{
       const isCurrent=type===curType; const avail=typeAvail[type];
-      items.push({label:CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), disabled:isCurrent||!avail.ok, title:!avail.ok?avail.reason:undefined, onClick:()=>{ setTableChartType(table,type); commit(); }});
-    });
+      return {label:CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), disabled:isCurrent||!avail.ok, title:!avail.ok?avail.reason:undefined, onClick:()=>{ setTableChartType(table,type); commit(); }};
+    })});
   }
   return items;
 }
@@ -6719,12 +6723,31 @@ function setCardIconPick(table,label,key){
   if(key&&CARD_ICONS[key])picks[label]=key; else delete picks[label];
   if(Object.keys(picks).length)table.setAttribute('data-card-icon-picks',JSON.stringify(picks)); else table.removeAttribute('data-card-icon-picks');
 }
-// Menu items for right-clicking one card of a Cards figure: "No icon" plus the fixed set.
+// Optional per-card accent colour for the left bar (and icon tint), picked by hand; "Default"
+// keeps the automatic series colour. Stored like icons: data-card-accent-picks = {label: key}.
+const CARD_ACCENTS={accent:{label:'Accent',v:'--accent'},blue:{label:'Blue',v:'--fc-blue'},green:{label:'Green',v:'--fc-green'},orange:{label:'Orange',v:'--fc-orange'},purple:{label:'Purple',v:'--fc-purple'},red:{label:'Red',v:'--fc-red'},gray:{label:'Gray',v:'--fc-gray'}};
+function getCardAccentPicks(table){ try{ const v=JSON.parse(table?.getAttribute('data-card-accent-picks')||'{}'); return v&&typeof v==='object'&&!Array.isArray(v)?v:{}; }catch(e){ return {}; } }
+function setCardAccentPick(table,label,key){
+  if(!table)return;
+  const picks=getCardAccentPicks(table);
+  if(key&&CARD_ACCENTS[key])picks[label]=key; else delete picks[label];
+  if(Object.keys(picks).length)table.setAttribute('data-card-accent-picks',JSON.stringify(picks)); else table.removeAttribute('data-card-accent-picks');
+}
+function cardSwatchSvg(cssVar){ return `<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="3" fill="var(${cssVar})"/></svg>`; }
+// Menu items for right-clicking one card of a Cards figure: two submenus, "Card icon" and
+// "Accent colour", so the main menu stays short.
 function buildCardIconItems(table,label,commit){
   const cur=getCardIconPicks(table)[label]||'';
+  const curAccent=getCardAccentPicks(table)[label]||'';
   return [
-    {label:'No icon'+(cur?'':' (current)'), disabled:!cur, onClick:()=>{ setCardIconPick(table,label,''); commit(); }},
-    ...Object.entries(CARD_ICONS).map(([key,ic])=>({icon:cardIconSvg(key,14), label:ic.label+(cur===key?' (current)':''), disabled:cur===key, onClick:()=>{ setCardIconPick(table,label,key); commit(); }}))
+    {label:'Card icon', icon:cardIconSvg(cur||'target',13), submenu:[
+      {label:'No icon'+(cur?'':' (current)'), disabled:!cur, onClick:()=>{ setCardIconPick(table,label,''); commit(); }},
+      ...Object.entries(CARD_ICONS).map(([key,ic])=>({icon:cardIconSvg(key,14), label:ic.label+(cur===key?' (current)':''), disabled:cur===key, onClick:()=>{ setCardIconPick(table,label,key); commit(); }}))
+    ]},
+    {label:'Accent colour', icon:cardSwatchSvg(curAccent?CARD_ACCENTS[curAccent].v:'--fc-gray'), submenu:[
+      {label:'Default'+(curAccent?'':' (current)'), disabled:!curAccent, onClick:()=>{ setCardAccentPick(table,label,''); commit(); }},
+      ...Object.entries(CARD_ACCENTS).map(([key,a])=>({icon:cardSwatchSvg(a.v), label:a.label+(curAccent===key?' (current)':''), disabled:curAccent===key, onClick:()=>{ setCardAccentPick(table,label,key); commit(); }}))
+    ]}
   ];
 }
 function renderCardsHtml(table){
@@ -6734,8 +6757,10 @@ function renderCardsHtml(table){
   // keyword/AI-chosen icon badge here; that was removed with the rest of the icon features. Old
   // tables may still have a data-card-icons attribute from it -- harmless, never read.)
   const picks=getCardIconPicks(table);
+  const accents=getCardAccentPicks(table);
   const cards=data.map((d,i)=>{
-    const color=`var(${CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
+    const accentKey=accents[d.label];
+    const color=`var(${accentKey&&CARD_ACCENTS[accentKey]?CARD_ACCENTS[accentKey].v:CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
     const iconKey=picks[d.label];
     const icon=iconKey&&CARD_ICONS[iconKey]?`<span class="pv-table-card-icon" style="color:${color}">${cardIconSvg(iconKey,16)}</span>`:'';
     return `<div class="pv-table-card${icon?' has-icon':''}" data-card-label="${esc(d.label)}" style="border-left:3px solid ${color}">`
@@ -22957,27 +22982,77 @@ function _sbContextKeyHandler(e){
   // Handled keys stop here (this runs in the capture phase): an open menu owns them, so e.g. Esc
   // closing a table cell's menu doesn't also end that table's editing session, and arrows don't
   // move the caret between cells underneath it.
-  if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Escape'||(e.key==='Enter'&&_sbContextActiveIndex>=0))e.stopPropagation();
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Escape'||e.key==='ArrowRight'||e.key==='ArrowLeft'||(e.key==='Enter'&&_sbContextActiveIndex>=0))e.stopPropagation();
+  // Submenus: → opens the highlighted item's flyout and moves the highlight into it; ← or Esc
+  // closes the flyout and returns to its parent item.
+  if(e.key==='ArrowRight'){ const b=_sbContextButtons[_sbContextActiveIndex]; if(b&&b._sbSubmenu&&!_sbSubParent){ e.preventDefault(); _sbOpenSubmenu(b,true); } return; }
+  if((e.key==='ArrowLeft'||e.key==='Escape')&&_sbSubParent){ e.preventDefault(); _sbCloseSubmenu(); return; }
   if(e.key==='ArrowDown'){ e.preventDefault(); _sbContextActiveIndex=(_sbContextActiveIndex+1+_sbContextButtons.length)%_sbContextButtons.length; _sbContextUpdateHighlight(); }
   else if(e.key==='ArrowUp'){ e.preventDefault(); _sbContextActiveIndex=(_sbContextActiveIndex-1+_sbContextButtons.length)%_sbContextButtons.length; _sbContextUpdateHighlight(); }
   else if(e.key==='Enter'){ if(_sbContextActiveIndex>=0){ e.preventDefault(); _sbContextButtons[_sbContextActiveIndex].click(); } }
   else if(e.key==='Escape'){ e.preventDefault(); closeSbContextMenu(); }
 }
-function closeSbContextMenu(){ if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
+function closeSbContextMenu(e){
+  // A click on a submenu's own parent item opens that submenu instead of closing everything.
+  if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger'))return;
+  if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
+// One level of submenu for showSbContextMenu: an item with `submenu:[...items]` renders as a parent
+// row with a chevron and opens a flyout beside it on hover, click, or →. The flyout is a child of
+// the menu element, so closing the menu always closes it too.
+let _sbSubEl=null, _sbSubParent=null;
+function _sbBuildItemButton(it, container, list){
+  if(it.divider){ const d=document.createElement('div'); d.className='sb-context-divider'; container.appendChild(d); return null; }
+  const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
+  btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+'</span>'+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
+  if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; container.appendChild(btn); return null; }
+  if(it.submenu){
+    btn._sbSubmenu=it.submenu; btn.setAttribute('aria-haspopup','menu');
+    btn.addEventListener('click',e=>{ e.stopPropagation(); _sbOpenSubmenu(btn,false); });
+    btn.addEventListener('mouseenter',()=>{ _sbContextActiveIndex=_sbContextButtons.indexOf(btn); _sbContextUpdateHighlight(); _sbOpenSubmenu(btn,false); });
+  } else {
+    btn.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await it.onClick(); });
+    btn.addEventListener('mouseenter',()=>{
+      // Hovering a plain top-level item closes any open flyout.
+      if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false);
+      _sbContextActiveIndex=_sbContextButtons.indexOf(btn); _sbContextUpdateHighlight();
+    });
+  }
+  container.appendChild(btn); list.push(btn);
+  return btn;
+}
+function _sbOpenSubmenu(trigger, viaKeyboard){
+  if(_sbSubEl&&_sbSubEl._trigger===trigger){ if(viaKeyboard)_sbFocusSubmenu(); return; }
+  _sbCloseSubmenu(false);
+  const sub=document.createElement('div'); sub.className='sb-context-menu sb-context-submenu'; sub.setAttribute('role','menu'); sub._trigger=trigger;
+  const subButtons=[];
+  trigger._sbSubmenu.forEach(it=>_sbBuildItemButton(it, sub, subButtons));
+  sub._buttons=subButtons;
+  _sbContextEl.appendChild(sub);
+  trigger.classList.add('sb-context-submenu-open'); trigger.setAttribute('aria-expanded','true');
+  const r=trigger.getBoundingClientRect(); const mw=sub.offsetWidth, mh=sub.offsetHeight;
+  let left=r.right+2; if(left+mw>window.innerWidth-8)left=Math.max(8,r.left-mw-2);
+  const top=Math.max(8,Math.min(r.top-5, window.innerHeight-mh-8));
+  sub.style.left=left+'px'; sub.style.top=top+'px';
+  _sbSubEl=sub;
+  if(viaKeyboard)_sbFocusSubmenu();
+}
+function _sbFocusSubmenu(){
+  if(!_sbSubEl||!_sbSubEl._buttons.length)return;
+  _sbSubParent={buttons:_sbContextButtons, index:_sbContextActiveIndex};
+  _sbContextButtons=_sbSubEl._buttons; _sbContextActiveIndex=0; _sbContextUpdateHighlight();
+}
+function _sbCloseSubmenu(restoreFocus=true){
+  if(!_sbSubEl)return;
+  const trigger=_sbSubEl._trigger;
+  _sbSubEl.remove(); _sbSubEl=null;
+  trigger?.classList.remove('sb-context-submenu-open'); trigger?.setAttribute('aria-expanded','false');
+  if(_sbSubParent){ _sbContextButtons=_sbSubParent.buttons; _sbContextActiveIndex=_sbSubParent.index; _sbSubParent=null; if(restoreFocus)_sbContextUpdateHighlight(); }
+}
 function showSbContextMenu(x,y,items){
   closeSbContextMenu(); closeMoveMenu();
   const menu=document.createElement('div'); menu.className='sb-context-menu'; _sbContextEl=menu;
   _sbContextButtons=[];
-  items.forEach(it=>{
-    if(it.divider){ const d=document.createElement('div'); d.className='sb-context-divider'; menu.appendChild(d); return; }
-    const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'');
-    btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span>'+esc(it.label)+'</span>';
-    if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; menu.appendChild(btn); return; }
-    btn.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await it.onClick(); });
-    btn.addEventListener('mouseenter',()=>{ _sbContextActiveIndex=_sbContextButtons.indexOf(btn); _sbContextUpdateHighlight(); });
-    menu.appendChild(btn);
-    _sbContextButtons.push(btn);
-  });
+  items.forEach(it=>_sbBuildItemButton(it, menu, _sbContextButtons));
   document.body.appendChild(menu);
   // Position with a rough guess first (avoids a layout flash), then correct against the
   // menu's actual rendered size. The guess alone isn't reliably screen-aware: item labels

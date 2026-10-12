@@ -64,14 +64,42 @@ test.describe('Card icons', () => {
   test('right-clicking a card picks an icon for that card only, and No icon clears it', async ({ page }) => {
     await openWith(page, [EST]);
     await page.locator('.pv-table-card').nth(1).click({ button: 'right', force: true });
-    await pickMenu(page, 'Total');
+    // Top level stays short: icon, accent and chart type are submenus.
+    await expect(page.locator('.sb-context-menu > .sb-context-item', { hasText: 'Total' })).toHaveCount(0);
+    await page.locator('.sb-context-item', { hasText: 'Card icon' }).hover();
+    await page.locator('.sb-context-submenu .sb-context-item', { hasText: 'Total' }).click();
     const cards = page.locator('.pv-table-card');
     await expect(cards.nth(1).locator('.pv-table-card-icon')).toHaveCount(1);
     await expect(cards.nth(0).locator('.pv-table-card-icon')).toHaveCount(0);
     // @ts-expect-error
     expect(await page.evaluate(() => nodes[0].tables[0])).toContain('data-card-icon-picks');
     await cards.nth(1).click({ button: 'right', force: true });
-    await pickMenu(page, 'No icon');
+    await page.locator('.sb-context-item', { hasText: 'Card icon' }).click();
+    await page.locator('.sb-context-submenu .sb-context-item', { hasText: 'No icon' }).click();
     await expect(page.locator('.pv-table-card-icon')).toHaveCount(0);
+  });
+
+  test('Accent colour submenu recolours one card; keyboard → opens a submenu and ← closes it', async ({ page }) => {
+    await openWith(page, [EST]);
+    const cards = page.locator('.pv-table-card');
+    const before = await cards.nth(0).evaluate(el => getComputedStyle(el).borderLeftColor);
+    await cards.nth(0).click({ button: 'right', force: true });
+    await page.locator('.sb-context-item', { hasText: 'Accent colour' }).hover();
+    await page.locator('.sb-context-submenu .sb-context-item', { hasText: 'Purple' }).click();
+    // @ts-expect-error -- bare global from index.html
+    expect(await page.evaluate(() => nodes[0].tables[0])).toContain('data-card-accent-picks');
+    const after = await page.locator('.pv-table-card').nth(0).evaluate(el => getComputedStyle(el).borderLeftColor);
+    expect(after).not.toBe(before);
+    const other = await page.locator('.pv-table-card').nth(1).evaluate(el => getComputedStyle(el).borderLeftColor);
+    expect(other).not.toBe(after);
+
+    await page.locator('.pv-table-card').nth(0).click({ button: 'right', force: true });
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('.sb-context-submenu')).toHaveCount(1);
+    await expect(page.locator('.sb-context-submenu .sb-context-item.sb-context-active')).toHaveCount(1);
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('.sb-context-submenu')).toHaveCount(0);
+    await expect(page.locator('.sb-context-menu')).toHaveCount(1);
   });
 });
