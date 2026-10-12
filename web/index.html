@@ -1457,6 +1457,16 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-tl-item.done .pv-tl-event{color:var(--muted)}
 .pv-tl-detail{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:2px;line-height:1.4}
 .pv-tl-next{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;font:700 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);vertical-align:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-timeline.horizontal{grid-template-columns:repeat(var(--tl-cols,4),minmax(0,1fr));grid-template-rows:auto 14px auto;grid-auto-flow:column;column-gap:0;text-align:center;break-inside:avoid;page-break-inside:avoid}
+.pv-timeline.horizontal .pv-tl-date{text-align:center;white-space:normal;align-self:end;padding:0 6px 8px}
+.pv-timeline.horizontal .pv-tl-rail{height:14px;align-items:center}
+.pv-timeline.horizontal .pv-tl-rail::before{top:50%;bottom:auto;left:0;right:0;width:auto;height:2px;margin:-1px 0 0}
+.pv-timeline.horizontal .pv-tl-item:first-child .pv-tl-rail::before{left:50%}
+.pv-timeline.horizontal .pv-tl-item:last-child .pv-tl-rail::before{right:50%;height:2px}
+.pv-timeline.horizontal .pv-tl-item:only-child .pv-tl-rail::before{display:none}
+.pv-timeline.horizontal .pv-tl-dot,.pv-timeline.horizontal .pv-tl-item.next .pv-tl-dot{margin-top:0}
+.pv-timeline.horizontal .pv-tl-body{padding:8px 6px 0;min-width:0}
+.pv-timeline.horizontal .pv-tl-next{display:table;margin:4px auto 0}
 table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
@@ -5577,6 +5587,11 @@ function tableTimelineEligible(table){
   return dated>=Math.ceil(rows.length/2);
 }
 function isTableShownAsTimeline(table){ return !!(table&&table.getAttribute('data-table-display')==='timeline'); }
+// Horizontal layout (data-timeline-layout="horizontal"): milestones side by side on one line, one
+// column each, so it only fits a short roadmap -- TIMELINE_HORIZONTAL_MAX rows at most.
+const TIMELINE_HORIZONTAL_MAX=8;
+function isTimelineHorizontal(table){ return !!(table&&table.getAttribute('data-timeline-layout')==='horizontal'); }
+function timelineRowCount(table){ return Array.from(table?.querySelectorAll('tr')||[]).slice(1).filter(r=>(r.textContent||'').trim()).length; }
 function renderTimelineHtml(table){
   const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1)
     .map(r=>({date:(r.cells[0]?.textContent||'').trim(), event:(r.cells[1]?.textContent||'').trim(), detail:(r.cells[2]?.textContent||'').trim()}))
@@ -5594,7 +5609,9 @@ function renderTimelineHtml(table){
       +`<div class="pv-tl-rail"><span class="pv-tl-dot"${ph?` title="${label[ph]}"`:''}></span></div>`
       +`<div class="pv-tl-body"><div class="pv-tl-event">${esc(d.event)}${ph==='next'?'<span class="pv-tl-next">Next</span>':''}</div>${d.detail?`<div class="pv-tl-detail">${esc(d.detail)}</div>`:''}</div></div>`;
   }).join('');
-  return `<div class="pv-timeline">${items}</div>`;
+  return isTimelineHorizontal(table)
+    ? `<div class="pv-timeline horizontal" style="--tl-cols:${ordered.length}">${items}</div>`
+    : `<div class="pv-timeline">${items}</div>`;
 }
 // Heat-map: a plain table's numeric cells shaded by where each sits in its own column (per column,
 // since columns usually hold different units). data-heatmap="1" turns it on, data-heatmap-reverse
@@ -6514,22 +6531,24 @@ function buildTableEditItems(table,cell,commit){
 // above (buildTableEditItems, which needs a `cell` for its own row/column items but not for these)
 // and the read-only display-mode menu (buildNodeTableObject) -- letting someone feature a table as
 // a chart or Cards without first having to enter edit mode at all.
-// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, then the chart
-// shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
+// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, then
+// Vertical / Horizontal under a "Timeline" heading and the chart shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
 // (a chart or Cards), size (a chart). Anything that doesn't apply is listed but disabled, with the
 // reason on hover, so the menu never changes shape.
 function currentTableDisplay(table){
   if(isTableShownAsChips(table))return 'chips';
   if(isTableShownAsProgress(table))return 'progress';
-  if(isTableShownAsTimeline(table))return 'timeline';
+  if(isTableShownAsTimeline(table))return isTimelineHorizontal(table)?'timeline:horizontal':'timeline';
   if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
   return 'table';
 }
 function setTableDisplay(table,mode){
   if(!table)return;
+  if(mode==='timeline:horizontal')table.setAttribute('data-timeline-layout','horizontal');
+  else table.removeAttribute('data-timeline-layout');
   if(mode==='chips'){ setTableChips(table,true); return; }
   if(mode==='progress'){ setTableProgress(table,true); return; }
-  if(mode==='timeline'){
+  if(mode==='timeline'||mode==='timeline:horizontal'){
     table.setAttribute('data-table-display','timeline'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
     table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); showToast('Showing as timeline'); return;
   }
@@ -6550,12 +6569,16 @@ function buildChartFeatureItems(table,commit){
   const opt=(mode,label,ok,reason)=>cur===mode
     ? {label, icon:CHECK, current:true, onClick:()=>{}}
     : {label, disabled:!ok, title:ok?undefined:reason, onClick:()=>{ setTableDisplay(table,mode); commit(); }};
+  const tlOk=tableTimelineEligible(table), tlRows=timelineRowCount(table);
+  const TL_REASON='A timeline needs dates in the first column (e.g. 2026-10-14 or Oct 14), then the event, and optionally a detail.';
   const showAs=[
     opt('table','Table',true),
     opt('chips','Chips',tableChipsEligible(table),'Chips need a two-column table: a short code and its description.'),
     opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
     opt('progress','Progress bars',tableProgressEligible(table),'Progress bars need a label column and a percentage (or a value and a goal) column.'),
-    opt('timeline','Timeline',tableTimelineEligible(table),'A timeline needs dates in the first column (e.g. 2026-10-14 or Oct 14), then the event, and optionally a detail.'),
+    {heading:'Timeline'},
+    opt('timeline','Vertical',tlOk,TL_REASON),
+    opt('timeline:horizontal','Horizontal',tlOk&&tlRows<=TIMELINE_HORIZONTAL_MAX,tlOk?`A horizontal timeline fits up to ${TIMELINE_HORIZONTAL_MAX} milestones; this table has ${tlRows}. Use Vertical.`:TL_REASON),
     {heading:'Chart'},
     ...CHART_TYPES.filter(t=>t!=='cards').map(t=>opt('chart:'+t,CHART_TYPE_LABELS[t].replace(/ chart$/,''),typeAvail[t].ok,typeAvail[t].reason))
   ];

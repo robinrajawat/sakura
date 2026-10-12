@@ -277,6 +277,13 @@ last) and phases them with `timelinePhases` against today's UTC date (done / nex
 without a 4-digit year get no phase). Pure helpers in `chartFormat.ts`. Covered by
 `tests/e2e/table-timeline.spec.ts`.
 
+**Horizontal timeline (owner request).** Show as › now has a "Timeline" heading with Vertical /
+Horizontal (the menu supports only one submenu level, so no nested Timeline ›). Horizontal adds
+`data-timeline-layout="horizontal"` (cleared by any other display); `renderTimelineHtml` emits
+`.pv-timeline.horizontal` with `--tl-cols` = row count, a 3-row grid (`grid-auto-flow:column`, items
+`display:contents`) so dates, dots and events align across columns. Capped at
+`TIMELINE_HORIZONTAL_MAX` = 8 rows (disabled with a reason above that); avoid-break in print.
+
 **Cell menu grouped (owner request).** `buildTableEditItems` now returns Insert ›, Move ›, Sort ›,
 Align column › (check on current, incl. Automatically), Turn header row on/off | the Show as group |
 Delete › (Row, Column, Table). e2e helpers in `table-editing.spec.ts` map old flat labels to
