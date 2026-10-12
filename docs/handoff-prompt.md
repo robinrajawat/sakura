@@ -318,6 +318,15 @@ column. Weight column was offered but not built (ambiguous per-row). Covered by
 `tests/e2e/table-proscons-checks.spec.ts`. Next agreed: currency picker (searchable, all ISO codes incl.
 DKK; parseCellNumber must learn codes / "kr").
 
+**Currency picker (owner request: DKK etc.).** The menu can't nest a third level, so Column type › lists
+five currencies (`menuCurrencies`: current, then recent from localStorage `sakura_recent_currencies`,
+then EUR USD GBP INR JPY) plus **More currencies…** → `openCurrencyPicker` (searchable, every
+`Intl.supportedValuesOf('currency')` code; lives in the edit wrapper as a `.tbl-cell-picker`, caret back
+to the cell before removal). `formatCurrency` now uses en-US `currencyDisplay:'symbol'` for any code
+(`DKK 1,234.50`, `CA$5.00`); `parseCellNumber` (tableData.ts) reads ISO codes (validated against the
+Intl list, so "JAN 2026" isn't money), prefixed dollars, and local abbreviations (kr, zł, Kč, Fr., Rs,
+R, F CFA, Cg.) before or after the number; a unit test round-trips every currency.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

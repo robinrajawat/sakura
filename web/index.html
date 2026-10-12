@@ -1513,6 +1513,17 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .tbl-picker-date{font:500 12px 'Inter',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 6px}
 .tbl-picker-btn{font:500 12px 'Inter',sans-serif;color:var(--fg);background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer}
 .tbl-picker-btn:hover{background:var(--hover)}
+.tbl-currency-picker{position:fixed;flex-direction:column;align-items:stretch;flex-wrap:nowrap;width:280px;max-width:calc(100vw - 16px);gap:6px}
+.tbl-currency-search{font:500 13px 'Inter',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;outline:none}
+.tbl-currency-search:focus{border-color:var(--accent)}
+.tbl-currency-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column}
+.tbl-currency-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg)}
+.tbl-currency-row b{font-weight:600;min-width:34px;font-variant-numeric:tabular-nums}
+.tbl-currency-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.tbl-currency-sym{color:var(--muted);font-weight:500}
+.tbl-currency-row.active{background:var(--hover)}
+.tbl-currency-row.current b::after{content:' \2713';color:var(--accent)}
+.tbl-currency-empty{padding:8px;color:var(--muted);font:400 12px 'Inter',sans-serif}
 table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
@@ -5903,10 +5914,29 @@ function setTableChartType(table,type){
  * index.html next to buildTableEditItems; only the decisions live here so they can be unit tested.
  */
 const TD_CURRENCY = '$€£¥₹';
+// A currency written before or after the number: a sign ("$", "€", "₩"…), a prefixed dollar or yen
+// ("CA$", "A$", "R$", "CN¥"), a common local abbreviation ("kr", "kr.", "zł", "Kč", "Fr.", "Rs", "Rp",
+// "R", "CFA", "Cg.") or an ISO code ("DKK", "CHF" — checked against the real code list, so "JAN" isn't one).
+const TD_CURRENCY_TOKEN = '(?:[A-Z]{1,3}\\$|CN¥|FCFA|F CFA|CFA|CFPF|Cg\\.?|kr\\.?|Kr\\.?|zł|Kč|Fr\\.?|Rs\\.?|Rp|R|[A-Z]{3}|[' + TD_CURRENCY + '₩₪₺₽₫₱฿₦₴₸₡₲₵])';
+let tdIsoCodes = null;
+function tdIsCurrencyToken(tok) {
+    if (!/^[A-Z]{3}$/.test(tok))
+        return true;
+    if (!tdIsoCodes) {
+        try {
+            const intl = Intl;
+            tdIsoCodes = new Set(intl.supportedValuesOf ? intl.supportedValuesOf('currency') : []);
+        }
+        catch {
+            tdIsoCodes = new Set();
+        }
+    }
+    return tdIsoCodes.size === 0 || tdIsoCodes.has(tok);
+}
 /**
  * A cell's numeric value, or null when the text isn't a plain number. Accepts the shapes people
  * type or paste from spreadsheets: thousands separators ("1,234.5"), a currency sign before or
- * after a sign ("$12", "-$12", "$-12", "12 €"), a trailing percent ("12.5%"), accounting-style
+ * after a sign ("$12", "-$12", "$-12", "12 €", "DKK 1,234.50", "kr 100", "CA$5", "100 zł"), a trailing percent ("12.5%"), accounting-style
  * negatives ("(1,234)"), a Unicode minus, and a k/M/B magnitude suffix ("1.2k"). A percentage is
  * compared by its written number (so "9%" < "10%"), not divided by 100.
  */
@@ -5921,17 +5951,21 @@ function parseCellNumber(raw) {
         negative = true;
         s = paren[1].trim();
     }
-    // A sign and a currency symbol can come in either order: "-$5", "$-5", "+€3".
-    const lead = new RegExp('^([+-]?)\\s*([' + TD_CURRENCY + ']?)\\s*([+-]?)\\s*');
+    // A sign and a currency can come in either order: "-$5", "$-5", "+€3", "-kr 5", "DKK -5".
+    const lead = new RegExp('^([+-]?)\\s*(' + TD_CURRENCY_TOKEN + '?)\\s*([+-]?)\\s*(?=[\\d.])');
     const m = lead.exec(s);
     if (m) {
+        if (m[2] && !tdIsCurrencyToken(m[2]))
+            return null;
         if (m[1] && m[3])
             return null;
         if (m[1] === '-' || m[3] === '-')
             negative = !negative;
         s = s.slice(m[0].length);
     }
-    s = s.replace(new RegExp('\\s*[' + TD_CURRENCY + ']$'), '');
+    const trail = new RegExp('(\\d)\\s*(' + TD_CURRENCY_TOKEN + ')$').exec(s);
+    if (trail && !(m && m[2]) && tdIsCurrencyToken(trail[2]))
+        s = s.slice(0, trail.index + 1);
     let pct = false;
     if (/\s*%$/.test(s)) {
         pct = true;
@@ -6505,24 +6539,82 @@ function normalizeColumnType(v) {
     const s = String(v ?? '').trim().toLowerCase();
     return COLUMN_TYPES.includes(s) ? s : '';
 }
-/** Currencies offered in the menu, in order: ISO code → menu label. */
-const COLUMN_CURRENCIES = {
-    EUR: '€ Euro',
-    USD: '$ US dollar',
-    GBP: '£ British pound',
-    INR: '₹ Indian rupee',
-    JPY: '¥ Japanese yen'
-};
+/** The currencies listed in the menu before any has been used (most recent ones go first after). */
+const DEFAULT_MENU_CURRENCIES = ['EUR', 'USD', 'GBP', 'INR', 'JPY'];
+/** How many currencies the Column type menu lists directly; the rest are under "More currencies…". */
+const MENU_CURRENCY_COUNT = 5;
+/** Every ISO 4217 code the browser knows (Intl), or the defaults where it can't list them. */
+function allCurrencyCodes() {
+    try {
+        const intl = Intl;
+        const list = intl.supportedValuesOf ? intl.supportedValuesOf('currency') : [];
+        return list.length ? list : [...DEFAULT_MENU_CURRENCIES];
+    }
+    catch {
+        return [...DEFAULT_MENU_CURRENCIES];
+    }
+}
+let knownCodes = null;
+/** Whether `code` is a real ISO 4217 currency (any well-formed code where the browser can't list them). */
+function isCurrencyCode(code) {
+    if (!/^[A-Z]{3}$/.test(String(code ?? '')))
+        return false;
+    if (!knownCodes)
+        knownCodes = new Set(allCurrencyCodes());
+    return knownCodes.size <= DEFAULT_MENU_CURRENCIES.length || knownCodes.has(code);
+}
+/** A currency's English name ("Danish Krone"), or the code itself if the browser has none. */
+function currencyName(code) {
+    try {
+        const DN = Intl.DisplayNames;
+        return (DN && new DN(['en'], { type: 'currency' }).of(code)) || code;
+    }
+    catch {
+        return code;
+    }
+}
+/** The sign or code a currency is written with ("€", "CA$", "DKK"). */
+function currencySymbol(code) {
+    const s = formatCurrency(0, code);
+    return s.replace(/[\d.,\s]+$/, '').trim() || code;
+}
 /**
- * A number written as currency: symbol first, thousands separators, the currency's usual decimals
- * ("€1,234.50", "-$12.00", "¥1,500"). Always en-US punctuation, so the result still reads back as
- * a number (parseCellNumber) for charts, sorting and progress bars. Unknown codes fall back to EUR.
+ * The currencies the Column type menu lists: the column's current one, then recently used ones,
+ * then the defaults, without repeats, up to MENU_CURRENCY_COUNT.
+ */
+function menuCurrencies(recent, current = '') {
+    const out = [];
+    [current, ...recent, ...DEFAULT_MENU_CURRENCIES].forEach((c) => {
+        if (c && isCurrencyCode(c) && !out.includes(c) && out.length < MENU_CURRENCY_COUNT)
+            out.push(c);
+    });
+    return out;
+}
+/** `recent` with `code` moved to the front, at most `max` long. */
+function pushRecentCurrency(recent, code, max = 8) {
+    return [code, ...recent.filter((c) => c !== code)].slice(0, max);
+}
+/**
+ * Whether a currency matches what was typed in the picker's search: the code, its name or its
+ * symbol, ignoring case ("dkk", "danish", "kr" all find DKK; "dollar" finds every dollar).
+ */
+function currencyMatches(code, query) {
+    const q = String(query ?? '').trim().toLowerCase();
+    if (!q)
+        return true;
+    return code.toLowerCase().includes(q) || currencyName(code).toLowerCase().includes(q) || currencySymbol(code).toLowerCase() === q;
+}
+/**
+ * A number written as currency: the currency's sign or code first, thousands separators, its usual
+ * decimals ("€1,234.50", "-$12.00", "¥1,500", "DKK 1,234.50", "CA$5.00"). Always en-US punctuation,
+ * so the result still reads back as a number (parseCellNumber) for charts, sorting and progress
+ * bars. Unknown codes fall back to EUR.
  */
 function formatCurrency(n, code) {
     if (!Number.isFinite(n))
         return '';
-    const cur = COLUMN_CURRENCIES[code] ? code : 'EUR';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).format(n);
+    const cur = isCurrencyCode(code) ? code : 'EUR';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur }).format(n);
 }
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /**
@@ -6585,7 +6677,7 @@ function tableColumnAlign(table,ci){
 }
 // Column type (cell menu -> Column type ›): '' (automatic) or text / number / currency / date /
 // status, stored as data-type on every cell of the column like data-align, plus data-currency (an
-// ISO code from COLUMN_CURRENCIES) on a currency column. Number and currency columns right-align;
+// ISO 4217 code, any the browser knows) on a currency column. Number and currency columns right-align;
 // a currency column's values are rewritten as currency ("€1,234.50") when set and as each cell is
 // left; a status column shows pills and a status picker while editing; a date column a date picker.
 // Text switches the automatic guesses (right-align, status pills) off.
@@ -6610,8 +6702,19 @@ function tableFormatCurrencyCells(table){
   tableBodyRows(table).forEach(r=>[...r.cells].forEach(c=>{ if(formatCurrencyCell(c))changed=true; }));
   return changed;
 }
+// Recently used currencies (most recent first), so a team's own currency -- DKK, say -- sits at the
+// top of Column type › after its first use. Per browser; losing it only resets the menu's order.
+const RECENT_CURRENCIES_KEY='sakura_recent_currencies';
+function recentCurrencies(){
+  try{ const v=JSON.parse(localStorage.getItem(RECENT_CURRENCIES_KEY)||'[]'); return Array.isArray(v)?v.filter(c=>typeof c==='string'):[]; }catch{ return []; }
+}
+function rememberCurrency(code){
+  try{ localStorage.setItem(RECENT_CURRENCIES_KEY,JSON.stringify(pushRecentCurrency(recentCurrencies(),code))); }catch{ /* storage unavailable */ }
+}
+function currencyMenuLabel(code){ return code+' \u00b7 '+currencyName(code); }
 function tableSetColumnType(table,cell,type,currency){
   const ci=cell.cellIndex; const ct={type:normalizeColumnType(type),currency:currency||'EUR'};
+  if(ct.type==='currency')rememberCurrency(ct.currency);
   [...table.rows].forEach(r=>applyColumnTypeAttrs(r.cells[ci],ct));
   if(ct.type==='currency')tableBodyRows(table).forEach(r=>formatCurrencyCell(r.cells[ci]));
   return cell;
@@ -6894,7 +6997,8 @@ function buildTableEditItems(table,cell,commit){
       {label:'Column type', submenu:[
         typeItem('','Automatic'), typeItem('text','Text'), typeItem('number','Number'), typeItem('date','Date'), typeItem('status','Status'),
         {heading:'Currency'},
-        ...Object.entries(COLUMN_CURRENCIES).map(([code,label])=>typeItem('currency',label,code))
+        ...menuCurrencies(recentCurrencies(),ct.type==='currency'?ct.currency:'').map(code=>typeItem('currency',currencyMenuLabel(code),code)),
+        {label:'More currencies\u2026', onClick:()=>openCurrencyPicker(table,cell,ct.type==='currency'?ct.currency:'',code=>run(()=>tableSetColumnType(table,cell,'currency',code))())}
       ]},
       {label:hasHeader?'Turn header row off':'Turn header row on', onClick:run(()=>tableToggleHeader(table,cell))}
     ]);
@@ -7281,6 +7385,49 @@ function attachTableCellPickers(wrap,table,commit){
   wrap.addEventListener('focusout',onCellOut,true);
   const active=document.activeElement; if(active&&wrap.contains(active))onFocusIn({target:active});
   return ()=>{ wrap.removeEventListener('focusin',onFocusIn); wrap.removeEventListener('focusout',onCellOut,true); hide(); };
+}
+// Column type › More currencies…: a searchable list of every currency the browser knows (code, name
+// and sign; type "dkk", "danish" or "kr"), arrow keys + Enter or a click to pick, Esc to cancel.
+// Like the cell pickers it lives inside the table's own editing wrapper (the cleanEditorHtml-
+// stripped .tbl-cell-picker class), so focusing its search box doesn't end the editing session;
+// the caret goes back to the cell before it's removed for the same reason.
+function openCurrencyPicker(table,cell,current,onPick){
+  const host=table.parentElement||document.body;
+  host.querySelector('.tbl-currency-picker')?.remove();
+  const box=document.createElement('div'); box.className='tbl-cell-picker tbl-currency-picker'; box.contentEditable='false';
+  box.innerHTML='<input type="search" class="tbl-currency-search" placeholder="Search currencies\u2026" aria-label="Search currencies"><div class="tbl-currency-list" role="listbox"></div>';
+  const input=box.querySelector('input'), list=box.querySelector('.tbl-currency-list');
+  const codes=allCurrencyCodes().filter(isCurrencyCode);
+  const recent=menuCurrencies(recentCurrencies(),current);
+  const ordered=[...recent,...codes.filter(c=>!recent.includes(c))];
+  let shown=[], active=0, closed=false;
+  const close=()=>{ if(closed)return; closed=true; placeTableCaret(cell); box.remove(); };
+  const pick=code=>{ if(closed)return; close(); onPick(code); };
+  const draw=()=>{
+    shown=ordered.filter(c=>currencyMatches(c,input.value));
+    active=Math.min(active,Math.max(0,shown.length-1));
+    list.innerHTML=shown.length?shown.map((c,i)=>`<div class="tbl-currency-row${i===active?' active':''}${c===current?' current':''}" role="option" data-code="${c}"><b>${c}</b><span class="tbl-currency-name">${esc(currencyName(c))}</span>${currencySymbol(c)!==c?`<span class="tbl-currency-sym">${esc(currencySymbol(c))}</span>`:''}</div>`).join('')
+      :'<div class="tbl-currency-empty">No currency matches</div>';
+    list.querySelector('.active')?.scrollIntoView({block:'nearest'});
+  };
+  input.addEventListener('input',e=>{ e.stopPropagation(); active=0; draw(); });
+  input.addEventListener('keydown',e=>{
+    e.stopPropagation();
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); active=Math.max(0,Math.min(shown.length-1,active+(e.key==='ArrowDown'?1:-1))); draw(); }
+    else if(e.key==='Enter'){ e.preventDefault(); if(shown[active])pick(shown[active]); }
+    else if(e.key==='Escape'){ e.preventDefault(); close(); }
+  });
+  list.addEventListener('mousedown',e=>e.preventDefault());
+  list.addEventListener('click',e=>{ const row=e.target.closest('.tbl-currency-row'); if(row)pick(row.dataset.code); });
+  // Clicking another cell of the table closes it (leaving the table altogether ends the session,
+  // which clears the wrapper anyway).
+  box.addEventListener('focusout',e=>{ if(!box.contains(e.relatedTarget)&&!closed){ closed=true; box.remove(); } });
+  host.appendChild(box);
+  const r=cell.getBoundingClientRect();
+  box.style.left=Math.max(8,Math.min(r.left,window.innerWidth-300))+'px';
+  box.style.top=Math.max(8,Math.min(r.bottom+4,window.innerHeight-340))+'px';
+  draw();
+  input.focus();
 }
 // A table/chart/Cards object living directly on node.tables[tIdx] -- NOT embedded in node.note
 // (see migrateNoteTablesToNode), so unlike enterScopedTableEdit this needs no ambient

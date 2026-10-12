@@ -49,7 +49,7 @@ async function setType(page: Page, f: Locator, cell: string, label: string) {
   await f.locator('td,th', { hasText: cell }).first().click({ button: 'right' });
   const menu = page.locator('.sb-context-menu:not(.sb-context-submenu)');
   await menu.locator(':scope > .sb-context-item', { hasText: /^Column type$/ }).hover();
-  await page.locator('.sb-context-submenu .sb-context-item', { hasText: new RegExp('^' + label.replace(/[$]/g, '\\$') + '$') }).click();
+  await page.locator('.sb-context-submenu .sb-context-item', { hasText: new RegExp('^' + label.replace(/[$.·]/g, (c) => '\\' + c) + '$') }).click();
   await expect(page.locator('.sb-context-menu')).toHaveCount(0);
 }
 const leave = async (page: Page) => { await page.keyboard.press('Escape'); await expect(fig(page)).not.toHaveClass(/editing/); };
@@ -57,7 +57,7 @@ const leave = async (page: Page) => { await page.keyboard.press('Escape'); await
 test('Currency: values are written as currency, right-aligned, and new entries too', async ({ page }) => {
   const errors = await load(page);
   const f = fig(page);
-  await setType(page, f, '1234.5', '€ Euro');
+  await setType(page, f, '1234.5', 'EUR · Euro');
   await expect(f.locator('tbody td:nth-child(3)')).toHaveText(['€1,234.50', '€12.00']);
   // Typing a plain number and leaving the cell formats it.
   const c = f.locator('tbody tr:nth-child(2) td:nth-child(3)');
@@ -72,7 +72,7 @@ test('Currency: values are written as currency, right-aligned, and new entries t
   expect(html).toContain('data-currency="EUR"');
   await expect(f.locator('tbody td:nth-child(3)').first()).toHaveAttribute('data-auto-align', 'right');
   // The menu shows the current type.
-  await setType(page, f, '€99.00', '$ US dollar');
+  await setType(page, f, '€99.00', 'USD · US Dollar');
   await expect(f.locator('tbody td:nth-child(3)')).toHaveText(['$1,234.50', '$99.00']);
   expect(errors).toEqual([]);
 });
@@ -128,5 +128,38 @@ test('Date: a picker writes dates in the column\'s own style', async ({ page }) 
   await expect(f.locator('tbody tr:nth-child(1) td:nth-child(4)')).toHaveText('');
   await leave(page);
   expect(await stored(page)).toContain('Dec 15, 2026');
+  expect(errors).toEqual([]);
+});
+
+test('More currencies… searches every currency, and the pick moves to the top of the menu', async ({ page }) => {
+  const errors = await load(page);
+  const f = fig(page);
+  await setType(page, f, '1234.5', 'More currencies…');
+  const picker = f.locator('.tbl-currency-picker');
+  await expect(picker.locator('input')).toBeFocused();
+  await page.keyboard.type('danish');
+  await expect(picker.locator('.tbl-currency-row')).toHaveCount(1);
+  await expect(picker.locator('.tbl-currency-row b')).toHaveText('DKK');
+  await page.keyboard.press('Enter');
+  await expect(picker).toHaveCount(0);
+  // Still editing, the column now in DKK, and the values still read as numbers (right-aligned).
+  await expect(f).toHaveClass(/editing/);
+  await expect(f.locator('tbody td:nth-child(3)')).toHaveText([/^DKK\s1,234\.50$/, /^DKK\s12\.00$/]);
+  await leave(page);
+  expect(await stored(page)).toContain('data-currency="DKK"');
+  await expect(f.locator('tbody td:nth-child(3)').first()).toHaveAttribute('data-auto-align', 'right');
+  // DKK now leads the menu's currencies, with a check mark.
+  await f.locator('td', { hasText: 'Labels' }).click();
+  await f.locator('tbody td:nth-child(3)').first().click({ button: 'right' });
+  await page.locator('.sb-context-menu:not(.sb-context-submenu) > .sb-context-item', { hasText: /^Column type$/ }).hover();
+  const items = page.locator('.sb-context-submenu .sb-context-item');
+  await expect(items.filter({ hasText: /·/ }).first()).toHaveText('DKK · Danish Krone');
+  await expect(items.filter({ hasText: 'DKK · Danish Krone' }).locator('svg')).toHaveCount(1);
+  // Escape closes the search without changing anything.
+  await items.filter({ hasText: 'More currencies…' }).click();
+  await expect(picker.locator('.tbl-currency-row.current b')).toHaveText('DKK');
+  await page.keyboard.press('Escape');
+  await expect(picker).toHaveCount(0);
+  await expect(f).toHaveClass(/editing/);
   expect(errors).toEqual([]);
 });

@@ -12,11 +12,26 @@
 export type TableAlign = 'left' | 'center' | 'right';
 
 const TD_CURRENCY = '$€£¥₹';
+// A currency written before or after the number: a sign ("$", "€", "₩"…), a prefixed dollar or yen
+// ("CA$", "A$", "R$", "CN¥"), a common local abbreviation ("kr", "kr.", "zł", "Kč", "Fr.", "Rs", "Rp",
+// "R", "CFA", "Cg.") or an ISO code ("DKK", "CHF" — checked against the real code list, so "JAN" isn't one).
+const TD_CURRENCY_TOKEN = '(?:[A-Z]{1,3}\\$|CN¥|FCFA|F CFA|CFA|CFPF|Cg\\.?|kr\\.?|Kr\\.?|zł|Kč|Fr\\.?|Rs\\.?|Rp|R|[A-Z]{3}|[' + TD_CURRENCY + '₩₪₺₽₫₱฿₦₴₸₡₲₵])';
+let tdIsoCodes: Set<string> | null = null;
+function tdIsCurrencyToken(tok: string): boolean {
+  if (!/^[A-Z]{3}$/.test(tok)) return true;
+  if (!tdIsoCodes) {
+    try {
+      const intl = Intl as unknown as { supportedValuesOf?: (k: string) => string[] };
+      tdIsoCodes = new Set(intl.supportedValuesOf ? intl.supportedValuesOf('currency') : []);
+    } catch { tdIsoCodes = new Set(); }
+  }
+  return tdIsoCodes.size === 0 || tdIsoCodes.has(tok);
+}
 
 /**
  * A cell's numeric value, or null when the text isn't a plain number. Accepts the shapes people
  * type or paste from spreadsheets: thousands separators ("1,234.5"), a currency sign before or
- * after a sign ("$12", "-$12", "$-12", "12 €"), a trailing percent ("12.5%"), accounting-style
+ * after a sign ("$12", "-$12", "$-12", "12 €", "DKK 1,234.50", "kr 100", "CA$5", "100 zł"), a trailing percent ("12.5%"), accounting-style
  * negatives ("(1,234)"), a Unicode minus, and a k/M/B magnitude suffix ("1.2k"). A percentage is
  * compared by its written number (so "9%" < "10%"), not divided by 100.
  */
@@ -27,15 +42,17 @@ export function parseCellNumber(raw: string): number | null {
   let negative = false;
   const paren = /^\((.*)\)$/.exec(s);
   if (paren) { negative = true; s = paren[1].trim(); }
-  // A sign and a currency symbol can come in either order: "-$5", "$-5", "+€3".
-  const lead = new RegExp('^([+-]?)\\s*([' + TD_CURRENCY + ']?)\\s*([+-]?)\\s*');
+  // A sign and a currency can come in either order: "-$5", "$-5", "+€3", "-kr 5", "DKK -5".
+  const lead = new RegExp('^([+-]?)\\s*(' + TD_CURRENCY_TOKEN + '?)\\s*([+-]?)\\s*(?=[\\d.])');
   const m = lead.exec(s);
   if (m) {
+    if (m[2] && !tdIsCurrencyToken(m[2])) return null;
     if (m[1] && m[3]) return null;
     if (m[1] === '-' || m[3] === '-') negative = !negative;
     s = s.slice(m[0].length);
   }
-  s = s.replace(new RegExp('\\s*[' + TD_CURRENCY + ']$'), '');
+  const trail = new RegExp('(\\d)\\s*(' + TD_CURRENCY_TOKEN + ')$').exec(s);
+  if (trail && !(m && m[2]) && tdIsCurrencyToken(trail[2])) s = s.slice(0, trail.index + 1);
   let pct = false;
   if (/\s*%$/.test(s)) { pct = true; s = s.replace(/\s*%$/, ''); }
   let mult = 1;
