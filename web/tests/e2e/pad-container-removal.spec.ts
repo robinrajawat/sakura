@@ -56,7 +56,7 @@ function trackErrors(page: import('@playwright/test').Page) {
 // The cutdown series removed the docked Pad panel and its Diagrams/Q&A/Remarks list tabs.
 // Diagrams, Q&A, and remarks now live only inline under their nodes, so these tests pin that the
 // container is really gone (no dead DOM/flags left behind) and that every surviving way into
-// those objects -- right-click actions, Where used, generation -- still works without it.
+// those objects -- right-click actions, generation -- still works without it.
 test.describe('Pad container removal', () => {
   test('no Pad DOM, toggle, settings, or feature flags remain', async ({ page }) => {
     const errors = trackErrors(page);
@@ -138,36 +138,6 @@ test.describe('Pad container removal', () => {
       remarks: remarks.map((r: { anchorNodeId: number }) => r.anchorNodeId)
     }));
     expect(linked).toEqual({ qa: [2], remarks: [3] });
-    expect(errors).toEqual([]);
-  });
-
-  test('Where used reveals and focuses a linked question inline instead of opening a Pad', async ({ page }) => {
-    const errors = trackErrors(page);
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedNodes(page);
-    await page.evaluate(() => {
-      // @ts-expect-error
-      qaItems = [{ id: 'qa-test', question: 'Who signs off?', answer: '', sourceNodeId: 2, createdAt: Date.now() }];
-      // @ts-expect-error
-      collapsedIds = new Set([1]); inlineExpandQaNodeIds = new Set(); alwaysExpandInlineEnabled = false;
-      // @ts-expect-error
-      render();
-    });
-    // Collapsed parent + collapsed inline items: the question isn't on screen yet.
-    await expect(page.locator('#inline-qa-q-qa-test')).toHaveCount(0);
-
-    await page.evaluate(() => {
-      // @ts-expect-error
-      openWhereUsedPopover(document.querySelector('.node-row[data-id="1"]'), [1, 2, 3]);
-    });
-    const item = page.locator('#ref-jump-popover .ref-jump-item', { hasText: 'Who signs off?' });
-    await expect(item).toBeVisible();
-    await item.dispatchEvent('mousedown');
-
-    const q = page.locator('#inline-qa-q-qa-test');
-    await expect(q).toBeVisible();
-    await expect(q).toBeFocused();
     expect(errors).toEqual([]);
   });
 

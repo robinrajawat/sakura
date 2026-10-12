@@ -2404,6 +2404,7 @@ body.printing-generic #gpe-overlay{
 .doc-status-chip:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .doc-status-chip.unset{background:transparent;color:var(--hint);border:1px dashed var(--border);opacity:.7}
 .doc-status-chip.unset:hover{opacity:1;border-color:var(--muted)}
+.doc-history-chip{display:inline-flex;align-items:center;justify-content:center;padding:3px 7px}
 .doc-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
 .doc-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .doc-status-chip[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
@@ -3539,7 +3540,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">  
 <h4>Structure</h4>  
 <ul>  
-<li>Right-click a node → a small row of marker icons (Confirmed, Issue, Parked, Follow-up, N/A — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add remark, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Where used, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
+<li>Right-click a node → a small row of marker icons (Confirmed, Issue, Parked, Follow-up, N/A — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add remark, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
 <li><strong>Markers</strong> — five quick marks (✓ Confirmed, ⚠ Issue, ⏸ Parked, 🚩 Follow-up, ✗ N/A) for tracking status on a node, e.g. while reviewing a document. N/A covers something discarded or out of scope — deliberately a different icon from Issue, so "this needs attention" and "this doesn't apply/was decided against" don't collide on the same cross mark. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph filters the tree to that marker — showing every matching node, its full subtree, and its ancestors back to the root (dimmed, so they read as "here's where it lives" rather than more matches); a filter bar appears with a × to clear it. Right-click the glyph to clear the marker itself instead. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
 <li>Right-clicking empty space — editor canvas, file explorer, status bar, tab bar, or app bar — opens a separate, smaller menu of chrome-level actions, not the node menu above. Navigate it with <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span>, same as the category picker above, or hover with a mouse — both move the same highlight. Editor canvas: switch theme and Collapse all/Expand all sit in the menu itself; a "More…" item opens a second menu at the same spot for the rest — hide/show file explorer, and Settings. File Explorer: switch theme, hide file explorer, Settings. Status bar: switch theme, Settings. Tab bar: switch theme, new document, close current tab, Settings. App bar: switch theme, hide/show file explorer, and "Declutter app bar" — which hides the title field, file explorer toggle, and the Documents/Templates buttons, but deliberately never hides Settings — hiding it would remove your only way back in. Every hide action here shows an Undo toast, same pattern as Quick Assist's own toggles. The toolbar, tab bar, status bar and app bar can't be hidden (zen mode hides the toolbar and tab bar while it's on)</li>
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Deleting a referenced node removes its links from all other nodes automatically</li>
@@ -3748,7 +3749,7 @@ body.printing-generic #gpe-overlay{
 <ul>
 <li>Questions and answers kept right under the node they're about: right-click any node → <strong>Add question…</strong> adds a blank question linked to that node and puts the cursor in it. Each one is a bold <strong>Q</strong> line with its <strong>A</strong> line underneath, both edited in place and keeping pasted formatting</li>
 <li>Right-click a Q&amp;A line for Delete Q&amp;A; emptying the question and pressing Backspace removes it too</li>
-<li>A small question-mark dot appears on a node with linked questions — click it to show or hide them inline. The same icon appears next to a folded node's "+N hidden" badge when a question is linked somewhere inside its collapsed subtree, and Where used… lists them alongside the node's other linked content</li>
+<li>A small question-mark dot appears on a node with linked questions — click it to show or hide them inline. The same icon appears next to a folded node's "+N hidden" badge when a question is linked somewhere inside its collapsed subtree</li>
 <li>Always included in PDF exports: each question prints right under the node it's linked to, same as a note; questions with no linked node are appended as a final section — bold question, regular-weight answer, unanswered ones marked "No answer provided"</li>
 </ul>
 </div>
@@ -4092,6 +4093,7 @@ body.printing-generic #gpe-overlay{
             </div>
           </div>
         </div>
+        <button type="button" class="doc-status-chip unset doc-history-chip" id="doc-history-chip" data-tip="Version history — earlier versions of this document" aria-label="Version history"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
         <div class="doc-presence-chip" id="doc-presence-chip" style="display:none"></div>
         <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
           <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
@@ -10879,6 +10881,9 @@ document.querySelectorAll('#doc-status-menu .todo-dd-item').forEach(item=>{
 document.addEventListener('mousedown',e=>{
   if(!e.target.closest('#doc-status-wrap'))el('doc-status-menu')?.classList.remove('open');
 });
+// The open document's version history, one click from its title (also on the tab's and File
+// Explorer's right-click menus).
+el('doc-history-chip')?.addEventListener('click',e=>{ e.stopPropagation(); if(!currentDocId)return; commitEdit(); openVersionHistory(currentDocId); });
 el('doc-link-chip')?.addEventListener('click',e=>{
   e.stopPropagation();
   // Ctrl/Cmd-click is a shortcut straight to the linked ticket — skips the edit popover
@@ -11147,8 +11152,8 @@ function ctxActionAllowed(actionId){
   // for every entry, so this one line covers all of them at once instead of needing an
   // individual guard per action. The four exceptions are genuinely non-mutating: 'focus' and
   // 'fold' only change this device's own view state (never saved for a viewer anyway, see
-  // saveToStorage), and 'where-used'/'version-history' just open read-only viewers.
-  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','where-used','version-history'].includes(actionId))return false;
+  // saveToStorage), and 'version-history' just opens a read-only viewer.
+  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','version-history'].includes(actionId))return false;
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='ai-rewrite')return featureAiEnabled;
   return true;
@@ -15495,7 +15500,7 @@ function todoRefsForWholeDoc(docId){
 // previously showed that a question was linked to it. This mirrors those existing per-node dots.
 // Aggregates every Diagram / To-Do / Q&A / Remark reference attached
 // to a set of node ids in the *currently open* document — the single source of truth behind both
-// the "Where used" view and the delete-confirmation warnings, so the two can never drift apart
+// the delete-confirmation warnings and the linked-content counts, so they can never drift apart
 // on what counts as "linked". Cross-document data (todos) still resolves correctly since
 // those lookups take a docId; content that lives inside a document's own saved blob (diagrams,
 // Q&A) only resolves for whichever document is actually loaded right
@@ -15609,57 +15614,7 @@ function jumpToNodeTodoRefs(anchorEl, refs){
   if(refs.length===1){ if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(refs[0].id); return; }
   openRefJumpPopover(anchorEl, refs, refs.length+' to-dos reference this node');
 }
-const DIAGRAM_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>';
 const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>';
-// "Where used" — the one place every reference type (Diagrams, To-Dos, Q&A,
-// Remarks) shows up together, instead of having to notice and click through each
-// dot separately. Reuses the same #ref-jump-popover element/styling the individual dots already
-// use, rather than inventing a second popover system. nodeIds is normally just the one node, but
-// the delete-confirmation caller passes a whole subtree's worth so a folded parent's "Where
-// used" still surfaces what's hidden underneath.
-function openWhereUsedPopover(anchorEl,nodeIds,title){
-  const pop=el('ref-jump-popover'); const list=el('ref-jump-popover-list'); const titleEl=el('ref-jump-popover-title');
-  if(!pop||!list||!anchorEl)return;
-  const bundle=collectLinkedContentForNodeIds(nodeIds);
-  const total=linkedContentTotalCount(bundle);
-  if(titleEl)titleEl.textContent=title||(total?'Where used':'Nothing linked here yet');
-  list.innerHTML='';
-  if(!total){
-    const empty=document.createElement('div'); empty.className='ref-jump-empty';
-    empty.textContent='No diagrams, to-dos, Q&A, or remarks are linked here.';
-    list.appendChild(empty);
-  } else {
-    bundle.diagrams.forEach(dg=>{
-      const item=document.createElement('div'); item.className='ref-jump-item';
-      item.innerHTML=DIAGRAM_DOT_SVG+`<span>${esc(dg.title||'Untitled diagram')}</span>`;
-      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); setSingleSelection(dg.anchorNodeId); render(); openDiagramEditor(dg.id); });
-      list.appendChild(item);
-    });
-    bundle.todos.forEach(t=>{
-      const item=document.createElement('div'); item.className='ref-jump-item';
-      item.innerHTML=todoDotIconSvg(12)+`<span>${esc((t.text||'').trim()||'(untitled task)')}</span>`;
-      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(t.id); });
-      list.appendChild(item);
-    });
-    bundle.qa.forEach(q=>{
-      const item=document.createElement('div'); item.className='ref-jump-item';
-      item.innerHTML=qaDotIconSvg(12)+`<span>${esc((q.question||'').trim()||'(untitled question)')}</span>`;
-      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); revealInlineObject('qa',q.id); });
-      list.appendChild(item);
-    });
-    (bundle.remarks||[]).forEach(r=>{
-      const item=document.createElement('div'); item.className='ref-jump-item';
-      const rTextPlain=stripHtmlToText(r.text||''); item.innerHTML=REMARK_DOT_SVG+`<span>${esc(r.person||'(unnamed)')} — ${esc(rTextPlain.slice(0,40))}${rTextPlain.length>40?'…':''}</span>`;
-      item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); revealInlineObject('remark',r.id); });
-      list.appendChild(item);
-    });
-  }
-  const r=anchorEl.getBoundingClientRect();
-  pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
-  pop.style.top=(r.bottom+4)+'px';
-  pop.classList.add('open');
-  _refJumpOpen=true;
-}
 function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); render()}
 function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); render()}}
 function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); scheduleAutoSave(); render()}}
@@ -15688,7 +15643,7 @@ function openInlineNoteAndFocus(id){
 // just always adding the id.
 function forceInlineItemExpanded(set,id){ set.add(id); }
 // Brings a node's inline Q&A row or remark into view and focuses it -- the replacement for the
-// removed Pad list tabs' "jump to row" behavior, used by Where used and global search. Expands the node's ancestors and its own inline items first, since
+// removed Pad list tabs' "jump to row" behavior, used by global search. Expands the node's ancestors and its own inline items first, since
 // either can be hiding the target. An item whose node is missing (never linked, or the node was
 // deleted) has nowhere to be shown, so that case just says so.
 function revealInlineObject(kind,id){
@@ -16820,13 +16775,12 @@ const CTX_ACTION_META={
   'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'visual'},
   table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'visual'},
   image:{label:'Add image…',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>',group:'visual'},
-  'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'info'},
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'node'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'info'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'info'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','qa','remark','table','image','diagram','diagram-gen','where-used','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','qa','remark','table','image','diagram','diagram-gen','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -16846,16 +16800,7 @@ const NODE_QA_ACTION_META={
 const CTX_GROUP_ORDER=['insert','structure','ai','notes','delete']; // order for leftover items in the More panel
 
 function _ctxNoteLabelText(){const idx=getIndex(nodes,contextMenuNodeId??selectedId); if(idx<0)return 'Note…'; const n=nodes[idx]; const hasNote=!!(n.note&&n.note.trim()); return hasNote?'Edit note…':'Add note…'}
-function _ctxWhereUsedNodeIds(){
-  const idx=getIndex(nodes,contextMenuNodeId??selectedId); if(idx<0)return [];
-  const end=getSubtreeEnd(nodes,idx);
-  return nodes.slice(idx,end).map(n=>n.id);
-}
-function _ctxWhereUsedLabelText(){
-  const count=linkedContentTotalCount(collectLinkedContentForNodeIds(_ctxWhereUsedNodeIds()));
-  return count?`Where used… (${count})`:'Where used…';
-}
-function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelText(); if(actionId==='where-used')return _ctxWhereUsedLabelText(); return CTX_ACTION_META[actionId].label; }
+function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelText(); return CTX_ACTION_META[actionId].label; }
 
 // Builds the entire merged top row of the context menu in one pass: the fixed
 // Confirmed/Issue/Parked/Follow-up marker strip (mirrors the node-marker popover's quick-mark
@@ -21365,15 +21310,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     setSingleSelection(_ctxNodeId);
     render();
     openNodeImagePicker(_ctxNodeId);
-    return;
-  }
-  if(action==='where-used'){
-    if(_ctxNodeId===null)return;
-    const idx=getIndex(nodes,_ctxNodeId); if(idx<0)return;
-    const end=getSubtreeEnd(nodes,idx);
-    const ids=nodes.slice(idx,end).map(n=>n.id);
-    const anchor=document.querySelector(`.node-row[data-id="${_ctxNodeId}"]`);
-    if(anchor)openWhereUsedPopover(anchor,ids);
     return;
   }
   if(action==='date-time'){if(selectedId!==null)insertDateTime(); return}
