@@ -22,6 +22,7 @@ export {
   buildPrefix,
   buildVertFlags,
   isSectionNodeText,
+  sectionHeadingParts,
   nodeIsSection,
   isIdSelected,
   getSelectionRangeIds,
