@@ -513,7 +513,7 @@ and merged after independent review:
    (d) PDF tables repeat their header row on each page (`thead` → `table-header-group`, a first
    row of all `<th>` is moved into a `<thead>` in the PDF copy only), rows don't split, and the
    table row avoids a break right after its node. Covered by `tests/e2e/tables-pdf-bugs.spec.ts`.
-   **PR 2 — table editing. Done in PR #PRNUM (not merged).** Pure logic in `src/utils/tableData.ts`
+   **PR 2 — table editing. Done in PR #478 (not merged).** Pure logic in `src/utils/tableData.ts`
    (generator block `tableData`, unit-tested): `parseCellNumber` (commas, currency before/after a
    sign, `%`, `(1,234)` negatives, Unicode minus, k/M/B), `parseCellDate` (ISO, `2026/10/14`, month-
    name dates either order with optional year/weekday — no year sorts as year 2000; slash dates like
