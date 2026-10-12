@@ -2014,7 +2014,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-heading-5{min-width:0;font-family:'Inter',sans-serif;font-size:14px;font-weight:400;line-height:1.4;color:var(--heading-c5);word-break:break-word}
 .pv-heading-6{min-width:0;font-family:'Inter',sans-serif;font-size:13px;font-weight:400;font-style:italic;line-height:1.4;color:var(--heading-c6);word-break:break-word}
 .pv-heading-7{min-width:0;font-family:'Inter',sans-serif;font-size:13px;font-weight:400;line-height:1.4;color:var(--heading-c7);word-break:break-word}
-.pv-status-stamp{position:absolute;top:0;right:0;transform:rotate(-8deg);padding:4px 12px;border:2.5px solid currentColor;border-radius:6px;font:800 15px 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;opacity:.85;pointer-events:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-status-stamp.draft{color:#6b7280}.pv-status-stamp.review{color:#d97706}.pv-status-stamp.approved{color:#16a34a}.pv-status-stamp.rejected{color:#dc2626}
+.pv-status-stamp{position:absolute;top:0;right:0;transform:rotate(-8deg);padding:4px 12px;border:2.5px solid currentColor;border-radius:6px;font:800 15px 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;opacity:.85;pointer-events:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-status-stamp.draft{color:#6b7280}.pv-status-stamp.review{color:#d97706}.pv-status-stamp.approved{color:#16a34a}.pv-status-stamp.rejected{color:#dc2626}#sakura-cover-page .pv-status-stamp{top:48px;right:56px;font-size:20px}
 #pv-doc-header.has-status-stamp #pv-doc-title{padding-right:150px}
 #pv-doc-kicker{width:28px;height:3px;border-radius:2px;background:var(--accent);margin:0 0 12px}
 #pv-doc-title{font:800 28px/1.25 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);word-break:break-word}
@@ -26629,49 +26629,33 @@ function exportPreviewAsPdf(onDone){
         page-break-after:auto !important; break-after:auto !important;
         padding:0 !important; margin:0 0 26px !important;
       }
-      /* Editorial cover: left-aligned, an accent bar down the left edge, the title in the upper
-         third, the main sections as a subtitle line, and a details block at the foot of the page. */
       body.printing-preview #sakura-cover-page{
-        display:flex !important; flex-direction:column; align-items:flex-start; justify-content:flex-start;
-        text-align:left; box-sizing:border-box; height:${(paper.h-2*PDF_PAGE_MARGIN_MM-2).toFixed(1)}mm;
-        padding:56px 40px 8px 44px; border-left:6px solid ${liveAccent};
-        -webkit-print-color-adjust:exact; print-color-adjust:exact;
+        display:flex !important; flex-direction:column; align-items:center; justify-content:center;
+        text-align:center; padding:120px 60px 80px; box-sizing:border-box;
         page-break-after:always !important; break-after:page !important;
         font-family:'Inter',Helvetica,Arial,sans-serif !important;
         page:cover;
       }
       body.printing-preview #sakura-cover-wordmark{
-        font:700 11px 'Inter',sans-serif !important; text-transform:uppercase !important;
-        letter-spacing:.18em !important; color:${liveAccent} !important; margin:0 0 150px !important;
+        font:700 12px 'Inter',sans-serif !important; text-transform:uppercase !important;
+        letter-spacing:.14em !important; color:${liveAccent} !important; margin-bottom:48px !important;
       }
       body.printing-preview #sakura-cover-title{
-        font:800 40px 'Inter',sans-serif !important; color:#1f1c14 !important; letter-spacing:-.02em !important;
-        margin:0 !important; line-height:1.12 !important; max-width:520px !important; word-break:break-word;
+        font:700 30px 'Inter',sans-serif !important; color:#1f1c14 !important;
+        margin:0 0 14px !important; line-height:1.25 !important; max-width:560px !important;
+      }
+      body.printing-preview #sakura-cover-author{
+        font:400 15px 'Inter',sans-serif !important; color:#5c584f !important; margin:0 0 6px !important;
+      }
+      body.printing-preview #sakura-cover-meta{
+        font:400 12.5px 'Inter',sans-serif !important; color:#79756b !important; margin-top:4px !important;
       }
       body.printing-preview #sakura-cover-rule{
-        width:56px !important; height:3px !important; margin:26px 0 18px !important;
+        width:48px !important; height:3px !important; margin:28px 0 !important;
         background:${liveAccent} !important; border-radius:2px !important;
       }
-      body.printing-preview #sakura-cover-subtitle{
-        font:400 14px 'Inter',sans-serif !important; color:#5c584f !important; line-height:1.5 !important;
-        max-width:520px !important;
-      }
-      body.printing-preview #sakura-cover-details{
-        margin-top:auto !important; display:grid !important; grid-template-columns:auto 1fr;
-        column-gap:28px; row-gap:9px; padding-top:18px !important; border-top:1px solid #d6d2c7 !important;
-        width:100% !important; max-width:420px !important;
-      }
-      body.printing-preview .sakura-cover-dt{
-        font:700 9.5px 'Inter',sans-serif !important; letter-spacing:.14em !important; text-transform:uppercase !important;
-        color:#79756b !important; padding-top:2px;
-      }
-      body.printing-preview .sakura-cover-dd{ font:500 12.5px 'Inter',sans-serif !important; color:#1f1c14 !important; }
-      body.printing-preview .sakura-cover-dd.status-draft{ color:#6b7280 !important; }
-      body.printing-preview .sakura-cover-dd.status-review{ color:#b45309 !important; }
-      body.printing-preview .sakura-cover-dd.status-approved{ color:#15803d !important; }
-      body.printing-preview .sakura-cover-dd.status-rejected{ color:#b91c1c !important; }
-      /* The cover already shows the title, author, word count and status, so the body starts
-         straight with the first section instead of repeating them. */
+      /* The cover already shows the title, author, word count and status stamp, so the body
+         starts straight with the first section instead of repeating them. */
       body.printing-preview.has-cover-page #pv-doc-header{ display:none !important; }
       body.printing-preview #preview-toc-head-row{
         margin-bottom:14px !important;
@@ -26808,27 +26792,15 @@ function exportPreviewAsPdf(onDone){
     const titleEl=document.createElement('div'); titleEl.id='sakura-cover-title'; titleEl.textContent=String(meta.title||'Untitled');
     const rule=document.createElement('div'); rule.id='sakura-cover-rule';
     if(wordmark)coverEl.appendChild(wordmark); coverEl.appendChild(titleEl); coverEl.appendChild(rule);
-    const sections=pdfCoverSectionNames();
-    if(sections.length>=2){
-      const sub=document.createElement('div'); sub.id='sakura-cover-subtitle';
-      sub.textContent=sections.slice(0,5).join(' \u00b7 ')+(sections.length>5?' \u00b7 \u2026':'');
-      coverEl.appendChild(sub);
-    }
-    // Details block at the foot of the page: who, when, status and length.
+    const rawAuthor=String(meta.author||'').trim();
+    if(rawAuthor){ const authorEl=document.createElement('div'); authorEl.id='sakura-cover-author'; authorEl.textContent=rawAuthor; coverEl.appendChild(authorEl); }
     const wordCount=nodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0);
     const readMins=Math.max(1,Math.round(wordCount/200));
-    const details=document.createElement('div'); details.id='sakura-cover-details';
-    const addDetail=(label,value,cls)=>{
-      const dt=document.createElement('div'); dt.className='sakura-cover-dt'; dt.textContent=label;
-      const dd=document.createElement('div'); dd.className='sakura-cover-dd'+(cls?' '+cls:''); dd.textContent=value;
-      details.appendChild(dt); details.appendChild(dd);
-    };
-    const rawAuthor=String(meta.author||'').trim();
-    if(rawAuthor)addDetail('Author',rawAuthor);
-    addDetail('Date',footerDate);
-    if(docStatus&&DOC_STATUSES.includes(docStatus))addDetail('Status',docStatusLabel(docStatus),'status-'+docStatus);
-    addDetail('Length',`${wordCount.toLocaleString()} word${wordCount===1?'':'s'} \u00b7 ${readMins} min read`);
-    coverEl.appendChild(details);
+    const coverMetaParts=[`${wordCount.toLocaleString()} word${wordCount===1?'':'s'}`,`${readMins} min read`];
+    if(lastSavedAt)coverMetaParts.push(`Updated ${new Date(lastSavedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}`);
+    const coverMetaEl=document.createElement('div'); coverMetaEl.id='sakura-cover-meta'; coverMetaEl.textContent=coverMetaParts.join(' · ');
+    coverEl.appendChild(coverMetaEl);
+    const coverStamp=buildPdfStatusStamp(); if(coverStamp){ coverEl.style.position='relative'; coverEl.appendChild(coverStamp); }
     const overlay=el('preview-overlay');
     overlay?.insertBefore(coverEl,overlay.firstChild);
   }
@@ -26884,11 +26856,6 @@ function exportPreviewAsPdf(onDone){
     });
 }
 const PDF_PAGE_MARGIN_MM=20;
-// The cover's subtitle line: the document's top-level sections, as the Contents names them
-// ("Release 2.4 · Plan" for "[Release 2.4] Plan"), in order.
-function pdfCoverSectionNames(){
-  return nodes.filter(n=>n.depth===0).map(n=>stripSemanticMarkers(sectionHeadingParts(n.text).title).trim()).filter(Boolean);
-}
 // Without a cover page, a short Contents list (up to this many entries) prints right under the
 // document title instead of on a page of its own. With a cover it always keeps its own page.
 const PDF_TOC_INLINE_MAX=8;
