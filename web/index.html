@@ -448,6 +448,9 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .tb-menu-item:hover,.tb-menu-item:focus-visible{background:var(--hover);outline:none}
 .tb-menu-label{flex:1 1 auto}
 .tb-menu-kbd{font-size:11px;color:var(--hint)}
+.tb-menu-heading{font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:8px 10px 3px;user-select:none}
+.tb-menu-heading:first-child{padding-top:3px}
+.tb-menu-markers{display:flex;gap:4px;padding:2px 8px 4px}
 .tb-menu-divider{height:1px;background:var(--border);margin:4px 2px}
 /* The rewrite item lives inside a closed menu, so mirror its busy spinner on the AI trigger. */
 #ai-wrap:has(.ai-busy) #qb-ai svg:first-child{animation:ai-spin 1.1s linear infinite}
@@ -3986,17 +3989,21 @@ body.printing-generic #gpe-overlay{
         <div class="hl-wrap tb-menu-wrap" id="insert-wrap">
           <button class="btn quick-btn tb-menu-trigger" id="qb-insert" data-tip="Insert into the selected node" aria-label="Insert" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="tb-menu-trigger-label">Insert</span><svg class="tb-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="hl-palette tb-menu" id="insert-menu" role="menu" aria-label="Insert">
+          <div class="tb-menu-heading">Node</div>
           <button role="menuitem" class="tb-menu-item" id="qb-note" aria-label="Note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="tb-menu-label">Note</span><span class="tb-menu-kbd">Ctrl+Shift+N</span></button>
           <button role="menuitem" class="tb-menu-item" id="qb-checkbox" aria-label="Toggle checkbox"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg><span class="tb-menu-label">Checkbox</span></button>
           <button role="menuitem" class="tb-menu-item" id="qb-tags" aria-label="Tags"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span class="tb-menu-label">Tags…</span></button>
-          <div class="tb-menu-divider"></div>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="qa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="tb-menu-label">Add question</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="remark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/></svg><span class="tb-menu-label">Add remark</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="diagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg><span class="tb-menu-label">Add diagram</span></button>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="date-time"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tb-menu-label">Date/time</span></button>
+          <div class="tb-menu-heading">Marker</div>
+          <div class="tb-menu-markers" id="insert-markers" role="group" aria-label="Marker"></div>
+          <div class="tb-menu-heading">Discussion</div>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="qa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="tb-menu-label">Question</span></button>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="remark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/></svg><span class="tb-menu-label">Remark</span></button>
+          <div class="tb-menu-heading">Visuals</div>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg><span class="tb-menu-label">Table</span></button>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="tb-menu-label">Image</span></button>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="diagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg><span class="tb-menu-label">Diagram</span></button>
           <button role="menuitem" class="tb-menu-item" data-insert-action="diagram-gen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg><span class="tb-menu-label">Generate diagram</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg><span class="tb-menu-label">Add table</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="tb-menu-label">Add image</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="date-time"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tb-menu-label">Insert date/time</span></button>
           </div>
         </div>
       </div>
@@ -16489,20 +16496,20 @@ const CTX_ACTION_META={
   down:{label:'Move down',glyph:'↓',group:'structure'},
   fold:{label:'Collapse/expand branch',svg:'<polyline points="6 9 12 15 18 9"/>',group:'structure'},
   'ai-rewrite':{label:'Rewrite node',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
-  note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'content'},
-  qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'content'},
-  remark:{label:'Add remark…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'content'},
-  diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'content'},
-  'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'content'},
-  table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'content'},
-  image:{label:'Add image…',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>',group:'content'},
+  note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'node'},
+  qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'discuss'},
+  remark:{label:'Add remark…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'discuss'},
+  diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'visual'},
+  'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'visual'},
+  table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'visual'},
+  image:{label:'Add image…',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>',group:'visual'},
   'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'info'},
-  'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'content'},
+  'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'node'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'info'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'info'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','qa','remark','diagram','diagram-gen','table','image','date-time','where-used','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','qa','remark','table','image','diagram','diagram-gen','where-used','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -16617,9 +16624,11 @@ function renderContextMorePanel(){
     any=true;
   }
   addGroupRemaining('ai');
-  // Things you add to a node (notes, objects, date) apart from things you look up about it
-  // (where used, tags, history) — two short groups read faster than one long one.
-  addGroupRemaining('content');
+  // Things you add to a node, in the same groups and order as the toolbar's Insert ▾ menu
+  // (node / discussion / visuals), then things you look up about it (where used, tags, history).
+  addGroupRemaining('node');
+  addGroupRemaining('discuss');
+  addGroupRemaining('visual');
   addGroupRemaining('info');
   addGroupRemaining('delete');
   // Nothing landed in the panel — don't show a "More" button that opens onto an empty panel.
@@ -22535,17 +22544,29 @@ function closeToolbarMenus(){
     closeAllPanelsExceptGlobalSearch?.(); closeToolbarMenus();
     if(!opening)return;
     menu.querySelectorAll('[data-insert-action]').forEach(b=>{ b.hidden=!ctxActionAllowed(b.dataset.insertAction); });
+    if(menuId==='insert-menu'){
+      // Same marker strip as the top of the right-click menu; the selected node's marker shows active.
+      const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.marker||''):'';
+      const strip=el('insert-markers');
+      if(strip)strip.innerHTML=NODE_MARKERS.map(m=>`<button type="button" class="pv-qm-btn pv-qm-mark tb-menu-marker${cur===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}" aria-label="${nodeMarkerLabel(m)}" aria-pressed="${cur===m}">${markIconSvg(m)}</button>`).join('');
+    }
     menu.classList.add('open'); el(btnId).setAttribute('aria-expanded','true');
     menu.querySelector('.tb-menu-item:not([hidden])')?.focus();
   });
   el(menuId)?.addEventListener('click',e=>{ if(e.target.closest('.tb-menu-item'))closeToolbarMenus(); });
   el(menuId)?.addEventListener('keydown',e=>{
-    const items=[...el(menuId).querySelectorAll('.tb-menu-item:not([hidden])')];
+    const items=[...el(menuId).querySelectorAll('.tb-menu-item:not([hidden]),.tb-menu-marker')];
     const i=items.indexOf(document.activeElement);
     if(e.key==='ArrowDown'){ e.preventDefault(); items[(i+1)%items.length]?.focus(); }
     else if(e.key==='ArrowUp'){ e.preventDefault(); items[(i-1+items.length)%items.length]?.focus(); }
     else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeToolbarMenus(); el(btnId)?.focus(); }
   });
+});
+el('insert-markers')?.addEventListener('click',e=>{
+  const b=e.target.closest('.tb-menu-marker'); if(!b)return;
+  e.stopPropagation();
+  if(selectedId!==null){ setNodeMarker(selectedId,b.dataset.marker); render(); }
+  closeToolbarMenus();
 });
 document.querySelectorAll('#insert-menu [data-insert-action]').forEach(b=>b.addEventListener('click',()=>{ if(selectedId!==null)runQuickAction(b.dataset.insertAction,selectedId,el('qb-insert')?.getBoundingClientRect()); }));
 document.addEventListener('click',e=>{ if(!e.target.closest('#insert-wrap,#ai-wrap'))closeToolbarMenus(); });

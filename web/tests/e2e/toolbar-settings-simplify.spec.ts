@@ -78,7 +78,9 @@ test.describe('Fixed main toolbar', () => {
     // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
     // Rewrite + Generate outline live in AI ▾.
     await page.locator('#qb-insert').click();
-    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Add question', 'Add remark', 'Add diagram', 'Generate diagram', 'Add table', 'Add image', 'Insert date/time']);
+    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Node', 'Marker', 'Discussion', 'Visuals']);
+    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Question', 'Remark', 'Table', 'Image', 'Diagram', 'Generate diagram']);
+    await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(5);
     await page.locator('#qb-ai').click();
     await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
     await expect(page.locator('#ai-menu .tb-menu-label')).toHaveText(['Rewrite node', 'Generate outline']);
@@ -215,7 +217,7 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'focus', 'up', 'down', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'diagram-gen', 'image', 'date-time', 'where-used', 'tags', 'version-history', 'delete']);
+    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'focus', 'up', 'down', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'image', 'diagram-gen', 'where-used', 'tags', 'version-history', 'delete']);
     expect(errors).toEqual([]);
   });
 });
@@ -251,6 +253,22 @@ test.describe('Settings', () => {
     await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
     // @ts-expect-error
     await expect.poll(() => page.evaluate(() => remarks.length)).toBe(before + 1);
+  });
+
+  test('Insert ▾ marker strip sets the selected node\'s marker, and clicking the active one clears it', async ({ page }) => {
+    await open(page);
+    await seedDoc(page);
+    await page.locator('.node-row[data-id="1"]').click();
+    await page.locator('#qb-insert').click();
+    await page.locator('#insert-markers [data-marker="followup"]').click();
+    await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
+    // @ts-expect-error -- bare global from index.html
+    expect(await page.evaluate(() => nodes.find((n: { id: number }) => n.id === 1).marker)).toBe('followup');
+    await page.locator('#qb-insert').click();
+    await expect(page.locator('#insert-markers [data-marker="followup"]')).toHaveClass(/active/);
+    await page.locator('#insert-markers [data-marker="followup"]').click();
+    // @ts-expect-error
+    expect(await page.evaluate(() => nodes.find((n: { id: number }) => n.id === 1).marker)).toBe('');
   });
 
   test('turning AI Capabilities off from Settings → AI hides the AI toolbar buttons but keeps its own switch', async ({ page }) => {
