@@ -523,7 +523,7 @@ and merged after independent review:
    the Contents page when there are few sections or put it on the cover, don't repeat the title
    right after the cover, print a node's note directly under its text before its tables/images,
    consistent widths for charts/tables, tighter Cards.
-14 — Simplify toolbar and remove customization settings. **Done in PR #<n> (not merged).**
+14 — Simplify toolbar and remove customization settings. **Done in PR #477 (not merged).**
    Project-owner decision: "No need to have settings for everything." Removing a setting fixes its
    behaviour at the value below; old saved prefs load harmlessly and drop on the next save (old
    localStorage keys are never deleted). Covered by `tests/e2e/toolbar-settings-simplify.spec.ts`.
