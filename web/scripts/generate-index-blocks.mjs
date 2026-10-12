@@ -533,6 +533,17 @@ initHubTodosState({
     sourceFile: 'src/utils/nodeImages.ts',
     testFile: 'tests/unit/nodeImages.test.ts',
     footer: ''
+  },
+  {
+    // Table editing (node.tables objects) -- pure decisions only: number/date parsing of cell text,
+    // the row order "Sort by this column" produces, whether a column is numeric (auto right-align),
+    // stored alignment values, and parsing a spreadsheet range (tab-separated) pasted into a table.
+    // Moving <tr>/<td> elements and reading pasted HTML tables stay hand-written in index.html next
+    // to buildTableEditItems. No production wiring needed -- pure functions.
+    name: 'tableData',
+    sourceFile: 'src/utils/tableData.ts',
+    testFile: 'tests/unit/tableData.test.ts',
+    footer: ''
   }
 ];
 

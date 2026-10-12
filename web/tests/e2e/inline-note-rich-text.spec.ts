@@ -613,7 +613,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await dismissOverlays(page);
       await seedNodeWithTables(page, ['<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>']);
 
-      await page.locator('.node-table-line').click();
+      // A chart opens its data on double-click (a single click leaves it a chart).
+      await page.locator('.node-table-line').dblclick();
       await page.locator('.node-table-line td').first().click({ button: 'right' });
       await page.locator('.sb-context-menu').getByText('Cards', { exact: true }).click();
 
@@ -678,7 +679,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(endHeight).toBeGreaterThan(startHeight);
     });
 
-    test('"Add table…" quick action adds a blank 2x2 table object to the node', async ({ page }) => {
+    test('"Add table…" quick action opens the size picker; Enter adds a 3x3 table object with a header row', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithNote(page, '');
@@ -688,14 +689,18 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       const tableBtn = page.locator('#context-quickbar .pv-qm-btn[data-action="table"]');
       await expect(tableBtn).toBeVisible();
       await tableBtn.click();
+      await expect(page.locator('.table-grid-picker')).toBeVisible();
+      await page.keyboard.press('Enter');
+      await expect(page.locator('.node-table-line')).toHaveCount(1);
 
       const result = await page.evaluate(() => {
         // @ts-expect-error
         const n = nodes.find((x: any) => x.id === 1);
-        return { tablesLen: n.tables.length, hasTableLine: !!document.querySelector('.node-table-line') };
+        const d = document.createElement('div'); d.innerHTML = n.tables[0];
+        const t = d.querySelector('table') as HTMLTableElement;
+        return { tablesLen: n.tables.length, rows: t.rows.length, cols: t.rows[0].cells.length, head: t.tHead?.rows.length };
       });
-      expect(result.tablesLen).toBe(1);
-      expect(result.hasTableLine).toBe(true);
+      expect(result).toEqual({ tablesLen: 1, rows: 3, cols: 3, head: 1 });
     });
 
     // A table/chart/Cards object is open (visible) by default -- it has no prior collapsed state
@@ -947,10 +952,10 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
     // A real, currently-focused table cell -- not just the disposable read-only display -- since
     // its content is read back as plain text only (tableCardsData, a copied table's own
-    // textContent), formatting is pointless there too. Clicking the Cards display itself (there's
+    // textContent), formatting is pointless there too. Double-clicking the Cards display itself (there's
     // no td/th visible in Cards' own card-grid markup to click directly) enters edit mode and
-    // swaps in the real table underneath.
-    await page.locator('.node-table-line').click();
+    // swaps in the real table underneath -- by double-click: a single click leaves Cards as Cards.
+    await page.locator('.node-table-line').dblclick();
     const tableCellResult = await page.evaluate(() => {
       const cell = document.querySelector('.node-table-line td')!;
       // @ts-expect-error

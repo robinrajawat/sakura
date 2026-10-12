@@ -1288,12 +1288,20 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .doc-icon-reset{appearance:none;border:none;background:none;color:var(--hint);font:500 11px 'Inter',sans-serif;cursor:pointer;width:100%;text-align:center;padding:7px 0 2px;margin-top:5px;border-top:1px solid var(--border);transition:color .12s}
 .doc-icon-reset:hover{color:var(--accent)}
 /* Sidebar right-click context menu (docs & folders) */
-.sb-context-menu{position:fixed;z-index:170;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.14);padding:5px;min-width:175px;font-family:'Inter',sans-serif;display:flex;flex-direction:column;gap:1px}
+.sb-context-menu{position:fixed;z-index:170;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.14);padding:5px;min-width:175px;font-family:'Inter',sans-serif;display:flex;flex-direction:column;gap:1px;max-height:calc(100vh - 16px);overflow-y:auto}
+.sb-context-menu > *{flex-shrink:0}
 .sb-context-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);border:none;background:none;width:100%;text-align:left}
 .sb-context-item.sb-context-active{background:color-mix(in srgb,var(--accent) 10%,var(--hover))}
 .sb-context-item:hover{background:var(--hover)}
 .sb-context-item.danger:hover{color:#dc2626;background:color-mix(in srgb,#dc2626 10%,transparent)}
 .sb-context-item.disabled{opacity:.4;cursor:default;pointer-events:none}
+.table-grid-picker{position:fixed;z-index:175;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.16);padding:10px 10px 8px;font-family:'Inter',sans-serif;display:flex;flex-direction:column;gap:7px}
+.table-grid-picker-readout{font:600 12.5px 'Inter',sans-serif;color:var(--fg);text-align:center;font-variant-numeric:tabular-nums}
+.table-grid-picker-grid{display:grid;grid-template-columns:repeat(8,18px);grid-auto-rows:18px;gap:3px;outline:none;border-radius:4px;padding:2px}
+.table-grid-picker-grid:focus-visible{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent)}
+.table-grid-picker-cell{border:1px solid var(--border);border-radius:3px;background:var(--bg);cursor:pointer}
+.table-grid-picker-cell.on{background:color-mix(in srgb,var(--accent) 22%,var(--bg));border-color:color-mix(in srgb,var(--accent) 70%,var(--border))}
+.table-grid-picker-hint{font:400 11px 'Inter',sans-serif;color:var(--muted);text-align:center}
 .sb-context-divider{height:1px;background:var(--border);margin:4px 2px}
 .sb-context-icon{width:14px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.8}
 /* Drag & drop between folders */
@@ -1366,6 +1374,13 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
+/* Per-column alignment: data-align is stored on each cell of the column (cell menu -> Align column);
+   data-auto-align is the render-time marker for numeric columns (applyTableAutoAlign), never saved.
+   Same rules in the outline, while editing, in a chart's Edit data view and in the PDF. */
+.pv-table-figure td[data-auto-align="right"],.pv-table-figure th[data-auto-align="right"]{text-align:right;font-variant-numeric:tabular-nums}
+.pv-table-figure td[data-align="left"],.pv-table-figure th[data-align="left"]{text-align:left}
+.pv-table-figure td[data-align="center"],.pv-table-figure th[data-align="center"]{text-align:center}
+.pv-table-figure td[data-align="right"],.pv-table-figure th[data-align="right"]{text-align:right}
 .pv-table-chart-figure{flex:1 1 100%}
 .pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
 .pv-table-chartable table{cursor:context-menu}
@@ -3636,6 +3651,18 @@ body.printing-generic #gpe-overlay{
 <li>Always included in PDF exports: each question prints right under the node it's linked to, same as a note; questions with no linked node are appended as a final section — bold question, regular-weight answer, unanswered ones marked "No answer provided"</li>
 </ul>
 </div>
+          <div class="help-section" data-cat="panels" id="help-section-tables">
+<h4>Tables</h4>
+<ul>
+<li>Right-click a node → <strong>Add table…</strong> opens a size picker: hover or use the arrow keys to choose up to 8 columns × 8 rows (the readout shows columns × rows), then click or press <span class="help-kbd">Enter</span>; <span class="help-kbd">Esc</span> cancels. The new table has a header row and opens for editing with its first header cell selected</li>
+<li>Click a table to edit its cells; <span class="help-kbd">Esc</span> or a click outside finishes. Each editing session is one <span class="help-kbd">Ctrl/Cmd+Z</span> step</li>
+<li>While editing: <span class="help-kbd">Tab</span> / <span class="help-kbd">Shift</span> + <span class="help-kbd">Tab</span> move to the next / previous cell (Tab in the last cell adds a row), <span class="help-kbd">Enter</span> moves down (adding a row at the bottom), <span class="help-kbd">Shift</span> + <span class="help-kbd">Enter</span> starts a new line in the cell, <span class="help-kbd">↑</span> / <span class="help-kbd">↓</span> on a cell's first / last line move to the cell above / below</li>
+<li>Right-click a cell for: add row above/below, add column left/right, move row up/down, move column left/right, sort A → Z / Z → A (numbers, percentages, amounts and dates sort by value), turn the header row on/off, align the column left/center/right, and delete row/column/table</li>
+<li>Paste a range copied from Excel or Google Sheets into a table you're editing: it fills the cells from the caret and adds rows and columns as needed</li>
+<li>Columns of numbers right-align automatically unless you've set the column's alignment; alignment shows the same in the PDF</li>
+<li>A chart or Cards figure stays a chart when clicked — double-click it, or right-click → <strong>Edit data</strong>, to edit its table</li>
+</ul>
+</div>
           <div class="help-section" data-cat="panels" id="help-section-images">
 <h4>Images</h4>
 <ul>
@@ -5406,67 +5433,611 @@ function setTableChartType(table,type){
   markDirty(); scheduleAutoSave();
   showToast(CHART_TYPE_LABELS[clean]);
 }
-// Builds the structure-editing menu items (row/column add+delete, feature-as-chart, chart type
-// picks) for a table, shared by the note-line's live table&&cell right-click branch (table is a
-// real DOM node already inside the focused note, cell is whatever was under the cursor) and
-// enterScopedTableEdit's own submenu (table is the real stored table fetched via
-// noteTableByIndex, not necessarily inside any focused editor at all). `commit` is called after
-// every mutation and owns however that caller actually persists/re-renders -- commitNoteLine for
-// the live case, persistNoteTableChange+render for the scoped one. Row/column items are only
-// offered when a cell is given; a caller with no concrete cell to anchor "add row below"/"add
-// column right" on (a chart's SVG has none to click) just omits them.
+/* GENERATED:tableData:START — DO NOT EDIT BY HAND. Source of truth: src/utils/tableData.ts (tests: tests/unit/tableData.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure helpers for table editing (node.tables objects): what a cell's text means as a number or a
+ * date, the order "Sort by this column" puts rows in, whether a column is numeric (so it
+ * right-aligns automatically), the stored per-column alignment values, and parsing a spreadsheet
+ * range copied from Excel / Google Sheets (tab-separated text) into a grid of cell strings.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `tableData` block. Everything that
+ * touches the DOM (moving <tr>/<td> elements, reading a pasted HTML table) stays hand-written in
+ * index.html next to buildTableEditItems; only the decisions live here so they can be unit tested.
+ */
+const TD_CURRENCY = '$€£¥₹';
+/**
+ * A cell's numeric value, or null when the text isn't a plain number. Accepts the shapes people
+ * type or paste from spreadsheets: thousands separators ("1,234.5"), a currency sign before or
+ * after a sign ("$12", "-$12", "$-12", "12 €"), a trailing percent ("12.5%"), accounting-style
+ * negatives ("(1,234)"), a Unicode minus, and a k/M/B magnitude suffix ("1.2k"). A percentage is
+ * compared by its written number (so "9%" < "10%"), not divided by 100.
+ */
+function parseCellNumber(raw) {
+    let s = String(raw ?? '').replace(/[  ]/g, ' ').trim();
+    if (!s)
+        return null;
+    s = s.replace(/−/g, '-');
+    let negative = false;
+    const paren = /^\((.*)\)$/.exec(s);
+    if (paren) {
+        negative = true;
+        s = paren[1].trim();
+    }
+    // A sign and a currency symbol can come in either order: "-$5", "$-5", "+€3".
+    const lead = new RegExp('^([+-]?)\\s*([' + TD_CURRENCY + ']?)\\s*([+-]?)\\s*');
+    const m = lead.exec(s);
+    if (m) {
+        if (m[1] && m[3])
+            return null;
+        if (m[1] === '-' || m[3] === '-')
+            negative = !negative;
+        s = s.slice(m[0].length);
+    }
+    s = s.replace(new RegExp('\\s*[' + TD_CURRENCY + ']$'), '');
+    let pct = false;
+    if (/\s*%$/.test(s)) {
+        pct = true;
+        s = s.replace(/\s*%$/, '');
+    }
+    let mult = 1;
+    const suf = /^(.*\d)\s*([kKmMbB])$/.exec(s);
+    if (suf && !pct) {
+        s = suf[1];
+        mult = /k/i.test(suf[2]) ? 1e3 : /m/i.test(suf[2]) ? 1e6 : 1e9;
+    }
+    if (!/^(?:\d{1,3}(?:,\d{3})+|\d+)?(?:\.\d+)?$/.test(s) || !/\d/.test(s))
+        return null;
+    const n = parseFloat(s.replace(/,/g, '')) * mult;
+    if (!Number.isFinite(n))
+        return null;
+    return negative ? -n : n;
+}
+const TD_MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+function tdMonthIndex(word) {
+    const w = word.toLowerCase().replace(/\.$/, '');
+    if (w.length < 3)
+        return -1;
+    const i = TD_MONTHS.indexOf(w.slice(0, 3));
+    if (i < 0)
+        return -1;
+    const full = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'][i];
+    // "Sept" is common; otherwise the word must be a prefix of the full month name.
+    if (!full.startsWith(w) && !(i === 8 && w === 'sept'))
+        return -1;
+    return i;
+}
+function tdValidDay(y, mo, d) {
+    if (mo < 0 || mo > 11 || d < 1 || d > 31)
+        return false;
+    const dt = new Date(Date.UTC(y, mo, d));
+    return dt.getUTCMonth() === mo && dt.getUTCDate() === d;
+}
+/**
+ * A cell's date as a sortable number (UTC milliseconds), or null when it isn't a date. Accepts
+ * ISO dates ("2026-10-14", optionally with a time), "2026/10/14", and month-name dates in either
+ * order with an optional year and weekday: "Oct 14", "October 14, 2026", "14 Oct", "14 Oct 2026",
+ * "Tue, Oct 14", "Oct 2026". A date without a year sorts as if in year 2000 (a leap year, so
+ * "Feb 29" stays valid), which keeps a column of "Oct 14"/"Nov 3" style dates in calendar order.
+ * Slash dates like 10/14 are deliberately NOT parsed: day/month order differs by locale.
+ */
+function parseCellDate(raw) {
+    const s = String(raw ?? '').trim().replace(/\s+/g, ' ');
+    if (!s)
+        return null;
+    let m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(s);
+    if (m && m[0].length >= s.replace(/(?:Z|[+-]\d{2}:?\d{2})$/, '').length) {
+        const y = +m[1], mo = +m[2] - 1, d = +m[3];
+        if (!tdValidDay(y, mo, d))
+            return null;
+        return Date.UTC(y, mo, d, m[4] ? +m[4] : 0, m[5] ? +m[5] : 0, m[6] ? +m[6] : 0);
+    }
+    const t = s.replace(/^(?:mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[a-z]*\.?,? /i, '');
+    // Month first: "Oct 14", "October 14, 2026", "Oct 14th 2026"
+    m = /^([A-Za-z]+\.?) (\d{1,2})(?:st|nd|rd|th)?(?:,? (\d{4}))?$/.exec(t);
+    if (m) {
+        const mo = tdMonthIndex(m[1]);
+        const d = +m[2];
+        const y = m[3] ? +m[3] : 2000;
+        return mo >= 0 && tdValidDay(y, mo, d) ? Date.UTC(y, mo, d) : null;
+    }
+    // Day first: "14 Oct", "14 October 2026"
+    m = /^(\d{1,2})(?:st|nd|rd|th)? ([A-Za-z]+\.?),?(?: (\d{4}))?$/.exec(t);
+    if (m) {
+        const mo = tdMonthIndex(m[2]);
+        const d = +m[1];
+        const y = m[3] ? +m[3] : 2000;
+        return mo >= 0 && tdValidDay(y, mo, d) ? Date.UTC(y, mo, d) : null;
+    }
+    // Month and year: "Oct 2026"
+    m = /^([A-Za-z]+\.?),? (\d{4})$/.exec(t);
+    if (m) {
+        const mo = tdMonthIndex(m[1]);
+        return mo >= 0 ? Date.UTC(+m[2], mo, 1) : null;
+    }
+    return null;
+}
+function tdSortKey(raw) {
+    const text = String(raw ?? '').trim();
+    if (!text)
+        return { rank: 3, num: 0, text };
+    const n = parseCellNumber(text);
+    if (n !== null)
+        return { rank: 0, num: n, text };
+    const d = parseCellDate(text);
+    if (d !== null)
+        return { rank: 1, num: d, text };
+    return { rank: 2, num: 0, text };
+}
+const tdCollator = typeof Intl !== 'undefined'
+    ? new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+    : null;
+/**
+ * Compares two cell texts for "Sort by this column": numbers (numerically) come before dates
+ * (chronologically), which come before other text (natural, case-insensitive order, so "Item 9"
+ * < "Item 10"). `direction` -1 reverses the order within that ranking, but empty cells always
+ * sort last in both directions so a sort never buries the filled rows under blank ones.
+ */
+function compareCellText(a, b, direction = 1) {
+    const ka = tdSortKey(a), kb = tdSortKey(b);
+    if (ka.rank === 3 || kb.rank === 3)
+        return ka.rank === kb.rank ? 0 : ka.rank === 3 ? 1 : -1;
+    let c;
+    if (ka.rank !== kb.rank)
+        c = ka.rank - kb.rank;
+    else if (ka.rank < 2)
+        c = ka.num === kb.num ? 0 : ka.num < kb.num ? -1 : 1;
+    else
+        c = tdCollator ? tdCollator.compare(ka.text, kb.text) : ka.text.localeCompare(kb.text);
+    return c * direction;
+}
+/**
+ * The order (as indices into `values`) that sorts rows by those cell texts. Stable: rows whose
+ * cells compare equal keep their current relative order, so sorting twice by different columns
+ * behaves like a spreadsheet's secondary sort.
+ */
+function tableSortOrder(values, direction = 1) {
+    return values
+        .map((v, i) => ({ v, i }))
+        .sort((x, y) => compareCellText(x.v, y.v, direction) || x.i - y.i)
+        .map((x) => x.i);
+}
+/**
+ * True when a column should right-align automatically: it has at least one non-empty body cell
+ * and every non-empty body cell is a number (see parseCellNumber — currency, percent, commas and
+ * negatives all count). Header cells are not passed in.
+ */
+function isNumericColumn(values) {
+    let seen = false;
+    for (const v of values) {
+        const t = String(v ?? '').trim();
+        if (!t)
+            continue;
+        if (parseCellNumber(t) === null)
+            return false;
+        seen = true;
+    }
+    return seen;
+}
+/** A stored alignment value, or '' when absent/unknown (auto). */
+function normalizeAlign(v) {
+    const s = String(v ?? '').trim().toLowerCase();
+    return s === 'left' || s === 'center' || s === 'right' ? s : '';
+}
+/**
+ * True when pasted plain text looks like a spreadsheet range rather than ordinary text: it has a
+ * tab. Excel and Google Sheets separate a copied range's columns with tabs; ordinary prose
+ * practically never contains one.
+ */
+function looksLikeSpreadsheetText(text) {
+    return /\t/.test(String(text ?? ''));
+}
+/**
+ * Parses tab-separated text as Excel / Google Sheets put it on the clipboard: rows end with
+ * \n or \r\n, columns are separated by \t, and a cell containing a tab, newline or quote is
+ * wrapped in double quotes with inner quotes doubled. The trailing newline spreadsheets add after
+ * the last row is dropped, and every row is padded to the widest row's length.
+ */
+function parseTsv(text) {
+    const src = String(text ?? '').replace(/\r\n?/g, '\n');
+    const rows = [];
+    let row = [];
+    let cell = '';
+    let i = 0;
+    let atCellStart = true;
+    while (i < src.length) {
+        const ch = src[i];
+        if (atCellStart && ch === '"') {
+            // Quoted cell: runs to the next lone quote.
+            let j = i + 1;
+            let val = '';
+            let closed = false;
+            while (j < src.length) {
+                if (src[j] === '"') {
+                    if (src[j + 1] === '"') {
+                        val += '"';
+                        j += 2;
+                        continue;
+                    }
+                    closed = true;
+                    j++;
+                    break;
+                }
+                val += src[j];
+                j++;
+            }
+            if (closed && (j >= src.length || src[j] === '\t' || src[j] === '\n')) {
+                cell = val;
+                i = j;
+                atCellStart = false;
+                continue;
+            }
+            // Not a well-formed quoted cell: treat the quote literally.
+        }
+        if (ch === '\t') {
+            row.push(cell);
+            cell = '';
+            atCellStart = true;
+            i++;
+            continue;
+        }
+        if (ch === '\n') {
+            row.push(cell);
+            rows.push(row);
+            row = [];
+            cell = '';
+            atCellStart = true;
+            i++;
+            continue;
+        }
+        cell += ch;
+        atCellStart = false;
+        i++;
+    }
+    if (cell !== '' || row.length) {
+        row.push(cell);
+        rows.push(row);
+    }
+    const width = rows.reduce((w, r) => Math.max(w, r.length), 0);
+    return rows.map((r) => r.concat(Array(width - r.length).fill('')));
+}
+/**
+ * How big a table has to become for a pasted grid (`dataRows` × `dataCols`) dropped at
+ * (`startRow`, `startCol`) to fit: the current size, grown only where the paste runs past it.
+ */
+function gridSizeForPaste(rows, cols, startRow, startCol, dataRows, dataCols) {
+    return {
+        rows: Math.max(rows, startRow + dataRows),
+        cols: Math.max(cols, startCol + dataCols)
+    };
+}
+/** Clamps a grid-picker size to 1..max in each direction. */
+function clampGridSize(rows, cols, max = 8) {
+    const c = (n) => Math.max(1, Math.min(max, Math.round(Number.isFinite(n) ? n : 1)));
+    return { rows: c(rows), cols: c(cols) };
+}
+
+/* GENERATED:tableData:END */
+// ── Table structure operations (shared by every table editing session) ─────────────────────────
+// Each takes the LIVE table being edited (cells contentEditable) and returns the cell the caret
+// should land in afterwards. Header rows are the <thead> rows, or -- for a pasted table without a
+// <thead> -- a first row made only of <th> cells (same rule promoteHeaderRowToThead uses for the
+// PDF). Body operations (move, sort, add row) never cross into or out of the header.
+// While > 0, editing sessions ignore focusout: retagging/moving the focused cell detaches it for a
+// moment, which can blur it natively and would otherwise end the session mid-operation.
+let _tableStructOpDepth=0;
+const TABLE_HANDLE_SEL='.col-resize-handle,.row-resize-handle';
+function isTableHandleEl(n){ return !!(n&&n.nodeType===1&&n.classList&&(n.classList.contains('col-resize-handle')||n.classList.contains('row-resize-handle'))); }
+// A cell's text as the person sees it: resize handles ignored, <br> as a newline.
+function tableCellText(cell){
+  if(!cell)return '';
+  const c=cell.cloneNode(true);
+  c.querySelectorAll(TABLE_HANDLE_SEL).forEach(h=>h.remove());
+  c.querySelectorAll('br').forEach(b=>b.replaceWith('\n'));
+  return (c.textContent||'').replace(/\n$/,'');
+}
+// Replaces a cell's content with text (newlines become <br>), keeping any resize handles.
+function setTableCellText(cell,text){
+  [...cell.childNodes].forEach(n=>{ if(!isTableHandleEl(n))n.remove(); });
+  const first=cell.firstChild;
+  String(text??'').split('\n').forEach((line,i)=>{
+    if(i)cell.insertBefore(document.createElement('br'),first);
+    if(line)cell.insertBefore(document.createTextNode(line),first);
+  });
+}
+function tableHeaderRow(table){
+  if(table.tHead&&table.tHead.rows.length)return table.tHead.rows[0];
+  const first=table.rows[0];
+  if(first&&first.cells.length&&[...first.cells].every(c=>c.tagName==='TH'))return first;
+  return null;
+}
+function tableIsHeaderRow(table,row){
+  if(!row)return false;
+  if(row.parentElement&&row.parentElement.tagName==='THEAD')return true;
+  return row===tableHeaderRow(table);
+}
+function tableBodyRows(table){ return [...table.rows].filter(r=>!tableIsHeaderRow(table,r)); }
+function tableColumnCount(table){ return [...table.rows].reduce((n,r)=>Math.max(n,r.cells.length),0); }
+// Explicit alignment of column ci ('' = automatic), read from its cells' data-align.
+function tableColumnAlign(table,ci){
+  for(const r of table.rows){ const a=normalizeAlign(r.cells[ci]?.getAttribute('data-align')); if(a)return a; }
+  return '';
+}
+function makeTableCell(tag,align){
+  const c=document.createElement(tag); c.contentEditable='true';
+  if(align)c.setAttribute('data-align',align);
+  return c;
+}
+function retagTableCell(cell,tag){
+  if(cell.tagName===tag.toUpperCase())return cell;
+  const n=document.createElement(tag);
+  [...cell.attributes].forEach(a=>n.setAttribute(a.name,a.value));
+  while(cell.firstChild)n.appendChild(cell.firstChild);
+  cell.replaceWith(n);
+  return n;
+}
+function tableEnsureBody(table){
+  let tb=table.tBodies[0];
+  if(!tb){ tb=document.createElement('tbody'); table.appendChild(tb); }
+  return tb;
+}
+function tableNewBodyRow(table,cols){
+  const tr=document.createElement('tr');
+  for(let c=0;c<cols;c++)tr.appendChild(makeTableCell('td',tableColumnAlign(table,c)));
+  return tr;
+}
+// Automatic alignment (render-time only, never saved: cleanEditorHtml strips data-auto-align):
+// a column with no explicit data-align whose non-empty body cells are all numbers right-aligns,
+// header included. Called by every renderer of a table -- outline display, editing, PDF.
+function applyTableAutoAlign(table){
+  if(!table)return;
+  const n=tableColumnCount(table); const body=tableBodyRows(table);
+  for(let ci=0;ci<n;ci++){
+    const auto=!tableColumnAlign(table,ci)&&isNumericColumn(body.map(r=>tableCellText(r.cells[ci])));
+    [...table.rows].forEach(r=>{ const c=r.cells[ci]; if(!c)return; if(auto)c.setAttribute('data-auto-align','right'); else c.removeAttribute('data-auto-align'); });
+  }
+}
+function tableInsertRow(table,cell,below){
+  const row=cell.closest('tr'); const ci=cell.cellIndex;
+  const tr=tableNewBodyRow(table,tableColumnCount(table));
+  if(tableIsHeaderRow(table,row)){
+    // Anything added "around" the header lands at the top of the body -- never inside the header.
+    const body=tableBodyRows(table);
+    if(body.length)body[0].parentNode.insertBefore(tr,body[0]);
+    else if(row.parentElement.tagName==='THEAD')tableEnsureBody(table).appendChild(tr);
+    else row.insertAdjacentElement('afterend',tr);
+  } else row.insertAdjacentElement(below?'afterend':'beforebegin',tr);
+  return tr.cells[Math.min(ci,tr.cells.length-1)];
+}
+function tableInsertColumn(table,cell,right){
+  const idx=cell.cellIndex+(right?1:0); const ownRow=cell.closest('tr'); let target=null;
+  [...table.rows].forEach(row=>{
+    const head=tableIsHeaderRow(table,row);
+    const c=makeTableCell(head?'th':'td','');
+    if(head)c.textContent='Column';
+    const ref=row.cells[idx]; if(ref)row.insertBefore(c,ref); else row.appendChild(c);
+    if(row===ownRow)target=c;
+  });
+  const cg=table.querySelector('colgroup');
+  if(cg){ const col=document.createElement('col'); col.style.width='120px'; const ref=cg.children[idx]; if(ref)cg.insertBefore(col,ref); else cg.appendChild(col); }
+  return target;
+}
+function tableMoveRow(table,cell,dir){
+  const row=cell.closest('tr'); const body=tableBodyRows(table);
+  const i=body.indexOf(row); const other=body[i+dir];
+  if(i<0||!other)return cell;
+  other.parentNode.insertBefore(row,dir<0?other:other.nextSibling);
+  return cell;
+}
+function tableMoveColumn(table,cell,dir){
+  const ci=cell.cellIndex; const j=ci+dir;
+  if(j<0||j>=tableColumnCount(table))return cell;
+  [...table.rows].forEach(row=>{ const a=row.cells[ci], b=row.cells[j]; if(!a||!b)return; if(dir<0)row.insertBefore(a,b); else row.insertBefore(b,a); });
+  const cg=table.querySelector('colgroup');
+  if(cg){ const a=cg.children[ci], b=cg.children[j]; if(a&&b){ if(dir<0)cg.insertBefore(a,b); else cg.insertBefore(b,a); } }
+  return cell;
+}
+function tableSortByColumn(table,cell,dir){
+  const ci=cell.cellIndex; const body=tableBodyRows(table);
+  const order=tableSortOrder(body.map(r=>tableCellText(r.cells[ci])),dir);
+  // Placeholders keep each row slot where it is (rows can span several <tbody>s), so the sorted
+  // rows go back exactly into the body's slots and nothing ever moves into the header.
+  const slots=body.map(r=>{ const ph=document.createComment(''); r.replaceWith(ph); return ph; });
+  order.forEach((oi,k)=>slots[k].replaceWith(body[oi]));
+  return cell;
+}
+function tableToggleHeader(table,cell){
+  const pos=cell?{r:[...table.rows].indexOf(cell.closest('tr')),c:cell.cellIndex}:null;
+  const hdr=tableHeaderRow(table);
+  if(hdr){
+    if(table.tHead){
+      const rows=[...table.tHead.rows]; const tb=tableEnsureBody(table);
+      for(let k=rows.length-1;k>=0;k--)tb.insertBefore(rows[k],tb.firstChild);
+      rows.forEach(r=>[...r.cells].forEach(c=>retagTableCell(c,'td')));
+      table.tHead.remove();
+    } else [...hdr.cells].forEach(c=>retagTableCell(c,'td'));
+  } else {
+    const first=table.rows[0];
+    if(!first)return cell;
+    const thead=document.createElement('thead');
+    const before=first.parentElement===table?first:first.parentElement;
+    table.insertBefore(thead,before);
+    thead.appendChild(first);
+    [...first.cells].forEach(c=>retagTableCell(c,'th'));
+    [...table.tBodies].forEach(tb=>{ if(!tb.rows.length)tb.remove(); });
+  }
+  if(!pos)return null;
+  const row=table.rows[pos.r];
+  return row?row.cells[Math.min(pos.c,row.cells.length-1)]:null;
+}
+function tableSetColumnAlign(table,cell,align){
+  const ci=cell.cellIndex;
+  [...table.rows].forEach(r=>{ const c=r.cells[ci]; if(!c)return; if(align)c.setAttribute('data-align',align); else c.removeAttribute('data-align'); });
+  return cell;
+}
+function tableDeleteRow(table,cell){
+  const row=cell.closest('tr'); const all=[...table.rows];
+  if(!row||all.length<=1)return cell;
+  const i=all.indexOf(row); const fb=all[i+1]||all[i-1];
+  const target=fb?fb.cells[Math.min(cell.cellIndex,fb.cells.length-1)]:null;
+  // Focus a surviving cell BEFORE removing the focused one (see enterScopedTableEdit's exited-guard).
+  if(target)placeTableCaret(target);
+  row.remove();
+  [...table.querySelectorAll('thead,tbody')].forEach(s=>{ if(!s.rows.length)s.remove(); });
+  return target;
+}
+function tableDeleteColumn(table,cell){
+  const ci=cell.cellIndex;
+  if([...table.rows].some(r=>r.cells.length<=1))return cell;
+  const row=cell.closest('tr'); const target=row?row.cells[ci>0?ci-1:ci+1]:null;
+  if(target)placeTableCaret(target);
+  [...table.rows].forEach(r=>r.cells[ci]?.remove());
+  const cg=table.querySelector('colgroup'); if(cg&&cg.children[ci])cg.children[ci].remove();
+  return target;
+}
+// Pastes a grid of cell strings (a spreadsheet range) into the table starting at `cell`, growing
+// the table with new rows/columns where the range runs past it. Returns the last filled cell.
+function tablePasteGrid(table,cell,grid){
+  const startRow=[...table.rows].indexOf(cell.closest('tr')); const startCol=cell.cellIndex;
+  const width=grid.reduce((w,r)=>Math.max(w,r.length),0);
+  const size=gridSizeForPaste(table.rows.length,tableColumnCount(table),startRow,startCol,grid.length,width);
+  while(tableColumnCount(table)<size.cols){ const r0=[...table.rows].reduce((a,r)=>r.cells.length>a.cells.length?r:a,table.rows[0]); tableInsertColumn(table,r0.cells[r0.cells.length-1],true); }
+  [...table.rows].forEach(r=>{ while(r.cells.length<size.cols)r.appendChild(makeTableCell(tableIsHeaderRow(table,r)?'th':'td',tableColumnAlign(table,r.cells.length))); });
+  while(table.rows.length<size.rows){
+    const body=tableBodyRows(table); const last=body[body.length-1];
+    const tr=tableNewBodyRow(table,size.cols);
+    if(last)last.insertAdjacentElement('afterend',tr); else tableEnsureBody(table).appendChild(tr);
+  }
+  let lastCell=cell;
+  grid.forEach((line,i)=>{ const row=table.rows[startRow+i]; line.forEach((v,j)=>{ const c=row.cells[startCol+j]; if(c){ setTableCellText(c,v); lastCell=c; } }); });
+  return lastCell;
+}
+// A pasted HTML table (Excel / Google Sheets / a web page) as a grid of cell strings: whitespace
+// collapsed like a browser renders it, <br> kept as an in-cell line break, colspan padded.
+function tableGridFromHtml(html){
+  try{
+    const doc=new DOMParser().parseFromString(String(html),'text/html');
+    const t=doc.querySelector('table'); if(!t)return null;
+    return [...t.rows].map(r=>{
+      const out=[];
+      [...r.cells].forEach(c=>{
+        const walker=doc.createTreeWalker(c,NodeFilter.SHOW_TEXT); const texts=[];
+        while(walker.nextNode())texts.push(walker.currentNode);
+        texts.forEach(tn=>{ tn.nodeValue=tn.nodeValue.replace(/\s+/g,' '); });
+        c.querySelectorAll('br').forEach(b=>b.replaceWith('\n'));
+        out.push((c.textContent||'').split('\n').map(s=>s.trim()).join('\n').trim());
+        const span=Math.min(50,parseInt(c.getAttribute('colspan')||'1',10)||1);
+        for(let k=1;k<span;k++)out.push('');
+      });
+      return out;
+    }).filter(r=>r.length);
+  }catch(e){ return null; }
+}
+// Puts the caret at the end of a cell's text (before its resize handles), or at its start.
+function placeTableCaret(cell,atStart){
+  if(!cell)return;
+  if(cell.focus)cell.focus();
+  const rg=document.createRange();
+  let idx=0;
+  if(!atStart){ idx=cell.childNodes.length; while(idx>0&&isTableHandleEl(cell.childNodes[idx-1]))idx--; }
+  rg.setStart(cell,idx); rg.collapse(true);
+  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+}
+// Selects all of a cell's text (used for a new table's first header cell, so typing replaces it).
+function selectTableCellText(cell){
+  if(!cell)return;
+  if(cell.focus)cell.focus();
+  const rg=document.createRange(); let end=cell.childNodes.length;
+  while(end>0&&isTableHandleEl(cell.childNodes[end-1]))end--;
+  rg.setStart(cell,0); rg.setEnd(cell,end);
+  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+}
+// Whether the caret sits on the first / last visual line of a cell -- for ArrowUp/ArrowDown moving
+// to the cell above/below. Returns null whenever that can't be measured reliably (a selection, no
+// text, no client rects), and the caller then leaves the key to the browser.
+function tableCaretLineEdges(cell){
+  const sel=window.getSelection();
+  if(!sel||!sel.rangeCount||!sel.isCollapsed)return null;
+  if(!tableCellText(cell).trim())return {first:true,last:true};
+  const texts=[]; const w=document.createTreeWalker(cell,NodeFilter.SHOW_TEXT);
+  while(w.nextNode()){ const t=w.currentNode; if(t.nodeValue&&!(t.parentElement&&t.parentElement.closest(TABLE_HANDLE_SEL)))texts.push(t); }
+  if(!texts.length)return null;
+  const rectAt=(node,off)=>{ const r=document.createRange(); r.setStart(node,off); r.collapse(true); const rs=r.getClientRects(); return rs.length?rs[0]:null; };
+  const cur=sel.getRangeAt(0);
+  // The caret can sit at an element-level position (placeTableCaret puts it before the resize
+  // handles): measure it at the neighbouring text node instead.
+  let cn=cur.startContainer, co=cur.startOffset;
+  if(cn.nodeType!==3){
+    const before=cn.childNodes[co-1], after=cn.childNodes[co];
+    if(before&&before.nodeType===3){ cn=before; co=before.nodeValue.length; }
+    else if(after&&after.nodeType===3){ cn=after; co=0; }
+    else return null;
+  }
+  const c=rectAt(cn,co);
+  const s=rectAt(texts[0],0); const last=texts[texts.length-1]; const e=rectAt(last,last.nodeValue.length);
+  if(!c||!s||!e)return null;
+  return {first:Math.abs(c.top-s.top)<3,last:Math.abs(c.bottom-e.bottom)<3};
+}
+// Builds the cell right-click menu for a table being edited, shared by every editing session
+// (node.tables objects via buildNodeTableObject, a chart's/Cards' "Edit data", and the legacy
+// note-embedded table paths). `commit` is called after every change and owns persisting it. Row/
+// column items need a concrete `cell`; right-clicking outside any cell only offers Delete table and
+// the chart items. Groups are separated by dividers, with no divider at either end.
 function buildTableEditItems(table,cell,commit){
-  const items=[];
-  // Lands the caret inside the newly-added row/column's own cell rather than leaving it wherever
-  // it happened to be before the menu opened -- without this, the selection stays on the
-  // now-stale `cell` reference (shifted position, or for "Add column right" the ORIGINAL column
-  // rather than the new one beside it), which is what "the cursor doesn't look right" after
-  // adding a row was actually a symptom of.
-  const placeCaretIn=el=>{
-    if(!el)return;
-    const rg=document.createRange(); rg.selectNodeContents(el); rg.collapse(true);
-    const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
-    el.focus&&el.focus();
+  const groups=[];
+  // Removing the table holds the focused cell, whose native blur would otherwise end the session
+  // (re-rendering) while the table is still attached -- so the guard, then commit() sees it gone.
+  const deleteTable=()=>{ _tableStructOpDepth++; try{ table.remove(); } finally{ _tableStructOpDepth--; } commit(); };
+  const run=fn=>()=>{
+    _tableStructOpDepth++;
+    let target=null;
+    try{ target=fn(); } finally{ _tableStructOpDepth--; }
+    if(!table.isConnected){ commit(); return; }
+    _attachTableResizeHandles(table);
+    applyTableAutoAlign(table);
+    if(target&&target.isConnected)placeTableCaret(target);
+    commit();
   };
   if(cell){
-    items.push({label:'Add row below', onClick:()=>{ const row=cell.closest('tr'); if(!row)return; const newRow=row.cloneNode(false); const colCount=row.cells.length; for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); } row.insertAdjacentElement('afterend',newRow); _attachTableResizeHandles(table); placeCaretIn(newRow.cells[0]); commit(); }});
-    items.push({label:'Add column right', onClick:()=>{ const cellIndex=cell.cellIndex; const ownRow=cell.closest('tr'); let newCellInOwnRow=null; table.querySelectorAll('tr').forEach(row=>{ const isHead=row.closest('thead')!==null; const c=isHead?document.createElement('th'):document.createElement('td'); c.contentEditable='true'; if(isHead)c.textContent='Column'; const refCell=row.cells[cellIndex]; if(refCell)refCell.insertAdjacentElement('afterend',c); else row.appendChild(c); if(row===ownRow)newCellInOwnRow=c; }); _attachTableResizeHandles(table); placeCaretIn(newCellInOwnRow); commit(); }});
-    items.push({divider:true});
-    // Moves the caret to a surviving cell BEFORE removing the row/column the current cell is in --
-    // removing a still-focused element forces its own native, synchronous focus change (to
-    // whatever's left, often outside the table entirely), which for enterScopedTableEdit's scoped
-    // session reads as focus leaving the figure altogether and tears the whole session down via its
-    // own onFocusOut before this handler's own commit() below ever gets to run against valid state
-    // (see enterScopedTableEdit's own exited-guard comment for what that corrupted). Focusing a
-    // cell that ISN'T about to be removed first means the removal never touches the focused element
-    // at all, so no such cascade fires in the first place.
-    items.push({label:'Delete row', onClick:()=>{
-      const row=cell.closest('tr');
-      if(!row||table.rows.length<=1)return;
-      const allRows=[...table.rows];
-      const rowIdx=allRows.indexOf(row);
-      const fallbackRow=allRows[rowIdx+1]||allRows[rowIdx-1];
-      const fallbackCell=fallbackRow?fallbackRow.cells[Math.min(cell.cellIndex,fallbackRow.cells.length-1)]:null;
-      if(fallbackCell)placeCaretIn(fallbackCell);
-      row.remove();
-      commit();
-    }});
-    items.push({label:'Delete column', onClick:()=>{
-      const ci=cell.cellIndex;
-      let canDelete=true;
-      table.querySelectorAll('tr').forEach(r=>{ if(r.cells.length<=1)canDelete=false; });
-      if(!canDelete)return;
-      const row=cell.closest('tr');
-      const fallbackIdx=ci>0?ci-1:ci+1;
-      const fallbackCell=row?row.cells[fallbackIdx]:null;
-      if(fallbackCell)placeCaretIn(fallbackCell);
-      table.querySelectorAll('tr').forEach(r=>r.cells[ci]?.remove());
-      commit();
-    }});
+    const row=cell.closest('tr');
+    const isHead=tableIsHeaderRow(table,row);
+    const body=tableBodyRows(table); const bi=body.indexOf(row);
+    const ci=cell.cellIndex; const cols=tableColumnCount(table);
+    const headTip='The header row always stays first';
+    groups.push([
+      {label:'Add row above', disabled:isHead, title:isHead?headTip:undefined, onClick:run(()=>tableInsertRow(table,cell,false))},
+      {label:'Add row below', onClick:run(()=>tableInsertRow(table,cell,true))},
+      {label:'Add column left', onClick:run(()=>tableInsertColumn(table,cell,false))},
+      {label:'Add column right', onClick:run(()=>tableInsertColumn(table,cell,true))}
+    ]);
+    groups.push([
+      {label:'Move row up', disabled:isHead||bi<=0, title:isHead?headTip:undefined, onClick:run(()=>tableMoveRow(table,cell,-1))},
+      {label:'Move row down', disabled:isHead||bi<0||bi>=body.length-1, title:isHead?headTip:undefined, onClick:run(()=>tableMoveRow(table,cell,1))},
+      {label:'Move column left', disabled:ci<=0, onClick:run(()=>tableMoveColumn(table,cell,-1))},
+      {label:'Move column right', disabled:ci>=cols-1, onClick:run(()=>tableMoveColumn(table,cell,1))}
+    ]);
+    const hasHeader=!!tableHeaderRow(table);
+    groups.push([
+      {label:'Sort A → Z', disabled:body.length<2, onClick:run(()=>tableSortByColumn(table,cell,1))},
+      {label:'Sort Z → A', disabled:body.length<2, onClick:run(()=>tableSortByColumn(table,cell,-1))},
+      {label:hasHeader?'Turn header row off':'Turn header row on', onClick:run(()=>tableToggleHeader(table,cell))}
+    ]);
+    const cur=tableColumnAlign(table,ci);
+    const alignItem=(a,label)=>({label:label+(cur===a?' (current)':''), disabled:cur===a, onClick:run(()=>tableSetColumnAlign(table,cell,a))});
+    const alignGroup=[alignItem('left','Align column left'),alignItem('center','Align column center'),alignItem('right','Align column right')];
+    if(cur)alignGroup.push({label:'Align column automatically', onClick:run(()=>tableSetColumnAlign(table,cell,''))});
+    groups.push(alignGroup);
+    groups.push([
+      {label:'Delete row', disabled:table.rows.length<=1, onClick:run(()=>tableDeleteRow(table,cell))},
+      {label:'Delete column', disabled:cols<=1, onClick:run(()=>tableDeleteColumn(table,cell))},
+      {label:'Delete table', danger:true, onClick:deleteTable}
+    ]);
+  } else {
+    groups.push([{label:'Delete table', danger:true, onClick:deleteTable}]);
   }
-  items.push({label:'Delete table', danger:true, onClick:()=>{ table.remove(); commit(); }});
-  items.push({divider:true});
-  items.push(...buildChartFeatureItems(table,commit));
+  const chartItems=buildChartFeatureItems(table,commit);
+  if(chartItems.length)groups.push(chartItems);
+  const items=[];
+  groups.forEach((g,i)=>{ if(i)items.push({divider:true}); items.push(...g); });
   return items;
 }
 // Feature-as-chart / chart-type-pick / Suggest-icons items, shared between the live-editing menu
@@ -5575,7 +6146,7 @@ function enterScopedTableEdit(fig,node,tIdx,clickedCellIdx,noteLine){
     if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
   };
   fig.addEventListener('contextmenu',onCtx);
-  const onFocusOut=e=>{ if(fig.contains(e.relatedTarget))return; commit(); exit(); };
+  const onFocusOut=e=>{ if(_tableStructOpDepth>0||fig.contains(e.relatedTarget))return; commit(); exit(); };
   fig.addEventListener('focusout',onFocusOut);
   const allCells=liveTable.querySelectorAll('td,th');
   const focusCell=(clickedCellIdx>=0?allCells[clickedCellIdx]:null)||allCells[0];
@@ -5584,6 +6155,92 @@ function enterScopedTableEdit(fig,node,tIdx,clickedCellIdx,noteLine){
     const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
     focusCell.focus();
   }
+}
+// "Add table…" grid picker: hover or arrow keys choose up to TABLE_PICKER_MAX columns × rows (the
+// first row is the header), click / Enter inserts, Esc / click outside cancels. The readout shows
+// "columns × rows".
+const TABLE_PICKER_MAX=8;
+function closeTableGridPicker(){ document.querySelector('.table-grid-picker')?._sakuraClose?.(); }
+function openTableGridPicker(pos,onPick){
+  closeTableGridPicker();
+  let size=clampGridSize(3,3,TABLE_PICKER_MAX);
+  const box=document.createElement('div');
+  box.className='table-grid-picker';
+  box.setAttribute('role','dialog'); box.setAttribute('aria-label','Insert table');
+  const grid=document.createElement('div');
+  grid.className='table-grid-picker-grid'; grid.tabIndex=0;
+  grid.setAttribute('role','grid'); grid.setAttribute('aria-label','Table size: arrow keys choose, Enter inserts, Escape cancels');
+  const cells=[];
+  for(let r=1;r<=TABLE_PICKER_MAX;r++)for(let c=1;c<=TABLE_PICKER_MAX;c++){
+    const cell=document.createElement('div'); cell.className='table-grid-picker-cell';
+    cell.dataset.r=String(r); cell.dataset.c=String(c);
+    grid.appendChild(cell); cells.push(cell);
+  }
+  const readout=document.createElement('div'); readout.className='table-grid-picker-readout'; readout.setAttribute('aria-live','polite');
+  const hint=document.createElement('div'); hint.className='table-grid-picker-hint'; hint.textContent='Columns × rows · first row is the header';
+  box.append(readout,grid,hint);
+  const paint=()=>{
+    cells.forEach(cell=>cell.classList.toggle('on',+cell.dataset.r<=size.rows&&+cell.dataset.c<=size.cols));
+    readout.textContent=size.cols+' × '+size.rows;
+    grid.setAttribute('aria-valuetext',size.cols+' columns by '+size.rows+' rows');
+  };
+  let done=false;
+  const close=()=>{ if(done)return; done=true; document.removeEventListener('mousedown',onDocDown,true); box.remove(); };
+  box._sakuraClose=close;
+  const pick=()=>{ const s2=size; close(); onPick(s2.rows,s2.cols); };
+  const onDocDown=e=>{ if(!box.contains(e.target))close(); };
+  grid.addEventListener('mousemove',e=>{
+    const cell=e.target.closest&&e.target.closest('.table-grid-picker-cell'); if(!cell)return;
+    const next=clampGridSize(+cell.dataset.r,+cell.dataset.c,TABLE_PICKER_MAX);
+    if(next.rows!==size.rows||next.cols!==size.cols){ size=next; paint(); }
+  });
+  grid.addEventListener('click',e=>{
+    const cell=e.target.closest&&e.target.closest('.table-grid-picker-cell'); if(!cell)return;
+    size=clampGridSize(+cell.dataset.r,+cell.dataset.c,TABLE_PICKER_MAX); pick();
+  });
+  box.addEventListener('keydown',e=>{
+    const k=e.key; let r=size.rows, c=size.cols;
+    if(k==='ArrowRight')c++; else if(k==='ArrowLeft')c--; else if(k==='ArrowDown')r++; else if(k==='ArrowUp')r--;
+    else if(k==='Enter'||k===' '){ e.preventDefault(); e.stopPropagation(); pick(); return; }
+    else if(k==='Escape'){ e.preventDefault(); e.stopPropagation(); close(); return; }
+    else if(k==='Tab'){ e.preventDefault(); e.stopPropagation(); return; }
+    else return;
+    e.preventDefault(); e.stopPropagation();
+    size=clampGridSize(r,c,TABLE_PICKER_MAX); paint();
+  });
+  paint();
+  document.body.appendChild(box);
+  const rect=box.getBoundingClientRect();
+  box.style.left=Math.max(8,Math.min(pos.x,window.innerWidth-rect.width-8))+'px';
+  box.style.top=Math.max(8,Math.min(pos.y,window.innerHeight-rect.height-8))+'px';
+  setTimeout(()=>{ if(!done)document.addEventListener('mousedown',onDocDown,true); },0);
+  grid.focus();
+  return box;
+}
+// Adds a rows × cols table (first row = header, "Column 1…N") to a node and opens it for editing.
+function insertNodeTable(nodeId,rows,cols){
+  const idx=getIndex(nodes,nodeId); if(idx<0)return;
+  const sz=clampGridSize(rows,cols,TABLE_PICKER_MAX);
+  pushUndo();
+  const w=sz.cols>5?96:120;
+  let html='<table><colgroup>'+'<col style="width:'+w+'px">'.repeat(sz.cols)+'</colgroup><thead><tr>';
+  for(let c=1;c<=sz.cols;c++)html+='<th>Column '+c+'</th>';
+  html+='</tr></thead><tbody>';
+  for(let r=1;r<sz.rows;r++)html+='<tr>'+'<td></td>'.repeat(sz.cols)+'</tr>';
+  html+='</tbody></table>';
+  if(!Array.isArray(nodes[idx].tables))nodes[idx].tables=[];
+  nodes[idx].tables.push(html);
+  const tIdx=nodes[idx].tables.length-1;
+  nodes[idx].modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave();
+  setSingleSelection(nodeId);
+  expandNode(nodeId);
+  render();
+  setTimeout(()=>{
+    const wraps=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)];
+    const wrap=wraps[tIdx]||wraps[wraps.length-1];
+    if(wrap&&wrap._sakuraEnterEdit){ wrap.scrollIntoView({block:'nearest'}); wrap._sakuraEnterEdit(0,{selectText:true}); }
+  },0);
 }
 // Copies a node.tables object's real table to the clipboard -- same shape/approach as
 // copyNoteReadOnlyFigure's own table branch (HTML as a real <table>, plain text as its innerText).
@@ -5628,9 +6285,10 @@ function buildNodeTableObject(node,tIdx){
       if(svg){ wrap.classList.add('pv-table-chart-figure'); wrap.innerHTML=svg; return; }
     }
     const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
+    applyTableAutoAlign(clone);
     wrap.appendChild(clone);
   }
-  function enterEdit(clickedCellFlatIdx,clickX,clickY){
+  function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
     const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
     const liveTable=div.querySelector('table');
     if(!liveTable)return;
@@ -5649,6 +6307,7 @@ function buildNodeTableObject(node,tIdx){
     wrap.classList.toggle('editing-chart-data',isTableFeaturedAsChart(liveTable));
     wrap.appendChild(liveTable);
     _attachTableResizeHandles(liveTable);
+    applyTableAutoAlign(liveTable);
     // One app-level undo step per editing session, taken just before the session's FIRST real
     // change (same contract as the image markup editor): a session that only clicks in and out
     // changes nothing and pushes nothing, and Ctrl/Cmd+Z afterwards restores the table (or the
@@ -5661,12 +6320,7 @@ function buildNodeTableObject(node,tIdx){
     // which can fire onFocusOut's commit()+exit() mid-handler, before the menu action's own
     // trailing commit() call runs against now-stale state. Idempotent once exited for the same
     // reason.
-    const placeCaretIn=el=>{
-      if(!el)return;
-      const rg=document.createRange(); rg.selectNodeContents(el); rg.collapse(false);
-      const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
-      el.focus&&el.focus();
-    };
+    const placeCaretIn=el=>placeTableCaret(el);
     let exited=false;
     const detach=()=>{
       wrap.removeEventListener('input',onInput);
@@ -5693,6 +6347,7 @@ function buildNodeTableObject(node,tIdx){
         render();
         return;
       }
+      applyTableAutoAlign(liveTable);
       const html=sakuraSanitizeRichHtml(cleanEditorHtml(wrap));
       if(html===lastCommitted)return;
       ensureUndo();
@@ -5711,60 +6366,88 @@ function buildNodeTableObject(node,tIdx){
       if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
     };
     wrap.addEventListener('contextmenu',onCtx);
-    const onFocusOut=e=>{ if(wrap.contains(e.relatedTarget))return; commit(); exit(); };
+    const onFocusOut=e=>{ if(_tableStructOpDepth>0||wrap.contains(e.relatedTarget))return; commit(); exit(); };
     wrap.addEventListener('focusout',onFocusOut);
-    // A cell holds one data value, not a rich document -- there's no toolbar reachable here (the
-    // selection-formatting popover already excludes table cells) and typing alone can't produce
-    // anything but plain text, so the ONLY way rich content or an image used to get in was a paste
-    // bringing along the source's own formatting/images. Flattened to plain text here instead,
-    // inserted at the caret like any plain-text paste rather than letting the browser's default
-    // (full HTML, images included) land. A literal newline is also flattened to a space -- a cell
-    // is one line, so a multi-line paste reads as a run-on value instead of silently growing the
-    // row height with no way to tell there's hidden content below the fold.
+    // Paste. A spreadsheet range (tab-separated text, or an HTML table, as Excel / Google Sheets /
+    // a web page put on the clipboard) fills cells starting at the focused cell, adding rows and
+    // columns where it runs past the table -- part of this session's single undo step. Anything
+    // else is flattened to plain text and inserted at the caret: a cell holds a data value, not a
+    // rich document, so the source's own formatting/images never land (that used to be the only
+    // way rich content got in). A literal newline in non-tabular text becomes a space -- a
+    // multi-line paste reads as one value rather than silently growing the row.
     const onPaste=e=>{
       e.preventDefault(); e.stopPropagation();
-      const text=(e.clipboardData?.getData('text/plain')||'').replace(/\r\n|\r|\n/g,' ');
-      if(!text)return;
-      document.execCommand('insertText',false,text);
+      const html=e.clipboardData?.getData('text/html')||'';
+      const text=e.clipboardData?.getData('text/plain')||'';
+      const sel=window.getSelection();
+      const anchor=sel&&sel.anchorNode?(sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentElement):null;
+      const cell=(anchor&&anchor.closest&&anchor.closest('td,th'))||(e.target.closest&&e.target.closest('td,th'));
+      let grid=null;
+      if(cell&&liveTable.contains(cell)){
+        if(/<table[\s>]/i.test(html))grid=tableGridFromHtml(html);
+        if((!grid||!grid.length)&&looksLikeSpreadsheetText(text))grid=parseTsv(text);
+      }
+      if(grid&&grid.length&&(grid.length>1||grid[0].length>1)){
+        _tableStructOpDepth++;
+        let last=null;
+        try{ last=tablePasteGrid(liveTable,cell,grid); } finally{ _tableStructOpDepth--; }
+        _attachTableResizeHandles(liveTable);
+        placeCaretIn(last);
+        commit();
+        return;
+      }
+      const single=grid&&grid.length===1&&grid[0].length===1?grid[0][0]:null;
+      const flat=(single??text).replace(/\r\n|\r|\n/g,' ');
+      if(!flat)return;
+      document.execCommand('insertText',false,flat);
     };
     wrap.addEventListener('paste',onPaste);
-    // Each cell is its own independent contenteditable (not the whole table, unlike the old
-    // note-embedded live table) -- so e.target here IS the focused td/th directly, no selection-
-    // anchor resolution needed the way the note-line's own Tab handler required. Tab/Shift+Tab
-    // move between cells (wrapping to a fresh row past the last cell); Enter moves straight down a
-    // column instead of inserting a block element inside the cell, since a table object's cells are
-    // single-line data, not paragraphs -- this also sidesteps the caret-placement oddities a
-    // paragraph-in-a-td accumulating over repeated edits used to cause. Escape commits and exits
-    // back to display mode, same as clicking away does.
+    // Keyboard. Each cell is its own contenteditable, so e.target IS the focused td/th.
+    //  Tab / Shift+Tab   next / previous cell, wrapping across rows; Tab in the last cell adds a row.
+    //                    Never leaves the table (Shift+Tab in the first cell stays put).
+    //  Enter             the cell below; in the last row, adds a row and moves into it.
+    //  Shift+Enter       a line break inside the cell.
+    //  ArrowUp/Down      native within a cell; on the cell's first/last line, the cell above/below.
+    //  Escape            commits and returns to the display, same as clicking away.
+    // Handled keys stop here, so the outline's own Tab (indent) / Enter (new row) never see them.
+    const addBodyRowAfterLast=()=>{
+      const body=tableBodyRows(liveTable); const last=body[body.length-1];
+      const tr=tableNewBodyRow(liveTable,tableColumnCount(liveTable));
+      if(last)last.insertAdjacentElement('afterend',tr); else tableEnsureBody(liveTable).appendChild(tr);
+      _attachTableResizeHandles(liveTable);
+      return tr;
+    };
+    const cellAt=(r,c)=>{ const row=liveTable.rows[r]; return row?row.cells[Math.min(c,row.cells.length-1)]||null:null; };
     const onKeyDown=e=>{
       const cell=e.target.closest&&e.target.closest('td,th');
-      if(!cell)return;
-      if(e.key==='Escape'){ e.preventDefault(); commit(); exit(); return; }
+      if(!cell||!liveTable.contains(cell))return;
+      if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); commit(); exit(); return; }
+      if(e.ctrlKey||e.metaKey||e.altKey)return;
+      const r=[...liveTable.rows].indexOf(cell.closest('tr')); const c=cell.cellIndex;
       if(e.key==='Tab'){
-        e.preventDefault();
+        e.preventDefault(); e.stopPropagation();
         const allCells=[...liveTable.querySelectorAll('td,th')];
         const i=allCells.indexOf(cell);
-        if(e.shiftKey){ placeCaretIn(allCells[i-1]); return; }
-        if(i===allCells.length-1){
-          const lastRow=liveTable.rows[liveTable.rows.length-1];
-          const newRow=lastRow.cloneNode(false);
-          const colCount=lastRow.cells.length;
-          for(let c=0;c<colCount;c++){ const td=document.createElement('td'); td.contentEditable='true'; newRow.appendChild(td); }
-          (liveTable.tBodies[0]||liveTable).appendChild(newRow);
-          _attachTableResizeHandles(liveTable);
-          placeCaretIn(newRow.cells[0]);
-          commit();
-          return;
-        }
+        if(e.shiftKey){ if(i>0)placeCaretIn(allCells[i-1]); return; }
+        if(i===allCells.length-1){ const tr=addBodyRowAfterLast(); placeCaretIn(tr.cells[0]); commit(); return; }
         placeCaretIn(allCells[i+1]);
         return;
       }
       if(e.key==='Enter'){
-        e.preventDefault();
-        const allCells=[...liveTable.querySelectorAll('td,th')];
-        const colCount=cell.closest('tr').cells.length;
-        const below=allCells[allCells.indexOf(cell)+colCount];
-        if(below)placeCaretIn(below); else { commit(); exit(); }
+        e.preventDefault(); e.stopPropagation();
+        if(e.shiftKey){ document.execCommand('insertLineBreak'); return; }
+        if(r<liveTable.rows.length-1){ placeCaretIn(cellAt(r+1,c)); return; }
+        const tr=addBodyRowAfterLast(); placeCaretIn(tr.cells[Math.min(c,tr.cells.length-1)]); commit();
+        return;
+      }
+      if((e.key==='ArrowUp'||e.key==='ArrowDown')&&!e.shiftKey){
+        const up=e.key==='ArrowUp';
+        const target=up?(r>0?cellAt(r-1,c):null):(r<liveTable.rows.length-1?cellAt(r+1,c):null);
+        if(!target)return;
+        const edges=tableCaretLineEdges(cell);
+        if(!edges||!(up?edges.first:edges.last))return;
+        e.preventDefault(); e.stopPropagation();
+        placeCaretIn(target);
         return;
       }
     };
@@ -5794,9 +6477,11 @@ function buildNodeTableObject(node,tIdx){
         placed=true;
       }
     }
-    if(!placed)placeCaretIn(focusCell);
+    if(!placed){ if(opts&&opts.selectText)selectTableCellText(focusCell); else placeCaretIn(focusCell); }
   }
   showDisplay();
+  // Lets "Add table…" (grid picker) open a brand-new table straight into editing.
+  wrap._sakuraEnterEdit=(flatIdx,opts)=>enterEdit(flatIdx,undefined,undefined,opts);
   // Both stopPropagation calls matter: without them, this click/mousedown bubbles up to the
   // outline's own pane-level click handling (which manages keyboard-nav focus/selection for the
   // whole document) and steals focus right back off whatever enterEdit() just focused, the same
@@ -5805,6 +6490,9 @@ function buildNodeTableObject(node,tIdx){
   wrap.addEventListener('click',e=>{
     e.stopPropagation();
     if(wrap.classList.contains('editing'))return;
+    // A chart or Cards figure stays a chart on a single click (owner decision): its data opens only
+    // via double-click or right-click -> "Edit data". Plain tables keep click-to-edit.
+    if(wrap.classList.contains('pv-table-chart-figure'))return;
     // The display clone (plain-table case) is a direct, unmodified clone of the exact table a
     // fresh parse of node.tables[tIdx] would produce -- same td/th order, same count -- so a flat
     // index computed against it is already valid against the live re-parsed table too, no
@@ -5813,8 +6501,8 @@ function buildNodeTableObject(node,tIdx){
     const flatIdx=clickedCell?[...wrap.querySelectorAll('td,th')].indexOf(clickedCell):-1;
     enterEdit(flatIdx,e.clientX,e.clientY);
   });
-  // Double-click is the explicit "Edit data" gesture on a chart/Cards figure (a single click on one
-  // already opens it too); on a plain table it's the same as the click that already entered edit.
+  // Double-click is the "Edit data" gesture on a chart/Cards figure (a single click leaves it as a
+  // chart); on a plain table it's the same as the click that already entered edit.
   wrap.addEventListener('dblclick',e=>{
     e.stopPropagation();
     if(wrap.classList.contains('editing'))return;
@@ -6060,8 +6748,11 @@ function cleanEditorHtml(editor){
   // elements baked into every cell's stored HTML, re-exported to the PDF, and sitting
   // in the way of the contenteditable caret the next time this exact (unprocessed) HTML is
   // reloaded without going through _attachTableResizeHandles' own cleanup-and-reattach first.
-  if(!editor.querySelector('.editor-img-selected,.col-resize-handle,.row-resize-handle')) return editor.innerHTML;
+  if(!editor.querySelector('.editor-img-selected,.col-resize-handle,.row-resize-handle,[data-auto-align]')) return editor.innerHTML;
   const clone=editor.cloneNode(true);
+  // data-auto-align is applyTableAutoAlign's render-time marker (numeric columns right-align on
+  // their own) -- recomputed on every render, never stored.
+  clone.querySelectorAll('[data-auto-align]').forEach(el=>el.removeAttribute('data-auto-align'));
   clone.querySelectorAll('.editor-img-selected').forEach(el=>el.classList.remove('editor-img-selected'));
   clone.querySelectorAll('.col-resize-handle,.row-resize-handle').forEach(el=>el.remove());
   return clone.innerHTML;
@@ -7162,6 +7853,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   }
   const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart');
   promoteHeaderRowToThead(clone);
+  applyTableAutoAlign(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
@@ -20033,21 +20725,17 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     generateDiagramFromOutline();
     return;
   }
+  // "Add table…" opens a small rows × columns grid picker under the node's row; the new table
+  // gets a header row and opens straight into editing with its first header cell selected.
   if(action==='table'){
     if(_ctxNodeId===null)return;
-    const idx=getIndex(nodes,_ctxNodeId); if(idx<0)return;
-    pushUndo();
-    // Same 2x2-to-start shape "Insert table"/Pad's own ptb-table already use -- a real
-    // <thead><th> header row so _attachTableResizeHandles' column handles and buildNodeTableObject
-    // both see the structure they expect from the start.
-    const html='<table><colgroup><col style="width:120px"><col style="width:120px"></colgroup><thead><tr><th>Column 1</th><th>Column 2</th></tr></thead><tbody><tr><td></td><td></td></tr><tr><td></td><td></td></tr></tbody></table>';
-    if(!Array.isArray(nodes[idx].tables))nodes[idx].tables=[];
-    nodes[idx].tables.push(html);
-    nodes[idx].modifiedAt=Date.now();
-    markDirty(); scheduleAutoSave();
-    setSingleSelection(_ctxNodeId);
-    expandNode(_ctxNodeId);
-    render();
+    const nodeId=_ctxNodeId;
+    if(getIndex(nodes,nodeId)<0)return;
+    const rowEl=document.querySelector(`.node-row[data-id="${nodeId}"]`);
+    const rr=rowEl?rowEl.getBoundingClientRect():null;
+    const textEl=rowEl?rowEl.querySelector('.node-text,.node-input'):null;
+    const tr=textEl?textEl.getBoundingClientRect():rr;
+    openTableGridPicker(tr?{x:tr.left,y:(rr||tr).bottom+4}:{x:window.innerWidth/2-90,y:120},(rows,cols)=>insertNodeTable(nodeId,rows,cols));
     return;
   }
   // Pictures/screenshots as node.images objects -- multiple files allowed, each compressed on the
@@ -22135,6 +22823,10 @@ let _sbContextActiveIndex = -1;
 function _sbContextUpdateHighlight(){ _sbContextButtons.forEach((b,i)=>b.classList.toggle('sb-context-active',i===_sbContextActiveIndex)); }
 function _sbContextKeyHandler(e){
   if(!_sbContextEl||!_sbContextButtons.length)return;
+  // Handled keys stop here (this runs in the capture phase): an open menu owns them, so e.g. Esc
+  // closing a table cell's menu doesn't also end that table's editing session, and arrows don't
+  // move the caret between cells underneath it.
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Escape'||(e.key==='Enter'&&_sbContextActiveIndex>=0))e.stopPropagation();
   if(e.key==='ArrowDown'){ e.preventDefault(); _sbContextActiveIndex=(_sbContextActiveIndex+1+_sbContextButtons.length)%_sbContextButtons.length; _sbContextUpdateHighlight(); }
   else if(e.key==='ArrowUp'){ e.preventDefault(); _sbContextActiveIndex=(_sbContextActiveIndex-1+_sbContextButtons.length)%_sbContextButtons.length; _sbContextUpdateHighlight(); }
   else if(e.key==='Enter'){ if(_sbContextActiveIndex>=0){ e.preventDefault(); _sbContextButtons[_sbContextActiveIndex].click(); } }
@@ -22168,7 +22860,13 @@ function showSbContextMenu(x,y,items){
   const mw=rect.width||estW, mh=rect.height||estH;
   menu.style.left=Math.max(8,Math.min(x, window.innerWidth-mw-8))+'px';
   menu.style.top=Math.max(8,Math.min(y, window.innerHeight-mh-8))+'px';
-  setTimeout(()=>{ document.addEventListener('click', closeSbContextMenu, true); document.addEventListener('contextmenu', closeSbContextMenu, true); document.addEventListener('keydown', _sbContextKeyHandler, true); },0);
+  // Click/contextmenu closers wait a tick so the event that opened the menu doesn't close it; the
+  // key handler doesn't need to (no keydown opened it), and registering it at once means an Esc
+  // pressed right away closes this menu rather than reaching what's underneath (e.g. ending a
+  // table editing session).
+  document.addEventListener('keydown', _sbContextKeyHandler, true);
+  const openedMenu=menu;
+  setTimeout(()=>{ if(_sbContextEl!==openedMenu)return; document.addEventListener('click', closeSbContextMenu, true); document.addEventListener('contextmenu', closeSbContextMenu, true); },0);
 }
 function sbDocContextItems(d, folders){
   const items=[];
@@ -29001,6 +29699,19 @@ let dockActiveTab=null;
           <li><span class="cs-desc">!Text → alert</span> · <span class="cs-desc">`Text` → code</span></li>
           <li><span class="cs-desc">@Node name → backlink (type @ while editing to pick)</span></li>
           <li><span class="cs-desc">[ ] or [x] at start → auto-converts to checkbox on commit</span></li>
+        </ul>
+      </div>
+
+      <div class="cs-card" data-cs-anchor="tables">
+        <h3>Tables</h3>
+        <ul>
+          <li><span class="help-kbd">Tab</span>/<span class="help-kbd">Shift</span>+<span class="help-kbd">Tab</span> <span class="cs-desc">next / previous cell (Tab in the last cell adds a row)</span></li>
+          <li><span class="help-kbd">Enter</span> <span class="cs-desc">cell below (in the last row, adds a row)</span></li>
+          <li><span class="help-kbd">Shift</span>+<span class="help-kbd">Enter</span> <span class="cs-desc">new line inside the cell</span></li>
+          <li><span class="help-kbd">↑</span>/<span class="help-kbd">↓</span> <span class="cs-desc">cell above / below from a cell's first / last line</span></li>
+          <li><span class="help-kbd">Esc</span> <span class="cs-desc">finish editing the table</span></li>
+          <li><span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">V</span> <span class="cs-desc">paste a spreadsheet range into the cells</span></li>
+          <li><span class="cs-desc">Add table… size picker: arrows choose, Enter inserts, Esc cancels</span></li>
         </ul>
       </div>
 
