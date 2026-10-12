@@ -26,9 +26,11 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // looked before #402: a flat list, no border, no background distinct from the panel, and a
 // chevron that click-to-expands a row to reveal its priority/status/due/link/repeat/subtasks --
 // hovering alone reveals nothing. This file asserts that restored shape, not the card one.
-test.describe('To-Dos panel rows are a flat list with click-to-expand, not cards', () => {
-  test('a row has no border and no background distinct from the panel', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Flat row styling check');
+// The 2026-10 To-Dos redesign (owner-approved mockup) brings open tasks back as light cards so a long
+// subtask list stays grouped with its task; completed tasks stay flat. Click-to-expand is unchanged.
+test.describe('To-Dos panel: open tasks are light cards with click-to-expand', () => {
+  test('an open task row is a card: its own background and a 1px border', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Card row styling check');
     const result = await page.evaluate(() => {
       const r = document.querySelector('.todo-row')!;
       return {
@@ -37,20 +39,20 @@ test.describe('To-Dos panel rows are a flat list with click-to-expand, not cards
       };
     });
     expect(row).toBeTruthy();
-    expect(result.rowBg).toBe('rgba(0, 0, 0, 0)');
-    expect(parseFloat(result.rowBorder)).toBe(0);
+    expect(result.rowBg).not.toBe('rgba(0, 0, 0, 0)');
+    expect(parseFloat(result.rowBorder)).toBe(1);
   });
 
-  test('hovering a row reveals nothing -- only a background highlight, no chips', async ({ page }) => {
+  test('hovering a row reveals nothing -- only a border highlight, no chips', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Hover reveals nothing check');
     const id = await row.getAttribute('data-id');
-    const before = await row.evaluate(el => getComputedStyle(el).backgroundColor);
+    const before = await row.evaluate(el => getComputedStyle(el).borderTopColor);
     const priorityBefore = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
     await row.hover();
     await page.waitForTimeout(150);
-    const after = await row.evaluate(el => getComputedStyle(el).backgroundColor);
+    const after = await row.evaluate(el => getComputedStyle(el).borderTopColor);
     const priorityAfter = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
-    expect(after).not.toBe(before); // a plain hover highlight does apply
+    expect(after).not.toBe(before); // a plain hover highlight (the card border) does apply
     expect(priorityBefore).toBe('none');
     expect(priorityAfter).toBe('none'); // but hovering alone never reveals chips
   });
@@ -95,7 +97,7 @@ test.describe('To-Dos panel rows are a flat list with click-to-expand, not cards
 
   // Subtask lists are open by default (not collapsed) and are a plain indented block with a
   // straight left border -- no branch/tree connector, no shaded background of its own.
-  test('the subtask list is a plain left-bordered block, open by default, no branch connector', async ({ page }) => {
+  test('the subtask list is open by default with no left rule or branch connector; completed subtasks fold behind "N completed"', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask plain-block check');
     const id = await row.getAttribute('data-id');
     await page.click(`.todo-expand-toggle[data-id="${id}"]`);
@@ -111,8 +113,21 @@ test.describe('To-Dos panel rows are a flat list with click-to-expand, not cards
       const trunk = getComputedStyle(list, '::before');
       return { borderLeftWidth: parseFloat(cs.borderLeftWidth), trunkContent: trunk.content };
     });
-    expect(result.borderLeftWidth).toBeGreaterThan(0);
+    expect(result.borderLeftWidth).toBe(0);
     expect(result.trunkContent === 'none' || result.trunkContent === '""').toBe(true); // no branch ::before trunk
+    // Completing it folds it behind "1 completed"; clicking that shows it again, muted and not struck through.
+    // A second subtask keeps the parent open (completing every subtask completes the task).
+    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'Second subtask');
+    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await expect(page.locator('.todo-subtask-row')).toHaveCount(2);
+    await page.locator('.todo-subtask-check').first().click();
+    await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
+    const fold = page.locator(`.todo-subtasks-done-toggle[data-id="${id}"]`);
+    await expect(fold).toContainText('1 completed');
+    await fold.click();
+    await expect(page.locator('.todo-subtask-row')).toHaveCount(2);
+    expect(await page.locator('.todo-subtask-text.completed').evaluate(el => getComputedStyle(el).textDecorationLine)).toBe('none');
   });
 
   // The subtask progress indicator is a small, plain gray bar (not a wide accent-tinted one).

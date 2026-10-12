@@ -95,9 +95,9 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     expect(gone).toEqual([]);
     expect(await page.evaluate(() => typeof (window as unknown as { PptxGenJS?: unknown }).PptxGenJS)).toBe('undefined');
 
-    // The To-Dos dock's own Export menu is PDF only.
-    await expect(page.locator('#todos-export-menu .dock-menu-item')).toHaveCount(1);
-    await expect(page.locator('#todos-export-menu #todos-export-pdf-item')).toHaveCount(1);
+    // The To-Dos panel exports PDF only — one "Export as PDF" item in its ⋯ menu.
+    await expect(page.locator('#todos-more-menu [id^="todos-export"]')).toHaveCount(1);
+    await expect(page.locator('#todos-more-menu #todos-export-pdf-item')).toHaveCount(1);
 
     expect(errors).toEqual([]);
   });

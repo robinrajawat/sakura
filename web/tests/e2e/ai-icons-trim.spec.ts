@@ -243,9 +243,9 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     expect(errors).toEqual([]);
   });
 
-  // With the To-Dos AI header buttons gone, the panel's header row and its "Add a task" row are one
-  // bar: input (flexible) + add button, then History / Export / Maximize / Close.
-  test('To-Dos panel: add-task input and History/Export/Maximize/Close share one bar at default, minimum, and maximized widths', async ({ page }) => {
+  // To-Dos header: title + open count, Search, Sort-and-filter, ⋯ (Version history / Export as PDF /
+  // Select), then Maximize/Close on one row; "Add a task" is its own row just below.
+  test('To-Dos panel: header controls share one row and the add-task row sits below it, at default, minimum, and maximized widths', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -255,51 +255,54 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
       openDockTab('todos');
     });
     await expect(page.locator('#todos-panel')).toHaveClass(/open/);
-    await expect(page.locator('#todos-input-row')).toHaveCount(0);
-    const order = await page.locator('#todos-panel-header > *').evaluateAll((els) => els.map((e) => e.id));
-    expect(order).toEqual(['todos-input', 'todos-add-btn', 'todos-history-btn', 'todos-export-trigger', 'todos-panel-maximize', 'todos-panel-close']);
-    // Tooltips unchanged.
-    await expect(page.locator('#todos-add-btn')).toHaveAttribute('data-tip', 'Add task');
-    await expect(page.locator('#todos-history-btn')).toHaveAttribute('data-tip', 'Version history');
-    await expect(page.locator('#todos-export-trigger')).toHaveAttribute('data-tip', 'Export to-do list');
+    await expect(page.locator('#todos-open-row')).toHaveCount(0);
+    const order = await page.locator('#todos-panel-header > *').evaluateAll((els) => els.map((e) => e.id || e.className));
+    expect(order).toEqual(['todos-title', 'todos-open-label', 'todos-search-wrap', 'todos-filter-wrap', 'todos-more-wrap', 'todos-header-sep', 'todos-panel-maximize', 'todos-panel-close']);
+    await expect(page.locator('#todos-add-row #todos-input')).toHaveCount(1);
+    await expect(page.locator('#todos-add-row #todos-add-btn')).toHaveAttribute('data-tip', 'Add task');
     await expect(page.locator('#todos-panel-close')).toHaveAttribute('data-tip', 'Close (Esc)');
 
     const layout = async () => page.evaluate(() => {
       const panel = document.getElementById('todos-panel')!.getBoundingClientRect();
-      const ids = ['todos-input', 'todos-add-btn', 'todos-history-btn', 'todos-export-trigger', 'todos-panel-maximize', 'todos-panel-close'];
+      const ids = ['todos-title', 'todos-search-trigger', 'todos-filter-trigger', 'todos-more-trigger', 'todos-panel-maximize', 'todos-panel-close'];
       const rects = ids.map((id) => document.getElementById(id)!.getBoundingClientRect());
-      const bottoms = rects.map((r) => Math.round(r.bottom));
+      const mids = rects.map((r) => Math.round(r.top + r.height / 2));
+      const input = document.getElementById('todos-input')!.getBoundingClientRect();
       return {
-        sameRow: Math.max(...bottoms) - Math.min(...bottoms) <= 2,
+        sameRow: Math.max(...mids) - Math.min(...mids) <= 2,
         allInside: rects.every((r) => r.width > 0 && r.left >= panel.left - 1 && r.right <= panel.right + 1),
-        inputWidth: Math.round(rects[0].width),
-        ordered: rects.every((r, i) => i === 0 || r.left >= rects[i - 1].right - 1)
+        ordered: rects.every((r, i) => i === 0 || r.left >= rects[i - 1].right - 1),
+        inputBelow: input.top >= Math.max(...rects.map((r) => r.bottom)) - 1,
+        inputWidth: Math.round(input.width)
       };
     });
     const def = await layout();
-    expect(def).toMatchObject({ sameRow: true, allInside: true, ordered: true });
+    expect(def).toMatchObject({ sameRow: true, allInside: true, ordered: true, inputBelow: true });
     expect(def.inputWidth).toBeGreaterThan(150);
 
-    // Minimum dock width (TODOS_WIDTH_MIN = 320): input shrinks, every button stays visible.
+    // Minimum dock width (TODOS_WIDTH_MIN = 320): every header control stays visible.
     await page.evaluate(() => { document.getElementById('todos-panel')!.style.width = '320px'; });
-    const min = await layout();
-    expect(min).toMatchObject({ sameRow: true, allInside: true, ordered: true });
-    expect(min.inputWidth).toBeGreaterThan(60);
-    expect(min.inputWidth).toBeLessThan(def.inputWidth);
+    expect(await layout()).toMatchObject({ sameRow: true, allInside: true, ordered: true, inputBelow: true });
 
     // Maximized.
     await page.locator('#todos-panel-maximize').click();
     await expect(page.locator('#todos-panel')).toHaveClass(/maximized/);
-    expect(await layout()).toMatchObject({ sameRow: true, allInside: true, ordered: true });
+    expect(await layout()).toMatchObject({ sameRow: true, allInside: true, ordered: true, inputBelow: true });
     await page.locator('#todos-panel-maximize').click();
     await expect(page.locator('#todos-panel')).not.toHaveClass(/maximized/);
 
-    // Focus order: the input comes first, then the add button, then the action buttons.
-    await page.locator('#todos-input').focus();
-    await page.keyboard.press('Tab');
-    await expect(page.locator('#todos-add-btn')).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(page.locator('#todos-history-btn')).toBeFocused();
+    // ⋯ holds Version history, Export as PDF and Select.
+    await page.locator('#todos-more-trigger').click();
+    await expect(page.locator('#todos-more-menu')).toHaveClass(/open/);
+    await expect(page.locator('#todos-more-menu .todo-dd-item')).toHaveText(['Version history', 'Export as PDF', 'Select or reorder tasks']);
+    await page.locator('#todos-more-trigger').click();
+    await expect(page.locator('#todos-more-menu')).not.toHaveClass(/open/);
+
+    // N (with focus in the panel, outside any text field) jumps to the add-task input.
+    await page.locator('#todos-panel-maximize').focus();
+    await page.keyboard.press('n');
+    await expect(page.locator('#todos-input')).toBeFocused();
+    await expect(page.locator('#todos-input')).toHaveValue('');
 
     // Pressing on the input never starts a panel drag; Enter still adds the task.
     await page.locator('#todos-input').click();
