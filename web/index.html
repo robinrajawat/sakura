@@ -1507,7 +1507,9 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
    buildNodeImageStrip): a compact, wrapping strip of thumbnails under the row (placed like
    .node-table-line-wrap), each with its caption truncated beneath; click one for the viewer. */
 .node-image-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
-.node-image-strip{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.node-image-strip{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;position:relative}
+.node-image-caption-input{position:absolute;z-index:3;box-sizing:border-box;margin-top:-23px;height:23px;padding:3px 7px;border:1px solid var(--accent);border-radius:0 0 7px 7px;font:500 11px 'Inter',sans-serif;color:var(--fg);background:var(--bg);outline:none;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.node-image-caption:hover{color:var(--fg);cursor:text}
 .node-image-thumb{all:unset;box-sizing:border-box;display:flex;flex-direction:column;width:calc(132px * var(--editor-scale));border:1px solid var(--border);border-radius:7px;overflow:hidden;cursor:zoom-in;background:color-mix(in srgb,var(--fg) 3%,var(--bg));transition:border-color .12s,box-shadow .12s}
 .node-image-thumb:hover,.node-image-thumb:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
 .node-image-thumb img{display:block;width:100%;height:calc(82px * var(--editor-scale));object-fit:cover;object-position:top left;background:var(--bg)}
@@ -3773,7 +3775,7 @@ body.printing-generic #gpe-overlay{
 <li>New images are shrunk to at most 1600px on the long side and saved as WebP (JPEG where the browser can't make WebP), which keeps documents small enough to sync; SVGs and animated GIFs are kept exactly as they are</li>
 <li>Click a thumbnail to open the enlarged viewer: edit the caption under the picture, step through the node's images with <span class="help-kbd">←</span>/<span class="help-kbd">→</span> or the side arrows, pick a display size (<strong>Auto</strong>, <strong>Small</strong>, <strong>Medium</strong>, <strong>Full</strong> — used in the viewer and in PDF exports), or Delete it. <span class="help-kbd">Esc</span> or clicking outside closes it</li>
 <li><strong>Mark up</strong> in the viewer (or <span class="help-kbd">M</span>) to draw on a screenshot without changing the picture: rectangle (<span class="help-kbd">R</span>), arrow (<span class="help-kbd">A</span>), translucent highlighter (<span class="help-kbd">H</span>), and text labels (<span class="help-kbd">T</span> — click, type, <span class="help-kbd">Enter</span>; double-click a label to edit it), in six colours. The select tool (<span class="help-kbd">V</span>) moves a mark (drag, or the arrow keys), recolours it, or deletes it (<span class="help-kbd">Delete</span>). Undo/redo inside the editor with <span class="help-kbd">Ctrl/Cmd+Z</span> / <span class="help-kbd">Ctrl/Cmd+Shift+Z</span>; <strong>Clear markings</strong> removes them all. <span class="help-kbd">Esc</span> backs out one step at a time; <strong>Done</strong> finishes. Marks stay in place at any display size, show on the thumbnails and in PDF exports, and a whole marking session is one step of the document's undo</li>
-<li>Right-click a thumbnail for Open, Edit caption, Move left/right, or Delete image; drag a thumbnail onto another to reorder. Everything is undoable with <span class="help-kbd">Ctrl/Cmd+Z</span></li>
+<li>Click a caption under a thumbnail to edit it right there (<span class="help-kbd">Enter</span> saves, <span class="help-kbd">Esc</span> cancels). Right-click a thumbnail for Open, Add/Edit caption, Size (Auto, Small, Medium, Full), Mark up…, Move left/right, or Delete image; drag a thumbnail onto another to reorder. Everything is undoable with <span class="help-kbd">Ctrl/Cmd+Z</span></li>
 <li>A small picture dot appears on a node with images — click it to fold or unfold the thumbnails. A folded branch's "+N hidden" badge mentions images inside it</li>
 <li>Copying nodes (<span class="help-kbd">Ctrl/Cmd+C</span>) carries their images when pasted back into Sakura; duplicating a node copies them too. PDF exports show each image under its node with its caption; OPML can't hold images, so they're left out there</li>
 <li>Pictures that older versions kept inside a note move into the node's images automatically the first time the document opens — the note's text stays as it was</li>
@@ -7659,6 +7661,30 @@ function moveNodeImage(nodeId,imageId,toIndex){
   _touchNodeImages(ref.idx); render();
 }
 
+// Edits a picture's caption right under its thumbnail: a small field laid over the caption area.
+// Enter or clicking away saves (one undo step), Esc cancels; keys stay inside the field so outline
+// shortcuts don't fire while typing.
+function editNodeImageCaptionInline(strip,thumb,nodeId,imageId){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
+  strip.querySelector('.node-image-caption-input')?.remove();
+  const input=document.createElement('input'); input.type='text'; input.className='node-image-caption-input';
+  input.value=ref.img.caption||''; input.placeholder='Add a caption…'; input.maxLength=NODE_IMAGE_CAPTION_MAX; input.setAttribute('aria-label','Caption');
+  const sr=strip.getBoundingClientRect(), tr=thumb.getBoundingClientRect();
+  input.style.left=(tr.left-sr.left)+'px'; input.style.width=tr.width+'px'; input.style.top=(tr.bottom-sr.top)+'px';
+  strip.appendChild(input);
+  let done=false;
+  const finish=save=>{
+    if(done)return; done=true;
+    const v=input.value.replace(/\s+/g,' ').trim();
+    input.remove();
+    if(save&&v!==(ref.img.caption||'')){ pushUndo(); setNodeImageCaption(nodeId,imageId,v); }
+    render();
+  };
+  input.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); finish(true); } else if(e.key==='Escape'){ e.preventDefault(); finish(false); } });
+  ['keyup','keypress','mousedown','click','paste'].forEach(t=>input.addEventListener(t,e=>e.stopPropagation()));
+  input.addEventListener('blur',()=>finish(true));
+  input.focus(); input.select();
+}
 // --- Outline: compact thumbnail strip under the row ---
 function buildNodeImageStrip(node){
   const strip=document.createElement('div'); strip.className='node-image-strip'; strip.dataset.nodeId=String(node.id);
@@ -7680,17 +7706,30 @@ function buildNodeImageStrip(node){
       // Keep marks visible at thumbnail scale: at least ~1.5 screen px of stroke.
       paintImageMarks(marks,pic,img.annotations,{minStroke:(w,h)=>1.5/Math.max(132/w,82/h)});
     }
-    if(img.caption){ const cap=document.createElement('span'); cap.className='node-image-caption'; cap.textContent=img.caption; thumb.appendChild(cap); }
+    if(img.caption){
+      const cap=document.createElement('span'); cap.className='node-image-caption'; cap.textContent=img.caption;
+      // Click the caption to edit it right there; the rest of the thumbnail opens the viewer.
+      if(!readOnly){ cap.dataset.tip='Click to edit the caption'; cap.addEventListener('click',e=>{ e.stopPropagation(); e.preventDefault(); editNodeImageCaptionInline(strip,thumb,node.id,img.id); }); }
+      thumb.appendChild(cap);
+    }
     thumb.addEventListener('click',e=>{ e.stopPropagation(); openNodeImageViewer(node.id,img.id); });
     thumb.addEventListener('contextmenu',e=>{
       e.preventDefault(); e.stopPropagation();
+      // Order: view, then the picture's own details (caption, size, markings), then its place in
+      // the strip, then Delete. Quick edits happen in place; the viewer is for viewing and Mark up.
       const items=[{label:'Open', onClick:()=>openNodeImageViewer(node.id,img.id)}];
       if(!readOnly){
-        items.push({label:'Edit caption…', onClick:()=>openNodeImageViewer(node.id,img.id,{focusCaption:true})});
-        if(node.images.length>1){
-          if(i>0)items.push({label:'Move left', onClick:()=>moveNodeImage(node.id,img.id,i-1)});
-          if(i<node.images.length-1)items.push({label:'Move right', onClick:()=>moveNodeImage(node.id,img.id,i+1)});
-        }
+        const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        const curSize=imageWidthPresetKey(img.width);
+        items.push({divider:true});
+        items.push({label:img.caption?'Edit caption':'Add caption', onClick:()=>editNodeImageCaptionInline(strip,thumb,node.id,img.id)});
+        items.push({label:'Size', submenu:IMAGE_WIDTH_PRESETS.map(pr=>pr.key===curSize
+          ? {label:pr.label, icon:CHECK, current:true, onClick:()=>{}}
+          : {label:pr.label, title:pr.value?('Shown at '+pr.value+'% width here and in the PDF'):'Natural size, up to the full width', onClick:()=>setNodeImageWidth(node.id,img.id,pr.value)})});
+        items.push({label:'Mark up…', onClick:()=>{ openNodeImageViewer(node.id,img.id); setNodeImageMarkupMode(true); }});
+        items.push({divider:true});
+        items.push({label:'Move left', disabled:i===0, onClick:()=>moveNodeImage(node.id,img.id,i-1)});
+        items.push({label:'Move right', disabled:i===node.images.length-1, onClick:()=>moveNodeImage(node.id,img.id,i+1)});
         items.push({divider:true});
         items.push({label:'Delete image', danger:true, onClick:()=>deleteNodeImage(node.id,img.id)});
       }

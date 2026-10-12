@@ -261,6 +261,14 @@ Chart size ›. Object menu order: Show as group | Edit data, Copy | Delete. Cel
 groups, then the Show as group, Delete group last. Owner rule: options that don't apply are
 deactivated, never hidden, so the menu keeps its shape.
 
+**Image quick edits in place (owner agreed).** Caption: click `.node-image-caption` (or the thumbnail
+menu's Add/Edit caption) → `editNodeImageCaptionInline` lays an input over the caption area; Enter/blur
+saves with one `pushUndo`, Esc cancels, keys don't reach the outline. Thumbnail menu order: Open | Add/Edit
+caption, Size › (`IMAGE_WIDTH_PRESETS`, check on current), Mark up… (viewer + `setNodeImageMarkupMode(true)`)
+| Move left/right (disabled at the ends) | Delete image. The viewer stays for viewing large and Mark up
+(markup needs the room, and its single-key tools would clash with outline shortcuts inline). Covered by
+`tests/e2e/node-images-inline-edit.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
