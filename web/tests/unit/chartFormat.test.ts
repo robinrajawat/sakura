@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   niceAxisScale, formatChartNumber, cardsGridColumns, cardChangeDirection, cardChangeText,
-  valuesLookLikeFractions, progressPercent, heatLevels
+  valuesLookLikeFractions, progressPercent, heatLevels, timelineOrder, timelinePhases
 } from '../../src/utils/chartFormat';
 
 describe('niceAxisScale', () => {
@@ -118,5 +118,20 @@ describe('heatLevels', () => {
   it('leaves columns with nothing to compare unshaded', () => {
     expect(heatLevels([7, 7, 7])).toEqual([null, null, null]);
     expect(heatLevels([7, null])).toEqual([null, null]);
+  });
+});
+
+describe('timeline', () => {
+  it('orders dated rows chronologically, undated rows last in table order', () => {
+    expect(timelineOrder([30, null, 10, 20, null])).toEqual([2, 3, 0, 1, 4]);
+    expect(timelineOrder([5, 5, 1])).toEqual([2, 0, 1]); // ties keep table order
+  });
+  it('marks past rows done, the first from today next, later ones upcoming', () => {
+    const today = Date.UTC(2026, 9, 12);
+    const dates = [Date.UTC(2026, 8, 1), Date.UTC(2026, 9, 12), Date.UTC(2026, 10, 1), null];
+    expect(timelinePhases(dates, [true, true, true, false], today)).toEqual(['done', 'next', 'upcoming', null]);
+  });
+  it('gives dates without a year no phase', () => {
+    expect(timelinePhases([Date.UTC(2000, 0, 5)], [false], Date.UTC(2026, 0, 1))).toEqual([null]);
   });
 });

@@ -270,6 +270,13 @@ caption, Size › (`IMAGE_WIDTH_PRESETS`, check on current), Mark up… (viewer 
 (markup needs the room, and its single-key tools would clash with outline shortcuts inline). Covered by
 `tests/e2e/node-images-inline-edit.spec.ts`.
 
+**Timeline display.** `data-table-display="timeline"` (beside chips/progress), offered in Show as ›
+after Progress bars. Eligible: 2–3 columns and at least half the body rows' first cell parses with
+`parseCellDate`. `renderTimelineHtml` orders rows with `timelineOrder` (dated chronologically, undated
+last) and phases them with `timelinePhases` against today's UTC date (done / next / upcoming; dates
+without a 4-digit year get no phase). Pure helpers in `chartFormat.ts`. Covered by
+`tests/e2e/table-timeline.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

@@ -100,7 +100,7 @@ test('menu: progress bars and heat-map options, mutually exclusive displays', as
     return { labels, showAs, progressCurrent, heatSub: heatItem.submenu.map((i: any) => i.label), reversed, afterProgress, progressLabels, displayAfterChart: plain.getAttribute('data-table-display') };
   });
   expect(r.labels).toEqual(['Show as', 'Heat-map', 'Add title…', 'Chart size']);
-  expect(r.showAs).toEqual(['Table ✓', 'Chips', 'Cards', 'Progress bars', '# Chart', 'Bar', 'Stacked bar (n/a)', 'Line', 'Pie', 'Doughnut']);
+  expect(r.showAs).toEqual(['Table ✓', 'Chips', 'Cards', 'Progress bars', 'Timeline (n/a)', '# Chart', 'Bar', 'Stacked bar (n/a)', 'Line', 'Pie', 'Doughnut']);
   expect(r.heatSub).toEqual(['Off (current)', 'Higher is darker', 'Lower is darker']);
   expect(r.reversed).toBe('1');
   expect(r.afterProgress).toEqual({ display: 'progress', heat: null });

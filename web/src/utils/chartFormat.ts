@@ -2,7 +2,8 @@
  * Pure helpers for featured tables shown as charts, Cards or progress bars, and for heat-map
  * shading: round ("nice") value-axis ticks, axis/tooltip number formatting with thousands
  * separators, how many columns a Cards grid uses so its rows come out balanced, which way a Cards
- * "change" value points, a progress bar's fill, and a numeric column's heat-map levels.
+ * "change" value points, a progress bar's fill, a numeric column's heat-map levels, and a timeline's
+ * row order and past / next / upcoming phases.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `chartFormat` block. The SVG and
  * HTML builders (renderCartesianChartSvg, renderCardsHtml) stay hand-written in index.html; only
@@ -143,5 +144,35 @@ export function heatLevels(values: (number | null)[], reverse = false, steps = 5
     let t = (v - lo) / (hi - lo);
     if (reverse) t = 1 - t;
     return 1 + Math.round(t * (steps - 1));
+  });
+}
+
+export type TimelinePhase = 'done' | 'next' | 'upcoming';
+
+/**
+ * Display order for a timeline's rows: rows with a date in chronological order (ties keep their
+ * table order), then rows without one ("TBD") in their table order.
+ */
+export function timelineOrder(dates: (number | null)[]): number[] {
+  const idx = dates.map((_, i) => i);
+  const dated = idx.filter((i) => dates[i] !== null && Number.isFinite(dates[i] as number));
+  const undated = idx.filter((i) => !dated.includes(i));
+  dated.sort((a, b) => (dates[a] as number) - (dates[b] as number) || a - b);
+  return [...dated, ...undated];
+}
+
+/**
+ * Each timeline row's phase relative to `today` (UTC midnight of the viewer's date): before today
+ * is done, the first row on or after today is next, later ones are upcoming. A row with no date,
+ * or a date written without a year (which can't be placed in time), has no phase (null).
+ * `dates` must already be in display order.
+ */
+export function timelinePhases(dates: (number | null)[], hasYear: boolean[], today: number): (TimelinePhase | null)[] {
+  let nextGiven = false;
+  return dates.map((d, i) => {
+    if (d === null || !Number.isFinite(d) || !hasYear[i]) return null;
+    if (d < today) return 'done';
+    if (!nextGiven) { nextGiven = true; return 'next'; }
+    return 'upcoming';
   });
 }
