@@ -1493,6 +1493,20 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .tbl-status-pill[data-group="blocked"]{--pill:var(--fc-red)}
 .tbl-status-pill[data-group="done"]{--pill:var(--fc-green)}
 .node-table-line.editing{position:relative}
+.pv-proscons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;break-inside:avoid;page-break-inside:avoid}
+.pv-pc-col{--pc:var(--fc-green);border:1px solid color-mix(in srgb,var(--pc) 30%,var(--border));border-top:3px solid var(--pc);border-radius:10px;padding:10px 12px 12px;background:color-mix(in srgb,var(--pc) 5%,var(--bg));min-width:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-pc-col.cons{--pc:var(--fc-red)}
+.pv-pc-head{display:flex;align-items:center;gap:8px;font:600 13px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px}
+.pv-pc-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:#fff;background:var(--pc);flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-pc-count{margin-left:auto;font:600 11px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-pc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pv-pc-list li{display:flex;gap:8px;align-items:flex-start;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.4;overflow-wrap:anywhere}
+.pv-pc-mark{color:var(--pc);flex:none;margin-top:2px;display:inline-flex}
+@media (max-width:640px){.pv-proscons{grid-template-columns:minmax(0,1fr)}}
+.tbl-check{display:inline-flex;vertical-align:-2px;color:var(--fc-gray);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-check[data-check="yes"]{color:var(--fc-green)}
+.tbl-check[data-check="no"]{color:var(--fc-red)}
+.tbl-check[data-check="partial"]{color:var(--fc-orange)}
 .tbl-cell-picker{position:absolute;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:320px;padding:8px;border-radius:8px;background:var(--bg);border:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.14);font:500 12px 'Inter',sans-serif;cursor:default}
 .tbl-picker-status{border:0;cursor:pointer;font:600 12px 'Inter',sans-serif;padding:0;margin:4px}
 .tbl-picker-status.current{outline:2px solid var(--pill,var(--fc-gray));outline-offset:4px}
@@ -5716,6 +5730,54 @@ function applyTableStatusPills(table){
     c.innerHTML=`<span class="tbl-status-pill" data-group="${statusGroup(text)||'other'}">${c.innerHTML}</span>`;
   }));
 }
+// Pros & cons: a two-column table headed Pros / Cons (or Advantages / Disadvantages, For / Against,
+// Benefits / Risks, Strengths / Weaknesses, Upsides / Downsides -- see prosConsColumn, either order)
+// shown as two side-by-side lists, pros in green with ticks, cons in red with crosses, each with a
+// count and headed as the table is. Empty cells are skipped, so the lists can differ in length.
+// Stored as data-table-display="proscons".
+function tableProsConsInfo(table){
+  if(!table||tableColumnCount(table)!==2)return null;
+  const head=[...(table.rows[0]?.cells||[])].map(c=>(c.textContent||'').trim());
+  const pos=prosConsColumn(head[0]||'',head[1]||''); if(pos<0)return null;
+  const body=Array.from(table.rows).slice(1);
+  const col=ci=>body.map(r=>(r.cells[ci]?.textContent||'').trim()).filter(Boolean);
+  const pros=col(pos), cons=col(1-pos);
+  if(!pros.length&&!cons.length)return null;
+  return {pros,cons,prosLabel:head[pos],consLabel:head[1-pos]};
+}
+function tableProsConsEligible(table){ return !!tableProsConsInfo(table); }
+function isTableShownAsProsCons(table){ return !!(table&&table.getAttribute('data-table-display')==='proscons'); }
+function renderProsConsHtml(table){
+  const info=tableProsConsInfo(table); if(!info)return null;
+  const TICK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const CROSS='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const col=(kind,label,items,icon)=>`<div class="pv-pc-col ${kind}"><div class="pv-pc-head"><span class="pv-pc-badge">${icon}</span><span class="pv-pc-label">${esc(label)}</span><span class="pv-pc-count">${items.length}</span></div>`
+    +`<ul class="pv-pc-list">${items.map(t=>`<li><span class="pv-pc-mark">${icon}</span><span>${esc(t)}</span></li>`).join('')}</ul></div>`;
+  return `<div class="pv-proscons">${col('pros',info.prosLabel,info.pros,TICK)}${col('cons',info.consLabel,info.cons,CROSS)}</div>`;
+}
+// Ticks and crosses in comparison tables: in a plain table, a column whose cells are mostly ✓ / yes,
+// ✗ / no and ~ / partial (isCheckColumn) shows those cells as green ✓, red ✗ and amber ~ icons, the
+// original text kept as the tooltip. Display clones only, like applyTableStatusPills; a column set
+// to any explicit type (Text included) is left alone.
+function applyTableCheckIcons(table){
+  if(!table||table.getAttribute('data-table-display'))return;
+  const body=tableBodyRows(table);
+  const ICON={
+    yes:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    no:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    partial:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M4 14c3-5 5-5 8 0s5 5 8 0"/></svg>'
+  };
+  const LABEL={yes:'Yes',no:'No',partial:'Partly'};
+  for(let ci=0;ci<tableColumnCount(table);ci++){
+    if(tableColumnType(table,ci).type)continue;
+    if(!isCheckColumn(body.map(r=>tableCellText(r.cells[ci]))))continue;
+    body.forEach(r=>{
+      const c=r.cells[ci]; if(!c)return;
+      const text=tableCellText(c).trim(); const v=checkValue(text); if(!v)return;
+      c.innerHTML=`<span class="tbl-check" data-check="${v}" title="${esc(text)}" aria-label="${LABEL[v]}">${ICON[v]}</span>`;
+    });
+  }
+}
 // Heat-map: a plain table's numeric cells shaded by where each sits in its own column (per column,
 // since columns usually hold different units). data-heatmap="1" turns it on, data-heatmap-reverse
 // flips it for columns where lower is better. Applied at render time only, like
@@ -5752,10 +5814,11 @@ function tableFeatureDisplayHtml(table){
   if(isTableShownAsProgress(table)&&tableProgressEligible(table))return renderProgressHtml(table);
   if(isTableShownAsTimeline(table)&&tableTimelineEligible(table))return renderTimelineHtml(table);
   if(isTableShownAsBoard(table)&&tableStatusBoardEligible(table))return renderStatusBoardHtml(table);
+  if(isTableShownAsProsCons(table)&&tableProsConsEligible(table))return renderProsConsHtml(table);
   if(isTableFeaturedAsChart(table)&&tableChartability(table).ok)return renderTableChartSvg(table);
   return null;
 }
-function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableFeaturedAsChart(table); }
+function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableShownAsProsCons(table)||isTableFeaturedAsChart(table); }
 function isTableFeaturedAsChart(table){
   return !!(table&&table.getAttribute('data-feature-chart')==='1');
 }
@@ -6379,6 +6442,51 @@ function statusPickerOptions(values) {
     });
     return [...std, ...extra];
 }
+const PROS_CONS_PAIRS = [
+    ['pros', 'cons'], ['pro', 'con'], ['advantages', 'disadvantages'], ['for', 'against'],
+    ['benefits', 'risks'], ['benefits', 'drawbacks'], ['strengths', 'weaknesses'], ['upsides', 'downsides']
+];
+const headerWord = (h) => String(h ?? '').toLowerCase().replace(/[^a-z]+/g, ' ').trim();
+/**
+ * Which of two column headers holds the pros: 0 when they read Pros / Cons (or Advantages /
+ * Disadvantages, For / Against, Benefits / Risks, Strengths / Weaknesses, Upsides / Downsides),
+ * 1 when the same pair is written the other way round, -1 when they aren't such a pair.
+ */
+function prosConsColumn(a, b) {
+    const x = headerWord(a), y = headerWord(b);
+    for (const [p, c] of PROS_CONS_PAIRS) {
+        if (x === p && y === c)
+            return 0;
+        if (x === c && y === p)
+            return 1;
+    }
+    return -1;
+}
+/**
+ * A comparison cell written as a tick, cross or "partly": ✓ / ✔ / ✅ / yes / y / true, ✗ / ✘ /
+ * ✕ / ❌ / no / n / false, ~ / partial / partly / some / limited. The whole cell must be just that
+ * word or mark (case ignored); anything longer ("yes, from Q2") is left as text (null).
+ */
+function checkValue(raw) {
+    const s = String(raw ?? '').trim().toLowerCase().replace(/[.!]+$/, '');
+    if (!s)
+        return null;
+    if (['✓', '✔', '✔️', '✅', '☑', '☑️', 'yes', 'y', 'true'].includes(s))
+        return 'yes';
+    if (['✗', '✘', '✕', '❌', '✖', '✖️', 'no', 'n', 'false'].includes(s))
+        return 'no';
+    if (['~', 'partial', 'partly', 'some', 'limited'].includes(s))
+        return 'partial';
+    return null;
+}
+/**
+ * Whether a column reads as ticks and crosses: at least two filled cells, and at least 60% of the
+ * filled cells are check values (see checkValue), so one stray "yes" in a text column isn't iconised.
+ */
+function isCheckColumn(values) {
+    const filled = values.map((v) => String(v ?? '').trim()).filter(Boolean);
+    return filled.length >= 2 && filled.filter((v) => checkValue(v) !== null).length / filled.length >= 0.6;
+}
 
 /* GENERATED:chartFormat:END */
 /* GENERATED:columnType:START — DO NOT EDIT BY HAND. Source of truth: src/utils/columnType.ts (tests: tests/unit/columnType.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -6812,7 +6920,8 @@ function buildTableEditItems(table,cell,commit){
 // above (buildTableEditItems, which needs a `cell` for its own row/column items but not for these)
 // and the read-only display-mode menu (buildNodeTableObject) -- letting someone feature a table as
 // a chart or Cards without first having to enter edit mode at all.
-// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, Status board, then
+// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, Status board,
+// Pros & cons, then
 // Vertical / Horizontal under a "Timeline" heading and the chart shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
 // (a chart or Cards), size (a chart). Anything that doesn't apply is listed but disabled, with the
 // reason on hover, so the menu never changes shape.
@@ -6820,6 +6929,7 @@ function currentTableDisplay(table){
   if(isTableShownAsChips(table))return 'chips';
   if(isTableShownAsProgress(table))return 'progress';
   if(isTableShownAsBoard(table))return 'board';
+  if(isTableShownAsProsCons(table))return 'proscons';
   if(isTableShownAsTimeline(table))return isTimelineHorizontal(table)?'timeline:horizontal':'timeline';
   if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
   return 'table';
@@ -6830,9 +6940,11 @@ function setTableDisplay(table,mode){
   else table.removeAttribute('data-timeline-layout');
   if(mode==='chips'){ setTableChips(table,true); return; }
   if(mode==='progress'){ setTableProgress(table,true); return; }
-  if(mode==='timeline'||mode==='timeline:horizontal'||mode==='board'){
-    table.setAttribute('data-table-display',mode==='board'?'board':'timeline'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
-    table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); showToast(mode==='board'?'Showing as status board':'Showing as timeline'); return;
+  if(mode==='timeline'||mode==='timeline:horizontal'||mode==='board'||mode==='proscons'){
+    const attr=mode.startsWith('timeline')?'timeline':mode;
+    table.setAttribute('data-table-display',attr); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
+    table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse');
+    showToast({timeline:'Showing as timeline',board:'Showing as status board',proscons:'Showing as pros & cons'}[attr]); return;
   }
   table.removeAttribute('data-table-display');
   if(mode==='table'){ table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as table'); return; }
@@ -6859,6 +6971,7 @@ function buildChartFeatureItems(table,commit){
     opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
     opt('progress','Progress bars',tableProgressEligible(table),'Progress bars need a label column and a percentage (or a value and a goal) column.'),
     opt('board','Status board',tableStatusBoardEligible(table),'A status board needs a Status column (e.g. Open, In progress, Blocked, Done) and at least two items.'),
+    opt('proscons','Pros & cons',tableProsConsEligible(table),'Pros & cons needs a two-column table headed Pros / Cons (or Advantages / Disadvantages, For / Against, Strengths / Weaknesses).'),
     {heading:'Timeline'},
     opt('timeline','Vertical',tlOk,TL_REASON),
     opt('timeline:horizontal','Horizontal',tlOk&&tlRows<=TIMELINE_HORIZONTAL_MAX,tlOk?`A horizontal timeline fits up to ${TIMELINE_HORIZONTAL_MAX} milestones; this table has ${tlRows}. Use Vertical.`:TL_REASON),
@@ -7198,6 +7311,7 @@ function buildNodeTableObject(node,tIdx){
     applyTableAutoAlign(clone);
     applyTableHeatmap(clone);
     applyTableStatusPills(clone);
+    applyTableCheckIcons(clone);
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
@@ -8941,6 +9055,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   applyTableAutoAlign(clone);
   applyTableHeatmap(clone);
   applyTableStatusPills(clone);
+  applyTableCheckIcons(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);

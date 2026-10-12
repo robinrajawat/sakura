@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   niceAxisScale, formatChartNumber, cardsGridColumns, cardChangeDirection, cardChangeText,
   valuesLookLikeFractions, progressPercent, heatLevels, timelineOrder, timelinePhases,
-  statusGroup, findStatusColumn, boardLanes, statusPickerOptions
+  statusGroup, findStatusColumn, boardLanes, statusPickerOptions, prosConsColumn, checkValue, isCheckColumn
 } from '../../src/utils/chartFormat';
 
 describe('niceAxisScale', () => {
@@ -159,5 +159,26 @@ describe('status board', () => {
 describe('statusPickerOptions', () => {
   it('offers the standard four, then the column\'s own other statuses', () => {
     expect(statusPickerOptions(['done', 'Cancelled', '', 'cancelled', 'Parked'])).toEqual(['Open', 'In progress', 'Blocked', 'Done', 'Cancelled', 'Parked']);
+  });
+});
+
+describe('pros & cons', () => {
+  it('recognises header pairs either way round', () => {
+    expect(prosConsColumn('Pros', 'Cons')).toBe(0);
+    expect(prosConsColumn('Disadvantages', 'Advantages')).toBe(1);
+    expect(prosConsColumn('For:', 'Against')).toBe(0);
+    expect(prosConsColumn('Pros', 'Notes')).toBe(-1);
+  });
+});
+
+describe('check values', () => {
+  it('reads ticks, crosses and partly as whole-cell values only', () => {
+    expect(['✓', 'Yes', 'true', '✗', 'NO', 'n', '~', 'Partial', 'yes, from Q2', ''].map(checkValue))
+      .toEqual(['yes', 'yes', 'yes', 'no', 'no', 'no', 'partial', 'partial', null, null]);
+  });
+  it('needs most of a column to be check values', () => {
+    expect(isCheckColumn(['yes', 'no', 'partial'])).toBe(true);
+    expect(isCheckColumn(['yes', 'Paris', 'Rome'])).toBe(false);
+    expect(isCheckColumn(['yes'])).toBe(false);
   });
 });
