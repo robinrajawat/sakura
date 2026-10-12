@@ -523,6 +523,41 @@ and merged after independent review:
    the Contents page when there are few sections or put it on the cover, don't repeat the title
    right after the cover, print a node's note directly under its text before its tables/images,
    consistent widths for charts/tables, tighter Cards.
+14 — Simplify toolbar and remove customization settings. **Done in PR #477 (not merged).**
+   Project-owner decision: "No need to have settings for everything." Removing a setting fixes its
+   behaviour at the value below; old saved prefs load harmlessly and drop on the next save (old
+   localStorage keys are never deleted). Covered by `tests/e2e/toolbar-settings-simplify.spec.ts`.
+   **Toolbar (fixed, no group headings, always shown — Zen still hides it):** Undo, Redo | Outdent,
+   Indent | Bold, Italic, Highlight (+picker), Text colour (+picker), Heading style | Note,
+   Checkbox, Tags | Generate outline, Rewrite node (AI) | Collapse all + Zoom as a pair at the right
+   end; wraps onto a second row when narrow. Gone from the toolbar: Insert above, Add child,
+   Duplicate, Move up/down, Delete (all in the right-click menu's More; Add child/Move/Delete also
+   by keyboard), Underline/Strikethrough/Date-time (shortcuts; date/time also in Quick Insert and
+   right-click), Intelligent paste (Ctrl/Cmd+V smart paste kept), the Extras menu. **Version
+   history, Sort top-level nodes (A→Z, Z→A, by depth) and Clear all nodes** live in the document
+   tab's right-click menu (`docTabContextItems`; Sort/Clear only on the active tab; Version history
+   also stays in the File Explorer document menu); Clear all now asks first (`clearAllNodes`) — it
+   had no confirmation before, only Undo.
+   **Removed settings → fixed value:** Show toolbar → on (+ its floating button and Ctrl/Cmd+Shift+X);
+   Group labels → off; Word wrap → on; Customize toolbar buttons and every `*HiddenButtons` /
+   section list → all fixed buttons shown; Customize right-click menu + quick row → one fixed menu
+   (quick row Rewrite, Note, Remark, Q&A, Diagram, Table; every other node action under More, so
+   nothing previously enable-able became unreachable); Node hover toolbar → removed entirely;
+   Status bar items/order → word count + depth, saved, vault chip, auto-rewrite chip (+ Quick
+   Assist); App bar items → Help/Import/Export always shown; Tab bar → always on; New folders start
+   collapsed → expanded; File Explorer tips → removed; To-Dos overdue badge → on, row actions →
+   click to expand, row elements → all shown, sub-tasks collapsed → off, Completed collapsed → on
+   (To-Dos feature switch → always on); Zen hide toolbar/File Explorer/tab bar → yes; Confirm
+   before delete → removed (it was already a no-op); Quick Insert icon-only row → off (labeled
+   list; was on by default); Selection popover → on; Always expand inline → off; Timestamps on
+   hover → on; Diagram skip review → off; Tagging/To-Dos/Quick Insert/Quick Assist feature
+   switches → always on (Features section gone; AI Capabilities moved to Settings → AI as its own
+   section); Auto-rewrite min words 5 / idle 120s / batch 5 / chip detail on / exclusions all on
+   (only the on/off switch remains); Debug logging → off (section, `sakuraLog` and its ~70 calls
+   removed; uncaught errors still go to console.error → crash-report buffer).
+   **Judgment calls:** text size had no Settings control (only the hidden-by-default status-bar
+   chip), so it moved to Settings → Appearance → Text size; the no-UI `editorFloatingHiddenButtons`
+   pref went with the toolbar toggle. Kept: everything in the owner's keep list.
 
 **Decisions already made, so the next session doesn't need to re-ask:**
 - Preview/PDF relationship (used for #463): "keep the engine, remove the UI" — the interactive

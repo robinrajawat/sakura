@@ -56,12 +56,14 @@ Key capabilities:
 - **Tab / Shift+Tab** — indent / outdent the selected node
 - **Backspace** at the start of a row merges it into the row above; **Delete** at the end of a row pulls the next row up into it. The merged-away row's note, tables, images and tags move onto the row that stays, and any Q&A, remarks, diagrams or to-dos linked to it follow along (one **Undo** splits them apart again)
 - **Drag a row** — drop above/below to reorder, or onto the middle of another row to nest it as a child
-- **Right-click a node with children** — sort children A→Z, Z→A, or by depth
+- **Right-click a node with children** — sort children A→Z, Z→A, or by depth. To sort the whole document's top-level nodes the same three ways, right-click the open document's **tab** — the same tab menu has **Version history** and **Clear all nodes** (asks first; Undo brings everything back)
+- **Toolbar** — one fixed bar above the editor, always shown (zen mode hides it), in unlabeled groups: **Undo, Redo · Outdent, Indent · Bold, Italic, Highlight (with its colour picker), Text colour (with its picker), Heading style · Note, Checkbox, Tags · Generate outline, Rewrite node (AI)**, with **Collapse all + Zoom** as a small pair at the right end. It wraps onto a second row on a narrow window. There's nothing to customise
+- **Right-click a node** — a fixed menu: marker icons, a quick row (Rewrite, Note, Add remark, Add question, Add diagram, Add table), and **More** for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Where used, Insert date/time, Version history, Delete
 - Click the fold arrow to collapse or expand a subtree; when collapsed, the "+N" badge is itself clickable to expand
 - Use `[Text]`, `(Text)`, `!Text`, and `` `Text` `` inline for section labels, muted notes, alerts, and inline code
 - A node or note starting with `Label: ` (any short word/phrase before the colon) bolds the label — e.g. `Customer: Acme Corp` bolds "Customer:". `SAP Note 12345` or `OSS Note 12345` (a 5–10 digit number) auto-links to that note on me.sap.com
-- Hover any node (Settings → Editing → "Node hover toolbar") to reveal quick Menu and Zoom-in buttons next to its bullet, without needing to select it first
-- **Checkboxes** — toolbar button (Insert group) or type `[ ] `/`[x] ` at the start of a node while editing (auto-converts on commit). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
+- Hover a row's tree connector or dot to see when the node was created and last modified
+- **Checkboxes** — toolbar button or type `[ ] `/`[x] ` at the start of a node while editing (auto-converts on commit). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
 - `Ctrl/Cmd+Space` opens **Quick Insert** — a small menu for inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, or date/time without leaving the keyboard. Same menu, same shortcut, in every editable area of the app (nodes, inline notes, remarks, Q&A, To-Dos, the title field) — not just while editing a node
 
 ## Documents & Tabs
@@ -80,7 +82,7 @@ Sakura supports multiple open documents at once, shown as tabs above the toolbar
 Beyond the text itself, richer content attaches to a node as inline objects shown directly under it in the outline — there are no separate floating or docked panels for them (earlier versions had a side Pad panel, a floating Note/Code panel, Decision Log, Notepad, Mind Map, Files, and Preview/Presenter mode; all were removed to keep the app focused on its core outline workflow).
 
 - **Note** — every node can hold a note, shown inline directly under the node (a small dot marks a node that has one; click it to expand or collapse). Add or edit it via right-click → Note…, the toolbar, or `Ctrl/Cmd+Shift+N`; edit it in place, and right-click a note line to Rewrite it with AI or delete it.
-- **Inline Q&A, Remarks, and Diagrams** — three kinds of object that live directly under the node they're about, in the outline itself (there's no separate side panel or list view for them). Each node shows a small dot when it has any; click the dot to show or hide them inline (Settings → Layout → "Always expand inline" flips the default).
+- **Inline Q&A, Remarks, and Diagrams** — three kinds of object that live directly under the node they're about, in the outline itself (there's no separate side panel or list view for them). Each node shows a small dot when it has any; click the dot to show or hide them inline.
   - **Q&A** — right-click a node → "Add question…" adds a question/answer pair under it, edited in place. Right-click the Q&A line to Delete it.
   - **Remarks** — a record of things people said: right-click a node → "Add remark…" adds a line with who said it (initials avatar + name), the date (defaults to today, click it for a calendar to backdate), and the remark itself, all edited in place. A node's remarks list newest first; right-click one to rewrite it with AI or delete it. Deleting a node with a remark linked to it warns about the orphaned link first.
   - **Diagrams** — right-click a node → "Add diagram…" creates a real draw.io diagram linked to that node and opens it full-screen; it then shows as a preview card (thumbnail + editable title) under the node, which reopens the editor. The editor's header holds the diagram's title, node link, status (Draft/In Progress/Review/Final), a private note, page count, Duplicate, and Delete. Diagrams embed as a real picture in PDF exports. Right-click a node → **Generate diagram** (under "More" by default) builds a rough flowchart from that node's subtree as an editable draw.io diagram linked under it: a review screen first lets you confirm each node's shape/container/sequence classification (Settings → Panels → Diagrams → "Skip review before generating" makes it one click). Layout, structure, and color are deterministic; labels too long to fit two lines are truncated at a word boundary with an ellipsis. Generating again for the same node offers to regenerate that diagram in place. It's a rough first draft to refine by hand in draw.io, not a finished diagram.
@@ -122,15 +124,15 @@ AI features are entirely optional. Pick a mode at Settings → AI → Provider:
 Both modes are available side by side in the same dropdown, and every AI feature below shares whichever one is currently active.
 
 - **Rewrite** — the ✦ toolbar button rewrites the selected node (or a batch, if multiple are selected, or just a highlighted portion of text). There's no whole-document rewrite. Right-click a note or remark line for its own Rewrite with AI, and each To-Do task/sub-task has one too. The rewrite prompt itself is fully customizable in Settings, with a one-click reset to the default grammar-and-spelling-only wording.
-- **Auto-rewrite on commit** (off by default) — automatically runs Rewrite on a node as soon as you finish typing it (pastes/drops are excluded). Batches multiple nodes into a single request after a configurable idle pause or queue size, rather than firing one request per node, to avoid burning through rate limits. A status-bar chip shows the live queued/countdown/rewriting state and doubles as its own on/off toggle.
+- **Auto-rewrite on commit** (off by default) — automatically runs Rewrite on a node as soon as you finish typing it (pastes/drops are excluded). Batches nodes into a single request after two minutes without further edits or once five are queued, rather than firing one request per node, to avoid burning through rate limits. Nodes under five words, checkbox items, headings, and text with `[[backlinks]]` or `` `code` `` are left alone. The only setting is the on/off switch. A status-bar chip shows the live queued/countdown/rewriting state and doubles as its own on/off toggle.
 - **Generate outline** (`Ctrl/Cmd+Shift+O`) — describe a topic and get an AI-generated nested outline inserted into the current document (or a new blank one).
 - **Provider fallback** — an optional toggle that automatically retries with the next configured provider (in your chosen order) if the active one fails for any reason other than a bad key, which always surfaces directly instead of silently falling back.
 - **Usage today** — a local, best-effort request counter per provider, shown in Settings; it's a rough gauge only, not fetched from the provider, and can drift slightly from that provider's own reset clock.
 
 ## Quick Assist & Quick Insert
 
-- **Quick Assist** (`Ctrl/Cmd+K` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide file explorer," "toggle dark mode," "hide toolbar" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark," "todo: milk") narrows a search to one area — including Q&A, Diagrams, and Remarks individually (`qa:`, `diagram:`, `remark:`). Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, and the AI actions above: rewrite this node, generate outline) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, Q&A, Diagrams, and Remarks, to-dos, and settings/help topics show up as **Go to** results.
-- **Quick Insert** (`Ctrl/Cmd+Space` while actively editing text — anywhere: a node, the title field, a note, a remark, a To-Do) opens a small character-insert menu — em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time — configurable in Settings → Editing. Same menu, same shortcut, everywhere; it's deliberately just characters, not a second command bar, so it's never in competition with Quick Assist for the same key. Node-specific actions (Note, Tags, Add question, Rewrite, Version history) live on the right-click menu instead.
+- **Quick Assist** (`Ctrl/Cmd+K` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide file explorer," "toggle dark mode," "toggle zen mode" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark," "todo: milk") narrows a search to one area — including Q&A, Diagrams, and Remarks individually (`qa:`, `diagram:`, `remark:`). Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, and the AI actions above: rewrite this node, generate outline) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, Q&A, Diagrams, and Remarks, to-dos, and settings/help topics show up as **Go to** results.
+- **Quick Insert** (`Ctrl/Cmd+Space` while actively editing text — anywhere: a node, the title field, a note, a remark, a To-Do) opens a small labeled list of characters to insert — em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time — which of them appear is configurable in Settings → Editing. Same menu, same shortcut, everywhere; it's deliberately just characters, not a second command bar, so it's never in competition with Quick Assist for the same key. Node-specific actions (Note, Tags, Add question, Rewrite, Version history) live on the right-click menu instead.
 
 ## Export & Import (PDF, OPML)
 
@@ -148,10 +150,10 @@ Export ▾ offers two formats, **PDF** and **OPML**; Import ▾ offers **OPML** 
 
 - **Light/Dark theme** with an **Auto theme** mode: Off (manual only) or System (follows the OS/browser's dark-mode setting live). Manually overriding the theme while in System mode holds as a temporary override until the automatic value naturally catches up and matches it again.
 - **Accent color** — six presets (Terracotta, the default, plus Teal, Indigo, Violet, Moss, and Amber), used for buttons, borders, and highlights (not node text itself).
-- **Zen mode** (`Ctrl/Cmd+Shift+E`, or the maximize button by the editor) gives the outline the whole screen and always switches the browser to fullscreen; exiting fullscreen (Esc, F11, the browser's control) exits Zen too. The app bar and status bar always stay visible — no setting or mode hides them. Settings → Bars & menus → Zen mode chooses whether Zen also hides the toolbar, the file explorer (on by default), and the tab bar.
-- **Status bar and app bar** are always shown. Settings → Bars & menus picks which individual status-bar items appear (and their order) and which app-bar buttons (Help, Import, Export) appear.
-- Further layout controls: text size (85–140%, from the status bar's text-size chip), "Timestamps on hover", and word wrap.
-- **Always expand inline** (Settings → Appearance → Layout, off by default) — notes, remarks, and Q&A each show as a small dot next to their node; click a dot to expand that item as its own editable line(s) directly underneath the node. This setting makes every item start expanded instead. Right-click a note or remark line for a small menu (Rewrite with AI, Delete).
+- **Zen mode** (`Ctrl/Cmd+Shift+E`, or the maximize button by the editor) gives the outline the whole screen and always switches the browser to fullscreen; exiting fullscreen (Esc, F11, the browser's control) exits Zen too. Zen hides the toolbar, the tab bar and the file explorer (the file explorer's own toggle still works while in Zen); the app bar and status bar always stay visible.
+- **Status bar, app bar and tab bar** are always shown (outside Zen, for the tab bar). The status bar shows word count and current depth, saved status, the Secure Storage lock chip while locked, the auto-rewrite chip while auto-rewrite is on, and Quick Assist when docked there. None of them are customisable.
+- **Text size** (Settings → Appearance, 85–140%). Hovering a row's dot always shows its created/modified times, long lines always wrap, and notes/remarks/Q&A always start collapsed under their dot.
+- Notes, remarks, and Q&A each show as a small dot next to their node; click a dot to expand that item as its own editable line(s) directly underneath the node. Right-click a note or remark line for a small menu (Rewrite with AI, Delete).
 
 ## Installing as an App (PWA)
 
@@ -203,19 +205,12 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Search bar | Bars & Menus | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+K`) folds this in regardless of this setting |
 | Reopen tabs on launch | *(Quick Assist only)* | On | No Settings UI control yet — toggle via Quick Assist ("reopen tabs"); turn off to always start with a single tab |
 | Start each session blank | *(Quick Assist only)* | Off | No Settings UI control yet — new blank document every launch instead of restoring the last state |
-| Confirm before delete | General | On | Adds a confirmation dialog before deleting nodes or documents |
 | Auto theme | Appearance | Off | Off / System — see Theming & Appearance above |
-| Expanded toolbar | Bars & Menus | Off | Shows "Extras" actions as buttons instead of a dropdown menu |
-| Format buttons | Bars & Menus | All shown | Hide individual Bold/Italic/Underline/Strike/Highlight/Text color/Heading buttons independently, without affecting the shortcuts |
-| AI Capabilities | Features | On | Master switch for all AI features; each still needs Sakura Hosted AI (sign in) or a BYOK provider key active |
+| AI Capabilities | AI | On | Master switch for all AI features; each still needs Sakura Hosted AI (sign in) or a BYOK provider key active |
 | Auto-rewrite on commit | AI | Off | See AI Features above; needs a configured API key |
 | Provider fallback | AI | Off | Auto-retries with the next configured provider on failure (except a bad key) |
-| To-Dos | Features | On | App-level task list; independent of any single document |
-| Node hover toolbar | Editing | Off | Menu + Zoom-in buttons on hover, without selecting the node first |
 | Focus | Editing | On | Zoom into a branch; can be turned off entirely |
-| Debug logging | Data & Backup | Off | Rolling in-memory log (last 500 entries) of app events — save, restore, panel, import/export, AI, and more. Uncaught errors are recorded regardless of this setting; the toggle controls the more detailed breadcrumb trail and whether the log viewer is shown. Never includes your note/task/document text, only metadata (node IDs, lengths, which action ran) — useful to turn on when troubleshooting a specific issue, then use "Copy log" to share it |
 | PDF branding | Data & Backup → Export & copy | On | Small mark on the PDF cover page and every page's corner; optional custom text |
-| Zen mode: hide File Explorer / toolbar / tab bar | Bars & Menus → Zen mode | On / Off / Off | What Zen also hides on entry; the app bar and status bar are never hidden |
 | Use accent color in exports | Data & Backup | On | Off: PDF exports (documents and To-Dos) use one fixed color instead of your live accent, for consistent branding when sharing |
 
 ## Keyboard Shortcuts
@@ -243,7 +238,6 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Insert date/time | Ctrl/Cmd+Shift+D |
 | Open/close To-Dos | Ctrl/Cmd+Shift+T |
 | Generate outline (AI) | Ctrl/Cmd+Shift+O |
-| Show/hide toolbar | Ctrl/Cmd+Shift+X |
 | Zen mode | Ctrl/Cmd+Shift+E |
 | Save now | Ctrl/Cmd+S |
 | New document / Close tab | Ctrl/Cmd+Alt+N / Ctrl/Cmd+Alt+W |
@@ -251,7 +245,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Select all | Ctrl/Cmd+A |
 | Undo / Redo | Ctrl/Cmd+Z / Ctrl/Cmd+Y |
 
-If a shortcut is intercepted by the OS or browser before it reaches the page (notably `Ctrl/Cmd+Space` for Quick Insert, which can conflict with macOS Spotlight), the equivalent toolbar button or menu item always works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
+If a shortcut is intercepted by the OS or browser before it reaches the page (notably `Ctrl/Cmd+Space` for Quick Insert, which can conflict with macOS Spotlight), the equivalent toolbar button or menu item works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
 
 ## Browser Support
 

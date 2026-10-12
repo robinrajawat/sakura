@@ -46,6 +46,8 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     const id = await row.getAttribute('data-id');
     const before = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).backgroundColor);
     await page.click(`.todo-check[data-id="${id}"]`);
+    // The Completed section always starts collapsed; open it to see the task that just moved there.
+    await page.click('#todos-completed-collapse-btn[aria-label="Expand completed"]');
     await page.waitForTimeout(100);
     const result = await page.evaluate((id) => {
       const cb = document.querySelector(`.todo-check[data-id="${id}"]`) as HTMLElement;
@@ -95,6 +97,8 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     await page.click(`.todo-priority[data-id="${id}"]`);
     await page.click(`.todo-priority[data-id="${id}"]`); // now medium priority (amber, #d1a23a -- distinct from accent)
     await page.click(`.todo-check[data-id="${id}"]`);
+    // The Completed section always starts collapsed; open it to see the task that just moved there.
+    await page.click('#todos-completed-collapse-btn[aria-label="Expand completed"]');
     await page.waitForTimeout(100);
     const result = await page.evaluate((id) => {
       const cb = document.querySelector(`.todo-check[data-id="${id}"]`) as HTMLElement;

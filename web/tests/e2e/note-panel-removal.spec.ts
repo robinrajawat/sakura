@@ -108,9 +108,7 @@ test.describe('Note Panel + Code Block removal', () => {
       selectedId = 1; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = [];
       // @ts-expect-error
       nextId = 2;
-      // Toolbar is collapsed by default -- the note button lives there.
-      // @ts-expect-error
-      setToolbarVisible(true, false);
+      // The toolbar (where the note button lives) is always shown.
       // @ts-expect-error
       render();
     });
@@ -184,8 +182,6 @@ test.describe('Note Panel + Code Block removal', () => {
       selectedId = 1; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = [];
       // @ts-expect-error
       nextId = 2;
-      // @ts-expect-error
-      setToolbarVisible(true, false);
       // @ts-expect-error
       render();
     });

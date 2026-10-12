@@ -284,12 +284,9 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    // Surviving prefs from the same blob still apply. (skipFoldedInExports itself was removed
-    // later, in cutdown 9b — exports and copy now always include folded sections.)
-    expect(await page.evaluate(() => (
-      // @ts-expect-error
-      appbarHiddenButtons
-    ))).toEqual(['help']);
+    // (skipFoldedInExports was removed later, in cutdown 9b — exports and copy now always include
+    // folded sections; App bar items were removed in item 14 — Help/Import/Export always show.)
+    await expect(page.locator('#help-toggle')).toBeVisible();
     // OPML is always in the Export menu now, even though the old prefs had hidden it.
     await openExportMenu(page);
     await expect(page.locator('#export-menu .export-item[data-save="opml"]')).toBeVisible();
@@ -300,10 +297,9 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
       savePrefs();
       return JSON.parse(localStorage.getItem('sakura_v001_prefs') || '{}');
     });
-    for (const k of ['exportHiddenButtons', 'diagramExportEnabled', 'previewClosingSlideEnabled', 'previewClosingSlideText', 'previewClosingSlideSubtitle', 'skipFoldedInExports']) {
+    for (const k of ['exportHiddenButtons', 'appbarHiddenButtons', 'diagramExportEnabled', 'previewClosingSlideEnabled', 'previewClosingSlideText', 'previewClosingSlideSubtitle', 'skipFoldedInExports']) {
       expect(saved, k).not.toHaveProperty(k);
     }
-    expect(saved.appbarHiddenButtons).toEqual(['help']);
     expect(await page.evaluate(() => (
       // @ts-expect-error
       Object.prototype.hasOwnProperty.call(shortcutOverrides, 'copyAsImage')

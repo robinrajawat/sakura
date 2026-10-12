@@ -71,6 +71,8 @@ test.describe('To-Dos panel rows are a flat list with click-to-expand, not cards
     const id = await row.getAttribute('data-id');
     const rowOpacityBefore = await row.evaluate(el => getComputedStyle(el).opacity);
     await page.click(`.todo-check[data-id="${id}"]`);
+    // The Completed section always starts collapsed; open it to see the task that just moved there.
+    await page.click('#todos-completed-collapse-btn[aria-label="Expand completed"]');
     await page.waitForTimeout(100);
     const result = await page.evaluate((id) => {
       const r = document.querySelector(`.todo-row[data-id="${id}"]`) as HTMLElement;
