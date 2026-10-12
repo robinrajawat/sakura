@@ -1395,8 +1395,14 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-table-chart-figure{flex:1 1 100%}
 .pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
 .pv-table-chartable table{cursor:context-menu}
+.pv-table-chips{display:flex;flex-wrap:wrap;gap:8px;width:100%;cursor:context-menu}
+.pv-table-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:5px 12px 5px 5px;border-radius:999px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.3}
+.pv-table-chip-key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--bg));color:var(--accent);font:700 12px 'Inter',sans-serif;letter-spacing:.02em;white-space:nowrap}
+.pv-table-chip-desc{overflow-wrap:anywhere}
 .pv-table-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;cursor:context-menu}
 .pv-table-card{display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border)}
+.pv-table-card-head{display:flex;align-items:center;gap:10px}
+.pv-table-card-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,currentColor 13%,transparent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-table-card-value{font:700 22px 'Inter',sans-serif;color:var(--fg);line-height:1.15}
 .pv-table-card-label{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
 
@@ -5375,6 +5381,34 @@ function tableChartability(table){
   if(!tableHasNumericData(table,1))return {ok:false,cols,reason:'None of the columns after the first contain numbers to plot — a chart needs at least one numeric column alongside the labels.'};
   return {ok:true,cols};
 }
+// Chips: a second, non-chart way to show a two-column table — each row as one pill, the first
+// column as a short bold key and the second as its description (e.g. "ZN · Night Distribution").
+// Built for code/description lookups that have no numbers to chart. Mutually exclusive with the
+// chart feature (setTableChips / setTableFeatureChart each clear the other's flag).
+function tableChipsEligible(table){ return tableColumnCount(table)===2&&(table?.rows?.length||0)>=2; }
+function isTableShownAsChips(table){ return !!(table&&table.getAttribute('data-table-display')==='chips'); }
+function setTableChips(table,on){
+  if(!table)return;
+  if(on){ table.setAttribute('data-table-display','chips'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as chips'); }
+  else { table.removeAttribute('data-table-display'); showToast('Showing as table'); }
+}
+function renderChipsHtml(table){
+  const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1)
+    .map(r=>({key:(r.cells[0]?.textContent||'').trim(),desc:(r.cells[1]?.textContent||'').trim()}))
+    .filter(d=>d.key||d.desc);
+  if(!rows.length)return null;
+  return `<div class="pv-table-chips">${rows.map(d=>`<span class="pv-table-chip">${d.key?`<b class="pv-table-chip-key">${esc(d.key)}</b>`:''}${d.desc?`<span class="pv-table-chip-desc">${esc(d.desc)}</span>`:''}</span>`).join('')}</div>`;
+}
+// The one place that decides whether a table displays as something other than a plain table —
+// chips first (an explicit choice that works on text-only tables), then a chart/Cards when the
+// table is featured and chartable. Every display site (inline node tables, note figures, PDF)
+// goes through this, so a new display style only has to be taught here.
+function tableFeatureDisplayHtml(table){
+  if(isTableShownAsChips(table)&&tableChipsEligible(table))return renderChipsHtml(table);
+  if(isTableFeaturedAsChart(table)&&tableChartability(table).ok)return renderTableChartSvg(table);
+  return null;
+}
+function isTableFeatured(table){ return isTableShownAsChips(table)||isTableFeaturedAsChart(table); }
 function isTableFeaturedAsChart(table){
   return !!(table&&table.getAttribute('data-feature-chart')==='1');
 }
@@ -5385,6 +5419,7 @@ function setTableFeatureChart(table,on){
   if(!table)return;
   if(on){
     table.setAttribute('data-feature-chart','1');
+    table.removeAttribute('data-table-display');
     showToast('Will export as a chart');
   } else {
     table.removeAttribute('data-feature-chart');
@@ -6059,6 +6094,8 @@ function buildTableEditItems(table,cell,commit){
 function buildChartFeatureItems(table,commit){
   const items=[];
   const isCharted=isTableFeaturedAsChart(table);
+  if(isTableShownAsChips(table))items.push({label:'Show as table', onClick:()=>{ setTableChips(table,false); commit(); }});
+  else if(tableChipsEligible(table))items.push({label:'Show as chips', onClick:()=>{ setTableChips(table,true); commit(); }});
   if(isCharted||tableChartability(table).ok){
     items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commit(); }});
   }
@@ -6292,8 +6329,8 @@ function buildNodeTableObject(node,tIdx){
     wrap.innerHTML='';
     wrap.classList.remove('pv-table-chart-figure');
     if(!table)return;
-    if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
-      const svg=renderTableChartSvg(table);
+    {
+      const svg=tableFeatureDisplayHtml(table);
       if(svg){ wrap.classList.add('pv-table-chart-figure'); wrap.innerHTML=svg; return; }
     }
     const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
@@ -6316,7 +6353,7 @@ function buildNodeTableObject(node,tIdx){
     wrap.classList.add('editing');
     // A chart/Cards figure being edited shows its underlying table ("Edit data"); the class only
     // drives a CSS ::before hint above it, so nothing extra ends up in the serialized table.
-    wrap.classList.toggle('editing-chart-data',isTableFeaturedAsChart(liveTable));
+    wrap.classList.toggle('editing-chart-data',isTableFeatured(liveTable));
     wrap.appendChild(liveTable);
     _attachTableResizeHandles(liveTable);
     applyTableAutoAlign(liveTable);
@@ -6536,13 +6573,19 @@ function buildNodeTableObject(node,tIdx){
       markDirty(); scheduleAutoSave();
       render();
     };
-    const items=[
-      {label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)},
-    ];
+    const items=[];
+    // Right-clicking one card of a Cards figure leads with that card's icon picker.
+    const cardEl=e.target.closest?.('.pv-table-card');
+    if(cardEl&&table&&getTableChartType(table)==='cards'){
+      items.push(...buildCardIconItems(table,cardEl.dataset.cardLabel||'',commit),{divider:true});
+    }
+    items.push(
+      {label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)}
+    );
     // "Edit data": shows a chart's/Cards' underlying table in the same editing session a plain
     // table gets on click (cells editable, the row/column menu on right-click), and re-renders the
     // chart/Cards from the edited values when it ends (Esc, click outside).
-    if(table&&isTableFeaturedAsChart(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
+    if(table&&isTableFeatured(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
     if(table)items.push(...buildChartFeatureItems(table,commit));
     items.push({label:'Delete', danger:true, onClick:()=>{ node.tables.splice(tIdx,1); node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); }});
     showSbContextMenu(e.clientX,e.clientY,items);
@@ -6617,16 +6660,55 @@ function tableCardsData(table){
     value: (singleCol ? (r.cells[0]?.textContent||'') : (r.cells[1]?.textContent||'')).trim()
   })).filter(d=>d.label!==''||d.value!=='');
 }
+// Optional per-card icons, picked by hand from this small fixed set (right-click a card). No
+// keyword/AI guessing — that machinery was removed on purpose; this is just a manual choice,
+// stored on the table as data-card-icon-picks = {"<card label>": "<icon key>"}. Keyed by label
+// rather than row position so sorting or inserting rows keeps each icon on its card. (The old
+// data-card-icons attribute from the removed auto-icons is still ignored.)
+const CARD_ICONS={
+  time:{label:'Time',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>'},
+  calendar:{label:'Date',svg:'<rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/>'},
+  people:{label:'People',svg:'<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'},
+  code:{label:'Code',svg:'<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'},
+  settings:{label:'Configuration',svg:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>'},
+  truck:{label:'Delivery',svg:'<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'},
+  box:{label:'Warehouse',svg:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'},
+  money:{label:'Cost',svg:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'},
+  trend:{label:'Growth',svg:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>'},
+  target:{label:'Goal',svg:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'},
+  check:{label:'Done',svg:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'},
+  alert:{label:'Risk',svg:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'},
+  sum:{label:'Total',svg:'<path d="M18 4H6l6 8-6 8h12"/>'}
+};
+function cardIconSvg(key,size){ const ic=CARD_ICONS[key]; return ic?`<svg width="${size||16}" height="${size||16}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic.svg}</svg>`:''; }
+function getCardIconPicks(table){ try{ const v=JSON.parse(table?.getAttribute('data-card-icon-picks')||'{}'); return v&&typeof v==='object'&&!Array.isArray(v)?v:{}; }catch(e){ return {}; } }
+function setCardIconPick(table,label,key){
+  if(!table)return;
+  const picks=getCardIconPicks(table);
+  if(key&&CARD_ICONS[key])picks[label]=key; else delete picks[label];
+  if(Object.keys(picks).length)table.setAttribute('data-card-icon-picks',JSON.stringify(picks)); else table.removeAttribute('data-card-icon-picks');
+}
+// Menu items for right-clicking one card of a Cards figure: "No icon" plus the fixed set.
+function buildCardIconItems(table,label,commit){
+  const cur=getCardIconPicks(table)[label]||'';
+  return [
+    {label:'No icon'+(cur?'':' (current)'), disabled:!cur, onClick:()=>{ setCardIconPick(table,label,''); commit(); }},
+    ...Object.entries(CARD_ICONS).map(([key,ic])=>({icon:cardIconSvg(key,14), label:ic.label+(cur===key?' (current)':''), disabled:cur===key, onClick:()=>{ setCardIconPick(table,label,key); commit(); }}))
+  ];
+}
 function renderCardsHtml(table){
   const data=tableCardsData(table);
   if(!data.length)return null;
   // Each card keeps its own series color as a left accent stripe. (Cards used to carry a
   // keyword/AI-chosen icon badge here; that was removed with the rest of the icon features. Old
   // tables may still have a data-card-icons attribute from it -- harmless, never read.)
+  const picks=getCardIconPicks(table);
   const cards=data.map((d,i)=>{
     const color=`var(${CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
-    return `<div class="pv-table-card" style="border-left:3px solid ${color}">`
-      +`<div class="pv-table-card-value">${esc(d.value)}</div>`
+    const iconKey=picks[d.label];
+    const icon=iconKey&&CARD_ICONS[iconKey]?`<span class="pv-table-card-icon" style="color:${color}">${cardIconSvg(iconKey,16)}</span>`:'';
+    return `<div class="pv-table-card${icon?' has-icon':''}" data-card-label="${esc(d.label)}" style="border-left:3px solid ${color}">`
+      +(icon?`<div class="pv-table-card-head">${icon}<div class="pv-table-card-value">${esc(d.value)}</div></div>`:`<div class="pv-table-card-value">${esc(d.value)}</div>`)
       +`<div class="pv-table-card-label">${esc(d.label)}</div>`
       +`</div>`;
   }).join('');
@@ -7721,8 +7803,8 @@ function renderNoteDisplayHtml(html){
       const row=document.createElement('div'); row.className='pv-diagram-row';
       tables.forEach((table,tIdx)=>{
         const fig=document.createElement('div'); fig.className='pv-diagram-figure pv-table-figure'; fig.dataset.noteObjIdx=String(tIdx);
-        if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
-          const svg=renderTableChartSvg(table);
+        {
+          const svg=tableFeatureDisplayHtml(table);
           if(svg){ fig.classList.add('pv-table-chart-figure'); fig.innerHTML=svg; row.appendChild(fig); return; }
         }
         const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
@@ -7749,8 +7831,8 @@ function noteChartDisplayHtml(html,nodeId){
     let tIdx=-1;
     div.querySelectorAll('table').forEach(table=>{
       tIdx++;
-      if(table.getAttribute('data-feature-chart')!=='1')return;
-      const svg=renderTableChartSvg(table);
+      if(!isTableFeatured(table))return;
+      const svg=tableFeatureDisplayHtml(table);
       if(!svg)return;
       const figure=document.createElement('div'); figure.className='pv-table-chart-figure';
       figure.dataset.noteChartNodeId=String(nodeId); figure.dataset.noteChartTableIdx=String(tIdx);
@@ -7859,8 +7941,8 @@ function promoteHeaderRowToThead(table){
 }
 function buildNoteTableFigure(table,nodeId,tIdx){
   const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-table-figure';
-  if(isTableFeaturedAsChart(table)&&tableChartability(table).ok){
-    const svg=renderTableChartSvg(table);
+  {
+    const svg=tableFeatureDisplayHtml(table);
     if(svg){ fig.classList.add('pv-table-chart-figure'); fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx); fig.innerHTML=svg; return fig; }
   }
   const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart');
@@ -16986,7 +17068,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         const figObjIdx=Number(readOnlyFigure.dataset.noteObjIdx);
         {
           const figFound=Number.isFinite(figObjIdx)?noteTableByIndex(node.id,figObjIdx):null;
-          if(figFound&&(isTableFeaturedAsChart(figFound.table)||tableChartability(figFound.table).ok)){
+          if(figFound&&(isTableFeatured(figFound.table)||tableChartability(figFound.table).ok||tableChipsEligible(figFound.table))){
             // Edits this exact figure's data directly -- see enterScopedTableEdit -- rather than
             // focusing the whole note the way "Edit note" does. `cell` here (if any) is a node
             // inside rawTable, the figure's own disposable clone -- passed across as a flat index

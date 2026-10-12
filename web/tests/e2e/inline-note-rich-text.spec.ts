@@ -428,15 +428,16 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(after.isEditing).toBe(false);
     });
 
-    test('right-clicking an unfocused table object (display mode) offers "Copy", "Feature as chart" and "Delete" -- no row/column edit items', async ({ page }) => {
+    test('right-clicking an unfocused table object (display mode) offers "Copy", "Show as chips", "Feature as chart" and "Delete" -- no row/column edit items', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await seedNodeWithTables(page, [tableNote.match(/<table.*<\/table>/)![0]]);
 
       await rightClick(page, '.node-table-line');
       const menu = page.locator('.sb-context-menu');
-      await expect(menu.locator('.sb-context-item')).toHaveCount(3);
+      await expect(menu.locator('.sb-context-item')).toHaveCount(4);
       await expect(menu.getByText('Copy', { exact: true })).toBeVisible();
+      await expect(menu.getByText('Show as chips', { exact: true })).toBeVisible();
       await expect(menu.getByText('Feature as chart', { exact: true })).toBeVisible();
       await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
       await expect(menu.getByText('Add row below', { exact: true })).toHaveCount(0);
