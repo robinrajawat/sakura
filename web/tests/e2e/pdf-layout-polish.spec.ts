@@ -81,7 +81,7 @@ test('with a cover: note before table and images, Contents on its own page, no r
   expect(r.order).toEqual(['note', 'table', 'images']);
   expect(r.tocInline).toBe(false);
   expect(r.tocParent).toBe('preview-main');
-  expect(r.pages).toEqual(['2', '2']); // Contents is page 1; both short sections fit page 2
+  expect(r.pages).toEqual(['3', '3']); // cover is page 1, Contents page 2; both sections fit page 3
   expect(r.headerHiddenRule).toBe(true);
   expect(r.homeParent).toBe('preview-main');
   expect(r.homeNext).toBe('preview-body');

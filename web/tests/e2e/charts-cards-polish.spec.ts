@@ -122,7 +122,7 @@ test('PDF: no blank Contents page when there are too few sections', async ({ pag
   expect(r.printed).toBe(true);
   expect(r.tocHidden).toBe(true);
   expect(r.hideRule).toBe(true);
-  // The cover still isn't counted: the total is the measured page count, not counter(pages).
-  expect(r.footer).toMatch(/" of " "\d+"/);
+  // The footer counts pages with the browser's own counters, so its total always matches the PDF.
+  expect(r.footer).toContain('counter(pages)');
   expect(errors).toEqual([]);
 });
