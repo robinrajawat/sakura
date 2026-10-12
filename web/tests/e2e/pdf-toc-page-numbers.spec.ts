@@ -24,7 +24,8 @@ test.beforeEach(async ({ page }) => {
         return id++;
       };
       const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor. '.repeat(4);
-      ['Overview', 'Plan', 'Risks'].forEach((s, i) => {
+      // Ten sections: more than fit on the cover (PDF_TOC_INLINE_MAX), so Contents gets its own page.
+      ['Overview', 'Plan', 'Risks', 'Budget', 'Team', 'Timeline', 'Scope', 'Vendors', 'Support', 'Appendix'].forEach((s, i) => {
         const a = add(0, '[' + s + ']', null);
         for (let j = 0; j < 8; j++) add(1, lorem, a);
         if (i === 0) add(1, 'Tickets', a, [long]);
@@ -70,7 +71,8 @@ test('Contents entries carry measured page numbers; cover is unnumbered', async 
   });
 
   expect(result.printed).toBe(true);
-  expect(result.entries.map((e) => e.label)).toEqual(['Overview', 'Plan', 'Risks']);
+  expect(result.entries.map((e) => e.label).slice(0, 3)).toEqual(['Overview', 'Plan', 'Risks']);
+  expect(result.entries.length).toBe(10);
   for (const e of result.entries) {
     expect(e.hasPage).toBe(true);
     expect(e.page).toMatch(/^\d+$/);
@@ -82,7 +84,7 @@ test('Contents entries carry measured page numbers; cover is unnumbered', async 
   expect(nums[2]).toBeGreaterThanOrEqual(nums[1]);
   // The footer total is a measured literal (cover excluded), not counter(pages).
   expect(result.footer).toMatch(/" of " "\d+"/);
-  expect(Number(result.footer.match(/" of " "(\d+)"/)![1])).toBeGreaterThanOrEqual(nums[2]);
+  expect(Number(result.footer.match(/" of " "(\d+)"/)![1])).toBeGreaterThanOrEqual(nums[9]);
   expect(result.coverRule).toBe(true);
   expect(result.coverNamed).toBe(true);
   expect(result.leftoverFrames).toBe(0);

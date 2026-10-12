@@ -133,6 +133,7 @@ test.describe('PDF markers, footer and stamp placement', () => {
     expect(res.badge).toBe('Follow-up');
     expect(res.css).toContain('@bottom-left{ content:"Night Delivery · Review"');
     expect(res.css).toContain('counter(page)');
-    expect(res.css).toContain('has-cover-page #pv-doc-header .pv-status-stamp{ display:none');
+    // With a cover, the whole title block (title, meta, stamp) stays off the body pages.
+    expect(res.css).toContain('has-cover-page #pv-doc-header{ display:none');
   });
 });
