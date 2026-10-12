@@ -500,7 +500,7 @@ and merged after independent review:
    Undo restores them to the original row; diagrams and to-dos live outside it and stay on the
    surviving row (still reachable). Covered by `tests/e2e/merge-rows-keeps-content.spec.ts`.
 13. **Tables, Cards and PDF improvements** (three PRs, owner-approved plan).
-   **PR 1 — four bug fixes. Done in PR #476 (not merged).** (a) PDF section headings/Contents
+   **PR 1 — four bug fixes. Merged (#476).** (a) PDF section headings/Contents
    for a section whose text starts with a `[label]` (e.g. `[Release 2.4] Plan`) printed "Release
    2.4] Plan" — now "Release 2.4 · Plan" (label in the accent colour, via the pure
    `sectionHeadingParts` in `src/core/nodeQueries.ts`); (b) clicking into a table no longer
@@ -513,10 +513,38 @@ and merged after independent review:
    (d) PDF tables repeat their header row on each page (`thead` → `table-header-group`, a first
    row of all `<th>` is moved into a `<thead>` in the PDF copy only), rows don't split, and the
    table row avoids a break right after its node. Covered by `tests/e2e/tables-pdf-bugs.spec.ts`.
-   **PR 2 — table editing. Not started.** Menu: add row/column above/left too, move rows/columns,
-   sort by column, header-row toggle; Tab/Shift+Tab between cells, Tab in the last cell adds a
-   row, Enter moves down; grid-size picker on "Add table…"; paste a copied spreadsheet range into
-   selected cells; per-column alignment with numbers right-aligned automatically.
+   **PR 2 — table editing. Done in PR #PRNUM (not merged).** Pure logic in `src/utils/tableData.ts`
+   (generator block `tableData`, unit-tested): `parseCellNumber` (commas, currency before/after a
+   sign, `%`, `(1,234)` negatives, Unicode minus, k/M/B), `parseCellDate` (ISO, `2026/10/14`, month-
+   name dates either order with optional year/weekday — no year sorts as year 2000; slash dates like
+   10/14 deliberately not parsed, locale-ambiguous), `compareCellText`/`tableSortOrder` (numbers <
+   dates < natural text, empties always last, stable), `isNumericColumn`, `normalizeAlign`,
+   `parseTsv` (Excel quoting), `gridSizeForPaste`, `clampGridSize`. DOM operations live next to
+   `buildTableEditItems` in index.html (`tableInsertRow`/`…Column`/`tableMoveRow`/`…Column`/
+   `tableSortByColumn`/`tableToggleHeader`/`tableSetColumnAlign`/`tableDeleteRow`/`…Column`/
+   `tablePasteGrid`/`tableGridFromHtml`). **Header row** = `<thead>` rows, or a first row of all
+   `<th>` (pasted tables); body ops never cross it. **Cell menu** (every editing session incl. Edit
+   data): add row above/below, add column left/right | move row up/down, move column left/right |
+   Sort A→Z / Z→A, Turn header row on/off | Align column left/center/right (+ "automatically" when
+   set) | Delete row/column/table | chart items. Delete table has **no confirmation** (no other
+   object delete confirms; undo restores it). Structural ops run under `_tableStructOpDepth`, which
+   both sessions' focusout handlers honour (retagging/moving/removing the focused cell blurs it
+   natively and used to end the session mid-operation — this was also why "Delete table" inside an
+   editing session threw and deleted nothing). The shared context menu's capture key handler now
+   stops propagation of the keys it handles, so Esc closing a cell menu no longer ends editing.
+   **Keyboard:** Tab/Shift+Tab (wrap, Tab in last cell adds a row, never leaves the table), Enter
+   (down; last row adds a row — previously it exited), Shift+Enter (`<br>` in the cell), ArrowUp/
+   Down move cells only when the caret is measurably on the first/last line (`tableCaretLineEdges`;
+   unmeasurable = native), Esc. **Grid picker** (`openTableGridPicker`, 8×8, readout "cols × rows",
+   default 3×3; `insertNodeTable`): header row "Column 1…N", opens editing with the first header
+   cell's text selected. **Paste** while editing: HTML table preferred, else tab-separated text →
+   fills from the caret, grows rows/columns; single cell / plain text inserts as text (multi-line
+   non-tabular text still flattens to one line). **Alignment** stored as `data-align` on each cell
+   of the column (survives `sakuraSanitizeRichHtml` unchanged — it's a blocklist sanitizer, no
+   change needed); numeric columns get a render-time `data-auto-align="right"` (outline display,
+   editing, PDF via `buildNoteTableFigure`) which `cleanEditorHtml` strips so it's never stored.
+   **Owner decision in this PR:** a single click on a chart/Cards figure no longer opens its table
+   — only double-click or Edit data. Covered by `tests/e2e/table-editing.spec.ts`.
    **PR 3 — charts, Cards and PDF layout. Not started.** Nice round axis ticks + thousands
    separators, optional chart title, Small/Medium/Full chart size; Cards: optional third "change"
    column shown as ▲/▼ coloured, balanced card rows (e.g. 4 or 2×2, not 3+1); PDF: skip/compact
