@@ -24,7 +24,7 @@ Sakura is a single-file, browser-based outliner that's grown into a full persona
 
 ## Overview
 
-Sakura is a single `.html` file. Open it in a browser and it runs — no install, no build step, no network dependency for core functionality. All documents, folders, templates, and settings are stored in the browser's local storage, scoped to that exact file.
+Sakura is a single `.html` file. Open it in a browser and it runs — no install, no build step, no network dependency for core functionality. All documents, folders, To-Dos, and settings are stored in the browser's local storage, scoped to that exact file.
 
 Key capabilities:
 
@@ -39,15 +39,15 @@ Key capabilities:
 - Diagrams — add a draw.io diagram to any node (right-click → Add diagram…, or Generate diagram for a rough first draft from that branch); embeds as a real picture in PDF exports
 - Optional AI features — generate an outline from a topic, and rewrite nodes, selections, note/remark lines, and To-Do tasks/subtasks (manually or automatically as you type) — either zero-setup via **Sakura Hosted AI** (sign in, no key needed, daily quota) or bring your own key with any of seven built-in providers
 - Quick Assist: a combined command bar and search box (plain-English toggles like "hide file explorer," plus search across documents, notes, tags, to-dos, and settings)
-- In-document search and a global header search across settings, help, documents, and templates
-- Folders and templates in the file explorer, with drag-and-drop filing and nesting
+- In-document search and a global header search across settings, help, documents, and To-Dos
+- Folders in the file explorer, with drag-and-drop filing and nesting
 - Export to **PDF** — always the whole document (folded sections, notes, Q&A, and remarks included), with a table of contents, an optional cover page, and your chosen accent color (independently toggleable for consistent branding when sharing) — or to **OPML**; import from OPML. Copy nodes with Ctrl/Cmd+C and paste them into another document or app
 - Multiple documents open as independent tabs
 - Theming: Light/Dark theme with an optional System auto-theme, and six accent colors
 - Zen mode: a fullscreen, distraction-reduced editor that keeps the app bar and status bar in view
 - Installable as a desktop/mobile app (PWA) in supporting browsers
 - Manual full-data backup to a file (and restore, with one-step undo); signed in, your data also syncs to your account automatically
-- Optional account sign-in (Google or email) syncs documents, folders, templates, and settings across devices, and lets you share individual documents with other Sakura accounts as viewer or editor
+- Optional account sign-in (Google or email) syncs documents, folders, To-Dos, and settings across devices, and lets you share individual documents with other Sakura accounts as viewer or editor
 - Version History for documents and the To-Dos list — periodic snapshots you can restore from independently of the undo stack
 
 ## Core Editing
@@ -178,7 +178,7 @@ The install icon itself is genuinely transparent (real alpha, not a flattened op
 
 Signing in (Google or email, from the account button top-right) is entirely optional — everything above keeps working fully offline and locally without it. Signing in does two things:
 
-- **Sync** — your documents, folders, templates, and settings sync to your account and follow you to another browser or device (newer-wins per item, not a field-level merge). A status-bar dot shows sync health. While signed in, this sync is your live, continuous off-device copy — there's nothing extra to set up.
+- **Sync** — your documents, folders, To-Dos, and settings sync to your account and follow you to another browser or device (newer-wins per item, not a field-level merge). A status-bar dot shows sync health. While signed in, this sync is your live, continuous off-device copy — there's nothing extra to set up.
 - **Sharing** — share an individual document with another Sakura account as **Can view** or **Can edit**. A "Share" chip appears under a document's title once you're signed in; type a name or email to search (only accounts with **Profile visibility** set to Public, Settings → Account, Private by default, show up in results), pick a role, and click a result to share immediately. Documents shared with you appear in a **Shared** section in the file explorer, alongside who shared them and your access level. A bell icon next to the account button notifies you when someone shares something with you.
 
 Sharing is deliberately simple in this version: access is per-document, not per-folder; a shared document opens as a normal tab but doesn't persist across a page reload the way your own documents do (reopen it from the Shared section); and there's no live co-editing — two people editing the same shared document at once still follow the same newer-wins sync model as your own devices do, not real-time collaboration.
@@ -189,9 +189,9 @@ Everything is stored locally in the browser, scoped to this exact file. Opening 
 
 How your data is protected depends on whether you're signed in:
 
-- **Signed in — automatic.** Your documents, folders, templates, and settings sync to your account continuously (see [Account, Sync & Sharing](#account-sync--sharing) above). That is a live, off-device copy with nothing to configure.
+- **Signed in — automatic.** Your documents, folders, To-Dos, and settings sync to your account continuously (see [Account, Sync & Sharing](#account-sync--sharing) above). That is a live, off-device copy with nothing to configure.
 - **Signed out — manual.** Everything lives only in this browser until you back it up yourself:
-  - **Backup all data** (Settings → Data) saves everything — documents, folders, templates, settings, and AI provider keys (encrypted if Secure Storage is on, plain text otherwise; handle the file like a password) — to a single downloadable JSON file. It's the only copy outside the browser, and the only reliable way to move *all* your data between different files, browsers, or computers.
+  - **Backup all data** (Settings → Data) saves everything — documents, folders, To-Dos, settings, and AI provider keys (encrypted if Secure Storage is on, plain text otherwise; handle the file like a password) — to a single downloadable JSON file. It's the only copy outside the browser, and the only reliable way to move *all* your data between different files, browsers, or computers.
   - **Restore from backup** (Settings → Data) reads one back and **replaces the entire app's contents** with the file's. For handing a single document to someone else, use the account-based **Share** chip under the title instead. Both live only in Settings, not as one-click shortcuts — Restore replaces everything, so it's worth the extra clicks. Restoring while signed in is guarded against overwriting newer synced work: the next sync pull reconciles against your account before anything local gets pushed back up. Backup files from older versions restore fine; settings for features that no longer exist are simply ignored.
   - **Undo last restore** (Settings → Data, appears only once you've restored) — every Restore first snapshots whatever's currently in the app, so this reverses the most recent restore if the file you picked turns out to have been the wrong one.
 
