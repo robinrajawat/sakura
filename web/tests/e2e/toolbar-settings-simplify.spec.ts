@@ -78,7 +78,7 @@ test.describe('Fixed main toolbar', () => {
     // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
     // Rewrite + Generate outline live in AI ▾.
     await page.locator('#qb-insert').click();
-    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Node', 'Marker', 'Discussion', 'Visuals']);
+    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Basics', 'Marker', 'Discussion', 'Visuals']);
     await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Question', 'Remark', 'Table', 'Image', 'Diagram', 'Generate diagram']);
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(5);
     await page.locator('#qb-ai').click();
