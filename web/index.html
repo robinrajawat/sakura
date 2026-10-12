@@ -26649,9 +26649,10 @@ function exportPreviewAsPdf(onDone){
       @bottom-center{ content:"Page " counter(page) " of " counter(pages); font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
       @bottom-right{ content:"${footerDateContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
     }
-    /* The cover page carries no footer; numbering starts on the page after it. */
+    /* The cover page carries no footer. It still counts as page 1, so the footer's "Page x of y"
+       comes straight from the browser's own page counters and can never disagree with the PDF
+       (a measured total, cover excluded, was off by a page on some documents). */
     @page cover {
-      counter-increment: page 0;
       @bottom-left{ content:none; } @bottom-center{ content:none; } @bottom-right{ content:none; }
     }
     @media print {
@@ -26941,15 +26942,8 @@ function exportPreviewAsPdf(onDone){
   // paint has happened first. Images (SVGs especially — see _pdfWaitForImages above)
   // get their own wait first, since they can still be mid-decode after two rAFs.
   _pdfWaitForImages(el('preview-overlay'))
-    .then(()=>fillPdfTocPageNumbers(paper,coverPageEnabled).catch(e=>{ console.warn('[sakura] Contents page numbers skipped:',e); return 0; }))
-    .then(totalPages=>{
-      // counter(pages) still counts the unnumbered cover, so the footer's total comes from the
-      // measurement; without one the cover simply keeps its (hidden) page number.
-      if(coverPageEnabled){
-        style.textContent=totalPages>1
-          ?style.textContent.replace(/(@bottom-center\{[^}]*?)counter\(pages\)/,'$1"'+(totalPages-1)+'"')
-          :style.textContent.replace('counter-increment: page 0;','');
-      }
+    .then(()=>fillPdfTocPageNumbers(paper).catch(e=>console.warn('[sakura] Contents page numbers skipped:',e)))
+    .then(()=>{
       requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
     });
 }
@@ -26992,13 +26986,12 @@ function pdfPaperSize(){
 // unconditional, and lays it out as columns exactly one page's content box in size. Columns
 // fragment with the same engine (and the same break-before/after/inside rules) as printed pages,
 // so each heading's column index is its page. Numbers are written into the real Contents before
-// window.print(); if anything fails the entries simply stay without numbers. Resolves to the
-// number of printed pages (cover included).
-function fillPdfTocPageNumbers(paper,hasCover){
+// window.print(); if anything fails the entries simply stay without numbers. Numbers match the
+// footer: the cover, when there is one, is page 1.
+function fillPdfTocPageNumbers(paper){
   const toc=el('preview-toc'), overlay=el('preview-overlay');
-  // Measured even with no Contents entries: the footer's total (cover excluded) comes from here too.
   const items=toc&&!toc.classList.contains('pv-toc-hidden-auto')?[...toc.querySelectorAll('.pv-toc-item')]:[];
-  if(!overlay)return Promise.resolve(0);
+  if(!overlay||!items.length)return Promise.resolve();
   const MM=96/25.4;
   const colW=Math.floor((paper.w-2*PDF_PAGE_MARGIN_MM)*MM), colH=Math.floor((paper.h-2*PDF_PAGE_MARGIN_MM)*MM), gap=40;
   // Placeholder numbers so the Contents measures at its printed width.
@@ -27043,19 +27036,17 @@ function fillPdfTocPageNumbers(paper,hasCover){
             page=pageOf(r);
           });
         });
-        const firstNumbered=hasCover?1:0; // the cover is page 0 and unnumbered
         const placed=new Map();
         items.forEach(a=>{
           const target=d.getElementById((a.getAttribute('href')||'').slice(1));
-          if(target)placed.set(a,pageOf(target)-firstNumbered+1);
+          if(target)placed.set(a,pageOf(target)+1);
         });
         items.forEach(a=>{
           const p=a.querySelector('.pv-toc-page'); const n=placed.get(a);
           if(p&&n>0){ p.textContent=String(n); a.classList.add('has-page'); }
           else { if(p)p.textContent=''; a.classList.remove('has-page'); }
         });
-        const totalPages=Math.max(1,Math.round((d.documentElement.scrollWidth+gap)/(colW+gap)));
-        done(); resolve(totalPages);
+        done(); resolve();
       }catch(e){ done(); clear(); reject(e); }
     });
   });

@@ -6,8 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // PDF Contents page: each entry gets a dotted leader and a page number, measured before printing
-// (Chrome can't print target-counter()). The cover page has no footer and isn't counted, so the
-// footer's total is the measured page count minus the cover.
+// (Chrome can't print target-counter()). The cover page has no footer but counts as page 1, so the
+// Contents numbers and the footer's "Page x of y" (the browser's own counters) always agree.
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 const DOC_ID = 'pdftocdoc';
@@ -78,13 +78,13 @@ test('Contents entries carry measured page numbers; cover is unnumbered', async 
     expect(e.page).toMatch(/^\d+$/);
   }
   const nums = result.entries.map((e) => Number(e.page));
-  // Contents is page 1, so the first section starts on page 2; the long table pushes the rest on.
-  expect(nums[0]).toBe(2);
+  // The cover is page 1 and Contents page 2, so the first section starts on page 3; the long
+  // table pushes the rest on.
+  expect(nums[0]).toBe(3);
   expect(nums[1]).toBeGreaterThan(nums[0] + 1);
   expect(nums[2]).toBeGreaterThanOrEqual(nums[1]);
-  // The footer total is a measured literal (cover excluded), not counter(pages).
-  expect(result.footer).toMatch(/" of " "\d+"/);
-  expect(Number(result.footer.match(/" of " "(\d+)"/)![1])).toBeGreaterThanOrEqual(nums[9]);
+  // The footer total is the browser's own page count, never a measured guess.
+  expect(result.footer).toContain('" of " counter(pages)');
   expect(result.coverRule).toBe(true);
   expect(result.coverNamed).toBe(true);
   expect(result.leftoverFrames).toBe(0);

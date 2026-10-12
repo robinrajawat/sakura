@@ -197,8 +197,11 @@ a hidden iframe as page-sized CSS columns (every `@media print` rule made uncond
 breaks → column breaks, repeated table headers simulated) and reads each heading's column index.
 Verified against real PDFs: A4/Letter × cover on/off, long tables, charts, images — exact. Paper
 size is now fixed (`pdfPaperSize`: Letter for US/CA/MX/PH locales, else A4) so the measurement
-matches. Cover is a named page (`@page cover`) with no footer and isn't counted; the footer total is
-the measured count (falls back to plain `counter(pages)` numbering if measuring fails). Covered by
+matches. Cover is a named page (`@page cover`) with no footer. **Changed after #501 (owner saw "Page
+12 of 11"):** the cover counts as page 1 again and the footer uses plain `counter(page)` /
+`counter(pages)` — a measured total (cover excluded) was off by a page on some documents (reproduced:
+mixed long notes/Q&A/remarks/tall image). Contents numbers stay measured (they matched in every test)
+and use the same numbering. Don't reintroduce a measured footer total. Covered by
 `tests/e2e/pdf-toc-page-numbers.spec.ts`.
 
 **PR 3a — charts and Cards polish (after #496).** Pure helpers in `src/utils/chartFormat.ts`
