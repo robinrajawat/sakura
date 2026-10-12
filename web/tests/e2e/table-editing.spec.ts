@@ -102,14 +102,31 @@ async function editCell(page: Page, figIdx: number, cell: string) {
 }
 async function cellMenu(page: Page, f: Locator, cell: string) {
   await f.locator('td,th', { hasText: cell }).first().click({ button: 'right' });
-  const menu = page.locator('.sb-context-menu');
+  const menu = page.locator('.sb-context-menu:not(.sb-context-submenu)');
   await expect(menu).toBeVisible();
   return menu;
 }
+// The cell menu groups its actions into submenus; tests name an action by its old flat label.
+const MENU_PATH: Record<string, [string, string]> = {
+  'Add row above': ['Insert', 'Row above'], 'Add row below': ['Insert', 'Row below'],
+  'Add column left': ['Insert', 'Column left'], 'Add column right': ['Insert', 'Column right'],
+  'Move row up': ['Move', 'Row up'], 'Move row down': ['Move', 'Row down'],
+  'Move column left': ['Move', 'Column left'], 'Move column right': ['Move', 'Column right'],
+  'Sort A → Z': ['Sort', 'A → Z'], 'Sort Z → A': ['Sort', 'Z → A'],
+  'Align column left': ['Align column', 'Left'], 'Align column center': ['Align column', 'Center'],
+  'Align column right': ['Align column', 'Right'], 'Align column automatically': ['Align column', 'Automatically'],
+  'Delete row': ['Delete', 'Row'], 'Delete column': ['Delete', 'Column'], 'Delete table': ['Delete', 'Table']
+};
+async function subItem(page: Page, menu: Locator, label: string) {
+  const [parent, child] = MENU_PATH[label];
+  await menu.locator(':scope > .sb-context-item', { hasText: new RegExp('^' + parent + '$') }).hover();
+  return page.locator('.sb-context-submenu .sb-context-item', { hasText: new RegExp('^' + child.replace(/[→]/g, '.') + '$') });
+}
 async function menuAction(page: Page, f: Locator, cell: string, label: string) {
   const menu = await cellMenu(page, f, cell);
-  await menu.locator('.sb-context-item', { hasText: label }).first().click();
-  await expect(menu).toHaveCount(0);
+  if (MENU_PATH[label]) await (await subItem(page, menu, label)).click();
+  else await menu.locator('.sb-context-item', { hasText: label }).first().click();
+  await expect(page.locator('.sb-context-menu')).toHaveCount(0);
 }
 const activeCellText = (page: Page) => page.evaluate(() => {
   const a = document.activeElement as HTMLElement | null;
@@ -117,26 +134,33 @@ const activeCellText = (page: Page) => page.evaluate(() => {
   return c ? { text: (c.textContent || '').trim(), row: (c.parentElement as HTMLTableRowElement).rowIndex, col: (c as HTMLTableCellElement).cellIndex } : null;
 });
 
-test('the cell menu lists every action in dividered groups, with no empty divider', async ({ page }) => {
+test('the cell menu groups its actions into submenus, in dividered groups with no empty divider', async ({ page }) => {
   const errors = await load(page);
   const f = await editCell(page, 0, 'billing');
   const menu = await cellMenu(page, f, 'billing');
   const entries = await menu.evaluate((m) => [...m.children].map((c) => c.classList.contains('sb-context-divider') ? '---' : (c.textContent || '').trim()));
   expect(entries).toEqual([
-    'Add row above', 'Add row below', 'Add column left', 'Add column right', '---',
-    'Move row up', 'Move row down', 'Move column left', 'Move column right', '---',
-    'Sort A → Z', 'Sort Z → A', 'Turn header row off', '---',
-    'Align column left', 'Align column center', 'Align column right', '---',
+    'Insert', 'Move', 'Sort', 'Align column', 'Turn header row off', '---',
     'Show as', 'Heat-map', 'Add title…', 'Chart size', '---',
-    'Delete row', 'Delete column', 'Delete table'
+    'Delete'
   ]);
-  // On the header row, rows can't be added above it or moved.
-  await page.keyboard.press('Escape');
+  const subLabels = async (parent: string) => {
+    await menu.locator(':scope > .sb-context-item', { hasText: new RegExp('^' + parent + '$') }).hover();
+    return page.locator('.sb-context-submenu .sb-context-item').allTextContents().then((t) => t.map((x) => x.trim()));
+  };
+  expect(await subLabels('Insert')).toEqual(['Row above', 'Row below', 'Column left', 'Column right']);
+  expect(await subLabels('Move')).toEqual(['Row up', 'Row down', 'Column left', 'Column right']);
+  expect(await subLabels('Sort')).toEqual(['A → Z', 'Z → A']);
+  expect(await subLabels('Align column')).toEqual(['Left', 'Center', 'Right', 'Automatically']);
+  expect(await subLabels('Delete')).toEqual(['Row', 'Column', 'Table']);
+  // On the header row, rows can't be added above it or moved. (Esc only while a menu is open: one
+  // more would end the editing session.)
+  for (let i = 0; i < 3 && await page.locator('.sb-context-menu').count(); i++) await page.keyboard.press('Escape');
   const head = await cellMenu(page, f, 'Budget');
   for (const label of ['Add row above', 'Move row up', 'Move row down']) {
-    await expect(head.locator('.sb-context-item', { hasText: label })).toBeDisabled();
+    await expect(await subItem(page, head, label)).toBeDisabled();
   }
-  await expect(head.locator('.sb-context-item', { hasText: 'Move column left' })).toBeEnabled();
+  await expect(await subItem(page, head, 'Move column left')).toBeEnabled();
   expect(errors).toEqual([]);
 });
 
@@ -171,7 +195,7 @@ test('move rows and columns, never across the header', async ({ page }) => {
   await menuAction(page, f, 'SSO', 'Move row up');
   await menuAction(page, f, 'SSO', 'Move row up');
   expect(await activeCellText(page)).toMatchObject({ text: 'SSO', row: 1 });
-  await expect((await cellMenu(page, f, 'SSO')).locator('.sb-context-item', { hasText: 'Move row up' })).toBeDisabled();
+  await expect(await subItem(page, await cellMenu(page, f, 'SSO'), 'Move row up')).toBeDisabled();
   await page.keyboard.press('Escape');
   await menuAction(page, f, 'Login', 'Move row down');
   await menuAction(page, f, 'Share', 'Move column left');
@@ -482,7 +506,8 @@ test('alignment: numeric columns right-align automatically; explicit alignment w
   await menuAction(page, f, 'Login', 'Align column center');
   await menuAction(page, f, '$950', 'Align column left');
   const menu = await cellMenu(page, f, '$950');
-  await expect(menu.locator('.sb-context-item', { hasText: 'Align column left (current)' })).toBeDisabled();
+  // The current alignment carries a check mark.
+  await expect((await subItem(page, menu, 'Align column left')).locator('svg')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   const want = ['center', 'left', 'right', 'left'];

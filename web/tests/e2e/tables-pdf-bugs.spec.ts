@@ -148,7 +148,7 @@ test('a chart\'s "Edit data" shows its table for editing, re-renders the chart w
 
   // The table's own row/column menu is available while editing.
   await chart.locator('td').nth(1).click({ button: 'right' });
-  await expect(menu.getByText('Add row below', { exact: true })).toBeVisible();
+  await expect(menu.getByText('Insert', { exact: true })).toBeVisible();
   // Two edits in one session. Esc closes the (tall) cell menu without ending the session.
   await page.keyboard.press('Escape');
   await expect(menu).toHaveCount(0);

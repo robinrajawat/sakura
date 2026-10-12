@@ -441,7 +441,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
         : (c.textContent || '').trim() + (c.classList.contains('disabled') ? ' (off)' : '')));
       expect(labels).toEqual(['Show as', 'Heat-map', 'Add title… (off)', 'Chart size (off)', '---', 'Copy', '---', 'Delete']);
       await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
-      await expect(menu.getByText('Add row below', { exact: true })).toHaveCount(0);
+      await expect(menu.getByText('Insert', { exact: true })).toHaveCount(0);
     });
 
     // "How should I feature it as chart or card?" was a real discoverability gap -- this used to
@@ -511,7 +511,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       await page.locator('.node-table-line td').first().click();
       await page.locator('.node-table-line td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Add row below', { exact: true }).click();
+      await page.locator('.sb-context-menu').getByText('Insert', { exact: true }).hover();
+      await page.locator('.sb-context-submenu').getByText('Row below', { exact: true }).click();
 
       const afterAddRow = await page.evaluate(() => {
         const rows = [...document.querySelectorAll('.node-table-line tbody tr')];
@@ -522,7 +523,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(afterAddRow.activeIsInLastRow).toBe(true);
 
       await page.locator('.node-table-line tbody tr').nth(1).locator('td').last().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Add column right', { exact: true }).click();
+      await page.locator('.sb-context-menu').getByText('Insert', { exact: true }).hover();
+      await page.locator('.sb-context-submenu').getByText('Column right', { exact: true }).click();
 
       const afterAddColumn = await page.evaluate(() => {
         const active = document.activeElement as HTMLElement | null;
@@ -548,7 +550,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       await page.locator('.node-table-line td').first().click();
       await page.locator('.node-table-line td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete row', { exact: true }).click();
+      await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).hover();
+      await page.locator('.sb-context-submenu').getByText('Row', { exact: true }).click();
 
       const state = await page.evaluate(() => ({
         hasTableLine: !!document.querySelector('.node-table-line'),
@@ -574,7 +577,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       await page.locator('.node-table-line td').first().click();
       await page.locator('.node-table-line td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Delete column', { exact: true }).click();
+      await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).hover();
+      await page.locator('.sb-context-submenu').getByText('Column', { exact: true }).click();
 
       const state = await page.evaluate(() => ({
         hasTableLine: !!document.querySelector('.node-table-line'),
