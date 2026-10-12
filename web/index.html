@@ -26180,14 +26180,23 @@ function renderPreviewToc(entries,showQa=false){
       a.className='pv-toc-item pv-toc-lvl-'+entry.level;
       a.href='#pv-anchor-'+entry.id;
       const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent=entry.text; a.appendChild(label);
+      appendTocPageSlot(a);
       toc.appendChild(a);
     });
   }
   if(showQa){
     const a=document.createElement('a'); a.className='pv-toc-item pv-toc-lvl-1'; a.href='#pv-qa-section';
     const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent='Q&A'; a.appendChild(label);
+    appendTocPageSlot(a);
     toc.appendChild(a);
   }
+}
+// Dotted leader + page number for one Contents entry. Both stay empty until
+// fillPdfTocPageNumbers() measures the print layout; an entry it can't place keeps no number.
+function appendTocPageSlot(a){
+  const leader=document.createElement('span'); leader.className='pv-toc-leader'; leader.setAttribute('aria-hidden','true');
+  const page=document.createElement('span'); page.className='pv-toc-page';
+  a.appendChild(leader); a.appendChild(page);
 }
 function markIconSvg(kind,size){
   size=size||14;
@@ -26312,6 +26321,7 @@ function exportPreviewAsPdf(onDone){
   // the string early, and no raw newlines since a margin box renders on one line anyway.
   const cssStr=s=>String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\r?\n/g,' ');
   const footerDate=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+  const paper=pdfPaperSize();
   // Footer: the document's title (and status, if set) on the left so a loose page still says what
   // it belongs to; the date moves to the right. The branding wordmark stays on the cover page.
   const footerTitleRaw=String(meta.title||'Untitled');
@@ -26320,7 +26330,8 @@ function exportPreviewAsPdf(onDone){
   const footerDateContent=cssStr(footerDate);
   style.textContent=`
     @page {
-      margin: 20mm;
+      size: ${paper.css};
+      margin: ${PDF_PAGE_MARGIN_MM}mm;
       /* Chrome 131+ (Nov 2024) supports these margin-box at-rules natively — this replaced an
          earlier position:fixed-based approach that could overlap the last line of content on a
          page, since a fixed element doesn't know where the browser will actually paginate.
@@ -26333,6 +26344,11 @@ function exportPreviewAsPdf(onDone){
       @bottom-left{ content:"${footerContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
       @bottom-center{ content:"Page " counter(page) " of " counter(pages); font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
       @bottom-right{ content:"${footerDateContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
+    }
+    /* The cover page carries no footer; numbering starts on the page after it. */
+    @page cover {
+      counter-increment: page 0;
+      @bottom-left{ content:none; } @bottom-center{ content:none; } @bottom-right{ content:none; }
     }
     @media print {
       body.printing-preview > *:not(#preview-overlay){ display:none !important; }
@@ -26368,6 +26384,7 @@ function exportPreviewAsPdf(onDone){
         text-align:center; padding:120px 60px 80px; box-sizing:border-box;
         page-break-after:always !important; break-after:page !important;
         font-family:'Inter',Helvetica,Arial,sans-serif !important;
+        page:cover;
       }
       body.printing-preview #sakura-cover-wordmark{
         font:700 12px 'Inter',sans-serif !important; text-transform:uppercase !important;
@@ -26404,8 +26421,14 @@ function exportPreviewAsPdf(onDone){
         color:#2c4a6e !important; background:none !important;
         padding:4px 10px !important; border-radius:0 !important;
         white-space:normal !important; text-decoration:none !important;
-        display:block !important;
+        display:flex !important; align-items:baseline; gap:6px;
+        overflow:visible !important; break-inside:avoid;
       }
+      body.printing-preview .pv-toc-item.pv-toc-lvl-1{ font-weight:600 !important; margin-top:6px !important; }
+      body.printing-preview .pv-toc-label{ flex:0 1 auto; min-width:0; }
+      body.printing-preview .pv-toc-leader{ flex:1 1 24px; border-bottom:1px dotted #b8b4aa; transform:translateY(-3px); }
+      body.printing-preview .pv-toc-page{ flex:none; min-width:18px; text-align:right; font-variant-numeric:tabular-nums; color:#5c584f; font-weight:400; }
+      body.printing-preview .pv-toc-item:not(.has-page) .pv-toc-leader{ visibility:hidden; }
       body.printing-preview .pv-toc-item.pv-toc-lvl-1{
         padding-left:24px !important; color:#2c4a6e !important;
         font-size:12.5px !important;
@@ -26564,8 +26587,97 @@ function exportPreviewAsPdf(onDone){
   // slide) instead of the fully-rebuilt document. Two rAFs guarantee a full layout +
   // paint has happened first. Images (SVGs especially — see _pdfWaitForImages above)
   // get their own wait first, since they can still be mid-decode after two rAFs.
-  _pdfWaitForImages(el('preview-overlay')).then(()=>{
-    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+  _pdfWaitForImages(el('preview-overlay'))
+    .then(()=>fillPdfTocPageNumbers(paper,coverPageEnabled).catch(e=>{ console.warn('[sakura] Contents page numbers skipped:',e); return 0; }))
+    .then(totalPages=>{
+      // counter(pages) still counts the unnumbered cover, so the footer's total comes from the
+      // measurement; without one the cover simply keeps its (hidden) page number.
+      if(coverPageEnabled){
+        style.textContent=totalPages>1
+          ?style.textContent.replace(/(@bottom-center\{[^}]*?)counter\(pages\)/,'$1"'+(totalPages-1)+'"')
+          :style.textContent.replace('counter-increment: page 0;','');
+      }
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.print(); }); });
+    });
+}
+const PDF_PAGE_MARGIN_MM=20;
+// The PDF's paper size is fixed so the Contents page numbers can be measured ahead of printing:
+// US Letter where that's the local default, A4 everywhere else.
+function pdfPaperSize(){
+  const lang=String(navigator.language||'');
+  const region=(lang.split('-')[1]||'').toUpperCase();
+  return ['US','CA','MX','PH'].includes(region)?{css:'letter',w:215.9,h:279.4}:{css:'A4',w:210,h:297};
+}
+// Chrome can't print target-counter(), so the Contents page numbers are measured: a hidden
+// iframe gets a copy of the print target and the app's styles with every print-only rule made
+// unconditional, and lays it out as columns exactly one page's content box in size. Columns
+// fragment with the same engine (and the same break-before/after/inside rules) as printed pages,
+// so each heading's column index is its page. Numbers are written into the real Contents before
+// window.print(); if anything fails the entries simply stay without numbers. Resolves to the
+// number of printed pages (cover included), or 0 when there is no Contents to number.
+function fillPdfTocPageNumbers(paper,hasCover){
+  const toc=el('preview-toc'), overlay=el('preview-overlay');
+  const items=toc?[...toc.querySelectorAll('.pv-toc-item')]:[];
+  if(!overlay||!items.length)return Promise.resolve(0);
+  const MM=96/25.4;
+  const colW=Math.floor((paper.w-2*PDF_PAGE_MARGIN_MM)*MM), colH=Math.floor((paper.h-2*PDF_PAGE_MARGIN_MM)*MM), gap=40;
+  // Placeholder numbers so the Contents measures at its printed width.
+  items.forEach(a=>{ const p=a.querySelector('.pv-toc-page'); if(p)p.textContent='00'; a.classList.add('has-page'); });
+  const clear=()=>items.forEach(a=>{ const p=a.querySelector('.pv-toc-page'); if(p)p.textContent=''; a.classList.remove('has-page'); });
+  const css=[...document.querySelectorAll('style')].map(st=>st.textContent).join('\n')
+    .replace(/@media\s+print\b/g,'@media all')
+    .replace(/page-break-(before|after)\s*:\s*always/g,'break-$1:column')
+    .replace(/break-(before|after)\s*:\s*page/g,'break-$1:column');
+  const fontLinks=[...document.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.outerHTML).join('');
+  const frame=document.createElement('iframe');
+  frame.setAttribute('aria-hidden','true'); frame.tabIndex=-1;
+  frame.style.cssText=`position:fixed;left:-20000px;top:0;width:${colW}px;height:${colH}px;border:0;visibility:hidden;pointer-events:none`;
+  document.body.appendChild(frame);
+  const done=()=>frame.remove();
+  return new Promise((resolve,reject)=>{
+    try{
+      const d=frame.contentDocument;
+      d.open();
+      d.write(`<!doctype html><html class="${escapeHtml(document.documentElement.className)}" style="${escapeHtml(document.documentElement.getAttribute('style')||'')}"><head><meta charset="utf-8">${fontLinks}<style>${css.replace(/<\/style/gi,'<\\/style')}</style>`
+        +`<style>html,body{margin:0!important;padding:0!important;overflow:visible!important;height:${colH}px!important}body{column-width:${colW}px!important;column-gap:${gap}px!important;column-fill:auto!important;width:${colW}px!important}</style></head>`
+        +`<body class="${escapeHtml(document.body.className)}" style="${escapeHtml(document.body.getAttribute('style')||'')}">${overlay.outerHTML}</body></html>`);
+      d.close();
+    }catch(e){ done(); clear(); reject(e); return; }
+    const d=frame.contentDocument;
+    const settle=Promise.race([
+      Promise.all([d.fonts?d.fonts.ready:Promise.resolve(),_pdfWaitForImages(d.body,3000)]),
+      new Promise(r=>setTimeout(r,3500))
+    ]);
+    settle.then(()=>new Promise(r=>requestAnimationFrame(()=>r()))).then(()=>{
+      try{
+        const origin=d.body.getBoundingClientRect().left;
+        const pageOf=node=>Math.max(0,Math.round((node.getBoundingClientRect().left-origin)/(colW+gap)));
+        // Printed pages repeat a table's <thead> at the top of every page it continues onto;
+        // columns don't, so the copy gets the same extra header rows where each column starts.
+        d.querySelectorAll('table').forEach(t=>{
+          const head=t.tHead&&t.tHead.rows[0]; if(!head)return;
+          let page=pageOf(head);
+          [...t.tBodies].flatMap(tb=>[...tb.rows]).forEach(r=>{
+            if(pageOf(r)<=page)return;
+            r.parentNode.insertBefore(head.cloneNode(true),r);
+            page=pageOf(r);
+          });
+        });
+        const firstNumbered=hasCover?1:0; // the cover is page 0 and unnumbered
+        const placed=new Map();
+        items.forEach(a=>{
+          const target=d.getElementById((a.getAttribute('href')||'').slice(1));
+          if(target)placed.set(a,pageOf(target)-firstNumbered+1);
+        });
+        items.forEach(a=>{
+          const p=a.querySelector('.pv-toc-page'); const n=placed.get(a);
+          if(p&&n>0){ p.textContent=String(n); a.classList.add('has-page'); }
+          else { if(p)p.textContent=''; a.classList.remove('has-page'); }
+        });
+        const totalPages=Math.max(1,Math.round((d.documentElement.scrollWidth+gap)/(colW+gap)));
+        done(); resolve(totalPages);
+      }catch(e){ done(); clear(); reject(e); }
+    });
   });
 }
 

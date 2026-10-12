@@ -191,6 +191,16 @@ on top of it, one small PR at a time. What changed, by PR:
   account holds documents, folders, To-Dos and settings. **Templates no longer exist in the app**
   — stale "templates" wording was removed from help and README.
 
+**PDF Contents page numbers (next PR after #495).** Owner chose *measured* page numbers. Chrome
+can't print `target-counter()`, so `fillPdfTocPageNumbers` lays a copy of the print target out in
+a hidden iframe as page-sized CSS columns (every `@media print` rule made unconditional, page
+breaks → column breaks, repeated table headers simulated) and reads each heading's column index.
+Verified against real PDFs: A4/Letter × cover on/off, long tables, charts, images — exact. Paper
+size is now fixed (`pdfPaperSize`: Letter for US/CA/MX/PH locales, else A4) so the measurement
+matches. Cover is a named page (`@page cover`) with no footer and isn't counted; the footer total is
+the measured count (falls back to plain `counter(pages)` numbering if measuring fails). Covered by
+`tests/e2e/pdf-toc-page-numbers.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
