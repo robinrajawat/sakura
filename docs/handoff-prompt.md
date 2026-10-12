@@ -218,7 +218,17 @@ node (`.pv-inline-block` break-inside/before:avoid), and only a row holding a pl
 ≤ `PDF_TOC_INLINE_MAX` (8) entries is moved onto the cover, or after the title without one
 (`placePdfTocInline`), and put back by `homePdfToc` on cleanup and before every render. Widths were
 checked and already consistent (all figures share the content column). Covered by
-`tests/e2e/pdf-layout-polish.spec.ts`. Next agreed: progress bars + heat-map (one PR), then timeline.
+`tests/e2e/pdf-layout-polish.spec.ts`.
+
+**Progress bars + heat-map (after 3b).** Progress is a third `data-table-display` value
+(`progress`, beside `chips`; mutually exclusive with chips, the chart feature and heat-map), eligible
+for 2–3 column tables with numbers in column B (`tableProgressEligible`, `renderProgressHtml`). Heat-map
+is `data-heatmap="1"` (+ `data-heatmap-reverse="1"`) on a plain table; `applyTableHeatmap` sets
+render-time `data-heat` levels 1–5 on display clones only (outline display + PDF, like
+`applyTableAutoAlign`), never on the live editing table, so it is never stored. Reverse is table-wide,
+not per column (possible follow-up). Pure helpers `valuesLookLikeFractions`, `progressPercent`,
+`heatLevels` in `chartFormat.ts`. Covered by `tests/e2e/progress-heatmap.spec.ts`. Next agreed: timeline,
+then status board (owner wants to see a mockup first).
 
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed

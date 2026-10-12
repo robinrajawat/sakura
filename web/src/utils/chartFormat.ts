@@ -1,7 +1,8 @@
 /**
- * Pure helpers for featured tables shown as charts or Cards: round ("nice") value-axis ticks,
- * axis/tooltip number formatting with thousands separators, how many columns a Cards grid uses so
- * its rows come out balanced, and which way a Cards "change" value points.
+ * Pure helpers for featured tables shown as charts, Cards or progress bars, and for heat-map
+ * shading: round ("nice") value-axis ticks, axis/tooltip number formatting with thousands
+ * separators, how many columns a Cards grid uses so its rows come out balanced, which way a Cards
+ * "change" value points, a progress bar's fill, and a numeric column's heat-map levels.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `chartFormat` block. The SVG and
  * HTML builders (renderCartesianChartSvg, renderCardsHtml) stay hand-written in index.html; only
@@ -98,4 +99,49 @@ export function cardChangeDirection(raw: string, parsed: number | null): ChangeD
 /** A change cell's text without a leading arrow or sign, since the arrow shows the direction. */
 export function cardChangeText(raw: string): string {
   return String(raw ?? '').trim().replace(/^[▲▼↑↓]\s*/, '').replace(/^[+\-−]\s*/, '');
+}
+
+/**
+ * Whether a progress column holds fractions (0.62) rather than percentages (62): every number is
+ * between 0 and 1 and at least one has a decimal part. "1" alone stays 1%.
+ */
+export function valuesLookLikeFractions(values: (number | null)[]): boolean {
+  const nums = values.filter((v): v is number => v !== null && Number.isFinite(v));
+  return nums.length > 0 && nums.every((v) => v >= 0 && v <= 1) && nums.some((v) => !Number.isInteger(v));
+}
+
+/**
+ * A progress bar's fill, 0–100 (clamped), from a row's value and optional target: value ÷ target
+ * when a target is given, otherwise the value itself as a percentage (×100 when the column holds
+ * fractions). Null when there is nothing to show (no number, or a zero/negative target).
+ */
+export function progressPercent(value: number | null, target: number | null, fractions = false): number | null {
+  if (value === null || !Number.isFinite(value)) return null;
+  let pct: number;
+  if (target !== null) {
+    if (!Number.isFinite(target) || target <= 0) return null;
+    pct = (value / target) * 100;
+  } else {
+    pct = fractions ? value * 100 : value;
+  }
+  return Math.max(0, Math.min(100, pct));
+}
+
+/**
+ * Heat-map shading for one column: each number gets a level 1..`steps` by where it sits between
+ * the column's lowest and highest value (level `steps` = highest, or lowest when `reverse`, for
+ * columns where less is better). Cells without a number get null, and so does every cell when the
+ * column has fewer than two distinct values (nothing to compare).
+ */
+export function heatLevels(values: (number | null)[], reverse = false, steps = 5): (number | null)[] {
+  const nums = values.filter((v): v is number => v !== null && Number.isFinite(v));
+  if (nums.length < 2) return values.map(() => null);
+  const lo = Math.min(...nums), hi = Math.max(...nums);
+  if (lo === hi) return values.map(() => null);
+  return values.map((v) => {
+    if (v === null || !Number.isFinite(v)) return null;
+    let t = (v - lo) / (hi - lo);
+    if (reverse) t = 1 - t;
+    return 1 + Math.round(t * (steps - 1));
+  });
 }

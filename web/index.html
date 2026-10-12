@@ -1435,6 +1435,19 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
 .pv-table-chart-figure svg.pv-chart-size-full{max-height:none}
 .pv-table-chartable table{cursor:context-menu}
+.pv-table-progress{display:grid;grid-template-columns:minmax(0,max-content) minmax(120px,1fr) auto;column-gap:12px;row-gap:9px;align-items:center;width:100%;cursor:context-menu}
+.pv-progress-row{display:contents}
+.pv-progress-label{font:500 13px 'Inter',sans-serif;color:var(--fg);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-progress-track{position:relative;height:10px;border-radius:999px;background:color-mix(in srgb,var(--fg) 9%,var(--bg));overflow:hidden}
+.pv-progress-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-progress-fill.done{background:var(--fc-green)}
+.pv-progress-value{font:600 12px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;min-width:36px}
+table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+table [data-heat="3"]{background:color-mix(in srgb,var(--accent) 25%,transparent)}
+table [data-heat="4"]{background:color-mix(in srgb,var(--accent) 37%,transparent)}
+table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent)}
 .pv-table-chips{display:flex;flex-wrap:wrap;gap:8px;width:100%;cursor:context-menu}
 .pv-table-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:5px 12px 5px 5px;border-radius:999px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.3}
 .pv-table-chip-key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--bg));color:var(--accent);font:700 12px 'Inter',sans-serif;letter-spacing:.02em;white-space:nowrap}
@@ -5495,8 +5508,64 @@ function tableChipsEligible(table){ return tableColumnCount(table)===2&&(table?.
 function isTableShownAsChips(table){ return !!(table&&table.getAttribute('data-table-display')==='chips'); }
 function setTableChips(table,on){
   if(!table)return;
-  if(on){ table.setAttribute('data-table-display','chips'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as chips'); }
+  if(on){ table.setAttribute('data-table-display','chips'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); showToast('Showing as chips'); }
   else { table.removeAttribute('data-table-display'); showToast('Showing as table'); }
+}
+// Progress bars: a third display beside chips and charts — each row as a labelled horizontal bar.
+// Column B is a percentage ("62%", 62, or a fraction like 0.62), or, with a third column, a
+// value measured against that column's target (31 of 50 → 62%). Stored as
+// data-table-display="progress"; mutually exclusive with chips and the chart feature.
+function tableProgressEligible(table){
+  const cols=tableColumnCount(table);
+  return (cols===2||cols===3)&&(table?.rows?.length||0)>=2&&tableHasNumericData(table,1);
+}
+function isTableShownAsProgress(table){ return !!(table&&table.getAttribute('data-table-display')==='progress'); }
+function setTableProgress(table,on){
+  if(!table)return;
+  if(on){ table.setAttribute('data-table-display','progress'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); showToast('Showing as progress bars'); }
+  else { table.removeAttribute('data-table-display'); showToast('Showing as table'); }
+}
+function renderProgressHtml(table){
+  const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1);
+  const hasTarget=tableColumnCount(table)===3;
+  const data=rows.map(r=>{
+    const raw=(r.cells[1]?.textContent||'').trim();
+    const targetRaw=hasTarget?(r.cells[2]?.textContent||'').trim():'';
+    return {label:(r.cells[0]?.textContent||'').trim(), raw, targetRaw, value:parseCellNumber(raw), target:hasTarget?parseCellNumber(targetRaw):null};
+  }).filter(d=>d.label||d.raw);
+  if(!data.length)return null;
+  const fractions=!hasTarget&&valuesLookLikeFractions(data.map(d=>d.value));
+  const items=data.map(d=>{
+    const pct=progressPercent(d.value,hasTarget?d.target:null,fractions);
+    // The bar stops at 100%, but the number says how far past the goal a row is (48 of 40 → 120%).
+    const over=pct===100&&hasTarget?Math.round(d.value/d.target*100):null;
+    const shown=pct===null?(d.raw||'\u2014'):(over??Math.round(pct))+'%';
+    const tip=hasTarget&&pct!==null?`${d.raw} of ${d.targetRaw}`:'';
+    return `<div class="pv-progress-row"${tip?` title="${esc(tip)}"`:''}><span class="pv-progress-label">${esc(d.label)}</span>`
+      +`<span class="pv-progress-track"><span class="pv-progress-fill${pct!==null&&pct>=100?' done':''}" style="width:${pct===null?0:pct.toFixed(1)}%"></span></span>`
+      +`<span class="pv-progress-value">${esc(shown)}</span></div>`;
+  }).join('');
+  return `<div class="pv-table-progress">${items}</div>`;
+}
+// Heat-map: a plain table's numeric cells shaded by where each sits in its own column (per column,
+// since columns usually hold different units). data-heatmap="1" turns it on, data-heatmap-reverse
+// flips it for columns where lower is better. Applied at render time only, like
+// applyTableAutoAlign: the data-heat levels go on display clones, never into the stored table.
+function isTableHeatmap(table){ return !!(table&&table.getAttribute('data-heatmap')==='1'); }
+function setTableHeatmap(table,on,reverse){
+  if(!table)return;
+  if(on){ table.setAttribute('data-heatmap','1'); if(reverse)table.setAttribute('data-heatmap-reverse','1'); else table.removeAttribute('data-heatmap-reverse'); }
+  else { table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); }
+}
+function applyTableHeatmap(table){
+  if(!table||!isTableHeatmap(table))return;
+  const reverse=table.getAttribute('data-heatmap-reverse')==='1';
+  const body=tableBodyRows(table);
+  const n=tableColumnCount(table);
+  for(let ci=0;ci<n;ci++){
+    const levels=heatLevels(body.map(r=>parseCellNumber(tableCellText(r.cells[ci]))),reverse);
+    body.forEach((r,ri)=>{ const c=r.cells[ci]; if(c&&levels[ri]!==null)c.setAttribute('data-heat',String(levels[ri])); });
+  }
 }
 function renderChipsHtml(table){
   const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1)
@@ -5511,10 +5580,11 @@ function renderChipsHtml(table){
 // goes through this, so a new display style only has to be taught here.
 function tableFeatureDisplayHtml(table){
   if(isTableShownAsChips(table)&&tableChipsEligible(table))return renderChipsHtml(table);
+  if(isTableShownAsProgress(table)&&tableProgressEligible(table))return renderProgressHtml(table);
   if(isTableFeaturedAsChart(table)&&tableChartability(table).ok)return renderTableChartSvg(table);
   return null;
 }
-function isTableFeatured(table){ return isTableShownAsChips(table)||isTableFeaturedAsChart(table); }
+function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableFeaturedAsChart(table); }
 function isTableFeaturedAsChart(table){
   return !!(table&&table.getAttribute('data-feature-chart')==='1');
 }
@@ -5873,9 +5943,10 @@ function clampGridSize(rows, cols, max = 8) {
 /* GENERATED:tableData:END */
 /* GENERATED:chartFormat:START — DO NOT EDIT BY HAND. Source of truth: src/utils/chartFormat.ts (tests: tests/unit/chartFormat.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
- * Pure helpers for featured tables shown as charts or Cards: round ("nice") value-axis ticks,
- * axis/tooltip number formatting with thousands separators, how many columns a Cards grid uses so
- * its rows come out balanced, and which way a Cards "change" value points.
+ * Pure helpers for featured tables shown as charts, Cards or progress bars, and for heat-map
+ * shading: round ("nice") value-axis ticks, axis/tooltip number formatting with thousands
+ * separators, how many columns a Cards grid uses so its rows come out balanced, which way a Cards
+ * "change" value points, a progress bar's fill, and a numeric column's heat-map levels.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `chartFormat` block. The SVG and
  * HTML builders (renderCartesianChartSvg, renderCardsHtml) stay hand-written in index.html; only
@@ -5970,6 +6041,55 @@ function cardChangeDirection(raw, parsed) {
 /** A change cell's text without a leading arrow or sign, since the arrow shows the direction. */
 function cardChangeText(raw) {
     return String(raw ?? '').trim().replace(/^[▲▼↑↓]\s*/, '').replace(/^[+\-−]\s*/, '');
+}
+/**
+ * Whether a progress column holds fractions (0.62) rather than percentages (62): every number is
+ * between 0 and 1 and at least one has a decimal part. "1" alone stays 1%.
+ */
+function valuesLookLikeFractions(values) {
+    const nums = values.filter((v) => v !== null && Number.isFinite(v));
+    return nums.length > 0 && nums.every((v) => v >= 0 && v <= 1) && nums.some((v) => !Number.isInteger(v));
+}
+/**
+ * A progress bar's fill, 0–100 (clamped), from a row's value and optional target: value ÷ target
+ * when a target is given, otherwise the value itself as a percentage (×100 when the column holds
+ * fractions). Null when there is nothing to show (no number, or a zero/negative target).
+ */
+function progressPercent(value, target, fractions = false) {
+    if (value === null || !Number.isFinite(value))
+        return null;
+    let pct;
+    if (target !== null) {
+        if (!Number.isFinite(target) || target <= 0)
+            return null;
+        pct = (value / target) * 100;
+    }
+    else {
+        pct = fractions ? value * 100 : value;
+    }
+    return Math.max(0, Math.min(100, pct));
+}
+/**
+ * Heat-map shading for one column: each number gets a level 1..`steps` by where it sits between
+ * the column's lowest and highest value (level `steps` = highest, or lowest when `reverse`, for
+ * columns where less is better). Cells without a number get null, and so does every cell when the
+ * column has fewer than two distinct values (nothing to compare).
+ */
+function heatLevels(values, reverse = false, steps = 5) {
+    const nums = values.filter((v) => v !== null && Number.isFinite(v));
+    if (nums.length < 2)
+        return values.map(() => null);
+    const lo = Math.min(...nums), hi = Math.max(...nums);
+    if (lo === hi)
+        return values.map(() => null);
+    return values.map((v) => {
+        if (v === null || !Number.isFinite(v))
+            return null;
+        let t = (v - lo) / (hi - lo);
+        if (reverse)
+            t = 1 - t;
+        return 1 + Math.round(t * (steps - 1));
+    });
 }
 
 /* GENERATED:chartFormat:END */
@@ -6303,8 +6423,19 @@ function buildTableEditItems(table,cell,commit){
 function buildChartFeatureItems(table,commit){
   const items=[];
   const isCharted=isTableFeaturedAsChart(table);
-  if(isTableShownAsChips(table))items.push({label:'Show as table', onClick:()=>{ setTableChips(table,false); commit(); }});
-  else if(tableChipsEligible(table))items.push({label:'Show as chips', onClick:()=>{ setTableChips(table,true); commit(); }});
+  const shownAs=isTableShownAsChips(table)?'chips':isTableShownAsProgress(table)?'progress':'';
+  if(shownAs)items.push({label:'Show as table', onClick:()=>{ shownAs==='chips'?setTableChips(table,false):setTableProgress(table,false); commit(); }});
+  if(shownAs!=='chips'&&tableChipsEligible(table))items.push({label:'Show as chips', onClick:()=>{ setTableChips(table,true); commit(); }});
+  if(shownAs!=='progress'&&tableProgressEligible(table))items.push({label:'Show as progress bars', onClick:()=>{ setTableProgress(table,true); commit(); }});
+  // Heat-map shades a table shown as a table, so it's only offered when it isn't featured.
+  if(!shownAs&&!isTableFeaturedAsChart(table)&&tableHasNumericData(table,0)){
+    const heat=isTableHeatmap(table), reverse=table.getAttribute('data-heatmap-reverse')==='1';
+    items.push({label:'Heat-map', submenu:[
+      {label:'Off'+(heat?'':' (current)'), disabled:!heat, onClick:()=>{ setTableHeatmap(table,false); commit(); }},
+      {label:'Higher is darker'+(heat&&!reverse?' (current)':''), disabled:heat&&!reverse, onClick:()=>{ setTableHeatmap(table,true,false); commit(); }},
+      {label:'Lower is darker'+(heat&&reverse?' (current)':''), disabled:heat&&reverse, onClick:()=>{ setTableHeatmap(table,true,true); commit(); }}
+    ]});
+  }
   if(isCharted||tableChartability(table).ok){
     items.push({label:isCharted?'Remove chart feature':'Feature as chart', onClick:()=>{ setTableFeatureChart(table,!isCharted); commit(); }});
   }
@@ -6556,6 +6687,7 @@ function buildNodeTableObject(node,tIdx){
     }
     const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
     applyTableAutoAlign(clone);
+    applyTableHeatmap(clone);
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
@@ -8246,6 +8378,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart');
   promoteHeaderRowToThead(clone);
   applyTableAutoAlign(clone);
+  applyTableHeatmap(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
