@@ -759,6 +759,9 @@ body.zen-mode #quick-bar{display:none}
 .fold-dot.is-hover::before,.fold-dot.is-hover::after{content:none}
 .fold-dot.is-hover,.fold-toggle.is-hover{font-size:17px}
 .node-vguide{position:absolute;top:0;bottom:calc(-2px * var(--editor-scale) * var(--row-density));width:1px;background:var(--vert);opacity:.16;pointer-events:none}
+/* Table and image blocks sit on an 8px bottom margin (rows use 2px), so their depth guides reach
+   through it too — otherwise every chips/cards/table/image block left a gap in the line below it. */
+.node-table-line-wrap .node-vguide,.node-image-line-wrap .node-vguide{bottom:-8px}
 .fold-dot:hover{background:var(--hover);color:var(--accent)}
 .fold-spacer{display:inline-flex;width:18px;height:18px;flex:0 0 auto;margin-right:1px}
 
