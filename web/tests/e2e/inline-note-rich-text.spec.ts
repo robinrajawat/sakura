@@ -603,6 +603,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
 
       await page.locator('.node-table-line td').first().click({ button: 'right' });
       const menu = page.locator('.sb-context-menu');
+      // Chart types live in a "Chart type" submenu.
+      await menu.getByText('Chart type', { exact: true }).hover();
       await expect(menu.getByText('Bar chart (current)', { exact: true })).toBeVisible();
       await expect(menu.getByText('Stacked bar chart', { exact: true })).toBeVisible();
       const currentItem = menu.locator('.sb-context-item.disabled', { hasText: 'Bar chart (current)' });
@@ -617,10 +619,12 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       // A chart opens its data on double-click (a single click leaves it a chart).
       await page.locator('.node-table-line').dblclick();
       await page.locator('.node-table-line td').first().click({ button: 'right' });
-      await page.locator('.sb-context-menu').getByText('Cards', { exact: true }).click();
+      await page.locator('.sb-context-menu').getByText('Chart type', { exact: true }).hover();
+      await page.locator('.sb-context-submenu').getByText('Cards', { exact: true }).click();
 
       await page.locator('.node-table-line td').first().click({ button: 'right' });
       const menu = page.locator('.sb-context-menu');
+      await menu.getByText('Chart type', { exact: true }).hover();
       await expect(menu.getByText('Cards (current)', { exact: true })).toBeVisible();
       await expect(menu.getByText('Suggest icons with AI', { exact: true })).toHaveCount(0);
       const pieItem = menu.locator('.sb-context-item:not(.disabled)', { hasText: 'Pie chart' });
