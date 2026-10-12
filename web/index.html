@@ -2032,7 +2032,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    outline's own right-click menu (#context-marker-row). Sits at the far right of the row
    (appended last, after any fold-badge/hidden-content chips which live on contentEl rather
    than the row itself). */
-.pv-marker-badge{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;margin-left:8px;width:18px;height:18px;border-radius:5px;font-size:11px;line-height:1;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+.pv-marker-badge{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;margin-left:8px;min-width:18px;height:18px;padding:0 6px 0 5px;border-radius:5px;font:600 10.5px 'Inter',sans-serif;line-height:1;white-space:nowrap;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 .pv-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .pv-marker-badge[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
 .pv-marker-badge[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
@@ -25719,7 +25719,8 @@ function renderPreviewBody(){
       mainEl=row; contentEl=txt;
     }
     if(node.marker){
-      const mk=document.createElement('span'); mk.className='pv-marker-badge'; mk.dataset.color=nodeMarkerColor(node.marker); mk.dataset.tip=nodeMarkerLabel(node.marker); mk.innerHTML=markIconSvg(node.marker,12);
+      // Icon plus its name: on paper there's no hover tip, so an icon alone (⚑ vs ⚠) isn't readable.
+      const mk=document.createElement('span'); mk.className='pv-marker-badge'; mk.dataset.color=nodeMarkerColor(node.marker); mk.dataset.tip=nodeMarkerLabel(node.marker); mk.innerHTML=markIconSvg(node.marker,12)+'<span class="pv-marker-label">'+esc(nodeMarkerLabel(node.marker))+'</span>';
       contentEl.appendChild(mk);
     }
     const ownNote=!!(node.note&&node.note.trim());
@@ -26196,8 +26197,12 @@ function exportPreviewAsPdf(onDone){
   // the string early, and no raw newlines since a margin box renders on one line anyway.
   const cssStr=s=>String(s||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\r?\n/g,' ');
   const footerDate=new Date().toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
-  const footerContent=cssStr(footerDate);
-  const brandingContent=cssStr(getBrandingDisplayText());
+  // Footer: the document's title (and status, if set) on the left so a loose page still says what
+  // it belongs to; the date moves to the right. The branding wordmark stays on the cover page.
+  const footerTitleRaw=String(meta.title||'Untitled');
+  const footerTitle=footerTitleRaw.length>70?footerTitleRaw.slice(0,69)+'…':footerTitleRaw;
+  const footerContent=cssStr(footerTitle+(docStatus&&DOC_STATUSES.includes(docStatus)?' · '+docStatusLabel(docStatus):''));
+  const footerDateContent=cssStr(footerDate);
   style.textContent=`
     @page {
       margin: 20mm;
@@ -26212,7 +26217,7 @@ function exportPreviewAsPdf(onDone){
          Chrome's own default header/footer (page URL + date) for the page. */
       @bottom-left{ content:"${footerContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
       @bottom-center{ content:"Page " counter(page) " of " counter(pages); font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
-      ${previewBrandingEnabled?`@bottom-right{ content:"${brandingContent}"; font-family:'Inter',sans-serif; font-size:8pt; letter-spacing:.15em; color:#a3a099; }`:''}
+      @bottom-right{ content:"${footerDateContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
     }
     @media print {
       body.printing-preview > *:not(#preview-overlay){ display:none !important; }
@@ -26268,6 +26273,9 @@ function exportPreviewAsPdf(onDone){
         background:${liveAccent} !important; border-radius:2px !important;
       }
       body.printing-preview.has-cover-page #pv-doc-meta{ display:none !important; }
+      /* The status stamp belongs on the cover page; the title block only carries it when there is no cover. */
+      body.printing-preview.has-cover-page #pv-doc-header .pv-status-stamp{ display:none !important; }
+      body.printing-preview.has-cover-page #pv-doc-header.has-status-stamp #pv-doc-title{ padding-right:0 !important; }
       body.printing-preview #preview-toc-head-row{
         margin-bottom:14px !important;
       }

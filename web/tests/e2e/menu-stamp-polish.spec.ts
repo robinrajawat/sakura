@@ -17,6 +17,9 @@ async function seed(page: import('@playwright/test').Page, list: ReturnType<type
 }
 
 async function open(page: import('@playwright/test').Page) {
+  // Mark the welcome dialog as seen before load: it opens on a short delay, so hiding it right
+  // after load raced with it and it could still pop up over later clicks.
+  await page.addInitScript(() => { try { localStorage.setItem('sakura_welcome_seen', 'true'); } catch { /* ignore */ } });
   await page.goto('file://' + indexPath);
   await page.evaluate(() => {
     const landing = document.getElementById('sakura-landing-overlay');
@@ -107,5 +110,29 @@ test.describe('Toolbar marker summary', () => {
     await page.locator('#marker-summary .marker-sum-btn.active').click();
     // @ts-expect-error
     expect(await page.evaluate(() => activeMarkerFilter)).toBeNull();
+  });
+});
+
+test.describe('PDF markers, footer and stamp placement', () => {
+  test('markers carry their name, the footer names the document and status, and the stamp is cover-only when a cover prints', async ({ page }) => {
+    await open(page);
+    await seed(page, [n(1, 0, 'Open questions', null), n(2, 1, 'Who owns the label layout?', 1)]);
+    const res = await page.evaluate(() => {
+      // @ts-expect-error -- bare globals from index.html
+      nodes[1].marker = 'followup';
+      (document.getElementById('header-title') as HTMLInputElement).value = 'Night Delivery';
+      // @ts-expect-error
+      setDocStatus('review', false);
+      window.print = () => {};
+      // @ts-expect-error
+      exportPdfDirect();
+      const badge = document.querySelector('#preview-overlay .pv-marker-badge');
+      const css = document.getElementById('pv-print-override')?.textContent || '';
+      return { badge: badge?.textContent || '', css };
+    });
+    expect(res.badge).toBe('Follow-up');
+    expect(res.css).toContain('@bottom-left{ content:"Night Delivery · Review"');
+    expect(res.css).toContain('counter(page)');
+    expect(res.css).toContain('has-cover-page #pv-doc-header .pv-status-stamp{ display:none');
   });
 });
