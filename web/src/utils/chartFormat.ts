@@ -3,10 +3,10 @@
  * shading: round ("nice") value-axis ticks, axis/tooltip number formatting with thousands
  * separators, how many columns a Cards grid uses so its rows come out balanced, which way a Cards
  * "change" value points, a progress bar's fill, a numeric column's heat-map levels, and a timeline's
- * row order and past / next / upcoming phases.
+ * row order and past / next / upcoming phases, and a status board's lanes.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `chartFormat` block. The SVG and
- * HTML builders (renderCartesianChartSvg, renderCardsHtml) stay hand-written in index.html; only
+ * HTML builders (renderCartesianChartSvg, renderCardsHtml, renderStatusBoardHtml) stay hand-written in index.html; only
  * the decisions live here so they can be unit tested.
  */
 
@@ -175,4 +175,72 @@ export function timelinePhases(dates: (number | null)[], hasYear: boolean[], tod
     if (!nextGiven) { nextGiven = true; return 'next'; }
     return 'upcoming';
   });
+}
+
+export type StatusGroup = 'open' | 'progress' | 'blocked' | 'done';
+
+const STATUS_WORDS: Record<StatusGroup, string[]> = {
+  open: ['open', 'to do', 'todo', 'new', 'not started', 'backlog', 'planned', 'pending', 'proposed'],
+  progress: ['in progress', 'doing', 'wip', 'ongoing', 'started', 'active', 'underway', 'review', 'in review', 'testing', 'qa'],
+  blocked: ['blocked', 'on hold', 'waiting', 'stuck', 'at risk', 'paused', 'delayed'],
+  done: ['done', 'closed', 'complete', 'completed', 'resolved', 'finished', 'fixed', 'shipped']
+};
+
+/**
+ * Which of the four standard groups a status cell belongs to — Open, In progress, Blocked, Done —
+ * ignoring case, punctuation and emoji ("In-progress", "✅ Done", "ON HOLD"). Null for anything
+ * else ("Cancelled", "Phase 2"), which a status board shows in a lane of its own.
+ */
+export function statusGroup(raw: string): StatusGroup | null {
+  const s = String(raw ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!s) return null;
+  for (const g of Object.keys(STATUS_WORDS) as StatusGroup[]) if (STATUS_WORDS[g].includes(s)) return g;
+  return null;
+}
+
+/** A column header that names a status column. */
+export const STATUS_HEADER_RE = /^\s*(status|state|stage)\s*$/i;
+
+/**
+ * The status column of a table, or -1: the first column headed Status / State / Stage, otherwise
+ * the first whose filled cells (at least two) are mostly recognised statuses.
+ */
+export function findStatusColumn(headers: string[], columns: string[][]): number {
+  const byHeader = headers.findIndex((h) => STATUS_HEADER_RE.test(h || ''));
+  if (byHeader >= 0) return byHeader;
+  return columns.findIndex((col) => {
+    const filled = col.map((v) => String(v ?? '').trim()).filter(Boolean);
+    return filled.length >= 2 && filled.filter((v) => statusGroup(v) !== null).length / filled.length >= 0.6;
+  });
+}
+
+export interface BoardLane {
+  key: string;
+  label: string;
+  group: StatusGroup | null;
+  rows: number[];
+}
+
+const LANE_LABELS: Record<StatusGroup, string> = { open: 'Open', progress: 'In progress', blocked: 'Blocked', done: 'Done' };
+
+/**
+ * A status board's lanes, from each row's status text: Open, In progress, Blocked, then any other
+ * statuses (one lane each, labelled as first written, in order of appearance), then Done, then
+ * "No status" for empty cells. Lanes with no rows are left out; rows keep their table order.
+ */
+export function boardLanes(statuses: string[]): BoardLane[] {
+  const std = new Map<StatusGroup, BoardLane>();
+  (['open', 'progress', 'blocked', 'done'] as StatusGroup[]).forEach((g) => std.set(g, { key: g, label: LANE_LABELS[g], group: g, rows: [] }));
+  const other = new Map<string, BoardLane>();
+  const none: BoardLane = { key: 'none', label: 'No status', group: null, rows: [] };
+  statuses.forEach((raw, i) => {
+    const text = String(raw ?? '').trim();
+    if (!text) { none.rows.push(i); return; }
+    const g = statusGroup(text);
+    if (g) { std.get(g)!.rows.push(i); return; }
+    const key = 'x:' + text.toLowerCase().replace(/\s+/g, ' ');
+    if (!other.has(key)) other.set(key, { key, label: text, group: null, rows: [] });
+    other.get(key)!.rows.push(i);
+  });
+  return [std.get('open')!, std.get('progress')!, std.get('blocked')!, ...other.values(), std.get('done')!, none].filter((l) => l.rows.length);
 }

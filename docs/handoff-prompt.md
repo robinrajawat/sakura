@@ -277,10 +277,27 @@ last) and phases them with `timelinePhases` against today's UTC date (done / nex
 without a 4-digit year get no phase). Pure helpers in `chartFormat.ts`. Covered by
 `tests/e2e/table-timeline.spec.ts`.
 
+**Horizontal timeline (owner request).** Show as › now has a "Timeline" heading with Vertical /
+Horizontal (the menu supports only one submenu level, so no nested Timeline ›). Horizontal adds
+`data-timeline-layout="horizontal"` (cleared by any other display); `renderTimelineHtml` emits
+`.pv-timeline.horizontal` with `--tl-cols` = row count, a 3-row grid (`grid-auto-flow:column`, items
+`display:contents`) so dates, dots and events align across columns. Capped at
+`TIMELINE_HORIZONTAL_MAX` = 8 rows (disabled with a reason above that); avoid-break in print.
+
 **Cell menu grouped (owner request).** `buildTableEditItems` now returns Insert ›, Move ›, Sort ›,
 Align column › (check on current, incl. Automatically), Turn header row on/off | the Show as group |
 Delete › (Row, Column, Table). e2e helpers in `table-editing.spec.ts` map old flat labels to
 [submenu, item] via `MENU_PATH`/`subItem`.
+
+**Status board (owner request: tracking open points).** `data-table-display="board"`, in Show as ›
+after Progress bars. `tableStatusBoardInfo` picks the status column with `findStatusColumn` (header
+Status/State/Stage, else ≥60% recognised status words), item = first other column, owner/due by header
+(`BOARD_OWNER_RE`/`BOARD_DUE_RE`), note = next column. Lanes from `boardLanes` (Open, In progress,
+Blocked, custom statuses, Done, No status; empty lanes dropped); `statusGroup` maps wordings. Overdue =
+due date with a year before today and lane not Done. `.many` (≥13 rows) stacks lanes in print.
+`applyTableStatusPills` colours a plain table's Status cells on display clones only, and the pill is
+layout-neutral (box-shadow, no padding/weight change) so entering edit mode doesn't move the table
+(`tables-pdf-bugs.spec.ts` guards that). Covered by `tests/e2e/table-status-board.spec.ts`.
 
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed

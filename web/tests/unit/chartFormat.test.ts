@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   niceAxisScale, formatChartNumber, cardsGridColumns, cardChangeDirection, cardChangeText,
-  valuesLookLikeFractions, progressPercent, heatLevels, timelineOrder, timelinePhases
+  valuesLookLikeFractions, progressPercent, heatLevels, timelineOrder, timelinePhases,
+  statusGroup, findStatusColumn, boardLanes
 } from '../../src/utils/chartFormat';
 
 describe('niceAxisScale', () => {
@@ -133,5 +134,24 @@ describe('timeline', () => {
   });
   it('gives dates without a year no phase', () => {
     expect(timelinePhases([Date.UTC(2000, 0, 5)], [false], Date.UTC(2026, 0, 1))).toEqual([null]);
+  });
+});
+
+describe('status board', () => {
+  it('recognises common status words, ignoring case, punctuation and emoji', () => {
+    expect(['Open', 'To-do', 'IN PROGRESS', 'in-progress', 'On hold', '✅ Done', 'Closed.', 'Cancelled', ''].map(statusGroup))
+      .toEqual(['open', 'open', 'progress', 'progress', 'blocked', 'done', 'done', null, null]);
+  });
+  it('finds the status column by header, else by its values', () => {
+    expect(findStatusColumn(['Item', 'Owner', 'Status'], [['a', 'b'], ['x', 'y'], ['', '']])).toBe(2);
+    expect(findStatusColumn(['Item', 'State '], [[], []])).toBe(1);
+    expect(findStatusColumn(['Item', 'Where'], [['a', 'b', 'c'], ['Done', 'Open', 'Phase 2']])).toBe(1);
+    expect(findStatusColumn(['Item', 'Where'], [['a', 'b'], ['Paris', 'Open']])).toBe(-1);
+  });
+  it('groups rows into lanes: standard ones, then others, then Done, then No status', () => {
+    const lanes = boardLanes(['Done', 'Open', 'Cancelled', '', 'Blocked', 'open', 'cancelled']);
+    expect(lanes.map((l) => [l.label, l.rows])).toEqual([
+      ['Open', [1, 5]], ['Blocked', [4]], ['Cancelled', [2, 6]], ['Done', [0]], ['No status', [3]]
+    ]);
   });
 });
