@@ -1442,6 +1442,21 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-progress-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-progress-fill.done{background:var(--fc-green)}
 .pv-progress-value{font:600 12px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;min-width:36px}
+.pv-timeline{display:grid;grid-template-columns:auto 18px minmax(0,1fr);column-gap:12px;width:100%;cursor:context-menu}
+.pv-tl-item{display:contents}
+.pv-tl-date{font:600 12px 'Inter',sans-serif;color:var(--muted);text-align:right;padding:2px 0 16px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pv-tl-rail{position:relative;display:flex;justify-content:center}
+.pv-tl-rail::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:var(--border)}
+.pv-tl-item:first-child .pv-tl-rail::before{top:7px}
+.pv-tl-item:last-child .pv-tl-rail::before{bottom:auto;height:7px}
+.pv-tl-dot{position:relative;z-index:1;width:10px;height:10px;margin-top:3px;border-radius:50%;box-sizing:border-box;border:2px solid var(--hint);background:var(--bg);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-tl-item.done .pv-tl-dot{background:var(--accent);border-color:var(--accent)}
+.pv-tl-item.next .pv-tl-dot{width:12px;height:12px;margin-top:2px;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.pv-tl-body{padding:0 0 16px;min-width:0}
+.pv-tl-event{font:500 13.5px 'Inter',sans-serif;color:var(--fg);line-height:1.35}
+.pv-tl-item.done .pv-tl-event{color:var(--muted)}
+.pv-tl-detail{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:2px;line-height:1.4}
+.pv-tl-next{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;font:700 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);vertical-align:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
@@ -5550,6 +5565,37 @@ function renderProgressHtml(table){
   }).join('');
   return `<div class="pv-table-progress">${items}</div>`;
 }
+// Timeline: column A is a date, B the event, and an optional C a detail. Rows show in date order on
+// a vertical line — done (before today), next (the first from today) and upcoming — with undated
+// rows ("TBD") last. Stored as data-table-display="timeline"; eligible when the table has 2–3
+// columns and most rows' first cell is a date (parseCellDate).
+function tableTimelineEligible(table){
+  const cols=tableColumnCount(table); if(cols<2||cols>3)return false;
+  const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1).filter(r=>(r.textContent||'').trim());
+  if(rows.length<2)return false;
+  const dated=rows.filter(r=>parseCellDate((r.cells[0]?.textContent||'').trim())!==null).length;
+  return dated>=Math.ceil(rows.length/2);
+}
+function isTableShownAsTimeline(table){ return !!(table&&table.getAttribute('data-table-display')==='timeline'); }
+function renderTimelineHtml(table){
+  const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1)
+    .map(r=>({date:(r.cells[0]?.textContent||'').trim(), event:(r.cells[1]?.textContent||'').trim(), detail:(r.cells[2]?.textContent||'').trim()}))
+    .filter(d=>d.date||d.event||d.detail);
+  if(!rows.length)return null;
+  const stamps=rows.map(d=>parseCellDate(d.date));
+  const order=timelineOrder(stamps);
+  const now=new Date(), today=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+  const ordered=order.map(i=>rows[i]);
+  const phases=timelinePhases(order.map(i=>stamps[i]),ordered.map(d=>/\b\d{4}\b/.test(d.date)),today);
+  const label={done:'Done',next:'Next',upcoming:'Upcoming'};
+  const items=ordered.map((d,k)=>{
+    const ph=phases[k];
+    return `<div class="pv-tl-item${ph?' '+ph:''}"><div class="pv-tl-date">${esc(d.date||'TBD')}</div>`
+      +`<div class="pv-tl-rail"><span class="pv-tl-dot"${ph?` title="${label[ph]}"`:''}></span></div>`
+      +`<div class="pv-tl-body"><div class="pv-tl-event">${esc(d.event)}${ph==='next'?'<span class="pv-tl-next">Next</span>':''}</div>${d.detail?`<div class="pv-tl-detail">${esc(d.detail)}</div>`:''}</div></div>`;
+  }).join('');
+  return `<div class="pv-timeline">${items}</div>`;
+}
 // Heat-map: a plain table's numeric cells shaded by where each sits in its own column (per column,
 // since columns usually hold different units). data-heatmap="1" turns it on, data-heatmap-reverse
 // flips it for columns where lower is better. Applied at render time only, like
@@ -5584,10 +5630,11 @@ function renderChipsHtml(table){
 function tableFeatureDisplayHtml(table){
   if(isTableShownAsChips(table)&&tableChipsEligible(table))return renderChipsHtml(table);
   if(isTableShownAsProgress(table)&&tableProgressEligible(table))return renderProgressHtml(table);
+  if(isTableShownAsTimeline(table)&&tableTimelineEligible(table))return renderTimelineHtml(table);
   if(isTableFeaturedAsChart(table)&&tableChartability(table).ok)return renderTableChartSvg(table);
   return null;
 }
-function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableFeaturedAsChart(table); }
+function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableFeaturedAsChart(table); }
 function isTableFeaturedAsChart(table){
   return !!(table&&table.getAttribute('data-feature-chart')==='1');
 }
@@ -5949,7 +5996,8 @@ function clampGridSize(rows, cols, max = 8) {
  * Pure helpers for featured tables shown as charts, Cards or progress bars, and for heat-map
  * shading: round ("nice") value-axis ticks, axis/tooltip number formatting with thousands
  * separators, how many columns a Cards grid uses so its rows come out balanced, which way a Cards
- * "change" value points, a progress bar's fill, and a numeric column's heat-map levels.
+ * "change" value points, a progress bar's fill, a numeric column's heat-map levels, and a timeline's
+ * row order and past / next / upcoming phases.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `chartFormat` block. The SVG and
  * HTML builders (renderCartesianChartSvg, renderCardsHtml) stay hand-written in index.html; only
@@ -6092,6 +6140,37 @@ function heatLevels(values, reverse = false, steps = 5) {
         if (reverse)
             t = 1 - t;
         return 1 + Math.round(t * (steps - 1));
+    });
+}
+/**
+ * Display order for a timeline's rows: rows with a date in chronological order (ties keep their
+ * table order), then rows without one ("TBD") in their table order.
+ */
+function timelineOrder(dates) {
+    const idx = dates.map((_, i) => i);
+    const dated = idx.filter((i) => dates[i] !== null && Number.isFinite(dates[i]));
+    const undated = idx.filter((i) => !dated.includes(i));
+    dated.sort((a, b) => dates[a] - dates[b] || a - b);
+    return [...dated, ...undated];
+}
+/**
+ * Each timeline row's phase relative to `today` (UTC midnight of the viewer's date): before today
+ * is done, the first row on or after today is next, later ones are upcoming. A row with no date,
+ * or a date written without a year (which can't be placed in time), has no phase (null).
+ * `dates` must already be in display order.
+ */
+function timelinePhases(dates, hasYear, today) {
+    let nextGiven = false;
+    return dates.map((d, i) => {
+        if (d === null || !Number.isFinite(d) || !hasYear[i])
+            return null;
+        if (d < today)
+            return 'done';
+        if (!nextGiven) {
+            nextGiven = true;
+            return 'next';
+        }
+        return 'upcoming';
     });
 }
 
@@ -6432,6 +6511,7 @@ function buildTableEditItems(table,cell,commit){
 function currentTableDisplay(table){
   if(isTableShownAsChips(table))return 'chips';
   if(isTableShownAsProgress(table))return 'progress';
+  if(isTableShownAsTimeline(table))return 'timeline';
   if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
   return 'table';
 }
@@ -6439,6 +6519,10 @@ function setTableDisplay(table,mode){
   if(!table)return;
   if(mode==='chips'){ setTableChips(table,true); return; }
   if(mode==='progress'){ setTableProgress(table,true); return; }
+  if(mode==='timeline'){
+    table.setAttribute('data-table-display','timeline'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
+    table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); showToast('Showing as timeline'); return;
+  }
   table.removeAttribute('data-table-display');
   if(mode==='table'){ table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as table'); return; }
   const type=mode==='cards'?'cards':mode.slice(6);
@@ -6461,6 +6545,7 @@ function buildChartFeatureItems(table,commit){
     opt('chips','Chips',tableChipsEligible(table),'Chips need a two-column table: a short code and its description.'),
     opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
     opt('progress','Progress bars',tableProgressEligible(table),'Progress bars need a label column and a percentage (or a value and a goal) column.'),
+    opt('timeline','Timeline',tableTimelineEligible(table),'A timeline needs dates in the first column (e.g. 2026-10-14 or Oct 14), then the event, and optionally a detail.'),
     {heading:'Chart'},
     ...CHART_TYPES.filter(t=>t!=='cards').map(t=>opt('chart:'+t,CHART_TYPE_LABELS[t].replace(/ chart$/,''),typeAvail[t].ok,typeAvail[t].reason))
   ];
