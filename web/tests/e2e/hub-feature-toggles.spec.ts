@@ -20,20 +20,25 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 }
 
 // To-Dos is the only Hub dock panel left (Meeting Notes, Journal, Library, and Recap were all
-// removed), so these cover the one feature toggle the dock still has.
-//
-// Turning To-Dos off in Settings used to have no visible effect: the setFeatureEnabled
-// plumbing was real, but nothing hid its entry point or its content panel, and openDockTab/
-// toggleDockTab (the single choke point every open path -- keyboard shortcut, cross-reference
-// dots, the app-bar launcher -- runs through) had no awareness of the flag either.
-test.describe('To-Dos feature toggle hides its launcher + panel (and cannot be opened around)', () => {
-  test('disabling To-Dos hides #dock-panel-appbar-toggle and #todos-panel, re-enabling restores them', async ({ page }) => {
+// removed). Its Settings → Features on/off switch was removed too (item 14): To-Dos is always on,
+// and openDockTab/toggleDockTab (the single choke point every open path -- keyboard shortcut,
+// cross-reference dots, the app-bar launcher -- runs through) always work.
+test.describe('To-Dos is always on: its launcher and panel cannot be switched off', () => {
+  test('there is no To-Dos feature switch; the launcher shows and the panel opens and closes', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
+    const unexpectedErrors: string[] = [];
+    page.on('pageerror', (err) => unexpectedErrors.push('pageerror: ' + err.message));
 
-    // The panel itself is only visible while open (its base CSS hides it when closed
-    // regardless of the feature flag), so open it first to get a meaningful baseline --
-    // the real assertion is that the feature-off rule can hide it even while open.
+    await expect(page.locator('#feat-todos-toggle')).toHaveCount(0);
+    const state = await page.evaluate(() => ({
+      // @ts-expect-error — bare global from index.html
+      hasFlag: 'todos' in FEATURE_FLAGS,
+      // @ts-expect-error
+      bridge: typeof window.sakuraTodosSetFeatureEnabled
+    }));
+    expect(state).toEqual({ hasFlag: false, bridge: 'undefined' });
+
     const read = () => page.evaluate(() => {
       const launcher = document.getElementById('dock-panel-appbar-toggle');
       const panel = document.getElementById('todos-panel');
@@ -41,60 +46,33 @@ test.describe('To-Dos feature toggle hides its launcher + panel (and cannot be o
         bodyHasClass: document.body.classList.contains('feature-off-todos'),
         launcherDisplay: launcher ? getComputedStyle(launcher).display : null,
         panelDisplay: panel ? getComputedStyle(panel).display : null,
-        panelOpen: panel ? panel.classList.contains('open') : false
+        // @ts-expect-error
+        open: dockPanelIsOpen()
       };
     });
 
     // @ts-expect-error — bare global from index.html
     await page.evaluate(() => openDockTab());
-    const initial = await read();
-    expect(initial.launcherDisplay).not.toBe('none');
-    expect(initial.panelOpen).toBe(true);
-    expect(initial.panelDisplay).not.toBe('none');
+    const opened = await read();
+    expect(opened.bodyHasClass).toBe(false);
+    expect(opened.launcherDisplay).not.toBe('none');
+    expect(opened.open).toBe(true);
+    expect(opened.panelDisplay).not.toBe('none');
 
     // @ts-expect-error
-    await page.evaluate(() => setFeatureEnabled('todos', false));
-    const disabled = await read();
-    expect(disabled.bodyHasClass).toBe(true);
-    expect(disabled.launcherDisplay).toBe('none');
-    expect(disabled.panelDisplay).toBe('none');
-
-    await page.evaluate(() => {
-      // @ts-expect-error
-      setFeatureEnabled('todos', true);
-      // @ts-expect-error
-      openDockTab();
-    });
-    const reenabled = await read();
-    expect(reenabled.bodyHasClass).toBe(false);
-    expect(reenabled.launcherDisplay).not.toBe('none');
-    expect(reenabled.panelDisplay).not.toBe('none');
+    await page.evaluate(() => toggleDockTab());
+    expect((await read()).open).toBe(false);
+    expect(unexpectedErrors).toEqual([]);
   });
 
-  test('openDockTab/toggleDockTab are safe no-ops while To-Dos is disabled', async ({ page }) => {
+  test('old saved To-Dos settings with the feature switched off are ignored', async ({ page }) => {
+    await page.addInitScript(() => { try { localStorage.setItem('sakura_todos_settings_v1', JSON.stringify({ featureEnabled: false })); } catch { /* storage unavailable */ } });
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    const unexpectedErrors: string[] = [];
-    page.on('pageerror', (err) => unexpectedErrors.push('pageerror: ' + err.message));
-
-    const result = await page.evaluate(() => {
-      // @ts-expect-error
-      setFeatureEnabled('todos', false);
-      // @ts-expect-error
-      openDockTab();
-      // @ts-expect-error
-      toggleDockTab();
-      // @ts-expect-error
-      const open = dockPanelIsOpen();
-      // @ts-expect-error
-      const active = dockActiveTab;
-      // @ts-expect-error
-      setFeatureEnabled('todos', true);
-      return { open, active };
-    });
-    expect(result.open).toBe(false);
-    expect(result.active).toBeNull();
-    expect(unexpectedErrors).toEqual([]);
+    await expect(page.locator('#dock-panel-appbar-toggle')).toBeVisible();
+    // @ts-expect-error — bare global from index.html
+    await page.evaluate(() => openDockTab());
+    await expect(page.locator('#todos-panel')).toHaveClass(/open/);
   });
 
   // With only one dock panel there's nothing to switch between, so there's no tab strip at

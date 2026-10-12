@@ -58,14 +58,17 @@ test.describe('Fold dot tooltip is the node timestamp, never "Expand/Collapse su
     expect(tipText).not.toContain('Collapse');
   });
 
-  test('with "Timestamps on hover" turned off, the fold dot shows no tooltip at all, not "Expand/Collapse subtree"', async ({ page }) => {
+  // "Timestamps on hover" used to be a setting that could turn this tooltip off; it's always on
+  // now (item 14), so prefs saved with it off by an older build still get the timestamp tooltip.
+  test('prefs saved with the old "Timestamps on hover" switch off still show the timestamp, never "Expand/Collapse subtree"', async ({ page }) => {
+    await page.addInitScript(() => { try { localStorage.setItem('sakura_v001_prefs', JSON.stringify({ nodeTimestampHoverEnabled: false })); } catch { /* storage unavailable */ } });
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
     await page.evaluate(() => {
       // @ts-expect-error
       nodes = [
-        { id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {}, createdAt: Date.now() - 100000, modifiedAt: Date.now() - 5000 },
         { id: 2, depth: 1, text: 'Child', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
       ];
       // @ts-expect-error
@@ -75,8 +78,6 @@ test.describe('Fold dot tooltip is the node timestamp, never "Expand/Collapse su
       // @ts-expect-error
       nextId = 3;
       // @ts-expect-error
-      setNodeTimestampHoverEnabled(false, false);
-      // @ts-expect-error
       render();
     });
 
@@ -84,7 +85,9 @@ test.describe('Fold dot tooltip is the node timestamp, never "Expand/Collapse su
     const box = (await dot.boundingBox())!;
     await page.mouse.move(5, 5);
     await page.mouse.move(box.x + 3, box.y + 3, { steps: 5 });
-    await page.waitForTimeout(150);
-    await expect(page.locator('#node-timestamp-tip')).not.toHaveClass(/visible/);
+    await expect(page.locator('#node-timestamp-tip')).toHaveClass(/visible/);
+    const tipText = await page.locator('#node-timestamp-tip').textContent();
+    expect(tipText).toContain('Created at');
+    expect(tipText).not.toContain('Expand');
   });
 });

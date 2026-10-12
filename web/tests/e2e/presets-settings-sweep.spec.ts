@@ -93,8 +93,9 @@ const REMOVED_GLOBALS = [
 const KEPT_GLOBALS = [
   'setZenMode', 'exportPdfDirect', 'exportPreviewAsPdf', 'renderPreviewBody', 'exportOpml', 'serializeOpml', 'copyNodesToClipboard',
   'setTheme', 'setEditorScale', 'generateOutlineWithAi', 'rewriteMultipleNodes', 'rewriteSubTextSelection', 'setAutoRewriteEnabled',
-  'setPreviewBrandingEnabled', 'setPreviewBrandingText', 'setCoverPageEnabled', 'setExportUseAccentColor', 'setAccentPreset',
-  'setZenHideToolbar', 'setZenHideSidebar', 'setZenHideTabbar', 'setTabbarVisible'
+  'setPreviewBrandingEnabled', 'setPreviewBrandingText', 'setCoverPageEnabled', 'setExportUseAccentColor', 'setAccentPreset'
+  // (setZenHideToolbar/-Sidebar/-Tabbar and setTabbarVisible were removed later, in item 14 —
+  // Zen always hides those, and the tab bar is always on.)
 ];
 
 test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () => {
@@ -122,12 +123,10 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     const sectionTitles = await page.locator('#settings-panel .settings-section-title').allTextContents();
     expect(sectionTitles).not.toContain('Preview');
     expect(sectionTitles).not.toContain('Presets');
-    expect(sectionTitles).toContain('Zen mode');
-
-    // Zen mode lives under Bars & menus and keeps only its three hide-on-entry options.
-    await openSettingsCategory(page, 'toolbar');
-    const zenRows = page.locator('#settings-section-zen .settings-list-row .settings-switch-text');
-    expect(await zenRows.allTextContents()).toEqual(['Hide toolbar by default', 'Hide File Explorer', 'Hide tab bar']);
+    // Zen mode's last three hide-on-entry options were removed later (item 14) — Zen always hides
+    // the toolbar, File Explorer and tab bar — so its Settings section is gone entirely.
+    expect(sectionTitles).not.toContain('Zen mode');
+    await expect(page.locator('#settings-section-zen')).toHaveCount(0);
 
     // Export & copy: Cover page, PDF branding (+ text), accent color — and nothing else.
     await openSettingsCategory(page, 'data');
@@ -148,9 +147,10 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     const accents = await page.locator('#accent-swatch-row .accent-swatch').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.accent));
     expect(accents).toEqual(['terracotta', 'teal', 'indigo', 'violet', 'moss', 'amber']);
 
-    // Features: no empty "Presentation" group heading.
-    const featureGroups = await page.locator('#settings-section-features .settings-subsection-title').allTextContents();
-    expect(featureGroups).toEqual(['Node content', 'Hub', 'Interaction', 'Automation']);
+    // The whole Features section (and so its old empty "Presentation" heading) was removed later,
+    // in item 14; AI Capabilities moved to Settings → AI.
+    await expect(page.locator('#settings-section-features')).toHaveCount(0);
+    await expect(page.locator('#settings-section-ai-capabilities #feat-ai-toggle')).toHaveCount(1);
 
     // Quick Assist has no preset or Rewrite document run actions, and no app bar shortcut remains.
     const qa = await page.evaluate(() => ({
@@ -169,11 +169,7 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedRichDoc(page);
-    // Every action switched on, so "More" shows everything the quick row has no room for.
-    await page.evaluate(() => {
-      // @ts-expect-error -- bare globals from index.html
-      contextQuickActions = CTX_ACTION_ORDER.slice();
-    });
+    // The menu is fixed (item 14): "More" always lists every action the quick row has no room for.
     await page.locator('.node-row[data-id="3"]').click({ button: 'right' });
     await expect(page.locator('#context-menu')).toBeVisible();
     await page.locator('#context-more-toggle').click();
@@ -278,10 +274,12 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
         previewHeadingDepthFallback: { 0: 1, 1: 2 }, previewTocMaxLevel: 6, noteHiddenButtons: ['ai-summarise'],
         chromePreset: 'ink', accentIntensity: 40, accentCustomColor: '#123456',
         accentPreset: 'plum',
+        // Menu customizations (with entries removed in 9b) — the customizations themselves were
+        // removed in item 14, so these are simply ignored.
         contextQuickActions: ['slide-divider', 'ai-rewrite-all', 'ai-rewrite', 'note'],
         hoverToolbarActions: ['child', 'slide-divider'],
         // Kept — must still apply.
-        previewBrandingEnabled: false, previewBrandingText: 'Acme', zenHideTabbar: true
+        previewBrandingEnabled: false, previewBrandingText: 'Acme'
       }));
       localStorage.setItem('sakura-shortcut-overrides', JSON.stringify({ toggleAppbar: 'mod+alt+a' }));
       localStorage.setItem('sakura_editors_choice_undo_v1', JSON.stringify({ toolbarVisible: true }));
@@ -320,16 +318,13 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
         prefs,
         overrideInMemory,
         overrides: JSON.parse(localStorage.getItem('sakura-shortcut-overrides') || '{}'),
-        // @ts-expect-error
-        quick: contextQuickActions,
-        // @ts-expect-error
-        hover: hoverToolbarActions,
+        menuGlobals: ['contextQuickActions', 'hoverToolbarActions'].filter((n) => typeof (window as unknown as Record<string, unknown>)[n] !== 'undefined'),
         // @ts-expect-error
         accent: accentPreset,
         accentVar: getComputedStyle(document.body).getPropertyValue('--accent').trim(),
         inlineBg: document.body.style.getPropertyValue('--bg'),
         // @ts-expect-error
-        branding: [previewBrandingEnabled, previewBrandingText, zenHideTabbar],
+        branding: [previewBrandingEnabled, previewBrandingText],
         // @ts-expect-error
         dividerFlags: nodes.map((n) => n.slideDivider)
       };
@@ -337,18 +332,16 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     for (const k of ['statusbarVisible', 'appbarVisible', 'zenHideStatusbar', 'zenHideAppbar', 'zenUseFullscreen', 'skipFoldedInExports',
       'exportMenuFoldNoteEnabled', 'qaExportEnabled', 'nodeContentExportEnabled', 'remarksExportEnabled', 'previewSlideDepth', 'previewPdfMargin',
       'previewPdfFooterEnabled', 'previewAlwaysExpand', 'previewTocOpen', 'previewHeadingDepthFallback', 'previewTocMaxLevel', 'noteHiddenButtons',
-      'chromePreset', 'accentIntensity', 'accentCustomColor']) {
+      'chromePreset', 'accentIntensity', 'accentCustomColor', 'contextQuickActions', 'hoverToolbarActions']) {
       expect(state.prefs, k).not.toHaveProperty(k);
     }
-    // 'image' ("Add image…") is appended once to menus saved before it existed (ctxImageActionAdded).
-    expect(state.quick).toEqual(['ai-rewrite', 'note', 'image']);
-    expect(state.hover).toEqual(['child']);
+    expect(state.menuGlobals).toEqual([]);
     // 'plum' is no longer offered — falls back to the default accent; no chrome preset applies.
     expect(state.accent).toBe('terracotta');
     expect(state.prefs.accentPreset).toBe('terracotta');
     expect(state.accentVar).toBe('#c2553d');
     expect(state.inlineBg).toBe('');
-    expect(state.branding).toEqual([false, 'Acme', true]);
+    expect(state.branding).toEqual([false, 'Acme']);
     expect(state.overrideInMemory).toBeUndefined();
     expect(state.overrides.toggleAppbar).toBeUndefined();
     // The stray slideDivider flag isn't carried on loaded nodes.

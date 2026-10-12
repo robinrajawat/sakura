@@ -256,9 +256,10 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     });
     expect(saved).not.toHaveProperty('backupReminderDays');
     expect(saved).not.toHaveProperty('sessionBackupPromptMode');
-    expect(saved.statusbarHiddenItems).not.toContain('fsstatus');
-    expect(saved.statusbarRightOrder).not.toContain('fsstatus');
-    expect(saved.statusbarRightOrder).not.toContain('backupreminder');
+    // The status bar items/order settings themselves are gone now (item 14), so those lists drop
+    // entirely rather than just losing their 'fsstatus'/'backupreminder' entries.
+    expect(saved).not.toHaveProperty('statusbarHiddenItems');
+    expect(saved).not.toHaveProperty('statusbarRightOrder');
     expect(errors).toEqual([]);
   });
 

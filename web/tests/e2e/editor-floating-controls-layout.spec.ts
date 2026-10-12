@@ -31,28 +31,26 @@ async function seedOneNode(page: import('@playwright/test').Page) {
 
 // The floating editor-corner toggles used to each be individually position:absolute at a
 // hardcoded `right` offset, so hiding one left a dead gap instead of the remaining buttons
-// closing up. They now share one flex row (#editor-floating-controls) that collapses
-// automatically around whichever buttons are actually visible. The Pad toggle that used to sit
-// between maximize and toolbar was removed along with the Pad panel itself -- this also guards
-// that its removal didn't leave a hole in the row.
+// closing up. They share one flex row (#editor-floating-controls). The Pad toggle that used to sit
+// there went with the Pad panel, and the "show toolbar" toggle went when the toolbar became
+// always-on (item 14) -- so maximize is the only button left, flush with the row's right edge.
 test.describe('Floating editor-corner toggles sit adjacent with no gap', () => {
-  test('maximize and toolbar toggles are immediate neighbors now that the Pad toggle is gone', async ({ page }) => {
+  test('maximize is the only floating toggle left, with no hole where removed ones used to be', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedOneNode(page);
 
     await expect(page.locator('#editor-pad-toggle')).toHaveCount(0);
+    await expect(page.locator('#editor-toolbar-toggle')).toHaveCount(0);
     await expect(page.locator('#editor-zen-toggle')).toBeVisible();
-    await expect(page.locator('#editor-toolbar-toggle')).toBeVisible();
+    await expect(page.locator('#editor-floating-controls > *')).toHaveCount(1);
 
-    // The gap between them should match the row's own 8px gap, not the ~44px a missing/hidden
-    // button used to leave behind.
     const gap = await page.evaluate(() => {
+      const row = document.getElementById('editor-floating-controls')!.getBoundingClientRect();
       const zen = document.getElementById('editor-zen-toggle')!.getBoundingClientRect();
-      const toolbar = document.getElementById('editor-toolbar-toggle')!.getBoundingClientRect();
-      return zen.left - toolbar.right; // toolbar sits to the left of zen (row-reverse)
+      return row.right - zen.right;
     });
     expect(gap).toBeGreaterThanOrEqual(0);
-    expect(gap).toBeLessThan(12);
+    expect(gap).toBeLessThan(2);
   });
 });

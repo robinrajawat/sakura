@@ -452,28 +452,22 @@ test.describe('Images as node objects', () => {
     expect(merged).toEqual([{ text: 'AB', imgs: ['a1', 'b1'] }]);
   });
 
-  test('right-click menu offers Add image…, and older saved menus get it added once', async ({ page }) => {
+  // The right-click menu is fixed now (item 14): Add image… is always there (under More), and an
+  // older saved menu customization -- even one that left it out -- is ignored.
+  test('right-click menu always offers Add image…, whatever an older saved menu said', async ({ page }) => {
     await page.addInitScript(() => {
       if (sessionStorage.getItem('seededPrefs')) return;
       sessionStorage.setItem('seededPrefs', '1');
-      localStorage.setItem('sakura_v001_prefs', JSON.stringify({ contextQuickActions: ['note', 'diagram', 'table'] }));
+      localStorage.setItem('sakura_v001_prefs', JSON.stringify({ contextQuickActions: ['note', 'diagram', 'table'], ctxImageActionAdded: true }));
     });
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
-    // @ts-expect-error
-    expect(await page.evaluate(() => contextQuickActions)).toEqual(['note', 'diagram', 'table', 'image']);
-    await expect(page.locator('#ctxq-image')).toHaveCount(1);
-    await expect(page.locator('#hoverq-image')).toHaveCount(1);
-    // Unchecking it sticks across a reload of prefs (ctxImageActionAdded recorded on save).
-    const after = await page.evaluate(() => {
-      // @ts-expect-error
-      setContextQuickActions(contextQuickActions.filter((a: string) => a !== 'image')); savePrefs();
-      // @ts-expect-error
-      loadPrefs();
-      // @ts-expect-error
-      return contextQuickActions;
-    });
-    expect(after).toEqual(['note', 'diagram', 'table']);
+    await seedDoc(page);
+    await page.locator('.node-row').first().click({ button: 'right' });
+    await page.locator('#context-more-toggle').click();
+    await expect(page.locator('#context-more-panel [data-action="image"]')).toBeVisible();
+    await expect(page.locator('#ctxq-image')).toHaveCount(0);
+    await expect(page.locator('#hoverq-image')).toHaveCount(0);
   });
 
   test('PDF renders each node image as a figure with its width and caption; OPML leaves images out', async ({ page }) => {
