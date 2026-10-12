@@ -867,6 +867,13 @@ body.zen-mode #quick-bar{display:none}
 .action-group:hover .ag-buttons{background:color-mix(in srgb,var(--fg) 6%,transparent)}
 /* Collapse all + Zoom sit as a small pair at the right end of the toolbar. */
 #ag-fold{margin-left:auto}
+/* Marker summary: whole-document counts per marker (folded branches included), left of the fold group. */
+#ag-markers{margin-left:auto}#ag-markers[hidden]{display:none}#ag-markers:not([hidden])+#ag-fold{margin-left:6px}
+.marker-sum-btn{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:none;border-radius:8px;background:transparent;color:var(--fc-gray);font:600 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums}
+.marker-sum-btn[data-color="green"]{color:var(--fc-green)}.marker-sum-btn[data-color="red"]{color:var(--fc-red)}.marker-sum-btn[data-color="orange"]{color:var(--fc-orange)}
+.marker-sum-btn:hover{background:color-mix(in srgb,currentColor 12%,transparent)}
+.marker-sum-btn.active{background:color-mix(in srgb,currentColor 16%,transparent);box-shadow:inset 0 0 0 1.5px currentColor}
+.marker-sum-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .quick-btn{width:34px;height:34px;font-size:16px;border-radius:7px;border-color:transparent;background:transparent;transition:background .12s,color .12s,transform .08s,box-shadow .12s}
 .quick-btn:hover{background:var(--hover);border-color:transparent;transform:translateY(-1px);box-shadow:0 2px 5px rgba(0,0,0,.08)}
 .quick-btn:active{transform:translateY(0) scale(.94);box-shadow:none}
@@ -3930,6 +3937,7 @@ body.printing-generic #gpe-overlay{
         <button class="btn icon-btn quick-btn ai-rewrite-btn" id="qb-ai-rewrite" data-tip="Rewrite node (AI)" aria-label="Rewrite node"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg></button>
       </div>
     </div>
+    <div class="action-group" id="ag-markers" hidden><div class="ag-buttons" id="marker-summary" role="group" aria-label="Marker summary"></div></div>
     <div class="action-group" id="ag-fold">
       <div class="ag-buttons">
         <button class="btn icon-btn quick-btn" id="qb-collapse" data-tip="Collapse all" aria-label="Collapse all"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/></svg></button>
@@ -17172,7 +17180,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // tree branch, so an active filter's bar/chips could keep showing stale state — or simply
   // never get hidden — once the pane had no rows to filter in the first place.
   applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null))); if(target)target.focus(); } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')) el('sb-depth').textContent=`Depth ${selectedDepth===null?'—':selectedDepth}`; if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates();
-  updateDirtyIndicator(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
+  updateDirtyIndicator(); updateMarkerSummary(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
   document.querySelectorAll('.bl-link').forEach(lnk=>{const target=findNodeByText(lnk.dataset.blTarget||''); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Jump to: '+lnk.dataset.blTarget:'No node found: '+lnk.dataset.blTarget;});
 }
 function toggleNodeStyle(styleName){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const makeActive=!selectedNodes.every(n=>!!n.styles[styleName]); let value; if(styleName==='highlight')value=makeActive?lastHighlightColor:false; else if(styleName==='color')value=makeActive?lastFontColor:false; else value=makeActive; selectedNodes.forEach(n=>n.styles[styleName]=value); markDirty(); render()}
@@ -26914,6 +26922,30 @@ function setTagFilter(tag){
 }
 // Marker filter mirrors setTagFilter above — separate state so a tag filter and a marker filter
 // can be active together (AND), same reasoning as applyTagFilterToPane's combined check.
+// Toolbar marker summary — how many nodes carry each marker across the whole document, folded
+// branches included, so outstanding Issues/Follow-ups stay visible when the outline is collapsed.
+// Ordered by how much each needs action; markers nobody used are left out, and the group hides
+// entirely on a document with no markers.
+function updateMarkerSummary(){
+  // Order lives inside the function: render() calls this during boot, before a top-level const
+  // this far down the script would be initialised (see the note on NODE_MARKERS).
+  const MARKER_SUMMARY_ORDER=['issue','followup','parked','confirmed','na'];
+  const group=el('ag-markers'); const box=el('marker-summary'); if(!group||!box)return;
+  const counts={}; nodes.forEach(n=>{ if(n.marker&&NODE_MARKERS.includes(n.marker))counts[n.marker]=(counts[n.marker]||0)+1; });
+  const used=MARKER_SUMMARY_ORDER.filter(m=>counts[m]);
+  group.hidden=!used.length;
+  const html=used.map(m=>`<button type="button" class="marker-sum-btn${activeMarkerFilter===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${counts[m]} ${esc(nodeMarkerLabel(m))}${activeMarkerFilter===m?' — click to clear the filter':' — click to show only these'}" aria-label="${counts[m]} ${esc(nodeMarkerLabel(m))}" aria-pressed="${activeMarkerFilter===m}">${markIconSvg(m)}<span>${counts[m]}</span></button>`).join('');
+  if(box.innerHTML!==html)box.innerHTML=html;
+}
+el('marker-summary')?.addEventListener('click',e=>{
+  const btn=e.target.closest('.marker-sum-btn'); if(!btn)return;
+  const m=btn.dataset.marker;
+  if(activeMarkerFilter===m){ setMarkerFilter(null); return; }
+  // The filter only acts on rendered rows, so unfold every branch hiding a match first —
+  // otherwise the counts would promise nodes the filtered view can't show.
+  nodes.forEach((n,i)=>{ if(n.marker!==m)return; let d=n.depth; for(let j=i-1;j>=0&&d>0;j--){ if(nodes[j].depth<d){ collapsedIds.delete(nodes[j].id); d=nodes[j].depth; } } });
+  setMarkerFilter(m);
+});
 function setMarkerFilter(marker){
   activeMarkerFilter=NODE_MARKERS.includes(marker)?marker:null;
   const pane=document.getElementById('editor-pane');
