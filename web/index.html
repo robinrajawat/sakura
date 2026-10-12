@@ -1314,6 +1314,10 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .table-grid-picker-cell.on{background:color-mix(in srgb,var(--accent) 22%,var(--bg));border-color:color-mix(in srgb,var(--accent) 70%,var(--border))}
 .table-grid-picker-hint{font:400 11px 'Inter',sans-serif;color:var(--muted);text-align:center}
 .sb-context-label{flex:1 1 auto}
+.sb-context-heading{font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:7px 8px 3px;user-select:none}
+.sb-context-tiles{display:grid;grid-template-columns:repeat(6,30px);gap:2px;padding:0 4px 2px}
+.sb-context-item.sb-context-tile{width:30px;height:30px;padding:0;justify-content:center;gap:0}
+.sb-context-item.sb-context-tile.current{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
 .sb-context-chevron{flex:0 0 auto;margin-left:10px;opacity:.55}
 .sb-context-item.sb-context-submenu-open{background:var(--hover)}
 .sb-context-submenu{z-index:171;max-height:min(70vh,520px);overflow-y:auto}
@@ -6715,8 +6719,26 @@ const CARD_ICONS={
   target:{label:'Goal',svg:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'},
   check:{label:'Done',svg:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'},
   alert:{label:'Risk',svg:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'},
-  sum:{label:'Total',svg:'<path d="M18 4H6l6 8-6 8h12"/>'}
+  sum:{label:'Total',svg:'<path d="M18 4H6l6 8-6 8h12"/>'},
+  system:{label:'System',svg:'<rect x="2" y="3" width="20" height="7" rx="1.5"/><rect x="2" y="14" width="20" height="7" rx="1.5"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/>'},
+  architecture:{label:'Architecture',svg:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>'},
+  erp:{label:'ERP',svg:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>'},
+  webshop:{label:'Webshop',svg:'<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>'},
+  integration:{label:'Integrations',svg:'<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/>'},
+  api:{label:'API',svg:'<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>'},
+  cloud:{label:'Cloud',svg:'<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>'},
+  security:{label:'Security',svg:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'},
+  mobile:{label:'Mobile',svg:'<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>'},
+  report:{label:'Report',svg:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'},
+  location:{label:'Location',svg:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'},
+  label:{label:'Label',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'}
 };
+// How the picker groups them (every CARD_ICONS key appears exactly once).
+const CARD_ICON_GROUPS=[
+  ['General',['time','calendar','people','target','check','alert','sum','trend','money']],
+  ['Systems',['system','architecture','erp','webshop','integration','api','cloud','security','mobile','code','settings']],
+  ['Logistics',['truck','box','location','label','report']]
+];
 function cardIconSvg(key,size){ const ic=CARD_ICONS[key]; return ic?`<svg width="${size||16}" height="${size||16}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ic.svg}</svg>`:''; }
 function getCardIconPicks(table){ try{ const v=JSON.parse(table?.getAttribute('data-card-icon-picks')||'{}'); return v&&typeof v==='object'&&!Array.isArray(v)?v:{}; }catch(e){ return {}; } }
 function setCardIconPick(table,label,key){
@@ -6744,7 +6766,7 @@ function buildCardIconItems(table,label,commit){
   return [
     {label:'Card icon', icon:cardIconSvg(cur||'target',13), submenu:[
       {label:'No icon'+(cur?'':' (current)'), disabled:!cur, onClick:()=>{ setCardIconPick(table,label,''); commit(); }},
-      ...Object.entries(CARD_ICONS).map(([key,ic])=>({icon:cardIconSvg(key,14), label:ic.label+(cur===key?' (current)':''), disabled:cur===key, onClick:()=>{ setCardIconPick(table,label,key); commit(); }}))
+      ...CARD_ICON_GROUPS.flatMap(([heading,keys])=>[{heading},{tiles:keys.map(key=>({icon:cardIconSvg(key,15), label:CARD_ICONS[key].label, current:cur===key, onClick:()=>{ setCardIconPick(table,label,key); commit(); }}))}])
     ]},
     {label:'Accent colour', icon:cardSwatchSvg(curAccent?CARD_ACCENTS[curAccent].v:'--fc-gray'), submenu:[
       {label:'Default'+(curAccent?'':' (current)'), disabled:!curAccent, onClick:()=>{ setCardAccentPick(table,label,''); commit(); }},
@@ -23006,6 +23028,19 @@ function closeSbContextMenu(e){
 let _sbSubEl=null, _sbSubParent=null;
 function _sbBuildItemButton(it, container, list){
   if(it.divider){ const d=document.createElement('div'); d.className='sb-context-divider'; container.appendChild(d); return null; }
+  // A small section heading, and a compact grid of icon-only tiles (name on hover) — used by the
+  // card icon picker so two dozen icons fit in one short submenu.
+  if(it.heading){ const h=document.createElement('div'); h.className='sb-context-heading'; h.textContent=it.heading; container.appendChild(h); return null; }
+  if(it.tiles){
+    const grid=document.createElement('div'); grid.className='sb-context-tiles'; container.appendChild(grid);
+    it.tiles.forEach(t=>{
+      const b=document.createElement('button'); b.type='button'; b.className='sb-context-item sb-context-tile'+(t.current?' current':''); b.innerHTML=t.icon||''; b.dataset.tip=t.label; b.setAttribute('aria-label',t.label+(t.current?' (current)':''));
+      b.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await t.onClick(); });
+      b.addEventListener('mouseenter',()=>{ _sbContextActiveIndex=_sbContextButtons.indexOf(b); _sbContextUpdateHighlight(); });
+      grid.appendChild(b); list.push(b);
+    });
+    return null;
+  }
   const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
   btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+'</span>'+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
   if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; container.appendChild(btn); return null; }
