@@ -299,6 +299,17 @@ due date with a year before today and lane not Done. `.many` (≥13 rows) stacks
 layout-neutral (box-shadow, no padding/weight change) so entering edit mode doesn't move the table
 (`tables-pdf-bugs.spec.ts` guards that). Covered by `tests/e2e/table-status-board.spec.ts`.
 
+**Column types (owner request, incl. currency).** Cell menu Column type › Automatic / Text / Number /
+Date / Status / heading Currency (EUR USD GBP INR JPY). Stored as `data-type` (+ `data-currency`) on every
+cell of the column like `data-align`; `tableNewBodyRow` copies it. Pure parts in
+`src/utils/columnType.ts` (new generated block `columnType`): `formatCurrency` always uses en-US
+punctuation with narrow symbols so values still parse with `parseCellNumber` (charts, sort, progress).
+Number/currency force right-align in `applyTableAutoAlign`; Text disables auto align and pills.
+`attachTableCellPickers` (node-table edit only) shows a status/date picker inside the wrap (stripped by
+`cleanEditorHtml`); caret goes back to the cell before the picker is removed (removing a focused date
+input otherwise blurs out and ends the session). Status board prefers a Status-typed column and a
+Date-typed column for due. Covered by `tests/e2e/table-column-types.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

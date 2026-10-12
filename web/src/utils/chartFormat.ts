@@ -244,3 +244,21 @@ export function boardLanes(statuses: string[]): BoardLane[] {
   });
   return [std.get('open')!, std.get('progress')!, std.get('blocked')!, ...other.values(), std.get('done')!, none].filter((l) => l.rows.length);
 }
+
+/**
+ * The choices a Status column's picker offers: the four standard statuses, then any other status
+ * already written in the column (as first written, in order), so a team's own wording stays one
+ * click away.
+ */
+export function statusPickerOptions(values: string[]): string[] {
+  const std = ['Open', 'In progress', 'Blocked', 'Done'];
+  const seen = new Set<string>();
+  const extra: string[] = [];
+  values.forEach((v) => {
+    const t = String(v ?? '').trim();
+    if (!t || statusGroup(t)) return;
+    const k = t.toLowerCase();
+    if (!seen.has(k)) { seen.add(k); extra.push(t); }
+  });
+  return [...std, ...extra];
+}
