@@ -127,8 +127,8 @@ test('the cell menu lists every action in dividered groups, with no empty divide
     'Move row up', 'Move row down', 'Move column left', 'Move column right', '---',
     'Sort A → Z', 'Sort Z → A', 'Turn header row off', '---',
     'Align column left', 'Align column center', 'Align column right', '---',
-    'Delete row', 'Delete column', 'Delete table', '---',
-    'Heat-map', 'Feature as chart'
+    'Show as', 'Heat-map', 'Add title…', 'Chart size', '---',
+    'Delete row', 'Delete column', 'Delete table'
   ]);
   // On the header row, rows can't be added above it or moved.
   await page.keyboard.press('Escape');

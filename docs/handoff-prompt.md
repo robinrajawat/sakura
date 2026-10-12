@@ -252,6 +252,15 @@ reverted at the owner's request after they compared mockups of centred and edito
 word count / read time / updated date, rotated status stamp top-right. Don't redesign it without
 showing the owner mockups first.
 
+**Table menu (owner design).** One **Show as ›** submenu (`buildChartFeatureItems` →
+`currentTableDisplay`/`setTableDisplay`): Table, Chips, Cards, Progress bars, then a "Chart" heading
+with Bar…Doughnut (the context menu supports only one submenu level, hence a heading, not a nested
+submenu). Current display = check-mark icon; unfit displays disabled with the reason as tooltip. Then,
+always in this order and disabled rather than hidden when they don't apply: Heat-map ›, Add title…,
+Chart size ›. Object menu order: Show as group | Edit data, Copy | Delete. Cell menu: row/column
+groups, then the Show as group, Delete group last. Owner rule: options that don't apply are
+deactivated, never hidden, so the menu keeps its shape.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

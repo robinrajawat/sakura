@@ -86,22 +86,27 @@ test('menu: progress bars and heat-map options, mutually exclusive displays', as
     const fresh = (html: string) => { const d = document.createElement('div'); d.innerHTML = html; return d.querySelector('table')!; };
     const plain = fresh('<table><tr><th>A</th><th>B</th></tr><tr><td>x</td><td>40%</td></tr><tr><td>y</td><td>70%</td></tr></table>');
     const labels = w.buildChartFeatureItems(plain, () => {}).map((i: any) => i.label);
+    const showAs = w.buildChartFeatureItems(plain, () => {}).find((i: any) => i.label === 'Show as').submenu
+      .map((i: any) => i.heading ? '# ' + i.heading : i.label + (i.disabled ? ' (n/a)' : '') + (i.current ? ' ✓' : ''));
     const heatItem = w.buildChartFeatureItems(plain, () => {}).find((i: any) => i.label === 'Heat-map');
     w.setTableHeatmap(plain, true, true);
     const reversed = plain.getAttribute('data-heatmap-reverse');
     w.setTableProgress(plain, true);
     const afterProgress = { display: plain.getAttribute('data-table-display'), heat: plain.getAttribute('data-heatmap') };
-    const progressLabels = w.buildChartFeatureItems(plain, () => {}).map((i: any) => i.label);
+    const progressItems = w.buildChartFeatureItems(plain, () => {});
+    const progressLabels = progressItems.map((i: any) => i.label + (i.disabled ? ' (off)' : ''));
+    const progressCurrent = progressItems.find((i: any) => i.label === 'Show as').submenu.filter((i: any) => i.current).map((i: any) => i.label);
     w.setTableFeatureChart(plain, true);
-    return { labels, heatSub: heatItem.submenu.map((i: any) => i.label), reversed, afterProgress, progressLabels, displayAfterChart: plain.getAttribute('data-table-display') };
+    return { labels, showAs, progressCurrent, heatSub: heatItem.submenu.map((i: any) => i.label), reversed, afterProgress, progressLabels, displayAfterChart: plain.getAttribute('data-table-display') };
   });
-  expect(r.labels).toEqual(expect.arrayContaining(['Show as chips', 'Show as progress bars', 'Heat-map']));
+  expect(r.labels).toEqual(['Show as', 'Heat-map', 'Add title…', 'Chart size']);
+  expect(r.showAs).toEqual(['Table ✓', 'Chips', 'Cards', 'Progress bars', '# Chart', 'Bar', 'Stacked bar (n/a)', 'Line', 'Pie', 'Doughnut']);
   expect(r.heatSub).toEqual(['Off (current)', 'Higher is darker', 'Lower is darker']);
   expect(r.reversed).toBe('1');
   expect(r.afterProgress).toEqual({ display: 'progress', heat: null });
-  expect(r.progressLabels).toContain('Show as table');
-  expect(r.progressLabels).not.toContain('Show as progress bars');
-  expect(r.progressLabels).not.toContain('Heat-map');
+  // Same menu shape; heat-map, title and size don't apply to progress bars, so they're disabled.
+  expect(r.progressLabels).toEqual(['Show as', 'Heat-map (off)', 'Add title… (off)', 'Chart size (off)']);
+  expect(r.progressCurrent).toEqual(['Progress bars']);
   expect(r.displayAfterChart).toBeNull();
   expect(errors).toEqual([]);
 });
