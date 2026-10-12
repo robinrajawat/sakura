@@ -235,7 +235,14 @@ not per column (possible follow-up). Pure helpers `valuesLookLikeFractions`, `pr
 (`chartSvgWithTitle` grows the viewBox upward and centres a `<text class="pv-chart-svg-title">`);
 Cards keep the HTML `.pv-table-chart-title` heading. Chart SVGs use
 `preserveAspectRatio="xMinYMin meet"` so a height-capped chart stays at the left edge instead of
-drifting to the centre of its full-width box. Next agreed: timeline,
+drifting to the centre of its full-width box. Merged as #500.
+
+**Editorial cover (owner picked it from three options).** `#sakura-cover-page` is left-aligned with a
+6px accent `border-left`, a fixed height of the page's content box (so the details block can sit at
+the foot), wordmark → title (40px/800) → rule → `#sakura-cover-subtitle` (top-level sections via
+`pdfCoverSectionNames`, shown when there are 2+, max 5) → `#sakura-cover-details` grid (Author, Date,
+Status coloured by `status-*`, Length). The rotated status stamp no longer prints on the cover (status
+is a details row); it still stamps the title block when there's no cover. Next agreed: timeline,
 then status board (owner wants to see a mockup first).
 
 **Parked / open questions for the owner:**

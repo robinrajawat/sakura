@@ -97,3 +97,32 @@ test('without a cover: Contents sits right under the title', async ({ page }) =>
   expect(r.homeParent).toBe('preview-main');
   expect(errors).toEqual([]);
 });
+
+test('editorial cover: title, sections line and a details block with author, date, status and length', async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.goto('file://' + indexPath);
+  await page.waitForFunction(() => typeof (window as any).exportPdfDirect === 'function');
+  const r = await page.evaluate(async () => {
+    const w = window as any;
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].text = '[Release 2.4] Plan'; setDocStatus('review', false);
+    w.__printed = false;
+    w.print = () => { w.__printed = true; };
+    w.exportPdfDirect();
+    const t0 = Date.now();
+    while (!w.__printed && Date.now() - t0 < 10000) await new Promise((res) => setTimeout(res, 50));
+    const cover = document.getElementById('sakura-cover-page')!;
+    return {
+      title: cover.querySelector('#sakura-cover-title')?.textContent,
+      subtitle: cover.querySelector('#sakura-cover-subtitle')?.textContent,
+      labels: [...cover.querySelectorAll('.sakura-cover-dt')].map((e) => e.textContent),
+      status: cover.querySelector('.sakura-cover-dd.status-review')?.textContent,
+      stamp: cover.querySelectorAll('.pv-status-stamp').length
+    };
+  });
+  expect(r.title).toBe('Layout');
+  expect(r.subtitle).toBe('Release 2.4 · Plan · Risks');
+  expect(r.labels).toEqual(expect.arrayContaining(['Date', 'Status', 'Length']));
+  expect(r.status).toBe('Review');
+  expect(r.stamp).toBe(0); // status is a details row now, not a rotated stamp
+});
