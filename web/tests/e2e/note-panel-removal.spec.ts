@@ -113,6 +113,7 @@ test.describe('Note Panel + Code Block removal', () => {
       render();
     });
 
+    await page.locator('#qb-insert').click();
     await page.locator('#qb-note').click();
     const noteLine = page.locator('.node-note-line[data-node-id="1"]');
     await expect(noteLine).toBeVisible();
@@ -186,6 +187,7 @@ test.describe('Note Panel + Code Block removal', () => {
       render();
     });
 
+    await page.locator('#qb-insert').click();
     await page.locator('#qb-checkbox').click();
     const isCheckbox = await page.evaluate(() =>
       // @ts-expect-error
@@ -206,6 +208,7 @@ test.describe('Note Panel + Code Block removal', () => {
     );
     expect(focused).toBe(1);
 
+    await page.locator('#qb-insert').click();
     await page.locator('#qb-tags').click();
     const tagPopoverOpen = await page.locator('#tag-popover').evaluate((el) => el.classList.contains('open'));
     expect(tagPopoverOpen).toBe(true);
