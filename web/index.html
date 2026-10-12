@@ -6461,33 +6461,43 @@ function buildTableEditItems(table,cell,commit){
     const body=tableBodyRows(table); const bi=body.indexOf(row);
     const ci=cell.cellIndex; const cols=tableColumnCount(table);
     const headTip='The header row always stays first';
-    groups.push([
-      {label:'Add row above', disabled:isHead, title:isHead?headTip:undefined, onClick:run(()=>tableInsertRow(table,cell,false))},
-      {label:'Add row below', onClick:run(()=>tableInsertRow(table,cell,true))},
-      {label:'Add column left', onClick:run(()=>tableInsertColumn(table,cell,false))},
-      {label:'Add column right', onClick:run(()=>tableInsertColumn(table,cell,true))}
-    ]);
-    groups.push([
-      {label:'Move row up', disabled:isHead||bi<=0, title:isHead?headTip:undefined, onClick:run(()=>tableMoveRow(table,cell,-1))},
-      {label:'Move row down', disabled:isHead||bi<0||bi>=body.length-1, title:isHead?headTip:undefined, onClick:run(()=>tableMoveRow(table,cell,1))},
-      {label:'Move column left', disabled:ci<=0, onClick:run(()=>tableMoveColumn(table,cell,-1))},
-      {label:'Move column right', disabled:ci>=cols-1, onClick:run(()=>tableMoveColumn(table,cell,1))}
-    ]);
+    // Grouped into short submenus so the menu stays a handful of rows: what you can do to the
+    // structure (Insert, Move, Sort, Align, header), how it shows, then Delete.
+    const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     const hasHeader=!!tableHeaderRow(table);
+    const cur=tableColumnAlign(table,ci);
+    const alignItem=(a,label)=>cur===a
+      ? {label, icon:CHECK, current:true, onClick:()=>{}}
+      : {label, onClick:run(()=>tableSetColumnAlign(table,cell,a))};
     groups.push([
-      {label:'Sort A → Z', disabled:body.length<2, onClick:run(()=>tableSortByColumn(table,cell,1))},
-      {label:'Sort Z → A', disabled:body.length<2, onClick:run(()=>tableSortByColumn(table,cell,-1))},
+      {label:'Insert', submenu:[
+        {label:'Row above', disabled:isHead, title:isHead?headTip:undefined, onClick:run(()=>tableInsertRow(table,cell,false))},
+        {label:'Row below', onClick:run(()=>tableInsertRow(table,cell,true))},
+        {label:'Column left', onClick:run(()=>tableInsertColumn(table,cell,false))},
+        {label:'Column right', onClick:run(()=>tableInsertColumn(table,cell,true))}
+      ]},
+      {label:'Move', submenu:[
+        {label:'Row up', disabled:isHead||bi<=0, title:isHead?headTip:undefined, onClick:run(()=>tableMoveRow(table,cell,-1))},
+        {label:'Row down', disabled:isHead||bi<0||bi>=body.length-1, title:isHead?headTip:undefined, onClick:run(()=>tableMoveRow(table,cell,1))},
+        {label:'Column left', disabled:ci<=0, onClick:run(()=>tableMoveColumn(table,cell,-1))},
+        {label:'Column right', disabled:ci>=cols-1, onClick:run(()=>tableMoveColumn(table,cell,1))}
+      ]},
+      {label:'Sort', submenu:[
+        {label:'A → Z', disabled:body.length<2, onClick:run(()=>tableSortByColumn(table,cell,1))},
+        {label:'Z → A', disabled:body.length<2, onClick:run(()=>tableSortByColumn(table,cell,-1))}
+      ]},
+      {label:'Align column', submenu:[
+        alignItem('left','Left'), alignItem('center','Center'), alignItem('right','Right'),
+        cur?{label:'Automatically', title:'Numbers right-align on their own', onClick:run(()=>tableSetColumnAlign(table,cell,''))}:{label:'Automatically', icon:CHECK, current:true, onClick:()=>{}}
+      ]},
       {label:hasHeader?'Turn header row off':'Turn header row on', onClick:run(()=>tableToggleHeader(table,cell))}
     ]);
-    const cur=tableColumnAlign(table,ci);
-    const alignItem=(a,label)=>({label:label+(cur===a?' (current)':''), disabled:cur===a, onClick:run(()=>tableSetColumnAlign(table,cell,a))});
-    const alignGroup=[alignItem('left','Align column left'),alignItem('center','Align column center'),alignItem('right','Align column right')];
-    if(cur)alignGroup.push({label:'Align column automatically', onClick:run(()=>tableSetColumnAlign(table,cell,''))});
-    groups.push(alignGroup);
     groups.push([
-      {label:'Delete row', disabled:table.rows.length<=1, onClick:run(()=>tableDeleteRow(table,cell))},
-      {label:'Delete column', disabled:cols<=1, onClick:run(()=>tableDeleteColumn(table,cell))},
-      {label:'Delete table', danger:true, onClick:deleteTable}
+      {label:'Delete', submenu:[
+        {label:'Row', disabled:table.rows.length<=1, onClick:run(()=>tableDeleteRow(table,cell))},
+        {label:'Column', disabled:cols<=1, onClick:run(()=>tableDeleteColumn(table,cell))},
+        {label:'Table', danger:true, onClick:deleteTable}
+      ]}
     ]);
   } else {
     groups.push([{label:'Delete table', danger:true, onClick:deleteTable}]);

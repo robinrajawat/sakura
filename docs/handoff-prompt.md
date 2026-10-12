@@ -277,6 +277,11 @@ last) and phases them with `timelinePhases` against today's UTC date (done / nex
 without a 4-digit year get no phase). Pure helpers in `chartFormat.ts`. Covered by
 `tests/e2e/table-timeline.spec.ts`.
 
+**Cell menu grouped (owner request).** `buildTableEditItems` now returns Insert ›, Move ›, Sort ›,
+Align column › (check on current, incl. Automatically), Turn header row on/off | the Show as group |
+Delete › (Row, Column, Table). e2e helpers in `table-editing.spec.ts` map old flat labels to
+[submenu, item] via `MENU_PATH`/`subItem`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
