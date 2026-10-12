@@ -80,7 +80,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await seedDoc(page);
 
     // Toolbar AI group: exactly Generate outline + Rewrite node.
-    await expect(page.locator('#ag-ai .ag-buttons > button')).toHaveCount(2);
+    await expect(page.locator('#ai-menu .tb-menu-item')).toHaveCount(2);
     await expect(page.locator('#qb-ai-outline')).toHaveCount(1);
     await expect(page.locator('#qb-ai-rewrite')).toHaveCount(1);
     for (const id of ['qb-ai-expand', 'qb-ai-summarise', 'qb-ai-tags', 'qb-ai-icon', 'icon-picker-popover',

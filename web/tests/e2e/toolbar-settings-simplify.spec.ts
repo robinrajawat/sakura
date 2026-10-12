@@ -72,10 +72,17 @@ test.describe('Fixed main toolbar', () => {
       'undo-btn', 'redo-btn',
       'qb-outdent', 'qb-indent',
       'bold', 'italic', 'hl-toggle-btn', 'fc-toggle-btn', 'heading-toggle-btn',
-      'qb-note', 'qb-checkbox', 'qb-tags',
-      'qb-ai-outline', 'qb-ai-rewrite',
+      'qb-insert', 'qb-ai',
       'qb-collapse', 'qb-zoom',
     ]);
+    // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
+    // Rewrite + Generate outline live in AI ▾.
+    await page.locator('#qb-insert').click();
+    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Add question', 'Add remark', 'Add diagram', 'Generate diagram', 'Add table', 'Add image', 'Insert date/time']);
+    await page.locator('#qb-ai').click();
+    await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
+    await expect(page.locator('#ai-menu .tb-menu-label')).toHaveText(['Rewrite node', 'Generate outline']);
+    await page.locator('#qb-ai').click();
     // Colour pickers stay attached to Highlight and Text colour.
     await expect(page.locator('#hl-caret-btn')).toBeVisible();
     await expect(page.locator('#fc-caret-btn')).toBeVisible();
@@ -87,7 +94,7 @@ test.describe('Fixed main toolbar', () => {
     const gap = await page.evaluate(() => {
       const bar = document.getElementById('quick-bar')!.getBoundingClientRect();
       const zoom = document.getElementById('qb-zoom')!.getBoundingClientRect();
-      const rewrite = document.getElementById('qb-ai-rewrite')!.getBoundingClientRect();
+      const rewrite = document.getElementById('qb-ai')!.getBoundingClientRect();
       return { toRightEdge: bar.right - zoom.right, afterAi: zoom.left - rewrite.right };
     });
     expect(gap.toRightEdge).toBeLessThan(40);
@@ -233,6 +240,19 @@ test.describe('Settings', () => {
     await expect(page.locator('#settings-section-ai-capabilities[data-cat="ai"] #feat-ai-toggle')).toHaveCount(1);
   });
 
+  test('Insert ▾ items run the same action as the right-click menu (Add remark adds a remark to the selected node)', async ({ page }) => {
+    await open(page);
+    await seedDoc(page);
+    await page.locator('.node-row[data-id="1"]').click();
+    // @ts-expect-error -- bare global from index.html
+    const before = await page.evaluate(() => remarks.length);
+    await page.locator('#qb-insert').click();
+    await page.locator('#insert-menu [data-insert-action="remark"]').click();
+    await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
+    // @ts-expect-error
+    await expect.poll(() => page.evaluate(() => remarks.length)).toBe(before + 1);
+  });
+
   test('turning AI Capabilities off from Settings → AI hides the AI toolbar buttons but keeps its own switch', async ({ page }) => {
     await open(page);
     await page.evaluate(() => {
@@ -240,11 +260,11 @@ test.describe('Settings', () => {
       (document.querySelector('.settings-rail-btn[data-cat="ai"]') as HTMLElement).click();
     });
     await page.locator('#feat-ai-toggle').click();
-    await expect(page.locator('#qb-ai-rewrite')).toBeHidden();
+    await expect(page.locator('#qb-ai')).toBeHidden();
     await expect(page.locator('#feat-ai-toggle')).toBeVisible();
     await expect(page.locator('#settings-section-ai-rewrite')).toBeHidden();
     await page.locator('#feat-ai-toggle').click();
-    await expect(page.locator('#qb-ai-rewrite')).toBeVisible();
+    await expect(page.locator('#qb-ai')).toBeVisible();
   });
 
   test('Text size lives in Settings → Appearance', async ({ page }) => {
@@ -322,7 +342,7 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     await seedDoc(page);
     // Toolbar: always shown, every fixed button visible despite the old hidden lists.
     await expect(page.locator('#quick-bar')).toBeVisible();
-    for (const id of ['#undo-btn', '#qb-outdent', '#hl-wrap', '#qb-note', '#qb-tags', '#qb-ai-rewrite', '#qb-collapse', '#qb-zoom']) {
+    for (const id of ['#undo-btn', '#qb-outdent', '#hl-wrap', '#qb-insert', '#qb-ai', '#qb-collapse', '#qb-zoom']) {
       await expect(page.locator(id), id).toBeVisible();
     }
     await expect(page.locator('.fmt-btn[data-style="bold"]')).toBeVisible();
@@ -341,7 +361,9 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toBeVisible();
     await page.keyboard.press('Escape');
     // Tagging / Quick Assist / Quick Insert are always on.
+    await page.locator('#qb-insert').click();
     await expect(page.locator('#qb-tags')).toBeVisible();
+    await page.locator('#qb-insert').click();
     // @ts-expect-error -- bare globals from index.html
     await page.evaluate(() => toggleQa());
     await expect(page.locator('#qa-dropdown')).toHaveClass(/open/);
