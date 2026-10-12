@@ -341,7 +341,7 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .settings-list-row .slider-control{display:flex;align-items:center;gap:8px;flex:0 0 auto;width:150px}
 .settings-list-row .slider-control .settings-slider{width:100%}
 .toggle-switch{position:relative;appearance:none;-webkit-appearance:none;width:34px;height:20px;flex:0 0 auto;border:none;border-radius:999px;background:linear-gradient(180deg, color-mix(in srgb,var(--tb-bg) 92%, #ffffff 8%), color-mix(in srgb,var(--tb-bg) 78%, #000 4%));backdrop-filter:blur(6px);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--border) 55%, transparent),0 1px 3px rgba(0,0,0,.08);cursor:pointer;transition:background .25s ease,box-shadow .22s ease,transform .14s ease}.toggle-switch:hover{background:linear-gradient(180deg, color-mix(in srgb,var(--tb-bg) 95%, #ffffff 5%), color-mix(in srgb,var(--tb-bg) 80%, #000 3%));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--border) 50%, transparent),0 2px 6px rgba(0,0,0,.10)}.toggle-switch:active{transform:scale(.985)}.toggle-switch:focus{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--border) 50%, transparent),0 2px 6px rgba(0,0,0,.10)}.toggle-switch::before{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:linear-gradient(180deg,#ffffff,var(--edit-bg));box-shadow:0 2px 6px rgba(0,0,0,.12),0 0 0 1px color-mix(in srgb,var(--border) 55%, transparent),0 0 12px color-mix(in srgb,var(--accent) 22%, transparent);transition:transform .22s cubic-bezier(.22,.8,.34,1),box-shadow .22s ease}.toggle-switch::after{content:'';position:absolute;inset:0;border-radius:999px;background:linear-gradient(to bottom, rgba(255,255,255,.34), transparent 42%);pointer-events:none}.toggle-switch.on{background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 78%, #ffffff 6%), color-mix(in srgb,var(--accent) 66%, #000 4%));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 34%, transparent),0 1px 3px rgba(0,0,0,.08)}.toggle-switch.on:hover{background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 82%, #ffffff 5%), color-mix(in srgb,var(--accent) 70%, #000 4%));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 36%, transparent),0 2px 6px rgba(0,0,0,.12)}.toggle-switch.on::before{transform:translateX(14px);box-shadow:0 2px 6px rgba(0,0,0,.12),0 0 0 1px color-mix(in srgb,var(--accent) 30%, var(--border) 70%),0 0 12px color-mix(in srgb,var(--accent) 24%, transparent)}  @media (max-width:700px){.help-panel,.settings-panel{right:-4px}.settings-grid{grid-template-columns:1fr}}
-.export-menu{min-width:240px;max-width:320px;display:none;flex-direction:column;overflow:hidden}
+.export-menu{min-width:0;width:max-content;max-width:320px;display:none;flex-direction:column;overflow:hidden}
 #account-menu{max-height:min(80vh,600px);overflow-y:auto;align-items:stretch}
 .export-item{display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:10px 12px;font:inherit;cursor:pointer;transition:background .12s}.export-item:hover{background:var(--hover)}.export-item:active{background:var(--sel)}.export-item:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 #appbar-more-menu{min-width:130px}
@@ -601,6 +601,8 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 /* Header layout: brand + inline title + actions, single row, no wrap */
 #editor-meta-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 2px 16px}
 #sb-author.doc-author-chip{text-transform:none;letter-spacing:0;font-weight:600;cursor:text;width:132px;text-align:left;outline:none}
+/* Hug the name instead of a fixed 132px box (which left trailing grey on short names); browsers without field-sizing keep the fixed width. */
+@supports (field-sizing:content){#sb-author.doc-author-chip{field-sizing:content;width:auto;min-width:64px;max-width:220px}}
 #doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu{right:auto;left:0}
 .meta-inline{appearance:none;-webkit-appearance:none;-moz-appearance:none;border:none;background:transparent;color:var(--fg);padding:0 2px;min-width:0;font-family:'Inter',sans-serif;line-height:1.2;border-radius:4px}
 .meta-inline::placeholder{color:var(--hint)}
@@ -887,7 +889,8 @@ body.zen-mode #quick-bar{display:none}
    nothing when Quick Assist lives in the status bar instead, so it never reserves dead space. */
 #appbar-qa-slot{display:flex;align-items:center;flex:0 0 auto}
 #appbar-qa-slot:empty{display:none}
-#appbar-qa-slot .qa-dropdown{left:0;right:auto}
+/* The slot sits near the app bar's right edge, so a 420px dropdown hanging rightward from it ran off-screen — open it leftward from the search box's right edge instead. */
+#appbar-qa-slot .qa-dropdown{left:auto;right:0}
 .qa-input-row{display:flex;align-items:center;gap:8px;width:200px;background:var(--edit-bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;transition:border-color .12s,width .15s}
 .qa-icon-btn{appearance:none;border:none;background:transparent;padding:0;margin:0;display:flex;align-items:center;color:var(--hint);cursor:pointer;flex-shrink:0;border-radius:4px}
 .qa-icon-btn:hover,.qa-icon-btn:focus-visible{color:var(--accent)}
@@ -970,6 +973,7 @@ body.zen-mode #quick-bar{display:none}
 .context-item.danger:hover{background:color-mix(in srgb,#dc2626 8%,transparent)}
 .context-label{font:400 13px 'Inter',sans-serif}
 .context-divider{height:1px;background:var(--border);margin:6px 6px}
+.context-sort-row{display:flex;align-items:center;gap:2px;padding:2px 6px 2px 12px}.context-sort-row-label{flex:1 1 auto;font:400 13px 'Inter',sans-serif;color:var(--fg)}.context-sort-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}.context-sort-btn:hover{background:var(--hover);color:var(--fg)}.context-sort-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .context-group-label{font:600 10px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:4px 12px 2px;user-select:none}
 /* Quick-action row at the top of the node context menu — markers plus the
    most-used actions as icon buttons, so most right-clicks never need the
@@ -1908,7 +1912,7 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 
 #preview-doc{max-width:min(var(--pv-reading-width,1080px),94%);margin:0 auto;padding:0 48px 0 24px;font-family:'Inter',sans-serif;color:var(--node-fg)}
 .pv-serif-body .pv-text{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif}
-#pv-doc-header{margin:0 0 22px;padding-bottom:14px;border-bottom:1px solid var(--border)}.pv-h-row{display:flex;align-items:center;gap:5px}
+#pv-doc-header{position:relative;margin:0 0 22px;padding-bottom:14px;border-bottom:1px solid var(--border)}.pv-h-row{display:flex;align-items:center;gap:5px}
 #pv-qa-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
 #pv-remarks-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
 .pv-qa-heading{font:700 22px 'Inter',sans-serif;color:var(--pv-heading);margin-bottom:16px}
@@ -1939,6 +1943,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-heading-5{min-width:0;font-family:'Inter',sans-serif;font-size:14px;font-weight:400;line-height:1.4;color:var(--heading-c5);word-break:break-word}
 .pv-heading-6{min-width:0;font-family:'Inter',sans-serif;font-size:13px;font-weight:400;font-style:italic;line-height:1.4;color:var(--heading-c6);word-break:break-word}
 .pv-heading-7{min-width:0;font-family:'Inter',sans-serif;font-size:13px;font-weight:400;line-height:1.4;color:var(--heading-c7);word-break:break-word}
+.pv-status-stamp{position:absolute;top:0;right:0;transform:rotate(-8deg);padding:4px 12px;border:2.5px solid currentColor;border-radius:6px;font:800 15px 'Inter',sans-serif;letter-spacing:.14em;text-transform:uppercase;opacity:.85;pointer-events:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-status-stamp.draft{color:#6b7280}.pv-status-stamp.review{color:#d97706}.pv-status-stamp.approved{color:#16a34a}.pv-status-stamp.rejected{color:#dc2626}#sakura-cover-page .pv-status-stamp{top:48px;right:56px;font-size:20px}
+#pv-doc-header.has-status-stamp #pv-doc-title{padding-right:150px}
 #pv-doc-kicker{width:28px;height:3px;border-radius:2px;background:var(--accent);margin:0 0 12px}
 #pv-doc-title{font:800 28px/1.25 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);word-break:break-word}
 #pv-doc-meta{margin-top:7px;font:400 12.5px 'Inter',sans-serif;color:var(--muted);letter-spacing:.01em}
@@ -5058,14 +5064,12 @@ function updateVaultChip(){
   // actionable left to show once you've unlocked; and if nothing vault-gated is even in use
   // (e.g. Sakura Hosted AI with no fallback keys saved), nagging to unlock
   // is just noise.
-  if(!vaultActive()||vaultUnlocked()||!vaultUnlockWouldHelp()){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
+  // On Sakura Hosted AI the vault only holds fallback keys, which aren't needed until the hosted
+  // call actually fails — callAiByShapeWithFallback asks to unlock at that point instead.
+  if(!vaultActive()||vaultUnlocked()||!vaultUnlockWouldHelp()||aiProvider===AI_HOSTED_PROVIDER_ID){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
   chip.style.display=''; divider.style.display=''; chip.style.color='';
   chip.innerHTML=SB_VAULT_LOCKED_ICON+'<span>Locked</span>';
-  // "AI Rewrite" only belongs in this tip for a BYOK provider — requireAiKey()'s hosted branch
-  // never touches the vault at all (checks currentUser instead), so AI Rewrite keeps working
-  // while locked whenever Sakura Hosted AI is the active provider; there, unlocking only
-  // matters for the saved fallback keys.
-  chip.dataset.tip=aiProvider===AI_HOSTED_PROVIDER_ID?'Secure Storage is locked — click to unlock your saved AI fallback keys':'Secure Storage is locked — click to unlock and use AI Rewrite';
+  chip.dataset.tip='Secure Storage is locked — click to unlock and use AI Rewrite';
   refreshStatusbarDividers();
 }
 el('sb-vault-chip')?.addEventListener('click',()=>{ if(vaultUnlocked())lockVault(); else unlockVault(); });
@@ -16276,20 +16280,20 @@ const CTX_ACTION_META={
   down:{label:'Move down',glyph:'↓',group:'structure'},
   fold:{label:'Collapse/expand branch',svg:'<polyline points="6 9 12 15 18 9"/>',group:'structure'},
   'ai-rewrite':{label:'Rewrite node',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
-  note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'notes'},
-  qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'notes'},
-  remark:{label:'Add remark…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'notes'},
-  diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'notes'},
-  'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'notes'},
-  table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'notes'},
-  image:{label:'Add image…',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>',group:'notes'},
-  'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'notes'},
-  'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'notes'},
-  tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'notes'},
-  'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'notes'},
+  note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'content'},
+  qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'content'},
+  remark:{label:'Add remark…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'content'},
+  diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'content'},
+  'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'content'},
+  table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'content'},
+  image:{label:'Add image…',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>',group:'content'},
+  'where-used':{label:'Where used…',dynamicLabel:true,svg:'<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>',group:'info'},
+  'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'content'},
+  tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'info'},
+  'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'info'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','qa','remark','diagram','diagram-gen','table','image','where-used','date-time','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','qa','remark','diagram','diagram-gen','table','image','date-time','where-used','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -16377,35 +16381,37 @@ function renderContextMorePanel(){
     panel.appendChild(btn);
   };
   // "More" lists every node action that isn't already an icon in the quick row, grouped
-  // (insert, structure, sort children, AI, notes, delete) — so structural actions with no
+  // (insert, structure, sort children, AI, content, info, delete) — so structural actions with no
   // toolbar button any more (Insert above/below, Add child, Duplicate, Move up/down, Delete…)
   // stay one right-click away.
   const addGroupRemaining=g=>{const remaining=CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a)); if(remaining.length){addDivider(); remaining.forEach(addItem); any=true}};
   addGroupRemaining('insert');
   addGroupRemaining('structure');
-  // Sort children — a group of three actions sharing one "More" entry rather than a single
-  // icon-able action.
+  // Sort children — three actions on one compact row (label + icon buttons) rather than three
+  // full-height rows; the whole row is hidden when the node has no children to sort (see
+  // updateContextMenuState).
   {
-    addDivider();
-    const sortLabel=document.createElement('div'); sortLabel.className='context-group-label'; sortLabel.id='context-sort-label'; sortLabel.textContent='Sort children'; panel.appendChild(sortLabel);
-    [['sort-az','A → Z','<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'],
-     ['sort-za','Z → A','<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'],
-     ['sort-depth','By depth','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>']
+    // The row carries its own divider so hiding it doesn't leave two dividers stacked.
+    const sortWrap=document.createElement('div'); sortWrap.id='context-sort-label';
+    if(any){const d=document.createElement('div'); d.className='context-divider'; sortWrap.appendChild(d)}
+    const sortRow=document.createElement('div'); sortRow.className='context-sort-row'; sortWrap.appendChild(sortRow);
+    const sortLabel=document.createElement('span'); sortLabel.className='context-sort-row-label'; sortLabel.textContent='Sort children'; sortRow.appendChild(sortLabel);
+    [['sort-az','Sort A → Z','<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'],
+     ['sort-za','Sort Z → A','<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'],
+     ['sort-depth','Sort by depth','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>']
     ].forEach(([actionId,label,svg])=>{
-      const btn=document.createElement('button'); btn.type='button'; btn.className='context-item'; btn.dataset.action=actionId; btn.setAttribute('role','menuitem');
-      const icon=document.createElement('span'); icon.className='context-icon'; icon.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`;
-      const lbl=document.createElement('span'); lbl.className='context-label'; lbl.textContent=label;
-      btn.appendChild(icon); btn.appendChild(lbl); panel.appendChild(btn);
+      const btn=document.createElement('button'); btn.type='button'; btn.className='context-sort-btn'; btn.dataset.action=actionId; btn.setAttribute('role','menuitem'); btn.title=label; btn.setAttribute('aria-label',label);
+      btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`;
+      sortRow.appendChild(btn);
     });
+    panel.appendChild(sortWrap);
     any=true;
   }
   addGroupRemaining('ai');
-  // 'tags' lives in the 'notes' group in CTX_ACTION_META/CTX_ACTION_ORDER, so it's
-  // already picked up here (or in the quick row) via the generic mechanism — no
-  // separate hardcoded entry needed. (Previously there was a second, hand-written
-  // "Tags…" button appended right after this call, which duplicated whichever one
-  // the generic system already rendered.)
-  addGroupRemaining('notes');
+  // Things you add to a node (notes, objects, date) apart from things you look up about it
+  // (where used, tags, history) — two short groups read faster than one long one.
+  addGroupRemaining('content');
+  addGroupRemaining('info');
   addGroupRemaining('delete');
   // Nothing landed in the panel — don't show a "More" button that opens onto an empty panel.
   const toggle=el('context-more-toggle');
@@ -21736,7 +21742,11 @@ async function callAiByShapeWithFallback(shape,baseUrl,key,model,systemPrompt,us
     const isFallbackable=err instanceof RateLimitError||err instanceof FallbackableError;
     recordAiUsage(providerId,false,err&&err.message);
     if(!isFallbackable)throw err;
-    const chain=getEffectiveFallbackChain();
+    let chain=getEffectiveFallbackChain();
+    // Locked Secure Storage hides saved fallback keys from the chain. On Sakura Hosted AI the
+    // status-bar chip no longer nags about that up front, so ask for the passphrase here, at
+    // the one moment unlocking actually changes the outcome.
+    if(!chain.length&&vaultActive()&&!vaultUnlocked()&&vaultUnlockWouldHelp()){ await unlockVault(); chain=getEffectiveFallbackChain(); }
     if(!chain.length)throw err;
     const primaryLabel=getAiProviderById(aiProvider).label;
     const reason=err instanceof RateLimitError?'Quota hit on '+primaryLabel:'Error on '+primaryLabel;
@@ -25367,6 +25377,7 @@ function renderPreviewBody(){
   const headerBlock=document.createElement('div'); headerBlock.id='pv-doc-header';
   const kickerEl=document.createElement('div'); kickerEl.id='pv-doc-kicker';
   headerBlock.appendChild(kickerEl);
+  const pvStamp=buildPdfStatusStamp(); if(pvStamp){ headerBlock.appendChild(pvStamp); headerBlock.classList.add('has-status-stamp'); }
   const titleEl=document.createElement('div'); titleEl.id='pv-doc-title'; titleEl.textContent=docTitle;
   headerBlock.appendChild(titleEl);
   const metaEl=document.createElement('div'); metaEl.id='pv-doc-meta'; metaEl.textContent=metaParts.join(' · ');
@@ -25877,6 +25888,13 @@ function _pdfWaitForImages(container, timeoutMs=4000){
     });
   }));
 }
+// A rubber-stamp style status mark for exported PDFs — the in-app status pill never reaches a
+// reader of the PDF, so the export carries its own. Nothing is stamped when no status is set.
+function buildPdfStatusStamp(){
+  if(!docStatus||!DOC_STATUSES.includes(docStatus))return null;
+  const stamp=document.createElement('div'); stamp.className='pv-status-stamp '+docStatus; stamp.textContent=docStatusLabel(docStatus);
+  return stamp;
+}
 function exportPreviewAsPdf(onDone){
   document.body.classList.add('printing-preview');
   // Redeclaring these as rules inside the injected @media print stylesheet below (the
@@ -26114,6 +26132,7 @@ function exportPreviewAsPdf(onDone){
     if(lastSavedAt)coverMetaParts.push(`Updated ${new Date(lastSavedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}`);
     const coverMetaEl=document.createElement('div'); coverMetaEl.id='sakura-cover-meta'; coverMetaEl.textContent=coverMetaParts.join(' · ');
     coverEl.appendChild(coverMetaEl);
+    const coverStamp=buildPdfStatusStamp(); if(coverStamp){ coverEl.style.position='relative'; coverEl.appendChild(coverStamp); }
     const overlay=el('preview-overlay');
     overlay?.insertBefore(coverEl,overlay.firstChild);
   }

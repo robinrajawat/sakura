@@ -208,7 +208,7 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'focus', 'up', 'down', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'diagram-gen', 'image', 'where-used', 'date-time', 'tags', 'version-history', 'delete']);
+    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'focus', 'up', 'down', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'diagram-gen', 'image', 'date-time', 'where-used', 'tags', 'version-history', 'delete']);
     expect(errors).toEqual([]);
   });
 });
