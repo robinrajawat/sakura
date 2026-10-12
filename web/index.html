@@ -1000,6 +1000,11 @@ body.zen-mode #quick-bar{display:none}
 .context-item.danger:hover{background:color-mix(in srgb,#dc2626 8%,transparent)}
 .context-label{font:400 13px 'Inter',sans-serif}
 .context-divider{height:1px;background:var(--border);margin:6px 6px}
+.ctx-pin{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;color:var(--hint);opacity:0;transition:opacity .12s}
+.context-item:hover .ctx-pin,.context-item:focus-visible .ctx-pin{opacity:1}
+.ctx-pin:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+#context-quickbar .pv-qm-btn.dragging{opacity:.4}
+#context-quickbar .pv-qm-btn.drop-target{box-shadow:inset 2px 0 0 var(--accent)}
 .context-sort-row{display:flex;align-items:center;gap:2px;padding:2px 6px 2px 12px}.context-sort-row-label{flex:1 1 auto;font:400 13px 'Inter',sans-serif;color:var(--fg)}.context-sort-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}.context-sort-btn:hover{background:var(--hover);color:var(--fg)}.context-sort-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .context-group-label{font:600 10px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:4px 12px 2px;user-select:none}
 /* Quick-action row at the top of the node context menu — markers plus the
@@ -4736,6 +4741,10 @@ let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
 const CTX_QUICK_ROW=['ai-rewrite','note','remark','qa','diagram','table','image','tags','diagram-gen'];
+// The person's own quick-row order (array of action ids), or null for the default above. Set by
+// dragging quick-row icons, right-click → Move/Remove, or More's pin buttons; saved in prefs as
+// ctxQuickRow. Declared up here because savePrefs/loadPrefs run during boot.
+let ctxQuickRowCustom=null;
 let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let qaItems=[]; let diagrams=[]; let remarks=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorReadingWidthEnabled=false; let editorReadingWidth=900; let treeIndentWidth=3; let outlineNumbering=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set();
 // Unlike the inlineExpand*NodeIds sets above (which track which items have been opened from
 // their closed-by-default state), a table/chart/Cards object has always rendered inline
@@ -10683,7 +10692,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -10706,7 +10715,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -16554,8 +16563,32 @@ function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelTex
 // run wider than the menu itself. Anything past the cap falls through to "More".
 const CTX_QUICK_ROW_MAX=6;
 function ctxQuickRowVisible(){
-  return CTX_QUICK_ROW.filter(a=>CTX_ACTION_META[a]&&ctxActionAllowed(a)).slice(0,CTX_QUICK_ROW_MAX);
+  return (ctxQuickRowCustom||CTX_QUICK_ROW).filter(a=>CTX_ACTION_META[a]&&ctxActionAllowed(a)).slice(0,CTX_QUICK_ROW_MAX);
 }
+// Quick-row customisation. Every change works from what's actually shown, so the stored list is
+// always the visible order (at most CTX_QUICK_ROW_MAX entries).
+function setCtxQuickRow(list){
+  const clean=[...new Set(list)].filter(a=>CTX_ACTION_META[a]).slice(0,CTX_QUICK_ROW_MAX);
+  ctxQuickRowCustom=clean; savePrefs(); renderContextTopRow(); renderContextMorePanel(); updateContextMenuState?.();
+}
+function ctxQuickRowPin(actionId){
+  const cur=ctxQuickRowVisible();
+  if(cur.includes(actionId))return;
+  if(cur.length>=CTX_QUICK_ROW_MAX){ showToast(`The quick row holds ${CTX_QUICK_ROW_MAX} — remove one first (right-click an icon)`); return; }
+  setCtxQuickRow([...cur,actionId]);
+}
+function ctxQuickRowMove(actionId,delta){
+  const cur=ctxQuickRowVisible(); const i=cur.indexOf(actionId); const j=i+delta;
+  if(i<0||j<0||j>=cur.length)return;
+  [cur[i],cur[j]]=[cur[j],cur[i]]; setCtxQuickRow(cur);
+}
+function ctxQuickRowRemove(actionId){
+  const cur=ctxQuickRowVisible();
+  if(cur.length<=1){ showToast('Keep at least one quick action'); return; }
+  setCtxQuickRow(cur.filter(a=>a!==actionId));
+}
+function ctxQuickRowReset(){ ctxQuickRowCustom=null; savePrefs(); renderContextTopRow(); renderContextMorePanel(); updateContextMenuState?.(); showToast('Quick row reset'); }
+let _ctxQuickDragId=null;
 function renderContextTopRow(){
   const markerRow=el('context-marker-row');
   if(markerRow){
@@ -16575,6 +16608,25 @@ function renderContextTopRow(){
     const label=meta.dynamicLabel?ctxDynamicLabel(actionId):meta.label;
     btn.dataset.tip=label; btn.setAttribute('aria-label',label);
     btn.innerHTML=meta.glyph?esc(meta.glyph):`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`;
+    // Drag an icon onto another to reorder; right-click one to move, remove, or reset the row.
+    btn.draggable=true;
+    btn.addEventListener('dragstart',e=>{ _ctxQuickDragId=actionId; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',actionId)}catch(_){} btn.classList.add('dragging'); });
+    btn.addEventListener('dragend',()=>{ _ctxQuickDragId=null; btn.classList.remove('dragging'); bar.querySelectorAll('.drop-target').forEach(b=>b.classList.remove('drop-target')); });
+    btn.addEventListener('dragover',e=>{ if(!_ctxQuickDragId||_ctxQuickDragId===actionId)return; e.preventDefault(); btn.classList.add('drop-target'); });
+    btn.addEventListener('dragleave',()=>btn.classList.remove('drop-target'));
+    btn.addEventListener('drop',e=>{ e.preventDefault(); btn.classList.remove('drop-target'); const from=_ctxQuickDragId; _ctxQuickDragId=null; if(!from||from===actionId)return; const cur=ctxQuickRowVisible().filter(a=>a!==from); cur.splice(cur.indexOf(actionId),0,from); setCtxQuickRow(cur); });
+    btn.addEventListener('contextmenu',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const cur=ctxQuickRowVisible(); const i=cur.indexOf(actionId);
+      showSbContextMenu(e.clientX,e.clientY,[
+        {label:'Move left', disabled:i<=0, onClick:()=>ctxQuickRowMove(actionId,-1)},
+        {label:'Move right', disabled:i>=cur.length-1, onClick:()=>ctxQuickRowMove(actionId,1)},
+        {label:'Remove from quick row', onClick:()=>ctxQuickRowRemove(actionId)},
+        {divider:true},
+        {label:'Reset quick row', disabled:!ctxQuickRowCustom, onClick:()=>ctxQuickRowReset()}
+      ]);
+      document.querySelector('.sb-context-menu')?.addEventListener('mousedown',ev=>ev.stopPropagation());
+    });
     bar.appendChild(btn);
   });
 }
@@ -16594,6 +16646,12 @@ function renderContextMorePanel(){
     const label=document.createElement('span'); label.className='context-label';
     if(actionId==='note'){label.id='ctx-note-label'; label.textContent=_ctxNoteLabelText()} else if(meta.dynamicLabel){label.textContent=ctxDynamicLabel(actionId)} else label.textContent=meta.label;
     btn.appendChild(icon); btn.appendChild(label);
+    // Any More action except Delete can be pinned to the quick row.
+    if(actionId!=='delete'){
+      const pin=document.createElement('span'); pin.className='ctx-pin'; pin.dataset.pin=actionId; pin.setAttribute('role','button'); pin.setAttribute('aria-label','Add to quick row'); pin.dataset.tip='Add to quick row';
+      pin.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>';
+      btn.appendChild(pin);
+    }
     panel.appendChild(btn);
   };
   // "More" lists every node action that isn't already an icon in the quick row, grouped
@@ -20990,6 +21048,8 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='delete'){const ok=await confirmDeleteIfNeeded(); if(!ok)return; deleteSelected(); focusPane(); return}
 }
 el('context-menu').addEventListener('click',async e=>{
+  const pinBtn=e.target.closest('.ctx-pin');
+  if(pinBtn){ e.stopPropagation(); ctxQuickRowPin(pinBtn.dataset.pin); return; }
   const markBtn=e.target.closest('.pv-qm-mark');
   if(markBtn){ e.stopPropagation(); if(contextMenuNodeId!==null){setNodeMarker(contextMenuNodeId,markBtn.dataset.marker); hideContextMenu(); render();} return; }
   const btn=e.target.closest('[data-action]'); if(!btn)return; const action=btn.dataset.action; const _ctxNodeId=contextMenuNodeId??selectedId; const _ctxAnchor=(action==='note'||action==='tags')?{left:_ctxLastX,right:_ctxLastX,top:_ctxLastY,bottom:_ctxLastY,height:0,width:0}:undefined; hideContextMenu(); await runQuickAction(action,_ctxNodeId,_ctxAnchor);
