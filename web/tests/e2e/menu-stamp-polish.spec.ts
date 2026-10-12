@@ -82,3 +82,30 @@ test.describe('Quick Assist docked in the app bar', () => {
     expect(box!.x + box!.width).toBeLessThanOrEqual(1280);
   });
 });
+
+test.describe('Toolbar marker summary', () => {
+  test('counts markers across folded branches and filters to them on click', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('#ag-markers')).toBeHidden();
+    const list = [n(1, 0, 'Parent', null), n(2, 1, 'Child A', 1), n(3, 1, 'Child B', 1), n(4, 0, 'Other', null)];
+    await seed(page, list);
+    await page.evaluate(() => {
+      // @ts-expect-error -- bare globals from index.html
+      nodes[1].marker = 'followup'; nodes[2].marker = 'followup'; nodes[3].marker = 'issue';
+      // @ts-expect-error
+      collapsedIds = new Set([1]); render();
+    });
+    const btns = page.locator('#marker-summary .marker-sum-btn');
+    await expect(btns).toHaveCount(2);
+    await expect(btns.nth(0)).toHaveAttribute('data-marker', 'issue');
+    await expect(btns.nth(1)).toHaveText('2');
+    await expect(page.locator('.node-row[data-id="2"]')).toHaveCount(0);
+    await btns.nth(1).click();
+    await expect(page.locator('.node-row[data-id="2"]')).toBeVisible();
+    await expect(page.locator('.node-row[data-id="3"]')).toBeVisible();
+    await expect(page.locator('#marker-summary .marker-sum-btn.active')).toHaveAttribute('data-marker', 'followup');
+    await page.locator('#marker-summary .marker-sum-btn.active').click();
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeMarkerFilter)).toBeNull();
+  });
+});
