@@ -282,6 +282,7 @@ test.describe('Images as node objects', () => {
     });
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
+    await page.locator('#context-more-panel .context-submenu-trigger').hover();
     const item = page.locator('#context-more-panel [data-action="image"]');
     await expect(item).toHaveText(/Add image…/);
     const chooserPromise = page.waitForEvent('filechooser');
@@ -465,6 +466,7 @@ test.describe('Images as node objects', () => {
     await seedDoc(page);
     await page.locator('.node-row').first().click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
+    await page.locator('#context-more-panel .context-submenu-trigger').hover();
     await expect(page.locator('#context-more-panel [data-action="image"]')).toBeVisible();
     await expect(page.locator('#ctxq-image')).toHaveCount(0);
     await expect(page.locator('#hoverq-image')).toHaveCount(0);

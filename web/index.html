@@ -1004,6 +1004,13 @@ body.zen-mode #quick-bar{display:none}
 .ctx-pin:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 #context-quickbar .pv-qm-btn.dragging{opacity:.4}
 #context-quickbar .pv-qm-btn.drop-target{box-shadow:inset 2px 0 0 var(--accent)}
+.context-icon-glyph{font-size:14px;line-height:1}
+.context-submenu-wrap{position:relative}
+.context-item.context-submenu-trigger{width:calc(100% - 4px)}
+.context-submenu-chevron{margin-left:auto;opacity:.55}
+.context-submenu{display:none;position:fixed;z-index:165;min-width:200px;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px}
+.context-submenu-wrap.open .context-submenu{display:flex}
+.context-submenu-wrap.open .context-submenu-trigger{background:var(--hover)}
 .context-sort-row{display:flex;align-items:center;gap:2px;padding:2px 6px 2px 12px}.context-sort-row-label{flex:1 1 auto;font:400 13px 'Inter',sans-serif;color:var(--fg)}.context-sort-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}.context-sort-btn:hover{background:var(--hover);color:var(--fg)}.context-sort-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .context-group-label{font:600 10px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:4px 12px 2px;user-select:none}
 /* Quick-action row at the top of the node context menu — markers plus the
@@ -16636,7 +16643,7 @@ function renderContextMorePanel(){
   const quickSet=new Set(ctxQuickRowVisible());
   let any=false;
   const addDivider=()=>{if(any){const d=document.createElement('div'); d.className='context-divider'; panel.appendChild(d)}};
-  const addItem=actionId=>{
+  const addItem=(actionId,container=panel)=>{
     const meta=CTX_ACTION_META[actionId];
     const btn=document.createElement('button');
     btn.type='button'; btn.className='context-item'+(meta.danger?' danger':''); btn.dataset.action=actionId; btn.setAttribute('role','menuitem');
@@ -16651,15 +16658,26 @@ function renderContextMorePanel(){
       pin.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>';
       btn.appendChild(pin);
     }
-    panel.appendChild(btn);
+    container.appendChild(btn);
   };
   // "More" lists every node action that isn't already an icon in the quick row, grouped
   // (insert, structure, sort children, AI, content, info, delete) — so structural actions with no
   // toolbar button any more (Insert above/below, Add child, Duplicate, Move up/down, Delete…)
   // stay one right-click away.
-  const addGroupRemaining=(g,heading)=>{const remaining=CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a)); if(remaining.length){addDivider(); if(heading){const h=document.createElement('div'); h.className='context-group-label'; h.textContent=heading; panel.appendChild(h);} remaining.forEach(addItem); any=true}};
-  addGroupRemaining('insert');
-  addGroupRemaining('structure');
+  const addGroupRemaining=(g,heading)=>{const remaining=CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a)); if(remaining.length){addDivider(); if(heading){const h=document.createElement('div'); h.className='context-group-label'; h.textContent=heading; panel.appendChild(h);} remaining.forEach(a=>addItem(a)); any=true}};
+  const allowedRemaining=ids=>ids.filter(a=>CTX_ACTION_META[a]&&!quickSet.has(a)&&ctxActionAllowed(a));
+  // Labelled rows of small icon buttons (the Sort children pattern): Add child/above/below and
+  // Move up/down each take one row instead of three and two.
+  const iconRow=(label,ids)=>{
+    const list=allowedRemaining(ids); if(!list.length)return;
+    const row=document.createElement('div'); row.className='context-sort-row context-icon-row';
+    const l=document.createElement('span'); l.className='context-sort-row-label'; l.textContent=label; row.appendChild(l);
+    list.forEach(a=>{ const meta=CTX_ACTION_META[a]; const b=document.createElement('button'); b.type='button'; b.className='context-sort-btn'; b.dataset.action=a; b.setAttribute('role','menuitem'); b.dataset.tip=meta.label; b.setAttribute('aria-label',meta.label); b.innerHTML=meta.glyph?`<span class="context-icon-glyph">${esc(meta.glyph)}</span>`:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`; row.appendChild(b); });
+    panel.appendChild(row); any=true;
+  };
+  iconRow('Add',['child','above','below']);
+  iconRow('Move',['up','down']);
+  { const items=allowedRemaining(['duplicate','focus','fold']); if(items.length){ addDivider(); items.forEach(a=>addItem(a)); any=true; } }
   // Sort children — three actions on one compact row (label + icon buttons) rather than three
   // full-height rows; the whole row is hidden when the node has no children to sort (see
   // updateContextMenuState).
@@ -16681,12 +16699,28 @@ function renderContextMorePanel(){
     any=true;
   }
   addGroupRemaining('ai');
-  // Things you add to a node, in the same groups and order as the toolbar's Insert ▾ menu
-  // (node / discussion / visuals), then things you look up about it (where used, tags, history).
-  // Same headings as the toolbar's Insert ▾ menu.
-  addGroupRemaining('node','Basics');
-  addGroupRemaining('discuss','Discussion');
-  addGroupRemaining('visual','Visuals');
+  // Everything you can add to a node that isn't already in the quick row sits behind one
+  // "Insert ›" flyout, grouped with the same headings as the toolbar's Insert ▾ menu.
+  {
+    const groups=[['node','Basics'],['discuss','Discussion'],['visual','Visuals']].map(([g,h])=>[h,CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a))]).filter(([,list])=>list.length);
+    if(groups.length){
+      addDivider();
+      const wrap=document.createElement('div'); wrap.className='context-submenu-wrap';
+      const trig=document.createElement('button'); trig.type='button'; trig.className='context-item context-submenu-trigger'; trig.setAttribute('aria-haspopup','menu'); trig.setAttribute('aria-expanded','false');
+      trig.innerHTML='<span class="context-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span><span class="context-label">Insert</span><svg class="context-submenu-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
+      const sub=document.createElement('div'); sub.className='context-submenu'; sub.setAttribute('role','menu');
+      groups.forEach(([heading,list])=>{ const h=document.createElement('div'); h.className='context-group-label'; h.textContent=heading; sub.appendChild(h); list.forEach(a=>addItem(a,sub)); });
+      wrap.appendChild(trig); wrap.appendChild(sub); panel.appendChild(wrap);
+      // position:fixed so the menu's own overflow:hidden can't clip it; opens to the left near
+      // the screen edge.
+      const openSub=()=>{ if(wrap.classList.contains('open'))return; wrap.classList.add('open'); trig.setAttribute('aria-expanded','true'); const r=trig.getBoundingClientRect(); const m=(el('context-menu')||trig).getBoundingClientRect(); const w=sub.offsetWidth, h=sub.offsetHeight; let left=m.right+4; if(left+w>window.innerWidth-8)left=Math.max(8,m.left-w-4); sub.style.left=left+'px'; sub.style.top=Math.max(8,Math.min(r.top-6,window.innerHeight-h-8))+'px'; };
+      const closeSub=()=>{ wrap.classList.remove('open'); trig.setAttribute('aria-expanded','false'); };
+      trig.addEventListener('mouseenter',openSub);
+      trig.addEventListener('click',e=>{ e.stopPropagation(); if(wrap.classList.contains('open'))closeSub(); else openSub(); });
+      panel.addEventListener('mouseover',e=>{ if(!wrap.contains(e.target))closeSub(); });
+      any=true;
+    }
+  }
   addGroupRemaining('info');
   addGroupRemaining('delete');
   // Nothing landed in the panel — don't show a "More" button that opens onto an empty panel.
