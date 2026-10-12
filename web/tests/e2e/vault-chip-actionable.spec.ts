@@ -93,7 +93,9 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
     await expect(chip).toHaveAttribute('data-tip', 'Secure Storage is locked — click to unlock and use AI Rewrite');
   });
 
-  test('shows on Hosted AI when an enabled fallback provider has a saved BYOK key', async ({ page }) => {
+  // Fallback keys only matter once a hosted call fails, so the chip stays out of the way on
+  // Hosted AI and callAiByShapeWithFallback asks for the passphrase at that point instead.
+  test('stays hidden on Hosted AI even when an enabled fallback provider has a saved BYOK key', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await setLocked(page);
@@ -110,10 +112,7 @@ test.describe('The Secure Storage status-bar chip only nags when unlocking would
       updateVaultChip();
     });
 
-    const chip = page.locator('#sb-vault-chip');
-    await expect(chip).toBeVisible();
-    await expect(chip).toHaveAttribute('data-tip', 'Secure Storage is locked — click to unlock your saved AI fallback keys');
-    expect(await chip.getAttribute('data-tip')).not.toContain('Gist');
+    await expect(page.locator('#sb-vault-chip')).toBeHidden();
   });
 
   test('stays hidden once unlocked, regardless of what is saved', async ({ page }) => {
