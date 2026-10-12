@@ -201,6 +201,17 @@ matches. Cover is a named page (`@page cover`) with no footer and isn't counted;
 the measured count (falls back to plain `counter(pages)` numbering if measuring fails). Covered by
 `tests/e2e/pdf-toc-page-numbers.spec.ts`.
 
+**PR 3a — charts and Cards polish (after #496).** Pure helpers in `src/utils/chartFormat.ts`
+(generator block `chartFormat`): `niceAxisScale` (round ticks, always includes 0, negatives),
+`formatChartNumber` (separators, M/B), `cardsGridColumns` (≤4 per row, balanced),
+`cardChangeDirection`/`cardChangeText`. Charts parse cells with `parseCellNumber` (currency, %,
+k/M) and `tableHasNumericData` accepts the same. Table attributes: `data-chart-title` (charts and
+Cards), `data-chart-size` small/medium/full (charts only; Small/Medium draw on a 360/460-wide
+canvas at that pixel width so text doesn't shrink). Cards: a 3-column table is label/value/change.
+PDF: no Contents page with fewer than two entries (it printed blank), and the footer total is
+measured even then. PR 3b (PDF layout: title after cover, notes before tables/images, consistent
+widths) is still to do. Covered by `tests/e2e/charts-cards-polish.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

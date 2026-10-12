@@ -1433,12 +1433,18 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-table-figure td[data-align="right"],.pv-table-figure th[data-align="right"]{text-align:right}
 .pv-table-chart-figure{flex:1 1 100%}
 .pv-table-chart-figure svg{width:100%;height:auto;max-height:340px;display:block;cursor:context-menu}
+.pv-table-chart-figure svg.pv-chart-size-full{max-height:none}
 .pv-table-chartable table{cursor:context-menu}
 .pv-table-chips{display:flex;flex-wrap:wrap;gap:8px;width:100%;cursor:context-menu}
 .pv-table-chip{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:5px 12px 5px 5px;border-radius:999px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.3}
 .pv-table-chip-key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,var(--bg));color:var(--accent);font:700 12px 'Inter',sans-serif;letter-spacing:.02em;white-space:nowrap}
 .pv-table-chip-desc{overflow-wrap:anywhere}
-.pv-table-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;cursor:context-menu}
+.pv-table-cards-grid{display:grid;grid-template-columns:repeat(var(--cards-cols,3),minmax(0,1fr));gap:12px;width:100%;cursor:context-menu}
+@media (max-width:640px){.pv-table-cards-grid{grid-template-columns:repeat(var(--cards-cols-narrow,2),minmax(0,1fr))}}
+.pv-table-card-change{font:600 12px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-table-card-change.up{color:var(--fc-green)}
+.pv-table-card-change.down{color:var(--fc-red)}
+.pv-table-chart-title{flex:1 1 100%;font:600 13px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
 .pv-table-card{display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border)}
 .pv-table-card-head{display:flex;align-items:center;gap:10px}
 .pv-table-card-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,currentColor 13%,transparent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -5451,8 +5457,8 @@ function tableHasNumericData(table,colStart){
   const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1);
   return rows.some(r=>{
     for(let c=colStart;c<r.cells.length;c++){
-      const raw=(r.cells[c]?.textContent||'').trim().replace(/,/g,'');
-      if(raw!==''&&Number.isFinite(parseFloat(raw)))return true;
+      const raw=(r.cells[c]?.textContent||'').trim();
+      if(raw!==''&&(parseCellNumber(raw)!==null||Number.isFinite(parseFloat(raw.replace(/,/g,'')))))return true;
     }
     return false;
   });
@@ -5559,9 +5565,10 @@ function tableChartTypeAvailability(table){
     : {ok:false,reason:'Stacking only means something with 2+ data columns — with just one, it\u2019s identical to a plain bar chart.'};
   // Same restriction as pie/doughnut and for the same reason — a card shows one label + one
   // value per row, so it can't represent a second data column any more than a pie slice can.
-  const cardsAvail=seriesCount===1
+  // A third column is allowed: it becomes each card's change (▲/▼), not a second value.
+  const cardsAvail=seriesCount===1||base.cols===3
     ? {ok:true}
-    : {ok:false,reason:'Cards only work with a single data column — this table has '+seriesCount+'. Use Bar, Stacked bar, or Line instead.'};
+    : {ok:false,reason:'Cards show a label, a value and an optional change column — this table has '+base.cols+' columns. Use Bar, Stacked bar, or Line instead.'};
   return {bar:{ok:true}, stackedBar:stackedAvail, line:{ok:true}, pie:pieAvail, doughnut:pieAvail, cards:cardsAvail};
 }
 // Sets which chart shape a featured+charted table renders as. Read by every renderer that draws
@@ -5864,6 +5871,108 @@ function clampGridSize(rows, cols, max = 8) {
 }
 
 /* GENERATED:tableData:END */
+/* GENERATED:chartFormat:START — DO NOT EDIT BY HAND. Source of truth: src/utils/chartFormat.ts (tests: tests/unit/chartFormat.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pure helpers for featured tables shown as charts or Cards: round ("nice") value-axis ticks,
+ * axis/tooltip number formatting with thousands separators, how many columns a Cards grid uses so
+ * its rows come out balanced, and which way a Cards "change" value points.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `chartFormat` block. The SVG and
+ * HTML builders (renderCartesianChartSvg, renderCardsHtml) stay hand-written in index.html; only
+ * the decisions live here so they can be unit tested.
+ */
+/** 1, 2, 2.5 or 5 times a power of ten — the smallest of those that is at least `rough`. */
+function niceStep(rough) {
+    if (!(rough > 0) || !Number.isFinite(rough))
+        return 1;
+    const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+    const f = rough / pow;
+    const m = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+    return m * pow;
+}
+/**
+ * A value axis that covers [dataMin, dataMax] with round tick values ("0, 50, 100, 150" rather
+ * than "0, 37.5, 75, 112.5"). The axis always includes 0, so bars start at the baseline; about
+ * `target` intervals are used. An all-zero or empty range still gets a usable 0..1 axis.
+ */
+function niceAxisScale(dataMin, dataMax, target = 4) {
+    let lo = Math.min(0, Number.isFinite(dataMin) ? dataMin : 0);
+    let hi = Math.max(0, Number.isFinite(dataMax) ? dataMax : 0);
+    if (lo === hi)
+        hi = lo + 1;
+    const step = niceStep((hi - lo) / Math.max(1, target));
+    lo = Math.floor(lo / step) * step;
+    hi = Math.ceil(hi / step) * step;
+    const ticks = [];
+    const count = Math.round((hi - lo) / step);
+    for (let i = 0; i <= count; i++)
+        ticks.push(roundTo(lo + i * step, step));
+    return { min: ticks[0], max: ticks[ticks.length - 1], step, ticks };
+}
+/** Removes floating-point noise (0.30000000000000004) at the precision `step` implies. */
+function roundTo(v, step) {
+    const decimals = Math.max(0, Math.min(10, -Math.floor(Math.log10(step)) + 1));
+    const r = Number(v.toFixed(decimals));
+    return r === 0 ? 0 : r;
+}
+/**
+ * A number for an axis label or tooltip: thousands separators up to a million ("12,500"),
+ * compact above that ("1.2M", "3B"), at most two decimals, no trailing zeros.
+ */
+function formatChartNumber(v) {
+    if (!Number.isFinite(v))
+        return '';
+    const abs = Math.abs(v);
+    const sign = v < 0 ? '-' : '';
+    const trim = (n, d) => String(Number(n.toFixed(d)));
+    if (abs >= 1e9)
+        return sign + trim(abs / 1e9, 1) + 'B';
+    if (abs >= 1e6)
+        return sign + trim(abs / 1e6, 1) + 'M';
+    const fixed = trim(abs, abs >= 100 ? 0 : 2);
+    const [int, frac] = fixed.split('.');
+    return sign + int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? '.' + frac : '');
+}
+/**
+ * How many columns a Cards grid uses for `n` cards so every row is (nearly) full: up to four in a
+ * row, otherwise the fewest rows of at most four, spread evenly — 5 → 3+2, 6 → 3+3, 7 → 4+3,
+ * 8 → 4+4, never 3+1.
+ */
+function cardsGridColumns(n) {
+    if (!(n > 0))
+        return 1;
+    if (n <= 4)
+        return n;
+    const rows = Math.ceil(n / 4);
+    return Math.ceil(n / rows);
+}
+/**
+ * Which way a Cards "change" cell points: an explicit ▲/▼/↑/↓ or a leading +/− decides; otherwise
+ * the sign of its number (`parsed`, from parseCellNumber) does. Zero is flat. Text with no number
+ * and no arrow (e.g. "n/a") has no direction (null) and is shown as written.
+ */
+function cardChangeDirection(raw, parsed) {
+    const s = String(raw ?? '').trim();
+    if (!s)
+        return null;
+    if (/^[▲↑]/.test(s))
+        return 'up';
+    if (/^[▼↓]/.test(s))
+        return 'down';
+    if (parsed === null || !Number.isFinite(parsed))
+        return null;
+    if (parsed > 0)
+        return 'up';
+    if (parsed < 0)
+        return 'down';
+    return 'flat';
+}
+/** A change cell's text without a leading arrow or sign, since the arrow shows the direction. */
+function cardChangeText(raw) {
+    return String(raw ?? '').trim().replace(/^[▲▼↑↓]\s*/, '').replace(/^[+\-−]\s*/, '');
+}
+
+/* GENERATED:chartFormat:END */
 // ── Table structure operations (shared by every table editing session) ─────────────────────────
 // Each takes the LIVE table being edited (cells contentEditable) and returns the cell the caret
 // should land in afterwards. Header rows are the <thead> rows, or -- for a pasted table without a
@@ -6206,6 +6315,18 @@ function buildChartFeatureItems(table,commit){
       const isCurrent=type===curType; const avail=typeAvail[type];
       return {label:CHART_TYPE_LABELS[type]+(isCurrent?' (current)':''), disabled:isCurrent||!avail.ok, title:!avail.ok?avail.reason:undefined, onClick:()=>{ setTableChartType(table,type); commit(); }};
     })});
+    const curTitle=getTableChartTitle(table);
+    items.push({label:curTitle?'Edit title\u2026':'Add title\u2026', onClick:async()=>{
+      const v=await sakuraPrompt({title:curTitle?'Edit title':'Add title', body:'Shown above the '+(curType==='cards'?'cards':'chart')+', in the document and the PDF. Leave empty to remove it.', defaultValue:curTitle, confirmLabel:'Save'});
+      if(v===null)return;
+      setTableChartTitle(table,v); commit();
+    }});
+    if(curType!=='cards'){
+      const curSize=getTableChartSize(table);
+      items.push({label:'Chart size', submenu:[['', 'Auto'],...Object.entries(CHART_SIZES).map(([k,v])=>[k,v.label])].map(([key,label])=>({
+        label:label+(curSize===key?' (current)':''), disabled:curSize===key, onClick:()=>{ setTableChartSize(table,key); commit(); }
+      }))});
+    }
   }
   return items;
 }
@@ -6712,7 +6833,7 @@ function chartSeriesFromTable(table){
   if(rows.length<2)return null;
   const headerCells=Array.from(rows[0].cells).map(c=>stripIllegalXmlChars((c.textContent||'').trim()));
   const bodyRows=rows.slice(1);
-  const parseNum=raw=>{ const n=parseFloat(String(raw||'').trim().replace(/,/g,'')); return Number.isFinite(n)?n:0; };
+  const parseNum=raw=>parseCellNumber(String(raw||''))??0;
   if(headerCells.length===1){
     const values=bodyRows.map(r=>parseNum(r.cells[0]?.textContent));
     const labels=bodyRows.map((_,i)=>'Row '+(i+1));
@@ -6734,33 +6855,68 @@ function chartSeriesFromTable(table){
 // icon/figure already in the app, so the chart follows the document's live theme/accent rather
 // than being baked in at render time.
 const CHART_SERIES_COLOR_VARS=['--accent','--fc-blue','--fc-green','--fc-orange','--fc-purple','--fc-red'];
-function chartFormatAxisNum(v){
-  if(Math.abs(v)>=1000)return (v/1000).toFixed(v%1000===0?0:1)+'k';
-  return Number.isInteger(v)?String(v):v.toFixed(1);
+// Optional title above a chart or Cards grid (data-chart-title) and a display width for charts
+// (data-chart-size: small/medium/full; absent = Auto, full width capped by height). Both are set
+// from the chart's right-click menu (buildChartFeatureItems) and apply everywhere the figure
+// renders, the PDF included.
+// Small and Medium draw on a narrower canvas (w) shown at that pixel width, so their text stays
+// the same size instead of shrinking with the picture; Full stretches to the available width.
+const CHART_SIZES={small:{label:'Small',w:360,h:220},medium:{label:'Medium',w:460,h:250},full:{label:'Full',w:560,h:280}};
+function getTableChartTitle(table){ return String(table?.getAttribute('data-chart-title')||'').trim(); }
+function setTableChartTitle(table,title){
+  if(!table)return;
+  const t=String(title||'').replace(/\s+/g,' ').trim().slice(0,120);
+  if(t)table.setAttribute('data-chart-title',t); else table.removeAttribute('data-chart-title');
+}
+function getTableChartSize(table){ const v=table?.getAttribute('data-chart-size'); return CHART_SIZES[v]?v:''; }
+function setTableChartSize(table,size){
+  if(!table)return;
+  if(CHART_SIZES[size])table.setAttribute('data-chart-size',size); else table.removeAttribute('data-chart-size');
 }
 function renderTableChartSvg(table){
   const type=getTableChartType(table);
   // Cards read the table's raw cell text, not chartSeriesFromTable's parsed numbers — a
   // card's value can be "<2s" or "90%", not just a plottable number, so it's kept as the
   // person typed it rather than coerced to 0 the way a real chart series would need to.
-  if(type==='cards')return renderCardsHtml(table);
-  const series=chartSeriesFromTable(table);
-  if(!series||!series.length)return null;
-  if(type==='pie'||type==='doughnut')return renderPieChartSvg(series,type==='doughnut');
-  return renderCartesianChartSvg(series,type);
+  let body=null;
+  if(type==='cards')body=renderCardsHtml(table);
+  else {
+    const series=chartSeriesFromTable(table);
+    if(!series||!series.length)return null;
+    const size=getTableChartSize(table);
+    const dims=size?CHART_SIZES[size]:CHART_SIZES.full;
+    body=(type==='pie'||type==='doughnut')?renderPieChartSvg(series,type==='doughnut'):renderCartesianChartSvg(series,type,dims.w,dims.h);
+    if(body&&size){
+      const px=size==='full'?'':`width:${type==='pie'||type==='doughnut'?Math.round(420*dims.w/560):dims.w}px;`;
+      body=body.replace('<svg class="pv-table-chart-svg"',`<svg class="pv-table-chart-svg pv-chart-size-${size}" style="${px}max-width:100%"`);
+    }
+  }
+  if(!body)return null;
+  const title=getTableChartTitle(table);
+  return title?`<div class="pv-table-chart-title">${esc(title)}</div>${body}`:body;
 }
 // Reads a table into {label,value} pairs for the Cards display — a KPI-style row of stat
 // cards rather than a plotted chart. Mirrors chartSeriesFromTable's two chartable shapes
 // (single column vs label+value column) but keeps each value as its original cell text so a
 // non-numeric value like "<2s" still displays correctly instead of being parsed to 0.
+// A third column, when the table has exactly three, is each card's change ("+12%", "-3",
+// "▲ 4") — shown under the value as a coloured ▲/▼.
 function tableCardsData(table){
   const rows=Array.from(table?.querySelectorAll('tr')||[]);
   if(rows.length<2)return [];
   const singleCol=rows[0].cells.length===1;
+  const hasChange=rows[0].cells.length===3;
   return rows.slice(1).map((r,i)=>({
     label: singleCol ? ('Row '+(i+1)) : (r.cells[0]?.textContent||'').trim(),
-    value: (singleCol ? (r.cells[0]?.textContent||'') : (r.cells[1]?.textContent||'')).trim()
+    value: (singleCol ? (r.cells[0]?.textContent||'') : (r.cells[1]?.textContent||'')).trim(),
+    change: hasChange ? (r.cells[2]?.textContent||'').trim() : ''
   })).filter(d=>d.label!==''||d.value!=='');
+}
+function cardChangeHtml(raw){
+  if(!raw)return '';
+  const dir=cardChangeDirection(raw,parseCellNumber(raw.replace(/^[▲▼↑↓]\s*/,'')));
+  const arrow=dir==='up'?'\u25B2':dir==='down'?'\u25BC':'';
+  return `<div class="pv-table-card-change${dir?' '+dir:''}">${arrow?`<span aria-hidden="true">${arrow}</span> `:''}${esc(dir&&dir!=='flat'?cardChangeText(raw):raw)}</div>`;
 }
 // Optional per-card icons, picked by hand from this small fixed set (right-click a card). No
 // keyword/AI guessing — that machinery was removed on purpose; this is just a manual choice,
@@ -6851,56 +7007,62 @@ function renderCardsHtml(table){
     return `<div class="pv-table-card${icon?' has-icon':''}" data-card-label="${esc(d.label)}" style="border-left:3px solid ${color}">`
       +(icon?`<div class="pv-table-card-head">${icon}<div class="pv-table-card-value">${esc(d.value)}</div></div>`:`<div class="pv-table-card-value">${esc(d.value)}</div>`)
       +`<div class="pv-table-card-label">${esc(d.label)}</div>`
+      +cardChangeHtml(d.change)
       +`</div>`;
   }).join('');
-  return `<div class="pv-table-cards-grid">${cards}</div>`;
+  return `<div class="pv-table-cards-grid" style="--cards-cols:${cardsGridColumns(data.length)};--cards-cols-narrow:${Math.min(2,data.length)}">${cards}</div>`;
 }
 // Shared axis/plot geometry for the three category-on-x, value-on-y chart shapes (bar, stacked
 // bar, and line) — everything but how each category's value(s) actually get drawn (grouped
 // rects, stacked rects, or a connected polyline+dots) is identical between them.
-function renderCartesianChartSvg(series,kind){
+function renderCartesianChartSvg(series,kind,W=560,H=280){
   const labels=series[0].labels;
   const n=labels.length;
   if(!n)return null;
   const hasLegend=series.length>1;
-  const W=560, padL=44, padR=16, padT=16, padB=hasLegend?60:40;
-  const H=280;
-  const plotW=W-padL-padR, plotH=H-padT-padB;
   // A stacked bar's tallest column is the SUM of that category's series, not the single
   // largest value across all of them — using the plain per-value max here would clip every
-  // stack taller than one series' own biggest number.
-  const maxVal=kind==='stackedBar'
-    ? Math.max(1,...labels.map((_,i)=>series.reduce((sum,s)=>sum+Math.max(0,s.values[i]||0),0)))
-    : Math.max(1,...series.flatMap(s=>s.values));
+  // stack taller than one series' own biggest number. Stacks only ever stack positive values.
+  const dataMax=kind==='stackedBar'
+    ? Math.max(0,...labels.map((_,i)=>series.reduce((sum,s)=>sum+Math.max(0,s.values[i]||0),0)))
+    : Math.max(0,...series.flatMap(s=>s.values));
+  const dataMin=kind==='stackedBar'?0:Math.min(0,...series.flatMap(s=>s.values));
+  // Round ticks ("0, 50, 100, 150"), and a left margin wide enough for the longest tick label.
+  const scale=niceAxisScale(dataMin,dataMax,4);
+  const tickLabels=scale.ticks.map(formatChartNumber);
+  const padR=16, padT=16, padB=hasLegend?60:40;
+  const padL=Math.max(36,Math.round(14+Math.max(...tickLabels.map(t=>t.length))*6.2));
+  // Narrow charts show shorter category labels so neighbours don't run into each other.
+  const catMax=Math.max(4,Math.min(14,Math.floor((W-padL-padR)/n/6.5)));
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const yAt=v=>padT+plotH-((v-scale.min)/(scale.max-scale.min))*plotH;
+  const y0=yAt(0);
+  const color=si=>`var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})`;
+  const tipFor=(s,label,v)=>esc((series.length>1?String(s.name||'').slice(0,40)+' \u2014 ':'')+String(label).slice(0,40)+': '+formatChartNumber(v));
+  const catLabel=(x,label)=>`<text x="${x.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,catMax))}</text>`;
   let marks='', catLabels='';
   if(kind==='line'){
     const stepX=n>1?plotW/(n-1):0;
     const xAt=i=>n>1?padL+i*stepX:padL+plotW/2;
     series.forEach((s,si)=>{
-      const color=`var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})`;
-      const pts=s.values.map((v,i)=>[xAt(i),padT+plotH-(v/maxVal)*plotH]);
-      marks+=`<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>`;
-      pts.forEach(p=>{ marks+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${color}"/>`; });
+      const pts=s.values.map((v,i)=>[xAt(i),yAt(v)]);
+      marks+=`<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color(si)}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>`;
+      pts.forEach((p,i)=>{ marks+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${color(si)}"><title>${tipFor(s,labels[i],s.values[i])}</title></circle>`; });
     });
-    labels.forEach((label,i)=>{
-      catLabels+=`<text x="${xAt(i).toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
-    });
+    labels.forEach((label,i)=>{ catLabels+=catLabel(xAt(i),label); });
   } else if(kind==='stackedBar'){
     const groupW=plotW/n;
     const barW=groupW*0.62;
     labels.forEach((label,i)=>{
-      let stackBottom=padT+plotH; // segments stack upward from the baseline
+      let acc=0; // segments stack upward from the baseline
       series.forEach((s,si)=>{
         const v=Math.max(0,s.values[i]||0);
-        const h=(v/maxVal)*plotH;
+        const yTop=yAt(acc+v), yBottom=yAt(acc);
         const x=padL+i*groupW+(groupW-barW)/2;
-        const y=stackBottom-h;
-        const tip=esc((series.length>1?String(s.name||'').slice(0,40)+' \u2014 ':'')+String(label).slice(0,40)+': '+chartFormatAxisNum(v));
-        marks+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})"><title>${tip}</title></rect>`;
-        stackBottom=y;
+        marks+=`<rect x="${x.toFixed(1)}" y="${yTop.toFixed(1)}" width="${barW.toFixed(1)}" height="${(yBottom-yTop).toFixed(1)}" fill="${color(si)}"><title>${tipFor(s,label,v)}</title></rect>`;
+        acc+=v;
       });
-      const lx=padL+i*groupW+groupW/2;
-      catLabels+=`<text x="${lx.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
+      catLabels+=catLabel(padL+i*groupW+groupW/2,label);
     });
   } else {
     const groupW=plotW/n;
@@ -6909,30 +7071,25 @@ function renderCartesianChartSvg(series,kind){
     labels.forEach((label,i)=>{
       series.forEach((s,si)=>{
         const v=s.values[i]||0;
-        const h=(v/maxVal)*plotH;
+        const yv=yAt(v);
         const x=padL+i*groupW+barGap/2+si*barW;
-        const y=padT+plotH-h;
-        const tip=esc((series.length>1?String(s.name||'').slice(0,40)+' \u2014 ':'')+String(label).slice(0,40)+': '+chartFormatAxisNum(v));
-        marks+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(barW*0.82).toFixed(1)}" height="${h.toFixed(1)}" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})" rx="2"><title>${tip}</title></rect>`;
+        marks+=`<rect x="${x.toFixed(1)}" y="${Math.min(yv,y0).toFixed(1)}" width="${(barW*0.82).toFixed(1)}" height="${Math.abs(y0-yv).toFixed(1)}" fill="${color(si)}" rx="2"><title>${tipFor(s,label,v)}</title></rect>`;
       });
-      const lx=padL+i*groupW+groupW/2;
-      catLabels+=`<text x="${lx.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter,sans-serif">${esc(String(label).slice(0,14))}</text>`;
+      catLabels+=catLabel(padL+i*groupW+groupW/2,label);
     });
   }
   let axis='';
-  const ticks=4;
-  for(let t=0;t<=ticks;t++){
-    const v=maxVal*t/ticks;
-    const y=padT+plotH-(v/maxVal)*plotH;
-    axis+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
-    axis+=`<text x="${(padL-8).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="Inter,sans-serif">${chartFormatAxisNum(v)}</text>`;
-  }
+  scale.ticks.forEach((v,t)=>{
+    const y=yAt(v);
+    axis+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="${v===0&&scale.min<0?1.5:1}"/>`;
+    axis+=`<text x="${(padL-8).toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="Inter,sans-serif">${tickLabels[t]}</text>`;
+  });
   let legend='';
   if(hasLegend){
     let lx=padL;
     series.forEach((s,si)=>{
       const label=String(s.name||'').slice(0,20);
-      legend+=`<rect x="${lx}" y="${H-18}" width="9" height="9" rx="2" fill="var(${CHART_SERIES_COLOR_VARS[si%CHART_SERIES_COLOR_VARS.length]})"/>`;
+      legend+=`<rect x="${lx}" y="${H-18}" width="9" height="9" rx="2" fill="${color(si)}"/>`;
       legend+=`<text x="${lx+13}" y="${H-10}" font-size="10" fill="var(--fg)" font-family="Inter,sans-serif">${esc(label)}</text>`;
       lx+=13+label.length*6+16;
     });
@@ -26379,6 +26536,8 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview.has-cover-page #preview-toc{
         page-break-before:always !important; break-before:page !important;
       }
+      /* Fewer than two entries: no Contents page at all (it used to print as a blank page). */
+      body.printing-preview #preview-toc.pv-toc-hidden-auto{ display:none !important; }
       body.printing-preview #sakura-cover-page{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center;
         text-align:center; padding:120px 60px 80px; box-sizing:border-box;
@@ -26509,6 +26668,13 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview .pv-table-row > .pv-table-figure { margin:0 0 14px !important; }
       body.printing-preview .pv-table-row > .pv-table-figure:not(.pv-table-chart-figure) { display:block !important; }
       body.printing-preview .pv-table-figure:not(.pv-table-chart-figure) { break-inside:auto; page-break-inside:auto; }
+      /* Cards print tighter than on screen: a page holds more of them and they read as one block. */
+      body.printing-preview .pv-table-cards-grid { gap:8px !important; }
+      body.printing-preview .pv-table-card { padding:10px 12px !important; gap:4px !important; border-radius:8px !important; }
+      body.printing-preview .pv-table-card-value { font-size:18px !important; }
+      body.printing-preview .pv-table-card-label { font-size:11px !important; }
+      body.printing-preview .pv-table-card-change { font-size:10.5px !important; }
+      body.printing-preview .pv-table-chart-title { font-size:12px !important; margin-bottom:6px !important; }
       body.printing-preview .pv-table-figure thead { display:table-header-group; }
       body.printing-preview .pv-table-figure tr { break-inside:avoid; page-break-inside:avoid; }
       /* No .pv-note-inline-full/.node-note-dot-plain shrink override here (there used to be one)
@@ -26614,11 +26780,12 @@ function pdfPaperSize(){
 // fragment with the same engine (and the same break-before/after/inside rules) as printed pages,
 // so each heading's column index is its page. Numbers are written into the real Contents before
 // window.print(); if anything fails the entries simply stay without numbers. Resolves to the
-// number of printed pages (cover included), or 0 when there is no Contents to number.
+// number of printed pages (cover included).
 function fillPdfTocPageNumbers(paper,hasCover){
   const toc=el('preview-toc'), overlay=el('preview-overlay');
-  const items=toc?[...toc.querySelectorAll('.pv-toc-item')]:[];
-  if(!overlay||!items.length)return Promise.resolve(0);
+  // Measured even with no Contents entries: the footer's total (cover excluded) comes from here too.
+  const items=toc&&!toc.classList.contains('pv-toc-hidden-auto')?[...toc.querySelectorAll('.pv-toc-item')]:[];
+  if(!overlay)return Promise.resolve(0);
   const MM=96/25.4;
   const colW=Math.floor((paper.w-2*PDF_PAGE_MARGIN_MM)*MM), colH=Math.floor((paper.h-2*PDF_PAGE_MARGIN_MM)*MM), gap=40;
   // Placeholder numbers so the Contents measures at its printed width.
