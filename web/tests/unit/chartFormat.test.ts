@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   niceAxisScale, formatChartNumber, cardsGridColumns, cardChangeDirection, cardChangeText,
   valuesLookLikeFractions, progressPercent, heatLevels, timelineOrder, timelinePhases,
-  statusGroup, findStatusColumn, boardLanes
+  statusGroup, findStatusColumn, boardLanes, statusPickerOptions
 } from '../../src/utils/chartFormat';
 
 describe('niceAxisScale', () => {
@@ -153,5 +153,11 @@ describe('status board', () => {
     expect(lanes.map((l) => [l.label, l.rows])).toEqual([
       ['Open', [1, 5]], ['Blocked', [4]], ['Cancelled', [2, 6]], ['Done', [0]], ['No status', [3]]
     ]);
+  });
+});
+
+describe('statusPickerOptions', () => {
+  it('offers the standard four, then the column\'s own other statuses', () => {
+    expect(statusPickerOptions(['done', 'Cancelled', '', 'cancelled', 'Parked'])).toEqual(['Open', 'In progress', 'Blocked', 'Done', 'Cancelled', 'Parked']);
   });
 });

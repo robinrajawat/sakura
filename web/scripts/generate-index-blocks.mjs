@@ -554,6 +554,15 @@ initHubTodosState({
     sourceFile: 'src/utils/chartFormat.ts',
     testFile: 'tests/unit/chartFormat.test.ts',
     footer: ''
+  },
+  {
+    // Table column types (cell menu -> Column type) -- pure parts only: type names, offered
+    // currencies, currency formatting and how a picked date is written. The menu, pickers and
+    // render-time effects stay hand-written in index.html next to tableColumnAlign.
+    name: 'columnType',
+    sourceFile: 'src/utils/columnType.ts',
+    testFile: 'tests/unit/columnType.test.ts',
+    footer: ''
   }
 ];
 

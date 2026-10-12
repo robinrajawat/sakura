@@ -140,7 +140,7 @@ test('the cell menu groups its actions into submenus, in dividered groups with n
   const menu = await cellMenu(page, f, 'billing');
   const entries = await menu.evaluate((m) => [...m.children].map((c) => c.classList.contains('sb-context-divider') ? '---' : (c.textContent || '').trim()));
   expect(entries).toEqual([
-    'Insert', 'Move', 'Sort', 'Align column', 'Turn header row off', '---',
+    'Insert', 'Move', 'Sort', 'Align column', 'Column type', 'Turn header row off', '---',
     'Show as', 'Heat-map', 'Add title…', 'Chart size', '---',
     'Delete'
   ]);
@@ -152,6 +152,7 @@ test('the cell menu groups its actions into submenus, in dividered groups with n
   expect(await subLabels('Move')).toEqual(['Row up', 'Row down', 'Column left', 'Column right']);
   expect(await subLabels('Sort')).toEqual(['A → Z', 'Z → A']);
   expect(await subLabels('Align column')).toEqual(['Left', 'Center', 'Right', 'Automatically']);
+  expect(await subLabels('Column type')).toEqual(['Automatic', 'Text', 'Number', 'Date', 'Status', '€ Euro', '$ US dollar', '£ British pound', '₹ Indian rupee', '¥ Japanese yen']);
   expect(await subLabels('Delete')).toEqual(['Row', 'Column', 'Table']);
   // On the header row, rows can't be added above it or moved. (Esc only while a menu is open: one
   // more would end the editing session.)

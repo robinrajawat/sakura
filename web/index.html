@@ -1492,6 +1492,13 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .tbl-status-pill[data-group="progress"]{--pill:var(--fc-orange)}
 .tbl-status-pill[data-group="blocked"]{--pill:var(--fc-red)}
 .tbl-status-pill[data-group="done"]{--pill:var(--fc-green)}
+.node-table-line.editing{position:relative}
+.tbl-cell-picker{position:absolute;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:320px;padding:8px;border-radius:8px;background:var(--bg);border:1px solid var(--border);box-shadow:0 6px 20px rgba(0,0,0,.14);font:500 12px 'Inter',sans-serif;cursor:default}
+.tbl-picker-status{border:0;cursor:pointer;font:600 12px 'Inter',sans-serif;padding:0;margin:4px}
+.tbl-picker-status.current{outline:2px solid var(--pill,var(--fc-gray));outline-offset:4px}
+.tbl-picker-date{font:500 12px 'Inter',sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 6px}
+.tbl-picker-btn{font:500 12px 'Inter',sans-serif;color:var(--fg);background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer}
+.tbl-picker-btn:hover{background:var(--hover)}
 table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
@@ -5654,11 +5661,14 @@ function tableStatusBoardInfo(table){
   const body=Array.from(table.rows).slice(1).filter(r=>(r.textContent||'').trim());
   if(body.length<2)return null;
   const cols=head.map((_,ci)=>body.map(r=>(r.cells[ci]?.textContent||'').trim()));
-  const status=findStatusColumn(head,cols); if(status<0)return null;
+  const typed=head.map((_,ci)=>tableColumnType(table,ci).type);
+  let status=typed.indexOf('status');
+  if(status<0)status=findStatusColumn(head.map((h,ci)=>typed[ci]?'':h),cols.map((c,ci)=>typed[ci]?[]:c));
+  if(status<0)return null;
   const rest=head.map((_,ci)=>ci).filter(ci=>ci!==status);
   const item=rest[0];
   const owner=rest.find(ci=>ci!==item&&BOARD_OWNER_RE.test(head[ci]))??-1;
-  const due=rest.find(ci=>ci!==item&&ci!==owner&&BOARD_DUE_RE.test(head[ci]))??-1;
+  const due=rest.find(ci=>ci!==item&&ci!==owner&&BOARD_DUE_RE.test(head[ci]))??rest.find(ci=>ci!==item&&ci!==owner&&typed[ci]==='date')??-1;
   const note=rest.find(ci=>ci!==item&&ci!==owner&&ci!==due)??-1;
   return {status,item,owner,due,note,body};
 }
@@ -5686,16 +5696,25 @@ function renderStatusBoardHtml(table){
   return `<div class="pv-board${rows.length>=BOARD_LIST_PRINT_MIN?' many':''}" style="--board-cols:${Math.min(lanes.length,4)}">${lanesHtml}</div>`;
 }
 // Coloured status pills on a plain table's Status column (headed Status / State / Stage), applied to
-// display clones only, like applyTableHeatmap — the stored table is never changed.
+// display clones only, like applyTableHeatmap — the stored table is never changed. A column set to
+// Status (Column type ›) gets pills whatever its header; one set to any other type never does.
+function tableStatusPillColumns(table){
+  const head=[...(table.rows[0]?.cells||[])];
+  const out=[];
+  for(let ci=0;ci<tableColumnCount(table);ci++){
+    const t=tableColumnType(table,ci).type;
+    if(t==='status'||(!t&&STATUS_HEADER_RE.test(head[ci]?.textContent||'')))out.push(ci);
+  }
+  return out;
+}
 function applyTableStatusPills(table){
   if(!table||table.getAttribute('data-table-display'))return;
-  const head=[...(table.rows[0]?.cells||[])];
-  const ci=head.findIndex(c=>STATUS_HEADER_RE.test(c.textContent||''));
-  if(ci<0)return;
-  tableBodyRows(table).forEach(r=>{
+  const cols=tableStatusPillColumns(table);
+  if(!cols.length)return;
+  tableBodyRows(table).forEach(r=>cols.forEach(ci=>{
     const c=r.cells[ci]; const text=(c?.textContent||'').trim(); if(!c||!text)return;
     c.innerHTML=`<span class="tbl-status-pill" data-group="${statusGroup(text)||'other'}">${c.innerHTML}</span>`;
-  });
+  }));
 }
 // Heat-map: a plain table's numeric cells shaded by where each sits in its own column (per column,
 // since columns usually hold different units). data-heatmap="1" turns it on, data-heatmap-reverse
@@ -6339,8 +6358,78 @@ function boardLanes(statuses) {
     });
     return [std.get('open'), std.get('progress'), std.get('blocked'), ...other.values(), std.get('done'), none].filter((l) => l.rows.length);
 }
+/**
+ * The choices a Status column's picker offers: the four standard statuses, then any other status
+ * already written in the column (as first written, in order), so a team's own wording stays one
+ * click away.
+ */
+function statusPickerOptions(values) {
+    const std = ['Open', 'In progress', 'Blocked', 'Done'];
+    const seen = new Set();
+    const extra = [];
+    values.forEach((v) => {
+        const t = String(v ?? '').trim();
+        if (!t || statusGroup(t))
+            return;
+        const k = t.toLowerCase();
+        if (!seen.has(k)) {
+            seen.add(k);
+            extra.push(t);
+        }
+    });
+    return [...std, ...extra];
+}
 
 /* GENERATED:chartFormat:END */
+/* GENERATED:columnType:START — DO NOT EDIT BY HAND. Source of truth: src/utils/columnType.ts (tests: tests/unit/columnType.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Column types for tables (cell menu → Column type ›): a column can be set to Text, Number,
+ * Currency, Date or Status instead of the default automatic detection. Stored as data-type (and
+ * data-currency) on every cell of the column, like data-align. These are the pure parts: the
+ * type names, the offered currencies, how a currency value is written, and how a picked date is
+ * written so it matches the column's existing dates.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `columnType` block.
+ */
+const COLUMN_TYPES = ['text', 'number', 'currency', 'date', 'status'];
+/** A stored data-type value, or '' (automatic) for anything unknown. */
+function normalizeColumnType(v) {
+    const s = String(v ?? '').trim().toLowerCase();
+    return COLUMN_TYPES.includes(s) ? s : '';
+}
+/** Currencies offered in the menu, in order: ISO code → menu label. */
+const COLUMN_CURRENCIES = {
+    EUR: '€ Euro',
+    USD: '$ US dollar',
+    GBP: '£ British pound',
+    INR: '₹ Indian rupee',
+    JPY: '¥ Japanese yen'
+};
+/**
+ * A number written as currency: symbol first, thousands separators, the currency's usual decimals
+ * ("€1,234.50", "-$12.00", "¥1,500"). Always en-US punctuation, so the result still reads back as
+ * a number (parseCellNumber) for charts, sorting and progress bars. Unknown codes fall back to EUR.
+ */
+function formatCurrency(n, code) {
+    if (!Number.isFinite(n))
+        return '';
+    const cur = COLUMN_CURRENCIES[code] ? code : 'EUR';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).format(n);
+}
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/**
+ * A picked date (UTC midnight) written in the column's own style: like "Oct 14, 2026" when the
+ * column's first written date (`sample`) starts with a letter, otherwise ISO "2026-10-14".
+ */
+function formatColumnDate(utc, sample = '') {
+    const d = new Date(utc);
+    const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+    if (/^[A-Za-z]/.test(String(sample).trim()))
+        return `${MONTHS[m]} ${day}, ${y}`;
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/* GENERATED:columnType:END */
 // ── Table structure operations (shared by every table editing session) ─────────────────────────
 // Each takes the LIVE table being edited (cells contentEditable) and returns the cell the caret
 // should land in afterwards. Header rows are the <thead> rows, or -- for a pasted table without a
@@ -6386,6 +6475,39 @@ function tableColumnAlign(table,ci){
   for(const r of table.rows){ const a=normalizeAlign(r.cells[ci]?.getAttribute('data-align')); if(a)return a; }
   return '';
 }
+// Column type (cell menu -> Column type ›): '' (automatic) or text / number / currency / date /
+// status, stored as data-type on every cell of the column like data-align, plus data-currency (an
+// ISO code from COLUMN_CURRENCIES) on a currency column. Number and currency columns right-align;
+// a currency column's values are rewritten as currency ("€1,234.50") when set and as each cell is
+// left; a status column shows pills and a status picker while editing; a date column a date picker.
+// Text switches the automatic guesses (right-align, status pills) off.
+function tableColumnType(table,ci){
+  for(const r of table.rows){ const c=r.cells[ci]; const t=normalizeColumnType(c?.getAttribute('data-type')); if(t)return {type:t,currency:c.getAttribute('data-currency')||'EUR'}; }
+  return {type:'',currency:''};
+}
+function applyColumnTypeAttrs(c,ct){
+  if(!c)return;
+  if(ct.type)c.setAttribute('data-type',ct.type); else c.removeAttribute('data-type');
+  if(ct.type==='currency')c.setAttribute('data-currency',ct.currency||'EUR'); else c.removeAttribute('data-currency');
+}
+function formatCurrencyCell(c){
+  if(!c||c.getAttribute('data-type')!=='currency')return false;
+  const text=tableCellText(c).trim(); const n=parseCellNumber(text); if(n===null)return false;
+  const out=formatCurrency(n,c.getAttribute('data-currency')||'EUR');
+  if(out===text)return false;
+  setTableCellText(c,out); return true;
+}
+function tableFormatCurrencyCells(table){
+  let changed=false;
+  tableBodyRows(table).forEach(r=>[...r.cells].forEach(c=>{ if(formatCurrencyCell(c))changed=true; }));
+  return changed;
+}
+function tableSetColumnType(table,cell,type,currency){
+  const ci=cell.cellIndex; const ct={type:normalizeColumnType(type),currency:currency||'EUR'};
+  [...table.rows].forEach(r=>applyColumnTypeAttrs(r.cells[ci],ct));
+  if(ct.type==='currency')tableBodyRows(table).forEach(r=>formatCurrencyCell(r.cells[ci]));
+  return cell;
+}
 function makeTableCell(tag,align){
   const c=document.createElement(tag); c.contentEditable='true';
   if(align)c.setAttribute('data-align',align);
@@ -6406,7 +6528,7 @@ function tableEnsureBody(table){
 }
 function tableNewBodyRow(table,cols){
   const tr=document.createElement('tr');
-  for(let c=0;c<cols;c++)tr.appendChild(makeTableCell('td',tableColumnAlign(table,c)));
+  for(let c=0;c<cols;c++){ const cell=makeTableCell('td',tableColumnAlign(table,c)); applyColumnTypeAttrs(cell,tableColumnType(table,c)); tr.appendChild(cell); }
   return tr;
 }
 // Automatic alignment (render-time only, never saved: cleanEditorHtml strips data-auto-align):
@@ -6416,7 +6538,8 @@ function applyTableAutoAlign(table){
   if(!table)return;
   const n=tableColumnCount(table); const body=tableBodyRows(table);
   for(let ci=0;ci<n;ci++){
-    const auto=!tableColumnAlign(table,ci)&&isNumericColumn(body.map(r=>tableCellText(r.cells[ci])));
+    const t=tableColumnType(table,ci).type;
+    const auto=!tableColumnAlign(table,ci)&&(t==='number'||t==='currency'||(!t&&isNumericColumn(body.map(r=>tableCellText(r.cells[ci])))));
     [...table.rows].forEach(r=>{ const c=r.cells[ci]; if(!c)return; if(auto)c.setAttribute('data-auto-align','right'); else c.removeAttribute('data-auto-align'); });
   }
 }
@@ -6635,6 +6758,10 @@ function buildTableEditItems(table,cell,commit){
     const alignItem=(a,label)=>cur===a
       ? {label, icon:CHECK, current:true, onClick:()=>{}}
       : {label, onClick:run(()=>tableSetColumnAlign(table,cell,a))};
+    const ct=tableColumnType(table,ci);
+    const typeItem=(type,label,code)=>ct.type===type&&(type!=='currency'||ct.currency===code)
+      ? {label, icon:CHECK, current:true, onClick:()=>{}}
+      : {label, onClick:run(()=>tableSetColumnType(table,cell,type,code))};
     groups.push([
       {label:'Insert', submenu:[
         {label:'Row above', disabled:isHead, title:isHead?headTip:undefined, onClick:run(()=>tableInsertRow(table,cell,false))},
@@ -6655,6 +6782,11 @@ function buildTableEditItems(table,cell,commit){
       {label:'Align column', submenu:[
         alignItem('left','Left'), alignItem('center','Center'), alignItem('right','Right'),
         cur?{label:'Automatically', title:'Numbers right-align on their own', onClick:run(()=>tableSetColumnAlign(table,cell,''))}:{label:'Automatically', icon:CHECK, current:true, onClick:()=>{}}
+      ]},
+      {label:'Column type', submenu:[
+        typeItem('','Automatic'), typeItem('text','Text'), typeItem('number','Number'), typeItem('date','Date'), typeItem('status','Status'),
+        {heading:'Currency'},
+        ...Object.entries(COLUMN_CURRENCIES).map(([code,label])=>typeItem('currency',label,code))
       ]},
       {label:hasHeader?'Turn header row off':'Turn header row on', onClick:run(()=>tableToggleHeader(table,cell))}
     ]);
@@ -6961,6 +7093,82 @@ async function copyNodeTableObject(node,tIdx){
     showToast('Table copied');
   }catch(e){ showToast('Copy failed'); }
 }
+// Pickers for typed columns while a table is being edited: focusing a body cell of a Status column
+// shows its status choices (statusPickerOptions), of a Date column a date input with Today / Clear,
+// just below the cell. Typing still works as usual -- the picker only offers a shortcut. Leaving a
+// Currency cell rewrites its number as currency. The picker lives inside `wrap` (so focusing its
+// date input doesn't count as leaving the table) and cleanEditorHtml strips it from what's saved.
+// Returns a detach function.
+function attachTableCellPickers(wrap,table,commit){
+  // `dismissed`: the cell whose picker was just used or closed, so putting the caret back into it
+  // doesn't reopen the picker straight away; moving to another cell clears it.
+  let picker=null, forCell=null, dismissed=null;
+  const hide=()=>{ if(picker?.isConnected)picker.remove(); picker=null; forCell=null; };
+  // Caret first, then remove: removing the picker while its date input has focus would blur out of
+  // the table and end the editing session.
+  const backTo=cell=>{ dismissed=cell; placeTableCaret(cell); hide(); };
+  const writeCell=(cell,text)=>{ setTableCellText(cell,text); commit(); backTo(cell); };
+  const place=cell=>{
+    const wr=wrap.getBoundingClientRect(), cr=cell.getBoundingClientRect();
+    picker.style.left=Math.max(0,cr.left-wr.left)+'px';
+    picker.style.top=(cr.bottom-wr.top+4)+'px';
+  };
+  const btn=(label,cls,onPick)=>{
+    const b=document.createElement('button'); b.type='button'; b.className=cls; b.textContent=label;
+    b.addEventListener('mousedown',e=>e.preventDefault());
+    b.addEventListener('click',e=>{ e.stopPropagation(); onPick(); });
+    return b;
+  };
+  const show=cell=>{
+    if(cell===forCell&&picker)return;
+    hide();
+    if(cell===dismissed)return;
+    dismissed=null;
+    const row=cell.closest('tr');
+    if(!row||tableIsHeaderRow(table,row))return;
+    const ci=cell.cellIndex; const type=tableColumnType(table,ci).type;
+    if(type!=='status'&&type!=='date')return;
+    picker=document.createElement('div'); picker.className='tbl-cell-picker'; picker.contentEditable='false';
+    picker.dataset.kind=type;
+    const colValues=tableBodyRows(table).map(r=>tableCellText(r.cells[ci]).trim());
+    if(type==='status'){
+      const cur=tableCellText(cell).trim().toLowerCase();
+      statusPickerOptions(colValues).forEach(opt=>{
+        const b=btn(opt,'tbl-status-pill tbl-picker-status'+(opt.toLowerCase()===cur?' current':''),()=>writeCell(cell,opt));
+        b.dataset.group=statusGroup(opt)||'other';
+        picker.appendChild(b);
+      });
+    } else {
+      const input=document.createElement('input'); input.type='date'; input.className='tbl-picker-date';
+      const at=parseCellDate(tableCellText(cell).trim());
+      if(at!==null)input.value=new Date(at).toISOString().slice(0,10);
+      const sample=colValues.find(v=>parseCellDate(v)!==null)||'';
+      const write=utc=>writeCell(cell,utc===null?'':formatColumnDate(utc,sample));
+      input.addEventListener('input',e=>e.stopPropagation());
+      input.addEventListener('change',()=>{ if(input.value){ const [y,m,d]=input.value.split('-').map(Number); write(Date.UTC(y,m-1,d)); } });
+      input.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Escape'){ e.preventDefault(); backTo(cell); } });
+      picker.appendChild(input);
+      picker.appendChild(btn('Today','tbl-picker-btn',()=>{ const n=new Date(); write(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())); }));
+      picker.appendChild(btn('Clear','tbl-picker-btn',()=>write(null)));
+    }
+    forCell=cell;
+    wrap.appendChild(picker);
+    place(cell);
+  };
+  const onFocusIn=e=>{
+    if(picker&&picker.contains(e.target))return;
+    const cell=e.target.closest&&e.target.closest('td,th');
+    if(cell&&table.contains(cell))show(cell); else hide();
+  };
+  const onCellOut=e=>{
+    const cell=e.target.closest&&e.target.closest('td,th');
+    if(cell&&table.contains(cell)&&formatCurrencyCell(cell))commit();
+  };
+  wrap.addEventListener('focusin',onFocusIn);
+  wrap.addEventListener('focusout',onCellOut,true);
+  const active=document.activeElement; if(active&&wrap.contains(active))onFocusIn({target:active});
+  return ()=>{ wrap.removeEventListener('focusin',onFocusIn); wrap.removeEventListener('focusout',onCellOut,true); hide(); };
+}
 // A table/chart/Cards object living directly on node.tables[tIdx] -- NOT embedded in node.note
 // (see migrateNoteTablesToNode), so unlike enterScopedTableEdit this needs no ambient
 // contentEditable host to coexist with, no isolation from a note-line's own input/paste/keydown
@@ -7027,6 +7235,7 @@ function buildNodeTableObject(node,tIdx){
     const placeCaretIn=el=>placeTableCaret(el);
     let exited=false;
     const detach=()=>{
+      detachPickers();
       wrap.removeEventListener('input',onInput);
       wrap.removeEventListener('contextmenu',onCtx);
       wrap.removeEventListener('focusout',onFocusOut);
@@ -7070,6 +7279,7 @@ function buildNodeTableObject(node,tIdx){
       if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
     };
     wrap.addEventListener('contextmenu',onCtx);
+    const detachPickers=attachTableCellPickers(wrap,liveTable,commit);
     const onFocusOut=e=>{ if(_tableStructOpDepth>0||wrap.contains(e.relatedTarget))return; commit(); exit(); };
     wrap.addEventListener('focusout',onFocusOut);
     // Paste. A spreadsheet range (tab-separated text, or an HTML table, as Excel / Google Sheets /
@@ -7094,7 +7304,7 @@ function buildNodeTableObject(node,tIdx){
       if(grid&&grid.length&&(grid.length>1||grid[0].length>1)){
         _tableStructOpDepth++;
         let last=null;
-        try{ last=tablePasteGrid(liveTable,cell,grid); } finally{ _tableStructOpDepth--; }
+        try{ last=tablePasteGrid(liveTable,cell,grid); tableFormatCurrencyCells(liveTable); } finally{ _tableStructOpDepth--; }
         _attachTableResizeHandles(liveTable);
         placeCaretIn(last);
         commit();
@@ -7586,13 +7796,13 @@ function cleanEditorHtml(editor){
   // elements baked into every cell's stored HTML, re-exported to the PDF, and sitting
   // in the way of the contenteditable caret the next time this exact (unprocessed) HTML is
   // reloaded without going through _attachTableResizeHandles' own cleanup-and-reattach first.
-  if(!editor.querySelector('.editor-img-selected,.col-resize-handle,.row-resize-handle,[data-auto-align]')) return editor.innerHTML;
+  if(!editor.querySelector('.editor-img-selected,.col-resize-handle,.row-resize-handle,[data-auto-align],.tbl-cell-picker')) return editor.innerHTML;
   const clone=editor.cloneNode(true);
   // data-auto-align is applyTableAutoAlign's render-time marker (numeric columns right-align on
   // their own) -- recomputed on every render, never stored.
   clone.querySelectorAll('[data-auto-align]').forEach(el=>el.removeAttribute('data-auto-align'));
   clone.querySelectorAll('.editor-img-selected').forEach(el=>el.classList.remove('editor-img-selected'));
-  clone.querySelectorAll('.col-resize-handle,.row-resize-handle').forEach(el=>el.remove());
+  clone.querySelectorAll('.col-resize-handle,.row-resize-handle,.tbl-cell-picker').forEach(el=>el.remove());
   return clone.innerHTML;
 }
 // "Feature as diagram" (setImageCaption/toggleImageDiagramFeature, right-click an image in
