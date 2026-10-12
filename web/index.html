@@ -25887,6 +25887,7 @@ function previewFold(node,idx,hasChildren){
 }
 function renderPreviewBody(){
   const body=el('preview-body'); if(!body)return;
+  homePdfToc();
   // Preview/PDF can run before the outline's own render() ever has (opening Preview right after a
   // document loads, or a test driving renderPreviewBody() directly) -- migrateNoteTablesToNode is
   // otherwise only ever called from render()'s own per-node loop, so without this, a node.note
@@ -26151,6 +26152,30 @@ function renderPreviewBody(){
           nodeRemarks.forEach(rm=>_previewRemarksRenderedInline.add(rm.id));
         }
       }
+      // The note's text comes first, directly under the node, then its diagrams, tables and
+      // images below. Tables and standalone images are pulled out into their own figures (see
+      // blockVisuals) -- what's left here is only the note's own text, via blockVisuals.textHtml
+      // when it ran (non-plain notes) or the untouched noteRestHtml otherwise (isPlainNote, which
+      // by construction never contains either). A note whose content turned out to be ENTIRELY a
+      // table/image once text is split out (blockVisuals ran but left nothing behind) skips this
+      // card too, unless it still has a title to show -- an empty box under a bare "Note" label
+      // would just be noise once its only real content already rendered as its own figure above.
+      const noteCardHtml = blockVisuals ? blockVisuals.textHtml : noteRestHtml;
+      const noteCardHasText = blockVisuals ? htmlHasVisibleContent(noteCardHtml) : noteHasContent;
+      if(featureNoteEnabled&&!isPlainNote&&(noteCardHasText||hasNoteTitle)){
+        const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
+        const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
+        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteCardHtml)?' pv-note-plain':'');
+        // Any table left in noteCardHtml at this point (isPlainNote path only -- a non-plain
+        // note's own tables were already extracted into blockVisuals above) still needs the same
+        // chart swap renderNoteDisplayHtml gives the live editor's own unfocused display, via
+        // noteChartDisplayHtml/noteTableByIndex -- but isPlainNote can never actually contain a
+        // table (noteIsPlainTextOnly excludes it), so this is a no-op pass-through in practice,
+        // kept only so the call stays correct if that ever changes.
+        inner.innerHTML=noteChartDisplayHtml(noteCardHtml,node.id);
+        wrap.appendChild(label); wrap.appendChild(inner);
+        doc.appendChild(wrap);
+      }
       if(noteSplit&&noteSplit.diagrams.length){
         const multi=noteSplit.diagrams.length>1;
         const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
@@ -26217,29 +26242,6 @@ function renderPreviewBody(){
           irow.appendChild(fig);
         });
         if(irow.children.length)doc.appendChild(irow);
-      }
-      // Tables and standalone images were already pulled out into their own figures above (see
-      // blockVisuals) -- what's left here is only the note's own text, via blockVisuals.textHtml
-      // when it ran (non-plain notes) or the untouched noteRestHtml otherwise (isPlainNote, which
-      // by construction never contains either). A note whose content turned out to be ENTIRELY a
-      // table/image once text is split out (blockVisuals ran but left nothing behind) skips this
-      // card too, unless it still has a title to show -- an empty box under a bare "Note" label
-      // would just be noise once its only real content already rendered as its own figure above.
-      const noteCardHtml = blockVisuals ? blockVisuals.textHtml : noteRestHtml;
-      const noteCardHasText = blockVisuals ? htmlHasVisibleContent(noteCardHtml) : noteHasContent;
-      if(featureNoteEnabled&&!isPlainNote&&(noteCardHasText||hasNoteTitle)){
-        const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-        const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
-        const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteCardHtml)?' pv-note-plain':'');
-        // Any table left in noteCardHtml at this point (isPlainNote path only -- a non-plain
-        // note's own tables were already extracted into blockVisuals above) still needs the same
-        // chart swap renderNoteDisplayHtml gives the live editor's own unfocused display, via
-        // noteChartDisplayHtml/noteTableByIndex -- but isPlainNote can never actually contain a
-        // table (noteIsPlainTextOnly excludes it), so this is a no-op pass-through in practice,
-        // kept only so the call stays correct if that ever changes.
-        inner.innerHTML=noteChartDisplayHtml(noteCardHtml,node.id);
-        wrap.appendChild(label); wrap.appendChild(inner);
-        doc.appendChild(wrap);
       }
       if(previewOpenQaIds.has(node.id)){
         const qRefsInline=qaRefsForNode(node.id);
@@ -26538,6 +26540,17 @@ function exportPreviewAsPdf(onDone){
       }
       /* Fewer than two entries: no Contents page at all (it used to print as a blank page). */
       body.printing-preview #preview-toc.pv-toc-hidden-auto{ display:none !important; }
+      /* A short Contents list sits on the cover page, or under the title when there's no cover
+         (see placePdfTocInline), instead of taking a page of its own. */
+      body.printing-preview #preview-toc.pv-toc-inline{
+        page-break-before:auto !important; break-before:auto !important;
+        page-break-after:auto !important; break-after:auto !important;
+        padding:0 !important; margin:0 0 26px !important;
+      }
+      body.printing-preview #sakura-cover-page #preview-toc.pv-toc-inline{
+        width:100% !important; max-width:440px !important; margin:56px 0 0 !important;
+        text-align:left !important; align-self:center;
+      }
       body.printing-preview #sakura-cover-page{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center;
         text-align:center; padding:120px 60px 80px; box-sizing:border-box;
@@ -26563,10 +26576,9 @@ function exportPreviewAsPdf(onDone){
         width:48px !important; height:3px !important; margin:28px 0 !important;
         background:${liveAccent} !important; border-radius:2px !important;
       }
-      body.printing-preview.has-cover-page #pv-doc-meta{ display:none !important; }
-      /* The status stamp belongs on the cover page; the title block only carries it when there is no cover. */
-      body.printing-preview.has-cover-page #pv-doc-header .pv-status-stamp{ display:none !important; }
-      body.printing-preview.has-cover-page #pv-doc-header.has-status-stamp #pv-doc-title{ padding-right:0 !important; }
+      /* The cover already shows the title, author, word count and status stamp, so the body
+         starts straight with the first section instead of repeating them. */
+      body.printing-preview.has-cover-page #pv-doc-header{ display:none !important; }
       body.printing-preview #preview-toc-head-row{
         margin-bottom:14px !important;
       }
@@ -26664,7 +26676,11 @@ function exportPreviewAsPdf(onDone){
          whatever precedes it (the node's own row, or its note), so the heading keeps its table's
          first rows with it where they fit. Block layout rather than the screen's flex row, so the
          table fragments as an ordinary block-level table. Charts and Cards keep break-inside:avoid. */
-      body.printing-preview .pv-diagram-row.pv-table-row { display:block !important; break-before:avoid; page-break-before:avoid; }
+      body.printing-preview .pv-diagram-row.pv-table-row { display:block !important; }
+      body.printing-preview .pv-diagram-row.pv-table-row:has(> .pv-table-figure:not(.pv-table-chart-figure)) { break-before:avoid; page-break-before:avoid; }
+      /* A note card prints whole (when it fits a page) and stays with its node; a chart or Cards
+         figure after it moves to the next page on its own rather than splitting the card. */
+      body.printing-preview .pv-inline-block { break-inside:avoid; page-break-inside:avoid; break-before:avoid; page-break-before:avoid; }
       body.printing-preview .pv-table-row > .pv-table-figure { margin:0 0 14px !important; }
       body.printing-preview .pv-table-row > .pv-table-figure:not(.pv-table-chart-figure) { display:block !important; }
       body.printing-preview .pv-table-figure:not(.pv-table-chart-figure) { break-inside:auto; page-break-inside:auto; }
@@ -26710,11 +26726,13 @@ function exportPreviewAsPdf(onDone){
     const overlay=el('preview-overlay');
     overlay?.insertBefore(coverEl,overlay.firstChild);
   }
+  placePdfTocInline(coverEl);
   const originalTitle=document.title;
   document.title=String(meta.title||'Sakura').replace(/[\\/:*?"<>|]+/g,'_');
   let _pdfCleanupDone=false;
   const cleanup=()=>{
     if(_pdfCleanupDone)return; _pdfCleanupDone=true;
+    homePdfToc();
     coverEl?.remove();
     document.body.classList.remove('has-cover-page');
     document.title=originalTitle;
@@ -26767,6 +26785,27 @@ function exportPreviewAsPdf(onDone){
     });
 }
 const PDF_PAGE_MARGIN_MM=20;
+// A short Contents list doesn't get a page of its own: up to this many entries print on the cover
+// page (or, without a cover, right under the document title) instead.
+const PDF_TOC_INLINE_MAX=8;
+function placePdfTocInline(coverEl){
+  const toc=el('preview-toc'); if(!toc||toc.classList.contains('pv-toc-hidden-auto'))return false;
+  const count=toc.querySelectorAll('.pv-toc-item').length;
+  if(!count||count>PDF_TOC_INLINE_MAX)return false;
+  const header=el('pv-doc-header');
+  if(coverEl)coverEl.appendChild(toc); else if(header)header.after(toc); else return false;
+  toc.classList.add('pv-toc-inline');
+  return true;
+}
+// Puts the Contents element back in its own slot (#preview-main, ahead of #preview-body) after
+// placePdfTocInline moved it — run on cleanup and again before every render, so a later
+// export never loses it with the old body.
+function homePdfToc(){
+  const toc=el('preview-toc'), main=el('preview-main'), body=el('preview-body');
+  if(!toc||!main||!body)return;
+  toc.classList.remove('pv-toc-inline');
+  if(toc.parentNode!==main||toc.nextSibling!==body)main.insertBefore(toc,body);
+}
 // The PDF's paper size is fixed so the Contents page numbers can be measured ahead of printing:
 // US Letter where that's the local default, A4 everywhere else.
 function pdfPaperSize(){

@@ -209,8 +209,16 @@ k/M) and `tableHasNumericData` accepts the same. Table attributes: `data-chart-t
 Cards), `data-chart-size` small/medium/full (charts only; Small/Medium draw on a 360/460-wide
 canvas at that pixel width so text doesn't shrink). Cards: a 3-column table is label/value/change.
 PDF: no Contents page with fewer than two entries (it printed blank), and the footer total is
-measured even then. PR 3b (PDF layout: title after cover, notes before tables/images, consistent
-widths) is still to do. Covered by `tests/e2e/charts-cards-polish.spec.ts`.
+measured even then. Covered by `tests/e2e/charts-cards-polish.spec.ts`. Merged as #497.
+
+**PR 3b — PDF layout.** With a cover, `#pv-doc-header` (title, meta, stamp) is hidden on body pages.
+A node's note card is now built before its diagrams/tables/images; it prints whole and stays with its
+node (`.pv-inline-block` break-inside/before:avoid), and only a row holding a plain table keeps
+`break-before:avoid` (a chart row with it chained through the note and split the card). Contents with
+≤ `PDF_TOC_INLINE_MAX` (8) entries is moved onto the cover, or after the title without one
+(`placePdfTocInline`), and put back by `homePdfToc` on cleanup and before every render. Widths were
+checked and already consistent (all figures share the content column). Covered by
+`tests/e2e/pdf-layout-polish.spec.ts`. Next agreed: progress bars + heat-map (one PR), then timeline.
 
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
