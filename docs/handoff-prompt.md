@@ -248,6 +248,12 @@ Status coloured by `status-*`, Length). The rotated status stamp no longer print
 is a details row); it still stamps the title block when there's no cover. Next agreed: timeline,
 then status board (owner wants to see a mockup first).
 
+**Where used removed; version history clock (owner decisions).** The right-click "Where used…" item
+and `openWhereUsedPopover` are gone — every linked item already has its own row dot, and a folded
+row's "+N" badge names what's hidden. `collectLinkedContentForNodeIds`/`linkedContentSummaryParts`
+stay (delete-confirmation warnings use them). Document version history got a clock chip
+(`#doc-history-chip`) in `#editor-meta-row`, next to Status/Author/Link.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
