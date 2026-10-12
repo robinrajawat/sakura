@@ -2392,8 +2392,11 @@ body.printing-generic #gpe-overlay{
    button, then History / Export / Maximize / Close. No title — it's the only dock panel and the
    app-bar launcher already says To-Dos. Bottom-aligned so the icon buttons stay on the input's
    last line while it auto-grows to several lines. */
-#todos-panel-header{display:flex;align-items:flex-end;gap:4px;padding:10px 10px 10px 14px;flex-shrink:0;cursor:move;border-bottom:1px solid var(--border);position:relative;z-index:2}
-#todos-panel-header #todos-add-btn{margin-right:4px}
+#todos-panel-header{display:flex;align-items:center;gap:2px;padding:10px 8px 8px 16px;flex-shrink:0;cursor:move;position:relative;z-index:2}
+#todos-title{font:700 14.5px 'Inter',sans-serif;color:var(--fg);user-select:none;white-space:nowrap}
+#todos-open-label{flex:1 1 auto;min-width:0;margin-left:8px;font:500 12px 'Inter',sans-serif;color:var(--muted);user-select:none;white-space:nowrap}
+#todos-panel-header .todo-dd-trigger{width:28px;height:28px;border-radius:8px}
+.todos-header-sep{width:1px;height:16px;background:var(--border);margin:0 4px;flex:0 0 auto}
 #todos-panel.anchored #todos-panel-header{cursor:default}
 #todos-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
 #todos-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
@@ -2401,14 +2404,27 @@ body.printing-generic #gpe-overlay{
 #todos-panel.maximized #todos-resize-handle{display:none}
 #todos-panel-header.dragging{cursor:grabbing}
 #todos-panel.dragging{user-select:none}
-#todos-panel-maximize,#todos-panel-close,#todos-export-trigger,#todos-history-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;height:30px;flex:0 0 auto;padding:2px 5px;border-radius:5px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#todos-panel-maximize:hover,#todos-panel-close:hover,#todos-export-trigger:hover,#todos-history-btn:hover{color:var(--fg);background:var(--hover)}
-#todos-input{flex:1 1 auto;min-width:0;box-sizing:border-box;appearance:none;resize:none;overflow:hidden;min-height:30px;max-height:120px;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:400 12.5px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.4;padding:6px 10px;border-radius:7px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s}
-#todos-input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 45%,var(--border));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
-#todos-add-btn{appearance:none;border:none;background:var(--accent);color:#fff;width:30px;height:30px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s}
+#todos-panel-maximize,#todos-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;width:28px;height:28px;flex:0 0 auto;padding:0;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#todos-panel-maximize:hover,#todos-panel-close:hover{color:var(--fg);background:var(--hover)}
+/* "Add a task" — a quiet first row under the header: dashed outline at rest, a normal input once
+   focused. The add button only appears while the row is in use (Enter adds too); at rest the row
+   shows the N shortcut instead. */
+#todos-add-row{display:flex;align-items:flex-start;gap:8px;margin:0 10px 8px;padding:5px 6px 5px 10px;border:1px dashed var(--border);border-radius:9px;flex-shrink:0;transition:border-color .12s,background .12s,box-shadow .12s}
+#todos-add-row:hover{background:var(--hover)}
+#todos-add-row:focus-within{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:var(--edit-bg);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+.todos-add-plus{flex:0 0 auto;width:18px;height:18px;margin-top:5px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+#todos-input{flex:1 1 auto;min-width:0;box-sizing:border-box;appearance:none;resize:none;overflow:hidden;min-height:28px;max-height:120px;border:none;background:transparent;color:var(--fg);font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.4;padding:5px 0;outline:none}
+#todos-input::placeholder{color:var(--hint)}
+#todos-add-row::after{content:'N';align-self:center;flex:0 0 auto;font:500 10.5px 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+#todos-add-row:focus-within::after{display:none}
+#todos-add-btn{appearance:none;border:none;background:var(--accent);color:#fff;width:28px;height:28px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:opacity .12s}
+#todos-add-row:focus-within #todos-add-btn{display:inline-flex}
 #todos-add-btn:hover{opacity:.88}
-#todos-open-row{display:flex;align-items:center;gap:2px;padding:10px 6px 6px 14px;flex-shrink:0}
-#todos-open-label{flex:1 1 auto;font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);user-select:none}
+#todos-more-menu{right:0;left:auto;min-width:210px}
+#todos-filter-menu{right:0;left:auto}
+.todo-more-item{display:flex;align-items:center;justify-content:flex-start;gap:9px}
+.todo-more-item svg{flex:0 0 auto;color:var(--muted)}
+#todos-select-toggle[aria-pressed="true"]{color:var(--accent)}
 .todo-dd-wrap{position:relative;flex:0 0 auto}
 .todo-dd-trigger{appearance:none;border:none;background:none;width:22px;height:22px;border-radius:6px;color:var(--hint);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 .todo-dd-trigger:hover{color:var(--fg);background:var(--hover)}
@@ -2566,7 +2582,6 @@ body.printing-generic #gpe-overlay{
 .todo-bulk-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:11px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
 .todo-bulk-btn:hover{color:var(--fg);background:var(--hover)}
 .todo-bulk-btn.danger:hover{color:var(--sem-alert);background:color-mix(in srgb,var(--sem-alert) 12%,transparent)}
-.todo-subtasks-toggle-row{display:flex;align-items:center;gap:8px;margin-top:2px}
 .todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
 .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
 .todo-subtasks-progress-track{width:26px;height:4px;flex:0 0 auto;border-radius:999px;background:var(--border);overflow:hidden;display:inline-block}
@@ -2586,7 +2601,18 @@ body.printing-generic #gpe-overlay{
 .todo-subtask-add-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s}
 .todo-row.expanded .todo-subtask-add-btn{display:inline-flex}
 .todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
-.todo-subtasks-list{display:flex;flex-direction:column;gap:2px;margin-top:3px;padding-left:4px;border-left:2px solid var(--border)}
+.todo-subtasks-list{display:flex;flex-direction:column;gap:1px;margin-top:6px}
+.todo-subtasks-done-toggle{appearance:none;border:none;background:none;display:flex;align-items:center;gap:6px;width:100%;padding:3px 4px;margin-top:1px;border-radius:6px;font:500 11px 'Inter',sans-serif;color:var(--muted);cursor:pointer;text-align:left}
+.todo-subtasks-done-toggle:hover{background:var(--hover);color:var(--fg)}
+.todo-subtasks-done-icon{flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--hint);position:relative}
+.todo-subtasks-done-icon::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--hint);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
+.todo-subtasks-done-chevron{margin-left:auto;transition:transform .15s}
+.todo-subtasks-done-toggle.open .todo-subtasks-done-chevron{transform:rotate(90deg)}
+/* Open tasks read as cards so a long subtask list stays visibly grouped with its task. */
+#todos-body .todo-row:not(.completed){background:var(--edit-bg);border:1px solid var(--border);padding:9px 8px 8px;margin-bottom:6px}
+#todos-body .todo-row:not(.completed):hover{border-color:color-mix(in srgb,var(--fg) 14%,var(--border))}
+/* Subtask progress as a pill in the meta row. */
+.todo-meta-row .todo-subtasks-toggle{height:20px;padding:0 7px;border-radius:999px;background:var(--hover)}
 .todo-subtask-row{display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
 .todo-subtask-row:hover{background:var(--hover)}
 .todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
@@ -2594,7 +2620,7 @@ body.printing-generic #gpe-overlay{
 .todo-subtask-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
 .todo-subtask-check:checked::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--accent);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
 .todo-subtask-text{flex:1;font-family:var(--content-font);font-size:11.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere;outline:none;cursor:text}
-.todo-subtask-text.completed{color:var(--muted);text-decoration:line-through}
+.todo-subtask-text.completed{color:var(--hint)}
 .todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .todo-subtask-row:hover .todo-subtask-delete{opacity:1}
 .todo-subtask-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
@@ -2694,8 +2720,6 @@ body.printing-generic #gpe-overlay{
 
 /* ===== Hub dock-panel pieces ===== */
 /* Small fixed-position dropdown menus (To-Dos Export) */
-#todos-export-menu{display:none;position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;width:200px;font-family:'Inter',sans-serif}
-#todos-export-menu.open{display:block}
 .dock-menu-item{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;appearance:none;border:none;background:none;text-align:left;padding:7px 8px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
 .dock-menu-item:hover{background:var(--hover);color:var(--accent)}
 .dock-menu-icon{flex:0 0 auto;display:inline-flex;color:var(--hint)}
@@ -4096,30 +4120,25 @@ body.printing-generic #gpe-overlay{
        (Used to be a header row of icon buttons over a separate "Add a task" row; merged once the
        To-Dos AI header buttons were removed.) The whole bar is still the drag handle when the
        panel is floating, except on the input and the buttons themselves. -->
+  <!-- Header: title + open count, then Search, View (sort + filter in one menu) and ⋯ (Version
+       history, Export as PDF, Select or reorder), then Maximize/Close. The whole bar is the drag
+       handle when the panel is floating, except on its buttons. "Add a task" is its own quiet row
+       just below (#todos-add-row) rather than the biggest thing in the header. -->
   <div id="todos-panel-header">
-    <textarea id="todos-input" rows="1" placeholder="Add a task…" spellcheck="false" maxlength="500"></textarea>
-    <button id="todos-add-btn" data-tip="Add task" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-    <button id="todos-history-btn" data-tip="Version history" aria-label="Version history"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
-    <button id="todos-export-trigger" data-tip="Export to-do list" aria-label="Export to-do list" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
-    <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
-    <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-  </div>
-  <div id="todos-open-row">
-    <span id="todos-open-label">Open</span>
+    <span id="todos-title">To-Dos</span><span id="todos-open-label"></span>
     <div class="todo-dd-wrap" id="todos-search-wrap">
       <button type="button" class="todo-dd-trigger" id="todos-search-trigger" data-tip="Find a task" aria-label="Find a task" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
     </div>
-    <div class="todo-dd-wrap" id="todos-sort-wrap">
-      <button type="button" class="todo-dd-trigger" id="todos-sort-trigger" data-tip="Sort by" aria-label="Sort by" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="17 14 20 18 20 4"/></svg></button>
-      <div class="todo-dd-menu" id="todos-sort-menu" role="menu">
+    <div class="todo-dd-wrap" id="todos-filter-wrap">
+      <button type="button" class="todo-dd-trigger" id="todos-filter-trigger" data-tip="Sort and filter" aria-label="Sort and filter" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="17" x2="14" y2="17"/></svg></button>
+      <div class="todo-dd-menu" id="todos-filter-menu" role="menu">
+        <span class="todo-dd-label">Sort by</span>
+        <div id="todos-sort-menu" role="group" aria-label="Sort by">
         <button type="button" class="todo-dd-item" data-value="manual" role="menuitemradio">Manual order<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
         <button type="button" class="todo-dd-item" data-value="priority" role="menuitemradio">Priority<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
         <button type="button" class="todo-dd-item" data-value="due" role="menuitemradio">Due date<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-      </div>
-    </div>
-    <div class="todo-dd-wrap" id="todos-filter-wrap">
-      <button type="button" class="todo-dd-trigger" id="todos-filter-trigger" data-tip="Filter" aria-label="Filter" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
-      <div class="todo-dd-menu" id="todos-filter-menu" role="menu">
+        </div>
+        <div class="todo-dd-divider"></div>
         <span class="todo-dd-label">Priority</span>
         <button type="button" class="todo-dd-item" data-group="priority" data-value="all" role="menuitemradio">All priorities<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
         <button type="button" class="todo-dd-item" data-group="priority" data-value="high" role="menuitemradio">High only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
@@ -4143,7 +4162,22 @@ body.printing-generic #gpe-overlay{
         <button type="button" class="todo-dd-item" data-group="due" data-value="none" role="menuitemradio">No due date<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
       </div>
     </div>
-    <button type="button" class="todo-dd-trigger" id="todos-select-toggle" data-tip="Select or reorder tasks" aria-label="Select or reorder tasks" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg></button>
+    <div class="todo-dd-wrap" id="todos-more-wrap">
+      <button type="button" class="todo-dd-trigger" id="todos-more-trigger" data-tip="More" aria-label="More To-Do actions" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
+      <div class="todo-dd-menu" id="todos-more-menu" role="menu">
+        <button type="button" class="todo-dd-item todo-more-item" id="todos-history-btn" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>Version history</button>
+        <button type="button" class="todo-dd-item todo-more-item" id="todos-export-pdf-item" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Export as PDF</button>
+        <button type="button" class="todo-dd-item todo-more-item" id="todos-select-toggle" role="menuitem" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg>Select or reorder tasks</button>
+      </div>
+    </div>
+    <span class="todos-header-sep" aria-hidden="true"></span>
+    <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
+    <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+  </div>
+  <div id="todos-add-row">
+    <span class="todos-add-plus" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+    <textarea id="todos-input" rows="1" placeholder="Add a task…" spellcheck="false" maxlength="500"></textarea>
+    <button id="todos-add-btn" data-tip="Add task" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
   </div>
   <div id="todos-bulk-bar">
     <span id="todos-bulk-count">0 selected</span>
@@ -4178,9 +4212,6 @@ body.printing-generic #gpe-overlay{
   </div>
   <div id="todos-body"></div>
   <div id="todos-toast" role="status" aria-live="polite"></div>
-</div>
-<div id="todos-export-menu" role="menu" aria-label="Export to-do list">
-  <button type="button" class="dock-menu-item" id="todos-export-pdf-item" role="menuitem"><span class="dock-menu-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></span><span>PDF</span></button>
 </div>
 
 
@@ -24240,46 +24271,6 @@ async function importAllDataFromPayload(payload){
   setTimeout(()=>location.reload(), 700);
 }
 el('sb-export-all-btn')?.addEventListener('click',()=>exportAllData());
-// === Shared small action-item dropdown (fixed-position) — used by the To-Dos Export menu, so
-// this positioning/flip/outside-click logic lives in one place. ===
-const _openSimpleMenus=new Set();
-function openSimpleDropdown(menu,btn){
-  if(!menu||!btn)return;
-  const r=btn.getBoundingClientRect();
-  // Measure the menu's real rendered width (CSS width + padding + border) rather than trusting
-  // a caller-supplied number — a mismatch between the two is what used to push the To-Dos
-  // Export menu past the viewport's right edge.
-  menu.style.left='0px'; menu.style.top=(r.bottom+4)+'px';
-  menu.classList.add('open');
-  const widthPx=menu.offsetWidth;
-  let left=r.left;
-  if(left+widthPx>window.innerWidth-8)left=window.innerWidth-widthPx-8;
-  if(left<8)left=8;
-  menu.style.left=left+'px';
-  btn.setAttribute('aria-expanded','true');
-  _openSimpleMenus.add(menu.id);
-  const mr=menu.getBoundingClientRect();
-  if(mr.bottom>window.innerHeight-8){
-    const flippedTop=r.top-mr.height-4;
-    menu.style.top=((flippedTop>=8)?flippedTop:Math.max(8,window.innerHeight-8-mr.height))+'px';
-  }
-}
-function closeSimpleDropdown(menu,btn){
-  menu?.classList.remove('open');
-  btn?.setAttribute('aria-expanded','false');
-  if(menu)_openSimpleMenus.delete(menu.id);
-}
-document.addEventListener('mousedown',e=>{
-  if(!_openSimpleMenus.size)return;
-  [['todos-export-menu','todos-export-trigger']].forEach(([menuId,btnId])=>{
-    if(_openSimpleMenus.has(menuId)&&!e.target.closest('#'+menuId)&&!e.target.closest('#'+btnId))closeSimpleDropdown(el(menuId),el(btnId));
-  });
-},true);
-document.addEventListener('keydown',e=>{
-  if(e.key!=='Escape'||!_openSimpleMenus.size)return;
-  ['todos-export-menu'].forEach(menuId=>{ if(_openSimpleMenus.has(menuId))closeSimpleDropdown(el(menuId),el(menuId.replace('-menu','-trigger'))); });
-});
-
 el('vault-setup-btn')?.addEventListener('click',()=>setupVaultPassphrase());
 el('vault-unlock-btn')?.addEventListener('click',()=>unlockVault());
 el('vault-lock-btn')?.addEventListener('click',()=>lockVault());
@@ -27190,7 +27181,7 @@ let dockActiveTab=null;
   // model entirely. Session-only, like todosSelectedIds: re-rendering the whole list on every
   // mutation (renderTodos rebuilds body.innerHTML) means this external Set is what keeps a row
   // expanded across those rebuilds, not any DOM state on the row itself.
-  let todosExpandedIds=new Set();
+  let todosExpandedIds=new Set(); let todosDoneSubsShownIds=new Set(); // tasks whose completed subtasks are unfolded (session-only)
   function toggleTodoExpanded(id){
     if(todosExpandedIds.has(id)) todosExpandedIds.delete(id); else todosExpandedIds.add(id);
     renderTodos();
@@ -28054,7 +28045,7 @@ let dockActiveTab=null;
     const dragUiActive=document.getElementById('todos-panel')?.classList.contains('select-mode');
     const manualOrder=settings.sortMode==='manual'&&dragUiActive;
     const openLabelEl=document.getElementById('todos-open-label');
-    if(openLabelEl) openLabelEl.textContent=`Open${open.length?' · '+open.length:''}`;
+    if(openLabelEl) openLabelEl.textContent=open.length?`${open.length} open`:'';
 
     let html='';
     if(!open.length){
@@ -28115,6 +28106,9 @@ let dockActiveTab=null;
     });
     body.querySelectorAll('.todo-repeat').forEach(btn=>{
       btn.addEventListener('click',()=>cycleRepeat(btn.getAttribute('data-id')));
+    });
+    body.querySelectorAll('.todo-subtasks-done-toggle').forEach(btn=>{
+      btn.addEventListener('click',e=>{ e.stopPropagation(); const id=btn.getAttribute('data-id'); if(todosDoneSubsShownIds.has(id))todosDoneSubsShownIds.delete(id); else todosDoneSubsShownIds.add(id); renderTodos(); });
     });
     body.querySelectorAll('.todo-subtasks-toggle').forEach(btn=>{
       btn.addEventListener('click',()=>toggleSubtasksOpen(btn.getAttribute('data-id')));
@@ -28450,11 +28444,13 @@ let dockActiveTab=null;
     return s==='waiting'?'Waiting':s==='progress'?'In Progress':s==='blocked'?'Blocked':s==='review'?'Review':'Status';
   }
 
-  function subtasksSectionHtml(t){
+  // The subtask progress control and the "add subtask" button live in the task's meta row (see
+  // todoRowHtml) rather than on a line of their own — one row of pills per task.
+  function subtaskMetaHtml(t){
     const subs=t.subtasks||[];
     const doneCount=subs.filter(s=>s.done).length;
     const open=t.subtasksOpen!==false;
-    let html=`<div class="todo-subtasks-toggle-row">`;
+    let html='';
     if(subs.length){
       const pct=Math.round((doneCount/subs.length)*100);
       html+=`<button type="button" class="todo-subtasks-toggle" data-id="${t.id}" aria-label="Toggle subtasks">`
@@ -28466,17 +28462,31 @@ let dockActiveTab=null;
     if(!t.repeat){
       html+=`<button type="button" class="todo-subtask-add-btn" data-id="${t.id}" data-tip="Add subtask" aria-label="Add subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Subtask</span></button>`;
     }
-    html+=`</div>`;
+    return html;
+  }
+  function subtasksSectionHtml(t){
+    const subs=t.subtasks||[];
+    const open=t.subtasksOpen!==false;
+    let html='';
     if(subs.length && open){
       html+=`<div class="todo-subtasks-list">`;
-      subs.forEach(s=>{
-        html+=`<div class="todo-subtask-row" data-parent="${t.id}" data-sub="${s.id}">`
+      const subRowHtml=s=>{
+        return `<div class="todo-subtask-row" data-parent="${t.id}" data-sub="${s.id}">`
           +`<input type="checkbox" class="todo-subtask-check" data-parent="${t.id}" data-sub="${s.id}" ${s.done?'checked':''} aria-label="Mark subtask complete" />`
           +`<span class="todo-subtask-text${s.done?' completed':''}" contenteditable="true" spellcheck="false" data-parent="${t.id}" data-sub="${s.id}">${esc(s.text)}</span>`
           +`<button type="button" class="todo-subtask-rewrite" data-parent="${t.id}" data-sub="${s.id}" data-tip="Rewrite with AI" aria-label="Rewrite subtask with AI"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>`
           +`<button type="button" class="todo-subtask-delete" data-parent="${t.id}" data-sub="${s.id}" aria-label="Delete subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
         +`</div>`;
-      });
+      };
+      // Open subtasks first; completed ones fold into a single "N completed" row so finished
+      // work stops dominating the card. Expanding it is session-only, like other fold state.
+      const openSubs=subs.filter(x=>!x.done), doneSubs=subs.filter(x=>x.done);
+      openSubs.forEach(x=>{ html+=subRowHtml(x); });
+      if(doneSubs.length){
+        const shown=todosDoneSubsShownIds.has(t.id);
+        html+=`<button type="button" class="todo-subtasks-done-toggle${shown?' open':''}" data-id="${t.id}" aria-expanded="${shown}"><span class="todo-subtasks-done-icon" aria-hidden="true"></span>${doneSubs.length} completed<svg class="todo-subtasks-done-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>`;
+        if(shown) doneSubs.forEach(x=>{ html+=subRowHtml(x); });
+      }
       html+=`</div>`;
     }
     html+=`<div class="todo-subtask-input-row" data-id="${t.id}" style="display:none">`
@@ -28584,7 +28594,7 @@ let dockActiveTab=null;
     // hover-only) action buttons — used to collapse that row's reserved height down to ~nothing
     // for a plain checklist-style task, rather than leaving a same-height but visually-empty gap
     // under every task that has no priority/due/etc. set. See .todo-row-nochips below.
-    const hasVisibleChips=priority!=='none'||status!=='none'||!!due||hasAttachment||(!!t.repeat&&!hasSubtasks);
+    const hasVisibleChips=priority!=='none'||status!=='none'||!!due||hasAttachment||hasSubtasks||(!!t.repeat&&!hasSubtasks);
     return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}${todosExpandedIds.has(t.id)?' expanded':''}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
@@ -28615,6 +28625,7 @@ let dockActiveTab=null;
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
         +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
       +`</button>` : '')
+      + subtaskMetaHtml(t)
       + `<span class="todo-actions">${hasAttachment?(nodeRef
           ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
           : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
@@ -29419,16 +29430,15 @@ let dockActiveTab=null;
       item.classList.toggle('selected', isSel);
       item.setAttribute('aria-checked', String(isSel));
     });
-    document.getElementById('todos-sort-wrap')?.classList.toggle('active', settings.sortMode!=='manual');
     const filterMenu=document.getElementById('todos-filter-menu');
-    if(filterMenu) filterMenu.querySelectorAll('.todo-dd-item').forEach(item=>{
+    if(filterMenu) filterMenu.querySelectorAll('.todo-dd-item[data-group]').forEach(item=>{
       const group=item.getAttribute('data-group');
       const activeVal=group==='priority'?settings.priorityFilter:group==='status'?settings.statusFilter:settings.dueFilter;
       const isSel=item.getAttribute('data-value')===activeVal;
       item.classList.toggle('selected', isSel);
       item.setAttribute('aria-checked', String(isSel));
     });
-    document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive());
+    document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive()||settings.sortMode!=='manual');
     const expirySel=document.getElementById('todos-expiry-select');
     if(expirySel){
       expirySel.value=String(settings.expiryDays);
@@ -29578,12 +29588,12 @@ let dockActiveTab=null;
         i.classList.toggle('selected', i===item);
         i.setAttribute('aria-checked', String(i===item));
       });
-      document.getElementById('todos-sort-wrap')?.classList.toggle('active', settings.sortMode!=='manual');
+      document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive()||settings.sortMode!=='manual');
       closeTodoDropdowns();
       saveSettings(); renderTodos();
     });
   });
-  document.getElementById('todos-filter-menu')?.querySelectorAll('.todo-dd-item').forEach(item=>{
+  document.getElementById('todos-filter-menu')?.querySelectorAll('.todo-dd-item[data-group]').forEach(item=>{
     item.addEventListener('click',e=>{
       e.stopPropagation();
       const group=item.getAttribute('data-group');
@@ -29595,7 +29605,7 @@ let dockActiveTab=null;
         i.classList.toggle('selected', i===item);
         i.setAttribute('aria-checked', String(i===item));
       });
-      document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive());
+      document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive()||settings.sortMode!=='manual');
       saveSettings(); renderTodos();
     });
   });
@@ -29647,7 +29657,7 @@ let dockActiveTab=null;
   document.getElementById('todos-bulk-complete-btn')?.addEventListener('click', bulkComplete);
   document.getElementById('todos-bulk-delete-btn')?.addEventListener('click', bulkDelete);
   document.getElementById('todos-bulk-cancel-btn')?.addEventListener('click', ()=>toggleTodoSelectMode(false));
-  document.getElementById('todos-select-toggle')?.addEventListener('click', ()=>toggleTodoSelectMode());
+  document.getElementById('todos-select-toggle')?.addEventListener('click', ()=>{ closeTodoDropdowns(); toggleTodoSelectMode(); });
   wireTodoMenuKeyNav('todos-bulk-priority-menu');
   wireTodoMenuKeyNav('todos-bulk-status-menu');
   wireTodoMenuKeyNav('todos-sort-menu');
@@ -29662,17 +29672,28 @@ let dockActiveTab=null;
       openMenu?.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.focus();
     }
   });
-  document.getElementById('todos-export-trigger')?.addEventListener('click',e=>{
+  document.getElementById('todos-more-trigger')?.addEventListener('click',e=>{
     e.stopPropagation();
-    const menu=document.getElementById('todos-export-menu'), btn=document.getElementById('todos-export-trigger');
-    if(menu?.classList.contains('open')){ closeSimpleDropdown(menu,btn); return; }
-    openSimpleDropdown(menu,btn);
+    const menu=document.getElementById('todos-more-menu');
+    const isOpen=menu.classList.contains('open');
+    closeTodoDropdowns();
+    menu.classList.toggle('open', !isOpen);
+    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
+    if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
   });
-  document.getElementById('todos-export-pdf-item')?.addEventListener('click',()=>{
-    closeSimpleDropdown(document.getElementById('todos-export-menu'),document.getElementById('todos-export-trigger'));
-    exportTodosAsPdf();
+  wireTodoMenuKeyNav('todos-more-menu');
+  // N jumps to "Add a task" — only while focus is inside the To-Dos panel and not in a text field,
+  // so it never steals the letter from typing anywhere else.
+  document.getElementById('todos-panel')?.addEventListener('keydown',e=>{
+    if(e.key!=='n'&&e.key!=='N')return;
+    if(e.ctrlKey||e.metaKey||e.altKey||e.shiftKey)return;
+    const t=e.target;
+    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+    const input=document.getElementById('todos-input'); if(!input)return;
+    e.preventDefault(); input.focus();
   });
-  document.getElementById('todos-history-btn')?.addEventListener('click', openTodosHistory);
+  document.getElementById('todos-export-pdf-item')?.addEventListener('click',()=>{ closeTodoDropdowns(); exportTodosAsPdf(); });
+  document.getElementById('todos-history-btn')?.addEventListener('click', ()=>{ closeTodoDropdowns(); openTodosHistory(); });
   document.getElementById('todos-history-close-x')?.addEventListener('click', closeTodosHistory);
   document.getElementById('todos-history-save-now-btn')?.addEventListener('click', saveTodosVersionNow);
   onOverlayBackdropClick(document.getElementById('todos-history-overlay'),closeTodosHistory);
