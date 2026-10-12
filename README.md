@@ -121,7 +121,7 @@ hub.html has its own web app manifest (`hub-manifest.json`, `display: "standalon
 
 - **Tags** — select a node and click the tag icon, or right-click → Tags, to open a popover of existing document tags as toggleable chips (type a new name + Enter to add one). Tags render as `#chips` directly on the node row; clicking one filters the whole tree to that tag.
 - **Backlinks** — while editing a node, type `@` to reference another node by name from a filtering dropdown. The reference saves as `[[Node name]]`, renders as a clickable link, and the target node's right-click → "Where used…" lists every node that mentions it. Deleting a referenced node removes its `[[mentions]]` elsewhere automatically.
-- **Focus** — right-click a node → Zoom in (or `Ctrl/Cmd+.`, or the toolbar's zoom icon) to show only that node and its descendants, with a breadcrumb trail back to the root. Exit with `Ctrl/Cmd+,` or by clicking the root crumb. Focus state is saved with the document (like fold state) and comes back when you reopen it, including across sessions.
+- **Focus** — right-click a node → Zoom in (or `Ctrl/Cmd+.`, or the toolbar's zoom icon) to show only that node and its descendants, with a breadcrumb trail back to the root. The zoomed node itself stays visible as the first row, so its own dots and inline objects (notes, tables, diagrams, images) can still be opened and closed. Exit with `Ctrl/Cmd+,` or by clicking the root crumb. Focus state is saved with the document (like fold state) and comes back when you reopen it, including across sessions.
 
 ## AI Features
 

@@ -102,7 +102,7 @@ test.describe('generated nodeQueries block (src/core/nodeQueries.ts spliced into
       // @ts-expect-error
       expandNode(1);
       // @ts-expect-error
-      enterFocus(2); // focus on A1 — should show only A1 and its descendant A1a
+      enterFocus(2); // focus on A1 — shows A1 itself and its descendant A1a
       const rows = Array.from(document.querySelectorAll('.node-row')).map(
         (el) => (el as HTMLElement).dataset.id
       );
@@ -110,11 +110,10 @@ test.describe('generated nodeQueries block (src/core/nodeQueries.ts spliced into
       const breadcrumb = getFocusBreadcrumb().map((c: { id: number }) => c.id);
       return { rows, breadcrumb };
     });
-    // Focus mode renders the focused node's DESCENDANTS only (idx > focusIdx and < focusEnd) —
-    // the focused node itself becomes the implicit "root" of the zoomed view, shown via the
-    // breadcrumb rather than as its own row, matching Workflowy-style zoom. So focusing A1
-    // shows only A1a, not A1 itself.
-    expect(focusResult.rows).toEqual(['3']);
+    // Focus mode renders the focused node itself as the first row (so its own object dots and
+    // inline tables/diagrams/notes stay reachable), then its descendants indented below it
+    // (idx >= focusIdx and < focusEnd). So focusing A1 shows A1, then A1a.
+    expect(focusResult.rows).toEqual(['2', '3']);
     expect(focusResult.breadcrumb).toEqual([1, 2]); // A -> A1, via getParentIndex walking up
 
     // Exit focus, then a range selection from A to A2 (getSelectionRangeIds, which itself calls
