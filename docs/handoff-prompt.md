@@ -289,6 +289,16 @@ Align column › (check on current, incl. Automatically), Turn header row on/off
 Delete › (Row, Column, Table). e2e helpers in `table-editing.spec.ts` map old flat labels to
 [submenu, item] via `MENU_PATH`/`subItem`.
 
+**Status board (owner request: tracking open points).** `data-table-display="board"`, in Show as ›
+after Progress bars. `tableStatusBoardInfo` picks the status column with `findStatusColumn` (header
+Status/State/Stage, else ≥60% recognised status words), item = first other column, owner/due by header
+(`BOARD_OWNER_RE`/`BOARD_DUE_RE`), note = next column. Lanes from `boardLanes` (Open, In progress,
+Blocked, custom statuses, Done, No status; empty lanes dropped); `statusGroup` maps wordings. Overdue =
+due date with a year before today and lane not Done. `.many` (≥13 rows) stacks lanes in print.
+`applyTableStatusPills` colours a plain table's Status cells on display clones only, and the pill is
+layout-neutral (box-shadow, no padding/weight change) so entering edit mode doesn't move the table
+(`tables-pdf-bugs.spec.ts` guards that). Covered by `tests/e2e/table-status-board.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

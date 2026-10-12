@@ -1467,6 +1467,31 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-timeline.horizontal .pv-tl-dot,.pv-timeline.horizontal .pv-tl-item.next .pv-tl-dot{margin-top:0}
 .pv-timeline.horizontal .pv-tl-body{padding:8px 6px 0;min-width:0}
 .pv-timeline.horizontal .pv-tl-next{display:table;margin:4px auto 0}
+.pv-board{display:grid;grid-template-columns:repeat(var(--board-cols,4),minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;--lane:var(--fc-gray)}
+.pv-board-lane{display:flex;flex-direction:column;gap:8px;min-width:0;padding:10px;border-radius:10px;background:color-mix(in srgb,var(--fg) 3.5%,var(--bg));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-lane[data-group="progress"]{--lane:var(--fc-orange)}
+.pv-board-lane[data-group="blocked"]{--lane:var(--fc-red)}
+.pv-board-lane[data-group="done"]{--lane:var(--fc-green)}
+.pv-board-lane[data-group="other"]{--lane:var(--fc-purple)}
+.pv-board-head{display:flex;align-items:center;gap:7px;font:600 12px 'Inter',sans-serif;color:var(--fg);padding:0 2px 2px}
+.pv-board-dot{width:8px;height:8px;border-radius:50%;background:var(--lane);flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-board-count{margin-left:auto;font:600 11px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-board-card{padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--lane);break-inside:avoid;page-break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-item{font:500 13px 'Inter',sans-serif;color:var(--fg);line-height:1.35;overflow-wrap:anywhere}
+.pv-board-lane[data-group="done"] .pv-board-item{color:var(--muted)}
+.pv-board-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;font:500 11.5px 'Inter',sans-serif;color:var(--muted)}
+.pv-board-due{font-variant-numeric:tabular-nums}
+.pv-board-due.overdue{color:var(--fc-red);font-weight:600}
+.pv-board-note{font:400 12px 'Inter',sans-serif;color:var(--muted);margin-top:3px;line-height:1.4;overflow-wrap:anywhere}
+@media (max-width:640px){.pv-board{grid-template-columns:minmax(0,1fr)}}
+@media print{.pv-board.many{display:block}.pv-board.many .pv-board-lane{margin-bottom:10px;break-inside:auto;page-break-inside:auto}}
+/* Layout-neutral on purpose (no padding, same weight): the pill is drawn with a spread box-shadow so
+   the cell keeps exactly the size it has in edit mode, where the pill isn't shown. */
+.tbl-status-pill{border-radius:999px;color:var(--pill,var(--fc-gray));background:color-mix(in srgb,var(--pill,var(--fc-gray)) 14%,transparent);box-shadow:0 0 0 4px color-mix(in srgb,var(--pill,var(--fc-gray)) 14%,transparent);-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-status-pill[data-group="progress"]{--pill:var(--fc-orange)}
+.tbl-status-pill[data-group="blocked"]{--pill:var(--fc-red)}
+.tbl-status-pill[data-group="done"]{--pill:var(--fc-green)}
 table [data-heat]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table [data-heat="1"]{background:color-mix(in srgb,var(--accent) 7%,transparent)}
 table [data-heat="2"]{background:color-mix(in srgb,var(--accent) 15%,transparent)}
@@ -5613,6 +5638,65 @@ function renderTimelineHtml(table){
     ? `<div class="pv-timeline horizontal" style="--tl-cols:${ordered.length}">${items}</div>`
     : `<div class="pv-timeline">${items}</div>`;
 }
+// Status board: open points grouped into lanes by their status — Open, In progress, Blocked, other
+// statuses, Done (see boardLanes) — each row a card with its item, owner, due date (red once past
+// and not done) and a note. The status column is the one headed Status / State / Stage, or the
+// first holding mostly status words (findStatusColumn); the item is the first other column, owner
+// and due come from their headers, and the first remaining column is the note. Stored as
+// data-table-display="board". Plain tables with a Status column get coloured status pills instead
+// (applyTableStatusPills).
+const BOARD_OWNER_RE=/^\s*(owner|assignee|assigned to|who|responsible|lead|action owner)\s*$/i;
+const BOARD_DUE_RE=/^\s*(due|due date|deadline|target|target date|date|by when|eta|when)\s*$/i;
+const BOARD_LIST_PRINT_MIN=13;
+function tableStatusBoardInfo(table){
+  if(!table||tableColumnCount(table)<2)return null;
+  const head=[...(table.rows[0]?.cells||[])].map(c=>(c.textContent||'').trim());
+  const body=Array.from(table.rows).slice(1).filter(r=>(r.textContent||'').trim());
+  if(body.length<2)return null;
+  const cols=head.map((_,ci)=>body.map(r=>(r.cells[ci]?.textContent||'').trim()));
+  const status=findStatusColumn(head,cols); if(status<0)return null;
+  const rest=head.map((_,ci)=>ci).filter(ci=>ci!==status);
+  const item=rest[0];
+  const owner=rest.find(ci=>ci!==item&&BOARD_OWNER_RE.test(head[ci]))??-1;
+  const due=rest.find(ci=>ci!==item&&ci!==owner&&BOARD_DUE_RE.test(head[ci]))??-1;
+  const note=rest.find(ci=>ci!==item&&ci!==owner&&ci!==due)??-1;
+  return {status,item,owner,due,note,body};
+}
+function tableStatusBoardEligible(table){ return !!tableStatusBoardInfo(table); }
+function isTableShownAsBoard(table){ return !!(table&&table.getAttribute('data-table-display')==='board'); }
+function renderStatusBoardHtml(table){
+  const info=tableStatusBoardInfo(table); if(!info)return null;
+  const cell=(r,ci)=>ci<0?'':(r.cells[ci]?.textContent||'').trim();
+  const rows=info.body.map(r=>({status:cell(r,info.status), item:cell(r,info.item), owner:cell(r,info.owner), due:cell(r,info.due), note:cell(r,info.note)}));
+  const lanes=boardLanes(rows.map(d=>d.status));
+  const now=new Date(), today=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+  const lanesHtml=lanes.map(l=>{
+    const cards=l.rows.map(i=>{
+      const d=rows[i];
+      const at=parseCellDate(d.due);
+      const overdue=l.group!=='done'&&at!==null&&/\b\d{4}\b/.test(d.due)&&at<today;
+      const meta=(d.owner?`<span class="pv-board-owner">${esc(d.owner)}</span>`:'')
+        +(d.due?`<span class="pv-board-due${overdue?' overdue':''}"${overdue?' title="Overdue"':''}>${esc(d.due)}</span>`:'');
+      return `<div class="pv-board-card"><div class="pv-board-item">${esc(d.item||'\u2014')}</div>`
+        +(meta?`<div class="pv-board-meta">${meta}</div>`:'')
+        +(d.note?`<div class="pv-board-note">${esc(d.note)}</div>`:'')+`</div>`;
+    }).join('');
+    return `<div class="pv-board-lane" data-group="${l.group||'other'}"><div class="pv-board-head"><span class="pv-board-dot"></span><span class="pv-board-label">${esc(l.label)}</span><span class="pv-board-count">${l.rows.length}</span></div>${cards}</div>`;
+  }).join('');
+  return `<div class="pv-board${rows.length>=BOARD_LIST_PRINT_MIN?' many':''}" style="--board-cols:${Math.min(lanes.length,4)}">${lanesHtml}</div>`;
+}
+// Coloured status pills on a plain table's Status column (headed Status / State / Stage), applied to
+// display clones only, like applyTableHeatmap — the stored table is never changed.
+function applyTableStatusPills(table){
+  if(!table||table.getAttribute('data-table-display'))return;
+  const head=[...(table.rows[0]?.cells||[])];
+  const ci=head.findIndex(c=>STATUS_HEADER_RE.test(c.textContent||''));
+  if(ci<0)return;
+  tableBodyRows(table).forEach(r=>{
+    const c=r.cells[ci]; const text=(c?.textContent||'').trim(); if(!c||!text)return;
+    c.innerHTML=`<span class="tbl-status-pill" data-group="${statusGroup(text)||'other'}">${c.innerHTML}</span>`;
+  });
+}
 // Heat-map: a plain table's numeric cells shaded by where each sits in its own column (per column,
 // since columns usually hold different units). data-heatmap="1" turns it on, data-heatmap-reverse
 // flips it for columns where lower is better. Applied at render time only, like
@@ -5648,10 +5732,11 @@ function tableFeatureDisplayHtml(table){
   if(isTableShownAsChips(table)&&tableChipsEligible(table))return renderChipsHtml(table);
   if(isTableShownAsProgress(table)&&tableProgressEligible(table))return renderProgressHtml(table);
   if(isTableShownAsTimeline(table)&&tableTimelineEligible(table))return renderTimelineHtml(table);
+  if(isTableShownAsBoard(table)&&tableStatusBoardEligible(table))return renderStatusBoardHtml(table);
   if(isTableFeaturedAsChart(table)&&tableChartability(table).ok)return renderTableChartSvg(table);
   return null;
 }
-function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableFeaturedAsChart(table); }
+function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableFeaturedAsChart(table); }
 function isTableFeaturedAsChart(table){
   return !!(table&&table.getAttribute('data-feature-chart')==='1');
 }
@@ -6014,10 +6099,10 @@ function clampGridSize(rows, cols, max = 8) {
  * shading: round ("nice") value-axis ticks, axis/tooltip number formatting with thousands
  * separators, how many columns a Cards grid uses so its rows come out balanced, which way a Cards
  * "change" value points, a progress bar's fill, a numeric column's heat-map levels, and a timeline's
- * row order and past / next / upcoming phases.
+ * row order and past / next / upcoming phases, and a status board's lanes.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `chartFormat` block. The SVG and
- * HTML builders (renderCartesianChartSvg, renderCardsHtml) stay hand-written in index.html; only
+ * HTML builders (renderCartesianChartSvg, renderCardsHtml, renderStatusBoardHtml) stay hand-written in index.html; only
  * the decisions live here so they can be unit tested.
  */
 /** 1, 2, 2.5 or 5 times a power of ten — the smallest of those that is at least `rough`. */
@@ -6189,6 +6274,70 @@ function timelinePhases(dates, hasYear, today) {
         }
         return 'upcoming';
     });
+}
+const STATUS_WORDS = {
+    open: ['open', 'to do', 'todo', 'new', 'not started', 'backlog', 'planned', 'pending', 'proposed'],
+    progress: ['in progress', 'doing', 'wip', 'ongoing', 'started', 'active', 'underway', 'review', 'in review', 'testing', 'qa'],
+    blocked: ['blocked', 'on hold', 'waiting', 'stuck', 'at risk', 'paused', 'delayed'],
+    done: ['done', 'closed', 'complete', 'completed', 'resolved', 'finished', 'fixed', 'shipped']
+};
+/**
+ * Which of the four standard groups a status cell belongs to — Open, In progress, Blocked, Done —
+ * ignoring case, punctuation and emoji ("In-progress", "✅ Done", "ON HOLD"). Null for anything
+ * else ("Cancelled", "Phase 2"), which a status board shows in a lane of its own.
+ */
+function statusGroup(raw) {
+    const s = String(raw ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (!s)
+        return null;
+    for (const g of Object.keys(STATUS_WORDS))
+        if (STATUS_WORDS[g].includes(s))
+            return g;
+    return null;
+}
+/** A column header that names a status column. */
+const STATUS_HEADER_RE = /^\s*(status|state|stage)\s*$/i;
+/**
+ * The status column of a table, or -1: the first column headed Status / State / Stage, otherwise
+ * the first whose filled cells (at least two) are mostly recognised statuses.
+ */
+function findStatusColumn(headers, columns) {
+    const byHeader = headers.findIndex((h) => STATUS_HEADER_RE.test(h || ''));
+    if (byHeader >= 0)
+        return byHeader;
+    return columns.findIndex((col) => {
+        const filled = col.map((v) => String(v ?? '').trim()).filter(Boolean);
+        return filled.length >= 2 && filled.filter((v) => statusGroup(v) !== null).length / filled.length >= 0.6;
+    });
+}
+const LANE_LABELS = { open: 'Open', progress: 'In progress', blocked: 'Blocked', done: 'Done' };
+/**
+ * A status board's lanes, from each row's status text: Open, In progress, Blocked, then any other
+ * statuses (one lane each, labelled as first written, in order of appearance), then Done, then
+ * "No status" for empty cells. Lanes with no rows are left out; rows keep their table order.
+ */
+function boardLanes(statuses) {
+    const std = new Map();
+    ['open', 'progress', 'blocked', 'done'].forEach((g) => std.set(g, { key: g, label: LANE_LABELS[g], group: g, rows: [] }));
+    const other = new Map();
+    const none = { key: 'none', label: 'No status', group: null, rows: [] };
+    statuses.forEach((raw, i) => {
+        const text = String(raw ?? '').trim();
+        if (!text) {
+            none.rows.push(i);
+            return;
+        }
+        const g = statusGroup(text);
+        if (g) {
+            std.get(g).rows.push(i);
+            return;
+        }
+        const key = 'x:' + text.toLowerCase().replace(/\s+/g, ' ');
+        if (!other.has(key))
+            other.set(key, { key, label: text, group: null, rows: [] });
+        other.get(key).rows.push(i);
+    });
+    return [std.get('open'), std.get('progress'), std.get('blocked'), ...other.values(), std.get('done'), none].filter((l) => l.rows.length);
 }
 
 /* GENERATED:chartFormat:END */
@@ -6531,13 +6680,14 @@ function buildTableEditItems(table,cell,commit){
 // above (buildTableEditItems, which needs a `cell` for its own row/column items but not for these)
 // and the read-only display-mode menu (buildNodeTableObject) -- letting someone feature a table as
 // a chart or Cards without first having to enter edit mode at all.
-// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, then
+// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, Status board, then
 // Vertical / Horizontal under a "Timeline" heading and the chart shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
 // (a chart or Cards), size (a chart). Anything that doesn't apply is listed but disabled, with the
 // reason on hover, so the menu never changes shape.
 function currentTableDisplay(table){
   if(isTableShownAsChips(table))return 'chips';
   if(isTableShownAsProgress(table))return 'progress';
+  if(isTableShownAsBoard(table))return 'board';
   if(isTableShownAsTimeline(table))return isTimelineHorizontal(table)?'timeline:horizontal':'timeline';
   if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
   return 'table';
@@ -6548,9 +6698,9 @@ function setTableDisplay(table,mode){
   else table.removeAttribute('data-timeline-layout');
   if(mode==='chips'){ setTableChips(table,true); return; }
   if(mode==='progress'){ setTableProgress(table,true); return; }
-  if(mode==='timeline'||mode==='timeline:horizontal'){
-    table.setAttribute('data-table-display','timeline'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
-    table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); showToast('Showing as timeline'); return;
+  if(mode==='timeline'||mode==='timeline:horizontal'||mode==='board'){
+    table.setAttribute('data-table-display',mode==='board'?'board':'timeline'); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
+    table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse'); showToast(mode==='board'?'Showing as status board':'Showing as timeline'); return;
   }
   table.removeAttribute('data-table-display');
   if(mode==='table'){ table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as table'); return; }
@@ -6576,6 +6726,7 @@ function buildChartFeatureItems(table,commit){
     opt('chips','Chips',tableChipsEligible(table),'Chips need a two-column table: a short code and its description.'),
     opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
     opt('progress','Progress bars',tableProgressEligible(table),'Progress bars need a label column and a percentage (or a value and a goal) column.'),
+    opt('board','Status board',tableStatusBoardEligible(table),'A status board needs a Status column (e.g. Open, In progress, Blocked, Done) and at least two items.'),
     {heading:'Timeline'},
     opt('timeline','Vertical',tlOk,TL_REASON),
     opt('timeline:horizontal','Horizontal',tlOk&&tlRows<=TIMELINE_HORIZONTAL_MAX,tlOk?`A horizontal timeline fits up to ${TIMELINE_HORIZONTAL_MAX} milestones; this table has ${tlRows}. Use Vertical.`:TL_REASON),
@@ -6838,6 +6989,7 @@ function buildNodeTableObject(node,tIdx){
     const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
     applyTableAutoAlign(clone);
     applyTableHeatmap(clone);
+    applyTableStatusPills(clone);
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
@@ -8578,6 +8730,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   promoteHeaderRowToThead(clone);
   applyTableAutoAlign(clone);
   applyTableHeatmap(clone);
+  applyTableStatusPills(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
