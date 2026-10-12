@@ -179,6 +179,7 @@ test.describe('Pad container removal', () => {
 
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
+    await page.locator('#context-more-panel .context-submenu-trigger').hover();
     await expect(page.locator('#context-more-panel [data-action="diagram-gen"]')).toBeVisible();
     await page.keyboard.press('Escape');
 

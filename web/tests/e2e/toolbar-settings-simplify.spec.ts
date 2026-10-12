@@ -120,6 +120,7 @@ test.describe('Fixed main toolbar', () => {
     await seedDoc(page);
     await page.locator('.node-row[data-id="3"]').click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
+    await page.locator('#context-more-panel .context-submenu-trigger').hover();
     for (const action of ['above', 'below', 'child', 'duplicate', 'up', 'down', 'date-time', 'delete']) {
       await expect(page.locator(`#context-more-panel [data-action="${action}"]`)).toBeVisible();
     }
@@ -217,7 +218,12 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'focus', 'up', 'down', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'image', 'diagram-gen', 'where-used', 'tags', 'version-history', 'delete']);
+    expect(more).toEqual(['child', 'above', 'below', 'up', 'down', 'duplicate', 'focus', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'image', 'diagram-gen', 'where-used', 'tags', 'version-history', 'delete']);
+    // Add and Move are single icon rows; the add-to-node leftovers sit behind one Insert › flyout.
+    await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(2);
+    await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(3);
+    await page.locator('#context-more-panel .context-submenu-trigger').hover();
+    await expect(page.locator('#context-more-panel .context-submenu')).toBeVisible();
     expect(errors).toEqual([]);
   });
 });
