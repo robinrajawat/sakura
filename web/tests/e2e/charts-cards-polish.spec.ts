@@ -48,7 +48,10 @@ test('charts: currency values chart, round ticks with separators, title and size
   const errors = await load(page);
   const charts = page.locator('.pv-table-chart-figure');
   const revenue = charts.filter({ hasText: 'Revenue (EUR)' });
-  await expect(revenue.locator('.pv-table-chart-title')).toHaveText('Revenue (EUR)');
+  // A chart's title is drawn inside the SVG, centred above the plot.
+  await expect(revenue.locator('svg text.pv-chart-svg-title')).toHaveText('Revenue (EUR)');
+  await expect(revenue.locator('svg')).toHaveAttribute('aria-label', 'Revenue (EUR)');
+  await expect(revenue.locator('.pv-table-chart-title')).toHaveCount(0);
   const ticks = await revenue.locator('svg text[text-anchor="end"]').allTextContents();
   expect(ticks).toEqual(['0', '10,000', '20,000', '30,000']);
   // Small: drawn on a 360-wide canvas at 360px, with a negative bar below the zero line.
