@@ -22860,7 +22860,13 @@ function showSbContextMenu(x,y,items){
   const mw=rect.width||estW, mh=rect.height||estH;
   menu.style.left=Math.max(8,Math.min(x, window.innerWidth-mw-8))+'px';
   menu.style.top=Math.max(8,Math.min(y, window.innerHeight-mh-8))+'px';
-  setTimeout(()=>{ document.addEventListener('click', closeSbContextMenu, true); document.addEventListener('contextmenu', closeSbContextMenu, true); document.addEventListener('keydown', _sbContextKeyHandler, true); },0);
+  // Click/contextmenu closers wait a tick so the event that opened the menu doesn't close it; the
+  // key handler doesn't need to (no keydown opened it), and registering it at once means an Esc
+  // pressed right away closes this menu rather than reaching what's underneath (e.g. ending a
+  // table editing session).
+  document.addEventListener('keydown', _sbContextKeyHandler, true);
+  const openedMenu=menu;
+  setTimeout(()=>{ if(_sbContextEl!==openedMenu)return; document.addEventListener('click', closeSbContextMenu, true); document.addEventListener('contextmenu', closeSbContextMenu, true); },0);
 }
 function sbDocContextItems(d, folders){
   const items=[];
