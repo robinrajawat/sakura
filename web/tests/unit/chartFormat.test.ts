@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { niceAxisScale, formatChartNumber, cardsGridColumns, cardChangeDirection, cardChangeText } from '../../src/utils/chartFormat';
+import {
+  niceAxisScale, formatChartNumber, cardsGridColumns, cardChangeDirection, cardChangeText,
+  valuesLookLikeFractions, progressPercent, heatLevels
+} from '../../src/utils/chartFormat';
 
 describe('niceAxisScale', () => {
   it('uses round ticks from 0', () => {
@@ -80,5 +83,40 @@ describe('cardChangeDirection / cardChangeText', () => {
     expect(cardChangeText('▼ 3 pts')).toBe('3 pts');
     expect(cardChangeText('−5')).toBe('5');
     expect(cardChangeText('n/a')).toBe('n/a');
+  });
+});
+
+
+describe('progress bars', () => {
+  it('tells fractions from percentages', () => {
+    expect(valuesLookLikeFractions([0.25, 0.8, 1])).toBe(true);
+    expect(valuesLookLikeFractions([25, 80])).toBe(false);
+    expect(valuesLookLikeFractions([0, 1])).toBe(false);
+    expect(valuesLookLikeFractions([null])).toBe(false);
+  });
+  it('computes the fill from a percentage, a fraction or value ÷ target', () => {
+    expect(progressPercent(62, null)).toBe(62);
+    expect(progressPercent(0.62, null, true)).toBeCloseTo(62);
+    expect(progressPercent(31, 50)).toBe(62);
+    expect(progressPercent(140, null)).toBe(100);
+    expect(progressPercent(-5, null)).toBe(0);
+  });
+  it('has nothing to show without a number or with a zero target', () => {
+    expect(progressPercent(null, null)).toBeNull();
+    expect(progressPercent(5, 0)).toBeNull();
+  });
+});
+
+describe('heatLevels', () => {
+  it('spreads a column over levels 1..5', () => {
+    expect(heatLevels([0, 25, 50, 75, 100])).toEqual([1, 2, 3, 4, 5]);
+    expect(heatLevels([10, null, 30])).toEqual([1, null, 5]);
+  });
+  it('reverses for columns where less is better', () => {
+    expect(heatLevels([0, 100], true)).toEqual([5, 1]);
+  });
+  it('leaves columns with nothing to compare unshaded', () => {
+    expect(heatLevels([7, 7, 7])).toEqual([null, null, null]);
+    expect(heatLevels([7, null])).toEqual([null, null]);
   });
 });
