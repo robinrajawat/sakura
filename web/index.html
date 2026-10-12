@@ -7025,7 +7025,19 @@ function renderTableChartSvg(table){
   }
   if(!body)return null;
   const title=getTableChartTitle(table);
-  return title?`<div class="pv-table-chart-title">${esc(title)}</div>${body}`:body;
+  if(!title)return body;
+  // A chart's title is drawn inside the SVG, centred above it, so it scales and lines up with the
+  // chart at every size; Cards keep it as a heading above the grid.
+  return type==='cards'?`<div class="pv-table-chart-title">${esc(title)}</div>${body}`:chartSvgWithTitle(body,title);
+}
+// Grows the SVG's viewBox upward by a title band and draws the title centred in it.
+function chartSvgWithTitle(svg,title){
+  const m=/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/.exec(svg);
+  if(!m)return svg;
+  const W=Number(m[1]), H=Number(m[2]), band=30;
+  return svg
+    .replace(m[0],`viewBox="0 -${band} ${W} ${H+band}"`)
+    .replace('aria-label="Chart">',`aria-label="${esc(title)}"><text class="pv-chart-svg-title" x="${W/2}" y="-10" text-anchor="middle" font-size="13" font-weight="600" fill="var(--fg)" font-family="Inter,sans-serif">${esc(title.length>70?title.slice(0,69)+'\u2026':title)}</text>`);
 }
 // Reads a table into {label,value} pairs for the Cards display — a KPI-style row of stat
 // cards rather than a plotted chart. Mirrors chartSeriesFromTable's two chartable shapes
@@ -7226,7 +7238,7 @@ function renderCartesianChartSvg(series,kind,W=560,H=280){
       lx+=13+label.length*6+16;
     });
   }
-  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${axis}${marks}${catLabels}${legend}</svg>`;
+  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${axis}${marks}${catLabels}${legend}</svg>`;
 }
 // A pie/doughnut only ever shows one series — its values across categories, as slices — the
 // same reason a spreadsheet's own pie-chart tool ignores extra columns rather than trying to
@@ -7263,7 +7275,7 @@ function renderPieChartSvg(series,isDoughnut){
     ly+=20;
   });
   const hole=isDoughnut?`<circle cx="${cx}" cy="${cy}" r="${(r*0.55).toFixed(1)}" fill="var(--bg)"/>`:'';
-  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${slices}${hole}${legend}</svg>`;
+  return `<svg class="pv-table-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chart">${slices}${hole}${legend}</svg>`;
 }
 function cleanEditorHtml(editor){
   if(!editor) return '';
@@ -26673,16 +26685,12 @@ function exportPreviewAsPdf(onDone){
       }
       /* Fewer than two entries: no Contents page at all (it used to print as a blank page). */
       body.printing-preview #preview-toc.pv-toc-hidden-auto{ display:none !important; }
-      /* A short Contents list sits on the cover page, or under the title when there's no cover
-         (see placePdfTocInline), instead of taking a page of its own. */
+      /* Without a cover, a short Contents list sits under the title (see placePdfTocInline)
+         instead of taking a page of its own. */
       body.printing-preview #preview-toc.pv-toc-inline{
         page-break-before:auto !important; break-before:auto !important;
         page-break-after:auto !important; break-after:auto !important;
         padding:0 !important; margin:0 0 26px !important;
-      }
-      body.printing-preview #sakura-cover-page #preview-toc.pv-toc-inline{
-        width:100% !important; max-width:440px !important; margin:56px 0 0 !important;
-        text-align:left !important; align-self:center;
       }
       body.printing-preview #sakura-cover-page{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center;
@@ -26918,15 +26926,15 @@ function exportPreviewAsPdf(onDone){
     });
 }
 const PDF_PAGE_MARGIN_MM=20;
-// A short Contents list doesn't get a page of its own: up to this many entries print on the cover
-// page (or, without a cover, right under the document title) instead.
+// Without a cover page, a short Contents list (up to this many entries) prints right under the
+// document title instead of on a page of its own. With a cover it always keeps its own page.
 const PDF_TOC_INLINE_MAX=8;
 function placePdfTocInline(coverEl){
-  const toc=el('preview-toc'); if(!toc||toc.classList.contains('pv-toc-hidden-auto'))return false;
+  const toc=el('preview-toc'); if(coverEl||!toc||toc.classList.contains('pv-toc-hidden-auto'))return false;
   const count=toc.querySelectorAll('.pv-toc-item').length;
   if(!count||count>PDF_TOC_INLINE_MAX)return false;
   const header=el('pv-doc-header');
-  if(coverEl)coverEl.appendChild(toc); else if(header)header.after(toc); else return false;
+  if(header)header.after(toc); else return false;
   toc.classList.add('pv-toc-inline');
   return true;
 }

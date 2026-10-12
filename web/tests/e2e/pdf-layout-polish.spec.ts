@@ -6,8 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // PDF layout: a node's note prints right under it, before its tables and images; with a cover the
-// title block isn't repeated on the first body page; a short Contents list (up to 8 entries) sits
-// on the cover, or under the title without one, instead of taking a page of its own.
+// title block isn't repeated on the first body page and Contents keeps its own page; without a
+// cover, a short Contents list (up to 8 entries) sits under the title instead.
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 const DOC_ID = 'pdflayoutdoc';
@@ -75,13 +75,13 @@ async function exportPdf(page: import('@playwright/test').Page, cover: boolean) 
   return { r, errors };
 }
 
-test('with a cover: note before table and images, Contents on the cover, no repeated title', async ({ page }) => {
+test('with a cover: note before table and images, Contents on its own page, no repeated title', async ({ page }) => {
   const { r, errors } = await exportPdf(page, true);
   expect(r.printed).toBe(true);
   expect(r.order).toEqual(['note', 'table', 'images']);
-  expect(r.tocInline).toBe(true);
-  expect(r.tocParent).toBe('sakura-cover-page');
-  expect(r.pages).toEqual(['1', '1']); // both short sections fit the first page after the cover
+  expect(r.tocInline).toBe(false);
+  expect(r.tocParent).toBe('preview-main');
+  expect(r.pages).toEqual(['2', '2']); // Contents is page 1; both short sections fit page 2
   expect(r.headerHiddenRule).toBe(true);
   expect(r.homeParent).toBe('preview-main');
   expect(r.homeNext).toBe('preview-body');

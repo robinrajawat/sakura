@@ -215,8 +215,10 @@ measured even then. Covered by `tests/e2e/charts-cards-polish.spec.ts`. Merged a
 A node's note card is now built before its diagrams/tables/images; it prints whole and stays with its
 node (`.pv-inline-block` break-inside/before:avoid), and only a row holding a plain table keeps
 `break-before:avoid` (a chart row with it chained through the note and split the card). Contents with
-≤ `PDF_TOC_INLINE_MAX` (8) entries is moved onto the cover, or after the title without one
-(`placePdfTocInline`), and put back by `homePdfToc` on cleanup and before every render. Widths were
+≤ `PDF_TOC_INLINE_MAX` (8) entries is moved after the title when there is NO cover
+(`placePdfTocInline`), and put back by `homePdfToc` on cleanup and before every render. **Owner
+decision (after #498):** Contents must never sit on the cover page — with a cover it always gets its
+own page. Widths were
 checked and already consistent (all figures share the content column). Covered by
 `tests/e2e/pdf-layout-polish.spec.ts`.
 
@@ -227,7 +229,13 @@ is `data-heatmap="1"` (+ `data-heatmap-reverse="1"`) on a plain table; `applyTab
 render-time `data-heat` levels 1–5 on display clones only (outline display + PDF, like
 `applyTableAutoAlign`), never on the live editing table, so it is never stored. Reverse is table-wide,
 not per column (possible follow-up). Pure helpers `valuesLookLikeFractions`, `progressPercent`,
-`heatLevels` in `chartFormat.ts`. Covered by `tests/e2e/progress-heatmap.spec.ts`. Next agreed: timeline,
+`heatLevels` in `chartFormat.ts`. Covered by `tests/e2e/progress-heatmap.spec.ts`. Merged as #499.
+
+**Chart title placement (owner feedback after #499).** A chart's title is drawn inside the SVG
+(`chartSvgWithTitle` grows the viewBox upward and centres a `<text class="pv-chart-svg-title">`);
+Cards keep the HTML `.pv-table-chart-title` heading. Chart SVGs use
+`preserveAspectRatio="xMinYMin meet"` so a height-capped chart stays at the left edge instead of
+drifting to the centre of its full-width box. Next agreed: timeline,
 then status board (owner wants to see a mockup first).
 
 **Parked / open questions for the owner:**
