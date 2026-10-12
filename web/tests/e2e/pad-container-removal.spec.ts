@@ -69,8 +69,9 @@ test.describe('Pad container removal', () => {
     // Popovers that used to live inside #pad-panel but serve surviving features.
     await expect(page.locator('#ref-jump-popover')).toHaveCount(1);
     await expect(page.locator('#remarks-date-popover')).toHaveCount(1);
-    // "Skip review before generating" moved to its own Diagrams settings section.
-    await expect(page.locator('#settings-section-diagrams #diagram-gen-skip-review-toggle')).toHaveCount(1);
+    // "Skip review before generating" (later its own Diagrams settings section) was removed in
+    // item 14 — the review screen always opens first.
+    await expect(page.locator('#diagram-gen-skip-review-toggle')).toHaveCount(0);
 
     const flags = await page.evaluate(() => {
       // @ts-expect-error
@@ -107,7 +108,8 @@ test.describe('Pad container removal', () => {
     });
     const leftover = Object.keys(saved.prefs).filter((k) => /^pad|^zenHidePad$|^qaCompactRows$|^qaRowActionsMode$|^qaAi(Bulk|Summary|Generate|Group)/.test(k));
     expect(leftover).toEqual([]);
-    expect(saved.prefs.editorFloatingHiddenButtons).toEqual([]);
+    // The floating-buttons visibility list itself was removed in item 14, so it drops entirely.
+    expect(saved.prefs).not.toHaveProperty('editorFloatingHiddenButtons');
     expect(saved.overrides).toEqual({});
     expect(errors).toEqual([]);
   });
@@ -180,12 +182,15 @@ test.describe('Pad container removal', () => {
     await expect(page.locator('#context-more-panel [data-action="diagram-gen"]')).toBeVisible();
     await page.keyboard.press('Escape');
 
+    // The review screen always opens first (its skip setting was removed in item 14).
     await page.evaluate(async () => {
-      // @ts-expect-error -- one-click mode, so no review screen to drive here
-      diagramGenSkipReviewEnabled = true;
       // @ts-expect-error
       await runQuickAction('diagram-gen', 1);
     });
+    await expect(page.locator('#diagram-gen-review-overlay')).toHaveClass(/open/);
+    await page.locator('#diagram-gen-review-confirm').click();
+    // @ts-expect-error
+    await expect.poll(() => page.evaluate(() => diagrams.length)).toBe(1);
     const result = await page.evaluate(() => ({
       // @ts-expect-error
       count: diagrams.length,

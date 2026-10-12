@@ -39,65 +39,56 @@ async function seedOneNode(page: import('@playwright/test').Page) {
   });
 }
 
-// The right-click menu used to have two overlapping settings: "Quick row" (placement --
-// quick row vs "More") and "Menu items" (full removal from the menu entirely). Having both
-// was confusing and the second one was also the actual cause of a reported bug (a newly added
-// action missing its own checkbox there, silently making it un-removable to look for). Removed
-// entirely -- "Quick row" is now the only control. An unchecked action doesn't appear anywhere
-// in the menu at all; a checked one shows as an icon in the quick row (the first 6, by the
-// user's own drag order) or as a text item under "More" (everything checked beyond that).
-test.describe('Right-click menu has only one setting (Quick row), controlling both placement and visibility', () => {
-  test('the "Menu items" settings section no longer exists', async ({ page }) => {
+// The right-click menu used to have customization settings ("Menu items", then "Quick row") that
+// controlled which actions appeared and where. They were removed (item 14): it's now one fixed
+// menu -- a quick row of the first 6 allowed actions of CTX_QUICK_ROW, and "More" listing every
+// other node action, so nothing that could once be switched on is ever unreachable.
+test.describe('Right-click menu is fixed: quick row + "More" with everything else', () => {
+  test('no right-click menu settings remain', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    await expect(page.locator('#ctx-hidden-field')).toHaveCount(0);
-    await expect(page.locator('#ctx-hidden-header')).toHaveCount(0);
-    await expect(page.locator('[id^="ctxh-"]')).toHaveCount(0);
-  });
-
-  test('unchecking an action removes it from the menu entirely -- it does not fall back to "More"', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedOneNode(page);
-
-    // 'note' is in the default quick row.
-    await page.evaluate(() => {
-      // @ts-expect-error
-      setContextQuickActions(contextQuickActions.filter((a: string) => a !== 'note'));
-    });
-
-    const row = page.locator('.node-row[data-id="1"]');
-    await row.click({ button: 'right' });
-
-    await expect(page.locator('#context-quickbar .pv-qm-btn[data-action="note"]')).toHaveCount(0);
-    const moreToggle = page.locator('#context-more-toggle');
-    await moreToggle.click();
-    await expect(page.locator('#context-more-panel [data-action="note"]')).toHaveCount(0);
-  });
-
-  // Unlike the quick row's own 6-icon cap (which still spills checked-but-overflowing actions
-  // into More, covered below), an action that was never checked at all has no business showing
-  // up anywhere -- "More" is the overflow for checked actions, not a catalog of everything.
-  test('"More" never lists an action that isn\'t checked in Settings, even ones with no feature gate at all', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedOneNode(page);
-
-    await page.evaluate(() => {
-      // @ts-expect-error
-      setContextQuickActions(['note']);
-    });
-
-    const row = page.locator('.node-row[data-id="1"]');
-    await row.click({ button: 'right' });
-    await page.locator('#context-more-toggle').click();
-
-    // None of these are checked, and none are feature-gated -- under the old "More shows
-    // everything not in the quick row" rule they'd all still be reachable here.
-    for (const unchecked of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'delete']) {
-      await expect(page.locator(`#context-more-panel [data-action="${unchecked}"]`)).toHaveCount(0);
+    for (const sel of ['#ctx-hidden-field', '#ctx-hidden-header', '[id^="ctxh-"]', '[id^="ctxq-"]', '#rightclick-menu-open-btn', '#rightclick-menu-modal-overlay', '#ctx-quickbar-order-list']) {
+      await expect(page.locator(sel), sel).toHaveCount(0);
     }
+    const globals = await page.evaluate(() => ['contextQuickActions', 'setContextQuickActions', 'contextSortChildrenEnabled', 'CTX_QUICK_ROW_DEFAULT']
+      .filter((n) => typeof (window as unknown as Record<string, unknown>)[n] !== 'undefined'));
+    expect(globals).toEqual([]);
+  });
+
+  test('the quick row is the first 6 of the fixed set, and "More" lists every other action without duplicates', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedOneNode(page);
+
+    const row = page.locator('.node-row[data-id="1"]');
+    await row.click({ button: 'right' });
+    const quick = await page.evaluate(() =>
+      [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map((b) => (b as HTMLElement).dataset.action));
+    expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
+
+    await page.locator('#context-more-toggle').click();
+    for (const action of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'image', 'tags', 'diagram-gen', 'date-time', 'delete']) {
+      await expect(page.locator(`#context-more-panel [data-action="${action}"]`), action).toBeVisible();
+    }
+    for (const visibleAction of quick) {
+      await expect(page.locator(`#context-more-panel [data-action="${visibleAction}"]`)).toHaveCount(0);
+    }
+  });
+
+  test('when an action in the quick row is not allowed (AI off), the next one moves up into the row', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedOneNode(page);
+    // @ts-expect-error -- bare globals from index.html
+    await page.evaluate(() => setFeatureEnabled('ai', false, false));
+
+    await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
+    const quick = await page.evaluate(() =>
+      [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map((b) => (b as HTMLElement).dataset.action));
+    expect(quick).toEqual(['note', 'remark', 'qa', 'diagram', 'table', 'image']);
+    await page.locator('#context-more-toggle').click();
+    await expect(page.locator('#context-more-panel [data-action="ai-rewrite"]')).toHaveCount(0);
   });
 
   async function seedParentWithChild(page: import('@playwright/test').Page) {
@@ -118,7 +109,7 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
     });
   }
 
-  test('"Sort children" appears in "More" by default, for a node that has children', async ({ page }) => {
+  test('"Sort children" is always in "More" for a node that has children, and sorts them', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedParentWithChild(page);
@@ -128,99 +119,5 @@ test.describe('Right-click menu has only one setting (Quick row), controlling bo
     await page.locator('#context-more-toggle').click();
     await expect(page.locator('#context-sort-label')).toBeVisible();
     await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toBeVisible();
-  });
-
-  // Like every other action in this menu, "Sort children" has its own Settings checkbox
-  // (ctxq-sort-children / contextSortChildrenEnabled) and follows the same "unchecked means
-  // gone everywhere" rule -- it isn't a permanent fixture exempt from it.
-  test('unchecking "Sort children" in Settings removes the whole group from "More"', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedParentWithChild(page);
-
-    await page.evaluate(() => {
-      // @ts-expect-error
-      contextSortChildrenEnabled = false;
-    });
-
-    const row = page.locator('.node-row[data-id="1"]');
-    await row.click({ button: 'right' });
-    // With the default quick row exactly filling the 6-icon cap, Sort children is normally the
-    // only thing "More" ever has to offer for this node -- so with it off, "More" itself has
-    // nothing left to show and hides. Its toggle has no bounding box to click at that point, so
-    // dispatch the click directly (same listener the real click would reach if it were visible).
-    await page.evaluate(() => document.getElementById('context-more-toggle')?.click());
-    await expect(page.locator('#context-sort-label')).toHaveCount(0);
-    await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toHaveCount(0);
-  });
-
-  test('the settings summary just reports the quick-row count, not a "menu items shown" count', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-
-    const text = await page.evaluate(() => document.getElementById('rightclick-menu-summary-desc')?.textContent);
-    expect(text).toMatch(/^\d+ in quick row$/);
-  });
-
-  // contextQuickActions can hold more entries than are sensible to actually show as icons --
-  // checking every box in Settings is allowed, but the quick row itself caps at 6 (its own
-  // natural width before a context menu starts looking cluttered or running wider than the
-  // menu). Anything past the 6th, in the user's own drag-to-reorder sequence, falls through to
-  // "More" exactly as if it had never been checked.
-  test('only the first 6 checked quick-row actions render as icons; the rest fall through to "More"', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedOneNode(page);
-
-    const order = await page.evaluate(() => {
-      // All 8 notes/ai/structure actions that are allowed by default (no feature gates needed).
-      const nine = ['child','above','below','duplicate','up','down','ai-rewrite','note','qa'];
-      // @ts-expect-error
-      setContextQuickActions(nine);
-      // @ts-expect-error
-      return [...contextQuickActions];
-    });
-    expect(order.length).toBe(9);
-
-    const row = page.locator('.node-row[data-id="1"]');
-    await row.click({ button: 'right' });
-
-    const quickActions = await page.evaluate(() =>
-      // @ts-expect-error
-      [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map(b => b.dataset.action)
-    );
-    expect(quickActions).toEqual(order.slice(0, 6));
-
-    await page.locator('#context-more-toggle').click();
-    for (const overflowAction of order.slice(6)) {
-      await expect(page.locator(`#context-more-panel [data-action="${overflowAction}"]`)).toBeVisible();
-    }
-    // The 6 visible in the quick row must NOT also be duplicated into "More".
-    for (const visibleAction of order.slice(0, 6)) {
-      await expect(page.locator(`#context-more-panel [data-action="${visibleAction}"]`)).toHaveCount(0);
-    }
-  });
-
-  test('the default quick row is the 9-item curated set, matching "Reset" in Settings', async ({ page }) => {
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-
-    const initial = await page.evaluate(() =>
-      // @ts-expect-error
-      [...contextQuickActions]
-    );
-    expect(initial).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'image', 'tags', 'diagram-gen']);
-
-    // Mess with it, then Reset should bring back exactly the same default.
-    await page.evaluate(() => {
-      // @ts-expect-error
-      setContextQuickActions(['delete']);
-      document.getElementById('ctxq-reset-btn')?.click();
-    });
-    const afterReset = await page.evaluate(() =>
-      // @ts-expect-error
-      [...contextQuickActions]
-    );
-    expect(afterReset).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table', 'image', 'tags', 'diagram-gen']);
   });
 });

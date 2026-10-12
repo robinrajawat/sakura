@@ -92,8 +92,8 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     // Auto-rewrite status-bar toggle + its settings survive.
     await expect(page.locator('#sb-auto-rewrite-chip')).toHaveCount(1);
     await expect(page.locator('#auto-rewrite-toggle')).toHaveCount(1);
-    // "AI buttons" setting lists only surviving buttons.
-    await expect(page.locator('#ai-buttons-grid input[type="checkbox"]')).toHaveCount(2);
+    // The toolbar is fixed now (item 14), so there's no "AI buttons" customization grid at all.
+    await expect(page.locator('#ai-buttons-grid')).toHaveCount(0);
 
     const state = await page.evaluate(({ removed, kept }) => {
       const w = window as unknown as Record<string, unknown>;
@@ -101,8 +101,6 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
         removedPresent: removed.filter((n) => typeof w[n] !== 'undefined'),
         keptMissing: kept.filter((n) => typeof w[n] !== 'function'),
         // @ts-expect-error -- bare globals from index.html
-        aiTbButtons: AI_TB_BUTTONS,
-        // @ts-expect-error
         ctxOrder: CTX_ACTION_ORDER.filter((a) => a.startsWith('ai-')),
         // @ts-expect-error
         qaAiIds: QA_ACTIONS.map((a) => a.id).filter((id) => id.startsWith('ai-')),
@@ -112,7 +110,6 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     }, { removed: REMOVED_FUNCTIONS, kept: KEPT_FUNCTIONS });
     expect(state.removedPresent).toEqual([]);
     expect(state.keptMissing).toEqual([]);
-    expect(state.aiTbButtons).toEqual(['outline', 'rewrite']);
     // 'ai-rewrite-all' / 'ai-rewrite-document' (Rewrite document) were removed later, in cutdown 9b.
     expect(state.ctxOrder).toEqual(['ai-rewrite']);
     expect(state.qaAiIds).toEqual(['ai-rewrite-node', 'ai-generate-outline']);
@@ -222,14 +219,12 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
         texts: nodes.map((n) => n.text),
         // @ts-expect-error
         icons: nodes.map((n) => n.icon),
-        // @ts-expect-error
-        aiHidden: aiHiddenButtons,
-        // @ts-expect-error
-        quick: contextQuickActions,
-        // @ts-expect-error
-        hover: hoverToolbarActions,
+        // The toolbar, right-click menu and hover toolbar customizations are gone entirely
+        // (item 14), so their old saved lists aren't read into any state at all.
+        customizationGlobals: ['aiHiddenButtons', 'contextQuickActions', 'hoverToolbarActions']
+          .filter((n) => typeof (window as unknown as Record<string, unknown>)[n] !== 'undefined'),
         prefsHasQaAi: 'qaAiAnswerEnabled' in prefs,
-        prefsAiHidden: prefs.aiHiddenButtons,
+        prefsCustomizationKeys: ['aiHiddenButtons', 'contextQuickActions', 'hoverToolbarActions'].filter((k) => k in prefs),
         overrideInMemory,
         overrides: JSON.parse(localStorage.getItem('sakura-shortcut-overrides') || '{}')
       };
@@ -239,11 +234,8 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     // node fields, same as before this change) and loading it causes no error.
     expect(after.texts).toEqual(['🛒 Webshop checkout', 'Payment provider integration']);
     expect(after.icons.length).toBe(2);
-    expect(after.aiHidden).toEqual([]);
-    expect(after.prefsAiHidden).toEqual([]);
-    // 'image' ("Add image…") is appended once to menus saved before it existed (ctxImageActionAdded).
-    expect(after.quick).toEqual(['ai-rewrite', 'note', 'image']);
-    expect(after.hover).toEqual(['child']);
+    expect(after.customizationGlobals).toEqual([]);
+    expect(after.prefsCustomizationKeys).toEqual([]);
     expect(after.prefsHasQaAi).toBe(false);
     expect(after.overrideInMemory).toBeUndefined();
     expect(after.overrides.restructureText).toBeUndefined();
