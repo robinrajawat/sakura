@@ -573,6 +573,15 @@ initHubTodosState({
     sourceFile: 'src/utils/discussionStatus.ts',
     testFile: 'tests/unit/discussionStatus.test.ts',
     footer: ''
+  },
+  {
+    // Deleting rows: what goes with them (notes, tables, images, Q&A, remarks, diagrams) and the
+    // confirmation wording, split into what Undo restores and what it can't (diagrams). Counting
+    // and removing stay hand-written in index.html next to confirmDeleteIfNeeded.
+    name: 'deleteImpact',
+    sourceFile: 'src/utils/deleteImpact.ts',
+    testFile: 'tests/unit/deleteImpact.test.ts',
+    footer: ''
   }
 ];
 

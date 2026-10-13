@@ -361,10 +361,19 @@ untouched blank remark is discarded when focus leaves its line (the cause of the
 owner saw at the end of PDFs: blank remarks orphaned by deleting their row). Covered by
 `tests/e2e/remark-qa-status.spec.ts`, `tests/e2e/remark-blank-cleanup.spec.ts`.
 
-**Next, pending owner input:** (1) deleting a row should delete its linked Q&A/remarks (undo restores —
-they're in the snapshot) instead of orphaning them; to-dos just unlink; diagrams are outside the undo
-snapshot, so the owner must choose between adding them to undo or keeping today's orphaning.
-(2) Table display polish (owner screenshot): group repeated first-column values, horizontal hairlines
+**Deleting rows deletes their inline objects (owner decision, 2026-10-13).** "Ask for confirmation
+when there are inline objects, with a significant warning if the step is irreversible." Pure parts in
+`src/utils/deleteImpact.ts` (generator block `deleteImpact`); `collectDeleteImpact` counts a selection's
+notes/tables/images/Q&A/remarks/diagrams/to-dos, `removeLinkedObjectsForNodeIds` (called after
+`pushUndo()` in `deleteSelected` and `clearAllNodes`) drops their Q&A, remarks and diagrams. Q&A and
+remarks are in the undo snapshot, diagrams are not, so diagrams get a red `#sakura-modal-warning`
+callout (`sakuraConfirm({warning})`, new). To-dos are untouched (their link reconnects on undo, same
+id). `confirmDeleteIfNeeded` is silent only with no backlinks and no inline objects;
+`deleteEmptyNodeAndFocusPrev` (Backspace on an empty row) routes through it when the row holds objects.
+Older documents' existing orphans are left alone. Covered by
+`tests/e2e/delete-row-linked-objects.spec.ts`.
+
+**Next:** Table display polish (owner screenshot): group repeated first-column values, horizontal hairlines
 only, faint "–" for empty / `" "` cells — display-only, like the heat-map.
 
 **Parked / open questions for the owner:**
