@@ -339,6 +339,69 @@ a 500 ms timer when nothing is marked seen, so under load it opened later over t
 at 8 workers); now seeded via addInitScript (200/200). ~55 other specs use the same hide-after-load
 pattern; not changed here.
 
+**Filters hide a row's inline objects (2026-10-13).** Tag/marker filters used to hide only the
+`.node-row`; its note/tables/images/remarks/Q&A/diagrams are sibling elements after it, so a hidden
+row's remark showed under the previous visible row. `applyTagFilterToPane` now marks every sibling up
+to the next row (stopping at `.empty-state`) with `.filter-hidden-inline`. Covered by
+`tests/e2e/marker-filter-hides-inline-objects.spec.ts`.
+
+**Remark / Q&A status (owner decisions, 2026-10-13).** Pure parts in `src/utils/discussionStatus.ts`
+(generator block `discussionStatus`). Data: `remark.resolvedAt` (absent = open — owner: old remarks
+stay open) and `qa.wontAnswer` (owner: "Won't answer" is a way to close). A question's state is
+derived: answered once the answer has visible text (wins over wontAnswer), else won't answer if
+flagged, else open. Outline: Resolve/Reopen hover button on remarks, resolved ones fold behind a
+"✓ N resolved remarks" line (`showResolvedRemarksNodeIds`, session only); Q&A status pill updates live
+while typing an answer; row dots show open counts and go grey when all closed. Toolbar marker summary
+adds "N open" questions/remarks buttons → `setDiscussionFilter` ('openQa'/'openRemarks', ANDed with
+tag/marker filters; matched rows + dimmed ancestors, not subtrees). PDF: status pills on every
+question/remark, and an "Open items" closing page (`previewRenderOpenItems`, own Contents entry,
+`break-before:page`) behind the new pref `pdfOpenItemsSummary` (Settings → Export & copy, on by
+default). Blank remarks (text without visible content) are ignored by counts and never printed, and an
+untouched blank remark is discarded when focus leaves its line (the cause of the blank "Remarks" the
+owner saw at the end of PDFs: blank remarks orphaned by deleting their row). Covered by
+`tests/e2e/remark-qa-status.spec.ts`, `tests/e2e/remark-blank-cleanup.spec.ts`.
+
+**Deleting rows deletes their inline objects (owner decisions, 2026-10-13).** Owner rule: "if it's
+not reversible then only ask for confirmation before delete". Pure parts in `src/utils/deleteImpact.ts`
+(generator block `deleteImpact`); `collectDeleteImpact` counts a selection's notes/tables/images/Q&A/
+remarks/diagrams/to-dos, `removeLinkedObjectsForNodeIds` (after `pushUndo()` in `deleteSelected`,
+`deleteEmptyNodeAndFocusPrev` and `clearAllNodes`) drops their Q&A, remarks and diagrams. Q&A and
+remarks are in the undo snapshot; diagrams are not, so `confirmDeleteIfNeeded` asks only for diagrams
+(red `#sakura-modal-warning` callout via the new `sakuraConfirm({warning})`) or backlinks (pre-existing,
+kept); otherwise it's silent and the toast names what went. To-dos are untouched (link reconnects on
+undo, same id). Clear all nodes always confirms and lists what goes.
+**One-time orphan cleanup (owner OK'd):** `removeOrphanedLinkedObjects` runs in `loadDocFromStorage` and
+`applyTabSnapshot` and removes Q&A/remarks/diagrams whose row isn't in the document (skipped when the
+document has no rows, and for view-only shared docs), saving through the normal path. A Version
+History restore's orphans are cleaned the next time the doc opens (the toast says the "Before
+restoring" version keeps them). Covered by `tests/e2e/delete-row-linked-objects.spec.ts`.
+**Version history cap:** `REVISION_MAX_PER_DOC` 20 → 10 (owner: "5–10, 20 is way too many"); longer
+existing lists trim on the next recorded version. To-Dos history stays at 20 (not asked).
+
+**Table display polish + Group rows (owner-approved mockup, 2026-10-13).** `applyTableDisplayPolish`
+runs last on every plain-table display copy (`buildNodeTableObject` showDisplay, `buildNoteTableFigure`
+for the PDF): class `tbl-polished` (vertical/top borders transparent, not removed, so widths match the
+editing grid — `tables-pdf-bugs.spec.ts` guards that; header text style is shared by both modes for the
+same reason), blank or quote-only cells (`isBlankCellText`) emptied with class `tbl-empty` (CSS dash).
+**Group rows** (`data-group-rows="1"`, menu item after Heat-map, disabled with a reason unless the
+display is Table and the first column has a consecutive repeat — `hasGroupableRuns`): runs from
+`groupRunLengths` become one `rowspan` cell (`tbl-group-cell`, "N rows"), `tr.tbl-group-start` gets the
+heavier rule, and `splitCodeName` shows "2001 (Centrallager Vejen)" as code over name. Pure parts in
+`tableData.ts`. Covered by `tests/e2e/table-polish-group-rows.spec.ts`.
+
+**Expand/Collapse all include inline objects (owner request, 2026-10-13).** `expandAll` opens every
+note/Q&A/remark/diagram (`inlineExpand*NodeIds`) and clears `collapsedTableNodeIds`/`collapsedImageNodeIds`;
+`collapseAll` does the reverse on top of folding top-level branches. `anyFoldClosed()` (any folded branch
+or any closed inline object) now drives `toggleFoldAll`, the toolbar icon and the menu label.
+
+**Diagram previews after a restore (bug, 2026-10-13).** Revisions don't store previews, so restored
+diagrams showed "No preview yet" until opened and saved. Restore now keeps the current preview when the
+diagram's xml is unchanged, and `regenerateMissingDiagramPreviews()` (after restore, and at the end of
+`hydrateDiagramBlobsForDoc`, i.e. every document open) rebuilds any missing preview silently via
+`regenerateDiagramThumbnail(id,{silent:true})` (now returns a Promise), one at a time, once per diagram per
+session (state kept on the function — boot-time TDZ). Covered by
+`tests/e2e/fold-all-inline-and-diagram-previews.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

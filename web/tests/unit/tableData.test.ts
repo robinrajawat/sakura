@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
+  isBlankCellText,
+  groupRunLengths,
+  hasGroupableRuns,
+  splitCodeName,
   parseCellNumber,
   parseCellDate,
   compareCellText,
@@ -164,5 +168,53 @@ describe('looksLikeSpreadsheetText / gridSizeForPaste / clampGridSize', () => {
     expect(clampGridSize(0, 12)).toEqual({ rows: 1, cols: 8 });
     expect(clampGridSize(3.4, NaN)).toEqual({ rows: 3, cols: 1 });
     expect(clampGridSize(10, 10, 10)).toEqual({ rows: 10, cols: 10 });
+  });
+});
+
+
+describe('isBlankCellText', () => {
+  it('treats empty, whitespace and quote-only cells as blank', () => {
+    expect(isBlankCellText('')).toBe(true);
+    expect(isBlankCellText(null)).toBe(true);
+    expect(isBlankCellText('   ')).toBe(true);
+    expect(isBlankCellText('" "')).toBe(true);
+    expect(isBlankCellText("''")).toBe(true);
+    expect(isBlankCellText('“ ”')).toBe(true);
+    expect(isBlankCellText('0')).toBe(false);
+    expect(isBlankCellText('ZTRS')).toBe(false);
+  });
+});
+
+describe('groupRunLengths', () => {
+  it('counts runs of equal consecutive values', () => {
+    expect(groupRunLengths(['a', 'a', 'b', 'a'])).toEqual([2, 1, 1]);
+    expect(groupRunLengths([' a', 'a '])).toEqual([2]);
+    expect(groupRunLengths([])).toEqual([]);
+  });
+  it('never merges blank values', () => {
+    expect(groupRunLengths(['', '', 'x'])).toEqual([1, 1, 1]);
+  });
+  it('is case-sensitive', () => {
+    expect(groupRunLengths(['Open', 'open'])).toEqual([1, 1]);
+  });
+});
+
+describe('hasGroupableRuns', () => {
+  it('needs at least one repeat', () => {
+    expect(hasGroupableRuns(['a', 'b', 'c'])).toBe(false);
+    expect(hasGroupableRuns(['a', 'b', 'b'])).toBe(true);
+  });
+});
+
+describe('splitCodeName', () => {
+  it('splits a code with digits from its name, nested parentheses included', () => {
+    expect(splitCodeName('2001 (Centrallager Vejen)')).toEqual({ code: '2001', name: 'Centrallager Vejen' });
+    expect(splitCodeName('2501 (LC North (Kumla))')).toEqual({ code: '2501', name: 'LC North (Kumla)' });
+    expect(splitCodeName('DK-01 (Vejen)')).toEqual({ code: 'DK-01', name: 'Vejen' });
+  });
+  it('leaves ordinary text alone', () => {
+    expect(splitCodeName('Review (draft)')).toBeNull();
+    expect(splitCodeName('Centrallager Vejen')).toBeNull();
+    expect(splitCodeName('2001')).toBeNull();
   });
 });

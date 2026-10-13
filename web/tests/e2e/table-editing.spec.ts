@@ -141,7 +141,7 @@ test('the cell menu groups its actions into submenus, in dividered groups with n
   const entries = await menu.evaluate((m) => [...m.children].map((c) => c.classList.contains('sb-context-divider') ? '---' : (c.textContent || '').trim()));
   expect(entries).toEqual([
     'Insert', 'Move', 'Sort', 'Align column', 'Column type', 'Turn header row off', '---',
-    'Show as', 'Heat-map', 'Add title…', 'Chart size', '---',
+    'Show as', 'Heat-map', 'Group rows', 'Add title…', 'Chart size', '---',
     'Delete'
   ]);
   const subLabels = async (parent: string) => {

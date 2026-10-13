@@ -499,6 +499,9 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 #sakura-modal-icon{font-size:24px;margin-bottom:10px;line-height:1}
 #sakura-modal-title{font:600 14px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px}
 #sakura-modal-body{font:400 13px 'Inter',sans-serif;color:var(--muted);line-height:1.55;margin-bottom:16px;white-space:pre-line;max-height:240px;overflow-y:auto;word-break:break-word}
+/* A warning about something that can't be undone -- set by sakuraConfirm({warning}). */
+#sakura-modal-warning{display:flex;gap:8px;align-items:flex-start;margin:-6px 0 16px;padding:9px 11px;border-radius:8px;border:1px solid color-mix(in srgb,var(--sem-alert) 40%,transparent);background:color-mix(in srgb,var(--sem-alert) 10%,transparent);color:var(--sem-alert);font:600 12.5px 'Inter',sans-serif;line-height:1.45}
+#sakura-modal-warning[hidden]{display:none}
 
 #sakura-modal-input-wrap{margin-bottom:16px;display:none}
 #sakura-modal-input2-wrap{margin-bottom:16px}
@@ -1423,7 +1426,18 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-table-figure{flex:1 1 100%}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
-.pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
+.pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600;font-size:.82em;letter-spacing:.03em;text-transform:uppercase}
+/* Display polish (applyTableDisplayPolish, display copies only): horizontal rules only -- the
+   vertical ones turn transparent rather than going, and header text is styled the same in both,
+   so nothing moves on entering edit mode -- a quiet header, and a faint dash in blank cells. */
+.pv-table-figure table.tbl-polished td,.pv-table-figure table.tbl-polished th{border-left-color:transparent;border-right-color:transparent;border-top-color:transparent;border-bottom-color:color-mix(in srgb,var(--border) 70%,transparent)}
+.pv-table-figure table.tbl-polished th{background:transparent;color:var(--muted);border-bottom-color:color-mix(in srgb,var(--fg) 22%,var(--border))}
+.pv-table-figure table.tbl-polished td.tbl-empty::after{content:'\2013';color:var(--hint)}
+.pv-table-figure table.tbl-grouped tr.tbl-group-start>td{border-top:1.5px solid var(--border)}
+.pv-table-figure table.tbl-grouped td.tbl-group-cell{vertical-align:top}
+.pv-table-figure .tbl-grp-code{display:block;font-weight:600}
+.pv-table-figure .tbl-grp-name{display:block;color:var(--muted);font-size:.92em}
+.pv-table-figure .tbl-grp-count{display:block;margin-top:3px;color:var(--hint);font-size:.8em}
 /* Per-column alignment: data-align is stored on each cell of the column (cell menu -> Align column);
    data-auto-align is the render-time marker for numeric columns (applyTableAutoAlign), never saved.
    Same rules in the outline, while editing, in a chart's Edit data view and in the PDF. */
@@ -1720,6 +1734,41 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .node-remark-text-inline:focus{opacity:1;color:var(--fg)}
 .node-qa-line{max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:13px;line-height:1.4}
 .node-qa-label{flex:0 0 auto;font-weight:700;color:var(--hint);width:12px;text-align:center;user-select:none}
+/* Remark / Q&A status (open, resolved, answered, won't answer) */
+.node-remark-status-btn,.node-qa-wont-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;margin-left:6px;border:1px solid color-mix(in srgb,var(--fc-green) 35%,var(--border));border-radius:6px;background:var(--edit-bg);color:var(--fc-green);font:600 11px 'Inter',sans-serif;cursor:pointer;opacity:0;transition:opacity .12s}
+.node-qa-wont-btn{border-color:var(--border);color:var(--muted)}
+.node-remark-status-btn.is-reopen{border-color:var(--border);color:var(--muted)}
+.node-remark-line:hover .node-remark-status-btn,.node-remark-line:focus-within .node-remark-status-btn,.node-remark-status-btn:focus-visible,.node-qa-line:hover .node-qa-wont-btn,.node-qa-line:focus-within .node-qa-wont-btn,.node-qa-wont-btn:focus-visible{opacity:1}
+@media (hover:none){.node-remark-status-btn,.node-qa-wont-btn{opacity:1}}
+.node-qa-wont-btn[hidden]{display:none}
+.node-remark-line.is-resolved{opacity:.6}
+.node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
+.node-remark-resolved-toggle svg{color:var(--fc-green)}
+.node-remark-resolved-toggle:hover{background:var(--hover)}
+.node-remark-resolved-toggle .nrr-meta,.node-remark-resolved-toggle .nrr-caret{color:var(--hint)}
+.node-qa-status{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:4px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
+.node-qa-status[data-state="open"],.pv-status-pill[data-state="open"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
+.node-qa-status[data-state="answered"],.pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
+.node-qa-status[data-state="wont"],.pv-status-pill[data-state="wont"]{background:var(--chip);color:var(--muted)}
+.node-qa-line.is-closed .node-qa-question{color:var(--muted)}
+.node-note-dot.has-open-count{width:auto;min-width:18px;gap:2px;padding:0 3px;opacity:.85}
+.node-dot-count{font:700 10px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
+.node-note-dot.dot-all-closed{color:var(--hint)!important}
+.marker-sum-divider{width:1px;height:16px;margin:0 3px;background:var(--border);align-self:center}
+.disc-sum-btn{color:var(--fc-purple)}
+.pv-status-pill{display:inline-flex;align-items:center;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
+.pv-inline-qa-line .pv-status-pill{align-self:flex-start;margin-top:1px}
+#pv-open-items-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
+.pv-open-items-sub{font:400 12px 'Inter',sans-serif;color:var(--muted);margin:-10px 0 14px}
+.pv-open-items-group{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+.pv-open-items-group:last-child{border-bottom:none}
+.pv-open-items-node{font:600 13.5px 'Inter',sans-serif;color:var(--pv-heading);margin-bottom:6px}
+.pv-open-items-row{display:flex;align-items:baseline;gap:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.45;padding:2px 0 2px 2px}
+.pv-open-items-row b{font-weight:600;white-space:nowrap}
+.pv-open-items-row .pv-remark-avatar{align-self:center}
+.pv-open-items-tag{font-weight:700;color:var(--muted);width:12px;flex:0 0 auto}
+@media print{.pv-open-items-group{break-inside:avoid-page}#pv-open-items-section{break-before:page;margin-top:0;padding-top:0;border-top:none}}
+
 .node-qa-question{flex:1;min-width:0;color:var(--fg);cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
 .node-qa-answer{flex:1;min-width:0;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
 .node-diagram-line{position:relative;max-width:calc(100% - 16px);padding-top:4px;padding-bottom:8px}
@@ -1794,7 +1843,7 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .tp-chip.tp-active{background:color-mix(in srgb,var(--accent) 28%,transparent);border-color:var(--accent);color:var(--accent)}
 .tp-chip-x{font-size:11px;line-height:1;opacity:.6;margin-left:1px}
 .tp-chip.tp-active .tp-chip-x{opacity:.8}
-.node-row.tag-filtered-out{display:none}
+.node-row.tag-filtered-out,.filter-hidden-inline{display:none}
 .node-row.marker-filter-context{opacity:.5}
 .node-row.marker-filter-context:hover,.node-row.marker-filter-context.selected,.node-row.marker-filter-context.primary-selection{opacity:.8}
 .bl-link{display:inline;padding:1px 3px;margin:0 -1px;border-radius:4px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);cursor:pointer;font-weight:500;transition:background .1s}
@@ -3303,6 +3352,7 @@ body.printing-generic #gpe-overlay{
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (document title, author, word/read-time stats) before the contents page when exporting to PDF. The small wordmark above the title only appears if "PDF branding" below is also on.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding</span><span class="settings-row-desc">Shows a small letter-spaced mark on the cover page of PDF exports, and in the bottom-right corner of every page. Reads "SAKURA" by default, or your own text below. On by default — off removes it everywhere, including the cover page.</span></div><button id="preview-branding-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="PDF branding"></button></div>
               <div class="settings-list-row" id="preview-branding-text-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding text</span><span class="settings-row-desc">Replaces "SAKURA" in the mark above with your own company or team name. Leave blank to use the default. Only shown when PDF branding is on.</span></div><input id="preview-branding-text-input" type="text" class="meta-input" placeholder="SAKURA" style="width:160px;text-align:left" /></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open items summary</span><span class="settings-row-desc">Ends PDF exports with an "Open items" page: every question still open and every remark not yet resolved, grouped under the row it belongs to. Nothing is added when nothing is open. On by default.</span></div><button id="pdf-open-items-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Open items summary"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Use accent color in exports</span><span class="settings-row-desc">PDF exports (documents and the To-Dos list) use your current accent color (Settings → Appearance) for titles, checkmarks, and highlights. Off: every export uses the same fixed color instead, regardless of what the app is themed to at export time — useful if you want documents you share with others to look consistent no matter which accent you personally have set.</span></div><button id="export-accent-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Use accent color in exports"></button></div>
             </div>
           </div>
@@ -3753,6 +3803,7 @@ body.printing-generic #gpe-overlay{
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">F</span> → search this tree; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">H</span> → search and replace (Replace / Replace all, undoable)</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">C</span> / ▶ at the right end of the toolbar → collapse all (folds every top-level section)</li>
 <li>Same shortcut / same button again → expand all — it's a single toggle, the icon flips to show which one it'll do next</li>
+<li>Both cover inline objects too: Expand all opens every note, Q&amp;A, remark and diagram under its row and unfolds tables and images; Collapse all closes and folds them. While anything is still closed, the button offers Expand all</li>
 </ul>
 </div>
           <div class="help-section" data-cat="toolbar">
@@ -3773,7 +3824,7 @@ body.printing-generic #gpe-overlay{
 <li>Searching the file explorer keeps folders visible (showing only matching documents and subfolders, force-expanded) but disables drag-and-drop while a search is active; it only matches document names — for text inside documents, use the header search (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span>) instead</li>
 <li>The file explorer's filter box is hidden by default since the header search now covers the same ground; bring it back via the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> icon next to "Documents", or Settings → Bars &amp; Menus → File Explorer → Filter box</li>
 <li>Drag the thin strip at the file explorer's right edge to resize it</li>
-<li><strong>Version history</strong> (right-click a document in the file explorer, or its tab, → "Version history") keeps automatic checkpoints of a document's past content — not full version control, just lightweight snapshots. A version is captured right before it would otherwise be overwritten, but only once every ~10 minutes of active editing at most, and only if something actually changed, so it won't flood with near-duplicates from every autosave tick. Capped at the last 20 per document, oldest dropped first. "Save a version now" in that panel adds one immediately, useful right before a big rewrite. Restoring an older version is itself non-destructive — whatever was there gets saved as a version first, so restoring is never a one-way trip</li>
+<li><strong>Version history</strong> (right-click a document in the file explorer, or its tab, → "Version history") keeps automatic checkpoints of a document's past content — not full version control, just lightweight snapshots. A version is captured right before it would otherwise be overwritten, but only once every ~10 minutes of active editing at most, and only if something actually changed, so it won't flood with near-duplicates from every autosave tick. Capped at the last 10 per document, oldest dropped first. "Save a version now" in that panel adds one immediately, useful right before a big rewrite. Restoring an older version is itself non-destructive — whatever was there gets saved as a version first, so restoring is never a one-way trip</li>
 <li>If the same document is open as the active one in two tabs or windows of this browser at once (easy to do by accident — duplicating a tab, browser session restore, opening the file twice), a banner appears the moment the <em>other</em> one saves a change, since otherwise whichever tab saves last would silently win with no warning. "Reload latest" discards anything unsaved here and pulls in the other tab's version; dismissing it just clears the banner — your edits here are kept either way, and the other tab gets the same warning in reverse once you save. Documents open here only in the background (not the one on screen) refresh silently instead, since there's nothing unsaved there to protect. This only applies within one browser — a completely different browser, or a different device, never shares storage and can't collide</li>
 </ul>
 </div>
@@ -3828,9 +3879,12 @@ body.printing-generic #gpe-overlay{
 <li>Right-click any node → <strong>Add remark…</strong> (on by default in the quick-action row, same place "Add question…" lives) adds one already linked to that node and drops you straight into its text, ready to type</li>
 <li>Everything on the line is edited in place: click the name to change who said it (Enter or clicking away saves, Escape reverts), click the date to open the same calendar popover Todo's due date uses (Today/Yesterday presets, plus month navigation for anything else) — useful for logging something after the fact — and type straight into the remark text, which keeps pasted formatting. A node's remarks list newest first</li>
 <li>Right-click a remark line for Rewrite with AI (when AI is on) or Delete remark; emptying a remark's text and pressing Backspace removes it too</li>
-<li>A small person dot appears on a node with remarks — click it to show or hide them inline</li>
-<li>Deleting a node that has a remark linked to it warns about the orphaned link first, same as it already does for Diagrams</li>
-<li>Always included in PDF exports: a remark appears right after the node it's linked to</li>
+<li>A remark stays <strong>open</strong> until someone resolves it: hover it for <strong>Resolve</strong> (or right-click → Resolve remark). Resolved remarks fold behind one "✓ N resolved remarks" line under the row — click it to show them, each with a <strong>Reopen</strong> button. Remarks written before this existed start open</li>
+<li>A remark left blank (added, never typed into) is discarded as soon as you click away from it</li>
+<li>A small person dot appears on a node with remarks — click it to show or hide them inline. It shows how many are still open, and turns grey once they're all resolved</li>
+<li>Deleting a node deletes its remarks too (and its note, tables, images, Q&amp;A and diagrams); Undo brings them back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
+<li>Always included in PDF exports: a remark appears right after the node it's linked to, with an Open or Resolved pill</li>
+<li>The toolbar's marker summary shows <strong>N open</strong> for remarks and for questions — click one to show only the rows that still have open ones</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-qa">
@@ -3840,6 +3894,8 @@ body.printing-generic #gpe-overlay{
 <li>Right-click a Q&amp;A line for Delete Q&amp;A; emptying the question and pressing Backspace removes it too</li>
 <li>A small question-mark dot appears on a node with linked questions — click it to show or hide them inline. The same icon appears next to a folded node's "+N hidden" badge when a question is linked somewhere inside its collapsed subtree</li>
 <li>Always included in PDF exports: each question prints right under the node it's linked to, same as a note; questions with no linked node are appended as a final section — bold question, regular-weight answer, unanswered ones marked "No answer provided"</li>
+<li>Each question shows its status: <strong>Open</strong> until it has an answer, <strong>Answered</strong> once the answer has text, or <strong>Won't answer</strong> — hover an open question for its "Won't answer" button (or right-click it) to close it without one, and "Reopen" to take that back</li>
+<li>PDF exports end with an <strong>Open items</strong> page listing every open question and unresolved remark under its row (Settings → Data &amp; backup → Export &amp; copy → "Open items summary", on by default)</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-tables">
@@ -3852,6 +3908,8 @@ body.printing-generic #gpe-overlay{
 <li>Paste a range copied from Excel or Google Sheets into a table you're editing: it fills the cells from the caret and adds rows and columns as needed</li>
 <li>Columns of numbers right-align automatically unless you've set the column's alignment; alignment shows the same in the PDF</li>
 <li>A chart or Cards figure stays a chart when clicked — double-click it, or right-click → <strong>Edit data</strong>, to edit its table</li>
+<li>A table shown as a table displays clean: horizontal rules only, a quiet header, and a faint "–" in empty cells. Clicking in to edit shows the full grid</li>
+<li>Right-click a table → <strong>Group rows</strong> shows each repeated first-column value once, spanning its rows (a "code (name)" value shows as a bold code over its name). Display only — editing still shows every row</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-images">
@@ -4799,6 +4857,7 @@ body.printing-generic #gpe-overlay{
       <div id="sakura-modal-icon"></div>
       <div id="sakura-modal-title"></div>
       <div id="sakura-modal-body"></div>
+      <div id="sakura-modal-warning" role="alert" hidden></div>
       <div id="sakura-modal-input-wrap"><span id="sakura-modal-input-label" style="display:none"></span><input id="sakura-modal-input" type="text" autocomplete="off" spellcheck="false" /></div>
       <div id="sakura-modal-input2-wrap" style="display:none;margin-top:-8px"><span id="sakura-modal-input2-label" style="display:none"></span><input id="sakura-modal-input2" type="text" autocomplete="off" spellcheck="false" /></div>
       <div id="sakura-modal-actions"></div>
@@ -4812,7 +4871,7 @@ body.printing-generic #gpe-overlay{
       </div>
       <div id="history-modal-body" class="history-modal-body"></div>
       <div class="history-modal-footer">
-        <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 20 versions per document</span>
+        <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 10 versions per document</span>
         <button id="history-save-now-btn" class="btn">Save a version now</button>
       </div>
     </div>
@@ -4853,6 +4912,11 @@ const REMARK_AVATAR_PALETTE=[
 const DOCS_INDEX_KEY='sakura_docs_index_v1'; const DOC_KEY_PREFIX='sakura_doc_v1_'; const CURRENT_DOC_KEY='sakura_current_doc_v1';
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
+// Remark/Q&A status filter from the toolbar's open counts: null, 'openQa' or 'openRemarks'.
+let activeDiscussionFilter=null;
+// Nodes whose resolved remarks are unfolded this session (resolved remarks fold behind one line).
+let showResolvedRemarksNodeIds=new Set();
+let pdfOpenItemsSummary=true;
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
@@ -5845,6 +5909,59 @@ function applyTableHeatmap(table){
     body.forEach((r,ri)=>{ const c=r.cells[ci]; if(c&&levels[ri]!==null)c.setAttribute('data-heat',String(levels[ri])); });
   }
 }
+// "Group rows" (owner request): a plain table can show each run of repeated first-column values
+// once, as one cell spanning its rows, with a heavier rule between groups. Stored as
+// data-group-rows="1"; drawn on display copies only (outline and PDF) -- editing always shows the
+// full grid.
+function isTableGroupRows(table){ return !!(table&&table.getAttribute('data-group-rows')==='1'); }
+function setTableGroupRows(table,on){
+  if(!table)return;
+  if(on)table.setAttribute('data-group-rows','1'); else table.removeAttribute('data-group-rows');
+  showToast(on?'Grouping rows by the first column':'Rows ungrouped');
+}
+function tableGroupRowsEligible(table){
+  if(currentTableDisplay(table)!=='table')return {ok:false,reason:'Grouping applies to a table shown as a table.'};
+  const vals=tableBodyRows(table).map(r=>tableCellText(r.cells[0]));
+  if(!hasGroupableRuns(vals))return {ok:false,reason:'Nothing to group: no value repeats in consecutive rows of the first column.'};
+  return {ok:true,reason:''};
+}
+// Display polish for every plain table (owner-approved mockup): horizontal rules only, a quiet
+// header, and a faint dash in empty or quote-only cells -- then row grouping when it's on. Runs
+// last on a display copy (after alignment, heat-map, pills and chips), since grouping removes
+// cells and the other passes index cells by column.
+function applyTableDisplayPolish(table){
+  if(!table)return;
+  table.classList.add('tbl-polished');
+  tableBodyRows(table).forEach(r=>[...r.cells].forEach(c=>{
+    if(c.querySelector('img,svg,table'))return;
+    if(isBlankCellText(c.textContent)){ c.textContent=''; c.classList.add('tbl-empty'); }
+  }));
+  if(!isTableGroupRows(table))return;
+  const body=tableBodyRows(table); if(body.length<2)return;
+  const runs=groupRunLengths(body.map(r=>tableCellText(r.cells[0])));
+  if(!runs.some(n=>n>1))return;
+  table.classList.add('tbl-grouped');
+  let i=0;
+  runs.forEach((len,gi)=>{
+    const head=body[i].cells[0];
+    if(gi>0)body[i].classList.add('tbl-group-start');
+    if(head){
+      head.classList.add('tbl-group-cell');
+      if(len>1){
+        head.rowSpan=len;
+        for(let k=i+1;k<i+len;k++){ const c=body[k].cells[0]; if(c)c.remove(); }
+        if(!head.children.length){
+          const split=splitCodeName(head.textContent||'');
+          head.innerHTML=split
+            ?'<span class="tbl-grp-code">'+esc(split.code)+'</span><span class="tbl-grp-name">'+esc(split.name)+'</span>'
+            :'<span class="tbl-grp-code">'+esc((head.textContent||'').trim())+'</span>';
+        }
+        head.insertAdjacentHTML('beforeend','<span class="tbl-grp-count">'+len+' rows</span>');
+      }
+    }
+    i+=len;
+  });
+}
 function renderChipsHtml(table){
   const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1)
     .map(r=>({key:(r.cells[0]?.textContent||'').trim(),desc:(r.cells[1]?.textContent||'').trim()}))
@@ -6242,6 +6359,44 @@ function gridSizeForPaste(rows, cols, startRow, startCol, dataRows, dataCols) {
 function clampGridSize(rows, cols, max = 8) {
     const c = (n) => Math.max(1, Math.min(max, Math.round(Number.isFinite(n) ? n : 1)));
     return { rows: c(rows), cols: c(cols) };
+}
+// ── Display polish (display copies only; the stored table never changes) ──────────────────
+/** A cell that shows nothing useful: empty, whitespace, or only quotes (`" "`, `''`). */
+function isBlankCellText(raw) {
+    return String(raw ?? '').replace(/["'“”‘’\s ]/g, '') === '';
+}
+/**
+ * "Group rows": lengths of the runs of equal consecutive values (trimmed, case-sensitive), in
+ * order — ['a','a','b'] → [2, 1]. A blank value never joins a run, so empty cells stay their own
+ * rows rather than being merged into one.
+ */
+function groupRunLengths(values) {
+    const out = [];
+    let prev = null;
+    for (const raw of values) {
+        const v = String(raw ?? '').trim();
+        if (out.length && v !== '' && v === prev)
+            out[out.length - 1]++;
+        else
+            out.push(1);
+        prev = v;
+    }
+    return out;
+}
+/** True when grouping would merge anything: some value repeats in consecutive rows. */
+function hasGroupableRuns(values) {
+    return groupRunLengths(values).some(n => n > 1);
+}
+/**
+ * A grouped value shaped like "code (name)" — "2001 (Centrallager Vejen)", "2501 (LC North
+ * (Kumla))" — splits into a bold code and a muted name. The code is one short token with a
+ * digit in it, so ordinary text with a parenthesis ("Review (draft)") stays whole.
+ */
+function splitCodeName(raw) {
+    const m = /^(\S{1,16})\s+\((.+)\)$/.exec(String(raw ?? '').trim());
+    if (!m || !/\d/.test(m[1]))
+        return null;
+    return { code: m[1], name: m[2].trim() };
 }
 
 /* GENERATED:tableData:END */
@@ -6710,6 +6865,183 @@ function columnPeople(values) {
 }
 
 /* GENERATED:columnType:END */
+/* GENERATED:discussionStatus:START — DO NOT EDIT BY HAND. Source of truth: src/utils/discussionStatus.ts (tests: tests/unit/discussionStatus.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Open / closed status for remarks and Q&A (owner request: triage what still needs attention).
+ *
+ * Data (both stored on the existing objects, absent on anything older):
+ * - remark.resolvedAt: epoch ms when someone resolved it. Absent = open, so every remark from
+ *   before this existed starts open (owner decision).
+ * - qa.wontAnswer: true when a question was closed without an answer.
+ *
+ * A question's state is derived, never stored: it is answered as soon as its answer has visible
+ * text (an answer wins over wontAnswer), closed as "won't answer" when flagged, otherwise open.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
+ */
+/** True when an HTML fragment has any visible text (tags, &nbsp; and whitespace don't count). */
+function htmlHasVisibleText(html) {
+    const text = String(html ?? '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;|&#160;| /gi, ' ');
+    return text.trim().length > 0;
+}
+function qaState(item) {
+    if (htmlHasVisibleText(item.answer))
+        return 'answered';
+    if (item.wontAnswer)
+        return 'wont';
+    return 'open';
+}
+function remarkIsOpen(r) {
+    return !r.resolvedAt;
+}
+/** An open remark with text — a blank remark (added, never typed into) has nothing to triage. */
+function isOpenRemarkWithText(r) {
+    return remarkIsOpen(r) && htmlHasVisibleText(r.text);
+}
+/** A Q&A entry that is a real question (not a section heading) with question text. */
+function isCountableQuestion(item) {
+    return item.type !== 'section' && htmlHasVisibleText(item.question);
+}
+/**
+ * Open questions and remarks anchored to a node in `nodeIds`. Items not attached to any node of
+ * the document can't be reached in the outline, so they are left out of the counts.
+ */
+function countOpenItems(qaItems, remarks, nodeIds) {
+    let openQuestions = 0;
+    let openRemarks = 0;
+    for (const q of qaItems || []) {
+        if (q.sourceNodeId == null || !nodeIds.has(q.sourceNodeId))
+            continue;
+        if (isCountableQuestion(q) && qaState(q) === 'open')
+            openQuestions++;
+    }
+    for (const r of remarks || []) {
+        if (r.anchorNodeId == null || !nodeIds.has(r.anchorNodeId))
+            continue;
+        if (isOpenRemarkWithText(r))
+            openRemarks++;
+    }
+    return { openQuestions, openRemarks };
+}
+function normalizeDiscussionFilter(v) {
+    return v === 'openQa' || v === 'openRemarks' ? v : null;
+}
+/** Ids of the nodes that hold at least one open item of the filter's kind. */
+function nodesWithOpenItems(filter, qaItems, remarks) {
+    const ids = new Set();
+    if (filter === 'openQa') {
+        for (const q of qaItems || []) {
+            if (q.sourceNodeId != null && isCountableQuestion(q) && qaState(q) === 'open')
+                ids.add(q.sourceNodeId);
+        }
+    }
+    else {
+        for (const r of remarks || []) {
+            if (r.anchorNodeId != null && isOpenRemarkWithText(r))
+                ids.add(r.anchorNodeId);
+        }
+    }
+    return ids;
+}
+/**
+ * The PDF's "Open items" summary: every node (in document order) with open questions or open
+ * remarks, each with its open items. Remarks newest first, questions in stored order.
+ */
+function openItemsByNode(nodeIdsInOrder, qaItems, remarks) {
+    const out = [];
+    for (const nodeId of nodeIdsInOrder) {
+        const qs = (qaItems || []).filter(q => q.sourceNodeId === nodeId && isCountableQuestion(q) && qaState(q) === 'open');
+        const rs = (remarks || [])
+            .filter(r => r.anchorNodeId === nodeId && isOpenRemarkWithText(r))
+            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        if (qs.length || rs.length)
+            out.push({ nodeId, questions: qs, remarks: rs });
+    }
+    return out;
+}
+/** "1 open question", "2 open remarks" — the label for a count. */
+function openCountLabel(n, kind) {
+    return n + ' open ' + kind + (n === 1 ? '' : 's');
+}
+
+/* GENERATED:discussionStatus:END */
+/* GENERATED:deleteImpact:START — DO NOT EDIT BY HAND. Source of truth: src/utils/deleteImpact.ts (tests: tests/unit/deleteImpact.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * What deleting rows takes with it (owner decision: a row's linked objects go with it, with a
+ * confirmation whenever there are inline objects, and a prominent warning for anything Undo can't
+ * bring back).
+ *
+ * - Notes, tables and images live on the node, and Q&A and remarks are in the undo snapshot, so
+ *   all of those come back with Ctrl/Cmd+Z.
+ * - Diagrams live outside the undo snapshot: deleting one with its row is permanent.
+ * - To-dos are never deleted; they keep their task and only lose the link (which reconnects if
+ *   the delete is undone, since the row comes back with the same id).
+ *
+ * Owner rule: only ask before deleting when part of it can't be undone (diagrams); otherwise
+ * delete straight away and name what went in the toast.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `deleteImpact` block.
+ */
+function emptyDeleteImpact() {
+    return { notes: 0, tables: 0, images: 0, questions: 0, remarks: 0, diagrams: 0, todos: 0 };
+}
+/** Inline objects deleted along with the rows (to-dos are kept, so they don't count). */
+function inlineObjectTotal(c) {
+    return c.notes + c.tables + c.images + c.questions + c.remarks + c.diagrams;
+}
+function countPhrase(n, singular, plural = singular + 's') {
+    return n + ' ' + (n === 1 ? singular : plural);
+}
+/** "a", "a and b", "a, b and c". */
+function joinWithAnd(parts) {
+    if (parts.length <= 1)
+        return parts.join('');
+    return parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+}
+function deleteImpactText(c) {
+    const parts = [];
+    if (c.notes)
+        parts.push(countPhrase(c.notes, 'note'));
+    if (c.tables)
+        parts.push(countPhrase(c.tables, 'table'));
+    if (c.images)
+        parts.push(countPhrase(c.images, 'image'));
+    if (c.questions)
+        parts.push(countPhrase(c.questions, 'question'));
+    if (c.remarks)
+        parts.push(countPhrase(c.remarks, 'remark'));
+    const undoable = parts.length
+        ? 'This also deletes ' + joinWithAnd(parts) + '. Undo (Ctrl/Cmd+Z) brings ' + (parts.length === 1 && inlineObjectTotal(c) - c.diagrams === 1 ? 'it' : 'them') + ' back.'
+        : '';
+    const permanent = c.diagrams
+        ? countPhrase(c.diagrams, 'diagram') + ' will be permanently deleted. Undo can’t bring ' + (c.diagrams === 1 ? 'it' : 'them') + ' back.'
+        : '';
+    const todos = c.todos
+        ? countPhrase(c.todos, 'to-do') + ' linked here ' + (c.todos === 1 ? 'stays' : 'stay') + ' in To-Dos, unlinked.'
+        : '';
+    return { undoable, permanent, todos };
+}
+/** Everything deleted with the rows, for the delete toast: "1 note and 2 remarks", or ''. */
+function deletedObjectsPhrase(c) {
+    const parts = [];
+    if (c.notes)
+        parts.push(countPhrase(c.notes, 'note'));
+    if (c.tables)
+        parts.push(countPhrase(c.tables, 'table'));
+    if (c.images)
+        parts.push(countPhrase(c.images, 'image'));
+    if (c.questions)
+        parts.push(countPhrase(c.questions, 'question'));
+    if (c.remarks)
+        parts.push(countPhrase(c.remarks, 'remark'));
+    if (c.diagrams)
+        parts.push(countPhrase(c.diagrams, 'diagram'));
+    return joinWithAnd(parts);
+}
+
+/* GENERATED:deleteImpact:END */
 // ── Table structure operations (shared by every table editing session) ─────────────────────────
 // Each takes the LIVE table being edited (cells contentEditable) and returns the cell the caret
 // should land in afterwards. Header rows are the <thead> rows, or -- for a pasted table without a
@@ -7175,6 +7507,11 @@ function buildChartFeatureItems(table,commit){
       {label:'Lower is darker'+(heat&&reverse?' (current)':''), disabled:heat&&reverse, onClick:()=>{ setTableHeatmap(table,true,true); commit(); }}
     ]});
   } else items.push(na('Heat-map',cur==='table'?'Heat-map shades numbers, and this table has none.':'Heat-map shades a table shown as a table.'));
+  {
+    const grouped=isTableGroupRows(table), g=tableGroupRowsEligible(table);
+    if(g.ok||grouped&&cur==='table')items.push({label:'Group rows', icon:grouped?CHECK:undefined, title:'Show each repeated first-column value once, spanning its rows', onClick:()=>{ setTableGroupRows(table,!grouped); commit(); }});
+    else items.push(na('Group rows',g.reason));
+  }
   if(titled){
     const curTitle=getTableChartTitle(table);
     items.push({label:curTitle?'Edit title\u2026':'Add title\u2026', onClick:async()=>{
@@ -7552,6 +7889,7 @@ function buildNodeTableObject(node,tIdx){
     applyTableStatusPills(clone);
     applyTableCheckIcons(clone);
     applyTablePersonChips(clone);
+    applyTableDisplayPolish(clone);
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
@@ -9297,6 +9635,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   applyTableStatusPills(clone);
   applyTableCheckIcons(clone);
   applyTablePersonChips(clone);
+  applyTableDisplayPolish(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
@@ -10048,9 +10387,9 @@ let _sbTitleSyncCache=null;
 // document so it can't grow without bound.
 const REVISION_KEY_PREFIX='sakura_doc_rev_v1_';
 const REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes between automatic snapshots
-const REVISION_MAX_PER_DOC=20;
+const REVISION_MAX_PER_DOC=10; // owner: the last 10 is plenty (was 20); older ones are trimmed on the next save
 function revisionKey(id){ return REVISION_KEY_PREFIX+id }
-// Version history moved from localStorage to the IndexedDB overflow store — up to 20 full
+// Version history moved from localStorage to the IndexedDB overflow store — up to 10 full
 // text snapshots per document adds up fast across many documents, and unlike diagrams there's
 // no "only the heavy part" split possible here, so the whole thing moves.
 // Each read opportunistically migrates any legacy copy still sitting in localStorage from
@@ -10300,6 +10639,10 @@ function loadDocFromStorage(id){
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
     diagrams.forEach(dg=>{ if(dg&&dg.xml)dg._hydrated=true; });
     remarks=Array.isArray(d.remarks)?d.remarks:[];
+    // Q&A, remarks and diagrams attached to no row of this document (left behind by deleted rows
+    // before deleting took them along, or by the removed Pad panel's lists) can't be seen or
+    // reached anywhere: remove them once, through the normal save (owner-approved cleanup).
+    if(removeOrphanedLinkedObjects())setTimeout(()=>{ if(currentDocId===id){ markDirty(); scheduleAutoSave(); } },0);
     hydrateDiagramBlobsForDoc(id);
     return true;
   }catch(e){ } return false;
@@ -10318,7 +10661,7 @@ function loadDocFromStorage(id){
 // reaches this function at all.
 async function hydrateDiagramBlobsForDoc(id){
   const targets=diagrams.filter(dg=>dg&&!dg._hydrated);
-  if(!targets.length)return;
+  if(!targets.length){ regenerateMissingDiagramPreviews(); return; }
   let changed=false;
   for(const dgMeta of targets){
     if(currentDocId!==id)return; // switched documents mid-hydration — abandon rather than touch the new doc's state
@@ -10345,6 +10688,7 @@ async function hydrateDiagramBlobsForDoc(id){
     changed=true;
   }
   if(changed&&currentDocId===id){ render(); }
+  if(currentDocId===id)regenerateMissingDiagramPreviews();
 }
 // Re-attempts a single diagram's read after hydrateDiagramBlobsForDoc's own retries above already
 // gave up on it — called from the "Retry" state openDiagramEditor shows instead of silently
@@ -10415,6 +10759,8 @@ function applyTabSnapshot(tab){
   remarks=Array.isArray(tab.remarks)?tab.remarks:[];
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
+  // Same one-time orphan cleanup as loadDocFromStorage (opening a tab doesn't go through it).
+  if(removeOrphanedLinkedObjects()){ markDirty(); scheduleAutoSave(); }
   hydrateDiagramBlobsForDoc(tab.docId);
   ensureSelection(); render(); updateDirtyIndicator();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
@@ -10970,7 +11316,7 @@ async function renderVersionHistoryList(){
     }
     return;
   }
-  if(footerHint)footerHint.textContent='Keeps the last 20 versions per document';
+  if(footerHint)footerHint.textContent='Keeps the last '+REVISION_MAX_PER_DOC+' versions per document';
   if(saveNowBtn)saveNowBtn.style.display='';
   const entry=loadDocsIndex().find(d=>d.id===docId);
   if(nameEl)nameEl.textContent=(docId===currentDocId?el('header-title')?.value:entry?.title)||entry?.title||'Untitled';
@@ -11011,7 +11357,7 @@ function describeOrphanedLinksAfterRestore(nodeList,diagramList,remarkList){
   const parts=[];
   if(orphanedDiagrams)parts.push(orphanedDiagrams+' diagram'+(orphanedDiagrams===1?'':'s'));
   if(orphanedRemarks)parts.push(orphanedRemarks+' remark'+(orphanedRemarks===1?'':'s'));
-  return ' — '+parts.join(', ')+' no longer linked to a node (see the Diagrams/Remarks tab to re-anchor)';
+  return ' — '+parts.join(', ')+' no longer linked to a node will be removed (the "Before restoring" version keeps them)';
 }
 async function restoreDocRevision(docId,ts){
   const revisions=await loadDocRevisions(docId);
@@ -11023,15 +11369,17 @@ async function restoreDocRevision(docId,ts){
     recordDocRevision(docId,{nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
-      // Revision diagrams never include their exported preview image (see recordDocRevision)
-      // — restored ones show the placeholder icon until reopened and saved once in draw.io,
-      // which regenerates it automatically. Older revisions recorded before this existed have
+      // Revision diagrams never include their exported preview image (see recordDocRevision);
+      // see below for how restored ones get theirs back. Older revisions recorded before this existed have
       // no diagrams field at all; leave the current ones alone in that case rather than wipe them.
       // _hydrated:true is essential here, not cosmetic — these objects carry real xml straight
       // from the revision, but without the flag saveToStorage's hydration gate (see there) would
       // treat them as not-yet-loaded and silently never write their blob to the overflow store,
       // losing the restored diagram's content the next time the page refreshes.
-      diagrams=rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[],_hydrated:true}));
+      // A restored diagram whose content is unchanged keeps its current preview; the rest are
+      // rebuilt in the background (regenerateMissingDiagramPreviews, after the render below).
+      const curById=new Map(diagrams.map(d=>[d.id,d]));
+      diagrams=rev.diagrams.map(d=>{ const cur=curById.get(d.id); const same=cur&&cur.xml&&cur.xml===d.xml&&cur.previewSvg; return {...d,previewSvg:same?cur.previewSvg:'',pageSvgs:same&&Array.isArray(cur.pageSvgs)?cur.pageSvgs:[],_hydrated:true}; });
     }
     if(Array.isArray(rev.qa)){
       qaItems=rev.qa.map(q=>({...q}));
@@ -11042,6 +11390,7 @@ async function restoreDocRevision(docId,ts){
     // "explicitly had no status at that point in time".
     if('docStatus' in rev)setDocStatus(rev.docStatus||'',false);
     markDirty(); ensureSelection(); render(); scheduleAutoSave(true);
+    regenerateMissingDiagramPreviews();
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(nodes,diagrams,remarks);
   } else {
     let prevQa=[]; let prevDiagramsCurrent=[]; let prevDocStatusCurrent=''; let prevRemarksCurrent=[];
@@ -11337,15 +11686,16 @@ function diagramIsOrphaned(d){
 // editor piggybacks on every save. Never touches the live/visible editor or posts an `xml`
 // override into an already-open session, so it can't hit the corruption path documented on the
 // 'save' handler above — this is a fresh, throwaway frame that's torn down right after.
-function regenerateDiagramThumbnail(id){
-  const d=findDiagram(id); if(!d)return;
-  if(!d.xml){ showToast('Nothing to regenerate yet — this diagram has no content'); return; }
+function regenerateDiagramThumbnail(id,{silent=false}={}){
+  return new Promise(resolve=>{
+  const d=findDiagram(id); if(!d){ resolve(); return; }
+  if(!d.xml){ if(!silent)showToast('Nothing to regenerate yet — this diagram has no content'); resolve(); return; }
   const iframe=document.createElement('iframe');
   iframe.style.cssText='position:fixed;left:-9999px;top:-9999px;width:800px;height:600px;border:0;visibility:hidden';
   iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1';
   document.body.appendChild(iframe);
   let done=false;
-  const cleanup=()=>{ if(done)return; done=true; window.removeEventListener('message',handler); iframe.remove(); };
+  const cleanup=()=>{ if(done)return; done=true; window.removeEventListener('message',handler); iframe.remove(); resolve(); };
   const handler=e=>{
     if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
     let msg; try{ msg=typeof e.data==='string'?JSON.parse(e.data):e.data; }catch(err){ return; }
@@ -11354,12 +11704,28 @@ function regenerateDiagramThumbnail(id){
       iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*');
       setTimeout(()=>{ if(!done&&iframe.contentWindow)iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*'); },400);
     } else if(msg.event==='export'){
-      if(msg.data){ d.previewSvg=msg.data; d.pageSvgs=[{name:'',svg:msg.data}]; markDirty(); scheduleAutoSave(); render(); showToast('Thumbnail updated'); }
+      if(msg.data){ d.previewSvg=msg.data; d.pageSvgs=[{name:'',svg:msg.data}]; markDirty(); scheduleAutoSave(); render(); if(!silent)showToast('Thumbnail updated'); }
       cleanup();
     }
   };
   window.addEventListener('message',handler);
   setTimeout(cleanup,8000); // safety timeout so a stuck/unresponsive frame doesn't leak forever
+  });
+}
+// A diagram with content but no preview image -- after a Version History restore (revisions don't
+// store previews) or anything else that lost it -- used to show "No preview yet" until it was
+// opened and saved. Now its preview is rebuilt in the background, quietly and one diagram at a
+// time (each in its own hidden draw.io frame), at most once per diagram per session. State lives on
+// the function, not in top-level consts: document loading can call this during boot, before a
+// declaration this far down the script would be initialised.
+function regenerateMissingDiagramPreviews(){
+  const self=regenerateMissingDiagramPreviews;
+  if(!self.tried){ self.tried=new Set(); self.queue=Promise.resolve(); }
+  (diagrams||[]).forEach(d=>{
+    if(!d||!d.xml||d.previewSvg||self.tried.has(d.id))return;
+    self.tried.add(d.id);
+    self.queue=self.queue.then(()=>{ const live=findDiagram(d.id); if(live&&live.xml&&!live.previewSvg)return regenerateDiagramThumbnail(d.id,{silent:true}); });
+  });
 }
 
 function createDiagram(){
@@ -11909,7 +12275,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,pdfOpenItemsSummary,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -11932,7 +12298,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; pdfOpenItemsSummary=d.pdfOpenItemsSummary===undefined?true:!!d.pdfOpenItemsSummary; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -12105,6 +12471,59 @@ function setGreetingDisplayName(name,persist=true){greetingDisplayName=String(na
 function getGreetingTimePrefix(){const h=new Date().getHours(); if(h<5)return 'Good night'; if(h<12)return 'Good morning'; if(h<17)return 'Good afternoon'; if(h<21)return 'Good evening'; return 'Good night'}
 function getGreetingName(){if(greetingDisplayName)return greetingDisplayName; if(currentUser&&currentUser.displayName){const first=currentUser.displayName.trim().split(/\s+/)[0]; if(first)return first} return ''}
 
+// What deleting these rows takes with it -- see src/utils/deleteImpact.ts for which parts Undo
+// restores. Blank remarks and empty Q&A rows are removed too but not counted (nothing to lose).
+function collectDeleteImpact(nodeIds){
+  const ids=new Set(nodeIds); const c=emptyDeleteImpact();
+  nodes.forEach(n=>{ if(!ids.has(n.id))return;
+    if(htmlHasVisibleText(n.note))c.notes++;
+    if(Array.isArray(n.tables))c.tables+=n.tables.length;
+    if(Array.isArray(n.images))c.images+=n.images.length;
+    c.todos+=todoRefsForNode(n.id).length;
+  });
+  (qaItems||[]).forEach(q=>{ if(ids.has(q.sourceNodeId)&&!qaIsSection(q)&&(htmlHasVisibleText(q.question)||htmlHasVisibleText(q.answer)))c.questions++; });
+  (remarks||[]).forEach(r=>{ if(ids.has(r.anchorNodeId)&&htmlHasVisibleText(r.text))c.remarks++; });
+  (diagrams||[]).forEach(d=>{ if(ids.has(d.anchorNodeId))c.diagrams++; });
+  return c;
+}
+// Deleting rows deletes their Q&A, remarks and diagrams too (owner decision), instead of leaving
+// them orphaned and invisible. Call after pushUndo(): Q&A and remarks are in the undo snapshot, so
+// Undo restores them with the rows. Diagrams aren't, so they're gone for good (the confirmation
+// says so); their stored blob is cleaned up shortly after. To-dos are left alone -- they keep
+// their task, and their link reconnects if the delete is undone (the row returns with its id).
+function removeLinkedObjectsForNodeIds(nodeIds){
+  const ids=new Set(nodeIds);
+  if(Array.isArray(qaItems))qaItems=qaItems.filter(q=>!ids.has(q.sourceNodeId));
+  if(Array.isArray(remarks))remarks=remarks.filter(r=>!ids.has(r.anchorNodeId));
+  if(Array.isArray(diagrams)){
+    const gone=diagrams.filter(d=>ids.has(d.anchorNodeId)).map(d=>d.id);
+    if(gone.length){
+      diagrams=diagrams.filter(d=>!ids.has(d.anchorNodeId));
+      setTimeout(()=>{ gone.forEach(id=>{ if(diagrams.some(d=>d.id===id))return; idbDelete('diagblob:'+currentDocId+':'+id).catch(()=>{}); delete _diagramBlobSyncCache[id]; }); },8000);
+    }
+  }
+}
+// Removes Q&A, remarks and diagrams whose row isn't in `nodes` (or that never had one). Skipped for
+// a document with no rows at all, so a failed or partial load can never wipe them, and for view-only
+// shared documents. Returns how many went.
+function removeOrphanedLinkedObjects(){
+  if(!nodes.length)return 0;
+  // Never on a document shared with you view-only: nothing could be saved, and the attempt warns.
+  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc())return 0;
+  const ids=new Set(nodes.map(n=>n.id));
+  let removed=0;
+  if(Array.isArray(qaItems)){ const keep=qaItems.filter(q=>ids.has(q.sourceNodeId)); removed+=qaItems.length-keep.length; qaItems=keep; }
+  if(Array.isArray(remarks)){ const keep=remarks.filter(r=>ids.has(r.anchorNodeId)); removed+=remarks.length-keep.length; remarks=keep; }
+  if(Array.isArray(diagrams)){
+    const gone=diagrams.filter(d=>!ids.has(d.anchorNodeId)).map(d=>d.id);
+    if(gone.length){
+      removed+=gone.length; diagrams=diagrams.filter(d=>ids.has(d.anchorNodeId));
+      const docId=currentDocId;
+      setTimeout(()=>{ gone.forEach(gid=>{ if(diagrams.some(d=>d.id===gid))return; idbDelete('diagblob:'+docId+':'+gid).catch(()=>{}); delete _diagramBlobSyncCache[gid]; }); },8000);
+    }
+  }
+  return removed;
+}
 async function confirmDeleteIfNeeded(){
   const count=getDeleteImpactCount(); if(!count)return true;
   const plural=count!==1;
@@ -12116,21 +12535,18 @@ async function confirmDeleteIfNeeded(){
   const extCount=referrers.length;
   const intCount=internalRefs.length;
   const blWarning=extCount?`\n\n${extCount} node${extCount===1?'':'s'} link to this — the [[reference${extCount===1?'':'s'}]] will be removed from ${extCount===1?'that node':'those nodes'}.`:(intCount?`\n\nThis subtree contains ${intCount} internal [[backlink${intCount===1?'':'s'}]] that will be lost.`:'');
-  // Same idea, for everything else that can point at a node — Diagrams,
-  // To-Dos, Q&A, Remarks. Unlike backlinks these don't get deleted outright; they just become
-  // unlinked (same "missing" state already shown when a link's target no longer exists), but
-  // that's still worth knowing about before it happens rather than discovering it afterward.
-  const linked=collectLinkedContentForNodeIds(roots);
-  const linkedParts=linkedContentSummaryParts(linked);
-  const linkedWarning=linkedParts.length?`\n\n${joinSummaryParts(linkedParts)} ${linkedParts.length===1&&linkedContentTotalCount(linked)===1?'is':'are'} linked here and will become unlinked.`:'';
+  // Inline objects (notes, tables, images, Q&A, remarks, diagrams) are deleted with the rows.
+  // Owner rule: only ask when part of the delete can't be undone -- diagrams, which live outside
+  // the undo snapshot -- with a prominent warning; the dialog then also says what Undo restores.
+  const impact=collectDeleteImpact(roots);
+  const impactText=deleteImpactText(impact);
+  const linkedWarning=[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('');
   // Plain "are you sure, you can undo" case is gone entirely (Category A of the popup audit —
   // Ctrl+Z / the delete toast already cover it). What's left here is different in kind: a
-  // warning that OTHER content elsewhere (backlinks, Diagrams/To-Dos/Q&A/Remarks
-  // anchors) will lose its link target — something the person could easily not notice
-  // at the delete site itself, unlike "this thing is gone but Undo brings it back." That warning
-  // is always a modal; only the no-impact case is always silent.
-  if(!extCount&&!intCount&&!linkedParts.length)return true;
-  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?\n${blWarning}${linkedWarning}`,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+  // warning that OTHER rows will lose a [[backlink]], or that diagrams will be deleted for good.
+  // Everything else is silent (the delete toast names what went; Undo restores it).
+  if(!extCount&&!intCount&&!impact.diagrams)return true;
+  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?${blWarning}${linkedWarning}`,warning:impactText.permanent,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
 }
 /* GENERATED:formatRelativeTime:START — DO NOT EDIT BY HAND. Source of truth: src/utils/formatRelativeTime.ts (tests: tests/unit/formatRelativeTime.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -14851,13 +15267,43 @@ function stopRealtimeSync(){
 
 function markDirty(){ensureDocumentForEditing(); dirty=true; updateDirtyIndicator(); scheduleAutoSave()} function resetDirty(){dirty=false; updateDirtyIndicator()}
 function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'; const strip=el('doc-tab-strip'); const activeRow=strip?strip.querySelector('.doc-tab.active'):null; if(activeRow)activeRow.classList.toggle('is-dirty',dirty)}
-function collapseAll(){if(!nodes.length)return; collapsedIds.clear(); nodes.forEach((n,i)=>{if((n.depth||0)===0&&nodeHasChildren(nodes,i))collapsedIds.add(n.id)}); scheduleAutoSave(); render(); showToast('All collapsed')}
-function expandAll(){if(!collapsedIds.size)return; collapsedIds.clear(); scheduleAutoSave(); render(); showToast('All expanded')}
+// Expand all / Collapse all cover inline objects too (owner request): every note, Q&A, remark and
+// diagram opens or closes under its row, and tables and images unfold or fold, along with the
+// branches themselves.
+function inlineObjectNodeIds(){
+  const has=(list,key)=>new Set((list||[]).map(x=>x&&x[key]).filter(id=>id!=null));
+  return {
+    notes:new Set(nodes.filter(n=>htmlHasVisibleText(n.note)).map(n=>n.id)),
+    qa:new Set((qaItems||[]).filter(q=>q&&!qaIsSection(q)&&q.sourceNodeId!=null).map(q=>q.sourceNodeId)),
+    remarks:has(remarks,'anchorNodeId'),
+    diagrams:has(diagrams,'anchorNodeId'),
+    tables:new Set(nodes.filter(n=>Array.isArray(n.tables)&&n.tables.length).map(n=>n.id)),
+    images:new Set(nodes.filter(n=>Array.isArray(n.images)&&n.images.length).map(n=>n.id))
+  };
+}
+// Anything still closed: a folded branch, or an inline object not showing under its row.
+function anyFoldClosed(){
+  if(collapsedIds.size>0)return true;
+  const o=inlineObjectNodeIds();
+  const closed=(ids,openSet)=>[...ids].some(id=>!openSet.has(id));
+  return closed(o.notes,inlineExpandNoteNodeIds)||closed(o.qa,inlineExpandQaNodeIds)||closed(o.remarks,inlineExpandRemarksNodeIds)||closed(o.diagrams,inlineExpandDiagramNodeIds)
+    ||[...o.tables].some(id=>collapsedTableNodeIds.has(id))||[...o.images].some(id=>collapsedImageNodeIds.has(id));
+}
+function collapseAll(){if(!nodes.length)return; collapsedIds.clear(); nodes.forEach((n,i)=>{if((n.depth||0)===0&&nodeHasChildren(nodes,i))collapsedIds.add(n.id)});
+  const o=inlineObjectNodeIds();
+  inlineExpandNoteNodeIds.clear(); inlineExpandQaNodeIds.clear(); inlineExpandRemarksNodeIds.clear(); inlineExpandDiagramNodeIds.clear(); showResolvedRemarksNodeIds.clear();
+  o.tables.forEach(id=>collapsedTableNodeIds.add(id)); o.images.forEach(id=>collapsedImageNodeIds.add(id));
+  scheduleAutoSave(); render(); showToast('All collapsed')}
+function expandAll(){collapsedIds.clear();
+  const o=inlineObjectNodeIds();
+  o.notes.forEach(id=>inlineExpandNoteNodeIds.add(id)); o.qa.forEach(id=>inlineExpandQaNodeIds.add(id)); o.remarks.forEach(id=>inlineExpandRemarksNodeIds.add(id)); o.diagrams.forEach(id=>inlineExpandDiagramNodeIds.add(id));
+  collapsedTableNodeIds.clear(); collapsedImageNodeIds.clear();
+  scheduleAutoSave(); render(); showToast('All expanded')}
 // Single toggle for the toolbar's one fold/unfold button (previously two separate buttons) —
 // state is just "is anything collapsed right now", no depth number involved: something
 // collapsed means the action is to expand it all back out, nothing collapsed means the
 // action is to fold everything down to the top level.
-function toggleFoldAll(){ if(collapsedIds.size>0)expandAll(); else collapseAll(); }
+function toggleFoldAll(){ if(anyFoldClosed())expandAll(); else collapseAll(); }
 function hasMeaningfulContent(){return nodes.some(n=>String(n.text||'').trim())||nodes.length>1}
 // Which rail category is currently shown, per panel. Search (below) temporarily overrides
 // this — while a query is active every category is searched at once, and clearing the query
@@ -16727,7 +17173,7 @@ function getSelectionRootIndexes(){return computeSelectionRootIndexes(nodes,getS
 function getDeleteImpactCount(){if(selectAllMode)return nodes.length; const roots=getSelectionRootIndexes(); let total=0; for(const idx of roots) total+=getSubtreeEnd(nodes,idx)-idx; return total}
 /* === Sakura Modal Engine === */
 let _modalResolve=null;
-function _openModal({icon='',title='',body='',inputValue=null,inputLabel='',inputPlaceholder='',inputValue2=null,inputLabel2='',inputPlaceholder2='',buttons=[],iconClass=''}){
+function _openModal({icon='',title='',body='',warning='',inputValue=null,inputLabel='',inputPlaceholder='',inputValue2=null,inputLabel2='',inputPlaceholder2='',buttons=[],iconClass=''}){
   return new Promise(resolve=>{
     _modalResolve=resolve;
     const overlay=el('sakura-modal-overlay');
@@ -16736,6 +17182,7 @@ function _openModal({icon='',title='',body='',inputValue=null,inputLabel='',inpu
     el('sakura-modal-icon').className=iconClass;
     el('sakura-modal-title').textContent=title;
     el('sakura-modal-body').textContent=body;
+    const warnEl=el('sakura-modal-warning'); if(warnEl){ warnEl.textContent=warning||''; warnEl.hidden=!warning; }
     const inputWrap=el('sakura-modal-input-wrap');
     const input=el('sakura-modal-input');
     const inputLabelEl=el('sakura-modal-input-label');
@@ -16817,8 +17264,8 @@ function onOverlayBackdropClick(overlay,closeFn){
   overlay.addEventListener('click',e=>{ if(e.target===overlay&&mouseDownOnBackdrop)closeFn(); });
 }
 
-async function sakuraConfirm({icon,title,body,confirmLabel='OK',confirmCls='primary',cancelLabel='Cancel'}){
-  const res=await _openModal({icon,title,body,inputValue:null,buttons:[{label:cancelLabel,cls:'',key:'cancel'},{label:confirmLabel,cls:confirmCls,key:'confirm'}]});
+async function sakuraConfirm({icon,title,body,warning='',confirmLabel='OK',confirmCls='primary',cancelLabel='Cancel'}){
+  const res=await _openModal({icon,title,body,warning,inputValue:null,buttons:[{label:cancelLabel,cls:'',key:'cancel'},{label:confirmLabel,cls:confirmCls,key:'confirm'}]});
   return res.key==='confirm';
 }
 async function sakuraPrompt({icon,title,body,defaultValue='',confirmLabel='Rename',cancelLabel='Cancel'}){
@@ -17019,8 +17466,9 @@ const FOLD_ICON_COLLAPSE='<polyline points="8 6 13 12 8 18"/><polyline points="1
 const FOLD_ICON_EXPAND='<polyline points="6 8 12 13 18 8"/><polyline points="6 14 12 19 18 14"/>';
 function updateFoldToggleButton(){
   const btn=el('qb-collapse'); if(!btn)return;
-  const anyCollapsed=collapsedIds.size>0;
-  const anyFoldable=nodes.some((_,i)=>nodeHasChildren(nodes,i));
+  const anyCollapsed=anyFoldClosed();
+  const o=inlineObjectNodeIds();
+  const anyFoldable=nodes.some((_,i)=>nodeHasChildren(nodes,i))||Object.values(o).some(set=>set.size>0);
   btn.disabled=!(anyCollapsed||anyFoldable);
   const svg=btn.querySelector('svg'); if(svg)svg.innerHTML=anyCollapsed?FOLD_ICON_EXPAND:FOLD_ICON_COLLAPSE;
   const tip=anyCollapsed?'Expand all (Ctrl/Cmd+Alt+E)':'Collapse all (Ctrl/Cmd+Alt+C)';
@@ -17093,7 +17541,7 @@ function editorEmptyAreaContextItems(x,y){
   return [
     themeItem,
     {divider:true},
-    {label: collapsedIds.size>0?'Expand all':'Collapse all', onClick: async()=>{ toggleFoldAll(); }},
+    {label: anyFoldClosed()?'Expand all':'Collapse all', onClick: async()=>{ toggleFoldAll(); }},
     {divider:true},
     {label:'More…', onClick: async()=>{ showSbContextMenu(x,y,moreItems); }}
   ];
@@ -18200,7 +18648,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':''); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG; rdot.dataset.tip=nodeRemarks.length>1?'This node has '+nodeRemarks.length+' remarks — click to expand inline':'This node has a remark from '+esc(nodeRemarks[0].person||'someone')+' — click to expand inline'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=qaRefsForNode(node.id); if(qRefs.length){const qdot=document.createElement('span'); qdot.className='node-note-dot node-qa-dot'+(inlineExpandQaNodeIds.has(node.id)?' pv-dot-open':''); qdot.style.color='var(--fc-purple)'; qdot.innerHTML=qaDotIconSvg(11); qdot.dataset.tip=qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions — click to expand inline':'Linked to a Q&A question — click to expand inline'; qdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandQaNodeIds.has(node.id))inlineExpandQaNodeIds.delete(node.id); else inlineExpandQaNodeIds.add(node.id); render();}); row.appendChild(qdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a remark'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const openR=nodeRemarks.filter(r=>remarkIsOpen(r)).length; rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':' dot-all-closed'); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip=(nodeRemarks.length>1?'This node has '+nodeRemarks.length+' remarks':'This node has a remark from '+esc(nodeRemarks[0].person||'someone'))+(openR?' ('+openCountLabel(openR,'remark')+')':' (all resolved)')+' — click to expand inline'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=qaRefsForNode(node.id); if(qRefs.length){const qdot=document.createElement('span'); const openQ=qRefs.filter(q=>isCountableQuestion(q)&&qaState(q)==='open').length; qdot.className='node-note-dot node-qa-dot'+(inlineExpandQaNodeIds.has(node.id)?' pv-dot-open':'')+(openQ?' has-open-count':' dot-all-closed'); qdot.style.color='var(--fc-purple)'; qdot.innerHTML=qaDotIconSvg(11)+(openQ?'<span class="node-dot-count">'+openQ+'</span>':''); qdot.dataset.tip=(qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions':'Linked to a Q&A question')+(openQ?' ('+openCountLabel(openQ,'question')+')':' (none open)')+' — click to expand inline'; qdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandQaNodeIds.has(node.id))inlineExpandQaNodeIds.delete(node.id); else inlineExpandQaNodeIds.add(node.id); render();}); row.appendChild(qdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a remark'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -18518,9 +18966,16 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // from before that field existed falls back to 0, sorting after every timestamped one but
     // keeping its relative position among other untimestamped remarks (Array.sort is stable).
     const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    nodeRemarks.forEach(r=>{
+    // Open remarks show in full; resolved ones fold behind one quiet line (click to unfold), and
+    // the "open remarks" filter leaves them out altogether.
+    const openRemarks=nodeRemarks.filter(r=>remarkIsOpen(r)); const resolvedRemarks=nodeRemarks.filter(r=>!remarkIsOpen(r));
+    const resolvedShown=showResolvedRemarksNodeIds.has(node.id)&&activeDiscussionFilter!=='openRemarks';
+    const remarkGuides=lineEl=>{ if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; lineEl.appendChild(vg) } }); if(hasChildren){ const rDepth2=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(rDepth2*32+0*editorScale+9)+'px'; lineEl.appendChild(vgOwn) } } };
+    const setRemarkResolved=(r,resolved)=>{ pushUndo(); if(resolved)r.resolvedAt=Date.now(); else delete r.resolvedAt; markDirty(); scheduleAutoSave(); render(); };
+    const renderRemarkLine=r=>{
+      const isResolved=!remarkIsOpen(r);
       const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
-      const rLine=document.createElement('div'); rLine.className='node-remark-line';
+      const rLine=document.createElement('div'); rLine.className='node-remark-line'+(isResolved?' is-resolved':'');
       rLine.style.paddingLeft=hideTreeLines?(rDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
       const c=remarkAuthorColor(r.person);
       const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
@@ -18531,7 +18986,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       personInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.textContent=r.person||''; personInput.blur(); } });
       personInput.addEventListener('blur',()=>{ const val=(personInput.textContent||'').trim(); personInput.textContent=val; if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
       const dateSpan=document.createElement('span'); dateSpan.className='node-remark-date-inline'; dateSpan.textContent=formatRemarkDateDisplay(r.date); dateSpan.dataset.tip='Click to change the date';
-      dateSpan.addEventListener('mousedown',e=>e.stopPropagation());
+      // preventDefault keeps focus in the remark, so picking a date for a still-blank remark
+      // doesn't count as leaving it (see the blank-remark cleanup below).
+      dateSpan.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
       dateSpan.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(dateSpan,r); });
       const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
       textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
@@ -18542,14 +18999,48 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       textEl.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(textEl.textContent||'').trim(); const doDelete=()=>{ const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(textEl.textContent||'').trim())doDelete(); },0); });
       textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); });
       textEl.addEventListener('blur',()=>{ r.text=sakuraSanitizeRichHtml(textEl.innerHTML); });
-      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl);
-      rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete remark', onClick: async()=>{ pushUndo(); const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
-      if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; rLine.appendChild(vg) } }); if(hasChildren){ const rDepth2=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(rDepth2*32+0*editorScale+9)+'px'; rLine.appendChild(vgOwn) } }
+      const stBtn=document.createElement('button'); stBtn.type='button'; stBtn.className='node-remark-status-btn'+(isResolved?' is-reopen':'');
+      stBtn.innerHTML=isResolved?'Reopen':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>Resolve';
+      stBtn.dataset.tip=isResolved?'Mark this remark open again':'Mark this remark resolved — it folds away under the row';
+      stBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+      stBtn.addEventListener('click',e=>{ e.stopPropagation(); setRemarkResolved(r,!isResolved); });
+      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl); rLine.appendChild(stBtn);
+      rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; items.push({label:isResolved?'Reopen remark':'Resolve remark', onClick:()=>setRemarkResolved(r,!isResolved)}); items.push({divider:true}); if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete remark', onClick: async()=>{ pushUndo(); const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
+      // "Add remark…" creates the remark blank and focuses it; one left blank when focus moves on
+      // (not to its own name/date fields or the date picker) is discarded, so blank remarks no
+      // longer pile up in the document -- and outlive their row as blank orphans in the PDF.
+      rLine.addEventListener('focusout',()=>{ setTimeout(()=>{
+        if(htmlHasVisibleText(r.text))return;
+        if(rLine.isConnected&&rLine.contains(document.activeElement))return;
+        const pop=el('remarks-date-popover'); if(pop&&pop.offsetParent!==null&&_remarksDateTarget===r)return;
+        const ri=remarks.findIndex(x=>x.id===r.id); if(ri<0)return;
+        remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render();
+      },0); });
+      remarkGuides(rLine);
       frag.appendChild(rLine)
-    })
+    };
+    openRemarks.forEach(renderRemarkLine);
+    if(resolvedRemarks.length&&activeDiscussionFilter!=='openRemarks'){
+      const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
+      const fLine=document.createElement('div'); fLine.className='node-remark-line node-remark-resolved-line';
+      fLine.style.paddingLeft=hideTreeLines?(rDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
+      const latest=resolvedRemarks[0];
+      const fBtn=document.createElement('button'); fBtn.type='button'; fBtn.className='node-remark-resolved-toggle'; fBtn.setAttribute('aria-expanded',String(resolvedShown));
+      fBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>'
+        +'<span>'+resolvedRemarks.length+' resolved remark'+(resolvedRemarks.length===1?'':'s')+'</span>'
+        +'<span class="nrr-meta">· '+esc(latest.person||'someone')+(latest.date?', '+esc(formatRemarkDateDisplay(latest.date)):'')+'</span>'
+        +'<span class="nrr-caret" aria-hidden="true">'+(resolvedShown?'▾':'▸')+'</span>';
+      fBtn.dataset.tip=resolvedShown?'Hide resolved remarks':'Show resolved remarks';
+      fBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+      fBtn.addEventListener('click',e=>{ e.stopPropagation(); if(showResolvedRemarksNodeIds.has(node.id))showResolvedRemarksNodeIds.delete(node.id); else showResolvedRemarksNodeIds.add(node.id); render(); });
+      fLine.appendChild(fBtn); remarkGuides(fLine); frag.appendChild(fLine);
+      if(resolvedShown)resolvedRemarks.forEach(renderRemarkLine);
+    }
   }
   if(inlineExpandQaNodeIds.has(node.id)&&Array.isArray(qaItems)&&qaItems.length){
-    const nodeQaItems=qaItems.filter(it=>it.sourceNodeId===node.id&&!qaIsSection(it));
+    // The "open questions" filter shows only questions that are still open.
+    const nodeQaItems=qaItems.filter(it=>it.sourceNodeId===node.id&&!qaIsSection(it)&&(activeDiscussionFilter!=='openQa'||qaState(it)==='open'));
+    const setQaWont=(item,wont)=>{ pushUndo(); if(wont)item.wontAnswer=true; else delete item.wontAnswer; markDirty(); scheduleAutoSave(); render(); };
     nodeQaItems.forEach(item=>{
       const qDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
       const qaLine=document.createElement('div'); qaLine.className='node-qa-line'; qaLine.style.position='relative';
@@ -18563,18 +19054,26 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       qText.addEventListener('input',()=>{ item.question=qText.innerHTML; markDirty(); scheduleAutoSave(); });
       qText.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(qText.textContent||'').trim(); const doDelete=()=>{ const qi=qaItems.findIndex(x=>x.id===item.id); if(qi>=0)qaItems.splice(qi,1); markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(qText.textContent||'').trim())doDelete(); },0); });
       qText.addEventListener('blur',()=>{ item.question=sakuraSanitizeRichHtml(qText.innerHTML); });
-      const qRow=document.createElement('div'); qRow.style.display='flex'; qRow.style.gap='6px'; qRow.appendChild(qLabel); qRow.appendChild(qText);
+      // Status pill: Open / Answered / Won't answer. Typing an answer updates it live (no re-render,
+      // so the caret stays put); the hover button closes or reopens a question without an answer.
+      const qStatus=document.createElement('span'); qStatus.className='node-qa-status';
+      const qWontBtn=document.createElement('button'); qWontBtn.type='button'; qWontBtn.className='node-qa-wont-btn';
+      qWontBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+      qWontBtn.addEventListener('click',e=>{ e.stopPropagation(); setQaWont(item,qaState(item)!=='wont'); });
+      const paintQaStatus=()=>{ const st=qaState(item); qStatus.dataset.state=st; qStatus.textContent=st==='open'?'Open':(st==='answered'?'Answered':'Won\u2019t answer'); qaLine.classList.toggle('is-closed',st!=='open'); qWontBtn.hidden=st==='answered'; qWontBtn.textContent=st==='wont'?'Reopen':'Won\u2019t answer'; qWontBtn.dataset.tip=st==='wont'?'Mark this question open again':'Close this question without an answer'; };
+      const qRow=document.createElement('div'); qRow.style.display='flex'; qRow.style.gap='6px'; qRow.style.alignItems='flex-start'; qRow.appendChild(qLabel); qRow.appendChild(qText); qRow.appendChild(qStatus); qRow.appendChild(qWontBtn);
       const aLabel=document.createElement('span'); aLabel.className='node-qa-label node-qa-label-a'; aLabel.textContent='A';
       const aText=document.createElement('div'); aText.className='node-qa-answer'; aText.contentEditable='true'; aText.spellcheck=spellcheckEnabled; aText.dataset.qaId=item.id; aText.id='inline-qa-a-'+item.id;
       aText.innerHTML=sakuraSanitizeRichHtml(item.answer||''); aText.dataset.tip='Answer — click to edit inline'; aText.dataset.placeholder='No answer yet…';
       aText.addEventListener('mousedown',e=>e.stopPropagation());
       aText.addEventListener('click',e=>e.stopPropagation());
       aText.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'qaAnswer',qaId:item.id}; });
-      aText.addEventListener('input',()=>{ item.answer=aText.innerHTML; markDirty(); scheduleAutoSave(); });
+      aText.addEventListener('input',()=>{ item.answer=aText.innerHTML; markDirty(); scheduleAutoSave(); paintQaStatus(); updateMarkerSummary(); });
       aText.addEventListener('blur',()=>{ item.answer=sakuraSanitizeRichHtml(aText.innerHTML); });
       const aRow=document.createElement('div'); aRow.style.display='flex'; aRow.style.gap='6px'; aRow.style.marginTop='2px'; aRow.appendChild(aLabel); aRow.appendChild(aText);
-      qaLine.appendChild(qRow); qaLine.appendChild(aRow);
-      const qaContextMenu=e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; items.push({label:'Delete Q&A', onClick: async()=>{ pushUndo(); const qi=qaItems.findIndex(x=>x.id===item.id); if(qi>=0)qaItems.splice(qi,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); };
+      if(item.wontAnswer)aText.dataset.placeholder='Closed without an answer — type one to mark it answered';
+      qaLine.appendChild(qRow); qaLine.appendChild(aRow); paintQaStatus();
+      const qaContextMenu=e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; const st=qaState(item); if(st!=='answered'){ items.push({label:st==='wont'?'Reopen question':'Won\u2019t answer', onClick:()=>setQaWont(item,st!=='wont')}); items.push({divider:true}); } items.push({label:'Delete Q&A', onClick: async()=>{ pushUndo(); const qi=qaItems.findIndex(x=>x.id===item.id); if(qi>=0)qaItems.splice(qi,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); };
       qaLine.addEventListener('contextmenu',qaContextMenu);
       if(hideTreeLines&&depthGuideLines){ const qVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); qVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; qaLine.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(qDepth*32+0*editorScale+9)+'px'; qaLine.appendChild(vgOwn) } }
       frag.appendChild(qaLine)
@@ -19065,11 +19564,15 @@ function focusTitleAtEnd(){
 // title keeps acting as the outline's row -1 rather than the flow dead-ending here.
 function deleteEmptyNodeAndFocusPrev(id){
   const idx=getIndex(nodes,id); if(idx<0)return; if(nodeHasChildren(nodes,idx))return;
+  // An empty row can still hold a diagram, which Undo can't bring back: go through Delete's
+  // confirmation for that. Its other objects (note, remarks, Q&A…) go with it, undoably.
+  if(collectDeleteImpact([id]).diagrams){ commitEdit(); setSingleSelection(id); render(); confirmDeleteIfNeeded().then(ok=>{ if(ok){ deleteSelected(); focusPane(); } }); return; }
   const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0)return;
   const prevId=pos>0?nodes[vis[pos-1]].id:null;
   pushUndo(); markDirty();
   const deletedTexts=nodes[idx].text?[nodes[idx].text]:[]; const deletedIds=[nodes[idx].id];
   nodes.splice(idx,1);
+  removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
   rebuildParentIds();
@@ -19152,18 +19655,20 @@ function splitNodeAtCursorAndFocus(id,beforeText,afterText){
   beginEditAt(nn.id,0);
 }
 function deleteSelected(){
-  if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); render(); showToast('Cleared tree'); return}
+  if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); render(); showToast('Cleared tree'); return}
   const roots=getSelectionRootIndexes(); if(!roots.length)return;
   const count=getDeleteImpactCount();
+  const goneWith=deletedObjectsPhrase(collectDeleteImpact(roots.flatMap(i=>nodes.slice(i,getSubtreeEnd(nodes,i)).map(n=>n.id))));
   // Collect texts of nodes being deleted for backlink cleanup, and their ids so any of them
   // still sitting in the auto-rewrite queue get purged along with the nodes themselves.
   const deletedTexts=[]; const deletedIds=[];
   roots.forEach(i=>{const end=getSubtreeEnd(nodes,i); nodes.slice(i,end).forEach(n=>{ if(n.text)deletedTexts.push(n.text); deletedIds.push(n.id); });});
   pushUndo(); markDirty();
   deleteRootIndexes(nodes,roots);
+  removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
-  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`);
+  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images)); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
@@ -22071,7 +22576,7 @@ document.querySelectorAll('#accent-swatch-row .accent-swatch').forEach(btn=>{if(
 
 // Clear all nodes — reached from the open document's tab menu (right-click the active tab).
 // Undoable like any other edit, but asks first since it empties the whole document at once.
-async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all nodes',body:'Remove every node from this document?\n\nYou can undo this with Ctrl/Cmd+Z.',confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; pushUndo(); markDirty(); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane()}
+async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const allIds=nodes.map(n=>n.id); const impactText=deleteImpactText(collectDeleteImpact(allIds)); const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all nodes',body:'Remove every node from this document?'+[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('')+'\n\nYou can undo this with Ctrl/Cmd+Z.',warning:impactText.permanent,confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; pushUndo(); markDirty(); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane()}
 el('doc-tab-add-btn')?.addEventListener('click',()=>createDoc());
 el('doc-tab-overview-btn')?.addEventListener('click',e=>{ e.stopPropagation(); const menu=el('doc-tab-overview-menu'); if(menu&&menu.classList.contains('open'))closeTabOverviewMenu(); else openTabOverviewMenu() });
 el('doc-tab-overview-search')?.addEventListener('click',e=>e.stopPropagation());
@@ -26819,6 +27324,12 @@ function previewBuildNodeTree(startIdx,endIdx){
 // it: previewRenderRemarkGroup below (one or more remarks anchored to the same node, all inside
 // one shared card) or the leftover-remarks trailing section in renderPreviewBody (several
 // unrelated orphaned remarks already grouped under one "Remarks" heading).
+// Open / Resolved / Answered / Won't answer — the same pills the outline shows, for the PDF.
+function previewStatusPill(state){
+  const pill=document.createElement('span'); pill.className='pv-status-pill'; pill.dataset.state=state;
+  pill.textContent=({open:'Open',resolved:'Resolved',answered:'Answered',wont:'Won\u2019t answer'})[state]||'';
+  return pill;
+}
 function previewRenderRemarkEntry(r){
   const entry=document.createElement('div'); entry.className='pv-remark-entry';
   const text=document.createElement('div'); text.className='pv-remark-text';
@@ -26832,6 +27343,7 @@ function previewRenderRemarkEntry(r){
   meta.appendChild(bEl);
   if(r.date){ meta.appendChild(document.createTextNode(' · '+formatRemarkDateDisplay(r.date))); }
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
+  meta.appendChild(previewStatusPill(remarkIsOpen(r)?'open':'resolved'));
   entry.appendChild(meta);
   return entry;
 }
@@ -27129,7 +27641,7 @@ function renderPreviewBody(){
         // Newest first -- same reasoning as the identical sort on the live editor's own inline
         // remark rendering (see its own comment): remarks.push always appends, so unsorted array
         // order reads oldest-on-top here too.
-        const nodeRemarks=remarks.filter(rm=>rm.anchorNodeId===node.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+        const nodeRemarks=remarks.filter(rm=>rm.anchorNodeId===node.id&&htmlHasVisibleText(rm.text)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
         if(nodeRemarks.length){
           const rGroup=previewRenderRemarkGroup(nodeRemarks);
           rGroup.style.paddingLeft=inlinePad;
@@ -27239,11 +27751,11 @@ function renderPreviewBody(){
             const qLine=document.createElement('div'); qLine.className='pv-inline-qa-line';
             qLine.innerHTML='<span class="pv-inline-qa-tag pv-inline-qa-tag-q">Q</span>';
             const qEl=document.createElement('div'); qEl.className='pv-inline-qa-question'; qEl.textContent=item.question||'';
-            qLine.appendChild(qEl); rowEl.appendChild(qLine);
+            qLine.appendChild(qEl); qLine.appendChild(previewStatusPill(qaState(item))); rowEl.appendChild(qLine);
             const aTrimmed=(item.answer||'').trim();
             const aLine=document.createElement('div'); aLine.className='pv-inline-qa-line';
             aLine.innerHTML='<span class="pv-inline-qa-tag pv-inline-qa-tag-a">A</span>';
-            const aEl=document.createElement('div'); aEl.className='pv-inline-qa-answer'+(aTrimmed?'':' pv-inline-qa-unanswered'); aEl.textContent=aTrimmed||'No answer yet';
+            const aEl=document.createElement('div'); aEl.className='pv-inline-qa-answer'+(aTrimmed?'':' pv-inline-qa-unanswered'); aEl.textContent=aTrimmed||(item.wontAnswer?'Closed without an answer':'No answer yet');
             aLine.appendChild(aEl); rowEl.appendChild(aLine);
             inner.appendChild(rowEl);
             _previewQaRenderedInline.add(item.id);
@@ -27266,16 +27778,18 @@ function renderPreviewBody(){
     qaSection.appendChild(qaHeading);
     qaValidItems.forEach(item=>{
       const row=document.createElement('div'); row.className='pv-qa-row';
-      const q=document.createElement('div'); q.className='pv-qa-q'; q.textContent=item.question.trim();
+      const q=document.createElement('div'); q.className='pv-qa-q'; q.textContent=item.question.trim(); q.appendChild(previewStatusPill(qaState(item)));
       const answered=(item.answer||'').trim();
-      const a=document.createElement('div'); a.className='pv-qa-a'+(answered?'':' pv-qa-a-empty'); a.textContent=answered||'No answer provided';
+      const a=document.createElement('div'); a.className='pv-qa-a'+(answered?'':' pv-qa-a-empty'); a.textContent=answered||(item.wontAnswer?'Closed without an answer':'No answer provided');
       row.appendChild(q); row.appendChild(a);
       qaSection.appendChild(row);
     });
     doc.appendChild(qaSection);
   }
   if(Array.isArray(remarks)&&remarks.length){
-    const leftoverRemarks=remarks.filter(rm=>!_previewRemarksRenderedInline.has(rm.id));
+    // Blank remarks (an "Add remark…" never typed into, often orphaned when its row was deleted)
+    // have nothing to print.
+    const leftoverRemarks=remarks.filter(rm=>!_previewRemarksRenderedInline.has(rm.id)&&htmlHasVisibleText(rm.text));
     if(leftoverRemarks.length){
       const remarksSection=document.createElement('div'); remarksSection.id='pv-remarks-section';
       const remarksHeading=document.createElement('div'); remarksHeading.className='pv-qa-heading'; remarksHeading.textContent='Remarks';
@@ -27293,13 +27807,53 @@ function renderPreviewBody(){
       doc.appendChild(remarksSection);
     }
   }
+  const openItemsSection=pdfOpenItemsSummary?previewRenderOpenItems():null;
+  if(openItemsSection)doc.appendChild(openItemsSection);
   body.replaceChildren(doc);
   const filteredTocEntries=tocEntries.filter(e=>{
     if(e.kind==='section'&&!previewTocIncludeSections)return false;
     if(e.level>PDF_TOC_MAX_LEVEL)return false;
     return true;
   });
-  renderPreviewToc(filteredTocEntries,!!doc.querySelector('#pv-qa-section'));
+  renderPreviewToc(filteredTocEntries,!!doc.querySelector('#pv-qa-section'),!!openItemsSection);
+}
+// "Open items" — the PDF's closing summary of every question and remark still open, grouped under
+// the row each belongs to, in document order (Settings → Export & copy → "Open items summary").
+// Nothing is added when nothing is open.
+function previewRenderOpenItems(){
+  const groups=openItemsByNode(nodes.map(n=>n.id),qaItems,remarks);
+  if(!groups.length)return null;
+  const plain=html=>{ const d=document.createElement('div'); d.innerHTML=sakuraSanitizeRichHtml(html||''); return (d.textContent||'').replace(/\s+/g,' ').trim(); };
+  const sec=document.createElement('div'); sec.id='pv-open-items-section';
+  const h=document.createElement('div'); h.className='pv-qa-heading'; h.textContent='Open items'; sec.appendChild(h);
+  const nQ=groups.reduce((a,g)=>a+g.questions.length,0), nR=groups.reduce((a,g)=>a+g.remarks.length,0);
+  const sub=document.createElement('div'); sub.className='pv-open-items-sub';
+  sub.textContent=[nQ?openCountLabel(nQ,'question'):'',nR?openCountLabel(nR,'remark'):''].filter(Boolean).join(' · ');
+  sec.appendChild(sub);
+  groups.forEach(g=>{
+    const node=nodes.find(n=>n.id===g.nodeId);
+    const grp=document.createElement('div'); grp.className='pv-open-items-group';
+    const where=document.createElement('div'); where.className='pv-open-items-node';
+    where.textContent=previewSplitQuotes(stripSemanticMarkers(node?.text||'')).main||'(untitled row)';
+    grp.appendChild(where);
+    g.questions.forEach(q=>{
+      const row=document.createElement('div'); row.className='pv-open-items-row';
+      row.innerHTML='<span class="pv-open-items-tag">Q</span>';
+      const t=document.createElement('span'); t.textContent=plain(q.question); row.appendChild(t);
+      grp.appendChild(row);
+    });
+    g.remarks.forEach(r=>{
+      const row=document.createElement('div'); row.className='pv-open-items-row';
+      const c=remarkAuthorColor(r.person);
+      const av=document.createElement('span'); av.className='pv-remark-avatar'; av.style.background=c.avatarBg; av.textContent=remarkAuthorInitials(r.person);
+      const who=document.createElement('b'); who.textContent=(r.person||'(unnamed)')+(r.date?' · '+formatRemarkDateDisplay(r.date):'');
+      const t=document.createElement('span'); t.textContent=plain(r.text);
+      row.appendChild(av); row.appendChild(who); row.appendChild(t);
+      grp.appendChild(row);
+    });
+    sec.appendChild(grp);
+  });
+  return sec;
 }
 // Builds the "Contents" page that prints ahead of the document body (page-break-after:always —
 // see the @media print rules in exportPreviewAsPdf) from the headings/[Section] markers gathered
@@ -27308,10 +27862,12 @@ function renderPreviewBody(){
 // overlay — that chrome is gone, but the entries themselves still have to be built and placed
 // into #preview-toc every render, since exportPdfDirect()'s headless pipeline prints straight
 // from this same DOM and has no other way to get a contents page.
-function renderPreviewToc(entries,showQa=false){
+function renderPreviewToc(entries,showQa=false,showOpenItems=false){
   const toc=el('preview-toc'); if(!toc)return;
   toc.innerHTML='';
   const showHeadings=entries.length>=2;
+  // The Open items summary only gets a Contents entry when there is a Contents anyway.
+  showOpenItems=showOpenItems&&(showHeadings||showQa);
   toc.classList.toggle('pv-toc-hidden-auto',!showHeadings&&!showQa);
   if(!showHeadings&&!showQa)return;
   const headRow=document.createElement('div'); headRow.id='preview-toc-head-row';
@@ -27331,6 +27887,12 @@ function renderPreviewToc(entries,showQa=false){
   if(showQa){
     const a=document.createElement('a'); a.className='pv-toc-item pv-toc-lvl-1'; a.href='#pv-qa-section';
     const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent='Q&A'; a.appendChild(label);
+    appendTocPageSlot(a);
+    toc.appendChild(a);
+  }
+  if(showOpenItems){
+    const a=document.createElement('a'); a.className='pv-toc-item pv-toc-lvl-1'; a.href='#pv-open-items-section';
+    const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent='Open items'; a.appendChild(label);
     appendTocPageSlot(a);
     toc.appendChild(a);
   }
@@ -28084,6 +28646,13 @@ function setPreviewBrandingEnabled(on,persist=true){
   if(persist){savePrefs()}
 }
 el('preview-branding-toggle')?.addEventListener('click',()=>setPreviewBrandingEnabled(!previewBrandingEnabled));
+function setPdfOpenItemsSummary(on,persist=true){
+  pdfOpenItemsSummary=!!on;
+  const toggle=el('pdf-open-items-toggle');
+  if(toggle){toggle.classList.toggle('on',pdfOpenItemsSummary); toggle.setAttribute('aria-checked',String(pdfOpenItemsSummary))}
+  if(persist){savePrefs()}
+}
+el('pdf-open-items-toggle')?.addEventListener('click',()=>setPdfOpenItemsSummary(!pdfOpenItemsSummary));
 function setPreviewBrandingText(text,persist=true){
   previewBrandingText=String(text||'');
   const input=el('preview-branding-text-input'); if(input&&input.value!==previewBrandingText)input.value=previewBrandingText;
@@ -28328,6 +28897,7 @@ setTypewriterMode(typewriterModeEnabled, false);
 setPreviewTocIncludeSections(previewTocIncludeSections, false);
 setSectionMarkersDepthZero(sectionMarkersDepthZero, false);
 setPreviewBrandingEnabled(previewBrandingEnabled, false);
+setPdfOpenItemsSummary(pdfOpenItemsSummary, false);
 setPreviewBrandingText(previewBrandingText, false);
 setQaSearchResultsEnabled(qaSearchResultsEnabled, false);
 applyQaSearchCategorySettings();
@@ -28506,10 +29076,11 @@ function applyTagFilterToPane(pane){
   if(!pane)return;
   const bar=document.getElementById('tag-filter-bar');
   const chips=document.getElementById('tag-filter-chips');
-  if(!activeTagFilter&&!activeMarkerFilter){
+  if(!activeTagFilter&&!activeMarkerFilter&&!activeDiscussionFilter){
     if(bar)bar.style.display='none';
     pane.querySelectorAll('.node-row.tag-filtered-out').forEach(r=>r.classList.remove('tag-filtered-out'));
     pane.querySelectorAll('.node-row.marker-filter-context').forEach(r=>r.classList.remove('marker-filter-context'));
+    pane.querySelectorAll('.filter-hidden-inline').forEach(b=>b.classList.remove('filter-hidden-inline'));
     return;
   }
   // Show filter bar
@@ -28531,6 +29102,15 @@ function applyTagFilterToPane(pane){
       btn.innerHTML='<span>'+markIconSvg(activeMarkerFilter)+' '+esc(nodeMarkerLabel(activeMarkerFilter))+'</span><span class="tfcb-x">×</span>';
       btn.dataset.tip='Clear filter for '+nodeMarkerLabel(activeMarkerFilter);
       btn.addEventListener('click',()=>setMarkerFilter(null));
+      chips.appendChild(btn);
+    }
+    if(activeDiscussionFilter){
+      const btn=document.createElement('button');
+      btn.className='tag-filter-chip-btn disc-filter-chip';
+      const label=activeDiscussionFilter==='openQa'?'Open questions':'Open remarks';
+      btn.innerHTML='<span>'+(activeDiscussionFilter==='openQa'?qaDotIconSvg(11):REMARK_DOT_SVG)+' '+label+'</span><span class="tfcb-x">×</span>';
+      btn.dataset.tip='Clear filter for '+label.toLowerCase();
+      btn.addEventListener('click',()=>setDiscussionFilter(null));
       chips.appendChild(btn);
     }
   }
@@ -28568,14 +29148,36 @@ function applyTagFilterToPane(pane){
       }
     });
   }
+  // Open questions/remarks filter: the rows holding them, plus their ancestors (dimmed, like the
+  // marker filter's) so the tree lines still lead somewhere. Not their subtrees: an open item
+  // belongs to its own row, not to the children under it.
+  let discVisible=null,discContextOnly=null;
+  if(activeDiscussionFilter){
+    const matchIds=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks);
+    discVisible=new Set(matchIds); discContextOnly=new Set();
+    nodes.forEach((n,i)=>{
+      if(!matchIds.has(n.id))return;
+      let p=getParentIndex(nodes,i);
+      while(p>=0){ if(!discVisible.has(nodes[p].id))discContextOnly.add(nodes[p].id); discVisible.add(nodes[p].id); p=getParentIndex(nodes,p); }
+    });
+  }
   // Hide/show rows
   pane.querySelectorAll('.node-row').forEach(row=>{
     const id=Number(row.dataset.id);
     const node=nodes.find(n=>n.id===id);
     const tagOk=!activeTagFilter||(node&&node.tags&&node.tags.includes(activeTagFilter));
     const markerOk=!activeMarkerFilter||(markerVisible&&markerVisible.has(id));
-    row.classList.toggle('tag-filtered-out',!(tagOk&&markerOk));
-    row.classList.toggle('marker-filter-context',!!(tagOk&&markerOk&&markerContextOnly&&markerContextOnly.has(id)));
+    const discOk=!activeDiscussionFilter||(discVisible&&discVisible.has(id));
+    const shown=tagOk&&markerOk&&discOk;
+    row.classList.toggle('tag-filtered-out',!shown);
+    row.classList.toggle('marker-filter-context',!!(shown&&((markerContextOnly&&markerContextOnly.has(id))||(discContextOnly&&discContextOnly.has(id)))));
+    // A row's note, tables, images, remarks, Q&A and diagrams render as separate siblings right
+    // after it, not inside it -- hide them with their row, or a filtered-out row's remark shows
+    // up under the previous visible row as if it were that row's.
+    const hideInline=row.classList.contains('tag-filtered-out');
+    for(let sib=row.nextElementSibling; sib&&!sib.classList.contains('node-row')&&!sib.classList.contains('empty-state'); sib=sib.nextElementSibling){
+      sib.classList.toggle('filter-hidden-inline',hideInline);
+    }
   });
 }
 
@@ -28600,12 +29202,22 @@ function updateMarkerSummary(){
   const group=el('ag-markers'); const box=el('marker-summary'); if(!group||!box)return;
   const counts={}; nodes.forEach(n=>{ if(n.marker&&NODE_MARKERS.includes(n.marker))counts[n.marker]=(counts[n.marker]||0)+1; });
   const used=MARKER_SUMMARY_ORDER.filter(m=>counts[m]);
-  group.hidden=!used.length;
-  const html=used.map(m=>`<button type="button" class="marker-sum-btn${activeMarkerFilter===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${counts[m]} ${esc(nodeMarkerLabel(m))}${activeMarkerFilter===m?' — click to clear the filter':' — click to show only these'}" aria-label="${counts[m]} ${esc(nodeMarkerLabel(m))}" aria-pressed="${activeMarkerFilter===m}">${markIconSvg(m)}<span>${counts[m]}</span></button>`).join('');
+  // Open questions and open remarks follow the markers, after a divider. Shown while any are
+  // open, or while their filter is on (so it can be cleared from here).
+  const open=countOpenItems(qaItems,remarks,new Set(nodes.map(n=>n.id)));
+  const disc=[
+    {key:'openQa',n:open.openQuestions,kind:'question',icon:qaDotIconSvg(13)},
+    {key:'openRemarks',n:open.openRemarks,kind:'remark',icon:REMARK_DOT_SVG}
+  ].filter(d=>d.n||activeDiscussionFilter===d.key);
+  group.hidden=!used.length&&!disc.length;
+  const html=used.map(m=>`<button type="button" class="marker-sum-btn${activeMarkerFilter===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${counts[m]} ${esc(nodeMarkerLabel(m))}${activeMarkerFilter===m?' — click to clear the filter':' — click to show only these'}" aria-label="${counts[m]} ${esc(nodeMarkerLabel(m))}" aria-pressed="${activeMarkerFilter===m}">${markIconSvg(m)}<span>${counts[m]}</span></button>`).join('')
+    +(used.length&&disc.length?'<span class="marker-sum-divider" aria-hidden="true"></span>':'')
+    +disc.map(d=>{ const label=openCountLabel(d.n,d.kind); const on=activeDiscussionFilter===d.key; return `<button type="button" class="marker-sum-btn disc-sum-btn${on?' active':''}" data-disc="${d.key}" data-tip="${label}${on?' — click to clear the filter':' — click to show only these'}" aria-label="${label}" aria-pressed="${on}">${d.icon}<span>${d.n} open</span></button>`; }).join('');
   if(box.innerHTML!==html)box.innerHTML=html;
 }
 el('marker-summary')?.addEventListener('click',e=>{
   const btn=e.target.closest('.marker-sum-btn'); if(!btn)return;
+  if(btn.dataset.disc){ setDiscussionFilter(activeDiscussionFilter===btn.dataset.disc?null:btn.dataset.disc); return; }
   const m=btn.dataset.marker;
   if(activeMarkerFilter===m){ setMarkerFilter(null); return; }
   // The filter only acts on rendered rows, so unfold every branch hiding a match first —
@@ -28613,6 +29225,21 @@ el('marker-summary')?.addEventListener('click',e=>{
   nodes.forEach((n,i)=>{ if(n.marker!==m)return; let d=n.depth; for(let j=i-1;j>=0&&d>0;j--){ if(nodes[j].depth<d){ collapsedIds.delete(nodes[j].id); d=nodes[j].depth; } } });
   setMarkerFilter(m);
 });
+// Toolbar "N open" counts → show only the rows holding open questions (or open remarks). Unfolds
+// the branches hiding them and opens their inline Q&A/remarks, so every counted item is on screen.
+function setDiscussionFilter(f){
+  activeDiscussionFilter=normalizeDiscussionFilter(f);
+  if(activeDiscussionFilter){
+    const ids=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks);
+    nodes.forEach((n,i)=>{ if(!ids.has(n.id))return; let d=n.depth; for(let j=i-1;j>=0&&d>0;j--){ if(nodes[j].depth<d){ collapsedIds.delete(nodes[j].id); d=nodes[j].depth; } } });
+    ids.forEach(id=>(activeDiscussionFilter==='openQa'?inlineExpandQaNodeIds:inlineExpandRemarksNodeIds).add(id));
+  }
+  const pane=document.getElementById('editor-pane');
+  if(pane)applyTagFilterToPane(pane);
+  render();
+  if(activeDiscussionFilter)showToast(activeDiscussionFilter==='openQa'?'Showing open questions':'Showing open remarks');
+  else showToast('Filter cleared');
+}
 function setMarkerFilter(marker){
   activeMarkerFilter=NODE_MARKERS.includes(marker)?marker:null;
   const pane=document.getElementById('editor-pane');
@@ -28627,7 +29254,7 @@ function setMarkerFilter(marker){
 // "clear whichever filter happened to be set first."
 (function(){
   const btn=document.getElementById('tag-filter-clear-btn');
-  if(btn)btn.addEventListener('click',()=>{ activeTagFilter=null; activeMarkerFilter=null; const pane=document.getElementById('editor-pane'); if(pane)applyTagFilterToPane(pane); render(); showToast('Filters cleared'); });
+  if(btn)btn.addEventListener('click',()=>{ activeTagFilter=null; activeMarkerFilter=null; activeDiscussionFilter=null; const pane=document.getElementById('editor-pane'); if(pane)applyTagFilterToPane(pane); render(); showToast('Filters cleared'); });
 })();
 
 // ── Tag Manager Modal ────────────────────────────────────────────────
@@ -31582,7 +32209,7 @@ let dockActiveTab=null;
         <h3>Version History</h3>
         <ul>
           <li><span class="cs-desc">Right-click a doc in the file explorer → "Version history" → automatic snapshots</span></li>
-          <li><span class="cs-desc">Snapshot taken before content would be overwritten — at most once per ~10 min, capped at last 20 per document</span></li>
+          <li><span class="cs-desc">Snapshot taken before content would be overwritten — at most once per ~10 min, capped at last 10 per document</span></li>
           <li><span class="cs-desc">"Save a version now" → snapshot immediately, useful before a big rewrite</span></li>
           <li><span class="cs-desc">Restoring saves current content as a version first — always reversible</span></li>
         </ul>

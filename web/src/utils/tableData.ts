@@ -248,3 +248,43 @@ export function clampGridSize(rows: number, cols: number, max = 8): { rows: numb
   const c = (n: number) => Math.max(1, Math.min(max, Math.round(Number.isFinite(n) ? n : 1)));
   return { rows: c(rows), cols: c(cols) };
 }
+
+// ── Display polish (display copies only; the stored table never changes) ──────────────────
+
+/** A cell that shows nothing useful: empty, whitespace, or only quotes (`" "`, `''`). */
+export function isBlankCellText(raw: string | null | undefined): boolean {
+  return String(raw ?? '').replace(/["'“”‘’\s ]/g, '') === '';
+}
+
+/**
+ * "Group rows": lengths of the runs of equal consecutive values (trimmed, case-sensitive), in
+ * order — ['a','a','b'] → [2, 1]. A blank value never joins a run, so empty cells stay their own
+ * rows rather than being merged into one.
+ */
+export function groupRunLengths(values: string[]): number[] {
+  const out: number[] = [];
+  let prev: string | null = null;
+  for (const raw of values) {
+    const v = String(raw ?? '').trim();
+    if (out.length && v !== '' && v === prev) out[out.length - 1]++;
+    else out.push(1);
+    prev = v;
+  }
+  return out;
+}
+
+/** True when grouping would merge anything: some value repeats in consecutive rows. */
+export function hasGroupableRuns(values: string[]): boolean {
+  return groupRunLengths(values).some(n => n > 1);
+}
+
+/**
+ * A grouped value shaped like "code (name)" — "2001 (Centrallager Vejen)", "2501 (LC North
+ * (Kumla))" — splits into a bold code and a muted name. The code is one short token with a
+ * digit in it, so ordinary text with a parenthesis ("Review (draft)") stays whole.
+ */
+export function splitCodeName(raw: string): { code: string; name: string } | null {
+  const m = /^(\S{1,16})\s+\((.+)\)$/.exec(String(raw ?? '').trim());
+  if (!m || !/\d/.test(m[1])) return null;
+  return { code: m[1], name: m[2].trim() };
+}
