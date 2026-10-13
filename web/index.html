@@ -1794,7 +1794,7 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .tp-chip.tp-active{background:color-mix(in srgb,var(--accent) 28%,transparent);border-color:var(--accent);color:var(--accent)}
 .tp-chip-x{font-size:11px;line-height:1;opacity:.6;margin-left:1px}
 .tp-chip.tp-active .tp-chip-x{opacity:.8}
-.node-row.tag-filtered-out{display:none}
+.node-row.tag-filtered-out,.filter-hidden-inline{display:none}
 .node-row.marker-filter-context{opacity:.5}
 .node-row.marker-filter-context:hover,.node-row.marker-filter-context.selected,.node-row.marker-filter-context.primary-selection{opacity:.8}
 .bl-link{display:inline;padding:1px 3px;margin:0 -1px;border-radius:4px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);cursor:pointer;font-weight:500;transition:background .1s}
@@ -28510,6 +28510,7 @@ function applyTagFilterToPane(pane){
     if(bar)bar.style.display='none';
     pane.querySelectorAll('.node-row.tag-filtered-out').forEach(r=>r.classList.remove('tag-filtered-out'));
     pane.querySelectorAll('.node-row.marker-filter-context').forEach(r=>r.classList.remove('marker-filter-context'));
+    pane.querySelectorAll('.filter-hidden-inline').forEach(b=>b.classList.remove('filter-hidden-inline'));
     return;
   }
   // Show filter bar
@@ -28576,6 +28577,13 @@ function applyTagFilterToPane(pane){
     const markerOk=!activeMarkerFilter||(markerVisible&&markerVisible.has(id));
     row.classList.toggle('tag-filtered-out',!(tagOk&&markerOk));
     row.classList.toggle('marker-filter-context',!!(tagOk&&markerOk&&markerContextOnly&&markerContextOnly.has(id)));
+    // A row's note, tables, images, remarks, Q&A and diagrams render as separate siblings right
+    // after it, not inside it -- hide them with their row, or a filtered-out row's remark shows
+    // up under the previous visible row as if it were that row's.
+    const hideInline=row.classList.contains('tag-filtered-out');
+    for(let sib=row.nextElementSibling; sib&&!sib.classList.contains('node-row')&&!sib.classList.contains('empty-state'); sib=sib.nextElementSibling){
+      sib.classList.toggle('filter-hidden-inline',hideInline);
+    }
   });
 }
 
