@@ -131,6 +131,8 @@ A node can hold tables directly under it. Right-click a node → **Add table…*
 
 ### Extras on a plain table
 
+- **Clean display:** a table shown as a table displays with horizontal rules only, a quiet small-caps header, and a faint "–" in empty or quote-only (`" "`) cells — in the outline and the PDF. Clicking in to edit shows the full grid, with nothing moving.
+- **Group rows:** right-click a table → **Group rows** shows each run of repeated values in the first column once, as one cell spanning its rows (with "N rows" under it), and a heavier rule between groups. A value shaped like "code (name)" — `2001 (Centrallager Vejen)` — shows as a bold code over a muted name. It's display-only: the table itself and the editing grid keep every row's value. Greyed out when nothing in the first column repeats.
 - **Heat-map:** right-click a table shown as a table → **Heat-map ›** — **Higher is darker**, **Lower is darker** (for costs, churn and the like) or **Off**. Numeric cells are shaded by where they sit in their own column; text cells stay plain. The shading is worked out when the table is shown (editor and PDF), never saved into the table.
 - **Ticks and crosses:** in a plain table, a column whose cells are mostly `✓` / `yes`, `✗` / `no` or `~` / `partial` shows them as green ✓, red ✗ and amber ~ icons (the original text is the tooltip); longer text like "Yes, from Q2" stays as written. Setting the column to any Column type (e.g. **Text**) turns this off.
 - **Status pills and people:** a column headed Status (or set to Column type › Status) shows coloured status pills, and one headed Owner, Assignee, Who, Responsible or Lead (or set to Person) shows each name as a coloured chip — see **Column types** above. Like the heat-map and the icons, these are display only: the table you edit keeps its plain text, and clicking in to edit doesn't shift the columns.
@@ -271,7 +273,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Text color | Ctrl/Cmd+Shift+F |
 | Heading 1–6 / Body text | Ctrl/Cmd+Alt+1–6 / Ctrl/Cmd+Alt+0 |
 | Collapse / expand selected | ← / → |
-| Collapse all / Expand all | Ctrl/Cmd+Alt+C |
+| Collapse all / Expand all (branches and every inline note, Q&A, remark, diagram, table and image) | Ctrl/Cmd+Alt+C |
 | Zoom into branch (Focus) / Exit | Ctrl/Cmd+. / Ctrl/Cmd+, |
 | Search this document / Search & replace | Ctrl/Cmd+F / Ctrl/Cmd+H |
 | Quick Assist (command + search) | Ctrl/Cmd+K |

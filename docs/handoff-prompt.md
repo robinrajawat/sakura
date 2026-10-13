@@ -378,8 +378,29 @@ restoring" version keeps them). Covered by `tests/e2e/delete-row-linked-objects.
 **Version history cap:** `REVISION_MAX_PER_DOC` 20 → 10 (owner: "5–10, 20 is way too many"); longer
 existing lists trim on the next recorded version. To-Dos history stays at 20 (not asked).
 
-**Next:** Table display polish (owner screenshot): group repeated first-column values, horizontal hairlines
-only, faint "–" for empty / `" "` cells — display-only, like the heat-map.
+**Table display polish + Group rows (owner-approved mockup, 2026-10-13).** `applyTableDisplayPolish`
+runs last on every plain-table display copy (`buildNodeTableObject` showDisplay, `buildNoteTableFigure`
+for the PDF): class `tbl-polished` (vertical/top borders transparent, not removed, so widths match the
+editing grid — `tables-pdf-bugs.spec.ts` guards that; header text style is shared by both modes for the
+same reason), blank or quote-only cells (`isBlankCellText`) emptied with class `tbl-empty` (CSS dash).
+**Group rows** (`data-group-rows="1"`, menu item after Heat-map, disabled with a reason unless the
+display is Table and the first column has a consecutive repeat — `hasGroupableRuns`): runs from
+`groupRunLengths` become one `rowspan` cell (`tbl-group-cell`, "N rows"), `tr.tbl-group-start` gets the
+heavier rule, and `splitCodeName` shows "2001 (Centrallager Vejen)" as code over name. Pure parts in
+`tableData.ts`. Covered by `tests/e2e/table-polish-group-rows.spec.ts`.
+
+**Expand/Collapse all include inline objects (owner request, 2026-10-13).** `expandAll` opens every
+note/Q&A/remark/diagram (`inlineExpand*NodeIds`) and clears `collapsedTableNodeIds`/`collapsedImageNodeIds`;
+`collapseAll` does the reverse on top of folding top-level branches. `anyFoldClosed()` (any folded branch
+or any closed inline object) now drives `toggleFoldAll`, the toolbar icon and the menu label.
+
+**Diagram previews after a restore (bug, 2026-10-13).** Revisions don't store previews, so restored
+diagrams showed "No preview yet" until opened and saved. Restore now keeps the current preview when the
+diagram's xml is unchanged, and `regenerateMissingDiagramPreviews()` (after restore, and at the end of
+`hydrateDiagramBlobsForDoc`, i.e. every document open) rebuilds any missing preview silently via
+`regenerateDiagramThumbnail(id,{silent:true})` (now returns a Promise), one at a time, once per diagram per
+session (state kept on the function — boot-time TDZ). Covered by
+`tests/e2e/fold-all-inline-and-diagram-previews.spec.ts`.
 
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed

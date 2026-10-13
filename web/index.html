@@ -1426,7 +1426,18 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-table-figure{flex:1 1 100%}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
-.pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
+.pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600;font-size:.82em;letter-spacing:.03em;text-transform:uppercase}
+/* Display polish (applyTableDisplayPolish, display copies only): horizontal rules only -- the
+   vertical ones turn transparent rather than going, and header text is styled the same in both,
+   so nothing moves on entering edit mode -- a quiet header, and a faint dash in blank cells. */
+.pv-table-figure table.tbl-polished td,.pv-table-figure table.tbl-polished th{border-left-color:transparent;border-right-color:transparent;border-top-color:transparent;border-bottom-color:color-mix(in srgb,var(--border) 70%,transparent)}
+.pv-table-figure table.tbl-polished th{background:transparent;color:var(--muted);border-bottom-color:color-mix(in srgb,var(--fg) 22%,var(--border))}
+.pv-table-figure table.tbl-polished td.tbl-empty::after{content:'\2013';color:var(--hint)}
+.pv-table-figure table.tbl-grouped tr.tbl-group-start>td{border-top:1.5px solid var(--border)}
+.pv-table-figure table.tbl-grouped td.tbl-group-cell{vertical-align:top}
+.pv-table-figure .tbl-grp-code{display:block;font-weight:600}
+.pv-table-figure .tbl-grp-name{display:block;color:var(--muted);font-size:.92em}
+.pv-table-figure .tbl-grp-count{display:block;margin-top:3px;color:var(--hint);font-size:.8em}
 /* Per-column alignment: data-align is stored on each cell of the column (cell menu -> Align column);
    data-auto-align is the render-time marker for numeric columns (applyTableAutoAlign), never saved.
    Same rules in the outline, while editing, in a chart's Edit data view and in the PDF. */
@@ -3792,6 +3803,7 @@ body.printing-generic #gpe-overlay{
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">F</span> → search this tree; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">H</span> → search and replace (Replace / Replace all, undoable)</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">C</span> / ▶ at the right end of the toolbar → collapse all (folds every top-level section)</li>
 <li>Same shortcut / same button again → expand all — it's a single toggle, the icon flips to show which one it'll do next</li>
+<li>Both cover inline objects too: Expand all opens every note, Q&amp;A, remark and diagram under its row and unfolds tables and images; Collapse all closes and folds them. While anything is still closed, the button offers Expand all</li>
 </ul>
 </div>
           <div class="help-section" data-cat="toolbar">
@@ -3896,6 +3908,8 @@ body.printing-generic #gpe-overlay{
 <li>Paste a range copied from Excel or Google Sheets into a table you're editing: it fills the cells from the caret and adds rows and columns as needed</li>
 <li>Columns of numbers right-align automatically unless you've set the column's alignment; alignment shows the same in the PDF</li>
 <li>A chart or Cards figure stays a chart when clicked — double-click it, or right-click → <strong>Edit data</strong>, to edit its table</li>
+<li>A table shown as a table displays clean: horizontal rules only, a quiet header, and a faint "–" in empty cells. Clicking in to edit shows the full grid</li>
+<li>Right-click a table → <strong>Group rows</strong> shows each repeated first-column value once, spanning its rows (a "code (name)" value shows as a bold code over its name). Display only — editing still shows every row</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-images">
@@ -5895,6 +5909,59 @@ function applyTableHeatmap(table){
     body.forEach((r,ri)=>{ const c=r.cells[ci]; if(c&&levels[ri]!==null)c.setAttribute('data-heat',String(levels[ri])); });
   }
 }
+// "Group rows" (owner request): a plain table can show each run of repeated first-column values
+// once, as one cell spanning its rows, with a heavier rule between groups. Stored as
+// data-group-rows="1"; drawn on display copies only (outline and PDF) -- editing always shows the
+// full grid.
+function isTableGroupRows(table){ return !!(table&&table.getAttribute('data-group-rows')==='1'); }
+function setTableGroupRows(table,on){
+  if(!table)return;
+  if(on)table.setAttribute('data-group-rows','1'); else table.removeAttribute('data-group-rows');
+  showToast(on?'Grouping rows by the first column':'Rows ungrouped');
+}
+function tableGroupRowsEligible(table){
+  if(currentTableDisplay(table)!=='table')return {ok:false,reason:'Grouping applies to a table shown as a table.'};
+  const vals=tableBodyRows(table).map(r=>tableCellText(r.cells[0]));
+  if(!hasGroupableRuns(vals))return {ok:false,reason:'Nothing to group: no value repeats in consecutive rows of the first column.'};
+  return {ok:true,reason:''};
+}
+// Display polish for every plain table (owner-approved mockup): horizontal rules only, a quiet
+// header, and a faint dash in empty or quote-only cells -- then row grouping when it's on. Runs
+// last on a display copy (after alignment, heat-map, pills and chips), since grouping removes
+// cells and the other passes index cells by column.
+function applyTableDisplayPolish(table){
+  if(!table)return;
+  table.classList.add('tbl-polished');
+  tableBodyRows(table).forEach(r=>[...r.cells].forEach(c=>{
+    if(c.querySelector('img,svg,table'))return;
+    if(isBlankCellText(c.textContent)){ c.textContent=''; c.classList.add('tbl-empty'); }
+  }));
+  if(!isTableGroupRows(table))return;
+  const body=tableBodyRows(table); if(body.length<2)return;
+  const runs=groupRunLengths(body.map(r=>tableCellText(r.cells[0])));
+  if(!runs.some(n=>n>1))return;
+  table.classList.add('tbl-grouped');
+  let i=0;
+  runs.forEach((len,gi)=>{
+    const head=body[i].cells[0];
+    if(gi>0)body[i].classList.add('tbl-group-start');
+    if(head){
+      head.classList.add('tbl-group-cell');
+      if(len>1){
+        head.rowSpan=len;
+        for(let k=i+1;k<i+len;k++){ const c=body[k].cells[0]; if(c)c.remove(); }
+        if(!head.children.length){
+          const split=splitCodeName(head.textContent||'');
+          head.innerHTML=split
+            ?'<span class="tbl-grp-code">'+esc(split.code)+'</span><span class="tbl-grp-name">'+esc(split.name)+'</span>'
+            :'<span class="tbl-grp-code">'+esc((head.textContent||'').trim())+'</span>';
+        }
+        head.insertAdjacentHTML('beforeend','<span class="tbl-grp-count">'+len+' rows</span>');
+      }
+    }
+    i+=len;
+  });
+}
 function renderChipsHtml(table){
   const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1)
     .map(r=>({key:(r.cells[0]?.textContent||'').trim(),desc:(r.cells[1]?.textContent||'').trim()}))
@@ -6292,6 +6359,44 @@ function gridSizeForPaste(rows, cols, startRow, startCol, dataRows, dataCols) {
 function clampGridSize(rows, cols, max = 8) {
     const c = (n) => Math.max(1, Math.min(max, Math.round(Number.isFinite(n) ? n : 1)));
     return { rows: c(rows), cols: c(cols) };
+}
+// ── Display polish (display copies only; the stored table never changes) ──────────────────
+/** A cell that shows nothing useful: empty, whitespace, or only quotes (`" "`, `''`). */
+function isBlankCellText(raw) {
+    return String(raw ?? '').replace(/["'“”‘’\s ]/g, '') === '';
+}
+/**
+ * "Group rows": lengths of the runs of equal consecutive values (trimmed, case-sensitive), in
+ * order — ['a','a','b'] → [2, 1]. A blank value never joins a run, so empty cells stay their own
+ * rows rather than being merged into one.
+ */
+function groupRunLengths(values) {
+    const out = [];
+    let prev = null;
+    for (const raw of values) {
+        const v = String(raw ?? '').trim();
+        if (out.length && v !== '' && v === prev)
+            out[out.length - 1]++;
+        else
+            out.push(1);
+        prev = v;
+    }
+    return out;
+}
+/** True when grouping would merge anything: some value repeats in consecutive rows. */
+function hasGroupableRuns(values) {
+    return groupRunLengths(values).some(n => n > 1);
+}
+/**
+ * A grouped value shaped like "code (name)" — "2001 (Centrallager Vejen)", "2501 (LC North
+ * (Kumla))" — splits into a bold code and a muted name. The code is one short token with a
+ * digit in it, so ordinary text with a parenthesis ("Review (draft)") stays whole.
+ */
+function splitCodeName(raw) {
+    const m = /^(\S{1,16})\s+\((.+)\)$/.exec(String(raw ?? '').trim());
+    if (!m || !/\d/.test(m[1]))
+        return null;
+    return { code: m[1], name: m[2].trim() };
 }
 
 /* GENERATED:tableData:END */
@@ -7402,6 +7507,11 @@ function buildChartFeatureItems(table,commit){
       {label:'Lower is darker'+(heat&&reverse?' (current)':''), disabled:heat&&reverse, onClick:()=>{ setTableHeatmap(table,true,true); commit(); }}
     ]});
   } else items.push(na('Heat-map',cur==='table'?'Heat-map shades numbers, and this table has none.':'Heat-map shades a table shown as a table.'));
+  {
+    const grouped=isTableGroupRows(table), g=tableGroupRowsEligible(table);
+    if(g.ok||grouped&&cur==='table')items.push({label:'Group rows', icon:grouped?CHECK:undefined, title:'Show each repeated first-column value once, spanning its rows', onClick:()=>{ setTableGroupRows(table,!grouped); commit(); }});
+    else items.push(na('Group rows',g.reason));
+  }
   if(titled){
     const curTitle=getTableChartTitle(table);
     items.push({label:curTitle?'Edit title\u2026':'Add title\u2026', onClick:async()=>{
@@ -7779,6 +7889,7 @@ function buildNodeTableObject(node,tIdx){
     applyTableStatusPills(clone);
     applyTableCheckIcons(clone);
     applyTablePersonChips(clone);
+    applyTableDisplayPolish(clone);
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
@@ -9524,6 +9635,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   applyTableStatusPills(clone);
   applyTableCheckIcons(clone);
   applyTablePersonChips(clone);
+  applyTableDisplayPolish(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
@@ -10549,7 +10661,7 @@ function loadDocFromStorage(id){
 // reaches this function at all.
 async function hydrateDiagramBlobsForDoc(id){
   const targets=diagrams.filter(dg=>dg&&!dg._hydrated);
-  if(!targets.length)return;
+  if(!targets.length){ regenerateMissingDiagramPreviews(); return; }
   let changed=false;
   for(const dgMeta of targets){
     if(currentDocId!==id)return; // switched documents mid-hydration — abandon rather than touch the new doc's state
@@ -10576,6 +10688,7 @@ async function hydrateDiagramBlobsForDoc(id){
     changed=true;
   }
   if(changed&&currentDocId===id){ render(); }
+  if(currentDocId===id)regenerateMissingDiagramPreviews();
 }
 // Re-attempts a single diagram's read after hydrateDiagramBlobsForDoc's own retries above already
 // gave up on it — called from the "Retry" state openDiagramEditor shows instead of silently
@@ -11256,15 +11369,17 @@ async function restoreDocRevision(docId,ts){
     recordDocRevision(docId,{nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
-      // Revision diagrams never include their exported preview image (see recordDocRevision)
-      // — restored ones show the placeholder icon until reopened and saved once in draw.io,
-      // which regenerates it automatically. Older revisions recorded before this existed have
+      // Revision diagrams never include their exported preview image (see recordDocRevision);
+      // see below for how restored ones get theirs back. Older revisions recorded before this existed have
       // no diagrams field at all; leave the current ones alone in that case rather than wipe them.
       // _hydrated:true is essential here, not cosmetic — these objects carry real xml straight
       // from the revision, but without the flag saveToStorage's hydration gate (see there) would
       // treat them as not-yet-loaded and silently never write their blob to the overflow store,
       // losing the restored diagram's content the next time the page refreshes.
-      diagrams=rev.diagrams.map(d=>({...d,previewSvg:'',pageSvgs:[],_hydrated:true}));
+      // A restored diagram whose content is unchanged keeps its current preview; the rest are
+      // rebuilt in the background (regenerateMissingDiagramPreviews, after the render below).
+      const curById=new Map(diagrams.map(d=>[d.id,d]));
+      diagrams=rev.diagrams.map(d=>{ const cur=curById.get(d.id); const same=cur&&cur.xml&&cur.xml===d.xml&&cur.previewSvg; return {...d,previewSvg:same?cur.previewSvg:'',pageSvgs:same&&Array.isArray(cur.pageSvgs)?cur.pageSvgs:[],_hydrated:true}; });
     }
     if(Array.isArray(rev.qa)){
       qaItems=rev.qa.map(q=>({...q}));
@@ -11275,6 +11390,7 @@ async function restoreDocRevision(docId,ts){
     // "explicitly had no status at that point in time".
     if('docStatus' in rev)setDocStatus(rev.docStatus||'',false);
     markDirty(); ensureSelection(); render(); scheduleAutoSave(true);
+    regenerateMissingDiagramPreviews();
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(nodes,diagrams,remarks);
   } else {
     let prevQa=[]; let prevDiagramsCurrent=[]; let prevDocStatusCurrent=''; let prevRemarksCurrent=[];
@@ -11570,15 +11686,16 @@ function diagramIsOrphaned(d){
 // editor piggybacks on every save. Never touches the live/visible editor or posts an `xml`
 // override into an already-open session, so it can't hit the corruption path documented on the
 // 'save' handler above — this is a fresh, throwaway frame that's torn down right after.
-function regenerateDiagramThumbnail(id){
-  const d=findDiagram(id); if(!d)return;
-  if(!d.xml){ showToast('Nothing to regenerate yet — this diagram has no content'); return; }
+function regenerateDiagramThumbnail(id,{silent=false}={}){
+  return new Promise(resolve=>{
+  const d=findDiagram(id); if(!d){ resolve(); return; }
+  if(!d.xml){ if(!silent)showToast('Nothing to regenerate yet — this diagram has no content'); resolve(); return; }
   const iframe=document.createElement('iframe');
   iframe.style.cssText='position:fixed;left:-9999px;top:-9999px;width:800px;height:600px;border:0;visibility:hidden';
   iframe.src='https://embed.diagrams.net/?embed=1&proto=json&spin=1';
   document.body.appendChild(iframe);
   let done=false;
-  const cleanup=()=>{ if(done)return; done=true; window.removeEventListener('message',handler); iframe.remove(); };
+  const cleanup=()=>{ if(done)return; done=true; window.removeEventListener('message',handler); iframe.remove(); resolve(); };
   const handler=e=>{
     if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
     let msg; try{ msg=typeof e.data==='string'?JSON.parse(e.data):e.data; }catch(err){ return; }
@@ -11587,12 +11704,28 @@ function regenerateDiagramThumbnail(id){
       iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*');
       setTimeout(()=>{ if(!done&&iframe.contentWindow)iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*'); },400);
     } else if(msg.event==='export'){
-      if(msg.data){ d.previewSvg=msg.data; d.pageSvgs=[{name:'',svg:msg.data}]; markDirty(); scheduleAutoSave(); render(); showToast('Thumbnail updated'); }
+      if(msg.data){ d.previewSvg=msg.data; d.pageSvgs=[{name:'',svg:msg.data}]; markDirty(); scheduleAutoSave(); render(); if(!silent)showToast('Thumbnail updated'); }
       cleanup();
     }
   };
   window.addEventListener('message',handler);
   setTimeout(cleanup,8000); // safety timeout so a stuck/unresponsive frame doesn't leak forever
+  });
+}
+// A diagram with content but no preview image -- after a Version History restore (revisions don't
+// store previews) or anything else that lost it -- used to show "No preview yet" until it was
+// opened and saved. Now its preview is rebuilt in the background, quietly and one diagram at a
+// time (each in its own hidden draw.io frame), at most once per diagram per session. State lives on
+// the function, not in top-level consts: document loading can call this during boot, before a
+// declaration this far down the script would be initialised.
+function regenerateMissingDiagramPreviews(){
+  const self=regenerateMissingDiagramPreviews;
+  if(!self.tried){ self.tried=new Set(); self.queue=Promise.resolve(); }
+  (diagrams||[]).forEach(d=>{
+    if(!d||!d.xml||d.previewSvg||self.tried.has(d.id))return;
+    self.tried.add(d.id);
+    self.queue=self.queue.then(()=>{ const live=findDiagram(d.id); if(live&&live.xml&&!live.previewSvg)return regenerateDiagramThumbnail(d.id,{silent:true}); });
+  });
 }
 
 function createDiagram(){
@@ -15134,13 +15267,43 @@ function stopRealtimeSync(){
 
 function markDirty(){ensureDocumentForEditing(); dirty=true; updateDirtyIndicator(); scheduleAutoSave()} function resetDirty(){dirty=false; updateDirtyIndicator()}
 function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'; const strip=el('doc-tab-strip'); const activeRow=strip?strip.querySelector('.doc-tab.active'):null; if(activeRow)activeRow.classList.toggle('is-dirty',dirty)}
-function collapseAll(){if(!nodes.length)return; collapsedIds.clear(); nodes.forEach((n,i)=>{if((n.depth||0)===0&&nodeHasChildren(nodes,i))collapsedIds.add(n.id)}); scheduleAutoSave(); render(); showToast('All collapsed')}
-function expandAll(){if(!collapsedIds.size)return; collapsedIds.clear(); scheduleAutoSave(); render(); showToast('All expanded')}
+// Expand all / Collapse all cover inline objects too (owner request): every note, Q&A, remark and
+// diagram opens or closes under its row, and tables and images unfold or fold, along with the
+// branches themselves.
+function inlineObjectNodeIds(){
+  const has=(list,key)=>new Set((list||[]).map(x=>x&&x[key]).filter(id=>id!=null));
+  return {
+    notes:new Set(nodes.filter(n=>htmlHasVisibleText(n.note)).map(n=>n.id)),
+    qa:new Set((qaItems||[]).filter(q=>q&&!qaIsSection(q)&&q.sourceNodeId!=null).map(q=>q.sourceNodeId)),
+    remarks:has(remarks,'anchorNodeId'),
+    diagrams:has(diagrams,'anchorNodeId'),
+    tables:new Set(nodes.filter(n=>Array.isArray(n.tables)&&n.tables.length).map(n=>n.id)),
+    images:new Set(nodes.filter(n=>Array.isArray(n.images)&&n.images.length).map(n=>n.id))
+  };
+}
+// Anything still closed: a folded branch, or an inline object not showing under its row.
+function anyFoldClosed(){
+  if(collapsedIds.size>0)return true;
+  const o=inlineObjectNodeIds();
+  const closed=(ids,openSet)=>[...ids].some(id=>!openSet.has(id));
+  return closed(o.notes,inlineExpandNoteNodeIds)||closed(o.qa,inlineExpandQaNodeIds)||closed(o.remarks,inlineExpandRemarksNodeIds)||closed(o.diagrams,inlineExpandDiagramNodeIds)
+    ||[...o.tables].some(id=>collapsedTableNodeIds.has(id))||[...o.images].some(id=>collapsedImageNodeIds.has(id));
+}
+function collapseAll(){if(!nodes.length)return; collapsedIds.clear(); nodes.forEach((n,i)=>{if((n.depth||0)===0&&nodeHasChildren(nodes,i))collapsedIds.add(n.id)});
+  const o=inlineObjectNodeIds();
+  inlineExpandNoteNodeIds.clear(); inlineExpandQaNodeIds.clear(); inlineExpandRemarksNodeIds.clear(); inlineExpandDiagramNodeIds.clear(); showResolvedRemarksNodeIds.clear();
+  o.tables.forEach(id=>collapsedTableNodeIds.add(id)); o.images.forEach(id=>collapsedImageNodeIds.add(id));
+  scheduleAutoSave(); render(); showToast('All collapsed')}
+function expandAll(){collapsedIds.clear();
+  const o=inlineObjectNodeIds();
+  o.notes.forEach(id=>inlineExpandNoteNodeIds.add(id)); o.qa.forEach(id=>inlineExpandQaNodeIds.add(id)); o.remarks.forEach(id=>inlineExpandRemarksNodeIds.add(id)); o.diagrams.forEach(id=>inlineExpandDiagramNodeIds.add(id));
+  collapsedTableNodeIds.clear(); collapsedImageNodeIds.clear();
+  scheduleAutoSave(); render(); showToast('All expanded')}
 // Single toggle for the toolbar's one fold/unfold button (previously two separate buttons) —
 // state is just "is anything collapsed right now", no depth number involved: something
 // collapsed means the action is to expand it all back out, nothing collapsed means the
 // action is to fold everything down to the top level.
-function toggleFoldAll(){ if(collapsedIds.size>0)expandAll(); else collapseAll(); }
+function toggleFoldAll(){ if(anyFoldClosed())expandAll(); else collapseAll(); }
 function hasMeaningfulContent(){return nodes.some(n=>String(n.text||'').trim())||nodes.length>1}
 // Which rail category is currently shown, per panel. Search (below) temporarily overrides
 // this — while a query is active every category is searched at once, and clearing the query
@@ -17303,8 +17466,9 @@ const FOLD_ICON_COLLAPSE='<polyline points="8 6 13 12 8 18"/><polyline points="1
 const FOLD_ICON_EXPAND='<polyline points="6 8 12 13 18 8"/><polyline points="6 14 12 19 18 14"/>';
 function updateFoldToggleButton(){
   const btn=el('qb-collapse'); if(!btn)return;
-  const anyCollapsed=collapsedIds.size>0;
-  const anyFoldable=nodes.some((_,i)=>nodeHasChildren(nodes,i));
+  const anyCollapsed=anyFoldClosed();
+  const o=inlineObjectNodeIds();
+  const anyFoldable=nodes.some((_,i)=>nodeHasChildren(nodes,i))||Object.values(o).some(set=>set.size>0);
   btn.disabled=!(anyCollapsed||anyFoldable);
   const svg=btn.querySelector('svg'); if(svg)svg.innerHTML=anyCollapsed?FOLD_ICON_EXPAND:FOLD_ICON_COLLAPSE;
   const tip=anyCollapsed?'Expand all (Ctrl/Cmd+Alt+E)':'Collapse all (Ctrl/Cmd+Alt+C)';
@@ -17377,7 +17541,7 @@ function editorEmptyAreaContextItems(x,y){
   return [
     themeItem,
     {divider:true},
-    {label: collapsedIds.size>0?'Expand all':'Collapse all', onClick: async()=>{ toggleFoldAll(); }},
+    {label: anyFoldClosed()?'Expand all':'Collapse all', onClick: async()=>{ toggleFoldAll(); }},
     {divider:true},
     {label:'More…', onClick: async()=>{ showSbContextMenu(x,y,moreItems); }}
   ];
