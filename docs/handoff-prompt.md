@@ -339,6 +339,34 @@ a 500 ms timer when nothing is marked seen, so under load it opened later over t
 at 8 workers); now seeded via addInitScript (200/200). ~55 other specs use the same hide-after-load
 pattern; not changed here.
 
+**Filters hide a row's inline objects (2026-10-13).** Tag/marker filters used to hide only the
+`.node-row`; its note/tables/images/remarks/Q&A/diagrams are sibling elements after it, so a hidden
+row's remark showed under the previous visible row. `applyTagFilterToPane` now marks every sibling up
+to the next row (stopping at `.empty-state`) with `.filter-hidden-inline`. Covered by
+`tests/e2e/marker-filter-hides-inline-objects.spec.ts`.
+
+**Remark / Q&A status (owner decisions, 2026-10-13).** Pure parts in `src/utils/discussionStatus.ts`
+(generator block `discussionStatus`). Data: `remark.resolvedAt` (absent = open — owner: old remarks
+stay open) and `qa.wontAnswer` (owner: "Won't answer" is a way to close). A question's state is
+derived: answered once the answer has visible text (wins over wontAnswer), else won't answer if
+flagged, else open. Outline: Resolve/Reopen hover button on remarks, resolved ones fold behind a
+"✓ N resolved remarks" line (`showResolvedRemarksNodeIds`, session only); Q&A status pill updates live
+while typing an answer; row dots show open counts and go grey when all closed. Toolbar marker summary
+adds "N open" questions/remarks buttons → `setDiscussionFilter` ('openQa'/'openRemarks', ANDed with
+tag/marker filters; matched rows + dimmed ancestors, not subtrees). PDF: status pills on every
+question/remark, and an "Open items" closing page (`previewRenderOpenItems`, own Contents entry,
+`break-before:page`) behind the new pref `pdfOpenItemsSummary` (Settings → Export & copy, on by
+default). Blank remarks (text without visible content) are ignored by counts and never printed, and an
+untouched blank remark is discarded when focus leaves its line (the cause of the blank "Remarks" the
+owner saw at the end of PDFs: blank remarks orphaned by deleting their row). Covered by
+`tests/e2e/remark-qa-status.spec.ts`, `tests/e2e/remark-blank-cleanup.spec.ts`.
+
+**Next, pending owner input:** (1) deleting a row should delete its linked Q&A/remarks (undo restores —
+they're in the snapshot) instead of orphaning them; to-dos just unlink; diagrams are outside the undo
+snapshot, so the owner must choose between adding them to undo or keeping today's orphaning.
+(2) Table display polish (owner screenshot): group repeated first-column values, horizontal hairlines
+only, faint "–" for empty / `" "` cells — display-only, like the heat-map.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

@@ -563,6 +563,16 @@ initHubTodosState({
     sourceFile: 'src/utils/columnType.ts',
     testFile: 'tests/unit/columnType.test.ts',
     footer: ''
+  },
+  {
+    // Remark and Q&A status (open / resolved / answered / won't answer) -- pure parts only: an
+    // item's state, the toolbar's open counts, which nodes a status filter shows, and the PDF's
+    // "Open items" grouping. Buttons, pills, the filter and the PDF markup stay hand-written in
+    // index.html next to the inline remark/Q&A rendering. No production wiring needed.
+    name: 'discussionStatus',
+    sourceFile: 'src/utils/discussionStatus.ts',
+    testFile: 'tests/unit/discussionStatus.test.ts',
+    footer: ''
   }
 ];
 
