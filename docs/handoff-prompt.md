@@ -346,8 +346,9 @@ to the next row (stopping at `.empty-state`) with `.filter-hidden-inline`. Cover
 `tests/e2e/marker-filter-hides-inline-objects.spec.ts`.
 
 **Remark / Q&A status (owner decisions, 2026-10-13).** Pure parts in `src/utils/discussionStatus.ts`
-(generator block `discussionStatus`). Data: `remark.resolvedAt` (absent = open — owner: old remarks
-stay open) and `qa.wontAnswer` (owner: "Won't answer" is a way to close). A question's state is
+(generator block `discussionStatus`). Data: `remark.followUp` + `remark.resolvedAt` — **revised by the owner: not every remark needs a resolution**,
+so a remark is a plain comment (never counted, no pill) unless right-click → Mark as follow-up; open =
+`followUp && !resolvedAt`; older remarks are plain comments and `qa.wontAnswer` (owner: "Won't answer" is a way to close). A question's state is
 derived: answered once the answer has visible text (wins over wontAnswer), else won't answer if
 flagged, else open. Outline: Resolve/Reopen hover button on remarks, resolved ones fold behind a
 "✓ N resolved remarks" line (`showResolvedRemarksNodeIds`, session only); Q&A status pill updates live
@@ -401,6 +402,14 @@ diagram's xml is unchanged, and `regenerateMissingDiagramPreviews()` (after rest
 `regenerateDiagramThumbnail(id,{silent:true})` (now returns a Promise), one at a time, once per diagram per
 session (state kept on the function — boot-time TDZ). Covered by
 `tests/e2e/fold-all-inline-and-diagram-previews.spec.ts`.
+
+**Multiple remarks / questions (owner request, 2026-10-13).** More than two shown remarks under a row:
+the newest two plus every open follow-up show, the rest fold behind "N earlier remarks"
+(`showAllRemarksNodeIds`). Q&A under a row sorts open → won't answer → answered (stable); with more than
+two and at least one closed, closed ones fold behind "N answered/closed questions" (`showClosedQaNodeIds`).
+Both are session-only, both open with Expand all and reset with Collapse all; filters show everything
+they match. Owner requirement: the PDF always prints everything (renderPreviewBody is untouched).
+`buildInlineFoldLine` draws the toggle. Covered in `tests/e2e/remark-qa-status.spec.ts`.
 
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
