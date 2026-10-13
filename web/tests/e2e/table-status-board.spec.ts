@@ -62,7 +62,9 @@ test('Show as › Status board groups items into lanes with owner, due and overd
     ['Cancelled', '1', 'Old idea'], ['Done', '1', 'Label size']
   ]);
   const blocked = page.locator('.pv-board-lane[data-group="blocked"] .pv-board-card');
-  await expect(blocked.locator('.pv-board-owner')).toHaveText('Raj');
+  // Owner as a person chip with an initials avatar.
+  await expect(blocked.locator('.pv-board-owner .tbl-person-av')).toHaveText('R');
+  await expect(blocked.locator('.pv-board-owner .tbl-person')).toContainText('Raj');
   await expect(blocked.locator('.pv-board-note')).toHaveText('Waiting on vendor');
   // Past due and not done → overdue; a past date in Done is not.
   await expect(blocked.locator('.pv-board-due.overdue')).toHaveText('2001-02-01');

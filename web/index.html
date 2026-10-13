@@ -1503,6 +1503,12 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-pc-list li{display:flex;gap:8px;align-items:flex-start;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.4;overflow-wrap:anywhere}
 .pv-pc-mark{color:var(--pc);flex:none;margin-top:2px;display:inline-flex}
 @media (max-width:640px){.pv-proscons{grid-template-columns:minmax(0,1fr)}}
+.tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
+.tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--pc);color:#fff;font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-board-owner .tbl-person{font-size:11.5px;margin:0}
+.tbl-picker-person{border:0;background:transparent;padding:0;margin:2px;cursor:pointer;font:500 12px 'Inter',sans-serif}
+.tbl-picker-person.current .tbl-person{outline:2px solid var(--pc);outline-offset:1px}
 .tbl-check{display:inline-flex;vertical-align:-2px;color:var(--fc-gray);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-check[data-check="yes"]{color:var(--fc-green)}
 .tbl-check[data-check="no"]{color:var(--fc-red)}
@@ -5677,7 +5683,6 @@ function renderTimelineHtml(table){
 // and due come from their headers, and the first remaining column is the note. Stored as
 // data-table-display="board". Plain tables with a Status column get coloured status pills instead
 // (applyTableStatusPills).
-const BOARD_OWNER_RE=/^\s*(owner|assignee|assigned to|who|responsible|lead|action owner)\s*$/i;
 const BOARD_DUE_RE=/^\s*(due|due date|deadline|target|target date|date|by when|eta|when)\s*$/i;
 const BOARD_LIST_PRINT_MIN=13;
 function tableStatusBoardInfo(table){
@@ -5692,7 +5697,7 @@ function tableStatusBoardInfo(table){
   if(status<0)return null;
   const rest=head.map((_,ci)=>ci).filter(ci=>ci!==status);
   const item=rest[0];
-  const owner=rest.find(ci=>ci!==item&&BOARD_OWNER_RE.test(head[ci]))??-1;
+  const owner=rest.find(ci=>ci!==item&&typed[ci]==='person')??rest.find(ci=>ci!==item&&!typed[ci]&&PERSON_HEADER_RE.test(head[ci]))??-1;
   const due=rest.find(ci=>ci!==item&&ci!==owner&&BOARD_DUE_RE.test(head[ci]))??rest.find(ci=>ci!==item&&ci!==owner&&typed[ci]==='date')??-1;
   const note=rest.find(ci=>ci!==item&&ci!==owner&&ci!==due)??-1;
   return {status,item,owner,due,note,body};
@@ -5710,7 +5715,7 @@ function renderStatusBoardHtml(table){
       const d=rows[i];
       const at=parseCellDate(d.due);
       const overdue=l.group!=='done'&&at!==null&&/\b\d{4}\b/.test(d.due)&&at<today;
-      const meta=(d.owner?`<span class="pv-board-owner">${esc(d.owner)}</span>`:'')
+      const meta=(d.owner?`<span class="pv-board-owner">${personChipsHtml(d.owner)||esc(d.owner)}</span>`:'')
         +(d.due?`<span class="pv-board-due${overdue?' overdue':''}"${overdue?' title="Overdue"':''}>${esc(d.due)}</span>`:'');
       return `<div class="pv-board-card"><div class="pv-board-item">${esc(d.item||'\u2014')}</div>`
         +(meta?`<div class="pv-board-meta">${meta}</div>`:'')
@@ -5723,6 +5728,37 @@ function renderStatusBoardHtml(table){
 // Coloured status pills on a plain table's Status column (headed Status / State / Stage), applied to
 // display clones only, like applyTableHeatmap — the stored table is never changed. A column set to
 // Status (Column type ›) gets pills whatever its header; one set to any other type never does.
+// People as chips: a column set to Person (Column type ›), or left Automatic and headed Owner /
+// Assignee / Who / Responsible / Lead (PERSON_HEADER_RE), shows each named person (splitPeople:
+// "Ana, Raj & Mo" is three) as a chip, coloured the same for the same name everywhere. Display
+// clones only, like applyTableStatusPills; any other explicit type opts out. In a table the chip is
+// layout-neutral (no avatar, drawn with a box-shadow like the status pills) so clicking into the
+// table to edit doesn't shift it; the status board and the person picker add an initials avatar.
+// Six distinct hues kept clear of the status colours (red = blocked, green = done) and of each
+// other; mid-tones that read on both the light and dark themes.
+const PERSON_COLORS=['#3b6fd8','#8a4fd1','#16897a','#c2457a','#7a8a1f','#b3741a'];
+const personColor=name=>PERSON_COLORS[personColorIndex(name.replace(/^@/,''),PERSON_COLORS.length)];
+function personChipsHtml(raw){
+  return splitPeople(raw).map(name=>`<span class="tbl-person with-av" style="--pc:${personColor(name)}"><span class="tbl-person-av" aria-hidden="true">${esc(personInitials(name))}</span>${esc(name)}</span>`).join('');
+}
+// The in-table version: the cell's own text, separators and all, with each name wrapped in place.
+function personInlineHtml(raw){
+  const parts=String(raw??'').split(/(\s*(?:[,;&+/]|\band\b)\s*)/i);
+  if(!parts.some((p,i)=>i%2===0&&p.trim()))return '';
+  return parts.map((p,i)=>i%2===1||!p.trim()?esc(p):p.replace(/^(\s*)(.*?)(\s*)$/,(m,a,n,z)=>`${esc(a)}<span class="tbl-person" style="--pc:${personColor(n)}">${esc(n)}</span>${esc(z)}`)).join('');
+}
+function applyTablePersonChips(table){
+  if(!table||table.getAttribute('data-table-display'))return;
+  const head=[...(table.rows[0]?.cells||[])];
+  for(let ci=0;ci<tableColumnCount(table);ci++){
+    const t=tableColumnType(table,ci).type;
+    if(!(t==='person'||(!t&&PERSON_HEADER_RE.test(head[ci]?.textContent||''))))continue;
+    tableBodyRows(table).forEach(r=>{
+      const c=r.cells[ci]; if(!c)return;
+      const html=personInlineHtml(tableCellText(c)); if(html)c.innerHTML=html;
+    });
+  }
+}
 function tableStatusPillColumns(table){
   const head=[...(table.rows[0]?.cells||[])];
   const out=[];
@@ -6526,14 +6562,14 @@ function isCheckColumn(values) {
 /* GENERATED:columnType:START — DO NOT EDIT BY HAND. Source of truth: src/utils/columnType.ts (tests: tests/unit/columnType.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * Column types for tables (cell menu → Column type ›): a column can be set to Text, Number,
- * Currency, Date or Status instead of the default automatic detection. Stored as data-type (and
+ * Currency, Date, Status or Person instead of the default automatic detection. Stored as data-type (and
  * data-currency) on every cell of the column, like data-align. These are the pure parts: the
  * type names, the offered currencies, how a currency value is written, and how a picked date is
  * written so it matches the column's existing dates.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `columnType` block.
  */
-const COLUMN_TYPES = ['text', 'number', 'currency', 'date', 'status'];
+const COLUMN_TYPES = ['text', 'number', 'currency', 'date', 'status', 'person'];
 /** A stored data-type value, or '' (automatic) for anything unknown. */
 function normalizeColumnType(v) {
     const s = String(v ?? '').trim().toLowerCase();
@@ -6627,6 +6663,50 @@ function formatColumnDate(utc, sample = '') {
     if (/^[A-Za-z]/.test(String(sample).trim()))
         return `${MONTHS[m]} ${day}, ${y}`;
     return `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+/** A column header that names people: Owner, Assignee, Who, Responsible, Lead, … */
+const PERSON_HEADER_RE = /^\s*(owner|owners|assignee|assignees|assigned to|who|responsible|lead|action owner|people|person)\s*$/i;
+/**
+ * The people named in a cell: split on commas, semicolons, "&", "+", "/" and the word "and"
+ * ("Ana, Raj & Mo" → Ana, Raj, Mo), a leading "@" dropped, blanks and repeats removed.
+ */
+function splitPeople(raw) {
+    const out = [];
+    String(raw ?? '').split(/\s*(?:[,;&+/]|\band\b)\s*/i).forEach((p) => {
+        const name = p.trim().replace(/^@/, '').trim();
+        if (name && !out.some((o) => o.toLowerCase() === name.toLowerCase()))
+            out.push(name);
+    });
+    return out;
+}
+/** A person's initials for an avatar: first letters of the first and last word ("Ana Silva" → AS, "raj" → R). */
+function personInitials(name) {
+    const words = String(name ?? '').trim().split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w));
+    if (!words.length)
+        return '?';
+    const first = (w) => (w.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+    return words.length === 1 ? first(words[0]) : first(words[0]) + first(words[words.length - 1]);
+}
+/** A stable colour slot 0..n-1 for a name, so the same person always gets the same avatar colour. */
+function personColorIndex(name, n) {
+    let h = 0;
+    for (const ch of String(name ?? '').trim().toLowerCase())
+        h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return n > 0 ? h % n : 0;
+}
+/** Everyone named in a column, most often named first (ties in order of appearance), for the picker. */
+function columnPeople(values) {
+    const count = new Map();
+    let at = 0;
+    values.forEach((v) => splitPeople(v).forEach((name) => {
+        const k = name.toLowerCase();
+        const e = count.get(k);
+        if (e)
+            e.n++;
+        else
+            count.set(k, { name, n: 1, at: at++ });
+    }));
+    return [...count.values()].sort((a, b) => b.n - a.n || a.at - b.at).map((e) => e.name);
 }
 
 /* GENERATED:columnType:END */
@@ -6995,7 +7075,7 @@ function buildTableEditItems(table,cell,commit){
         cur?{label:'Automatically', title:'Numbers right-align on their own', onClick:run(()=>tableSetColumnAlign(table,cell,''))}:{label:'Automatically', icon:CHECK, current:true, onClick:()=>{}}
       ]},
       {label:'Column type', submenu:[
-        typeItem('','Automatic'), typeItem('text','Text'), typeItem('number','Number'), typeItem('date','Date'), typeItem('status','Status'),
+        typeItem('','Automatic'), typeItem('text','Text'), typeItem('number','Number'), typeItem('date','Date'), typeItem('status','Status'), typeItem('person','Person'),
         {heading:'Currency'},
         ...menuCurrencies(recentCurrencies(),ct.type==='currency'?ct.currency:'').map(code=>typeItem('currency',currencyMenuLabel(code),code)),
         {label:'More currencies\u2026', onClick:()=>openCurrencyPicker(table,cell,ct.type==='currency'?ct.currency:'',code=>run(()=>tableSetColumnType(table,cell,'currency',code))())}
@@ -7311,7 +7391,8 @@ async function copyNodeTableObject(node,tIdx){
   }catch(e){ showToast('Copy failed'); }
 }
 // Pickers for typed columns while a table is being edited: focusing a body cell of a Status column
-// shows its status choices (statusPickerOptions), of a Date column a date input with Today / Clear,
+// shows its status choices (statusPickerOptions), of a Person column the people already named in it
+// (columnPeople), of a Date column a date input with Today / Clear,
 // just below the cell. Typing still works as usual -- the picker only offers a shortcut. Leaving a
 // Currency cell rewrites its number as currency. The picker lives inside `wrap` (so focusing its
 // date input doesn't count as leaving the table) and cleanEditorHtml strips it from what's saved.
@@ -7344,11 +7425,22 @@ function attachTableCellPickers(wrap,table,commit){
     const row=cell.closest('tr');
     if(!row||tableIsHeaderRow(table,row))return;
     const ci=cell.cellIndex; const type=tableColumnType(table,ci).type;
-    if(type!=='status'&&type!=='date')return;
+    if(type!=='status'&&type!=='date'&&type!=='person')return;
     picker=document.createElement('div'); picker.className='tbl-cell-picker'; picker.contentEditable='false';
     picker.dataset.kind=type;
     const colValues=tableBodyRows(table).map(r=>tableCellText(r.cells[ci]).trim());
-    if(type==='status'){
+    if(type==='person'){
+      // Everyone already named in the column, most often first; a click puts that one person in
+      // the cell. Nobody named yet → no picker, just type.
+      const cur=splitPeople(tableCellText(cell)).map(n=>n.toLowerCase());
+      const people=columnPeople(colValues);
+      if(!people.length){ picker=null; return; }
+      people.forEach(name=>{
+        const b=btn('', 'tbl-picker-person'+(cur.length===1&&cur[0]===name.toLowerCase()?' current':''),()=>writeCell(cell,name));
+        b.innerHTML=personChipsHtml(name);
+        picker.appendChild(b);
+      });
+    } else if(type==='status'){
       const cur=tableCellText(cell).trim().toLowerCase();
       statusPickerOptions(colValues).forEach(opt=>{
         const b=btn(opt,'tbl-status-pill tbl-picker-status'+(opt.toLowerCase()===cur?' current':''),()=>writeCell(cell,opt));
@@ -7459,6 +7551,7 @@ function buildNodeTableObject(node,tIdx){
     applyTableHeatmap(clone);
     applyTableStatusPills(clone);
     applyTableCheckIcons(clone);
+    applyTablePersonChips(clone);
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
@@ -9203,6 +9296,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   applyTableHeatmap(clone);
   applyTableStatusPills(clone);
   applyTableCheckIcons(clone);
+  applyTablePersonChips(clone);
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);

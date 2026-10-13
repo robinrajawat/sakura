@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   normalizeColumnType, formatCurrency, formatColumnDate, isCurrencyCode, currencyName, currencySymbol,
-  menuCurrencies, pushRecentCurrency, currencyMatches, allCurrencyCodes
+  menuCurrencies, pushRecentCurrency, currencyMatches, allCurrencyCodes,
+  PERSON_HEADER_RE, splitPeople, personInitials, personColorIndex, columnPeople
 } from '../../src/utils/columnType';
 import { parseCellNumber } from '../../src/utils/tableData';
 
@@ -66,5 +67,29 @@ describe('formatColumnDate', () => {
     expect(formatColumnDate(oct14)).toBe('2026-10-14');
     expect(formatColumnDate(oct14, '2026-01-02')).toBe('2026-10-14');
     expect(formatColumnDate(oct14, 'Oct 1, 2026')).toBe('Oct 14, 2026');
+  });
+});
+
+describe('people', () => {
+  it('recognises people headers', () => {
+    expect(['Owner', 'assignee', ' Who ', 'Assigned to'].every((h) => PERSON_HEADER_RE.test(h))).toBe(true);
+    expect(PERSON_HEADER_RE.test('Ownership')).toBe(false);
+  });
+  it('splits a cell into people', () => {
+    expect(splitPeople('Ana, Raj & Mo')).toEqual(['Ana', 'Raj', 'Mo']);
+    expect(splitPeople('@ana and Lee / ANA')).toEqual(['ana', 'Lee']);
+    expect(splitPeople('Ana Silva; Brandon')).toEqual(['Ana Silva', 'Brandon']);
+    expect(splitPeople('  ')).toEqual([]);
+  });
+  it('makes initials and stable colours', () => {
+    expect(personInitials('Ana Silva')).toBe('AS');
+    expect(personInitials('raj')).toBe('R');
+    expect(personInitials('Jean-Luc de Vries')).toBe('JV');
+    expect(personInitials('')).toBe('?');
+    expect(personColorIndex('Ana', 5)).toBe(personColorIndex(' ana ', 5));
+    expect(personColorIndex('Ana', 5)).toBeLessThan(5);
+  });
+  it('lists a column\'s people, most often named first', () => {
+    expect(columnPeople(['Raj', 'Ana, Raj', '', 'Mo', 'ana'])).toEqual(['Raj', 'Ana', 'Mo']);
   });
 });

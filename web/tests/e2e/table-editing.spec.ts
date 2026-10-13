@@ -152,7 +152,7 @@ test('the cell menu groups its actions into submenus, in dividered groups with n
   expect(await subLabels('Move')).toEqual(['Row up', 'Row down', 'Column left', 'Column right']);
   expect(await subLabels('Sort')).toEqual(['A → Z', 'Z → A']);
   expect(await subLabels('Align column')).toEqual(['Left', 'Center', 'Right', 'Automatically']);
-  expect(await subLabels('Column type')).toEqual(['Automatic', 'Text', 'Number', 'Date', 'Status', 'EUR · Euro', 'USD · US Dollar', 'GBP · British Pound', 'INR · Indian Rupee', 'JPY · Japanese Yen', 'More currencies…']);
+  expect(await subLabels('Column type')).toEqual(['Automatic', 'Text', 'Number', 'Date', 'Status', 'Person', 'EUR · Euro', 'USD · US Dollar', 'GBP · British Pound', 'INR · Indian Rupee', 'JPY · Japanese Yen', 'More currencies…']);
   expect(await subLabels('Delete')).toEqual(['Row', 'Column', 'Table']);
   // On the header row, rows can't be added above it or moved. (Esc only while a menu is open: one
   // more would end the editing session.)

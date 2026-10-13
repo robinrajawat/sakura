@@ -163,3 +163,35 @@ test('More currencies… searches every currency, and the pick moves to the top 
   await expect(f).toHaveClass(/editing/);
   expect(errors).toEqual([]);
 });
+
+test('Person: names show as chips, automatically under an Owner header, with a picker while editing', async ({ page }) => {
+  const errors = await load(page);
+  const f = fig(page);
+  // "Task" isn't a people header; set it to Person.
+  await setType(page, f, 'Labels', 'Person');
+  await leave(page);
+  await expect(f.locator('tbody td:nth-child(1) .tbl-person')).toHaveText(['Labels', 'Carrier']);
+  // Same name, same colour.
+  // @ts-expect-error -- bare globals from index.html
+  const same = await page.evaluate(() => personInlineHtml('Ana') === personInlineHtml('Ana') && personInlineHtml('Ana, Raj & Mo').split('tbl-person').length - 1 === 3);
+  expect(same).toBe(true);
+  // Picker offers the column's people; a click fills the cell.
+  const cell = f.locator('tbody tr:nth-child(2) td:nth-child(1)');
+  await cell.click();
+  const picker = f.locator('.tbl-cell-picker');
+  await expect(picker.locator('.tbl-picker-person')).toHaveCount(2);
+  await expect(picker.locator('.tbl-picker-person.current .tbl-person-av')).toHaveText('C');
+  await picker.locator('.tbl-picker-person', { hasText: 'Labels' }).click();
+  await expect(cell).toHaveText('Labels');
+  await leave(page);
+  expect(await stored(page)).toContain('data-type="person"');
+  expect(await stored(page)).not.toContain('tbl-person');
+  expect(errors).toEqual([]);
+});
+
+test('Person chips keep the cell text exactly, separators included', async ({ page }) => {
+  await load(page);
+  // @ts-expect-error -- bare global from index.html
+  const r = await page.evaluate(() => { const d = document.createElement('div'); d.innerHTML = personInlineHtml('Ana, Raj & @Mo'); return { text: d.textContent, chips: [...d.querySelectorAll('.tbl-person')].map((e) => e.textContent) }; });
+  expect(r).toEqual({ text: 'Ana, Raj & @Mo', chips: ['Ana', 'Raj', '@Mo'] });
+});
