@@ -7692,7 +7692,9 @@ function insertNodeTable(nodeId,rows,cols){
   nodes[idx].modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   setSingleSelection(nodeId);
-  expandNode(nodeId);
+  // Inline objects show under the row even while its branch is folded, so adding one never
+  // unfolds the row's children (owner request) -- it only makes sure the tables themselves show.
+  collapsedTableNodeIds.delete(nodeId);
   render();
   setTimeout(()=>{
     const wraps=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)];
@@ -22705,7 +22707,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   }
   if(action==='qa'){
     if(_ctxNodeId===null)return;
-    expandNode(_ctxNodeId);
+    // No expandNode: adding an inline object never unfolds the row's children.
     forceInlineItemExpanded(inlineExpandQaNodeIds,_ctxNodeId);
     const item={id:newQaId(),question:'',answer:'',sourceNodeId:_ctxNodeId,createdAt:Date.now()};
     qaItems.push(item);
@@ -22718,7 +22720,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     if(_ctxNodeId===null)return;
     setSingleSelection(_ctxNodeId);
     render();
-    expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandRemarksNodeIds,_ctxNodeId);
     addRemark();
     return;
@@ -22727,7 +22728,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     if(_ctxNodeId===null)return;
     setSingleSelection(_ctxNodeId);
     render();
-    expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandDiagramNodeIds,_ctxNodeId);
     createDiagram();
     return;
@@ -22739,7 +22739,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     if(_ctxNodeId===null)return;
     setSingleSelection(_ctxNodeId);
     render();
-    expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandDiagramNodeIds,_ctxNodeId);
     generateDiagramFromOutline();
     return;
@@ -22997,7 +22996,7 @@ document.addEventListener('paste',e=>{
       nodes[idx].modifiedAt=Date.now();
       markDirty(); scheduleAutoSave();
       setSingleSelection(selectedId);
-      expandNode(selectedId);
+      collapsedTableNodeIds.delete(selectedId);
       render();
       return;
     }
