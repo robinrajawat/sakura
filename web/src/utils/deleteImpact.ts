@@ -9,6 +9,9 @@
  * - To-dos are never deleted; they keep their task and only lose the link (which reconnects if
  *   the delete is undone, since the row comes back with the same id).
  *
+ * Owner rule: only ask before deleting when part of it can't be undone (diagrams); otherwise
+ * delete straight away and name what went in the toast.
+ *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `deleteImpact` block.
  */
 
@@ -67,4 +70,16 @@ export function deleteImpactText(c: DeleteImpactCounts): DeleteImpactText {
     ? countPhrase(c.todos, 'to-do') + ' linked here ' + (c.todos === 1 ? 'stays' : 'stay') + ' in To-Dos, unlinked.'
     : '';
   return { undoable, permanent, todos };
+}
+
+/** Everything deleted with the rows, for the delete toast: "1 note and 2 remarks", or ''. */
+export function deletedObjectsPhrase(c: DeleteImpactCounts): string {
+  const parts: string[] = [];
+  if (c.notes) parts.push(countPhrase(c.notes, 'note'));
+  if (c.tables) parts.push(countPhrase(c.tables, 'table'));
+  if (c.images) parts.push(countPhrase(c.images, 'image'));
+  if (c.questions) parts.push(countPhrase(c.questions, 'question'));
+  if (c.remarks) parts.push(countPhrase(c.remarks, 'remark'));
+  if (c.diagrams) parts.push(countPhrase(c.diagrams, 'diagram'));
+  return joinWithAnd(parts);
 }

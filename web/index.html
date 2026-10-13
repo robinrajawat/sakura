@@ -3812,7 +3812,7 @@ body.printing-generic #gpe-overlay{
 <li>Searching the file explorer keeps folders visible (showing only matching documents and subfolders, force-expanded) but disables drag-and-drop while a search is active; it only matches document names — for text inside documents, use the header search (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span>) instead</li>
 <li>The file explorer's filter box is hidden by default since the header search now covers the same ground; bring it back via the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> icon next to "Documents", or Settings → Bars &amp; Menus → File Explorer → Filter box</li>
 <li>Drag the thin strip at the file explorer's right edge to resize it</li>
-<li><strong>Version history</strong> (right-click a document in the file explorer, or its tab, → "Version history") keeps automatic checkpoints of a document's past content — not full version control, just lightweight snapshots. A version is captured right before it would otherwise be overwritten, but only once every ~10 minutes of active editing at most, and only if something actually changed, so it won't flood with near-duplicates from every autosave tick. Capped at the last 20 per document, oldest dropped first. "Save a version now" in that panel adds one immediately, useful right before a big rewrite. Restoring an older version is itself non-destructive — whatever was there gets saved as a version first, so restoring is never a one-way trip</li>
+<li><strong>Version history</strong> (right-click a document in the file explorer, or its tab, → "Version history") keeps automatic checkpoints of a document's past content — not full version control, just lightweight snapshots. A version is captured right before it would otherwise be overwritten, but only once every ~10 minutes of active editing at most, and only if something actually changed, so it won't flood with near-duplicates from every autosave tick. Capped at the last 10 per document, oldest dropped first. "Save a version now" in that panel adds one immediately, useful right before a big rewrite. Restoring an older version is itself non-destructive — whatever was there gets saved as a version first, so restoring is never a one-way trip</li>
 <li>If the same document is open as the active one in two tabs or windows of this browser at once (easy to do by accident — duplicating a tab, browser session restore, opening the file twice), a banner appears the moment the <em>other</em> one saves a change, since otherwise whichever tab saves last would silently win with no warning. "Reload latest" discards anything unsaved here and pulls in the other tab's version; dismissing it just clears the banner — your edits here are kept either way, and the other tab gets the same warning in reverse once you save. Documents open here only in the background (not the one on screen) refresh silently instead, since there's nothing unsaved there to protect. This only applies within one browser — a completely different browser, or a different device, never shares storage and can't collide</li>
 </ul>
 </div>
@@ -3870,7 +3870,7 @@ body.printing-generic #gpe-overlay{
 <li>A remark stays <strong>open</strong> until someone resolves it: hover it for <strong>Resolve</strong> (or right-click → Resolve remark). Resolved remarks fold behind one "✓ N resolved remarks" line under the row — click it to show them, each with a <strong>Reopen</strong> button. Remarks written before this existed start open</li>
 <li>A remark left blank (added, never typed into) is discarded as soon as you click away from it</li>
 <li>A small person dot appears on a node with remarks — click it to show or hide them inline. It shows how many are still open, and turns grey once they're all resolved</li>
-<li>Deleting a node deletes its remarks too (and its note, tables, images, Q&amp;A and diagrams). Delete asks first and lists what goes; Undo brings everything back except diagrams, which get a separate red warning</li>
+<li>Deleting a node deletes its remarks too (and its note, tables, images, Q&amp;A and diagrams); Undo brings them back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Always included in PDF exports: a remark appears right after the node it's linked to, with an Open or Resolved pill</li>
 <li>The toolbar's marker summary shows <strong>N open</strong> for remarks and for questions — click one to show only the rows that still have open ones</li>
 </ul>
@@ -4857,7 +4857,7 @@ body.printing-generic #gpe-overlay{
       </div>
       <div id="history-modal-body" class="history-modal-body"></div>
       <div class="history-modal-footer">
-        <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 20 versions per document</span>
+        <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 10 versions per document</span>
         <button id="history-save-now-btn" class="btn">Save a version now</button>
       </div>
     </div>
@@ -6874,6 +6874,9 @@ function openCountLabel(n, kind) {
  * - To-dos are never deleted; they keep their task and only lose the link (which reconnects if
  *   the delete is undone, since the row comes back with the same id).
  *
+ * Owner rule: only ask before deleting when part of it can't be undone (diagrams); otherwise
+ * delete straight away and name what went in the toast.
+ *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `deleteImpact` block.
  */
 function emptyDeleteImpact() {
@@ -6914,6 +6917,23 @@ function deleteImpactText(c) {
         ? countPhrase(c.todos, 'to-do') + ' linked here ' + (c.todos === 1 ? 'stays' : 'stay') + ' in To-Dos, unlinked.'
         : '';
     return { undoable, permanent, todos };
+}
+/** Everything deleted with the rows, for the delete toast: "1 note and 2 remarks", or ''. */
+function deletedObjectsPhrase(c) {
+    const parts = [];
+    if (c.notes)
+        parts.push(countPhrase(c.notes, 'note'));
+    if (c.tables)
+        parts.push(countPhrase(c.tables, 'table'));
+    if (c.images)
+        parts.push(countPhrase(c.images, 'image'));
+    if (c.questions)
+        parts.push(countPhrase(c.questions, 'question'));
+    if (c.remarks)
+        parts.push(countPhrase(c.remarks, 'remark'));
+    if (c.diagrams)
+        parts.push(countPhrase(c.diagrams, 'diagram'));
+    return joinWithAnd(parts);
 }
 
 /* GENERATED:deleteImpact:END */
@@ -10255,9 +10275,9 @@ let _sbTitleSyncCache=null;
 // document so it can't grow without bound.
 const REVISION_KEY_PREFIX='sakura_doc_rev_v1_';
 const REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes between automatic snapshots
-const REVISION_MAX_PER_DOC=20;
+const REVISION_MAX_PER_DOC=10; // owner: the last 10 is plenty (was 20); older ones are trimmed on the next save
 function revisionKey(id){ return REVISION_KEY_PREFIX+id }
-// Version history moved from localStorage to the IndexedDB overflow store — up to 20 full
+// Version history moved from localStorage to the IndexedDB overflow store — up to 10 full
 // text snapshots per document adds up fast across many documents, and unlike diagrams there's
 // no "only the heavy part" split possible here, so the whole thing moves.
 // Each read opportunistically migrates any legacy copy still sitting in localStorage from
@@ -10507,6 +10527,10 @@ function loadDocFromStorage(id){
     diagrams=Array.isArray(d.diagrams)?d.diagrams:[];
     diagrams.forEach(dg=>{ if(dg&&dg.xml)dg._hydrated=true; });
     remarks=Array.isArray(d.remarks)?d.remarks:[];
+    // Q&A, remarks and diagrams attached to no row of this document (left behind by deleted rows
+    // before deleting took them along, or by the removed Pad panel's lists) can't be seen or
+    // reached anywhere: remove them once, through the normal save (owner-approved cleanup).
+    if(removeOrphanedLinkedObjects())setTimeout(()=>{ if(currentDocId===id){ markDirty(); scheduleAutoSave(); } },0);
     hydrateDiagramBlobsForDoc(id);
     return true;
   }catch(e){ } return false;
@@ -10622,6 +10646,8 @@ function applyTabSnapshot(tab){
   remarks=Array.isArray(tab.remarks)?tab.remarks:[];
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=tab.searchQuery||''; searchMatches=tab.searchMatches||[]; searchIndex=tab.searchIndex??-1; if(el('search-input'))el('search-input').value='';
   currentDocId=tab.docId; activeTabDocId=tab.docId; saveCurrentDocId(tab.docId);
+  // Same one-time orphan cleanup as loadDocFromStorage (opening a tab doesn't go through it).
+  if(removeOrphanedLinkedObjects()){ markDirty(); scheduleAutoSave(); }
   hydrateDiagramBlobsForDoc(tab.docId);
   ensureSelection(); render(); updateDirtyIndicator();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
@@ -11177,7 +11203,7 @@ async function renderVersionHistoryList(){
     }
     return;
   }
-  if(footerHint)footerHint.textContent='Keeps the last 20 versions per document';
+  if(footerHint)footerHint.textContent='Keeps the last '+REVISION_MAX_PER_DOC+' versions per document';
   if(saveNowBtn)saveNowBtn.style.display='';
   const entry=loadDocsIndex().find(d=>d.id===docId);
   if(nameEl)nameEl.textContent=(docId===currentDocId?el('header-title')?.value:entry?.title)||entry?.title||'Untitled';
@@ -11218,7 +11244,7 @@ function describeOrphanedLinksAfterRestore(nodeList,diagramList,remarkList){
   const parts=[];
   if(orphanedDiagrams)parts.push(orphanedDiagrams+' diagram'+(orphanedDiagrams===1?'':'s'));
   if(orphanedRemarks)parts.push(orphanedRemarks+' remark'+(orphanedRemarks===1?'':'s'));
-  return ' — '+parts.join(', ')+' no longer linked to a node (see the Diagrams/Remarks tab to re-anchor)';
+  return ' — '+parts.join(', ')+' no longer linked to a node will be removed (the "Before restoring" version keeps them)';
 }
 async function restoreDocRevision(docId,ts){
   const revisions=await loadDocRevisions(docId);
@@ -12344,6 +12370,27 @@ function removeLinkedObjectsForNodeIds(nodeIds){
     }
   }
 }
+// Removes Q&A, remarks and diagrams whose row isn't in `nodes` (or that never had one). Skipped for
+// a document with no rows at all, so a failed or partial load can never wipe them, and for view-only
+// shared documents. Returns how many went.
+function removeOrphanedLinkedObjects(){
+  if(!nodes.length)return 0;
+  // Never on a document shared with you view-only: nothing could be saved, and the attempt warns.
+  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc())return 0;
+  const ids=new Set(nodes.map(n=>n.id));
+  let removed=0;
+  if(Array.isArray(qaItems)){ const keep=qaItems.filter(q=>ids.has(q.sourceNodeId)); removed+=qaItems.length-keep.length; qaItems=keep; }
+  if(Array.isArray(remarks)){ const keep=remarks.filter(r=>ids.has(r.anchorNodeId)); removed+=remarks.length-keep.length; remarks=keep; }
+  if(Array.isArray(diagrams)){
+    const gone=diagrams.filter(d=>!ids.has(d.anchorNodeId)).map(d=>d.id);
+    if(gone.length){
+      removed+=gone.length; diagrams=diagrams.filter(d=>ids.has(d.anchorNodeId));
+      const docId=currentDocId;
+      setTimeout(()=>{ gone.forEach(gid=>{ if(diagrams.some(d=>d.id===gid))return; idbDelete('diagblob:'+docId+':'+gid).catch(()=>{}); delete _diagramBlobSyncCache[gid]; }); },8000);
+    }
+  }
+  return removed;
+}
 async function confirmDeleteIfNeeded(){
   const count=getDeleteImpactCount(); if(!count)return true;
   const plural=count!==1;
@@ -12355,17 +12402,17 @@ async function confirmDeleteIfNeeded(){
   const extCount=referrers.length;
   const intCount=internalRefs.length;
   const blWarning=extCount?`\n\n${extCount} node${extCount===1?'':'s'} link to this — the [[reference${extCount===1?'':'s'}]] will be removed from ${extCount===1?'that node':'those nodes'}.`:(intCount?`\n\nThis subtree contains ${intCount} internal [[backlink${intCount===1?'':'s'}]] that will be lost.`:'');
-  // Inline objects (notes, tables, images, Q&A, remarks, diagrams) are deleted with the rows:
-  // always confirm when there are any, saying what Undo restores, with a separate prominent
-  // warning for diagrams, which it can't.
+  // Inline objects (notes, tables, images, Q&A, remarks, diagrams) are deleted with the rows.
+  // Owner rule: only ask when part of the delete can't be undone -- diagrams, which live outside
+  // the undo snapshot -- with a prominent warning; the dialog then also says what Undo restores.
   const impact=collectDeleteImpact(roots);
   const impactText=deleteImpactText(impact);
   const linkedWarning=[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('');
   // Plain "are you sure, you can undo" case is gone entirely (Category A of the popup audit —
   // Ctrl+Z / the delete toast already cover it). What's left here is different in kind: a
-  // warning that OTHER rows will lose a [[backlink]], or that the rows' inline objects go with
-  // them (owner decision: confirm whenever there are any). Only the no-impact case is silent.
-  if(!extCount&&!intCount&&!inlineObjectTotal(impact))return true;
+  // warning that OTHER rows will lose a [[backlink]], or that diagrams will be deleted for good.
+  // Everything else is silent (the delete toast names what went; Undo restores it).
+  if(!extCount&&!intCount&&!impact.diagrams)return true;
   return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?${blWarning}${linkedWarning}`,warning:impactText.permanent,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
 }
 /* GENERATED:formatRelativeTime:START — DO NOT EDIT BY HAND. Source of truth: src/utils/formatRelativeTime.ts (tests: tests/unit/formatRelativeTime.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -19353,14 +19400,15 @@ function focusTitleAtEnd(){
 // title keeps acting as the outline's row -1 rather than the flow dead-ending here.
 function deleteEmptyNodeAndFocusPrev(id){
   const idx=getIndex(nodes,id); if(idx<0)return; if(nodeHasChildren(nodes,idx))return;
-  // An empty row can still hold inline objects (a note, remarks, a diagram…): never delete those
-  // silently -- go through the same confirmation as Delete.
-  if(inlineObjectTotal(collectDeleteImpact([id]))){ commitEdit(); setSingleSelection(id); render(); confirmDeleteIfNeeded().then(ok=>{ if(ok){ deleteSelected(); focusPane(); } }); return; }
+  // An empty row can still hold a diagram, which Undo can't bring back: go through Delete's
+  // confirmation for that. Its other objects (note, remarks, Q&A…) go with it, undoably.
+  if(collectDeleteImpact([id]).diagrams){ commitEdit(); setSingleSelection(id); render(); confirmDeleteIfNeeded().then(ok=>{ if(ok){ deleteSelected(); focusPane(); } }); return; }
   const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0)return;
   const prevId=pos>0?nodes[vis[pos-1]].id:null;
   pushUndo(); markDirty();
   const deletedTexts=nodes[idx].text?[nodes[idx].text]:[]; const deletedIds=[nodes[idx].id];
   nodes.splice(idx,1);
+  removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
   rebuildParentIds();
@@ -19446,6 +19494,7 @@ function deleteSelected(){
   if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); render(); showToast('Cleared tree'); return}
   const roots=getSelectionRootIndexes(); if(!roots.length)return;
   const count=getDeleteImpactCount();
+  const goneWith=deletedObjectsPhrase(collectDeleteImpact(roots.flatMap(i=>nodes.slice(i,getSubtreeEnd(nodes,i)).map(n=>n.id))));
   // Collect texts of nodes being deleted for backlink cleanup, and their ids so any of them
   // still sitting in the auto-rewrite queue get purged along with the nodes themselves.
   const deletedTexts=[]; const deletedIds=[];
@@ -19455,7 +19504,7 @@ function deleteSelected(){
   removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupBacklinksFor(deletedTexts);
-  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`);
+  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images)); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
@@ -31996,7 +32045,7 @@ let dockActiveTab=null;
         <h3>Version History</h3>
         <ul>
           <li><span class="cs-desc">Right-click a doc in the file explorer → "Version history" → automatic snapshots</span></li>
-          <li><span class="cs-desc">Snapshot taken before content would be overwritten — at most once per ~10 min, capped at last 20 per document</span></li>
+          <li><span class="cs-desc">Snapshot taken before content would be overwritten — at most once per ~10 min, capped at last 10 per document</span></li>
           <li><span class="cs-desc">"Save a version now" → snapshot immediately, useful before a big rewrite</span></li>
           <li><span class="cs-desc">Restoring saves current content as a version first — always reversible</span></li>
         </ul>

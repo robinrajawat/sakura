@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emptyDeleteImpact, inlineObjectTotal, joinWithAnd, deleteImpactText } from '../../src/utils/deleteImpact';
+import { emptyDeleteImpact, inlineObjectTotal, joinWithAnd, deleteImpactText, deletedObjectsPhrase } from '../../src/utils/deleteImpact';
 
 const counts = (o: Partial<ReturnType<typeof emptyDeleteImpact>>) => ({ ...emptyDeleteImpact(), ...o });
 
@@ -38,5 +38,13 @@ describe('deleteImpactText', () => {
   it('says to-dos stay', () => {
     expect(deleteImpactText(counts({ todos: 1 })).todos).toBe('1 to-do linked here stays in To-Dos, unlinked.');
     expect(deleteImpactText(counts({ todos: 3 })).todos).toBe('3 to-dos linked here stay in To-Dos, unlinked.');
+  });
+});
+
+describe('deletedObjectsPhrase', () => {
+  it('names everything that went, diagrams included', () => {
+    expect(deletedObjectsPhrase(emptyDeleteImpact())).toBe('');
+    expect(deletedObjectsPhrase(counts({ notes: 1, remarks: 2, todos: 4 }))).toBe('1 note and 2 remarks');
+    expect(deletedObjectsPhrase(counts({ tables: 1, diagrams: 1, questions: 2 }))).toBe('1 table, 2 questions and 1 diagram');
   });
 });

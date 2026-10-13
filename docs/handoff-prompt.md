@@ -361,17 +361,22 @@ untouched blank remark is discarded when focus leaves its line (the cause of the
 owner saw at the end of PDFs: blank remarks orphaned by deleting their row). Covered by
 `tests/e2e/remark-qa-status.spec.ts`, `tests/e2e/remark-blank-cleanup.spec.ts`.
 
-**Deleting rows deletes their inline objects (owner decision, 2026-10-13).** "Ask for confirmation
-when there are inline objects, with a significant warning if the step is irreversible." Pure parts in
-`src/utils/deleteImpact.ts` (generator block `deleteImpact`); `collectDeleteImpact` counts a selection's
-notes/tables/images/Q&A/remarks/diagrams/to-dos, `removeLinkedObjectsForNodeIds` (called after
-`pushUndo()` in `deleteSelected` and `clearAllNodes`) drops their Q&A, remarks and diagrams. Q&A and
-remarks are in the undo snapshot, diagrams are not, so diagrams get a red `#sakura-modal-warning`
-callout (`sakuraConfirm({warning})`, new). To-dos are untouched (their link reconnects on undo, same
-id). `confirmDeleteIfNeeded` is silent only with no backlinks and no inline objects;
-`deleteEmptyNodeAndFocusPrev` (Backspace on an empty row) routes through it when the row holds objects.
-Older documents' existing orphans are left alone. Covered by
-`tests/e2e/delete-row-linked-objects.spec.ts`.
+**Deleting rows deletes their inline objects (owner decisions, 2026-10-13).** Owner rule: "if it's
+not reversible then only ask for confirmation before delete". Pure parts in `src/utils/deleteImpact.ts`
+(generator block `deleteImpact`); `collectDeleteImpact` counts a selection's notes/tables/images/Q&A/
+remarks/diagrams/to-dos, `removeLinkedObjectsForNodeIds` (after `pushUndo()` in `deleteSelected`,
+`deleteEmptyNodeAndFocusPrev` and `clearAllNodes`) drops their Q&A, remarks and diagrams. Q&A and
+remarks are in the undo snapshot; diagrams are not, so `confirmDeleteIfNeeded` asks only for diagrams
+(red `#sakura-modal-warning` callout via the new `sakuraConfirm({warning})`) or backlinks (pre-existing,
+kept); otherwise it's silent and the toast names what went. To-dos are untouched (link reconnects on
+undo, same id). Clear all nodes always confirms and lists what goes.
+**One-time orphan cleanup (owner OK'd):** `removeOrphanedLinkedObjects` runs in `loadDocFromStorage` and
+`applyTabSnapshot` and removes Q&A/remarks/diagrams whose row isn't in the document (skipped when the
+document has no rows, and for view-only shared docs), saving through the normal path. A Version
+History restore's orphans are cleaned the next time the doc opens (the toast says the "Before
+restoring" version keeps them). Covered by `tests/e2e/delete-row-linked-objects.spec.ts`.
+**Version history cap:** `REVISION_MAX_PER_DOC` 20 → 10 (owner: "5–10, 20 is way too many"); longer
+existing lists trim on the next recorded version. To-Dos history stays at 20 (not asked).
 
 **Next:** Table display polish (owner screenshot): group repeated first-column values, horizontal hairlines
 only, faint "–" for empty / `" "` cells — display-only, like the heat-map.
