@@ -270,15 +270,15 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
             label: c.querySelector('.pv-table-card-label')?.textContent,
             value: c.querySelector('.pv-table-card-value')?.textContent,
             hasSvg: !!c.querySelector('svg'),
-            hasStripe: /border-left/.test(c.getAttribute('style') || ''),
+            hasSwatch: !!c.querySelector('.pv-table-card-label .pv-table-card-swatch'),
           })),
           iconBadges: div.querySelectorAll('.pv-table-card-icon').length,
           helpersGone: ['pickCardIconId', 'getCardIconIds', 'suggestCardIconsWithAi', 'callAiCardIconBatch'].every(n => typeof (window as any)[n] === 'undefined'),
         };
       });
       expect(result.cards).toEqual([
-        { label: 'ERP - ABAP', value: '6 days', hasSvg: false, hasStripe: true },
-        { label: 'EWM - Functional', value: '5 days', hasSvg: false, hasStripe: true },
+        { label: 'ERP - ABAP', value: '6 days', hasSvg: false, hasSwatch: true },
+        { label: 'EWM - Functional', value: '5 days', hasSvg: false, hasSwatch: true },
       ]);
       expect(result.iconBadges).toBe(0);
       expect(result.helpersGone).toBe(true);
@@ -378,7 +378,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
         nodes = [
           { id: 1, depth: 0, text: 'Plain', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>'], tags: [], styles: {} },
           { id: 2, depth: 0, text: 'Chart', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>'], tags: [], styles: {} },
-          { id: 3, depth: 0, text: 'Cards', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>'], tags: [], styles: {} },
+          { id: 3, depth: 0, text: 'Cards', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>'], tags: [], styles: {} },
         ];
         // @ts-expect-error
         collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 4;
@@ -949,7 +949,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     await dismissOverlays(page);
     await page.evaluate(() => {
       // @ts-expect-error -- bare globals from index.html
-      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr></table>'], tags: [], styles: {} }];
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tables: ['<table data-feature-chart="1" data-chart-type="cards"><tr><th>Label</th><th>Value</th></tr><tr><td>A</td><td>10</td></tr><tr><td>B</td><td>20</td></tr></table>'], tags: [], styles: {} }];
       // @ts-expect-error
       collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
       // @ts-expect-error

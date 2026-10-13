@@ -85,7 +85,7 @@ test('chart menu: title and size items; Cards allowed with a change column', asy
     const bar = fresh('<table data-feature-chart="1"><tr><th>A</th><th>B</th></tr><tr><td>x</td><td>1</td></tr></table>');
     const labels = w.buildChartFeatureItems(bar, () => {}).map((i: any) => i.label);
     const sizeItem = w.buildChartFeatureItems(bar, () => {}).find((i: any) => i.label === 'Chart size');
-    const three = fresh('<table><tr><th>A</th><th>B</th><th>C</th></tr><tr><td>x</td><td>1</td><td>+1</td></tr></table>');
+    const three = fresh('<table><tr><th>A</th><th>B</th><th>C</th></tr><tr><td>x</td><td>1</td><td>+1</td></tr><tr><td>y</td><td>2</td><td>-1</td></tr></table>');
     const four = fresh('<table><tr><th>A</th><th>B</th><th>C</th><th>D</th></tr><tr><td>x</td><td>1</td><td>2</td><td>3</td></tr></table>');
     w.setTableChartTitle(bar, '  Spaced   title ');
     return {

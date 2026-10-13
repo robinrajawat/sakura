@@ -93,15 +93,15 @@ test.describe('Card icons', () => {
   test('Accent colour submenu recolours one card; keyboard → opens a submenu and ← closes it', async ({ page }) => {
     await openWith(page, [EST]);
     const cards = page.locator('.pv-table-card');
-    const before = await cards.nth(0).evaluate(el => getComputedStyle(el).borderLeftColor);
+    const before = await cards.nth(0).locator('.pv-table-card-swatch').evaluate(el => getComputedStyle(el).backgroundColor);
     await cards.nth(0).click({ button: 'right', force: true });
     await page.locator('.sb-context-item', { hasText: 'Accent colour' }).hover();
     await page.locator('.sb-context-submenu .sb-context-item', { hasText: 'Purple' }).click();
     // @ts-expect-error -- bare global from index.html
     expect(await page.evaluate(() => nodes[0].tables[0])).toContain('data-card-accent-picks');
-    const after = await page.locator('.pv-table-card').nth(0).evaluate(el => getComputedStyle(el).borderLeftColor);
+    const after = await page.locator('.pv-table-card').nth(0).locator('.pv-table-card-swatch').evaluate(el => getComputedStyle(el).backgroundColor);
     expect(after).not.toBe(before);
-    const other = await page.locator('.pv-table-card').nth(1).evaluate(el => getComputedStyle(el).borderLeftColor);
+    const other = await page.locator('.pv-table-card').nth(1).locator('.pv-table-card-swatch').evaluate(el => getComputedStyle(el).backgroundColor);
     expect(other).not.toBe(after);
 
     await page.locator('.pv-table-card').nth(0).click({ button: 'right', force: true });

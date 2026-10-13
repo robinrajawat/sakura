@@ -565,6 +565,15 @@ initHubTodosState({
     footer: ''
   },
   {
+    // Which displays fit a table (Show as ›) -- pure rules on the table's cell text, so far for
+    // Cards: column/row counts, numbers in the value column, a real change column. index.html's
+    // tableTextGrid turns a <table> into the grid these take. No production wiring needed.
+    name: 'tableDisplay',
+    sourceFile: 'src/utils/tableDisplay.ts',
+    testFile: 'tests/unit/tableDisplay.test.ts',
+    footer: ''
+  },
+  {
     // Remark and Q&A status (open / resolved / answered / won't answer) -- pure parts only: an
     // item's state, the toolbar's open counts, which nodes a status filter shows, and the PDF's
     // "Open items" grouping. Buttons, pills, the filter and the PDF markup stay hand-written in
