@@ -41,6 +41,8 @@ test.describe('Several remarks on the same node show newest first', () => {
       remarks = threeRemarks;
       // @ts-expect-error
       inlineExpandRemarksNodeIds = new Set([1]);
+      // @ts-expect-error -- more than two remarks fold the earliest; unfold them to check the order
+      showAllRemarksNodeIds = new Set([1]);
       // @ts-expect-error
       render();
     }, threeRemarks);

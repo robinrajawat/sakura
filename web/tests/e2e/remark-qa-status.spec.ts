@@ -232,3 +232,47 @@ test('a plain comment has no status until it is marked as a follow-up (right-cli
   expect(await sumButtons(page)).toEqual(['1 open question', '1 open follow-up']);
   expect(errors).toEqual([]);
 });
+
+test('more than two remarks or questions under a row: the latest remarks and open questions show, the rest fold', async ({ page }) => {
+  const errors = await open(page);
+  await page.evaluate(`
+    remarks.push(
+      { id: 'c1', anchorNodeId: 4, person: 'A', date: '2026-10-01', text: 'Oldest comment', createdAt: 10 },
+      { id: 'c2', anchorNodeId: 4, person: 'B', date: '2026-10-02', text: 'Older comment', createdAt: 11 },
+      { id: 'c3', anchorNodeId: 4, person: 'C', date: '2026-10-03', text: 'Newest comment', createdAt: 12 },
+      { id: 'c4', anchorNodeId: 4, person: 'D', date: '2026-10-04', text: 'Old follow-up', createdAt: 1, followUp: true }
+    );
+    qaItems.push(
+      { id: 'qa2', question: 'Second answered?', answer: 'Yes', sourceNodeId: 4, createdAt: 5 },
+      { id: 'qa3', question: 'Still open?', answer: '', sourceNodeId: 4, createdAt: 6 }
+    );
+    inlineExpandRemarksNodeIds.add(4); render();
+  `);
+  const remarkIds = () => page.evaluate(() => [...document.querySelectorAll('.node-remark-text-inline')].map(e => (e as HTMLElement).dataset.remarkId));
+  const qaIds = () => page.evaluate(() => [...document.querySelectorAll('.node-qa-question')].map(e => (e as HTMLElement).dataset.qaId));
+  // Row 4 now has five remarks (rPlain + four): the two newest, plus the open follow-up, show.
+  expect((await remarkIds()).filter(id => ['rPlain', 'c1', 'c2', 'c3', 'c4'].includes(id!))).toEqual(['c3', 'c2', 'c4']);
+  const more = page.locator('.node-inline-more-toggle', { hasText: 'earlier remark' });
+  await expect(more).toHaveText(/2 earlier remarks/);
+  await more.click();
+  expect((await remarkIds()).filter(id => ['rPlain', 'c1', 'c2', 'c3', 'c4'].includes(id!))).toEqual(['c3', 'c2', 'c1', 'rPlain', 'c4']);
+  await expect(page.locator('.node-inline-more-toggle', { hasText: 'Hide earlier remarks' })).toBeVisible();
+
+  // Row 4's questions: open first, the two answered ones folded.
+  expect((await qaIds()).filter(id => ['qDone', 'qa2', 'qa3'].includes(id!))).toEqual(['qa3']);
+  await page.locator('.node-inline-more-toggle', { hasText: '2 answered questions' }).click();
+  expect((await qaIds()).filter(id => ['qDone', 'qa2', 'qa3'].includes(id!))).toEqual(['qa3', 'qDone', 'qa2']);
+
+  // The PDF prints every one of them.
+  const printed = await page.evaluate(async () => {
+    const w = window as any;
+    w.__printed = false; w.print = () => { w.__printed = true; };
+    w.exportPdfDirect();
+    const t0 = Date.now();
+    while (!w.__printed && Date.now() - t0 < 10000) await new Promise((res) => setTimeout(res, 50));
+    const txt = document.getElementById('preview-doc')!.textContent || '';
+    return ['Oldest comment', 'Older comment', 'Newest comment', 'Old follow-up', 'Just a comment.', 'Second answered?', 'Still open?', 'Who owns tier-2 tickets?'].filter(t => !txt.includes(t));
+  });
+  expect(printed).toEqual([]);
+  expect(errors).toEqual([]);
+});

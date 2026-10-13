@@ -3886,6 +3886,7 @@ body.printing-generic #gpe-overlay{
 <li>Deleting a node deletes its remarks too (and its note, tables, images, Q&amp;A and diagrams); Undo brings them back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Always included in PDF exports: a remark appears right after the node it's linked to, with an Open or Resolved pill</li>
 <li>The toolbar's marker summary shows <strong>N open</strong> for remarks and for questions — click one to show only the rows that still have open ones</li>
+<li>With more than two remarks under a row, the latest two (and any open follow-up) show; the rest fold behind "N earlier remarks" — click to show them. PDF exports always include every remark</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-qa">
@@ -3897,6 +3898,7 @@ body.printing-generic #gpe-overlay{
 <li>Always included in PDF exports: each question prints right under the node it's linked to, same as a note; questions with no linked node are appended as a final section — bold question, regular-weight answer, unanswered ones marked "No answer provided"</li>
 <li>Each question shows its status: <strong>Open</strong> until it has an answer, <strong>Answered</strong> once the answer has text, or <strong>Won't answer</strong> — hover an open question for its "Won't answer" button (or right-click it) to close it without one, and "Reopen" to take that back</li>
 <li>PDF exports end with an <strong>Open items</strong> page listing every open question and open follow-up under its row (Settings → Data &amp; backup → Export &amp; copy → "Open items summary", on by default)</li>
+<li>Open questions list first. With more than two questions under a row, answered and closed ones fold behind "N answered questions" — click to show them. PDF exports always include every question</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-tables">
@@ -4917,6 +4919,9 @@ let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 let activeDiscussionFilter=null;
 // Nodes whose resolved remarks are unfolded this session (resolved remarks fold behind one line).
 let showResolvedRemarksNodeIds=new Set();
+// Nodes whose earlier remarks / closed questions are unfolded this session (with more than two
+// remarks or questions under a row, only the latest remarks and the open questions show at first).
+let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
 let pdfOpenItemsSummary=true;
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
@@ -15284,6 +15289,18 @@ function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'; cons
 // Expand all / Collapse all cover inline objects too (owner request): every note, Q&A, remark and
 // diagram opens or closes under its row, and tables and images unfold or fold, along with the
 // branches themselves.
+// A quiet "N more ▸" line under a row's remarks or questions (same look as the resolved
+// follow-ups line); clicking toggles `set` for the node and re-renders.
+function buildInlineFoldLine(lineClass,paddingLeft,label,open,set,nodeId,tip){
+  const line=document.createElement('div'); line.className=lineClass+' node-remark-resolved-line node-inline-more-line'; line.style.position='relative'; line.style.paddingLeft=paddingLeft;
+  const b=document.createElement('button'); b.type='button'; b.className='node-remark-resolved-toggle node-inline-more-toggle'; b.setAttribute('aria-expanded',String(open));
+  b.innerHTML='<span>'+esc(label)+'</span><span class="nrr-caret" aria-hidden="true">'+(open?'▾':'▸')+'</span>';
+  b.dataset.tip=tip;
+  b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+  b.addEventListener('click',e=>{ e.stopPropagation(); if(set.has(nodeId))set.delete(nodeId); else set.add(nodeId); render(); });
+  line.appendChild(b);
+  return line;
+}
 function inlineObjectNodeIds(){
   const has=(list,key)=>new Set((list||[]).map(x=>x&&x[key]).filter(id=>id!=null));
   return {
@@ -15305,12 +15322,12 @@ function anyFoldClosed(){
 }
 function collapseAll(){if(!nodes.length)return; collapsedIds.clear(); nodes.forEach((n,i)=>{if((n.depth||0)===0&&nodeHasChildren(nodes,i))collapsedIds.add(n.id)});
   const o=inlineObjectNodeIds();
-  inlineExpandNoteNodeIds.clear(); inlineExpandQaNodeIds.clear(); inlineExpandRemarksNodeIds.clear(); inlineExpandDiagramNodeIds.clear(); showResolvedRemarksNodeIds.clear();
+  inlineExpandNoteNodeIds.clear(); inlineExpandQaNodeIds.clear(); inlineExpandRemarksNodeIds.clear(); inlineExpandDiagramNodeIds.clear(); showResolvedRemarksNodeIds.clear(); showAllRemarksNodeIds.clear(); showClosedQaNodeIds.clear();
   o.tables.forEach(id=>collapsedTableNodeIds.add(id)); o.images.forEach(id=>collapsedImageNodeIds.add(id));
   scheduleAutoSave(); render(); showToast('All collapsed')}
 function expandAll(){collapsedIds.clear();
   const o=inlineObjectNodeIds();
-  o.notes.forEach(id=>inlineExpandNoteNodeIds.add(id)); o.qa.forEach(id=>inlineExpandQaNodeIds.add(id)); o.remarks.forEach(id=>inlineExpandRemarksNodeIds.add(id)); o.diagrams.forEach(id=>inlineExpandDiagramNodeIds.add(id));
+  o.notes.forEach(id=>inlineExpandNoteNodeIds.add(id)); o.qa.forEach(id=>{ inlineExpandQaNodeIds.add(id); showClosedQaNodeIds.add(id); }); o.remarks.forEach(id=>{ inlineExpandRemarksNodeIds.add(id); showAllRemarksNodeIds.add(id); }); o.diagrams.forEach(id=>inlineExpandDiagramNodeIds.add(id));
   collapsedTableNodeIds.clear(); collapsedImageNodeIds.clear();
   scheduleAutoSave(); render(); showToast('All expanded')}
 // Single toggle for the toolbar's one fold/unfold button (previously two separate buttons) —
@@ -19046,7 +19063,20 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       remarkGuides(rLine);
       frag.appendChild(rLine)
     };
-    openRemarks.forEach(renderRemarkLine);
+    // More than two shown remarks: the latest two (plus any open follow-up) show; the rest fold
+    // behind "N earlier remarks". The PDF always prints every remark.
+    const showAllR=showAllRemarksNodeIds.has(node.id)||activeDiscussionFilter==='openRemarks'||openRemarks.length<=2;
+    const visibleRemarks=showAllR?openRemarks:openRemarks.filter((r,i)=>i<2||remarkIsOpen(r));
+    visibleRemarks.forEach(renderRemarkLine);
+    if(openRemarks.length>2&&activeDiscussionFilter!=='openRemarks'){
+      const hidden=openRemarks.length-openRemarks.filter((r,i)=>i<2||remarkIsOpen(r)).length;
+      if(hidden>0){
+        const rDepthF=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
+        const more=buildInlineFoldLine('node-remark-line',hideTreeLines?(rDepthF*32+0*editorScale+23)+'px':(0*editorScale+24)+'px',
+          showAllR?'Hide earlier remarks':hidden+' earlier remark'+(hidden===1?'':'s'),showAllR,showAllRemarksNodeIds,node.id,showAllR?'Show only the latest remarks':'Show all remarks');
+        remarkGuides(more); frag.appendChild(more);
+      }
+    }
     if(resolvedRemarks.length&&activeDiscussionFilter!=='openRemarks'){
       const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
       const fLine=document.createElement('div'); fLine.className='node-remark-line node-remark-resolved-line';
@@ -19066,7 +19096,16 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   }
   if(inlineExpandQaNodeIds.has(node.id)&&Array.isArray(qaItems)&&qaItems.length){
     // The "open questions" filter shows only questions that are still open.
-    const nodeQaItems=qaItems.filter(it=>it.sourceNodeId===node.id&&!qaIsSection(it)&&(activeDiscussionFilter!=='openQa'||qaState(it)==='open'));
+    // Open questions first (then won't answer, then answered — stable within each). With more than
+    // two questions under a row, closed ones fold behind "N answered" until clicked. The PDF always
+    // prints every question.
+    const qaRank={open:0,wont:1,answered:2};
+    const allNodeQa=qaItems.filter(it=>it.sourceNodeId===node.id&&!qaIsSection(it)&&(activeDiscussionFilter!=='openQa'||qaState(it)==='open'))
+      .map((it,i)=>({it,i})).sort((a,b)=>(qaRank[qaState(a.it)]-qaRank[qaState(b.it)])||(a.i-b.i)).map(x=>x.it);
+    const closedQa=allNodeQa.filter(it=>qaState(it)!=='open');
+    const foldQa=allNodeQa.length>2&&closedQa.length>0;
+    const showClosedQa=showClosedQaNodeIds.has(node.id);
+    const nodeQaItems=foldQa&&!showClosedQa?allNodeQa.filter(it=>qaState(it)==='open'):allNodeQa;
     const setQaWont=(item,wont)=>{ pushUndo(); if(wont)item.wontAnswer=true; else delete item.wontAnswer; markDirty(); scheduleAutoSave(); render(); };
     nodeQaItems.forEach(item=>{
       const qDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
@@ -19105,6 +19144,14 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       if(hideTreeLines&&depthGuideLines){ const qVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); qVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; qaLine.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(qDepth*32+0*editorScale+9)+'px'; qaLine.appendChild(vgOwn) } }
       frag.appendChild(qaLine)
     })
+    if(foldQa){
+      const qDepthF=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
+      const allAnswered=closedQa.every(it=>qaState(it)==='answered');
+      const label=showClosedQa?'Hide '+(allAnswered?'answered':'closed')+' questions':closedQa.length+(allAnswered?' answered':' closed')+' question'+(closedQa.length===1?'':'s');
+      const more=buildInlineFoldLine('node-qa-line',hideTreeLines?(qDepthF*32+0*editorScale+23)+'px':(0*editorScale+24)+'px',label,showClosedQa,showClosedQaNodeIds,node.id,showClosedQa?'Show only open questions':'Show answered and closed questions');
+      if(hideTreeLines&&depthGuideLines){ const fVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); fVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; more.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(qDepthF*32+0*editorScale+9)+'px'; more.appendChild(vgOwn) } }
+      frag.appendChild(more);
+    }
   }
   if(inlineExpandDiagramNodeIds.has(node.id)&&Array.isArray(diagrams)&&diagrams.length){
     const nodeDiagramsInline=diagrams.filter(dg=>dg.anchorNodeId===node.id);
