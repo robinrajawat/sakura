@@ -1556,15 +1556,17 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .pv-table-chip-desc{overflow-wrap:anywhere}
 .pv-table-cards-grid{display:grid;grid-template-columns:repeat(var(--cards-cols,3),minmax(0,1fr));gap:12px;width:100%;cursor:context-menu}
 @media (max-width:640px){.pv-table-cards-grid{grid-template-columns:repeat(var(--cards-cols-narrow,2),minmax(0,1fr))}}
-.pv-table-card-change{font:600 12px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.pv-table-card-change{font:600 11.5px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,currentColor 12%,transparent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-table-card-change.up{color:var(--fc-green)}
 .pv-table-card-change.down{color:var(--fc-red)}
 .pv-table-chart-title{flex:1 1 100%;font:600 13px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
-.pv-table-card{display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg));border:1px solid var(--border)}
-.pv-table-card-head{display:flex;align-items:center;gap:10px}
-.pv-table-card-icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,currentColor 13%,transparent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.pv-table-card-value{font:700 22px 'Inter',sans-serif;color:var(--fg);line-height:1.15}
-.pv-table-card-label{font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
+.pv-table-card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px 16px;border-radius:10px;background:var(--canvas-bg);border:1px solid var(--border)}
+.pv-table-card-label{display:flex;align-items:center;gap:7px;min-width:0;font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
+.pv-table-card-label-text{min-width:0;overflow-wrap:break-word}
+.pv-table-card-swatch{flex:0 0 auto;width:8px;height:8px;border-radius:2px;background:var(--card-color);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-card-icon{display:inline-flex;flex:0 0 auto;color:var(--card-color)}
+.pv-table-card-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.pv-table-card-value{min-width:0;font:600 26px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg);line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 
 /* A table/chart/Cards object on node.tables -- a sibling of the note, not embedded inside it (see
    buildNodeTableObject/migrateNoteTablesToNode) -- reuses .pv-table-figure/.pv-table-chart-figure
@@ -5609,6 +5611,11 @@ function tableColumnCount(table){
   const row=table?.querySelector('tr');
   return row?row.cells.length:0;
 }
+// A table's cell text as a grid of trimmed strings, header row first: the shape the pure display
+// rules in src/utils/tableDisplay.ts (cardsAvailability, cardsRows) take.
+function tableTextGrid(table){
+  return Array.from(table?.querySelectorAll('tr')||[]).map(r=>Array.from(r.cells).map(c=>(c.textContent||'').trim()));
+}
 // Whether at least one body-row cell from colStart onward parses as a number — used to catch
 // the case a column count alone can't: a 2-5 column table where every "data" column is actually
 // more text (e.g. three label columns with nothing to plot) looks chartable by shape but would
@@ -5972,7 +5979,11 @@ function tableFeatureDisplayHtml(table){
   if(isTableShownAsTimeline(table)&&tableTimelineEligible(table))return renderTimelineHtml(table);
   if(isTableShownAsBoard(table)&&tableStatusBoardEligible(table))return renderStatusBoardHtml(table);
   if(isTableShownAsProsCons(table)&&tableProsConsEligible(table))return renderProsConsHtml(table);
-  if(isTableFeaturedAsChart(table)&&tableChartability(table).ok)return renderTableChartSvg(table);
+  if(isTableFeaturedAsChart(table)){
+    // A Cards table edited out of shape (too many rows, text in the value column…) shows as a table.
+    const ok=getTableChartType(table)==='cards'?cardsAvailability(tableTextGrid(table)).ok:tableChartability(table).ok;
+    if(ok)return renderTableChartSvg(table);
+  }
   return null;
 }
 function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableShownAsProsCons(table)||isTableFeaturedAsChart(table); }
@@ -6013,9 +6024,12 @@ function getTableChartType(table){
 // unexplained.
 function tableChartTypeAvailability(table){
   const base=tableChartability(table);
+  // Cards have their own rules (src/utils/tableDisplay.ts): 2-3 columns, 2-8 rows, numbers in the
+  // value column, and a real change column if there's a third.
+  const cardsAvail=cardsAvailability(tableTextGrid(table));
   if(!base.ok){
     const off={ok:false,reason:base.reason};
-    return CHART_TYPES.reduce((o,t)=>{o[t]=off; return o;},{});
+    return {...CHART_TYPES.reduce((o,t)=>{o[t]=off; return o;},{}), cards:cardsAvail};
   }
   const seriesCount=base.cols<=1?1:base.cols-1;
   const pieAvail=seriesCount===1
@@ -6024,12 +6038,6 @@ function tableChartTypeAvailability(table){
   const stackedAvail=seriesCount>=2
     ? {ok:true}
     : {ok:false,reason:'Stacking only means something with 2+ data columns — with just one, it\u2019s identical to a plain bar chart.'};
-  // Same restriction as pie/doughnut and for the same reason — a card shows one label + one
-  // value per row, so it can't represent a second data column any more than a pie slice can.
-  // A third column is allowed: it becomes each card's change (▲/▼), not a second value.
-  const cardsAvail=seriesCount===1||base.cols===3
-    ? {ok:true}
-    : {ok:false,reason:'Cards show a label, a value and an optional change column — this table has '+base.cols+' columns. Use Bar, Stacked bar, or Line instead.'};
   return {bar:{ok:true}, stackedBar:stackedAvail, line:{ok:true}, pie:pieAvail, doughnut:pieAvail, cards:cardsAvail};
 }
 // Sets which chart shape a featured+charted table renders as. Read by every renderer that draws
@@ -6858,6 +6866,91 @@ function columnPeople(values) {
 }
 
 /* GENERATED:columnType:END */
+/* GENERATED:tableDisplay:START — DO NOT EDIT BY HAND. Source of truth: src/utils/tableDisplay.ts (tests: tests/unit/tableDisplay.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Which displays fit a table (Show as ›), decided from the table's cell text alone so the rules
+ * can be unit tested. A table is passed as a grid of trimmed cell strings, header row first —
+ * index.html's tableTextGrid builds it from a <table>. Each rule returns {ok, reason}; the menu
+ * disables an unfit display with the reason as its tooltip, and a table already set to a display
+ * that no longer fits (after an edit) shows as a plain table.
+ *
+ * So far this holds Cards; the other displays' rules still live in index.html.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `tableDisplay` block.
+ */
+/** Fewer than this many rows is not worth a grid of cards. */
+const CARDS_MIN_ROWS = 2;
+/** More than this many cards reads worse than the table itself. */
+const CARDS_MAX_ROWS = 8;
+/** Cell text that means "no value": n/a, a dash, TBD, a question mark. */
+function cdIsPlaceholder(raw) {
+    return isBlankCellText(raw) || /^(n\/?a|tbd|tbc|[-–—?])$/i.test(String(raw ?? '').trim());
+}
+/**
+ * A card value's number, or null when it isn't one. On top of parseCellNumber's shapes (currency,
+ * %, k/M/B), allows a leading comparator and a one-word unit, since a headline figure is often
+ * written that way: "<2 s", "~40", "3.2 h", "6 days", "≥ 99.9%".
+ */
+function cardValueNumber(raw) {
+    const direct = parseCellNumber(raw);
+    if (direct !== null)
+        return direct;
+    const s = String(raw ?? '').trim().replace(/^[<>≤≥~≈]\s*/, '');
+    const unit = /^(.*\d%?)\s*[A-Za-zµ°]{1,12}\.?$/.exec(s);
+    return parseCellNumber(unit ? unit[1] : s);
+}
+/** Body rows (header excluded) that hold anything at all. */
+function cdBodyRows(grid) {
+    return grid.slice(1).filter((row) => row.some((c) => !isBlankCellText(c)));
+}
+function cdColumnCount(grid) {
+    return grid.reduce((n, row) => Math.max(n, row.length), 0);
+}
+/**
+ * Whether a table can show as Cards. A card is label · value · optional change, so the table needs:
+ * 2 or 3 columns; 2–8 rows; numbers in the second column (at least half its filled cells, see
+ * cardValueNumber); and, with a third column, changes in it — every filled cell has a direction
+ * (cardChangeDirection) and at least one is written with a sign or an arrow, so a plain quantity
+ * or a text column (Owner, Notes) isn't mistaken for one. n/a, dashes and empty cells are allowed
+ * in both the value and the change column.
+ */
+function cardsAvailability(grid) {
+    const cols = cdColumnCount(grid);
+    if (cols !== 2 && cols !== 3) {
+        return { ok: false, reason: `Cards need 2 or 3 columns: a label, a value and an optional change. This table has ${cols}.` };
+    }
+    const rows = cdBodyRows(grid);
+    if (rows.length < CARDS_MIN_ROWS)
+        return { ok: false, reason: `Cards need at least ${CARDS_MIN_ROWS} rows.` };
+    if (rows.length > CARDS_MAX_ROWS) {
+        return { ok: false, reason: `Cards fit up to ${CARDS_MAX_ROWS} rows. This table has ${rows.length}, so it reads better as a table or a chart.` };
+    }
+    const values = rows.map((r) => r[1] ?? '').filter((v) => !cdIsPlaceholder(v));
+    const numeric = values.filter((v) => cardValueNumber(v) !== null).length;
+    if (!numeric || numeric * 2 < values.length) {
+        return { ok: false, reason: 'Cards need numbers in the second column, like 1,240, 12% or 3.2 h.' };
+    }
+    if (cols === 3) {
+        const changes = rows.map((r) => r[2] ?? '').filter((v) => !cdIsPlaceholder(v));
+        const allHaveDirection = changes.every((v) => cardChangeDirection(v, cardValueNumber(v.replace(/^[▲▼↑↓]\s*/, ''))) !== null);
+        const anyMarked = changes.some((v) => /^\s*[▲▼↑↓+\-−]/.test(v));
+        if (changes.length && !(allHaveDirection && anyMarked)) {
+            return { ok: false, reason: 'The third column must hold changes written with a sign or an arrow (+12%, −3, ▲ 4), or be left empty.' };
+        }
+    }
+    return { ok: true };
+}
+/** The cards a table shows: one per filled body row, label · value · change as written. */
+function cardsRows(grid) {
+    const hasChange = cdColumnCount(grid) === 3;
+    return cdBodyRows(grid).map((r) => ({
+        label: (r[0] ?? '').trim(),
+        value: (r[1] ?? '').trim(),
+        change: hasChange ? (r[2] ?? '').trim() : ''
+    }));
+}
+
+/* GENERATED:tableDisplay:END */
 /* GENERATED:discussionStatus:START — DO NOT EDIT BY HAND. Source of truth: src/utils/discussionStatus.ts (tests: tests/unit/discussionStatus.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * Open / closed status for remarks and Q&A (owner request: triage what still needs attention).
@@ -8241,20 +8334,10 @@ function chartSvgWithTitle(svg,title){
 // non-numeric value like "<2s" still displays correctly instead of being parsed to 0.
 // A third column, when the table has exactly three, is each card's change ("+12%", "-3",
 // "▲ 4") — shown under the value as a coloured ▲/▼.
-function tableCardsData(table){
-  const rows=Array.from(table?.querySelectorAll('tr')||[]);
-  if(rows.length<2)return [];
-  const singleCol=rows[0].cells.length===1;
-  const hasChange=rows[0].cells.length===3;
-  return rows.slice(1).map((r,i)=>({
-    label: singleCol ? ('Row '+(i+1)) : (r.cells[0]?.textContent||'').trim(),
-    value: (singleCol ? (r.cells[0]?.textContent||'') : (r.cells[1]?.textContent||'')).trim(),
-    change: hasChange ? (r.cells[2]?.textContent||'').trim() : ''
-  })).filter(d=>d.label!==''||d.value!=='');
-}
+function tableCardsData(table){ return cardsRows(tableTextGrid(table)); }
 function cardChangeHtml(raw){
   if(!raw)return '';
-  const dir=cardChangeDirection(raw,parseCellNumber(raw.replace(/^[▲▼↑↓]\s*/,'')));
+  const dir=cardChangeDirection(raw,cardValueNumber(raw.replace(/^[▲▼↑↓]\s*/,'')));
   const arrow=dir==='up'?'\u25B2':dir==='down'?'\u25BC':'';
   return `<div class="pv-table-card-change${dir?' '+dir:''}">${arrow?`<span aria-hidden="true">${arrow}</span> `:''}${esc(dir&&dir!=='flat'?cardChangeText(raw):raw)}</div>`;
 }
@@ -8334,20 +8417,20 @@ function buildCardIconItems(table,label,commit){
 function renderCardsHtml(table){
   const data=tableCardsData(table);
   if(!data.length)return null;
-  // Each card keeps its own series color as a left accent stripe. (Cards used to carry a
-  // keyword/AI-chosen icon badge here; that was removed with the rest of the icon features. Old
-  // tables may still have a data-card-icons attribute from it -- harmless, never read.)
+  // Label first, then the value with its change beside it. The card's colour (series colour, or
+  // its accent pick) marks the label with a small square, or colours its hand-picked icon, which
+  // takes the square's place. (The old auto-chosen icon badges were removed; an old table's
+  // data-card-icons attribute is harmless, never read.)
   const picks=getCardIconPicks(table);
   const accents=getCardAccentPicks(table);
   const cards=data.map((d,i)=>{
     const accentKey=accents[d.label];
     const color=`var(${accentKey&&CARD_ACCENTS[accentKey]?CARD_ACCENTS[accentKey].v:CHART_SERIES_COLOR_VARS[i%CHART_SERIES_COLOR_VARS.length]})`;
     const iconKey=picks[d.label];
-    const icon=iconKey&&CARD_ICONS[iconKey]?`<span class="pv-table-card-icon" style="color:${color}">${cardIconSvg(iconKey,16)}</span>`:'';
-    return `<div class="pv-table-card${icon?' has-icon':''}" data-card-label="${esc(d.label)}" style="border-left:3px solid ${color}">`
-      +(icon?`<div class="pv-table-card-head">${icon}<div class="pv-table-card-value">${esc(d.value)}</div></div>`:`<div class="pv-table-card-value">${esc(d.value)}</div>`)
-      +`<div class="pv-table-card-label">${esc(d.label)}</div>`
-      +cardChangeHtml(d.change)
+    const mark=iconKey&&CARD_ICONS[iconKey]?`<span class="pv-table-card-icon">${cardIconSvg(iconKey,15)}</span>`:'<span class="pv-table-card-swatch"></span>';
+    return `<div class="pv-table-card" data-card-label="${esc(d.label)}" style="--card-color:${color}">`
+      +`<div class="pv-table-card-label">${mark}<span class="pv-table-card-label-text">${esc(d.label)}</span></div>`
+      +`<div class="pv-table-card-main"><div class="pv-table-card-value">${esc(d.value)}</div>${cardChangeHtml(d.change)}</div>`
       +`</div>`;
   }).join('');
   return `<div class="pv-table-cards-grid" style="--cards-cols:${cardsGridColumns(data.length)};--cards-cols-narrow:${Math.min(2,data.length)}">${cards}</div>`;
@@ -28219,10 +28302,10 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview .pv-table-figure:not(.pv-table-chart-figure) { break-inside:auto; page-break-inside:auto; }
       /* Cards print tighter than on screen: a page holds more of them and they read as one block. */
       body.printing-preview .pv-table-cards-grid { gap:8px !important; }
-      body.printing-preview .pv-table-card { padding:10px 12px !important; gap:4px !important; border-radius:8px !important; }
-      body.printing-preview .pv-table-card-value { font-size:18px !important; }
+      body.printing-preview .pv-table-card { padding:10px 12px !important; gap:4px !important; border-radius:8px !important; background:#fff !important; }
+      body.printing-preview .pv-table-card-value { font-size:20px !important; }
       body.printing-preview .pv-table-card-label { font-size:11px !important; }
-      body.printing-preview .pv-table-card-change { font-size:10.5px !important; }
+      body.printing-preview .pv-table-card-change { font-size:10px !important; padding:1px 6px !important; }
       body.printing-preview .pv-table-chart-title { font-size:12px !important; margin-bottom:6px !important; }
       body.printing-preview .pv-table-figure thead { display:table-header-group; }
       body.printing-preview .pv-table-figure tr { break-inside:avoid; page-break-inside:avoid; }

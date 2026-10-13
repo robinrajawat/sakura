@@ -417,6 +417,22 @@ inline objects render under the row even while its branch is folded. Adding a ta
 `collapsedTableNodeIds` so it shows. Pasting child rows still unfolds (the new rows must be visible).
 Covered by `tests/e2e/add-inline-object-keeps-fold.spec.ts`.
 
+**Cards redesign + stricter Cards rules (owner-approved mockup, 2026-10-13).** Owner picked "Option 1"
+from a mockup of five designs, as the ONE Cards design (no per-table card styles — owner agreed one
+default beats a style picker). Each card: label first with an 8px square in the card's colour (a
+hand-picked icon takes the square's place), then the value (26px) with the change as a pill beside it
+(wraps under when narrow); white card, thin border, no left stripe. **Show as › Cards rules** now live in
+the new pure module `src/utils/tableDisplay.ts` (generator block `tableDisplay`; `cardsAvailability`,
+`cardsRows`, `cardValueNumber`), fed by `tableTextGrid(table)` in index.html: 2–3 columns (the old
+1-column "Row 1" case is gone), 2–8 rows (`CARDS_MAX_ROWS`), numbers in column B for at least half its
+filled cells (units/comparators allowed: `3.2 h`, `6 days`, `<2 s`), and a third column only if every
+filled cell has a direction and at least one is written with a sign or arrow (so Owner/Qty/date columns
+aren't taken for changes). A Cards table edited out of shape displays as a plain table
+(`tableFeatureDisplayHtml`). **Agreed next PR:** move the other displays' eligibility rules (Chips,
+Progress, Timeline, Status board, Pros & cons, chart types) into `tableDisplay.ts` with no behaviour
+change. Open idea, not built: a way to mark "down is good" so a falling change shows green. Covered by
+`tests/e2e/cards-design-rules.spec.ts` + `tests/unit/tableDisplay.test.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
