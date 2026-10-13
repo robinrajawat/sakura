@@ -1,9 +1,11 @@
 /**
  * Open / closed status for remarks and Q&A (owner request: triage what still needs attention).
  *
- * Data (both stored on the existing objects, absent on anything older):
- * - remark.resolvedAt: epoch ms when someone resolved it. Absent = open, so every remark from
- *   before this existed starts open (owner decision).
+ * Data (stored on the existing objects, absent on anything older):
+ * - remark.followUp: true when someone marked the remark as needing follow-up (right-click).
+ *   Owner decision: not every remark needs a resolution — a remark is a plain comment unless
+ *   flagged, so older remarks are plain comments and never counted.
+ * - remark.resolvedAt: epoch ms when a follow-up was resolved.
  * - qa.wontAnswer: true when a question was closed without an answer.
  *
  * A question's state is derived, never stored: it is answered as soon as its answer has visible
@@ -15,6 +17,7 @@
 export interface StatusRemark {
   id?: string;
   text?: string;
+  followUp?: boolean;
   anchorNodeId?: number | null;
   resolvedAt?: number | null;
 }
@@ -44,8 +47,20 @@ export function qaState(item: StatusQaItem): QaState {
   return 'open';
 }
 
+/** A remark marked as needing follow-up (resolved or not). Anything else is a plain comment. */
+export function remarkIsFollowUp(r: StatusRemark): boolean {
+  return !!r.followUp;
+}
+
+/** An open follow-up: flagged and not yet resolved. Plain comments are never open. */
 export function remarkIsOpen(r: StatusRemark): boolean {
-  return !r.resolvedAt;
+  return !!r.followUp && !r.resolvedAt;
+}
+
+/** The status a remark shows: none for a plain comment, else open or resolved. */
+export function remarkState(r: StatusRemark): 'comment' | 'open' | 'resolved' {
+  if (!r.followUp) return 'comment';
+  return r.resolvedAt ? 'resolved' : 'open';
 }
 
 /** An open remark with text — a blank remark (added, never typed into) has nothing to triage. */
@@ -138,7 +153,7 @@ export function openItemsByNode<Q extends StatusQaItem, R extends StatusRemark &
   return out;
 }
 
-/** "1 open question", "2 open remarks" — the label for a count. */
-export function openCountLabel(n: number, kind: 'question' | 'remark'): string {
+/** "1 open question", "2 open follow-ups" — the label for a count. */
+export function openCountLabel(n: number, kind: 'question' | 'follow-up'): string {
   return n + ' open ' + kind + (n === 1 ? '' : 's');
 }

@@ -3,6 +3,8 @@ import {
   htmlHasVisibleText,
   qaState,
   remarkIsOpen,
+  remarkIsFollowUp,
+  remarkState,
   isCountableQuestion,
   countOpenItems,
   normalizeDiscussionFilter,
@@ -35,11 +37,19 @@ describe('qaState', () => {
   });
 });
 
-describe('remarkIsOpen', () => {
-  it('treats remarks without resolvedAt (all older ones) as open', () => {
-    expect(remarkIsOpen({})).toBe(true);
-    expect(remarkIsOpen({ resolvedAt: null })).toBe(true);
-    expect(remarkIsOpen({ resolvedAt: 1700000000000 })).toBe(false);
+describe('remark status', () => {
+  it('treats a remark as a plain comment unless it is marked as a follow-up', () => {
+    expect(remarkIsOpen({})).toBe(false);
+    expect(remarkIsFollowUp({})).toBe(false);
+    expect(remarkState({})).toBe('comment');
+    expect(remarkState({ resolvedAt: 5 })).toBe('comment');
+  });
+  it('counts a follow-up as open until it is resolved', () => {
+    expect(remarkIsOpen({ followUp: true })).toBe(true);
+    expect(remarkIsOpen({ followUp: true, resolvedAt: null })).toBe(true);
+    expect(remarkIsOpen({ followUp: true, resolvedAt: 1700000000000 })).toBe(false);
+    expect(remarkState({ followUp: true })).toBe('open');
+    expect(remarkState({ followUp: true, resolvedAt: 1 })).toBe('resolved');
   });
 });
 
@@ -61,10 +71,11 @@ describe('countOpenItems', () => {
     { type: 'section', question: 'Section', sourceNodeId: 1 },
   ];
   const remarks = [
-    { anchorNodeId: 1, text: 'Open' },
-    { anchorNodeId: 1, text: '<br>' },
-    { anchorNodeId: 2, text: 'Done', resolvedAt: 5 },
-    { anchorNodeId: 99, text: 'Elsewhere' },
+    { anchorNodeId: 1, text: 'Open', followUp: true },
+    { anchorNodeId: 1, text: 'Just a comment' },
+    { anchorNodeId: 1, text: '<br>', followUp: true },
+    { anchorNodeId: 2, text: 'Done', followUp: true, resolvedAt: 5 },
+    { anchorNodeId: 99, text: 'Elsewhere', followUp: true },
   ];
   it('counts only open items with text on nodes of the document', () => {
     expect(countOpenItems(qa, remarks, new Set([1, 2]))).toEqual({ openQuestions: 1, openRemarks: 1 });
@@ -89,7 +100,7 @@ describe('nodesWithOpenItems', () => {
     { question: 'B?', answer: 'done', sourceNodeId: 2 },
     { question: 'C?', answer: '', wontAnswer: true, sourceNodeId: 3 },
   ];
-  const remarks = [{ anchorNodeId: 2, text: 'x' }, { anchorNodeId: 3, text: 'y', resolvedAt: 1 }, { anchorNodeId: 4, text: '' }];
+  const remarks = [{ anchorNodeId: 2, text: 'x', followUp: true }, { anchorNodeId: 3, text: 'y', followUp: true, resolvedAt: 1 }, { anchorNodeId: 4, text: '', followUp: true }, { anchorNodeId: 5, text: 'comment' }];
   it('finds nodes with open questions', () => {
     expect([...nodesWithOpenItems('openQa', qa, remarks)]).toEqual([1]);
   });
@@ -105,10 +116,11 @@ describe('openItemsByNode', () => {
       { id: 'q2', question: 'Closed', answer: 'x', sourceNodeId: 1 },
     ];
     const remarks = [
-      { id: 'r1', anchorNodeId: 1, text: 'a', createdAt: 10 },
-      { id: 'r2', anchorNodeId: 1, text: 'b', createdAt: 20 },
-      { id: 'r3', anchorNodeId: 1, text: 'c', createdAt: 30, resolvedAt: 40 },
-      { id: 'r4', anchorNodeId: 3, text: '', createdAt: 50 },
+      { id: 'r1', anchorNodeId: 1, text: 'a', followUp: true, createdAt: 10 },
+      { id: 'r2', anchorNodeId: 1, text: 'b', followUp: true, createdAt: 20 },
+      { id: 'r3', anchorNodeId: 1, text: 'c', followUp: true, createdAt: 30, resolvedAt: 40 },
+      { id: 'r4', anchorNodeId: 3, text: '', followUp: true, createdAt: 50 },
+      { id: 'r5', anchorNodeId: 1, text: 'plain', createdAt: 60 },
     ];
     const out = openItemsByNode([1, 2, 3], qa, remarks);
     expect(out.map(e => e.nodeId)).toEqual([1, 2]);
@@ -121,6 +133,6 @@ describe('openItemsByNode', () => {
 describe('openCountLabel', () => {
   it('pluralises', () => {
     expect(openCountLabel(1, 'question')).toBe('1 open question');
-    expect(openCountLabel(2, 'remark')).toBe('2 open remarks');
+    expect(openCountLabel(2, 'follow-up')).toBe('2 open follow-ups');
   });
 });

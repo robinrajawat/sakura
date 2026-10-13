@@ -1742,12 +1742,13 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 @media (hover:none){.node-remark-status-btn,.node-qa-wont-btn{opacity:1}}
 .node-qa-wont-btn[hidden]{display:none}
 .node-remark-line.is-resolved{opacity:.6}
+.node-remark-followup-pill{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:6px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
 .node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
 .node-remark-resolved-toggle svg{color:var(--fc-green)}
 .node-remark-resolved-toggle:hover{background:var(--hover)}
 .node-remark-resolved-toggle .nrr-meta,.node-remark-resolved-toggle .nrr-caret{color:var(--hint)}
 .node-qa-status{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:4px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
-.node-qa-status[data-state="open"],.pv-status-pill[data-state="open"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
+.node-qa-status[data-state="open"],.pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"],.node-remark-followup-pill{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
 .node-qa-status[data-state="answered"],.pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
 .node-qa-status[data-state="wont"],.pv-status-pill[data-state="wont"]{background:var(--chip);color:var(--muted)}
 .node-qa-line.is-closed .node-qa-question{color:var(--muted)}
@@ -3352,7 +3353,7 @@ body.printing-generic #gpe-overlay{
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (document title, author, word/read-time stats) before the contents page when exporting to PDF. The small wordmark above the title only appears if "PDF branding" below is also on.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding</span><span class="settings-row-desc">Shows a small letter-spaced mark on the cover page of PDF exports, and in the bottom-right corner of every page. Reads "SAKURA" by default, or your own text below. On by default — off removes it everywhere, including the cover page.</span></div><button id="preview-branding-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="PDF branding"></button></div>
               <div class="settings-list-row" id="preview-branding-text-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding text</span><span class="settings-row-desc">Replaces "SAKURA" in the mark above with your own company or team name. Leave blank to use the default. Only shown when PDF branding is on.</span></div><input id="preview-branding-text-input" type="text" class="meta-input" placeholder="SAKURA" style="width:160px;text-align:left" /></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open items summary</span><span class="settings-row-desc">Ends PDF exports with an "Open items" page: every question still open and every remark not yet resolved, grouped under the row it belongs to. Nothing is added when nothing is open. On by default.</span></div><button id="pdf-open-items-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Open items summary"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open items summary</span><span class="settings-row-desc">Ends PDF exports with an "Open items" page: every question still open and every remark marked as a follow-up and not yet resolved, grouped under the row it belongs to. Nothing is added when nothing is open. On by default.</span></div><button id="pdf-open-items-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Open items summary"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Use accent color in exports</span><span class="settings-row-desc">PDF exports (documents and the To-Dos list) use your current accent color (Settings → Appearance) for titles, checkmarks, and highlights. Off: every export uses the same fixed color instead, regardless of what the app is themed to at export time — useful if you want documents you share with others to look consistent no matter which accent you personally have set.</span></div><button id="export-accent-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Use accent color in exports"></button></div>
             </div>
           </div>
@@ -3879,9 +3880,9 @@ body.printing-generic #gpe-overlay{
 <li>Right-click any node → <strong>Add remark…</strong> (on by default in the quick-action row, same place "Add question…" lives) adds one already linked to that node and drops you straight into its text, ready to type</li>
 <li>Everything on the line is edited in place: click the name to change who said it (Enter or clicking away saves, Escape reverts), click the date to open the same calendar popover Todo's due date uses (Today/Yesterday presets, plus month navigation for anything else) — useful for logging something after the fact — and type straight into the remark text, which keeps pasted formatting. A node's remarks list newest first</li>
 <li>Right-click a remark line for Rewrite with AI (when AI is on) or Delete remark; emptying a remark's text and pressing Backspace removes it too</li>
-<li>A remark stays <strong>open</strong> until someone resolves it: hover it for <strong>Resolve</strong> (or right-click → Resolve remark). Resolved remarks fold behind one "✓ N resolved remarks" line under the row — click it to show them, each with a <strong>Reopen</strong> button. Remarks written before this existed start open</li>
+<li>A remark is a plain comment unless it needs action: right-click it → <strong>Mark as follow-up</strong>. A follow-up shows a "Follow-up" pill and stays <strong>open</strong> until someone resolves it — hover it for <strong>Resolve</strong> (or right-click → Resolve follow-up; "Not a follow-up" turns it back into a comment). Resolved follow-ups fold behind one "✓ N resolved follow-ups" line under the row — click it to show them, each with a <strong>Reopen</strong> button</li>
 <li>A remark left blank (added, never typed into) is discarded as soon as you click away from it</li>
-<li>A small person dot appears on a node with remarks — click it to show or hide them inline. It shows how many are still open, and turns grey once they're all resolved</li>
+<li>A small person dot appears on a node with remarks — click it to show or hide them inline. It shows how many follow-ups are still open, and turns grey once they're all resolved</li>
 <li>Deleting a node deletes its remarks too (and its note, tables, images, Q&amp;A and diagrams); Undo brings them back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Always included in PDF exports: a remark appears right after the node it's linked to, with an Open or Resolved pill</li>
 <li>The toolbar's marker summary shows <strong>N open</strong> for remarks and for questions — click one to show only the rows that still have open ones</li>
@@ -3895,7 +3896,7 @@ body.printing-generic #gpe-overlay{
 <li>A small question-mark dot appears on a node with linked questions — click it to show or hide them inline. The same icon appears next to a folded node's "+N hidden" badge when a question is linked somewhere inside its collapsed subtree</li>
 <li>Always included in PDF exports: each question prints right under the node it's linked to, same as a note; questions with no linked node are appended as a final section — bold question, regular-weight answer, unanswered ones marked "No answer provided"</li>
 <li>Each question shows its status: <strong>Open</strong> until it has an answer, <strong>Answered</strong> once the answer has text, or <strong>Won't answer</strong> — hover an open question for its "Won't answer" button (or right-click it) to close it without one, and "Reopen" to take that back</li>
-<li>PDF exports end with an <strong>Open items</strong> page listing every open question and unresolved remark under its row (Settings → Data &amp; backup → Export &amp; copy → "Open items summary", on by default)</li>
+<li>PDF exports end with an <strong>Open items</strong> page listing every open question and open follow-up under its row (Settings → Data &amp; backup → Export &amp; copy → "Open items summary", on by default)</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-tables">
@@ -6869,9 +6870,11 @@ function columnPeople(values) {
 /**
  * Open / closed status for remarks and Q&A (owner request: triage what still needs attention).
  *
- * Data (both stored on the existing objects, absent on anything older):
- * - remark.resolvedAt: epoch ms when someone resolved it. Absent = open, so every remark from
- *   before this existed starts open (owner decision).
+ * Data (stored on the existing objects, absent on anything older):
+ * - remark.followUp: true when someone marked the remark as needing follow-up (right-click).
+ *   Owner decision: not every remark needs a resolution — a remark is a plain comment unless
+ *   flagged, so older remarks are plain comments and never counted.
+ * - remark.resolvedAt: epoch ms when a follow-up was resolved.
  * - qa.wontAnswer: true when a question was closed without an answer.
  *
  * A question's state is derived, never stored: it is answered as soon as its answer has visible
@@ -6893,8 +6896,19 @@ function qaState(item) {
         return 'wont';
     return 'open';
 }
+/** A remark marked as needing follow-up (resolved or not). Anything else is a plain comment. */
+function remarkIsFollowUp(r) {
+    return !!r.followUp;
+}
+/** An open follow-up: flagged and not yet resolved. Plain comments are never open. */
 function remarkIsOpen(r) {
-    return !r.resolvedAt;
+    return !!r.followUp && !r.resolvedAt;
+}
+/** The status a remark shows: none for a plain comment, else open or resolved. */
+function remarkState(r) {
+    if (!r.followUp)
+        return 'comment';
+    return r.resolvedAt ? 'resolved' : 'open';
 }
 /** An open remark with text — a blank remark (added, never typed into) has nothing to triage. */
 function isOpenRemarkWithText(r) {
@@ -6961,7 +6975,7 @@ function openItemsByNode(nodeIdsInOrder, qaItems, remarks) {
     }
     return out;
 }
-/** "1 open question", "2 open remarks" — the label for a count. */
+/** "1 open question", "2 open follow-ups" — the label for a count. */
 function openCountLabel(n, kind) {
     return n + ' open ' + kind + (n === 1 ? '' : 's');
 }
@@ -18648,7 +18662,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const openR=nodeRemarks.filter(r=>remarkIsOpen(r)).length; rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':' dot-all-closed'); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip=(nodeRemarks.length>1?'This node has '+nodeRemarks.length+' remarks':'This node has a remark from '+esc(nodeRemarks[0].person||'someone'))+(openR?' ('+openCountLabel(openR,'remark')+')':' (all resolved)')+' — click to expand inline'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=qaRefsForNode(node.id); if(qRefs.length){const qdot=document.createElement('span'); const openQ=qRefs.filter(q=>isCountableQuestion(q)&&qaState(q)==='open').length; qdot.className='node-note-dot node-qa-dot'+(inlineExpandQaNodeIds.has(node.id)?' pv-dot-open':'')+(openQ?' has-open-count':' dot-all-closed'); qdot.style.color='var(--fc-purple)'; qdot.innerHTML=qaDotIconSvg(11)+(openQ?'<span class="node-dot-count">'+openQ+'</span>':''); qdot.dataset.tip=(qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions':'Linked to a Q&A question')+(openQ?' ('+openCountLabel(openQ,'question')+')':' (none open)')+' — click to expand inline'; qdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandQaNodeIds.has(node.id))inlineExpandQaNodeIds.delete(node.id); else inlineExpandQaNodeIds.add(node.id); render();}); row.appendChild(qdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a remark'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const openR=nodeRemarks.filter(r=>remarkIsOpen(r)&&htmlHasVisibleText(r.text)).length; const allResolved=nodeRemarks.every(r=>remarkState(r)==='resolved'); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip=(nodeRemarks.length>1?'This node has '+nodeRemarks.length+' remarks':'This node has a remark from '+esc(nodeRemarks[0].person||'someone'))+(openR?' ('+openCountLabel(openR,'follow-up')+')':(allResolved?' (all follow-ups resolved)':''))+' — click to expand inline'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)} const qRefs=qaRefsForNode(node.id); if(qRefs.length){const qdot=document.createElement('span'); const openQ=qRefs.filter(q=>isCountableQuestion(q)&&qaState(q)==='open').length; qdot.className='node-note-dot node-qa-dot'+(inlineExpandQaNodeIds.has(node.id)?' pv-dot-open':'')+(openQ?' has-open-count':' dot-all-closed'); qdot.style.color='var(--fc-purple)'; qdot.innerHTML=qaDotIconSvg(11)+(openQ?'<span class="node-dot-count">'+openQ+'</span>':''); qdot.dataset.tip=(qRefs.length>1?'Linked to '+qRefs.length+' Q&A questions':'Linked to a Q&A question')+(openQ?' ('+openCountLabel(openQ,'question')+')':' (none open)')+' — click to expand inline'; qdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandQaNodeIds.has(node.id))inlineExpandQaNodeIds.delete(node.id); else inlineExpandQaNodeIds.add(node.id); render();}); row.appendChild(qdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a remark'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -18966,14 +18980,18 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // from before that field existed falls back to 0, sorting after every timestamped one but
     // keeping its relative position among other untimestamped remarks (Array.sort is stable).
     const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    // Open remarks show in full; resolved ones fold behind one quiet line (click to unfold), and
-    // the "open remarks" filter leaves them out altogether.
-    const openRemarks=nodeRemarks.filter(r=>remarkIsOpen(r)); const resolvedRemarks=nodeRemarks.filter(r=>!remarkIsOpen(r));
+    // A remark is a plain comment unless marked as a follow-up (right-click). Comments and open
+    // follow-ups show in full; resolved follow-ups fold behind one quiet line (click to unfold), and
+    // the "open follow-ups" filter shows only open follow-ups.
+    const openRemarks=nodeRemarks.filter(r=>activeDiscussionFilter==='openRemarks'?remarkIsOpen(r):remarkState(r)!=='resolved');
+    const resolvedRemarks=nodeRemarks.filter(r=>remarkState(r)==='resolved');
     const resolvedShown=showResolvedRemarksNodeIds.has(node.id)&&activeDiscussionFilter!=='openRemarks';
     const remarkGuides=lineEl=>{ if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; lineEl.appendChild(vg) } }); if(hasChildren){ const rDepth2=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(rDepth2*32+0*editorScale+9)+'px'; lineEl.appendChild(vgOwn) } } };
     const setRemarkResolved=(r,resolved)=>{ pushUndo(); if(resolved)r.resolvedAt=Date.now(); else delete r.resolvedAt; markDirty(); scheduleAutoSave(); render(); };
+    const setRemarkFollowUp=(r,on)=>{ pushUndo(); if(on)r.followUp=true; else { delete r.followUp; delete r.resolvedAt; } markDirty(); scheduleAutoSave(); render(); };
     const renderRemarkLine=r=>{
-      const isResolved=!remarkIsOpen(r);
+      const rState=remarkState(r);
+      const isResolved=rState==='resolved';
       const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
       const rLine=document.createElement('div'); rLine.className='node-remark-line'+(isResolved?' is-resolved':'');
       rLine.style.paddingLeft=hideTreeLines?(rDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
@@ -18999,13 +19017,22 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       textEl.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(textEl.textContent||'').trim(); const doDelete=()=>{ const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(textEl.textContent||'').trim())doDelete(); },0); });
       textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); });
       textEl.addEventListener('blur',()=>{ r.text=sakuraSanitizeRichHtml(textEl.innerHTML); });
-      const stBtn=document.createElement('button'); stBtn.type='button'; stBtn.className='node-remark-status-btn'+(isResolved?' is-reopen':'');
-      stBtn.innerHTML=isResolved?'Reopen':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>Resolve';
-      stBtn.dataset.tip=isResolved?'Mark this remark open again':'Mark this remark resolved — it folds away under the row';
-      stBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-      stBtn.addEventListener('click',e=>{ e.stopPropagation(); setRemarkResolved(r,!isResolved); });
-      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl); rLine.appendChild(stBtn);
-      rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[]; items.push({label:isResolved?'Reopen remark':'Resolve remark', onClick:()=>setRemarkResolved(r,!isResolved)}); items.push({divider:true}); if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete remark', onClick: async()=>{ pushUndo(); const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
+      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl);
+      // Only follow-ups carry a status: an open one shows a "Follow-up" pill and a Resolve button
+      // on hover, a resolved one a Reopen button. Plain comments show neither.
+      if(rState!=='comment'){
+        if(rState==='open'){ const pill=document.createElement('span'); pill.className='node-remark-followup-pill'; pill.textContent='Follow-up'; pill.dataset.tip='Needs follow-up — right-click to change'; rLine.appendChild(pill); }
+        const stBtn=document.createElement('button'); stBtn.type='button'; stBtn.className='node-remark-status-btn'+(isResolved?' is-reopen':'');
+        stBtn.innerHTML=isResolved?'Reopen':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>Resolve';
+        stBtn.dataset.tip=isResolved?'Mark this follow-up open again':'Mark this follow-up resolved — it folds away under the row';
+        stBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+        stBtn.addEventListener('click',e=>{ e.stopPropagation(); setRemarkResolved(r,!isResolved); });
+        rLine.appendChild(stBtn);
+      }
+      rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[];
+        if(rState==='comment')items.push({label:'Mark as follow-up', onClick:()=>setRemarkFollowUp(r,true)});
+        else { items.push({label:isResolved?'Reopen follow-up':'Resolve follow-up', onClick:()=>setRemarkResolved(r,!isResolved)}); items.push({label:'Not a follow-up', onClick:()=>setRemarkFollowUp(r,false)}); }
+        items.push({divider:true}); if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete remark', onClick: async()=>{ pushUndo(); const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
       // "Add remark…" creates the remark blank and focuses it; one left blank when focus moves on
       // (not to its own name/date fields or the date picker) is discarded, so blank remarks no
       // longer pile up in the document -- and outlive their row as blank orphans in the PDF.
@@ -19027,10 +19054,10 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const latest=resolvedRemarks[0];
       const fBtn=document.createElement('button'); fBtn.type='button'; fBtn.className='node-remark-resolved-toggle'; fBtn.setAttribute('aria-expanded',String(resolvedShown));
       fBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>'
-        +'<span>'+resolvedRemarks.length+' resolved remark'+(resolvedRemarks.length===1?'':'s')+'</span>'
+        +'<span>'+resolvedRemarks.length+' resolved follow-up'+(resolvedRemarks.length===1?'':'s')+'</span>'
         +'<span class="nrr-meta">· '+esc(latest.person||'someone')+(latest.date?', '+esc(formatRemarkDateDisplay(latest.date)):'')+'</span>'
         +'<span class="nrr-caret" aria-hidden="true">'+(resolvedShown?'▾':'▸')+'</span>';
-      fBtn.dataset.tip=resolvedShown?'Hide resolved remarks':'Show resolved remarks';
+      fBtn.dataset.tip=resolvedShown?'Hide resolved follow-ups':'Show resolved follow-ups';
       fBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
       fBtn.addEventListener('click',e=>{ e.stopPropagation(); if(showResolvedRemarksNodeIds.has(node.id))showResolvedRemarksNodeIds.delete(node.id); else showResolvedRemarksNodeIds.add(node.id); render(); });
       fLine.appendChild(fBtn); remarkGuides(fLine); frag.appendChild(fLine);
@@ -27327,7 +27354,7 @@ function previewBuildNodeTree(startIdx,endIdx){
 // Open / Resolved / Answered / Won't answer — the same pills the outline shows, for the PDF.
 function previewStatusPill(state){
   const pill=document.createElement('span'); pill.className='pv-status-pill'; pill.dataset.state=state;
-  pill.textContent=({open:'Open',resolved:'Resolved',answered:'Answered',wont:'Won\u2019t answer'})[state]||'';
+  pill.textContent=({open:'Open',followup:'Follow-up',resolved:'Resolved',answered:'Answered',wont:'Won\u2019t answer'})[state]||'';
   return pill;
 }
 function previewRenderRemarkEntry(r){
@@ -27343,7 +27370,7 @@ function previewRenderRemarkEntry(r){
   meta.appendChild(bEl);
   if(r.date){ meta.appendChild(document.createTextNode(' · '+formatRemarkDateDisplay(r.date))); }
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
-  meta.appendChild(previewStatusPill(remarkIsOpen(r)?'open':'resolved'));
+  { const st=remarkState(r); if(st!=='comment')meta.appendChild(previewStatusPill(st==='open'?'followup':'resolved')); }
   entry.appendChild(meta);
   return entry;
 }
@@ -27828,7 +27855,7 @@ function previewRenderOpenItems(){
   const h=document.createElement('div'); h.className='pv-qa-heading'; h.textContent='Open items'; sec.appendChild(h);
   const nQ=groups.reduce((a,g)=>a+g.questions.length,0), nR=groups.reduce((a,g)=>a+g.remarks.length,0);
   const sub=document.createElement('div'); sub.className='pv-open-items-sub';
-  sub.textContent=[nQ?openCountLabel(nQ,'question'):'',nR?openCountLabel(nR,'remark'):''].filter(Boolean).join(' · ');
+  sub.textContent=[nQ?openCountLabel(nQ,'question'):'',nR?openCountLabel(nR,'follow-up'):''].filter(Boolean).join(' · ');
   sec.appendChild(sub);
   groups.forEach(g=>{
     const node=nodes.find(n=>n.id===g.nodeId);
@@ -29107,7 +29134,7 @@ function applyTagFilterToPane(pane){
     if(activeDiscussionFilter){
       const btn=document.createElement('button');
       btn.className='tag-filter-chip-btn disc-filter-chip';
-      const label=activeDiscussionFilter==='openQa'?'Open questions':'Open remarks';
+      const label=activeDiscussionFilter==='openQa'?'Open questions':'Open follow-ups';
       btn.innerHTML='<span>'+(activeDiscussionFilter==='openQa'?qaDotIconSvg(11):REMARK_DOT_SVG)+' '+label+'</span><span class="tfcb-x">×</span>';
       btn.dataset.tip='Clear filter for '+label.toLowerCase();
       btn.addEventListener('click',()=>setDiscussionFilter(null));
@@ -29207,7 +29234,7 @@ function updateMarkerSummary(){
   const open=countOpenItems(qaItems,remarks,new Set(nodes.map(n=>n.id)));
   const disc=[
     {key:'openQa',n:open.openQuestions,kind:'question',icon:qaDotIconSvg(13)},
-    {key:'openRemarks',n:open.openRemarks,kind:'remark',icon:REMARK_DOT_SVG}
+    {key:'openRemarks',n:open.openRemarks,kind:'follow-up',icon:REMARK_DOT_SVG}
   ].filter(d=>d.n||activeDiscussionFilter===d.key);
   group.hidden=!used.length&&!disc.length;
   const html=used.map(m=>`<button type="button" class="marker-sum-btn${activeMarkerFilter===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${counts[m]} ${esc(nodeMarkerLabel(m))}${activeMarkerFilter===m?' — click to clear the filter':' — click to show only these'}" aria-label="${counts[m]} ${esc(nodeMarkerLabel(m))}" aria-pressed="${activeMarkerFilter===m}">${markIconSvg(m)}<span>${counts[m]}</span></button>`).join('')
@@ -29237,7 +29264,7 @@ function setDiscussionFilter(f){
   const pane=document.getElementById('editor-pane');
   if(pane)applyTagFilterToPane(pane);
   render();
-  if(activeDiscussionFilter)showToast(activeDiscussionFilter==='openQa'?'Showing open questions':'Showing open remarks');
+  if(activeDiscussionFilter)showToast(activeDiscussionFilter==='openQa'?'Showing open questions':'Showing open follow-ups');
   else showToast('Filter cleared');
 }
 function setMarkerFilter(marker){

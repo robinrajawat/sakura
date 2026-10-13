@@ -32,8 +32,9 @@ test.beforeEach(async ({ page }) => {
         ],
         nextId: 6, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Status', author: '',
         remarks: [
-          { id: 'rOld', anchorNodeId: 2, person: 'Maria', date: '2026-10-09', text: 'Under 20 EUR please.', createdAt: 1 },
-          { id: 'rDone', anchorNodeId: 2, person: 'Jonas', date: '2026-10-08', text: 'Old pricing idea.', createdAt: 0, resolvedAt: 5 },
+          { id: 'rOld', anchorNodeId: 2, person: 'Maria', date: '2026-10-09', text: 'Under 20 EUR please.', createdAt: 1, followUp: true },
+          { id: 'rDone', anchorNodeId: 2, person: 'Jonas', date: '2026-10-08', text: 'Old pricing idea.', createdAt: 0, followUp: true, resolvedAt: 5 },
+          { id: 'rPlain', anchorNodeId: 4, person: 'Priya', date: '2026-10-07', text: 'Just a comment.', createdAt: 2 },
         ],
         qa: [
           { id: 'qOpen', question: 'Do EU customers need 30 days notice?', answer: '', sourceNodeId: 3, createdAt: 1 },
@@ -68,18 +69,20 @@ test('remarks: resolve folds a remark away, the fold line shows it again, reopen
   const errors = await open(page);
   // Seeded remark without resolvedAt counts as open; the resolved one is folded.
   await expect(page.locator('.node-remark-line:not(.node-remark-resolved-line)')).toHaveCount(1);
-  await expect(page.locator('.node-remark-resolved-toggle')).toContainText('1 resolved remark');
-  expect(await sumButtons(page)).toEqual(['1 open question', '1 open remark']);
+  await expect(page.locator('.node-remark-resolved-toggle')).toContainText('1 resolved follow-up');
+  expect(await sumButtons(page)).toEqual(['1 open question', '1 open follow-up']);
 
   const line = page.locator('.node-remark-line', { hasText: 'Under 20 EUR' });
   await line.hover();
   await line.locator('.node-remark-status-btn').click();
-  await expect(page.locator('.node-remark-resolved-toggle')).toContainText('2 resolved remarks');
+  await expect(page.locator('.node-remark-resolved-toggle')).toContainText('2 resolved follow-ups');
   await expect(page.locator('.node-remark-text-inline')).toHaveCount(0);
   expect(await page.evaluate("typeof remarks.find(r => r.id === 'rOld').resolvedAt")).toBe('number');
   expect(await sumButtons(page)).toEqual(['1 open question']);
   // Row dot turns grey with no count once everything is resolved.
-  await expect(page.locator('.node-remark-dot')).toHaveClass(/dot-all-closed/);
+  await expect(page.locator('.node-row[data-id="2"] .node-remark-dot')).toHaveClass(/dot-all-closed/);
+  // A row with only a plain comment never goes grey: there's nothing to close.
+  await expect(page.locator('.node-row[data-id="4"] .node-remark-dot')).not.toHaveClass(/dot-all-closed/);
 
   await page.locator('.node-remark-resolved-toggle').click();
   await expect(page.locator('.node-remark-line.is-resolved')).toHaveCount(2);
@@ -108,7 +111,7 @@ test('Q&A: status pill tracks the answer live, and won\'t answer closes and reop
   await page.keyboard.type('Yes');
   await expect(pill('qOpen')).toHaveText('Answered');
   await expect(page.locator('#inline-qa-a-qOpen')).toBeFocused();
-  expect(await sumButtons(page)).toEqual(['1 open remark']);
+  expect(await sumButtons(page)).toEqual(['1 open follow-up']);
   await page.keyboard.press('Control+a');
   await page.keyboard.press('Backspace');
   await expect(pill('qOpen')).toHaveText('Open');
@@ -176,9 +179,11 @@ async function exportPdf(page: Page) {
 test('PDF shows each item\'s status and ends with an Open items summary', async ({ page }) => {
   const errors = await open(page);
   const r = await exportPdf(page);
-  expect(r.pills).toEqual(expect.arrayContaining(['Open', 'Resolved', 'Answered', 'Won’t answer']));
+  expect(r.pills).toEqual(expect.arrayContaining(['Open', 'Follow-up', 'Resolved', 'Answered', 'Won’t answer']));
+  // Plain comments carry no status pill.
+  expect(r.pills.filter((p: string | null) => p === 'Follow-up' || p === 'Resolved')).toHaveLength(2);
   expect(r.section).toEqual({
-    sub: '1 open question · 1 open remark',
+    sub: '1 open question · 1 open follow-up',
     nodes: ['Pricing', 'Migration window'],
     rows: ['MAMaria · Oct 9Under 20 EUR please.', 'QDo EU customers need 30 days notice?'],
   });
@@ -202,5 +207,28 @@ test('PDF Open items summary: off by setting, and absent when nothing is open', 
   const r = await exportPdf(page);
   expect(r.section).toBeNull();
   expect(r.tocHasOpenItems).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('a plain comment has no status until it is marked as a follow-up (right-click)', async ({ page }) => {
+  const errors = await open(page);
+  await page.evaluate('inlineExpandRemarksNodeIds.add(4); render();');
+  const line = page.locator('.node-remark-line', { hasText: 'Just a comment.' });
+  await line.hover();
+  await expect(line.locator('.node-remark-status-btn')).toHaveCount(0);
+  await expect(line.locator('.node-remark-followup-pill')).toHaveCount(0);
+  expect(await sumButtons(page)).toEqual(['1 open question', '1 open follow-up']);
+
+  await line.click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Mark as follow-up', { exact: true }).click();
+  const flagged = page.locator('.node-remark-line', { hasText: 'Just a comment.' });
+  await expect(flagged.locator('.node-remark-followup-pill')).toHaveText('Follow-up');
+  expect(await sumButtons(page)).toEqual(['1 open question', '2 open follow-ups']);
+
+  await flagged.click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Not a follow-up', { exact: true }).click();
+  await expect(page.locator('.node-remark-line', { hasText: 'Just a comment.' }).locator('.node-remark-followup-pill')).toHaveCount(0);
+  expect(await page.evaluate("'followUp' in remarks.find(r => r.id === 'rPlain')")).toBe(false);
+  expect(await sumButtons(page)).toEqual(['1 open question', '1 open follow-up']);
   expect(errors).toEqual([]);
 });
