@@ -125,34 +125,6 @@ export function nodesWithOpenItems(
   return ids;
 }
 
-export interface OpenItemEntry<Q, R> {
-  nodeId: number;
-  questions: Q[];
-  remarks: R[];
-}
-
-/**
- * The PDF's "Open items" summary: every node (in document order) with open questions or open
- * remarks, each with its open items. Remarks newest first, questions in stored order.
- */
-export function openItemsByNode<Q extends StatusQaItem, R extends StatusRemark & { createdAt?: number }>(
-  nodeIdsInOrder: number[],
-  qaItems: Q[],
-  remarks: R[]
-): OpenItemEntry<Q, R>[] {
-  const out: OpenItemEntry<Q, R>[] = [];
-  for (const nodeId of nodeIdsInOrder) {
-    const qs = (qaItems || []).filter(
-      q => q.sourceNodeId === nodeId && isCountableQuestion(q) && qaState(q) === 'open'
-    );
-    const rs = (remarks || [])
-      .filter(r => r.anchorNodeId === nodeId && isOpenRemarkWithText(r))
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    if (qs.length || rs.length) out.push({ nodeId, questions: qs, remarks: rs });
-  }
-  return out;
-}
-
 /** "1 open question", "2 open follow-ups" — the label for a count. */
 export function openCountLabel(n: number, kind: 'question' | 'follow-up'): string {
   return n + ' open ' + kind + (n === 1 ? '' : 's');

@@ -9,7 +9,6 @@ import {
   countOpenItems,
   normalizeDiscussionFilter,
   nodesWithOpenItems,
-  openItemsByNode,
   openCountLabel,
 } from '../../src/utils/discussionStatus';
 
@@ -106,27 +105,6 @@ describe('nodesWithOpenItems', () => {
   });
   it('finds nodes with open remarks', () => {
     expect([...nodesWithOpenItems('openRemarks', qa, remarks)]).toEqual([2]);
-  });
-});
-
-describe('openItemsByNode', () => {
-  it('lists nodes in document order with their open items, remarks newest first', () => {
-    const qa = [
-      { id: 'q1', question: 'Later node?', answer: '', sourceNodeId: 2 },
-      { id: 'q2', question: 'Closed', answer: 'x', sourceNodeId: 1 },
-    ];
-    const remarks = [
-      { id: 'r1', anchorNodeId: 1, text: 'a', followUp: true, createdAt: 10 },
-      { id: 'r2', anchorNodeId: 1, text: 'b', followUp: true, createdAt: 20 },
-      { id: 'r3', anchorNodeId: 1, text: 'c', followUp: true, createdAt: 30, resolvedAt: 40 },
-      { id: 'r4', anchorNodeId: 3, text: '', followUp: true, createdAt: 50 },
-      { id: 'r5', anchorNodeId: 1, text: 'plain', createdAt: 60 },
-    ];
-    const out = openItemsByNode([1, 2, 3], qa, remarks);
-    expect(out.map(e => e.nodeId)).toEqual([1, 2]);
-    expect(out[0].questions).toEqual([]);
-    expect(out[0].remarks.map(r => r.id)).toEqual(['r2', 'r1']);
-    expect(out[1].questions.map(q => q.id)).toEqual(['q1']);
   });
 });
 
