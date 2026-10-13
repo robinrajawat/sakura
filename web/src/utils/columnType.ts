@@ -1,6 +1,6 @@
 /**
  * Column types for tables (cell menu → Column type ›): a column can be set to Text, Number,
- * Currency, Date or Status instead of the default automatic detection. Stored as data-type (and
+ * Currency, Date, Status or Person instead of the default automatic detection. Stored as data-type (and
  * data-currency) on every cell of the column, like data-align. These are the pure parts: the
  * type names, the offered currencies, how a currency value is written, and how a picked date is
  * written so it matches the column's existing dates.
@@ -8,9 +8,9 @@
  * Wired into index.html via scripts/generate-index-blocks.mjs's `columnType` block.
  */
 
-export type ColumnType = 'text' | 'number' | 'currency' | 'date' | 'status';
+export type ColumnType = 'text' | 'number' | 'currency' | 'date' | 'status' | 'person';
 
-export const COLUMN_TYPES: ColumnType[] = ['text', 'number', 'currency', 'date', 'status'];
+export const COLUMN_TYPES: ColumnType[] = ['text', 'number', 'currency', 'date', 'status', 'person'];
 
 /** A stored data-type value, or '' (automatic) for anything unknown. */
 export function normalizeColumnType(v: string | null | undefined): ColumnType | '' {
@@ -104,4 +104,47 @@ export function formatColumnDate(utc: number, sample = ''): string {
   const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
   if (/^[A-Za-z]/.test(String(sample).trim())) return `${MONTHS[m]} ${day}, ${y}`;
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** A column header that names people: Owner, Assignee, Who, Responsible, Lead, … */
+export const PERSON_HEADER_RE = /^\s*(owner|owners|assignee|assignees|assigned to|who|responsible|lead|action owner|people|person)\s*$/i;
+
+/**
+ * The people named in a cell: split on commas, semicolons, "&", "+", "/" and the word "and"
+ * ("Ana, Raj & Mo" → Ana, Raj, Mo), a leading "@" dropped, blanks and repeats removed.
+ */
+export function splitPeople(raw: string): string[] {
+  const out: string[] = [];
+  String(raw ?? '').split(/\s*(?:[,;&+/]|\band\b)\s*/i).forEach((p) => {
+    const name = p.trim().replace(/^@/, '').trim();
+    if (name && !out.some((o) => o.toLowerCase() === name.toLowerCase())) out.push(name);
+  });
+  return out;
+}
+
+/** A person's initials for an avatar: first letters of the first and last word ("Ana Silva" → AS, "raj" → R). */
+export function personInitials(name: string): string {
+  const words = String(name ?? '').trim().split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w));
+  if (!words.length) return '?';
+  const first = (w: string) => (w.match(/[\p{L}\p{N}]/u) || ['?'])[0].toUpperCase();
+  return words.length === 1 ? first(words[0]) : first(words[0]) + first(words[words.length - 1]);
+}
+
+/** A stable colour slot 0..n-1 for a name, so the same person always gets the same avatar colour. */
+export function personColorIndex(name: string, n: number): number {
+  let h = 0;
+  for (const ch of String(name ?? '').trim().toLowerCase()) h = (h * 31 + ch.codePointAt(0)!) >>> 0;
+  return n > 0 ? h % n : 0;
+}
+
+/** Everyone named in a column, most often named first (ties in order of appearance), for the picker. */
+export function columnPeople(values: string[]): string[] {
+  const count = new Map<string, { name: string; n: number; at: number }>();
+  let at = 0;
+  values.forEach((v) => splitPeople(v).forEach((name) => {
+    const k = name.toLowerCase();
+    const e = count.get(k);
+    if (e) e.n++; else count.set(k, { name, n: 1, at: at++ });
+  }));
+  return [...count.values()].sort((a, b) => b.n - a.n || a.at - b.at).map((e) => e.name);
 }

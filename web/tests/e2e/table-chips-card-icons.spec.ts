@@ -9,6 +9,12 @@ const SHIP = '<table><tr><th>Shipping Condition</th><th>Description</th></tr><tr
 const EST = '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Area</th><th>Effort</th></tr><tr><td>ERP - ABAP</td><td>6 days</td></tr><tr><td>Total</td><td>31 days</td></tr></table>';
 
 async function openWith(page: import('@playwright/test').Page, tables: string[]) {
+  // Marked as seen BEFORE the page loads: with no documents and nothing seen, the app opens its
+  // Welcome dialog on a 500 ms timer, which under CI load could land after the hide below and then
+  // cover the menus / take the arrow keys (the cause of this file's old intermittent failures).
+  await page.addInitScript(() => {
+    try { localStorage.setItem('sakura_welcome_seen', '1'); sessionStorage.setItem('sakura_landing_dismissed', 'true'); } catch { /* storage unavailable */ }
+  });
   await page.goto('file://' + indexPath);
   await page.evaluate((tables) => {
     const l = document.getElementById('sakura-landing-overlay');

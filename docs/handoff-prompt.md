@@ -327,6 +327,18 @@ to the cell before removal). `formatCurrency` now uses en-US `currencyDisplay:'s
 Intl list, so "JAN 2026" isn't money), prefixed dollars, and local abbreviations (kr, zł, Kč, Fr., Rs,
 R, F CFA, Cg.) before or after the number; a unit test round-trips every currency.
 
+**Person column type + flaky Cards test (owner request).** Column type › Person (`data-type="person"`);
+Automatic + a header matching `PERSON_HEADER_RE` (Owner/Assignee/Who/Responsible/Lead…) also gets it.
+`splitPeople` splits on , ; & + / "and"; `personColorIndex` hashes into `PERSON_COLORS` (six hues kept
+clear of status red/green and of each other). In plain tables `personInlineHtml` wraps each name in place
+(separators kept, no avatar, box-shadow chip) so entering edit mode doesn't shift widths
+(`tables-pdf-bugs.spec.ts` guards it); the status board owner and the person picker use
+`personChipsHtml` with an initials avatar. Status board owner prefers a Person-typed column.
+Flake: `table-chips-card-icons.spec.ts` hid the Welcome dialog right after load, but the app opens it on
+a 500 ms timer when nothing is marked seen, so under load it opened later over the menus (17/60 failed
+at 8 workers); now seeded via addInitScript (200/200). ~55 other specs use the same hide-after-load
+pattern; not changed here.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
