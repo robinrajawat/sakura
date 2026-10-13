@@ -33,6 +33,21 @@ describe('parseCellNumber', () => {
     expect(parseCellNumber('1.2k')).toBe(1200);
     expect(parseCellNumber('3M')).toBe(3e6);
   });
+  it('accepts other currencies: codes, prefixed dollars and local abbreviations', () => {
+    expect(parseCellNumber('DKK 1,234.50')).toBe(1234.5);
+    expect(parseCellNumber('-DKK 1,234.50')).toBe(-1234.5);
+    expect(parseCellNumber('1,234.50 DKK')).toBe(1234.5);
+    expect(parseCellNumber('kr 100')).toBe(100);
+    expect(parseCellNumber('100 kr.')).toBe(100);
+    expect(parseCellNumber('CA$5')).toBe(5);
+    expect(parseCellNumber('-R$1,234.50')).toBe(-1234.5);
+    expect(parseCellNumber('100 zł')).toBe(100);
+    expect(parseCellNumber('₩1,235')).toBe(1235);
+    expect(parseCellNumber('CHF 12')).toBe(12);
+  });
+  it('does not read words that only look like currency codes', () => {
+    for (const s of ['JAN 2026', '100 KMS', 'ABC', 'kr']) expect(parseCellNumber(s), s).toBeNull();
+  });
   it('rejects text, dates, malformed separators and empties', () => {
     for (const s of ['', '  ', 'abc', 'Q1', 'Oct 14', '2026-10-14', '1,23', '12,34,567', '1.2.3', '$', '%', '-', '+-5', '5 apples', '<2s', '10/14']) {
       expect(parseCellNumber(s), s).toBeNull();
