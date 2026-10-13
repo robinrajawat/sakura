@@ -355,9 +355,9 @@ flagged, else open. Outline: Resolve/Reopen hover button on remarks, resolved on
 while typing an answer; row dots show open counts and go grey when all closed. Toolbar marker summary
 adds "N open" questions/remarks buttons → `setDiscussionFilter` ('openQa'/'openRemarks', ANDed with
 tag/marker filters; matched rows + dimmed ancestors, not subtrees). PDF: status pills on every
-question/remark, and an "Open items" closing page (`previewRenderOpenItems`, own Contents entry,
-`break-before:page`) behind the new pref `pdfOpenItemsSummary` (Settings → Export & copy, on by
-default). Blank remarks (text without visible content) are ignored by counts and never printed, and an
+question/follow-up remark. (An "Open items" closing page + `pdfOpenItemsSummary` pref shipped in #515 and
+was **removed at the owner's request** — it printed oddly and duplicated what each row already shows.
+Don't reintroduce it; an old saved `pdfOpenItemsSummary` pref is ignored and drops on the next save.) Blank remarks (text without visible content) are ignored by counts and never printed, and an
 untouched blank remark is discarded when focus leaves its line (the cause of the blank "Remarks" the
 owner saw at the end of PDFs: blank remarks orphaned by deleting their row). Covered by
 `tests/e2e/remark-qa-status.spec.ts`, `tests/e2e/remark-blank-cleanup.spec.ts`.
@@ -410,6 +410,12 @@ two and at least one closed, closed ones fold behind "N answered/closed question
 Both are session-only, both open with Expand all and reset with Collapse all; filters show everything
 they match. Owner requirement: the PDF always prints everything (renderPreviewBody is untouched).
 `buildInlineFoldLine` draws the toggle. Covered in `tests/e2e/remark-qa-status.spec.ts`.
+
+**Adding an inline object keeps the row folded (owner request, 2026-10-13).** Add question / remark /
+diagram / generate diagram / table (and pasting a table into a row) no longer call `expandNode` —
+inline objects render under the row even while its branch is folded. Adding a table clears that row's
+`collapsedTableNodeIds` so it shows. Pasting child rows still unfolds (the new rows must be visible).
+Covered by `tests/e2e/add-inline-object-keeps-fold.spec.ts`.
 
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed

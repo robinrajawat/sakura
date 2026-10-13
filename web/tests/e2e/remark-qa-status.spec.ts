@@ -7,8 +7,8 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Remark and Q&A status: remarks are open until resolved (older ones start open); a question is
 // open until it has an answer or is closed as "won't answer". The toolbar counts open items and
-// filters to them; PDF exports show each item's status and end with an "Open items" summary
-// (Settings → Export & copy → "Open items summary", on by default).
+// filters to them; PDF exports show each item's status (the closing "Open items" summary page
+// was removed at the owner's request).
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 const DOC_ID = 'statusdoc';
@@ -176,35 +176,13 @@ async function exportPdf(page: Page) {
   });
 }
 
-test('PDF shows each item\'s status and ends with an Open items summary', async ({ page }) => {
+test('PDF shows each item\'s status, and no Open items summary page', async ({ page }) => {
   const errors = await open(page);
   const r = await exportPdf(page);
   expect(r.pills).toEqual(expect.arrayContaining(['Open', 'Follow-up', 'Resolved', 'Answered', 'Won’t answer']));
   // Plain comments carry no status pill.
   expect(r.pills.filter((p: string | null) => p === 'Follow-up' || p === 'Resolved')).toHaveLength(2);
-  expect(r.section).toEqual({
-    sub: '1 open question · 1 open follow-up',
-    nodes: ['Pricing', 'Migration window'],
-    rows: ['MAMaria · Oct 9Under 20 EUR please.', 'QDo EU customers need 30 days notice?'],
-  });
-  expect(errors).toEqual([]);
-});
-
-test('PDF Open items summary: off by setting, and absent when nothing is open', async ({ page }) => {
-  const errors = await open(page);
-  await page.evaluate(() => {
-    // @ts-expect-error -- bare global
-    setPdfOpenItemsSummary(false);
-  });
-  expect((await exportPdf(page)).section).toBeNull();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_v001_prefs') || '{}').pdfOpenItemsSummary)).toBe(false);
-
-  await page.evaluate(() => {
-    // @ts-expect-error -- bare globals
-    setPdfOpenItemsSummary(true);
-  });
-  await page.evaluate('remarks.forEach(x => { x.resolvedAt = 1; }); qaItems.forEach(x => { x.wontAnswer = true; });');
-  const r = await exportPdf(page);
+  // Owner decision: the closing "Open items" summary page was removed.
   expect(r.section).toBeNull();
   expect(r.tocHasOpenItems).toBe(false);
   expect(errors).toEqual([]);

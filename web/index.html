@@ -1759,16 +1759,6 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .disc-sum-btn{color:var(--fc-purple)}
 .pv-status-pill{display:inline-flex;align-items:center;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
 .pv-inline-qa-line .pv-status-pill{align-self:flex-start;margin-top:1px}
-#pv-open-items-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
-.pv-open-items-sub{font:400 12px 'Inter',sans-serif;color:var(--muted);margin:-10px 0 14px}
-.pv-open-items-group{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
-.pv-open-items-group:last-child{border-bottom:none}
-.pv-open-items-node{font:600 13.5px 'Inter',sans-serif;color:var(--pv-heading);margin-bottom:6px}
-.pv-open-items-row{display:flex;align-items:baseline;gap:6px;font:400 12.5px 'Inter',sans-serif;color:var(--fg);line-height:1.45;padding:2px 0 2px 2px}
-.pv-open-items-row b{font-weight:600;white-space:nowrap}
-.pv-open-items-row .pv-remark-avatar{align-self:center}
-.pv-open-items-tag{font-weight:700;color:var(--muted);width:12px;flex:0 0 auto}
-@media print{.pv-open-items-group{break-inside:avoid-page}#pv-open-items-section{break-before:page;margin-top:0;padding-top:0;border-top:none}}
 
 .node-qa-question{flex:1;min-width:0;color:var(--fg);cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
 .node-qa-answer{flex:1;min-width:0;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
@@ -3353,7 +3343,6 @@ body.printing-generic #gpe-overlay{
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (document title, author, word/read-time stats) before the contents page when exporting to PDF. The small wordmark above the title only appears if "PDF branding" below is also on.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding</span><span class="settings-row-desc">Shows a small letter-spaced mark on the cover page of PDF exports, and in the bottom-right corner of every page. Reads "SAKURA" by default, or your own text below. On by default — off removes it everywhere, including the cover page.</span></div><button id="preview-branding-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="PDF branding"></button></div>
               <div class="settings-list-row" id="preview-branding-text-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding text</span><span class="settings-row-desc">Replaces "SAKURA" in the mark above with your own company or team name. Leave blank to use the default. Only shown when PDF branding is on.</span></div><input id="preview-branding-text-input" type="text" class="meta-input" placeholder="SAKURA" style="width:160px;text-align:left" /></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open items summary</span><span class="settings-row-desc">Ends PDF exports with an "Open items" page: every question still open and every remark marked as a follow-up and not yet resolved, grouped under the row it belongs to. Nothing is added when nothing is open. On by default.</span></div><button id="pdf-open-items-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Open items summary"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Use accent color in exports</span><span class="settings-row-desc">PDF exports (documents and the To-Dos list) use your current accent color (Settings → Appearance) for titles, checkmarks, and highlights. Off: every export uses the same fixed color instead, regardless of what the app is themed to at export time — useful if you want documents you share with others to look consistent no matter which accent you personally have set.</span></div><button id="export-accent-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Use accent color in exports"></button></div>
             </div>
           </div>
@@ -3897,7 +3886,6 @@ body.printing-generic #gpe-overlay{
 <li>A small question-mark dot appears on a node with linked questions — click it to show or hide them inline. The same icon appears next to a folded node's "+N hidden" badge when a question is linked somewhere inside its collapsed subtree</li>
 <li>Always included in PDF exports: each question prints right under the node it's linked to, same as a note; questions with no linked node are appended as a final section — bold question, regular-weight answer, unanswered ones marked "No answer provided"</li>
 <li>Each question shows its status: <strong>Open</strong> until it has an answer, <strong>Answered</strong> once the answer has text, or <strong>Won't answer</strong> — hover an open question for its "Won't answer" button (or right-click it) to close it without one, and "Reopen" to take that back</li>
-<li>PDF exports end with an <strong>Open items</strong> page listing every open question and open follow-up under its row (Settings → Data &amp; backup → Export &amp; copy → "Open items summary", on by default)</li>
 <li>Open questions list first. With more than two questions under a row, answered and closed ones fold behind "N answered questions" — click to show them. PDF exports always include every question</li>
 </ul>
 </div>
@@ -4922,7 +4910,6 @@ let showResolvedRemarksNodeIds=new Set();
 // Nodes whose earlier remarks / closed questions are unfolded this session (with more than two
 // remarks or questions under a row, only the latest remarks and the open questions show at first).
 let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
-let pdfOpenItemsSummary=true;
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
@@ -6964,22 +6951,6 @@ function nodesWithOpenItems(filter, qaItems, remarks) {
     }
     return ids;
 }
-/**
- * The PDF's "Open items" summary: every node (in document order) with open questions or open
- * remarks, each with its open items. Remarks newest first, questions in stored order.
- */
-function openItemsByNode(nodeIdsInOrder, qaItems, remarks) {
-    const out = [];
-    for (const nodeId of nodeIdsInOrder) {
-        const qs = (qaItems || []).filter(q => q.sourceNodeId === nodeId && isCountableQuestion(q) && qaState(q) === 'open');
-        const rs = (remarks || [])
-            .filter(r => r.anchorNodeId === nodeId && isOpenRemarkWithText(r))
-            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        if (qs.length || rs.length)
-            out.push({ nodeId, questions: qs, remarks: rs });
-    }
-    return out;
-}
 /** "1 open question", "2 open follow-ups" — the label for a count. */
 function openCountLabel(n, kind) {
     return n + ' open ' + kind + (n === 1 ? '' : 's');
@@ -7721,7 +7692,9 @@ function insertNodeTable(nodeId,rows,cols){
   nodes[idx].modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
   setSingleSelection(nodeId);
-  expandNode(nodeId);
+  // Inline objects show under the row even while its branch is folded, so adding one never
+  // unfolds the row's children (owner request) -- it only makes sure the tables themselves show.
+  collapsedTableNodeIds.delete(nodeId);
   render();
   setTimeout(()=>{
     const wraps=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)];
@@ -12294,7 +12267,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,pdfOpenItemsSummary,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -12317,7 +12290,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; pdfOpenItemsSummary=d.pdfOpenItemsSummary===undefined?true:!!d.pdfOpenItemsSummary; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -22734,7 +22707,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   }
   if(action==='qa'){
     if(_ctxNodeId===null)return;
-    expandNode(_ctxNodeId);
+    // No expandNode: adding an inline object never unfolds the row's children.
     forceInlineItemExpanded(inlineExpandQaNodeIds,_ctxNodeId);
     const item={id:newQaId(),question:'',answer:'',sourceNodeId:_ctxNodeId,createdAt:Date.now()};
     qaItems.push(item);
@@ -22747,7 +22720,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     if(_ctxNodeId===null)return;
     setSingleSelection(_ctxNodeId);
     render();
-    expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandRemarksNodeIds,_ctxNodeId);
     addRemark();
     return;
@@ -22756,7 +22728,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     if(_ctxNodeId===null)return;
     setSingleSelection(_ctxNodeId);
     render();
-    expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandDiagramNodeIds,_ctxNodeId);
     createDiagram();
     return;
@@ -22768,7 +22739,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     if(_ctxNodeId===null)return;
     setSingleSelection(_ctxNodeId);
     render();
-    expandNode(_ctxNodeId);
     forceInlineItemExpanded(inlineExpandDiagramNodeIds,_ctxNodeId);
     generateDiagramFromOutline();
     return;
@@ -23026,7 +22996,7 @@ document.addEventListener('paste',e=>{
       nodes[idx].modifiedAt=Date.now();
       markDirty(); scheduleAutoSave();
       setSingleSelection(selectedId);
-      expandNode(selectedId);
+      collapsedTableNodeIds.delete(selectedId);
       render();
       return;
     }
@@ -27881,67 +27851,18 @@ function renderPreviewBody(){
       doc.appendChild(remarksSection);
     }
   }
-  const openItemsSection=pdfOpenItemsSummary?previewRenderOpenItems():null;
-  if(openItemsSection)doc.appendChild(openItemsSection);
   body.replaceChildren(doc);
   const filteredTocEntries=tocEntries.filter(e=>{
     if(e.kind==='section'&&!previewTocIncludeSections)return false;
     if(e.level>PDF_TOC_MAX_LEVEL)return false;
     return true;
   });
-  renderPreviewToc(filteredTocEntries,!!doc.querySelector('#pv-qa-section'),!!openItemsSection);
+  renderPreviewToc(filteredTocEntries,!!doc.querySelector('#pv-qa-section'));
 }
-// "Open items" — the PDF's closing summary of every question and remark still open, grouped under
-// the row each belongs to, in document order (Settings → Export & copy → "Open items summary").
-// Nothing is added when nothing is open.
-function previewRenderOpenItems(){
-  const groups=openItemsByNode(nodes.map(n=>n.id),qaItems,remarks);
-  if(!groups.length)return null;
-  const plain=html=>{ const d=document.createElement('div'); d.innerHTML=sakuraSanitizeRichHtml(html||''); return (d.textContent||'').replace(/\s+/g,' ').trim(); };
-  const sec=document.createElement('div'); sec.id='pv-open-items-section';
-  const h=document.createElement('div'); h.className='pv-qa-heading'; h.textContent='Open items'; sec.appendChild(h);
-  const nQ=groups.reduce((a,g)=>a+g.questions.length,0), nR=groups.reduce((a,g)=>a+g.remarks.length,0);
-  const sub=document.createElement('div'); sub.className='pv-open-items-sub';
-  sub.textContent=[nQ?openCountLabel(nQ,'question'):'',nR?openCountLabel(nR,'follow-up'):''].filter(Boolean).join(' · ');
-  sec.appendChild(sub);
-  groups.forEach(g=>{
-    const node=nodes.find(n=>n.id===g.nodeId);
-    const grp=document.createElement('div'); grp.className='pv-open-items-group';
-    const where=document.createElement('div'); where.className='pv-open-items-node';
-    where.textContent=previewSplitQuotes(stripSemanticMarkers(node?.text||'')).main||'(untitled row)';
-    grp.appendChild(where);
-    g.questions.forEach(q=>{
-      const row=document.createElement('div'); row.className='pv-open-items-row';
-      row.innerHTML='<span class="pv-open-items-tag">Q</span>';
-      const t=document.createElement('span'); t.textContent=plain(q.question); row.appendChild(t);
-      grp.appendChild(row);
-    });
-    g.remarks.forEach(r=>{
-      const row=document.createElement('div'); row.className='pv-open-items-row';
-      const c=remarkAuthorColor(r.person);
-      const av=document.createElement('span'); av.className='pv-remark-avatar'; av.style.background=c.avatarBg; av.textContent=remarkAuthorInitials(r.person);
-      const who=document.createElement('b'); who.textContent=(r.person||'(unnamed)')+(r.date?' · '+formatRemarkDateDisplay(r.date):'');
-      const t=document.createElement('span'); t.textContent=plain(r.text);
-      row.appendChild(av); row.appendChild(who); row.appendChild(t);
-      grp.appendChild(row);
-    });
-    sec.appendChild(grp);
-  });
-  return sec;
-}
-// Builds the "Contents" page that prints ahead of the document body (page-break-after:always —
-// see the @media print rules in exportPreviewAsPdf) from the headings/[Section] markers gathered
-// above. This used to also be an interactive on-screen sidebar (click an entry to jump to it,
-// a close button, scroll-spy highlighting the current section) for the now-removed Preview
-// overlay — that chrome is gone, but the entries themselves still have to be built and placed
-// into #preview-toc every render, since exportPdfDirect()'s headless pipeline prints straight
-// from this same DOM and has no other way to get a contents page.
-function renderPreviewToc(entries,showQa=false,showOpenItems=false){
+function renderPreviewToc(entries,showQa=false){
   const toc=el('preview-toc'); if(!toc)return;
   toc.innerHTML='';
   const showHeadings=entries.length>=2;
-  // The Open items summary only gets a Contents entry when there is a Contents anyway.
-  showOpenItems=showOpenItems&&(showHeadings||showQa);
   toc.classList.toggle('pv-toc-hidden-auto',!showHeadings&&!showQa);
   if(!showHeadings&&!showQa)return;
   const headRow=document.createElement('div'); headRow.id='preview-toc-head-row';
@@ -27961,12 +27882,6 @@ function renderPreviewToc(entries,showQa=false,showOpenItems=false){
   if(showQa){
     const a=document.createElement('a'); a.className='pv-toc-item pv-toc-lvl-1'; a.href='#pv-qa-section';
     const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent='Q&A'; a.appendChild(label);
-    appendTocPageSlot(a);
-    toc.appendChild(a);
-  }
-  if(showOpenItems){
-    const a=document.createElement('a'); a.className='pv-toc-item pv-toc-lvl-1'; a.href='#pv-open-items-section';
-    const label=document.createElement('span'); label.className='pv-toc-label'; label.textContent='Open items'; a.appendChild(label);
     appendTocPageSlot(a);
     toc.appendChild(a);
   }
@@ -28720,13 +28635,6 @@ function setPreviewBrandingEnabled(on,persist=true){
   if(persist){savePrefs()}
 }
 el('preview-branding-toggle')?.addEventListener('click',()=>setPreviewBrandingEnabled(!previewBrandingEnabled));
-function setPdfOpenItemsSummary(on,persist=true){
-  pdfOpenItemsSummary=!!on;
-  const toggle=el('pdf-open-items-toggle');
-  if(toggle){toggle.classList.toggle('on',pdfOpenItemsSummary); toggle.setAttribute('aria-checked',String(pdfOpenItemsSummary))}
-  if(persist){savePrefs()}
-}
-el('pdf-open-items-toggle')?.addEventListener('click',()=>setPdfOpenItemsSummary(!pdfOpenItemsSummary));
 function setPreviewBrandingText(text,persist=true){
   previewBrandingText=String(text||'');
   const input=el('preview-branding-text-input'); if(input&&input.value!==previewBrandingText)input.value=previewBrandingText;
@@ -28971,7 +28879,6 @@ setTypewriterMode(typewriterModeEnabled, false);
 setPreviewTocIncludeSections(previewTocIncludeSections, false);
 setSectionMarkersDepthZero(sectionMarkersDepthZero, false);
 setPreviewBrandingEnabled(previewBrandingEnabled, false);
-setPdfOpenItemsSummary(pdfOpenItemsSummary, false);
 setPreviewBrandingText(previewBrandingText, false);
 setQaSearchResultsEnabled(qaSearchResultsEnabled, false);
 applyQaSearchCategorySettings();
