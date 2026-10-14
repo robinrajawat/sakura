@@ -123,19 +123,23 @@ test.describe('Pad container removal', () => {
     await page.evaluate(async () => {
       // @ts-expect-error
       await runQuickAction('qa', 2);
+    });
+    // The new question has the caret; a blank one is discarded when focus moves on, like a remark.
+    await page.keyboard.type('Who signs off?');
+    await page.evaluate(async () => {
       // @ts-expect-error
       await runQuickAction('remark', 3);
     });
-    const qaLine = page.locator('.node-qa-line');
-    await expect(qaLine).toHaveCount(1);
-    await expect(page.locator('.node-remark-line')).toHaveCount(1);
-    await expect(page.locator('.node-qa-line .node-inline-open-panel-btn, .node-remark-line .node-inline-open-panel-btn')).toHaveCount(0);
+    // A question is a discussion item: same line as a remark, with a Question pill.
+    await expect(page.locator('.node-remark-kind-pill[data-kind="question"]')).toHaveCount(1);
+    await expect(page.locator('.node-remark-line:not(.node-remark-answer-line)')).toHaveCount(2);
+    await expect(page.locator('.node-remark-line .node-inline-open-panel-btn')).toHaveCount(0);
 
     const linked = await page.evaluate(() => ({
       // @ts-expect-error
-      qa: qaItems.map((q: { sourceNodeId: number }) => q.sourceNodeId),
+      qa: remarks.filter((r: { kind?: string }) => r.kind === 'question').map((r: { anchorNodeId: number }) => r.anchorNodeId),
       // @ts-expect-error
-      remarks: remarks.map((r: { anchorNodeId: number }) => r.anchorNodeId)
+      remarks: remarks.filter((r: { kind?: string }) => r.kind !== 'question').map((r: { anchorNodeId: number }) => r.anchorNodeId)
     }));
     expect(linked).toEqual({ qa: [2], remarks: [3] });
     expect(errors).toEqual([]);

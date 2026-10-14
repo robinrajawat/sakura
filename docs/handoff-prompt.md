@@ -553,6 +553,21 @@ older documents on open), and in the node table's display/edit paths. Untouched 
 same string. Probed modifier+Enter, Ctrl+Z/B/I/D and Delete inside a cell: no other bugs found.
 Covered by `tests/e2e/table-cell-hidden-spaces.spec.ts`.
 
+**Q&A and remarks merged into one Discussion item (owner decision, 2026-10-14).** Owner's call-notes
+had remarks like "Does this work?" that really needed a Yes/No, and a follow-up flag reused as
+"confirmed". Instead of adding a Decision object, Q&A and remarks became one object stored in
+`remarks`, with a kind (`web/src/utils/discussionStatus.ts`: `remarkKind`, `applyRemarkKind`):
+comment (default), `kind:'question'` (`answer`, `verdict:'yes'|'no'`, `wontAnswer`), follow-up
+(`followUp`/`resolvedAt`, unchanged) and `kind:'decision'`. Right-click an item → **Kind** to switch;
+a question has an A line with Yes/No buttons plus a typed answer. `migrateQaToRemarks` turns every
+row-linked Q&A into a question item with id `'r'+qa.id` (idempotent), called from `render()`,
+`renderPreviewBody()` and cross-doc search via `ensureQaMigratedToDiscussion`; section headers and
+unlinked Q&A stay in `qaItems` (still printed in the PDF's closing Q&A list). One row dot, one PDF
+"Discussion" card, one Quick Assist "Discussion" group (`qa:`/`question:`/`remark:`/`discussion:`
+prefixes). A blank item left by moving focus to a just-added item on another row no longer takes the
+new one with it. Covered by `tests/e2e/discussion-items.spec.ts`, `remark-qa-status.spec.ts` and
+`tests/unit/discussionStatus.test.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

@@ -42,7 +42,7 @@ async function seed(page: Page) {
 
 const shown = (page: Page) => page.evaluate(() => ({
   note: !!document.querySelector('.node-note-line'),
-  qa: !!document.querySelector('.node-qa-line'),
+  qa: !!document.querySelector('.node-remark-kind-pill[data-kind="question"]'),
   remark: !!document.querySelector('.node-remark-text-inline'),
   diagram: !!document.querySelector('.node-diagram-line'),
   table: !!document.querySelector('.node-table-line'),
