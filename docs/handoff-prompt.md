@@ -459,6 +459,16 @@ questions / Open follow-up remarks / Parked, up to 8 items each; an item jumps (
 clears that filter. The old per-marker count buttons (`.marker-sum-btn`, `.disc-sum-btn`) are gone.
 Covered in `menu-stamp-polish.spec.ts` and `remark-qa-status.spec.ts`.
 
+**Byline: History menu + facts | actions (owner request, 2026-10-14).** Owner noticed Link and Share
+open small dropdowns under their chips while History opened a full window. The History chip now opens a
+`showSbContextMenu` menu (class `history-menu`, `openHistoryMenu`): the last `HISTORY_MENU_RECENT` (5)
+versions labelled "Today 14:32 · Auto" (click restores via `restoreDocRevision`, which records a
+"Before restoring" version first), **Save a version now** (`saveManualDocVersion(docId)` now takes the
+doc id; it used to read only `historyModalDocId`, so it did nothing with the window closed) and
+**All versions…** (`openVersionHistory`). The byline separates facts (status · author) from actions
+(Link, History, Share) with a thin rule (`#doc-link-wrap::before`) instead of a "·". Covered by
+`tests/e2e/doc-history-chip.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

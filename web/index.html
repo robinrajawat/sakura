@@ -2570,7 +2570,9 @@ body.printing-generic #gpe-overlay{
 #editor-meta-row #doc-status-chip.unset::before{background:transparent;box-shadow:inset 0 0 0 1.5px var(--border)}
 #editor-meta-row #sb-author.doc-author-chip{font-weight:500;cursor:text}
 #editor-meta-row #sb-author.doc-author-chip::placeholder{color:var(--hint)}
-#doc-status-wrap::after,#doc-link-wrap::before{content:'\00B7';color:var(--hint);padding:0 2px}
+#doc-status-wrap::after{content:'\00B7';color:var(--hint);padding:0 2px}
+/* Facts (status · author) | actions (Link, History, Share): a thin rule marks where the actions start. */
+#doc-link-wrap::before{content:'';width:1px;height:14px;margin:0 8px 0 6px;background:var(--border)}
 #diagram-editor-note-input{appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;outline:none;width:150px;transition:width .15s,border-color .12s,background .12s}
 #diagram-editor-note-input:hover{background:var(--hover)}
 #diagram-editor-note-input:focus{width:260px;background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
@@ -4262,7 +4264,7 @@ body.printing-generic #gpe-overlay{
             </div>
           </div>
         </div>
-        <button type="button" class="doc-status-chip unset doc-history-chip" id="doc-history-chip" data-tip="Version history — earlier versions of this document" aria-label="Version history"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:3px;vertical-align:-1px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>History</button>
+        <button type="button" class="doc-status-chip unset doc-history-chip" id="doc-history-chip" data-tip="Version history — earlier versions of this document" aria-label="Version history" aria-haspopup="menu"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:3px;vertical-align:-1px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>History</button>
         <div class="doc-presence-chip" id="doc-presence-chip" style="display:none"></div>
         <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
           <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
@@ -11627,8 +11629,10 @@ async function restoreNodeTextFromRevision(nodeId,text){
   showToast('Text restored — Ctrl+Z to undo');
   renderVersionHistoryList();
 }
-async function saveManualDocVersion(){
-  const docId=historyModalDocId; if(!docId)return;
+// docId defaults to the document open in the Version history window; the History chip's menu
+// passes the current document (the window is closed then).
+async function saveManualDocVersion(docId=historyModalDocId){
+  if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
     await recordDocRevision(docId,{nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Manual checkpoint');
@@ -12313,7 +12317,41 @@ document.addEventListener('mousedown',e=>{
 });
 // The open document's version history, one click from its title (also on the tab's and File
 // Explorer's right-click menus).
-el('doc-history-chip')?.addEventListener('click',e=>{ e.stopPropagation(); if(!currentDocId)return; commitEdit(); openVersionHistory(currentDocId); });
+// History chip: a small dropdown like Link and Share — the last few versions (click to restore;
+// restoring first saves a "Before restoring" version, so it is never destructive), "Save a version
+// now", and "All versions…" for the full Version history window.
+const HISTORY_MENU_RECENT=5;
+function historyMenuWhen(ts){
+  const d=new Date(ts), now=new Date();
+  const time=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const day=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  if(ts>=day)return 'Today '+time;
+  if(ts>=day-864e5)return 'Yesterday '+time;
+  return d.toLocaleDateString([], {month:'short',day:'numeric'})+', '+time;
+}
+async function openHistoryMenu(chip){
+  const docId=currentDocId; if(!docId)return;
+  commitEdit();
+  const revisions=(await loadDocRevisions(docId)).slice().reverse().slice(0,HISTORY_MENU_RECENT);
+  const CLOCK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>';
+  const items=[{heading:revisions.length?'Restore an earlier version':'Version history'}];
+  if(revisions.length)revisions.forEach(rev=>items.push({label:historyMenuWhen(rev.ts)+' \u00B7 '+(rev.reason||'Auto'), icon:CLOCK, onClick:()=>restoreDocRevision(docId,rev.ts)}));
+  else items.push({label:'No earlier versions yet', disabled:true, title:'Versions are saved automatically as you edit (at most every 10 minutes)'});
+  items.push({divider:true});
+  items.push({label:'Save a version now', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>', onClick:()=>saveManualDocVersion(docId)});
+  items.push({label:'All versions\u2026', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>', onClick:()=>openVersionHistory(docId)});
+  const r=chip.getBoundingClientRect();
+  showSbContextMenu(r.left,r.bottom+6,items);
+  _sbContextEl?.classList.add('history-menu');
+}
+(function(){
+  const chip=el('doc-history-chip'); if(!chip)return;
+  let wasOpen=false;
+  // The menu closes itself on any outside click, so a second click on the chip closes it
+  // instead of reopening it.
+  chip.addEventListener('pointerdown',()=>{ wasOpen=!!(_sbContextEl&&_sbContextEl.classList.contains('history-menu')); });
+  chip.addEventListener('click',e=>{ e.stopPropagation(); if(wasOpen){ wasOpen=false; return; } openHistoryMenu(chip); });
+})();
 el('doc-link-chip')?.addEventListener('click',e=>{
   e.stopPropagation();
   // Ctrl/Cmd-click is a shortcut straight to the linked ticket — skips the edit popover
