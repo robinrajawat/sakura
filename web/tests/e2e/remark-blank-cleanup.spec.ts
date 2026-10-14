@@ -49,6 +49,9 @@ test('a remark added and left blank is discarded when focus moves on', async ({ 
 test('a remark with text is kept when focus moves on', async ({ page }) => {
   await seed(page);
   await page.evaluate(`setSingleSelection(1); inlineExpandRemarksNodeIds.add(1); addRemark();`);
+  // addRemark focuses the new line after its render; typing before that lands elsewhere, the
+  // remark stays blank and is (correctly) discarded -- the old intermittent failure under load.
+  await expect(page.locator('.node-remark-text-inline')).toBeFocused();
   await page.keyboard.type('Keep me');
   await page.locator('.node-row[data-id="2"] .node-label').click();
   await page.waitForTimeout(100);
