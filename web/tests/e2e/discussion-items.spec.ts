@@ -61,9 +61,11 @@ test('reply line: hidden until "+ Reply"; Enter adds a comment, Ask a question, 
   // At rest the thread ends in "+ Reply", shown while the thread is hovered.
   await expect(box).toHaveCount(0);
   const replyLink = page.locator('.thread-reply-link').first();
-  await expect(replyLink).toHaveCSS('opacity', '0');
-  await page.locator('.thread-entry').first().hover();
+  // Only its label fades: the line itself stays opaque, so the depth guides it carries stay drawn.
   await expect(replyLink).toHaveCSS('opacity', '1');
+  await expect(replyLink.locator('.thread-reply-label')).toHaveCSS('opacity', '0');
+  await page.locator('.thread-entry').first().hover();
+  await expect(replyLink.locator('.thread-reply-label')).toHaveCSS('opacity', '1');
   await replyLink.click();
   await expect(box).toBeFocused();
   await page.keyboard.type('Ops confirmed the window.');
@@ -241,4 +243,15 @@ test('entry menu: Reply first, question toggle, status as labelled marker choice
   await menu.getByText('Reply', { exact: true }).click();
   await expect(page.locator('.thread-composer-input[data-node-id="2"]')).toBeFocused();
   expect(await page.evaluate('_threadAskNodeIds.has(2)')).toBe(false);
+});
+
+test('depth guides run unbroken through a thread, its "+ Reply" line included', async ({ page }) => {
+  await seed(page);
+  const guides = (sel: string) => page.locator(sel).first().evaluate((el) => {
+    const op = (n: Element | null): number => { let o = 1; for (; n; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity); return o; };
+    return [...el.querySelectorAll(':scope > .node-vguide')].map((g) => [(g as HTMLElement).style.left, op(g)]);
+  });
+  const entry = await guides('.thread-entry');
+  expect(entry.length).toBeGreaterThan(0);
+  expect(await guides('.thread-reply-link')).toEqual(entry);
 });
