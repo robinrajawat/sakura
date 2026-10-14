@@ -20,6 +20,16 @@ export interface StatusRemark {
   followUp?: boolean;
   anchorNodeId?: number | null;
   resolvedAt?: number | null;
+  /** Discussion kind beyond comment/follow-up (absent on comments and follow-ups). */
+  kind?: 'question' | 'decision';
+  /** A question's answer (rich HTML) and its one-click Yes/No. */
+  answer?: string;
+  verdict?: 'yes' | 'no';
+  wontAnswer?: boolean;
+  person?: string;
+  date?: string;
+  context?: string;
+  createdAt?: number;
 }
 
 export interface StatusQaItem {
@@ -47,20 +57,99 @@ export function qaState(item: StatusQaItem): QaState {
   return 'open';
 }
 
+// ── Discussion items ─────────────────────────────────────────────────────────────────────────
+// Q&A and remarks are one kind of object (owner decision, 2026-10-14): a discussion item under a
+// row, stored in `remarks`, with who/date/text and one kind. Comment and follow-up keep their old
+// shape (follow-up = `followUp: true`), so older documents read unchanged; a question is
+// `kind: 'question'` with `answer` / `verdict` / `wontAnswer`; a decision is `kind: 'decision'`.
+
+export type DiscussionKind = 'comment' | 'question' | 'followup' | 'decision';
+
+export function remarkKind(r: StatusRemark): DiscussionKind {
+  if (r.kind === 'question') return 'question';
+  if (r.kind === 'decision') return 'decision';
+  return r.followUp ? 'followup' : 'comment';
+}
+
+/** A question item's state, derived like a Q&A entry's: answered (a Yes/No or answer text wins),
+ * closed as "won't answer", otherwise open. */
+export function remarkQuestionState(r: StatusRemark): QaState {
+  if (r.verdict === 'yes' || r.verdict === 'no') return 'answered';
+  return qaState({ answer: r.answer, wontAnswer: r.wontAnswer });
+}
+
+/** An open question item with question text. */
+export function remarkIsOpenQuestion(r: StatusRemark): boolean {
+  return remarkKind(r) === 'question' && htmlHasVisibleText(r.text) && remarkQuestionState(r) === 'open';
+}
+
+/** Anything still open in a discussion: an open follow-up or an open question. */
+export function discussionItemIsOpen(r: StatusRemark): boolean {
+  return remarkIsOpen(r) || remarkIsOpenQuestion(r);
+}
+
 /** A remark marked as needing follow-up (resolved or not). Anything else is a plain comment. */
 export function remarkIsFollowUp(r: StatusRemark): boolean {
-  return !!r.followUp;
+  return remarkKind(r) === 'followup';
 }
 
 /** An open follow-up: flagged and not yet resolved. Plain comments are never open. */
 export function remarkIsOpen(r: StatusRemark): boolean {
-  return !!r.followUp && !r.resolvedAt;
+  return remarkIsFollowUp(r) && !r.resolvedAt;
 }
 
-/** The status a remark shows: none for a plain comment, else open or resolved. */
+/** The follow-up status a remark shows: none unless it's a follow-up, else open or resolved. */
 export function remarkState(r: StatusRemark): 'comment' | 'open' | 'resolved' {
-  if (!r.followUp) return 'comment';
+  if (!remarkIsFollowUp(r)) return 'comment';
   return r.resolvedAt ? 'resolved' : 'open';
+}
+
+/** The remark fields that change with its kind, set for `kind` (others cleared). */
+export function applyRemarkKind<T extends StatusRemark>(r: T, kind: DiscussionKind): T {
+  delete r.kind;
+  delete r.followUp;
+  delete r.resolvedAt;
+  if (kind === 'question' || kind === 'decision') r.kind = kind;
+  else if (kind === 'followup') r.followUp = true;
+  return r;
+}
+
+function localDateStr(ms: number): string {
+  const d = new Date(ms);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+/**
+ * Moves every Q&A entry linked to a row into `remarks` as a question item (same text, answer and
+ * won't-answer state; no name, since Q&A never stored one; dated from when it was asked). Section
+ * headings and unlinked entries stay in `qaItems`. Idempotent: an entry whose question item
+ * already exists (id `r` + its id) is just dropped from `qaItems`.
+ */
+export function migrateQaToRemarks<Q extends StatusQaItem & { createdAt?: number }, R extends StatusRemark>(
+  qaItems: Q[],
+  remarks: R[]
+): { qaItems: Q[]; remarks: R[]; moved: number } {
+  const kept: Q[] = [];
+  const out = (remarks || []).slice();
+  const ids = new Set(out.map((r) => r.id));
+  let moved = 0;
+  for (const q of qaItems || []) {
+    if (!q || q.type === 'section' || q.sourceNodeId == null) { if (q) kept.push(q); continue; }
+    const id = 'r' + q.id;
+    if (!ids.has(id)) {
+      const created = Number.isFinite(q.createdAt) ? (q.createdAt as number) : 0;
+      const item: StatusRemark = {
+        id, kind: 'question', person: '', text: q.question || '', answer: q.answer || '',
+        date: created ? localDateStr(created) : '', context: '', anchorNodeId: q.sourceNodeId, createdAt: created
+      };
+      if (q.wontAnswer) item.wontAnswer = true;
+      out.push(item as R);
+      ids.add(id);
+    }
+    moved++;
+  }
+  return { qaItems: kept, remarks: out, moved };
 }
 
 /** An open remark with text — a blank remark (added, never typed into) has nothing to triage. */
@@ -96,6 +185,7 @@ export function countOpenItems(
   for (const r of remarks || []) {
     if (r.anchorNodeId == null || !nodeIds.has(r.anchorNodeId)) continue;
     if (isOpenRemarkWithText(r)) openRemarks++;
+    else if (remarkIsOpenQuestion(r)) openQuestions++;
   }
   return { openQuestions, openRemarks };
 }
@@ -126,6 +216,9 @@ export function nodesWithOpenItems(
   if (filter === 'openQa') {
     for (const q of qaItems || []) {
       if (q.sourceNodeId != null && isCountableQuestion(q) && qaState(q) === 'open') ids.add(q.sourceNodeId);
+    }
+    for (const r of remarks || []) {
+      if (r.anchorNodeId != null && remarkIsOpenQuestion(r)) ids.add(r.anchorNodeId);
     }
   } else {
     for (const r of remarks || []) {
@@ -182,7 +275,13 @@ export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[],
     else p.settled++;
   }
   for (const r of remarks || []) {
-    if (r.anchorNodeId == null || !ids.has(r.anchorNodeId) || !remarkIsFollowUp(r) || !htmlHasVisibleText(r.text)) continue;
+    if (r.anchorNodeId == null || !ids.has(r.anchorNodeId) || !htmlHasVisibleText(r.text)) continue;
+    if (remarkKind(r) === 'question') {
+      if (remarkQuestionState(r) === 'open') p.questions++;
+      else p.settled++;
+      continue;
+    }
+    if (!remarkIsFollowUp(r)) continue;
     if (remarkIsOpen(r)) p.remarks++;
     else p.settled++;
   }

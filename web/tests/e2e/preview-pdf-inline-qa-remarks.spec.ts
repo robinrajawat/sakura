@@ -52,13 +52,11 @@ function seedDoc(page: import('@playwright/test').Page, opts: { qaItems?: any[];
   }, opts);
 }
 
-// Q&A linked to a node used to only ever appear in one flat "Q&A" list at the very end of the
-// document, disconnected from the node it was actually about -- the per-node inline Q&A card
-// already existed in the renderer but was gated behind previewOpenQaIds, an ephemeral on-screen
-// toggle that PDF export never force-populated (unlike notes, via previewOpenNoteIds).
-// _applyNodeContentExportState now does the same force-open for Q&A that it already did for notes.
+// Q&A linked to a node prints under that node, never only in a disconnected trailing list. Since
+// Q&A and remarks merged into one Discussion item, a linked question prints as a question item in
+// the node's Discussion card, with its answer.
 test.describe('Linked Q&A prints inline under its node in PDF export, not just in a disconnected trailing list', () => {
-  test('a question linked to a node renders as its own inline card under that node', async ({ page }) => {
+  test('a question linked to a node renders as a question item in the node\'s Discussion card', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedDoc(page, { qaItems: [{ id: 'q1', question: 'Why this approach?', answer: 'Because it scales.', sourceNodeId: 2 }] });
@@ -66,18 +64,18 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
 
     const result = await page.evaluate(() => {
       const body = document.getElementById('preview-body')!;
-      const card = body.querySelector('.pv-inline-qa-body');
+      const block = body.querySelector('.pv-remark-block');
       return {
-        hasInlineCard: !!card,
-        questionText: body.querySelector('.pv-inline-qa-question')?.textContent,
-        answerText: body.querySelector('.pv-inline-qa-answer')?.textContent,
-        labelHasQaColorClass: !!body.querySelector('.pv-inline-label-qa'),
+        label: block?.querySelector('.pv-inline-label-remark span')?.textContent,
+        text: block?.querySelector('.pv-remark-entry')?.textContent || '',
+        answer: block?.querySelector('.pv-remark-answer')?.textContent || '',
+        pill: block?.querySelector('.pv-status-pill')?.textContent,
       };
     });
-    expect(result.hasInlineCard).toBe(true);
-    expect(result.questionText).toBe('Why this approach?');
-    expect(result.answerText).toBe('Because it scales.');
-    expect(result.labelHasQaColorClass).toBe(true);
+    expect(result.label).toBe('Discussion');
+    expect(result.text).toContain('Why this approach?');
+    expect(result.answer).toContain('Because it scales.');
+    expect(result.pill).toBe('Answered');
   });
 
   test('a question rendered inline is NOT duplicated into the trailing Q&A section', async ({ page }) => {
@@ -107,7 +105,7 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
       return {
         sectionExists: !!section,
         sectionText: section?.textContent || '',
-        inlineCardCount: document.querySelectorAll('#preview-body .pv-inline-qa-body').length,
+        inlineCardCount: document.querySelectorAll('#preview-body .pv-remark-block').length,
       };
     });
     expect(result.sectionExists).toBe(true);
@@ -188,7 +186,7 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
   // or three remarks on the same node read as that many separate, seemingly unrelated cards
   // stacked back to back -- mirrors the single-card/multiple-rows pattern the inline Q&A card
   // already uses for several questions linked to one node.
-  test('several remarks anchored to the same node group under one shared "Remarks" card, not one card each', async ({ page }) => {
+  test('several remarks anchored to the same node group under one shared "Discussion" card, not one card each', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedDoc(page, {
@@ -217,7 +215,7 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
     expect(result.blockCount).toBe(1);
     expect(result.labelCount).toBe(1);
     expect(result.entryCount).toBe(2);
-    expect(result.labelText).toBe('Remarks');
+    expect(result.labelText).toBe('Discussion');
   });
 });
 

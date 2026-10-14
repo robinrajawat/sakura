@@ -5,8 +5,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// Remark and Q&A status: remarks are open until resolved (older ones start open); a question is
-// open until it has an answer or is closed as "won't answer". The toolbar counts open items and
+// Discussion item status: a follow-up is open until resolved; a question (Q&A linked to a row is
+// migrated into a question item) is open until it has a Yes/No or typed answer or is closed as
+// "won't answer". The toolbar counts open items and
 // filters to them; PDF exports show each item's status (the closing "Open items" summary page
 // was removed at the owner's request).
 
@@ -105,32 +106,45 @@ test('remarks: resolve folds a remark away, the fold line shows it again, reopen
   expect(errors).toEqual([]);
 });
 
-test('Q&A: status pill tracks the answer live, and won\'t answer closes and reopens', async ({ page }) => {
+test('a question (formerly Q&A): status pill tracks the answer live, Yes/No answers it, won\'t answer closes and reopens', async ({ page }) => {
   const errors = await open(page);
-  const pill = (id: string) => page.locator(`.node-qa-line:has(#inline-qa-q-${id}) .node-qa-status`);
-  await expect(pill('qOpen')).toHaveText('Open');
-  await expect(pill('qDone')).toHaveText('Answered');
-  await expect(pill('qWont')).toHaveText('Won’t answer');
+  await page.evaluate('inlineExpandRemarksNodeIds = new Set([2, 3, 4, 5]); render();');
+  // Q&A linked to a row became a question item in the row's discussion (id 'r' + the old id).
+  expect(await page.evaluate('qaItems.length')).toBe(0);
+  const pill = (id: string) => page.locator(`.node-remark-line:has(#inline-remark-text-${id}) .node-remark-kind-pill`);
+  await expect(pill('rqOpen')).toHaveText('Question · Open');
+  await expect(pill('rqDone')).toHaveText('Answered');
+  await expect(pill('rqWont')).toHaveText('Won’t answer');
 
   // Typing an answer flips the pill without re-rendering (caret stays in the answer).
-  await page.locator('#inline-qa-a-qOpen').click();
+  const answer = page.locator('.node-remark-answer[data-remark-id="rqOpen"]');
+  await answer.click();
   await page.keyboard.type('Yes');
-  await expect(pill('qOpen')).toHaveText('Answered');
-  await expect(page.locator('#inline-qa-a-qOpen')).toBeFocused();
+  await expect(pill('rqOpen')).toHaveText('Answered');
+  await expect(answer).toBeFocused();
   expect(await sumButtons(page)).toEqual(['1 remark']);
   await page.keyboard.press('Control+a');
   await page.keyboard.press('Backspace');
-  await expect(pill('qOpen')).toHaveText('Open');
+  await expect(pill('rqOpen')).toHaveText('Question · Open');
 
-  // Won't answer via the hover button, then reopen it.
-  const row = page.locator('.node-qa-line:has(#inline-qa-q-qOpen)');
-  await row.hover();
-  await row.locator('.node-qa-wont-btn').click();
-  await expect(pill('qOpen')).toHaveText('Won’t answer');
-  expect(await page.evaluate("qaItems.find(q => q.id === 'qOpen').wontAnswer")).toBe(true);
-  await row.hover();
-  await row.locator('.node-qa-wont-btn').click();
-  await expect(pill('qOpen')).toHaveText('Open');
+  // One-click Yes answers it; clicking the picked chip clears it again.
+  const ansLine = page.locator('.node-remark-answer-line:has(.node-remark-answer[data-remark-id="rqOpen"])');
+  await ansLine.locator('.node-remark-verdict-btn[data-verdict="yes"]').click();
+  await expect(pill('rqOpen')).toHaveText('Answered');
+  await expect(ansLine.locator('.node-remark-verdict-btn.is-picked')).toHaveText('✓ Yes');
+  expect(await page.evaluate("remarks.find(r => r.id === 'rqOpen').verdict")).toBe('yes');
+  await ansLine.locator('.node-remark-verdict-btn.is-picked').click();
+  await expect(pill('rqOpen')).toHaveText('Question · Open');
+
+  // Won't answer via right-click, then reopen it.
+  const line = page.locator('.node-remark-line:has(#inline-remark-text-rqOpen)');
+  await line.click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Won’t answer', { exact: true }).click();
+  await expect(pill('rqOpen')).toHaveText('Won’t answer');
+  expect(await page.evaluate("remarks.find(r => r.id === 'rqOpen').wontAnswer")).toBe(true);
+  await line.click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Reopen question', { exact: true }).click();
+  await expect(pill('rqOpen')).toHaveText('Question · Open');
   expect(errors).toEqual([]);
 });
 
@@ -147,8 +161,8 @@ test('the open-items list filters to the rows holding open items', async ({ page
   await clickGroupFilter(page, 'Open questions');
   expect(await visibleRows()).toEqual(['1(context)', '3']);
   // The filter opened the matching row's Q&A, and only open questions show.
-  await expect(page.locator('#inline-qa-q-qOpen')).toBeVisible();
-  await expect(page.locator('.node-qa-question')).toHaveCount(1);
+  await expect(page.locator('#inline-remark-text-rqOpen')).toBeVisible();
+  await expect(page.locator('.node-remark-kind-pill[data-kind="question"]')).toHaveCount(1);
   await expect(page.locator('#tag-filter-bar')).toContainText('Open questions');
 
   await clickGroupFilter(page, 'Open follow-up remarks');
@@ -185,7 +199,7 @@ async function exportPdf(page: Page) {
 test('PDF shows each item\'s status, and no Open items summary page', async ({ page }) => {
   const errors = await open(page);
   const r = await exportPdf(page);
-  expect(r.pills).toEqual(expect.arrayContaining(['Open', 'Follow-up', 'Resolved', 'Answered', 'Won’t answer']));
+  expect(r.pills).toEqual(expect.arrayContaining(['Question · Open', 'Follow-up', 'Resolved', 'Answered', 'Won’t answer']));
   // Plain comments carry no status pill.
   expect(r.pills.filter((p: string | null) => p === 'Follow-up' || p === 'Resolved')).toHaveLength(2);
   // Owner decision: the closing "Open items" summary page was removed.
@@ -204,20 +218,21 @@ test('a plain comment has no status until it is marked as a follow-up (right-cli
   expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
 
   await line.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Mark as follow-up', { exact: true }).click();
+  await expect(page.locator('.sb-context-menu .sb-context-heading', { hasText: 'Kind' })).toBeVisible();
+  await page.locator('.sb-context-menu').getByText('Follow-up', { exact: true }).click();
   const flagged = page.locator('.node-remark-line', { hasText: 'Just a comment.' });
   await expect(flagged.locator('.node-remark-followup-pill')).toHaveText('Follow-up');
   expect(await sumButtons(page)).toEqual(['1 question', '2 remarks']);
 
   await flagged.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Not a follow-up', { exact: true }).click();
+  await page.locator('.sb-context-menu').getByText('Comment', { exact: true }).click();
   await expect(page.locator('.node-remark-line', { hasText: 'Just a comment.' }).locator('.node-remark-followup-pill')).toHaveCount(0);
   expect(await page.evaluate("'followUp' in remarks.find(r => r.id === 'rPlain')")).toBe(false);
   expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
   expect(errors).toEqual([]);
 });
 
-test('more than two remarks or questions under a row: the latest remarks and open questions show, the rest fold', async ({ page }) => {
+test('more than two discussion items under a row: the latest two and every open one show, the rest fold', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate(`
     remarks.push(
@@ -232,20 +247,16 @@ test('more than two remarks or questions under a row: the latest remarks and ope
     );
     inlineExpandRemarksNodeIds.add(4); render();
   `);
-  const remarkIds = () => page.evaluate(() => [...document.querySelectorAll('.node-remark-text-inline')].map(e => (e as HTMLElement).dataset.remarkId));
-  const qaIds = () => page.evaluate(() => [...document.querySelectorAll('.node-qa-question')].map(e => (e as HTMLElement).dataset.qaId));
-  // Row 4 now has five remarks (rPlain + four): the two newest, plus the open follow-up, show.
-  expect((await remarkIds()).filter(id => ['rPlain', 'c1', 'c2', 'c3', 'c4'].includes(id!))).toEqual(['c3', 'c2', 'c4']);
-  const more = page.locator('.node-inline-more-toggle', { hasText: 'earlier remark' });
-  await expect(more).toHaveText(/2 earlier remarks/);
+  const itemIds = () => page.evaluate(() => [...document.querySelectorAll('.node-row[data-id="4"] ~ .node-remark-line .node-remark-text-inline')]
+    .map(e => (e as HTMLElement).dataset.remarkId).filter(id => !['rOld', 'rDone', 'rqOpen', 'rqWont'].includes(id!)));
+  // Row 4 now holds eight items (comments, a follow-up and questions, newest first): the two
+  // newest show, plus every open item (the open question, the open follow-up); the rest fold.
+  expect(await itemIds()).toEqual(['c3', 'c2', 'rqa3', 'c4']);
+  const more = page.locator('.node-inline-more-toggle', { hasText: 'earlier item' });
+  await expect(more).toHaveText(/4 earlier items/);
   await more.click();
-  expect((await remarkIds()).filter(id => ['rPlain', 'c1', 'c2', 'c3', 'c4'].includes(id!))).toEqual(['c3', 'c2', 'c1', 'rPlain', 'c4']);
-  await expect(page.locator('.node-inline-more-toggle', { hasText: 'Hide earlier remarks' })).toBeVisible();
-
-  // Row 4's questions: open first, the two answered ones folded.
-  expect((await qaIds()).filter(id => ['qDone', 'qa2', 'qa3'].includes(id!))).toEqual(['qa3']);
-  await page.locator('.node-inline-more-toggle', { hasText: '2 answered questions' }).click();
-  expect((await qaIds()).filter(id => ['qDone', 'qa2', 'qa3'].includes(id!))).toEqual(['qa3', 'qDone', 'qa2']);
+  expect(await itemIds()).toEqual(['c3', 'c2', 'c1', 'rqa3', 'rqa2', 'rPlain', 'rqDone', 'c4']);
+  await expect(page.locator('.node-inline-more-toggle', { hasText: 'Hide earlier items' })).toBeVisible();
 
   // The PDF prints every one of them.
   const printed = await page.evaluate(async () => {

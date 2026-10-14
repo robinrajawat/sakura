@@ -81,3 +81,15 @@ test('PDF skips blank remarks, orphaned or not', async ({ page }) => {
   expect(r.entries).toEqual(['Real remark']);
   expect(r.trailing).toBe(false);
 });
+
+test('a blank item cleaned up when another row\'s item is added does not take the new one with it', async ({ page }) => {
+  await seed(page);
+  await page.evaluate(`(async () => { await runQuickAction('qa', 1); })()`);
+  await expect(page.locator('.node-remark-text-inline')).toBeFocused();
+  await page.evaluate(`(async () => { await runQuickAction('remark', 2); })()`);
+  await expect.poll(() => page.evaluate('JSON.stringify(remarks.map(r => [r.anchorNodeId, r.kind || null]))')).toBe('[[2,null]]');
+  // The caret stays in the new remark, ready to type.
+  await expect(page.locator('.node-remark-text-inline')).toBeFocused();
+  await page.keyboard.type('Kept');
+  expect(await page.evaluate('remarks[0].text')).toBe('Kept');
+});

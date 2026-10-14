@@ -29,7 +29,9 @@ for (const action of ['qa', 'remark'] as const) {
     await seedFolded(page);
     expect(await childVisible(page)).toBe(false);
     await page.evaluate(`runQuickAction('${action}', 1)`);
-    await expect(page.locator(action === 'qa' ? '.node-qa-line' : '.node-remark-line')).toHaveCount(1);
+    // A question is a discussion item too: its line plus its answer line.
+    await expect(page.locator('.node-remark-line:not(.node-remark-answer-line)')).toHaveCount(1);
+    if (action === 'qa') await expect(page.locator('.node-remark-kind-pill[data-kind="question"]')).toHaveCount(1);
     expect(await page.evaluate('collapsedIds.has(1)')).toBe(true);
     expect(await childVisible(page)).toBe(false);
   });

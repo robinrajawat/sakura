@@ -10,7 +10,8 @@ import {
   normalizeDiscussionFilter,
   nodesWithOpenItems,
   openCountLabel,
-  documentProgress, attentionParts, progressSummaryText
+  documentProgress, attentionParts, progressSummaryText,
+  remarkKind, remarkQuestionState, remarkIsOpenQuestion, discussionItemIsOpen, applyRemarkKind, migrateQaToRemarks
 } from '../../src/utils/discussionStatus';
 
 describe('htmlHasVisibleText', () => {
@@ -154,5 +155,61 @@ describe('documentProgress / attentionParts / progressSummaryText', () => {
       'Needs attention: 1 issue, 2 follow-ups, 1 open question, 1 open follow-up remark. 5 of 11 settled, 1 parked.'
     );
     expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled.');
+  });
+});
+
+describe('discussion items (Q&A and remarks as one object)', () => {
+  it('reads the kind from the stored fields, old remarks included', () => {
+    expect(remarkKind({ text: 'x' })).toBe('comment');
+    expect(remarkKind({ text: 'x', followUp: true })).toBe('followup');
+    expect(remarkKind({ text: 'x', kind: 'question' })).toBe('question');
+    expect(remarkKind({ text: 'x', kind: 'decision', followUp: true })).toBe('decision');
+  });
+  it('a question is answered by Yes/No or by answer text, and can be closed', () => {
+    expect(remarkQuestionState({ kind: 'question', text: 'Enough?' })).toBe('open');
+    expect(remarkQuestionState({ kind: 'question', text: 'Enough?', verdict: 'no' })).toBe('answered');
+    expect(remarkQuestionState({ kind: 'question', text: 'Enough?', answer: '<b>Yes</b>' })).toBe('answered');
+    expect(remarkQuestionState({ kind: 'question', text: 'Enough?', wontAnswer: true })).toBe('wont');
+    expect(remarkIsOpenQuestion({ kind: 'question', text: '' })).toBe(false);
+    expect(discussionItemIsOpen({ kind: 'question', text: 'Enough?' })).toBe(true);
+    expect(discussionItemIsOpen({ text: 'x', followUp: true, resolvedAt: 5 })).toBe(false);
+  });
+  it('only follow-ups carry a follow-up state', () => {
+    expect(remarkState({ text: 'x', kind: 'question', followUp: true })).toBe('comment');
+    expect(remarkIsOpen({ text: 'x', kind: 'decision', followUp: true })).toBe(false);
+  });
+  it('changing the kind clears the other kinds\' fields', () => {
+    expect(applyRemarkKind({ text: 'x', followUp: true, resolvedAt: 3 }, 'question')).toEqual({ text: 'x', kind: 'question' });
+    expect(applyRemarkKind({ text: 'x', kind: 'question' as const }, 'followup')).toEqual({ text: 'x', followUp: true });
+    expect(applyRemarkKind({ text: 'x', kind: 'decision' as const }, 'comment')).toEqual({ text: 'x' });
+  });
+  it('counts open question items with the open questions', () => {
+    const remarks = [
+      { anchorNodeId: 1, kind: 'question' as const, text: 'Enough?' },
+      { anchorNodeId: 1, kind: 'question' as const, text: 'Block?', verdict: 'yes' as const },
+      { anchorNodeId: 2, text: 'Send list', followUp: true }
+    ];
+    expect(countOpenItems([], remarks, new Set([1, 2]))).toEqual({ openQuestions: 1, openRemarks: 1 });
+    expect([...nodesWithOpenItems('openQa', [], remarks)]).toEqual([1]);
+    const p = documentProgress([{ id: 1 }, { id: 2 }], [], remarks);
+    expect([p.questions, p.remarks, p.settled]).toEqual([1, 1, 1]);
+  });
+  it('moves linked Q&A into question items once, keeping sections and unlinked entries', () => {
+    const qa = [
+      { id: 'qa1', question: 'Enough?', answer: 'Yes', sourceNodeId: 4, createdAt: new Date(2026, 9, 14, 10).getTime() },
+      { id: 'qa2', question: 'Later?', answer: '', sourceNodeId: 4, wontAnswer: true },
+      { id: 'qa3', type: 'section', question: '', sourceNodeId: null },
+      { id: 'qa4', question: 'Loose', sourceNodeId: null }
+    ];
+    const first = migrateQaToRemarks(qa, [{ id: 'r1', text: 'Hi', anchorNodeId: 4 }]);
+    expect(first.moved).toBe(2);
+    expect(first.qaItems.map((q) => q.id)).toEqual(['qa3', 'qa4']);
+    expect(first.remarks.slice(1)).toEqual([
+      { id: 'rqa1', kind: 'question', person: '', text: 'Enough?', answer: 'Yes', date: '2026-10-14', context: '', anchorNodeId: 4, createdAt: qa[0].createdAt },
+      { id: 'rqa2', kind: 'question', person: '', text: 'Later?', answer: '', date: '', context: '', anchorNodeId: 4, createdAt: 0, wontAnswer: true }
+    ]);
+    // Running it again (the same entries still in qaItems) adds nothing twice.
+    const again = migrateQaToRemarks(qa, first.remarks);
+    expect(again.remarks.length).toBe(first.remarks.length);
   });
 });

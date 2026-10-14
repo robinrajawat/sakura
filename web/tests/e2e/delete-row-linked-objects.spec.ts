@@ -54,8 +54,9 @@ test('a row with undoable objects deletes them with it without asking, and Undo 
 
   await page.evaluate('undo()');
   expect(await page.evaluate('nodes.map(n => n.id)')).toEqual([1, 2, 3, 4, 5]);
-  expect(await page.evaluate('remarks.map(r => r.id).sort()')).toEqual(['r1', 'r2', 'r3']);
-  expect(await page.evaluate('qaItems.map(q => q.id)')).toEqual(['q1']);
+  // The row's question is a discussion item now (migrated from Q&A on render).
+  expect(await page.evaluate('remarks.map(r => r.id).sort()')).toEqual(['r1', 'r2', 'r3', 'rq1']);
+  expect(await page.evaluate('qaItems.length')).toBe(0);
   expect(errors).toEqual([]);
 });
 
@@ -148,10 +149,10 @@ test('opening a document removes Q&A, remarks and diagrams left without a row, o
   });
   await page.goto('file://' + indexPath);
   await page.waitForFunction('typeof nodes !== "undefined" && nodes.length === 1 && nodes[0].text === "Row"');
-  expect(await page.evaluate('[remarks.map(r => r.id), qaItems.map(q => q.id), diagrams.length]')).toEqual([['keep'], ['qk'], 0]);
+  expect(await page.evaluate('[remarks.map(r => r.id), qaItems.map(q => q.id), diagrams.length]')).toEqual([['keep', 'rqk'], [], 0]);
   // Saved through the normal save path.
   await expect.poll(() => page.evaluate(() => {
     const d = JSON.parse(localStorage.getItem('sakura_doc_v1_orph') || '{}');
     return [(d.remarks || []).length, (d.qa || []).length, (d.diagrams || []).length];
-  })).toEqual([1, 1, 0]);
+  })).toEqual([2, 0, 0]);
 });

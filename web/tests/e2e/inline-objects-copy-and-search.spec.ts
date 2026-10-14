@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// A duplicated or pasted row gets its own copies of every inline object (Q&A, remarks and
+// A duplicated or pasted row gets its own copies of every inline object (discussion items and
 // diagrams included, not just note/tables/images), and Quick Assist finds table cells and image
 // captions — the only inline-object text it didn't search before.
 
@@ -41,33 +41,39 @@ async function seed(page: Page) {
   `);
 }
 
-test('Duplicate copies Q&A, remarks and diagrams of every row in the branch', async ({ page }) => {
+// Q&A linked to a row is a question item in its discussion (migrated on render), so it is copied
+// along with the row's other discussion items.
+const kindOf = `x => x.kind === 'question' ? 'Q:' + x.text + '|' + x.answer : x.text`;
+
+test('Duplicate copies discussion items (questions included) and diagrams of every row in the branch', async ({ page }) => {
   await seed(page);
+  expect(await page.evaluate('qaItems.length')).toBe(0);
   await page.evaluate('setSingleSelection(1); duplicateSelected()');
   const r = await page.evaluate(`(() => {
     const copy = nodes.find(n => n.text === 'Rollout' && n.id !== 1);
     const childCopy = nodes.find(n => n.text === 'Pilot site' && n.id !== 2);
     return {
-      qa: qaItems.filter(q => q.sourceNodeId === copy.id).map(q => [q.question, q.answer]),
-      childQa: qaItems.filter(q => q.sourceNodeId === childCopy.id).length,
-      rm: remarks.filter(x => x.anchorNodeId === copy.id).map(x => [x.text, x.person, !!x.followUp]),
+      items: remarks.filter(x => x.anchorNodeId === copy.id).map(${kindOf}).sort(),
+      followUp: remarks.some(x => x.anchorNodeId === copy.id && x.followUp && x.person === 'Ana'),
+      childItems: remarks.filter(x => x.anchorNodeId === childCopy.id).map(${kindOf}),
       dg: diagrams.filter(d => d.anchorNodeId === copy.id).map(d => [d.title, d.xml]),
-      ids: new Set([...qaItems.map(q => q.id), ...remarks.map(x => x.id)]).size === qaItems.length + remarks.length,
-      originalQa: qaItems.filter(q => q.sourceNodeId === 1).length
+      ids: new Set(remarks.map(x => x.id)).size === remarks.length,
+      originals: remarks.filter(x => x.anchorNodeId === 1).length
     };
   })()`);
-  expect(r.qa).toEqual([['Who signs off?', 'Ops lead']]);
-  expect(r.childQa).toBe(1);
-  expect(r.rm).toEqual([['Check the EDI mapping', 'Ana', true]]); // the blank remark is not copied
+  // The blank remark is not copied.
+  expect(r.items).toEqual(['Check the EDI mapping', 'Q:Who signs off?|Ops lead']);
+  expect(r.followUp).toBe(true);
+  expect(r.childItems).toEqual(['Q:Pilot date?|']);
   expect(r.dg).toEqual([['Flow', '<mxfile/>']]);
   expect(r.ids).toBe(true);
-  expect(r.originalQa).toBe(1);
-  // Q&A and remarks are in the undo snapshot: Undo takes the copies away again.
+  expect(r.originals).toBe(3);
+  // Discussion items are in the undo snapshot: Undo takes the copies away again.
   await page.evaluate('undo()');
-  expect(await page.evaluate('qaItems.length + "/" + remarks.length')).toBe('2/2');
+  expect(await page.evaluate('remarks.length')).toBe(4);
 });
 
-test('Copy and paste brings Q&A and remarks along', async ({ page }) => {
+test('Copy and paste brings the discussion items along', async ({ page }) => {
   await seed(page);
   const r = await page.evaluate(`(() => {
     const scope = nodes.slice(0, 2);
@@ -77,13 +83,11 @@ test('Copy and paste brings Q&A and remarks along', async ({ page }) => {
     pasteParsedNodes(parseTreeClipboardHtml(html), undefined, extras);
     const pasted = nodes.filter(n => n.text === 'Rollout' && n.id !== 1)[0];
     return {
-      qa: qaItems.filter(q => q.sourceNodeId === pasted.id).map(q => q.question),
-      rm: remarks.filter(x => x.anchorNodeId === pasted.id).map(x => x.text),
+      items: remarks.filter(x => x.anchorNodeId === pasted.id).map(${kindOf}).sort(),
       dg: diagrams.filter(d => d.anchorNodeId === pasted.id).length
     };
   })()`);
-  expect(r.qa).toEqual(['Who signs off?']);
-  expect(r.rm).toEqual(['Check the EDI mapping']);
+  expect(r.items).toEqual(['Check the EDI mapping', 'Q:Who signs off?|Ops lead']);
   expect(r.dg).toBe(1);
 });
 

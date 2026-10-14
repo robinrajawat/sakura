@@ -155,26 +155,26 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
     const result = await page.evaluate(() => {
       // @ts-expect-error
       nodes = [
-        { id: 1, depth: 0, text: 'Own note + own Q&A', styles: {}, note: 'a note' },
+        { id: 1, depth: 0, text: 'Own note + own discussion', styles: {}, note: 'a note' },
       ];
       // @ts-expect-error
       collapsedIds = new Set();
       // @ts-expect-error
       selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null;
       // @ts-expect-error
-      qaItems = [{ id: 'q1', sourceNodeId: 1, question: 'Q', answer: 'A' }];
+      remarks = [{ id: 'r1', anchorNodeId: 1, kind: 'question', text: 'Q', answer: 'A' }];
       // @ts-expect-error
       render();
 
       const row = document.querySelector('.node-row[data-id="1"]')!;
-      const ownNoteDot = row.querySelector('.node-note-dot:not(.node-qa-dot)')!;
-      const ownQaDot = row.querySelector('.node-qa-dot')!;
+      const ownNoteDot = row.querySelector('.node-note-dot:not(.node-remark-dot)')!;
+      const ownDiscussionDot = row.querySelector('.node-remark-dot')!;
       return {
         ownNoteColor: getComputedStyle(ownNoteDot).color,
-        ownQaColor: getComputedStyle(ownQaDot).color,
+        ownDiscussionColor: getComputedStyle(ownDiscussionDot).color,
       };
     });
 
-    expect(result.ownNoteColor).not.toBe(result.ownQaColor); // distinct types, distinct colors
+    expect(result.ownNoteColor).not.toBe(result.ownDiscussionColor); // distinct types, distinct colors
   });
 });
