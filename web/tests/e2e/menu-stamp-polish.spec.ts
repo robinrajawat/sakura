@@ -212,3 +212,49 @@ test.describe('PDF markers, footer and stamp placement', () => {
     expect(res.css).toContain('has-cover-page #pv-doc-header{ display:none');
   });
 });
+
+test.describe('Open-items summary shortcut', () => {
+  test('right-click or Shift+click toggles "show only open items" without opening the list', async ({ page }) => {
+    await open(page);
+    await seed(page, [n(1, 0, 'Open thing', null), n(2, 0, 'Done thing', null), n(3, 0, 'Plain', null)]);
+    // @ts-expect-error -- bare globals from index.html
+    await page.evaluate(() => { nodes[0].marker = 'issue'; nodes[1].marker = 'confirmed'; render(); });
+    const btn = page.locator('#marker-summary .open-items-btn');
+    await expect(btn).toHaveAttribute('data-tip', /right-click \(or Shift\+click\) to show only open items/);
+
+    await btn.click({ button: 'right' });
+    await expect(page.locator('.open-items-menu')).toHaveCount(0);
+    await expect(page.locator('.sb-context-menu')).toHaveCount(0);
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeDiscussionFilter)).toBe('openItems');
+    await expect(btn).toHaveClass(/active/);
+    const shown = () => page.evaluate(() => [...document.querySelectorAll('.node-row:not(.tag-filtered-out)')].map((r) => (r as HTMLElement).dataset.id));
+    expect(await shown()).toEqual(['1']);
+
+    await btn.click({ button: 'right' });
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeDiscussionFilter)).toBeNull();
+
+    await btn.click({ modifiers: ['Shift'] });
+    await expect(page.locator('.open-items-menu')).toHaveCount(0);
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeDiscussionFilter)).toBe('openItems');
+    await btn.click({ modifiers: ['Shift'] });
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeDiscussionFilter)).toBeNull();
+
+    // A plain click still opens the list.
+    await btn.click();
+    await expect(page.locator('.open-items-menu')).toHaveCount(1);
+  });
+
+  test('with nothing open, the shortcut says so instead of filtering everything away', async ({ page }) => {
+    await open(page);
+    await seed(page, [n(1, 0, 'Agreed', null)]);
+    // @ts-expect-error -- bare globals from index.html
+    await page.evaluate(() => { nodes[0].marker = 'confirmed'; render(); });
+    await page.locator('#marker-summary .open-items-btn').click({ button: 'right' });
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeDiscussionFilter)).toBeNull();
+  });
+});
