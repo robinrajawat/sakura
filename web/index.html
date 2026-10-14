@@ -29695,7 +29695,7 @@ function updateMarkerSummary(){
     ? parts.map(a=>`<span class="oi-part" data-key="${a.key}" style="--mc:${openItemKindColor(a.key)}">${openItemKindIcon(a.key)}<span>${a.label}</span></span>`).join('<span class="oi-sep" aria-hidden="true">·</span>')
     : `<span class="oi-part" data-key="done" style="--mc:${openItemKindColor('done')}">${openItemKindIcon('done')}<span>All settled</span></span>`;
   const text=progressSummaryText(p);
-  const html=`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list." aria-label="${esc(text)}">${segs}</button>`;
+  const html=`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list; right-click (or Shift+click) to show only open items." aria-label="${esc(text)}">${segs}</button>`;
   if(box.innerHTML!==html)box.innerHTML=html;
 }
 // Show only the rows with this marker. The filter only acts on rendered rows, so unfold every
@@ -29790,10 +29790,23 @@ function openOpenItemsMenu(btn){
   box.addEventListener('pointerdown',()=>{ wasOpen=!!(_sbContextEl&&_sbContextEl.classList.contains('open-items-menu')); });
   box.addEventListener('click',e=>{
     const btn=e.target.closest('.open-items-btn'); if(!btn)return;
+    if(e.shiftKey){ wasOpen=false; quickToggleOpenItemsFilter(); return; }
     if(wasOpen){ wasOpen=false; return; }
     openOpenItemsMenu(btn);
   });
+  // Shortcut (owner request): right-click toggles "Show only open items in the outline" without
+  // opening the list.
+  box.addEventListener('contextmenu',e=>{
+    if(!e.target.closest('.open-items-btn'))return;
+    e.preventDefault(); e.stopPropagation();
+    closeSbContextMenu();
+    quickToggleOpenItemsFilter();
+  });
 })();
+function quickToggleOpenItemsFilter(){
+  if(currentOpenItemsFilter()!=='openItems'&&!attentionParts(documentProgress(nodes,qaItems,remarks)).length){ showToast('Nothing open to show'); return; }
+  applyOpenItemsFilter('openItems');
+}
 // Toolbar "N open" counts → show only the rows holding open questions (or open remarks). Unfolds
 // the branches hiding them and opens their inline Q&A/remarks, so every counted item is on screen.
 // Whether the discussion filter limits a row's inline questions (or remarks) to open ones: the
