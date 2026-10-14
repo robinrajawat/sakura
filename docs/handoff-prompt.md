@@ -505,7 +505,9 @@ a "Rows: N" hint in the outline when it disagrees (`.tbl-total-hint`, not in the
 `tableDataRows` keeps it out of heat-map, grouping and sorting (stays last), and
 `chartSeriesFromTable` leaves it out. Menu: "Total row" (on/off) after Group rows, or "Use calculated
 total" when a typed total exists (`setTableTotalRow` removes the typed row; Undo restores it). Cards
-show the total as one line under the grid (`.pv-table-cards-total`). Covered by
+show the total as one full-width line under the grid (`.pv-table-cards-total`) — owner wanted it
+to look different from the cards: accent tint and border, "Σ Total" label in the accent colour, value
+at card-value size. Covered by
 `tests/e2e/table-total-row.spec.ts`.
 
 **Parked / open questions for the owner:**
