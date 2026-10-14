@@ -53,10 +53,10 @@ function seedDoc(page: import('@playwright/test').Page, opts: { qaItems?: any[];
 }
 
 // Q&A linked to a node prints under that node, never only in a disconnected trailing list. Since
-// Q&A and remarks merged into one Discussion item, a linked question prints as a question item in
-// the node's Discussion card, with its answer.
+// Q&A linked to a node migrates into that node's thread: the question prints in the node's Thread
+// card, followed by its answer.
 test.describe('Linked Q&A prints inline under its node in PDF export, not just in a disconnected trailing list', () => {
-  test('a question linked to a node renders as a question item in the node\'s Discussion card', async ({ page }) => {
+  test('a question linked to a node renders as a question item in the node\'s thread card', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedDoc(page, { qaItems: [{ id: 'q1', question: 'Why this approach?', answer: 'Because it scales.', sourceNodeId: 2 }] });
@@ -66,16 +66,16 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
       const body = document.getElementById('preview-body')!;
       const block = body.querySelector('.pv-remark-block');
       return {
-        label: block?.querySelector('.pv-inline-label-remark span')?.textContent,
+        label: block?.querySelector('.pv-inline-label-remark > span:not(.pv-status-pill)')?.textContent,
         text: block?.querySelector('.pv-remark-entry')?.textContent || '',
-        answer: block?.querySelector('.pv-remark-answer')?.textContent || '',
-        pill: block?.querySelector('.pv-status-pill')?.textContent,
+        answer: block?.querySelectorAll('.pv-remark-entry')[1]?.textContent || '',
+        pill: block?.querySelector('.pv-remark-entry .pv-status-pill')?.textContent,
       };
     });
-    expect(result.label).toBe('Discussion');
+    expect(result.label).toBe('Thread · 2');
     expect(result.text).toContain('Why this approach?');
     expect(result.answer).toContain('Because it scales.');
-    expect(result.pill).toBe('Answered');
+    expect(result.pill).toBe('Question · Answered');
   });
 
   test('a question rendered inline is NOT duplicated into the trailing Q&A section', async ({ page }) => {
@@ -186,7 +186,7 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
   // or three remarks on the same node read as that many separate, seemingly unrelated cards
   // stacked back to back -- mirrors the single-card/multiple-rows pattern the inline Q&A card
   // already uses for several questions linked to one node.
-  test('several remarks anchored to the same node group under one shared "Discussion" card, not one card each', async ({ page }) => {
+  test('several remarks anchored to the same node group under one shared "Thread" card, not one card each', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedDoc(page, {
@@ -209,13 +209,13 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
         blockCount: body.querySelectorAll('.pv-remark-block').length,
         labelCount: body.querySelectorAll('.pv-inline-label-remark').length,
         entryCount: body.querySelectorAll('.pv-remark-entry').length,
-        labelText: body.querySelector('.pv-inline-label-remark span')?.textContent,
+        labelText: body.querySelector('.pv-inline-label-remark > span:not(.pv-status-pill)')?.textContent,
       };
     });
     expect(result.blockCount).toBe(1);
     expect(result.labelCount).toBe(1);
     expect(result.entryCount).toBe(2);
-    expect(result.labelText).toBe('Discussion');
+    expect(result.labelText).toBe('Thread · 2');
   });
 });
 

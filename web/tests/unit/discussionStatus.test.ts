@@ -1,17 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  htmlHasVisibleText,
-  qaState,
-  remarkIsOpen,
-  remarkIsFollowUp,
-  remarkState,
-  isCountableQuestion,
-  countOpenItems,
-  normalizeDiscussionFilter,
-  nodesWithOpenItems,
-  openCountLabel,
+  htmlHasVisibleText, qaState, isCountableQuestion,
+  normalizeDiscussionFilter, nodesWithOpenItems, openCountLabel,
   documentProgress, attentionParts, progressSummaryText,
-  remarkKind, remarkQuestionState, remarkIsOpenQuestion, discussionItemIsOpen, applyRemarkKind, migrateQaToRemarks
+  threadEntries, questionState, openQuestions, questionToAnswer, threadStatus, threadStatusEntry,
+  markerForThreadStatus, threadStatusForMarker, isThreadMarker, syncedMarker, linkMarkersToThreads,
+  migrateDiscussionToThread, needsThreadMigration, migrateQaToRemarks, type ThreadEntry
 } from '../../src/utils/discussionStatus';
 
 describe('htmlHasVisibleText', () => {
@@ -38,22 +32,6 @@ describe('qaState', () => {
   });
 });
 
-describe('remark status', () => {
-  it('treats a remark as a plain comment unless it is marked as a follow-up', () => {
-    expect(remarkIsOpen({})).toBe(false);
-    expect(remarkIsFollowUp({})).toBe(false);
-    expect(remarkState({})).toBe('comment');
-    expect(remarkState({ resolvedAt: 5 })).toBe('comment');
-  });
-  it('counts a follow-up as open until it is resolved', () => {
-    expect(remarkIsOpen({ followUp: true })).toBe(true);
-    expect(remarkIsOpen({ followUp: true, resolvedAt: null })).toBe(true);
-    expect(remarkIsOpen({ followUp: true, resolvedAt: 1700000000000 })).toBe(false);
-    expect(remarkState({ followUp: true })).toBe('open');
-    expect(remarkState({ followUp: true, resolvedAt: 1 })).toBe('resolved');
-  });
-});
-
 describe('isCountableQuestion', () => {
   it('skips sections and empty questions', () => {
     expect(isCountableQuestion({ type: 'section', question: 'Heading' })).toBe(false);
@@ -62,56 +40,142 @@ describe('isCountableQuestion', () => {
   });
 });
 
-describe('countOpenItems', () => {
-  const qa = [
-    { question: 'Open?', answer: '', sourceNodeId: 1 },
-    { question: 'Answered?', answer: 'yes', sourceNodeId: 1 },
-    { question: 'Skipped?', answer: '', wontAnswer: true, sourceNodeId: 2 },
-    { question: 'Unlinked?', answer: '', sourceNodeId: null },
-    { question: 'Other doc?', answer: '', sourceNodeId: 99 },
-    { type: 'section', question: 'Section', sourceNodeId: 1 },
+const E = (o: Partial<ThreadEntry>): ThreadEntry => ({ text: 'x', ...o });
+
+describe('one thread', () => {
+  const thread = [
+    E({ id: 'c', anchorNodeId: 1, createdAt: 1, text: 'Weekend works.' }),
+    E({ id: 'q1', anchorNodeId: 1, createdAt: 2, type: 'question', text: 'Enough?' }),
+    E({ id: 'q2', anchorNodeId: 1, createdAt: 3, type: 'question', text: 'EU too?' }),
+    E({ id: 'a2', anchorNodeId: 1, createdAt: 4, answerTo: 'q2', verdict: 'yes', text: '' })
   ];
-  const remarks = [
-    { anchorNodeId: 1, text: 'Open', followUp: true },
-    { anchorNodeId: 1, text: 'Just a comment' },
-    { anchorNodeId: 1, text: '<br>', followUp: true },
-    { anchorNodeId: 2, text: 'Done', followUp: true, resolvedAt: 5 },
-    { anchorNodeId: 99, text: 'Elsewhere', followUp: true },
-  ];
-  it('counts only open items with text on nodes of the document', () => {
-    expect(countOpenItems(qa, remarks, new Set([1, 2]))).toEqual({ openQuestions: 1, openRemarks: 1 });
+  it('orders a node\'s entries by time, stably', () => {
+    const mixed = [E({ id: 'b', anchorNodeId: 1, createdAt: 5 }), E({ id: 'x', anchorNodeId: 2, createdAt: 1 }), E({ id: 'a', anchorNodeId: 1, createdAt: 1 }), E({ id: 'c', anchorNodeId: 1, createdAt: 5 })];
+    expect(threadEntries(mixed, 1).map((e) => e.id)).toEqual(['a', 'b', 'c']);
   });
-  it('handles empty input', () => {
-    expect(countOpenItems([], [], new Set())).toEqual({ openQuestions: 0, openRemarks: 0 });
+  it('a question is answered by an answer to it (Yes/No or text), else open or won\'t answer', () => {
+    expect(questionState(thread[1], thread)).toBe('open');
+    expect(questionState(thread[2], thread)).toBe('answered');
+    expect(questionState(E({ id: 'q3', type: 'question', wontAnswer: true }), thread)).toBe('wont');
+    // A blank answer doesn't count.
+    expect(questionState(thread[1], [...thread, E({ answerTo: 'q1', text: '<br>' })])).toBe('open');
+    expect(questionState(thread[1], [...thread, E({ answerTo: 'q1', text: 'Probably' })])).toBe('answered');
+  });
+  it('lists open questions and picks the latest open one before a point to answer', () => {
+    expect(openQuestions(thread).map((e) => e.id)).toEqual(['q1']);
+    expect(questionToAnswer(thread)?.id).toBe('q1');
+    expect(questionToAnswer(thread, thread[1])).toBeNull();
+    expect(openQuestions([E({ type: 'question', text: '' })])).toEqual([]);
+  });
+  it('the thread status is the latest status chip', () => {
+    expect(threadStatus(thread)).toBeNull();
+    const t = [E({ status: 'followup' }), E({}), E({ status: 'decision' }), E({})];
+    expect(threadStatus(t)).toBe('decision');
+    expect(threadStatusEntry(t)).toBe(t[2]);
+  });
+});
+
+describe('row marker ⇄ thread status', () => {
+  it('maps both ways; Parked and N/A are row-only', () => {
+    expect(markerForThreadStatus('followup')).toBe('followup');
+    expect(markerForThreadStatus('resolved')).toBe('confirmed');
+    expect(markerForThreadStatus('decision')).toBe('confirmed');
+    expect(markerForThreadStatus(null)).toBeNull();
+    expect(threadStatusForMarker('followup')).toBe('followup');
+    expect(threadStatusForMarker('confirmed')).toBe('resolved');
+    expect(markerForThreadStatus('issue')).toBe('issue');
+    expect(threadStatusForMarker('issue')).toBe('issue');
+    expect(threadStatusForMarker('parked')).toBeNull();
+    expect(isThreadMarker('confirmed')).toBe(true);
+    expect(isThreadMarker('parked')).toBe(false);
+  });
+  it('syncs the marker from the thread, keeping row-only markers when the thread has no status', () => {
+    expect(syncedMarker('', [E({ status: 'followup' })])).toBe('followup');
+    expect(syncedMarker('issue', [E({ status: 'resolved' })])).toBe('confirmed');
+    expect(syncedMarker('followup', [E({})])).toBe('');
+    expect(syncedMarker('parked', [E({})])).toBe('parked');
+  });
+  it('links older documents once: thread status → marker, marker → status on the latest entry', () => {
+    const nodes = [{ id: 1 }, { id: 2, marker: 'followup' }, { id: 3, marker: 'issue' }, { id: 4, marker: 'confirmed' }, { id: 5, marker: 'issue' }, { id: 6, marker: 'parked' }];
+    const entries = [
+      E({ anchorNodeId: 1, createdAt: 1, status: 'decision' }),
+      E({ anchorNodeId: 2, createdAt: 1 }), E({ anchorNodeId: 2, createdAt: 2 }),
+      E({ anchorNodeId: 3, createdAt: 1, status: 'followup' }),
+      E({ anchorNodeId: 5, createdAt: 1, status: 'followup' }), E({ anchorNodeId: 5, createdAt: 2 }),
+      E({ anchorNodeId: 6, createdAt: 1, status: 'decision' })
+    ];
+    const changes = linkMarkersToThreads(nodes, entries);
+    // Row 3's old Issue mark gives way to its thread's Follow-up; row 5's goes on its latest entry;
+    // Parked (row-only) stays over row 6's decision.
+    expect([...changes]).toEqual([[1, 'confirmed'], [3, 'followup']]);
+    expect(entries.map((e) => e.status || null)).toEqual(['decision', null, 'followup', 'followup', 'followup', 'issue', 'decision']);
+  });
+});
+
+describe('migrateDiscussionToThread', () => {
+  it('turns follow-ups, decisions and inline answers into chips and answer entries, once', () => {
+    const old = [
+      E({ id: 'f', anchorNodeId: 1, followUp: true, createdAt: 1 }),
+      E({ id: 'g', anchorNodeId: 1, followUp: true, resolvedAt: 9, createdAt: 2 }),
+      E({ id: 'd', anchorNodeId: 1, kind: 'decision', createdAt: 3 }),
+      E({ id: 'q', anchorNodeId: 1, kind: 'question', text: 'Enough?', answer: 'Ops agreed', verdict: 'yes', date: '2026-10-14', createdAt: 4 }),
+      E({ id: 'w', anchorNodeId: 1, kind: 'question', text: 'Later?', answer: '', wontAnswer: true, createdAt: 6 }),
+      E({ id: 'c', anchorNodeId: 1, createdAt: 7 })
+    ];
+    const { entries, changed } = migrateDiscussionToThread(old);
+    expect(changed).toBe(true);
+    expect(entries.map((e) => [e.id, e.type || '', e.status || '', e.answerTo || '', e.verdict || ''])).toEqual([
+      ['f', '', 'followup', '', ''], ['g', '', 'resolved', '', ''], ['d', '', 'decision', '', ''],
+      ['q', 'question', '', '', ''], ['q-a', '', '', 'q', 'yes'], ['w', 'question', '', '', ''], ['c', '', '', '', '']
+    ]);
+    expect(entries[4]).toMatchObject({ text: 'Ops agreed', person: '', createdAt: 5, date: '2026-10-14' });
+    expect(entries[5].wontAnswer).toBe(true);
+    expect(needsThreadMigration(entries)).toBe(false);
+    expect(migrateDiscussionToThread(entries)).toEqual({ entries, changed: false });
+    expect(old[0].followUp).toBe(true); // the input is not mutated
+  });
+});
+
+describe('Q&A migration', () => {
+  it('moves linked Q&A into the row\'s thread once, keeping sections and unlinked entries', () => {
+    const qa = [
+      { id: 'qa1', question: 'Enough?', answer: 'Yes', sourceNodeId: 4, createdAt: new Date(2026, 9, 14, 10).getTime() },
+      { id: 'qa2', question: 'Later?', answer: '', sourceNodeId: 4, wontAnswer: true },
+      { id: 'qa3', type: 'section', question: '', sourceNodeId: null },
+      { id: 'qa4', question: 'Loose', sourceNodeId: null }
+    ];
+    const first = migrateQaToRemarks(qa, [{ id: 'r1', text: 'Hi', anchorNodeId: 4 }]);
+    expect(first.moved).toBe(2);
+    expect(first.qaItems.map((q) => q.id)).toEqual(['qa3', 'qa4']);
+    expect(first.remarks.slice(1)).toEqual([
+      { id: 'rqa1', type: 'question', person: '', text: 'Enough?', date: '2026-10-14', context: '', anchorNodeId: 4, createdAt: qa[0].createdAt },
+      { id: 'rqa1-a', person: '', text: 'Yes', date: '2026-10-14', context: '', anchorNodeId: 4, createdAt: (qa[0].createdAt as number) + 1, answerTo: 'rqa1' },
+      { id: 'rqa2', type: 'question', person: '', text: 'Later?', date: '', context: '', anchorNodeId: 4, createdAt: 0, wontAnswer: true }
+    ]);
+    const again = migrateQaToRemarks(qa, first.remarks);
+    expect(again.remarks.length).toBe(first.remarks.length);
   });
 });
 
 describe('normalizeDiscussionFilter', () => {
-  it('accepts only the three filters', () => {
+  it('accepts the two filters', () => {
     expect(normalizeDiscussionFilter('openQa')).toBe('openQa');
     expect(normalizeDiscussionFilter('openItems')).toBe('openItems');
-    expect(normalizeDiscussionFilter('openRemarks')).toBe('openRemarks');
-    expect(normalizeDiscussionFilter('issue')).toBeNull();
+    expect(normalizeDiscussionFilter('openRemarks')).toBeNull();
     expect(normalizeDiscussionFilter(null)).toBeNull();
   });
 });
 
 describe('nodesWithOpenItems', () => {
-  const qa = [
-    { question: 'A?', answer: '', sourceNodeId: 1 },
-    { question: 'B?', answer: 'done', sourceNodeId: 2 },
-    { question: 'C?', answer: '', wontAnswer: true, sourceNodeId: 3 },
+  const entries = [
+    E({ id: 'a', anchorNodeId: 1, type: 'question', text: 'A?' }),
+    E({ id: 'b', anchorNodeId: 2, type: 'question', text: 'B?' }), E({ anchorNodeId: 2, answerTo: 'b', verdict: 'no' }),
+    E({ id: 'c', anchorNodeId: 3, type: 'question', text: 'C?', wontAnswer: true })
   ];
-  const remarks = [{ anchorNodeId: 2, text: 'x', followUp: true }, { anchorNodeId: 3, text: 'y', followUp: true, resolvedAt: 1 }, { anchorNodeId: 4, text: '', followUp: true }, { anchorNodeId: 5, text: 'comment' }];
-  it('finds nodes with open questions', () => {
-    expect([...nodesWithOpenItems('openQa', qa, remarks)]).toEqual([1]);
-  });
-  it('finds nodes with open remarks', () => {
-    expect([...nodesWithOpenItems('openRemarks', qa, remarks)]).toEqual([2]);
-  });
-  it('openItems combines open questions, open remarks and Issue/Follow-up rows', () => {
-    const nodes = [{ id: 6, marker: 'issue' }, { id: 7, marker: 'followup' }, { id: 8, marker: 'confirmed' }, { id: 9, marker: 'parked' }];
-    expect([...nodesWithOpenItems('openItems', qa, remarks, nodes)].sort()).toEqual([1, 2, 6, 7]);
+  it('finds nodes with open questions; openItems adds Issue and Follow-up rows', () => {
+    expect([...nodesWithOpenItems('openQa', entries)]).toEqual([1]);
+    const nodes = [{ id: 6, marker: 'issue' }, { id: 7, marker: 'followup' }, { id: 8, marker: 'confirmed' }];
+    expect([...nodesWithOpenItems('openItems', entries, nodes)].sort()).toEqual([1, 6, 7]);
   });
 });
 
@@ -130,86 +194,25 @@ describe('documentProgress / attentionParts / progressSummaryText', () => {
   const qa = [
     { sourceNodeId: 7, question: 'Who signs off?' },
     { sourceNodeId: 7, question: 'Which carrier?', answer: 'DHL' },
-    { sourceNodeId: 7, question: 'Budget?', wontAnswer: true },
     { sourceNodeId: 7, type: 'section', question: 'Heading' },
     { sourceNodeId: 99, question: 'Elsewhere' }
   ];
-  const remarks = [
-    { anchorNodeId: 1, text: 'Check rates', followUp: true },
-    { anchorNodeId: 1, text: 'Done', followUp: true, resolvedAt: 1 },
-    { anchorNodeId: 1, text: 'Just a note' },
-    { anchorNodeId: 1, text: '', followUp: true }
+  const entries = [
+    E({ id: 'q', anchorNodeId: 1, type: 'question', text: 'Rates?' }),
+    E({ id: 'p', anchorNodeId: 1, type: 'question', text: 'Budget?', wontAnswer: true }),
+    E({ anchorNodeId: 1, text: 'Follow-up chips are counted by the marker', status: 'followup' }),
+    E({ id: 'z', anchorNodeId: 99, type: 'question', text: 'Other doc?' })
   ];
 
   it('counts what needs attention, parked and settled', () => {
-    expect(documentProgress(nodes, qa, remarks)).toEqual({ issues: 1, followups: 2, parked: 1, questions: 1, remarks: 1, settled: 5, total: 11 });
+    expect(documentProgress(nodes, qa, entries)).toEqual({ issues: 1, followups: 2, parked: 1, questions: 2, settled: 4, total: 10 });
   });
-
   it('lists only kinds with something open, most urgent first', () => {
-    expect(attentionParts(documentProgress(nodes, qa, remarks)).map((a) => a.label)).toEqual(['1 issue', '2 follow-ups', '1 question', '1 remark']);
+    expect(attentionParts(documentProgress(nodes, qa, entries)).map((a) => a.label)).toEqual(['1 issue', '2 follow-ups', '2 questions']);
     expect(attentionParts(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toEqual([]);
   });
-
   it('describes the summary in words', () => {
-    expect(progressSummaryText(documentProgress(nodes, qa, remarks))).toBe(
-      'Needs attention: 1 issue, 2 follow-ups, 1 open question, 1 open follow-up remark. 5 of 11 settled, 1 parked.'
-    );
+    expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 1 issue, 2 follow-ups, 2 open questions. 4 of 10 settled, 1 parked.');
     expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled.');
-  });
-});
-
-describe('discussion items (Q&A and remarks as one object)', () => {
-  it('reads the kind from the stored fields, old remarks included', () => {
-    expect(remarkKind({ text: 'x' })).toBe('comment');
-    expect(remarkKind({ text: 'x', followUp: true })).toBe('followup');
-    expect(remarkKind({ text: 'x', kind: 'question' })).toBe('question');
-    expect(remarkKind({ text: 'x', kind: 'decision', followUp: true })).toBe('decision');
-  });
-  it('a question is answered by Yes/No or by answer text, and can be closed', () => {
-    expect(remarkQuestionState({ kind: 'question', text: 'Enough?' })).toBe('open');
-    expect(remarkQuestionState({ kind: 'question', text: 'Enough?', verdict: 'no' })).toBe('answered');
-    expect(remarkQuestionState({ kind: 'question', text: 'Enough?', answer: '<b>Yes</b>' })).toBe('answered');
-    expect(remarkQuestionState({ kind: 'question', text: 'Enough?', wontAnswer: true })).toBe('wont');
-    expect(remarkIsOpenQuestion({ kind: 'question', text: '' })).toBe(false);
-    expect(discussionItemIsOpen({ kind: 'question', text: 'Enough?' })).toBe(true);
-    expect(discussionItemIsOpen({ text: 'x', followUp: true, resolvedAt: 5 })).toBe(false);
-  });
-  it('only follow-ups carry a follow-up state', () => {
-    expect(remarkState({ text: 'x', kind: 'question', followUp: true })).toBe('comment');
-    expect(remarkIsOpen({ text: 'x', kind: 'decision', followUp: true })).toBe(false);
-  });
-  it('changing the kind clears the other kinds\' fields', () => {
-    expect(applyRemarkKind({ text: 'x', followUp: true, resolvedAt: 3 }, 'question')).toEqual({ text: 'x', kind: 'question' });
-    expect(applyRemarkKind({ text: 'x', kind: 'question' as const }, 'followup')).toEqual({ text: 'x', followUp: true });
-    expect(applyRemarkKind({ text: 'x', kind: 'decision' as const }, 'comment')).toEqual({ text: 'x' });
-  });
-  it('counts open question items with the open questions', () => {
-    const remarks = [
-      { anchorNodeId: 1, kind: 'question' as const, text: 'Enough?' },
-      { anchorNodeId: 1, kind: 'question' as const, text: 'Block?', verdict: 'yes' as const },
-      { anchorNodeId: 2, text: 'Send list', followUp: true }
-    ];
-    expect(countOpenItems([], remarks, new Set([1, 2]))).toEqual({ openQuestions: 1, openRemarks: 1 });
-    expect([...nodesWithOpenItems('openQa', [], remarks)]).toEqual([1]);
-    const p = documentProgress([{ id: 1 }, { id: 2 }], [], remarks);
-    expect([p.questions, p.remarks, p.settled]).toEqual([1, 1, 1]);
-  });
-  it('moves linked Q&A into question items once, keeping sections and unlinked entries', () => {
-    const qa = [
-      { id: 'qa1', question: 'Enough?', answer: 'Yes', sourceNodeId: 4, createdAt: new Date(2026, 9, 14, 10).getTime() },
-      { id: 'qa2', question: 'Later?', answer: '', sourceNodeId: 4, wontAnswer: true },
-      { id: 'qa3', type: 'section', question: '', sourceNodeId: null },
-      { id: 'qa4', question: 'Loose', sourceNodeId: null }
-    ];
-    const first = migrateQaToRemarks(qa, [{ id: 'r1', text: 'Hi', anchorNodeId: 4 }]);
-    expect(first.moved).toBe(2);
-    expect(first.qaItems.map((q) => q.id)).toEqual(['qa3', 'qa4']);
-    expect(first.remarks.slice(1)).toEqual([
-      { id: 'rqa1', kind: 'question', person: '', text: 'Enough?', answer: 'Yes', date: '2026-10-14', context: '', anchorNodeId: 4, createdAt: qa[0].createdAt },
-      { id: 'rqa2', kind: 'question', person: '', text: 'Later?', answer: '', date: '', context: '', anchorNodeId: 4, createdAt: 0, wontAnswer: true }
-    ]);
-    // Running it again (the same entries still in qaItems) adds nothing twice.
-    const again = migrateQaToRemarks(qa, first.remarks);
-    expect(again.remarks.length).toBe(first.remarks.length);
   });
 });

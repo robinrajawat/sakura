@@ -41,11 +41,12 @@ async function seed(page: Page) {
   `);
 }
 
-// Q&A linked to a row is a question item in its discussion (migrated on render), so it is copied
-// along with the row's other discussion items.
-const kindOf = `x => x.kind === 'question' ? 'Q:' + x.text + '|' + x.answer : x.text`;
+// Q&A linked to a row is a question in its thread (migrated on render), with its answer as a reply,
+// so it is copied along with the row's other thread entries; the copied answer stays linked to the
+// copied question.
+const kindOf = `x => x.type === 'question' ? 'Q:' + x.text : x.answerTo ? 'A:' + x.text + '->' + (remarks.find(q => q.id === x.answerTo && q.anchorNodeId === x.anchorNodeId) || {}).text : x.text`;
 
-test('Duplicate copies discussion items (questions included) and diagrams of every row in the branch', async ({ page }) => {
+test('Duplicate copies thread entries (questions included) and diagrams of every row in the branch', async ({ page }) => {
   await seed(page);
   expect(await page.evaluate('qaItems.length')).toBe(0);
   await page.evaluate('setSingleSelection(1); duplicateSelected()');
@@ -54,26 +55,26 @@ test('Duplicate copies discussion items (questions included) and diagrams of eve
     const childCopy = nodes.find(n => n.text === 'Pilot site' && n.id !== 2);
     return {
       items: remarks.filter(x => x.anchorNodeId === copy.id).map(${kindOf}).sort(),
-      followUp: remarks.some(x => x.anchorNodeId === copy.id && x.followUp && x.person === 'Ana'),
+      followUp: remarks.some(x => x.anchorNodeId === copy.id && x.status === 'followup' && x.person === 'Ana'),
       childItems: remarks.filter(x => x.anchorNodeId === childCopy.id).map(${kindOf}),
       dg: diagrams.filter(d => d.anchorNodeId === copy.id).map(d => [d.title, d.xml]),
       ids: new Set(remarks.map(x => x.id)).size === remarks.length,
       originals: remarks.filter(x => x.anchorNodeId === 1).length
     };
   })()`);
-  // The blank remark is not copied.
-  expect(r.items).toEqual(['Check the EDI mapping', 'Q:Who signs off?|Ops lead']);
+  // The blank entry is not copied.
+  expect(r.items).toEqual(['A:Ops lead->Who signs off?', 'Check the EDI mapping', 'Q:Who signs off?']);
   expect(r.followUp).toBe(true);
-  expect(r.childItems).toEqual(['Q:Pilot date?|']);
+  expect(r.childItems).toEqual(['Q:Pilot date?']);
   expect(r.dg).toEqual([['Flow', '<mxfile/>']]);
   expect(r.ids).toBe(true);
-  expect(r.originals).toBe(3);
-  // Discussion items are in the undo snapshot: Undo takes the copies away again.
+  expect(r.originals).toBe(4);
+  // Thread entries are in the undo snapshot: Undo takes the copies away again.
   await page.evaluate('undo()');
-  expect(await page.evaluate('remarks.length')).toBe(4);
+  expect(await page.evaluate('remarks.length')).toBe(5);
 });
 
-test('Copy and paste brings the discussion items along', async ({ page }) => {
+test('Copy and paste brings the thread entries along', async ({ page }) => {
   await seed(page);
   const r = await page.evaluate(`(() => {
     const scope = nodes.slice(0, 2);
@@ -87,7 +88,7 @@ test('Copy and paste brings the discussion items along', async ({ page }) => {
       dg: diagrams.filter(d => d.anchorNodeId === pasted.id).length
     };
   })()`);
-  expect(r.items).toEqual(['Check the EDI mapping', 'Q:Who signs off?|Ops lead']);
+  expect(r.items).toEqual(['A:Ops lead->Who signs off?', 'Check the EDI mapping', 'Q:Who signs off?']);
   expect(r.dg).toBe(1);
 });
 

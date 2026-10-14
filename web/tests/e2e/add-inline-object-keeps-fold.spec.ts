@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Inline objects show directly under their row even while its branch is folded, so adding one
-// (question, remark, table) must not unfold the row's children (owner request).
+// (question, comment, table) must not unfold the row's children (owner request).
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => { localStorage.setItem('sakura_welcome_seen', '1'); sessionStorage.setItem('sakura_landing_dismissed', 'true'); });
@@ -25,13 +25,13 @@ async function seedFolded(page: Page) {
 const childVisible = (page: Page) => page.evaluate('!!document.querySelector(\'.node-row[data-id="2"]\')');
 
 for (const action of ['qa', 'remark'] as const) {
-  test(`adding a ${action === 'qa' ? 'question' : 'remark'} keeps the row folded`, async ({ page }) => {
+  test(`adding a ${action === 'qa' ? 'question' : 'comment'} keeps the row folded`, async ({ page }) => {
     await seedFolded(page);
     expect(await childVisible(page)).toBe(false);
     await page.evaluate(`runQuickAction('${action}', 1)`);
-    // A question is a discussion item too: its line plus its answer line.
-    await expect(page.locator('.node-remark-line:not(.node-remark-answer-line)')).toHaveCount(1);
-    if (action === 'qa') await expect(page.locator('.node-remark-kind-pill[data-kind="question"]')).toHaveCount(1);
+    // Both open the row's thread with its reply box focused; a question has Ask switched on.
+    await expect(page.locator('.thread-composer-input[data-node-id="1"]')).toBeFocused();
+    await expect(page.locator('.thread-btn[data-act="ask"].is-on')).toHaveCount(action === 'qa' ? 1 : 0);
     expect(await page.evaluate('collapsedIds.has(1)')).toBe(true);
     expect(await childVisible(page)).toBe(false);
   });

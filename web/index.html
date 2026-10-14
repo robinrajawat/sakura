@@ -1788,36 +1788,48 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-remark-text-inline:focus{opacity:1;color:var(--fg)}
 .node-qa-line{max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:13px;line-height:1.4}
 .node-qa-label{flex:0 0 auto;font-weight:700;color:var(--hint);width:12px;text-align:center;user-select:none}
-/* Remark / Q&A status (open, resolved, answered, won't answer) */
-.node-remark-status-btn,.node-qa-wont-btn{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 7px;margin-left:6px;border:1px solid color-mix(in srgb,var(--fc-green) 35%,var(--border));border-radius:6px;background:var(--edit-bg);color:var(--fc-green);font:600 11px 'Inter',sans-serif;cursor:pointer;opacity:0;transition:opacity .12s}
-.node-qa-wont-btn{border-color:var(--border);color:var(--muted)}
-.node-remark-status-btn.is-reopen{border-color:var(--border);color:var(--muted)}
-.node-remark-line:hover .node-remark-status-btn,.node-remark-line:focus-within .node-remark-status-btn,.node-remark-status-btn:focus-visible,.node-qa-line:hover .node-qa-wont-btn,.node-qa-line:focus-within .node-qa-wont-btn,.node-qa-wont-btn:focus-visible{opacity:1}
-@media (hover:none){.node-remark-status-btn,.node-qa-wont-btn{opacity:1}}
-.node-qa-wont-btn[hidden]{display:none}
-.node-remark-line.is-resolved{opacity:.6}
-.node-remark-followup-pill{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:6px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
-.node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
-.node-remark-resolved-toggle svg{color:var(--fc-green)}
-.node-remark-resolved-toggle:hover{background:var(--hover)}
-.node-remark-resolved-toggle .nrr-meta,.node-remark-resolved-toggle .nrr-caret{color:var(--hint)}
+/* Status pills (PDF) and the row thread's chips: Question, Yes / No, Answer, Follow-up, Resolved, Decision. */
 .node-qa-status{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:4px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
-.node-qa-status[data-state="open"],.pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"],.node-remark-followup-pill{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
-.node-qa-status[data-state="answered"],.pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
-.node-qa-status[data-state="wont"],.pv-status-pill[data-state="wont"]{background:var(--chip);color:var(--muted)}
-.node-remark-kind-pill{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:6px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
-.node-remark-kind-pill[data-state="open"]{background:color-mix(in srgb,var(--fc-purple) 14%,transparent);color:color-mix(in srgb,var(--fc-purple) 75%,var(--fg))}
-.node-remark-kind-pill[data-state="answered"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
-.node-remark-kind-pill[data-state="wont"]{background:var(--chip);color:var(--muted)}
-.node-remark-kind-pill[data-kind="decision"],.pv-status-pill[data-state="decision"]{background:color-mix(in srgb,var(--fc-blue) 14%,transparent);color:color-mix(in srgb,var(--fc-blue) 75%,var(--fg))}
-.pv-status-pill[data-state="question"]{background:color-mix(in srgb,var(--fc-purple) 14%,transparent);color:color-mix(in srgb,var(--fc-purple) 75%,var(--fg))}
-/* A question item's answer line: Yes / No (a picked one shows as a chip), then the typed answer. */
-.node-remark-answer-line{align-items:center;gap:6px;padding-top:0}
-.node-remark-answer-line .node-qa-label-a{flex:0 0 auto;width:20px;text-align:center}
-.node-remark-verdict-btn{flex:0 0 auto;height:20px;padding:0 9px;border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--fg);font:500 11.5px 'Inter',sans-serif;cursor:pointer}
-.node-remark-verdict-btn:hover{background:var(--hover)}
-.node-remark-verdict-btn.is-picked[data-verdict="yes"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);border-color:color-mix(in srgb,var(--fc-green) 35%,var(--border));color:color-mix(in srgb,var(--fc-green) 80%,var(--fg));font-weight:600}
-.node-remark-verdict-btn.is-picked[data-verdict="no"]{background:color-mix(in srgb,var(--fc-red) 12%,transparent);border-color:color-mix(in srgb,var(--fc-red) 35%,var(--border));color:color-mix(in srgb,var(--fc-red) 80%,var(--fg));font-weight:600}
+.pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"],.thread-chip.is-followup{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
+.pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"],.pv-status-pill[data-state="decision"],.pv-status-pill[data-state="yes"],.pv-status-pill[data-state="answer"],.thread-chip.is-resolved,.thread-chip.is-decision,.thread-chip.is-answer,.thread-chip.is-question[data-state="answered"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
+.pv-status-pill[data-state="wont"],.thread-chip.is-question[data-state="wont"]{background:var(--chip);color:var(--muted)}
+.pv-status-pill[data-state="question"],.thread-chip.is-question{background:color-mix(in srgb,var(--fc-purple) 14%,transparent);color:color-mix(in srgb,var(--fc-purple) 75%,var(--fg))}
+.pv-status-pill[data-state="issue"],.thread-chip.is-issue,.pv-status-pill[data-state="no"],.thread-chip.is-no{background:color-mix(in srgb,var(--fc-red) 12%,transparent);color:color-mix(in srgb,var(--fc-red) 78%,var(--fg))}
+.thread-chip.is-yes{background:color-mix(in srgb,var(--fc-green) 72%,#0b3d1f);color:#fff}
+.thread-chip.is-decision{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fc-green) 35%,transparent)}
+/* The row thread: one flat list, each entry a meta line (avatar, author, time, chips) over its text. */
+.node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
+/* One thin rule down the left of the whole thread (header, entries, reply box). */
+.thread-line::after{content:'';position:absolute;left:var(--thread-rule-x,24px);top:0;bottom:0;width:2px;background:color-mix(in srgb,var(--fc-purple) 22%,var(--border))}
+.node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--fc-purple);font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none}
+.thread-head svg{flex:0 0 auto}
+.thread-head .thread-head-status{text-transform:none;letter-spacing:0}
+.thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
+.thread-time{font-size:12px}
+.thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
+.thread-entry .node-remark-text-inline{display:block;margin-left:22px;min-height:1.4em}
+.thread-entry .node-remark-text-inline.is-event{min-height:0}
+.thread-entry .node-remark-text-inline:empty::before{content:attr(data-placeholder);color:var(--hint)}
+.node-remark-line.thread-composer{align-items:center;gap:6px;padding-top:2px;opacity:.6;transition:opacity .12s}
+.node-remark-line.thread-composer:hover,.node-remark-line.thread-composer:focus-within{opacity:1}
+.thread-author-btn{flex:0 0 auto;border:0;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:0 4px;height:20px;border-radius:4px;cursor:pointer;white-space:nowrap}
+.thread-author-btn:hover{background:var(--hover);color:var(--fg)}
+.thread-author-edit{flex:0 0 auto;min-width:60px;font:500 12px 'Inter',sans-serif;padding:0 4px;border-radius:4px;background:var(--hover);outline:none}
+.thread-author-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
+.thread-composer-input{flex:1;min-width:80px;outline:none;cursor:text;white-space:pre-wrap;word-break:break-word;color:var(--fg);border:1px dashed var(--border);border-radius:6px;padding:1px 8px;min-height:20px}
+.thread-composer-input:empty::before{content:attr(data-placeholder);color:var(--hint)}
+.thread-composer-input:focus{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
+.thread-actions{flex:0 0 auto;display:inline-flex;gap:4px}
+.thread-btn{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--muted);font:600 11px 'Inter',sans-serif;cursor:pointer}
+.thread-btn:hover{background:var(--hover);color:var(--fg)}
+.thread-btn.is-on{background:color-mix(in srgb,var(--fc-purple) 14%,transparent);border-color:color-mix(in srgb,var(--fc-purple) 35%,var(--border));color:color-mix(in srgb,var(--fc-purple) 80%,var(--fg))}
+.thread-btn[data-act="yes"]:hover{color:var(--fc-green)}
+.thread-btn[data-act="no"]:hover{color:var(--fc-red)}
+.thread-btn[data-act="resolve"] svg{color:var(--fc-green)}
+/* "N earlier entries" fold line (buildInlineFoldLine). */
+.node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
+.node-remark-resolved-toggle:hover{background:var(--hover)}
+.node-remark-resolved-toggle .nrr-caret{color:var(--hint)}
 .node-qa-line.is-closed .node-qa-question{color:var(--muted)}
 .node-note-dot.has-open-count{width:auto;min-width:18px;gap:2px;padding:0 3px;opacity:.85}
 .node-dot-count{font:700 10px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
@@ -1900,7 +1912,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .tp-chip.tp-active{background:color-mix(in srgb,var(--accent) 28%,transparent);border-color:var(--accent);color:var(--accent)}
 .tp-chip-x{font-size:11px;line-height:1;opacity:.6;margin-left:1px}
 .tp-chip.tp-active .tp-chip-x{opacity:.8}
-.node-row.tag-filtered-out,.filter-hidden-inline{display:none}
+.node-row.tag-filtered-out,.filter-hidden-inline,.node-remark-line.filter-hidden-inline{display:none}
 .node-row.marker-filter-context{opacity:.5}
 .node-row.marker-filter-context:hover,.node-row.marker-filter-context.selected,.node-row.marker-filter-context.primary-selection{opacity:.8}
 .bl-link{display:inline;padding:1px 3px;margin:0 -1px;border-radius:4px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);cursor:pointer;font-weight:500;transition:background .1s}
@@ -2298,10 +2310,19 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    previewRenderRemarkGroup) -- same pattern as .pv-inline-qa-row+.pv-inline-qa-row. */
 .pv-remark-entry+.pv-remark-entry{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .pv-remark-text{color:var(--fg);font-style:italic;font-size:12.5px;line-height:1.55}
-.pv-remark-meta{display:flex;align-items:center;gap:6px;font:400 11px 'Inter',sans-serif;color:var(--muted);margin-top:6px}
-.pv-remark-answer{display:flex;align-items:baseline;gap:6px;margin-top:4px;font:400 12px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
-.pv-remark-answer .pv-inline-qa-tag{flex:0 0 auto}
-.pv-remark-answer .pv-inline-qa-unanswered{color:var(--muted);font-style:italic}
+.pv-remark-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font:400 11px 'Inter',sans-serif;color:var(--muted)}
+/* A node's thread prints as a transcript under its row: one thin rule, avatars in a column,
+   upright text, no box or dividers. */
+.pv-inline-remark-body.pv-thread-body{margin-left:6px;padding:0 0 0 14px;background:transparent;border:0;border-radius:0;border-left:2px solid color-mix(in srgb,var(--fc-purple) 22%,var(--border))}
+.pv-thread-body .pv-remark-entry{display:grid;grid-template-columns:15px 1fr;column-gap:8px;align-items:start;margin:0;padding:3px 0;border:0}
+.pv-thread-body .pv-remark-entry+.pv-remark-entry{margin-top:3px;padding-top:3px;border:0}
+.pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
+.pv-thread-body .pv-remark-meta,.pv-thread-body .pv-remark-text{grid-column:2}
+.pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px}
+.pv-remark-anon{color:var(--muted)}
+.pv-remark-block .pv-inline-label-remark{color:var(--fc-purple);margin-left:6px}
+.pv-thread-status{margin-left:auto;text-transform:none;letter-spacing:0}
+.pv-remark-meta+.pv-remark-text{margin-top:3px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
 .pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
 .pv-remarks-section-item{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
@@ -3712,7 +3733,7 @@ body.printing-generic #gpe-overlay{
 <ul>  
 <li>Lives in the header, where a plain search box used to sit. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span> focuses it and opens the results dropdown from anywhere in the app; clicking directly into the box does the same. Type a plain-English instruction and it's carried out immediately: "get me toolbar," "I don't want file explorer," "toggle dark mode" — or just type anything else to search documents, notes, tags, settings, and help. Not to be confused with Quick Insert (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span>) — a much smaller character-insert menu that opens instead whenever you're actively editing text, described below</li>
 <li>An empty box shows a "Try things like…" tip with a handful of example phrases — click any of them to run it as a search immediately, same as typing it yourself; nothing executes without a second click on the actual result.</li>
-<li>To search just one category instead of all of them at once, type a category prefix before your query — "notes: budget" only searches Notes, "settings: dark" only searches Settings. Short aliases work too (doc/docs, note/notes, tag/tags, and so on). Discussion and Diagrams each have their own prefix too — "discussion: EDI" (or "remark:", "question:", "qa:") searches only discussion items (text, answer, Yes/No, person and context), "diagram: flow" only Diagrams (title + note). "table: Berlin" searches only table cells and table titles (the result shows the matching row), "image: login" only image captions. Don't want to remember the exact word? Click the icon at the left of the box, or press Space while it's completely empty — either shows a picker inline in the dropdown, navigable the same way search results are (<span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> to move, <span class="help-kbd">Enter</span> to pick). Above the categories, the same picker also lists <strong>Show</strong>, <strong>Hide</strong>, <strong>Toggle</strong>, and <strong>Run</strong> — picking one inserts that bare word instead of a category prefix, which does something different: rather than scoping a search, it browses everything of that kind (see the bare-verb bullet below). Either way, choosing an entry leaves the dropdown open, cursor ready for you to keep typing and narrow further. A category prefix with nothing typed after it (just "notes: " on its own) shows no results rather than browsing the whole category — the box doesn't have a "show me everything in here" mode for categories, only "search within here," so you still need something to search for after a category prefix specifically; the four verb words above are the exception; each of those does browse everything on its own with nothing else typed</li>
+<li>To search just one category instead of all of them at once, type a category prefix before your query — "notes: budget" only searches Notes, "settings: dark" only searches Settings. Short aliases work too (doc/docs, note/notes, tag/tags, and so on). Threads and Diagrams each have their own prefix too — "thread: EDI" (or "comment:", "question:", "discussion:", "qa:") searches only thread entries (text, Yes/No, author and context), "diagram: flow" only Diagrams (title + note). "table: Berlin" searches only table cells and table titles (the result shows the matching row), "image: login" only image captions. Don't want to remember the exact word? Click the icon at the left of the box, or press Space while it's completely empty — either shows a picker inline in the dropdown, navigable the same way search results are (<span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> to move, <span class="help-kbd">Enter</span> to pick). Above the categories, the same picker also lists <strong>Show</strong>, <strong>Hide</strong>, <strong>Toggle</strong>, and <strong>Run</strong> — picking one inserts that bare word instead of a category prefix, which does something different: rather than scoping a search, it browses everything of that kind (see the bare-verb bullet below). Either way, choosing an entry leaves the dropdown open, cursor ready for you to keep typing and narrow further. A category prefix with nothing typed after it (just "notes: " on its own) shows no results rather than browsing the whole category — the box doesn't have a "show me everything in here" mode for categories, only "search within here," so you still need something to search for after a category prefix specifically; the four verb words above are the exception; each of those does browse everything on its own with nothing else typed</li>
 <li>Typing just a bare word — "show," "hide," "toggle," or "run," nothing else — lists everything of that kind instead of requiring you to already know a specific setting's name: "show" lists everything currently hidden that could be shown, "hide" lists everything currently shown that could be hidden, "toggle" lists everything either way regardless of its current state, and "run" lists every available Run action ("new document," "duplicate node," and the AI actions covered below). Keep typing after the bare word to narrow the list further by name — "show file" narrows to just File Explorer-related results, the same as typing "show file explorer" would, just built up in two steps instead of one</li>
 <li>On a Mac, if the system's own Spotlight is bound to Cmd+Space (its default), it takes priority over the browser and this shortcut won't fire — either change Spotlight's shortcut in macOS System Settings → Keyboard, or remap this one from Settings → Keyboard Shortcuts</li>
 <li>Toggles and search are rule-based, not AI — a fixed set of recognized phrases (show/get/enable/turn on… vs. hide/remove/get rid of/turn off…) matched against a fixed list of settings. Nothing is sent anywhere for these, no API key needed, and it never improvises — if it doesn't recognize a phrase, it says so rather than guessing. The AI Run actions below are the one exception: those do call your configured AI provider, the same as clicking their toolbar/right-click equivalent would</li>
@@ -3739,7 +3760,7 @@ body.printing-generic #gpe-overlay{
 <li>Actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time. Which of these appear (and their fixed order) is configured in Settings → Editing → Quick Insert → Menu items</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the text you're editing, which this avoids touching</li>
 <li>Every action splices directly at the cursor and keeps you in edit mode, so you don't lose your place — the fastest way to get these in, and the reason the menu exists</li>
-<li>Node-only actions — Note, Tags, Add question, Add remark, Rewrite node, Version history — live in a node's right-click menu instead, not here, since Quick Insert is deliberately the same small menu everywhere rather than growing extra items only inside the outline editor</li>
+<li>Node-only actions — Note, Tags, Add question, Add comment, Rewrite node, Version history — live in a node's right-click menu instead, not here, since Quick Insert is deliberately the same small menu everywhere rather than growing extra items only inside the outline editor</li>
 <li><strong>Version history…</strong> (right-click a node → in the "notes" group of the More panel) — shows earlier text for just this one node, drawn from the document's regular version history (captured automatically roughly every 10 minutes of active changes — see the Version History entry below) — skips straight past versions where this particular node didn't change, so a document with 20 saved versions might show far fewer than 20 rows here. "Restore text" replaces only this node's text, through the normal undo stack (Ctrl/Cmd+Z undoes it like any other edit) — nothing else about the node (note, code, tags) is touched</li>
 </ul>
 </div>
@@ -3758,8 +3779,8 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">  
 <h4>Structure</h4>  
 <ul>  
-<li>Right-click a node → a small row of marker icons (Confirmed, Issue, Parked, Follow-up, N/A — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add remark, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
-<li><strong>Markers</strong> — five quick marks (✓ Confirmed, ⚠ Issue, ⏸ Parked, 🚩 Follow-up, ✗ N/A) for tracking status on a node, e.g. while reviewing a document. N/A covers something discarded or out of scope — deliberately a different icon from Issue, so "this needs attention" and "this doesn't apply/was decided against" don't collide on the same cross mark. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph filters the tree to that marker — showing every matching node, its full subtree, and its ancestors back to the root (dimmed, so they read as "here's where it lives" rather than more matches); a filter bar appears with a × to clear it. Right-click the glyph to clear the marker itself instead. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
+<li>Right-click a node → a small row of marker icons (Confirmed, Issue, Parked, Follow-up, N/A — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add comment, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
+<li><strong>Markers</strong> — five quick marks (✓ Confirmed, ⚠ Issue, ⏸ Parked, 🚩 Follow-up, ✗ N/A) for tracking status on a node, e.g. while reviewing a document. N/A covers something discarded or out of scope — deliberately a different icon from Issue, so "this needs attention" and "this doesn't apply/was decided against" don't collide on the same cross mark. Issue, Follow-up and Confirmed are also the node's thread status: setting one puts an Issue, Follow-up or Resolved chip on the thread's latest entry (Issue also opens the reply box), and a chip set in the thread sets the marker — the two always agree. Parked and N/A stay row-only. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph filters the tree to that marker — showing every matching node, its full subtree, and its ancestors back to the root (dimmed, so they read as "here's where it lives" rather than more matches); a filter bar appears with a × to clear it. Right-click the glyph to clear the marker itself instead. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
 <li>Right-clicking empty space — editor canvas, file explorer, status bar, tab bar, or app bar — opens a separate, smaller menu of chrome-level actions, not the node menu above. Navigate it with <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span>, same as the category picker above, or hover with a mouse — both move the same highlight. Editor canvas: switch theme and Collapse all/Expand all sit in the menu itself; a "More…" item opens a second menu at the same spot for the rest — hide/show file explorer, and Settings. File Explorer: switch theme, hide file explorer, Settings. Status bar: switch theme, Settings. Tab bar: switch theme, new document, close current tab, Settings. App bar: switch theme, hide/show file explorer, and "Declutter app bar" — which hides the title field, file explorer toggle, and the Documents/Templates buttons, but deliberately never hides Settings — hiding it would remove your only way back in. Every hide action here shows an Undo toast, same pattern as Quick Assist's own toggles. The toolbar, tab bar, status bar and app bar can't be hidden (zen mode hides the toolbar and tab bar while it's on)</li>
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Deleting a referenced node removes its links from all other nodes automatically</li>
 <li><strong>Tags</strong> — select a node and click the tag icon in the toolbar or right-click → Tags to open the tag popover. Existing document tags appear as chips to toggle; type a new name and press Enter to add. Tags render as <span class="node-tag-chip" style="display:inline-flex;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%)">#chips</span> on the node. Click a chip in the tree to filter to that tag; click again or × to clear. Multi-select: toolbar button applies to all selected nodes</li>
@@ -3952,20 +3973,19 @@ body.printing-generic #gpe-overlay{
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-remarks">
-<h4>Discussion (remarks and questions)</h4>
+<h4>Thread (comments and questions)</h4>
 <ul>
-<li>What people said or asked about a node, kept right under it: each item is one line with who said it (a colored initials avatar plus their name), the date, and the text. Every item has a kind — <strong>Comment</strong> (the default), <strong>Question</strong>, <strong>Follow-up</strong> or <strong>Decision</strong> — so one place holds the whole conversation about that node</li>
-<li>Right-click any node → <strong>Add remark…</strong> adds a comment, <strong>Add question…</strong> a question, both linked to that node with the cursor in the text. Right-click an item → <strong>Kind</strong> to change what it is at any time (a "Does this work?" remark becomes a question in one click)</li>
-<li>A <strong>question</strong> shows an <strong>A</strong> line underneath: click <strong>Yes</strong> or <strong>No</strong> for a quick answer, and/or type one (with Yes/No picked, the typed text is its detail). Its pill reads <strong>Question · Open</strong> until it's answered, then <strong>Answered</strong>; right-click → <strong>Won't answer</strong> closes it without an answer, and "Reopen question" takes that back. Click a picked Yes/No chip to clear it</li>
-<li>A <strong>follow-up</strong> shows a "Follow-up" pill and stays <strong>open</strong> until someone resolves it — hover it for <strong>Resolve</strong> (or right-click → Resolve follow-up). Resolved follow-ups fold behind one "✓ N resolved follow-ups" line under the row — click it to show them, each with a <strong>Reopen</strong> button. A <strong>decision</strong> shows a "Decision" pill and never needs closing</li>
-<li>Everything on the line is edited in place: click the name to change who said it (Enter or clicking away saves, Escape reverts), click the date to open the calendar popover (Today/Yesterday presets, plus month navigation) — useful for logging something after the fact — and type straight into the text, which keeps pasted formatting. A node's items list newest first</li>
-<li>Right-click an item for Rewrite with AI (when AI is on) or Delete; emptying its text and pressing Backspace removes it too. An item left blank (added, never typed into or answered) is discarded as soon as you click away from it</li>
-<li>One person dot appears on a node with discussion items — click it to show or hide them inline. It shows how many questions and follow-ups are still open, and turns grey once they're all settled</li>
-<li>With more than two items under a row, the latest two (and every open question or follow-up) show; the rest fold behind "N earlier items" — click to show them</li>
-<li>The toolbar's marker summary shows open questions and open follow-ups — click one to show only the rows that still have them</li>
-<li>Always included in PDF exports: a node's items print in one "Discussion" card right after it, each with its pill and, for a question, its answer (Yes / No in bold, then any typed answer, or "No answer yet")</li>
-<li>Deleting a node deletes its discussion too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
-<li>Older documents: Q&amp;A linked to a node opens as question items in that node's discussion, answers and "won't answer" kept. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
+<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry shows its <strong>author</strong> (a colored initials avatar plus the name), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
+<li>Right-click any node → <strong>Add comment…</strong> or <strong>Add question…</strong> opens the node's thread with the cursor in its reply box. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line). <strong>Ask</strong> makes the next entry a question. What you type stays in the box if you move to another row</li>
+<li>The reply box writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
+<li>A <strong>question</strong> carries a Question chip until it's answered. Answer it from the reply box with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
+<li><strong>Status</strong>: right-click an entry → Issue, Follow-up, Resolved or Decision puts that chip on it. The latest chip is the thread's status, and it is the row's marker too: <strong>Issue</strong> ⇄ ⚠ Issue, <strong>Follow-up</strong> ⇄ ⚑ Follow-up, <strong>Resolved</strong> or <strong>Decision</strong> ⇄ ✓ Confirmed. Clicking a marker on a row puts the chip on the thread's latest entry (Issue also opens the reply box, to say what's wrong); clearing it takes that chip back. While a thread is an issue or a follow-up, the reply box has <strong>Resolve</strong>. Parked and N/A stay row-only</li>
+<li>Right-click an entry for Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>One person dot appears on a node with a thread — click it to show or hide the thread inline. It shows how many questions are still open</li>
+<li>A thread longer than four entries shows its latest three; the rest fold behind "N earlier entries" — click to show them</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header with the thread's status, then every entry with its author, time (the date once per day) and chips, along one thin rule. The outline shows the thread the same way; click its header to hide it</li>
+<li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
+<li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups and decisions become status chips, and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-tables">
@@ -4244,9 +4264,9 @@ body.printing-generic #gpe-overlay{
           <button role="menuitem" class="tb-menu-item" data-insert-action="date-time"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tb-menu-label">Date/time</span></button>
           <div class="tb-menu-heading">Marker</div>
           <div class="tb-menu-markers" id="insert-markers" role="group" aria-label="Marker"></div>
-          <div class="tb-menu-heading">Discussion</div>
+          <div class="tb-menu-heading">Thread</div>
           <button role="menuitem" class="tb-menu-item" data-insert-action="qa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="tb-menu-label">Question</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="remark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/></svg><span class="tb-menu-label">Remark</span></button>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="remark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/></svg><span class="tb-menu-label">Comment</span></button>
           <div class="tb-menu-heading">Visuals</div>
           <button role="menuitem" class="tb-menu-item" data-insert-action="table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg><span class="tb-menu-label">Table</span></button>
           <button role="menuitem" class="tb-menu-item" data-insert-action="image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="tb-menu-label">Image</span></button>
@@ -4982,13 +5002,20 @@ const REMARK_AVATAR_PALETTE=[
 const DOCS_INDEX_KEY='sakura_docs_index_v1'; const DOC_KEY_PREFIX='sakura_doc_v1_'; const CURRENT_DOC_KEY='sakura_current_doc_v1';
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
-// Remark/Q&A status filter from the toolbar's open counts: null, 'openQa' or 'openRemarks'.
+// Open-items filter from the toolbar: null, 'openQa' (open questions) or 'openItems'.
 let activeDiscussionFilter=null;
-// Nodes whose resolved remarks are unfolded this session (resolved remarks fold behind one line).
-let showResolvedRemarksNodeIds=new Set();
-// Nodes whose earlier remarks / closed questions are unfolded this session (with more than two
-// remarks or questions under a row, only the latest remarks and the open questions show at first).
+// Nodes whose whole thread is unfolded this session (a long thread shows only its latest entries).
 let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
+// A node's thread: reply box state and chip icons (see renderNodeThread).
+var _threadComposerNodeId=null;   // the node whose reply box is open even with no entries yet
+var _threadAskNodeIds=new Set();  // reply boxes whose next entry is a question
+var _threadDrafts=new Map();      // node id -> what is typed in its reply box, kept across renders
+var _threadAuthor=null;           // who the reply box writes as (null: the last author used)
+var THREAD_FLAG_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg>';
+var THREAD_CHECK_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>';
+var THREAD_SEAL_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.4 1.7 2.9-.1.9 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-.9 2.8-2.9-.1L12 21.5l-2.4-1.7-2.9.1-.9-2.8-2.4-1.7.9-2.8-.9-2.8 2.4-1.7.9-2.8 2.9.1z"/><path d="M8.5 12.2l2.3 2.3 4.7-4.8"/></svg>';
+var THREAD_WARN_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+var THREAD_STATUS_LABEL={issue:'Issue',followup:'Follow-up',resolved:'Resolved',decision:'Decision'};
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
@@ -7242,17 +7269,20 @@ function cardsTotal(grid, calculated) {
 /* GENERATED:tableDisplay:END */
 /* GENERATED:discussionStatus:START — DO NOT EDIT BY HAND. Source of truth: src/utils/discussionStatus.ts (tests: tests/unit/discussionStatus.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
- * Open / closed status for remarks and Q&A (owner request: triage what still needs attention).
+ * A row's thread: the conversation about one node, and the row status it drives.
  *
- * Data (stored on the existing objects, absent on anything older):
- * - remark.followUp: true when someone marked the remark as needing follow-up (right-click).
- *   Owner decision: not every remark needs a resolution — a remark is a plain comment unless
- *   flagged, so older remarks are plain comments and never counted.
- * - remark.resolvedAt: epoch ms when a follow-up was resolved.
- * - qa.wontAnswer: true when a question was closed without an answer.
+ * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
+ * order. An entry has an author, a time and text; it is a comment, or a question
+ * (`type: 'question'`). An answer is an entry that answers a question (`answerTo`), with a Yes/No
+ * (`verdict`) and/or text. A status chip (`status`: issue, follow-up, resolved or decision) sits on
+ * the entry it was set on, so its author gives the context; the thread's status is the latest one.
  *
- * A question's state is derived, never stored: it is answered as soon as its answer has visible
- * text (an answer wins over wontAnswer), closed as "won't answer" when flagged, otherwise open.
+ * The thread status and the row marker are one status shown in two places: Issue ⇄ ⚠ Issue,
+ * Follow-up ⇄ ⚑ Follow-up, Resolved / Decision ⇄ ✓ Confirmed. Parked and N/A ("not now", "doesn't
+ * apply") stay row-only. An unanswered question shows as Open on its own (derived, never stored).
+ *
+ * Entries are stored in the document's `remarks` array (the key older documents already use);
+ * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
@@ -7260,9 +7290,10 @@ function cardsTotal(grid, calculated) {
 function htmlHasVisibleText(html) {
     const text = String(html ?? '')
         .replace(/<[^>]*>/g, '')
-        .replace(/&nbsp;|&#160;| /gi, ' ');
+        .replace(/&nbsp;|&#160;| /gi, ' ');
     return text.trim().length > 0;
 }
+/** A Q&A entry's state (unlinked Q&A, which stays in the Q&A list). */
 function qaState(item) {
     if (htmlHasVisibleText(item.answer))
         return 'answered';
@@ -7270,62 +7301,150 @@ function qaState(item) {
         return 'wont';
     return 'open';
 }
-function remarkKind(r) {
-    if (r.kind === 'question')
-        return 'question';
-    if (r.kind === 'decision')
-        return 'decision';
-    return r.followUp ? 'followup' : 'comment';
+/** A Q&A entry that is a real question (not a section heading) with question text. */
+function isCountableQuestion(item) {
+    return item.type !== 'section' && htmlHasVisibleText(item.question);
 }
-/** A question item's state, derived like a Q&A entry's: answered (a Yes/No or answer text wins),
- * closed as "won't answer", otherwise open. */
-function remarkQuestionState(r) {
-    if (r.verdict === 'yes' || r.verdict === 'no')
+// ── One thread ───────────────────────────────────────────────────────────────────────────────
+/** A node's entries in time order (stable for equal times). */
+function threadEntries(entries, nodeId) {
+    return (entries || []).filter((e) => e && e.anchorNodeId === nodeId)
+        .map((e, i) => [e, i])
+        .sort((a, b) => (a[0].createdAt || 0) - (b[0].createdAt || 0) || a[1] - b[1])
+        .map(([e]) => e);
+}
+function isQuestion(e) {
+    return e.type === 'question';
+}
+/** An entry that counts as an answer: it says Yes/No or has text. */
+function isRealAnswer(e) {
+    return e.verdict === 'yes' || e.verdict === 'no' || htmlHasVisibleText(e.text);
+}
+/** A question's state in its thread: answered once an answer to it exists, else won't answer if
+ * closed that way, else open. */
+function questionState(q, thread) {
+    if ((thread || []).some((e) => e.answerTo != null && e.answerTo === q.id && isRealAnswer(e)))
         return 'answered';
-    return qaState({ answer: r.answer, wontAnswer: r.wontAnswer });
+    return q.wontAnswer ? 'wont' : 'open';
 }
-/** An open question item with question text. */
-function remarkIsOpenQuestion(r) {
-    return remarkKind(r) === 'question' && htmlHasVisibleText(r.text) && remarkQuestionState(r) === 'open';
+/** Open questions (with question text) in a thread, oldest first. */
+function openQuestions(thread) {
+    return (thread || []).filter((e) => isQuestion(e) && htmlHasVisibleText(e.text) && questionState(e, thread) === 'open');
 }
-/** Anything still open in a discussion: an open follow-up or an open question. */
-function discussionItemIsOpen(r) {
-    return remarkIsOpen(r) || remarkIsOpenQuestion(r);
+/** The question an answer added now (or marked at `before`) answers: the latest open question
+ * before that point, or null. */
+function questionToAnswer(thread, before) {
+    const end = before ? thread.indexOf(before) : thread.length;
+    const open = openQuestions(thread.slice(0, end < 0 ? thread.length : end));
+    return open.length ? open[open.length - 1] : null;
 }
-/** A remark marked as needing follow-up (resolved or not). Anything else is a plain comment. */
-function remarkIsFollowUp(r) {
-    return remarkKind(r) === 'followup';
+/** The thread's status: the latest status chip in it, or null. */
+function threadStatus(thread) {
+    for (let i = (thread || []).length - 1; i >= 0; i--)
+        if (thread[i].status)
+            return thread[i].status;
+    return null;
 }
-/** An open follow-up: flagged and not yet resolved. Plain comments are never open. */
-function remarkIsOpen(r) {
-    return remarkIsFollowUp(r) && !r.resolvedAt;
+/** The entry holding the thread's status. */
+function threadStatusEntry(thread) {
+    for (let i = (thread || []).length - 1; i >= 0; i--)
+        if (thread[i].status)
+            return thread[i];
+    return null;
 }
-/** The follow-up status a remark shows: none unless it's a follow-up, else open or resolved. */
-function remarkState(r) {
-    if (!remarkIsFollowUp(r))
-        return 'comment';
-    return r.resolvedAt ? 'resolved' : 'open';
+/** The row marker a thread status shows as. */
+function markerForThreadStatus(s) {
+    if (s === 'issue')
+        return 'issue';
+    if (s === 'followup')
+        return 'followup';
+    if (s === 'resolved' || s === 'decision')
+        return 'confirmed';
+    return null;
 }
-/** The remark fields that change with its kind, set for `kind` (others cleared). */
-function applyRemarkKind(r, kind) {
-    delete r.kind;
-    delete r.followUp;
-    delete r.resolvedAt;
-    if (kind === 'question' || kind === 'decision')
-        r.kind = kind;
-    else if (kind === 'followup')
-        r.followUp = true;
-    return r;
+/** The status a row marker sets on its thread (null for row-only markers). */
+function threadStatusForMarker(m) {
+    if (m === 'issue')
+        return 'issue';
+    if (m === 'followup')
+        return 'followup';
+    if (m === 'confirmed')
+        return 'resolved';
+    return null;
 }
+/** Markers the thread drives; Parked and N/A are row-only. */
+function isThreadMarker(m) {
+    return m === 'issue' || m === 'followup' || m === 'confirmed';
+}
+/**
+ * The marker a row should show after its thread changed: the thread's status when it has one;
+ * otherwise a thread-driven marker is cleared and a row-only one kept.
+ */
+function syncedMarker(current, thread) {
+    const fromThread = markerForThreadStatus(threadStatus(thread));
+    if (fromThread)
+        return fromThread;
+    return isThreadMarker(current) ? '' : (current || '');
+}
+// ── Migration ────────────────────────────────────────────────────────────────────────────────
 function localDateStr(ms) {
     const d = new Date(ms);
     const p = (n) => String(n).padStart(2, '0');
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
 }
+/** True when any entry still has an older shape (remark follow-up, discussion kind, inline answer). */
+function needsThreadMigration(entries) {
+    return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null));
+}
 /**
- * Moves every Q&A entry linked to a row into `remarks` as a question item (same text, answer and
- * won't-answer state; no name, since Q&A never stored one; dated from when it was asked). Section
- * headings and unlinked entries stay in `qaItems`. Idempotent: an entry whose question item
+ * Converts older remarks and discussion items to thread entries: a follow-up remark becomes a
+ * Follow-up (or Resolved) status chip, a decision item a Decision chip, and a question item's
+ * inline answer / Yes-No becomes its own answer entry right after it (no author: the old shape
+ * didn't store one). Idempotent: converted entries carry none of the old fields.
+ */
+function migrateDiscussionToThread(entries) {
+    if (!needsThreadMigration(entries))
+        return { entries, changed: false };
+    const out = [];
+    const ids = new Set((entries || []).map((r) => r && r.id));
+    for (const src of entries || []) {
+        if (!src)
+            continue;
+        const r = { ...src };
+        const kind = r.kind;
+        const answer = r.answer;
+        const verdict = r.verdict;
+        if (r.followUp)
+            r.status = r.resolvedAt ? 'resolved' : 'followup';
+        if (kind === 'decision')
+            r.status = 'decision';
+        if (kind === 'question')
+            r.type = 'question';
+        delete r.followUp;
+        delete r.resolvedAt;
+        delete r.kind;
+        delete r.answer;
+        if (kind === 'question')
+            delete r.verdict;
+        out.push(r);
+        if (kind === 'question' && (htmlHasVisibleText(answer) || verdict === 'yes' || verdict === 'no')) {
+            let id = (r.id || 'r') + '-a';
+            while (ids.has(id))
+                id += 'a';
+            ids.add(id);
+            const a = { id, anchorNodeId: r.anchorNodeId, person: '', text: answer || '', date: r.date || '', context: '', createdAt: (r.createdAt || 0) + 1, answerTo: r.id };
+            if (verdict === 'yes' || verdict === 'no')
+                a.verdict = verdict;
+            out.push(a);
+            delete r.wontAnswer;
+        }
+    }
+    return { entries: out, changed: true };
+}
+/**
+ * Moves every Q&A entry linked to a row into the row's thread: the question (no author, since Q&A
+ * never stored one; dated from when it was asked) and, when answered, an answer entry after it.
+ * Section headings and unlinked entries stay in `qaItems`. Idempotent: a question whose entry
  * already exists (id `r` + its id) is just dropped from `qaItems`.
  */
 function migrateQaToRemarks(qaItems, remarks) {
@@ -7342,82 +7461,105 @@ function migrateQaToRemarks(qaItems, remarks) {
         const id = 'r' + q.id;
         if (!ids.has(id)) {
             const created = Number.isFinite(q.createdAt) ? q.createdAt : 0;
-            const item = {
-                id, kind: 'question', person: '', text: q.question || '', answer: q.answer || '',
-                date: created ? localDateStr(created) : '', context: '', anchorNodeId: q.sourceNodeId, createdAt: created
-            };
-            if (q.wontAnswer)
+            const date = created ? localDateStr(created) : '';
+            const item = { id, type: 'question', person: '', text: q.question || '', date, context: '', anchorNodeId: q.sourceNodeId, createdAt: created };
+            const verdict = q.verdict;
+            const yesNo = verdict === 'yes' || verdict === 'no' ? verdict : undefined;
+            const answered = htmlHasVisibleText(q.answer) || !!yesNo;
+            if (q.wontAnswer && !answered)
                 item.wontAnswer = true;
             out.push(item);
             ids.add(id);
+            if (answered) {
+                const answer = { id: id + '-a', person: '', text: q.answer || '', date, context: '', anchorNodeId: q.sourceNodeId, createdAt: created + 1, answerTo: id };
+                if (yesNo)
+                    answer.verdict = yesNo;
+                out.push(answer);
+                ids.add(id + '-a');
+            }
         }
         moved++;
     }
     return { qaItems: kept, remarks: out, moved };
 }
-/** An open remark with text — a blank remark (added, never typed into) has nothing to triage. */
-function isOpenRemarkWithText(r) {
-    return remarkIsOpen(r) && htmlHasVisibleText(r.text);
-}
-/** A Q&A entry that is a real question (not a section heading) with question text. */
-function isCountableQuestion(item) {
-    return item.type !== 'section' && htmlHasVisibleText(item.question);
-}
 /**
- * Open questions and remarks anchored to a node in `nodeIds`. Items not attached to any node of
- * the document can't be reached in the outline, so they are left out of the counts.
+ * Links row markers and threads once, for documents from before they were linked: a row with a
+ * thread status but no marker gets the matching marker; a row marked Issue, Follow-up or Confirmed
+ * whose thread has no status puts that status on the thread's latest entry. Returns the marker changes
+ * (node id → marker); entries are updated in place.
  */
-function countOpenItems(qaItems, remarks, nodeIds) {
-    let openQuestions = 0;
-    let openRemarks = 0;
-    for (const q of qaItems || []) {
-        if (q.sourceNodeId == null || !nodeIds.has(q.sourceNodeId))
+function linkMarkersToThreads(nodes, entries) {
+    const changes = new Map();
+    const byNode = new Map();
+    for (const e of entries || []) {
+        if (!e || e.anchorNodeId == null)
             continue;
-        if (isCountableQuestion(q) && qaState(q) === 'open')
-            openQuestions++;
+        const list = byNode.get(e.anchorNodeId) || [];
+        list.push(e);
+        byNode.set(e.anchorNodeId, list);
     }
-    for (const r of remarks || []) {
-        if (r.anchorNodeId == null || !nodeIds.has(r.anchorNodeId))
+    for (const n of nodes || []) {
+        const list = byNode.get(n.id);
+        if (!list || !list.length)
             continue;
-        if (isOpenRemarkWithText(r))
-            openRemarks++;
-        else if (remarkIsOpenQuestion(r))
-            openQuestions++;
+        const thread = threadEntries(list, n.id);
+        const st = threadStatus(thread);
+        const last = thread[thread.length - 1];
+        if (st && !n.marker)
+            changes.set(n.id, markerForThreadStatus(st));
+        else if (!st && isThreadMarker(n.marker))
+            last.status = threadStatusForMarker(n.marker);
+        else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== n.marker) {
+            // Issue used to be row-only, so an older row can be marked Issue over a thread with another
+            // status: the Issue goes on the latest entry when that one has no chip yet; otherwise the
+            // thread's status wins.
+            if (n.marker === 'issue' && !last.status)
+                last.status = 'issue';
+            else
+                changes.set(n.id, markerForThreadStatus(st));
+        }
     }
-    return { openQuestions, openRemarks };
+    return changes;
+}
+// ── Open items ───────────────────────────────────────────────────────────────────────────────
+function groupByNode(entries, ids) {
+    const m = new Map();
+    for (const e of entries || []) {
+        if (!e || e.anchorNodeId == null || (ids && !ids.has(e.anchorNodeId)))
+            continue;
+        const list = m.get(e.anchorNodeId) || [];
+        list.push(e);
+        m.set(e.anchorNodeId, list);
+    }
+    return m;
+}
+/** Every open question of the document's threads (rows in `nodeIds` only, when given). */
+function allOpenQuestions(entries, nodeIds) {
+    const out = [];
+    groupByNode(entries, nodeIds).forEach((list, id) => out.push(...openQuestions(threadEntries(list, id))));
+    return out;
+}
+/** Every answered or won't-answer question (rows in `nodeIds` only, when given). */
+function allSettledQuestions(entries, nodeIds) {
+    const out = [];
+    groupByNode(entries, nodeIds).forEach((list, id) => {
+        const thread = threadEntries(list, id);
+        out.push(...thread.filter((e) => isQuestion(e) && htmlHasVisibleText(e.text) && questionState(e, thread) !== 'open'));
+    });
+    return out;
 }
 function normalizeDiscussionFilter(v) {
-    return v === 'openQa' || v === 'openRemarks' || v === 'openItems' ? v : null;
+    return v === 'openQa' || v === 'openItems' ? v : null;
 }
-/**
- * Ids of the nodes that hold at least one open item of the filter's kind. For openItems that is
- * open questions, open follow-up remarks, and (from `nodes`) rows marked Issue or Follow-up.
- */
-function nodesWithOpenItems(filter, qaItems, remarks, nodes = []) {
-    if (filter === 'openItems') {
-        const ids = new Set([...nodesWithOpenItems('openQa', qaItems, remarks), ...nodesWithOpenItems('openRemarks', qaItems, remarks)]);
+/** Ids of the nodes with an open question; for openItems also rows marked Issue or Follow-up. */
+function nodesWithOpenItems(filter, entries, nodes = []) {
+    const ids = new Set();
+    for (const q of allOpenQuestions(entries))
+        ids.add(q.anchorNodeId);
+    if (filter === 'openItems')
         for (const n of nodes || [])
             if (n.marker === 'issue' || n.marker === 'followup')
                 ids.add(n.id);
-        return ids;
-    }
-    const ids = new Set();
-    if (filter === 'openQa') {
-        for (const q of qaItems || []) {
-            if (q.sourceNodeId != null && isCountableQuestion(q) && qaState(q) === 'open')
-                ids.add(q.sourceNodeId);
-        }
-        for (const r of remarks || []) {
-            if (r.anchorNodeId != null && remarkIsOpenQuestion(r))
-                ids.add(r.anchorNodeId);
-        }
-    }
-    else {
-        for (const r of remarks || []) {
-            if (r.anchorNodeId != null && isOpenRemarkWithText(r))
-                ids.add(r.anchorNodeId);
-        }
-    }
     return ids;
 }
 /** "1 open question", "2 open follow-ups" — the label for a count. */
@@ -7425,13 +7567,12 @@ function openCountLabel(n, kind) {
     return n + ' open ' + kind + (n === 1 ? '' : 's');
 }
 /**
- * The toolbar summary's counts. Markers on rows: Issue and Follow-up need attention, Parked is
- * deliberately set aside, Confirmed and N/A are settled. Questions and follow-up remarks count only
- * when attached to a row of this document (same rule as countOpenItems); a plain remark (not marked
- * for follow-up) is a comment and is never counted.
+ * The toolbar summary's counts. Row markers (which threads drive): Issue and Follow-up need
+ * attention, Parked is set aside, Confirmed and N/A are settled. Questions count once each, open
+ * or settled, when on a row of this document; unlinked Q&A entries count too.
  */
-function documentProgress(nodes, qaItems, remarks) {
-    const p = { issues: 0, followups: 0, parked: 0, questions: 0, remarks: 0, settled: 0, total: 0 };
+function documentProgress(nodes, qaItems, entries) {
+    const p = { issues: 0, followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
     const ids = new Set();
     for (const n of nodes || []) {
         ids.add(n.id);
@@ -7452,40 +7593,24 @@ function documentProgress(nodes, qaItems, remarks) {
         else
             p.settled++;
     }
-    for (const r of remarks || []) {
-        if (r.anchorNodeId == null || !ids.has(r.anchorNodeId) || !htmlHasVisibleText(r.text))
-            continue;
-        if (remarkKind(r) === 'question') {
-            if (remarkQuestionState(r) === 'open')
-                p.questions++;
-            else
-                p.settled++;
-            continue;
-        }
-        if (!remarkIsFollowUp(r))
-            continue;
-        if (remarkIsOpen(r))
-            p.remarks++;
-        else
-            p.settled++;
-    }
-    p.total = p.issues + p.followups + p.parked + p.questions + p.remarks + p.settled;
+    p.questions += allOpenQuestions(entries, ids).length;
+    p.settled += allSettledQuestions(entries, ids).length;
+    p.total = p.issues + p.followups + p.parked + p.questions + p.settled;
     return p;
 }
 const ATTENTION_WORDS = {
     issue: ['issue', 'issues'],
     followup: ['follow-up', 'follow-ups'],
-    question: ['question', 'questions'],
-    remark: ['remark', 'remarks']
+    question: ['question', 'questions']
 };
 /** What still needs attention, most urgent first, leaving out kinds with nothing open. */
 function attentionParts(p) {
-    const counts = [['issue', p.issues], ['followup', p.followups], ['question', p.questions], ['remark', p.remarks]];
+    const counts = [['issue', p.issues], ['followup', p.followups], ['question', p.questions]];
     return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
 }
 /** The summary's tooltip / accessible name: "Needs attention: 1 issue, 2 open questions. 8 of 15 settled." */
 function progressSummaryText(p) {
-    const parts = attentionParts(p).map((a) => a.key === 'question' ? openCountLabel(a.n, 'question') : a.key === 'remark' ? a.n + ' open follow-up remark' + (a.n === 1 ? '' : 's') : a.label);
+    const parts = attentionParts(p).map((a) => (a.key === 'question' ? openCountLabel(a.n, 'question') : a.label));
     const head = parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
     return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' parked' : '') + '.';
 }
@@ -7535,7 +7660,7 @@ function deleteImpactText(c) {
     if (c.questions)
         parts.push(countPhrase(c.questions, 'question'));
     if (c.remarks)
-        parts.push(countPhrase(c.remarks, 'remark'));
+        parts.push(countPhrase(c.remarks, 'comment'));
     const undoable = parts.length
         ? 'This also deletes ' + joinWithAnd(parts) + '. Undo (Ctrl/Cmd+Z) brings ' + (parts.length === 1 && inlineObjectTotal(c) - c.diagrams === 1 ? 'it' : 'them') + ' back.'
         : '';
@@ -7559,7 +7684,7 @@ function deletedObjectsPhrase(c) {
     if (c.questions)
         parts.push(countPhrase(c.questions, 'question'));
     if (c.remarks)
-        parts.push(countPhrase(c.remarks, 'remark'));
+        parts.push(countPhrase(c.remarks, 'comment'));
     if (c.diagrams)
         parts.push(countPhrase(c.diagrams, 'diagram'));
     return joinWithAnd(parts);
@@ -9275,13 +9400,16 @@ function repointNodeLinks(fromId,toId){
 function nodeDiscussionCopies(nodeId){
   const clone=x=>JSON.parse(JSON.stringify(x));
   const qas=(Array.isArray(qaItems)?qaItems:[]).filter(q=>q&&q.sourceNodeId===nodeId).map(clone);
-  const rms=(Array.isArray(remarks)?remarks:[]).filter(r=>r&&r.anchorNodeId===nodeId&&stripHtmlToText(r.text||'').trim()).map(clone);
+  const rms=(Array.isArray(remarks)?remarks:[]).filter(r=>r&&r.anchorNodeId===nodeId&&(stripHtmlToText(r.text||'').trim()||r.verdict||r.status)).map(clone);
   return {qas,rms};
 }
 function attachDiscussionCopies(toId,qas,rms){
   let count=0;
   (Array.isArray(qas)?qas:[]).forEach(q=>{ qaItems.push({...q,id:newQaId(),sourceNodeId:toId}); count++; });
-  (Array.isArray(rms)?rms:[]).forEach(r=>{ remarks.push({...r,id:newRemarkId(),anchorNodeId:toId}); count++; });
+  // Fresh ids, keeping each answer linked to its copied question.
+  const idMap=new Map();
+  (Array.isArray(rms)?rms:[]).forEach(r=>{ const id=newRemarkId(); idMap.set(r.id,id); remarks.push({...r,id,anchorNodeId:toId}); count++; });
+  remarks.forEach(r=>{ if(r&&r.anchorNodeId===toId&&r.answerTo&&idMap.has(r.answerTo))r.answerTo=idMap.get(r.answerTo); });
   return count;
 }
 // Diagrams live outside Undo (like a pasted one); one whose drawing hasn't loaded yet is left out
@@ -11959,7 +12087,7 @@ function describeOrphanedLinksAfterRestore(nodeList,diagramList,remarkList){
   if(!orphanedDiagrams&&!orphanedRemarks)return '';
   const parts=[];
   if(orphanedDiagrams)parts.push(orphanedDiagrams+' diagram'+(orphanedDiagrams===1?'':'s'));
-  if(orphanedRemarks)parts.push(orphanedRemarks+' remark'+(orphanedRemarks===1?'':'s'));
+  if(orphanedRemarks)parts.push(orphanedRemarks+' comment'+(orphanedRemarks===1?'':'s'));
   return ' — '+parts.join(', ')+' no longer linked to a node will be removed (the "Before restoring" version keeps them)';
 }
 async function restoreDocRevision(docId,ts){
@@ -13121,7 +13249,7 @@ function collectDeleteImpact(nodeIds){
     c.todos+=todoRefsForNode(n.id).length;
   });
   (qaItems||[]).forEach(q=>{ if(ids.has(q.sourceNodeId)&&!qaIsSection(q)&&(htmlHasVisibleText(q.question)||htmlHasVisibleText(q.answer)))c.questions++; });
-  (remarks||[]).forEach(r=>{ if(ids.has(r.anchorNodeId)&&htmlHasVisibleText(r.text)){ if(remarkKind(r)==='question')c.questions++; else c.remarks++; } });
+  (remarks||[]).forEach(r=>{ if(ids.has(r.anchorNodeId)&&htmlHasVisibleText(r.text)){ if(isQuestion(r))c.questions++; else c.remarks++; } });
   (diagrams||[]).forEach(d=>{ if(ids.has(d.anchorNodeId))c.diagrams++; });
   return c;
 }
@@ -15942,7 +16070,7 @@ function anyFoldClosed(){
 }
 function collapseAll(){if(!nodes.length)return; collapsedIds.clear(); nodes.forEach((n,i)=>{if((n.depth||0)===0&&nodeHasChildren(nodes,i))collapsedIds.add(n.id)});
   const o=inlineObjectNodeIds();
-  inlineExpandNoteNodeIds.clear(); inlineExpandQaNodeIds.clear(); inlineExpandRemarksNodeIds.clear(); inlineExpandDiagramNodeIds.clear(); showResolvedRemarksNodeIds.clear(); showAllRemarksNodeIds.clear(); showClosedQaNodeIds.clear();
+  inlineExpandNoteNodeIds.clear(); inlineExpandQaNodeIds.clear(); inlineExpandRemarksNodeIds.clear(); inlineExpandDiagramNodeIds.clear(); showAllRemarksNodeIds.clear(); showClosedQaNodeIds.clear();
   o.tables.forEach(id=>collapsedTableNodeIds.add(id)); o.images.forEach(id=>collapsedImageNodeIds.add(id));
   scheduleAutoSave(); render(); showToast('All collapsed')}
 function expandAll(){collapsedIds.clear();
@@ -16582,16 +16710,16 @@ function collectRemarkMatches(q){
         if(out.length>=4)break;
         if(r.anchorNodeId==null)continue; // unlinked: no row to reveal it under
         const plainText=stripHtmlToText(r.text||'');
-        // A question item's answer is searched too (Yes / No included).
-        const hay=plainText+' '+stripHtmlToText(r.answer||'')+' '+(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'')+' '+(r.person||'')+' '+(r.context||'');
+        // Every thread entry is searched: its text, author and an answer's Yes / No.
+        const hay=plainText+' '+(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'')+' '+(r.person||'')+' '+(r.context||'');
         if(!qaHayMatches(hay,tokens))continue;
-        const label=plainText.trim()||'(empty item)';
+        const label=plainText.trim()||(r.verdict==='yes'?'Yes':r.verdict==='no'?'No':THREAD_STATUS_LABEL[r.status]||'(empty entry)');
         out.push(isTrash?{
-          group:'Discussion', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          group:'Threads', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
           meta:'In Trash · '+(docTitle||'Untitled'),
           action:()=>{closeAllPanelsExceptGlobalSearch(); revealTrashedDocInSidebar(d.id)}
         }:{
-          group:'Discussion', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
+          group:'Threads', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
           meta:(r.person?r.person+' · ':'')+(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
           action:()=>{closeAllPanelsExceptGlobalSearch(); if(d.id!==currentDocId)switchDoc(d.id); revealInlineObject('remark',r.id);}
         });
@@ -16640,7 +16768,7 @@ function collectSearchGroups(q){
     {name:'Notes',items:collectNoteMatches(q)},
     {name:'Tags',items:collectTagMatches(q)},
     {name:'Diagrams',items:collectDiagramMatches(q)},
-    {name:'Discussion',items:collectRemarkMatches(q)},
+    {name:'Threads',items:collectRemarkMatches(q)},
     {name:'Tables',items:collectTableMatches(q)},
     {name:'Images',items:collectImageMatches(q)},
     {name:'To-Dos',items:(typeof collectTodoMatches==='function'?collectTodoMatches(q):[])},
@@ -16863,7 +16991,7 @@ const QA_SEARCH_CATEGORIES=[
   {key:'notes',group:'Notes'},
   {key:'tags',group:'Tags'},
   {key:'diagrams',group:'Diagrams'},
-  {key:'remarks',group:'Discussion'},
+  {key:'remarks',group:'Threads'},
   {key:'tables',group:'Tables'},
   {key:'images',group:'Images'},
   {key:'todos',group:'To-Dos'},
@@ -16883,7 +17011,7 @@ const QA_CATEGORY_PREFIXES={
   note:'notes', notes:'notes',
   code:'code',
   tag:'tags', tags:'tags',
-  qa:'remarks', question:'remarks', questions:'remarks', discussion:'remarks',
+  qa:'remarks', question:'remarks', questions:'remarks', discussion:'remarks', thread:'remarks', threads:'remarks', comment:'remarks', comments:'remarks',
   diagram:'diagrams', diagrams:'diagrams',
   remark:'remarks', remarks:'remarks',
   table:'tables', tables:'tables',
@@ -16911,7 +17039,7 @@ function qaParseCategoryPrefix(text){
 // aliases "wins").
 const QA_CATEGORY_PRIMARY_PREFIX={
   documents:'doc', folders:'folder', 'in-documents':'text',
-  notes:'note', code:'code', tags:'tag', remarks:'discussion', tables:'table', images:'image', todos:'todo', settings:'setting',
+  notes:'note', code:'code', tags:'tag', remarks:'thread', tables:'table', images:'image', todos:'todo', settings:'setting',
   help:'help'
 };
 // Debounce for qaRender() on typing. Each collector re-scans every active document from
@@ -17641,7 +17769,7 @@ function jumpToNodeTodoRefs(anchorEl, refs){
   if(refs.length===1){ if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(refs[0].id); return; }
   openRefJumpPopover(anchorEl, refs, refs.length+' to-dos reference this node');
 }
-const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>';
+const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>';
 function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); render()}
 function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); render()}}
 function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); scheduleAutoSave(); render()}}
@@ -17675,15 +17803,14 @@ function forceInlineItemExpanded(set,id){ set.add(id); }
 // deleted) has nowhere to be shown, so that case just says so.
 function revealInlineObject(kind,id){
   ensureQaMigratedToDiscussion();
-  // Questions are discussion items now; a Q&A id (from an older search result) maps to the
-  // question item it became.
+  // Questions are thread entries now; a Q&A id (from an older search result) maps to the
+  // question entry it became.
   const item=remarks.find(r=>r.id===id)||(kind==='qa'?remarks.find(r=>r.id==='r'+id):null);
   const nodeId=item?item.anchorNodeId:null;
   if(nodeId==null||getIndex(nodes,nodeId)<0){ showToast('This item isn\u2019t linked to a row in the outline'); return; }
   exitFocusIfOutsideCurrent(nodeId); expandAncestorsOf(nodeId); setSingleSelection(nodeId);
   forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId);
   showAllRemarksNodeIds.add(nodeId);
-  if(remarkState(item)==='resolved')showResolvedRemarksNodeIds.add(nodeId);
   render(); scrollToNode(nodeId);
   requestAnimationFrame(()=>{
     const target=el('inline-remark-text-'+item.id);
@@ -18803,7 +18930,7 @@ const CTX_ACTION_META={
   'ai-rewrite':{label:'Rewrite node',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'node'},
   qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'discuss'},
-  remark:{label:'Add remark…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'discuss'},
+  remark:{label:'Add comment…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'discuss'},
   diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'visual'},
   'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'visual'},
   table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'visual'},
@@ -19329,7 +19456,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const openR=nodeRemarks.filter(r=>discussionItemIsOpen(r)).length; const allResolved=nodeRemarks.every(r=>remarkState(r)==='resolved'||(remarkKind(r)==='question'&&remarkQuestionState(r)!=='open')); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Discussion: '+nodeRemarks.length+' item'+(nodeRemarks.length===1?'':'s')+(openR?' ('+openR+' open)':(allResolved?' (all settled)':''))+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a discussion item'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setMarkerFilter(activeMarkerFilter===node.marker?null:node.marker);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; const tStatus=threadStatus(tThread); const allResolved=!openR&&(tStatus==='resolved'||tStatus==='decision'); const tHolder=threadStatusEntry(tThread); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color='var(--fc-purple)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+(tStatus?' \u00b7 '+THREAD_STATUS_LABEL[tStatus]+(tStatus==='decision'&&tHolder&&htmlHasVisibleText(tHolder.text)?': '+stripHtmlToText(tHolder.text).slice(0,80):''):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -19639,172 +19766,17 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     iWrap.appendChild(buildNodeImageStrip(node));
     frag.appendChild(iWrap);
   }
-  if(inlineExpandRemarksNodeIds.has(node.id)&&Array.isArray(remarks)&&remarks.length){
-    // Newest first -- remarks.push (addRemark/saveNodeComment) always appends, so left in array
-    // order a node with several remarks read oldest-on-top, newest buried at the bottom, exactly
-    // backwards from "what's the latest on this node" being the thing you'd actually want to see
-    // first. createdAt (set by both remark-creation paths) is the real insertion order; a remark
-    // from before that field existed falls back to 0, sorting after every timestamped one but
-    // keeping its relative position among other untimestamped remarks (Array.sort is stable).
-    const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    // A remark is a plain comment unless marked as a follow-up (right-click). Comments and open
-    // follow-ups show in full; resolved follow-ups fold behind one quiet line (click to unfold), and
-    // the "open follow-ups" filter shows only open follow-ups.
-    // Questions are discussion items too (kind 'question'); the open-items filters show only the
-    // open questions and/or open follow-ups.
-    const openRemarks=nodeRemarks.filter(r=>activeDiscussionFilter?discussionItemPassesFilter(r):remarkState(r)!=='resolved');
-    const resolvedRemarks=nodeRemarks.filter(r=>remarkState(r)==='resolved');
-    const resolvedShown=showResolvedRemarksNodeIds.has(node.id)&&!activeDiscussionFilter;
-    const remarkGuides=lineEl=>{ if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; lineEl.appendChild(vg) } }); if(hasChildren){ const rDepth2=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(rDepth2*32+0*editorScale+9)+'px'; lineEl.appendChild(vgOwn) } } };
-    const setRemarkResolved=(r,resolved)=>{ pushUndo(); if(resolved)r.resolvedAt=Date.now(); else delete r.resolvedAt; markDirty(); scheduleAutoSave(); render(); };
-    const setRemarkFollowUp=(r,on)=>{ pushUndo(); applyRemarkKind(r,on?'followup':'comment'); markDirty(); scheduleAutoSave(); render(); };
-    const setRemarkKindTo=(r,kind)=>{ if(remarkKind(r)===kind)return; pushUndo(); applyRemarkKind(r,kind); markDirty(); scheduleAutoSave(); render(); };
-    // A question's one-click answer: Yes / No (the typed answer, if any, stays as its detail).
-    const setRemarkVerdict=(r,v)=>{ pushUndo(); if(v){ r.verdict=v; delete r.wontAnswer; } else delete r.verdict; markDirty(); scheduleAutoSave(); render(); };
-    const setRemarkWont=(r,wont)=>{ pushUndo(); if(wont){ r.wontAnswer=true; delete r.verdict; } else delete r.wontAnswer; markDirty(); scheduleAutoSave(); render(); };
-    const renderRemarkLine=r=>{
-      const rState=remarkState(r);
-      const rKind=remarkKind(r);
-      const isResolved=rState==='resolved';
-      const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
-      const rLine=document.createElement('div'); rLine.className='node-remark-line'+(isResolved?' is-resolved':'');
-      rLine.style.paddingLeft=hideTreeLines?(rDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
-      const c=remarkAuthorColor(r.person);
-      const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
-      const personInput=document.createElement('span'); personInput.contentEditable='true'; personInput.className='node-remark-person-inline'; personInput.textContent=r.person||''; personInput.dataset.placeholder='Who said it'; personInput.spellcheck=false;
-      personInput.addEventListener('mousedown',e=>e.stopPropagation());
-      personInput.addEventListener('click',e=>e.stopPropagation());
-      personInput.addEventListener('focus',()=>{ pushUndo(); });
-      personInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); personInput.blur(); } else if(e.key==='Escape'){ e.preventDefault(); personInput.textContent=r.person||''; personInput.blur(); } });
-      personInput.addEventListener('blur',()=>{ const val=(personInput.textContent||'').trim(); personInput.textContent=val; if(val===(r.person||''))return; r.person=val; markDirty(); scheduleAutoSave(); const c=remarkAuthorColor(val); avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
-      const dateSpan=document.createElement('span'); dateSpan.className='node-remark-date-inline'; dateSpan.textContent=formatRemarkDateDisplay(r.date); dateSpan.dataset.tip='Click to change the date';
-      // preventDefault keeps focus in the remark, so picking a date for a still-blank remark
-      // doesn't count as leaving it (see the blank-remark cleanup below).
-      dateSpan.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-      dateSpan.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(dateSpan,r); });
-      const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
-      textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
-      textEl.dataset.tip=({question:'Question',decision:'Decision',followup:'Follow-up'})[rKind]||'Remark'; textEl.dataset.tip+=' — click to edit inline';
-      textEl.dataset.placeholder=({question:'Ask a question…',decision:'What was decided…'})[rKind]||'Add a remark…';
-      textEl.addEventListener('mousedown',e=>{e.stopPropagation()});
-      textEl.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'remarkText',remarkId:r.id}; });
-      textEl.addEventListener('click',e=>{e.stopPropagation()});
-      textEl.addEventListener('keydown',e=>{ if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return; const wasEmpty=!(textEl.textContent||'').trim(); const doDelete=()=>{ const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); beginEdit(node.id,true); }; if(wasEmpty){ e.preventDefault(); doDelete(); return; } setTimeout(()=>{ if(!(textEl.textContent||'').trim())doDelete(); },0); });
-      textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); });
-      textEl.addEventListener('blur',()=>{ r.text=sakuraSanitizeRichHtml(textEl.innerHTML); });
-      rLine.appendChild(avatar); rLine.appendChild(personInput); rLine.appendChild(dateSpan); rLine.appendChild(textEl);
-      // Questions show Open / Answered / Won't answer (live as the answer is typed); decisions a
-      // Decision pill. Plain comments show nothing.
-      let paintQuestionPill=null;
-      if(rKind==='question'){
-        const pill=document.createElement('span'); pill.className='node-remark-kind-pill'; pill.dataset.kind='question';
-        paintQuestionPill=()=>{ const st=remarkQuestionState(r); pill.dataset.state=st; pill.textContent=st==='open'?'Question \u00b7 Open':(st==='answered'?'Answered':'Won\u2019t answer'); pill.dataset.tip=st==='open'?'Open question — answer Yes or No below, or type an answer':'Right-click to change'; };
-        paintQuestionPill(); rLine.appendChild(pill);
-      } else if(rKind==='decision'){
-        const pill=document.createElement('span'); pill.className='node-remark-kind-pill'; pill.dataset.kind='decision'; pill.textContent='Decision'; pill.dataset.tip='A decision — right-click to change'; rLine.appendChild(pill);
-      }
-      // Only follow-ups carry a status: an open one shows a "Follow-up" pill and a Resolve button
-      // on hover, a resolved one a Reopen button. Plain comments show neither.
-      if(rState!=='comment'){
-        if(rState==='open'){ const pill=document.createElement('span'); pill.className='node-remark-followup-pill'; pill.textContent='Follow-up'; pill.dataset.tip='Needs follow-up — right-click to change'; rLine.appendChild(pill); }
-        const stBtn=document.createElement('button'); stBtn.type='button'; stBtn.className='node-remark-status-btn'+(isResolved?' is-reopen':'');
-        stBtn.innerHTML=isResolved?'Reopen':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>Resolve';
-        stBtn.dataset.tip=isResolved?'Mark this follow-up open again':'Mark this follow-up resolved — it folds away under the row';
-        stBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-        stBtn.addEventListener('click',e=>{ e.stopPropagation(); setRemarkResolved(r,!isResolved); });
-        rLine.appendChild(stBtn);
-      }
-      rLine.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); const items=[];
-        const KIND_CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-        items.push({heading:'Kind'});
-        [['comment','Comment'],['question','Question'],['followup','Follow-up'],['decision','Decision']].forEach(([k,label])=>items.push({label, icon:rKind===k?KIND_CHECK:'', onClick:()=>setRemarkKindTo(r,k)}));
-        if(rKind==='question'){
-          const st=remarkQuestionState(r);
-          items.push({divider:true});
-          items.push({label:'Answer Yes', icon:r.verdict==='yes'?KIND_CHECK:'', onClick:()=>setRemarkVerdict(r,r.verdict==='yes'?null:'yes')});
-          items.push({label:'Answer No', icon:r.verdict==='no'?KIND_CHECK:'', onClick:()=>setRemarkVerdict(r,r.verdict==='no'?null:'no')});
-          if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won\u2019t answer', onClick:()=>setRemarkWont(r,st!=='wont')});
-        } else if(rState!=='comment'){
-          items.push({divider:true});
-          items.push({label:isResolved?'Reopen follow-up':'Resolve follow-up', onClick:()=>setRemarkResolved(r,!isResolved)});
-        }
-        items.push({divider:true}); if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); } items.push({label:'Delete', danger:true, onClick: async()=>{ pushUndo(); const ri=remarks.findIndex(x=>x.id===r.id); if(ri>=0)remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render(); }}); showSbContextMenu(e.clientX,e.clientY,items); });
-      // "Add remark…" creates the remark blank and focuses it; one left blank when focus moves on
-      // (not to its own name/date fields or the date picker) is discarded, so blank remarks no
-      // longer pile up in the document -- and outlive their row as blank orphans in the PDF.
-      rLine.addEventListener('focusout',()=>{ setTimeout(()=>{
-        if(htmlHasVisibleText(r.text)||htmlHasVisibleText(r.answer)||r.verdict)return;
-        if(rLine.isConnected&&rLine.contains(document.activeElement))return;
-        // A re-render replaced this line (e.g. another blank item was cleaned up) and the caret is
-        // back in the item's new line: that line handles its own focus from here.
-        if(!rLine.isConnected){ const fresh=document.getElementById('inline-remark-text-'+r.id); const freshLine=fresh&&fresh.closest('.node-remark-line'); if(freshLine&&freshLine.contains(document.activeElement))return; }
-        const pop=el('remarks-date-popover'); if(pop&&pop.offsetParent!==null&&_remarksDateTarget===r)return;
-        const ri=remarks.findIndex(x=>x.id===r.id); if(ri<0)return;
-        // Keep the caret where it went (e.g. a just-added item on another row) across the re-render.
-        const keepId=document.activeElement&&document.activeElement.id;
-        remarks.splice(ri,1); markDirty(); scheduleAutoSave(); render();
-        if(keepId){ const again=document.getElementById(keepId); if(again&&again!==document.activeElement)again.focus(); }
-      },0); });
-      remarkGuides(rLine);
-      frag.appendChild(rLine);
-      // A question's answer line: Yes / No buttons until one is picked (then that choice as a chip,
-      // click it to clear), and the typed answer, as with Q&A.
-      if(rKind==='question'){
-        const aLine=document.createElement('div'); aLine.className='node-remark-line node-remark-answer-line';
-        aLine.style.paddingLeft=rLine.style.paddingLeft;
-        const aLabel=document.createElement('span'); aLabel.className='node-qa-label node-qa-label-a'; aLabel.textContent='A';
-        aLine.appendChild(aLabel);
-        const verdictBtn=(v,label)=>{ const b=document.createElement('button'); b.type='button'; b.className='node-remark-verdict-btn'+(r.verdict===v?' is-picked':''); b.dataset.verdict=v;
-          b.innerHTML=r.verdict===v?(v==='yes'?'\u2713 ':'\u2717 ')+label:label; b.dataset.tip=r.verdict===v?'Click to clear':'Answer '+label;
-          b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-          b.addEventListener('click',e=>{ e.stopPropagation(); setRemarkVerdict(r,r.verdict===v?null:v); });
-          return b; };
-        if(r.verdict)aLine.appendChild(verdictBtn(r.verdict,r.verdict==='yes'?'Yes':'No'));
-        else { aLine.appendChild(verdictBtn('yes','Yes')); aLine.appendChild(verdictBtn('no','No')); }
-        const aText=document.createElement('div'); aText.className='node-qa-answer node-remark-answer'; aText.contentEditable='true'; aText.spellcheck=spellcheckEnabled; aText.dataset.remarkId=r.id;
-        aText.innerHTML=sakuraSanitizeRichHtml(r.answer||''); aText.dataset.tip='Answer — click to edit inline';
-        aText.dataset.placeholder=r.verdict?'Add detail…':(r.wontAnswer?'Closed without an answer — type one to mark it answered':'or type an answer…');
-        aText.addEventListener('mousedown',e=>e.stopPropagation());
-        aText.addEventListener('click',e=>e.stopPropagation());
-        aText.addEventListener('focus',()=>{ pushUndo(); });
-        aText.addEventListener('input',()=>{ r.answer=aText.innerHTML; markDirty(); scheduleAutoSave(); if(paintQuestionPill)paintQuestionPill(); updateMarkerSummary(); });
-        aText.addEventListener('blur',()=>{ r.answer=sakuraSanitizeRichHtml(aText.innerHTML); });
-        aLine.appendChild(aText);
-        aLine.addEventListener('contextmenu',e=>{ rLine.dispatchEvent(new MouseEvent('contextmenu',{bubbles:false,cancelable:true,clientX:e.clientX,clientY:e.clientY})); e.preventDefault(); e.stopPropagation(); });
-        remarkGuides(aLine);
-        frag.appendChild(aLine);
-      }
+  if(inlineExpandRemarksNodeIds.has(node.id)&&Array.isArray(remarks)&&(remarks.some(r=>r.anchorNodeId===node.id)||_threadComposerNodeId===node.id||_threadDrafts.has(node.id))){
+    // The node's thread (owner design 2026-10-14): one flat list of entries, oldest first, each
+    // with its author, time and text, chips only where they mean something (Question, Yes/No, a
+    // status), and a reply box at the end. See renderNodeThread.
+    const tDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
+    const place=lineEl=>{
+      lineEl.style.paddingLeft=hideTreeLines?(tDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
+      if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; lineEl.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(tDepth*32+0*editorScale+9)+'px'; lineEl.appendChild(vgOwn) } }
+      frag.appendChild(lineEl);
     };
-    // More than two shown remarks: the latest two (plus any open follow-up) show; the rest fold
-    // behind "N earlier remarks". The PDF always prints every remark.
-    const showAllR=showAllRemarksNodeIds.has(node.id)||!!activeDiscussionFilter||openRemarks.length<=2;
-    const visibleRemarks=showAllR?openRemarks:openRemarks.filter((r,i)=>i<2||discussionItemIsOpen(r));
-    visibleRemarks.forEach(renderRemarkLine);
-    if(openRemarks.length>2&&!activeDiscussionFilter){
-      const hidden=openRemarks.length-openRemarks.filter((r,i)=>i<2||discussionItemIsOpen(r)).length;
-      if(hidden>0){
-        const rDepthF=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
-        const more=buildInlineFoldLine('node-remark-line',hideTreeLines?(rDepthF*32+0*editorScale+23)+'px':(0*editorScale+24)+'px',
-          showAllR?'Hide earlier items':hidden+' earlier item'+(hidden===1?'':'s'),showAllR,showAllRemarksNodeIds,node.id,showAllR?'Show only the latest items':'Show all items');
-        remarkGuides(more); frag.appendChild(more);
-      }
-    }
-    if(resolvedRemarks.length&&!activeDiscussionFilter){
-      const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
-      const fLine=document.createElement('div'); fLine.className='node-remark-line node-remark-resolved-line';
-      fLine.style.paddingLeft=hideTreeLines?(rDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
-      const latest=resolvedRemarks[0];
-      const fBtn=document.createElement('button'); fBtn.type='button'; fBtn.className='node-remark-resolved-toggle'; fBtn.setAttribute('aria-expanded',String(resolvedShown));
-      fBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>'
-        +'<span>'+resolvedRemarks.length+' resolved follow-up'+(resolvedRemarks.length===1?'':'s')+'</span>'
-        +'<span class="nrr-meta">· '+esc(latest.person||'someone')+(latest.date?', '+esc(formatRemarkDateDisplay(latest.date)):'')+'</span>'
-        +'<span class="nrr-caret" aria-hidden="true">'+(resolvedShown?'▾':'▸')+'</span>';
-      fBtn.dataset.tip=resolvedShown?'Hide resolved follow-ups':'Show resolved follow-ups';
-      fBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-      fBtn.addEventListener('click',e=>{ e.stopPropagation(); if(showResolvedRemarksNodeIds.has(node.id))showResolvedRemarksNodeIds.delete(node.id); else showResolvedRemarksNodeIds.add(node.id); render(); });
-      fLine.appendChild(fBtn); remarkGuides(fLine); frag.appendChild(fLine);
-      if(resolvedShown)resolvedRemarks.forEach(renderRemarkLine);
-    }
+    renderNodeThread(node,place);
   }
   if(inlineExpandDiagramNodeIds.has(node.id)&&Array.isArray(diagrams)&&diagrams.length){
     const nodeDiagramsInline=diagrams.filter(dg=>dg.anchorNodeId===node.id);
@@ -19860,7 +19832,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // into a childless node, or every node deleted). Previously this only ran inside the normal-
   // tree branch, so an active filter's bar/chips could keep showing stale state — or simply
   // never get hidden — once the pane had no rows to filter in the first place.
-  applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null))); if(target)target.focus(); } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')) el('sb-depth').textContent=`Depth ${selectedDepth===null?'—':selectedDepth}`; if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates();
+  applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')) el('sb-depth').textContent=`Depth ${selectedDepth===null?'—':selectedDepth}`; if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates();
   updateDirtyIndicator(); updateMarkerSummary(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
   document.querySelectorAll('.bl-link').forEach(lnk=>{const target=findNodeByText(lnk.dataset.blTarget||''); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Jump to: '+lnk.dataset.blTarget:'No node found: '+lnk.dataset.blTarget;});
 }
@@ -20865,7 +20837,7 @@ function clipExtrasToastLabel(dgCount,imgCount,qaCount=0,rmCount=0){
   if(dgCount)parts.push(dgCount+' diagram'+(dgCount===1?'':'s'));
   if(imgCount)parts.push(imgCount+' image'+(imgCount===1?'':'s'));
   if(qaCount)parts.push(qaCount+' question'+(qaCount===1?'':'s'));
-  if(rmCount)parts.push(rmCount+' remark'+(rmCount===1?'':'s'));
+  if(rmCount)parts.push(rmCount+' comment'+(rmCount===1?'':'s'));
   return parts.length?` (incl. ${parts.join(', ')})`:'';
 }
 function encodeSakuraClipComment(payload){
@@ -23395,23 +23367,14 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   }
   if(action==='qa'){
     if(_ctxNodeId===null)return;
-    // No expandNode: adding an inline object never unfolds the row's children.
-    forceInlineItemExpanded(inlineExpandQaNodeIds,_ctxNodeId);
-    // A question is a discussion item (kind 'question') -- see migrateQaToRemarks.
-    const item={id:newRemarkId(),kind:'question',person:'',text:'',answer:'',date:todayDateStr(),context:'',anchorNodeId:_ctxNodeId,createdAt:Date.now()};
-    remarks.push(item);
-    inlineExpandRemarksNodeIds.add(_ctxNodeId);
-    markDirty(); scheduleAutoSave();
-    render();
-    requestAnimationFrame(()=>{ document.querySelector(`.node-remark-text-inline[data-remark-id="${item.id}"]`)?.focus(); });
+    // No expandNode: adding to the thread never unfolds the row's children.
+    openThreadComposer(_ctxNodeId,true);
     return;
   }
   if(action==='remark'){
     if(_ctxNodeId===null)return;
     setSingleSelection(_ctxNodeId);
-    render();
-    forceInlineItemExpanded(inlineExpandRemarksNodeIds,_ctxNodeId);
-    addRemark();
+    openThreadComposer(_ctxNodeId,false);
     return;
   }
   if(action==='diagram'){
@@ -27493,10 +27456,25 @@ function setNodeMarker(id,marker){
   const idx=getIndex(nodes,id); if(idx<0)return;
   const node=nodes[idx];
   const next=NODE_MARKERS.includes(marker)?marker:'';
-  const resolved=(node.marker===next)?'':next;
-  if(node.marker===resolved)return;
+  const prev=node.marker||'';
+  const resolved=(prev===next)?'':next;
+  if(prev===resolved)return;
   pushUndo();
   node.marker=resolved; node.modifiedAt=Date.now();
+  // Issue, Follow-up and Confirmed are the row's thread status (one status, two places): clicking one
+  // puts it on the thread's latest entry; clearing it takes back the chip that set it (an older
+  // chip, if any, becomes the status again). Parked and N/A are row-only.
+  const thread=nodeThread(id);
+  if(thread.length){
+    const want=threadStatusForMarker(resolved);
+    if(want){ if(markerForThreadStatus(threadStatus(thread))!==resolved)thread[thread.length-1].status=want; }
+    else if(!resolved&&isThreadMarker(prev)){ const holder=threadStatusEntry(thread); if(holder)delete holder.status; node.marker=syncedMarker('',thread); }
+  }
+  // An issue needs saying what's wrong: marking one opens the row's reply box (the caller renders).
+  if(resolved==='issue'){
+    forceInlineItemExpanded(inlineExpandRemarksNodeIds,id); inlineExpandRemarksNodeIds.add(id);
+    _threadComposerNodeId=id; _pendingInlineFocus={kind:'threadComposer',nodeId:id};
+  }
   markDirty(); scheduleAutoSave();
 }
 // Section headers are just another entry in qaItems (type:'section', title only — no
@@ -28101,34 +28079,38 @@ function previewBuildNodeTree(startIdx,endIdx){
 // Open / Resolved / Answered / Won't answer — the same pills the outline shows, for the PDF.
 function previewStatusPill(state){
   const pill=document.createElement('span'); pill.className='pv-status-pill'; pill.dataset.state=state;
-  pill.textContent=({open:'Open',followup:'Follow-up',resolved:'Resolved',answered:'Answered',wont:'Won\u2019t answer',question:'Question \u00b7 Open',decision:'Decision'})[state]||'';
+  pill.textContent=({open:'Open',issue:'Issue',followup:'Follow-up',resolved:'Resolved',answered:'Question \u00b7 Answered',wont:'Question \u00b7 Won\u2019t answer',question:'Question \u00b7 Open',decision:'Decision',yes:'\u2713 Yes',no:'\u2717 No',answer:'Answer'})[state]||'';
   return pill;
 }
-function previewRenderRemarkEntry(r){
+// The PDF prints dates in full (the outline's "Today" would be wrong by the time it's read).
+function formatThreadTimeAbsolute(r,prev){
+  const d=remarksParseISODate(r.date)||(r.createdAt?new Date(r.createdAt):null);
+  const day=d?d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'';
+  const t=r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+  // The date shows once per day: an entry on the same day as the one before it shows only its time.
+  if(prev&&t&&(prev.date||'')===(r.date||''))return t;
+  return day&&t?day+' · '+t:(day||t);
+}
+// One thread entry for the PDF: author, time and the same chips as the outline, then the text.
+// `thread` (the node's entries) tells a question whether it's been answered.
+function previewRenderRemarkEntry(r,thread,prev){
   const entry=document.createElement('div'); entry.className='pv-remark-entry';
-  const text=document.createElement('div'); text.className='pv-remark-text';
-  text.innerHTML=sakuraSanitizeRichHtml(r.text||'');
-  entry.appendChild(text);
   const meta=document.createElement('div'); meta.className='pv-remark-meta';
   const authorColor=remarkAuthorColor(r.person);
   const avatar=document.createElement('span'); avatar.className='pv-remark-avatar'; avatar.style.background=authorColor.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
-  meta.appendChild(avatar);
-  const bEl=document.createElement('b'); bEl.textContent=r.person||'(unnamed)';
-  meta.appendChild(bEl);
-  if(r.date){ meta.appendChild(document.createTextNode(' · '+formatRemarkDateDisplay(r.date))); }
+  entry.appendChild(avatar);
+  if(r.person){ const bEl=document.createElement('b'); bEl.textContent=r.person; meta.appendChild(bEl); }
+  else { const q=document.createElement('span'); q.className='pv-remark-anon'; q.textContent=r.answerTo?'Answer':'Unnamed'; meta.appendChild(q); }
+  const when=formatThreadTimeAbsolute(r,prev); if(when)meta.appendChild(document.createTextNode(' · '+when));
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
-  { const kind=remarkKind(r);
-    if(kind==='question'){ const st=remarkQuestionState(r); meta.appendChild(previewStatusPill(st==='open'?'question':st)); }
-    else if(kind==='decision')meta.appendChild(previewStatusPill('decision'));
-    else { const st=remarkState(r); if(st!=='comment')meta.appendChild(previewStatusPill(st==='open'?'followup':'resolved')); } }
+  if(isQuestion(r)){ const st=questionState(r,thread||[r]); meta.appendChild(previewStatusPill(st==='open'?'question':st)); }
+  if(r.answerTo)meta.appendChild(previewStatusPill(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'answer'));
+  if(r.status)meta.appendChild(previewStatusPill(r.status));
   entry.appendChild(meta);
-  // A question's answer prints under it: Yes / No, then any typed answer.
-  if(remarkKind(r)==='question'){
-    const ans=document.createElement('div'); ans.className='pv-remark-answer';
-    const verdict=r.verdict==='yes'?'Yes':r.verdict==='no'?'No':'';
-    const typed=stripHtmlToText(r.answer||'').trim();
-    ans.innerHTML='<span class="pv-inline-qa-tag pv-inline-qa-tag-a">A</span>'+(verdict?'<b>'+verdict+'</b>'+(typed?' \u2014 ':''):'')+(typed?sakuraSanitizeRichHtml(r.answer):'')+(!verdict&&!typed?'<span class="pv-inline-qa-unanswered">'+(r.wontAnswer?'Closed without an answer':'No answer yet')+'</span>':'');
-    entry.insertBefore(ans,meta);
+  if(htmlHasVisibleText(r.text)){
+    const text=document.createElement('div'); text.className='pv-remark-text';
+    text.innerHTML=sakuraSanitizeRichHtml(r.text||'');
+    entry.appendChild(text);
   }
   return entry;
 }
@@ -28141,9 +28123,11 @@ function previewRenderRemarkEntry(r){
 function previewRenderRemarkGroup(remarksForNode){
   const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
   const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
-  label.innerHTML=REMARK_DOT_SVG+'<span>Discussion</span>';
-  const body=document.createElement('div'); body.className='pv-inline-remark-body'+(noteMatchEditorBg?'':' bg-distinct');
-  remarksForNode.forEach(r=>body.appendChild(previewRenderRemarkEntry(r)));
+  label.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+remarksForNode.length+'</span>';
+  const hs=threadHeaderStatus(remarksForNode);
+  if(hs){ const pill=previewStatusPill(hs.key==='question'?'question':hs.key); pill.classList.add('pv-thread-status'); pill.textContent=(hs.key==='resolved'||hs.key==='decision'?'\u2713 ':hs.key==='issue'?'\u26a0 ':'')+hs.label; label.appendChild(pill); }
+  const body=document.createElement('div'); body.className='pv-inline-remark-body pv-thread-body';
+  remarksForNode.forEach((r,i)=>body.appendChild(previewRenderRemarkEntry(r,remarksForNode,remarksForNode[i-1])));
   wrap.appendChild(label); wrap.appendChild(body);
   return wrap;
 }
@@ -28408,10 +28392,9 @@ function renderPreviewBody(){
         doc.appendChild(qBlock);
       }
       if(Array.isArray(remarks)&&remarks.length){
-        // Newest first -- same reasoning as the identical sort on the live editor's own inline
-        // remark rendering (see its own comment): remarks.push always appends, so unsorted array
-        // order reads oldest-on-top here too.
-        const nodeRemarks=remarks.filter(rm=>rm.anchorNodeId===node.id&&htmlHasVisibleText(rm.text)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+        // The node's whole thread, oldest first like the outline (owner: the PDF prints the whole
+        // thread). Blank entries with no chip have nothing to print.
+        const nodeRemarks=nodeThread(node.id).filter(rm=>htmlHasVisibleText(rm.text)||rm.status||rm.verdict);
         if(nodeRemarks.length){
           const rGroup=previewRenderRemarkGroup(nodeRemarks);
           rGroup.style.paddingLeft=inlinePad;
@@ -28530,12 +28513,12 @@ function renderPreviewBody(){
     doc.appendChild(qaSection);
   }
   if(Array.isArray(remarks)&&remarks.length){
-    // Blank remarks (an "Add remark…" never typed into, often orphaned when its row was deleted)
+    // Blank entries (an old "Add remark…" never typed into, often orphaned when its row was deleted)
     // have nothing to print.
     const leftoverRemarks=remarks.filter(rm=>!_previewRemarksRenderedInline.has(rm.id)&&htmlHasVisibleText(rm.text));
     if(leftoverRemarks.length){
       const remarksSection=document.createElement('div'); remarksSection.id='pv-remarks-section';
-      const remarksHeading=document.createElement('div'); remarksHeading.className='pv-qa-heading'; remarksHeading.textContent='Remarks';
+      const remarksHeading=document.createElement('div'); remarksHeading.className='pv-qa-heading'; remarksHeading.textContent='Comments without a row';
       remarksSection.appendChild(remarksHeading);
       // Flat entries here, not the full label+card shell previewRenderRemarkGroup builds --
       // these are scattered, unrelated remarks (different nodes, some orphaned entirely), not a
@@ -29416,16 +29399,237 @@ function formatRemarkDateDisplay(dateStr){
   const opts=d.getFullYear()===thisYear?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'};
   return d.toLocaleDateString(undefined,opts);
 }
-// Adds a blank remark under the selected node (the right-click "Add remark…" action selects it
-// first) and focuses its inline text, ready to type.
-function addRemark(){
-  const r={id:newRemarkId(),person:'',text:'',date:todayDateStr(),context:'',anchorNodeId:selectedId??null,createdAt:Date.now()};
-  remarks.push(r);
+// ── A node's thread (owner design 2026-10-14) ─────────────────────────────────────────────
+// One flat list per node, oldest first: author, time, text; chips only for Question, Yes/No,
+// Answer and a status (Follow-up / Resolved / Decision). The thread status and the row marker
+// are one status (see syncRowMarkerFromThread / setNodeMarker). Data helpers live in
+// src/utils/discussionStatus.ts. The reply box is the only way to add an entry, so blank entries
+// never pile up.
+// (The reply box state and chip icons are declared up top with the other inline-object state; render runs before this point.)
+function threadStatusChipHtml(st){ return (st==='issue'?THREAD_WARN_SVG:st==='followup'?THREAD_FLAG_SVG:st==='decision'?THREAD_SEAL_SVG:THREAD_CHECK_SVG)+'<span>'+THREAD_STATUS_LABEL[st]+'</span>'; }
+// Who the reply box writes as: the author picked in it, else whoever wrote last in this document.
+function threadDefaultAuthor(){
+  if(_threadAuthor!=null)return _threadAuthor;
+  let best=null; (remarks||[]).forEach(r=>{ if(r&&(r.person||'').trim()&&(!best||(r.createdAt||0)>=(best.createdAt||0)))best=r; });
+  return best?best.person.trim():((el('doc-author')?.value||'').trim());
+}
+// Names used in this document, most recent first, plus the document's author.
+function threadRecentAuthors(){
+  const seen=new Map();
+  (remarks||[]).forEach(r=>{ const n=(r&&r.person||'').trim(); if(n)seen.set(n,Math.max(seen.get(n)||0,r.createdAt||0)); });
+  const docAuthor=(el('doc-author')?.value||'').trim(); if(docAuthor&&!seen.has(docAuthor))seen.set(docAuthor,-1);
+  return [...seen.entries()].sort((a,b)=>b[1]-a[1]).map(([n])=>n);
+}
+// "10:02" today, "Yesterday · 10:02", "13 Oct · 10:02" -- the date part follows the editable date.
+function formatThreadTime(r){
+  const day=formatRemarkDateDisplay(r.date);
+  const t=r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+  if(day==='Today')return t||day;
+  return t?day+' · '+t:day;
+}
+// Status on a thread from the row marker or the Resolve button: on the latest entry when it has no
+// status yet, else as a new status-only entry, so earlier chips stay as history.
+function addThreadStatus(nodeId,status,text){
+  const thread=nodeThread(nodeId);
+  const last=thread[thread.length-1];
+  if(!htmlHasVisibleText(text)&&last&&!last.status){ last.status=status; return last; }
+  const e={id:newRemarkId(),anchorNodeId:nodeId,person:threadDefaultAuthor(),text:text||'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1),status};
+  remarks.push(e);
+  return e;
+}
+// Opens a node's thread with its reply box focused ("Add comment…" / "Add question…").
+function openThreadComposer(nodeId,ask){
+  if(nodeId==null)return;
+  forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId);
+  inlineExpandRemarksNodeIds.add(nodeId);
+  _threadComposerNodeId=nodeId; if(ask)_threadAskNodeIds.add(nodeId); else _threadAskNodeIds.delete(nodeId);
+  _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
-  markDirty();
-  scheduleAutoSave();
-  requestAnimationFrame(()=>{ document.querySelector(`.node-remark-text-inline[data-remark-id="${r.id}"]`)?.focus(); });
-  return r;
+}
+// The thread's status for its header line: Issue / Follow-up / Resolved / Decision, else how many
+// questions are open. Shared by the editor and the PDF.
+function threadHeaderStatus(thread){
+  const st=threadStatus(thread);
+  if(st)return {key:st, label:st==='issue'?'Open issue':st==='followup'?'Follow-up':THREAD_STATUS_LABEL[st]};
+  const open=openQuestions(thread).length;
+  return open?{key:'question', label:openCountLabel(open,'question')}:null;
+}
+function renderNodeThread(node,placeLine){
+  const thread=nodeThread(node.id);
+  const commit=()=>{ syncRowMarkerFromThread(node.id); markDirty(); scheduleAutoSave(); render(); };
+  // Every line of the thread sits right of one thin rule, like the PDF's transcript.
+  const place=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+3)+'px'); line.style.paddingLeft=(x+15)+'px'; };
+  if(thread.length){
+    const head=document.createElement('div'); head.className='node-remark-line thread-head';
+    const hs=threadHeaderStatus(thread);
+    head.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+thread.length+'</span>'+(hs?'<span class="thread-chip is-'+hs.key+' thread-head-status"'+(hs.key==='question'?' data-state="open"':'')+'>'+(THREAD_STATUS_LABEL[hs.key]?threadStatusChipHtml(hs.key).replace(/<span>[^<]*<\/span>$/,'<span>'+hs.label+'</span>'):hs.label)+'</span>':'');
+    head.dataset.tip='Click to hide the thread';
+    head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+    head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
+    place(head);
+  }
+  const shownAll=showAllRemarksNodeIds.has(node.id)||thread.length<=4;
+  const visible=shownAll?thread:thread.slice(-3);
+  if(thread.length>4){
+    const hidden=thread.length-3;
+    place(buildInlineFoldLine('node-remark-line','',shownAll?'Hide earlier entries':hidden+' earlier entr'+(hidden===1?'y':'ies'),shownAll,showAllRemarksNodeIds,node.id,shownAll?'Show only the latest entries':'Show the whole thread'));
+  }
+  visible.forEach(r=>renderThreadEntry(node,r,thread,place,commit));
+  renderThreadComposer(node,thread,place,commit);
+}
+function renderThreadEntry(node,r,thread,place,commit){
+  const line=document.createElement('div'); line.className='node-remark-line thread-entry'; line.dataset.remarkId=r.id;
+  const meta=document.createElement('div'); meta.className='thread-meta';
+  const c=remarkAuthorColor(r.person);
+  const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
+  // An entry emptied and left (with no Yes/No or status chip to keep) is removed, so blank
+  // entries never pile up or print. Moving between its own fields keeps it.
+  const dropIfBlank=e=>{
+    if(htmlHasVisibleText(r.text)||r.verdict||r.status||(e.relatedTarget&&line.contains(e.relatedTarget))||!remarks.includes(r))return false;
+    remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } });
+    setTimeout(commit,0); return true;
+  };
+  const person=document.createElement('span'); person.contentEditable='true'; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to change';
+  person.addEventListener('mousedown',e=>e.stopPropagation());
+  person.addEventListener('click',e=>e.stopPropagation());
+  person.addEventListener('focus',()=>{ pushUndo(); });
+  person.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); } });
+  person.addEventListener('blur',e=>{ const val=(person.textContent||'').trim(); person.textContent=val; const changed=val!==(r.person||''); r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); const c2=remarkAuthorColor(val); avatar.style.background=c2.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
+  const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r); time.dataset.tip='Click to change the date';
+  time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+  time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
+  meta.appendChild(avatar); meta.appendChild(person); meta.appendChild(time);
+  const chip=(cls,html,tip)=>{ const ch=document.createElement('span'); ch.className='thread-chip '+cls; ch.innerHTML=html; if(tip)ch.dataset.tip=tip; meta.appendChild(ch); return ch; };
+  const isQ=isQuestion(r);
+  const qState=isQ?questionState(r,thread):null;
+  if(isQ){ const ch=chip('is-question','Question'+(qState==='answered'?' · Answered':qState==='wont'?' · Won’t answer':''),qState==='open'?'Open question — answer it with Yes / No below, or reply and mark the reply as the answer':'Right-click to change'); ch.dataset.state=qState; }
+  if(r.answerTo){ if(r.verdict)chip('is-'+r.verdict,(r.verdict==='yes'?'✓ Yes':'✗ No'),'The answer — right-click to change'); else chip('is-answer','Answer','Marked as the answer — right-click to change'); }
+  if(r.status)chip('is-'+r.status,threadStatusChipHtml(r.status),'Sets the row to '+(r.status==='issue'?'Issue':r.status==='followup'?'Follow-up':'Confirmed')+' — right-click to change');
+  line.appendChild(meta);
+  const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
+  textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
+  if(!htmlHasVisibleText(r.text)&&(r.status||r.verdict))textEl.classList.add('is-event');
+  textEl.dataset.placeholder=r.verdict||r.status?'':'Write…';
+  textEl.addEventListener('mousedown',e=>e.stopPropagation());
+  textEl.addEventListener('click',e=>e.stopPropagation());
+  textEl.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'remarkText',remarkId:r.id}; });
+  textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); updateMarkerSummary(); });
+  textEl.addEventListener('blur',e=>{
+    const was=htmlHasVisibleText(r.text); r.text=sakuraSanitizeRichHtml(textEl.innerHTML);
+    if(dropIfBlank(e))return;
+    if(r.answerTo&&!r.verdict&&was!==htmlHasVisibleText(r.text))render();
+  });
+  // Backspace in an empty entry removes it (a Yes/No or status-only entry keeps its chip until
+  // removed from the menu).
+  textEl.addEventListener('keydown',e=>{
+    if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
+    if((textEl.textContent||'').trim()||r.verdict||r.status)return;
+    e.preventDefault();
+    const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1);
+    _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
+    commit();
+  });
+  line.appendChild(textEl);
+  line.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadEntryMenuItems(node,r,thread,textEl,commit)); });
+  place(line);
+}
+function threadEntryMenuItems(node,r,thread,textEl,commit){
+  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const change=fn=>()=>{ pushUndo(); fn(); commit(); };
+  const items=[];
+  if(r.answerTo){
+    items.push({label:'Answer Yes', icon:r.verdict==='yes'?CHECK:'', onClick:change(()=>{ if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; })});
+    items.push({label:'Answer No', icon:r.verdict==='no'?CHECK:'', onClick:change(()=>{ if(r.verdict==='no')delete r.verdict; else r.verdict='no'; })});
+    items.push({label:'Not the answer', onClick:change(()=>{ delete r.answerTo; delete r.verdict; })});
+  } else {
+    items.push({label:'Question', icon:isQuestion(r)?CHECK:'', onClick:change(()=>{ if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); } else r.type='question'; })});
+    const q=isQuestion(r)?null:questionToAnswer(thread,r);
+    if(q)items.push({label:'Mark as the answer', onClick:change(()=>{ r.answerTo=q.id; })});
+    if(isQuestion(r)){ const st=questionState(r,thread); if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won’t answer', onClick:change(()=>{ if(st==='wont')delete r.wontAnswer; else r.wontAnswer=true; })}); }
+  }
+  items.push({heading:'Status'});
+  ['issue','followup','resolved','decision'].forEach(st=>items.push({label:THREAD_STATUS_LABEL[st], icon:r.status===st?CHECK:'', onClick:change(()=>{ if(r.status===st)delete r.status; else r.status=st; })}));
+  items.push({divider:true});
+  if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
+  items.push({label:'Delete', danger:true, onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
+  return items;
+}
+function renderThreadComposer(node,thread,place,commit){
+  const line=document.createElement('div'); line.className='node-remark-line thread-composer';
+  const ask=_threadAskNodeIds.has(node.id);
+  const author=threadDefaultAuthor();
+  const c=remarkAuthorColor(author);
+  const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(author);
+  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Reply as — pick who is speaking';
+  who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+  who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
+  const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;
+  const openQ=questionToAnswer(thread);
+  input.dataset.placeholder=ask?'Ask a question…':(openQ?'Reply, or answer Yes / No…':'Reply…');
+  const submit=extra=>{
+    const html=sakuraSanitizeRichHtml(input.innerHTML);
+    const hasText=htmlHasVisibleText(html);
+    if(!hasText&&!(extra&&(extra.verdict||extra.status)))return;
+    pushUndo();
+    if(extra&&extra.status&&!extra.verdict){ addThreadStatus(node.id,extra.status,hasText?html:''); }
+    else {
+      const last=thread[thread.length-1];
+      const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:hasText?html:'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
+      if(ask&&!(extra&&extra.verdict))e.type='question';
+      // A row marked Issue / Follow-up / Confirmed before it had a thread: its first entry carries that status.
+      if(!thread.length&&!(extra&&extra.status)&&threadStatusForMarker(node.marker))e.status=threadStatusForMarker(node.marker);
+      if(extra&&extra.verdict&&openQ){ e.answerTo=openQ.id; e.verdict=extra.verdict; }
+      remarks.push(e);
+    }
+    _threadComposerNodeId=node.id; _threadAskNodeIds.delete(node.id); _threadDrafts.delete(node.id);
+    _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
+    commit();
+  };
+  // A draft survives re-renders and moving to another row; the box stays open while it has one.
+  if(_threadDrafts.has(node.id))input.innerHTML=_threadDrafts.get(node.id);
+  input.addEventListener('input',()=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); else _threadDrafts.delete(node.id); });
+  input.addEventListener('mousedown',e=>e.stopPropagation());
+  input.addEventListener('click',e=>e.stopPropagation());
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
+    else if(e.key==='Escape'){ e.preventDefault(); input.blur(); if(!thread.length&&!_threadDrafts.has(node.id)){ _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); } }
+  });
+  const btn=(act,label,tip,on)=>{ const b=document.createElement('button'); b.type='button'; b.className='thread-btn'+(on?' is-on':''); b.dataset.act=act; b.innerHTML=label; b.dataset.tip=tip; b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); }); return b; };
+  const actions=document.createElement('span'); actions.className='thread-actions';
+  const askBtn=btn('ask','Ask',ask?'Your next entry is a question — click to make it a reply':'Make your next entry a question',ask);
+  askBtn.addEventListener('click',e=>{ e.stopPropagation(); _threadComposerNodeId=node.id; if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
+  actions.appendChild(askBtn);
+  if(openQ){
+    const yes=btn('yes','Yes','Answer “'+stripHtmlToText(openQ.text).slice(0,60)+'” with Yes (and what you typed)');
+    yes.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'yes'}); });
+    const no=btn('no','No','Answer “'+stripHtmlToText(openQ.text).slice(0,60)+'” with No (and what you typed)');
+    no.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'no'}); });
+    actions.appendChild(yes); actions.appendChild(no);
+  }
+  const openStatus=threadStatus(thread);
+  if(openStatus==='followup'||openStatus==='issue'){
+    const res=btn('resolve',THREAD_CHECK_SVG+' Resolve','Resolve the '+(openStatus==='issue'?'issue':'follow-up')+' (with what you typed) — the row turns Confirmed');
+    res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'resolved'}); });
+    actions.appendChild(res);
+  }
+  line.appendChild(avatar); line.appendChild(who); line.appendChild(input); line.appendChild(actions);
+  place(line);
+}
+function threadAuthorMenuItems(node,anchor){
+  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const cur=threadDefaultAuthor();
+  const pick=name=>()=>{ _threadAuthor=name; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
+  const items=[{heading:'Reply as'}];
+  threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===cur?CHECK:'', onClick:pick(n)}));
+  if(items.length>1)items.push({divider:true});
+  items.push({label:'Someone else…', onClick:()=>{
+    const ed=document.createElement('span'); ed.className='thread-author-edit'; ed.contentEditable='true'; ed.dataset.placeholder='Name';
+    anchor.replaceWith(ed); ed.focus();
+    ed.addEventListener('mousedown',e=>e.stopPropagation());
+    ed.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ed.blur(); } else if(e.key==='Escape'){ e.preventDefault(); ed.textContent=''; ed.blur(); } });
+    ed.addEventListener('blur',()=>{ const v=(ed.textContent||'').trim(); if(v)_threadAuthor=v; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
+  }});
+  return items;
 }
 
 // Node-picker tree infrastructure for the diagram editor's "link to a node" popup
@@ -29793,8 +29997,8 @@ function applyTagFilterToPane(pane){
     if(activeDiscussionFilter){
       const btn=document.createElement('button');
       btn.className='tag-filter-chip-btn disc-filter-chip';
-      const label=({openQa:'Open questions',openRemarks:'Open follow-ups',openItems:'Open items'})[activeDiscussionFilter];
-      const icon=activeDiscussionFilter==='openQa'?qaDotIconSvg(11):activeDiscussionFilter==='openRemarks'?REMARK_DOT_SVG:markIconSvg('followup',11);
+      const label=({openQa:'Open questions',openItems:'Open items'})[activeDiscussionFilter];
+      const icon=activeDiscussionFilter==='openQa'?qaDotIconSvg(11):markIconSvg('followup',11);
       btn.innerHTML='<span>'+icon+' '+label+'</span><span class="tfcb-x">×</span>';
       btn.dataset.tip='Clear filter for '+label.toLowerCase();
       btn.addEventListener('click',()=>setDiscussionFilter(null));
@@ -29840,7 +30044,7 @@ function applyTagFilterToPane(pane){
   // belongs to its own row, not to the children under it.
   let discVisible=null,discContextOnly=null;
   if(activeDiscussionFilter){
-    const matchIds=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks,nodes);
+    const matchIds=nodesWithOpenItems(activeDiscussionFilter,remarks,nodes);
     discVisible=new Set(matchIds); discContextOnly=new Set();
     nodes.forEach((n,i)=>{
       if(!matchIds.has(n.id))return;
@@ -29951,21 +30155,17 @@ function openItemsMenuItems(){
   const markerRows=m=>nodes.filter(n=>n.marker===m).map(n=>({label:rowText(n), go:()=>revealNodeInDoc(currentDocId,n.id)}));
   addGroup('issue','Issues',markerRows('issue'),'issue');
   addGroup('followup','Follow-ups',markerRows('followup'),'followup');
-  const qs=remarks.filter(r=>r.anchorNodeId!=null&&idx.has(r.anchorNodeId)&&remarkIsOpenQuestion(r)).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
+  const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),'openQa');
-  const rs=remarks.filter(r=>r.anchorNodeId!=null&&idx.has(r.anchorNodeId)&&isOpenRemarkWithText(r)).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
-  addGroup('remark','Open follow-up remarks',rs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),'openRemarks');
   addGroup('parked','Parked',markerRows('parked'),'parked');
   // What counts toward "N of M settled", folded by default so it doesn't lengthen the list: Confirmed and
-  // N/A rows, answered or won't-answer questions, resolved follow-up remarks. Each jumps like above.
+  // N/A rows, answered or won't-answer questions. Each jumps like above.
   const settled=[];
   const settledGroup=(heading,key,entries)=>{ if(!entries.length)return; settled.push({heading:heading+' \u00B7 '+entries.length}); entries.forEach(en=>settled.push({label:en.label, icon:icon(key), onClick:en.go})); };
   settledGroup('Confirmed','confirmed',markerRows('confirmed'));
   settledGroup('N/A','na',markerRows('na'));
-  const doneQs=remarks.filter(r=>r.anchorNodeId!=null&&idx.has(r.anchorNodeId)&&remarkKind(r)==='question'&&htmlHasVisibleText(r.text)&&remarkQuestionState(r)!=='open').sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
+  const doneQs=allSettledQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   settledGroup('Answered or closed questions','question',doneQs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})));
-  const doneRs=remarks.filter(r=>r.anchorNodeId!=null&&idx.has(r.anchorNodeId)&&remarkState(r)==='resolved'&&htmlHasVisibleText(r.text)).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
-  settledGroup('Resolved follow-ups','remark',doneRs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})));
   if(settled.length){
     const n=settled.filter(x=>!x.heading).length;
     if(items.length)items.push({divider:true});
@@ -30016,44 +30216,44 @@ function quickToggleOpenItemsFilter(){
   if(currentOpenItemsFilter()!=='openItems'&&!attentionParts(documentProgress(nodes,qaItems,remarks)).length){ showToast('Nothing open to show'); return; }
   applyOpenItemsFilter('openItems');
 }
-// Toolbar "N open" counts → show only the rows holding open questions (or open remarks). Unfolds
-// the branches hiding them and opens their inline Q&A/remarks, so every counted item is on screen.
-// Whether the discussion filter limits a row's inline questions (or remarks) to open ones: the
-// questions/remarks filter itself, and the combined "open items" filter.
-function discFilterShowsOnlyOpen(kind){
-  const f=activeDiscussionFilter;
-  return f==='openItems'||(kind==='qa'?f==='openQa':f==='openRemarks');
-}
-// Which of a row's discussion items the active filter shows: all of them, or only the open
-// questions / open follow-ups / both.
-function discussionItemPassesFilter(r){
-  const f=activeDiscussionFilter;
-  if(f==='openItems')return discussionItemIsOpen(r);
-  if(f==='openQa')return remarkIsOpenQuestion(r);
-  if(f==='openRemarks')return remarkIsOpen(r);
-  return true;
-}
-// Q&A entries linked to a row live on as question items in `remarks` (owner decision: Q&A and
-// remarks are one discussion object -- see migrateQaToRemarks). Run before anything reads them, so
-// every way a document arrives (open, tab switch, sync, undo, version restore) is covered.
+// Every node has one thread (src/utils/discussionStatus.ts), stored in `remarks`. Q&A linked to a
+// row, older remarks and discussion items are converted to thread entries, and row markers are
+// linked to thread status, before anything reads them -- so every way a document arrives (open,
+// tab switch, sync, undo, version restore) is covered. Cheap when there is nothing to convert.
 function ensureQaMigratedToDiscussion(){
-  if(!Array.isArray(qaItems)||!qaItems.some(q=>q&&q.type!=='section'&&q.sourceNodeId!=null))return false;
-  const res=migrateQaToRemarks(qaItems,Array.isArray(remarks)?remarks:[]);
-  qaItems=res.qaItems; remarks=res.remarks;
-  return true;
+  let changed=false;
+  if(!Array.isArray(remarks))remarks=[];
+  if(Array.isArray(qaItems)&&qaItems.some(q=>q&&q.type!=='section'&&q.sourceNodeId!=null)){
+    const res=migrateQaToRemarks(qaItems,remarks);
+    qaItems=res.qaItems; remarks=res.remarks; changed=true;
+  }
+  const m=migrateDiscussionToThread(remarks);
+  if(m.changed){ remarks=m.entries; changed=true; }
+  if(changed&&Array.isArray(nodes)){
+    linkMarkersToThreads(nodes,remarks).forEach((mk,id)=>{ const n=nodes.find(x=>x.id===id); if(n)n.marker=mk; });
+  }
+  return changed;
+}
+// A node's thread, oldest first.
+function nodeThread(nodeId){ return threadEntries(Array.isArray(remarks)?remarks:[],nodeId); }
+// After a thread's status changed: the row marker follows it (Follow-up ⇄ ⚑, Resolved/Decision ⇄ ✓).
+function syncRowMarkerFromThread(nodeId){
+  const n=nodes.find(x=>x.id===nodeId); if(!n)return;
+  const next=syncedMarker(n.marker,nodeThread(nodeId));
+  if((n.marker||'')!==next){ n.marker=next; n.modifiedAt=Date.now(); }
 }
 function setDiscussionFilter(f){
   activeDiscussionFilter=normalizeDiscussionFilter(f);
   if(activeDiscussionFilter){
-    const ids=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks,nodes);
+    const ids=nodesWithOpenItems(activeDiscussionFilter,remarks,nodes);
     nodes.forEach((n,i)=>{ if(!ids.has(n.id))return; let d=n.depth; for(let j=i-1;j>=0&&d>0;j--){ if(nodes[j].depth<d){ collapsedIds.delete(nodes[j].id); d=nodes[j].depth; } } });
-    if(discFilterShowsOnlyOpen('qa'))nodesWithOpenItems('openQa',qaItems,remarks).forEach(id=>inlineExpandRemarksNodeIds.add(id));
-    if(discFilterShowsOnlyOpen('remarks'))nodesWithOpenItems('openRemarks',qaItems,remarks).forEach(id=>inlineExpandRemarksNodeIds.add(id));
+    // Open the threads holding open questions, so every counted question is on screen.
+    nodesWithOpenItems('openQa',remarks).forEach(id=>inlineExpandRemarksNodeIds.add(id));
   }
   const pane=document.getElementById('editor-pane');
   if(pane)applyTagFilterToPane(pane);
   render();
-  if(activeDiscussionFilter)showToast(({openQa:'Showing open questions',openRemarks:'Showing open follow-ups',openItems:'Showing open items'})[activeDiscussionFilter]);
+  if(activeDiscussionFilter)showToast(({openQa:'Showing open questions',openItems:'Showing open items'})[activeDiscussionFilter]);
   else showToast('Filter cleared');
 }
 function setMarkerFilter(marker){
@@ -32861,7 +33061,7 @@ let dockActiveTab=null;
           <li><span class="cs-combo" data-cs-shortcut="moveUp"></span>/<span class="cs-combo" data-cs-shortcut="moveDown"></span> <span class="cs-desc">move node</span></li>
           <li><span class="help-kbd">←</span>/<span class="help-kbd">→</span> <span class="cs-desc">collapse / expand</span></li>
           <li><span class="help-kbd">Click</span> <span class="cs-desc">select</span> · <span class="help-kbd">Shift</span>+click <span class="cs-desc">range</span> · <span class="help-kbd">Ctrl/Cmd</span>+click <span class="cs-desc">multi</span></li>
-          <li>Right-click → icon row (Rewrite, Note, Add remark, Add question, Add diagram, Add table) + <span class="help-kbd">More</span> for insert above/below, duplicate, move, sort, delete, and everything else</li>
+          <li>Right-click → icon row (Rewrite, Note, Add comment, Add question, Add diagram, Add table) + <span class="help-kbd">More</span> for insert above/below, duplicate, move, sort, delete, and everything else</li>
         </ul>
       </div>
 
@@ -32939,7 +33139,7 @@ let dockActiveTab=null;
           <li><span class="cs-desc"><strong>Note</strong> — per-node, rich text</span> · <span class="cs-combo" data-cs-shortcut="toggleNote"></span></li>
           <li><span class="cs-desc">Floating, draggable, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> to expand full-screen</span></li>
           <li><span class="cs-desc">Notes: B I U S, lists, link, table, image paste, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI rewrite</span></li>
-          <li><span class="cs-desc">Right-click a node → Add remark… / Add question… / Add diagram… — each lives inline under that node (remarks and questions share one Discussion list; right-click an item to change its kind); click the node's dot to show or hide them</span></li>
+          <li><span class="cs-desc">Right-click a node → Add comment… / Add question… / Add diagram… — each lives inline under that node (comments and questions share the node's one thread; Enter adds an entry, the row marker and the thread status move together); click the node's dot to show or hide them</span></li>
           <li><span class="cs-desc">Paste or drop a screenshot on a node (or right-click → Add image…) — thumbnails under the node; click one to enlarge, caption, or resize for the PDF</span></li>
           <li><span class="help-kbd">M</span> <span class="cs-desc">in the image viewer: Mark up — rectangle <span class="help-kbd">R</span>, arrow <span class="help-kbd">A</span>, highlighter <span class="help-kbd">H</span>, text <span class="help-kbd">T</span>, select/move <span class="help-kbd">V</span></span></li>
           <li><span class="cs-desc"><strong>Diagrams</strong> — a real draw.io editor per diagram, linked to a node; embeds as a picture in PDF exports. Right-click → Generate diagram drafts one from a branch</span></li>
