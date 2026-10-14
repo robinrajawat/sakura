@@ -22,11 +22,10 @@ const threeRemarks = [
   { id: 'r3', anchorNodeId: 1, person: 'Third Author', date: '2024-01-03', text: 'The third, most recent remark.', createdAt: 3000 },
 ];
 
-// remarks.push (both addRemark and the capture-popover's own creation path) always appends, so
-// unsorted array order reads oldest-on-top for a node with several remarks -- backwards from
-// "what's the latest on this node," the thing you'd actually want to see first when skimming.
-test.describe('Several remarks on the same node show newest first', () => {
-  test('in the live outline editor\'s own inline remark display', async ({ page }) => {
+// A row's thread reads like a conversation: oldest first, by when each entry was written, whatever
+// order the stored array is in -- in the editor and in Preview/PDF alike.
+test.describe('A thread lists its entries oldest first', () => {
+  test('in the outline editor', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -38,10 +37,10 @@ test.describe('Several remarks on the same node show newest first', () => {
       // @ts-expect-error
       selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
       // @ts-expect-error
-      remarks = threeRemarks;
+      remarks = [threeRemarks[2], threeRemarks[0], threeRemarks[1]];
       // @ts-expect-error
       inlineExpandRemarksNodeIds = new Set([1]);
-      // @ts-expect-error -- more than two remarks fold the earliest; unfold them to check the order
+      // @ts-expect-error
       showAllRemarksNodeIds = new Set([1]);
       // @ts-expect-error
       render();
@@ -50,10 +49,10 @@ test.describe('Several remarks on the same node show newest first', () => {
     const order = await page.evaluate(() =>
       [...document.querySelectorAll('.node-remark-text-inline')].map(el => (el as HTMLElement).dataset.remarkId)
     );
-    expect(order).toEqual(['r3', 'r2', 'r1']);
+    expect(order).toEqual(['r1', 'r2', 'r3']);
   });
 
-  test('in Preview/PDF\'s grouped remark card', async ({ page }) => {
+  test('in Preview/PDF', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -65,7 +64,7 @@ test.describe('Several remarks on the same node show newest first', () => {
       // @ts-expect-error
       selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
       // @ts-expect-error
-      remarks = threeRemarks;
+      remarks = [threeRemarks[2], threeRemarks[0], threeRemarks[1]];
       // @ts-expect-error
       previewActive = true;
       // @ts-expect-error
@@ -76,10 +75,10 @@ test.describe('Several remarks on the same node show newest first', () => {
     const order = await page.evaluate(() =>
       [...document.querySelectorAll('#preview-body .pv-remark-entry .pv-remark-meta b')].map(el => el.textContent)
     );
-    expect(order).toEqual(['Third Author', 'Second Author', 'First Author']);
+    expect(order).toEqual(['First Author', 'Second Author', 'Third Author']);
   });
 
-  test('a remark with no createdAt (loaded from before that field existed) sorts after every timestamped remark', async ({ page }) => {
+  test('an entry with no createdAt (from before that field existed) sorts before every timestamped one', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -92,8 +91,8 @@ test.describe('Several remarks on the same node show newest first', () => {
       selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
       // @ts-expect-error
       remarks = [
-        { id: 'old', anchorNodeId: 1, person: 'No Timestamp', date: '2023-01-01', text: 'Legacy remark.' },
-        { id: 'new', anchorNodeId: 1, person: 'Has Timestamp', date: '2024-01-01', text: 'Recent remark.', createdAt: 1000 },
+        { id: 'new', anchorNodeId: 1, person: 'Has Timestamp', date: '2024-01-01', text: 'Recent comment.', createdAt: 1000 },
+        { id: 'old', anchorNodeId: 1, person: 'No Timestamp', date: '2023-01-01', text: 'Legacy comment.' },
       ];
       // @ts-expect-error
       inlineExpandRemarksNodeIds = new Set([1]);
@@ -104,6 +103,6 @@ test.describe('Several remarks on the same node show newest first', () => {
     const order = await page.evaluate(() =>
       [...document.querySelectorAll('.node-remark-text-inline')].map(el => (el as HTMLElement).dataset.remarkId)
     );
-    expect(order).toEqual(['new', 'old']);
+    expect(order).toEqual(['old', 'new']);
   });
 });

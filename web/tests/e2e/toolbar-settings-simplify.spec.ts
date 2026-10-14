@@ -78,8 +78,8 @@ test.describe('Fixed main toolbar', () => {
     // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
     // Rewrite + Generate outline live in AI ▾.
     await page.locator('#qb-insert').click();
-    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Basics', 'Marker', 'Discussion', 'Visuals']);
-    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Question', 'Remark', 'Table', 'Image', 'Diagram', 'Generate diagram']);
+    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Basics', 'Marker', 'Thread', 'Visuals']);
+    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Question', 'Comment', 'Table', 'Image', 'Diagram', 'Generate diagram']);
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(5);
     await page.locator('#qb-ai').click();
     await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
@@ -248,17 +248,14 @@ test.describe('Settings', () => {
     await expect(page.locator('#settings-section-ai-capabilities[data-cat="ai"] #feat-ai-toggle')).toHaveCount(1);
   });
 
-  test('Insert ▾ items run the same action as the right-click menu (Add remark adds a remark to the selected node)', async ({ page }) => {
+  test('Insert ▾ items run the same action as the right-click menu (Add comment opens the selected node\'s reply box)', async ({ page }) => {
     await open(page);
     await seedDoc(page);
     await page.locator('.node-row[data-id="1"]').click();
-    // @ts-expect-error -- bare global from index.html
-    const before = await page.evaluate(() => remarks.length);
     await page.locator('#qb-insert').click();
     await page.locator('#insert-menu [data-insert-action="remark"]').click();
     await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
-    // @ts-expect-error
-    await expect.poll(() => page.evaluate(() => remarks.length)).toBe(before + 1);
+    await expect(page.locator('.thread-composer-input[data-node-id="1"]')).toBeFocused();
   });
 
   test('Insert ▾ marker strip sets the selected node\'s marker, and clicking the active one clears it', async ({ page }) => {

@@ -25,13 +25,13 @@ describe('deleteImpactText', () => {
   });
   it('lists undoable objects in a fixed order', () => {
     expect(deleteImpactText(counts({ remarks: 2, notes: 1, questions: 1 })).undoable)
-      .toBe('This also deletes 1 note, 1 question and 2 remarks. Undo (Ctrl/Cmd+Z) brings them back.');
+      .toBe('This also deletes 1 note, 1 question and 2 comments. Undo (Ctrl/Cmd+Z) brings them back.');
     expect(deleteImpactText(counts({ images: 1 })).undoable)
       .toBe('This also deletes 1 image. Undo (Ctrl/Cmd+Z) brings it back.');
   });
   it('warns separately about diagrams, which Undo cannot restore', () => {
     const t = deleteImpactText(counts({ diagrams: 1, remarks: 1 }));
-    expect(t.undoable).toBe('This also deletes 1 remark. Undo (Ctrl/Cmd+Z) brings it back.');
+    expect(t.undoable).toBe('This also deletes 1 comment. Undo (Ctrl/Cmd+Z) brings it back.');
     expect(t.permanent).toBe('1 diagram will be permanently deleted. Undo can’t bring it back.');
     expect(deleteImpactText(counts({ diagrams: 2 })).permanent).toBe('2 diagrams will be permanently deleted. Undo can’t bring them back.');
   });
@@ -44,7 +44,7 @@ describe('deleteImpactText', () => {
 describe('deletedObjectsPhrase', () => {
   it('names everything that went, diagrams included', () => {
     expect(deletedObjectsPhrase(emptyDeleteImpact())).toBe('');
-    expect(deletedObjectsPhrase(counts({ notes: 1, remarks: 2, todos: 4 }))).toBe('1 note and 2 remarks');
+    expect(deletedObjectsPhrase(counts({ notes: 1, remarks: 2, todos: 4 }))).toBe('1 note and 2 comments');
     expect(deletedObjectsPhrase(counts({ tables: 1, diagrams: 1, questions: 2 }))).toBe('1 table, 2 questions and 1 diagram');
   });
 });

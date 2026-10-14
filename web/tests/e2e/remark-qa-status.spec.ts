@@ -5,11 +5,11 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// Discussion item status: a follow-up is open until resolved; a question (Q&A linked to a row is
-// migrated into a question item) is open until it has a Yes/No or typed answer or is closed as
-// "won't answer". The toolbar counts open items and
-// filters to them; PDF exports show each item's status (the closing "Open items" summary page
-// was removed at the owner's request).
+// Thread status from older documents: a follow-up remark becomes a Follow-up chip (Resolved once it
+// was resolved) and the row marker follows the thread; Q&A linked to a row becomes a question in
+// its thread, open until answered (Yes / No or a reply marked as the answer) or closed as "won't
+// answer". The toolbar counts open items and filters to them; PDF exports show each entry's chips
+// (the closing "Open items" summary page was removed at the owner's request).
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 const DOC_ID = 'statusdoc';
@@ -63,92 +63,68 @@ async function open(page: Page) {
   return errors;
 }
 
-// The toolbar open-items summary's question/remark parts ("1 question", "2 remarks").
+// The toolbar open-items summary's parts ("1 follow-up", "1 question").
 const sumButtons = (page: Page) => page.evaluate(() =>
-  [...document.querySelectorAll('#marker-summary .oi-part[data-key="question"], #marker-summary .oi-part[data-key="remark"]')].map(b => (b as HTMLElement).textContent));
+  [...document.querySelectorAll('#marker-summary .oi-part')].map(b => (b as HTMLElement).textContent));
 // Opens the summary's list and clicks the filter icon on one group's heading ("Open questions", …).
 async function clickGroupFilter(page: Page, heading: string) {
   await page.locator('#marker-summary .open-items-btn').click();
   await page.locator('.open-items-menu .sb-context-heading', { hasText: heading }).locator('.sb-context-heading-action').click();
 }
+const chips = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-chip`);
 
-test('remarks: resolve folds a remark away, the fold line shows it again, reopen brings it back', async ({ page }) => {
+test('old follow-ups migrate to thread status, and the row marker follows the thread', async ({ page }) => {
   const errors = await open(page);
-  // Seeded remark without resolvedAt counts as open; the resolved one is folded.
-  await expect(page.locator('.node-remark-line:not(.node-remark-resolved-line)')).toHaveCount(1);
-  await expect(page.locator('.node-remark-resolved-toggle')).toContainText('1 resolved follow-up');
-  expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
+  await expect(chips(page, 'rDone')).toHaveText(['Resolved']);
+  await expect(chips(page, 'rOld')).toHaveText(['Follow-up']);
+  // The latest chip is the thread's status, so the row is a Follow-up.
+  expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
+  expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toContain('followUp');
+  expect(await sumButtons(page)).toEqual(['1 follow-up', '1 question']);
 
-  const line = page.locator('.node-remark-line', { hasText: 'Under 20 EUR' });
-  await line.hover();
-  await line.locator('.node-remark-status-btn').click();
-  await expect(page.locator('.node-remark-resolved-toggle')).toContainText('2 resolved follow-ups');
-  await expect(page.locator('.node-remark-text-inline')).toHaveCount(0);
-  expect(await page.evaluate("typeof remarks.find(r => r.id === 'rOld').resolvedAt")).toBe('number');
+  // Resolving from the reply box settles the row.
+  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="resolve"]').click();
+  expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('confirmed');
   expect(await sumButtons(page)).toEqual(['1 question']);
-  // Row dot turns grey with no count once everything is resolved.
-  await expect(page.locator('.node-row[data-id="2"] .node-remark-dot')).toHaveClass(/dot-all-closed/);
-  // A row with only a plain comment never goes grey: there's nothing to close.
-  await expect(page.locator('.node-row[data-id="4"] .node-remark-dot')).not.toHaveClass(/dot-all-closed/);
-
-  await page.locator('.node-remark-resolved-toggle').click();
-  await expect(page.locator('.node-remark-line.is-resolved')).toHaveCount(2);
-  const resolvedLine = page.locator('.node-remark-line.is-resolved', { hasText: 'Under 20 EUR' });
-  await resolvedLine.hover();
-  await resolvedLine.locator('.node-remark-status-btn').click();
-  await expect(page.locator('.node-remark-line:not(.is-resolved):not(.node-remark-resolved-line)')).toHaveCount(1);
-  expect(await page.evaluate("'resolvedAt' in remarks.find(r => r.id === 'rOld')")).toBe(false);
-
-  // One undo restores the resolved state from before the reopen.
-  // @ts-expect-error -- bare global
-  await page.evaluate(() => undo());
-  expect(await page.evaluate("typeof remarks.find(r => r.id === 'rOld').resolvedAt")).toBe('number');
+  // One undo brings the follow-up back.
+  await page.evaluate('undo(); render();');
+  expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
   expect(errors).toEqual([]);
 });
 
-test('a question (formerly Q&A): status pill tracks the answer live, Yes/No answers it, won\'t answer closes and reopens', async ({ page }) => {
+test('a question (formerly Q&A): its chip tracks the answer, Yes answers it, won\'t answer closes and reopens', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds = new Set([2, 3, 4, 5]); render();');
-  // Q&A linked to a row became a question item in the row's discussion (id 'r' + the old id).
   expect(await page.evaluate('qaItems.length')).toBe(0);
-  const pill = (id: string) => page.locator(`.node-remark-line:has(#inline-remark-text-${id}) .node-remark-kind-pill`);
-  await expect(pill('rqOpen')).toHaveText('Question · Open');
-  await expect(pill('rqDone')).toHaveText('Answered');
-  await expect(pill('rqWont')).toHaveText('Won’t answer');
+  const q = (id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-chip.is-question`);
+  await expect(q('rqOpen')).toHaveText('Question');
+  await expect(q('rqDone')).toHaveText('Question · Answered');
+  await expect(q('rqWont')).toHaveText('Question · Won’t answer');
+  await expect(page.locator('#inline-remark-text-rqDone-a')).toHaveText('Priya');
 
-  // Typing an answer flips the pill without re-rendering (caret stays in the answer).
-  const answer = page.locator('.node-remark-answer[data-remark-id="rqOpen"]');
-  await answer.click();
-  await page.keyboard.type('Yes');
-  await expect(pill('rqOpen')).toHaveText('Answered');
-  await expect(answer).toBeFocused();
-  expect(await sumButtons(page)).toEqual(['1 remark']);
-  await page.keyboard.press('Control+a');
-  await page.keyboard.press('Backspace');
-  await expect(pill('rqOpen')).toHaveText('Question · Open');
-
-  // One-click Yes answers it; clicking the picked chip clears it again.
-  const ansLine = page.locator('.node-remark-answer-line:has(.node-remark-answer[data-remark-id="rqOpen"])');
-  await ansLine.locator('.node-remark-verdict-btn[data-verdict="yes"]').click();
-  await expect(pill('rqOpen')).toHaveText('Answered');
-  await expect(ansLine.locator('.node-remark-verdict-btn.is-picked')).toHaveText('✓ Yes');
-  expect(await page.evaluate("remarks.find(r => r.id === 'rqOpen').verdict")).toBe('yes');
-  await ansLine.locator('.node-remark-verdict-btn.is-picked').click();
-  await expect(pill('rqOpen')).toHaveText('Question · Open');
+  // Yes from the reply box answers the open question.
+  await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="yes"]').click();
+  await expect(q('rqOpen')).toHaveText('Question · Answered');
+  expect(await sumButtons(page)).toEqual(['1 follow-up']);
+  // "Not the answer" on the reply reopens the question.
+  const ans = page.locator('.thread-entry:has(.thread-chip.is-yes)');
+  await ans.click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Not the answer', { exact: true }).click();
+  await expect(q('rqOpen')).toHaveText('Question');
 
   // Won't answer via right-click, then reopen it.
-  const line = page.locator('.node-remark-line:has(#inline-remark-text-rqOpen)');
+  const line = page.locator('.thread-entry:has(#inline-remark-text-rqOpen)');
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Won’t answer', { exact: true }).click();
-  await expect(pill('rqOpen')).toHaveText('Won’t answer');
+  await expect(q('rqOpen')).toHaveText('Question · Won’t answer');
   expect(await page.evaluate("remarks.find(r => r.id === 'rqOpen').wontAnswer")).toBe(true);
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Reopen question', { exact: true }).click();
-  await expect(pill('rqOpen')).toHaveText('Question · Open');
+  await expect(q('rqOpen')).toHaveText('Question');
   expect(errors).toEqual([]);
 });
 
-test('the open-items list filters to the rows holding open items', async ({ page }) => {
+test('the open-items list filters to the rows holding open questions', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals
@@ -160,16 +136,11 @@ test('the open-items list filters to the rows holding open items', async ({ page
 
   await clickGroupFilter(page, 'Open questions');
   expect(await visibleRows()).toEqual(['1(context)', '3']);
-  // The filter opened the matching row's Q&A, and only open questions show.
+  // The filter opened the matching row's thread.
   await expect(page.locator('#inline-remark-text-rqOpen')).toBeVisible();
-  await expect(page.locator('.node-remark-kind-pill[data-kind="question"]')).toHaveCount(1);
   await expect(page.locator('#tag-filter-bar')).toContainText('Open questions');
 
-  await clickGroupFilter(page, 'Open follow-up remarks');
-  expect(await visibleRows()).toEqual(['1(context)', '2']);
-  await expect(page.locator('.node-remark-resolved-toggle')).toHaveCount(0);
-
-  await clickGroupFilter(page, 'Open follow-up remarks');
+  await clickGroupFilter(page, 'Open questions');
   expect((await visibleRows()).length).toBe(5);
   await expect(page.locator('#tag-filter-bar')).toBeHidden();
   expect(errors).toEqual([]);
@@ -186,79 +157,62 @@ async function exportPdf(page: Page) {
     const sec = document.getElementById('pv-open-items-section');
     return {
       pills: [...document.querySelectorAll('#preview-doc .pv-status-pill')].map(p => p.textContent),
-      section: sec ? {
-        sub: sec.querySelector('.pv-open-items-sub')?.textContent,
-        nodes: [...sec.querySelectorAll('.pv-open-items-node')].map(e => e.textContent),
-        rows: [...sec.querySelectorAll('.pv-open-items-row')].map(e => (e.textContent || '').trim()),
-      } : null,
+      section: !!sec,
       tocHasOpenItems: !!document.querySelector('#preview-toc a[href="#pv-open-items-section"]'),
     };
   });
 }
 
-test('PDF shows each item\'s status, and no Open items summary page', async ({ page }) => {
+test('PDF shows each entry\'s chips, and no Open items summary page', async ({ page }) => {
   const errors = await open(page);
   const r = await exportPdf(page);
-  expect(r.pills).toEqual(expect.arrayContaining(['Question · Open', 'Follow-up', 'Resolved', 'Answered', 'Won’t answer']));
-  // Plain comments carry no status pill.
+  expect(r.pills).toEqual(expect.arrayContaining(['Question · Open', 'Follow-up', 'Resolved', 'Question · Answered', 'Question · Won’t answer']));
+  // Plain comments carry no chip.
   expect(r.pills.filter((p: string | null) => p === 'Follow-up' || p === 'Resolved')).toHaveLength(2);
   // Owner decision: the closing "Open items" summary page was removed.
-  expect(r.section).toBeNull();
+  expect(r.section).toBe(false);
   expect(r.tocHasOpenItems).toBe(false);
   expect(errors).toEqual([]);
 });
 
-test('a plain comment has no status until it is marked as a follow-up (right-click)', async ({ page }) => {
+test('a status set from an entry\'s menu moves the row marker', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds.add(4); render();');
-  const line = page.locator('.node-remark-line', { hasText: 'Just a comment.' });
-  await line.hover();
-  await expect(line.locator('.node-remark-status-btn')).toHaveCount(0);
-  await expect(line.locator('.node-remark-followup-pill')).toHaveCount(0);
-  expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
-
+  const line = page.locator('.thread-entry', { hasText: 'Just a comment.' });
+  await expect(line.locator('.thread-chip')).toHaveCount(0);
   await line.click({ button: 'right' });
-  await expect(page.locator('.sb-context-menu .sb-context-heading', { hasText: 'Kind' })).toBeVisible();
   await page.locator('.sb-context-menu').getByText('Follow-up', { exact: true }).click();
-  const flagged = page.locator('.node-remark-line', { hasText: 'Just a comment.' });
-  await expect(flagged.locator('.node-remark-followup-pill')).toHaveText('Follow-up');
-  expect(await sumButtons(page)).toEqual(['1 question', '2 remarks']);
+  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-chip.is-followup')).toHaveText('Follow-up');
+  expect(await page.evaluate('nodes.find(n => n.id === 4).marker')).toBe('followup');
+  expect(await sumButtons(page)).toEqual(['2 follow-ups', '1 question']);
 
-  await flagged.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Comment', { exact: true }).click();
-  await expect(page.locator('.node-remark-line', { hasText: 'Just a comment.' }).locator('.node-remark-followup-pill')).toHaveCount(0);
-  expect(await page.evaluate("'followUp' in remarks.find(r => r.id === 'rPlain')")).toBe(false);
-  expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
+  await page.locator('.thread-entry', { hasText: 'Just a comment.' }).click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Follow-up', { exact: true }).click();
+  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-chip')).toHaveCount(0);
+  expect(await page.evaluate("nodes.find(n => n.id === 4).marker || ''")).toBe('');
   expect(errors).toEqual([]);
 });
 
-test('more than two discussion items under a row: the latest two and every open one show, the rest fold', async ({ page }) => {
+test('a long thread shows its latest three entries; the rest fold, and the PDF prints all', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate(`
     remarks.push(
       { id: 'c1', anchorNodeId: 4, person: 'A', date: '2026-10-01', text: 'Oldest comment', createdAt: 10 },
       { id: 'c2', anchorNodeId: 4, person: 'B', date: '2026-10-02', text: 'Older comment', createdAt: 11 },
-      { id: 'c3', anchorNodeId: 4, person: 'C', date: '2026-10-03', text: 'Newest comment', createdAt: 12 },
-      { id: 'c4', anchorNodeId: 4, person: 'D', date: '2026-10-04', text: 'Old follow-up', createdAt: 1, followUp: true }
-    );
-    qaItems.push(
-      { id: 'qa2', question: 'Second answered?', answer: 'Yes', sourceNodeId: 4, createdAt: 5 },
-      { id: 'qa3', question: 'Still open?', answer: '', sourceNodeId: 4, createdAt: 6 }
+      { id: 'c3', anchorNodeId: 4, person: 'C', date: '2026-10-03', text: 'Newest comment', createdAt: 12 }
     );
     inlineExpandRemarksNodeIds.add(4); render();
   `);
-  const itemIds = () => page.evaluate(() => [...document.querySelectorAll('.node-row[data-id="4"] ~ .node-remark-line .node-remark-text-inline')]
-    .map(e => (e as HTMLElement).dataset.remarkId).filter(id => !['rOld', 'rDone', 'rqOpen', 'rqWont'].includes(id!)));
-  // Row 4 now holds eight items (comments, a follow-up and questions, newest first): the two
-  // newest show, plus every open item (the open question, the open follow-up); the rest fold.
-  expect(await itemIds()).toEqual(['c3', 'c2', 'rqa3', 'c4']);
-  const more = page.locator('.node-inline-more-toggle', { hasText: 'earlier item' });
-  await expect(more).toHaveText(/4 earlier items/);
+  const itemIds = () => page.evaluate(() => [...document.querySelectorAll('.node-row[data-id="4"] ~ .thread-entry')]
+    .filter(e => e.querySelector('.node-remark-text-inline'))
+    .map(e => (e as HTMLElement).dataset.remarkId).filter(id => ['rPlain', 'rqDone', 'rqDone-a', 'c1', 'c2', 'c3'].includes(id!)));
+  // Oldest first: rPlain (2), the old Q&A (2) and its answer (3), then c1..c3.
+  expect(await itemIds()).toEqual(['c1', 'c2', 'c3']);
+  const more = page.locator('.node-remark-resolved-toggle', { hasText: 'earlier entr' });
+  await expect(more).toHaveText(/3 earlier entries/);
   await more.click();
-  expect(await itemIds()).toEqual(['c3', 'c2', 'c1', 'rqa3', 'rqa2', 'rPlain', 'rqDone', 'c4']);
-  await expect(page.locator('.node-inline-more-toggle', { hasText: 'Hide earlier items' })).toBeVisible();
+  expect(await itemIds()).toEqual(['rPlain', 'rqDone', 'rqDone-a', 'c1', 'c2', 'c3']);
 
-  // The PDF prints every one of them.
   const printed = await page.evaluate(async () => {
     const w = window as any;
     w.__printed = false; w.print = () => { w.__printed = true; };
@@ -266,7 +220,7 @@ test('more than two discussion items under a row: the latest two and every open 
     const t0 = Date.now();
     while (!w.__printed && Date.now() - t0 < 10000) await new Promise((res) => setTimeout(res, 50));
     const txt = document.getElementById('preview-doc')!.textContent || '';
-    return ['Oldest comment', 'Older comment', 'Newest comment', 'Old follow-up', 'Just a comment.', 'Second answered?', 'Still open?', 'Who owns tier-2 tickets?'].filter(t => !txt.includes(t));
+    return ['Oldest comment', 'Older comment', 'Newest comment', 'Just a comment.', 'Who owns tier-2 tickets?', 'Priya'].filter(t => !txt.includes(t));
   });
   expect(printed).toEqual([]);
   expect(errors).toEqual([]);

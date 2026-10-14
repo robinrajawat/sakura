@@ -152,6 +152,20 @@ site root on every push to `main` — that's the only thing it publishes.
 *(Update this section at the end of every session. If it looks stale or
 contradicts the docs above, trust the docs.)*
 
+**2026-10-14: row thread redesign (draft PR from the "Review inline object gaps" thread).** Robin
+found #534's Discussion kinds still overlapping with markers, so a node's Q&A/remarks are now one
+flat **thread** (owner-agreed design, mockup `inline-objects/thread-final-mockup.png`): entries are
+Comment or Question, each with one author + time; answers are replies with Yes/No (`verdict`,
+`answerTo`); status chips Follow-up/Resolved/Decision sit on entries, and the latest chip *is* the
+row marker (issue ⇄ issue, followup ⇄ followup, resolved/decision ⇄ confirmed; parked/na row-only; `setNodeMarker` and
+`syncRowMarkerFromThread` keep them in step). Entries still live in `remarks`; old
+`kind`/`followUp`/`resolvedAt` items and linked Q&A migrate on open
+(`ensureQaMigratedToDiscussion` → `migrateDiscussionToThread`, `linkMarkersToThreads` in
+`src/utils/discussionStatus.ts`). The reply box (`renderThreadComposer`) is the only way to add an
+entry; drafts survive renders. Robin then chose to keep Issue as its own thread status (not merged
+into Follow-up); marking a row Issue opens its reply box. He also asked whether to drop markers
+entirely — recommended keeping them as linked shortcuts.
+
 **2026-10-12: post-cutdown polish session — #479–#494, all merged. Nothing open, nothing parked in
 git.** The cutdown below is finished (all 9 items merged); this session was owner-driven UI polish
 on top of it, one small PR at a time. What changed, by PR:

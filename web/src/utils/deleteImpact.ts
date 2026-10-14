@@ -59,7 +59,7 @@ export function deleteImpactText(c: DeleteImpactCounts): DeleteImpactText {
   if (c.tables) parts.push(countPhrase(c.tables, 'table'));
   if (c.images) parts.push(countPhrase(c.images, 'image'));
   if (c.questions) parts.push(countPhrase(c.questions, 'question'));
-  if (c.remarks) parts.push(countPhrase(c.remarks, 'remark'));
+  if (c.remarks) parts.push(countPhrase(c.remarks, 'comment'));
   const undoable = parts.length
     ? 'This also deletes ' + joinWithAnd(parts) + '. Undo (Ctrl/Cmd+Z) brings ' + (parts.length === 1 && inlineObjectTotal(c) - c.diagrams === 1 ? 'it' : 'them') + ' back.'
     : '';
@@ -79,7 +79,7 @@ export function deletedObjectsPhrase(c: DeleteImpactCounts): string {
   if (c.tables) parts.push(countPhrase(c.tables, 'table'));
   if (c.images) parts.push(countPhrase(c.images, 'image'));
   if (c.questions) parts.push(countPhrase(c.questions, 'question'));
-  if (c.remarks) parts.push(countPhrase(c.remarks, 'remark'));
+  if (c.remarks) parts.push(countPhrase(c.remarks, 'comment'));
   if (c.diagrams) parts.push(countPhrase(c.diagrams, 'diagram'));
   return joinWithAnd(parts);
 }

@@ -114,7 +114,7 @@ test.describe('Pad container removal', () => {
     expect(errors).toEqual([]);
   });
 
-  test('right-click Add question / Add remark create inline items under the node, with no "open in panel" icon', async ({ page }) => {
+  test('right-click Add question / Add comment open the row\'s thread, with no "open in panel" icon', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -124,24 +124,31 @@ test.describe('Pad container removal', () => {
       // @ts-expect-error
       await runQuickAction('qa', 2);
     });
-    // The new question has the caret; a blank one is discarded when focus moves on, like a remark.
+    // The reply box has the caret, set to ask; Enter adds the question.
     await page.keyboard.type('Who signs off?');
+    await page.keyboard.press('Enter');
     await page.evaluate(async () => {
       // @ts-expect-error
       await runQuickAction('remark', 3);
     });
-    // A question is a discussion item: same line as a remark, with a Question pill.
-    await expect(page.locator('.node-remark-kind-pill[data-kind="question"]')).toHaveCount(1);
-    await expect(page.locator('.node-remark-line:not(.node-remark-answer-line)')).toHaveCount(2);
+    // A draft left in a reply box is kept when moving to another row.
+    await page.keyboard.type('Draft note');
+    await page.evaluate(async () => {
+      // @ts-expect-error
+      await runQuickAction('remark', 2);
+    });
+    await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toHaveText('Draft note');
+    await expect(page.locator('.thread-chip.is-question')).toHaveCount(1);
+    await expect(page.locator('.thread-entry')).toHaveCount(1);
     await expect(page.locator('.node-remark-line .node-inline-open-panel-btn')).toHaveCount(0);
 
     const linked = await page.evaluate(() => ({
       // @ts-expect-error
-      qa: remarks.filter((r: { kind?: string }) => r.kind === 'question').map((r: { anchorNodeId: number }) => r.anchorNodeId),
+      qa: remarks.filter((r: { type?: string }) => r.type === 'question').map((r: { anchorNodeId: number }) => r.anchorNodeId),
       // @ts-expect-error
-      remarks: remarks.filter((r: { kind?: string }) => r.kind !== 'question').map((r: { anchorNodeId: number }) => r.anchorNodeId)
+      comments: remarks.filter((r: { type?: string }) => r.type !== 'question').map((r: { anchorNodeId: number }) => r.anchorNodeId)
     }));
-    expect(linked).toEqual({ qa: [2], remarks: [3] });
+    expect(linked).toEqual({ qa: [2], comments: [] });
     expect(errors).toEqual([]);
   });
 

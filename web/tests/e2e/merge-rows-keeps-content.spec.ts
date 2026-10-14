@@ -64,11 +64,11 @@ function readState(page: import('@playwright/test').Page) {
   return page.evaluate(() => ({
     // @ts-expect-error -- bare globals
     nodes: nodes.map((n) => ({ id: n.id, text: n.text, note: n.note, noteTitle: n.noteTitle, tables: n.tables.length, tags: n.tags })),
-    // Q&A linked to a row is a question item in its discussion (migrated on render).
+    // Q&A linked to a row is a question in its thread (migrated on render).
     // @ts-expect-error
-    qa: remarks.filter((r) => r.kind === 'question').map((r) => r.anchorNodeId),
+    qa: remarks.filter((r) => r.type === 'question').map((r) => r.anchorNodeId),
     // @ts-expect-error
-    remarks: remarks.filter((r) => r.kind !== 'question').map((r) => r.anchorNodeId),
+    remarks: remarks.filter((r) => r.type !== 'question').map((r) => r.anchorNodeId),
     // @ts-expect-error
     diagrams: diagrams.map((d) => d.anchorNodeId),
     todoOnSurvivor: (window as unknown as { sakuraTodoRefsForNode: (d: string, n: number) => unknown[] }).sakuraTodoRefsForNode('mergedoc', 1).length,
