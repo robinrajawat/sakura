@@ -1599,11 +1599,11 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .pv-table-card-change.down{color:var(--fc-red)}
 .pv-table-chart-title{flex:1 1 100%;font:600 13px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
 .pv-table-card{display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px 16px;border-radius:10px;background:var(--canvas-bg);border:1px solid var(--border)}
-.pv-table-card-label{display:flex;align-items:center;gap:7px;min-width:0;font:500 12.5px 'Inter',sans-serif;color:var(--muted)}
+.pv-table-card-label{display:flex;align-items:flex-start;gap:7px;min-width:0;font:500 12.5px/16px 'Inter',sans-serif;color:var(--muted)}
 .pv-table-card-label-text{min-width:0;overflow-wrap:break-word}
-.pv-table-card-swatch{flex:0 0 auto;width:8px;height:8px;border-radius:2px;background:var(--card-color);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.pv-table-card-icon{display:inline-flex;flex:0 0 auto;color:var(--card-color)}
-.pv-table-card-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.pv-table-card-swatch{flex:0 0 auto;width:8px;height:8px;margin-top:4px;border-radius:2px;background:var(--card-color);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-card-icon{display:inline-flex;align-items:center;flex:0 0 auto;height:16px;color:var(--card-color)}
+.pv-table-card-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:auto}
 .pv-table-card-value{min-width:0;font:600 26px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg);line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .pv-table-cards-total{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-top:12px;padding:12px 16px;border-radius:10px;background:color-mix(in srgb,var(--accent) 8%,var(--canvas-bg));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-table-cards-total-label{display:inline-flex;align-items:center;gap:6px;font:600 12.5px 'Inter',sans-serif;color:var(--accent)}
@@ -7833,8 +7833,8 @@ function buildTableEditItems(table,cell,commit){
 // above (buildTableEditItems, which needs a `cell` for its own row/column items but not for these)
 // and the read-only display-mode menu (buildNodeTableObject) -- letting someone feature a table as
 // a chart or Cards without first having to enter edit mode at all.
-// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, Status board,
-// Pros & cons, then
+// The table's display: one "Show as ›" submenu (Table, Chips, Inline, Cards, Progress bars, Status
+// board, Pros & cons under a "Layout" heading, then
 // Vertical / Horizontal under a "Timeline" heading and the chart shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
 // (a chart or Cards), size (a chart). Anything that doesn't apply is listed but disabled, with the
 // reason on hover, so the menu never changes shape.
@@ -7880,6 +7880,7 @@ function buildChartFeatureItems(table,commit){
   const tlOk=tableTimelineEligible(table), tlRows=timelineRowCount(table);
   const TL_REASON='A timeline needs dates in the first column (e.g. 2026-10-14 or Oct 14), then the event, and optionally a detail.';
   const showAs=[
+    {heading:'Layout'},
     opt('table','Table',true),
     opt('chips','Chips',tableChipsEligible(table),'Chips need a two-column table: a short code and its description.'),
     opt('inline','Inline',tableChipsEligible(table),'Inline needs a two-column table: a short code and its description.'),
@@ -8760,7 +8761,7 @@ function renderCardsHtml(table){
     const iconKey=picks[d.label];
     const mark=iconKey&&CARD_ICONS[iconKey]?`<span class="pv-table-card-icon">${cardIconSvg(iconKey,15)}</span>`:'<span class="pv-table-card-swatch"></span>';
     return `<div class="pv-table-card" data-card-label="${esc(d.label)}" style="--card-color:${color}">`
-      +`<div class="pv-table-card-label">${mark}<span class="pv-table-card-label-text">${esc(d.label)}</span></div>`
+      +`<div class="pv-table-card-label">${mark}<span class="pv-table-card-label-text">${esc(d.label).replace(/\//g,'/<wbr>')}</span></div>`
       +`<div class="pv-table-card-main"><div class="pv-table-card-value">${esc(d.value)}</div>${cardChangeHtml(d.change)}</div>`
       +`</div>`;
   }).join('');
@@ -28715,7 +28716,9 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview .pv-table-cards-grid { gap:8px !important; }
       body.printing-preview .pv-table-card { padding:10px 12px !important; gap:4px !important; border-radius:8px !important; background:#fff !important; }
       body.printing-preview .pv-table-card-value { font-size:20px !important; }
-      body.printing-preview .pv-table-card-label { font-size:11px !important; }
+      body.printing-preview .pv-table-card-label { font-size:11px !important; line-height:14px !important; }
+      body.printing-preview .pv-table-card-icon { height:14px !important; }
+      body.printing-preview .pv-table-card-swatch { margin-top:3px !important; }
       body.printing-preview .pv-table-card-change { font-size:10px !important; padding:1px 6px !important; }
       body.printing-preview .pv-table-cards-total { margin-top:8px !important; padding:8px 12px !important; border-radius:8px !important; }
       body.printing-preview .pv-table-cards-total-value { font-size:20px !important; }
