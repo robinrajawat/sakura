@@ -1384,6 +1384,11 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .sb-context-tiles{display:grid;grid-template-columns:repeat(6,30px);gap:2px;padding:0 4px 2px}
 .sb-context-item.sb-context-tile{width:30px;height:30px;padding:0;justify-content:center;gap:0}
 .sb-context-item.sb-context-tile.current{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+/* Labelled choices in a 2-column grid (a thread entry's status); the current one is tinted in its own color. */
+.sb-context-choices{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:0 4px 2px}
+.sb-context-item.sb-context-choice{gap:6px;padding:5px 8px}
+.sb-context-choice svg{flex:0 0 auto;color:var(--choice-color,currentColor)}
+.sb-context-item.sb-context-choice.current{background:color-mix(in srgb,var(--choice-color,var(--accent)) 16%,transparent);color:var(--choice-color,var(--accent))}
 .sb-context-chevron{flex:0 0 auto;margin-left:10px;opacity:.55}
 .sb-context-item.sb-context-submenu-open{background:var(--hover)}
 .sb-context-submenu{z-index:171;max-height:min(70vh,520px);overflow-y:auto}
@@ -1830,10 +1835,11 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-btn[data-act="yes"]:hover{color:var(--fc-green)}
 .thread-btn[data-act="no"]:hover{color:var(--fc-red)}
 /* "+ Reply" at the end of a thread: only while the thread is hovered. */
-.node-remark-line.thread-reply-link{padding-top:1px;padding-bottom:3px;color:var(--hint);font-size:12.5px;cursor:pointer;opacity:0;transition:opacity .12s}
-.node-remark-line.thread-reply-link.thread-hover,.node-remark-line.thread-reply-link:focus-within{opacity:1}
-.thread-reply-link span{margin-left:22px}
-.thread-reply-link:hover span{color:var(--fg)}
+.node-remark-line.thread-reply-link{padding-top:1px;padding-bottom:3px;color:var(--hint);font-size:12.5px;cursor:pointer}
+/* Only the label fades: the line also carries the outline's depth guides, which must stay drawn. */
+.thread-reply-label{margin-left:22px;opacity:0;transition:opacity .12s}
+.thread-reply-link.thread-hover .thread-reply-label,.thread-reply-link:focus-within .thread-reply-label{opacity:1}
+.thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 .thread-verdict{font:600 12px 'Inter',sans-serif}
 .thread-verdict.is-yes{color:var(--fc-green)}
 .thread-verdict.is-no{color:var(--fc-red)}
@@ -3999,7 +4005,7 @@ body.printing-generic #gpe-overlay{
 <li>The reply line writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong> carries a Question chip until it's answered. Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Status</strong>: right-click an entry → Issue, Follow-up, Resolved or Decision marks it (shown as quiet text, e.g. “· resolved”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown: <strong>Issue</strong> ⇄ ⚠ Issue, <strong>Follow-up</strong> ⇄ ⚑ Follow-up, <strong>Resolved</strong> or <strong>Decision</strong> ⇄ ✓ Confirmed. Clicking a marker on a row sets it on the thread's latest entry (Issue also opens the reply line, to say what's wrong); clearing it takes it back. The reply line has <strong>Follow-up</strong>, and <strong>Resolve</strong> while a thread is an issue or a follow-up — each adds an entry by the current author. Parked and N/A stay row-only</li>
-<li>Right-click an entry for Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>Right-click an entry for <strong>Reply</strong>, Make it a question / comment, its status (the row-marker icons, current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>One person dot appears on a node with a thread — click it to show or hide the thread inline. It shows how many questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the rest fold behind "N earlier entries" — click to show them</li>
 <li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the avatars joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
@@ -25590,6 +25596,19 @@ function _sbBuildItemButton(it, container, list){
     }
     return null;
   }
+  if(it.choices){
+    const grid=document.createElement('div'); grid.className='sb-context-choices'; container.appendChild(grid);
+    it.choices.forEach(t=>{
+      const b=document.createElement('button'); b.type='button'; b.className='sb-context-item sb-context-choice'+(t.current?' current':'');
+      if(t.color)b.style.setProperty('--choice-color',t.color);
+      b.innerHTML=(t.icon||'')+'<span class="sb-context-label"></span>'; b.querySelector('.sb-context-label').textContent=t.label;
+      if(t.tip)b.dataset.tip=t.tip; b.setAttribute('aria-pressed',String(!!t.current));
+      b.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await t.onClick(); });
+      b.addEventListener('mouseenter',()=>{ _sbContextActiveIndex=_sbContextButtons.indexOf(b); _sbContextUpdateHighlight(); });
+      grid.appendChild(b); list.push(b);
+    });
+    return null;
+  }
   if(it.tiles){
     const grid=document.createElement('div'); grid.className='sb-context-tiles'; container.appendChild(grid);
     it.tiles.forEach(t=>{
@@ -29567,23 +29586,29 @@ function renderThreadEntry(node,r,thread,place,commit){
 }
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const change=fn=>()=>{ pushUndo(); fn(); commit(); };
   const items=[];
+  // Reply first: it's what you most often want from an entry.
+  items.push({label:'Reply', icon:ico('<polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>'), onClick:()=>openThreadComposer(node.id,false)});
   if(r.answerTo){
     items.push({label:'Answer Yes', icon:r.verdict==='yes'?CHECK:'', onClick:change(()=>{ if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; })});
     items.push({label:'Answer No', icon:r.verdict==='no'?CHECK:'', onClick:change(()=>{ if(r.verdict==='no')delete r.verdict; else r.verdict='no'; })});
     items.push({label:'Not the answer', onClick:change(()=>{ delete r.answerTo; delete r.verdict; })});
   } else {
-    items.push({label:'Question', icon:isQuestion(r)?CHECK:'', onClick:change(()=>{ if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); } else r.type='question'; })});
     const q=isQuestion(r)?null:questionToAnswer(thread,r);
-    if(q)items.push({label:'Mark as the answer', onClick:change(()=>{ r.answerTo=q.id; })});
+    if(q)items.push({label:'Mark as the answer', icon:CHECK, onClick:change(()=>{ r.answerTo=q.id; })});
     if(isQuestion(r)){ const st=questionState(r,thread); if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won’t answer', onClick:change(()=>{ if(st==='wont')delete r.wontAnswer; else r.wontAnswer=true; })}); }
+    items.push({label:isQuestion(r)?'Make it a comment':'Make it a question', icon:isQuestion(r)?markIconSvg('comment'):qaDotIconSvg(14), onClick:change(()=>{ if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); } else r.type='question'; })});
   }
+  // Status: the row-marker icons and colors, labelled, current one tinted; clicking it again clears it.
   items.push({heading:'Status'});
-  ['issue','followup','resolved','decision'].forEach(st=>items.push({label:THREAD_STATUS_LABEL[st], icon:r.status===st?CHECK:'', onClick:change(()=>{ if(r.status===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}));
+  const STATUS_ICON={issue:markIconSvg('issue'),followup:markIconSvg('followup'),resolved:markIconSvg('confirmed'),decision:ico('<path d="M12 13v8"/><path d="M12 3v3"/><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.15-.37l3.43-2.31a1 1 0 0 0 0-1.64l-3.43-2.31A2 2 0 0 0 17 6z"/>')};
+  const STATUS_COLOR={issue:'var(--fc-red)',followup:'var(--fc-orange)',resolved:'var(--fc-green)',decision:'var(--fc-green)'};
+  items.push({choices:['issue','followup','resolved','decision'].map(st=>({label:THREAD_STATUS_LABEL[st], icon:STATUS_ICON[st], color:STATUS_COLOR[st], current:r.status===st, tip:r.status===st?'Clear '+THREAD_STATUS_LABEL[st]:'', onClick:change(()=>{ if(r.status===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}))});
   items.push({divider:true});
-  if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
-  items.push({label:'Delete', danger:true, onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
+  if(featureAiEnabled)items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
+  items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
   return items;
 }
 function renderThreadComposer(node,thread,place,commit){
@@ -29591,7 +29616,7 @@ function renderThreadComposer(node,thread,place,commit){
   // from the menu, or while it holds a draft.
   if(_threadComposerNodeId!==node.id&&!_threadDrafts.has(node.id)){
     const more=document.createElement('div'); more.className='node-remark-line thread-reply-link';
-    more.innerHTML='<span>+ Reply</span>'; more.dataset.tip='Add to this thread';
+    more.innerHTML='<span class="thread-reply-label">+ Reply</span>'; more.dataset.tip='Add to this thread';
     more.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     more.addEventListener('click',e=>{ e.stopPropagation(); openThreadComposer(node.id,false); });
     place(more);
