@@ -524,7 +524,8 @@ column after the value written as changes (same rule as before: every filled cel
 has a sign or arrow) as the pill; every other column is a detail line (`CardRow.details`). One detail
 column shows as a plain note; with two, each line starts with its header. A text third column (Owner,
 Note) no longer refuses Cards. Grids with details get `.has-details`: each card spans three subgrid rows
-(label · value · details) so values and notes line up along a row. Covered by
+(label · value · details) so values and notes line up along a row. Owner then raised the row cap
+from 8 to 12 (`CARDS_MAX_ROWS`; their 9-row effort table). Covered by
 `tests/e2e/cards-detail-lines.spec.ts` + `tests/unit/tableDisplay.test.ts`.
 
 **Open-items shortcut (owner request, 2026-10-14).** Right-click or Shift+click on the toolbar

@@ -6154,8 +6154,8 @@ function getTableChartType(table){
 // unexplained.
 function tableChartTypeAvailability(table){
   const base=tableChartability(table);
-  // Cards have their own rules (src/utils/tableDisplay.ts): 2-3 columns, 2-8 rows, numbers in the
-  // value column, and a real change column if there's a third.
+  // Cards have their own rules (src/utils/tableDisplay.ts): 2-5 columns, 2-12 rows, numbers in the
+  // value column; a later column is a change pill or a detail line.
   const cardsAvail=cardsAvailability(tableTextGrid(table));
   if(!base.ok){
     const off={ok:false,reason:base.reason};
@@ -7011,7 +7011,7 @@ function columnPeople(values) {
 /** Fewer than this many rows is not worth a grid of cards. */
 const CARDS_MIN_ROWS = 2;
 /** More than this many cards reads worse than the table itself. */
-const CARDS_MAX_ROWS = 8;
+const CARDS_MAX_ROWS = 12;
 /** Cell text that means "no value": n/a, a dash, TBD, a question mark. */
 function cdIsPlaceholder(raw) {
     return isBlankCellText(raw) || /^(n\/?a|tbd|tbc|[-–—?])$/i.test(String(raw ?? '').trim());
@@ -7063,8 +7063,8 @@ function cardsChangeColumn(grid) {
 }
 /**
  * Whether a table can show as Cards. A card is label · value, then an optional change pill and
- * detail lines, so the table needs: 2–5 columns; 2–8 rows (a typed total row is not counted toward
- * the 8); and numbers in the second column (at least half its filled cells, see cardValueNumber).
+ * detail lines, so the table needs: 2–5 columns; 2–12 rows (a typed total row is not counted toward
+ * the 12); and numbers in the second column (at least half its filled cells, see cardValueNumber).
  * Columns after the value need nothing: one written as changes (cardsChangeColumn) becomes the pill,
  * any other (a note, an owner, a quantity) a detail line under the value.
  */

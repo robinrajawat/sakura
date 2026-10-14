@@ -7,14 +7,14 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Cards redesign: label first (colour square, or the picked icon in its place), value with its
 // change pill beside it; and the tighter Show as › Cards rules from src/utils/tableDisplay.ts
-// (2–5 columns, 2–8 rows, numbers in the value column; a signed/arrowed column is the change, any
+// (2–5 columns, 2–12 rows, numbers in the value column; a signed/arrowed column is the change, any
 // other column a detail line). A Cards
 // table edited out of shape shows as a plain table.
 
 const T = (attrs: string, rows: string[][]) =>
   `<table ${attrs}>` + rows.map((r, i) => '<tr>' + r.map((c) => (i ? `<td>${c}</td>` : `<th>${c}</th>`)).join('') + '</tr>').join('') + '</table>';
 const CARDS = T('data-feature-chart="1" data-chart-type="cards"', [['Metric', 'Value', 'Change'], ['Revenue', '€1.24M', '+12%'], ['Response', '3.2 h', '−0.6 h']]);
-const TOO_MANY = T('data-feature-chart="1" data-chart-type="cards"', [['M', 'V'], ...Array.from({ length: 9 }, (_, i) => ['Row ' + i, String(i + 1)])]);
+const TOO_MANY = T('data-feature-chart="1" data-chart-type="cards"', [['M', 'V'], ...Array.from({ length: 13 }, (_, i) => ['Row ' + i, String(i + 1)])]);
 
 async function openWith(page: import('@playwright/test').Page, tables: string[]) {
   await page.addInitScript(() => {
@@ -82,7 +82,7 @@ test('Show as › Cards is offered only for tables that fit, with the reason oth
   expect(r.oneRow.disabled).toBe(true);
 });
 
-test('a Cards table with more than 8 rows shows as a plain table', async ({ page }) => {
+test('a Cards table with more than 12 rows shows as a plain table', async ({ page }) => {
   const errors = await openWith(page, [TOO_MANY]);
   await expect(page.locator('.pv-table-cards-grid')).toHaveCount(0);
   await expect(page.locator('.node-table-line table')).toHaveCount(1);

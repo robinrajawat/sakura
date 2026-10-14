@@ -43,13 +43,21 @@ describe('cardsAvailability', () => {
     expect(cardsAvailability(grid(['A', 'B', 'C', 'D', 'E', 'F'], ['x', '1', '', '', '', ''], ['y', '2', '', '', '', ''])).ok).toBe(false);
   });
 
-  it('needs 2 to 8 rows, ignoring empty rows', () => {
+  it('accepts a 9-row effort table with a typed total', () => {
+    const effort = grid(['Area', 'Effort'], ['CXP - Frontend/Backend', '15 days'], ['UX/UI', '3 days'], ['Integrations', '–'],
+      ['Solution Architect', '5 days'], ['ERP - O2C - Functional', '10 days'], ['ERP - ABAP', '6 days'], ['EWM - ABAP', '5 days'],
+      ['EWM - Functional', '5 days'], ['nShift', '5 days'], ['Total', '54 days']);
+    expect(cardsAvailability(effort)).toEqual({ ok: true });
+    expect(cardsRows(effort)).toHaveLength(9);
+  });
+
+  it('needs 2 to 12 rows, ignoring empty rows', () => {
     expect(cardsAvailability(grid(['M', 'V'], ['A', '1'], ['', ''])).reason).toContain('at least 2 rows');
     const rows = Array.from({ length: CARDS_MAX_ROWS }, (_, i) => ['R' + i, String(i)]);
     expect(cardsAvailability([['M', 'V'], ...rows]).ok).toBe(true);
     const tooMany = cardsAvailability([['M', 'V'], ...rows, ['Extra', '9']]);
     expect(tooMany.ok).toBe(false);
-    expect(tooMany.reason).toContain('up to 8 rows');
+    expect(tooMany.reason).toContain('up to 12 rows');
   });
 
   it('needs numbers in the second column for at least half its filled cells', () => {
@@ -168,7 +176,7 @@ describe('Cards and the total row', () => {
   const g = [['Area', 'Effort'], ['A', '15 days'], ['B', '3 days'], ['Total', '10 days']];
   it('leaves a typed total out of the cards and of the row limit', () => {
     expect(cardsRows(g).map((c) => c.label)).toEqual(['A', 'B']);
-    const nine = [['M', 'V'], ...Array.from({ length: 8 }, (_, i) => ['R' + i, String(i)]), ['Total', '28']];
+    const nine = [['M', 'V'], ...Array.from({ length: CARDS_MAX_ROWS }, (_, i) => ['R' + i, String(i)]), ['Total', '28']];
     expect(cardsAvailability(nine).ok).toBe(true);
   });
   it('gives the total card: typed as written, or calculated', () => {

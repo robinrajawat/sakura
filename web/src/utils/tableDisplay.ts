@@ -21,7 +21,7 @@ export interface DisplayAvailability {
 /** Fewer than this many rows is not worth a grid of cards. */
 export const CARDS_MIN_ROWS = 2;
 /** More than this many cards reads worse than the table itself. */
-export const CARDS_MAX_ROWS = 8;
+export const CARDS_MAX_ROWS = 12;
 
 /** Cell text that means "no value": n/a, a dash, TBD, a question mark. */
 function cdIsPlaceholder(raw: string): boolean {
@@ -78,8 +78,8 @@ export function cardsChangeColumn(grid: string[][]): number {
 
 /**
  * Whether a table can show as Cards. A card is label · value, then an optional change pill and
- * detail lines, so the table needs: 2–5 columns; 2–8 rows (a typed total row is not counted toward
- * the 8); and numbers in the second column (at least half its filled cells, see cardValueNumber).
+ * detail lines, so the table needs: 2–5 columns; 2–12 rows (a typed total row is not counted toward
+ * the 12); and numbers in the second column (at least half its filled cells, see cardValueNumber).
  * Columns after the value need nothing: one written as changes (cardsChangeColumn) becomes the pill,
  * any other (a note, an owner, a quantity) a detail line under the value.
  */
