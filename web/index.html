@@ -247,7 +247,7 @@ input[type=number]{-moz-appearance:textfield}
 .qa-dropdown,.history-modal-body,#sidebar-scroll,
 #at-suggest,#node-qa-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#account-menu{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+#diagram-anchor-suggest,#account-menu,.sb-context-menu{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 /* --content-font is the single source of truth for "what font is the text I actually write
@@ -903,6 +903,10 @@ body.zen-mode #quick-bar{display:none}
 .oi-sep{color:var(--hint)}
 .open-items-menu{width:340px;max-width:calc(100vw - 16px)}
 .open-items-menu .sb-context-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-context-fold .sb-context-chevron{transition:transform .15s}
+.sb-context-fold[aria-expanded="true"] .sb-context-chevron{transform:rotate(90deg)}
+.sb-context-fold-body{display:flex;flex-direction:column;gap:1px;padding-left:8px}
+@media (prefers-reduced-motion:reduce){.sb-context-fold .sb-context-chevron{transition:none}}
 .oi-menu-icon{display:inline-flex}
 .oi-head{display:flex;flex-direction:column;gap:6px;padding:6px 8px 8px;margin-bottom:2px;border-bottom:1px solid var(--border)}
 .oi-head-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
@@ -910,6 +914,18 @@ body.zen-mode #quick-bar{display:none}
 .oi-head-progress{font:500 11.5px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
 .oi-bar{height:4px;border-radius:999px;background:color-mix(in srgb,var(--fg) 8%,transparent);overflow:hidden}
 .oi-bar span{display:block;height:100%;border-radius:inherit;background:var(--fc-green)}
+.oi-switch{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:2px;padding:6px 2px;border:none;background:none;cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--fg);text-align:left;border-radius:6px}
+.oi-switch:hover .oi-switch-label{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--border)}
+.oi-switch:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.oi-switch-track{position:relative;flex:0 0 auto;width:28px;height:16px;border-radius:999px;background:color-mix(in srgb,var(--fg) 18%,transparent);transition:background .15s}
+.oi-switch-track span{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--bg);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.oi-switch.on .oi-switch-track{background:var(--accent)}
+.oi-switch.on .oi-switch-track span{transform:translateX(12px)}
+@media (prefers-reduced-motion:reduce){.oi-switch-track,.oi-switch-track span{transition:none}}
+.sb-context-heading.has-action{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:2px}
+.sb-context-item.sb-context-heading-action{width:24px;height:22px;padding:0;justify-content:center;gap:0;color:var(--hint);border-radius:5px;flex:0 0 auto}
+.sb-context-item.sb-context-heading-action:hover{color:var(--fg)}
+.sb-context-item.sb-context-heading-action.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .quick-btn{width:34px;height:34px;font-size:16px;border-radius:7px;border-color:transparent;background:transparent;transition:background .12s,color .12s,transform .08s,box-shadow .12s}
 .quick-btn:hover{background:var(--hover);border-color:transparent;transform:translateY(-1px);box-shadow:0 2px 5px rgba(0,0,0,.08)}
 .quick-btn:active{transform:translateY(0) scale(.94);box-shadow:none}
@@ -2441,7 +2457,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #demo-chapters-menu::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
 .anchor-suggest-results::-webkit-scrollbar,#link-pop-node-results::-webkit-scrollbar,#todo-link-popover::-webkit-scrollbar,
-#account-menu::-webkit-scrollbar,#notif-menu::-webkit-scrollbar{width:8px;height:8px}
+#account-menu::-webkit-scrollbar,#notif-menu::-webkit-scrollbar,.sb-context-menu::-webkit-scrollbar{width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
 .app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
@@ -2449,7 +2465,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #demo-chapters-menu::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
 .anchor-suggest-results::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
-#account-menu::-webkit-scrollbar-thumb,#notif-menu::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
+#account-menu::-webkit-scrollbar-thumb,#notif-menu::-webkit-scrollbar-thumb,.sb-context-menu::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
 #doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
 #doc-tab-strip::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
@@ -7056,10 +7072,20 @@ function countOpenItems(qaItems, remarks, nodeIds) {
     return { openQuestions, openRemarks };
 }
 function normalizeDiscussionFilter(v) {
-    return v === 'openQa' || v === 'openRemarks' ? v : null;
+    return v === 'openQa' || v === 'openRemarks' || v === 'openItems' ? v : null;
 }
-/** Ids of the nodes that hold at least one open item of the filter's kind. */
-function nodesWithOpenItems(filter, qaItems, remarks) {
+/**
+ * Ids of the nodes that hold at least one open item of the filter's kind. For openItems that is
+ * open questions, open follow-up remarks, and (from `nodes`) rows marked Issue or Follow-up.
+ */
+function nodesWithOpenItems(filter, qaItems, remarks, nodes = []) {
+    if (filter === 'openItems') {
+        const ids = new Set([...nodesWithOpenItems('openQa', qaItems, remarks), ...nodesWithOpenItems('openRemarks', qaItems, remarks)]);
+        for (const n of nodes || [])
+            if (n.marker === 'issue' || n.marker === 'followup')
+                ids.add(n.id);
+        return ids;
+    }
     const ids = new Set();
     if (filter === 'openQa') {
         for (const q of qaItems || []) {
@@ -19179,9 +19205,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // A remark is a plain comment unless marked as a follow-up (right-click). Comments and open
     // follow-ups show in full; resolved follow-ups fold behind one quiet line (click to unfold), and
     // the "open follow-ups" filter shows only open follow-ups.
-    const openRemarks=nodeRemarks.filter(r=>activeDiscussionFilter==='openRemarks'?remarkIsOpen(r):remarkState(r)!=='resolved');
+    const openRemarks=nodeRemarks.filter(r=>discFilterShowsOnlyOpen('remarks')?remarkIsOpen(r):remarkState(r)!=='resolved');
     const resolvedRemarks=nodeRemarks.filter(r=>remarkState(r)==='resolved');
-    const resolvedShown=showResolvedRemarksNodeIds.has(node.id)&&activeDiscussionFilter!=='openRemarks';
+    const resolvedShown=showResolvedRemarksNodeIds.has(node.id)&&!discFilterShowsOnlyOpen('remarks');
     const remarkGuides=lineEl=>{ if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; lineEl.appendChild(vg) } }); if(hasChildren){ const rDepth2=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0); const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(rDepth2*32+0*editorScale+9)+'px'; lineEl.appendChild(vgOwn) } } };
     const setRemarkResolved=(r,resolved)=>{ pushUndo(); if(resolved)r.resolvedAt=Date.now(); else delete r.resolvedAt; markDirty(); scheduleAutoSave(); render(); };
     const setRemarkFollowUp=(r,on)=>{ pushUndo(); if(on)r.followUp=true; else { delete r.followUp; delete r.resolvedAt; } markDirty(); scheduleAutoSave(); render(); };
@@ -19244,10 +19270,10 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     };
     // More than two shown remarks: the latest two (plus any open follow-up) show; the rest fold
     // behind "N earlier remarks". The PDF always prints every remark.
-    const showAllR=showAllRemarksNodeIds.has(node.id)||activeDiscussionFilter==='openRemarks'||openRemarks.length<=2;
+    const showAllR=showAllRemarksNodeIds.has(node.id)||discFilterShowsOnlyOpen('remarks')||openRemarks.length<=2;
     const visibleRemarks=showAllR?openRemarks:openRemarks.filter((r,i)=>i<2||remarkIsOpen(r));
     visibleRemarks.forEach(renderRemarkLine);
-    if(openRemarks.length>2&&activeDiscussionFilter!=='openRemarks'){
+    if(openRemarks.length>2&&!discFilterShowsOnlyOpen('remarks')){
       const hidden=openRemarks.length-openRemarks.filter((r,i)=>i<2||remarkIsOpen(r)).length;
       if(hidden>0){
         const rDepthF=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
@@ -19256,7 +19282,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         remarkGuides(more); frag.appendChild(more);
       }
     }
-    if(resolvedRemarks.length&&activeDiscussionFilter!=='openRemarks'){
+    if(resolvedRemarks.length&&!discFilterShowsOnlyOpen('remarks')){
       const rDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
       const fLine=document.createElement('div'); fLine.className='node-remark-line node-remark-resolved-line';
       fLine.style.paddingLeft=hideTreeLines?(rDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
@@ -19279,7 +19305,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // two questions under a row, closed ones fold behind "N answered" until clicked. The PDF always
     // prints every question.
     const qaRank={open:0,wont:1,answered:2};
-    const allNodeQa=qaItems.filter(it=>it.sourceNodeId===node.id&&!qaIsSection(it)&&(activeDiscussionFilter!=='openQa'||qaState(it)==='open'))
+    const allNodeQa=qaItems.filter(it=>it.sourceNodeId===node.id&&!qaIsSection(it)&&(!discFilterShowsOnlyOpen('qa')||qaState(it)==='open'))
       .map((it,i)=>({it,i})).sort((a,b)=>(qaRank[qaState(a.it)]-qaRank[qaState(b.it)])||(a.i-b.i)).map(x=>x.it);
     const closedQa=allNodeQa.filter(it=>qaState(it)!=='open');
     const foldQa=allNodeQa.length>2&&closedQa.length>0;
@@ -25098,8 +25124,9 @@ function _sbContextKeyHandler(e){
   else if(e.key==='Escape'){ e.preventDefault(); closeSbContextMenu(); }
 }
 function closeSbContextMenu(e){
-  // A click on a submenu's own parent item opens that submenu instead of closing everything.
-  if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger'))return;
+  // A click on a submenu's own parent item opens that submenu, and a fold row unfolds in place,
+  // instead of closing everything.
+  if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger, .sb-context-fold'))return;
   if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
 // One level of submenu for showSbContextMenu: an item with `submenu:[...items]` renders as a parent
 // row with a chevron and opens a flyout beside it on hover, click, or →. The flyout is a child of
@@ -25109,7 +25136,20 @@ function _sbBuildItemButton(it, container, list){
   if(it.divider){ const d=document.createElement('div'); d.className='sb-context-divider'; container.appendChild(d); return null; }
   // A small section heading, and a compact grid of icon-only tiles (name on hover) — used by the
   // card icon picker so two dozen icons fit in one short submenu.
-  if(it.heading){ const h=document.createElement('div'); h.className='sb-context-heading'; h.textContent=it.heading; container.appendChild(h); return null; }
+  if(it.heading){
+    const h=document.createElement('div'); h.className='sb-context-heading'; h.textContent=it.heading; container.appendChild(h);
+    // Optional small icon button at the heading's right end (e.g. a group's filter toggle); it is
+    // part of the arrow-key order like any item.
+    if(it.action){
+      h.classList.add('has-action');
+      const a=document.createElement('button'); a.type='button'; a.className='sb-context-item sb-context-heading-action'+(it.action.active?' on':'');
+      a.innerHTML=it.action.icon||''; a.dataset.tip=it.action.label; a.setAttribute('aria-label',it.action.label); a.setAttribute('aria-pressed',String(!!it.action.active));
+      a.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await it.action.onClick(); });
+      a.addEventListener('mouseenter',()=>{ _sbContextActiveIndex=list.indexOf(a); _sbContextUpdateHighlight(); });
+      h.appendChild(a); list.push(a);
+    }
+    return null;
+  }
   if(it.tiles){
     const grid=document.createElement('div'); grid.className='sb-context-tiles'; container.appendChild(grid);
     it.tiles.forEach(t=>{
@@ -25119,6 +25159,24 @@ function _sbBuildItemButton(it, container, list){
       grid.appendChild(b); list.push(b);
     });
     return null;
+  }
+  // A row that unfolds its items in place, below it (folded by default) — for a list that is
+  // useful but shouldn't lengthen the menu until asked for. Its items join the arrow-key order.
+  if(it.fold){
+    const t=document.createElement('button'); t.type='button'; t.className='sb-context-item sb-context-fold'; t.setAttribute('aria-expanded','false');
+    t.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+'</span><svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
+    let box=null, kids=[];
+    t.addEventListener('click',e=>{
+      e.stopPropagation();
+      if(box){ box.remove(); box=null; kids.forEach(k=>{ const i=list.indexOf(k); if(i>=0)list.splice(i,1); }); kids=[]; t.setAttribute('aria-expanded','false'); return; }
+      box=document.createElement('div'); box.className='sb-context-fold-body';
+      kids=[]; it.fold.forEach(f=>_sbBuildItemButton(f, box, kids));
+      t.after(box); list.splice(list.indexOf(t)+1,0,...kids); t.setAttribute('aria-expanded','true');
+      box.scrollIntoView({block:'nearest'});
+    });
+    t.addEventListener('mouseenter',()=>{ if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false); _sbContextActiveIndex=list.indexOf(t); _sbContextUpdateHighlight(); });
+    container.appendChild(t); list.push(t);
+    return t;
   }
   const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
   btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+'</span>'+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
@@ -29294,8 +29352,9 @@ function applyTagFilterToPane(pane){
     if(activeDiscussionFilter){
       const btn=document.createElement('button');
       btn.className='tag-filter-chip-btn disc-filter-chip';
-      const label=activeDiscussionFilter==='openQa'?'Open questions':'Open follow-ups';
-      btn.innerHTML='<span>'+(activeDiscussionFilter==='openQa'?qaDotIconSvg(11):REMARK_DOT_SVG)+' '+label+'</span><span class="tfcb-x">×</span>';
+      const label=({openQa:'Open questions',openRemarks:'Open follow-ups',openItems:'Open items'})[activeDiscussionFilter];
+      const icon=activeDiscussionFilter==='openQa'?qaDotIconSvg(11):activeDiscussionFilter==='openRemarks'?REMARK_DOT_SVG:markIconSvg('followup',11);
+      btn.innerHTML='<span>'+icon+' '+label+'</span><span class="tfcb-x">×</span>';
       btn.dataset.tip='Clear filter for '+label.toLowerCase();
       btn.addEventListener('click',()=>setDiscussionFilter(null));
       chips.appendChild(btn);
@@ -29340,7 +29399,7 @@ function applyTagFilterToPane(pane){
   // belongs to its own row, not to the children under it.
   let discVisible=null,discContextOnly=null;
   if(activeDiscussionFilter){
-    const matchIds=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks);
+    const matchIds=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks,nodes);
     discVisible=new Set(matchIds); discContextOnly=new Set();
     nodes.forEach((n,i)=>{
       if(!matchIds.has(n.id))return;
@@ -29393,7 +29452,7 @@ function openItemKindIcon(key){
   if(key==='done')return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   return markIconSvg(key);
 }
-function openItemKindColor(key){ return ({issue:'var(--fc-red)',followup:'var(--fc-orange)',question:'var(--fc-purple)',remark:'var(--fc-purple)',parked:'var(--fc-gray)',done:'var(--fc-green)'})[key]||'var(--fc-gray)'; }
+function openItemKindColor(key){ return ({issue:'var(--fc-red)',followup:'var(--fc-orange)',question:'var(--fc-purple)',remark:'var(--fc-purple)',parked:'var(--fc-gray)',done:'var(--fc-green)',confirmed:'var(--fc-green)',na:'var(--fc-gray)'})[key]||'var(--fc-gray)'; }
 function updateMarkerSummary(){
   const group=el('ag-markers'); const box=el('marker-summary'); if(!group||!box)return;
   const p=documentProgress(nodes,qaItems,remarks);
@@ -29415,9 +29474,22 @@ function filterToMarker(m){
   setMarkerFilter(m);
 }
 const OPEN_ITEMS_PER_GROUP=8;
-// The list behind the summary: open items grouped by kind (Parked last), each jumping to its row
-// or inline item, plus "Show only these" per group (the outline filters that used to be the
-// toolbar's only action).
+// One filter at a time from the open-items list: a group (a marker, open questions, open remarks)
+// or everything open together. Picking the active one again clears it.
+function currentOpenItemsFilter(){ return activeDiscussionFilter||activeMarkerFilter||null; }
+function applyOpenItemsFilter(kind){
+  const same=currentOpenItemsFilter()===kind;
+  if(NODE_MARKERS.includes(kind)){
+    activeDiscussionFilter=null;
+    if(same){ setMarkerFilter(null); return; }
+    filterToMarker(kind); return;
+  }
+  activeMarkerFilter=null;
+  setDiscussionFilter(same?null:kind);
+}
+// The list behind the summary: open items grouped by kind (Parked last), each jumping to its row or
+// inline item. Filtering is one switch at the top (everything open) plus a small filter icon on each
+// group heading (just that kind) — no repeated "Show only these" rows.
 function openItemsMenuItems(){
   const items=[];
   const idx=new Map(nodes.map((n,i)=>[n.id,i]));
@@ -29426,23 +29498,38 @@ function openItemsMenuItems(){
   const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
   const FILTER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
   const icon=key=>`<span class="oi-menu-icon" style="color:${openItemKindColor(key)}">${openItemKindIcon(key)}</span>`;
-  const addGroup=(key,heading,entries,filterOn,toggleFilter)=>{
+  const cur=currentOpenItemsFilter();
+  const addGroup=(key,heading,entries,filterKind)=>{
     if(!entries.length)return;
     if(items.length)items.push({divider:true});
-    items.push({heading:heading+' · '+entries.length});
+    const on=cur===filterKind;
+    items.push({heading:heading+' · '+entries.length, action:{icon:FILTER_ICON, active:on, label:on?'Clear this filter':'Show only '+heading.toLowerCase()+' in the outline', onClick:()=>applyOpenItemsFilter(filterKind)}});
     entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, icon:icon(key), onClick:en.go}));
-    if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!filterOn)toggleFilter(); }});
-    else items.push({label:filterOn?'Clear this filter':'Show only these in the outline', icon:FILTER_ICON, onClick:toggleFilter});
+    if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!on)applyOpenItemsFilter(filterKind); }});
   };
   const markerRows=m=>nodes.filter(n=>n.marker===m).map(n=>({label:rowText(n), go:()=>revealNodeInDoc(currentDocId,n.id)}));
-  const markerGroup=(m,heading)=>addGroup(m,heading,markerRows(m),activeMarkerFilter===m,()=>filterToMarker(m));
-  markerGroup('issue','Issues');
-  markerGroup('followup','Follow-ups');
+  addGroup('issue','Issues',markerRows('issue'),'issue');
+  addGroup('followup','Follow-ups',markerRows('followup'),'followup');
   const qs=qaItems.filter(q=>q.sourceNodeId!=null&&idx.has(q.sourceNodeId)&&isCountableQuestion(q)&&qaState(q)==='open').sort((a,b)=>byRow(a.sourceNodeId,b.sourceNodeId));
-  addGroup('question','Open questions',qs.map(q=>({label:stripHtmlToText(q.question), go:()=>revealInlineObject('qa',q.id)})),activeDiscussionFilter==='openQa',()=>setDiscussionFilter(activeDiscussionFilter==='openQa'?null:'openQa'));
+  addGroup('question','Open questions',qs.map(q=>({label:stripHtmlToText(q.question), go:()=>revealInlineObject('qa',q.id)})),'openQa');
   const rs=remarks.filter(r=>r.anchorNodeId!=null&&idx.has(r.anchorNodeId)&&isOpenRemarkWithText(r)).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
-  addGroup('remark','Open follow-up remarks',rs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),activeDiscussionFilter==='openRemarks',()=>setDiscussionFilter(activeDiscussionFilter==='openRemarks'?null:'openRemarks'));
-  markerGroup('parked','Parked');
+  addGroup('remark','Open follow-up remarks',rs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),'openRemarks');
+  addGroup('parked','Parked',markerRows('parked'),'parked');
+  // What counts toward "N of M settled", folded by default so it doesn't lengthen the list: Confirmed and
+  // N/A rows, answered or won't-answer questions, resolved follow-up remarks. Each jumps like above.
+  const settled=[];
+  const settledGroup=(heading,key,entries)=>{ if(!entries.length)return; settled.push({heading:heading+' \u00B7 '+entries.length}); entries.forEach(en=>settled.push({label:en.label, icon:icon(key), onClick:en.go})); };
+  settledGroup('Confirmed','confirmed',markerRows('confirmed'));
+  settledGroup('N/A','na',markerRows('na'));
+  const doneQs=qaItems.filter(q=>q.sourceNodeId!=null&&idx.has(q.sourceNodeId)&&isCountableQuestion(q)&&qaState(q)!=='open').sort((a,b)=>byRow(a.sourceNodeId,b.sourceNodeId));
+  settledGroup('Answered or closed questions','question',doneQs.map(q=>({label:stripHtmlToText(q.question), go:()=>revealInlineObject('qa',q.id)})));
+  const doneRs=remarks.filter(r=>r.anchorNodeId!=null&&idx.has(r.anchorNodeId)&&remarkState(r)==='resolved'&&htmlHasVisibleText(r.text)).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
+  settledGroup('Resolved follow-ups','remark',doneRs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})));
+  if(settled.length){
+    const n=settled.filter(x=>!x.heading).length;
+    if(items.length)items.push({divider:true});
+    items.push({label:'Settled \u00B7 '+n, icon:icon('done'), fold:settled});
+  }
   return items;
 }
 function openOpenItemsMenu(btn){
@@ -29452,9 +29539,13 @@ function openOpenItemsMenu(btn){
   const menu=_sbContextEl; if(!menu)return;
   menu.classList.add('open-items-menu');
   const pct=p.total?Math.round(p.settled/p.total*100):0;
+  const hasOpen=attentionParts(p).length>0;
+  const allOn=currentOpenItemsFilter()==='openItems';
   const head=document.createElement('div'); head.className='oi-head';
-  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${attentionParts(p).length?'Open items':'Nothing needs attention'}</span><span class="oi-head-progress">${p.settled} of ${p.total} settled</span></div><div class="oi-bar"><span style="width:${pct}%"></span></div>`;
+  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span><span class="oi-head-progress">${p.settled} of ${p.total} settled</span></div><div class="oi-bar"><span style="width:${pct}%"></span></div>`
+    +(hasOpen||allOn?`<button type="button" class="oi-switch${allOn?' on':''}" role="switch" aria-checked="${allOn}"><span class="oi-switch-label">Show only open items in the outline</span><span class="oi-switch-track" aria-hidden="true"><span></span></span></button>`:'');
   menu.insertBefore(head,menu.firstChild);
+  head.querySelector('.oi-switch')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); applyOpenItemsFilter('openItems'); });
   // Right-align under the summary; showSbContextMenu keeps it on screen.
   menu.style.left=Math.max(8,Math.min(r.right-menu.offsetWidth,window.innerWidth-menu.offsetWidth-8))+'px';
 }
@@ -29472,17 +29563,24 @@ function openOpenItemsMenu(btn){
 })();
 // Toolbar "N open" counts → show only the rows holding open questions (or open remarks). Unfolds
 // the branches hiding them and opens their inline Q&A/remarks, so every counted item is on screen.
+// Whether the discussion filter limits a row's inline questions (or remarks) to open ones: the
+// questions/remarks filter itself, and the combined "open items" filter.
+function discFilterShowsOnlyOpen(kind){
+  const f=activeDiscussionFilter;
+  return f==='openItems'||(kind==='qa'?f==='openQa':f==='openRemarks');
+}
 function setDiscussionFilter(f){
   activeDiscussionFilter=normalizeDiscussionFilter(f);
   if(activeDiscussionFilter){
-    const ids=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks);
+    const ids=nodesWithOpenItems(activeDiscussionFilter,qaItems,remarks,nodes);
     nodes.forEach((n,i)=>{ if(!ids.has(n.id))return; let d=n.depth; for(let j=i-1;j>=0&&d>0;j--){ if(nodes[j].depth<d){ collapsedIds.delete(nodes[j].id); d=nodes[j].depth; } } });
-    ids.forEach(id=>(activeDiscussionFilter==='openQa'?inlineExpandQaNodeIds:inlineExpandRemarksNodeIds).add(id));
+    if(discFilterShowsOnlyOpen('qa'))nodesWithOpenItems('openQa',qaItems,remarks).forEach(id=>inlineExpandQaNodeIds.add(id));
+    if(discFilterShowsOnlyOpen('remarks'))nodesWithOpenItems('openRemarks',qaItems,remarks).forEach(id=>inlineExpandRemarksNodeIds.add(id));
   }
   const pane=document.getElementById('editor-pane');
   if(pane)applyTagFilterToPane(pane);
   render();
-  if(activeDiscussionFilter)showToast(activeDiscussionFilter==='openQa'?'Showing open questions':'Showing open follow-ups');
+  if(activeDiscussionFilter)showToast(({openQa:'Showing open questions',openRemarks:'Showing open follow-ups',openItems:'Showing open items'})[activeDiscussionFilter]);
   else showToast('Filter cleared');
 }
 function setMarkerFilter(marker){

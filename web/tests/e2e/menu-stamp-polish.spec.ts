@@ -120,16 +120,44 @@ test.describe('Toolbar open-items summary', () => {
     await btn.click();
     await expect(page.locator('.open-items-menu')).toHaveCount(0);
 
-    // Filter from the list, then clear it the same way.
+    // No repeated "Show only these" rows: each heading has a filter icon instead.
     await btn.click();
-    await menu.locator('.sb-context-item', { hasText: 'Show only these in the outline' }).nth(1).click();
+    await expect(menu.locator('.sb-context-item', { hasText: 'Show only these' })).toHaveCount(0);
+    const followHeading = menu.locator('.sb-context-heading', { hasText: 'Follow-ups' });
+    await followHeading.locator('.sb-context-heading-action').click();
     // @ts-expect-error
     expect(await page.evaluate(() => activeMarkerFilter)).toBe('followup');
     await expect(btn).toHaveClass(/active/);
     await btn.click();
-    await menu.locator('.sb-context-item', { hasText: 'Clear this filter' }).click();
+    await expect(followHeading.locator('.sb-context-heading-action')).toHaveClass(/on/);
+    await followHeading.locator('.sb-context-heading-action').click();
     // @ts-expect-error
     expect(await page.evaluate(() => activeMarkerFilter)).toBeNull();
+
+    // The switch at the top shows every open item at once (here: the issue and both follow-ups).
+    await btn.click();
+    await menu.locator('.oi-switch').click();
+    // @ts-expect-error
+    expect(await page.evaluate(() => [activeDiscussionFilter, activeMarkerFilter])).toEqual(['openItems', null]);
+    const shown = await page.evaluate(() => [...document.querySelectorAll('.node-row:not(.tag-filtered-out):not(.marker-filter-context)')].map(r => (r as HTMLElement).dataset.id));
+    expect(shown).toEqual(['2', '3', '4']);
+    await expect(page.locator('#tag-filter-bar')).toContainText('Open items');
+    await btn.click();
+    await expect(menu.locator('.oi-switch')).toHaveAttribute('aria-checked', 'true');
+    await menu.locator('.oi-switch').click();
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeDiscussionFilter)).toBeNull();
+
+    // Settled items are folded at the bottom of the list; clicking unfolds them in place.
+    await btn.click();
+    const settled = menu.locator('.sb-context-fold', { hasText: 'Settled · 1' });
+    await expect(settled).toHaveAttribute('aria-expanded', 'false');
+    await expect(menu).not.toContainText('Done row');
+    await settled.click();
+    await expect(settled).toHaveAttribute('aria-expanded', 'true');
+    await expect(menu.locator('.sb-context-fold-body')).toContainText('Done row');
+    await settled.click();
+    await expect(menu.locator('.sb-context-fold-body')).toHaveCount(0);
   });
 
   test('shows "All settled" when nothing needs attention', async ({ page }) => {

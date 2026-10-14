@@ -469,6 +469,18 @@ doc id; it used to read only `historyModalDocId`, so it did nothing with the win
 (Link, History, Share) with a thin rule (`#doc-link-wrap::before`) instead of a "·". Covered by
 `tests/e2e/doc-history-chip.spec.ts`.
 
+**Open items list: one switch, heading filters, folded Settled (owner feedback, 2026-10-14).** The
+repeated "Show only these in the outline" rows are gone. The list header has a switch, **Show only open
+items in the outline** — a new combined discussion filter `openItems` (`nodesWithOpenItems('openItems',
+qa, remarks, nodes)`: open questions, open follow-up remarks, Issue/Follow-up rows; inline Q&A and
+remarks show open ones only, see `discFilterShowsOnlyOpen`). Each group heading has a small filter icon
+(`showSbContextMenu` heading items now take `action:{icon,label,active,onClick}`). Filters from the list
+are exclusive (`applyOpenItemsFilter` clears the other kind). **Settled · N** is a new in-place fold row
+(`fold:[items]` in `_sbBuildItemButton`; `closeSbContextMenu` ignores clicks on `.sb-context-fold`),
+listing Confirmed / N/A rows, answered or closed questions and resolved follow-ups. Owner rule:
+scrollbars are always the app's thin style — `.sb-context-menu` was missing from the thin-scrollbar
+lists and is now in both (WebKit and the Firefox `@supports` block).
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

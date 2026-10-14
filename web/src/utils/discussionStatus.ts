@@ -100,18 +100,28 @@ export function countOpenItems(
   return { openQuestions, openRemarks };
 }
 
-export type DiscussionFilter = 'openQa' | 'openRemarks';
+/** openItems = everything that needs attention: Issue/Follow-up rows, open questions, open follow-up remarks. */
+export type DiscussionFilter = 'openQa' | 'openRemarks' | 'openItems';
 
 export function normalizeDiscussionFilter(v: unknown): DiscussionFilter | null {
-  return v === 'openQa' || v === 'openRemarks' ? v : null;
+  return v === 'openQa' || v === 'openRemarks' || v === 'openItems' ? v : null;
 }
 
-/** Ids of the nodes that hold at least one open item of the filter's kind. */
+/**
+ * Ids of the nodes that hold at least one open item of the filter's kind. For openItems that is
+ * open questions, open follow-up remarks, and (from `nodes`) rows marked Issue or Follow-up.
+ */
 export function nodesWithOpenItems(
   filter: DiscussionFilter,
   qaItems: StatusQaItem[],
-  remarks: StatusRemark[]
+  remarks: StatusRemark[],
+  nodes: ProgressNode[] = []
 ): Set<number> {
+  if (filter === 'openItems') {
+    const ids = new Set<number>([...nodesWithOpenItems('openQa', qaItems, remarks), ...nodesWithOpenItems('openRemarks', qaItems, remarks)]);
+    for (const n of nodes || []) if (n.marker === 'issue' || n.marker === 'followup') ids.add(n.id);
+    return ids;
+  }
   const ids = new Set<number>();
   if (filter === 'openQa') {
     for (const q of qaItems || []) {
