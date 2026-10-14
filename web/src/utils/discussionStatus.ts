@@ -129,3 +129,84 @@ export function nodesWithOpenItems(
 export function openCountLabel(n: number, kind: 'question' | 'follow-up'): string {
   return n + ' open ' + kind + (n === 1 ? '' : 's');
 }
+
+// ── Document summary (toolbar "open items") ────────────────────────────────────────────────
+
+export interface ProgressNode {
+  id: number;
+  marker?: string | null;
+}
+
+/** Everything the toolbar summary counts, for the rows of one document. */
+export interface DocumentProgress {
+  issues: number;
+  followups: number;
+  parked: number;
+  questions: number;
+  remarks: number;
+  /** Confirmed + N/A rows, answered or won't-answer questions, resolved follow-up remarks. */
+  settled: number;
+  /** Everything tracked: needs attention + parked + settled. */
+  total: number;
+}
+
+/**
+ * The toolbar summary's counts. Markers on rows: Issue and Follow-up need attention, Parked is
+ * deliberately set aside, Confirmed and N/A are settled. Questions and follow-up remarks count only
+ * when attached to a row of this document (same rule as countOpenItems); a plain remark (not marked
+ * for follow-up) is a comment and is never counted.
+ */
+export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[], remarks: StatusRemark[]): DocumentProgress {
+  const p: DocumentProgress = { issues: 0, followups: 0, parked: 0, questions: 0, remarks: 0, settled: 0, total: 0 };
+  const ids = new Set<number>();
+  for (const n of nodes || []) {
+    ids.add(n.id);
+    if (n.marker === 'issue') p.issues++;
+    else if (n.marker === 'followup') p.followups++;
+    else if (n.marker === 'parked') p.parked++;
+    else if (n.marker === 'confirmed' || n.marker === 'na') p.settled++;
+  }
+  for (const q of qaItems || []) {
+    if (q.sourceNodeId == null || !ids.has(q.sourceNodeId) || !isCountableQuestion(q)) continue;
+    if (qaState(q) === 'open') p.questions++;
+    else p.settled++;
+  }
+  for (const r of remarks || []) {
+    if (r.anchorNodeId == null || !ids.has(r.anchorNodeId) || !remarkIsFollowUp(r) || !htmlHasVisibleText(r.text)) continue;
+    if (remarkIsOpen(r)) p.remarks++;
+    else p.settled++;
+  }
+  p.total = p.issues + p.followups + p.parked + p.questions + p.remarks + p.settled;
+  return p;
+}
+
+export type AttentionKey = 'issue' | 'followup' | 'question' | 'remark';
+
+export interface AttentionPart {
+  key: AttentionKey;
+  n: number;
+  /** Short label for the toolbar: "1 issue", "6 follow-ups", "2 questions", "1 remark". */
+  label: string;
+}
+
+const ATTENTION_WORDS: Record<AttentionKey, [string, string]> = {
+  issue: ['issue', 'issues'],
+  followup: ['follow-up', 'follow-ups'],
+  question: ['question', 'questions'],
+  remark: ['remark', 'remarks']
+};
+
+/** What still needs attention, most urgent first, leaving out kinds with nothing open. */
+export function attentionParts(p: DocumentProgress): AttentionPart[] {
+  const counts: [AttentionKey, number][] = [['issue', p.issues], ['followup', p.followups], ['question', p.questions], ['remark', p.remarks]];
+  return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
+}
+
+/** The summary's tooltip / accessible name: "Needs attention: 1 issue, 2 open questions. 8 of 15 settled." */
+export function progressSummaryText(p: DocumentProgress): string {
+  const parts = attentionParts(p).map((a) =>
+    a.key === 'question' ? openCountLabel(a.n, 'question') : a.key === 'remark' ? a.n + ' open follow-up remark' + (a.n === 1 ? '' : 's') : a.label
+  );
+  const head = parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
+  return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' parked' : '') + '.';
+}

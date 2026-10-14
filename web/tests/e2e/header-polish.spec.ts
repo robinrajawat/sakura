@@ -31,10 +31,10 @@ test('toolbar groups have no background box', async ({ page }) => {
   for (const bg of bgs) expect(bg).toBe('rgba(0, 0, 0, 0)');
 });
 
-test('marker summary counts use the text colour; the icon keeps the marker colour', async ({ page }) => {
-  const btn = page.locator('#marker-summary .marker-sum-btn').first();
-  await expect(btn).toBeVisible();
-  const c = await btn.evaluate((b) => ({
+test('the open-items summary uses the text colour; only the icon is tinted', async ({ page }) => {
+  const part = page.locator('#marker-summary .oi-part').first();
+  await expect(part).toBeVisible();
+  const c = await part.evaluate((b) => ({
     text: getComputedStyle(b).color,
     icon: getComputedStyle(b.querySelector('svg')!).color,
     fg: getComputedStyle(document.body).getPropertyValue('--fg').trim()

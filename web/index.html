@@ -892,14 +892,24 @@ body.zen-mode #quick-bar{display:none}
 #ag-markers{margin-left:auto}#ag-markers[hidden]{display:none}
 #ag-markers:not([hidden])+#ag-fold{position:relative;margin-left:13px}
 #ag-markers:not([hidden])+#ag-fold::before{content:'';position:absolute;left:-7px;top:50%;width:1px;height:18px;transform:translateY(-50%);background:color-mix(in srgb,var(--border) 70%,transparent)}
-/* Counts in the text colour; only the icon carries the marker's colour (--mc), so the summary
-   doesn't outshout the document. Hover/active tint with the same colour. */
-.marker-sum-btn{--mc:var(--fc-gray);display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:none;border-radius:8px;background:transparent;color:var(--fg);font:500 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums}
-.marker-sum-btn svg{color:var(--mc)}
-.marker-sum-btn[data-color="green"]{--mc:var(--fc-green)}.marker-sum-btn[data-color="red"]{--mc:var(--fc-red)}.marker-sum-btn[data-color="orange"]{--mc:var(--fc-orange)}
-.marker-sum-btn:hover{background:color-mix(in srgb,var(--mc) 12%,transparent)}
-.marker-sum-btn.active{background:color-mix(in srgb,var(--mc) 16%,transparent);box-shadow:inset 0 0 0 1.5px var(--mc)}
-.marker-sum-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+/* Open-items summary: words in the text colour, only each icon tinted (--mc), so it doesn't
+   outshout the document. One button; its list opens below (.open-items-menu). */
+.open-items-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px;border:none;border-radius:8px;background:transparent;color:var(--fg);font:500 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums;white-space:nowrap}
+.open-items-btn:hover{background:var(--hover)}
+.open-items-btn.active{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 45%,transparent)}
+.open-items-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.oi-part{display:inline-flex;align-items:center;gap:4px}
+.oi-part svg{color:var(--mc);flex:0 0 auto}
+.oi-sep{color:var(--hint)}
+.open-items-menu{width:340px;max-width:calc(100vw - 16px)}
+.open-items-menu .sb-context-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oi-menu-icon{display:inline-flex}
+.oi-head{display:flex;flex-direction:column;gap:6px;padding:6px 8px 8px;margin-bottom:2px;border-bottom:1px solid var(--border)}
+.oi-head-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.oi-head-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg)}
+.oi-head-progress{font:500 11.5px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.oi-bar{height:4px;border-radius:999px;background:color-mix(in srgb,var(--fg) 8%,transparent);overflow:hidden}
+.oi-bar span{display:block;height:100%;border-radius:inherit;background:var(--fc-green)}
 .quick-btn{width:34px;height:34px;font-size:16px;border-radius:7px;border-color:transparent;background:transparent;transition:background .12s,color .12s,transform .08s,box-shadow .12s}
 .quick-btn:hover{background:var(--hover);border-color:transparent;transform:translateY(-1px);box-shadow:0 2px 5px rgba(0,0,0,.08)}
 .quick-btn:active{transform:translateY(0) scale(.94);box-shadow:none}
@@ -1761,8 +1771,7 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .node-note-dot.has-open-count{width:auto;min-width:18px;gap:2px;padding:0 3px;opacity:.85}
 .node-dot-count{font:700 10px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
 .node-note-dot.dot-all-closed{color:var(--hint)!important}
-.marker-sum-divider{width:1px;height:16px;margin:0 3px;background:var(--border);align-self:center}
-.disc-sum-btn{--mc:var(--fc-purple)}
+
 .pv-status-pill{display:inline-flex;align-items:center;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
 .pv-inline-qa-line .pv-status-pill{align-self:flex-start;margin-top:1px}
 
@@ -4212,7 +4221,7 @@ body.printing-generic #gpe-overlay{
         </div>
       </div>
     </div>
-    <div class="action-group" id="ag-markers" hidden><div class="ag-buttons" id="marker-summary" role="group" aria-label="Marker summary"></div></div>
+    <div class="action-group" id="ag-markers" hidden><div class="ag-buttons" id="marker-summary" role="group" aria-label="Open items"></div></div>
     <div class="action-group" id="ag-fold">
       <div class="ag-buttons">
         <button class="btn icon-btn quick-btn" id="qb-collapse" data-tip="Collapse all" aria-label="Collapse all"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/></svg></button>
@@ -7067,6 +7076,62 @@ function nodesWithOpenItems(filter, qaItems, remarks) {
 /** "1 open question", "2 open follow-ups" — the label for a count. */
 function openCountLabel(n, kind) {
     return n + ' open ' + kind + (n === 1 ? '' : 's');
+}
+/**
+ * The toolbar summary's counts. Markers on rows: Issue and Follow-up need attention, Parked is
+ * deliberately set aside, Confirmed and N/A are settled. Questions and follow-up remarks count only
+ * when attached to a row of this document (same rule as countOpenItems); a plain remark (not marked
+ * for follow-up) is a comment and is never counted.
+ */
+function documentProgress(nodes, qaItems, remarks) {
+    const p = { issues: 0, followups: 0, parked: 0, questions: 0, remarks: 0, settled: 0, total: 0 };
+    const ids = new Set();
+    for (const n of nodes || []) {
+        ids.add(n.id);
+        if (n.marker === 'issue')
+            p.issues++;
+        else if (n.marker === 'followup')
+            p.followups++;
+        else if (n.marker === 'parked')
+            p.parked++;
+        else if (n.marker === 'confirmed' || n.marker === 'na')
+            p.settled++;
+    }
+    for (const q of qaItems || []) {
+        if (q.sourceNodeId == null || !ids.has(q.sourceNodeId) || !isCountableQuestion(q))
+            continue;
+        if (qaState(q) === 'open')
+            p.questions++;
+        else
+            p.settled++;
+    }
+    for (const r of remarks || []) {
+        if (r.anchorNodeId == null || !ids.has(r.anchorNodeId) || !remarkIsFollowUp(r) || !htmlHasVisibleText(r.text))
+            continue;
+        if (remarkIsOpen(r))
+            p.remarks++;
+        else
+            p.settled++;
+    }
+    p.total = p.issues + p.followups + p.parked + p.questions + p.remarks + p.settled;
+    return p;
+}
+const ATTENTION_WORDS = {
+    issue: ['issue', 'issues'],
+    followup: ['follow-up', 'follow-ups'],
+    question: ['question', 'questions'],
+    remark: ['remark', 'remarks']
+};
+/** What still needs attention, most urgent first, leaving out kinds with nothing open. */
+function attentionParts(p) {
+    const counts = [['issue', p.issues], ['followup', p.followups], ['question', p.questions], ['remark', p.remarks]];
+    return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
+}
+/** The summary's tooltip / accessible name: "Needs attention: 1 issue, 2 open questions. 8 of 15 settled." */
+function progressSummaryText(p) {
+    const parts = attentionParts(p).map((a) => a.key === 'question' ? openCountLabel(a.n, 'question') : a.key === 'remark' ? a.n + ' open follow-up remark' + (a.n === 1 ? '' : 's') : a.label);
+    const head = parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
+    return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' parked' : '') + '.';
 }
 
 /* GENERATED:discussionStatus:END */
@@ -29277,38 +29342,96 @@ function setTagFilter(tag){
 // can be active together (AND), same reasoning as applyTagFilterToPane's combined check.
 // Toolbar marker summary — how many nodes carry each marker across the whole document, folded
 // branches included, so outstanding Issues/Follow-ups stay visible when the outline is collapsed.
-// Ordered by how much each needs action; markers nobody used are left out, and the group hides
-// entirely on a document with no markers.
+// Toolbar open-items summary: what still needs attention, in words ("1 issue · 6 follow-ups ·
+// 2 questions"), or "All settled". Settled items (Confirmed / N/A rows, answered questions, resolved
+// follow-ups) only count toward the progress in its list. Hidden on a document that tracks nothing.
+// Counting lives in src/utils/discussionStatus.ts (documentProgress, attentionParts).
+// A function, not a const: render() calls updateMarkerSummary during boot, before a top-level
+// const this far down would be initialised.
+function openItemRemarkSvg(){ return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/></svg>'; }
+function openItemKindIcon(key){
+  if(key==='question')return qaDotIconSvg(13);
+  if(key==='remark')return openItemRemarkSvg();
+  if(key==='done')return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  return markIconSvg(key);
+}
+function openItemKindColor(key){ return ({issue:'var(--fc-red)',followup:'var(--fc-orange)',question:'var(--fc-purple)',remark:'var(--fc-purple)',parked:'var(--fc-gray)',done:'var(--fc-green)'})[key]||'var(--fc-gray)'; }
 function updateMarkerSummary(){
-  // Order lives inside the function: render() calls this during boot, before a top-level const
-  // this far down the script would be initialised (see the note on NODE_MARKERS).
-  const MARKER_SUMMARY_ORDER=['issue','followup','parked','confirmed','na'];
   const group=el('ag-markers'); const box=el('marker-summary'); if(!group||!box)return;
-  const counts={}; nodes.forEach(n=>{ if(n.marker&&NODE_MARKERS.includes(n.marker))counts[n.marker]=(counts[n.marker]||0)+1; });
-  const used=MARKER_SUMMARY_ORDER.filter(m=>counts[m]);
-  // Open questions and open remarks follow the markers, after a divider. Shown while any are
-  // open, or while their filter is on (so it can be cleared from here).
-  const open=countOpenItems(qaItems,remarks,new Set(nodes.map(n=>n.id)));
-  const disc=[
-    {key:'openQa',n:open.openQuestions,kind:'question',icon:qaDotIconSvg(13)},
-    {key:'openRemarks',n:open.openRemarks,kind:'follow-up',icon:REMARK_DOT_SVG}
-  ].filter(d=>d.n||activeDiscussionFilter===d.key);
-  group.hidden=!used.length&&!disc.length;
-  const html=used.map(m=>`<button type="button" class="marker-sum-btn${activeMarkerFilter===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${counts[m]} ${esc(nodeMarkerLabel(m))}${activeMarkerFilter===m?' — click to clear the filter':' — click to show only these'}" aria-label="${counts[m]} ${esc(nodeMarkerLabel(m))}" aria-pressed="${activeMarkerFilter===m}">${markIconSvg(m)}<span>${counts[m]}</span></button>`).join('')
-    +(used.length&&disc.length?'<span class="marker-sum-divider" aria-hidden="true"></span>':'')
-    +disc.map(d=>{ const label=openCountLabel(d.n,d.kind); const on=activeDiscussionFilter===d.key; return `<button type="button" class="marker-sum-btn disc-sum-btn${on?' active':''}" data-disc="${d.key}" data-tip="${label}${on?' — click to clear the filter':' — click to show only these'}" aria-label="${label}" aria-pressed="${on}">${d.icon}<span>${d.n} open</span></button>`; }).join('');
+  const p=documentProgress(nodes,qaItems,remarks);
+  const filtering=!!(activeMarkerFilter||activeDiscussionFilter);
+  group.hidden=!p.total&&!filtering;
+  const parts=attentionParts(p);
+  const segs=parts.length
+    ? parts.map(a=>`<span class="oi-part" data-key="${a.key}" style="--mc:${openItemKindColor(a.key)}">${openItemKindIcon(a.key)}<span>${a.label}</span></span>`).join('<span class="oi-sep" aria-hidden="true">·</span>')
+    : `<span class="oi-part" data-key="done" style="--mc:${openItemKindColor('done')}">${openItemKindIcon('done')}<span>All settled</span></span>`;
+  const text=progressSummaryText(p);
+  const html=`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list." aria-label="${esc(text)}">${segs}</button>`;
   if(box.innerHTML!==html)box.innerHTML=html;
 }
-el('marker-summary')?.addEventListener('click',e=>{
-  const btn=e.target.closest('.marker-sum-btn'); if(!btn)return;
-  if(btn.dataset.disc){ setDiscussionFilter(activeDiscussionFilter===btn.dataset.disc?null:btn.dataset.disc); return; }
-  const m=btn.dataset.marker;
+// Show only the rows with this marker. The filter only acts on rendered rows, so unfold every
+// branch hiding a match first — otherwise the list would promise rows the filtered view can't show.
+function filterToMarker(m){
   if(activeMarkerFilter===m){ setMarkerFilter(null); return; }
-  // The filter only acts on rendered rows, so unfold every branch hiding a match first —
-  // otherwise the counts would promise nodes the filtered view can't show.
   nodes.forEach((n,i)=>{ if(n.marker!==m)return; let d=n.depth; for(let j=i-1;j>=0&&d>0;j--){ if(nodes[j].depth<d){ collapsedIds.delete(nodes[j].id); d=nodes[j].depth; } } });
   setMarkerFilter(m);
-});
+}
+const OPEN_ITEMS_PER_GROUP=8;
+// The list behind the summary: open items grouped by kind (Parked last), each jumping to its row
+// or inline item, plus "Show only these" per group (the outline filters that used to be the
+// toolbar's only action).
+function openItemsMenuItems(){
+  const items=[];
+  const idx=new Map(nodes.map((n,i)=>[n.id,i]));
+  // The row's text as it reads on screen (getNodePlainText would also drop its (parentheses)).
+  const rowText=n=>stripHtmlToText(n.text||'')||'Untitled row';
+  const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
+  const FILTER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
+  const icon=key=>`<span class="oi-menu-icon" style="color:${openItemKindColor(key)}">${openItemKindIcon(key)}</span>`;
+  const addGroup=(key,heading,entries,filterOn,toggleFilter)=>{
+    if(!entries.length)return;
+    if(items.length)items.push({divider:true});
+    items.push({heading:heading+' · '+entries.length});
+    entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, icon:icon(key), onClick:en.go}));
+    if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!filterOn)toggleFilter(); }});
+    else items.push({label:filterOn?'Clear this filter':'Show only these in the outline', icon:FILTER_ICON, onClick:toggleFilter});
+  };
+  const markerRows=m=>nodes.filter(n=>n.marker===m).map(n=>({label:rowText(n), go:()=>revealNodeInDoc(currentDocId,n.id)}));
+  const markerGroup=(m,heading)=>addGroup(m,heading,markerRows(m),activeMarkerFilter===m,()=>filterToMarker(m));
+  markerGroup('issue','Issues');
+  markerGroup('followup','Follow-ups');
+  const qs=qaItems.filter(q=>q.sourceNodeId!=null&&idx.has(q.sourceNodeId)&&isCountableQuestion(q)&&qaState(q)==='open').sort((a,b)=>byRow(a.sourceNodeId,b.sourceNodeId));
+  addGroup('question','Open questions',qs.map(q=>({label:stripHtmlToText(q.question), go:()=>revealInlineObject('qa',q.id)})),activeDiscussionFilter==='openQa',()=>setDiscussionFilter(activeDiscussionFilter==='openQa'?null:'openQa'));
+  const rs=remarks.filter(r=>r.anchorNodeId!=null&&idx.has(r.anchorNodeId)&&isOpenRemarkWithText(r)).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
+  addGroup('remark','Open follow-up remarks',rs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),activeDiscussionFilter==='openRemarks',()=>setDiscussionFilter(activeDiscussionFilter==='openRemarks'?null:'openRemarks'));
+  markerGroup('parked','Parked');
+  return items;
+}
+function openOpenItemsMenu(btn){
+  const p=documentProgress(nodes,qaItems,remarks);
+  const r=btn.getBoundingClientRect();
+  showSbContextMenu(r.left,r.bottom+6,openItemsMenuItems());
+  const menu=_sbContextEl; if(!menu)return;
+  menu.classList.add('open-items-menu');
+  const pct=p.total?Math.round(p.settled/p.total*100):0;
+  const head=document.createElement('div'); head.className='oi-head';
+  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${attentionParts(p).length?'Open items':'Nothing needs attention'}</span><span class="oi-head-progress">${p.settled} of ${p.total} settled</span></div><div class="oi-bar"><span style="width:${pct}%"></span></div>`;
+  menu.insertBefore(head,menu.firstChild);
+  // Right-align under the summary; showSbContextMenu keeps it on screen.
+  menu.style.left=Math.max(8,Math.min(r.right-menu.offsetWidth,window.innerWidth-menu.offsetWidth-8))+'px';
+}
+(function(){
+  const box=el('marker-summary'); if(!box)return;
+  let wasOpen=false;
+  // The menu closes itself on any outside click (capture phase), so remember whether it was open
+  // before this press: a second click on the summary closes it instead of reopening it.
+  box.addEventListener('pointerdown',()=>{ wasOpen=!!(_sbContextEl&&_sbContextEl.classList.contains('open-items-menu')); });
+  box.addEventListener('click',e=>{
+    const btn=e.target.closest('.open-items-btn'); if(!btn)return;
+    if(wasOpen){ wasOpen=false; return; }
+    openOpenItemsMenu(btn);
+  });
+})();
 // Toolbar "N open" counts → show only the rows holding open questions (or open remarks). Unfolds
 // the branches hiding them and opens their inline Q&A/remarks, so every counted item is on screen.
 function setDiscussionFilter(f){

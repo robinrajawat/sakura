@@ -447,6 +447,18 @@ right edge, so shrinking the row would move them. Covered by `tests/e2e/header-p
 → change pill, every other column → a detail line; up to 5 columns) — loosens #518's rule that
 refused Cards when the third column isn't a change (owner's "Special freight | Amount | Scales").
 
+**Open items summary (owner request, 2026-10-14).** The toolbar marker summary became one button that
+says what needs attention in words ("1 issue · 6 follow-ups · 2 questions · 1 remark", or "All settled";
+hidden when the document tracks nothing). Counting is pure: `documentProgress` / `attentionParts` /
+`progressSummaryText` in `src/utils/discussionStatus.ts` (Issue + Follow-up markers, open questions,
+open follow-up remarks need attention; Parked is its own group; Confirmed/N/A, answered or won't-answer
+questions and resolved follow-ups are "settled"). Clicking opens a list (`openOpenItemsMenu`, built on
+`showSbContextMenu`, class `open-items-menu`): progress header + bar, groups Issues / Follow-ups / Open
+questions / Open follow-up remarks / Parked, up to 8 items each; an item jumps (`revealNodeInDoc` /
+`revealInlineObject`), and each group's last item filters (`filterToMarker` / `setDiscussionFilter`) or
+clears that filter. The old per-marker count buttons (`.marker-sum-btn`, `.disc-sum-btn`) are gone.
+Covered in `menu-stamp-polish.spec.ts` and `remark-qa-status.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

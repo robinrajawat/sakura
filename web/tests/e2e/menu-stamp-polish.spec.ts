@@ -86,30 +86,58 @@ test.describe('Quick Assist docked in the app bar', () => {
   });
 });
 
-test.describe('Toolbar marker summary', () => {
-  test('counts markers across folded branches and filters to them on click', async ({ page }) => {
+test.describe('Toolbar open-items summary', () => {
+  test('names what needs attention, lists it (folded branches included), jumps and filters from the list', async ({ page }) => {
     await open(page);
     await expect(page.locator('#ag-markers')).toBeHidden();
-    const list = [n(1, 0, 'Parent', null), n(2, 1, 'Child A', 1), n(3, 1, 'Child B', 1), n(4, 0, 'Other', null)];
+    const list = [n(1, 0, 'Parent', null), n(2, 1, 'Child A', 1), n(3, 1, 'Child B', 1), n(4, 0, 'Other', null), n(5, 0, 'Done row', null)];
     await seed(page, list);
     await page.evaluate(() => {
       // @ts-expect-error -- bare globals from index.html
-      nodes[1].marker = 'followup'; nodes[2].marker = 'followup'; nodes[3].marker = 'issue';
+      nodes[1].marker = 'followup'; nodes[2].marker = 'followup'; nodes[3].marker = 'issue'; nodes[4].marker = 'confirmed';
       // @ts-expect-error
       collapsedIds = new Set([1]); render();
     });
-    const btns = page.locator('#marker-summary .marker-sum-btn');
-    await expect(btns).toHaveCount(2);
-    await expect(btns.nth(0)).toHaveAttribute('data-marker', 'issue');
-    await expect(btns.nth(1)).toHaveText('2');
+    const btn = page.locator('#marker-summary .open-items-btn');
+    await expect(btn).toHaveText('1 issue·2 follow-ups');
+    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 1 issue, 2 follow-ups. 1 of 4 settled.');
     await expect(page.locator('.node-row[data-id="2"]')).toHaveCount(0);
-    await btns.nth(1).click();
-    await expect(page.locator('.node-row[data-id="2"]')).toBeVisible();
+
+    await btn.click();
+    const menu = page.locator('.open-items-menu');
+    await expect(menu.locator('.oi-head-progress')).toHaveText('1 of 4 settled');
+    expect(await menu.locator('.sb-context-heading').allTextContents()).toEqual(['Issues · 1', 'Follow-ups · 2']);
+    // Jump: opens the folded branch and selects the row.
+    await menu.locator('.sb-context-item', { hasText: 'Child B' }).click();
+    await expect(page.locator('.open-items-menu')).toHaveCount(0);
     await expect(page.locator('.node-row[data-id="3"]')).toBeVisible();
-    await expect(page.locator('#marker-summary .marker-sum-btn.active')).toHaveAttribute('data-marker', 'followup');
-    await page.locator('#marker-summary .marker-sum-btn.active').click();
+    // @ts-expect-error
+    expect(await page.evaluate(() => selectedId)).toBe(3);
+
+    // A second click on the summary closes the list instead of reopening it.
+    await btn.click();
+    await expect(menu).toHaveCount(1);
+    await btn.click();
+    await expect(page.locator('.open-items-menu')).toHaveCount(0);
+
+    // Filter from the list, then clear it the same way.
+    await btn.click();
+    await menu.locator('.sb-context-item', { hasText: 'Show only these in the outline' }).nth(1).click();
+    // @ts-expect-error
+    expect(await page.evaluate(() => activeMarkerFilter)).toBe('followup');
+    await expect(btn).toHaveClass(/active/);
+    await btn.click();
+    await menu.locator('.sb-context-item', { hasText: 'Clear this filter' }).click();
     // @ts-expect-error
     expect(await page.evaluate(() => activeMarkerFilter)).toBeNull();
+  });
+
+  test('shows "All settled" when nothing needs attention', async ({ page }) => {
+    await open(page);
+    await seed(page, [n(1, 0, 'Agreed', null)]);
+    // @ts-expect-error -- bare globals from index.html
+    await page.evaluate(() => { nodes[0].marker = 'confirmed'; render(); });
+    await expect(page.locator('#marker-summary .open-items-btn')).toHaveText('All settled');
   });
 });
 
