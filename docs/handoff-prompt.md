@@ -493,6 +493,12 @@ top edge (re-run after the open-items header is inserted), so a growing menu scr
 dropdown aligned its right edge to the chip and opened leftwards over the title; all byline dropdowns
 now open from their chip's left edge (`#doc-share-wrap .todo-dd-menu{left:0}`).
 
+**Inline display (owner request, 2026-10-14).** Show as › **Inline**, after Chips: the same two-column
+code/description table as one running line ("**ZN** Night Distribution · **ZL** KL 10:00 Fixed"), key
+bold, "·" between entries, no boxes. `data-table-display="inline"`, eligibility = `tableChipsEligible`,
+`renderInlineHtml`, `.pv-table-inline`; prints in the PDF. Covered by
+`tests/e2e/table-inline-display.spec.ts`.
+
 **Total row (owner request, 2026-10-14).** Owner's effort table had a typed "Total 31 days" that went
 stale when rows were added (rows add up to 49). Pure parts in `src/utils/tableDisplay.ts`:
 `isTotalLabel`, `typedTotalRowIndex` (last filled row starting Total/Sum/Grand total/Subtotal),
