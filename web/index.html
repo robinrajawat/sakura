@@ -1605,6 +1605,13 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .pv-table-card-icon{display:inline-flex;align-items:center;flex:0 0 auto;height:16px;color:var(--card-color)}
 .pv-table-card-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:auto}
 .pv-table-card-value{min-width:0;font:600 26px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg);line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pv-table-card-details{display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:6px;border-top:1px solid var(--border);font:400 12.5px/17px 'Inter',sans-serif;color:var(--muted);overflow-wrap:break-word}
+.pv-table-card-detail-label{font-weight:600;color:var(--fg);margin-right:4px}
+/* With detail lines, each card spans three rows of the grid (label · value · details) so values and
+   details line up along a row of cards even when one card's label or note wraps further. */
+.pv-table-cards-grid.has-details .pv-table-card{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:6px;align-content:start}
+.pv-table-cards-grid.has-details .pv-table-card-main{margin-top:0}
+.pv-table-cards-grid.has-details .pv-table-card-details{align-self:start}
 .pv-table-cards-total{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-top:12px;padding:12px 16px;border-radius:10px;background:color-mix(in srgb,var(--accent) 8%,var(--canvas-bg));border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-table-cards-total-label{display:inline-flex;align-items:center;gap:6px;font:600 12.5px 'Inter',sans-serif;color:var(--accent)}
 .pv-table-cards-total-label::before{content:'\03A3';font:700 13px 'Inter',sans-serif}
@@ -7030,18 +7037,41 @@ function cdBodyRows(grid) {
 function cdColumnCount(grid) {
     return grid.reduce((n, row) => Math.max(n, row.length), 0);
 }
+/** Cards read a label, a value, an optional change and up to two detail lines: 5 columns at most. */
+const CARDS_MAX_COLUMNS = 5;
+/** Whether a column's filled cells read as changes: every one has a direction and at least one is
+ * written with a sign or an arrow, so a plain quantity or a date isn't mistaken for one. */
+function cdIsChangeColumn(values) {
+    const filled = values.filter((v) => !cdIsPlaceholder(v));
+    if (!filled.length)
+        return false;
+    const allHaveDirection = filled.every((v) => cardChangeDirection(v, cardValueNumber(v.replace(/^[▲▼↑↓]\s*/, ''))) !== null);
+    const anyMarked = filled.some((v) => /^\s*[▲▼↑↓+\-−]/.test(v));
+    return allHaveDirection && anyMarked;
+}
 /**
- * Whether a table can show as Cards. A card is label · value · optional change, so the table needs:
- * 2 or 3 columns; 2–8 rows (a typed total row is not counted toward the 8); numbers in the second column (at least half its filled cells, see
- * cardValueNumber); and, with a third column, changes in it — every filled cell has a direction
- * (cardChangeDirection) and at least one is written with a sign or an arrow, so a plain quantity
- * or a text column (Owner, Notes) isn't mistaken for one. n/a, dashes and empty cells are allowed
- * in both the value and the change column.
+ * Which column (after the value) holds each card's change: the first one whose cells read as
+ * changes (cdIsChangeColumn). -1 when none does. Every other column after the value is a detail line.
+ */
+function cardsChangeColumn(grid) {
+    const rows = cdBodyRows(grid);
+    for (let c = 2; c < cdColumnCount(grid); c++) {
+        if (cdIsChangeColumn(rows.map((r) => r[c] ?? '')))
+            return c;
+    }
+    return -1;
+}
+/**
+ * Whether a table can show as Cards. A card is label · value, then an optional change pill and
+ * detail lines, so the table needs: 2–5 columns; 2–8 rows (a typed total row is not counted toward
+ * the 8); and numbers in the second column (at least half its filled cells, see cardValueNumber).
+ * Columns after the value need nothing: one written as changes (cardsChangeColumn) becomes the pill,
+ * any other (a note, an owner, a quantity) a detail line under the value.
  */
 function cardsAvailability(grid) {
     const cols = cdColumnCount(grid);
-    if (cols !== 2 && cols !== 3) {
-        return { ok: false, reason: `Cards need 2 or 3 columns: a label, a value and an optional change. This table has ${cols}.` };
+    if (cols < 2 || cols > CARDS_MAX_COLUMNS) {
+        return { ok: false, reason: `Cards need 2 to ${CARDS_MAX_COLUMNS} columns: a label, a value, then an optional change and notes. This table has ${cols}.` };
     }
     const rows = cdBodyRows(grid);
     // A typed total row becomes its own total card: it counts toward the minimum, not the maximum.
@@ -7056,23 +7086,28 @@ function cardsAvailability(grid) {
     if (!numeric || numeric * 2 < values.length) {
         return { ok: false, reason: 'Cards need numbers in the second column, like 1,240, 12% or 3.2 h.' };
     }
-    if (cols === 3) {
-        const changes = rows.map((r) => r[2] ?? '').filter((v) => !cdIsPlaceholder(v));
-        const allHaveDirection = changes.every((v) => cardChangeDirection(v, cardValueNumber(v.replace(/^[▲▼↑↓]\s*/, ''))) !== null);
-        const anyMarked = changes.some((v) => /^\s*[▲▼↑↓+\-−]/.test(v));
-        if (changes.length && !(allHaveDirection && anyMarked)) {
-            return { ok: false, reason: 'The third column must hold changes written with a sign or an arrow (+12%, −3, ▲ 4), or be left empty.' };
-        }
-    }
     return { ok: true };
 }
-/** The cards a table shows: one per filled body row, label · value · change as written. */
+/**
+ * The cards a table shows: one per filled body row, label · value · change as written, and a
+ * detail line for each other column with text in that row. A detail's label is its column header
+ * when the table has two detail columns (so "Owner Ana" and "Due Fri" can be told apart), and empty
+ * with one, where the text reads on its own as a note.
+ */
 function cardsRows(grid) {
-    const hasChange = cdColumnCount(grid) === 3;
+    const ci = cardsChangeColumn(grid);
+    const detailCols = [];
+    for (let c = 2; c < cdColumnCount(grid); c++)
+        if (c !== ci)
+            detailCols.push(c);
+    const head = grid[0] ?? [];
     return cdBodyRows(grid).map((r) => ({
         label: (r[0] ?? '').trim(),
         value: (r[1] ?? '').trim(),
-        change: hasChange ? (r[2] ?? '').trim() : ''
+        change: ci >= 0 ? (r[ci] ?? '').trim() : '',
+        details: detailCols
+            .map((c) => ({ label: detailCols.length > 1 ? (head[c] ?? '').trim() : '', text: (r[c] ?? '').trim() }))
+            .filter((d) => !isBlankCellText(d.text))
     }));
 }
 // ── Total row ───────────────────────────────────────────────────────────────────────────────
@@ -7188,13 +7223,14 @@ function totalRowMismatches(grid) {
 function cardsTotal(grid, calculated) {
     if (calculated) {
         const s = computeTotalRow(grid).sums[1];
-        return s ? { label: 'Total', value: s.text, change: '' } : null;
+        return s ? { label: 'Total', value: s.text, change: '', details: [] } : null;
     }
     const ti = typedTotalRowIndex(grid);
     if (ti < 0)
         return null;
     const r = grid[ti];
-    return { label: (r[0] ?? '').trim(), value: (r[1] ?? '').trim(), change: cdColumnCount(grid) === 3 ? (r[2] ?? '').trim() : '' };
+    const ci = cardsChangeColumn(grid);
+    return { label: (r[0] ?? '').trim(), value: (r[1] ?? '').trim(), change: ci >= 0 ? (r[ci] ?? '').trim() : '', details: [] };
 }
 
 /* GENERATED:tableDisplay:END */
@@ -8664,8 +8700,9 @@ function chartSvgWithTitle(svg,title){
 // cards rather than a plotted chart. Mirrors chartSeriesFromTable's two chartable shapes
 // (single column vs label+value column) but keeps each value as its original cell text so a
 // non-numeric value like "<2s" still displays correctly instead of being parsed to 0.
-// A third column, when the table has exactly three, is each card's change ("+12%", "-3",
-// "▲ 4") — shown under the value as a coloured ▲/▼.
+// A column after the value written as changes ("+12%", "-3", "▲ 4") is each card's change,
+// shown beside the value as a coloured ▲/▼ pill; any other column (a note, an owner) is a
+// detail line under the value (cardsRows in src/utils/tableDisplay.ts).
 function tableCardsData(table){ return cardsRows(tableTextGrid(table)); }
 function cardChangeHtml(raw){
   if(!raw)return '';
@@ -8763,12 +8800,13 @@ function renderCardsHtml(table){
     return `<div class="pv-table-card" data-card-label="${esc(d.label)}" style="--card-color:${color}">`
       +`<div class="pv-table-card-label">${mark}<span class="pv-table-card-label-text">${esc(d.label).replace(/\//g,'/<wbr>')}</span></div>`
       +`<div class="pv-table-card-main"><div class="pv-table-card-value">${esc(d.value)}</div>${cardChangeHtml(d.change)}</div>`
+      +(d.details.length?`<div class="pv-table-card-details">${d.details.map(x=>`<div class="pv-table-card-detail">${x.label?`<span class="pv-table-card-detail-label">${esc(x.label)}</span>`:''}${esc(x.text)}</div>`).join('')}</div>`:'')
       +`</div>`;
   }).join('');
   // A typed or calculated total becomes one quiet full-width total line under the cards.
   const tot=cardsTotal(tableTextGrid(table),isTableTotalRow(table));
   const totalHtml=tot&&tot.value?`<div class="pv-table-cards-total"><span class="pv-table-cards-total-label">${esc(tot.label||'Total')}</span><span class="pv-table-cards-total-value">${esc(tot.value)}</span>${cardChangeHtml(tot.change)}</div>`:'';
-  return `<div class="pv-table-cards-grid" style="--cards-cols:${cardsGridColumns(data.length)};--cards-cols-narrow:${Math.min(2,data.length)}">${cards}</div>${totalHtml}`;
+  return `<div class="pv-table-cards-grid${data.some(d=>d.details.length)?' has-details':''}" style="--cards-cols:${cardsGridColumns(data.length)};--cards-cols-narrow:${Math.min(2,data.length)}">${cards}</div>${totalHtml}`;
 }
 // Shared axis/plot geometry for the three category-on-x, value-on-y chart shapes (bar, stacked
 // bar, and line) — everything but how each category's value(s) actually get drawn (grouped
@@ -28720,6 +28758,8 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview .pv-table-card-icon { height:14px !important; }
       body.printing-preview .pv-table-card-swatch { margin-top:3px !important; }
       body.printing-preview .pv-table-card-change { font-size:10px !important; padding:1px 6px !important; }
+      body.printing-preview .pv-table-card-details { font-size:10px !important; line-height:13px !important; padding-top:4px !important; }
+      body.printing-preview .pv-table-cards-grid.has-details .pv-table-card { row-gap:4px !important; }
       body.printing-preview .pv-table-cards-total { margin-top:8px !important; padding:8px 12px !important; border-radius:8px !important; }
       body.printing-preview .pv-table-cards-total-value { font-size:20px !important; }
       body.printing-preview .pv-table-chart-title { font-size:12px !important; margin-bottom:6px !important; }

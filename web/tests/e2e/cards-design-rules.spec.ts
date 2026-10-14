@@ -7,7 +7,8 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Cards redesign: label first (colour square, or the picked icon in its place), value with its
 // change pill beside it; and the tighter Show as › Cards rules from src/utils/tableDisplay.ts
-// (2–3 columns, 2–8 rows, numbers in the value column, a signed/arrowed change column). A Cards
+// (2–5 columns, 2–8 rows, numbers in the value column; a signed/arrowed column is the change, any
+// other column a detail line). A Cards
 // table edited out of shape shows as a plain table.
 
 const T = (attrs: string, rows: string[][]) =>
@@ -69,14 +70,15 @@ test('Show as › Cards is offered only for tables that fit, with the reason oth
       fits: cardsItem('<table><tr><th>M</th><th>V</th></tr><tr><td>A</td><td>6 days</td></tr><tr><td>B</td><td>31 days</td></tr></table>'),
       owner: cardsItem('<table><tr><th>Item</th><th>Cost</th><th>Owner</th></tr><tr><td>Laptop</td><td>1,200</td><td>Ana</td></tr><tr><td>Desk</td><td>300</td><td>Ben</td></tr></table>'),
       single: cardsItem('<table><tr><th>V</th></tr><tr><td>1</td></tr><tr><td>2</td></tr></table>'),
-      oneRow: cardsItem('<table><tr><th>M</th><th>V</th></tr><tr><td>A</td><td>1</td></tr></table>')
+      oneRow: cardsItem('<table><tr><th>M</th><th>V</th></tr><tr><td>A</td><td>1</td></tr></table>'),
+      six: cardsItem('<table><tr><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr><tr><td>x</td><td>1</td><td></td><td></td><td></td><td></td></tr><tr><td>y</td><td>2</td><td></td><td></td><td></td><td></td></tr></table>')
     };
   });
   expect(r.fits.disabled).toBeFalsy();
-  expect(r.owner.disabled).toBe(true);
-  expect(r.owner.title).toContain('third column');
+  expect(r.owner.disabled).toBeFalsy();
   expect(r.single.disabled).toBe(true);
-  expect(r.single.title).toContain('2 or 3 columns');
+  expect(r.single.title).toContain('2 to 5 columns');
+  expect(r.six.disabled).toBe(true);
   expect(r.oneRow.disabled).toBe(true);
 });
 

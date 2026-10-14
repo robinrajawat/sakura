@@ -51,18 +51,42 @@ function cdColumnCount(grid: string[][]): number {
   return grid.reduce((n, row) => Math.max(n, row.length), 0);
 }
 
+/** Cards read a label, a value, an optional change and up to two detail lines: 5 columns at most. */
+export const CARDS_MAX_COLUMNS = 5;
+
+/** Whether a column's filled cells read as changes: every one has a direction and at least one is
+ * written with a sign or an arrow, so a plain quantity or a date isn't mistaken for one. */
+function cdIsChangeColumn(values: string[]): boolean {
+  const filled = values.filter((v) => !cdIsPlaceholder(v));
+  if (!filled.length) return false;
+  const allHaveDirection = filled.every((v) => cardChangeDirection(v, cardValueNumber(v.replace(/^[▲▼↑↓]\s*/, ''))) !== null);
+  const anyMarked = filled.some((v) => /^\s*[▲▼↑↓+\-−]/.test(v));
+  return allHaveDirection && anyMarked;
+}
+
 /**
- * Whether a table can show as Cards. A card is label · value · optional change, so the table needs:
- * 2 or 3 columns; 2–8 rows (a typed total row is not counted toward the 8); numbers in the second column (at least half its filled cells, see
- * cardValueNumber); and, with a third column, changes in it — every filled cell has a direction
- * (cardChangeDirection) and at least one is written with a sign or an arrow, so a plain quantity
- * or a text column (Owner, Notes) isn't mistaken for one. n/a, dashes and empty cells are allowed
- * in both the value and the change column.
+ * Which column (after the value) holds each card's change: the first one whose cells read as
+ * changes (cdIsChangeColumn). -1 when none does. Every other column after the value is a detail line.
+ */
+export function cardsChangeColumn(grid: string[][]): number {
+  const rows = cdBodyRows(grid);
+  for (let c = 2; c < cdColumnCount(grid); c++) {
+    if (cdIsChangeColumn(rows.map((r) => r[c] ?? ''))) return c;
+  }
+  return -1;
+}
+
+/**
+ * Whether a table can show as Cards. A card is label · value, then an optional change pill and
+ * detail lines, so the table needs: 2–5 columns; 2–8 rows (a typed total row is not counted toward
+ * the 8); and numbers in the second column (at least half its filled cells, see cardValueNumber).
+ * Columns after the value need nothing: one written as changes (cardsChangeColumn) becomes the pill,
+ * any other (a note, an owner, a quantity) a detail line under the value.
  */
 export function cardsAvailability(grid: string[][]): DisplayAvailability {
   const cols = cdColumnCount(grid);
-  if (cols !== 2 && cols !== 3) {
-    return { ok: false, reason: `Cards need 2 or 3 columns: a label, a value and an optional change. This table has ${cols}.` };
+  if (cols < 2 || cols > CARDS_MAX_COLUMNS) {
+    return { ok: false, reason: `Cards need 2 to ${CARDS_MAX_COLUMNS} columns: a label, a value, then an optional change and notes. This table has ${cols}.` };
   }
   const rows = cdBodyRows(grid);
   // A typed total row becomes its own total card: it counts toward the minimum, not the maximum.
@@ -76,30 +100,41 @@ export function cardsAvailability(grid: string[][]): DisplayAvailability {
   if (!numeric || numeric * 2 < values.length) {
     return { ok: false, reason: 'Cards need numbers in the second column, like 1,240, 12% or 3.2 h.' };
   }
-  if (cols === 3) {
-    const changes = rows.map((r) => r[2] ?? '').filter((v) => !cdIsPlaceholder(v));
-    const allHaveDirection = changes.every((v) => cardChangeDirection(v, cardValueNumber(v.replace(/^[▲▼↑↓]\s*/, ''))) !== null);
-    const anyMarked = changes.some((v) => /^\s*[▲▼↑↓+\-−]/.test(v));
-    if (changes.length && !(allHaveDirection && anyMarked)) {
-      return { ok: false, reason: 'The third column must hold changes written with a sign or an arrow (+12%, −3, ▲ 4), or be left empty.' };
-    }
-  }
   return { ok: true };
+}
+
+export interface CardDetail {
+  /** The column's header, shown before the text only when a card has more than one detail column. */
+  label: string;
+  text: string;
 }
 
 export interface CardRow {
   label: string;
   value: string;
   change: string;
+  /** One line per detail column with text in this row, in column order. */
+  details: CardDetail[];
 }
 
-/** The cards a table shows: one per filled body row, label · value · change as written. */
+/**
+ * The cards a table shows: one per filled body row, label · value · change as written, and a
+ * detail line for each other column with text in that row. A detail's label is its column header
+ * when the table has two detail columns (so "Owner Ana" and "Due Fri" can be told apart), and empty
+ * with one, where the text reads on its own as a note.
+ */
 export function cardsRows(grid: string[][]): CardRow[] {
-  const hasChange = cdColumnCount(grid) === 3;
+  const ci = cardsChangeColumn(grid);
+  const detailCols: number[] = [];
+  for (let c = 2; c < cdColumnCount(grid); c++) if (c !== ci) detailCols.push(c);
+  const head = grid[0] ?? [];
   return cdBodyRows(grid).map((r) => ({
     label: (r[0] ?? '').trim(),
     value: (r[1] ?? '').trim(),
-    change: hasChange ? (r[2] ?? '').trim() : ''
+    change: ci >= 0 ? (r[ci] ?? '').trim() : '',
+    details: detailCols
+      .map((c) => ({ label: detailCols.length > 1 ? (head[c] ?? '').trim() : '', text: (r[c] ?? '').trim() }))
+      .filter((d) => !isBlankCellText(d.text))
   }));
 }
 
@@ -223,10 +258,11 @@ export function totalRowMismatches(grid: string[][]): { col: number; typed: stri
 export function cardsTotal(grid: string[][], calculated: boolean): CardRow | null {
   if (calculated) {
     const s = computeTotalRow(grid).sums[1];
-    return s ? { label: 'Total', value: s.text, change: '' } : null;
+    return s ? { label: 'Total', value: s.text, change: '', details: [] } : null;
   }
   const ti = typedTotalRowIndex(grid);
   if (ti < 0) return null;
   const r = grid[ti];
-  return { label: (r[0] ?? '').trim(), value: (r[1] ?? '').trim(), change: cdColumnCount(grid) === 3 ? (r[2] ?? '').trim() : '' };
+  const ci = cardsChangeColumn(grid);
+  return { label: (r[0] ?? '').trim(), value: (r[1] ?? '').trim(), change: ci >= 0 ? (r[ci] ?? '').trim() : '', details: [] };
 }

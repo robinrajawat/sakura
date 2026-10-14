@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  cardsAvailability, cardsRows, cardValueNumber, CARDS_MAX_ROWS,
+  cardsAvailability, cardsChangeColumn, cardsRows, cardValueNumber, CARDS_MAX_ROWS,
   isTotalLabel, typedTotalRowIndex, sumColumn, computeTotalRow, totalRowMismatches, cardsTotal
 } from '../../src/utils/tableDisplay';
 
@@ -35,11 +35,12 @@ describe('cardsAvailability', () => {
     expect(cardsAvailability(grid(['Area', 'Effort'], ['ERP', '6 days'], ['Total', '31 days'])).ok).toBe(true);
   });
 
-  it('needs 2 or 3 columns', () => {
+  it('needs 2 to 5 columns', () => {
     const one = cardsAvailability(grid(['Value'], ['1'], ['2']));
     expect(one.ok).toBe(false);
     expect(one.reason).toContain('This table has 1');
-    expect(cardsAvailability(grid(['A', 'B', 'C', 'D'], ['x', '1', '+1', '2'], ['y', '2', '-1', '3'])).ok).toBe(false);
+    expect(cardsAvailability(grid(['A', 'B', 'C', 'D'], ['x', '1', '+1', '2'], ['y', '2', '-1', '3'])).ok).toBe(true);
+    expect(cardsAvailability(grid(['A', 'B', 'C', 'D', 'E', 'F'], ['x', '1', '', '', '', ''], ['y', '2', '', '', '', ''])).ok).toBe(false);
   });
 
   it('needs 2 to 8 rows, ignoring empty rows', () => {
@@ -68,26 +69,47 @@ describe('cardsAvailability', () => {
     expect(cardsAvailability(grid(['M', 'V', 'Change'], ['A', '1', ''], ['B', '2', ''])).ok).toBe(true);
   });
 
-  it('rejects a third column that is text or a plain quantity', () => {
-    const owner = cardsAvailability(grid(['Item', 'Cost', 'Owner'], ['Laptop', '1,200', 'Ana'], ['Desk', '300', 'Ben']));
-    expect(owner.ok).toBe(false);
-    expect(owner.reason).toContain('third column');
-    expect(cardsAvailability(grid(['Item', 'Cost', 'Qty'], ['Laptop', '1,200', '2'], ['Desk', '300', '4'])).ok).toBe(false);
-    expect(cardsAvailability(grid(['Item', 'Cost', 'Due'], ['Laptop', '1,200', '2026-10-14'], ['Desk', '300', '+2'])).ok).toBe(false);
+  it('accepts a third column that is text or a plain quantity, as a detail line', () => {
+    expect(cardsAvailability(grid(['Item', 'Cost', 'Owner'], ['Laptop', '1,200', 'Ana'], ['Desk', '300', 'Ben'])).ok).toBe(true);
+    expect(cardsAvailability(grid(['Item', 'Cost', 'Qty'], ['Laptop', '1,200', '2'], ['Desk', '300', '4'])).ok).toBe(true);
+  });
+});
+
+describe('cardsChangeColumn', () => {
+  it('is the first column after the value written as changes', () => {
+    expect(cardsChangeColumn(grid(['M', 'V', 'C'], ['A', '1', '+2'], ['B', '2', '▼ 1']))).toBe(2);
+    expect(cardsChangeColumn(grid(['M', 'V', 'Note', 'C'], ['A', '1', 'pilot', '+2'], ['B', '2', '', '-1']))).toBe(3);
+  });
+  it('is -1 for text, plain quantities, dates and empty columns', () => {
+    expect(cardsChangeColumn(grid(['I', 'C', 'Owner'], ['L', '1', 'Ana'], ['D', '2', 'Ben']))).toBe(-1);
+    expect(cardsChangeColumn(grid(['I', 'C', 'Qty'], ['L', '1', '2'], ['D', '2', '4']))).toBe(-1);
+    expect(cardsChangeColumn(grid(['I', 'C', 'Due'], ['L', '1', '2026-10-14'], ['D', '2', '+2']))).toBe(-1);
+    expect(cardsChangeColumn(grid(['I', 'C', 'X'], ['L', '1', ''], ['D', '2', '']))).toBe(-1);
   });
 });
 
 describe('cardsRows', () => {
   it('returns one card per filled body row', () => {
     expect(cardsRows(grid(['M', 'V'], ['A', '1'], ['', ''], ['B', '2']))).toEqual([
-      { label: 'A', value: '1', change: '' },
-      { label: 'B', value: '2', change: '' }
+      { label: 'A', value: '1', change: '', details: [] },
+      { label: 'B', value: '2', change: '', details: [] }
     ]);
   });
   it('reads the change column when there are three columns', () => {
     expect(cardsRows(grid(['M', 'V', 'C'], ['A', '1', '+2'], ['B', '2']))).toEqual([
-      { label: 'A', value: '1', change: '+2' },
-      { label: 'B', value: '2', change: '' }
+      { label: 'A', value: '1', change: '+2', details: [] },
+      { label: 'B', value: '2', change: '', details: [] }
+    ]);
+  });
+  it('shows a single text column as an unlabelled note line', () => {
+    expect(cardsRows(grid(['Item', 'Amount', 'Note'], ['Special freight', 'DKK 1,500', 'Scales only'], ['Pallets', 'DKK 400', '']))).toEqual([
+      { label: 'Special freight', value: 'DKK 1,500', change: '', details: [{ label: '', text: 'Scales only' }] },
+      { label: 'Pallets', value: 'DKK 400', change: '', details: [] }
+    ]);
+  });
+  it('labels detail lines with their header when there are two, around a change column', () => {
+    expect(cardsRows(grid(['M', 'V', 'Owner', 'Δ', 'Due'], ['A', '1', 'Ana', '+2', 'Fri']))).toEqual([
+      { label: 'A', value: '1', change: '+2', details: [{ label: 'Owner', text: 'Ana' }, { label: 'Due', text: 'Fri' }] }
     ]);
   });
 });
@@ -150,8 +172,8 @@ describe('Cards and the total row', () => {
     expect(cardsAvailability(nine).ok).toBe(true);
   });
   it('gives the total card: typed as written, or calculated', () => {
-    expect(cardsTotal(g, false)).toEqual({ label: 'Total', value: '10 days', change: '' });
-    expect(cardsTotal(g, true)).toEqual({ label: 'Total', value: '18 days', change: '' });
+    expect(cardsTotal(g, false)).toEqual({ label: 'Total', value: '10 days', change: '', details: [] });
+    expect(cardsTotal(g, true)).toEqual({ label: 'Total', value: '18 days', change: '', details: [] });
     expect(cardsTotal([['M', 'V'], ['A', '1']], false)).toBeNull();
   });
 });
