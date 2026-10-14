@@ -481,6 +481,11 @@ listing Confirmed / N/A rows, answered or closed questions and resolved follow-u
 scrollbars are always the app's thin style — `.sb-context-menu` was missing from the thin-scrollbar
 lists and is now in both (WebKit and the Firefox `@supports` block).
 
+**Status as a soft tag (owner feedback, 2026-10-14).** The byline's status dot read like a stray
+outline bullet (grey Draft dot right above the rows). Status is now the byline's one soft tag:
+sentence case on a light tint of its colour (`--status-c`; grey Draft, orange Review, green Approved,
+red Rejected), "No status" a faint outlined tag. Author and actions stay plain text.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

@@ -8,7 +8,7 @@ const indexPath = path.resolve(__dirname, '../../index.html');
 // Header polish (owner-approved mockup): toolbar groups have no grey box (dividers only, button
 // hover backgrounds stay), marker summary counts use the text colour with only the icon tinted,
 // and the line under the title is a quiet byline — sentence case, no pills, status shown as a
-// coloured dot, "·" separators.
+// soft tag (it is the one state there), "·" separators.
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -44,27 +44,27 @@ test('the open-items summary uses the text colour; only the icon is tinted', asy
   expect(c.text).toBe(probe);
 });
 
-test('the title byline is sentence case with a status dot and no pill backgrounds', async ({ page }) => {
+test('the title byline is sentence case; status is the one soft tag, the actions have no pill backgrounds', async ({ page }) => {
   const s = await page.evaluate(() => {
     const status = document.getElementById('doc-status-chip')!;
     const hist = document.getElementById('doc-history-chip')!;
-    const dot = getComputedStyle(status, '::before');
     return {
       statusText: status.textContent,
       transform: getComputedStyle(status).textTransform,
+      statusBg: getComputedStyle(status).backgroundColor,
+      statusDot: getComputedStyle(status, '::before').content,
       histTransform: getComputedStyle(hist).textTransform,
       histBg: getComputedStyle(hist).backgroundColor,
       histBorder: getComputedStyle(hist).borderTopStyle,
-      dotW: dot.width, dotBg: dot.backgroundColor,
       sep: getComputedStyle(document.getElementById('doc-status-wrap')!, '::after').content
     };
   });
   expect(s.statusText).toBe('Review');
   expect(s.transform).toBe('none');
+  expect(s.statusBg).not.toBe('rgba(0, 0, 0, 0)');
+  expect(s.statusDot).toBe('none');
   expect(s.histTransform).toBe('none');
   expect(s.histBg).toBe('rgba(0, 0, 0, 0)');
   expect(s.histBorder).toBe('none');
-  expect(s.dotW).toBe('7px');
-  expect(s.dotBg).not.toBe('rgba(0, 0, 0, 0)');
   expect(s.sep).toBe('"·"');
 });
