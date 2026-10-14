@@ -46,19 +46,26 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   const q = page.locator('.thread-entry:has(#inline-remark-text-rq1)');
   await expect(q.locator('.thread-chip.is-question')).toHaveText('Question · Answered');
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
-  await expect(a.locator('.thread-chip.is-yes')).toHaveText('✓ Yes');
+  await expect(a.locator('.thread-verdict.is-yes')).toHaveText('✓ Yes');
   await expect(a.locator('.node-remark-text-inline')).toHaveText('All of them');
   // A decision becomes the Decision status, and the row turns Confirmed.
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-chip.is-decision')).toHaveText('Decision');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-status-note.is-decision')).toHaveText('· decision');
   expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('confirmed');
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'd1'))")).not.toContain('"kind"');
   expect(errors).toEqual([]);
 });
 
-test('reply box: Enter adds a comment, Ask adds a question, Yes answers it, the author sticks', async ({ page }) => {
+test('reply line: hidden until "+ Reply"; Enter adds a comment, Ask a question, Yes answers it, the author sticks', async ({ page }) => {
   const errors = await seed(page);
   const box = page.locator('.thread-composer-input[data-node-id="2"]');
-  await box.click();
+  // At rest the thread ends in "+ Reply", shown while the thread is hovered.
+  await expect(box).toHaveCount(0);
+  const replyLink = page.locator('.thread-reply-link').first();
+  await expect(replyLink).toHaveCSS('opacity', '0');
+  await page.locator('.thread-entry').first().hover();
+  await expect(replyLink).toHaveCSS('opacity', '1');
+  await replyLink.click();
+  await expect(box).toBeFocused();
   await page.keyboard.type('Ops confirmed the window.');
   await page.keyboard.press('Enter');
   await expect(page.locator('.thread-entry[data-remark-id] .node-remark-text-inline', { hasText: 'Ops confirmed the window.' })).toHaveCount(1);
@@ -97,14 +104,15 @@ test('row marker and thread status are one status, both ways', async ({ page }) 
   await page.evaluate("setNodeMarker(2, 'followup'); render()");
   const latestStatus = "(() => { const t = nodeThread(2); return t[t.length - 1].status || ''; })()";
   expect(await page.evaluate(latestStatus)).toBe('followup');
-  await expect(page.locator('.thread-entry .thread-chip.is-followup')).toHaveCount(1);
+  await expect(page.locator('.thread-entry .thread-status-note.is-followup')).toHaveCount(1);
 
-  // Thread → marker: Resolve in the reply box turns the row Confirmed.
+  // Thread → marker: Resolve on the reply line turns the row Confirmed, as its own entry.
+  await page.evaluate('openThreadComposer(2, false)');
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="resolve"]').click();
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('confirmed');
   expect(await page.evaluate(latestStatus)).toBe('resolved');
-  // The earlier Follow-up chip stays as history.
-  await expect(page.locator('.thread-entry .thread-chip.is-followup')).toHaveCount(1);
+  // The earlier Follow-up stays as history.
+  await expect(page.locator('.thread-entry .thread-status-note.is-followup')).toHaveCount(1);
 
   // Clearing the marker takes back the chip that set it: the follow-up is open again; clearing
   // that leaves no status.
@@ -126,7 +134,7 @@ test('row marker and thread status are one status, both ways', async ({ page }) 
   await expect(box3).toBeFocused();
   await page.keyboard.type('Load script fails on the EU file');
   await page.keyboard.press('Enter');
-  await expect(page.locator('.thread-entry', { hasText: 'Load script fails' }).locator('.thread-chip.is-issue')).toHaveText('Issue');
+  await expect(page.locator('.thread-entry', { hasText: 'Load script fails' }).locator('.thread-status-note.is-issue')).toHaveText('· issue');
   expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('issue');
   await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="resolve"]').click();
   expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('confirmed');
@@ -166,18 +174,52 @@ test('PDF prints the whole thread with author, time and chips', async ({ page })
     const doc = document.getElementById('preview-doc')!;
     return {
       labels: [...doc.querySelectorAll('.pv-remark-block .pv-inline-label-remark > span:not(.pv-status-pill)')].map(e => e.textContent),
-      status: [...doc.querySelectorAll('.pv-remark-block .pv-thread-status')].map(e => e.textContent),
+      notes: [...doc.querySelectorAll('.pv-remark-block .pv-thread-status-note')].map(e => e.textContent),
+      verdicts: [...doc.querySelectorAll('.pv-remark-block .pv-thread-verdict')].map(e => e.textContent),
       texts: [...doc.querySelectorAll('.pv-remark-block .pv-remark-text')].map(e => (e.textContent || '').trim()),
       pills: [...doc.querySelectorAll('.pv-remark-block .pv-remark-entry .pv-status-pill')].map(e => e.textContent),
       qaSection: (document.getElementById('pv-qa-section')?.textContent || '')
     };
   });
-  // One header per thread: its size and its status.
+  // The header names the thread; the status prints once on the row, and quietly on the entry that set it.
   expect(r.labels).toEqual(['Thread · 4']);
-  expect(r.status).toEqual(['✓ Decision']);
+  expect(r.notes).toEqual(['· decision']);
+  expect(r.verdicts).toEqual(['✓ Yes']);
   expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
-  expect(r.pills).toEqual(expect.arrayContaining(['Question · Answered', '✓ Yes', 'Decision']));
+  expect(r.pills).toEqual(['Question · Answered']);
   expect(r.qaSection).toContain('Unlinked question');
   expect(r.qaSection).not.toContain('EU customers');
   expect(errors).toEqual([]);
+});
+
+test('each author gets their own avatar colour; a bare Yes takes one line', async ({ page }) => {
+  await seed(page, `
+    remarks.push(
+      { id: 'k', anchorNodeId: 2, person: 'Karsten', date: '2026-10-14', text: 'Fine by me.', createdAt: 5 },
+      { id: 'r', anchorNodeId: 2, person: 'Robin', date: '2026-10-14', text: 'Agreed.', createdAt: 6 },
+      { id: 'g', anchorNodeId: 2, person: 'Gro Fatima', date: '2026-10-14', text: 'Noted.', createdAt: 7 }
+    );
+  `);
+  // Karsten, Robin and Gro Fatima used to hash to one colour.
+  const colours = await page.evaluate(`['Ana', 'Karsten', 'Robin', 'Gro Fatima'].map(n => remarkAuthorColor(n).avatarBg)`);
+  expect(new Set(colours as string[]).size).toBe(4);
+
+  // A bare Yes reply has no text and shows no text line.
+  await page.evaluate(`remarks.push(
+    { id: 'ask', anchorNodeId: 3, person: 'Ana', date: '2026-10-14', text: 'Ready?', type: 'question', createdAt: 8 },
+    { id: 'bare', anchorNodeId: 3, person: 'Robin', date: '2026-10-14', text: '', verdict: 'yes', answerTo: 'ask', createdAt: 9 }); render();`);
+  const bare = page.locator('.thread-entry.is-event');
+  await expect(bare).toHaveCount(1);
+  await expect(bare.locator('.thread-verdict.is-yes')).toBeVisible();
+  await expect(bare.locator('.node-remark-text-inline')).toBeHidden();
+});
+
+test('right-click and Insert offer one Thread item, no separate comment/question', async ({ page }) => {
+  await seed(page);
+  const labels = await page.evaluate(`[...document.querySelectorAll('#insert-menu [data-insert-action]')].map(b => [b.dataset.insertAction, b.textContent.trim()])`) as string[][];
+  expect(labels.filter(([a]) => a === 'remark').map(([, t]) => t)).toEqual(['Thread']);
+  expect(labels.some(([a]) => a === 'qa')).toBe(false);
+  await page.locator('.node-row[data-id="2"] .node-label').click({ button: 'right' });
+  await expect(page.locator('#context-quickbar [data-action="remark"]')).toHaveCount(1);
+  await expect(page.locator('#context-menu [data-action="qa"]')).toHaveCount(0);
 });

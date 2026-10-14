@@ -78,8 +78,8 @@ test.describe('Fixed main toolbar', () => {
     // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
     // Rewrite + Generate outline live in AI ▾.
     await page.locator('#qb-insert').click();
-    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Basics', 'Marker', 'Thread', 'Visuals']);
-    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Question', 'Comment', 'Table', 'Image', 'Diagram', 'Generate diagram']);
+    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Basics', 'Marker', 'Discuss', 'Visuals']);
+    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(5);
     await page.locator('#qb-ai').click();
     await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
@@ -215,13 +215,13 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     await expect(page.locator('.node-hover-rail-btn')).toHaveCount(0);
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     const quick = await page.evaluate(() => Array.from(document.querySelectorAll('#context-quickbar [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
+    expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'up', 'down', 'duplicate', 'focus', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'image', 'diagram-gen', 'tags', 'version-history', 'delete']);
+    expect(more).toEqual(['child', 'above', 'below', 'up', 'down', 'duplicate', 'focus', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'tags', 'version-history', 'delete']);
     // Add and Move are single icon rows; the add-to-node leftovers sit behind one Insert › flyout.
     await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(2);
-    await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(3);
+    await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(2);
     await page.locator('#context-more-panel .context-submenu-trigger').hover();
     await expect(page.locator('#context-more-panel .context-submenu')).toBeVisible();
     expect(errors).toEqual([]);
@@ -377,7 +377,7 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     // Right-click menu fixed.
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     const quick = await page.evaluate(() => Array.from(document.querySelectorAll('#context-quickbar [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
+    expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
     await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toBeVisible();
     await page.keyboard.press('Escape');

@@ -71,18 +71,19 @@ async function clickGroupFilter(page: Page, heading: string) {
   await page.locator('#marker-summary .open-items-btn').click();
   await page.locator('.open-items-menu .sb-context-heading', { hasText: heading }).locator('.sb-context-heading-action').click();
 }
-const chips = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-chip`);
+const statusNote = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-status-note`);
 
 test('old follow-ups migrate to thread status, and the row marker follows the thread', async ({ page }) => {
   const errors = await open(page);
-  await expect(chips(page, 'rDone')).toHaveText(['Resolved']);
-  await expect(chips(page, 'rOld')).toHaveText(['Follow-up']);
+  await expect(statusNote(page, 'rDone')).toHaveText('· resolved');
+  await expect(statusNote(page, 'rOld')).toHaveText('· follow-up');
   // The latest chip is the thread's status, so the row is a Follow-up.
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toContain('followUp');
   expect(await sumButtons(page)).toEqual(['1 follow-up', '1 question']);
 
-  // Resolving from the reply box settles the row.
+  // Resolving from the reply line settles the row.
+  await page.evaluate('openThreadComposer(2, false)');
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="resolve"]').click();
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('confirmed');
   expect(await sumButtons(page)).toEqual(['1 question']);
@@ -102,12 +103,13 @@ test('a question (formerly Q&A): its chip tracks the answer, Yes answers it, won
   await expect(q('rqWont')).toHaveText('Question · Won’t answer');
   await expect(page.locator('#inline-remark-text-rqDone-a')).toHaveText('Priya');
 
-  // Yes from the reply box answers the open question.
+  // Yes from the reply line answers the open question.
+  await page.evaluate('openThreadComposer(3, false)');
   await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="yes"]').click();
   await expect(q('rqOpen')).toHaveText('Question · Answered');
   expect(await sumButtons(page)).toEqual(['1 follow-up']);
   // "Not the answer" on the reply reopens the question.
-  const ans = page.locator('.thread-entry:has(.thread-chip.is-yes)');
+  const ans = page.locator('.thread-entry:has(.thread-verdict.is-yes)');
   await ans.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Not the answer', { exact: true }).click();
   await expect(q('rqOpen')).toHaveText('Question');
@@ -157,18 +159,20 @@ async function exportPdf(page: Page) {
     const sec = document.getElementById('pv-open-items-section');
     return {
       pills: [...document.querySelectorAll('#preview-doc .pv-remark-entry .pv-status-pill')].map(p => p.textContent),
+      notes: [...document.querySelectorAll('#preview-doc .pv-thread-status-note')].map(p => p.textContent),
       section: !!sec,
       tocHasOpenItems: !!document.querySelector('#preview-toc a[href="#pv-open-items-section"]'),
     };
   });
 }
 
-test('PDF shows each entry\'s chips, and no Open items summary page', async ({ page }) => {
+test('PDF shows each entry\'s question state and status, and no Open items summary page', async ({ page }) => {
   const errors = await open(page);
   const r = await exportPdf(page);
-  expect(r.pills).toEqual(expect.arrayContaining(['Question · Open', 'Follow-up', 'Resolved', 'Question · Answered', 'Question · Won’t answer']));
-  // Plain comments carry no chip.
-  expect(r.pills.filter((p: string | null) => p === 'Follow-up' || p === 'Resolved')).toHaveLength(2);
+  expect(r.pills).toEqual(expect.arrayContaining(['Question · Open', 'Question · Answered', 'Question · Won’t answer']));
+  // A status is quiet text on the entry that set it, not a pill (the row's marker carries it).
+  expect(r.notes).toEqual(expect.arrayContaining(['· follow-up', '· resolved']));
+  expect(r.pills).not.toContain('Follow-up');
   // Owner decision: the closing "Open items" summary page was removed.
   expect(r.section).toBe(false);
   expect(r.tocHasOpenItems).toBe(false);
@@ -179,16 +183,16 @@ test('a status set from an entry\'s menu moves the row marker', async ({ page })
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds.add(4); render();');
   const line = page.locator('.thread-entry', { hasText: 'Just a comment.' });
-  await expect(line.locator('.thread-chip')).toHaveCount(0);
+  await expect(line.locator('.thread-status-note')).toHaveCount(0);
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Follow-up', { exact: true }).click();
-  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-chip.is-followup')).toHaveText('Follow-up');
+  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-status-note.is-followup')).toHaveText('· follow-up');
   expect(await page.evaluate('nodes.find(n => n.id === 4).marker')).toBe('followup');
   expect(await sumButtons(page)).toEqual(['2 follow-ups', '1 question']);
 
   await page.locator('.thread-entry', { hasText: 'Just a comment.' }).click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Follow-up', { exact: true }).click();
-  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-chip')).toHaveCount(0);
+  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-status-note')).toHaveCount(0);
   expect(await page.evaluate("nodes.find(n => n.id === 4).marker || ''")).toBe('');
   expect(errors).toEqual([]);
 });
