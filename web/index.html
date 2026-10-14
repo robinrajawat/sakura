@@ -7833,8 +7833,8 @@ function buildTableEditItems(table,cell,commit){
 // above (buildTableEditItems, which needs a `cell` for its own row/column items but not for these)
 // and the read-only display-mode menu (buildNodeTableObject) -- letting someone feature a table as
 // a chart or Cards without first having to enter edit mode at all.
-// The table's display: one "Show as ›" submenu (Table, Chips, Cards, Progress bars, Status board,
-// Pros & cons, then
+// The table's display: one "Show as ›" submenu (Table, Chips, Inline, Cards, Progress bars, Status
+// board, Pros & cons under a "Layout" heading, then
 // Vertical / Horizontal under a "Timeline" heading and the chart shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
 // (a chart or Cards), size (a chart). Anything that doesn't apply is listed but disabled, with the
 // reason on hover, so the menu never changes shape.
@@ -7880,6 +7880,7 @@ function buildChartFeatureItems(table,commit){
   const tlOk=tableTimelineEligible(table), tlRows=timelineRowCount(table);
   const TL_REASON='A timeline needs dates in the first column (e.g. 2026-10-14 or Oct 14), then the event, and optionally a detail.';
   const showAs=[
+    {heading:'Layout'},
     opt('table','Table',true),
     opt('chips','Chips',tableChipsEligible(table),'Chips need a two-column table: a short code and its description.'),
     opt('inline','Inline',tableChipsEligible(table),'Inline needs a two-column table: a short code and its description.'),
