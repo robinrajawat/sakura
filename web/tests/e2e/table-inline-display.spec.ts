@@ -6,7 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Show as › Inline (owner request): a two-column code/description table as one running line,
-// "ZN Night Distribution · ZL KL 10:00 Fixed" -- key bold, "·" between entries, no boxes.
+// "ZN Night Distribution · ZL KL 10:00 Fixed" -- codes in small monospace accent, descriptions muted,
+// "·" between entries, no boxes.
 
 const SHIP = '<table><tr><th>Shipping Condition</th><th>Description</th></tr><tr><td>ZN</td><td>Night Distribution</td></tr><tr><td>ZL</td><td>KL 10:00 Fixed</td></tr><tr><td>ZP</td><td>Pickup</td></tr></table>';
 
@@ -35,7 +36,7 @@ test('Show as › Inline shows the table as one line, key bold, entries separate
   expect(await page.evaluate(() => nodes[0].tables[0])).toContain('data-table-display="inline"');
   const line = page.locator('.node-table-line .pv-table-inline');
   await expect(line).toHaveText('ZN Night Distribution · ZL KL 10:00 Fixed · ZP Pickup');
-  await expect(line.locator('b')).toHaveText(['ZN', 'ZL', 'ZP']);
+  await expect(line.locator('code')).toHaveText(['ZN', 'ZL', 'ZP']);
   // The menu marks it as the current display.
   const current = await page.evaluate(() => {
     const d = document.createElement('div');
