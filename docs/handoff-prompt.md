@@ -433,6 +433,20 @@ Progress, Timeline, Status board, Pros & cons, chart types) into `tableDisplay.t
 change. Open idea, not built: a way to mark "down is good" so a falling change shows green. Covered by
 `tests/e2e/cards-design-rules.spec.ts` + `tests/unit/tableDisplay.test.ts`.
 
+**Header polish (owner-approved mockup, 2026-10-14).** Owner asked for "elegance" changes after
+comparing a before/after mockup of their real document header. Toolbar `.action-group .ag-buttons`
+lost its grey box (the `.quick-sep` dividers stay; buttons keep their own hover); a divider sits
+between the marker summary and the Collapse/Zoom pair. Marker summary counts use the text colour,
+only the icon carries the marker colour (`--mc` on `.marker-sum-btn`, purple for `.disc-sum-btn`).
+The line under the title is a byline, scoped to `#editor-meta-row` so other `.doc-status-chip`
+users keep pills: sentence case, no pill backgrounds, status as a 7px coloured dot + bold label
+(hollow dot when unset), "·" after status and before the link chip. **Not done:** ending the
+selected-row highlight after the text (mockup showed it) — a row's marker/object dots sit at its
+right edge, so shrinking the row would move them. Covered by `tests/e2e/header-polish.spec.ts`.
+**Agreed next:** Cards with detail lines (column 1 label, column 2 value, a signed/arrowed column
+→ change pill, every other column → a detail line; up to 5 columns) — loosens #518's rule that
+refused Cards when the third column isn't a change (owner's "Special freight | Amount | Scales").
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

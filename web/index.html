@@ -885,16 +885,20 @@ body.zen-mode #quick-bar{display:none}
 .doc-tab-overview-empty{padding:10px 8px;font:400 12px 'Inter',sans-serif;color:var(--hint);text-align:center}
 #quick-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-wrap:wrap}
 .action-group{display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;max-width:100%}
-.action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px;background:color-mix(in srgb,var(--fg) 4%,transparent);transition:background .15s}
-.action-group:hover .ag-buttons{background:color-mix(in srgb,var(--fg) 6%,transparent)}
+.action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px}
 /* Collapse all + Zoom sit as a small pair at the right end of the toolbar. */
 #ag-fold{margin-left:auto}
 /* Marker summary: whole-document counts per marker (folded branches included), left of the fold group. */
-#ag-markers{margin-left:auto}#ag-markers[hidden]{display:none}#ag-markers:not([hidden])+#ag-fold{margin-left:6px}
-.marker-sum-btn{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:none;border-radius:8px;background:transparent;color:var(--fc-gray);font:600 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums}
-.marker-sum-btn[data-color="green"]{color:var(--fc-green)}.marker-sum-btn[data-color="red"]{color:var(--fc-red)}.marker-sum-btn[data-color="orange"]{color:var(--fc-orange)}
-.marker-sum-btn:hover{background:color-mix(in srgb,currentColor 12%,transparent)}
-.marker-sum-btn.active{background:color-mix(in srgb,currentColor 16%,transparent);box-shadow:inset 0 0 0 1.5px currentColor}
+#ag-markers{margin-left:auto}#ag-markers[hidden]{display:none}
+#ag-markers:not([hidden])+#ag-fold{position:relative;margin-left:13px}
+#ag-markers:not([hidden])+#ag-fold::before{content:'';position:absolute;left:-7px;top:50%;width:1px;height:18px;transform:translateY(-50%);background:color-mix(in srgb,var(--border) 70%,transparent)}
+/* Counts in the text colour; only the icon carries the marker's colour (--mc), so the summary
+   doesn't outshout the document. Hover/active tint with the same colour. */
+.marker-sum-btn{--mc:var(--fc-gray);display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:none;border-radius:8px;background:transparent;color:var(--fg);font:500 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums}
+.marker-sum-btn svg{color:var(--mc)}
+.marker-sum-btn[data-color="green"]{--mc:var(--fc-green)}.marker-sum-btn[data-color="red"]{--mc:var(--fc-red)}.marker-sum-btn[data-color="orange"]{--mc:var(--fc-orange)}
+.marker-sum-btn:hover{background:color-mix(in srgb,var(--mc) 12%,transparent)}
+.marker-sum-btn.active{background:color-mix(in srgb,var(--mc) 16%,transparent);box-shadow:inset 0 0 0 1.5px var(--mc)}
 .marker-sum-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .quick-btn{width:34px;height:34px;font-size:16px;border-radius:7px;border-color:transparent;background:transparent;transition:background .12s,color .12s,transform .08s,box-shadow .12s}
 .quick-btn:hover{background:var(--hover);border-color:transparent;transform:translateY(-1px);box-shadow:0 2px 5px rgba(0,0,0,.08)}
@@ -1758,7 +1762,7 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .node-dot-count{font:700 10px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
 .node-note-dot.dot-all-closed{color:var(--hint)!important}
 .marker-sum-divider{width:1px;height:16px;margin:0 3px;background:var(--border);align-self:center}
-.disc-sum-btn{color:var(--fc-purple)}
+.disc-sum-btn{--mc:var(--fc-purple)}
 .pv-status-pill{display:inline-flex;align-items:center;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
 .pv-inline-qa-line .pv-status-pill{align-self:flex-start;margin-top:1px}
 
@@ -2542,6 +2546,22 @@ body.printing-generic #gpe-overlay{
 .doc-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 #doc-ref-chip{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);display:inline-flex;align-items:center}
 #doc-ref-chip:hover{background:color-mix(in srgb,var(--accent) 26%,transparent)}
+/* Byline under the title: one quiet line (status with a coloured dot · author · Link, History,
+   Share as small links) instead of a row of uppercase pills. Scoped to the title area, so other
+   .doc-status-chip users keep the pill look. */
+#editor-meta-row{gap:2px 4px}
+#doc-status-wrap,#doc-link-wrap{display:inline-flex;align-items:center}
+#editor-meta-row .doc-status-chip{display:inline-flex;align-items:center;gap:5px;font:500 12.5px 'Inter',sans-serif;text-transform:none;letter-spacing:0;padding:3px 7px;border:none;border-radius:6px;background:transparent;color:var(--muted);opacity:1}
+#editor-meta-row .doc-status-chip:hover{background:var(--hover);color:var(--fg)}
+#editor-meta-row .doc-status-chip svg{width:12px;height:12px;margin-right:0!important;vertical-align:0!important;flex:0 0 auto}
+#editor-meta-row #doc-status-chip{font-weight:600;color:var(--fg)}
+#editor-meta-row #doc-status-chip::before{content:'';flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:var(--status-dot,var(--fc-gray))}
+#doc-status-chip[data-color="orange"]{--status-dot:var(--fc-orange)}#doc-status-chip[data-color="green"]{--status-dot:var(--fc-green)}#doc-status-chip[data-color="red"]{--status-dot:var(--fc-red)}
+#editor-meta-row #doc-status-chip.unset{font-weight:500;color:var(--hint)}
+#editor-meta-row #doc-status-chip.unset::before{background:transparent;box-shadow:inset 0 0 0 1.5px var(--border)}
+#editor-meta-row #sb-author.doc-author-chip{font-weight:500;cursor:text}
+#editor-meta-row #sb-author.doc-author-chip::placeholder{color:var(--hint)}
+#doc-status-wrap::after,#doc-link-wrap::before{content:'\00B7';color:var(--hint);padding:0 2px}
 #diagram-editor-note-input{appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;outline:none;width:150px;transition:width .15s,border-color .12s,background .12s}
 #diagram-editor-note-input:hover{background:var(--hover)}
 #diagram-editor-note-input:focus{width:260px;background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
