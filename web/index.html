@@ -7736,6 +7736,43 @@ function tableGridFromHtml(html){
   }catch(e){ return null; }
 }
 // Puts the caret at the end of a cell's text (before its resize handles), or at its start.
+// A cell only shows its text, so line breaks, spaces (&nbsp; included) and empty blocks at either
+// end are invisible -- but they still grow the row or shift a right-aligned value (owner report:
+// Shift+Enter at the end of a cell leaves a trailing <br> that Backspace can't remove, because the
+// browser keeps one as the cell's placeholder line). They're trimmed from what gets stored; the
+// line breaks inside a cell's text stay.
+function tidyTableCell(cell){
+  const isBlank=n=>n.nodeType===3?!/[^\s ]/.test(n.nodeValue):n.nodeType===1&&(n.tagName==='BR'||(!n.textContent.replace(/[\s ]/g,'')&&!n.querySelector('img,svg,input')&&n.tagName!=='IMG'));
+  for(const side of ['firstChild','lastChild']){
+    let n;
+    while((n=cell[side])){
+      if(isBlank(n)){ n.remove(); continue; }
+      if(n.nodeType===1&&n[side]&&!/^(IMG|SVG|INPUT)$/.test(n.tagName)){
+        // Descend into an inline wrapper (<b>Integrations<br></b>) to trim its own edge.
+        let inner=n; while(inner[side]&&inner[side].nodeType===1&&!isBlank(inner[side]))inner=inner[side];
+        const edge=inner[side];
+        if(edge&&isBlank(edge)){ edge.remove(); continue; }
+      }
+      break;
+    }
+  }
+  const walker=document.createTreeWalker(cell,NodeFilter.SHOW_TEXT);
+  const texts=[]; while(walker.nextNode())texts.push(walker.currentNode);
+  if(texts.length){
+    texts[0].nodeValue=texts[0].nodeValue.replace(/^[\s ]+/,'');
+    const last=texts[texts.length-1]; last.nodeValue=last.nodeValue.replace(/[\s ]+$/,'');
+  }
+}
+// Stored-table form of tidyTableCell: returns the html unchanged (same string) when nothing needed
+// trimming, so untouched tables are never re-serialized.
+const TABLE_CELL_EDGE_JUNK=/<br\b|&nbsp;| |<t[hd]\b[^>]*>\s|\s<\/t[hd]>|<(div|p)\b[^>]*>(\s|<br[^>]*>)*<\/\1>/i;
+function tidyTableHtml(html){
+  if(typeof html!=='string'||!TABLE_CELL_EDGE_JUNK.test(html))return html;
+  const div=document.createElement('div'); div.innerHTML=html;
+  const before=div.innerHTML;
+  div.querySelectorAll('td,th').forEach(tidyTableCell);
+  return div.innerHTML===before?html:div.innerHTML;
+}
 function placeTableCaret(cell,atStart){
   if(!cell)return;
   if(cell.focus)cell.focus();
@@ -8324,7 +8361,7 @@ function buildNodeTableObject(node,tIdx){
   wrap.dataset.nodeId=String(node.id);
   function showDisplay(){
     wrap.classList.remove('editing','editing-chart-data');
-    const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
+    const div=document.createElement('div'); div.innerHTML=tidyTableHtml(node.tables[tIdx]||'');
     const table=div.querySelector('table');
     wrap.innerHTML='';
     wrap.classList.remove('pv-table-chart-figure');
@@ -8344,7 +8381,7 @@ function buildNodeTableObject(node,tIdx){
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
-    const div=document.createElement('div'); div.innerHTML=node.tables[tIdx]||'';
+    const div=document.createElement('div'); div.innerHTML=tidyTableHtml(node.tables[tIdx]||'');
     const liveTable=div.querySelector('table');
     if(!liveTable)return;
     liveTable.querySelectorAll('td,th').forEach(c=>c.contentEditable='true');
@@ -8367,7 +8404,7 @@ function buildNodeTableObject(node,tIdx){
     // change (same contract as the image markup editor): a session that only clicks in and out
     // changes nothing and pushes nothing, and Ctrl/Cmd+Z afterwards restores the table (or the
     // chart/Cards it's rendered as) exactly as it was before the session started.
-    let lastCommitted=sakuraSanitizeRichHtml(cleanEditorHtml(wrap));
+    let lastCommitted=tidyTableHtml(sakuraSanitizeRichHtml(cleanEditorHtml(wrap)));
     let undoPushed=false;
     const ensureUndo=()=>{ if(!undoPushed){ undoPushed=true; pushUndo(); } };
     // Same double-commit hazard enterScopedTableEdit's own exited-guard documents: removing a
@@ -8404,7 +8441,7 @@ function buildNodeTableObject(node,tIdx){
         return;
       }
       applyTableAutoAlign(liveTable);
-      const html=sakuraSanitizeRichHtml(cleanEditorHtml(wrap));
+      const html=tidyTableHtml(sakuraSanitizeRichHtml(cleanEditorHtml(wrap)));
       if(html===lastCommitted)return;
       ensureUndo();
       lastCommitted=html;
@@ -10655,7 +10692,7 @@ function captionFromLegacyAlt(alt) {
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string'):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 // images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
 // creating a NEW node from an existing one's content (duplicate, paste), so the copy's pictures
 // must be independent objects, not shared references into the source node.

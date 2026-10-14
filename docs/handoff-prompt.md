@@ -544,6 +544,15 @@ hydrated diagrams on Duplicate (paste already carried them). The clipboard paylo
 over adding a new one (Decision → a kind of remark, not a new object; Link card and Callout dropped).
 Covered by `tests/e2e/inline-objects-copy-and-search.spec.ts`.
 
+**Hidden line breaks/spaces in table cells (owner report, 2026-10-14).** Shift+Enter at the end of
+a cell stored `<br><br>` (Chrome keeps one `<br>` as the placeholder line, so Backspace could never
+remove the last one) and grew the row; typed or pasted edge spaces were stored as `&nbsp;` and
+shifted right-aligned values. `tidyTableHtml`/`tidyTableCell` trim breaks, whitespace and empty
+blocks at both ends of every cell (inner `<br>`s stay) on each commit, in `normalizeNode` (cleans
+older documents on open), and in the node table's display/edit paths. Untouched tables return the
+same string. Probed modifier+Enter, Ctrl+Z/B/I/D and Delete inside a cell: no other bugs found.
+Covered by `tests/e2e/table-cell-hidden-spaces.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
