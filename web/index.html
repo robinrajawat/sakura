@@ -3696,7 +3696,7 @@ body.printing-generic #gpe-overlay{
 <ul>  
 <li>Lives in the header, where a plain search box used to sit. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span> focuses it and opens the results dropdown from anywhere in the app; clicking directly into the box does the same. Type a plain-English instruction and it's carried out immediately: "get me toolbar," "I don't want file explorer," "toggle dark mode" — or just type anything else to search documents, notes, tags, settings, and help. Not to be confused with Quick Insert (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span>) — a much smaller character-insert menu that opens instead whenever you're actively editing text, described below</li>
 <li>An empty box shows a "Try things like…" tip with a handful of example phrases — click any of them to run it as a search immediately, same as typing it yourself; nothing executes without a second click on the actual result.</li>
-<li>To search just one category instead of all eighteen at once, type a category prefix before your query — "notes: budget" only searches Notes, "settings: dark" only searches Settings. Short aliases work too (doc/docs, note/notes, tag/tags, and so on). Q&amp;A, Diagrams, and Remarks each have their own prefix too — "qa: rollout" searches only Q&amp;A questions/answers, "diagram: flow" only Diagrams (title + note), "remark: EDI" only Remarks (text + person + context). Don't want to remember the exact word? Click the icon at the left of the box, or press Space while it's completely empty — either shows a picker inline in the dropdown, navigable the same way search results are (<span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> to move, <span class="help-kbd">Enter</span> to pick). Above the categories, the same picker also lists <strong>Show</strong>, <strong>Hide</strong>, <strong>Toggle</strong>, and <strong>Run</strong> — picking one inserts that bare word instead of a category prefix, which does something different: rather than scoping a search, it browses everything of that kind (see the bare-verb bullet below). Either way, choosing an entry leaves the dropdown open, cursor ready for you to keep typing and narrow further. A category prefix with nothing typed after it (just "notes: " on its own) shows no results rather than browsing the whole category — the box doesn't have a "show me everything in here" mode for categories, only "search within here," so you still need something to search for after a category prefix specifically; the four verb words above are the exception; each of those does browse everything on its own with nothing else typed</li>
+<li>To search just one category instead of all of them at once, type a category prefix before your query — "notes: budget" only searches Notes, "settings: dark" only searches Settings. Short aliases work too (doc/docs, note/notes, tag/tags, and so on). Q&amp;A, Diagrams, and Remarks each have their own prefix too — "qa: rollout" searches only Q&amp;A questions/answers, "diagram: flow" only Diagrams (title + note), "remark: EDI" only Remarks (text + person + context). "table: Berlin" searches only table cells and table titles (the result shows the matching row), "image: login" only image captions. Don't want to remember the exact word? Click the icon at the left of the box, or press Space while it's completely empty — either shows a picker inline in the dropdown, navigable the same way search results are (<span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> to move, <span class="help-kbd">Enter</span> to pick). Above the categories, the same picker also lists <strong>Show</strong>, <strong>Hide</strong>, <strong>Toggle</strong>, and <strong>Run</strong> — picking one inserts that bare word instead of a category prefix, which does something different: rather than scoping a search, it browses everything of that kind (see the bare-verb bullet below). Either way, choosing an entry leaves the dropdown open, cursor ready for you to keep typing and narrow further. A category prefix with nothing typed after it (just "notes: " on its own) shows no results rather than browsing the whole category — the box doesn't have a "show me everything in here" mode for categories, only "search within here," so you still need something to search for after a category prefix specifically; the four verb words above are the exception; each of those does browse everything on its own with nothing else typed</li>
 <li>Typing just a bare word — "show," "hide," "toggle," or "run," nothing else — lists everything of that kind instead of requiring you to already know a specific setting's name: "show" lists everything currently hidden that could be shown, "hide" lists everything currently shown that could be hidden, "toggle" lists everything either way regardless of its current state, and "run" lists every available Run action ("new document," "duplicate node," and the AI actions covered below). Keep typing after the bare word to narrow the list further by name — "show file" narrows to just File Explorer-related results, the same as typing "show file explorer" would, just built up in two steps instead of one</li>
 <li>On a Mac, if the system's own Spotlight is bound to Cmd+Space (its default), it takes priority over the browser and this shortcut won't fire — either change Spotlight's shortcut in macOS System Settings → Keyboard, or remap this one from Settings → Keyboard Shortcuts</li>
 <li>Toggles and search are rule-based, not AI — a fixed set of recognized phrases (show/get/enable/turn on… vs. hide/remove/get rid of/turn off…) matched against a fixed list of settings. Nothing is sent anywhere for these, no API key needed, and it never improvises — if it doesn't recognize a phrase, it says so rather than guessing. The AI Run actions below are the one exception: those do call your configured AI provider, the same as clicking their toolbar/right-click equivalent would</li>
@@ -3751,7 +3751,7 @@ body.printing-generic #gpe-overlay{
 <li><strong>Heading shortcut</strong> — type <span class="help-kbd">#</span> through <span class="help-kbd">######</span> (1 to 6 of them) followed by a space at the very start of a node, then finish editing — same auto-convert-on-commit as checkboxes above, and sets the node's real heading level (the same field the Heading toolbar button sets), stripping the markdown prefix. Caps at H6, matching the toolbar's own options — <span class="help-kbd">#Text</span> with no space, or seven or more <span class="help-kbd">#</span>, doesn't convert</li>
 <li>Right-click a node → <span class="help-kbd">More</span> → Insert above / Insert below / Add child (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Enter</span> also adds a child)</li>
 <li><span class="help-kbd">Tab</span> / <span class="help-kbd">Shift</span> + <span class="help-kbd">Tab</span> → indent / outdent</li>
-<li>Right-click a node → <span class="help-kbd">More</span> → Duplicate → duplicate node / subtree</li>
+<li>Right-click a node → <span class="help-kbd">More</span> → Duplicate → duplicate node / subtree, with its own copies of the note, tables, images, Q&amp;A, remarks and diagrams (copy/paste brings them along too)</li>
 <li><span class="help-kbd">Alt</span> + ↑ / ↓ → move (or right-click → <span class="help-kbd">More</span> → Move up / Move down)</li>
 <li>Drag a row → drop above/below to reorder, or onto the middle of another row to nest as its child. Dragging any node that's part of a multi-selection moves the whole selection together</li>
 <li>Right-click a node with children → <span class="help-kbd">More</span> → Sort children (A → Z, Z → A, or by depth — shallowest subtree first)</li>
@@ -9139,6 +9139,31 @@ function repointNodeLinks(fromId,toId){
   if(Array.isArray(diagrams))diagrams.forEach(d=>{ if(d&&d.anchorNodeId===fromId)d.anchorNodeId=toId; });
   [inlineExpandNoteNodeIds,inlineExpandRemarksNodeIds,inlineExpandQaNodeIds,inlineExpandDiagramNodeIds].forEach(s=>{ if(s&&s.has(fromId))s.add(toId); });
   if(currentDocId&&typeof window.sakuraTodosRepointNode==='function')window.sakuraTodosRepointNode(currentDocId,fromId,toId);
+}
+// Duplicate and copy/paste: Q&A and remarks are linked to a row by its id, so a copied row gets
+// its own copies of them (fresh ids, same content and status) instead of leaving them behind.
+// Blank remarks are skipped, since they're discarded anyway.
+function nodeDiscussionCopies(nodeId){
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  const qas=(Array.isArray(qaItems)?qaItems:[]).filter(q=>q&&q.sourceNodeId===nodeId).map(clone);
+  const rms=(Array.isArray(remarks)?remarks:[]).filter(r=>r&&r.anchorNodeId===nodeId&&stripHtmlToText(r.text||'').trim()).map(clone);
+  return {qas,rms};
+}
+function attachDiscussionCopies(toId,qas,rms){
+  let count=0;
+  (Array.isArray(qas)?qas:[]).forEach(q=>{ qaItems.push({...q,id:newQaId(),sourceNodeId:toId}); count++; });
+  (Array.isArray(rms)?rms:[]).forEach(r=>{ remarks.push({...r,id:newRemarkId(),anchorNodeId:toId}); count++; });
+  return count;
+}
+// Diagrams live outside Undo (like a pasted one); one whose drawing hasn't loaded yet is left out
+// rather than copied blank.
+function copyNodeDiagrams(fromId,toId){
+  let count=0;
+  (Array.isArray(diagrams)?diagrams.filter(d=>d&&d.anchorNodeId===fromId&&d._hydrated):[]).forEach(d=>{
+    diagrams.push({...cloneDiagramRecord(d),title:d.title||'',anchorNodeId:toId});
+    count++;
+  });
+  return count;
 }
 function subtreeHasImage(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(Array.isArray(nodes[i].images)&&nodes[i].images.length)return true} return false}
 
@@ -16297,6 +16322,55 @@ function collectNoteMatches(q){
   if(searchIncludesTrash&&out.length<4)scan(loadTrashedDocsIndex(),true);
   return out;
 }
+// Table cells and image captions: the only inline-object text the Notes/Q&A/Diagrams/Remarks
+// groups don't already cover. A table matches row by row (cells joined with " · ", its title
+// included), so the result shows the row that matched; opening one unfolds that node's tables or
+// images. Same budget as Notes: up to 4 results, 2 per document.
+function tableSearchRows(tableHtml){
+  const tmp=document.createElement('div'); tmp.innerHTML=tableHtml||'';
+  const t=tmp.querySelector('table'); if(!t)return [];
+  const title=(t.getAttribute('data-chart-title')||'').trim();
+  const rows=[...t.rows].map(tr=>[...tr.cells].map(c=>(c.textContent||'').replace(/\s+/g,' ').trim()).filter(Boolean).join(' · ')).filter(Boolean);
+  return title?[title,...rows]:rows;
+}
+function collectInlineObjectMatches(q,group,textsOf,reveal){
+  const out=[]; const tokens=qaTokenizeQuery(q);
+  function scan(docsIdx,isTrash){
+    for(const d of docsIdx){
+      if(out.length>=4)break;
+      const {docNodes,docTitle}=getDocNodesForSearch(d.id,d);
+      if(!Array.isArray(docNodes))continue;
+      let perDoc=0;
+      for(const n of docNodes){
+        if(perDoc>=2||out.length>=4)break;
+        const hit=textsOf(n).find(t=>qaHayMatches(t,tokens)); if(!hit)continue;
+        perDoc++;
+        out.push(isTrash?{
+          group, label:hit.slice(0,80), labelHtml:buildMatchSnippetHtml(hit,q),
+          meta:'In Trash · '+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); revealTrashedDocInSidebar(d.id)}
+        }:{
+          group, label:hit.slice(0,80), labelHtml:buildMatchSnippetHtml(hit,q),
+          meta:(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
+          action:()=>{closeAllPanelsExceptGlobalSearch(); if(d.id!==currentDocId)switchDoc(d.id); reveal(n.id); revealNodeInDoc(d.id,n.id)}
+        });
+      }
+    }
+  }
+  scan(loadActiveDocsIndex(),false);
+  if(searchIncludesTrash&&out.length<4)scan(loadTrashedDocsIndex(),true);
+  return out;
+}
+function collectTableMatches(q){
+  return collectInlineObjectMatches(q,'Tables',
+    n=>(Array.isArray(n.tables)?n.tables:[]).flatMap(tableSearchRows),
+    id=>{ collapsedTableNodeIds.delete(id); });
+}
+function collectImageMatches(q){
+  return collectInlineObjectMatches(q,'Images',
+    n=>(Array.isArray(n.images)?n.images:[]).map(img=>String(img&&img.caption||'').trim()).filter(Boolean),
+    id=>{ collapsedImageNodeIds.delete(id); });
+}
 // Tags are plain strings, no stripping needed — but the match is on the tag, not the node's
 // own text, so the label is built manually rather than via buildMatchSnippetHtml.
 function collectTagMatches(q){
@@ -16466,6 +16540,8 @@ function collectSearchGroups(q){
     {name:'Q&A',items:collectQaMatches(q)},
     {name:'Diagrams',items:collectDiagramMatches(q)},
     {name:'Remarks',items:collectRemarkMatches(q)},
+    {name:'Tables',items:collectTableMatches(q)},
+    {name:'Images',items:collectImageMatches(q)},
     {name:'To-Dos',items:(typeof collectTodoMatches==='function'?collectTodoMatches(q):[])},
     {name:'Folders',items:collectFolderMatches(q)},
     {name:'Settings',items:collectSettingsMatches(q)},
@@ -16688,6 +16764,8 @@ const QA_SEARCH_CATEGORIES=[
   {key:'qa',group:'Q&A'},
   {key:'diagrams',group:'Diagrams'},
   {key:'remarks',group:'Remarks'},
+  {key:'tables',group:'Tables'},
+  {key:'images',group:'Images'},
   {key:'todos',group:'To-Dos'},
   {key:'settings',group:'Settings'},
   {key:'help',group:'Help'}
@@ -16708,6 +16786,8 @@ const QA_CATEGORY_PREFIXES={
   qa:'qa', question:'qa', questions:'qa',
   diagram:'diagrams', diagrams:'diagrams',
   remark:'remarks', remarks:'remarks',
+  table:'tables', tables:'tables',
+  image:'images', images:'images', caption:'images',
   todo:'todos', todos:'todos',
   setting:'settings', settings:'settings',
   help:'help'
@@ -16731,7 +16811,7 @@ function qaParseCategoryPrefix(text){
 // aliases "wins").
 const QA_CATEGORY_PRIMARY_PREFIX={
   documents:'doc', folders:'folder', 'in-documents':'text',
-  notes:'note', code:'code', tags:'tag', todos:'todo', settings:'setting',
+  notes:'note', code:'code', tags:'tag', tables:'table', images:'image', todos:'todo', settings:'setting',
   help:'help'
 };
 // Debounce for qaRender() on typing. Each collector re-scans every active document from
@@ -20210,7 +20290,7 @@ function deleteSelected(){
   cleanupBacklinksFor(deletedTexts);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
-function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const clones=nodes.slice(idx,end).map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images)); nodes.splice(end,0,...clones); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
+function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images)); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
 function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const insertIdx=getIndex(nodes,selectedId);
   // parseTextToTreeNodes (and friends) always normalize the parsed block's own top-level
@@ -20225,7 +20305,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   // is what every other insertion path in this file already does.
   const offsetDepth=computePasteOffsetDepth(nodes,insertIdx);
   const mapped=parsed.map(n=>makeNode(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'',false,n.tables)); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
-  let dgAdded=0; let imgAdded=0;
+  let dgAdded=0; let imgAdded=0; let qaAdded=0; let rmAdded=0;
   if(Array.isArray(clipExtras)&&clipExtras.length){
     clipExtras.forEach(ex=>{
       const targetNode=mapped[ex.i]; if(!targetNode)return;
@@ -20235,6 +20315,8 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
         targetNode.images.push(...copies);
         imgAdded+=copies.length;
       }
+      qaAdded+=Array.isArray(ex.qas)?ex.qas.length:0; rmAdded+=Array.isArray(ex.rms)?ex.rms.length:0;
+      attachDiscussionCopies(targetNode.id,ex.qas,ex.rms);
       if(Array.isArray(ex.dgs)&&ex.dgs.length){
         ex.dgs.forEach(dg=>{
           const ts=Date.now();
@@ -20246,7 +20328,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
     if(dgAdded||imgAdded)scheduleAutoSave();
   }
   selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null; render();
-  const extrasLabel=clipExtrasToastLabel(dgAdded,imgAdded);
+  const extrasLabel=clipExtrasToastLabel(dgAdded,imgAdded,qaAdded,rmAdded);
   showToast(`${toastVerb} ${mapped.length} node${mapped.length===1?'':'s'}${extrasLabel}`)}
 // Turns clipboard HTML into the line-per-row text parseTextToTreeNodes expects. innerText can't be
 // used here: on an element that isn't in the rendered page it degrades to textContent, which runs
@@ -20658,19 +20740,25 @@ function buildNodeClipboardPayload(scopeNodes){
     // serializers either) -- pasteParsedNodes re-attaches them to the matching new node with
     // fresh ids. Older builds ignore the unknown `imgs` key.
     const imgs=Array.isArray(n.images)?n.images:[];
-    if(!dgs.length&&!imgs.length)return;
+    // Q&A and remarks ride along too (older builds ignore the unknown `qas`/`rms` keys).
+    const {qas,rms}=nodeDiscussionCopies(n.id);
+    if(!dgs.length&&!imgs.length&&!qas.length&&!rms.length)return;
     extras.push({
       i,
       ...(imgs.length?{imgs:JSON.parse(JSON.stringify(imgs))}:{}),
+      ...(qas.length?{qas}:{}),
+      ...(rms.length?{rms}:{}),
       dgs:dgs.map(dg=>({title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||''}))
     });
   });
   return extras.length?{v:1,extras}:null;
 }
-function clipExtrasToastLabel(dgCount,imgCount){
+function clipExtrasToastLabel(dgCount,imgCount,qaCount=0,rmCount=0){
   const parts=[];
   if(dgCount)parts.push(dgCount+' diagram'+(dgCount===1?'':'s'));
   if(imgCount)parts.push(imgCount+' image'+(imgCount===1?'':'s'));
+  if(qaCount)parts.push(qaCount+' question'+(qaCount===1?'':'s'));
+  if(rmCount)parts.push(rmCount+' remark'+(rmCount===1?'':'s'));
   return parts.length?` (incl. ${parts.join(', ')})`:'';
 }
 function encodeSakuraClipComment(payload){
@@ -20686,7 +20774,7 @@ function extractSakuraClipPayload(html){
   }catch(e){}
   return null;
 }
-async function copyNodesToClipboard(forceFull=false){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const imgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.imgs?x.imgs.length:0),0):0; const extrasLabel=clipExtrasToastLabel(dgCount,imgCount); const toastLabel=(isSubset?`Copied ${scopeNodes.length} node${scopeNodes.length===1?'':'s'}`:'Tree copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
+async function copyNodesToClipboard(forceFull=false){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const imgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.imgs?x.imgs.length:0),0):0; const qaCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.qas?x.qas.length:0),0):0; const rmCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.rms?x.rms.length:0),0):0; const extrasLabel=clipExtrasToastLabel(dgCount,imgCount,qaCount,rmCount); const toastLabel=(isSubset?`Copied ${scopeNodes.length} node${scopeNodes.length===1?'':'s'}`:'Tree copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
 function downloadBlob(filename,mime,content){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([content],{type:mime}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),500)}
 // === OPML ===
 // Recursively walks a flat depth-tagged node list (already rebased so the first

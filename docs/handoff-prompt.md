@@ -533,6 +533,17 @@ open-items summary toggles the combined "Show only open items" filter (`quickTog
 `applyOpenItemsFilter('openItems')`) without opening the list; with nothing open it just says "Nothing
 open to show". The tooltip names the shortcut. Covered in `menu-stamp-polish.spec.ts`.
 
+**Inline objects travel with their row; Quick Assist finds tables and captions (owner request,
+2026-10-14).** Duplicate used to copy only note/tables/images, and copy/paste dropped Q&A and remarks.
+Now `nodeDiscussionCopies`/`attachDiscussionCopies` give a duplicated or pasted row its own Q&A and
+remarks (new ids, same content and status; blank remarks skipped), and `copyNodeDiagrams` copies
+hydrated diagrams on Duplicate (paste already carried them). The clipboard payload gained optional
+`qas`/`rms` keys. Quick Assist gained **Tables** (cells per row, plus `data-chart-title`) and
+**Images** (captions) groups, prefixes `table:`/`image:`; Ctrl+F stays row-text only on purpose.
+**Owner rule:** every inline object type must justify its place; prefer extending an existing object
+over adding a new one (Decision → a kind of remark, not a new object; Link card and Callout dropped).
+Covered by `tests/e2e/inline-objects-copy-and-search.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
