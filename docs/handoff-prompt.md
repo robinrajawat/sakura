@@ -493,6 +493,21 @@ top edge (re-run after the open-items header is inserted), so a growing menu scr
 dropdown aligned its right edge to the chip and opened leftwards over the title; all byline dropdowns
 now open from their chip's left edge (`#doc-share-wrap .todo-dd-menu{left:0}`).
 
+**Total row (owner request, 2026-10-14).** Owner's effort table had a typed "Total 31 days" that went
+stale when rows were added (rows add up to 49). Pure parts in `src/utils/tableDisplay.ts`:
+`isTotalLabel`, `typedTotalRowIndex` (last filled row starting Total/Sum/Grand total/Subtotal),
+`sumColumn` (keeps the column's prefix/unit/decimals/grouping; "day"/"days" are one unit; refuses
+text, mixed units, % and k/M/B), `computeTotalRow`, `totalRowMismatches`, `cardsTotal`; Cards leave a
+typed total out of the cards and the 8-row cap (it counts toward the 2-row minimum). In index.html:
+`data-total-row="1"` = calculated total, added to display copies only by `applyTableTotalRow` (a
+`<tfoot>` row, outline and PDF) — never stored, so never stale. A typed total row gets `.tbl-total`,
+a "Rows: N" hint in the outline when it disagrees (`.tbl-total-hint`, not in the PDF),
+`tableDataRows` keeps it out of heat-map, grouping and sorting (stays last), and
+`chartSeriesFromTable` leaves it out. Menu: "Total row" (on/off) after Group rows, or "Use calculated
+total" when a typed total exists (`setTableTotalRow` removes the typed row; Undo restores it). Cards
+show the total as one line under the grid (`.pv-table-cards-total`). Covered by
+`tests/e2e/table-total-row.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

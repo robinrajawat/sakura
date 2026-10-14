@@ -41,9 +41,10 @@ export function cardValueNumber(raw: string): number | null {
   return parseCellNumber(unit ? unit[1] : s);
 }
 
-/** Body rows (header excluded) that hold anything at all. */
+/** Body rows (header and a typed total row excluded) that hold anything at all. */
 function cdBodyRows(grid: string[][]): string[][] {
-  return grid.slice(1).filter((row) => row.some((c) => !isBlankCellText(c)));
+  const ti = typedTotalRowIndex(grid);
+  return grid.slice(1).filter((row, i) => i + 1 !== ti && row.some((c) => !isBlankCellText(c)));
 }
 
 function cdColumnCount(grid: string[][]): number {
@@ -52,7 +53,7 @@ function cdColumnCount(grid: string[][]): number {
 
 /**
  * Whether a table can show as Cards. A card is label · value · optional change, so the table needs:
- * 2 or 3 columns; 2–8 rows; numbers in the second column (at least half its filled cells, see
+ * 2 or 3 columns; 2–8 rows (a typed total row is not counted toward the 8); numbers in the second column (at least half its filled cells, see
  * cardValueNumber); and, with a third column, changes in it — every filled cell has a direction
  * (cardChangeDirection) and at least one is written with a sign or an arrow, so a plain quantity
  * or a text column (Owner, Notes) isn't mistaken for one. n/a, dashes and empty cells are allowed
@@ -64,7 +65,9 @@ export function cardsAvailability(grid: string[][]): DisplayAvailability {
     return { ok: false, reason: `Cards need 2 or 3 columns: a label, a value and an optional change. This table has ${cols}.` };
   }
   const rows = cdBodyRows(grid);
-  if (rows.length < CARDS_MIN_ROWS) return { ok: false, reason: `Cards need at least ${CARDS_MIN_ROWS} rows.` };
+  // A typed total row becomes its own total card: it counts toward the minimum, not the maximum.
+  const withTotal = rows.length + (typedTotalRowIndex(grid) >= 0 ? 1 : 0);
+  if (withTotal < CARDS_MIN_ROWS) return { ok: false, reason: `Cards need at least ${CARDS_MIN_ROWS} rows.` };
   if (rows.length > CARDS_MAX_ROWS) {
     return { ok: false, reason: `Cards fit up to ${CARDS_MAX_ROWS} rows. This table has ${rows.length}, so it reads better as a table or a chart.` };
   }
@@ -98,4 +101,132 @@ export function cardsRows(grid: string[][]): CardRow[] {
     value: (r[1] ?? '').trim(),
     change: hasChange ? (r[2] ?? '').trim() : ''
   }));
+}
+
+// ── Total row ───────────────────────────────────────────────────────────────────────────────
+
+/** A first-column label that marks a typed total row: Total, Totals, Sum, Grand total, Subtotal. */
+export function isTotalLabel(raw: string): boolean {
+  return /^(grand\s+|sub-?\s?)?(total|sum)s?\s*:?$/i.test(String(raw ?? '').trim());
+}
+
+/**
+ * Grid index of a typed total row: the last body row with anything in it, when its first cell is a
+ * total label (isTotalLabel). -1 when there is none.
+ */
+export function typedTotalRowIndex(grid: string[][]): number {
+  for (let i = grid.length - 1; i >= 1; i--) {
+    const row = grid[i];
+    if (!row.some((c) => !isBlankCellText(c))) continue;
+    return isTotalLabel(row[0] ?? '') ? i : -1;
+  }
+  return -1;
+}
+
+export interface ColumnSum {
+  value: number;
+  /** Written like the column's own values: same prefix/unit, decimals and thousands separators. */
+  text: string;
+}
+
+/**
+ * The sum of a column's values, written the way the column writes them ("15 days" + "3 days" →
+ * "18 days", "DKK 500.00" × 3 → "DKK 1,500.00"). Null when the column isn't a number column: no
+ * numbers, any text that isn't a number (placeholders like n/a and dashes are skipped), values with
+ * different units, percentages (a sum of percentages is rarely meant), or k/M/B shorthand.
+ */
+export function sumColumn(values: string[]): ColumnSum | null {
+  const filled = values.map((v) => String(v ?? '').trim()).filter((v) => !cdIsPlaceholder(v));
+  if (!filled.length) return null;
+  const NUM = /^(.*?)([+\-−]?\(?\d[\d,]*(?:\.(\d+))?\)?)(.*)$/;
+  // A word unit compares without a plural "s", so "1 day" and "5 days" add up.
+  const unitKey = (u: string) => u.trim().toLowerCase().replace(/^([a-zµ°]+?)s$/, '$1');
+  let total = 0;
+  let decimals = 0;
+  let grouped = false;
+  let shape: string | null = null;
+  let prefix = '';
+  const suffixes: string[] = [];
+  for (const v of filled) {
+    const n = cardValueNumber(v);
+    if (n === null) return null;
+    const m = NUM.exec(v);
+    if (!m) return null;
+    const pre = m[1].replace(/[+\-−]\s*$/, '');
+    const suf = m[4];
+    if (/%/.test(suf) || /^\s*[kmb]\b/i.test(suf)) return null;
+    const key = pre.trim().toLowerCase() + '|' + unitKey(suf);
+    if (shape === null) { shape = key; prefix = pre; }
+    else if (shape !== key) return null;
+    suffixes.push(suf);
+    decimals = Math.max(decimals, m[3] ? m[3].length : 0);
+    if (/\d,\d{3}/.test(m[2])) grouped = true;
+    total += n;
+  }
+  // Singular unit for exactly 1, plural otherwise, when the column shows both forms.
+  const plural = suffixes.find((x) => /[a-z]s\s*$/i.test(x));
+  const singular = suffixes.find((x) => !/[a-z]s\s*$/i.test(x));
+  const suffix = (total === 1 ? singular : plural) ?? suffixes[0];
+  const abs = Math.abs(total).toFixed(decimals);
+  const [int, frac] = abs.split('.');
+  const intText = grouped || Math.abs(total) >= 10000 ? int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : int;
+  const num = (total < 0 ? '−' : '') + intText + (frac ? '.' + frac : '');
+  return { value: total, text: prefix + num + suffix };
+}
+
+export interface TotalRow {
+  /** One entry per column: column 0 is "Total", the others the column's sum text or ''. */
+  cells: string[];
+  /** Whether any column could be added up at all. */
+  any: boolean;
+  /** Per column, the computed sum (null where the column isn't a number column). */
+  sums: (ColumnSum | null)[];
+}
+
+/**
+ * The calculated total row for a table: every column after the first that is a number column
+ * (sumColumn) gets its sum; a typed total row, if there is one, is left out of the sums.
+ */
+export function computeTotalRow(grid: string[][]): TotalRow {
+  const cols = cdColumnCount(grid);
+  const skip = typedTotalRowIndex(grid);
+  const rows = grid.slice(1).filter((r, i) => i + 1 !== skip && r.some((c) => !isBlankCellText(c)));
+  const sums: (ColumnSum | null)[] = [null];
+  for (let c = 1; c < cols; c++) sums.push(sumColumn(rows.map((r) => r[c] ?? '')));
+  return { cells: sums.map((s, c) => (c === 0 ? 'Total' : s ? s.text : '')), any: sums.some((s) => s !== null), sums };
+}
+
+/**
+ * Where a typed total row disagrees with what its rows add up to: one entry per number column whose
+ * typed value differs from the calculated sum (beyond rounding). Empty when there is no typed total
+ * row or it is right.
+ */
+export function totalRowMismatches(grid: string[][]): { col: number; typed: string; computed: string }[] {
+  const ti = typedTotalRowIndex(grid);
+  if (ti < 0) return [];
+  const { sums } = computeTotalRow(grid);
+  const out: { col: number; typed: string; computed: string }[] = [];
+  sums.forEach((s, c) => {
+    if (!s) return;
+    const typed = (grid[ti][c] ?? '').trim();
+    const tv = cardValueNumber(typed);
+    if (tv === null || Math.abs(tv - s.value) > 1e-9 * Math.max(1, Math.abs(s.value))) out.push({ col: c, typed, computed: s.text });
+  });
+  return out;
+}
+
+/**
+ * The highlighted total card Cards show after the others: the calculated sum of the value column
+ * when the table has a calculated total row (`calculated`), else a typed total row as written.
+ * Null when there is neither (or the value column can't be added up).
+ */
+export function cardsTotal(grid: string[][], calculated: boolean): CardRow | null {
+  if (calculated) {
+    const s = computeTotalRow(grid).sums[1];
+    return s ? { label: 'Total', value: s.text, change: '' } : null;
+  }
+  const ti = typedTotalRowIndex(grid);
+  if (ti < 0) return null;
+  const r = grid[ti];
+  return { label: (r[0] ?? '').trim(), value: (r[1] ?? '').trim(), change: cdColumnCount(grid) === 3 ? (r[2] ?? '').trim() : '' };
 }

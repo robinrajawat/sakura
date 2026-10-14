@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 const SHIP = '<table><tr><th>Shipping Condition</th><th>Description</th></tr><tr><td>ZN</td><td>Night Distribution</td></tr><tr><td>ZL</td><td>KL 10:00 Fixed</td></tr></table>';
-const EST = '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Area</th><th>Effort</th></tr><tr><td>ERP - ABAP</td><td>6 days</td></tr><tr><td>Total</td><td>31 days</td></tr></table>';
+const EST = '<table data-feature-chart="1" data-chart-type="cards"><tr><th>Area</th><th>Effort</th></tr><tr><td>ERP - ABAP</td><td>6 days</td></tr><tr><td>EWM - ABAP</td><td>5 days</td></tr></table>';
 
 async function openWith(page: import('@playwright/test').Page, tables: string[]) {
   // Marked as seen BEFORE the page loads: with no documents and nothing seen, the app opens its
@@ -73,7 +73,7 @@ test.describe('Card icons', () => {
     await openWith(page, [EST]);
     await page.locator('.pv-table-card').nth(1).click({ button: 'right', force: true });
     // Top level stays short: icon, accent and chart type are submenus.
-    await expect(page.locator('.sb-context-menu > .sb-context-item', { hasText: 'Total' })).toHaveCount(0);
+    await expect(page.locator('.sb-context-menu > .sb-context-item', { hasText: /^Total$/ })).toHaveCount(0);
     await page.locator('.sb-context-item', { hasText: 'Card icon' }).hover();
     // Icons are a grouped tile grid; each tile is named by its aria-label / hover tip.
     await expect(page.locator('.sb-context-submenu .sb-context-heading')).toHaveText(['General', 'Systems', 'Logistics']);

@@ -1599,6 +1599,12 @@ table [data-heat="5"]{background:color-mix(in srgb,var(--accent) 50%,transparent
 .pv-table-card-icon{display:inline-flex;flex:0 0 auto;color:var(--card-color)}
 .pv-table-card-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
 .pv-table-card-value{min-width:0;font:600 26px 'Inter',sans-serif;letter-spacing:-.01em;color:var(--fg);line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pv-table-cards-total{display:flex;align-items:baseline;gap:10px;margin-top:10px;padding:10px 16px;border-radius:10px;background:color-mix(in srgb,var(--fg) 4%,var(--canvas-bg));border:1px solid var(--border);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-table-cards-total-label{font:600 12.5px 'Inter',sans-serif;color:var(--muted)}
+.pv-table-cards-total-value{font:700 18px 'Inter',sans-serif;color:var(--fg);font-variant-numeric:tabular-nums}
+/* Total row (typed or calculated) on a plain table: bold, a firmer rule above, no rule below. */
+table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px solid color-mix(in srgb,var(--fg) 35%,transparent) !important;border-bottom-color:transparent !important}
+.tbl-total-hint{display:inline-block;margin-left:8px;padding:1px 6px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 13%,transparent);vertical-align:1px;white-space:nowrap}
 
 /* A table/chart/Cards object on node.tables -- a sibling of the note, not embedded inside it (see
    buildNodeTableObject/migrateNoteTablesToNode) -- reuses .pv-table-figure/.pv-table-chart-figure
@@ -5940,6 +5946,53 @@ function applyTableCheckIcons(table){
     });
   }
 }
+// Total row (owner request). A typed total row is the last filled row whose first cell says Total /
+// Sum / Grand total / Subtotal (typedTotalRowIndex): it keeps its footer look, stays last when
+// sorting, and charts, heat-map and grouping leave it out. A calculated total row
+// (data-total-row="1") is never stored as a row: applyTableTotalRow adds it to display copies
+// (outline and PDF) with each number column's sum (computeTotalRow), so it can't go stale. The pure
+// rules live in src/utils/tableDisplay.ts.
+function isTableTotalRow(table){ return !!(table&&table.getAttribute('data-total-row')==='1'); }
+function tableTypedTotalTr(table){
+  const ti=typedTotalRowIndex(tableTextGrid(table));
+  return ti<0?null:(table.querySelectorAll('tr')[ti]||null);
+}
+// Body rows that hold data: the typed total row (if any) left out.
+function tableDataRows(table){ const t=tableTypedTotalTr(table); return tableBodyRows(table).filter(r=>r!==t); }
+function setTableTotalRow(table,on){
+  if(!table)return;
+  if(on){
+    // Switching to a calculated total replaces a typed one (Undo brings it back).
+    tableTypedTotalTr(table)?.remove();
+    table.setAttribute('data-total-row','1'); showToast('Total row added — it adds itself up');
+  } else { table.removeAttribute('data-total-row'); showToast('Total row removed'); }
+}
+// Display copies only: footer styling for a typed total row (plus, in the outline, a quiet hint when
+// it no longer matches its rows), or the calculated total row appended as a <tfoot>.
+function applyTableTotalRow(table,{hint=true}={}){
+  if(!table)return;
+  if(isTableTotalRow(table)){
+    const t=computeTotalRow(tableTextGrid(table));
+    if(!t.any)return;
+    const tf=table.tFoot||table.createTFoot();
+    const tr=tf.insertRow(); tr.className='tbl-total tbl-total-calc';
+    const n=tableColumnCount(table);
+    for(let c=0;c<n;c++){
+      const td=document.createElement('td'); td.textContent=t.cells[c]||'';
+      if(c>0&&t.sums[c])td.setAttribute('data-auto-align','right');
+      tr.appendChild(td);
+    }
+    return;
+  }
+  const tr=tableTypedTotalTr(table); if(!tr)return;
+  tr.classList.add('tbl-total');
+  if(!hint)return;
+  totalRowMismatches(tableTextGrid(table)).forEach(m=>{
+    const cell=tr.cells[m.col]; if(!cell)return;
+    cell.classList.add('tbl-total-stale');
+    cell.insertAdjacentHTML('beforeend','<span class="tbl-total-hint" data-tip="The rows above add up to '+esc(m.computed)+'. Right-click → Use calculated total to keep it right.">Rows: '+esc(m.computed)+'</span>');
+  });
+}
 // Heat-map: a plain table's numeric cells shaded by where each sits in its own column (per column,
 // since columns usually hold different units). data-heatmap="1" turns it on, data-heatmap-reverse
 // flips it for columns where lower is better. Applied at render time only, like
@@ -5953,7 +6006,7 @@ function setTableHeatmap(table,on,reverse){
 function applyTableHeatmap(table){
   if(!table||!isTableHeatmap(table))return;
   const reverse=table.getAttribute('data-heatmap-reverse')==='1';
-  const body=tableBodyRows(table);
+  const body=tableDataRows(table);
   const n=tableColumnCount(table);
   for(let ci=0;ci<n;ci++){
     const levels=heatLevels(body.map(r=>parseCellNumber(tableCellText(r.cells[ci]))),reverse);
@@ -5988,7 +6041,7 @@ function applyTableDisplayPolish(table){
     if(isBlankCellText(c.textContent)){ c.textContent=''; c.classList.add('tbl-empty'); }
   }));
   if(!isTableGroupRows(table))return;
-  const body=tableBodyRows(table); if(body.length<2)return;
+  const body=tableDataRows(table); if(body.length<2)return;
   const runs=groupRunLengths(body.map(r=>tableCellText(r.cells[0])));
   if(!runs.some(n=>n>1))return;
   table.classList.add('tbl-grouped');
@@ -6950,16 +7003,17 @@ function cardValueNumber(raw) {
     const unit = /^(.*\d%?)\s*[A-Za-zµ°]{1,12}\.?$/.exec(s);
     return parseCellNumber(unit ? unit[1] : s);
 }
-/** Body rows (header excluded) that hold anything at all. */
+/** Body rows (header and a typed total row excluded) that hold anything at all. */
 function cdBodyRows(grid) {
-    return grid.slice(1).filter((row) => row.some((c) => !isBlankCellText(c)));
+    const ti = typedTotalRowIndex(grid);
+    return grid.slice(1).filter((row, i) => i + 1 !== ti && row.some((c) => !isBlankCellText(c)));
 }
 function cdColumnCount(grid) {
     return grid.reduce((n, row) => Math.max(n, row.length), 0);
 }
 /**
  * Whether a table can show as Cards. A card is label · value · optional change, so the table needs:
- * 2 or 3 columns; 2–8 rows; numbers in the second column (at least half its filled cells, see
+ * 2 or 3 columns; 2–8 rows (a typed total row is not counted toward the 8); numbers in the second column (at least half its filled cells, see
  * cardValueNumber); and, with a third column, changes in it — every filled cell has a direction
  * (cardChangeDirection) and at least one is written with a sign or an arrow, so a plain quantity
  * or a text column (Owner, Notes) isn't mistaken for one. n/a, dashes and empty cells are allowed
@@ -6971,7 +7025,9 @@ function cardsAvailability(grid) {
         return { ok: false, reason: `Cards need 2 or 3 columns: a label, a value and an optional change. This table has ${cols}.` };
     }
     const rows = cdBodyRows(grid);
-    if (rows.length < CARDS_MIN_ROWS)
+    // A typed total row becomes its own total card: it counts toward the minimum, not the maximum.
+    const withTotal = rows.length + (typedTotalRowIndex(grid) >= 0 ? 1 : 0);
+    if (withTotal < CARDS_MIN_ROWS)
         return { ok: false, reason: `Cards need at least ${CARDS_MIN_ROWS} rows.` };
     if (rows.length > CARDS_MAX_ROWS) {
         return { ok: false, reason: `Cards fit up to ${CARDS_MAX_ROWS} rows. This table has ${rows.length}, so it reads better as a table or a chart.` };
@@ -6999,6 +7055,127 @@ function cardsRows(grid) {
         value: (r[1] ?? '').trim(),
         change: hasChange ? (r[2] ?? '').trim() : ''
     }));
+}
+// ── Total row ───────────────────────────────────────────────────────────────────────────────
+/** A first-column label that marks a typed total row: Total, Totals, Sum, Grand total, Subtotal. */
+function isTotalLabel(raw) {
+    return /^(grand\s+|sub-?\s?)?(total|sum)s?\s*:?$/i.test(String(raw ?? '').trim());
+}
+/**
+ * Grid index of a typed total row: the last body row with anything in it, when its first cell is a
+ * total label (isTotalLabel). -1 when there is none.
+ */
+function typedTotalRowIndex(grid) {
+    for (let i = grid.length - 1; i >= 1; i--) {
+        const row = grid[i];
+        if (!row.some((c) => !isBlankCellText(c)))
+            continue;
+        return isTotalLabel(row[0] ?? '') ? i : -1;
+    }
+    return -1;
+}
+/**
+ * The sum of a column's values, written the way the column writes them ("15 days" + "3 days" →
+ * "18 days", "DKK 500.00" × 3 → "DKK 1,500.00"). Null when the column isn't a number column: no
+ * numbers, any text that isn't a number (placeholders like n/a and dashes are skipped), values with
+ * different units, percentages (a sum of percentages is rarely meant), or k/M/B shorthand.
+ */
+function sumColumn(values) {
+    const filled = values.map((v) => String(v ?? '').trim()).filter((v) => !cdIsPlaceholder(v));
+    if (!filled.length)
+        return null;
+    const NUM = /^(.*?)([+\-−]?\(?\d[\d,]*(?:\.(\d+))?\)?)(.*)$/;
+    // A word unit compares without a plural "s", so "1 day" and "5 days" add up.
+    const unitKey = (u) => u.trim().toLowerCase().replace(/^([a-zµ°]+?)s$/, '$1');
+    let total = 0;
+    let decimals = 0;
+    let grouped = false;
+    let shape = null;
+    let prefix = '';
+    const suffixes = [];
+    for (const v of filled) {
+        const n = cardValueNumber(v);
+        if (n === null)
+            return null;
+        const m = NUM.exec(v);
+        if (!m)
+            return null;
+        const pre = m[1].replace(/[+\-−]\s*$/, '');
+        const suf = m[4];
+        if (/%/.test(suf) || /^\s*[kmb]\b/i.test(suf))
+            return null;
+        const key = pre.trim().toLowerCase() + '|' + unitKey(suf);
+        if (shape === null) {
+            shape = key;
+            prefix = pre;
+        }
+        else if (shape !== key)
+            return null;
+        suffixes.push(suf);
+        decimals = Math.max(decimals, m[3] ? m[3].length : 0);
+        if (/\d,\d{3}/.test(m[2]))
+            grouped = true;
+        total += n;
+    }
+    // Singular unit for exactly 1, plural otherwise, when the column shows both forms.
+    const plural = suffixes.find((x) => /[a-z]s\s*$/i.test(x));
+    const singular = suffixes.find((x) => !/[a-z]s\s*$/i.test(x));
+    const suffix = (total === 1 ? singular : plural) ?? suffixes[0];
+    const abs = Math.abs(total).toFixed(decimals);
+    const [int, frac] = abs.split('.');
+    const intText = grouped || Math.abs(total) >= 10000 ? int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : int;
+    const num = (total < 0 ? '−' : '') + intText + (frac ? '.' + frac : '');
+    return { value: total, text: prefix + num + suffix };
+}
+/**
+ * The calculated total row for a table: every column after the first that is a number column
+ * (sumColumn) gets its sum; a typed total row, if there is one, is left out of the sums.
+ */
+function computeTotalRow(grid) {
+    const cols = cdColumnCount(grid);
+    const skip = typedTotalRowIndex(grid);
+    const rows = grid.slice(1).filter((r, i) => i + 1 !== skip && r.some((c) => !isBlankCellText(c)));
+    const sums = [null];
+    for (let c = 1; c < cols; c++)
+        sums.push(sumColumn(rows.map((r) => r[c] ?? '')));
+    return { cells: sums.map((s, c) => (c === 0 ? 'Total' : s ? s.text : '')), any: sums.some((s) => s !== null), sums };
+}
+/**
+ * Where a typed total row disagrees with what its rows add up to: one entry per number column whose
+ * typed value differs from the calculated sum (beyond rounding). Empty when there is no typed total
+ * row or it is right.
+ */
+function totalRowMismatches(grid) {
+    const ti = typedTotalRowIndex(grid);
+    if (ti < 0)
+        return [];
+    const { sums } = computeTotalRow(grid);
+    const out = [];
+    sums.forEach((s, c) => {
+        if (!s)
+            return;
+        const typed = (grid[ti][c] ?? '').trim();
+        const tv = cardValueNumber(typed);
+        if (tv === null || Math.abs(tv - s.value) > 1e-9 * Math.max(1, Math.abs(s.value)))
+            out.push({ col: c, typed, computed: s.text });
+    });
+    return out;
+}
+/**
+ * The highlighted total card Cards show after the others: the calculated sum of the value column
+ * when the table has a calculated total row (`calculated`), else a typed total row as written.
+ * Null when there is neither (or the value column can't be added up).
+ */
+function cardsTotal(grid, calculated) {
+    if (calculated) {
+        const s = computeTotalRow(grid).sums[1];
+        return s ? { label: 'Total', value: s.text, change: '' } : null;
+    }
+    const ti = typedTotalRowIndex(grid);
+    if (ti < 0)
+        return null;
+    const r = grid[ti];
+    return { label: (r[0] ?? '').trim(), value: (r[1] ?? '').trim(), change: cdColumnCount(grid) === 3 ? (r[2] ?? '').trim() : '' };
 }
 
 /* GENERATED:tableDisplay:END */
@@ -7407,7 +7584,8 @@ function tableMoveColumn(table,cell,dir){
   return cell;
 }
 function tableSortByColumn(table,cell,dir){
-  const ci=cell.cellIndex; const body=tableBodyRows(table);
+  // A typed total row stays where it is (last); only the data rows are sorted.
+  const ci=cell.cellIndex; const body=tableDataRows(table);
   const order=tableSortOrder(body.map(r=>tableCellText(r.cells[ci])),dir);
   // Placeholders keep each row slot where it is (rows can span several <tbody>s), so the sorted
   // rows go back exactly into the body's slots and nothing ever moves into the header.
@@ -7712,6 +7890,18 @@ function buildChartFeatureItems(table,commit){
     if(g.ok||grouped&&cur==='table')items.push({label:'Group rows', icon:grouped?CHECK:undefined, title:'Show each repeated first-column value once, spanning its rows', onClick:()=>{ setTableGroupRows(table,!grouped); commit(); }});
     else items.push(na('Group rows',g.reason));
   }
+  // Total row: on/off for the calculated total; a table with a typed total offers to replace it
+  // ("Use calculated total"), saying what the rows really add up to when it's out of date.
+  if(cur==='table'||cur==='cards'){
+    const calc=isTableTotalRow(table), grid=tableTextGrid(table), t=computeTotalRow(grid);
+    if(calc)items.push({label:'Total row', icon:CHECK, title:'Remove the calculated total row', onClick:()=>{ setTableTotalRow(table,false); commit(); }});
+    else if(!t.any)items.push(na('Total row','No number column to add up.'));
+    else if(typedTotalRowIndex(grid)>=0){
+      const miss=totalRowMismatches(grid);
+      items.push({label:'Use calculated total', title:miss.length?'Your Total row says '+miss[0].typed+'; the rows add up to '+miss[0].computed+'. Replace it with a total that adds itself up.':'Replace the typed Total row with one that adds itself up', onClick:()=>{ setTableTotalRow(table,true); commit(); }});
+    }
+    else items.push({label:'Total row', title:'Add a row that adds up each number column, kept up to date as you edit', onClick:()=>{ setTableTotalRow(table,true); commit(); }});
+  } else items.push(na('Total row','A total row applies to a table or Cards.'));
   if(titled){
     const curTitle=getTableChartTitle(table);
     items.push({label:curTitle?'Edit title\u2026':'Add title\u2026', onClick:async()=>{
@@ -8092,6 +8282,7 @@ function buildNodeTableObject(node,tIdx){
     applyTableCheckIcons(clone);
     applyTablePersonChips(clone);
     applyTableDisplayPolish(clone);
+    applyTableTotalRow(clone);
     wrap.appendChild(clone);
   }
   function enterEdit(clickedCellFlatIdx,clickX,clickY,opts){
@@ -8370,7 +8561,9 @@ function chartSeriesFromTable(table){
   const rows=Array.from(table?.querySelectorAll('tr')||[]);
   if(rows.length<2)return null;
   const headerCells=Array.from(rows[0].cells).map(c=>stripIllegalXmlChars((c.textContent||'').trim()));
-  const bodyRows=rows.slice(1);
+  // A typed total row isn't data: charting it would add one oversized bar or slice.
+  const totalTr=tableTypedTotalTr(table);
+  const bodyRows=rows.slice(1).filter(r=>r!==totalTr);
   const parseNum=raw=>parseCellNumber(String(raw||''))??0;
   if(headerCells.length===1){
     const values=bodyRows.map(r=>parseNum(r.cells[0]?.textContent));
@@ -8550,7 +8743,10 @@ function renderCardsHtml(table){
       +`<div class="pv-table-card-main"><div class="pv-table-card-value">${esc(d.value)}</div>${cardChangeHtml(d.change)}</div>`
       +`</div>`;
   }).join('');
-  return `<div class="pv-table-cards-grid" style="--cards-cols:${cardsGridColumns(data.length)};--cards-cols-narrow:${Math.min(2,data.length)}">${cards}</div>`;
+  // A typed or calculated total becomes one quiet full-width total line under the cards.
+  const tot=cardsTotal(tableTextGrid(table),isTableTotalRow(table));
+  const totalHtml=tot&&tot.value?`<div class="pv-table-cards-total"><span class="pv-table-cards-total-label">${esc(tot.label||'Total')}</span><span class="pv-table-cards-total-value">${esc(tot.value)}</span>${cardChangeHtml(tot.change)}</div>`:'';
+  return `<div class="pv-table-cards-grid" style="--cards-cols:${cardsGridColumns(data.length)};--cards-cols-narrow:${Math.min(2,data.length)}">${cards}</div>${totalHtml}`;
 }
 // Shared axis/plot geometry for the three category-on-x, value-on-y chart shapes (bar, stacked
 // bar, and line) — everything but how each category's value(s) actually get drawn (grouped
@@ -9828,6 +10024,7 @@ function buildNoteTableFigure(table,nodeId,tIdx){
   applyTableCheckIcons(clone);
   applyTablePersonChips(clone);
   applyTableDisplayPolish(clone);
+  applyTableTotalRow(clone,{hint:false});
   fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx);
   if(tableChartability(table).ok)fig.classList.add('pv-table-chartable');
   fig.appendChild(clone);
