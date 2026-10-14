@@ -79,13 +79,13 @@ test('reply box: Enter adds a comment, Ask adds a question, Yes answers it, the 
   const last = await page.evaluate("JSON.stringify(remarks[remarks.length - 1])");
   expect(last).toContain('"type":"question"');
   expect(last).toContain('"person":"Kristoffer"');
-  await expect(page.locator('.thread-chip.is-question[data-state="open"]')).toHaveCount(1);
+  await expect(page.locator('.thread-entry .thread-chip.is-question[data-state="open"]')).toHaveCount(1);
   await expect(page.locator('.node-row[data-id="2"] .node-remark-dot .node-dot-count')).toHaveText('1');
 
   await box.click();
   await page.keyboard.type('Tested last week');
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="yes"]').click();
-  await expect(page.locator('.thread-chip.is-question[data-state="open"]')).toHaveCount(0);
+  await expect(page.locator('.thread-entry .thread-chip.is-question[data-state="open"]')).toHaveCount(0);
   const answer = await page.evaluate("(() => { const r = remarks[remarks.length - 1]; return [r.verdict, r.answerTo === remarks[remarks.length - 2].id, stripHtmlToText(r.text)]; })()");
   expect(answer).toEqual(['yes', true, 'Tested last week']);
   expect(errors).toEqual([]);
@@ -97,14 +97,14 @@ test('row marker and thread status are one status, both ways', async ({ page }) 
   await page.evaluate("setNodeMarker(2, 'followup'); render()");
   const latestStatus = "(() => { const t = nodeThread(2); return t[t.length - 1].status || ''; })()";
   expect(await page.evaluate(latestStatus)).toBe('followup');
-  await expect(page.locator('.thread-chip.is-followup')).toHaveCount(1);
+  await expect(page.locator('.thread-entry .thread-chip.is-followup')).toHaveCount(1);
 
   // Thread → marker: Resolve in the reply box turns the row Confirmed.
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="resolve"]').click();
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('confirmed');
   expect(await page.evaluate(latestStatus)).toBe('resolved');
   // The earlier Follow-up chip stays as history.
-  await expect(page.locator('.thread-chip.is-followup')).toHaveCount(1);
+  await expect(page.locator('.thread-entry .thread-chip.is-followup')).toHaveCount(1);
 
   // Clearing the marker takes back the chip that set it: the follow-up is open again; clearing
   // that leaves no status.
@@ -165,13 +165,16 @@ test('PDF prints the whole thread with author, time and chips', async ({ page })
     while (!w.__printed && Date.now() - t0 < 10000) await new Promise((res) => setTimeout(res, 50));
     const doc = document.getElementById('preview-doc')!;
     return {
-      labels: [...doc.querySelectorAll('.pv-remark-block .pv-inline-label-remark span')].map(e => e.textContent),
+      labels: [...doc.querySelectorAll('.pv-remark-block .pv-inline-label-remark > span:not(.pv-status-pill)')].map(e => e.textContent),
+      status: [...doc.querySelectorAll('.pv-remark-block .pv-thread-status')].map(e => e.textContent),
       texts: [...doc.querySelectorAll('.pv-remark-block .pv-remark-text')].map(e => (e.textContent || '').trim()),
-      pills: [...doc.querySelectorAll('.pv-remark-block .pv-status-pill')].map(e => e.textContent),
+      pills: [...doc.querySelectorAll('.pv-remark-block .pv-remark-entry .pv-status-pill')].map(e => e.textContent),
       qaSection: (document.getElementById('pv-qa-section')?.textContent || '')
     };
   });
-  expect(r.labels).toEqual(['Thread']);
+  // One header per thread: its size and its status.
+  expect(r.labels).toEqual(['Thread · 4']);
+  expect(r.status).toEqual(['✓ Decision']);
   expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
   expect(r.pills).toEqual(expect.arrayContaining(['Question · Answered', '✓ Yes', 'Decision']));
   expect(r.qaSection).toContain('Unlinked question');

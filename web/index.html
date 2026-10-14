@@ -1799,6 +1799,11 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-chip.is-decision{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fc-green) 35%,transparent)}
 /* The row thread: one flat list, each entry a meta line (avatar, author, time, chips) over its text. */
 .node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
+/* One thin rule down the left of the whole thread (header, entries, reply box). */
+.thread-line::after{content:'';position:absolute;left:var(--thread-rule-x,24px);top:0;bottom:0;width:2px;background:color-mix(in srgb,var(--fc-purple) 22%,var(--border))}
+.node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--fc-purple);font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none}
+.thread-head svg{flex:0 0 auto}
+.thread-head .thread-head-status{text-transform:none;letter-spacing:0}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
 .thread-time{font-size:12px}
 .thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
@@ -2306,6 +2311,17 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-remark-entry+.pv-remark-entry{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .pv-remark-text{color:var(--fg);font-style:italic;font-size:12.5px;line-height:1.55}
 .pv-remark-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font:400 11px 'Inter',sans-serif;color:var(--muted)}
+/* A node's thread prints as a transcript under its row: one thin rule, avatars in a column,
+   upright text, no box or dividers. */
+.pv-inline-remark-body.pv-thread-body{margin-left:6px;padding:0 0 0 14px;background:transparent;border:0;border-radius:0;border-left:2px solid color-mix(in srgb,var(--fc-purple) 22%,var(--border))}
+.pv-thread-body .pv-remark-entry{display:grid;grid-template-columns:15px 1fr;column-gap:8px;align-items:start;margin:0;padding:3px 0;border:0}
+.pv-thread-body .pv-remark-entry+.pv-remark-entry{margin-top:3px;padding-top:3px;border:0}
+.pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
+.pv-thread-body .pv-remark-meta,.pv-thread-body .pv-remark-text{grid-column:2}
+.pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px}
+.pv-remark-anon{color:var(--muted)}
+.pv-remark-block .pv-inline-label-remark{color:var(--fc-purple);margin-left:6px}
+.pv-thread-status{margin-left:auto;text-transform:none;letter-spacing:0}
 .pv-remark-meta+.pv-remark-text{margin-top:3px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
 .pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
@@ -3967,7 +3983,7 @@ body.printing-generic #gpe-overlay{
 <li>Right-click an entry for Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>One person dot appears on a node with a thread — click it to show or hide the thread inline. It shows how many questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the rest fold behind "N earlier entries" — click to show them</li>
-<li>Always included in PDF exports: the whole thread prints in one "Thread" card right after its node, every entry with its author, date and time, and chips</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header with the thread's status, then every entry with its author, time (the date once per day) and chips, along one thin rule. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups and decisions become status chips, and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
@@ -17753,7 +17769,7 @@ function jumpToNodeTodoRefs(anchorEl, refs){
   if(refs.length===1){ if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(refs[0].id); return; }
   openRefJumpPopover(anchorEl, refs, refs.length+' to-dos reference this node');
 }
-const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>';
+const REMARK_DOT_SVG='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>';
 function toggleCollapse(id){if(collapsedIds.has(id))collapsedIds.delete(id); else collapsedIds.add(id); scheduleAutoSave(); render()}
 function collapseNode(id){if(!collapsedIds.has(id)){collapsedIds.add(id); scheduleAutoSave(); render()}}
 function expandNode(id){if(collapsedIds.has(id)){collapsedIds.delete(id); scheduleAutoSave(); render()}}
@@ -28067,23 +28083,25 @@ function previewStatusPill(state){
   return pill;
 }
 // The PDF prints dates in full (the outline's "Today" would be wrong by the time it's read).
-function formatThreadTimeAbsolute(r){
+function formatThreadTimeAbsolute(r,prev){
   const d=remarksParseISODate(r.date)||(r.createdAt?new Date(r.createdAt):null);
   const day=d?d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'';
   const t=r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+  // The date shows once per day: an entry on the same day as the one before it shows only its time.
+  if(prev&&t&&(prev.date||'')===(r.date||''))return t;
   return day&&t?day+' · '+t:(day||t);
 }
 // One thread entry for the PDF: author, time and the same chips as the outline, then the text.
 // `thread` (the node's entries) tells a question whether it's been answered.
-function previewRenderRemarkEntry(r,thread){
+function previewRenderRemarkEntry(r,thread,prev){
   const entry=document.createElement('div'); entry.className='pv-remark-entry';
   const meta=document.createElement('div'); meta.className='pv-remark-meta';
   const authorColor=remarkAuthorColor(r.person);
   const avatar=document.createElement('span'); avatar.className='pv-remark-avatar'; avatar.style.background=authorColor.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
-  meta.appendChild(avatar);
-  const bEl=document.createElement('b'); bEl.textContent=r.person||'(unnamed)';
-  meta.appendChild(bEl);
-  const when=formatThreadTimeAbsolute(r); if(when)meta.appendChild(document.createTextNode(' · '+when));
+  entry.appendChild(avatar);
+  if(r.person){ const bEl=document.createElement('b'); bEl.textContent=r.person; meta.appendChild(bEl); }
+  else { const q=document.createElement('span'); q.className='pv-remark-anon'; q.textContent=r.answerTo?'Answer':'Unnamed'; meta.appendChild(q); }
+  const when=formatThreadTimeAbsolute(r,prev); if(when)meta.appendChild(document.createTextNode(' · '+when));
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
   if(isQuestion(r)){ const st=questionState(r,thread||[r]); meta.appendChild(previewStatusPill(st==='open'?'question':st)); }
   if(r.answerTo)meta.appendChild(previewStatusPill(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'answer'));
@@ -28105,9 +28123,11 @@ function previewRenderRemarkEntry(r,thread){
 function previewRenderRemarkGroup(remarksForNode){
   const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
   const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
-  label.innerHTML=REMARK_DOT_SVG+'<span>Thread</span>';
-  const body=document.createElement('div'); body.className='pv-inline-remark-body'+(noteMatchEditorBg?'':' bg-distinct');
-  remarksForNode.forEach(r=>body.appendChild(previewRenderRemarkEntry(r,remarksForNode)));
+  label.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+remarksForNode.length+'</span>';
+  const hs=threadHeaderStatus(remarksForNode);
+  if(hs){ const pill=previewStatusPill(hs.key==='question'?'question':hs.key); pill.classList.add('pv-thread-status'); pill.textContent=(hs.key==='resolved'||hs.key==='decision'?'\u2713 ':hs.key==='issue'?'\u26a0 ':'')+hs.label; label.appendChild(pill); }
+  const body=document.createElement('div'); body.className='pv-inline-remark-body pv-thread-body';
+  remarksForNode.forEach((r,i)=>body.appendChild(previewRenderRemarkEntry(r,remarksForNode,remarksForNode[i-1])));
   wrap.appendChild(label); wrap.appendChild(body);
   return wrap;
 }
@@ -29426,9 +29446,28 @@ function openThreadComposer(nodeId,ask){
   _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
 }
-function renderNodeThread(node,place){
+// The thread's status for its header line: Issue / Follow-up / Resolved / Decision, else how many
+// questions are open. Shared by the editor and the PDF.
+function threadHeaderStatus(thread){
+  const st=threadStatus(thread);
+  if(st)return {key:st, label:st==='issue'?'Open issue':st==='followup'?'Follow-up':THREAD_STATUS_LABEL[st]};
+  const open=openQuestions(thread).length;
+  return open?{key:'question', label:openCountLabel(open,'question')}:null;
+}
+function renderNodeThread(node,placeLine){
   const thread=nodeThread(node.id);
   const commit=()=>{ syncRowMarkerFromThread(node.id); markDirty(); scheduleAutoSave(); render(); };
+  // Every line of the thread sits right of one thin rule, like the PDF's transcript.
+  const place=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+3)+'px'); line.style.paddingLeft=(x+15)+'px'; };
+  if(thread.length){
+    const head=document.createElement('div'); head.className='node-remark-line thread-head';
+    const hs=threadHeaderStatus(thread);
+    head.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+thread.length+'</span>'+(hs?'<span class="thread-chip is-'+hs.key+' thread-head-status"'+(hs.key==='question'?' data-state="open"':'')+'>'+(THREAD_STATUS_LABEL[hs.key]?threadStatusChipHtml(hs.key).replace(/<span>[^<]*<\/span>$/,'<span>'+hs.label+'</span>'):hs.label)+'</span>':'');
+    head.dataset.tip='Click to hide the thread';
+    head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+    head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
+    place(head);
+  }
   const shownAll=showAllRemarksNodeIds.has(node.id)||thread.length<=4;
   const visible=shownAll?thread:thread.slice(-3);
   if(thread.length>4){
@@ -29450,7 +29489,7 @@ function renderThreadEntry(node,r,thread,place,commit){
     remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } });
     setTimeout(commit,0); return true;
   };
-  const person=document.createElement('span'); person.contentEditable='true'; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder='Who'; person.spellcheck=false; person.dataset.tip='Author — click to change';
+  const person=document.createElement('span'); person.contentEditable='true'; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to change';
   person.addEventListener('mousedown',e=>e.stopPropagation());
   person.addEventListener('click',e=>e.stopPropagation());
   person.addEventListener('focus',()=>{ pushUndo(); });

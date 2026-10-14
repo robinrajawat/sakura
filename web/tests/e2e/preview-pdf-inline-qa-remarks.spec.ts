@@ -66,13 +66,13 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
       const body = document.getElementById('preview-body')!;
       const block = body.querySelector('.pv-remark-block');
       return {
-        label: block?.querySelector('.pv-inline-label-remark span')?.textContent,
+        label: block?.querySelector('.pv-inline-label-remark > span:not(.pv-status-pill)')?.textContent,
         text: block?.querySelector('.pv-remark-entry')?.textContent || '',
         answer: block?.querySelectorAll('.pv-remark-entry')[1]?.textContent || '',
-        pill: block?.querySelector('.pv-status-pill')?.textContent,
+        pill: block?.querySelector('.pv-remark-entry .pv-status-pill')?.textContent,
       };
     });
-    expect(result.label).toBe('Thread');
+    expect(result.label).toBe('Thread · 2');
     expect(result.text).toContain('Why this approach?');
     expect(result.answer).toContain('Because it scales.');
     expect(result.pill).toBe('Question · Answered');
@@ -209,13 +209,13 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
         blockCount: body.querySelectorAll('.pv-remark-block').length,
         labelCount: body.querySelectorAll('.pv-inline-label-remark').length,
         entryCount: body.querySelectorAll('.pv-remark-entry').length,
-        labelText: body.querySelector('.pv-inline-label-remark span')?.textContent,
+        labelText: body.querySelector('.pv-inline-label-remark > span:not(.pv-status-pill)')?.textContent,
       };
     });
     expect(result.blockCount).toBe(1);
     expect(result.labelCount).toBe(1);
     expect(result.entryCount).toBe(2);
-    expect(result.labelText).toBe('Thread');
+    expect(result.labelText).toBe('Thread · 2');
   });
 });
 

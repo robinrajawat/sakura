@@ -156,7 +156,7 @@ async function exportPdf(page: Page) {
     while (!w.__printed && Date.now() - t0 < 10000) await new Promise((res) => setTimeout(res, 50));
     const sec = document.getElementById('pv-open-items-section');
     return {
-      pills: [...document.querySelectorAll('#preview-doc .pv-status-pill')].map(p => p.textContent),
+      pills: [...document.querySelectorAll('#preview-doc .pv-remark-entry .pv-status-pill')].map(p => p.textContent),
       section: !!sec,
       tocHasOpenItems: !!document.querySelector('#preview-toc a[href="#pv-open-items-section"]'),
     };
