@@ -76,3 +76,16 @@ test('"Where used…" is gone from the node menu', async ({ page }) => {
   }));
   expect(r).toEqual({ meta: false, order: false, popover: 'undefined' });
 });
+
+test('byline dropdowns open from their chip\'s left edge (Share used to open leftwards over the title)', async ({ page }) => {
+  await page.goto('file://' + indexPath);
+  const r = await page.evaluate(() => {
+    document.getElementById('doc-share-wrap')!.style.display = '';
+    document.getElementById('share-dd-menu')!.classList.add('open');
+    return {
+      chip: Math.round(document.getElementById('doc-share-chip')!.getBoundingClientRect().left),
+      menu: Math.round(document.getElementById('share-dd-menu')!.getBoundingClientRect().left)
+    };
+  });
+  expect(r.menu).toBe(r.chip);
+});
