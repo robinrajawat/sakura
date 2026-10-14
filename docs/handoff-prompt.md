@@ -516,6 +516,11 @@ to look different from the cards: accent tint and border, "Σ Total" label in th
 at card-value size. Covered by
 `tests/e2e/table-total-row.spec.ts`.
 
+**Open-items shortcut (owner request, 2026-10-14).** Right-click or Shift+click on the toolbar
+open-items summary toggles the combined "Show only open items" filter (`quickToggleOpenItemsFilter` →
+`applyOpenItemsFilter('openItems')`) without opening the list; with nothing open it just says "Nothing
+open to show". The tooltip names the shortcut. Covered in `menu-stamp-polish.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
