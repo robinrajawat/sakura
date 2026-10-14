@@ -30,6 +30,11 @@ async function seedWelcomeSeen(page: import('@playwright/test').Page) {
   await page.addInitScript(() => localStorage.setItem('sakura_welcome_seen', '1'));
 }
 
+// Every test here, not just the drag ones: the zoom tests press keys right after load, and under
+// full-suite load the welcome modal's timer could fire first and take the keypress (Enter then
+// created no child -- the intermittent "Enter while focused on an empty node" failure).
+test.beforeEach(async ({ page }) => { await seedWelcomeSeen(page); });
+
 test.describe('Zooming into a childless node lets you actually add a first child', () => {
   test('typing a character while focused on an empty node creates and seeds a child', async ({ page }) => {
     await page.goto('file://' + indexPath);

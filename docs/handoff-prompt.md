@@ -495,7 +495,9 @@ red Rejected), "No status" a faint outlined tag. Author and actions stay plain t
 **Testing lessons from this session:**
 - The welcome dialog opens on a short delay, so hiding it right after load races later clicks —
   that was the intermittent "one unnamed e2e failure". Set `localStorage.sakura_welcome_seen` in an
-  `addInitScript` before load instead (see `menu-stamp-polish.spec.ts`).
+  `addInitScript` before load instead (see `menu-stamp-polish.spec.ts`). Same cause, fixed 2026-10-14:
+  `focus-empty-and-row-drag-scope.spec.ts` "Enter while focused on an empty node" (the dialog took the
+  Enter key); the file now seeds it in a `beforeEach`. Other specs that hide it after load can still race.
 - Under Playwright, `page.reload()` of a `file://` page intermittently loses localStorage with no
   app code writing/removing/clearing it (traced). Test persistence by checking saved prefs and
   re-running `loadPrefs()` instead (see `context-quick-row-custom.spec.ts`).
