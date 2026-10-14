@@ -86,8 +86,9 @@ describe('countOpenItems', () => {
 });
 
 describe('normalizeDiscussionFilter', () => {
-  it('accepts only the two filters', () => {
+  it('accepts only the three filters', () => {
     expect(normalizeDiscussionFilter('openQa')).toBe('openQa');
+    expect(normalizeDiscussionFilter('openItems')).toBe('openItems');
     expect(normalizeDiscussionFilter('openRemarks')).toBe('openRemarks');
     expect(normalizeDiscussionFilter('issue')).toBeNull();
     expect(normalizeDiscussionFilter(null)).toBeNull();
@@ -106,6 +107,10 @@ describe('nodesWithOpenItems', () => {
   });
   it('finds nodes with open remarks', () => {
     expect([...nodesWithOpenItems('openRemarks', qa, remarks)]).toEqual([2]);
+  });
+  it('openItems combines open questions, open remarks and Issue/Follow-up rows', () => {
+    const nodes = [{ id: 6, marker: 'issue' }, { id: 7, marker: 'followup' }, { id: 8, marker: 'confirmed' }, { id: 9, marker: 'parked' }];
+    expect([...nodesWithOpenItems('openItems', qa, remarks, nodes)].sort()).toEqual([1, 2, 6, 7]);
   });
 });
 

@@ -65,15 +65,10 @@ async function open(page: Page) {
 // The toolbar open-items summary's question/remark parts ("1 question", "2 remarks").
 const sumButtons = (page: Page) => page.evaluate(() =>
   [...document.querySelectorAll('#marker-summary .oi-part[data-key="question"], #marker-summary .oi-part[data-key="remark"]')].map(b => (b as HTMLElement).textContent));
-// Opens the summary's list and clicks the filter item of one group ("Open questions", …).
+// Opens the summary's list and clicks the filter icon on one group's heading ("Open questions", …).
 async function clickGroupFilter(page: Page, heading: string) {
   await page.locator('#marker-summary .open-items-btn').click();
-  await page.evaluate((heading) => {
-    const h = [...document.querySelectorAll('.open-items-menu .sb-context-heading')].find(e => (e.textContent || '').startsWith(heading))!;
-    let n = h.nextElementSibling;
-    while (n && !/Show only these|Clear this filter/.test(n.textContent || '')) n = n.nextElementSibling;
-    (n as HTMLElement).click();
-  }, heading);
+  await page.locator('.open-items-menu .sb-context-heading', { hasText: heading }).locator('.sb-context-heading-action').click();
 }
 
 test('remarks: resolve folds a remark away, the fold line shows it again, reopen brings it back', async ({ page }) => {
