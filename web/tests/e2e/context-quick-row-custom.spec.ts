@@ -23,10 +23,10 @@ const quick = (page: import('@playwright/test').Page) =>
 test('quick row: remove via right-click, pin from More, drag to reorder, persist, reset', async ({ page }) => {
   await open(page);
   await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
-  expect(await quick(page)).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
+  expect(await quick(page)).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
 
-  // Remove "Add question" via its own right-click menu.
-  await page.locator('#context-quickbar [data-action="qa"]').click({ button: 'right' });
+  // Remove "Add image" via its own right-click menu.
+  await page.locator('#context-quickbar [data-action="image"]').click({ button: 'right' });
   await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Remove from quick row' }).click();
   await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
   expect(await quick(page)).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table']);
@@ -38,7 +38,7 @@ test('quick row: remove via right-click, pin from More, drag to reorder, persist
   expect(await quick(page)).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'date-time']);
   // The row is now full: pinning another is refused.
   await page.locator('#context-more-panel .context-submenu-trigger').hover();
-  await page.locator('#context-more-panel .ctx-pin[data-pin="image"]').click({ force: true });
+  await page.locator('#context-more-panel .ctx-pin[data-pin="tags"]').click({ force: true });
   expect(await quick(page)).toHaveLength(6);
 
   // Drag Table to the front.
@@ -59,5 +59,5 @@ test('quick row: remove via right-click, pin from More, drag to reorder, persist
   await page.locator('#context-quickbar [data-action="note"]').click({ button: 'right' });
   await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Reset quick row' }).click();
   await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
-  expect(await quick(page)).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
+  expect(await quick(page)).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
 });

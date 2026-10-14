@@ -1803,29 +1803,42 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-line::after{content:'';position:absolute;left:var(--thread-rule-x,24px);top:0;bottom:0;width:2px;background:color-mix(in srgb,var(--fc-purple) 22%,var(--border))}
 .node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--fc-purple);font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none}
 .thread-head svg{flex:0 0 auto}
-.thread-head .thread-head-status{text-transform:none;letter-spacing:0}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
 .thread-time{font-size:12px}
 .thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
 .thread-entry .node-remark-text-inline{display:block;margin-left:22px;min-height:1.4em}
-.thread-entry .node-remark-text-inline.is-event{min-height:0}
 .thread-entry .node-remark-text-inline:empty::before{content:attr(data-placeholder);color:var(--hint)}
-.node-remark-line.thread-composer{align-items:center;gap:6px;padding-top:2px;opacity:.6;transition:opacity .12s}
-.node-remark-line.thread-composer:hover,.node-remark-line.thread-composer:focus-within{opacity:1}
-.thread-author-btn{flex:0 0 auto;border:0;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:0 4px;height:20px;border-radius:4px;cursor:pointer;white-space:nowrap}
-.thread-author-btn:hover{background:var(--hover);color:var(--fg)}
-.thread-author-edit{flex:0 0 auto;min-width:60px;font:500 12px 'Inter',sans-serif;padding:0 4px;border-radius:4px;background:var(--hover);outline:none}
+.node-remark-line.thread-composer{display:block;padding-top:3px;padding-bottom:3px}
+.thread-author-btn{flex:0 0 auto;border:0;background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;padding:0 3px;height:20px;border-radius:4px;cursor:pointer;white-space:nowrap}
+.thread-author-btn:hover{background:var(--hover)}
+.thread-author-edit{flex:0 0 auto;min-width:60px;font:600 13px 'Inter',sans-serif;padding:0 4px;border-radius:4px;background:var(--hover);outline:none}
 .thread-author-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
-.thread-composer-input{flex:1;min-width:80px;outline:none;cursor:text;white-space:pre-wrap;word-break:break-word;color:var(--fg);border:1px dashed var(--border);border-radius:6px;padding:1px 8px;min-height:20px}
+/* The reply line types like any entry: no box, just the text under the author. */
+.thread-composer-input{display:block;margin-left:22px;min-height:1.4em;outline:none;cursor:text;white-space:pre-wrap;word-break:break-word;color:var(--fg)}
 .thread-composer-input:empty::before{content:attr(data-placeholder);color:var(--hint)}
-.thread-composer-input:focus{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--border))}
-.thread-actions{flex:0 0 auto;display:inline-flex;gap:4px}
-.thread-btn{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--muted);font:600 11px 'Inter',sans-serif;cursor:pointer}
+.thread-composer-input.remark-text-input,.thread-composer-input.remark-text-input:hover,.thread-composer-input.remark-text-input:focus{width:auto;padding:0;border:0;border-radius:0;background:transparent;color:var(--fg);font:inherit}
+.thread-composer-input.remark-text-input:empty::before{font-style:normal}
+.thread-composer-foot{display:flex;align-items:center;gap:10px;margin:2px 0 0 22px;font-size:11.5px;color:var(--hint)}
+.thread-composer-hint{flex:1;min-width:0}
+.thread-actions{flex:0 0 auto;display:inline-flex;gap:2px}
+.thread-btn{display:inline-flex;align-items:center;height:20px;padding:0 6px;border:0;border-radius:4px;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer}
 .thread-btn:hover{background:var(--hover);color:var(--fg)}
-.thread-btn.is-on{background:color-mix(in srgb,var(--fc-purple) 14%,transparent);border-color:color-mix(in srgb,var(--fc-purple) 35%,var(--border));color:color-mix(in srgb,var(--fc-purple) 80%,var(--fg))}
+.thread-btn.is-on{color:var(--fc-purple);background:color-mix(in srgb,var(--fc-purple) 12%,transparent)}
 .thread-btn[data-act="yes"]:hover{color:var(--fc-green)}
 .thread-btn[data-act="no"]:hover{color:var(--fc-red)}
-.thread-btn[data-act="resolve"] svg{color:var(--fc-green)}
+/* "+ Reply" at the end of a thread: only while the thread is hovered. */
+.node-remark-line.thread-reply-link{padding-top:1px;padding-bottom:3px;color:var(--hint);font-size:12.5px;cursor:pointer;opacity:0;transition:opacity .12s}
+.node-remark-line.thread-reply-link.thread-hover,.node-remark-line.thread-reply-link:focus-within{opacity:1}
+.thread-reply-link span{margin-left:22px}
+.thread-reply-link:hover span{color:var(--fg)}
+.thread-verdict{font:600 12px 'Inter',sans-serif}
+.thread-verdict.is-yes{color:var(--fc-green)}
+.thread-verdict.is-no{color:var(--fc-red)}
+.thread-status-note{font-size:12px;color:var(--muted)}
+/* An answer or status with no text is one line until clicked. */
+.thread-entry.is-event .node-remark-text-inline{display:none}
+.thread-entry.is-event.is-editing .node-remark-text-inline{display:block}
+.thread-entry.is-event{cursor:text}
 /* "N earlier entries" fold line (buildInlineFoldLine). */
 .node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
 .node-remark-resolved-toggle:hover{background:var(--hover)}
@@ -2321,7 +2334,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px}
 .pv-remark-anon{color:var(--muted)}
 .pv-remark-block .pv-inline-label-remark{color:var(--fc-purple);margin-left:6px}
-.pv-thread-status{margin-left:auto;text-transform:none;letter-spacing:0}
+.pv-thread-verdict{font-weight:600}.pv-thread-verdict.is-yes{color:var(--fc-green)}.pv-thread-verdict.is-no{color:var(--fc-red)}
+.pv-thread-status-note{color:var(--muted)}
 .pv-remark-meta+.pv-remark-text{margin-top:3px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
 .pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
@@ -3760,7 +3774,7 @@ body.printing-generic #gpe-overlay{
 <li>Actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time. Which of these appear (and their fixed order) is configured in Settings → Editing → Quick Insert → Menu items</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the text you're editing, which this avoids touching</li>
 <li>Every action splices directly at the cursor and keeps you in edit mode, so you don't lose your place — the fastest way to get these in, and the reason the menu exists</li>
-<li>Node-only actions — Note, Tags, Add question, Add comment, Rewrite node, Version history — live in a node's right-click menu instead, not here, since Quick Insert is deliberately the same small menu everywhere rather than growing extra items only inside the outline editor</li>
+<li>Node-only actions — Note, Tags, Thread, Rewrite node, Version history — live in a node's right-click menu instead, not here, since Quick Insert is deliberately the same small menu everywhere rather than growing extra items only inside the outline editor</li>
 <li><strong>Version history…</strong> (right-click a node → in the "notes" group of the More panel) — shows earlier text for just this one node, drawn from the document's regular version history (captured automatically roughly every 10 minutes of active changes — see the Version History entry below) — skips straight past versions where this particular node didn't change, so a document with 20 saved versions might show far fewer than 20 rows here. "Restore text" replaces only this node's text, through the normal undo stack (Ctrl/Cmd+Z undoes it like any other edit) — nothing else about the node (note, code, tags) is touched</li>
 </ul>
 </div>
@@ -3975,15 +3989,15 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="panels" id="help-section-remarks">
 <h4>Thread (comments and questions)</h4>
 <ul>
-<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry shows its <strong>author</strong> (a colored initials avatar plus the name), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
-<li>Right-click any node → <strong>Add comment…</strong> or <strong>Add question…</strong> opens the node's thread with the cursor in its reply box. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line). <strong>Ask</strong> makes the next entry a question. What you type stays in the box if you move to another row</li>
-<li>The reply box writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
-<li>A <strong>question</strong> carries a Question chip until it's answered. Answer it from the reply box with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
-<li><strong>Status</strong>: right-click an entry → Issue, Follow-up, Resolved or Decision puts that chip on it. The latest chip is the thread's status, and it is the row's marker too: <strong>Issue</strong> ⇄ ⚠ Issue, <strong>Follow-up</strong> ⇄ ⚑ Follow-up, <strong>Resolved</strong> or <strong>Decision</strong> ⇄ ✓ Confirmed. Clicking a marker on a row puts the chip on the thread's latest entry (Issue also opens the reply box, to say what's wrong); clearing it takes that chip back. While a thread is an issue or a follow-up, the reply box has <strong>Resolve</strong>. Parked and N/A stay row-only</li>
+<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry shows its <strong>author</strong> (a colored initials avatar plus the name; each person in a document gets their own color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
+<li>Right-click any node (or Insert) → <strong>Thread…</strong> opens the node's thread with the cursor on a new reply line. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line, Esc to close). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no reply box — hover it for <strong>+ Reply</strong>. What you type is kept if you move to another row</li>
+<li>The reply line writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
+<li>A <strong>question</strong> carries a Question chip until it's answered. Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
+<li><strong>Status</strong>: right-click an entry → Issue, Follow-up, Resolved or Decision marks it (shown as quiet text, e.g. “· resolved”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown: <strong>Issue</strong> ⇄ ⚠ Issue, <strong>Follow-up</strong> ⇄ ⚑ Follow-up, <strong>Resolved</strong> or <strong>Decision</strong> ⇄ ✓ Confirmed. Clicking a marker on a row sets it on the thread's latest entry (Issue also opens the reply line, to say what's wrong); clearing it takes it back. The reply line has <strong>Follow-up</strong>, and <strong>Resolve</strong> while a thread is an issue or a follow-up — each adds an entry by the current author. Parked and N/A stay row-only</li>
 <li>Right-click an entry for Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>One person dot appears on a node with a thread — click it to show or hide the thread inline. It shows how many questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the rest fold behind "N earlier entries" — click to show them</li>
-<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header with the thread's status, then every entry with its author, time (the date once per day) and chips, along one thin rule. The outline shows the thread the same way; click its header to hide it</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, along one thin rule. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups and decisions become status chips, and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
@@ -4264,9 +4278,8 @@ body.printing-generic #gpe-overlay{
           <button role="menuitem" class="tb-menu-item" data-insert-action="date-time"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tb-menu-label">Date/time</span></button>
           <div class="tb-menu-heading">Marker</div>
           <div class="tb-menu-markers" id="insert-markers" role="group" aria-label="Marker"></div>
-          <div class="tb-menu-heading">Thread</div>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="qa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="tb-menu-label">Question</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="remark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/></svg><span class="tb-menu-label">Comment</span></button>
+          <div class="tb-menu-heading">Discuss</div>
+          <button role="menuitem" class="tb-menu-item" data-insert-action="remark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg><span class="tb-menu-label">Thread</span></button>
           <div class="tb-menu-heading">Visuals</div>
           <button role="menuitem" class="tb-menu-item" data-insert-action="table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg><span class="tb-menu-label">Table</span></button>
           <button role="menuitem" class="tb-menu-item" data-insert-action="image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="tb-menu-label">Image</span></button>
@@ -4998,6 +5011,10 @@ const REMARK_AVATAR_PALETTE=[
   {bg:'#f8cecc',fg:'#b85450',avatarBg:'#b85450'}, // red-pink
   {bg:'#ffe6cc',fg:'#d79b00',avatarBg:'#966c00'}, // amber
   {bg:'#d4f0f0',fg:'#3a9e9e',avatarBg:'#2e7e7e'}, // teal
+  {bg:'#fde2ec',fg:'#c2557d',avatarBg:'#a8466c'}, // rose
+  {bg:'#e4e6f8',fg:'#5a62b8',avatarBg:'#4b52a0'}, // indigo
+  {bg:'#e9f1d6',fg:'#6f8f2a',avatarBg:'#5d7a22'}, // olive
+  {bg:'#f3e3d6',fg:'#a0623a',avatarBg:'#8a5330'}, // brown
 ]; const PREFS_KEY='sakura_v001_prefs';
 const DOCS_INDEX_KEY='sakura_docs_index_v1'; const DOC_KEY_PREFIX='sakura_doc_v1_'; const CURRENT_DOC_KEY='sakura_current_doc_v1';
 let activeTagFilter=null; // null = no filter, string = filter by this tag
@@ -5019,7 +5036,7 @@ var THREAD_STATUS_LABEL={issue:'Issue',followup:'Follow-up',resolved:'Resolved',
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
-const CTX_QUICK_ROW=['ai-rewrite','note','remark','qa','diagram','table','image','tags','diagram-gen'];
+const CTX_QUICK_ROW=['ai-rewrite','note','remark','diagram','table','image','tags','diagram-gen'];
 // The person's own quick-row order (array of action ids), or null for the default above. Set by
 // dragging quick-row icons, right-click → Move/Remove, or More's pin buttons; saved in prefs as
 // ctxQuickRow. Declared up here because savePrefs/loadPrefs run during boot.
@@ -17721,9 +17738,7 @@ function qaRefsForNode(nodeId){
 // Was missing its own outer circle -- every other dot's icon (note's page shape, remark's
 // person, diagram's rects) fills a good portion of its 24x24 box, but this one was just the
 // bare question-mark squiggle+dot floating in empty space, which reads as barely-there at the
-// 11px size these dots actually render at. CTX_ACTION_META's own 'qa' entry (the identical
-// question-mark icon used for "Add question…" in the right-click menu) already includes the
-// circle; this now matches it exactly instead of being a stripped-down one-off.
+// 11px size these dots actually render at; the outer circle fixes that.
 function qaDotIconSvg(size){
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
 }
@@ -18929,8 +18944,7 @@ const CTX_ACTION_META={
   fold:{label:'Collapse/expand branch',svg:'<polyline points="6 9 12 15 18 9"/>',group:'structure'},
   'ai-rewrite':{label:'Rewrite node',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',group:'node'},
-  qa:{label:'Add question…',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'discuss'},
-  remark:{label:'Add comment…',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',group:'discuss'},
+  remark:{label:'Thread…',svg:'<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>',group:'discuss'},
   diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'visual'},
   'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'visual'},
   table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'visual'},
@@ -18940,7 +18954,7 @@ const CTX_ACTION_META={
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'info'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','qa','remark','table','image','diagram','diagram-gen','tags','version-history','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -19109,7 +19123,7 @@ function renderContextMorePanel(){
   // Everything you can add to a node that isn't already in the quick row sits behind one
   // "Insert ›" flyout, grouped with the same headings as the toolbar's Insert ▾ menu.
   {
-    const groups=[['node','Basics'],['discuss','Discussion'],['visual','Visuals']].map(([g,h])=>[h,CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a))]).filter(([,list])=>list.length);
+    const groups=[['node','Basics'],['discuss','Discuss'],['visual','Visuals']].map(([g,h])=>[h,CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a))]).filter(([,list])=>list.length);
     if(groups.length){
       addDivider();
       const wrap=document.createElement('div'); wrap.className='context-submenu-wrap';
@@ -27468,7 +27482,11 @@ function setNodeMarker(id,marker){
   if(thread.length){
     const want=threadStatusForMarker(resolved);
     if(want){ if(markerForThreadStatus(threadStatus(thread))!==resolved)thread[thread.length-1].status=want; }
-    else if(!resolved&&isThreadMarker(prev)){ const holder=threadStatusEntry(thread); if(holder)delete holder.status; node.marker=syncedMarker('',thread); }
+    else if(!resolved&&isThreadMarker(prev)){
+      const holder=threadStatusEntry(thread);
+      if(holder){ delete holder.status; if(!htmlHasVisibleText(holder.text)&&!holder.verdict&&!isQuestion(holder))remarks.splice(remarks.indexOf(holder),1); }
+      node.marker=syncedMarker('',nodeThread(id));
+    }
   }
   // An issue needs saying what's wrong: marking one opens the row's reply box (the caller renders).
   if(resolved==='issue'){
@@ -28104,8 +28122,12 @@ function previewRenderRemarkEntry(r,thread,prev){
   const when=formatThreadTimeAbsolute(r,prev); if(when)meta.appendChild(document.createTextNode(' · '+when));
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
   if(isQuestion(r)){ const st=questionState(r,thread||[r]); meta.appendChild(previewStatusPill(st==='open'?'question':st)); }
-  if(r.answerTo)meta.appendChild(previewStatusPill(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'answer'));
-  if(r.status)meta.appendChild(previewStatusPill(r.status));
+  if(r.answerTo){
+    if(r.verdict){ const v=document.createElement('span'); v.className='pv-thread-verdict is-'+r.verdict; v.textContent=r.verdict==='yes'?'\u2713 Yes':'\u2717 No'; meta.appendChild(v); }
+    else meta.appendChild(previewStatusPill('answer'));
+  }
+  // The status prints once, on the row's marker; the entry that set it says so quietly.
+  if(r.status){ const n=document.createElement('span'); n.className='pv-thread-status-note'; n.textContent='\u00b7 '+THREAD_STATUS_LABEL[r.status].toLowerCase(); meta.appendChild(n); }
   entry.appendChild(meta);
   if(htmlHasVisibleText(r.text)){
     const text=document.createElement('div'); text.className='pv-remark-text';
@@ -28124,8 +28146,6 @@ function previewRenderRemarkGroup(remarksForNode){
   const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
   const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
   label.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+remarksForNode.length+'</span>';
-  const hs=threadHeaderStatus(remarksForNode);
-  if(hs){ const pill=previewStatusPill(hs.key==='question'?'question':hs.key); pill.classList.add('pv-thread-status'); pill.textContent=(hs.key==='resolved'||hs.key==='decision'?'\u2713 ':hs.key==='issue'?'\u26a0 ':'')+hs.label; label.appendChild(pill); }
   const body=document.createElement('div'); body.className='pv-inline-remark-body pv-thread-body';
   remarksForNode.forEach((r,i)=>body.appendChild(previewRenderRemarkEntry(r,remarksForNode,remarksForNode[i-1])));
   wrap.appendChild(label); wrap.appendChild(body);
@@ -29378,12 +29398,16 @@ function remarkAuthorInitials(name){
   if(words.length===1)return words[0].slice(0,2).toUpperCase();
   return (words[0][0]+words[words.length-1][0]).toUpperCase();
 }
+// Each person in the document gets their own colour, in the order they first spoke in it, so up
+// to REMARK_AVATAR_PALETTE.length people never share one (a name hash put Karsten, Robin and Gro
+// on the same amber). Someone not in the document yet takes the next free colour.
 function remarkAuthorColor(name){
   const s=String(name||'').trim().toLowerCase();
   if(!s)return {bg:'#e8e6e0',fg:'#8a8780',avatarBg:'#75736d'};
-  let hash=0;
-  for(let i=0;i<s.length;i++)hash=(hash*31+s.charCodeAt(i))|0;
-  return REMARK_AVATAR_PALETTE[Math.abs(hash)%REMARK_AVATAR_PALETTE.length];
+  const order=[];
+  (Array.isArray(remarks)?remarks.slice():[]).sort((a,b)=>((a&&a.createdAt)||0)-((b&&b.createdAt)||0)).forEach(r=>{ const n=String(r&&r.person||'').trim().toLowerCase(); if(n&&!order.includes(n))order.push(n); });
+  let i=order.indexOf(s); if(i<0)i=order.length;
+  return REMARK_AVATAR_PALETTE[i%REMARK_AVATAR_PALETTE.length];
 }
 function formatRemarkDateDisplay(dateStr){
   const s=dateStr||todayDateStr();
@@ -29437,7 +29461,7 @@ function addThreadStatus(nodeId,status,text){
   remarks.push(e);
   return e;
 }
-// Opens a node's thread with its reply box focused ("Add comment…" / "Add question…").
+// Opens a node's thread with its reply line focused (right-click / Insert "Thread…", "+ Reply").
 function openThreadComposer(nodeId,ask){
   if(nodeId==null)return;
   forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId);
@@ -29446,23 +29470,19 @@ function openThreadComposer(nodeId,ask){
   _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
 }
-// The thread's status for its header line: Issue / Follow-up / Resolved / Decision, else how many
-// questions are open. Shared by the editor and the PDF.
-function threadHeaderStatus(thread){
-  const st=threadStatus(thread);
-  if(st)return {key:st, label:st==='issue'?'Open issue':st==='followup'?'Follow-up':THREAD_STATUS_LABEL[st]};
-  const open=openQuestions(thread).length;
-  return open?{key:'question', label:openCountLabel(open,'question')}:null;
-}
 function renderNodeThread(node,placeLine){
   const thread=nodeThread(node.id);
   const commit=()=>{ syncRowMarkerFromThread(node.id); markDirty(); scheduleAutoSave(); render(); };
   // Every line of the thread sits right of one thin rule, like the PDF's transcript.
-  const place=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+3)+'px'); line.style.paddingLeft=(x+15)+'px'; };
+  const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+3)+'px'); line.style.paddingLeft=(x+15)+'px'; };
+  // Hovering any line of the thread shows its "+ Reply" line (the lines are separate siblings).
+  const lines=[];
+  const hover=on=>lines.forEach(l=>l.classList.toggle('thread-hover',on));
+  const place=line=>{ placeThread(line); lines.push(line); line.addEventListener('mouseenter',()=>hover(true)); line.addEventListener('mouseleave',()=>hover(false)); };
   if(thread.length){
     const head=document.createElement('div'); head.className='node-remark-line thread-head';
-    const hs=threadHeaderStatus(thread);
-    head.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+thread.length+'</span>'+(hs?'<span class="thread-chip is-'+hs.key+' thread-head-status"'+(hs.key==='question'?' data-state="open"':'')+'>'+(THREAD_STATUS_LABEL[hs.key]?threadStatusChipHtml(hs.key).replace(/<span>[^<]*<\/span>$/,'<span>'+hs.label+'</span>'):hs.label)+'</span>':'');
+    // The status shows once, on the row marker; the header only names the thread.
+    head.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+thread.length+'</span>';
     head.dataset.tip='Click to hide the thread';
     head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
@@ -29503,12 +29523,19 @@ function renderThreadEntry(node,r,thread,place,commit){
   const isQ=isQuestion(r);
   const qState=isQ?questionState(r,thread):null;
   if(isQ){ const ch=chip('is-question','Question'+(qState==='answered'?' · Answered':qState==='wont'?' · Won’t answer':''),qState==='open'?'Open question — answer it with Yes / No below, or reply and mark the reply as the answer':'Right-click to change'); ch.dataset.state=qState; }
-  if(r.answerTo){ if(r.verdict)chip('is-'+r.verdict,(r.verdict==='yes'?'✓ Yes':'✗ No'),'The answer — right-click to change'); else chip('is-answer','Answer','Marked as the answer — right-click to change'); }
-  if(r.status)chip('is-'+r.status,threadStatusChipHtml(r.status),'Sets the row to '+(r.status==='issue'?'Issue':r.status==='followup'?'Follow-up':'Confirmed')+' — right-click to change');
+  const note=(cls,text,tip)=>{ const n=document.createElement('span'); n.className=cls; n.textContent=text; if(tip)n.dataset.tip=tip; meta.appendChild(n); return n; };
+  if(r.answerTo){ if(r.verdict)note('thread-verdict is-'+r.verdict,r.verdict==='yes'?'✓ Yes':'✗ No','The answer — right-click to change'); else chip('is-answer','Answer','Marked as the answer — right-click to change'); }
+  // A status is quiet text on the entry that set it (who and when); the row marker shows it in colour.
+  if(r.status)note('thread-status-note is-'+r.status,'· '+THREAD_STATUS_LABEL[r.status].toLowerCase(),'Set the row to '+(r.status==='issue'?'Issue':r.status==='followup'?'Follow-up':'Confirmed')+' — right-click to change');
   line.appendChild(meta);
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
   textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
-  if(!htmlHasVisibleText(r.text)&&(r.status||r.verdict))textEl.classList.add('is-event');
+  // An answer or status with no text is one line; clicking it opens a text line under it.
+  if(!htmlHasVisibleText(r.text)&&(r.status||r.verdict)){
+    line.classList.add('is-event');
+    line.addEventListener('click',e=>{ if(e.target.closest('.node-remark-person-inline,.thread-time'))return; line.classList.add('is-editing'); textEl.focus(); });
+    textEl.addEventListener('blur',()=>{ if(!htmlHasVisibleText(textEl.innerHTML))line.classList.remove('is-editing'); });
+  }
   textEl.dataset.placeholder=r.verdict||r.status?'':'Write…';
   textEl.addEventListener('mousedown',e=>e.stopPropagation());
   textEl.addEventListener('click',e=>e.stopPropagation());
@@ -29548,13 +29575,23 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
     if(isQuestion(r)){ const st=questionState(r,thread); if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won’t answer', onClick:change(()=>{ if(st==='wont')delete r.wontAnswer; else r.wontAnswer=true; })}); }
   }
   items.push({heading:'Status'});
-  ['issue','followup','resolved','decision'].forEach(st=>items.push({label:THREAD_STATUS_LABEL[st], icon:r.status===st?CHECK:'', onClick:change(()=>{ if(r.status===st)delete r.status; else r.status=st; })}));
+  ['issue','followup','resolved','decision'].forEach(st=>items.push({label:THREAD_STATUS_LABEL[st], icon:r.status===st?CHECK:'', onClick:change(()=>{ if(r.status===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}));
   items.push({divider:true});
   if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
   items.push({label:'Delete', danger:true, onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
   return items;
 }
 function renderThreadComposer(node,thread,place,commit){
+  // At rest a thread ends in a quiet "+ Reply" that shows on hover; the reply line opens on click,
+  // from the menu, or while it holds a draft.
+  if(_threadComposerNodeId!==node.id&&!_threadDrafts.has(node.id)){
+    const more=document.createElement('div'); more.className='node-remark-line thread-reply-link';
+    more.innerHTML='<span>+ Reply</span>'; more.dataset.tip='Add to this thread';
+    more.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+    more.addEventListener('click',e=>{ e.stopPropagation(); openThreadComposer(node.id,false); });
+    place(more);
+    return;
+  }
   const line=document.createElement('div'); line.className='node-remark-line thread-composer';
   const ask=_threadAskNodeIds.has(node.id);
   const author=threadDefaultAuthor();
@@ -29571,14 +29608,15 @@ function renderThreadComposer(node,thread,place,commit){
     const hasText=htmlHasVisibleText(html);
     if(!hasText&&!(extra&&(extra.verdict||extra.status)))return;
     pushUndo();
-    if(extra&&extra.status&&!extra.verdict){ addThreadStatus(node.id,extra.status,hasText?html:''); }
-    else {
+    {
       const last=thread[thread.length-1];
       const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:hasText?html:'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
       if(ask&&!(extra&&extra.verdict))e.type='question';
       // A row marked Issue / Follow-up / Confirmed before it had a thread: its first entry carries that status.
       if(!thread.length&&!(extra&&extra.status)&&threadStatusForMarker(node.marker))e.status=threadStatusForMarker(node.marker);
       if(extra&&extra.verdict&&openQ){ e.answerTo=openQ.id; e.verdict=extra.verdict; }
+      // A status from the reply line is its own entry, so it records who moved it and when.
+      if(extra&&extra.status)e.status=extra.status;
       remarks.push(e);
     }
     _threadComposerNodeId=node.id; _threadAskNodeIds.delete(node.id); _threadDrafts.delete(node.id);
@@ -29592,7 +29630,7 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('click',e=>e.stopPropagation());
   input.addEventListener('keydown',e=>{
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
-    else if(e.key==='Escape'){ e.preventDefault(); input.blur(); if(!thread.length&&!_threadDrafts.has(node.id)){ _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); } }
+    else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }
   });
   const btn=(act,label,tip,on)=>{ const b=document.createElement('button'); b.type='button'; b.className='thread-btn'+(on?' is-on':''); b.dataset.act=act; b.innerHTML=label; b.dataset.tip=tip; b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); }); return b; };
   const actions=document.createElement('span'); actions.className='thread-actions';
@@ -29607,12 +29645,28 @@ function renderThreadComposer(node,thread,place,commit){
     actions.appendChild(yes); actions.appendChild(no);
   }
   const openStatus=threadStatus(thread);
+  if(openStatus!=='followup'){
+    const fu=btn('followup','Follow-up','Add as a follow-up — the row turns Follow-up');
+    fu.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'followup'}); });
+    actions.appendChild(fu);
+  }
   if(openStatus==='followup'||openStatus==='issue'){
-    const res=btn('resolve',THREAD_CHECK_SVG+' Resolve','Resolve the '+(openStatus==='issue'?'issue':'follow-up')+' (with what you typed) — the row turns Confirmed');
+    const res=btn('resolve','Resolve','Resolve the '+(openStatus==='issue'?'issue':'follow-up')+' (with what you typed) — the row turns Confirmed');
     res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'resolved'}); });
     actions.appendChild(res);
   }
-  line.appendChild(avatar); line.appendChild(who); line.appendChild(input); line.appendChild(actions);
+  const meta=document.createElement('div'); meta.className='thread-meta';
+  const now=document.createElement('span'); now.className='thread-time'; now.textContent='now';
+  meta.appendChild(avatar); meta.appendChild(who); meta.appendChild(now);
+  const foot=document.createElement('div'); foot.className='thread-composer-foot';
+  const hint=document.createElement('span'); hint.className='thread-composer-hint'; hint.textContent='Enter to add · Shift+Enter new line · Esc to close';
+  foot.appendChild(hint); foot.appendChild(actions);
+  line.appendChild(meta); line.appendChild(input); line.appendChild(foot);
+  // Leaving an empty reply line closes it again.
+  input.addEventListener('blur',()=>{ setTimeout(()=>{ if(_threadComposerNodeId!==node.id||_threadDrafts.has(node.id)||line.contains(document.activeElement)||!document.body.contains(line))return; if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.sb-context-menu,.thread-author-edit'))return; _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id);
+    // Typing somewhere else (another entry, a row): don't re-render under the caret; the reply line goes at the next render.
+    const ae=document.activeElement; if(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName)))return;
+    render(); },120); });
   place(line);
 }
 function threadAuthorMenuItems(node,anchor){
@@ -33061,7 +33115,7 @@ let dockActiveTab=null;
           <li><span class="cs-combo" data-cs-shortcut="moveUp"></span>/<span class="cs-combo" data-cs-shortcut="moveDown"></span> <span class="cs-desc">move node</span></li>
           <li><span class="help-kbd">←</span>/<span class="help-kbd">→</span> <span class="cs-desc">collapse / expand</span></li>
           <li><span class="help-kbd">Click</span> <span class="cs-desc">select</span> · <span class="help-kbd">Shift</span>+click <span class="cs-desc">range</span> · <span class="help-kbd">Ctrl/Cmd</span>+click <span class="cs-desc">multi</span></li>
-          <li>Right-click → icon row (Rewrite, Note, Add comment, Add question, Add diagram, Add table) + <span class="help-kbd">More</span> for insert above/below, duplicate, move, sort, delete, and everything else</li>
+          <li>Right-click → icon row (Rewrite, Note, Thread, Add diagram, Add table, Add image) + <span class="help-kbd">More</span> for insert above/below, duplicate, move, sort, delete, and everything else</li>
         </ul>
       </div>
 
@@ -33139,7 +33193,7 @@ let dockActiveTab=null;
           <li><span class="cs-desc"><strong>Note</strong> — per-node, rich text</span> · <span class="cs-combo" data-cs-shortcut="toggleNote"></span></li>
           <li><span class="cs-desc">Floating, draggable, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> to expand full-screen</span></li>
           <li><span class="cs-desc">Notes: B I U S, lists, link, table, image paste, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI rewrite</span></li>
-          <li><span class="cs-desc">Right-click a node → Add comment… / Add question… / Add diagram… — each lives inline under that node (comments and questions share the node's one thread; Enter adds an entry, the row marker and the thread status move together); click the node's dot to show or hide them</span></li>
+          <li><span class="cs-desc">Right-click a node → Thread… / Add diagram… — each lives inline under that node (comments and questions share the node's one thread; Enter adds an entry, the row marker and the thread status move together); click the node's dot to show or hide them</span></li>
           <li><span class="cs-desc">Paste or drop a screenshot on a node (or right-click → Add image…) — thumbnails under the node; click one to enlarge, caption, or resize for the PDF</span></li>
           <li><span class="help-kbd">M</span> <span class="cs-desc">in the image viewer: Mark up — rectangle <span class="help-kbd">R</span>, arrow <span class="help-kbd">A</span>, highlighter <span class="help-kbd">H</span>, text <span class="help-kbd">T</span>, select/move <span class="help-kbd">V</span></span></li>
           <li><span class="cs-desc"><strong>Diagrams</strong> — a real draw.io editor per diagram, linked to a node; embeds as a picture in PDF exports. Right-click → Generate diagram drafts one from a branch</span></li>

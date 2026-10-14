@@ -65,12 +65,12 @@ test.describe('Right-click menu is fixed: quick row + "More" with everything els
     await row.click({ button: 'right' });
     const quick = await page.evaluate(() =>
       [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map((b) => (b as HTMLElement).dataset.action));
-    expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'qa', 'diagram', 'table']);
+    expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
 
     await page.locator('#context-more-toggle').click();
-    // Add-to-node leftovers (image, diagram-gen, date-time) live behind the Insert › flyout.
+    // Add-to-node leftovers (diagram-gen, date-time) live behind the Insert › flyout.
     await page.locator('#context-more-panel .context-submenu-trigger').hover();
-    for (const action of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'image', 'tags', 'diagram-gen', 'date-time', 'delete']) {
+    for (const action of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'tags', 'diagram-gen', 'date-time', 'delete']) {
       await expect(page.locator(`#context-more-panel [data-action="${action}"]`), action).toBeVisible();
     }
     for (const visibleAction of quick) {
@@ -88,7 +88,7 @@ test.describe('Right-click menu is fixed: quick row + "More" with everything els
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     const quick = await page.evaluate(() =>
       [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map((b) => (b as HTMLElement).dataset.action));
-    expect(quick).toEqual(['note', 'remark', 'qa', 'diagram', 'table', 'image']);
+    expect(quick).toEqual(['note', 'remark', 'diagram', 'table', 'image', 'tags']);
     await page.locator('#context-more-toggle').click();
     await expect(page.locator('#context-more-panel [data-action="ai-rewrite"]')).toHaveCount(0);
   });

@@ -1004,22 +1004,17 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
   // tests/e2e/node-images.spec.ts.)
 
   // Was a bare stroked squiggle+dot with no outer circle, unlike every sibling dot icon (note's
-  // page shape, remark's person, diagram's rects) which fills a good portion of its 24x24 box --
-  // see qaDotIconSvg's own comment. Confirms it now matches the correct version already used by
-  // the right-click menu's "Add question…" entry (CTX_ACTION_META.qa).
-  test('the Q&A inline dot icon has an outer circle, matching the right-click menu\'s own question icon', async ({ page }) => {
+  // page shape, diagram's rects) which fills a good portion of its 24x24 box -- see qaDotIconSvg.
+  test('the Q&A inline dot icon has an outer circle', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
     const result = await page.evaluate(() => {
       // @ts-expect-error
       const dotSvg = qaDotIconSvg(11);
-      // @ts-expect-error
-      const menuSvg = CTX_ACTION_META.qa.svg;
-      return { dotHasCircle: dotSvg.includes('<circle'), menuHasCircle: menuSvg.includes('<circle') };
+      return { dotHasCircle: dotSvg.includes('<circle') };
     });
     expect(result.dotHasCircle).toBe(true);
-    expect(result.menuHasCircle).toBe(true);
   });
 
   // The note-line div is permanently contenteditable, even while just displaying and unfocused

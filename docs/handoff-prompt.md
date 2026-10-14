@@ -165,6 +165,15 @@ row marker (issue ⇄ issue, followup ⇄ followup, resolved/decision ⇄ confir
 entry; drafts survive renders. Robin then chose to keep Issue as its own thread status (not merged
 into Follow-up); marking a row Issue opens its reply box. He also asked whether to drop markers
 entirely — recommended keeping them as linked shortcuts.
+Merged as #535. Follow-up round (Robin: "box editing doesn't feel right", mockup
+`inline-objects/thread-v3-mockup.png`): no reply box at rest, a hover **+ Reply** line opens an
+inline reply (Ask / Yes / No / Follow-up / Resolve shown only while typing; Follow-up and Resolve add
+an entry by the current author); status shows once on the row marker, entries carry quiet text
+("· resolved", `.thread-status-note`) and the PDF prints no status pill; text-less Yes/No/status
+entries take one line (`.thread-entry.is-event`); avatar colours are per document by first
+appearance (`remarkAuthorColor`, 10-colour palette); right-click and Insert have one **Thread…**
+item (the `qa` quick action is gone from menus, `runQuickAction('qa')` still works). Clearing a
+status removes an entry left blank by it.
 
 **2026-10-12: post-cutdown polish session — #479–#494, all merged. Nothing open, nothing parked in
 git.** The cutdown below is finished (all 9 items merged); this session was owner-driven UI polish
