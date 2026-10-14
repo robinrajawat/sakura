@@ -1800,7 +1800,10 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* The row thread: one flat list, each entry a meta line (avatar, author, time, chips) over its text. */
 .node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
 /* One thin rule down the left of the whole thread (header, entries, reply box). */
-.thread-line::after{content:'';position:absolute;left:var(--thread-rule-x,24px);top:0;bottom:0;width:2px;background:color-mix(in srgb,var(--fc-purple) 22%,var(--border))}
+/* No bar: a faint line joins one avatar to the next, so the entries read as one conversation. */
+.thread-entry:has(+ .thread-entry,+ .thread-composer)::after,.thread-entry+.thread-entry::before,.thread-entry+.thread-composer::before{content:'';position:absolute;left:var(--thread-rule-x,8px);width:1px;background:var(--border);pointer-events:none}
+.thread-entry:has(+ .thread-entry,+ .thread-composer)::after{top:21px;bottom:0}
+.thread-entry+.thread-entry::before,.thread-entry+.thread-composer::before{top:0;height:3px}
 .node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--fc-purple);font:600 10.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none}
 .thread-head svg{flex:0 0 auto}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
@@ -2326,7 +2329,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-remark-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font:400 11px 'Inter',sans-serif;color:var(--muted)}
 /* A node's thread prints as a transcript under its row: one thin rule, avatars in a column,
    upright text, no box or dividers. */
-.pv-inline-remark-body.pv-thread-body{margin-left:6px;padding:0 0 0 14px;background:transparent;border:0;border-radius:0;border-left:2px solid color-mix(in srgb,var(--fc-purple) 22%,var(--border))}
+.pv-inline-remark-body.pv-thread-body{margin-left:0;padding:0;background:transparent;border:0;border-radius:0}
+.pv-thread-body .pv-remark-entry{position:relative}
+.pv-thread-body .pv-remark-entry:not(:last-child)::after{content:'';position:absolute;left:7px;top:20px;bottom:-6px;width:1px;background:var(--border)}
 .pv-thread-body .pv-remark-entry{display:grid;grid-template-columns:15px 1fr;column-gap:8px;align-items:start;margin:0;padding:3px 0;border:0}
 .pv-thread-body .pv-remark-entry+.pv-remark-entry{margin-top:3px;padding-top:3px;border:0}
 .pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
@@ -3997,7 +4002,7 @@ body.printing-generic #gpe-overlay{
 <li>Right-click an entry for Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>One person dot appears on a node with a thread — click it to show or hide the thread inline. It shows how many questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the rest fold behind "N earlier entries" — click to show them</li>
-<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, along one thin rule. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the avatars joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups and decisions become status chips, and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
@@ -29474,7 +29479,7 @@ function renderNodeThread(node,placeLine){
   const thread=nodeThread(node.id);
   const commit=()=>{ syncRowMarkerFromThread(node.id); markDirty(); scheduleAutoSave(); render(); };
   // Every line of the thread sits right of one thin rule, like the PDF's transcript.
-  const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+3)+'px'); line.style.paddingLeft=(x+15)+'px'; };
+  const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+7.5)+'px'); };
   // Hovering any line of the thread shows its "+ Reply" line (the lines are separate siblings).
   const lines=[];
   const hover=on=>lines.forEach(l=>l.classList.toggle('thread-hover',on));
