@@ -223,3 +223,22 @@ test('right-click and Insert offer one Thread item, no separate comment/question
   await expect(page.locator('#context-quickbar [data-action="remark"]')).toHaveCount(1);
   await expect(page.locator('#context-menu [data-action="qa"]')).toHaveCount(0);
 });
+
+test('entry menu: Reply first, question toggle, status as labelled marker choices', async ({ page }) => {
+  await seed(page);
+  const entry = page.locator('.thread-entry:has(#inline-remark-text-c1) .node-remark-text-inline');
+  await entry.click({ button: 'right' });
+  const menu = page.locator('.sb-context-menu');
+  await expect(menu.locator('.sb-context-item').first()).toHaveText('Reply');
+  await expect(menu.getByText('Make it a question', { exact: true })).toBeVisible();
+  await expect(menu.locator('.sb-context-choice')).toHaveText(['Issue', 'Follow-up', 'Resolved', 'Decision']);
+  await expect(menu.locator('.sb-context-choice.current')).toHaveCount(0);
+  await menu.locator('.sb-context-choice', { hasText: 'Follow-up' }).click();
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-status-note')).toHaveText('· follow-up');
+
+  await entry.click({ button: 'right' });
+  await expect(menu.locator('.sb-context-choice.current')).toHaveText('Follow-up');
+  await menu.getByText('Reply', { exact: true }).click();
+  await expect(page.locator('.thread-composer-input[data-node-id="2"]')).toBeFocused();
+  expect(await page.evaluate('_threadAskNodeIds.has(2)')).toBe(false);
+});
