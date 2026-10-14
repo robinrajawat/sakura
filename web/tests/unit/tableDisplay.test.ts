@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { cardsAvailability, cardsRows, cardValueNumber, CARDS_MAX_ROWS } from '../../src/utils/tableDisplay';
+import {
+  cardsAvailability, cardsRows, cardValueNumber, CARDS_MAX_ROWS,
+  isTotalLabel, typedTotalRowIndex, sumColumn, computeTotalRow, totalRowMismatches, cardsTotal
+} from '../../src/utils/tableDisplay';
 
 const grid = (...rows: string[][]) => rows;
 
@@ -86,5 +89,69 @@ describe('cardsRows', () => {
       { label: 'A', value: '1', change: '+2' },
       { label: 'B', value: '2', change: '' }
     ]);
+  });
+});
+
+describe('total row', () => {
+  const effort = [
+    ['Area', 'Effort'], ['CXP - Frontend/Backend', '15 days'], ['UX/UI', '3 days'], ['ERP - O2C - Functional', '10 days'],
+    ['ERP - ABAP', '6 days'], ['EWM - ABAP', '5 days'], ['EWM - Functional', '5 days'], ['nShift', '5 days'], ['Total', '31 days']
+  ];
+
+  it('recognises total labels', () => {
+    for (const t of ['Total', 'total', 'Totals', 'Grand total', 'Subtotal', 'Sub-total', 'Sum', 'Total:']) expect(isTotalLabel(t)).toBe(true);
+    for (const t of ['Total cost', 'Totally', 'Summary', '']) expect(isTotalLabel(t)).toBe(false);
+  });
+
+  it('finds a typed total row only as the last filled row', () => {
+    expect(typedTotalRowIndex(effort)).toBe(8);
+    expect(typedTotalRowIndex([...effort, ['', '']])).toBe(8);
+    expect(typedTotalRowIndex([['A', 'B'], ['Total', '1'], ['x', '2']])).toBe(-1);
+    expect(typedTotalRowIndex([['A', 'B'], ['x', '2']])).toBe(-1);
+  });
+
+  it('adds up a column the way it is written', () => {
+    expect(sumColumn(['15 days', '3 days', '10 days'])).toEqual({ value: 28, text: '28 days' });
+    expect(sumColumn(['DKK 500.00', 'DKK 500.00', 'DKK 1,500.00'])?.text).toBe('DKK 2,500.00');
+    expect(sumColumn(['€12', '€3.5'])?.text).toBe('€15.5');
+    expect(sumColumn(['4,000', '7,500'])?.text).toBe('11,500');
+    expect(sumColumn(['10', '-4', 'n/a', ''])?.text).toBe('6');
+    expect(sumColumn(['1 day', '2 days'])?.text).toBe('3 days');
+    expect(sumColumn(['0.5 day', '0.5 day'])?.text).toBe('1.0 day');
+  });
+
+  it('refuses columns that are not one kind of number', () => {
+    expect(sumColumn(['Ana', 'Ben'])).toBeNull();
+    expect(sumColumn(['5 days', '3 h'])).toBeNull();
+    expect(sumColumn(['40%', '60%'])).toBeNull();
+    expect(sumColumn(['1.2k', '3k'])).toBeNull();
+    expect(sumColumn(['', 'n/a'])).toBeNull();
+  });
+
+  it('computes the total row, leaving a typed total out of the sum', () => {
+    const t = computeTotalRow(effort);
+    expect(t.cells).toEqual(['Total', '49 days']);
+    expect(t.any).toBe(true);
+    expect(computeTotalRow([['Code', 'Name'], ['ZN', 'Night']]).any).toBe(false);
+  });
+
+  it('reports a typed total that no longer matches its rows', () => {
+    expect(totalRowMismatches(effort)).toEqual([{ col: 1, typed: '31 days', computed: '49 days' }]);
+    const fixed = effort.map((r) => (r[0] === 'Total' ? ['Total', '49 days'] : r));
+    expect(totalRowMismatches(fixed)).toEqual([]);
+  });
+});
+
+describe('Cards and the total row', () => {
+  const g = [['Area', 'Effort'], ['A', '15 days'], ['B', '3 days'], ['Total', '10 days']];
+  it('leaves a typed total out of the cards and of the row limit', () => {
+    expect(cardsRows(g).map((c) => c.label)).toEqual(['A', 'B']);
+    const nine = [['M', 'V'], ...Array.from({ length: 8 }, (_, i) => ['R' + i, String(i)]), ['Total', '28']];
+    expect(cardsAvailability(nine).ok).toBe(true);
+  });
+  it('gives the total card: typed as written, or calculated', () => {
+    expect(cardsTotal(g, false)).toEqual({ label: 'Total', value: '10 days', change: '' });
+    expect(cardsTotal(g, true)).toEqual({ label: 'Total', value: '18 days', change: '' });
+    expect(cardsTotal([['M', 'V'], ['A', '1']], false)).toBeNull();
   });
 });

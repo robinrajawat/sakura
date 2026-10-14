@@ -99,13 +99,13 @@ test('menu: progress bars and heat-map options, mutually exclusive displays', as
     w.setTableFeatureChart(plain, true);
     return { labels, showAs, progressCurrent, heatSub: heatItem.submenu.map((i: any) => i.label), reversed, afterProgress, progressLabels, displayAfterChart: plain.getAttribute('data-table-display') };
   });
-  expect(r.labels).toEqual(['Show as', 'Heat-map', 'Group rows', 'Add title…', 'Chart size']);
+  expect(r.labels).toEqual(['Show as', 'Heat-map', 'Group rows', 'Total row', 'Add title…', 'Chart size']);
   expect(r.showAs).toEqual(['Table ✓', 'Chips', 'Inline', 'Cards', 'Progress bars', 'Status board (n/a)', 'Pros & cons (n/a)', '# Timeline', 'Vertical (n/a)', 'Horizontal (n/a)', '# Chart', 'Bar', 'Stacked bar (n/a)', 'Line', 'Pie', 'Doughnut']);
   expect(r.heatSub).toEqual(['Off (current)', 'Higher is darker', 'Lower is darker']);
   expect(r.reversed).toBe('1');
   expect(r.afterProgress).toEqual({ display: 'progress', heat: null });
   // Same menu shape; heat-map, title and size don't apply to progress bars, so they're disabled.
-  expect(r.progressLabels).toEqual(['Show as', 'Heat-map (off)', 'Group rows (off)', 'Add title… (off)', 'Chart size (off)']);
+  expect(r.progressLabels).toEqual(['Show as', 'Heat-map (off)', 'Group rows (off)', 'Total row (off)', 'Add title… (off)', 'Chart size (off)']);
   expect(r.progressCurrent).toEqual(['Progress bars']);
   expect(r.displayAfterChart).toBeNull();
   expect(errors).toEqual([]);

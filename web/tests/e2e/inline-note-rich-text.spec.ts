@@ -439,7 +439,7 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       // table (title, size) are listed but disabled rather than hidden.
       const labels = await menu.evaluate((m) => [...m.children].map((c) => c.classList.contains('sb-context-divider') ? '---'
         : (c.textContent || '').trim() + (c.classList.contains('disabled') ? ' (off)' : '')));
-      expect(labels).toEqual(['Show as', 'Heat-map', 'Group rows (off)', 'Add title… (off)', 'Chart size (off)', '---', 'Copy', '---', 'Delete']);
+      expect(labels).toEqual(['Show as', 'Heat-map', 'Group rows (off)', 'Total row', 'Add title… (off)', 'Chart size (off)', '---', 'Copy', '---', 'Delete']);
       await expect(menu.getByText('Delete', { exact: true })).toBeVisible();
       await expect(menu.getByText('Insert', { exact: true })).toHaveCount(0);
     });

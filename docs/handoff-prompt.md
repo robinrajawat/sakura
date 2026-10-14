@@ -499,6 +499,23 @@ bold, "·" between entries, no boxes. `data-table-display="inline"`, eligibility
 `renderInlineHtml`, `.pv-table-inline`; prints in the PDF. Covered by
 `tests/e2e/table-inline-display.spec.ts`.
 
+**Total row (owner request, 2026-10-14).** Owner's effort table had a typed "Total 31 days" that went
+stale when rows were added (rows add up to 49). Pure parts in `src/utils/tableDisplay.ts`:
+`isTotalLabel`, `typedTotalRowIndex` (last filled row starting Total/Sum/Grand total/Subtotal),
+`sumColumn` (keeps the column's prefix/unit/decimals/grouping; "day"/"days" are one unit; refuses
+text, mixed units, % and k/M/B), `computeTotalRow`, `totalRowMismatches`, `cardsTotal`; Cards leave a
+typed total out of the cards and the 8-row cap (it counts toward the 2-row minimum). In index.html:
+`data-total-row="1"` = calculated total, added to display copies only by `applyTableTotalRow` (a
+`<tfoot>` row, outline and PDF) — never stored, so never stale. A typed total row gets `.tbl-total`,
+a "Rows: N" hint in the outline when it disagrees (`.tbl-total-hint`, not in the PDF),
+`tableDataRows` keeps it out of heat-map, grouping and sorting (stays last), and
+`chartSeriesFromTable` leaves it out. Menu: "Total row" (on/off) after Group rows, or "Use calculated
+total" when a typed total exists (`setTableTotalRow` removes the typed row; Undo restores it). Cards
+show the total as one full-width line under the grid (`.pv-table-cards-total`) — owner wanted it
+to look different from the cards: accent tint and border, "Σ Total" label in the accent colour, value
+at card-value size. Covered by
+`tests/e2e/table-total-row.spec.ts`.
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
