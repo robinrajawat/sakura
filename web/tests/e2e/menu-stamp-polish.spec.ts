@@ -160,6 +160,25 @@ test.describe('Toolbar open-items summary', () => {
     await expect(menu.locator('.sb-context-fold-body')).toHaveCount(0);
   });
 
+  test('unfolding Settled keeps the list on screen (it scrolls inside instead)', async ({ page }) => {
+    await page.setViewportSize({ width: 1300, height: 600 });
+    await open(page);
+    await seed(page, Array.from({ length: 24 }, (_, i) => n(i + 1, 0, 'Row ' + (i + 1), null)));
+    await page.evaluate(() => {
+      // @ts-expect-error -- bare globals from index.html
+      nodes.forEach((x: any, i: number) => { x.marker = i < 4 ? 'followup' : 'confirmed'; }); render();
+    });
+    await page.locator('#marker-summary .open-items-btn').click();
+    await page.locator('.open-items-menu .sb-context-fold').click();
+    const m = await page.evaluate(() => {
+      const el = document.querySelector('.open-items-menu') as HTMLElement;
+      const r = el.getBoundingClientRect();
+      return { bottom: r.bottom, vh: window.innerHeight, scrolls: el.scrollHeight > el.clientHeight };
+    });
+    expect(m.bottom).toBeLessThanOrEqual(m.vh);
+    expect(m.scrolls).toBe(true);
+  });
+
   test('shows "All settled" when nothing needs attention', async ({ page }) => {
     await open(page);
     await seed(page, [n(1, 0, 'Agreed', null)]);

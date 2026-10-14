@@ -486,6 +486,13 @@ outline bullet (grey Draft dot right above the rows). Status is now the byline's
 sentence case on a light tint of its colour (`--status-c`; grey Draft, orange Review, green Approved,
 red Rejected), "No status" a faint outlined tag. Author and actions stay plain text.
 
+**Menus stay on screen; Share opens under its chip (owner feedback, 2026-10-14).** Unfolding
+"Settled" ran the open-items list off the bottom of the window: `showSbContextMenu` capped height at the
+whole window, wherever the menu started. `_sbFitMenuHeight` now caps it at the space below the menu's
+top edge (re-run after the open-items header is inserted), so a growing menu scrolls inside. The Share
+dropdown aligned its right edge to the chip and opened leftwards over the title; all byline dropdowns
+now open from their chip's left edge (`#doc-share-wrap .todo-dd-menu{left:0}`).
+
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.

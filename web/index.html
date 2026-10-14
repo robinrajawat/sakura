@@ -622,7 +622,9 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 #sb-author.doc-author-chip{text-transform:none;letter-spacing:0;font-weight:600;cursor:text;width:132px;text-align:left;outline:none}
 /* Hug the name instead of a fixed 132px box (which left trailing grey on short names); browsers without field-sizing keep the fixed width. */
 @supports (field-sizing:content){#sb-author.doc-author-chip{field-sizing:content;width:auto;min-width:64px;max-width:220px}}
-#doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu{right:auto;left:0}
+/* Every byline dropdown opens from its chip's left edge (Share used to align its right edge to
+   the chip, so it opened leftwards over the title). */
+#doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu,#doc-share-wrap .todo-dd-menu{right:auto;left:0}
 .meta-inline{appearance:none;-webkit-appearance:none;-moz-appearance:none;border:none;background:transparent;color:var(--fg);padding:0 2px;min-width:0;font-family:'Inter',sans-serif;line-height:1.2;border-radius:4px}
 .meta-inline::placeholder{color:var(--hint)}
 .meta-inline:hover{background:color-mix(in srgb,var(--hover) 45%, transparent)}
@@ -25226,6 +25228,10 @@ function _sbCloseSubmenu(restoreFocus=true){
   trigger?.classList.remove('sb-context-submenu-open'); trigger?.setAttribute('aria-expanded','false');
   if(_sbSubParent){ _sbContextButtons=_sbSubParent.buttons; _sbContextActiveIndex=_sbSubParent.index; _sbSubParent=null; if(restoreFocus)_sbContextUpdateHighlight(); }
 }
+function _sbFitMenuHeight(menu){
+  const top=parseFloat(menu.style.top)||menu.getBoundingClientRect().top;
+  menu.style.maxHeight=Math.max(120,window.innerHeight-top-8)+'px';
+}
 function showSbContextMenu(x,y,items){
   closeSbContextMenu(); closeMoveMenu();
   const menu=document.createElement('div'); menu.className='sb-context-menu'; _sbContextEl=menu;
@@ -25244,6 +25250,10 @@ function showSbContextMenu(x,y,items){
   const mw=rect.width||estW, mh=rect.height||estH;
   menu.style.left=Math.max(8,Math.min(x, window.innerWidth-mw-8))+'px';
   menu.style.top=Math.max(8,Math.min(y, window.innerHeight-mh-8))+'px';
+  // Cap the height to the space below the menu's top edge (not the whole window), so a menu that
+  // grows after opening — a fold row unfolding — scrolls inside itself instead of running off the
+  // bottom of the screen.
+  _sbFitMenuHeight(menu);
   // Click/contextmenu closers wait a tick so the event that opened the menu doesn't close it; the
   // key handler doesn't need to (no keydown opened it), and registering it at once means an Esc
   // pressed right away closes this menu rather than reaching what's underneath (e.g. ending a
@@ -29550,6 +29560,7 @@ function openOpenItemsMenu(btn){
   head.querySelector('.oi-switch')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); applyOpenItemsFilter('openItems'); });
   // Right-align under the summary; showSbContextMenu keeps it on screen.
   menu.style.left=Math.max(8,Math.min(r.right-menu.offsetWidth,window.innerWidth-menu.offsetWidth-8))+'px';
+  _sbFitMenuHeight(menu);
 }
 (function(){
   const box=el('marker-summary'); if(!box)return;
