@@ -495,7 +495,9 @@ now open from their chip's left edge (`#doc-share-wrap .todo-dd-menu{left:0}`).
 
 **Inline display (owner request, 2026-10-14).** Show as › **Inline**, after Chips: the same two-column
 code/description table as one running line ("**ZN** Night Distribution · **ZL** KL 10:00 Fixed"), key
-bold, "·" between entries, no boxes. `data-table-display="inline"`, eligibility = `tableChipsEligible`,
+bold, "·" between entries, no boxes. **Restyled after owner feedback (it read like row text):** owner
+picked "Option A" — keys as `<code>` in small Fira Code-stack monospace, accent colour; descriptions
+muted at 13px. `data-table-display="inline"`, eligibility = `tableChipsEligible`,
 `renderInlineHtml`, `.pv-table-inline`; prints in the PDF. Covered by
 `tests/e2e/table-inline-display.spec.ts`.
 
