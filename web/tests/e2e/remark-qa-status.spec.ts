@@ -62,15 +62,26 @@ async function open(page: Page) {
   return errors;
 }
 
+// The toolbar open-items summary's question/remark parts ("1 question", "2 remarks").
 const sumButtons = (page: Page) => page.evaluate(() =>
-  [...document.querySelectorAll('#marker-summary .disc-sum-btn')].map(b => (b as HTMLElement).getAttribute('aria-label')));
+  [...document.querySelectorAll('#marker-summary .oi-part[data-key="question"], #marker-summary .oi-part[data-key="remark"]')].map(b => (b as HTMLElement).textContent));
+// Opens the summary's list and clicks the filter item of one group ("Open questions", …).
+async function clickGroupFilter(page: Page, heading: string) {
+  await page.locator('#marker-summary .open-items-btn').click();
+  await page.evaluate((heading) => {
+    const h = [...document.querySelectorAll('.open-items-menu .sb-context-heading')].find(e => (e.textContent || '').startsWith(heading))!;
+    let n = h.nextElementSibling;
+    while (n && !/Show only these|Clear this filter/.test(n.textContent || '')) n = n.nextElementSibling;
+    (n as HTMLElement).click();
+  }, heading);
+}
 
 test('remarks: resolve folds a remark away, the fold line shows it again, reopen brings it back', async ({ page }) => {
   const errors = await open(page);
   // Seeded remark without resolvedAt counts as open; the resolved one is folded.
   await expect(page.locator('.node-remark-line:not(.node-remark-resolved-line)')).toHaveCount(1);
   await expect(page.locator('.node-remark-resolved-toggle')).toContainText('1 resolved follow-up');
-  expect(await sumButtons(page)).toEqual(['1 open question', '1 open follow-up']);
+  expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
 
   const line = page.locator('.node-remark-line', { hasText: 'Under 20 EUR' });
   await line.hover();
@@ -78,7 +89,7 @@ test('remarks: resolve folds a remark away, the fold line shows it again, reopen
   await expect(page.locator('.node-remark-resolved-toggle')).toContainText('2 resolved follow-ups');
   await expect(page.locator('.node-remark-text-inline')).toHaveCount(0);
   expect(await page.evaluate("typeof remarks.find(r => r.id === 'rOld').resolvedAt")).toBe('number');
-  expect(await sumButtons(page)).toEqual(['1 open question']);
+  expect(await sumButtons(page)).toEqual(['1 question']);
   // Row dot turns grey with no count once everything is resolved.
   await expect(page.locator('.node-row[data-id="2"] .node-remark-dot')).toHaveClass(/dot-all-closed/);
   // A row with only a plain comment never goes grey: there's nothing to close.
@@ -111,7 +122,7 @@ test('Q&A: status pill tracks the answer live, and won\'t answer closes and reop
   await page.keyboard.type('Yes');
   await expect(pill('qOpen')).toHaveText('Answered');
   await expect(page.locator('#inline-qa-a-qOpen')).toBeFocused();
-  expect(await sumButtons(page)).toEqual(['1 open follow-up']);
+  expect(await sumButtons(page)).toEqual(['1 remark']);
   await page.keyboard.press('Control+a');
   await page.keyboard.press('Backspace');
   await expect(pill('qOpen')).toHaveText('Open');
@@ -128,7 +139,7 @@ test('Q&A: status pill tracks the answer live, and won\'t answer closes and reop
   expect(errors).toEqual([]);
 });
 
-test('toolbar open counts filter to the rows holding open items', async ({ page }) => {
+test('the open-items list filters to the rows holding open items', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals
@@ -138,18 +149,18 @@ test('toolbar open counts filter to the rows holding open items', async ({ page 
     [...document.querySelectorAll('.node-row')].filter(r => (r as HTMLElement).offsetParent !== null)
       .map(r => (r as HTMLElement).dataset.id + (r.classList.contains('marker-filter-context') ? '(context)' : '')));
 
-  await page.locator('#marker-summary .disc-sum-btn[data-disc="openQa"]').click();
+  await clickGroupFilter(page, 'Open questions');
   expect(await visibleRows()).toEqual(['1(context)', '3']);
   // The filter opened the matching row's Q&A, and only open questions show.
   await expect(page.locator('#inline-qa-q-qOpen')).toBeVisible();
   await expect(page.locator('.node-qa-question')).toHaveCount(1);
   await expect(page.locator('#tag-filter-bar')).toContainText('Open questions');
 
-  await page.locator('#marker-summary .disc-sum-btn[data-disc="openRemarks"]').click();
+  await clickGroupFilter(page, 'Open follow-up remarks');
   expect(await visibleRows()).toEqual(['1(context)', '2']);
   await expect(page.locator('.node-remark-resolved-toggle')).toHaveCount(0);
 
-  await page.locator('#marker-summary .disc-sum-btn[data-disc="openRemarks"]').click();
+  await clickGroupFilter(page, 'Open follow-up remarks');
   expect((await visibleRows()).length).toBe(5);
   await expect(page.locator('#tag-filter-bar')).toBeHidden();
   expect(errors).toEqual([]);
@@ -195,19 +206,19 @@ test('a plain comment has no status until it is marked as a follow-up (right-cli
   await line.hover();
   await expect(line.locator('.node-remark-status-btn')).toHaveCount(0);
   await expect(line.locator('.node-remark-followup-pill')).toHaveCount(0);
-  expect(await sumButtons(page)).toEqual(['1 open question', '1 open follow-up']);
+  expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
 
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Mark as follow-up', { exact: true }).click();
   const flagged = page.locator('.node-remark-line', { hasText: 'Just a comment.' });
   await expect(flagged.locator('.node-remark-followup-pill')).toHaveText('Follow-up');
-  expect(await sumButtons(page)).toEqual(['1 open question', '2 open follow-ups']);
+  expect(await sumButtons(page)).toEqual(['1 question', '2 remarks']);
 
   await flagged.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Not a follow-up', { exact: true }).click();
   await expect(page.locator('.node-remark-line', { hasText: 'Just a comment.' }).locator('.node-remark-followup-pill')).toHaveCount(0);
   expect(await page.evaluate("'followUp' in remarks.find(r => r.id === 'rPlain')")).toBe(false);
-  expect(await sumButtons(page)).toEqual(['1 open question', '1 open follow-up']);
+  expect(await sumButtons(page)).toEqual(['1 question', '1 remark']);
   expect(errors).toEqual([]);
 });
 

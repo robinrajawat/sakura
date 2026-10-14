@@ -10,6 +10,7 @@ import {
   normalizeDiscussionFilter,
   nodesWithOpenItems,
   openCountLabel,
+  documentProgress, attentionParts, progressSummaryText
 } from '../../src/utils/discussionStatus';
 
 describe('htmlHasVisibleText', () => {
@@ -112,5 +113,41 @@ describe('openCountLabel', () => {
   it('pluralises', () => {
     expect(openCountLabel(1, 'question')).toBe('1 open question');
     expect(openCountLabel(2, 'follow-up')).toBe('2 open follow-ups');
+  });
+});
+
+describe('documentProgress / attentionParts / progressSummaryText', () => {
+  const nodes = [
+    { id: 1, marker: 'issue' }, { id: 2, marker: 'followup' }, { id: 3, marker: 'followup' },
+    { id: 4, marker: 'confirmed' }, { id: 5, marker: 'na' }, { id: 6, marker: 'parked' }, { id: 7 }
+  ];
+  const qa = [
+    { sourceNodeId: 7, question: 'Who signs off?' },
+    { sourceNodeId: 7, question: 'Which carrier?', answer: 'DHL' },
+    { sourceNodeId: 7, question: 'Budget?', wontAnswer: true },
+    { sourceNodeId: 7, type: 'section', question: 'Heading' },
+    { sourceNodeId: 99, question: 'Elsewhere' }
+  ];
+  const remarks = [
+    { anchorNodeId: 1, text: 'Check rates', followUp: true },
+    { anchorNodeId: 1, text: 'Done', followUp: true, resolvedAt: 1 },
+    { anchorNodeId: 1, text: 'Just a note' },
+    { anchorNodeId: 1, text: '', followUp: true }
+  ];
+
+  it('counts what needs attention, parked and settled', () => {
+    expect(documentProgress(nodes, qa, remarks)).toEqual({ issues: 1, followups: 2, parked: 1, questions: 1, remarks: 1, settled: 5, total: 11 });
+  });
+
+  it('lists only kinds with something open, most urgent first', () => {
+    expect(attentionParts(documentProgress(nodes, qa, remarks)).map((a) => a.label)).toEqual(['1 issue', '2 follow-ups', '1 question', '1 remark']);
+    expect(attentionParts(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toEqual([]);
+  });
+
+  it('describes the summary in words', () => {
+    expect(progressSummaryText(documentProgress(nodes, qa, remarks))).toBe(
+      'Needs attention: 1 issue, 2 follow-ups, 1 open question, 1 open follow-up remark. 5 of 11 settled, 1 parked.'
+    );
+    expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled.');
   });
 });
