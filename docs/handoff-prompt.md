@@ -518,6 +518,16 @@ to look different from the cards: accent tint and border, "Σ Total" label in th
 at card-value size. Covered by
 `tests/e2e/table-total-row.spec.ts`.
 
+**Cards with detail lines (draft, built on #531, 2026-10-14).** The "Agreed next" above, prototyped:
+Show as › Cards now takes 2–5 columns (`CARDS_MAX_COLUMNS`). `cardsChangeColumn(grid)` picks the first
+column after the value written as changes (same rule as before: every filled cell has a direction, one
+has a sign or arrow) as the pill; every other column is a detail line (`CardRow.details`). One detail
+column shows as a plain note; with two, each line starts with its header. A text third column (Owner,
+Note) no longer refuses Cards. Grids with details get `.has-details`: each card spans three subgrid rows
+(label · value · details) so values and notes line up along a row. Owner then raised the row cap
+from 8 to 12 (`CARDS_MAX_ROWS`; their 9-row effort table). Covered by
+`tests/e2e/cards-detail-lines.spec.ts` + `tests/unit/tableDisplay.test.ts`.
+
 **Open-items shortcut (owner request, 2026-10-14).** Right-click or Shift+click on the toolbar
 open-items summary toggles the combined "Show only open items" filter (`quickToggleOpenItemsFilter` →
 `applyOpenItemsFilter('openItems')`) without opening the list; with nothing open it just says "Nothing
