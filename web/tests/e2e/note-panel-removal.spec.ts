@@ -5,6 +5,12 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
+// The Welcome dialog opens on a short timer when nothing is marked seen; hiding it after load can race
+// a later click (it once covered the toolbar's Insert menu here). Mark it seen before load instead.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.setItem('sakura_welcome_seen', '1'); } catch { /* storage unavailable */ } });
+});
+
 async function dismissOverlays(page: import('@playwright/test').Page) {
   const landing = page.locator('#sakura-landing-overlay');
   if (await landing.isVisible().catch(() => false)) {

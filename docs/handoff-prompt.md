@@ -205,7 +205,7 @@ PDF). An entry's author is a picker (`openAuthorMenu` in `renderThreadEntry`: na
 emptied entry while the menu has focus). Thread entries keep rich text, but paste goes through
 `cleanThreadPasteHtml` (keeps b/strong/i/em/u/a/br/p/div/ul/ol/li, drops all attributes except a
 sanitised href). Robin settled the word: a row has a **thread**, made of **entries**, each of a
-**kind**. Covered by `tests/e2e/thread-reply-actions.spec.ts`.
+**kind**. Covered by `tests/e2e/thread-reply-actions.spec.ts`. Follow-up (Robin): the actions sit right under the reply text, left-aligned, with the keyboard hint on its own line right under them (they were ~1000px away on wide screens); the action row wraps on narrow screens. Kind circles are 15px (2px around the 11px icon, so no half-pixel placement; the joining line moved to x+7 to stay centred) with optical centring in `threadKindCircleSvg`: a bare, heavier "?" (the ringed one doubled the circle) and small nudges for the bubble, flag, reply arrow and handshake. `note-panel-removal.spec.ts` now seeds the Welcome flag before load (it raced the toolbar Insert menu ~1 in 3 runs).
 
 **2026-10-15: linking answers to questions (Robin).** Robin: Sakura is a documentation/thinking tool,
 not a discussion tool — keep time order and the data model, accept a little repetition, make linking
