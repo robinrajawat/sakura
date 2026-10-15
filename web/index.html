@@ -1870,7 +1870,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-dot-count{font:700 10px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
 .node-note-dot.dot-all-closed{color:var(--hint)!important}
 
-.pv-status-pill{display:inline-flex;align-items:center;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
+.pv-status-pill{display:inline-flex;align-items:center;gap:3px;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
 .pv-inline-qa-line .pv-status-pill{align-self:flex-start;margin-top:1px}
 
 .node-qa-question{flex:1;min-width:0;color:var(--fg);cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
@@ -28191,7 +28191,8 @@ function previewRenderRemarkEntry(r,thread,prev){
   }
   // The status prints once, on the row's marker; the entry that set it says so quietly.
   if(r.status){ const n=document.createElement('span'); n.className='pv-thread-status-note'; n.textContent='\u00b7 '+THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&markerForThreadStatus(r.status)==='followup'?' for '+r.owner:''); meta.appendChild(n); }
-  if(r.decision)meta.appendChild(previewStatusPill('decision'));
+  // Same chip as the editor: the signpost icon and the word.
+  if(r.decision){ const pill=previewStatusPill('decision'); pill.innerHTML=markIconSvg('decision',9)+'<span>Decision</span>'; meta.appendChild(pill); }
   entry.appendChild(meta);
   const quoted=threadQuotedQuestion(r,thread);
   if(quoted){ const qq=document.createElement('div'); qq.className='pv-thread-quote'; qq.textContent='\u21b3 '+quoted; entry.appendChild(qq); }
