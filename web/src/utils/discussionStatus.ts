@@ -417,9 +417,10 @@ export function attentionParts(p: DocumentProgress): AttentionPart[] {
   return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
 }
 
-/** The summary's tooltip / accessible name: "Needs attention: 1 follow-up, 2 open questions. 8 of 15 settled." */
+/** The summary's tooltip / accessible name: "Needs attention: 1 follow-up, 2 open questions." */
 export function progressSummaryText(p: DocumentProgress): string {
   const parts = attentionParts(p).map((a) => (a.key === 'question' ? openCountLabel(a.n, 'question') : a.label));
-  const head = parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
-  return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' out of scope' : '') + '.';
+  // No "N of M settled" (owner, 2026-10-15): a follow-up closed by removing its marker drops out of
+  // the count instead of counting as settled, so the ratio didn't measure progress.
+  return parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
 }

@@ -390,7 +390,7 @@ test('Quick Insert (Ctrl/Cmd+Space) works in the inline note', async ({ page }) 
   await expect(note).toContainText('Note —');
 });
 
-test('open-items list: a follow-up shows its thread\'s latest line; decisions fold at the bottom', async ({ page }) => {
+test('open-items list: a follow-up shows its thread\'s latest line; decisions have their own chip', async ({ page }) => {
   await seed(page, `remarks.push(
     { id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails on the EU file.', createdAt: 4, status: 'followup' },
     { id: 'd1', anchorNodeId: 2, person: 'Maria', date: '2026-10-14', text: 'Cut over on Saturday.', createdAt: 5, decision: true });`);
@@ -398,10 +398,17 @@ test('open-items list: a follow-up shows its thread\'s latest line; decisions fo
   await page.locator('#marker-summary .open-items-btn').click();
   const menu = page.locator('.open-items-menu');
   await expect(menu.locator('.sb-context-item', { hasText: 'Data load' }).locator('.sb-context-sub')).toHaveText('Karsten: Script fails on the EU file.');
-  const fold = menu.locator('.sb-context-fold', { hasText: 'Decisions · 1' });
-  await fold.click();
-  const item = menu.locator('.sb-context-fold-body .sb-context-item', { hasText: 'Cut over on Saturday.' });
-  await expect(item.locator('.sb-context-sub')).toHaveText('Cutover');
+  // Decisions aren't open items (owner, 2026-10-15): not in this list, but their own toolbar chip.
+  await expect(menu).not.toContainText('Cut over on Saturday.');
+  await page.locator('#marker-summary .open-items-btn').click();
+  await expect(menu).toHaveCount(0);
+  const chip = page.locator('#marker-summary .decisions-btn');
+  await expect(chip).toHaveText('1 decision');
+  await chip.click();
+  const list = page.locator('.decisions-menu');
+  await expect(list.locator('.sb-context-heading')).toHaveText('Decisions · 1');
+  const item = list.locator('.sb-context-item', { hasText: 'Cut over on Saturday.' });
+  await expect(item.locator('.sb-context-sub')).toHaveText('Cutover · Maria');
   await item.click();
   await expect(page.locator('#inline-remark-text-d1')).toBeFocused();
 });
@@ -420,16 +427,14 @@ test('Backspace on an empty reply line closes it; with text it just deletes', as
   await expect(box).toHaveCount(0);
 });
 
-test('open-items list: Out of scope is folded at the bottom, not an open group', async ({ page }) => {
+test('open-items list: Out of scope isn\'t listed (it isn\'t open)', async ({ page }) => {
   await seed(page);
   await page.evaluate("nodes[1].marker = 'followup'; nodes[2].marker = 'parked'; render()");
   await page.locator('#marker-summary .open-items-btn').click();
   const menu = page.locator('.open-items-menu');
   expect(await menu.locator('.sb-context-heading').allTextContents()).toEqual(['Follow-ups · 1']);
-  const fold = menu.locator('.sb-context-fold', { hasText: 'Out of scope · 1' });
   await expect(menu).not.toContainText('Data load');
-  await fold.click();
-  await expect(menu.locator('.sb-context-fold-body')).toContainText('Data load');
+  await expect(menu.locator('.sb-context-fold')).toHaveCount(0);
 });
 
 test('Backspace on an emptied entry puts the caret at the end of the row text', async ({ page }) => {
