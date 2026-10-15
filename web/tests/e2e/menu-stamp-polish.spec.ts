@@ -186,6 +186,35 @@ test.describe('Toolbar open-items summary', () => {
     await page.evaluate(() => { nodes[0].marker = 'confirmed'; render(); });
     await expect(page.locator('#marker-summary .open-items-btn')).toHaveText('All settled');
   });
+
+  // Owner (2026-10-15): Out of scope is set aside, so it stays out of "N of M settled" (one such row
+  // used to keep the bar from ever filling); an open question names its row and who asked.
+  test('out of scope stays out of the count; a question shows its row and who asked', async ({ page }) => {
+    await open(page);
+    await seed(page, [n(1, 0, 'Pricing', null), n(2, 0, 'Legacy EDI', null), n(3, 0, 'Customer comms', null)]);
+    await page.evaluate(() => {
+      // @ts-expect-error -- bare globals from index.html
+      nodes[0].marker = 'confirmed'; nodes[1].marker = 'parked'; render();
+    });
+    const btn = page.locator('#marker-summary .open-items-btn');
+    await expect(btn).toHaveText('All settled');
+    await btn.click();
+    const menu = page.locator('.open-items-menu');
+    await expect(menu.locator('.oi-head-progress')).toHaveText('1 of 1 settled');
+    await expect(menu.locator('.oi-bar span')).toHaveAttribute('style', 'width:100%');
+    await btn.click();
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      remarks = [{ id: 'q1', anchorNodeId: 3, person: 'Maria', date: '2026-10-15', text: 'Who tells the customers?', type: 'question', createdAt: 1 }];
+      // @ts-expect-error
+      render();
+    });
+    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 1 open question. 1 of 2 settled, 1 out of scope.');
+    await btn.click();
+    const q = menu.locator('.sb-context-item', { hasText: 'Who tells the customers?' });
+    await expect(q.locator('.sb-context-sub')).toHaveText('Customer comms · Maria');
+  });
 });
 
 test.describe('PDF markers, footer and stamp placement', () => {

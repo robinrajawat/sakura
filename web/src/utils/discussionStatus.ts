@@ -366,7 +366,8 @@ export interface DocumentProgress {
   questions: number;
   /** Agreed rows, answered or won't-answer questions. */
   settled: number;
-  /** Everything tracked: needs attention + out of scope + settled. */
+  /** What can be settled: needs attention + settled. Out of scope is set aside, so it stays out of
+   *  "N of M settled" -- otherwise one out-of-scope row kept the bar from ever filling. */
   total: number;
 }
 
@@ -392,7 +393,7 @@ export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[],
   }
   p.questions += allOpenQuestions(entries, ids).length;
   p.settled += allSettledQuestions(entries, ids).length;
-  p.total = p.followups + p.parked + p.questions + p.settled;
+  p.total = p.followups + p.questions + p.settled;
   return p;
 }
 
