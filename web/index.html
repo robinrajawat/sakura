@@ -1374,7 +1374,7 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .sb-context-item.sb-context-active{background:color-mix(in srgb,var(--accent) 10%,var(--hover))}
 .sb-context-item:hover{background:var(--hover)}
 .sb-context-item.danger:hover{color:#dc2626;background:color-mix(in srgb,#dc2626 10%,transparent)}
-.sb-context-item.disabled{opacity:.4;cursor:default;pointer-events:none}
+/* Disabled: the label fades, but a reason line under it (why it doesn't apply) stays readable. */.sb-context-item.disabled{opacity:1;color:color-mix(in srgb,var(--fg) 38%,transparent);cursor:default;pointer-events:none}.sb-context-item.disabled .sb-context-icon{opacity:.4}.sb-context-item.disabled .sb-context-sub{color:color-mix(in srgb,var(--muted) 90%,transparent)}.sb-context-submenu .sb-context-sub{max-width:250px}
 .table-grid-picker{position:fixed;z-index:175;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.16);padding:10px 10px 8px;font-family:'Inter',sans-serif;display:flex;flex-direction:column;gap:7px}
 .table-grid-picker-readout{font:600 12.5px 'Inter',sans-serif;color:var(--fg);text-align:center;font-variant-numeric:tabular-nums}
 .table-grid-picker-grid{display:grid;grid-template-columns:repeat(8,18px);grid-auto-rows:18px;gap:3px;outline:none;border-radius:4px;padding:2px}
@@ -1527,6 +1527,8 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-board-lane[data-group="blocked"]{--lane:var(--fc-red)}
 .pv-board-lane[data-group="done"]{--lane:var(--fc-green)}
 .pv-board-lane[data-group="other"]{--lane:var(--fc-purple)}
+/* Lanes by a column (not statuses): neutral, so they don't read as a status. */
+.pv-board-lane[data-group="lane"]{--lane:var(--fc-gray)}
 .pv-board-head{display:flex;align-items:center;gap:7px;font:600 12px 'Inter',sans-serif;color:var(--fg);padding:0 2px 2px}
 .pv-board-dot{width:8px;height:8px;border-radius:50%;background:var(--lane);flex:none;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-board-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -5861,12 +5863,28 @@ function renderProgressHtml(table){
 // a vertical line — done (before today), next (the first from today) and upcoming — with undated
 // rows ("TBD") last. Stored as data-table-display="timeline"; eligible when the table has 2–3
 // columns and most rows' first cell is a date (parseCellDate).
-function tableTimelineEligible(table){
-  const cols=tableColumnCount(table); if(cols<2||cols>3)return false;
+// Show as fix-its mark the column they use on its header cell -- data-timeline-date (a timeline
+// dated by another column than the first) and data-board-by (Lanes by …) -- so the choice moves with
+// the column and goes with it when the column is deleted.
+function tableMarkedColumn(table,attr){ return [...(table?.rows?.[0]?.cells||[])].findIndex(c=>c.hasAttribute(attr)); }
+function setTableMarkedColumn(table,attr,ci){ [...(table?.rows?.[0]?.cells||[])].forEach((c,i)=>{ if(i===ci)c.setAttribute(attr,'1'); else c.removeAttribute(attr); }); }
+function timelineDateColumn(table){ const m=tableMarkedColumn(table,'data-timeline-date'); return m>=0?m:0; }
+function timelineColumnDated(table,ci){
   const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1).filter(r=>(r.textContent||'').trim());
   if(rows.length<2)return false;
-  const dated=rows.filter(r=>parseCellDate((r.cells[0]?.textContent||'').trim())!==null).length;
+  const dated=rows.filter(r=>parseCellDate((r.cells[ci]?.textContent||'').trim())!==null).length;
   return dated>=Math.ceil(rows.length/2);
+}
+function tableTimelineEligible(table){
+  const cols=tableColumnCount(table); if(cols<2||cols>3)return false;
+  return timelineColumnDated(table,timelineDateColumn(table));
+}
+// A column other than the first that holds the dates, offered as "Use “…” as the date" when the
+// table isn't a timeline as it stands; -1 when there's none (or it already is one).
+function timelineDateFixColumn(table){
+  const cols=tableColumnCount(table); if(cols<2||cols>3||tableTimelineEligible(table))return -1;
+  for(let ci=1;ci<cols;ci++)if(timelineColumnDated(table,ci))return ci;
+  return -1;
 }
 function isTableShownAsTimeline(table){ return !!(table&&table.getAttribute('data-table-display')==='timeline'); }
 // Horizontal layout (data-timeline-layout="horizontal"): milestones side by side on one line, one
@@ -5875,8 +5893,9 @@ const TIMELINE_HORIZONTAL_MAX=8;
 function isTimelineHorizontal(table){ return !!(table&&table.getAttribute('data-timeline-layout')==='horizontal'); }
 function timelineRowCount(table){ return Array.from(table?.querySelectorAll('tr')||[]).slice(1).filter(r=>(r.textContent||'').trim()).length; }
 function renderTimelineHtml(table){
+  const dc=timelineDateColumn(table), rest=[0,1,2].filter(ci=>ci!==dc);
   const rows=Array.from(table?.querySelectorAll('tr')||[]).slice(1)
-    .map(r=>({date:(r.cells[0]?.textContent||'').trim(), event:(r.cells[1]?.textContent||'').trim(), detail:(r.cells[2]?.textContent||'').trim()}))
+    .map(r=>({date:(r.cells[dc]?.textContent||'').trim(), event:(r.cells[rest[0]]?.textContent||'').trim(), detail:(r.cells[rest[1]]?.textContent||'').trim()}))
     .filter(d=>d.date||d.event||d.detail);
   if(!rows.length)return null;
   const stamps=rows.map(d=>parseCellDate(d.date));
@@ -5904,14 +5923,17 @@ function renderTimelineHtml(table){
 // (applyTableStatusPills).
 const BOARD_DUE_RE=/^\s*(due|due date|deadline|target|target date|date|by when|eta|when)\s*$/i;
 const BOARD_LIST_PRINT_MIN=13;
-function tableStatusBoardInfo(table){
+function tableStatusBoardInfo(table,ignoreLanes){
   if(!table||tableColumnCount(table)<2)return null;
   const head=[...(table.rows[0]?.cells||[])].map(c=>(c.textContent||'').trim());
   const body=Array.from(table.rows).slice(1).filter(r=>(r.textContent||'').trim());
   if(body.length<2)return null;
   const cols=head.map((_,ci)=>body.map(r=>(r.cells[ci]?.textContent||'').trim()));
   const typed=head.map((_,ci)=>tableColumnType(table,ci).type);
-  let status=typed.indexOf('status');
+  // Lanes by … (data-board-by): the marked column's values are the lanes, as written.
+  const by=ignoreLanes?-1:tableMarkedColumn(table,'data-board-by');
+  const grouped=by>=0;
+  let status=grouped?by:typed.indexOf('status');
   if(status<0)status=findStatusColumn(head.map((h,ci)=>typed[ci]?'':h),cols.map((c,ci)=>typed[ci]?[]:c));
   if(status<0)return null;
   const rest=head.map((_,ci)=>ci).filter(ci=>ci!==status);
@@ -5919,7 +5941,23 @@ function tableStatusBoardInfo(table){
   const owner=rest.find(ci=>ci!==item&&typed[ci]==='person')??rest.find(ci=>ci!==item&&!typed[ci]&&PERSON_HEADER_RE.test(head[ci]))??-1;
   const due=rest.find(ci=>ci!==item&&ci!==owner&&BOARD_DUE_RE.test(head[ci]))??rest.find(ci=>ci!==item&&ci!==owner&&typed[ci]==='date')??-1;
   const note=rest.find(ci=>ci!==item&&ci!==owner&&ci!==due)??-1;
-  return {status,item,owner,due,note,body};
+  return {status,item,owner,due,note,body,grouped};
+}
+// Columns whose repeating values make useful lanes ("Lanes by Release"), at most two, leaving out
+// the status column (that's the plain Status board) and number or date columns.
+function tableLaneColumns(table){
+  if(!table||tableColumnCount(table)<2)return [];
+  const head=[...(table.rows[0]?.cells||[])].map(c=>(c.textContent||'').trim());
+  const body=Array.from(table.rows).slice(1).filter(r=>(r.textContent||'').trim());
+  if(body.length<2)return [];
+  return head.map((_,ci)=>ci).filter(ci=>{
+    if(!head[ci]||STATUS_HEADER_RE.test(head[ci]))return false;
+    const t=tableColumnType(table,ci).type; if(t&&t!=='text'&&t!=='person')return false;
+    const vals=body.map(r=>(r.cells[ci]?.textContent||'').trim());
+    const filled=vals.filter(Boolean);
+    if(filled.filter(v=>parseCellNumber(v)!==null||parseCellDate(v)!==null).length*2>filled.length)return false;
+    return isGroupingColumn(vals);
+  }).slice(0,2);
 }
 function tableStatusBoardEligible(table){ return !!tableStatusBoardInfo(table); }
 function isTableShownAsBoard(table){ return !!(table&&table.getAttribute('data-table-display')==='board'); }
@@ -5927,7 +5965,7 @@ function renderStatusBoardHtml(table){
   const info=tableStatusBoardInfo(table); if(!info)return null;
   const cell=(r,ci)=>ci<0?'':(r.cells[ci]?.textContent||'').trim();
   const rows=info.body.map(r=>({status:cell(r,info.status), item:cell(r,info.item), owner:cell(r,info.owner), due:cell(r,info.due), note:cell(r,info.note)}));
-  const lanes=boardLanes(rows.map(d=>d.status));
+  const lanes=info.grouped?groupLanes(rows.map(d=>d.status)):boardLanes(rows.map(d=>d.status));
   const now=new Date(), today=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
   const lanesHtml=lanes.map(l=>{
     const cards=l.rows.map(i=>{
@@ -5940,7 +5978,7 @@ function renderStatusBoardHtml(table){
         +(meta?`<div class="pv-board-meta">${meta}</div>`:'')
         +(d.note?`<div class="pv-board-note">${esc(d.note)}</div>`:'')+`</div>`;
     }).join('');
-    return `<div class="pv-board-lane" data-group="${l.group||'other'}"><div class="pv-board-head"><span class="pv-board-dot"></span><span class="pv-board-label">${esc(l.label)}</span><span class="pv-board-count">${l.rows.length}</span></div>${cards}</div>`;
+    return `<div class="pv-board-lane" data-group="${info.grouped?'lane':(l.group||'other')}"><div class="pv-board-head"><span class="pv-board-dot"></span><span class="pv-board-label">${esc(l.label)}</span><span class="pv-board-count">${l.rows.length}</span></div>${cards}</div>`;
   }).join('');
   return `<div class="pv-board${rows.length>=BOARD_LIST_PRINT_MIN?' many':''}" style="--board-cols:${Math.min(lanes.length,4)}">${lanesHtml}</div>`;
 }
@@ -6856,6 +6894,39 @@ function boardLanes(statuses) {
         other.get(key).rows.push(i);
     });
     return [std.get('open'), std.get('progress'), std.get('blocked'), ...other.values(), std.get('done'), none].filter((l) => l.rows.length);
+}
+/**
+ * Lanes for a board grouped by any column (Show as › "Lanes by …"): one lane per distinct value,
+ * labelled as first written, in order of appearance (no status mapping, so "Phase 2" stays its own
+ * lane), then "No value" for empty cells. Rows keep their table order.
+ */
+function groupLanes(values) {
+    const lanes = new Map();
+    const none = { key: 'none', label: 'No value', group: null, rows: [] };
+    values.forEach((raw, i) => {
+        const text = String(raw ?? '').trim();
+        if (!text) {
+            none.rows.push(i);
+            return;
+        }
+        const key = 'x:' + text.toLowerCase().replace(/\s+/g, ' ');
+        if (!lanes.has(key))
+            lanes.set(key, { key, label: text, group: null, rows: [] });
+        lanes.get(key).rows.push(i);
+    });
+    return [...lanes.values(), none].filter((l) => l.rows.length);
+}
+/**
+ * Whether a column's values make useful lanes: at least two filled cells, at least two different
+ * values, and some repeating -- no more distinct values than half the filled cells (rounded up), so
+ * a column of names or one-off notes isn't offered.
+ */
+function isGroupingColumn(values) {
+    const filled = values.map((v) => String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ')).filter(Boolean);
+    if (filled.length < 2)
+        return false;
+    const distinct = new Set(filled).size;
+    return distinct >= 2 && distinct <= Math.ceil(filled.length / 2);
 }
 /**
  * The choices a Status column's picker offers: the four standard statuses, then any other status
@@ -8197,7 +8268,7 @@ function currentTableDisplay(table){
   if(isTableShownAsChips(table))return 'chips';
   if(isTableShownAsInline(table))return 'inline';
   if(isTableShownAsProgress(table))return 'progress';
-  if(isTableShownAsBoard(table))return 'board';
+  if(isTableShownAsBoard(table)){ const by=tableMarkedColumn(table,'data-board-by'); return by>=0?'board:'+by:'board'; }
   if(isTableShownAsProsCons(table))return 'proscons';
   if(isTableShownAsTimeline(table))return isTimelineHorizontal(table)?'timeline:horizontal':'timeline';
   if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
@@ -8205,6 +8276,11 @@ function currentTableDisplay(table){
 }
 function setTableDisplay(table,mode){
   if(!table)return;
+  // Fix-it modes carry the column they use: "board:2" (Lanes by column 2), "timeline@2" (dated by it).
+  if(mode.startsWith('board:')){ setTableMarkedColumn(table,'data-board-by',Number(mode.slice(6))); mode='board'; }
+  else setTableMarkedColumn(table,'data-board-by',-1);
+  if(mode.startsWith('timeline@')){ setTableMarkedColumn(table,'data-timeline-date',Number(mode.slice(9))); mode='timeline'; }
+  else if(!mode.startsWith('timeline'))setTableMarkedColumn(table,'data-timeline-date',-1);
   if(mode==='timeline:horizontal')table.setAttribute('data-timeline-layout','horizontal');
   else table.removeAttribute('data-timeline-layout');
   if(mode==='chips'){ setTableChips(table,true); return; }
@@ -8229,26 +8305,45 @@ function buildChartFeatureItems(table,commit){
   // The current display carries a check mark (and does nothing on click); only displays that
   // don't fit the table are greyed out.
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  const opt=(mode,label,ok,reason)=>cur===mode
-    ? {label, icon:CHECK, current:true, onClick:()=>{}}
-    : {label, disabled:!ok, title:ok?undefined:reason, onClick:()=>{ setTableDisplay(table,mode); commit(); }};
+  // A display that doesn't fit says why on a second line (a disabled item gets no hover, so a
+  // tooltip alone was never seen); the full reason stays as its title.
+  const shortReason=r=>String(r||'').split(/:\s| — |\. |, like | \(e\.g\./)[0].replace(/\.$/,'');
+  const opt=(mode,label,ok,reason,sub)=>cur===mode
+    ? {label, icon:CHECK, current:true, sub, onClick:()=>{}}
+    : {label, disabled:!ok, title:ok?undefined:reason, sub:ok?sub:shortReason(reason), onClick:()=>{ setTableDisplay(table,mode); commit(); }};
+  const cols=tableColumnCount(table);
+  const head=[...(table.rows[0]?.cells||[])].map(c=>(c.textContent||'').trim());
+  const colsReason=(lo,hi,why)=>cols<lo||cols>hi?`Needs ${lo===hi?lo:lo+'–'+hi} columns; this has ${cols}.`:why;
   const tlOk=tableTimelineEligible(table), tlRows=timelineRowCount(table);
-  const TL_REASON='A timeline needs dates in the first column (e.g. 2026-10-14 or Oct 14), then the event, and optionally a detail.';
+  const TL_REASON=colsReason(2,3,'A timeline needs a date column (e.g. 2026-10-14 or Oct 14), then the event, and optionally a detail.');
+  const chipsReason=colsReason(2,2,'Needs at least two rows.');
+  // Fix-its: lanes by a column whose values repeat, and a timeline dated by a column other than the first.
+  const laneItems=tableLaneColumns(table).map(ci=>{
+    const body=Array.from(table.rows).slice(1).map(r=>(r.cells[ci]?.textContent||'').trim());
+    const lanes=groupLanes(body);
+    return opt('board:'+ci,'Lanes by '+head[ci],true,'',lanes.length+' lanes: '+lanes.map(l=>l.label).join(', '));
+  });
+  const tlFix=timelineDateFixColumn(table);
   const showAs=[
     {heading:'Layout'},
     opt('table','Table',true),
-    opt('chips','Chips',tableChipsEligible(table),'Chips need a two-column table: a short code and its description.'),
-    opt('inline','Inline',tableChipsEligible(table),'Inline needs a two-column table: a short code and its description.'),
+    opt('chips','Chips',tableChipsEligible(table),chipsReason),
+    opt('inline','Inline',tableChipsEligible(table),chipsReason),
     opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
-    opt('progress','Progress bars',tableProgressEligible(table),'Progress bars need a label column and a percentage (or a value and a goal) column.'),
-    opt('board','Status board',tableStatusBoardEligible(table),'A status board needs a Status column (e.g. Open, In progress, Blocked, Done) and at least two items.'),
-    opt('proscons','Pros & cons',tableProsConsEligible(table),'Pros & cons needs a two-column table headed Pros / Cons (or Advantages / Disadvantages, For / Against, Strengths / Weaknesses).'),
+    opt('progress','Progress bars',tableProgressEligible(table),colsReason(2,3,'Needs a % or number column.')),
+    opt('board','Status board',!!tableStatusBoardInfo(table,true),'A status board needs a Status column (e.g. Open, In progress, Blocked, Done) and at least two items.'),
+    ...laneItems,
+    opt('proscons','Pros & cons',tableProsConsEligible(table),colsReason(2,2,'Pros & cons needs headers like Pros / Cons (or Advantages / Disadvantages, For / Against).')),
     {heading:'Timeline'},
     opt('timeline','Vertical',tlOk,TL_REASON),
     opt('timeline:horizontal','Horizontal',tlOk&&tlRows<=TIMELINE_HORIZONTAL_MAX,tlOk?`A horizontal timeline fits up to ${TIMELINE_HORIZONTAL_MAX} milestones; this table has ${tlRows}. Use Vertical.`:TL_REASON),
+    ...(tlFix>=0?[opt('timeline@'+tlFix,'Use “'+head[tlFix]+'” as the date',true,'','Vertical timeline, in date order')]:[]),
     {heading:'Chart'},
-    ...CHART_TYPES.filter(t=>t!=='cards').map(t=>opt('chart:'+t,CHART_TYPE_LABELS[t].replace(/ chart$/,''),typeAvail[t].ok,typeAvail[t].reason))
+    ...CHART_TYPES.filter(t=>t!=='cards').map(t=>{ const it=opt('chart:'+t,CHART_TYPE_LABELS[t].replace(/ chart$/,''),typeAvail[t].ok,typeAvail[t].reason); if(it.disabled&&/numbers to plot|numeric/i.test(typeAvail[t].reason||''))it.sub='Needs a column of numbers'; return it; })
   ];
+  // One reason is enough for a run of items greyed out for the same thing (Vertical/Horizontal,
+  // every chart shape).
+  { let prev=null; showAs.forEach(it=>{ if(it.heading){ prev=null; return; } const s=it.disabled?it.sub:null; if(s&&s===prev)delete it.sub; prev=s; }); }
   items.push({label:'Show as', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/></svg>', submenu:showAs});
   // Display options are always listed, in the same place; one that doesn't apply to the current
   // display (or the table's content) is greyed out with the reason on hover rather than hidden.

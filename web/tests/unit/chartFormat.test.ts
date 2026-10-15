@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   niceAxisScale, formatChartNumber, cardsGridColumns, cardChangeDirection, cardChangeText,
   valuesLookLikeFractions, progressPercent, heatLevels, timelineOrder, timelinePhases,
-  statusGroup, findStatusColumn, boardLanes, statusPickerOptions, prosConsColumn, checkValue, isCheckColumn
+  statusGroup, findStatusColumn, boardLanes, groupLanes, isGroupingColumn, statusPickerOptions, prosConsColumn, checkValue, isCheckColumn
 } from '../../src/utils/chartFormat';
 
 describe('niceAxisScale', () => {
@@ -153,6 +153,22 @@ describe('status board', () => {
     expect(lanes.map((l) => [l.label, l.rows])).toEqual([
       ['Open', [1, 5]], ['Blocked', [4]], ['Cancelled', [2, 6]], ['Done', [0]], ['No status', [3]]
     ]);
+  });
+});
+
+describe('groupLanes / isGroupingColumn', () => {
+  it('makes one lane per value in order of appearance, without status mapping, empties last', () => {
+    const lanes = groupLanes(['Current Release', 'Current release', '', 'Phase 2', 'Separate Release', 'Planned']);
+    expect(lanes.map((l) => [l.label, l.rows])).toEqual([
+      ['Current Release', [0, 1]], ['Phase 2', [3]], ['Separate Release', [4]], ['Planned', [5]], ['No value', [2]]
+    ]);
+  });
+  it('offers a column only when its values repeat', () => {
+    expect(isGroupingColumn(['A', 'A', 'A', 'B', 'B', 'C'])).toBe(true);
+    expect(isGroupingColumn(['SAP', 'Old Webshop', 'Old Mobile App', 'New Webshop', 'New Mobile App', 'EDI'])).toBe(false);
+    expect(isGroupingColumn(['In scope', 'Est', 'Est', 'Sep', 'Sep', 'Phase 2'])).toBe(false);
+    expect(isGroupingColumn(['A', 'A'])).toBe(false);
+    expect(isGroupingColumn(['A', '', 'B', 'A'])).toBe(true);
   });
 });
 
