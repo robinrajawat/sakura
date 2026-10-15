@@ -1842,12 +1842,12 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-btn.is-on{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .thread-btn[data-act="yes"]:hover{color:var(--fc-green)}
 .thread-btn[data-act="no"]:hover{color:var(--fc-red)}
-/* "+ Reply" at the end of a thread: only while the thread is hovered. */
+/* "+ Add to thread" at the end of a thread: only while the thread is hovered. */
 .node-remark-line.thread-reply-link{padding-top:1px;padding-bottom:3px;color:var(--hint);font-size:12.5px;cursor:pointer}
 /* Only the label fades: the line also carries the outline's depth guides, which must stay drawn. */
 .thread-reply-label{margin-left:22px;opacity:0;transition:opacity .12s}
 .thread-reply-link.thread-hover .thread-reply-label,.thread-reply-link:focus-within .thread-reply-label{opacity:1}
-/* Touch screens have no hover: "+ Reply" is always there. */
+/* Touch screens have no hover: "+ Add to thread" is always there. */
 @media (hover: none){.thread-reply-label{opacity:1}}
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 .thread-verdict{font:600 12px 'Inter',sans-serif}
@@ -4014,12 +4014,12 @@ body.printing-generic #gpe-overlay{
 <h4>Thread (comments and questions)</h4>
 <ul>
 <li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry shows its <strong>author</strong> (a colored initials avatar plus the name; each person in a document gets their own color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
-<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new reply line. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no reply box — hover it for <strong>+ Reply</strong>. What you type is kept if you move to another row</li>
-<li>The reply line writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
+<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
+<li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
-<li>Right-click an entry for <strong>Reply</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
 <li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the avatars joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
@@ -29528,7 +29528,7 @@ function addThreadStatus(nodeId,status,text,sameAuthorOnly){
   remarks.push(e);
   return e;
 }
-// Opens a node's thread with its reply line focused (right-click / Insert "Thread…", "+ Reply").
+// Opens a node's thread with its reply line focused (right-click / Insert "Thread…", "+ Add to thread").
 function openThreadComposer(nodeId,ask){
   if(nodeId==null)return;
   forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId);
@@ -29542,7 +29542,7 @@ function renderNodeThread(node,placeLine){
   const commit=()=>{ syncRowMarkerFromThread(node.id); markDirty(); scheduleAutoSave(); render(); };
   // Every line of the thread sits right of one thin rule, like the PDF's transcript.
   const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+7.5)+'px'); };
-  // Hovering any line of the thread shows its "+ Reply" line (the lines are separate siblings).
+  // Hovering any line of the thread shows its "+ Add to thread" line (the lines are separate siblings).
   const lines=[];
   const hover=on=>lines.forEach(l=>l.classList.toggle('thread-hover',on));
   const place=line=>{ placeThread(line); lines.push(line); line.addEventListener('mouseenter',()=>hover(true)); line.addEventListener('mouseleave',()=>hover(false)); };
@@ -29668,8 +29668,8 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const change=fn=>()=>{ pushUndo(); fn(); commit(); };
   const items=[];
-  // Reply first: it's what you most often want from an entry.
-  items.push({label:'Reply', icon:ico('<polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>'), onClick:()=>openThreadComposer(node.id,false)});
+  // Add to thread first: it's what you most often want from an entry.
+  items.push({label:'Add to thread', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>openThreadComposer(node.id,false)});
   if(r.answerTo){
     items.push({label:'Answer Yes', icon:r.verdict==='yes'?CHECK:'', onClick:change(()=>{ if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; })});
     items.push({label:'Answer No', icon:r.verdict==='no'?CHECK:'', onClick:change(()=>{ if(r.verdict==='no')delete r.verdict; else r.verdict='no'; })});
@@ -29694,11 +29694,11 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   return items;
 }
 function renderThreadComposer(node,thread,place,commit){
-  // At rest a thread ends in a quiet "+ Reply" that shows on hover; the reply line opens on click,
+  // At rest a thread ends in a quiet "+ Add to thread" that shows on hover; the reply line opens on click,
   // from the menu, or while it holds a draft.
   if(_threadComposerNodeId!==node.id&&!_threadDrafts.has(node.id)){
     const more=document.createElement('div'); more.className='node-remark-line thread-reply-link';
-    more.innerHTML='<span class="thread-reply-label">+ Reply</span>'; more.dataset.tip='Add to this thread';
+    more.innerHTML='<span class="thread-reply-label">+ Add to thread</span>'; more.dataset.tip='Add to this thread';
     more.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     more.addEventListener('click',e=>{ e.stopPropagation(); openThreadComposer(node.id,false); });
     place(more);
@@ -29709,7 +29709,7 @@ function renderThreadComposer(node,thread,place,commit){
   const author=threadDefaultAuthor();
   const c=remarkAuthorColor(author);
   const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(author);
-  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Reply as — pick who is speaking';
+  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
   who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
   const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;
@@ -29810,7 +29810,7 @@ function threadAuthorMenuItems(node,anchor){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const cur=threadDefaultAuthor();
   const pick=name=>()=>{ _threadAuthor=name; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
-  const items=[{heading:'Reply as'}];
+  const items=[{heading:'Add as'}];
   threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===cur?CHECK:'', onClick:pick(n)}));
   if(items.length>1)items.push({divider:true});
   items.push({label:'Someone else…', onClick:()=>{

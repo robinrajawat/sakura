@@ -56,10 +56,10 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   expect(errors).toEqual([]);
 });
 
-test('reply line: hidden until "+ Reply"; Enter adds a comment, Ask a question, Yes answers it, the author sticks', async ({ page }) => {
+test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a question, Yes answers it, the author sticks', async ({ page }) => {
   const errors = await seed(page);
   const box = page.locator('.thread-composer-input[data-node-id="2"]');
-  // At rest the thread ends in "+ Reply", shown while the thread is hovered.
+  // At rest the thread ends in "+ Add to thread", shown while the thread is hovered.
   await expect(box).toHaveCount(0);
   const replyLink = page.locator('.thread-reply-link').first();
   // Only its label fades: the line itself stays opaque, so the depth guides it carries stay drawn.
@@ -75,7 +75,7 @@ test('reply line: hidden until "+ Reply"; Enter adds a comment, Ask a question, 
   // The box stays focused for the next entry.
   await expect(box).toBeFocused();
 
-  // Reply as someone else.
+  // Add as someone else.
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-author-btn').click();
   await page.locator('.sb-context-menu').getByText('Someone else…').click();
   await page.keyboard.type('Kristoffer');
@@ -243,7 +243,7 @@ test('entry menu: Reply first, question toggle, decision, status as labelled mar
   const entry = page.locator('.thread-entry:has(#inline-remark-text-c1) .node-remark-text-inline');
   await entry.click({ button: 'right' });
   const menu = page.locator('.sb-context-menu');
-  await expect(menu.locator('.sb-context-item').first()).toHaveText('Reply');
+  await expect(menu.locator('.sb-context-item').first()).toHaveText('Add to thread');
   await expect(menu.getByText('Make it a question', { exact: true })).toBeVisible();
   await expect(menu.locator('.sb-context-choice')).toHaveText(['Agreed', 'Follow-up', 'Out of scope']);
   await expect(menu.locator('.sb-context-choice.current')).toHaveCount(0);
@@ -262,12 +262,12 @@ test('entry menu: Reply first, question toggle, decision, status as labelled mar
   // The header says the thread holds a decision.
   await expect(page.locator('.thread-head .thread-head-decision')).toHaveText('· Decision');
   await entry.click({ button: 'right' });
-  await menu.getByText('Reply', { exact: true }).click();
+  await menu.getByText('Add to thread', { exact: true }).click();
   await expect(page.locator('.thread-composer-input[data-node-id="2"]')).toBeFocused();
   expect(await page.evaluate('_threadAskNodeIds.has(2)')).toBe(false);
 });
 
-test('depth guides run unbroken through a thread, its "+ Reply" line included', async ({ page }) => {
+test('depth guides run unbroken through a thread, its "+ Add to thread" line included', async ({ page }) => {
   await seed(page);
   const guides = (sel: string) => page.locator(sel).first().evaluate((el) => {
     const op = (n: Element | null): number => { let o = 1; for (; n; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity); return o; };
