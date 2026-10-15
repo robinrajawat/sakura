@@ -246,6 +246,36 @@ export function boardLanes(statuses: string[]): BoardLane[] {
 }
 
 /**
+ * Lanes for a board grouped by any column (Show as › "Lanes by …"): one lane per distinct value,
+ * labelled as first written, in order of appearance (no status mapping, so "Phase 2" stays its own
+ * lane), then "No value" for empty cells. Rows keep their table order.
+ */
+export function groupLanes(values: string[]): BoardLane[] {
+  const lanes = new Map<string, BoardLane>();
+  const none: BoardLane = { key: 'none', label: 'No value', group: null, rows: [] };
+  values.forEach((raw, i) => {
+    const text = String(raw ?? '').trim();
+    if (!text) { none.rows.push(i); return; }
+    const key = 'x:' + text.toLowerCase().replace(/\s+/g, ' ');
+    if (!lanes.has(key)) lanes.set(key, { key, label: text, group: null, rows: [] });
+    lanes.get(key)!.rows.push(i);
+  });
+  return [...lanes.values(), none].filter((l) => l.rows.length);
+}
+
+/**
+ * Whether a column's values make useful lanes: at least two filled cells, at least two different
+ * values, and some repeating -- no more distinct values than half the filled cells (rounded up), so
+ * a column of names or one-off notes isn't offered.
+ */
+export function isGroupingColumn(values: string[]): boolean {
+  const filled = values.map((v) => String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ')).filter(Boolean);
+  if (filled.length < 2) return false;
+  const distinct = new Set(filled).size;
+  return distinct >= 2 && distinct <= Math.ceil(filled.length / 2);
+}
+
+/**
  * The choices a Status column's picker offers: the four standard statuses, then any other status
  * already written in the column (as first written, in order), so a team's own wording stays one
  * click away.

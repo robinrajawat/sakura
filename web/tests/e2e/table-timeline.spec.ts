@@ -71,10 +71,12 @@ test('Timeline is greyed out for a table without dates', async ({ page }) => {
     d.innerHTML = '<table><tr><th>A</th><th>B</th></tr><tr><td>x</td><td>1</td></tr><tr><td>y</td><td>2</td></tr></table>';
     const t = d.querySelector('table');
     const item = (window as any).buildChartFeatureItems(t, () => {}).find((i: any) => i.label === 'Show as').submenu.find((i: any) => i.label === 'Vertical');
-    return { disabled: item.disabled, title: item.title };
+    return { disabled: item.disabled, title: item.title, sub: item.sub };
   });
   expect(r.disabled).toBe(true);
-  expect(r.title).toContain('dates in the first column');
+  // The date column can be any column (Show as offers "Use … as the date" for one that isn't first).
+  expect(r.title).toContain('needs a date column');
+  expect(r.sub).toBe('A timeline needs a date column');
 });
 
 test('Show as › Horizontal lays milestones side by side and switches back', async ({ page }) => {
