@@ -20071,18 +20071,6 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     iWrap.appendChild(buildNodeImageStrip(node));
     frag.appendChild(iWrap);
   }
-  if(inlineExpandRemarksNodeIds.has(node.id)&&Array.isArray(remarks)&&(remarks.some(r=>r.anchorNodeId===node.id)||_threadComposerNodeId===node.id||_threadDrafts.has(node.id))){
-    // The node's thread (owner design 2026-10-14): one flat list of entries, oldest first, each
-    // with its author, time and text, chips only where they mean something (Question, Yes/No, a
-    // status), and a reply box at the end. See renderNodeThread.
-    const tDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
-    const place=lineEl=>{
-      lineEl.style.paddingLeft=hideTreeLines?(tDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
-      if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; lineEl.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(tDepth*32+0*editorScale+9)+'px'; lineEl.appendChild(vgOwn) } }
-      frag.appendChild(lineEl);
-    };
-    renderNodeThread(node,place);
-  }
   if(inlineExpandDiagramNodeIds.has(node.id)&&Array.isArray(diagrams)&&diagrams.length){
     const nodeDiagramsInline=diagrams.filter(dg=>dg.anchorNodeId===node.id);
     nodeDiagramsInline.forEach(d=>{
@@ -20127,6 +20115,19 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       if(hideTreeLines&&depthGuideLines){ const gVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); gVFlags.forEach((hasSib,d2)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d2*32+0*editorScale+9)+'px'; gLine.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(gDepth*32+0*editorScale+9)+'px'; gLine.appendChild(vgOwn) } }
       frag.appendChild(gLine)
     })
+  }
+  // The thread comes last, after the row's content (owner, 2026-10-15; the PDF follows the same order).
+  if(inlineExpandRemarksNodeIds.has(node.id)&&Array.isArray(remarks)&&(remarks.some(r=>r.anchorNodeId===node.id)||_threadComposerNodeId===node.id||_threadDrafts.has(node.id))){
+    // The node's thread (owner design 2026-10-14): one flat list of entries, oldest first, each
+    // with its author, time and text, chips only where they mean something (Question, Yes/No, a
+    // status), and a reply box at the end. See renderNodeThread.
+    const tDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
+    const place=lineEl=>{
+      lineEl.style.paddingLeft=hideTreeLines?(tDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
+      if(hideTreeLines&&depthGuideLines){ const rVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); rVFlags.forEach((hasSib,d)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d*32+0*editorScale+9)+'px'; lineEl.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(tDepth*32+0*editorScale+9)+'px'; lineEl.appendChild(vgOwn) } }
+      frag.appendChild(lineEl);
+    };
+    renderNodeThread(node,place);
   }
  }); pane.appendChild(frag)}
   // A zoomed-in node with no children shows its "No sub-items yet" hint under its own header row.
@@ -28727,17 +28728,6 @@ function renderPreviewBody(){
         });
         doc.appendChild(qBlock);
       }
-      if(Array.isArray(remarks)&&remarks.length){
-        // The node's whole thread, oldest first like the outline (owner: the PDF prints the whole
-        // thread). Blank entries with no chip have nothing to print.
-        const nodeRemarks=nodeThread(node.id).filter(rm=>htmlHasVisibleText(rm.text)||rm.status||rm.verdict);
-        if(nodeRemarks.length){
-          const rGroup=previewRenderRemarkGroup(nodeRemarks);
-          rGroup.style.paddingLeft=inlinePad;
-          doc.appendChild(rGroup);
-          nodeRemarks.forEach(rm=>_previewRemarksRenderedInline.add(rm.id));
-        }
-      }
       // The note's text comes first, directly under the node, then its diagrams, tables and
       // images below. Tables and standalone images are pulled out into their own figures (see
       // blockVisuals) -- what's left here is only the note's own text, via blockVisuals.textHtml
@@ -28770,24 +28760,6 @@ function renderPreviewBody(){
           const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=d.src; img.alt=d.alt||'Diagram';
           fig.appendChild(img);
           if(d.alt){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=d.alt; fig.appendChild(cap); }
-          row.appendChild(fig);
-        });
-        doc.appendChild(row);
-      }
-      // Draw.io diagrams anchored to this node — the newer,
-      // preferred workflow: a real draw.io editor rather than a static image pasted into the
-      // note. Same visual row/figure treatment as the note-embedded path above, since to a
-      // reader there's no meaningful difference in how either should look.
-      const anchoredDiagrams=diagrams.filter(d=>d.anchorNodeId===node.id&&(d.previewSvg||(Array.isArray(d.pageSvgs)&&d.pageSvgs.length)));
-      if(anchoredDiagrams.length){
-        const allPages=anchoredDiagrams.flatMap(d=>diagramDisplayPages(d));
-        const multi=allPages.length>1;
-        const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
-        allPages.forEach(p=>{
-          const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
-          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=p.svg; img.alt=p.caption||'Diagram';
-          fig.appendChild(img);
-          if(p.caption){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=p.caption; fig.appendChild(cap); }
           row.appendChild(fig);
         });
         doc.appendChild(row);
@@ -28828,6 +28800,37 @@ function renderPreviewBody(){
           irow.appendChild(fig);
         });
         if(irow.children.length)doc.appendChild(irow);
+      }
+      // Draw.io diagrams anchored to this node — the newer,
+      // preferred workflow: a real draw.io editor rather than a static image pasted into the
+      // note. Same visual row/figure treatment as the note-embedded path above, since to a
+      // reader there's no meaningful difference in how either should look.
+      const anchoredDiagrams=diagrams.filter(d=>d.anchorNodeId===node.id&&(d.previewSvg||(Array.isArray(d.pageSvgs)&&d.pageSvgs.length)));
+      if(anchoredDiagrams.length){
+        const allPages=anchoredDiagrams.flatMap(d=>diagramDisplayPages(d));
+        const multi=allPages.length>1;
+        const row=document.createElement('div'); row.className='pv-diagram-row'+(multi?' pv-diagram-row-multi':''); row.style.paddingLeft=inlinePad;
+        allPages.forEach(p=>{
+          const fig=document.createElement('figure'); fig.className='pv-diagram-figure';
+          const img=document.createElement('img'); img.className='pv-diagram-img'; img.src=p.svg; img.alt=p.caption||'Diagram';
+          fig.appendChild(img);
+          if(p.caption){ const cap=document.createElement('figcaption'); cap.className='pv-diagram-caption'; cap.textContent=p.caption; fig.appendChild(cap); }
+          row.appendChild(fig);
+        });
+        doc.appendChild(row);
+      }
+      // Same order as the outline (owner, 2026-10-15): note → tables → images → diagrams → thread —
+      // the row's content first, then what people said about it.
+      if(Array.isArray(remarks)&&remarks.length){
+        // The node's whole thread, last (after its content), oldest first like the outline (owner: the PDF prints the whole
+        // thread). Blank entries with no chip have nothing to print.
+        const nodeRemarks=nodeThread(node.id).filter(rm=>htmlHasVisibleText(rm.text)||rm.status||rm.verdict);
+        if(nodeRemarks.length){
+          const rGroup=previewRenderRemarkGroup(nodeRemarks);
+          rGroup.style.paddingLeft=inlinePad;
+          doc.appendChild(rGroup);
+          nodeRemarks.forEach(rm=>_previewRemarksRenderedInline.add(rm.id));
+        }
       }
     }
   });
@@ -30175,7 +30178,9 @@ function renderThreadComposer(node,thread,place,commit){
   // Leaving an empty reply line closes it again.
   input.addEventListener('blur',()=>{ setTimeout(()=>{ if(_threadComposerNodeId!==node.id||_threadDrafts.has(node.id)||line.contains(document.activeElement)||!document.body.contains(line))return; if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.sb-context-menu,.thread-author-edit'))return; _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id);
     // Typing somewhere else (another entry, a row): don't re-render under the caret; the reply line goes at the next render.
-    const ae=document.activeElement; if(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName)))return;
+    // An entry's author picker is focusable but not editable, so "inside a thread entry" counts too:
+    // re-rendering under it would blur it and drop an emptied entry the person is still working on.
+    const ae=document.activeElement; if(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName)||(ae.closest&&ae.closest('.thread-entry'))))return;
     render(); },120); });
   place(line);
 }
