@@ -905,6 +905,9 @@ body.zen-mode #quick-bar{display:none}
 .oi-sep{color:var(--hint)}
 .open-items-menu{width:340px;max-width:calc(100vw - 16px)}
 .open-items-menu .sb-context-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A second, quieter line under an item: e.g. why a follow-up is open (its thread's latest line). */
+.sb-context-sub{display:block;margin-top:1px;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-context-item:has(.sb-context-sub) .sb-context-icon{align-self:flex-start;margin-top:1px}
 .sb-context-fold .sb-context-chevron{transition:transform .15s}
 .sb-context-fold[aria-expanded="true"] .sb-context-chevron{transform:rotate(90deg)}
 .sb-context-fold-body{display:flex;flex-direction:column;gap:1px;padding-left:8px}
@@ -4011,7 +4014,7 @@ body.printing-generic #gpe-overlay{
 <h4>Thread (comments and questions)</h4>
 <ul>
 <li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry shows its <strong>author</strong> (a colored initials avatar plus the name; each person in a document gets their own color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
-<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new reply line. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line, Esc to close). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no reply box — hover it for <strong>+ Reply</strong>. What you type is kept if you move to another row</li>
+<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new reply line. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no reply box — hover it for <strong>+ Reply</strong>. What you type is kept if you move to another row</li>
 <li>The reply line writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
@@ -25665,7 +25668,7 @@ function _sbBuildItemButton(it, container, list){
     return t;
   }
   const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
-  btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+'</span>'+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
+  btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+(it.sub?'<span class="sb-context-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
   if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; container.appendChild(btn); return null; }
   if(it.submenu){
     btn._sbSubmenu=it.submenu; btn.setAttribute('aria-haspopup','menu');
@@ -29744,6 +29747,9 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('keydown',e=>{
     if(handleGenericQaKeydown(e,input))return;
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
+    // Backspace on an empty reply line closes it, like an emptied entry (a held-down Backspace
+    // that just erased the text doesn't).
+    else if(e.key==='Backspace'&&!e.repeat&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(input.textContent||'').trim()&&!input.querySelector('img')){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }
     else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }
   });
   const btn=(act,label,tip,on)=>{ const b=document.createElement('button'); b.type='button'; b.className='thread-btn'+(on?' is-on':''); b.dataset.act=act; b.innerHTML=label; b.dataset.tip=tip; b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); }); return b; };
@@ -30282,7 +30288,7 @@ function openItemKindIcon(key){
   if(key==='done')return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   return markIconSvg(key);
 }
-function openItemKindColor(key){ return ({followup:'var(--fc-orange)',question:'var(--accent)',remark:'var(--fc-gray)',parked:'var(--fc-gray)',done:'var(--fc-green)',confirmed:'var(--fc-green)'})[key]||'var(--fc-gray)'; }
+function openItemKindColor(key){ return ({decision:'var(--fc-green)',followup:'var(--fc-orange)',question:'var(--accent)',remark:'var(--fc-gray)',parked:'var(--fc-gray)',done:'var(--fc-green)',confirmed:'var(--fc-green)'})[key]||'var(--fc-gray)'; }
 function updateMarkerSummary(){
   const group=el('ag-markers'); const box=el('marker-summary'); if(!group||!box)return;
   const p=documentProgress(nodes,qaItems,remarks);
@@ -30334,17 +30340,19 @@ function openItemsMenuItems(){
     if(items.length)items.push({divider:true});
     const on=cur===filterKind;
     items.push({heading:heading+' · '+entries.length, action:{icon:FILTER_ICON, active:on, label:on?'Clear this filter':'Show only '+heading.toLowerCase()+' in the outline', onClick:()=>applyOpenItemsFilter(filterKind)}});
-    entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, icon:icon(key), onClick:en.go}));
+    entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, sub:en.sub||'', icon:icon(key), onClick:en.go}));
     if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!on)applyOpenItemsFilter(filterKind); }});
   };
   // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
   const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
+  // Under a follow-up, its thread's latest line says why it's open, without jumping there.
+  const latestLine=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--){ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); if(x)return (t[i].person?t[i].person+': ':'')+x; } return ''; };
   // Rows with the same name (two "Export (ZOR)" under different parents) add their parent's name.
   const parentText=n=>{ const p=n.parentId!=null?nodes.find(x=>x.id===n.parentId):null; return p?rowText(p):''; };
   const markerRows=m=>{
     const list=nodes.filter(n=>n.marker===m), seen=new Map();
     list.forEach(n=>seen.set(rowText(n),(seen.get(rowText(n))||0)+1));
-    return list.map(n=>{ const o=m==='followup'?ownerOf(n):''; const pt=seen.get(rowText(n))>1?parentText(n):''; return {label:rowText(n)+(pt?' (in '+pt+')':'')+(o?' · '+o:''), go:()=>revealNodeInDoc(currentDocId,n.id)}; });
+    return list.map(n=>{ const o=m==='followup'?ownerOf(n):''; const pt=seen.get(rowText(n))>1?parentText(n):''; return {label:rowText(n)+(pt?' (in '+pt+')':'')+(o?' · '+o:''), sub:m==='followup'?latestLine(n):'', go:()=>revealNodeInDoc(currentDocId,n.id)}; });
   };
   addGroup('followup','Follow-ups',markerRows('followup'),'followup');
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
@@ -30361,6 +30369,15 @@ function openItemsMenuItems(){
     const n=settled.filter(x=>!x.heading).length;
     if(items.length)items.push({divider:true});
     items.push({label:'Settled \u00B7 '+n, icon:icon('done'), fold:settled});
+  }
+  // Decisions made in threads, folded like Settled (they aren't open items): what was decided,
+  // and on which row. Each jumps to its entry.
+  const decisions=(remarks||[]).filter(r=>r&&r.decision&&idx.has(r.anchorNodeId)).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId)||(a.createdAt||0)-(b.createdAt||0));
+  if(decisions.length){
+    const rowOf=r=>nodes[idx.get(r.anchorNodeId)];
+    const fold=decisions.map(r=>{ const t=stripHtmlToText(r.text||'').replace(/\s+/g,' ').trim(); return {label:t||rowText(rowOf(r)), sub:t?rowText(rowOf(r)):'', icon:icon('decision'), onClick:()=>revealInlineObject('remark',r.id)}; });
+    if(items.length)items.push({divider:true});
+    items.push({label:'Decisions \u00B7 '+decisions.length, icon:icon('decision'), fold});
   }
   return items;
 }

@@ -331,7 +331,7 @@ test('a follow-up names its owner, in the thread, the PDF note and the open-item
   await page.locator('.sb-context-menu').getByText('Ana', { exact: true }).click();
   await expect(page.locator('.thread-entry:has(#inline-remark-text-k1) .thread-status-note')).toHaveText('· follow-up for Ana');
   await page.locator('#marker-summary .open-items-btn').click();
-  await expect(page.locator('.open-items-menu .sb-context-item', { hasText: 'Data load' })).toHaveText('Data load · Ana');
+  await expect(page.locator('.open-items-menu .sb-context-item', { hasText: 'Data load' })).toHaveText(/^Data load · Ana/);
   expect(errors).toEqual([]);
 });
 
@@ -370,4 +370,34 @@ test('Quick Insert (Ctrl/Cmd+Space) works in the inline note', async ({ page }) 
   await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
   await page.keyboard.press('Enter');
   await expect(note).toContainText('Note —');
+});
+
+test('open-items list: a follow-up shows its thread\'s latest line; decisions fold at the bottom', async ({ page }) => {
+  await seed(page, `remarks.push(
+    { id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails on the EU file.', createdAt: 4, status: 'followup' },
+    { id: 'd1', anchorNodeId: 2, person: 'Maria', date: '2026-10-14', text: 'Cut over on Saturday.', createdAt: 5, decision: true });`);
+  await page.evaluate('syncRowMarkerFromThread(3); render()');
+  await page.locator('#marker-summary .open-items-btn').click();
+  const menu = page.locator('.open-items-menu');
+  await expect(menu.locator('.sb-context-item', { hasText: 'Data load' }).locator('.sb-context-sub')).toHaveText('Karsten: Script fails on the EU file.');
+  const fold = menu.locator('.sb-context-fold', { hasText: 'Decisions · 1' });
+  await fold.click();
+  const item = menu.locator('.sb-context-fold-body .sb-context-item', { hasText: 'Cut over on Saturday.' });
+  await expect(item.locator('.sb-context-sub')).toHaveText('Cutover');
+  await item.click();
+  await expect(page.locator('#inline-remark-text-d1')).toBeFocused();
+});
+
+test('Backspace on an empty reply line closes it; with text it just deletes', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  const box = page.locator('.thread-composer-input[data-node-id="2"]');
+  await box.click();
+  await page.keyboard.type('ab');
+  await page.keyboard.press('Backspace');
+  await expect(box).toHaveText('a');
+  await page.keyboard.press('Backspace');
+  await expect(box).toHaveCount(1);
+  await page.keyboard.press('Backspace');
+  await expect(box).toHaveCount(0);
 });
