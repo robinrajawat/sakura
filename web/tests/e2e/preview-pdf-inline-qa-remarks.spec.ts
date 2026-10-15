@@ -69,13 +69,13 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
         label: block?.querySelector('.pv-inline-label-remark > span:not(.pv-status-pill)')?.textContent,
         text: block?.querySelector('.pv-remark-entry')?.textContent || '',
         answer: block?.querySelectorAll('.pv-remark-entry')[1]?.textContent || '',
-        pill: block?.querySelector('.pv-remark-entry .pv-status-pill')?.textContent,
+        state: block?.querySelector('.pv-remark-entry .pv-thread-status-note')?.textContent,
       };
     });
     expect(result.label).toBe('Thread · 2');
     expect(result.text).toContain('Why this approach?');
     expect(result.answer).toContain('Because it scales.');
-    expect(result.pill).toBe('Question · Answered');
+    expect(result.state).toBe('· question, answered');
   });
 
   test('a question rendered inline is NOT duplicated into the trailing Q&A section', async ({ page }) => {

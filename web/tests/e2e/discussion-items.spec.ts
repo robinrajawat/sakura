@@ -44,7 +44,7 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   `);
   expect(await page.evaluate('qaItems.map(q => q.id)')).toEqual(['sec', 'q2']);
   const q = page.locator('.thread-entry:has(#inline-remark-text-rq1)');
-  await expect(q.locator('.thread-chip.is-question')).toHaveText('Question · Answered');
+  await expect(q.locator('.thread-q-note')).toHaveText('· question, answered');
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
   await expect(a.locator('.thread-verdict.is-yes')).toHaveText('✓ Yes');
   await expect(a.locator('.node-remark-text-inline')).toHaveText('All of them');
@@ -185,10 +185,10 @@ test('PDF prints the whole thread with author, time and chips', async ({ page })
   });
   // The header names the thread; the status prints once on the row, and quietly on the entry that set it.
   expect(r.labels).toEqual(['Thread · 4']);
-  expect(r.notes).toEqual(['· decision']);
+  expect(r.notes).toEqual(['· question, answered', '· decision']);
   expect(r.verdicts).toEqual(['✓ Yes']);
   expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
-  expect(r.pills).toEqual(['Question · Answered']);
+  expect(r.pills).toEqual([]);
   expect(r.qaSection).toContain('Unlinked question');
   expect(r.qaSection).not.toContain('EU customers');
   expect(errors).toEqual([]);
@@ -254,4 +254,37 @@ test('depth guides run unbroken through a thread, its "+ Reply" line included', 
   const entry = await guides('.thread-entry');
   expect(entry.length).toBeGreaterThan(0);
   expect(await guides('.thread-reply-link')).toEqual(entry);
+});
+
+test('grey thread: only an open question takes the accent colour; an answer quotes a question further up', async ({ page }) => {
+  await seed(page, `
+    remarks.push(
+      { id: 'ask', anchorNodeId: 3, person: 'Gro', date: '2026-10-14', text: 'Does it make sense to use the shipping condition + plant combination?', type: 'question', createdAt: 10 },
+      { id: 'mid', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Scanning might be an issue too.', createdAt: 11 },
+      { id: 'ans', anchorNodeId: 3, person: 'Robin', date: '2026-10-14', text: '', verdict: 'yes', answerTo: 'ask', createdAt: 12 },
+      { id: 'open', anchorNodeId: 3, person: 'Gro', date: '2026-10-14', text: 'Who prints?', type: 'question', createdAt: 13 }
+    );
+  `);
+  const accent = await page.evaluate(`getComputedStyle(document.body).getPropertyValue('--accent').trim()`) as string;
+  const toRgb = (hex: string) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+  // Row 2's thread has no open question: grey icon. Row 3 has one: accent icon.
+  expect(await page.locator('.node-row[data-id="2"] .node-remark-dot').evaluate((e) => (e as HTMLElement).style.color)).toBe('var(--muted)');
+  await expect(page.locator('.node-row[data-id="3"] .node-remark-dot')).toHaveCSS('color', toRgb(accent));
+  // The header is quiet: not uppercase, not coloured.
+  await expect(page.locator('.thread-head').first()).toHaveCSS('text-transform', 'none');
+
+  // The Yes came two entries after its question, so it quotes it; an answer right after needs no quote.
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-ans) .thread-quote')).toHaveText('↳ Does it make sense to use the shipping condition + plant combination?');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-rq1-a) .thread-quote')).toHaveCount(0);
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-q-note')).toHaveText('· question, answered');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-chip.is-question')).toHaveText('Question');
+});
+
+test('Ctrl/Cmd+Alt+M opens a reply line in the selected row\'s thread', async ({ page }) => {
+  await seed(page);
+  await page.locator('.node-row[data-id="3"] .node-label').click();
+  await page.keyboard.press('Escape');
+  await page.evaluate('editingId = null; selectedId = 3; render();');
+  await page.keyboard.press('Control+Alt+KeyM');
+  await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toBeFocused();
 });

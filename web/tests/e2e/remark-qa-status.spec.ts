@@ -97,16 +97,17 @@ test('a question (formerly Q&A): its chip tracks the answer, Yes answers it, won
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds = new Set([2, 3, 4, 5]); render();');
   expect(await page.evaluate('qaItems.length')).toBe(0);
-  const q = (id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-chip.is-question`);
+  // Only an open question is a chip; a settled one is quiet text.
+  const q = (id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) :is(.thread-chip.is-question, .thread-q-note)`);
   await expect(q('rqOpen')).toHaveText('Question');
-  await expect(q('rqDone')).toHaveText('Question · Answered');
-  await expect(q('rqWont')).toHaveText('Question · Won’t answer');
+  await expect(q('rqDone')).toHaveText('· question, answered');
+  await expect(q('rqWont')).toHaveText('· question, won’t answer');
   await expect(page.locator('#inline-remark-text-rqDone-a')).toHaveText('Priya');
 
   // Yes from the reply line answers the open question.
   await page.evaluate('openThreadComposer(3, false)');
   await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="yes"]').click();
-  await expect(q('rqOpen')).toHaveText('Question · Answered');
+  await expect(q('rqOpen')).toHaveText('· question, answered');
   expect(await sumButtons(page)).toEqual(['1 follow-up']);
   // "Not the answer" on the reply reopens the question.
   const ans = page.locator('.thread-entry:has(.thread-verdict.is-yes)');
@@ -118,7 +119,7 @@ test('a question (formerly Q&A): its chip tracks the answer, Yes answers it, won
   const line = page.locator('.thread-entry:has(#inline-remark-text-rqOpen)');
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Won’t answer', { exact: true }).click();
-  await expect(q('rqOpen')).toHaveText('Question · Won’t answer');
+  await expect(q('rqOpen')).toHaveText('· question, won’t answer');
   expect(await page.evaluate("remarks.find(r => r.id === 'rqOpen').wontAnswer")).toBe(true);
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Reopen question', { exact: true }).click();
@@ -169,9 +170,9 @@ async function exportPdf(page: Page) {
 test('PDF shows each entry\'s question state and status, and no Open items summary page', async ({ page }) => {
   const errors = await open(page);
   const r = await exportPdf(page);
-  expect(r.pills).toEqual(expect.arrayContaining(['Question · Open', 'Question · Answered', 'Question · Won’t answer']));
-  // A status is quiet text on the entry that set it, not a pill (the row's marker carries it).
-  expect(r.notes).toEqual(expect.arrayContaining(['· follow-up', '· resolved']));
+  // Only an open question prints as a pill; settled questions and statuses are quiet text.
+  expect(r.pills).toEqual(['Question · Open']);
+  expect(r.notes).toEqual(expect.arrayContaining(['· follow-up', '· resolved', '· question, answered', '· question, won’t answer']));
   expect(r.pills).not.toContain('Follow-up');
   // Owner decision: the closing "Open items" summary page was removed.
   expect(r.section).toBe(false);
