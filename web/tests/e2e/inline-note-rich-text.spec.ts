@@ -1071,21 +1071,22 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       expect(openCallCount).toBe(1);
     });
 
-    test('ctrl/cmd-click is left to the browser\'s own default link handling, not intercepted', async ({ page }) => {
+    test('ctrl/cmd-click opens the link while the note is being edited', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await stubWindowOpen(page);
       await seedNodeWithNote(page, linkNote);
 
+      await page.locator('#note-line-1').focus();
       await page.locator('#note-line-1 a').click({ modifiers: ['Control'] });
 
-      // Our own window.open override is never called for a modifier-click -- that path is left
-      // alone so the browser's real ctrl/cmd-click-opens-link behavior still applies.
+      // Browsers don't follow a modifier-click inside a contenteditable either, so the note opens
+      // it itself -- exactly once, even though the note was already focused.
       const openCallCount = await page.evaluate(() =>
         // @ts-expect-error
         window._openCalls.length
       );
-      expect(openCallCount).toBe(0);
+      expect(openCallCount).toBe(1);
     });
   });
 });
