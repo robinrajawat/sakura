@@ -1464,6 +1464,12 @@ body.theme-dark .account-visibility-badge:hover{filter:brightness(1.18)}
 .pv-diagram-row-multi .pv-diagram-img{max-height:var(--pv-diagram-max-h-multi,42vh)}
 .pv-diagram-caption{font:500 12px 'Inter',sans-serif;color:var(--muted);text-align:center;margin-top:auto;padding-top:6px}
 .pv-table-figure{flex:1 1 100%}
+/* Position › Center (tableShowsCentered): the object sits in the middle of its column, outline and PDF. */
+.pv-table-figure.pos-center>table{margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center>svg.pv-table-chart-svg{display:block;margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center .pv-table-chips{justify-content:center}
+.pv-table-figure.pos-center .pv-table-inline{text-align:center;margin-left:auto;margin-right:auto}
+.pv-table-figure.pos-center .pv-timeline{width:max-content;max-width:100%;margin-left:auto;margin-right:auto}
 .pv-table-figure table{width:100%;border-collapse:collapse;font:400 14px 'Inter',sans-serif;color:var(--fg)}
 .pv-table-figure td,.pv-table-figure th{border:1px solid var(--border);padding:7px 12px;text-align:left;position:relative}
 .pv-table-figure th{background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600;font-size:.82em;letter-spacing:.03em;text-transform:uppercase}
@@ -8394,6 +8400,14 @@ function buildChartFeatureItems(table,commit){
       label:label+(curSize===key?' (current)':''), disabled:curSize===key, onClick:()=>{ setTableChartSize(table,key); commit(); }
     }))});
   } else items.push(na('Chart size','Size applies to charts.'));
+  {
+    const why=tablePositionReason(table), center=isTablePositionCenter(table);
+    if(why)items.push({...na('Position',why), sub:why});
+    else items.push({label:'Position', submenu:[
+      {label:'Left', icon:center?undefined:CHECK, onClick:()=>{ if(center){ setTablePosition(table,false); commit(); } }},
+      {label:'Center', icon:center?CHECK:undefined, onClick:()=>{ if(!center){ setTablePosition(table,true); commit(); } }}
+    ]});
+  }
   return items;
 }
 // "Edit card/chart" on a read-only figure (see the note-line's own contextmenu handler) -- makes
@@ -8581,12 +8595,12 @@ function tableStarterHtml(key){
   const t=(head,rows,attrs)=>'<table'+(attrs||'')+'><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'
     +rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
   switch(key){
-    case 'board': return t(['Item','Status','Owner','Due'],[['First item','Open','Ana',day(7)],['Second item','In progress','Robin',day(3)],['Third item','Done','Ana','']],' data-table-display="board"');
+    case 'board': return t(['Item','Status','Owner','Due'],[['First item','Open','Alex',day(7)],['Second item','In progress','Sam',day(3)],['Third item','Done','Alex','']],' data-table-display="board"');
     case 'timeline': return t(['Date','Milestone','Note'],[[day(-14),'Kick-off',''],[day(14),'Go-live','Cutover weekend'],[day(45),'Review','']],' data-table-display="timeline"');
     case 'cards': return t(['Metric','Value','Change'],[['Orders','1,240','+8%'],['Revenue','€86k','+3%'],['Returns','2.1%','-0.4%']],' data-feature-chart="1" data-chart-type="cards"');
     case 'progress': return t(['Workstream','Done'],[['Design','80%'],['Build','45%'],['Test','10%']],' data-table-display="progress"');
     case 'proscons': return t(['Pros','Cons'],[['Faster delivery','Higher cost'],['Fewer manual steps','Needs training']],' data-table-display="proscons"');
-    case 'chips': return t(['Code','Meaning'],[['ZN','Night distribution'],['ZL','Fixed time delivery']],' data-table-display="chips"');
+    case 'chips': return t(['Code','Meaning'],[['P1','Critical'],['P2','High'],['P3','Normal']],' data-table-display="chips"');
     case 'bar': return t(['Label','Value'],[['Q1','120'],['Q2','150'],['Q3','90']],' data-feature-chart="1" data-chart-type="bar"');
   }
   return '';
@@ -8791,9 +8805,11 @@ function buildNodeTableObject(node,tIdx){
     wrap.innerHTML='';
     wrap.classList.remove('pv-table-chart-figure');
     if(!table)return;
+    const centered=tableShowsCentered(table);
+    wrap.classList.toggle('pos-center',centered);
     {
       const svg=tableFeatureDisplayHtml(table);
-      if(svg){ wrap.classList.add('pv-table-chart-figure'); wrap.innerHTML=svg; return; }
+      if(svg){ wrap.classList.add('pv-table-chart-figure'); wrap.innerHTML=centered?centerChartSvg(svg):svg; return; }
     }
     const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart'); clone.removeAttribute('data-chart-type');
     applyTableAutoAlign(clone);
@@ -8811,7 +8827,7 @@ function buildNodeTableObject(node,tIdx){
     if(!liveTable)return;
     liveTable.querySelectorAll('td,th').forEach(c=>c.contentEditable='true');
     wrap.innerHTML='';
-    wrap.classList.remove('pv-table-chart-figure');
+    wrap.classList.remove('pv-table-chart-figure','pos-center');
     // An explicit flag, not "does this contain a contenteditable cell" -- cleanEditorHtml doesn't
     // strip the contenteditable attribute itself (only resize-handle <div>s), so a table that was
     // ever edited keeps that attribute baked into its stored HTML forever after, and every later
@@ -9119,6 +9135,20 @@ function setTableChartTitle(table,title){
   const t=String(title||'').replace(/\s+/g,' ').trim().slice(0,120);
   if(t)table.setAttribute('data-chart-title',t); else table.removeAttribute('data-chart-title');
 }
+// Position (owner request): a table, chart, chips, inline list or vertical timeline can sit centred
+// instead of at the left, in the outline and the PDF (data-position="center" on the table; absent =
+// left). Cards, Status board, Pros & cons, Progress bars and a horizontal timeline fill the width, so
+// Position doesn't apply to them -- the menu says so instead of hiding it.
+function isTablePositionCenter(table){ return table?.getAttribute('data-position')==='center'; }
+function tablePositionReason(table){
+  const cur=currentTableDisplay(table);
+  if(cur==='cards'||cur.startsWith('board')||cur==='proscons'||cur==='progress'||cur==='timeline:horizontal')return 'Fills the full width';
+  return '';
+}
+function tableShowsCentered(table){ return isTablePositionCenter(table)&&!tablePositionReason(table); }
+function setTablePosition(table,center){ if(center)table.setAttribute('data-position','center'); else table.removeAttribute('data-position'); showToast(center?'Centred':'Aligned left'); }
+// A centred chart's drawing sits in the middle of its box too (charts pin it left by default).
+function centerChartSvg(html){ return html.replace(/preserveAspectRatio="xMinYMin meet"/g,'preserveAspectRatio="xMidYMin meet"'); }
 function getTableChartSize(table){ const v=table?.getAttribute('data-chart-size'); return CHART_SIZES[v]?v:''; }
 function setTableChartSize(table,size){
   if(!table)return;
@@ -10607,9 +10637,11 @@ function promoteHeaderRowToThead(table){
 }
 function buildNoteTableFigure(table,nodeId,tIdx){
   const fig=document.createElement('figure'); fig.className='pv-diagram-figure pv-table-figure';
+  const centered=tableShowsCentered(table);
+  if(centered)fig.classList.add('pos-center');
   {
     const svg=tableFeatureDisplayHtml(table);
-    if(svg){ fig.classList.add('pv-table-chart-figure'); fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx); fig.innerHTML=svg; return fig; }
+    if(svg){ fig.classList.add('pv-table-chart-figure'); fig.dataset.noteChartNodeId=String(nodeId); fig.dataset.noteChartTableIdx=String(tIdx); fig.innerHTML=centered?centerChartSvg(svg):svg; return fig; }
   }
   const clone=table.cloneNode(true); clone.removeAttribute('data-feature-chart');
   promoteHeaderRowToThead(clone);
