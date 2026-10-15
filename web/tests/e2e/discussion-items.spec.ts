@@ -401,3 +401,71 @@ test('Backspace on an empty reply line closes it; with text it just deletes', as
   await page.keyboard.press('Backspace');
   await expect(box).toHaveCount(0);
 });
+
+test('open-items list: Out of scope is folded at the bottom, not an open group', async ({ page }) => {
+  await seed(page);
+  await page.evaluate("nodes[1].marker = 'followup'; nodes[2].marker = 'parked'; render()");
+  await page.locator('#marker-summary .open-items-btn').click();
+  const menu = page.locator('.open-items-menu');
+  expect(await menu.locator('.sb-context-heading').allTextContents()).toEqual(['Follow-ups · 1']);
+  const fold = menu.locator('.sb-context-fold', { hasText: 'Out of scope · 1' });
+  await expect(menu).not.toContainText('Data load');
+  await fold.click();
+  await expect(menu.locator('.sb-context-fold-body')).toContainText('Data load');
+});
+
+test('Backspace on an emptied entry puts the caret at the end of the row text', async ({ page }) => {
+  await seed(page, `remarks.push({ id: 'x1', anchorNodeId: 2, person: 'Ana', date: '2026-10-14', text: 'x', createdAt: 4 });`);
+  const t = page.locator('#inline-remark-text-x1');
+  await t.click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Backspace');
+  await expect(t).toHaveCount(0);
+  expect(await page.evaluate('editingId')).toBe(2);
+  await expect(page.locator('.thread-composer-input[data-node-id="2"]')).toHaveCount(0);
+});
+
+test('the input line has a right-click menu: make it a question, close', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  const box = page.locator('.thread-composer-input[data-node-id="2"]');
+  await box.click();
+  await page.keyboard.type('Is the window fixed?');
+  await box.click({ button: 'right' });
+  const menu = page.locator('.sb-context-menu');
+  await expect(menu.locator('.sb-context-item').first()).toHaveText('Add to thread');
+  await menu.getByText('Make it a question', { exact: true }).click();
+  expect(await page.evaluate('_threadAskNodeIds.has(2)')).toBe(true);
+  await expect(box).toHaveText('Is the window fixed?');
+  await box.click({ button: 'right' });
+  await menu.getByText('Close', { exact: true }).click();
+  await expect(box).toHaveCount(0);
+});
+
+test('a name can be removed from the "Add as" list; writing as it brings it back', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-author-btn').click();
+  const menu = page.locator('.sb-context-menu');
+  await menu.getByText('Remove from this list', { exact: true }).hover();
+  await page.locator('.sb-context-submenu, .sb-context-menu').last().getByText('Ana', { exact: true }).click();
+  expect(await page.evaluate('threadRecentAuthors()')).not.toContain('Ana');
+  // Her entries stay as they are.
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .node-remark-person-inline')).toHaveText('Ana');
+});
+
+test('an entry\'s time can be corrected from its date popover, and the thread re-orders', async ({ page }) => {
+  await seed(page, `remarks.push({ id: 't2', anchorNodeId: 2, person: 'Ana', date: '2026-10-14', text: 'Later note', createdAt: new Date(2026, 9, 14, 15, 0).getTime() });
+    remarks[0].createdAt = new Date(2026, 9, 14, 10, 0).getTime(); remarks[0].date = '2026-10-14';`);
+  await page.locator('.thread-entry:has(#inline-remark-text-t2) .thread-time').click();
+  const time = page.locator('#remarks-date-pop-time');
+  await expect(time).toHaveValue('15:00');
+  await time.fill('09:30');
+  await time.dispatchEvent('change');
+  const h = await page.evaluate("(() => { const d = new Date(remarks.find(r => r.id === 't2').createdAt); return [d.getHours(), d.getMinutes()]; })()");
+  expect(h).toEqual([9, 30]);
+  // 09:30 now comes before the 10:00 entry.
+  const order = await page.evaluate("nodeThread(2).map(r => r.id)") as string[];
+  expect(order.indexOf('t2')).toBeLessThan(order.indexOf('c1'));
+});

@@ -2972,6 +2972,8 @@ body.printing-generic #gpe-overlay{
 .todo-subtask-charcount.max{color:var(--sem-alert,#b85450);font-weight:600}
 #todo-due-popover,#remarks-date-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
 #todo-due-popover.open,#remarks-date-popover.open{display:block}
+.remarks-date-pop-time{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 8px;font:500 12px 'Inter',sans-serif;color:var(--muted)}
+.remarks-date-pop-time input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 6px}
 .due-pop-cal-day{position:relative}
 .due-pop-presets{display:flex;gap:4px;margin-bottom:9px}
 .due-pop-preset-btn{flex:1;appearance:none;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:500 10.5px 'Inter',sans-serif;padding:5px 2px;border-radius:6px;cursor:pointer;text-align:center;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
@@ -4014,8 +4016,8 @@ body.printing-generic #gpe-overlay{
 <h4>Thread (comments and questions)</h4>
 <ul>
 <li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry shows its <strong>author</strong> (a colored initials avatar plus the name; each person in a document gets their own color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
-<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
-<li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
+<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Right-click the line to add it, make it a question, Rewrite with AI (when AI is on) or close it. While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
+<li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
@@ -4426,7 +4428,8 @@ body.printing-generic #gpe-overlay{
     </div>
   </div>
 <div id="ref-jump-popover" role="dialog" aria-label="Linked to-dos"><div id="ref-jump-popover-title"></div><div id="ref-jump-popover-list"></div></div>
-<div id="remarks-date-popover" role="dialog" aria-label="Set date">
+<div id="remarks-date-popover" role="dialog" aria-label="Set date and time">
+  <label class="remarks-date-pop-time">Time <input type="time" id="remarks-date-pop-time"></label>
   <div class="due-pop-presets">
     <button type="button" class="due-pop-preset-btn" data-remarks-preset="0">Today</button>
     <button type="button" class="due-pop-preset-btn" data-remarks-preset="-1">Yesterday</button>
@@ -29499,15 +29502,21 @@ function threadStatusChipHtml(st){ const m=markerForThreadStatus(st)||'confirmed
 // Who the reply box writes as: the author picked in it, else whoever wrote last in this document.
 function threadDefaultAuthor(){
   if(_threadAuthor!=null)return _threadAuthor;
-  let best=null; (remarks||[]).forEach(r=>{ if(r&&(r.person||'').trim()&&(!best||(r.createdAt||0)>=(best.createdAt||0)))best=r; });
+  const hidden=new Set(threadHiddenAuthors());
+  let best=null; (remarks||[]).forEach(r=>{ if(r&&(r.person||'').trim()&&!hidden.has(r.person.trim())&&(!best||(r.createdAt||0)>=(best.createdAt||0)))best=r; });
   return best?best.person.trim():((el('doc-author')?.value||'').trim());
 }
 // Names used in this document, most recent first, plus the document's author.
+// Names taken off the "Add as" list for this document (this browser only); writing as one brings it back.
+function threadHiddenAuthorsKey(){ return 'sakura_thread_hidden_authors_'+(currentDocId||''); }
+function threadHiddenAuthors(){ try{ const v=JSON.parse(localStorage.getItem(threadHiddenAuthorsKey())||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+function setThreadAuthorHidden(name,hidden){ try{ const set=new Set(threadHiddenAuthors()); if(hidden)set.add(name); else set.delete(name); localStorage.setItem(threadHiddenAuthorsKey(),JSON.stringify([...set])); }catch(e){} }
 function threadRecentAuthors(){
+  const hidden=new Set(threadHiddenAuthors());
   const seen=new Map();
   (remarks||[]).forEach(r=>{ const n=(r&&r.person||'').trim(); if(n)seen.set(n,Math.max(seen.get(n)||0,r.createdAt||0)); });
   const docAuthor=(el('doc-author')?.value||'').trim(); if(docAuthor&&!seen.has(docAuthor))seen.set(docAuthor,-1);
-  return [...seen.entries()].sort((a,b)=>b[1]-a[1]).map(([n])=>n);
+  return [...seen.entries()].filter(([n])=>!hidden.has(n)).sort((a,b)=>b[1]-a[1]).map(([n])=>n);
 }
 // "10:02" today, "Yesterday · 10:02", "13 Oct · 10:02" -- the date part follows the editable date.
 // The day shows once per day, like the PDF: an entry on the same day as the one shown above it shows only its time.
@@ -29599,7 +29608,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   person.addEventListener('focus',()=>{ pushUndo(); });
   person.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); } });
   person.addEventListener('blur',e=>{ const val=(person.textContent||'').trim(); person.textContent=val; const changed=val!==(r.person||''); r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); const c2=remarkAuthorColor(val); avatar.style.background=c2.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
-  const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date';
+  const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date or time';
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
   meta.appendChild(avatar); meta.appendChild(person); meta.appendChild(time);
@@ -29645,8 +29654,9 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     if((textEl.textContent||'').trim()||r.verdict||r.status)return;
     e.preventDefault();
     const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1);
-    _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
-    commit();
+    // The caret goes back to the end of the row's text (owner: like deleting back into the row).
+    if(_threadComposerNodeId===node.id&&!_threadDrafts.has(node.id))_threadComposerNodeId=null;
+    commit(); beginEdit(node.id,true);
   });
   line.appendChild(textEl);
   line.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadEntryMenuItems(node,r,thread,textEl,commit)); });
@@ -29714,7 +29724,7 @@ function renderThreadComposer(node,thread,place,commit){
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
   const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;
   const openQ=questionToAnswer(thread);
-  input.dataset.placeholder=ask?'Ask a question…':(openQ?'Reply, or answer Yes / No…':'Reply…');
+  input.dataset.placeholder=ask?'Ask a question…':(openQ?'Add to thread, or answer Yes / No…':'Add to thread…');
   const submit=extra=>{
     const html=sakuraSanitizeRichHtml(input.innerHTML);
     const hasText=htmlHasVisibleText(html);
@@ -29744,12 +29754,14 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('input',()=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); else _threadDrafts.delete(node.id); });
   input.addEventListener('mousedown',e=>e.stopPropagation());
   input.addEventListener('click',e=>e.stopPropagation());
+  // Right-click while adding: add it, ask it, rewrite it with AI, or close the line.
+  input.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadComposerMenuItems(node,input,ask,submit)); });
   input.addEventListener('keydown',e=>{
     if(handleGenericQaKeydown(e,input))return;
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
-    // Backspace on an empty reply line closes it, like an emptied entry (a held-down Backspace
-    // that just erased the text doesn't).
-    else if(e.key==='Backspace'&&!e.repeat&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(input.textContent||'').trim()&&!input.querySelector('img')){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }
+    // Backspace on an empty input line closes it and puts the caret at the end of the row's text,
+    // like an emptied entry (a held-down Backspace that just erased the text doesn't).
+    else if(e.key==='Backspace'&&!e.repeat&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(input.textContent||'').trim()&&!input.querySelector('img')){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); beginEdit(node.id,true); }
     else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }
   });
   const btn=(act,label,tip,on)=>{ const b=document.createElement('button'); b.type='button'; b.className='thread-btn'+(on?' is-on':''); b.dataset.act=act; b.innerHTML=label; b.dataset.tip=tip; b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); }); return b; };
@@ -29795,6 +29807,19 @@ function renderThreadComposer(node,thread,place,commit){
     render(); },120); });
   place(line);
 }
+// The input line's right-click menu.
+function threadComposerMenuItems(node,input,ask,submit){
+  const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
+  const hasText=htmlHasVisibleText(input.innerHTML);
+  const refocus=()=>{ _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; };
+  const items=[];
+  if(hasText)items.push({label:ask?'Add question':'Add to thread', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>submit()});
+  items.push({label:ask?'Make it a comment':'Make it a question', icon:ask?markIconSvg('comment'):qaDotIconSvg(14), onClick:()=>{ if(hasText)_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); refocus(); render(); }});
+  if(featureAiEnabled&&hasText)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); refocus(); render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
+  items.push({divider:true});
+  items.push({label:'Close', icon:ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'), onClick:()=>{ _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }});
+  return items;
+}
 // Who owns a follow-up: names used in this document, someone else, or no one.
 function threadOwnerMenuItems(r,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -29809,16 +29834,19 @@ function threadOwnerMenuItems(r,commit){
 function threadAuthorMenuItems(node,anchor){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const cur=threadDefaultAuthor();
-  const pick=name=>()=>{ _threadAuthor=name; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
+  const pick=name=>()=>{ setThreadAuthorHidden(name,false); _threadAuthor=name; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
   const items=[{heading:'Add as'}];
   threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===cur?CHECK:'', onClick:pick(n)}));
   if(items.length>1)items.push({divider:true});
+  // Take a name off this list (e.g. a typo or someone no longer involved); their entries stay as they are.
+  const names=threadRecentAuthors();
+  if(names.length)items.push({label:'Remove from this list', icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><line x1="16" y1="11" x2="22" y2="11"/></svg>', submenu:names.slice(0,8).map(n=>({label:n, onClick:()=>{ setThreadAuthorHidden(n,true); if(_threadAuthor===n)_threadAuthor=null; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }}))});
   items.push({label:'Someone else…', onClick:()=>{
     const ed=document.createElement('span'); ed.className='thread-author-edit'; ed.contentEditable='true'; ed.dataset.placeholder='Name';
     anchor.replaceWith(ed); ed.focus();
     ed.addEventListener('mousedown',e=>e.stopPropagation());
     ed.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ed.blur(); } else if(e.key==='Escape'){ e.preventDefault(); ed.textContent=''; ed.blur(); } });
-    ed.addEventListener('blur',()=>{ const v=(ed.textContent||'').trim(); if(v)_threadAuthor=v; _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
+    ed.addEventListener('blur',()=>{ const v=(ed.textContent||'').trim(); if(v){ _threadAuthor=v; setThreadAuthorHidden(v,false); } _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
   }});
   return items;
 }
@@ -29892,6 +29920,9 @@ function openRemarksDateEditor(btn,r){
   if(left<8)left=8;
   pop.style.left=left+'px';
   pop.style.top=(rect.bottom+4)+'px';
+  // The time is part of the entry too (createdAt): it orders the thread and shows next to the date.
+  const timeInput=el('remarks-date-pop-time');
+  if(timeInput){ const t=r.createdAt?new Date(r.createdAt):null; timeInput.value=t?String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'):''; }
   renderRemarksDatePopover();
   pop.classList.add('open');
   const pr=pop.getBoundingClientRect();
@@ -29904,13 +29935,28 @@ function closeRemarksDateEditor(){
   const pop=el('remarks-date-popover'); if(pop)pop.classList.remove('open');
   _remarksDateTarget=null;
 }
+// An entry's date and time together: createdAt moves with them, so a corrected entry also takes its
+// place in the thread's order.
+function setRemarkDateTime(r,iso,hhmm){
+  const d=remarksParseISODate(iso)||new Date();
+  const prev=r.createdAt?new Date(r.createdAt):null;
+  const m=/^(\d{1,2}):(\d{2})$/.exec(hhmm||'');
+  const h=m?+m[1]:(prev?prev.getHours():0), mi=m?+m[2]:(prev?prev.getMinutes():0);
+  const next=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,mi,prev&&!m?prev.getSeconds():0).getTime();
+  const changed=iso!==(r.date||'')||next!==r.createdAt;
+  if(!changed)return false;
+  pushUndo(); r.date=iso; r.createdAt=next; markDirty(); scheduleAutoSave();
+  return true;
+}
 function commitRemarksDate(val){
   const r=_remarksDateTarget; if(!r)return;
   const clean=/^\d{4}-\d{2}-\d{2}$/.test(val||'')?val:todayDateStr();
-  if(clean!==(r.date||'')){ r.date=clean; markDirty(); scheduleAutoSave(); }
+  setRemarkDateTime(r,clean,el('remarks-date-pop-time')?.value||'');
   closeRemarksDateEditor();
   render();
 }
+el('remarks-date-pop-time')?.addEventListener('change',e=>{ const r=_remarksDateTarget; if(!r)return; if(setRemarkDateTime(r,r.date||todayDateStr(),e.target.value))render(); });
+el('remarks-date-pop-time')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); closeRemarksDateEditor(); render(); } else if(e.key==='Escape'){ e.preventDefault(); closeRemarksDateEditor(); } });
 function renderRemarksDatePopover(){
   const r=_remarksDateTarget; if(!r||!_remarksDateViewMonth)return;
   const today=new Date(); today.setHours(0,0,0,0);
@@ -30323,7 +30369,7 @@ function applyOpenItemsFilter(kind){
   activeMarkerFilter=null;
   setDiscussionFilter(same?null:kind);
 }
-// The list behind the summary: open items grouped by kind (Out of scope last), each jumping to its row or
+// The list behind the summary: open items grouped by kind (Out of scope folded at the bottom), each jumping to its row or
 // inline item. Filtering is one switch at the top (everything open) plus a small filter icon on each
 // group heading (just that kind) — no repeated "Show only these" rows.
 function openItemsMenuItems(){
@@ -30357,7 +30403,6 @@ function openItemsMenuItems(){
   addGroup('followup','Follow-ups',markerRows('followup'),'followup');
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),'openQa');
-  addGroup('parked','Out of scope',markerRows('parked'),'parked');
   // What counts toward "N of M settled", folded by default so it doesn't lengthen the list: Agreed
   // rows, answered or won't-answer questions. Each jumps like above.
   const settled=[];
@@ -30365,6 +30410,12 @@ function openItemsMenuItems(){
   settledGroup('Agreed','confirmed',markerRows('confirmed'));
   const doneQs=allSettledQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   settledGroup('Answered or closed questions','question',doneQs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})));
+  // Out of scope is set aside, not open: folded at the bottom like Settled (owner decision 2026-10-15).
+  const parked=markerRows('parked');
+  if(parked.length){
+    if(items.length)items.push({divider:true});
+    items.push({label:'Out of scope \u00B7 '+parked.length, icon:icon('parked'), fold:parked.map(en=>({label:en.label, icon:icon('parked'), onClick:en.go}))});
+  }
   if(settled.length){
     const n=settled.filter(x=>!x.heading).length;
     if(items.length)items.push({divider:true});
