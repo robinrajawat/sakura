@@ -1842,9 +1842,11 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-composer-input:empty::before{content:attr(data-placeholder);color:var(--hint)}
 .thread-composer-input.remark-text-input,.thread-composer-input.remark-text-input:hover,.thread-composer-input.remark-text-input:focus{width:auto;padding:0;border:0;border-radius:0;background:transparent;color:var(--fg);font:inherit}
 .thread-composer-input.remark-text-input:empty::before{font-style:normal}
-.thread-composer-foot{display:flex;align-items:center;gap:10px;margin:2px 0 0 22px;font-size:11.5px;color:var(--hint)}
-.thread-composer-hint{flex:1;min-width:0}
-.thread-actions{flex:0 0 auto;display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px}
+/* Actions start right under the text, and the keyboard hint right under them, all in one left column (owner: not across the page). */
+.thread-composer-foot{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:2px 0 0 22px;font-size:11.5px;color:var(--hint)}
+.thread-composer-foot .thread-actions{margin-left:-6px}
+.thread-composer-hint{flex:1 0 100%;min-width:0}
+.thread-actions{flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px}
 .thread-btn-kind{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-right:5px;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 .thread-btn-kind svg{stroke-width:2.6}
 .thread-btn-group{display:inline-flex;align-items:center;gap:1px;padding:1px;border:1px solid var(--border);border-radius:7px}
@@ -1867,12 +1869,12 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-verdict{font-size:12px;color:var(--muted)}
 .thread-status-note,.thread-q-note{font-size:12px;color:var(--muted)}
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
-.thread-kind{flex:0 0 auto;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
+.thread-kind{flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
 .thread-kind svg{width:11px;height:11px;stroke-width:2.6}
 .thread-entry .node-remark-person-inline,.thread-composer .thread-author-btn{color:var(--pc,var(--fg))}
 body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread-composer .thread-author-btn{color:color-mix(in srgb,var(--pc,var(--fg)) 55%,#fff)}
-.pv-remark-kind{grid-row:1 / span 2;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;margin-top:0;border-radius:50%;background:color-mix(in srgb,currentColor 15%,#fff);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-remark-kind{grid-row:1 / span 2;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:0;border-radius:50%;background:color-mix(in srgb,currentColor 15%,#fff);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-remark-kind svg{width:11px;height:11px;stroke-width:2.6}
 
 .thread-quote{margin:1px 0 1px 22px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2370,7 +2372,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    upright text, no box or dividers. */
 .pv-inline-remark-body.pv-thread-body{margin-left:0;padding:0;background:transparent;border:0;border-radius:0}
 .pv-thread-body .pv-remark-entry{position:relative}
-.pv-thread-body .pv-remark-entry:not(:last-child)::after{content:'';position:absolute;left:7.5px;top:20px;bottom:-6px;width:1px;background:var(--border)}
+.pv-thread-body .pv-remark-entry:not(:last-child)::after{content:'';position:absolute;left:7px;top:20px;bottom:-6px;width:1px;background:var(--border)}
 .pv-thread-body .pv-remark-entry{display:grid;grid-template-columns:15px 1fr;column-gap:8px;align-items:start;margin:0;padding:3px 0;border:0}
 .pv-thread-body .pv-remark-entry+.pv-remark-entry{margin-top:3px;padding-top:3px;border:0}
 .pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
@@ -29730,7 +29732,7 @@ function remarkAuthorColor(name){
 // uses dots for rows.
 function threadKindIcon(r,thread){
   if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--fc-green)',tip:'Decision'};
-  if(r.status){ const m=markerForThreadStatus(r.status); return {kind:'status',svg:markIconSvg(m,14),color:'var(--fc-'+(nodeMarkerColor(m)||'gray')+')',tip:THREAD_STATUS_LABEL[r.status]}; }
+  if(r.status){ const m=markerForThreadStatus(r.status); return {kind:'status',marker:m,svg:markIconSvg(m,14),color:'var(--fc-'+(nodeMarkerColor(m)||'gray')+')',tip:THREAD_STATUS_LABEL[r.status]}; }
   // An answer: ✓ / ✗ for a Yes / No, otherwise a reply arrow (its own kind, not a ✓ it didn't say).
   if(r.answerTo){
     if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--fc-green)',tip:'Answer'};
@@ -29739,9 +29741,19 @@ function threadKindIcon(r,thread){
   if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — answer it with Yes / No, or add an entry and mark it as the answer':'Question'}; }
   return {kind:'comment',svg:markIconSvg('comment',13),color:'var(--hint)',tip:'Comment'};
 }
+// Optical centring inside the tinted circle (measured): a bare "?" (the ringed one doubled the circle), and
+// small nudges, in the icon's own 24-unit space, for shapes whose weight sits off their box (flag, bubble, arrow).
+const THREAD_KIND_QUESTION_SVG='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="3.1"><path d="M7.8 8.2a4.3 4.3 0 0 1 8.4 1.3c0 2.8-4.2 3.4-4.2 6.1"/><line x1="12" y1="20.2" x2="12.01" y2="20.2"/></g></svg>';
+const THREAD_KIND_NUDGE={comment:'0.6 0.8',status_followup:'1 1.2',answer:'0 -0.8',decision:'0 0.6'};
+function threadKindCircleSvg(k){
+  let svg=k.kind==='question'?THREAD_KIND_QUESTION_SVG:k.svg;
+  const nudge=THREAD_KIND_NUDGE[k.kind==='status'?'status_'+k.marker:k.kind];
+  if(nudge)svg=svg.replace(/(<svg[^>]*>)([\s\S]*)(<\/svg>)/,'$1<g transform="translate('+nudge+')">$2</g>$3');
+  return svg;
+}
 function threadKindEl(r,thread,cls){
   const k=threadKindIcon(r,thread);
-  const el=document.createElement('span'); el.className=cls+' is-'+k.kind; el.style.color=k.color; el.innerHTML=k.svg; el.dataset.tip=k.tip;
+  const el=document.createElement('span'); el.className=cls+' is-'+k.kind; el.style.color=k.color; el.innerHTML=threadKindCircleSvg(k); el.dataset.tip=k.tip;
   return el;
 }
 function formatRemarkDateDisplay(dateStr){
@@ -29819,7 +29831,7 @@ function renderNodeThread(node,placeLine){
   const thread=nodeThread(node.id);
   const commit=()=>{ syncRowMarkerFromThread(node.id); markDirty(); scheduleAutoSave(); render(); };
   // Every line of the thread sits right of one thin rule, like the PDF's transcript.
-  const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+7.5)+'px'); };
+  const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+7)+'px'); };
   // Hovering any line of the thread shows its "+ Add to thread" line (the lines are separate siblings).
   const lines=[];
   const hover=on=>lines.forEach(l=>l.classList.toggle('thread-hover',on));
@@ -30158,7 +30170,7 @@ function renderThreadComposer(node,thread,place,commit){
   meta.appendChild(avatar); meta.appendChild(who); meta.appendChild(now);
   const foot=document.createElement('div'); foot.className='thread-composer-foot';
   const hint=document.createElement('span'); hint.className='thread-composer-hint'; hint.textContent='Enter to add · Shift+Enter new line · Esc to close';
-  foot.appendChild(hint); foot.appendChild(actions);
+  foot.appendChild(actions); foot.appendChild(hint);
   line.appendChild(meta); line.appendChild(input); line.appendChild(foot);
   // Leaving an empty reply line closes it again.
   input.addEventListener('blur',()=>{ setTimeout(()=>{ if(_threadComposerNodeId!==node.id||_threadDrafts.has(node.id)||line.contains(document.activeElement)||!document.body.contains(line))return; if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.sb-context-menu,.thread-author-edit'))return; _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id);

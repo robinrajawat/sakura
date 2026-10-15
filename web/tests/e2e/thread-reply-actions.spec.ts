@@ -40,6 +40,18 @@ test('reply line: Ask | Yes / No | statuses, each with its kind icon', async ({ 
       : (c as HTMLElement).dataset.act));
   expect(shape).toEqual(['ask', '|', 'yes,no', '|', 'followup,parked']);
   await expect(acts.locator('.thread-btn .thread-btn-kind svg')).toHaveCount(5);
+  // Actions start right under the text, and the keyboard hint right under them (one left column).
+  const order = await page.locator('.thread-composer .thread-composer-foot').evaluate((f) => [...f.children].map((c) => c.className));
+  expect(order).toEqual(['thread-actions', 'thread-composer-hint']);
+  const x = await page.evaluate(() => {
+    const inp = document.querySelector('.thread-composer .thread-composer-input')!.getBoundingClientRect();
+    const act = document.querySelector('.thread-composer .thread-actions')!.getBoundingClientRect();
+    const hint = document.querySelector('.thread-composer .thread-composer-hint')!.getBoundingClientRect();
+    return [Math.abs(act.left + 6 - inp.left), Math.abs(hint.left - inp.left), hint.top >= act.bottom - 1];
+  });
+  expect(x[0]).toBeLessThan(4);
+  expect(x[1]).toBeLessThan(4);
+  expect(x[2]).toBe(true);
   expect(errors).toEqual([]);
 });
 
