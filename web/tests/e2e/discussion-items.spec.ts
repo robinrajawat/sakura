@@ -192,6 +192,7 @@ test('PDF prints the whole thread with author, time and chips', async ({ page })
       verdicts: [...doc.querySelectorAll('.pv-remark-block .pv-thread-verdict')].map(e => e.textContent),
       texts: [...doc.querySelectorAll('.pv-remark-block .pv-remark-text')].map(e => (e.textContent || '').trim()),
       pills: [...doc.querySelectorAll('.pv-remark-block .pv-remark-entry .pv-status-pill')].map(e => e.textContent),
+      decisionIcon: !!doc.querySelector('.pv-remark-block .pv-status-pill[data-state="decision"] svg'),
       qaSection: (document.getElementById('pv-qa-section')?.textContent || '')
     };
   });
@@ -201,6 +202,7 @@ test('PDF prints the whole thread with author, time and chips', async ({ page })
   expect(r.verdicts).toEqual(['✓ Yes']);
   expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
   expect(r.pills).toEqual(['Decision']);
+  expect(r.decisionIcon).toBe(true);
   expect(r.qaSection).toContain('Unlinked question');
   expect(r.qaSection).not.toContain('EU customers');
   expect(errors).toEqual([]);
