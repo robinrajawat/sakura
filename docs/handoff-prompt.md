@@ -197,6 +197,17 @@ fold is "· show N earlier" in the header, "+ Reply" always shows on touch scree
 the date once per day, and the entry menu's Rewrite with AI has a left sparkle icon (the trailing ✦
 misaligned it). The reply line offers Out of scope too; an answer's quote is cut to ~42 characters. A follow-up can name an owner (`owner` on the status entry, entry menu "Assign follow-up…", `threadOwnerMenuItems`): "· follow-up for Ana" in thread and PDF, "Row · Ana" in the open-items list, where same-named rows add "(in Parent)". Open items: a follow-up shows its thread's latest line (`sub` on `showSbContextMenu` items, `.sb-context-sub`), and a folded **Decisions · N** row lists decision entries (not counted in progress; Robin keeps the name "Open items"). "Reply" is renamed **Add to thread** (hover line, entry menu; "Reply as" → "Add as"): Robin mostly logs what others said in his own document, so it isn't a reply. After merge (#539), Out of scope moved from an open group to a folded **Out of scope · N** row at the bottom of Open items (Robin: it isn't open). The note's icon is a sheet of paper (lucide sticky-note path) instead of a single speech bubble, so it no longer looks like the thread's two bubbles (Robin, 2026-10-15). An entry's time is correctable: the date popover has a Time field (`setRemarkDateTime` moves `createdAt` with date and time, so the thread re-orders). The input line has a right-click menu (`threadComposerMenuItems`: Add, question toggle, Rewrite with AI, Close); "Add as" can remove a name (per document, this browser: `sakura_thread_hidden_authors_<docId>` in localStorage); Backspace that removes an entry or closes the empty line returns the caret to the end of the row's text (`beginEdit`). Backspace on an empty reply line closes it (not on key repeat). Quick Insert (Ctrl/Cmd+Space) now works in thread entries, the reply line and the inline note (`handleGenericQaKeydown`; it was missing). Robin asked about newest-first; kept oldest first (a conversation reads in order).
 
+**2026-10-15: Table › starters (PR 2 of the "empower the table displays" plan).** The `table` action
+(right-click quick row, More › Insert, toolbar Insert ▾ — all go through `runQuickAction('table')`)
+now opens `openTableStartMenu`: **Blank table…** (the old grid picker, opens into editing) and
+**Start from** `TABLE_STARTERS` — Status board, Timeline, Cards, Progress bars, Pros & cons, Codes
+(chips), Bar chart — each with its columns as the menu line's sub text. `tableStarterHtml(key)`
+builds sample rows (dates relative to today) with the display attribute already set;
+`insertNodeTableHtml(nodeId,html,edit)` is the shared insert (blank → edit, starter → shows its
+display, toast says double-click to edit). It opens as its own menu at the row (the right-click menu
+supports one submenu level and the quick-row icon can't host a hover submenu). Covered by
+`tests/e2e/table-starters.spec.ts`.
+
 **2026-10-15: thread entries show a kind icon instead of an avatar (Robin).** Owner-approved mockup:
 the column left of each entry says what it is (`threadKindIcon` / `threadKindEl`): decision =
 handshake (green), status = its marker icon in the marker colour, answer = ✓ / ✗ (a reply arrow for one without Yes/No; the line then says "· yes" / "· no" / "· answer" in muted text, so the check isn't shown twice — Robin asked), question = the

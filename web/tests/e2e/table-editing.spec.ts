@@ -363,6 +363,8 @@ test('ArrowUp/ArrowDown move between cells on a cell\'s first/last line and stay
 async function openAddTable(page: Page) {
   await page.locator('.node-row[data-id="6"]').click({ button: 'right' });
   await page.locator('#context-quickbar [data-action="table"], #context-more-panel [data-action="table"]').first().click();
+  // The Table › menu: Blank table… is the size picker (starters are covered in table-starters.spec.ts).
+  await page.locator('.sb-context-menu .sb-context-item').filter({ hasText: 'Blank table' }).click();
   const picker = page.locator('.table-grid-picker');
   await expect(picker).toBeVisible();
   return picker;

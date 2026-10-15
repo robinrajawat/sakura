@@ -8554,15 +8554,55 @@ function openTableGridPicker(pos,onPick){
 }
 // Adds a rows × cols table (first row = header, "Column 1…N") to a node and opens it for editing.
 function insertNodeTable(nodeId,rows,cols){
-  const idx=getIndex(nodes,nodeId); if(idx<0)return;
   const sz=clampGridSize(rows,cols,TABLE_PICKER_MAX);
-  pushUndo();
   const w=sz.cols>5?96:120;
   let html='<table><colgroup>'+'<col style="width:'+w+'px">'.repeat(sz.cols)+'</colgroup><thead><tr>';
   for(let c=1;c<=sz.cols;c++)html+='<th>Column '+c+'</th>';
   html+='</tr></thead><tbody>';
   for(let r=1;r<sz.rows;r++)html+='<tr>'+'<td></td>'.repeat(sz.cols)+'</tr>';
   html+='</tbody></table>';
+  insertNodeTableHtml(nodeId,html,true);
+}
+// Table › Start from (owner request): starters that show as their display right away, with sample
+// rows to type over (double-click or Edit data). Each says which columns it makes, so people can
+// see the shape a display needs. Dates are relative to today, so a timeline/board looks current.
+const TABLE_STARTERS=[
+  {key:'board',label:'Status board',cols:'Item · Status · Owner · Due'},
+  {key:'timeline',label:'Timeline',cols:'Date · Milestone · Note'},
+  {key:'cards',label:'Cards',cols:'Metric · Value · Change'},
+  {key:'progress',label:'Progress bars',cols:'Workstream · Done %'},
+  {key:'proscons',label:'Pros & cons',cols:'Pros · Cons'},
+  {key:'chips',label:'Codes (chips)',cols:'Code · Meaning'},
+  {key:'bar',label:'Bar chart',cols:'Label · Value'}
+];
+function tableStarterHtml(key){
+  const day=n=>{ const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+  const t=(head,rows,attrs)=>'<table'+(attrs||'')+'><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'
+    +rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  switch(key){
+    case 'board': return t(['Item','Status','Owner','Due'],[['First item','Open','Ana',day(7)],['Second item','In progress','Robin',day(3)],['Third item','Done','Ana','']],' data-table-display="board"');
+    case 'timeline': return t(['Date','Milestone','Note'],[[day(-14),'Kick-off',''],[day(14),'Go-live','Cutover weekend'],[day(45),'Review','']],' data-table-display="timeline"');
+    case 'cards': return t(['Metric','Value','Change'],[['Orders','1,240','+8%'],['Revenue','€86k','+3%'],['Returns','2.1%','-0.4%']],' data-feature-chart="1" data-chart-type="cards"');
+    case 'progress': return t(['Workstream','Done'],[['Design','80%'],['Build','45%'],['Test','10%']],' data-table-display="progress"');
+    case 'proscons': return t(['Pros','Cons'],[['Faster delivery','Higher cost'],['Fewer manual steps','Needs training']],' data-table-display="proscons"');
+    case 'chips': return t(['Code','Meaning'],[['ZN','Night distribution'],['ZL','Fixed time delivery']],' data-table-display="chips"');
+    case 'bar': return t(['Label','Value'],[['Q1','120'],['Q2','150'],['Q3','90']],' data-feature-chart="1" data-chart-type="bar"');
+  }
+  return '';
+}
+// The Table › menu wherever "Add table" is offered: Blank table… (the size grid), then the starters.
+function openTableStartMenu(nodeId,pos){
+  const ico='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>';
+  showSbContextMenu(pos.x,pos.y,[
+    {label:'Blank table\u2026', icon:ico, sub:'Pick a size', onClick:()=>openTableGridPicker(pos,(rows,cols)=>insertNodeTable(nodeId,rows,cols))},
+    {heading:'Start from'},
+    ...TABLE_STARTERS.map(st=>({label:st.label, sub:st.cols, onClick:()=>{ insertNodeTableHtml(nodeId,tableStarterHtml(st.key),false); showToast(st.label+' added \u2014 double-click it to edit the data'); }}))
+  ]);
+}
+// Adds a table's HTML to a node; a blank one opens straight into editing, a starter shows as its display.
+function insertNodeTableHtml(nodeId,html,edit){
+  const idx=getIndex(nodes,nodeId); if(idx<0)return;
+  pushUndo();
   if(!Array.isArray(nodes[idx].tables))nodes[idx].tables=[];
   nodes[idx].tables.push(html);
   const tIdx=nodes[idx].tables.length-1;
@@ -8576,7 +8616,9 @@ function insertNodeTable(nodeId,rows,cols){
   setTimeout(()=>{
     const wraps=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)];
     const wrap=wraps[tIdx]||wraps[wraps.length-1];
-    if(wrap&&wrap._sakuraEnterEdit){ wrap.scrollIntoView({block:'nearest'}); wrap._sakuraEnterEdit(0,{selectText:true}); }
+    if(!wrap)return;
+    wrap.scrollIntoView({block:'nearest'});
+    if(edit&&wrap._sakuraEnterEdit)wrap._sakuraEnterEdit(0,{selectText:true});
   },0);
 }
 // Copies a node.tables object's real table to the clipboard -- same shape/approach as
@@ -23610,8 +23652,8 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     generateDiagramFromOutline();
     return;
   }
-  // "Add table…" opens a small rows × columns grid picker under the node's row; the new table
-  // gets a header row and opens straight into editing with its first header cell selected.
+  // "Add table…" opens the Table › menu under the node's row: Blank table… (a rows × columns grid
+  // picker; the new table opens straight into editing) or a starter shaped for a display.
   if(action==='table'){
     if(_ctxNodeId===null)return;
     const nodeId=_ctxNodeId;
@@ -23620,7 +23662,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
     const rr=rowEl?rowEl.getBoundingClientRect():null;
     const textEl=rowEl?rowEl.querySelector('.node-text,.node-input'):null;
     const tr=textEl?textEl.getBoundingClientRect():rr;
-    openTableGridPicker(tr?{x:tr.left,y:(rr||tr).bottom+4}:{x:window.innerWidth/2-90,y:120},(rows,cols)=>insertNodeTable(nodeId,rows,cols));
+    openTableStartMenu(nodeId,tr?{x:tr.left,y:(rr||tr).bottom+4}:{x:window.innerWidth/2-90,y:120});
     return;
   }
   // Pictures/screenshots as node.images objects -- multiple files allowed, each compressed on the

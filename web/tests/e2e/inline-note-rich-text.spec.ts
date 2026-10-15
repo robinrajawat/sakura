@@ -702,6 +702,8 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       const tableBtn = page.locator('#context-quickbar .pv-qm-btn[data-action="table"]');
       await expect(tableBtn).toBeVisible();
       await tableBtn.click();
+      // The Table › menu: Blank table… is the size picker (starters are covered in table-starters.spec.ts).
+      await page.locator('.sb-context-menu .sb-context-item').filter({ hasText: 'Blank table' }).click();
       await expect(page.locator('.table-grid-picker')).toBeVisible();
       await page.keyboard.press('Enter');
       await expect(page.locator('.node-table-line')).toHaveCount(1);
