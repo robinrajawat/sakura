@@ -179,6 +179,12 @@ Merged as #536. Then the entry right-click menu (`threadEntryMenuItems`): Reply 
 question / comment", status as a 2×2 grid of labelled choices with the row-marker icons and colours
 (`choices` item type in `_sbBuildItemButton`; current one tinted, click again clears), Rewrite with
 AI, Delete with an icon.
+Merged as #537 (also: the "+ Reply" line fades only its label so depth guides stay drawn). Then
+(Robin, 2026-10-15): the thread is **grey**, since purple clashed with the Violet accent; only an open
+question (chip, row-icon count, PDF pill) uses `var(--accent)`. Settled questions are quiet text
+(`.thread-q-note`, "· question, answered"), an answer that isn't right after its question quotes it
+(`threadQuotedQuestion`, `.thread-quote`), the header is grey sentence case, and `addThread`
+(Ctrl/Cmd+Alt+M, as in Word/Docs) opens the reply line. Name stays "Thread".
 
 **2026-10-12: post-cutdown polish session — #479–#494, all merged. Nothing open, nothing parked in
 git.** The cutdown below is finished (all 9 items merged); this session was owner-driven UI polish
