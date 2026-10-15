@@ -100,12 +100,11 @@ test.describe('Toolbar open-items summary', () => {
     });
     const btn = page.locator('#marker-summary .open-items-btn');
     await expect(btn).toHaveText('3 follow-ups');
-    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 3 follow-ups. 1 of 4 settled.');
+    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 3 follow-ups.');
     await expect(page.locator('.node-row[data-id="2"]')).toHaveCount(0);
 
     await btn.click();
     const menu = page.locator('.open-items-menu');
-    await expect(menu.locator('.oi-head-progress')).toHaveText('1 of 4 settled');
     expect(await menu.locator('.sb-context-heading').allTextContents()).toEqual(['Follow-ups · 3']);
     // Jump: opens the folded branch and selects the row.
     await menu.locator('.sb-context-item', { hasText: 'Child B' }).click();
@@ -148,28 +147,22 @@ test.describe('Toolbar open-items summary', () => {
     // @ts-expect-error
     expect(await page.evaluate(() => activeDiscussionFilter)).toBeNull();
 
-    // Settled items are folded at the bottom of the list; clicking unfolds them in place.
+    // Open items only (owner, 2026-10-15): no progress bar, no Settled / Out of scope / Decisions folds.
     await btn.click();
-    const settled = menu.locator('.sb-context-fold', { hasText: 'Settled · 1' });
-    await expect(settled).toHaveAttribute('aria-expanded', 'false');
+    await expect(menu.locator('.sb-context-fold')).toHaveCount(0);
     await expect(menu).not.toContainText('Done row');
-    await settled.click();
-    await expect(settled).toHaveAttribute('aria-expanded', 'true');
-    await expect(menu.locator('.sb-context-fold-body')).toContainText('Done row');
-    await settled.click();
-    await expect(menu.locator('.sb-context-fold-body')).toHaveCount(0);
+    await expect(menu).not.toContainText('settled');
   });
 
-  test('unfolding Settled keeps the list on screen (it scrolls inside instead)', async ({ page }) => {
-    await page.setViewportSize({ width: 1300, height: 600 });
+  test('a long list stays on screen (it scrolls inside instead)', async ({ page }) => {
+    await page.setViewportSize({ width: 1300, height: 360 });
     await open(page);
     await seed(page, Array.from({ length: 24 }, (_, i) => n(i + 1, 0, 'Row ' + (i + 1), null)));
     await page.evaluate(() => {
       // @ts-expect-error -- bare globals from index.html
-      nodes.forEach((x: any, i: number) => { x.marker = i < 4 ? 'followup' : 'confirmed'; }); render();
+      nodes.forEach((x: any) => { x.marker = 'followup'; }); render();
     });
     await page.locator('#marker-summary .open-items-btn').click();
-    await page.locator('.open-items-menu .sb-context-fold').click();
     const m = await page.evaluate(() => {
       const el = document.querySelector('.open-items-menu') as HTMLElement;
       const r = el.getBoundingClientRect();
@@ -187,9 +180,9 @@ test.describe('Toolbar open-items summary', () => {
     await expect(page.locator('#marker-summary .open-items-btn')).toHaveText('All settled');
   });
 
-  // Owner (2026-10-15): Out of scope is set aside, so it stays out of "N of M settled" (one such row
-  // used to keep the bar from ever filling); an open question names its row and who asked.
-  test('out of scope stays out of the count; a question shows its row and who asked', async ({ page }) => {
+  // Owner (2026-10-15): the list is open items only (no "N of M settled" bar: a follow-up closed by
+  // removing its marker dropped out of the count); an open question names its row and who asked.
+  test('no progress bar; a question shows its row and who asked', async ({ page }) => {
     await open(page);
     await seed(page, [n(1, 0, 'Pricing', null), n(2, 0, 'Legacy EDI', null), n(3, 0, 'Customer comms', null)]);
     await page.evaluate(() => {
@@ -200,8 +193,8 @@ test.describe('Toolbar open-items summary', () => {
     await expect(btn).toHaveText('All settled');
     await btn.click();
     const menu = page.locator('.open-items-menu');
-    await expect(menu.locator('.oi-head-progress')).toHaveText('1 of 1 settled');
-    await expect(menu.locator('.oi-bar span')).toHaveAttribute('style', 'width:100%');
+    await expect(menu.locator('.oi-head-title')).toHaveText('Nothing needs attention');
+    await expect(menu).not.toContainText('Legacy EDI');
     await btn.click();
 
     await page.evaluate(() => {
@@ -210,7 +203,7 @@ test.describe('Toolbar open-items summary', () => {
       // @ts-expect-error
       render();
     });
-    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 1 open question. 1 of 2 settled, 1 out of scope.');
+    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 1 open question.');
     await btn.click();
     const q = menu.locator('.sb-context-item', { hasText: 'Who tells the customers?' });
     await expect(q.locator('.sb-context-sub')).toHaveText('Customer comms · Maria');

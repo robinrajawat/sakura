@@ -231,9 +231,7 @@ describe('documentProgress / attentionParts / progressSummaryText', () => {
     expect(attentionParts(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toEqual([]);
   });
   it('describes the summary in words', () => {
-    expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 3 follow-ups, 2 open questions. 3 of 8 settled, 2 out of scope.');
-    expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled.');
-    // Out of scope doesn't hold the count back: everything else settled reads as complete.
-    expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }, { id: 2, marker: 'parked' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled, 1 out of scope.');
+    expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 3 follow-ups, 2 open questions.');
+    expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention.');
   });
 });
