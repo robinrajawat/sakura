@@ -46,7 +46,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
     });
 
     expect(result.hasDot).toBe(true);
-    expect(result.tip).toContain('marked Confirmed');
+    expect(result.tip).toContain('marked Agreed');
   });
 
   test('a folded node whose own marker matches its descendant\'s marker type gets no dot for it', async ({ page }) => {
@@ -81,7 +81,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'Folded parent, own confirmed', styles: {}, marker: 'confirmed' },
-        { id: 2, depth: 1, text: 'Child marked issue', styles: {}, marker: 'issue' },
+        { id: 2, depth: 1, text: 'Child marked follow-up', styles: {}, marker: 'followup' },
       ];
       // @ts-expect-error
       collapsedIds = new Set([1]);
@@ -99,7 +99,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
 
     expect(result.ownBadgeShown).toBe(true);
     expect(result.fold.hasDot).toBe(true);
-    expect(result.fold.tip).toContain('marked Issue');
+    expect(result.fold.tip).toContain('marked Follow-up');
   });
 
   test('several distinct marker types hidden in the subtree are all named in one shared tooltip', async ({ page }) => {
@@ -110,7 +110,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'Folded parent', styles: {} },
-        { id: 2, depth: 1, text: 'Child A', styles: {}, marker: 'issue' },
+        { id: 2, depth: 1, text: 'Child A', styles: {}, marker: 'followup' },
         { id: 3, depth: 1, text: 'Child B', styles: {}, marker: 'followup' },
       ];
       // @ts-expect-error
@@ -125,7 +125,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
     });
 
     expect(result.count).toBe(1); // one badge total, not one per marker type
-    expect(result.tip).toContain('marked Issue');
+    expect(result.tip).toContain('marked Follow-up');
     expect(result.tip).toContain('marked Follow-up');
   });
 
@@ -137,9 +137,9 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'Folded parent', styles: {} },
-        { id: 2, depth: 1, text: 'Child A', styles: {}, marker: 'issue' },
-        { id: 3, depth: 1, text: 'Child B', styles: {}, marker: 'issue' },
-        { id: 4, depth: 1, text: 'Child C', styles: {}, marker: 'issue' },
+        { id: 2, depth: 1, text: 'Child A', styles: {}, marker: 'followup' },
+        { id: 3, depth: 1, text: 'Child B', styles: {}, marker: 'followup' },
+        { id: 4, depth: 1, text: 'Child C', styles: {}, marker: 'followup' },
       ];
       // @ts-expect-error
       collapsedIds = new Set([1]);
@@ -152,7 +152,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       return badge.dataset.tip;
     });
 
-    expect(result).toBe('Click to expand · 3 hidden nodes — contains 3 nodes marked Issue');
+    expect(result).toBe('Click to expand · 3 hidden nodes — contains 3 nodes marked Follow-up');
   });
 
   test('a single hidden descendant with a marker gets singular tooltip wording, not "1 nodes"', async ({ page }) => {
@@ -176,7 +176,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       return badge.dataset.tip;
     });
 
-    expect(result).toBe('Click to expand · 1 hidden node — contains 1 node marked Confirmed');
+    expect(result).toBe('Click to expand · 1 hidden node — contains 1 node marked Agreed');
   });
 
   test('an expanded node (not folded) never shows a fold-badge, even with a marked child', async ({ page }) => {

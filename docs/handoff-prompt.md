@@ -185,6 +185,17 @@ question (chip, row-icon count, PDF pill) uses `var(--accent)`. Settled question
 (`.thread-q-note`, "· question, answered"), an answer that isn't right after its question quotes it
 (`threadQuotedQuestion`, `.thread-quote`), the header is grey sentence case, and `addThread`
 (Ctrl/Cmd+Alt+M, as in Word/Docs) opens the reply line. Name stays "Thread".
+Merged as #538. Then (Robin, 2026-10-15, "I am just trying to simplify things"): **three markers**,
+Agreed (`confirmed`), Follow-up (`followup`), Out of scope (`parked`). Issue merged into Follow-up
+(reversing the earlier "keep Issue"), Parked and N/A merged into Out of scope, Confirmed renamed
+Agreed. Every marker is the thread status: setting one records an entry by the current author
+(`addThreadStatus`), so each says who and when; Follow-up opens the reply line. **Decision** is a
+chip on an entry (`decision: true`, entry menu "Mark as decision"), not a status; it doesn't change
+the row; the thread header (and PDF label) adds "· Decision", which jumps to it. Old values normalise on open (`normalizeThreadStatus`; `normalizeNode` for markers;
+`migrateDiscussionToThread` turns old decision statuses/kinds into Agreed + `decision`). Also: the
+fold is "· show N earlier" in the header, "+ Reply" always shows on touch screens, the editor shows
+the date once per day, and the entry menu's Rewrite with AI has a left sparkle icon (the trailing ✦
+misaligned it). Robin asked about newest-first; kept oldest first (a conversation reads in order).
 
 **2026-10-12: post-cutdown polish session — #479–#494, all merged. Nothing open, nothing parked in
 git.** The cutdown below is finished (all 9 items merged); this session was owner-driven UI polish

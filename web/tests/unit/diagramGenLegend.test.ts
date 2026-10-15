@@ -59,7 +59,7 @@ describe('diagramGenLegendEntriesCore', () => {
     const meta: LegendNodeMetaMap = new Map();
     const entries = diagramGenLegendEntriesCore(n, { scopeIdxs: [0, 1] }, meta);
     expect(entries).toHaveLength(1);
-    expect(entries[0].label).toBe('Confirmed');
+    expect(entries[0].label).toBe('Agreed');
   });
 
   it('ignores an unrecognized marker value', () => {
@@ -70,10 +70,10 @@ describe('diagramGenLegendEntriesCore', () => {
   });
 
   it('renders both shape and marker entries together, shapes first', () => {
-    const n = [{ id: 1, marker: 'issue' }, { id: 2 }];
+    const n = [{ id: 1, marker: 'followup' }, { id: 2 }];
     const meta: LegendNodeMetaMap = new Map([[2, { shape: 'ui' }]]);
     const entries = diagramGenLegendEntriesCore(n, { scopeIdxs: [0, 1] }, meta);
-    expect(entries.map((e) => e.label)).toEqual(['UI / Frontend', 'Issue']);
+    expect(entries.map((e) => e.label)).toEqual(['UI / Frontend', 'Follow-up']);
   });
 
   it('deduplicates repeated shapes/markers across multiple nodes into one entry each', () => {
@@ -87,10 +87,10 @@ describe('diagramGenLegendEntriesCore', () => {
   });
 
   it('only considers nodes within scopeIdxs, ignoring others in the array', () => {
-    const n = [{ id: 1, marker: 'confirmed' }, { id: 2, marker: 'issue' }];
+    const n = [{ id: 1, marker: 'confirmed' }, { id: 2, marker: 'followup' }];
     const meta: LegendNodeMetaMap = new Map();
     const entries = diagramGenLegendEntriesCore(n, { scopeIdxs: [0] }, meta);
-    expect(entries.map((e) => e.label)).toEqual(['Confirmed']);
+    expect(entries.map((e) => e.label)).toEqual(['Agreed']);
   });
 });
 

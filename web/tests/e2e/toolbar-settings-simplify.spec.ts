@@ -80,7 +80,7 @@ test.describe('Fixed main toolbar', () => {
     await page.locator('#qb-insert').click();
     await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Basics', 'Marker', 'Discuss', 'Visuals']);
     await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
-    await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(5);
+    await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(3);
     await page.locator('#qb-ai').click();
     await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
     await expect(page.locator('#ai-menu .tb-menu-label')).toHaveText(['Rewrite node', 'Generate outline']);

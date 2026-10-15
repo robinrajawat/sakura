@@ -7,10 +7,12 @@
  * (`verdict`) and/or text. A status (`status`) sits on the entry it was set on, so its author and
  * time say who set it and when; the thread's status is the latest one.
  *
- * Owner decision (2026-10-15): the row marker *is* the thread's status — the same five values
- * (Confirmed, Issue, Follow-up, Parked, N/A) under the same names, stored only in the thread and
- * shown on the row. Clicking a marker adds it to the thread. Older 'resolved' and 'decision'
- * statuses read as Confirmed. An unanswered question shows as Open on its own (derived, never stored).
+ * Owner decision (2026-10-15): the row marker *is* the thread's status, and there are three:
+ * Agreed ('confirmed'), Follow-up ('followup') and Out of scope ('parked') — stored in the thread
+ * and shown on the row. Clicking a marker adds it to the thread, so it records who and when.
+ * Older values read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out
+ * of scope. "Open" is no marker: an unanswered question shows on its own (derived, never stored).
+ * A decision is no status either: `decision: true` marks the entry where something was decided.
  *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
  * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
@@ -18,13 +20,16 @@
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
 
-export type ThreadStatus = 'confirmed' | 'issue' | 'followup' | 'parked' | 'na';
+export type ThreadStatus = 'confirmed' | 'followup' | 'parked';
 
-export const THREAD_STATUSES: readonly ThreadStatus[] = ['confirmed', 'issue', 'followup', 'parked', 'na'];
+/** The row markers, in menu order: Agreed, Follow-up, Out of scope. */
+export const THREAD_STATUSES: readonly ThreadStatus[] = ['confirmed', 'followup', 'parked'];
 
-/** A stored status in today's terms: older 'resolved' / 'decision' read as Confirmed; anything unknown as none. */
+/** A stored status or marker in today's terms (older values read as their successor); unknown → none. */
 export function normalizeThreadStatus(s: unknown): ThreadStatus | null {
   if (s === 'resolved' || s === 'decision') return 'confirmed';
+  if (s === 'issue') return 'followup';
+  if (s === 'na') return 'parked';
   return (THREAD_STATUSES as readonly unknown[]).includes(s) ? (s as ThreadStatus) : null;
 }
 
@@ -42,8 +47,10 @@ export interface ThreadEntry {
   /** For an answer: the id of the question it answers. */
   answerTo?: string;
   verdict?: 'yes' | 'no';
-  /** Older documents may still hold 'resolved' or 'decision' until migrated (read as Confirmed). */
-  status?: ThreadStatus | 'resolved' | 'decision';
+  /** Older documents may hold 'resolved', 'decision', 'issue' or 'na' until migrated. */
+  status?: ThreadStatus | 'resolved' | 'decision' | 'issue' | 'na';
+  /** The entry where something was decided (a chip on the entry; it doesn't change the row). */
+  decision?: boolean;
   /** A question closed without an answer. */
   wontAnswer?: boolean;
   context?: string;
@@ -171,7 +178,7 @@ function localDateStr(ms: number): string {
 
 /** True when any entry still has an older shape (remark follow-up, discussion kind, inline answer). */
 export function needsThreadMigration(entries: ThreadEntry[]): boolean {
-  return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || r.status === 'resolved' || r.status === 'decision'));
+  return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || (r.status != null && r.status !== normalizeThreadStatus(r.status))));
 }
 
 /**
@@ -191,7 +198,7 @@ export function migrateDiscussionToThread<R extends ThreadEntry>(entries: R[]): 
     const answer = r.answer;
     const verdict = r.verdict;
     if (r.followUp) r.status = r.resolvedAt ? 'confirmed' : 'followup';
-    if (kind === 'decision') r.status = 'confirmed';
+    if (kind === 'decision' || r.status === 'decision') { r.status = 'confirmed'; r.decision = true; }
     if (r.status) r.status = normalizeThreadStatus(r.status) || undefined;
     if (!r.status) delete r.status;
     if (kind === 'question') r.type = 'question';
@@ -273,21 +280,21 @@ export function linkMarkersToThreads(nodes: { id: number; marker?: string | null
     const last = thread[thread.length - 1];
     if (st && !n.marker) changes.set(n.id, markerForThreadStatus(st) as string);
     else if (!st && isThreadMarker(n.marker)) last.status = threadStatusForMarker(n.marker) as ThreadStatus;
-    else if (st && (n.marker === 'parked' || n.marker === 'na') && st !== n.marker) {
-      // Parked and N/A used to be row-only, so an older row can show one over a thread with another
-      // status. The row keeps what it shows: the marker goes into the thread after its latest entry
-      // (no author or time of its own: the old marker never stored them).
-      if (!last.status) last.status = n.marker;
+    else if (st && normalizeThreadStatus(n.marker) === 'parked' && st !== 'parked') {
+      // Out of scope (Parked / N/A) used to be row-only, so an older row can show it over a thread
+      // with another status. The row keeps what it shows: the marker goes into the thread after its
+      // latest entry (no author or time of its own: the old marker never stored them).
+      if (!last.status) last.status = 'parked';
       else {
         const at = (last.createdAt || 0) + 1;
-        (entries as ThreadEntry[]).push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: n.marker });
+        (entries as ThreadEntry[]).push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: 'parked' });
       }
     }
-    else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== n.marker) {
-      // Issue used to be row-only, so an older row can be marked Issue over a thread with another
-      // status: the Issue goes on the latest entry when that one has no chip yet; otherwise the
-      // thread's status wins.
-      if (n.marker === 'issue' && !last.status) last.status = 'issue';
+    else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== normalizeThreadStatus(n.marker)) {
+      // Issue used to be row-only, so an older row can be marked Issue (now Follow-up) over a thread
+      // with another status: it goes on the latest entry when that one has no status yet; otherwise
+      // the thread's status wins.
+      if (normalizeThreadStatus(n.marker) === 'followup' && !last.status) last.status = 'followup';
       else changes.set(n.id, markerForThreadStatus(st) as string);
     }
   }
@@ -324,18 +331,18 @@ export function allSettledQuestions(entries: ThreadEntry[], nodeIds?: Set<number
   return out;
 }
 
-/** openItems = everything that needs attention: Issue/Follow-up rows and open questions. */
+/** openItems = everything that needs attention: Follow-up rows and open questions. */
 export type DiscussionFilter = 'openQa' | 'openItems';
 
 export function normalizeDiscussionFilter(v: unknown): DiscussionFilter | null {
   return v === 'openQa' || v === 'openItems' ? v : null;
 }
 
-/** Ids of the nodes with an open question; for openItems also rows marked Issue or Follow-up. */
+/** Ids of the nodes with an open question; for openItems also rows marked Follow-up. */
 export function nodesWithOpenItems(filter: DiscussionFilter, entries: ThreadEntry[], nodes: ProgressNode[] = []): Set<number> {
   const ids = new Set<number>();
   for (const q of allOpenQuestions(entries)) ids.add(q.anchorNodeId as number);
-  if (filter === 'openItems') for (const n of nodes || []) if (n.marker === 'issue' || n.marker === 'followup') ids.add(n.id);
+  if (filter === 'openItems') for (const n of nodes || []) if (normalizeThreadStatus(n.marker) === 'followup') ids.add(n.id);
   return ids;
 }
 
@@ -353,30 +360,30 @@ export interface ProgressNode {
 
 /** Everything the toolbar summary counts, for the rows of one document. */
 export interface DocumentProgress {
-  issues: number;
   followups: number;
+  /** Out of scope rows. */
   parked: number;
   questions: number;
-  /** Confirmed + N/A rows, answered or won't-answer questions. */
+  /** Agreed rows, answered or won't-answer questions. */
   settled: number;
-  /** Everything tracked: needs attention + parked + settled. */
+  /** Everything tracked: needs attention + out of scope + settled. */
   total: number;
 }
 
 /**
- * The toolbar summary's counts. Row markers (which threads drive): Issue and Follow-up need
- * attention, Parked is set aside, Confirmed and N/A are settled. Questions count once each, open
+ * The toolbar summary's counts. Row markers (which threads drive): Follow-up needs attention,
+ * Out of scope is set aside, Agreed is settled. Questions count once each, open
  * or settled, when on a row of this document; unlinked Q&A entries count too.
  */
 export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[], entries: ThreadEntry[]): DocumentProgress {
-  const p: DocumentProgress = { issues: 0, followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
+  const p: DocumentProgress = { followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
   const ids = new Set<number>();
   for (const n of nodes || []) {
     ids.add(n.id);
-    if (n.marker === 'issue') p.issues++;
-    else if (n.marker === 'followup') p.followups++;
-    else if (n.marker === 'parked') p.parked++;
-    else if (n.marker === 'confirmed' || n.marker === 'na') p.settled++;
+    const m = normalizeThreadStatus(n.marker);
+    if (m === 'followup') p.followups++;
+    else if (m === 'parked') p.parked++;
+    else if (m === 'confirmed') p.settled++;
   }
   for (const q of qaItems || []) {
     if (q.sourceNodeId == null || !ids.has(q.sourceNodeId) || !isCountableQuestion(q)) continue;
@@ -385,34 +392,33 @@ export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[],
   }
   p.questions += allOpenQuestions(entries, ids).length;
   p.settled += allSettledQuestions(entries, ids).length;
-  p.total = p.issues + p.followups + p.parked + p.questions + p.settled;
+  p.total = p.followups + p.parked + p.questions + p.settled;
   return p;
 }
 
-export type AttentionKey = 'issue' | 'followup' | 'question';
+export type AttentionKey = 'followup' | 'question';
 
 export interface AttentionPart {
   key: AttentionKey;
   n: number;
-  /** Short label for the toolbar: "1 issue", "6 follow-ups", "2 questions". */
+  /** Short label for the toolbar: "6 follow-ups", "2 questions". */
   label: string;
 }
 
 const ATTENTION_WORDS: Record<AttentionKey, [string, string]> = {
-  issue: ['issue', 'issues'],
   followup: ['follow-up', 'follow-ups'],
   question: ['question', 'questions']
 };
 
 /** What still needs attention, most urgent first, leaving out kinds with nothing open. */
 export function attentionParts(p: DocumentProgress): AttentionPart[] {
-  const counts: [AttentionKey, number][] = [['issue', p.issues], ['followup', p.followups], ['question', p.questions]];
+  const counts: [AttentionKey, number][] = [['followup', p.followups], ['question', p.questions]];
   return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
 }
 
-/** The summary's tooltip / accessible name: "Needs attention: 1 issue, 2 open questions. 8 of 15 settled." */
+/** The summary's tooltip / accessible name: "Needs attention: 1 follow-up, 2 open questions. 8 of 15 settled." */
 export function progressSummaryText(p: DocumentProgress): string {
   const parts = attentionParts(p).map((a) => (a.key === 'question' ? openCountLabel(a.n, 'question') : a.label));
   const head = parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
-  return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' parked' : '') + '.';
+  return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' out of scope' : '') + '.';
 }

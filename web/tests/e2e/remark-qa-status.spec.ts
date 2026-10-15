@@ -75,14 +75,14 @@ const statusNote = (page: Page, id: string) => page.locator(`.thread-entry:has(#
 
 test('old follow-ups migrate to thread status, and the row marker follows the thread', async ({ page }) => {
   const errors = await open(page);
-  await expect(statusNote(page, 'rDone')).toHaveText('· confirmed');
+  await expect(statusNote(page, 'rDone')).toHaveText('· agreed');
   await expect(statusNote(page, 'rOld')).toHaveText('· follow-up');
   // The latest chip is the thread's status, so the row is a Follow-up.
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toContain('followUp');
   expect(await sumButtons(page)).toEqual(['1 follow-up', '1 question']);
 
-  // Confirm on the reply line settles the row.
+  // Agree on the reply line settles the row.
   await page.evaluate('openThreadComposer(2, false)');
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="confirm"]').click();
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('confirmed');
@@ -172,7 +172,7 @@ test('PDF shows each entry\'s question state and status, and no Open items summa
   const r = await exportPdf(page);
   // Only an open question prints as a pill; settled questions and statuses are quiet text.
   expect(r.pills).toEqual(['Question · Open']);
-  expect(r.notes).toEqual(expect.arrayContaining(['· follow-up', '· confirmed', '· question, answered', '· question, won’t answer']));
+  expect(r.notes).toEqual(expect.arrayContaining(['· follow-up', '· agreed', '· question, answered', '· question, won’t answer']));
   expect(r.pills).not.toContain('Follow-up');
   // Owner decision: the closing "Open items" summary page was removed.
   expect(r.section).toBe(false);

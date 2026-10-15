@@ -17,7 +17,7 @@ test.describe('Filtering hides a filtered-out row\'s inline objects too', () => 
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
-        { id: 2, depth: 1, text: 'Marked child', parentId: 1, isCheckbox: false, checked: false, note: '', tags: ['x'], styles: {}, marker: 'issue' },
+        { id: 2, depth: 1, text: 'Marked child', parentId: 1, isCheckbox: false, checked: false, note: '', tags: ['x'], styles: {}, marker: 'followup' },
         { id: 3, depth: 1, text: 'Last child', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {}, tables: ['<table><tr><td>Last table cell</td></tr></table>'] },
       ];
       // @ts-expect-error
@@ -42,7 +42,7 @@ test.describe('Filtering hides a filtered-out row\'s inline objects too', () => 
   test('marker filter', async ({ page }) => {
     expect(await visibleRemarks(page)).toEqual(['ra', 'rb']);
     // @ts-expect-error
-    await page.evaluate(() => setMarkerFilter('issue'));
+    await page.evaluate(() => setMarkerFilter('followup'));
     expect(await visibleRemarks(page)).toEqual(['ra']);
     await expect(page.getByText('Last table cell')).toBeHidden();
     // @ts-expect-error

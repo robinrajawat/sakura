@@ -94,19 +94,19 @@ test.describe('Toolbar open-items summary', () => {
     await seed(page, list);
     await page.evaluate(() => {
       // @ts-expect-error -- bare globals from index.html
-      nodes[1].marker = 'followup'; nodes[2].marker = 'followup'; nodes[3].marker = 'issue'; nodes[4].marker = 'confirmed';
+      nodes[1].marker = 'followup'; nodes[2].marker = 'followup'; nodes[3].marker = 'followup'; nodes[4].marker = 'confirmed';
       // @ts-expect-error
       collapsedIds = new Set([1]); render();
     });
     const btn = page.locator('#marker-summary .open-items-btn');
-    await expect(btn).toHaveText('1 issue·2 follow-ups');
-    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 1 issue, 2 follow-ups. 1 of 4 settled.');
+    await expect(btn).toHaveText('3 follow-ups');
+    await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 3 follow-ups. 1 of 4 settled.');
     await expect(page.locator('.node-row[data-id="2"]')).toHaveCount(0);
 
     await btn.click();
     const menu = page.locator('.open-items-menu');
     await expect(menu.locator('.oi-head-progress')).toHaveText('1 of 4 settled');
-    expect(await menu.locator('.sb-context-heading').allTextContents()).toEqual(['Issues · 1', 'Follow-ups · 2']);
+    expect(await menu.locator('.sb-context-heading').allTextContents()).toEqual(['Follow-ups · 3']);
     // Jump: opens the folded branch and selects the row.
     await menu.locator('.sb-context-item', { hasText: 'Child B' }).click();
     await expect(page.locator('.open-items-menu')).toHaveCount(0);
@@ -134,7 +134,7 @@ test.describe('Toolbar open-items summary', () => {
     // @ts-expect-error
     expect(await page.evaluate(() => activeMarkerFilter)).toBeNull();
 
-    // The switch at the top shows every open item at once (here: the issue and both follow-ups).
+    // The switch at the top shows every open item at once (here: the three follow-ups).
     await btn.click();
     await menu.locator('.oi-switch').click();
     // @ts-expect-error
@@ -218,7 +218,7 @@ test.describe('Open-items summary shortcut', () => {
     await open(page);
     await seed(page, [n(1, 0, 'Open thing', null), n(2, 0, 'Done thing', null), n(3, 0, 'Plain', null)]);
     // @ts-expect-error -- bare globals from index.html
-    await page.evaluate(() => { nodes[0].marker = 'issue'; nodes[1].marker = 'confirmed'; render(); });
+    await page.evaluate(() => { nodes[0].marker = 'followup'; nodes[1].marker = 'confirmed'; render(); });
     const btn = page.locator('#marker-summary .open-items-btn');
     await expect(btn).toHaveAttribute('data-tip', /right-click \(or Shift\+click\) to show only open items/);
 

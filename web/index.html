@@ -1813,6 +1813,9 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-head svg{flex:0 0 auto}
 .thread-head-more{border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
 .thread-head-more:hover{color:var(--fg);background:var(--hover)}
+.thread-head-decision{display:inline-flex;align-items:center;gap:3px;border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
+.thread-head-decision svg{color:var(--fc-green)}
+.thread-head-decision:hover{color:var(--fg);background:var(--hover)}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
 .thread-time{font-size:12px}
 .thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
@@ -3811,8 +3814,8 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">  
 <h4>Structure</h4>  
 <ul>  
-<li>Right-click a node → a small row of marker icons (Confirmed, Issue, Parked, Follow-up, N/A — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add comment, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
-<li><strong>Markers</strong> — five quick marks (✓ Confirmed, ⚠ Issue, ⏸ Parked, 🚩 Follow-up, ✗ N/A) for tracking status on a node, e.g. while reviewing a document. N/A covers something discarded or out of scope — deliberately a different icon from Issue, so "this needs attention" and "this doesn't apply/was decided against" don't collide on the same cross mark. Issue, Follow-up and Confirmed are also the node's thread status: setting one puts an Issue, Follow-up or Resolved chip on the thread's latest entry (Issue also opens the reply box), and a chip set in the thread sets the marker — the two always agree. Parked and N/A stay row-only. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph filters the tree to that marker — showing every matching node, its full subtree, and its ancestors back to the root (dimmed, so they read as "here's where it lives" rather than more matches); a filter bar appears with a × to clear it. Right-click the glyph to clear the marker itself instead. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
+<li>Right-click a node → a small row of marker icons (Agreed, Follow-up, Out of scope — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add comment, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
+<li><strong>Markers</strong> — three quick marks (✓ Agreed, ⚑ Follow-up, ⊘ Out of scope) for tracking status on a node, e.g. while reviewing a document. Each one is the node's thread status: setting a marker records it in the thread, by you, now (starting the thread if there is none; Follow-up also opens the reply line, to say what's left), and a status set in the thread sets the marker — the two always agree. Older documents' Issue rows read as Follow-up and N/A or Parked rows as Out of scope. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph filters the tree to that marker — showing every matching node, its full subtree, and its ancestors back to the root (dimmed, so they read as "here's where it lives" rather than more matches); a filter bar appears with a × to clear it. Right-click the glyph to clear the marker itself instead. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
 <li>Right-clicking empty space — editor canvas, file explorer, status bar, tab bar, or app bar — opens a separate, smaller menu of chrome-level actions, not the node menu above. Navigate it with <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span>, same as the category picker above, or hover with a mouse — both move the same highlight. Editor canvas: switch theme and Collapse all/Expand all sit in the menu itself; a "More…" item opens a second menu at the same spot for the rest — hide/show file explorer, and Settings. File Explorer: switch theme, hide file explorer, Settings. Status bar: switch theme, Settings. Tab bar: switch theme, new document, close current tab, Settings. App bar: switch theme, hide/show file explorer, and "Declutter app bar" — which hides the title field, file explorer toggle, and the Documents/Templates buttons, but deliberately never hides Settings — hiding it would remove your only way back in. Every hide action here shows an Undo toast, same pattern as Quick Assist's own toggles. The toolbar, tab bar, status bar and app bar can't be hidden (zen mode hides the toolbar and tab bar while it's on)</li>
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Deleting a referenced node removes its links from all other nodes automatically</li>
 <li><strong>Tags</strong> — select a node and click the tag icon in the toolbar or right-click → Tags to open the tag popover. Existing document tags appear as chips to toggle; type a new name and press Enter to add. Tags render as <span class="node-tag-chip" style="display:inline-flex;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%)">#chips</span> on the node. Click a chip in the tree to filter to that tag; click again or × to clear. Multi-select: toolbar button applies to all selected nodes</li>
@@ -4011,13 +4014,14 @@ body.printing-generic #gpe-overlay{
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new reply line. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line, Esc to close). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no reply box — hover it for <strong>+ Reply</strong>. What you type is kept if you move to another row</li>
 <li>The reply line writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
-<li><strong>Status</strong>: right-click an entry → Issue, Follow-up, Resolved or Decision marks it (shown as quiet text, e.g. “· resolved”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown: <strong>Issue</strong> ⇄ ⚠ Issue, <strong>Follow-up</strong> ⇄ ⚑ Follow-up, <strong>Resolved</strong> or <strong>Decision</strong> ⇄ ✓ Confirmed. Clicking a marker on a row sets it on the thread's latest entry (Issue also opens the reply line, to say what's wrong); clearing it takes it back. The reply line has <strong>Follow-up</strong>, and <strong>Resolve</strong> while a thread is an issue or a follow-up — each adds an entry by the current author. Parked and N/A stay row-only</li>
-<li>Right-click an entry for <strong>Reply</strong>, Make it a question / comment, its status (the row-marker icons, current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
+<li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
+<li>Right-click an entry for <strong>Reply</strong>, Make it a question / comment, Mark as decision, its status (the row-marker icons, current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
-<li>A thread longer than four entries shows its latest three; the rest fold behind "N earlier entries" — click to show them</li>
+<li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
 <li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the avatars joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
-<li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups and decisions become status chips, and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
+<li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups become statuses and decisions become Decision chips (Agreed), and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-tables">
@@ -5050,8 +5054,9 @@ var THREAD_FLAG_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none"
 var THREAD_CHECK_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>';
 var THREAD_SEAL_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.4 1.7 2.9-.1.9 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-.9 2.8-2.9-.1L12 21.5l-2.4-1.7-2.9.1-.9-2.8-2.4-1.7.9-2.8-.9-2.8 2.4-1.7.9-2.8 2.9.1z"/><path d="M8.5 12.2l2.3 2.3 4.7-4.8"/></svg>';
 var THREAD_WARN_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
-// The thread's statuses are the row markers, same names (older 'resolved' / 'decision' read as Confirmed).
-var THREAD_STATUS_LABEL={confirmed:'Confirmed',issue:'Issue',followup:'Follow-up',parked:'Parked',na:'N/A',resolved:'Confirmed',decision:'Confirmed'};
+// The thread's statuses are the row markers, same names (older 'resolved' / 'decision' read as Agreed,
+// 'issue' as Follow-up, 'na' as Out of scope).
+var THREAD_STATUS_LABEL={confirmed:'Agreed',followup:'Follow-up',parked:'Out of scope',issue:'Follow-up',na:'Out of scope',resolved:'Agreed',decision:'Agreed'};
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
@@ -7313,21 +7318,28 @@ function cardsTotal(grid, calculated) {
  * (`verdict`) and/or text. A status (`status`) sits on the entry it was set on, so its author and
  * time say who set it and when; the thread's status is the latest one.
  *
- * Owner decision (2026-10-15): the row marker *is* the thread's status — the same five values
- * (Confirmed, Issue, Follow-up, Parked, N/A) under the same names, stored only in the thread and
- * shown on the row. Clicking a marker adds it to the thread. Older 'resolved' and 'decision'
- * statuses read as Confirmed. An unanswered question shows as Open on its own (derived, never stored).
+ * Owner decision (2026-10-15): the row marker *is* the thread's status, and there are three:
+ * Agreed ('confirmed'), Follow-up ('followup') and Out of scope ('parked') — stored in the thread
+ * and shown on the row. Clicking a marker adds it to the thread, so it records who and when.
+ * Older values read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out
+ * of scope. "Open" is no marker: an unanswered question shows on its own (derived, never stored).
+ * A decision is no status either: `decision: true` marks the entry where something was decided.
  *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
  * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
-const THREAD_STATUSES = ['confirmed', 'issue', 'followup', 'parked', 'na'];
-/** A stored status in today's terms: older 'resolved' / 'decision' read as Confirmed; anything unknown as none. */
+/** The row markers, in menu order: Agreed, Follow-up, Out of scope. */
+const THREAD_STATUSES = ['confirmed', 'followup', 'parked'];
+/** A stored status or marker in today's terms (older values read as their successor); unknown → none. */
 function normalizeThreadStatus(s) {
     if (s === 'resolved' || s === 'decision')
         return 'confirmed';
+    if (s === 'issue')
+        return 'followup';
+    if (s === 'na')
+        return 'parked';
     return THREAD_STATUSES.includes(s) ? s : null;
 }
 /** True when an HTML fragment has any visible text (tags, &nbsp; and whitespace don't count). */
@@ -7426,7 +7438,7 @@ function localDateStr(ms) {
 }
 /** True when any entry still has an older shape (remark follow-up, discussion kind, inline answer). */
 function needsThreadMigration(entries) {
-    return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || r.status === 'resolved' || r.status === 'decision'));
+    return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || (r.status != null && r.status !== normalizeThreadStatus(r.status))));
 }
 /**
  * Converts older remarks and discussion items to thread entries: a follow-up remark becomes a
@@ -7448,8 +7460,10 @@ function migrateDiscussionToThread(entries) {
         const verdict = r.verdict;
         if (r.followUp)
             r.status = r.resolvedAt ? 'confirmed' : 'followup';
-        if (kind === 'decision')
+        if (kind === 'decision' || r.status === 'decision') {
             r.status = 'confirmed';
+            r.decision = true;
+        }
         if (r.status)
             r.status = normalizeThreadStatus(r.status) || undefined;
         if (!r.status)
@@ -7545,23 +7559,23 @@ function linkMarkersToThreads(nodes, entries) {
             changes.set(n.id, markerForThreadStatus(st));
         else if (!st && isThreadMarker(n.marker))
             last.status = threadStatusForMarker(n.marker);
-        else if (st && (n.marker === 'parked' || n.marker === 'na') && st !== n.marker) {
-            // Parked and N/A used to be row-only, so an older row can show one over a thread with another
-            // status. The row keeps what it shows: the marker goes into the thread after its latest entry
-            // (no author or time of its own: the old marker never stored them).
+        else if (st && normalizeThreadStatus(n.marker) === 'parked' && st !== 'parked') {
+            // Out of scope (Parked / N/A) used to be row-only, so an older row can show it over a thread
+            // with another status. The row keeps what it shows: the marker goes into the thread after its
+            // latest entry (no author or time of its own: the old marker never stored them).
             if (!last.status)
-                last.status = n.marker;
+                last.status = 'parked';
             else {
                 const at = (last.createdAt || 0) + 1;
-                entries.push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: n.marker });
+                entries.push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: 'parked' });
             }
         }
-        else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== n.marker) {
-            // Issue used to be row-only, so an older row can be marked Issue over a thread with another
-            // status: the Issue goes on the latest entry when that one has no chip yet; otherwise the
-            // thread's status wins.
-            if (n.marker === 'issue' && !last.status)
-                last.status = 'issue';
+        else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== normalizeThreadStatus(n.marker)) {
+            // Issue used to be row-only, so an older row can be marked Issue (now Follow-up) over a thread
+            // with another status: it goes on the latest entry when that one has no status yet; otherwise
+            // the thread's status wins.
+            if (normalizeThreadStatus(n.marker) === 'followup' && !last.status)
+                last.status = 'followup';
             else
                 changes.set(n.id, markerForThreadStatus(st));
         }
@@ -7598,14 +7612,14 @@ function allSettledQuestions(entries, nodeIds) {
 function normalizeDiscussionFilter(v) {
     return v === 'openQa' || v === 'openItems' ? v : null;
 }
-/** Ids of the nodes with an open question; for openItems also rows marked Issue or Follow-up. */
+/** Ids of the nodes with an open question; for openItems also rows marked Follow-up. */
 function nodesWithOpenItems(filter, entries, nodes = []) {
     const ids = new Set();
     for (const q of allOpenQuestions(entries))
         ids.add(q.anchorNodeId);
     if (filter === 'openItems')
         for (const n of nodes || [])
-            if (n.marker === 'issue' || n.marker === 'followup')
+            if (normalizeThreadStatus(n.marker) === 'followup')
                 ids.add(n.id);
     return ids;
 }
@@ -7614,22 +7628,21 @@ function openCountLabel(n, kind) {
     return n + ' open ' + kind + (n === 1 ? '' : 's');
 }
 /**
- * The toolbar summary's counts. Row markers (which threads drive): Issue and Follow-up need
- * attention, Parked is set aside, Confirmed and N/A are settled. Questions count once each, open
+ * The toolbar summary's counts. Row markers (which threads drive): Follow-up needs attention,
+ * Out of scope is set aside, Agreed is settled. Questions count once each, open
  * or settled, when on a row of this document; unlinked Q&A entries count too.
  */
 function documentProgress(nodes, qaItems, entries) {
-    const p = { issues: 0, followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
+    const p = { followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
     const ids = new Set();
     for (const n of nodes || []) {
         ids.add(n.id);
-        if (n.marker === 'issue')
-            p.issues++;
-        else if (n.marker === 'followup')
+        const m = normalizeThreadStatus(n.marker);
+        if (m === 'followup')
             p.followups++;
-        else if (n.marker === 'parked')
+        else if (m === 'parked')
             p.parked++;
-        else if (n.marker === 'confirmed' || n.marker === 'na')
+        else if (m === 'confirmed')
             p.settled++;
     }
     for (const q of qaItems || []) {
@@ -7642,24 +7655,23 @@ function documentProgress(nodes, qaItems, entries) {
     }
     p.questions += allOpenQuestions(entries, ids).length;
     p.settled += allSettledQuestions(entries, ids).length;
-    p.total = p.issues + p.followups + p.parked + p.questions + p.settled;
+    p.total = p.followups + p.parked + p.questions + p.settled;
     return p;
 }
 const ATTENTION_WORDS = {
-    issue: ['issue', 'issues'],
     followup: ['follow-up', 'follow-ups'],
     question: ['question', 'questions']
 };
 /** What still needs attention, most urgent first, leaving out kinds with nothing open. */
 function attentionParts(p) {
-    const counts = [['issue', p.issues], ['followup', p.followups], ['question', p.questions]];
+    const counts = [['followup', p.followups], ['question', p.questions]];
     return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
 }
-/** The summary's tooltip / accessible name: "Needs attention: 1 issue, 2 open questions. 8 of 15 settled." */
+/** The summary's tooltip / accessible name: "Needs attention: 1 follow-up, 2 open questions. 8 of 15 settled." */
 function progressSummaryText(p) {
     const parts = attentionParts(p).map((a) => (a.key === 'question' ? openCountLabel(a.n, 'question') : a.label));
     const head = parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
-    return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' parked' : '') + '.';
+    return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' out of scope' : '') + '.';
 }
 
 /* GENERATED:discussionStatus:END */
@@ -10463,7 +10475,7 @@ const FONT_COLORS=['red','orange','green','blue','purple','gray'];
 // throwing "Cannot access 'NODE_MARKERS' before initialization" on every single document load —
 // this was the root cause of documents silently failing to load and falling back to blank content
 // on every refresh, not a data-loss or storage-sync bug at all.
-const NODE_MARKERS=['confirmed','issue','parked','followup','na'];
+const NODE_MARKERS=['confirmed','followup','parked'];
 let lastHighlightColor=(()=>{try{const v=localStorage.getItem('sakura_lastHighlightColor'); return HIGHLIGHT_COLORS[v]?v:'yellow'}catch(e){return 'yellow'}})();
 let lastFontColor=(()=>{try{const v=localStorage.getItem('sakura_lastFontColor'); return FONT_COLORS.includes(v)?v:'gray'}catch(e){return 'gray'}})();
 function setLastHighlightColor(c){if(!HIGHLIGHT_COLORS[c])return; lastHighlightColor=c; try{localStorage.setItem('sakura_lastHighlightColor',c)}catch(e){}}
@@ -10959,7 +10971,7 @@ function captionFromLegacyAlt(alt) {
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:NODE_MARKERS.includes(n.marker)?n.marker:'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
+function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null)}}
 // images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
 // creating a NEW node from an existing one's content (duplicate, paste), so the copy's pictures
 // must be independent objects, not shared references into the source node.
@@ -19007,7 +19019,7 @@ function _ctxNoteLabelText(){const idx=getIndex(nodes,contextMenuNodeId??selecte
 function ctxDynamicLabel(actionId){ if(actionId==='note')return _ctxNoteLabelText(); return CTX_ACTION_META[actionId].label; }
 
 // Builds the entire merged top row of the context menu in one pass: the fixed
-// Confirmed/Issue/Parked/Follow-up marker strip (mirrors the node-marker popover's quick-mark
+// Agreed/Follow-up/Out of scope marker strip (mirrors the node-marker popover's quick-mark
 // popover, see openNodeMarkerPopover) followed by the fixed quick actions (CTX_QUICK_ROW).
 // Re-rendering markers on every open (rather than building
 // them once at boot) costs nothing at 5 buttons and means this one function is
@@ -21158,12 +21170,9 @@ const DIAGRAM_GEN_TAG_CYCLE=['blue','green','amber','red','purple','teal','coral
 // Node markers are a deliberate, already-meaningful status flag (Settings → node marker),
 // so they outrank both tag and branch coloring when present. 'followup' (usually shown as an
 // orange glyph elsewhere in the app) maps to the closest palette hue, amber.
-// 'na' gets its own hue (pink) rather than sharing 'parked'\u2019s gray — a document using both
-// markers previously rendered them as visually identical boxes despite having separate legend
-// entries once na was added there. pink is otherwise only used for the 'actor' shape, and a
-// marker always outranks a shape color when both would apply to the same node (see
-// applyDiagramGenShapeColorOverrides), so the two can never actually compete for the same box.
-const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',issue:'red',parked:'gray',followup:'amber',na:'pink'};
+// Three markers (owner decision 2026-10-15): Agreed, Follow-up, Out of scope; older Issue / N/A
+// rows read as Follow-up / Out of scope (normalizeNode).
+const DIAGRAM_GEN_MARKER_COLOR={confirmed:'green',parked:'gray',followup:'amber'};
 // ── Diagram shape whitelist (manual classification only — no AI pass) ──────────────────────
 const DIAGRAM_GEN_SHAPE_WHITELIST=['ui','service','middleware','backend','datastore','external','actor','decision','note','excluded'];
 // A tag on a node is an explicit, deliberate signal from whoever wrote the outline — worth
@@ -21233,7 +21242,7 @@ const DIAGRAM_GEN_NOTE_COLOR={fill:'#FBF8EF',stroke:'#B8AF8C',font:'#5B5540'};
 // washed-out by comparison so the two read as different things, not just different shapes.
 const DIAGRAM_GEN_EXCLUDED_COLOR={fill:'#F7F7F5',stroke:'#C7C4BA',font:'#9A978C'};
 const DIAGRAM_GEN_SHAPE_LABEL={ui:'UI / Frontend',service:'Service / API',middleware:'Middleware / Integration',backend:'Backend / Persistence',datastore:'Data store',external:'External system',actor:'Actor',decision:'Decision',note:'Note',excluded:'Out of scope / unaffected'};
-const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up',na:'N/A'};
+const DIAGRAM_GEN_MARKER_LABEL={confirmed:'Agreed',parked:'Out of scope',followup:'Follow-up'};
 // ── Manual classification (nodeMeta) ─────────────────────────────────────
 // Replaces numbering-regex inference as the source of
 // truth for how a diagram is grouped. Lives entirely outside node.tags/.text — it's stored on
@@ -21497,10 +21506,8 @@ const _DIAGRAM_GEN_PALETTE_LEGEND = {
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_COLOR — see this file's header for why.
 const _DIAGRAM_GEN_MARKER_COLOR_LEGEND = {
     confirmed: 'green',
-    issue: 'red',
     parked: 'gray',
     followup: 'amber',
-    na: 'pink',
 };
 // Duplicated from index.html's own DIAGRAM_GEN_LAYER_ORDER — see this file's header for why.
 const _DIAGRAM_GEN_LAYER_ORDER_LEGEND = ['actor', 'ui', 'service', 'middleware', 'backend', 'external'];
@@ -21542,11 +21549,9 @@ const _DIAGRAM_GEN_SHAPE_LABEL_LEGEND = {
 };
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_LABEL — see this file's header for why.
 const _DIAGRAM_GEN_MARKER_LABEL_LEGEND = {
-    confirmed: 'Confirmed',
-    issue: 'Issue',
-    parked: 'Parked',
+    confirmed: 'Agreed',
+    parked: 'Out of scope',
     followup: 'Follow-up',
-    na: 'N/A',
 };
 function escXmlAttrLocal(s) {
     return String(s == null ? '' : s)
@@ -21702,7 +21707,7 @@ const _DIAGRAM_GEN_TAG_CYCLE = ['blue', 'green', 'amber', 'red', 'purple', 'teal
 // Duplicated from index.html's own DIAGRAM_GEN_BRANCH_CYCLE — see this file's header for why.
 const _DIAGRAM_GEN_BRANCH_CYCLE = ['purple', 'teal', 'coral', 'pink', 'blue', 'green', 'amber', 'red'];
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_COLOR — see this file's header for why.
-const _DIAGRAM_GEN_MARKER_COLOR = { confirmed: 'green', issue: 'red', parked: 'gray', followup: 'amber', na: 'pink' };
+const _DIAGRAM_GEN_MARKER_COLOR = { confirmed: 'green', parked: 'gray', followup: 'amber' };
 // Duplicated from index.html's own DIAGRAM_GEN_SHAPE_COLOR — see this file's header for why.
 const _DIAGRAM_GEN_SHAPE_COLOR = { ui: 'blue', service: 'teal', middleware: 'purple', backend: 'coral', datastore: 'coral', external: 'gray', actor: 'pink', decision: 'amber' };
 /** Pure: matches index.html's own `diagramGenTagColorKey` exactly — a deterministic per-document
@@ -27510,10 +27515,10 @@ function closeIconLibrary(){
 
 function newQaId(){ return 'qa'+Date.now()+'-'+Math.floor(Math.random()*100000); }
 // Node markers — a quick, at-a-glance status you can drop on any single node without touching
-// its text: Confirmed/Issue/Parked/Follow-up. Distinct from Q&A's follow-up flag (which lives on
+// its text: Agreed/Follow-up/Out of scope. Distinct from Q&A's follow-up flag (which lives on
 // a question, not a node) — set from the outline's own right-click menu (#context-marker-row).
-function nodeMarkerLabel(m){ return ({confirmed:'Confirmed',issue:'Issue',parked:'Parked',followup:'Follow-up',na:'N/A'})[m]||''; }
-function nodeMarkerColor(m){ return ({confirmed:'green',issue:'red',parked:'gray',followup:'orange',na:'gray'})[m]||''; }
+function nodeMarkerLabel(m){ return ({confirmed:'Agreed',followup:'Follow-up',parked:'Out of scope'})[m]||''; }
+function nodeMarkerColor(m){ return ({confirmed:'green',followup:'orange',parked:'gray'})[m]||''; }
 // Clicking the currently-active marker again clears it — same toggle-off convention as the Q&A
 // follow-up chip — rather than needing a separate "clear" control.
 function setNodeMarker(id,marker){
@@ -27537,8 +27542,8 @@ function setNodeMarker(id,marker){
     if(holder){ delete holder.status; if(!htmlHasVisibleText(holder.text)&&!holder.verdict&&!isQuestion(holder))remarks.splice(remarks.indexOf(holder),1); }
     node.marker=syncedMarker('',nodeThread(id));
   }
-  // An issue needs saying what's wrong: marking one opens the row's reply box (the caller renders).
-  if(resolved==='issue'){
+  // A follow-up needs saying what's left: marking one opens the row's reply box (the caller renders).
+  if(resolved==='followup'){
     forceInlineItemExpanded(inlineExpandRemarksNodeIds,id); inlineExpandRemarksNodeIds.add(id);
     _threadComposerNodeId=id; _pendingInlineFocus={kind:'threadComposer',nodeId:id};
   }
@@ -28178,6 +28183,7 @@ function previewRenderRemarkEntry(r,thread,prev){
   }
   // The status prints once, on the row's marker; the entry that set it says so quietly.
   if(r.status){ const n=document.createElement('span'); n.className='pv-thread-status-note'; n.textContent='\u00b7 '+THREAD_STATUS_LABEL[r.status].toLowerCase(); meta.appendChild(n); }
+  if(r.decision)meta.appendChild(previewStatusPill('decision'));
   entry.appendChild(meta);
   const quoted=threadQuotedQuestion(r,thread);
   if(quoted){ const qq=document.createElement('div'); qq.className='pv-thread-quote'; qq.textContent='\u21b3 '+quoted; entry.appendChild(qq); }
@@ -28197,7 +28203,8 @@ function previewRenderRemarkEntry(r,thread,prev){
 function previewRenderRemarkGroup(remarksForNode){
   const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
   const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
-  label.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+remarksForNode.length+'</span>';
+  const decisions=remarksForNode.filter(r=>r.decision).length;
+  label.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+remarksForNode.length+(decisions?' · '+(decisions===1?'Decision':decisions+' decisions'):'')+'</span>';
   const body=document.createElement('div'); body.className='pv-inline-remark-body pv-thread-body';
   remarksForNode.forEach((r,i)=>body.appendChild(previewRenderRemarkEntry(r,remarksForNode,remarksForNode[i-1])));
   wrap.appendChild(label); wrap.appendChild(body);
@@ -28653,8 +28660,9 @@ function markIconSvg(kind,size){
     confirmed:'<polyline points="20 6 9 17 4 12"/>',
     issue:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
     na:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-    parked:'<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>',
+    parked:'<circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>',
     followup:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+    decision:'<circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9.5"/>',
     comment:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     question:'<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2.5-3 4.5"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
     edit:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
@@ -29540,6 +29548,17 @@ function renderNodeThread(node,placeLine){
     head.dataset.tip='Click to hide the thread';
     head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
+    // A decision made in the thread shows in its header too (owner request, 2026-10-15): one click
+    // jumps to the entry, unfolding the thread if it's hidden. The row's icons stay as they are.
+    const decisions=thread.filter(r=>r.decision);
+    if(decisions.length){
+      const dec=document.createElement('button'); dec.type='button'; dec.className='thread-head-decision';
+      dec.innerHTML='· '+markIconSvg('decision',10)+'<span>'+(decisions.length===1?'Decision':decisions.length+' decisions')+'</span>';
+      dec.dataset.tip='Go to the '+(decisions.length===1?'decision':'latest decision');
+      dec.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+      dec.addEventListener('click',e=>{ e.stopPropagation(); revealInlineObject('remark',decisions[decisions.length-1].id); });
+      head.appendChild(dec);
+    }
     // A long thread shows its latest three; the header says how to see the rest (no line of its own).
     if(thread.length>4){
       const all=showAllRemarksNodeIds.has(node.id), hidden=thread.length-3;
@@ -29590,6 +29609,8 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   // A status is quiet text on the entry that set it (who and when); the row marker shows it in colour.
   const quoted=threadQuotedQuestion(r,thread);
   if(r.status)note('thread-status-note is-'+markerForThreadStatus(r.status),'· '+THREAD_STATUS_LABEL[r.status].toLowerCase(),'Set the row to '+THREAD_STATUS_LABEL[r.status]+' — right-click to change');
+  // A decision is a chip on the entry where it was made; it doesn't change the row (owner decision 2026-10-15).
+  if(r.decision)chip('is-decision',markIconSvg('decision',10)+'<span>Decision</span>','Decided here — right-click to change');
   line.appendChild(meta);
   if(quoted){ const qq=document.createElement('div'); qq.className='thread-quote'; qq.textContent='↳ '+quoted; qq.dataset.tip='Answers this question'; line.appendChild(qq); }
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
@@ -29651,12 +29672,14 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
     if(isQuestion(r)){ const st=questionState(r,thread); if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won’t answer', onClick:change(()=>{ if(st==='wont')delete r.wontAnswer; else r.wontAnswer=true; })}); }
     items.push({label:isQuestion(r)?'Make it a comment':'Make it a question', icon:isQuestion(r)?markIconSvg('comment'):qaDotIconSvg(14), onClick:change(()=>{ if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); } else r.type='question'; })});
   }
+  // A decision is a mark on this entry only (a chip); the row's status stays as it is.
+  items.push({label:r.decision?'Not a decision':'Mark as decision', icon:markIconSvg('decision'), onClick:change(()=>{ if(r.decision)delete r.decision; else r.decision=true; })});
   // Status: the row-marker icons and colors, labelled, current one tinted; clicking it again clears it.
   items.push({heading:'Status'});
   const cur=markerForThreadStatus(r.status);
   items.push({choices:NODE_MARKERS.map(st=>({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), color:'var(--fc-'+nodeMarkerColor(st)+')', current:cur===st, tip:cur===st?'Clear '+THREAD_STATUS_LABEL[st]:'', onClick:change(()=>{ if(cur===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}))});
   items.push({divider:true});
-  if(featureAiEnabled)items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
+  if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
   items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
   return items;
 }
@@ -29688,14 +29711,14 @@ function renderThreadComposer(node,thread,place,commit){
     if(!hasText&&!(extra&&(extra.verdict||extra.status)))return;
     pushUndo();
     const last=thread[thread.length-1];
-    // Saying why right after setting a marker (Issue opens the reply line for that): the words go
+    // Saying why right after setting a marker (Follow-up opens the reply line for that): the words go
     // on the status entry the marker just added, so the status and its reason are one entry.
     if(hasText&&!extra&&!ask&&last&&last.status&&!htmlHasVisibleText(last.text)&&!last.verdict&&!isQuestion(last)&&(last.person||'')===threadDefaultAuthor()&&Date.now()-(last.createdAt||0)<10*60*1000){
       last.text=html;
     } else {
       const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:hasText?html:'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
       if(ask&&!(extra&&extra.verdict))e.type='question';
-      // A row marked Issue / Follow-up / Confirmed before it had a thread: its first entry carries that status.
+      // A row marked Follow-up / Agreed / Out of scope before it had a thread: its first entry carries that status.
       if(!thread.length&&!(extra&&extra.status)&&threadStatusForMarker(node.marker))e.status=threadStatusForMarker(node.marker);
       if(extra&&extra.verdict&&openQ){ e.answerTo=openQ.id; e.verdict=extra.verdict; }
       // A status from the reply line is its own entry, so it records who moved it and when.
@@ -29733,8 +29756,8 @@ function renderThreadComposer(node,thread,place,commit){
     fu.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'followup'}); });
     actions.appendChild(fu);
   }
-  if(openStatus==='followup'||openStatus==='issue'){
-    const res=btn('confirm','Confirm','Settle the '+(openStatus==='issue'?'issue':'follow-up')+' (with what you typed) — the row turns Confirmed');
+  if(openStatus==='followup'){
+    const res=btn('confirm','Agree','Settle the follow-up (with what you typed) — the row turns Agreed');
     res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'confirmed'}); });
     actions.appendChild(res);
   }
@@ -30221,8 +30244,8 @@ function setTagFilter(tag){
 // can be active together (AND), same reasoning as applyTagFilterToPane's combined check.
 // Toolbar marker summary — how many nodes carry each marker across the whole document, folded
 // branches included, so outstanding Issues/Follow-ups stay visible when the outline is collapsed.
-// Toolbar open-items summary: what still needs attention, in words ("1 issue · 6 follow-ups ·
-// 2 questions"), or "All settled". Settled items (Confirmed / N/A rows, answered questions, resolved
+// Toolbar open-items summary: what still needs attention, in words ("6 follow-ups ·
+// 2 questions"), or "All settled". Settled items (Agreed rows, answered questions, resolved
 // follow-ups) only count toward the progress in its list. Hidden on a document that tracks nothing.
 // Counting lives in src/utils/discussionStatus.ts (documentProgress, attentionParts).
 // A function, not a const: render() calls updateMarkerSummary during boot, before a top-level
@@ -30234,7 +30257,7 @@ function openItemKindIcon(key){
   if(key==='done')return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   return markIconSvg(key);
 }
-function openItemKindColor(key){ return ({issue:'var(--fc-red)',followup:'var(--fc-orange)',question:'var(--accent)',remark:'var(--fc-gray)',parked:'var(--fc-gray)',done:'var(--fc-green)',confirmed:'var(--fc-green)',na:'var(--fc-gray)'})[key]||'var(--fc-gray)'; }
+function openItemKindColor(key){ return ({followup:'var(--fc-orange)',question:'var(--accent)',remark:'var(--fc-gray)',parked:'var(--fc-gray)',done:'var(--fc-green)',confirmed:'var(--fc-green)'})[key]||'var(--fc-gray)'; }
 function updateMarkerSummary(){
   const group=el('ag-markers'); const box=el('marker-summary'); if(!group||!box)return;
   const p=documentProgress(nodes,qaItems,remarks);
@@ -30269,7 +30292,7 @@ function applyOpenItemsFilter(kind){
   activeMarkerFilter=null;
   setDiscussionFilter(same?null:kind);
 }
-// The list behind the summary: open items grouped by kind (Parked last), each jumping to its row or
+// The list behind the summary: open items grouped by kind (Out of scope last), each jumping to its row or
 // inline item. Filtering is one switch at the top (everything open) plus a small filter icon on each
 // group heading (just that kind) — no repeated "Show only these" rows.
 function openItemsMenuItems(){
@@ -30290,17 +30313,15 @@ function openItemsMenuItems(){
     if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!on)applyOpenItemsFilter(filterKind); }});
   };
   const markerRows=m=>nodes.filter(n=>n.marker===m).map(n=>({label:rowText(n), go:()=>revealNodeInDoc(currentDocId,n.id)}));
-  addGroup('issue','Issues',markerRows('issue'),'issue');
   addGroup('followup','Follow-ups',markerRows('followup'),'followup');
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),'openQa');
-  addGroup('parked','Parked',markerRows('parked'),'parked');
-  // What counts toward "N of M settled", folded by default so it doesn't lengthen the list: Confirmed and
-  // N/A rows, answered or won't-answer questions. Each jumps like above.
+  addGroup('parked','Out of scope',markerRows('parked'),'parked');
+  // What counts toward "N of M settled", folded by default so it doesn't lengthen the list: Agreed
+  // rows, answered or won't-answer questions. Each jumps like above.
   const settled=[];
   const settledGroup=(heading,key,entries)=>{ if(!entries.length)return; settled.push({heading:heading+' \u00B7 '+entries.length}); entries.forEach(en=>settled.push({label:en.label, icon:icon(key), onClick:en.go})); };
-  settledGroup('Confirmed','confirmed',markerRows('confirmed'));
-  settledGroup('N/A','na',markerRows('na'));
+  settledGroup('Agreed','confirmed',markerRows('confirmed'));
   const doneQs=allSettledQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   settledGroup('Answered or closed questions','question',doneQs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})));
   if(settled.length){
