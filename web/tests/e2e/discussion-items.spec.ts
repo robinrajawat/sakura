@@ -48,9 +48,10 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
   await expect(a.locator('.thread-verdict.is-yes')).toHaveText('✓ Yes');
   await expect(a.locator('.node-remark-text-inline')).toHaveText('All of them');
-  // A decision becomes Agreed, on the thread and the row, with a Decision chip on its entry.
+  // A decision becomes Agreed, on the thread and the row, and stays marked as a decision on its entry.
   await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-status-note.is-confirmed')).toHaveText('· agreed');
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-chip.is-decision')).toHaveText('Decision');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-status-note.is-decision')).toHaveText('· decision');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-kind.is-decision svg')).toHaveCount(1);
   expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('confirmed');
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'd1'))")).not.toContain('"kind"');
   expect(errors).toEqual([]);
@@ -89,13 +90,15 @@ test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a qu
   const last = await page.evaluate("JSON.stringify(remarks[remarks.length - 1])");
   expect(last).toContain('"type":"question"');
   expect(last).toContain('"person":"Kristoffer"');
-  await expect(page.locator('.thread-entry .thread-chip.is-question[data-state="open"]')).toHaveCount(1);
+  await expect(page.locator('.thread-entry .thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
   await expect(page.locator('.node-row[data-id="2"] .node-remark-dot .node-dot-count')).toHaveText('1');
 
   await box.click();
   await page.keyboard.type('Tested last week');
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="yes"]').click();
-  await expect(page.locator('.thread-entry .thread-chip.is-question[data-state="open"]')).toHaveCount(0);
+  // Answered: the question's icon leaves the accent colour, and the answer gets a ✓.
+  await expect(page.locator('.thread-entry .thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
+  await expect(page.locator('.thread-entry .thread-kind.is-answer')).toHaveCount(1);
   const answer = await page.evaluate("(() => { const r = remarks[remarks.length - 1]; return [r.verdict, r.answerTo === remarks[remarks.length - 2].id, stripHtmlToText(r.text)]; })()");
   expect(answer).toEqual(['yes', true, 'Tested last week']);
   expect(errors).toEqual([]);
@@ -175,7 +178,7 @@ test('Quick Assist finds thread entries by text, answer and author', async ({ pa
   }
 });
 
-test('PDF prints the whole thread with author, time and chips', async ({ page }) => {
+test('PDF prints the whole thread with kind icons, author, time and notes', async ({ page }) => {
   const errors = await seed(page, `
     remarks.push({ id: 'd1', anchorNodeId: 2, person: 'Maria', date: '2026-10-14', text: 'Cut over on Saturday.', createdAt: 9, status: 'decision' });
   `);
@@ -192,23 +195,28 @@ test('PDF prints the whole thread with author, time and chips', async ({ page })
       verdicts: [...doc.querySelectorAll('.pv-remark-block .pv-thread-verdict')].map(e => e.textContent),
       texts: [...doc.querySelectorAll('.pv-remark-block .pv-remark-text')].map(e => (e.textContent || '').trim()),
       pills: [...doc.querySelectorAll('.pv-remark-block .pv-remark-entry .pv-status-pill')].map(e => e.textContent),
-      decisionIcon: !!doc.querySelector('.pv-remark-block .pv-status-pill[data-state="decision"] svg'),
+      kinds: [...doc.querySelectorAll('.pv-remark-block .pv-remark-kind')].map(e => e.className.replace('pv-remark-kind is-', '')),
+      decisionIcon: !!doc.querySelector('.pv-remark-block .pv-remark-kind.is-decision svg'),
+      nameColour: !!(doc.querySelector('.pv-remark-block .pv-remark-meta b') as HTMLElement | null)?.style.getPropertyValue('--pc'),
       qaSection: (document.getElementById('pv-qa-section')?.textContent || '')
     };
   });
   // The header names the thread; the status prints once on the row, and quietly on the entry that set it.
   expect(r.labels).toEqual(['Thread · 4 · Decision']);
-  expect(r.notes).toEqual(['· question, answered', '· agreed']);
+  expect(r.notes).toEqual(['· question, answered', '· agreed', '· decision']);
   expect(r.verdicts).toEqual(['✓ Yes']);
   expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
-  expect(r.pills).toEqual(['Decision']);
+  // No chips: each entry's kind is its icon (a faint comment icon for a plain comment).
+  expect(r.pills).toEqual([]);
+  expect(r.kinds).toEqual(['comment', 'question', 'answer', 'decision']);
   expect(r.decisionIcon).toBe(true);
+  expect(r.nameColour).toBe(true);
   expect(r.qaSection).toContain('Unlinked question');
   expect(r.qaSection).not.toContain('EU customers');
   expect(errors).toEqual([]);
 });
 
-test('each author gets their own avatar colour; a bare Yes takes one line', async ({ page }) => {
+test('each author gets their own name colour; a bare Yes takes one line', async ({ page }) => {
   await seed(page, `
     remarks.push(
       { id: 'k', anchorNodeId: 2, person: 'Karsten', date: '2026-10-14', text: 'Fine by me.', createdAt: 5 },
@@ -254,9 +262,10 @@ test('entry menu: Reply first, question toggle, decision, status as labelled mar
 
   await entry.click({ button: 'right' });
   await expect(menu.locator('.sb-context-choice.current')).toHaveText('Follow-up');
-  // A decision is a chip on the entry; the row keeps its marker.
+  // A decision is marked on the entry (handshake icon, quiet text); the row keeps its marker.
   await menu.getByText('Mark as decision', { exact: true }).click();
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-chip.is-decision')).toHaveText('Decision');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-status-note.is-decision')).toHaveText('· decision');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-kind.is-decision')).toHaveCount(1);
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('followup');
   await entry.click({ button: 'right' });
   await expect(menu.getByText('Not a decision', { exact: true })).toBeVisible();
@@ -301,7 +310,8 @@ test('grey thread: only an open question takes the accent colour; an answer quot
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ans) .thread-quote')).toHaveText('↳ Does it make sense to use the shipping con…');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-rq1-a) .thread-quote')).toHaveCount(0);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-q-note')).toHaveText('· question, answered');
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-chip.is-question')).toHaveText('Question');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
 });
 
 test('Ctrl/Cmd+Alt+M opens a reply line in the selected row\'s thread', async ({ page }) => {

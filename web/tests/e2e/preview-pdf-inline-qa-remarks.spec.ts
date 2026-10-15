@@ -118,8 +118,9 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
 
 // Remarks previously rendered as plain italic text with a "— Name · date" line and no box at all,
 // visually inconsistent with the boxed note/Q&A cards right next to it, and dropped the colored
-// author avatar the rest of the app already uses for remarks (REMARK_AVATAR_PALETTE).
-test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A, with the author avatar', () => {
+// author colour the rest of the app already uses for remarks (REMARK_AVATAR_PALETTE). Since
+// 2026-10-15 an entry starts with a kind icon (a comment here) and the name carries the colour.
+test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A, with a kind icon and coloured name', () => {
   test('a remark anchored to a node renders inside the shared .pv-inline-block card shell', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -135,20 +136,21 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
     const result = await page.evaluate(() => {
       const body = document.getElementById('preview-body')!;
       const block = body.querySelector('.pv-remark-block');
-      const avatar = body.querySelector('.pv-remark-avatar') as HTMLElement | null;
+      const kind = body.querySelector('.pv-remark-kind') as HTMLElement | null;
+      const name = body.querySelector('.pv-remark-meta b') as HTMLElement | null;
       return {
         isInlineBlock: !!block?.classList.contains('pv-inline-block'),
         hasBoxedBody: !!block?.querySelector('.pv-inline-remark-body'),
         hasLabelColorClass: !!block?.querySelector('.pv-inline-label-remark'),
-        avatarText: avatar?.textContent,
-        avatarHasBackground: !!avatar && avatar.style.background.length > 0,
+        kindIsComment: !!kind?.classList.contains('is-comment') && !!kind.querySelector('svg'),
+        nameHasColour: !!name && name.style.getPropertyValue('--pc').length > 0,
       };
     });
     expect(result.isInlineBlock).toBe(true);
     expect(result.hasBoxedBody).toBe(true);
     expect(result.hasLabelColorClass).toBe(true);
-    expect(result.avatarText).toBe('JD');
-    expect(result.avatarHasBackground).toBe(true);
+    expect(result.kindIsComment).toBe(true);
+    expect(result.nameHasColour).toBe(true);
   });
 
   // The trailing section already has its own "Remarks" heading grouping these -- a repeated
@@ -172,7 +174,7 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
       return {
         sectionExists: !!section,
         hasEntry: !!section?.querySelector('.pv-remark-entry'),
-        hasAvatar: !!section?.querySelector('.pv-remark-avatar'),
+        hasAvatar: !!section?.querySelector('.pv-remark-kind'),
         hasRepeatedLabel: !!section?.querySelector('.pv-inline-label-remark'),
       };
     });
