@@ -1811,6 +1811,8 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-entry+.thread-entry::before,.thread-entry+.thread-composer::before{top:0;height:3px}
 .node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--hint);font:500 12px 'Inter',sans-serif;cursor:pointer;user-select:none}
 .thread-head svg{flex:0 0 auto}
+.thread-head-more{border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
+.thread-head-more:hover{color:var(--fg);background:var(--hover)}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
 .thread-time{font-size:12px}
 .thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
@@ -1839,6 +1841,8 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Only the label fades: the line also carries the outline's depth guides, which must stay drawn. */
 .thread-reply-label{margin-left:22px;opacity:0;transition:opacity .12s}
 .thread-reply-link.thread-hover .thread-reply-label,.thread-reply-link:focus-within .thread-reply-label{opacity:1}
+/* Touch screens have no hover: "+ Reply" is always there. */
+@media (hover: none){.thread-reply-label{opacity:1}}
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 .thread-verdict{font:600 12px 'Inter',sans-serif}
 .thread-verdict.is-yes{color:var(--fc-green)}
@@ -5046,7 +5050,8 @@ var THREAD_FLAG_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none"
 var THREAD_CHECK_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg>';
 var THREAD_SEAL_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l2.4 1.7 2.9-.1.9 2.8 2.4 1.7-.9 2.8.9 2.8-2.4 1.7-.9 2.8-2.9-.1L12 21.5l-2.4-1.7-2.9.1-.9-2.8-2.4-1.7.9-2.8-.9-2.8 2.4-1.7.9-2.8 2.9.1z"/><path d="M8.5 12.2l2.3 2.3 4.7-4.8"/></svg>';
 var THREAD_WARN_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
-var THREAD_STATUS_LABEL={issue:'Issue',followup:'Follow-up',resolved:'Resolved',decision:'Decision'};
+// The thread's statuses are the row markers, same names (older 'resolved' / 'decision' read as Confirmed).
+var THREAD_STATUS_LABEL={confirmed:'Confirmed',issue:'Issue',followup:'Follow-up',parked:'Parked',na:'N/A',resolved:'Confirmed',decision:'Confirmed'};
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
@@ -7305,18 +7310,26 @@ function cardsTotal(grid, calculated) {
  * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
  * order. An entry has an author, a time and text; it is a comment, or a question
  * (`type: 'question'`). An answer is an entry that answers a question (`answerTo`), with a Yes/No
- * (`verdict`) and/or text. A status chip (`status`: issue, follow-up, resolved or decision) sits on
- * the entry it was set on, so its author gives the context; the thread's status is the latest one.
+ * (`verdict`) and/or text. A status (`status`) sits on the entry it was set on, so its author and
+ * time say who set it and when; the thread's status is the latest one.
  *
- * The thread status and the row marker are one status shown in two places: Issue ⇄ ⚠ Issue,
- * Follow-up ⇄ ⚑ Follow-up, Resolved / Decision ⇄ ✓ Confirmed. Parked and N/A ("not now", "doesn't
- * apply") stay row-only. An unanswered question shows as Open on its own (derived, never stored).
+ * Owner decision (2026-10-15): the row marker *is* the thread's status — the same five values
+ * (Confirmed, Issue, Follow-up, Parked, N/A) under the same names, stored only in the thread and
+ * shown on the row. Clicking a marker adds it to the thread. Older 'resolved' and 'decision'
+ * statuses read as Confirmed. An unanswered question shows as Open on its own (derived, never stored).
  *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
  * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
+const THREAD_STATUSES = ['confirmed', 'issue', 'followup', 'parked', 'na'];
+/** A stored status in today's terms: older 'resolved' / 'decision' read as Confirmed; anything unknown as none. */
+function normalizeThreadStatus(s) {
+    if (s === 'resolved' || s === 'decision')
+        return 'confirmed';
+    return THREAD_STATUSES.includes(s) ? s : null;
+}
 /** True when an HTML fragment has any visible text (tags, &nbsp; and whitespace don't count). */
 function htmlHasVisibleText(html) {
     const text = String(html ?? '')
@@ -7373,7 +7386,7 @@ function questionToAnswer(thread, before) {
 function threadStatus(thread) {
     for (let i = (thread || []).length - 1; i >= 0; i--)
         if (thread[i].status)
-            return thread[i].status;
+            return normalizeThreadStatus(thread[i].status);
     return null;
 }
 /** The entry holding the thread's status. */
@@ -7383,29 +7396,17 @@ function threadStatusEntry(thread) {
             return thread[i];
     return null;
 }
-/** The row marker a thread status shows as. */
+/** The row marker a thread status shows as: the same value. */
 function markerForThreadStatus(s) {
-    if (s === 'issue')
-        return 'issue';
-    if (s === 'followup')
-        return 'followup';
-    if (s === 'resolved' || s === 'decision')
-        return 'confirmed';
-    return null;
+    return normalizeThreadStatus(s);
 }
-/** The status a row marker sets on its thread (null for row-only markers). */
+/** The status a row marker sets on its thread: the same value. */
 function threadStatusForMarker(m) {
-    if (m === 'issue')
-        return 'issue';
-    if (m === 'followup')
-        return 'followup';
-    if (m === 'confirmed')
-        return 'resolved';
-    return null;
+    return normalizeThreadStatus(m);
 }
-/** Markers the thread drives; Parked and N/A are row-only. */
+/** Every marker is the thread's status. */
 function isThreadMarker(m) {
-    return m === 'issue' || m === 'followup' || m === 'confirmed';
+    return normalizeThreadStatus(m) != null;
 }
 /**
  * The marker a row should show after its thread changed: the thread's status when it has one;
@@ -7425,7 +7426,7 @@ function localDateStr(ms) {
 }
 /** True when any entry still has an older shape (remark follow-up, discussion kind, inline answer). */
 function needsThreadMigration(entries) {
-    return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null));
+    return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || r.status === 'resolved' || r.status === 'decision'));
 }
 /**
  * Converts older remarks and discussion items to thread entries: a follow-up remark becomes a
@@ -7446,9 +7447,13 @@ function migrateDiscussionToThread(entries) {
         const answer = r.answer;
         const verdict = r.verdict;
         if (r.followUp)
-            r.status = r.resolvedAt ? 'resolved' : 'followup';
+            r.status = r.resolvedAt ? 'confirmed' : 'followup';
         if (kind === 'decision')
-            r.status = 'decision';
+            r.status = 'confirmed';
+        if (r.status)
+            r.status = normalizeThreadStatus(r.status) || undefined;
+        if (!r.status)
+            delete r.status;
         if (kind === 'question')
             r.type = 'question';
         delete r.followUp;
@@ -7515,8 +7520,8 @@ function migrateQaToRemarks(qaItems, remarks) {
 }
 /**
  * Links row markers and threads once, for documents from before they were linked: a row with a
- * thread status but no marker gets the matching marker; a row marked Issue, Follow-up or Confirmed
- * whose thread has no status puts that status on the thread's latest entry. Returns the marker changes
+ * thread status but no marker gets the matching marker; a marked row whose thread has no status
+ * puts the marker on the thread's latest entry. Returns the marker changes
  * (node id → marker); entries are updated in place.
  */
 function linkMarkersToThreads(nodes, entries) {
@@ -7540,6 +7545,17 @@ function linkMarkersToThreads(nodes, entries) {
             changes.set(n.id, markerForThreadStatus(st));
         else if (!st && isThreadMarker(n.marker))
             last.status = threadStatusForMarker(n.marker);
+        else if (st && (n.marker === 'parked' || n.marker === 'na') && st !== n.marker) {
+            // Parked and N/A used to be row-only, so an older row can show one over a thread with another
+            // status. The row keeps what it shows: the marker goes into the thread after its latest entry
+            // (no author or time of its own: the old marker never stored them).
+            if (!last.status)
+                last.status = n.marker;
+            else {
+                const at = (last.createdAt || 0) + 1;
+                entries.push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: n.marker });
+            }
+        }
         else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== n.marker) {
             // Issue used to be row-only, so an older row can be marked Issue over a thread with another
             // status: the Issue goes on the latest entry when that one has no chip yet; otherwise the
@@ -27509,18 +27525,17 @@ function setNodeMarker(id,marker){
   if(prev===resolved)return;
   pushUndo();
   node.marker=resolved; node.modifiedAt=Date.now();
-  // Issue, Follow-up and Confirmed are the row's thread status (one status, two places): clicking one
-  // puts it on the thread's latest entry; clearing it takes back the chip that set it (an older
-  // chip, if any, becomes the status again). Parked and N/A are row-only.
+  // The marker is the thread's status (owner decision 2026-10-15): clicking one records it in the
+  // row's thread, by the current author, now (starting the thread if there is none), so every
+  // status says who set it and when. Clearing it takes back the status that set it (an older one,
+  // if any, becomes the status again).
   const thread=nodeThread(id);
-  if(thread.length){
-    const want=threadStatusForMarker(resolved);
-    if(want){ if(markerForThreadStatus(threadStatus(thread))!==resolved)thread[thread.length-1].status=want; }
-    else if(!resolved&&isThreadMarker(prev)){
-      const holder=threadStatusEntry(thread);
-      if(holder){ delete holder.status; if(!htmlHasVisibleText(holder.text)&&!holder.verdict&&!isQuestion(holder))remarks.splice(remarks.indexOf(holder),1); }
-      node.marker=syncedMarker('',nodeThread(id));
-    }
+  const want=threadStatusForMarker(resolved);
+  if(want){ if(markerForThreadStatus(threadStatus(thread))!==resolved)addThreadStatus(id,want,'',true); }
+  else if(!resolved&&thread.length){
+    const holder=threadStatusEntry(thread);
+    if(holder){ delete holder.status; if(!htmlHasVisibleText(holder.text)&&!holder.verdict&&!isQuestion(holder))remarks.splice(remarks.indexOf(holder),1); }
+    node.marker=syncedMarker('',nodeThread(id));
   }
   // An issue needs saying what's wrong: marking one opens the row's reply box (the caller renders).
   if(resolved==='issue'){
@@ -29467,7 +29482,7 @@ function formatRemarkDateDisplay(dateStr){
 // src/utils/discussionStatus.ts. The reply box is the only way to add an entry, so blank entries
 // never pile up.
 // (The reply box state and chip icons are declared up top with the other inline-object state; render runs before this point.)
-function threadStatusChipHtml(st){ return (st==='issue'?THREAD_WARN_SVG:st==='followup'?THREAD_FLAG_SVG:st==='decision'?THREAD_SEAL_SVG:THREAD_CHECK_SVG)+'<span>'+THREAD_STATUS_LABEL[st]+'</span>'; }
+function threadStatusChipHtml(st){ const m=markerForThreadStatus(st)||'confirmed'; return markIconSvg(m,10)+'<span>'+THREAD_STATUS_LABEL[m]+'</span>'; }
 // Who the reply box writes as: the author picked in it, else whoever wrote last in this document.
 function threadDefaultAuthor(){
   if(_threadAuthor!=null)return _threadAuthor;
@@ -29482,18 +29497,20 @@ function threadRecentAuthors(){
   return [...seen.entries()].sort((a,b)=>b[1]-a[1]).map(([n])=>n);
 }
 // "10:02" today, "Yesterday · 10:02", "13 Oct · 10:02" -- the date part follows the editable date.
-function formatThreadTime(r){
+// The day shows once per day, like the PDF: an entry on the same day as the one shown above it shows only its time.
+function formatThreadTime(r,prev){
   const day=formatRemarkDateDisplay(r.date);
   const t=r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
-  if(day==='Today')return t||day;
+  if(day==='Today'||(t&&prev&&(prev.date||'')===(r.date||'')))return t||day;
   return t?day+' · '+t:day;
 }
-// Status on a thread from the row marker or the Resolve button: on the latest entry when it has no
-// status yet, else as a new status-only entry, so earlier chips stay as history.
-function addThreadStatus(nodeId,status,text){
+// Status on a thread from the row marker or the reply line: on the latest entry when it has no
+// status yet (and, from a marker, was written by the same person), else as a new status-only entry,
+// so earlier statuses stay as history and each one says who set it.
+function addThreadStatus(nodeId,status,text,sameAuthorOnly){
   const thread=nodeThread(nodeId);
   const last=thread[thread.length-1];
-  if(!htmlHasVisibleText(text)&&last&&!last.status){ last.status=status; return last; }
+  if(!htmlHasVisibleText(text)&&last&&!last.status&&(!sameAuthorOnly||(last.person||'')===threadDefaultAuthor())){ last.status=status; return last; }
   const e={id:newRemarkId(),anchorNodeId:nodeId,person:threadDefaultAuthor(),text:text||'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1),status};
   remarks.push(e);
   return e;
@@ -29523,18 +29540,24 @@ function renderNodeThread(node,placeLine){
     head.dataset.tip='Click to hide the thread';
     head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
+    // A long thread shows its latest three; the header says how to see the rest (no line of its own).
+    if(thread.length>4){
+      const all=showAllRemarksNodeIds.has(node.id), hidden=thread.length-3;
+      const more=document.createElement('button'); more.type='button'; more.className='thread-head-more';
+      more.textContent=all?'· show latest only':'· show '+hidden+' earlier'; more.dataset.tip=all?'Show only the latest entries':'Show the whole thread';
+      more.setAttribute('aria-expanded',String(all));
+      more.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+      more.addEventListener('click',e=>{ e.stopPropagation(); if(all)showAllRemarksNodeIds.delete(node.id); else showAllRemarksNodeIds.add(node.id); render(); });
+      head.appendChild(more);
+    }
     place(head);
   }
   const shownAll=showAllRemarksNodeIds.has(node.id)||thread.length<=4;
   const visible=shownAll?thread:thread.slice(-3);
-  if(thread.length>4){
-    const hidden=thread.length-3;
-    place(buildInlineFoldLine('node-remark-line','',shownAll?'Hide earlier entries':hidden+' earlier entr'+(hidden===1?'y':'ies'),shownAll,showAllRemarksNodeIds,node.id,shownAll?'Show only the latest entries':'Show the whole thread'));
-  }
-  visible.forEach(r=>renderThreadEntry(node,r,thread,place,commit));
+  visible.forEach((r,i)=>renderThreadEntry(node,r,thread,place,commit,visible[i-1]));
   renderThreadComposer(node,thread,place,commit);
 }
-function renderThreadEntry(node,r,thread,place,commit){
+function renderThreadEntry(node,r,thread,place,commit,prev){
   const line=document.createElement('div'); line.className='node-remark-line thread-entry'; line.dataset.remarkId=r.id;
   const meta=document.createElement('div'); meta.className='thread-meta';
   const c=remarkAuthorColor(r.person);
@@ -29552,7 +29575,7 @@ function renderThreadEntry(node,r,thread,place,commit){
   person.addEventListener('focus',()=>{ pushUndo(); });
   person.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); } });
   person.addEventListener('blur',e=>{ const val=(person.textContent||'').trim(); person.textContent=val; const changed=val!==(r.person||''); r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); const c2=remarkAuthorColor(val); avatar.style.background=c2.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
-  const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r); time.dataset.tip='Click to change the date';
+  const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date';
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
   meta.appendChild(avatar); meta.appendChild(person); meta.appendChild(time);
@@ -29566,7 +29589,7 @@ function renderThreadEntry(node,r,thread,place,commit){
   if(r.answerTo){ if(r.verdict)note('thread-verdict is-'+r.verdict,r.verdict==='yes'?'✓ Yes':'✗ No','The answer — right-click to change'); else note('thread-verdict is-answer','✓ Answer','Marked as the answer — right-click to change'); }
   // A status is quiet text on the entry that set it (who and when); the row marker shows it in colour.
   const quoted=threadQuotedQuestion(r,thread);
-  if(r.status)note('thread-status-note is-'+r.status,'· '+THREAD_STATUS_LABEL[r.status].toLowerCase(),'Set the row to '+(r.status==='issue'?'Issue':r.status==='followup'?'Follow-up':'Confirmed')+' — right-click to change');
+  if(r.status)note('thread-status-note is-'+markerForThreadStatus(r.status),'· '+THREAD_STATUS_LABEL[r.status].toLowerCase(),'Set the row to '+THREAD_STATUS_LABEL[r.status]+' — right-click to change');
   line.appendChild(meta);
   if(quoted){ const qq=document.createElement('div'); qq.className='thread-quote'; qq.textContent='↳ '+quoted; qq.dataset.tip='Answers this question'; line.appendChild(qq); }
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
@@ -29630,9 +29653,8 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   }
   // Status: the row-marker icons and colors, labelled, current one tinted; clicking it again clears it.
   items.push({heading:'Status'});
-  const STATUS_ICON={issue:markIconSvg('issue'),followup:markIconSvg('followup'),resolved:markIconSvg('confirmed'),decision:ico('<path d="M12 13v8"/><path d="M12 3v3"/><path d="M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.15-.37l3.43-2.31a1 1 0 0 0 0-1.64l-3.43-2.31A2 2 0 0 0 17 6z"/>')};
-  const STATUS_COLOR={issue:'var(--fc-red)',followup:'var(--fc-orange)',resolved:'var(--fc-green)',decision:'var(--fc-green)'};
-  items.push({choices:['issue','followup','resolved','decision'].map(st=>({label:THREAD_STATUS_LABEL[st], icon:STATUS_ICON[st], color:STATUS_COLOR[st], current:r.status===st, tip:r.status===st?'Clear '+THREAD_STATUS_LABEL[st]:'', onClick:change(()=>{ if(r.status===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}))});
+  const cur=markerForThreadStatus(r.status);
+  items.push({choices:NODE_MARKERS.map(st=>({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), color:'var(--fc-'+nodeMarkerColor(st)+')', current:cur===st, tip:cur===st?'Clear '+THREAD_STATUS_LABEL[st]:'', onClick:change(()=>{ if(cur===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}))});
   items.push({divider:true});
   if(featureAiEnabled)items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
   items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
@@ -29665,8 +29687,12 @@ function renderThreadComposer(node,thread,place,commit){
     const hasText=htmlHasVisibleText(html);
     if(!hasText&&!(extra&&(extra.verdict||extra.status)))return;
     pushUndo();
-    {
-      const last=thread[thread.length-1];
+    const last=thread[thread.length-1];
+    // Saying why right after setting a marker (Issue opens the reply line for that): the words go
+    // on the status entry the marker just added, so the status and its reason are one entry.
+    if(hasText&&!extra&&!ask&&last&&last.status&&!htmlHasVisibleText(last.text)&&!last.verdict&&!isQuestion(last)&&(last.person||'')===threadDefaultAuthor()&&Date.now()-(last.createdAt||0)<10*60*1000){
+      last.text=html;
+    } else {
       const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:hasText?html:'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
       if(ask&&!(extra&&extra.verdict))e.type='question';
       // A row marked Issue / Follow-up / Confirmed before it had a thread: its first entry carries that status.
@@ -29708,8 +29734,8 @@ function renderThreadComposer(node,thread,place,commit){
     actions.appendChild(fu);
   }
   if(openStatus==='followup'||openStatus==='issue'){
-    const res=btn('resolve','Resolve','Resolve the '+(openStatus==='issue'?'issue':'follow-up')+' (with what you typed) — the row turns Confirmed');
-    res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'resolved'}); });
+    const res=btn('confirm','Confirm','Settle the '+(openStatus==='issue'?'issue':'follow-up')+' (with what you typed) — the row turns Confirmed');
+    res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'confirmed'}); });
     actions.appendChild(res);
   }
   const meta=document.createElement('div'); meta.className='thread-meta';

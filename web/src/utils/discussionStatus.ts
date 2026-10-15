@@ -4,12 +4,13 @@
  * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
  * order. An entry has an author, a time and text; it is a comment, or a question
  * (`type: 'question'`). An answer is an entry that answers a question (`answerTo`), with a Yes/No
- * (`verdict`) and/or text. A status chip (`status`: issue, follow-up, resolved or decision) sits on
- * the entry it was set on, so its author gives the context; the thread's status is the latest one.
+ * (`verdict`) and/or text. A status (`status`) sits on the entry it was set on, so its author and
+ * time say who set it and when; the thread's status is the latest one.
  *
- * The thread status and the row marker are one status shown in two places: Issue ⇄ ⚠ Issue,
- * Follow-up ⇄ ⚑ Follow-up, Resolved / Decision ⇄ ✓ Confirmed. Parked and N/A ("not now", "doesn't
- * apply") stay row-only. An unanswered question shows as Open on its own (derived, never stored).
+ * Owner decision (2026-10-15): the row marker *is* the thread's status — the same five values
+ * (Confirmed, Issue, Follow-up, Parked, N/A) under the same names, stored only in the thread and
+ * shown on the row. Clicking a marker adds it to the thread. Older 'resolved' and 'decision'
+ * statuses read as Confirmed. An unanswered question shows as Open on its own (derived, never stored).
  *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
  * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
@@ -17,7 +18,15 @@
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
 
-export type ThreadStatus = 'issue' | 'followup' | 'resolved' | 'decision';
+export type ThreadStatus = 'confirmed' | 'issue' | 'followup' | 'parked' | 'na';
+
+export const THREAD_STATUSES: readonly ThreadStatus[] = ['confirmed', 'issue', 'followup', 'parked', 'na'];
+
+/** A stored status in today's terms: older 'resolved' / 'decision' read as Confirmed; anything unknown as none. */
+export function normalizeThreadStatus(s: unknown): ThreadStatus | null {
+  if (s === 'resolved' || s === 'decision') return 'confirmed';
+  return (THREAD_STATUSES as readonly unknown[]).includes(s) ? (s as ThreadStatus) : null;
+}
 
 export interface ThreadEntry {
   id?: string;
@@ -33,7 +42,8 @@ export interface ThreadEntry {
   /** For an answer: the id of the question it answers. */
   answerTo?: string;
   verdict?: 'yes' | 'no';
-  status?: ThreadStatus;
+  /** Older documents may still hold 'resolved' or 'decision' until migrated (read as Confirmed). */
+  status?: ThreadStatus | 'resolved' | 'decision';
   /** A question closed without an answer. */
   wontAnswer?: boolean;
   context?: string;
@@ -116,7 +126,7 @@ export function questionToAnswer<T extends ThreadEntry>(thread: T[], before?: T)
 
 /** The thread's status: the latest status chip in it, or null. */
 export function threadStatus(thread: ThreadEntry[]): ThreadStatus | null {
-  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status) return thread[i].status as ThreadStatus;
+  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status) return normalizeThreadStatus(thread[i].status);
   return null;
 }
 
@@ -126,25 +136,19 @@ export function threadStatusEntry<T extends ThreadEntry>(thread: T[]): T | null 
   return null;
 }
 
-/** The row marker a thread status shows as. */
-export function markerForThreadStatus(s: ThreadStatus | null): 'issue' | 'followup' | 'confirmed' | null {
-  if (s === 'issue') return 'issue';
-  if (s === 'followup') return 'followup';
-  if (s === 'resolved' || s === 'decision') return 'confirmed';
-  return null;
+/** The row marker a thread status shows as: the same value. */
+export function markerForThreadStatus(s: ThreadStatus | string | null | undefined): ThreadStatus | null {
+  return normalizeThreadStatus(s);
 }
 
-/** The status a row marker sets on its thread (null for row-only markers). */
+/** The status a row marker sets on its thread: the same value. */
 export function threadStatusForMarker(m: string | null | undefined): ThreadStatus | null {
-  if (m === 'issue') return 'issue';
-  if (m === 'followup') return 'followup';
-  if (m === 'confirmed') return 'resolved';
-  return null;
+  return normalizeThreadStatus(m);
 }
 
-/** Markers the thread drives; Parked and N/A are row-only. */
+/** Every marker is the thread's status. */
 export function isThreadMarker(m: string | null | undefined): boolean {
-  return m === 'issue' || m === 'followup' || m === 'confirmed';
+  return normalizeThreadStatus(m) != null;
 }
 
 /**
@@ -167,7 +171,7 @@ function localDateStr(ms: number): string {
 
 /** True when any entry still has an older shape (remark follow-up, discussion kind, inline answer). */
 export function needsThreadMigration(entries: ThreadEntry[]): boolean {
-  return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null));
+  return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || r.status === 'resolved' || r.status === 'decision'));
 }
 
 /**
@@ -186,8 +190,10 @@ export function migrateDiscussionToThread<R extends ThreadEntry>(entries: R[]): 
     const kind = r.kind;
     const answer = r.answer;
     const verdict = r.verdict;
-    if (r.followUp) r.status = r.resolvedAt ? 'resolved' : 'followup';
-    if (kind === 'decision') r.status = 'decision';
+    if (r.followUp) r.status = r.resolvedAt ? 'confirmed' : 'followup';
+    if (kind === 'decision') r.status = 'confirmed';
+    if (r.status) r.status = normalizeThreadStatus(r.status) || undefined;
+    if (!r.status) delete r.status;
     if (kind === 'question') r.type = 'question';
     delete r.followUp; delete r.resolvedAt; delete r.kind; delete r.answer;
     if (kind === 'question') delete r.verdict;
@@ -246,8 +252,8 @@ export function migrateQaToRemarks<Q extends StatusQaItem & { createdAt?: number
 
 /**
  * Links row markers and threads once, for documents from before they were linked: a row with a
- * thread status but no marker gets the matching marker; a row marked Issue, Follow-up or Confirmed
- * whose thread has no status puts that status on the thread's latest entry. Returns the marker changes
+ * thread status but no marker gets the matching marker; a marked row whose thread has no status
+ * puts the marker on the thread's latest entry. Returns the marker changes
  * (node id → marker); entries are updated in place.
  */
 export function linkMarkersToThreads(nodes: { id: number; marker?: string | null }[], entries: ThreadEntry[]): Map<number, string> {
@@ -267,6 +273,16 @@ export function linkMarkersToThreads(nodes: { id: number; marker?: string | null
     const last = thread[thread.length - 1];
     if (st && !n.marker) changes.set(n.id, markerForThreadStatus(st) as string);
     else if (!st && isThreadMarker(n.marker)) last.status = threadStatusForMarker(n.marker) as ThreadStatus;
+    else if (st && (n.marker === 'parked' || n.marker === 'na') && st !== n.marker) {
+      // Parked and N/A used to be row-only, so an older row can show one over a thread with another
+      // status. The row keeps what it shows: the marker goes into the thread after its latest entry
+      // (no author or time of its own: the old marker never stored them).
+      if (!last.status) last.status = n.marker;
+      else {
+        const at = (last.createdAt || 0) + 1;
+        (entries as ThreadEntry[]).push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: n.marker });
+      }
+    }
     else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== n.marker) {
       // Issue used to be row-only, so an older row can be marked Issue over a thread with another
       // status: the Issue goes on the latest entry when that one has no chip yet; otherwise the
