@@ -197,6 +197,16 @@ fold is "· show N earlier" in the header, "+ Reply" always shows on touch scree
 the date once per day, and the entry menu's Rewrite with AI has a left sparkle icon (the trailing ✦
 misaligned it). The reply line offers Out of scope too; an answer's quote is cut to ~42 characters. A follow-up can name an owner (`owner` on the status entry, entry menu "Assign follow-up…", `threadOwnerMenuItems`): "· follow-up for Ana" in thread and PDF, "Row · Ana" in the open-items list, where same-named rows add "(in Parent)". Open items: a follow-up shows its thread's latest line (`sub` on `showSbContextMenu` items, `.sb-context-sub`), and a folded **Decisions · N** row lists decision entries (not counted in progress; Robin keeps the name "Open items"). "Reply" is renamed **Add to thread** (hover line, entry menu; "Reply as" → "Add as"): Robin mostly logs what others said in his own document, so it isn't a reply. After merge (#539), Out of scope moved from an open group to a folded **Out of scope · N** row at the bottom of Open items (Robin: it isn't open). The note's icon is a sheet of paper (lucide sticky-note path) instead of a single speech bubble, so it no longer looks like the thread's two bubbles (Robin, 2026-10-15). An entry's time is correctable: the date popover has a Time field (`setRemarkDateTime` moves `createdAt` with date and time, so the thread re-orders). The input line has a right-click menu (`threadComposerMenuItems`: Add, question toggle, Rewrite with AI, Close); "Add as" can remove a name (per document, this browser: `sakura_thread_hidden_authors_<docId>` in localStorage); Backspace that removes an entry or closes the empty line returns the caret to the end of the row's text (`beginEdit`). Backspace on an empty reply line closes it (not on key repeat). Quick Insert (Ctrl/Cmd+Space) now works in thread entries, the reply line and the inline note (`handleGenericQaKeydown`; it was missing). Robin asked about newest-first; kept oldest first (a conversation reads in order).
 
+**2026-10-15: thread polish (Robin, owner-approved mockup).** Reply-line actions in three groups with
+the kind icon of the entry each adds (`.thread-btn-kind` circles): Ask | `.thread-btn-group` (to / Yes /
+No, only with a question) | `.thread-btn-statuses`. Kind icons 11px in their 16px circles (editor and
+PDF). An entry's author is a picker (`openAuthorMenu` in `renderThreadEntry`: names from
+`threadRecentAuthors`, "Someone else…" switches the name to typing; `person._menuOpen` keeps an
+emptied entry while the menu has focus). Thread entries keep rich text, but paste goes through
+`cleanThreadPasteHtml` (keeps b/strong/i/em/u/a/br/p/div/ul/ol/li, drops all attributes except a
+sanitised href). Robin settled the word: a row has a **thread**, made of **entries**, each of a
+**kind**. Covered by `tests/e2e/thread-reply-actions.spec.ts`.
+
 **2026-10-15: linking answers to questions (Robin).** Robin: Sakura is a documentation/thinking tool,
 not a discussion tool — keep time order and the data model, accept a little repetition, make linking
 quick. Data model unchanged (`answerTo` + optional `verdict`; several entries may answer one question).

@@ -41,7 +41,8 @@ test('the reply box adds nothing when empty; an entry emptied and left is remove
   await text.click();
   await page.keyboard.press('Control+a');
   await page.keyboard.press('Delete');
-  await page.locator('.thread-entry .node-remark-person-inline').click();
+  // (Clicking the author opens the author picker; focusing it is the same move without the menu.)
+  await page.locator('.thread-entry .node-remark-person-inline').focus();
   await page.waitForTimeout(50);
   expect(await page.evaluate('remarks.length')).toBe(1);
   // Leaving it empty removes it.

@@ -1844,7 +1844,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-composer-input.remark-text-input:empty::before{font-style:normal}
 .thread-composer-foot{display:flex;align-items:center;gap:10px;margin:2px 0 0 22px;font-size:11.5px;color:var(--hint)}
 .thread-composer-hint{flex:1;min-width:0}
-.thread-actions{flex:0 0 auto;display:inline-flex;gap:2px}
+.thread-actions{flex:0 0 auto;display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px}
+.thread-btn-kind{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-right:5px;background:color-mix(in srgb,currentColor 15%,var(--bg))}
+.thread-btn-kind svg{stroke-width:2.6}
+.thread-btn-group{display:inline-flex;align-items:center;gap:1px;padding:1px;border:1px solid var(--border);border-radius:7px}
+.thread-btn-statuses{display:inline-flex;align-items:center;gap:2px}
+.thread-btn-sep{width:1px;height:14px;background:var(--border);margin:0 5px}
+.thread-btn[data-act="answer-to"]{background:var(--hover);color:var(--fg)}
 .thread-btn{display:inline-flex;align-items:center;height:20px;padding:0 6px;border:0;border-radius:4px;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer}
 .thread-btn:hover{background:var(--hover);color:var(--fg)}
 .thread-btn.is-on{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -1863,11 +1869,11 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{flex:0 0 auto;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
-.thread-kind svg{width:10px;height:10px;stroke-width:2.6}
+.thread-kind svg{width:11px;height:11px;stroke-width:2.6}
 .thread-entry .node-remark-person-inline,.thread-composer .thread-author-btn{color:var(--pc,var(--fg))}
 body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread-composer .thread-author-btn{color:color-mix(in srgb,var(--pc,var(--fg)) 55%,#fff)}
 .pv-remark-kind{grid-row:1 / span 2;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;margin-top:0;border-radius:50%;background:color-mix(in srgb,currentColor 15%,#fff);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.pv-remark-kind svg{width:10px;height:10px;stroke-width:2.6}
+.pv-remark-kind svg{width:11px;height:11px;stroke-width:2.6}
 
 .thread-quote{margin:1px 0 1px 22px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pv-thread-quote{font-size:11px;color:var(--muted);margin-top:1px}
@@ -29865,12 +29871,29 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } });
     setTimeout(commit,0); return true;
   };
-  const person=document.createElement('span'); person.contentEditable='true'; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to change'; person.style.setProperty('--pc',c.avatarBg);
-  person.addEventListener('mousedown',e=>e.stopPropagation());
-  person.addEventListener('click',e=>e.stopPropagation());
-  person.addEventListener('focus',()=>{ pushUndo(); });
-  person.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); } });
-  person.addEventListener('blur',e=>{ const val=(person.textContent||'').trim(); person.textContent=val; const changed=val!==(r.person||''); r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); person.style.setProperty('--pc',remarkAuthorColor(val).avatarBg); });
+  // The author is picked like on the reply line (owner request): click → the names in this document,
+  // or "Someone else…" to type one. Focusable, so moving here from an emptied entry keeps it.
+  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another'; person.style.setProperty('--pc',c.avatarBg);
+  const typing=()=>person.contentEditable==='true';
+  const openAuthorMenu=()=>{
+    const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const cur=(r.person||'').trim(); const rr=person.getBoundingClientRect();
+    const names=threadRecentAuthors().slice(0,8); if(cur&&!names.includes(cur))names.unshift(cur);
+    person._menuOpen=true; // the menu takes focus: picking an author isn't leaving the entry
+    hideNodeTooltip();
+    showSbContextMenu(rr.left,rr.bottom+4,[{heading:'Author'},
+      ...names.map(n=>({label:n, icon:n===cur?CHECK:'', onClick:()=>{ person._menuOpen=false; if(n===cur)return; pushUndo(); r.person=n; commit(); }})),
+      ...(names.length?[{divider:true}]:[]),
+      {label:'Someone else\u2026', onClick:()=>{ person._menuOpen=false; pushUndo(); person.contentEditable='true'; person.focus(); const rg=document.createRange(); rg.selectNodeContents(person); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); }}
+    ]);
+  };
+  person.addEventListener('mousedown',e=>{ e.stopPropagation(); });
+  person.addEventListener('click',e=>{ e.stopPropagation(); if(!typing())openAuthorMenu(); });
+  person.addEventListener('keydown',e=>{
+    if(!typing()){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openAuthorMenu(); } return; }
+    if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); }
+  });
+  person.addEventListener('blur',e=>{ if(person._menuOpen){ person._menuOpen=false; return; } const was=typing(); person.contentEditable='false'; const val=(person.textContent||'').trim(); person.textContent=val; const changed=was&&val!==(r.person||''); if(was)r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); person.style.setProperty('--pc',remarkAuthorColor(val).avatarBg); });
   const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date or time';
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
@@ -29920,9 +29943,39 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     if(_threadComposerNodeId===node.id&&!_threadDrafts.has(node.id))_threadComposerNodeId=null;
     commit(); beginEdit(node.id,true);
   });
+  attachThreadPaste(textEl);
   line.appendChild(textEl);
   line.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadEntryMenuItems(node,r,thread,textEl,commit)); });
   place(line);
+}
+// Pasting into a thread entry or the reply line (owner: keep rich text, lose the clutter): bold,
+// italic, underline, links, line breaks and simple lists stay; fonts, sizes, colours, classes and
+// every other element from Outlook / Teams / Word are dropped (their text kept).
+const THREAD_PASTE_KEEP=new Set(['B','STRONG','I','EM','U','A','BR','P','DIV','UL','OL','LI']);
+function cleanThreadPasteHtml(html){
+  const doc=new DOMParser().parseFromString(String(html||''),'text/html');
+  const walk=node=>{
+    [...node.childNodes].forEach(ch=>{
+      if(ch.nodeType===8){ ch.remove(); return; }
+      if(ch.nodeType!==1)return;
+      walk(ch);
+      if(/^(SCRIPT|STYLE|META|LINK|TITLE|XML|O:P)$/i.test(ch.tagName)){ ch.remove(); return; }
+      if(!THREAD_PASTE_KEEP.has(ch.tagName)){ ch.replaceWith(...ch.childNodes); return; }
+      const href=ch.tagName==='A'?sanitizeHrefUrl(ch.getAttribute('href')||''):'';
+      [...ch.attributes].forEach(a=>ch.removeAttribute(a.name));
+      if(ch.tagName==='A'){ if(href){ ch.setAttribute('href',href); ch.setAttribute('target','_blank'); ch.setAttribute('rel','noopener noreferrer'); } else ch.replaceWith(...ch.childNodes); }
+    });
+  };
+  walk(doc.body);
+  return doc.body.innerHTML.trim();
+}
+function attachThreadPaste(el){
+  el.addEventListener('paste',e=>{
+    const html=e.clipboardData?.getData('text/html')||'';
+    if(!html)return; // plain text: the browser's own paste is already clean
+    e.preventDefault();
+    document.execCommand('insertHTML',false,cleanThreadPasteHtml(html));
+  });
 }
 // The thread's questions (with text), oldest first; a short label for menus and the reply line's picker.
 function threadQuestions(thread){ return (thread||[]).filter(e=>isQuestion(e)&&htmlHasVisibleText(e.text)); }
@@ -30041,6 +30094,7 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('input',()=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); else _threadDrafts.delete(node.id); });
   input.addEventListener('mousedown',e=>e.stopPropagation());
   input.addEventListener('click',e=>e.stopPropagation());
+  attachThreadPaste(input);
   // Right-click while adding: add it, ask it, rewrite it with AI, or close the line.
   input.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadComposerMenuItems(node,input,ask,submit)); });
   input.addEventListener('keydown',e=>{
@@ -30053,7 +30107,12 @@ function renderThreadComposer(node,thread,place,commit){
   });
   const btn=(act,label,tip,on)=>{ const b=document.createElement('button'); b.type='button'; b.className='thread-btn'+(on?' is-on':''); b.dataset.act=act; b.innerHTML=label; b.dataset.tip=tip; b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); }); return b; };
   const actions=document.createElement('span'); actions.className='thread-actions';
-  const askBtn=btn('ask','Ask',ask?'Your next entry is a question — click to make it a reply':'Make your next entry a question',ask);
+  // Owner design (2026-10-15): three groups, each button with the kind icon of the entry it adds —
+  // Ask | to: … / Yes / No (only with a question) | the statuses.
+  const kicon=(svg,color)=>'<span class="thread-btn-kind" style="color:'+color+'">'+svg+'</span>';
+  const ansGrp=document.createElement('span'); ansGrp.className='thread-btn-group';
+  const stGrp=document.createElement('span'); stGrp.className='thread-btn-statuses';
+  const askBtn=btn('ask',kicon(qaDotIconSvg(11),'var(--accent)')+'Ask',ask?'Your next entry is a question — click to make it a reply':'Make your next entry a question',ask);
   askBtn.addEventListener('click',e=>{ e.stopPropagation(); _threadComposerNodeId=node.id; if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
   actions.appendChild(askBtn);
   // Which question Yes / No (or a chosen answer) goes to, when there's a choice to make.
@@ -30065,32 +30124,35 @@ function renderThreadComposer(node,thread,place,commit){
         ...qs.slice().reverse().map(q=>({label:threadQuestionLabel(q), sub:(q.person?q.person+' \u00b7 ':'')+(questionState(q,thread)==='open'?'open':'answered'), icon:openQ&&q.id===openQ.id?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'', onClick:()=>{ _threadAnswerTo.set(node.id,q.id); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }})),
         ...(chosen?[{divider:true},{label:'Not an answer', onClick:()=>{ _threadAnswerTo.delete(node.id); _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }}]:[])
       ]); });
-    actions.appendChild(to);
+    ansGrp.appendChild(to);
   }
   if(openQ){
-    const yes=btn('yes','Yes','Answer “'+stripHtmlToText(openQ.text).slice(0,60)+'” with Yes (and what you typed)');
+    const yes=btn('yes',kicon(markIconSvg('confirmed',11),'var(--fc-green)')+'Yes','Answer “'+stripHtmlToText(openQ.text).slice(0,60)+'” with Yes (and what you typed)');
     yes.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'yes'}); });
-    const no=btn('no','No','Answer “'+stripHtmlToText(openQ.text).slice(0,60)+'” with No (and what you typed)');
+    const no=btn('no',kicon(markIconSvg('close',11),'var(--fc-red)')+'No','Answer “'+stripHtmlToText(openQ.text).slice(0,60)+'” with No (and what you typed)');
     no.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'no'}); });
-    actions.appendChild(yes); actions.appendChild(no);
+    ansGrp.appendChild(yes); ansGrp.appendChild(no);
   }
   const openStatus=threadStatus(thread);
   if(openStatus!=='followup'){
-    const fu=btn('followup','Follow-up','Add as a follow-up — the row turns Follow-up');
+    const fu=btn('followup',kicon(markIconSvg('followup',11),'var(--fc-orange)')+'Follow-up','Add as a follow-up — the row turns Follow-up');
     fu.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'followup'}); });
-    actions.appendChild(fu);
+    stGrp.appendChild(fu);
   }
   if(openStatus==='followup'){
-    const res=btn('confirm','Agree','Settle the follow-up (with what you typed) — the row turns Agreed');
+    const res=btn('confirm',kicon(markIconSvg('confirmed',11),'var(--fc-green)')+'Agree','Settle the follow-up (with what you typed) — the row turns Agreed');
     res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'confirmed'}); });
-    actions.appendChild(res);
+    stGrp.appendChild(res);
   }
   // All three statuses are reachable from the thread itself (owner: the marker is the thread's status).
   if(openStatus!=='parked'){
-    const oos=btn('parked','Out of scope','Set aside (with what you typed) — the row turns Out of scope');
+    const oos=btn('parked',kicon(markIconSvg('parked',11),'var(--fc-gray)')+'Out of scope','Set aside (with what you typed) — the row turns Out of scope');
     oos.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'parked'}); });
-    actions.appendChild(oos);
+    stGrp.appendChild(oos);
   }
+  const sep=()=>{ const d=document.createElement('span'); d.className='thread-btn-sep'; return d; };
+  if(ansGrp.childElementCount)actions.append(sep(),ansGrp);
+  if(stGrp.childElementCount)actions.append(sep(),stGrp);
   const meta=document.createElement('div'); meta.className='thread-meta';
   const now=document.createElement('span'); now.className='thread-time'; now.textContent='now';
   meta.appendChild(avatar); meta.appendChild(who); meta.appendChild(now);
