@@ -199,6 +199,9 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
       kinds: [...doc.querySelectorAll('.pv-remark-block .pv-remark-kind')].map(e => e.className.replace('pv-remark-kind is-', '')),
       decisionIcon: !!doc.querySelector('.pv-remark-block .pv-remark-kind.is-decision svg'),
       nameColour: !!(doc.querySelector('.pv-remark-block .pv-remark-meta b') as HTMLElement | null)?.style.getPropertyValue('--pc'),
+      // The colour actually shows (an older rule once set every name to the text colour).
+      nameColours: [...doc.querySelectorAll('.pv-remark-block .pv-remark-meta b')].map(e => getComputedStyle(e).color),
+      kindHasCircle: getComputedStyle(doc.querySelector('.pv-remark-block .pv-remark-kind')!).borderRadius,
       qaSection: (document.getElementById('pv-qa-section')?.textContent || '')
     };
   });
@@ -212,6 +215,8 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
   expect(r.kinds).toEqual(['comment', 'question', 'answer', 'decision']);
   expect(r.decisionIcon).toBe(true);
   expect(r.nameColour).toBe(true);
+  expect(new Set(r.nameColours).size).toBeGreaterThan(1);
+  expect(r.kindHasCircle).toBe('50%');
   expect(r.qaSection).toContain('Unlinked question');
   expect(r.qaSection).not.toContain('EU customers');
   expect(errors).toEqual([]);

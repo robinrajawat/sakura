@@ -218,7 +218,8 @@ Decision chip are gone; muted text stays as it was ("· decision", "· question,
 for Ana") — Robin: keep the muted text. The reply line shows the kind it will add (comment, or
 question while asking). PDF: same icon (`.pv-remark-kind`) and coloured name; an open question also
 prints "· open question" in the accent colour, since PDF readers may not know the icons. Help and
-README updated.
+README updated. **Follow-up (Robin: bare icons looked ragged next to the names in the PDF):** every kind icon sits in the same 16px light tinted circle (`color-mix(currentColor 15%, bg)`), editor and PDF, so the column keeps the avatars' even rhythm. The PDF's names had printed grey because an older `.pv-remark-meta b{color:var(--fg)}` rule won; it now uses `--pc`.
+
 **2026-10-15: Show as says why, plus fix-its (PR 1 of the "empower the table displays" plan).**
 Robin's point: displays have fixed shape rules, so people can't tell how to use one or what table to
 make. Agreed plan, three PRs: (1) reasons + fix-its in Show as, (2) table starters -- a **Table ›
