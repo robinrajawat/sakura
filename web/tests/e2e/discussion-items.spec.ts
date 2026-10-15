@@ -6,9 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // A row has one flat thread: entries are a Comment or a Question, each with one author and a time;
-// an answer is a reply carrying Yes / No (or a reply marked as the answer); a status chip
-// (Issue / Follow-up / Resolved / Decision) sits on the entry it was set on. The thread status and the
-// row marker are one status: Issue ⇄ ⚠, Follow-up ⇄ ⚑, Resolved / Decision ⇄ ✓ Confirmed.
+// an answer is a reply carrying Yes / No (or a reply marked as the answer); a status (Agreed /
+// Follow-up / Out of scope) sits on the entry it was set on, and the latest one is the row marker.
+// A Decision is a chip on an entry; it doesn't change the row.
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 
@@ -321,4 +321,53 @@ test('the reply line offers all three statuses: Out of scope sets the row aside 
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('parked');
   await expect(page.locator('.thread-entry', { hasText: 'Not part of phase one' }).locator('.thread-status-note.is-parked')).toHaveText('· out of scope');
   expect(errors).toEqual([]);
+});
+
+test('a follow-up names its owner, in the thread, the PDF note and the open-items list', async ({ page }) => {
+  const errors = await seed(page, `remarks.push({ id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails.', createdAt: 4, status: 'followup' });`);
+  await page.evaluate('syncRowMarkerFromThread(3); render()');
+  await page.locator('.thread-entry:has(#inline-remark-text-k1) .node-remark-text-inline').click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Assign follow-up…', { exact: true }).click();
+  await page.locator('.sb-context-menu').getByText('Ana', { exact: true }).click();
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-k1) .thread-status-note')).toHaveText('· follow-up for Ana');
+  await page.locator('#marker-summary .open-items-btn').click();
+  await expect(page.locator('.open-items-menu .sb-context-item', { hasText: 'Data load' })).toHaveText('Data load · Ana');
+  expect(errors).toEqual([]);
+});
+
+test('open-items list: rows with the same name add their parent', async ({ page }) => {
+  await seed(page);
+  await page.evaluate(`
+    const n = (id, depth, text) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
+    nodes = [n(1, 0, 'Order types'), n(2, 1, 'Export'), n(3, 0, 'Plants'), n(4, 1, 'Export'), n(5, 1, 'Pick-up')];
+    nodes[1].marker = 'followup'; nodes[3].marker = 'followup'; nodes[4].marker = 'followup';
+    remarks = []; rebuildParentIds(); render();`);
+  await page.locator('#marker-summary .open-items-btn').click();
+  const labels = await page.locator('.open-items-menu .sb-context-item .sb-context-label').allTextContents();
+  expect(labels).toEqual(expect.arrayContaining(['Export (in Order types)', 'Export (in Plants)', 'Pick-up']));
+});
+
+test('Quick Insert (Ctrl/Cmd+Space) works in the reply line', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  const box = page.locator('.thread-composer-input[data-node-id="2"]');
+  await box.click();
+  await page.keyboard.type('A ');
+  await page.keyboard.press('ControlOrMeta+Space');
+  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await page.keyboard.press('Enter');
+  await expect(box).toHaveText('A —');
+});
+
+test('Quick Insert (Ctrl/Cmd+Space) works in the inline note', async ({ page }) => {
+  await seed(page);
+  await page.evaluate("nodes[1].note = 'Note'; inlineExpandNoteNodeIds = new Set([2]); render()");
+  const note = page.locator('.node-note-line[data-node-id="2"]');
+  await note.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' ');
+  await page.keyboard.press('ControlOrMeta+Space');
+  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await page.keyboard.press('Enter');
+  await expect(note).toContainText('Note —');
 });

@@ -4016,7 +4016,7 @@ body.printing-generic #gpe-overlay{
 <li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
-<li>Right-click an entry for <strong>Reply</strong>, Make it a question / comment, Mark as decision, its status (the row-marker icons, current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>Right-click an entry for <strong>Reply</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
 <li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the avatars joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
@@ -19676,6 +19676,8 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       _imgResizePersist();
     });
     noteLine.addEventListener('keydown',e=>{
+      // Quick Insert (Ctrl/Cmd+Space) works in the inline note like in other text.
+      if(handleGenericQaKeydown(e,noteLine))return;
       if(e.key==='Tab'){
         // Not e.target -- a keydown's target is always the focused contenteditable HOST (noteLine
         // itself), never whichever descendant the caret happens to sit in, unless that descendant
@@ -28182,7 +28184,7 @@ function previewRenderRemarkEntry(r,thread,prev){
     else pvNote('pv-thread-verdict is-yes','\u2713 Answer');
   }
   // The status prints once, on the row's marker; the entry that set it says so quietly.
-  if(r.status){ const n=document.createElement('span'); n.className='pv-thread-status-note'; n.textContent='\u00b7 '+THREAD_STATUS_LABEL[r.status].toLowerCase(); meta.appendChild(n); }
+  if(r.status){ const n=document.createElement('span'); n.className='pv-thread-status-note'; n.textContent='\u00b7 '+THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&markerForThreadStatus(r.status)==='followup'?' for '+r.owner:''); meta.appendChild(n); }
   if(r.decision)meta.appendChild(previewStatusPill('decision'));
   entry.appendChild(meta);
   const quoted=threadQuotedQuestion(r,thread);
@@ -29608,7 +29610,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   if(r.answerTo){ if(r.verdict)note('thread-verdict is-'+r.verdict,r.verdict==='yes'?'✓ Yes':'✗ No','The answer — right-click to change'); else note('thread-verdict is-answer','✓ Answer','Marked as the answer — right-click to change'); }
   // A status is quiet text on the entry that set it (who and when); the row marker shows it in colour.
   const quoted=threadQuotedQuestion(r,thread);
-  if(r.status)note('thread-status-note is-'+markerForThreadStatus(r.status),'· '+THREAD_STATUS_LABEL[r.status].toLowerCase(),'Set the row to '+THREAD_STATUS_LABEL[r.status]+' — right-click to change');
+  if(r.status)note('thread-status-note is-'+markerForThreadStatus(r.status),'· '+THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&markerForThreadStatus(r.status)==='followup'?' for '+r.owner:''),'Set the row to '+THREAD_STATUS_LABEL[r.status]+' — right-click to change');
   // A decision is a chip on the entry where it was made; it doesn't change the row (owner decision 2026-10-15).
   if(r.decision)chip('is-decision',markIconSvg('decision',10)+'<span>Decision</span>','Decided here — right-click to change');
   line.appendChild(meta);
@@ -29634,6 +29636,8 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   // Backspace in an empty entry removes it (a Yes/No or status-only entry keeps its chip until
   // removed from the menu).
   textEl.addEventListener('keydown',e=>{
+    // Quick Insert (Ctrl/Cmd+Space) works in thread entries like everywhere else.
+    if(handleGenericQaKeydown(e,textEl))return;
     if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
     if((textEl.textContent||'').trim()||r.verdict||r.status)return;
     e.preventDefault();
@@ -29679,6 +29683,8 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   items.push({heading:'Status'});
   const cur=markerForThreadStatus(r.status);
   items.push({choices:NODE_MARKERS.map(st=>({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), color:'var(--fc-'+nodeMarkerColor(st)+')', current:cur===st, tip:cur===st?'Clear '+THREAD_STATUS_LABEL[st]:'', onClick:change(()=>{ if(cur===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}))});
+  // A follow-up can name who owns it; the open-items list shows the name.
+  if(markerForThreadStatus(r.status)==='followup')items.push({label:r.owner?'Follow-up for '+r.owner+'…':'Assign follow-up…', icon:ico('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'), onClick:()=>{ const rect=textEl.getBoundingClientRect(); setTimeout(()=>showSbContextMenu(rect.left,rect.bottom+4,threadOwnerMenuItems(r,commit)),0); }});
   items.push({divider:true});
   if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
   items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
@@ -29736,6 +29742,7 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('mousedown',e=>e.stopPropagation());
   input.addEventListener('click',e=>e.stopPropagation());
   input.addEventListener('keydown',e=>{
+    if(handleGenericQaKeydown(e,input))return;
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
     else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }
   });
@@ -29781,6 +29788,17 @@ function renderThreadComposer(node,thread,place,commit){
     const ae=document.activeElement; if(ae&&(ae.isContentEditable||/^(INPUT|TEXTAREA)$/.test(ae.tagName)))return;
     render(); },120); });
   place(line);
+}
+// Who owns a follow-up: names used in this document, someone else, or no one.
+function threadOwnerMenuItems(r,commit){
+  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const set=name=>()=>{ pushUndo(); if(name)r.owner=name; else delete r.owner; commit(); };
+  const items=[{heading:'Follow-up for'}];
+  threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===r.owner?CHECK:'', onClick:set(n)}));
+  if(items.length>1)items.push({divider:true});
+  items.push({label:'Someone else…', onClick:async()=>{ const v=await sakuraPrompt({title:'Follow-up for', body:'Who owns this follow-up?', defaultValue:r.owner||'', confirmLabel:'Assign'}); const name=(v||'').trim(); if(name)set(name)(); }});
+  if(r.owner)items.push({label:'No one', onClick:set('')});
+  return items;
 }
 function threadAuthorMenuItems(node,anchor){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -30319,7 +30337,15 @@ function openItemsMenuItems(){
     entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, icon:icon(key), onClick:en.go}));
     if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!on)applyOpenItemsFilter(filterKind); }});
   };
-  const markerRows=m=>nodes.filter(n=>n.marker===m).map(n=>({label:rowText(n), go:()=>revealNodeInDoc(currentDocId,n.id)}));
+  // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
+  const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
+  // Rows with the same name (two "Export (ZOR)" under different parents) add their parent's name.
+  const parentText=n=>{ const p=n.parentId!=null?nodes.find(x=>x.id===n.parentId):null; return p?rowText(p):''; };
+  const markerRows=m=>{
+    const list=nodes.filter(n=>n.marker===m), seen=new Map();
+    list.forEach(n=>seen.set(rowText(n),(seen.get(rowText(n))||0)+1));
+    return list.map(n=>{ const o=m==='followup'?ownerOf(n):''; const pt=seen.get(rowText(n))>1?parentText(n):''; return {label:rowText(n)+(pt?' (in '+pt+')':'')+(o?' · '+o:''), go:()=>revealNodeInDoc(currentDocId,n.id)}; });
+  };
   addGroup('followup','Follow-ups',markerRows('followup'),'followup');
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),'openQa');

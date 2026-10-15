@@ -195,7 +195,7 @@ the row; the thread header (and PDF label) adds "· Decision", which jumps to it
 `migrateDiscussionToThread` turns old decision statuses/kinds into Agreed + `decision`). Also: the
 fold is "· show N earlier" in the header, "+ Reply" always shows on touch screens, the editor shows
 the date once per day, and the entry menu's Rewrite with AI has a left sparkle icon (the trailing ✦
-misaligned it). The reply line offers Out of scope too; an answer's quote is cut to ~42 characters. Robin asked about newest-first; kept oldest first (a conversation reads in order).
+misaligned it). The reply line offers Out of scope too; an answer's quote is cut to ~42 characters. A follow-up can name an owner (`owner` on the status entry, entry menu "Assign follow-up…", `threadOwnerMenuItems`): "· follow-up for Ana" in thread and PDF, "Row · Ana" in the open-items list, where same-named rows add "(in Parent)". Quick Insert (Ctrl/Cmd+Space) now works in thread entries, the reply line and the inline note (`handleGenericQaKeydown`; it was missing). Robin asked about newest-first; kept oldest first (a conversation reads in order).
 
 **2026-10-12: post-cutdown polish session — #479–#494, all merged. Nothing open, nothing parked in
 git.** The cutdown below is finished (all 9 items merged); this session was owner-driven UI polish
