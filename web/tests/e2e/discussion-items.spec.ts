@@ -296,7 +296,7 @@ test('grey thread: only an open question takes the accent colour; an answer quot
   await expect(page.locator('.thread-head').first()).toHaveCSS('text-transform', 'none');
 
   // The Yes came two entries after its question, so it quotes it; an answer right after needs no quote.
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-ans) .thread-quote')).toHaveText('↳ Does it make sense to use the shipping condition + plant combination?');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-ans) .thread-quote')).toHaveText('↳ Does it make sense to use the shipping con…');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-rq1-a) .thread-quote')).toHaveCount(0);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-q-note')).toHaveText('· question, answered');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-chip.is-question')).toHaveText('Question');
@@ -309,4 +309,16 @@ test('Ctrl/Cmd+Alt+M opens a reply line in the selected row\'s thread', async ({
   await page.evaluate('editingId = null; selectedId = 3; render();');
   await page.keyboard.press('Control+Alt+KeyM');
   await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toBeFocused();
+});
+
+test('the reply line offers all three statuses: Out of scope sets the row aside with what you typed', async ({ page }) => {
+  const errors = await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  const composer = page.locator('.thread-composer:has([data-node-id="2"])');
+  await page.locator('.thread-composer-input[data-node-id="2"]').click();
+  await page.keyboard.type('Not part of phase one');
+  await composer.locator('.thread-btn[data-act="parked"]').click();
+  expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('parked');
+  await expect(page.locator('.thread-entry', { hasText: 'Not part of phase one' }).locator('.thread-status-note.is-parked')).toHaveText('· out of scope');
+  expect(errors).toEqual([]);
 });

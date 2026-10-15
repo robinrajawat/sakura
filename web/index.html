@@ -4014,7 +4014,7 @@ body.printing-generic #gpe-overlay{
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new reply line. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line, Esc to close). While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no reply box — hover it for <strong>+ Reply</strong>. What you type is kept if you move to another row</li>
 <li>The reply line writes as the last author used — click the name (<strong>Robin ▾</strong>) to reply as someone else, e.g. when you note what a colleague said in a call. Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
-<li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
+<li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
 <li>Right-click an entry for <strong>Reply</strong>, Make it a question / comment, Mark as decision, its status (the row-marker icons, current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
@@ -29653,7 +29653,8 @@ function threadQuotedQuestion(r,thread){
   if(qi<0||ri<0||ri===qi+1)return '';
   const tmp=document.createElement('div'); tmp.innerHTML=sakuraSanitizeRichHtml(thread[qi].text||'');
   const t=(tmp.textContent||'').replace(/\s+/g,' ').trim();
-  return t.length>70?t.slice(0,68).trimEnd()+'…':t;
+  // A short reminder, not a second copy of the question.
+  return t.length>44?t.slice(0,42).trimEnd()+'…':t;
 }
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -29760,6 +29761,12 @@ function renderThreadComposer(node,thread,place,commit){
     const res=btn('confirm','Agree','Settle the follow-up (with what you typed) — the row turns Agreed');
     res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'confirmed'}); });
     actions.appendChild(res);
+  }
+  // All three statuses are reachable from the thread itself (owner: the marker is the thread's status).
+  if(openStatus!=='parked'){
+    const oos=btn('parked','Out of scope','Set aside (with what you typed) — the row turns Out of scope');
+    oos.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'parked'}); });
+    actions.appendChild(oos);
   }
   const meta=document.createElement('div'); meta.className='thread-meta';
   const now=document.createElement('span'); now.className='thread-time'; now.textContent='now';
