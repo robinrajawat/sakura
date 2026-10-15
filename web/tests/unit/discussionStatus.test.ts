@@ -224,14 +224,16 @@ describe('documentProgress / attentionParts / progressSummaryText', () => {
   ];
 
   it('counts what needs attention, out of scope and settled (older Issue / N/A included)', () => {
-    expect(documentProgress(nodes, qa, entries)).toEqual({ followups: 3, parked: 2, questions: 2, settled: 3, total: 10 });
+    expect(documentProgress(nodes, qa, entries)).toEqual({ followups: 3, parked: 2, questions: 2, settled: 3, total: 8 });
   });
   it('lists only kinds with something open, most urgent first', () => {
     expect(attentionParts(documentProgress(nodes, qa, entries)).map((a) => a.label)).toEqual(['3 follow-ups', '2 questions']);
     expect(attentionParts(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toEqual([]);
   });
   it('describes the summary in words', () => {
-    expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 3 follow-ups, 2 open questions. 3 of 10 settled, 2 out of scope.');
+    expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 3 follow-ups, 2 open questions. 3 of 8 settled, 2 out of scope.');
     expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled.');
+    // Out of scope doesn't hold the count back: everything else settled reads as complete.
+    expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }, { id: 2, marker: 'parked' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled, 1 out of scope.');
   });
 });

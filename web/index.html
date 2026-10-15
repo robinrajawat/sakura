@@ -7755,7 +7755,7 @@ function documentProgress(nodes, qaItems, entries) {
     }
     p.questions += allOpenQuestions(entries, ids).length;
     p.settled += allSettledQuestions(entries, ids).length;
-    p.total = p.followups + p.parked + p.questions + p.settled;
+    p.total = p.followups + p.questions + p.settled;
     return p;
 }
 const ATTENTION_WORDS = {
@@ -30718,7 +30718,7 @@ function updateMarkerSummary(){
   const group=el('ag-markers'); const box=el('marker-summary'); if(!group||!box)return;
   const p=documentProgress(nodes,qaItems,remarks);
   const filtering=!!(activeMarkerFilter||activeDiscussionFilter);
-  group.hidden=!p.total&&!filtering;
+  group.hidden=!p.total&&!p.parked&&!filtering;
   const parts=attentionParts(p);
   const segs=parts.length
     ? parts.map(a=>`<span class="oi-part" data-key="${a.key}" style="--mc:${openItemKindColor(a.key)}">${openItemKindIcon(a.key)}<span>${a.label}</span></span>`).join('<span class="oi-sep" aria-hidden="true">·</span>')
@@ -30781,7 +30781,9 @@ function openItemsMenuItems(){
   };
   addGroup('followup','Follow-ups',markerRows('followup'),'followup');
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
-  addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), go:()=>revealInlineObject('remark',r.id)})),'openQa');
+  // Under a question, the row it's on and who asked ("Customer comms · Maria"), like a follow-up's line.
+  const askedOn=r=>{ const n=nodes[idx.get(r.anchorNodeId)]; return [n?rowText(n):'',r.person||''].filter(Boolean).join(' \u00B7 '); };
+  addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), sub:askedOn(r), go:()=>revealInlineObject('remark',r.id)})),'openQa');
   // What counts toward "N of M settled", folded by default so it doesn't lengthen the list: Agreed
   // rows, answered or won't-answer questions. Each jumps like above.
   const settled=[];
@@ -30821,7 +30823,7 @@ function openOpenItemsMenu(btn){
   const hasOpen=attentionParts(p).length>0;
   const allOn=currentOpenItemsFilter()==='openItems';
   const head=document.createElement('div'); head.className='oi-head';
-  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span><span class="oi-head-progress">${p.settled} of ${p.total} settled</span></div><div class="oi-bar"><span style="width:${pct}%"></span></div>`
+  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span>${p.total?`<span class="oi-head-progress">${p.settled} of ${p.total} settled</span>`:''}</div>${p.total?`<div class="oi-bar"><span style="width:${pct}%"></span></div>`:''}`
     +(hasOpen||allOn?`<button type="button" class="oi-switch${allOn?' on':''}" role="switch" aria-checked="${allOn}"><span class="oi-switch-label">Show only open items in the outline</span><span class="oi-switch-track" aria-hidden="true"><span></span></span></button>`:'');
   menu.insertBefore(head,menu.firstChild);
   head.querySelector('.oi-switch')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); applyOpenItemsFilter('openItems'); });
