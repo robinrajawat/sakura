@@ -138,7 +138,7 @@ test.describe('Pad container removal', () => {
       await runQuickAction('remark', 2);
     });
     await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toHaveText('Draft note');
-    await expect(page.locator('.thread-entry .thread-chip.is-question')).toHaveCount(1);
+    await expect(page.locator('.thread-entry .thread-kind.is-question')).toHaveCount(1);
     await expect(page.locator('.thread-entry')).toHaveCount(1);
     await expect(page.locator('.node-remark-line .node-inline-open-panel-btn')).toHaveCount(0);
 

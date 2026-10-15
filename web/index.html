@@ -1852,11 +1852,16 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Touch screens have no hover: "+ Add to thread" is always there. */
 @media (hover: none){.thread-reply-label{opacity:1}}
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
-.thread-verdict{font:600 12px 'Inter',sans-serif}
-.thread-verdict.is-yes{color:var(--fc-green)}
-.thread-verdict.is-no{color:var(--fc-red)}
+.thread-verdict{font-size:12px;color:var(--muted)}
 .thread-status-note,.thread-q-note{font-size:12px;color:var(--muted)}
-.thread-verdict.is-answer{color:var(--fc-green)}
+/* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
+.thread-kind{flex:0 0 auto;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px}
+.thread-entry .node-remark-person-inline,.thread-composer .thread-author-btn{color:var(--pc,var(--fg))}
+body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread-composer .thread-author-btn{color:color-mix(in srgb,var(--pc,var(--fg)) 55%,#fff)}
+.pv-remark-kind{grid-row:1 / span 2;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-remark-kind svg{width:12px;height:12px}
+.pv-remark-meta b{color:var(--pc,var(--fg));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
 .thread-quote{margin:1px 0 1px 22px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pv-thread-quote{font-size:11px;color:var(--muted);margin-top:1px}
 /* An answer or status with no text is one line until clicked. */
@@ -2360,8 +2365,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px}
 .pv-remark-anon{color:var(--muted)}
 .pv-remark-block .pv-inline-label-remark{color:var(--muted);margin-left:6px}
-.pv-thread-verdict{font-weight:600}.pv-thread-verdict.is-yes{color:var(--fc-green)}.pv-thread-verdict.is-no{color:var(--fc-red)}
-.pv-thread-status-note{color:var(--muted)}
+.pv-thread-verdict{color:var(--muted)}
+.pv-thread-status-note{color:var(--muted)}.pv-thread-status-note.is-open{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-remark-meta+.pv-remark-text{margin-top:3px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
 .pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
@@ -4017,7 +4022,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="panels" id="help-section-remarks">
 <h4>Thread (comments and questions)</h4>
 <ul>
-<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry shows its <strong>author</strong> (a colored initials avatar plus the name; each person in a document gets their own color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
+<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a question, an answer (✓ Yes / ✗ No, or ↳ for an answer without Yes/No), a decision (handshake), a status such as Follow-up (its marker icon), or a plain comment (a faint speech bubble) — then its <strong>author</strong> (each person in a document gets their own name color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Right-click the line to add it, make it a question, Rewrite with AI (when AI is on) or close it. While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
@@ -4026,7 +4031,7 @@ body.printing-generic #gpe-overlay{
 <li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
-<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the avatars joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the entry icons joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups become statuses and decisions become Decision chips (Agreed), and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
@@ -28335,22 +28340,23 @@ function previewRenderRemarkEntry(r,thread,prev){
   const entry=document.createElement('div'); entry.className='pv-remark-entry';
   const meta=document.createElement('div'); meta.className='pv-remark-meta';
   const authorColor=remarkAuthorColor(r.person);
-  const avatar=document.createElement('span'); avatar.className='pv-remark-avatar'; avatar.style.background=authorColor.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
-  entry.appendChild(avatar);
-  if(r.person){ const bEl=document.createElement('b'); bEl.textContent=r.person; meta.appendChild(bEl); }
+  // Same kind icon as the editor, and the name in its colour.
+  entry.appendChild(threadKindEl(r,thread,'pv-remark-kind'));
+  if(r.person){ const bEl=document.createElement('b'); bEl.textContent=r.person; bEl.style.setProperty('--pc',authorColor.avatarBg); meta.appendChild(bEl); }
   else { const q=document.createElement('span'); q.className='pv-remark-anon'; q.textContent=r.answerTo?'Answer':'Unnamed'; meta.appendChild(q); }
   const when=formatThreadTimeAbsolute(r,prev); if(when)meta.appendChild(document.createTextNode(' · '+when));
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
   const pvNote=(cls,text)=>{ const n=document.createElement('span'); n.className=cls; n.textContent=text; meta.appendChild(n); };
-  if(isQuestion(r)){ const st=questionState(r,thread||[r]); if(st==='open')meta.appendChild(previewStatusPill('question')); else pvNote('pv-thread-status-note',st==='answered'?'\u00b7 question, answered':'\u00b7 question, won\u2019t answer'); }
+  // A reader of the PDF may not know the icons, so an open question also says so in words.
+  if(isQuestion(r)){ const st=questionState(r,thread||[r]); pvNote('pv-thread-status-note'+(st==='open'?' is-open':''),st==='open'?'\u00b7 open question':st==='answered'?'\u00b7 question, answered':'\u00b7 question, won\u2019t answer'); }
   if(r.answerTo){
-    if(r.verdict)pvNote('pv-thread-verdict is-'+r.verdict,r.verdict==='yes'?'\u2713 Yes':'\u2717 No');
-    else pvNote('pv-thread-verdict is-yes','\u2713 Answer');
+    if(r.verdict)pvNote('pv-thread-verdict is-'+r.verdict,r.verdict==='yes'?'\u00b7 yes':'\u00b7 no');
+    else pvNote('pv-thread-verdict is-answer','\u00b7 answer');
   }
   // The status prints once, on the row's marker; the entry that set it says so quietly.
   if(r.status){ const n=document.createElement('span'); n.className='pv-thread-status-note'; n.textContent='\u00b7 '+THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&markerForThreadStatus(r.status)==='followup'?' for '+r.owner:''); meta.appendChild(n); }
-  // Same chip as the editor: the handshake icon and the word.
-  if(r.decision){ const pill=previewStatusPill('decision'); pill.innerHTML=markIconSvg('decision',9)+'<span>Decision</span>'; meta.appendChild(pill); }
+  // Same as the editor: the handshake kind icon, and quiet text.
+  if(r.decision)pvNote('pv-thread-status-note','\u00b7 decision');
   entry.appendChild(meta);
   const quoted=threadQuotedQuestion(r,thread);
   if(quoted){ const qq=document.createElement('div'); qq.className='pv-thread-quote'; qq.textContent='\u21b3 '+quoted; entry.appendChild(qq); }
@@ -29636,6 +29642,26 @@ function remarkAuthorColor(name){
   let i=order.indexOf(s); if(i<0)i=order.length;
   return REMARK_AVATAR_PALETTE[i%REMARK_AVATAR_PALETTE.length];
 }
+// A thread entry's kind icon (owner design 2026-10-15, replacing the initials avatar): the column
+// left of each entry says WHAT it is -- decision, status, answer, question -- and a plain comment
+// gets a faint comment icon; the name, in its per-person colour, says who. Not a dot: the outline
+// uses dots for rows.
+function threadKindIcon(r,thread){
+  if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--fc-green)',tip:'Decision'};
+  if(r.status){ const m=markerForThreadStatus(r.status); return {kind:'status',svg:markIconSvg(m,14),color:'var(--fc-'+(nodeMarkerColor(m)||'gray')+')',tip:THREAD_STATUS_LABEL[r.status]}; }
+  // An answer: ✓ / ✗ for a Yes / No, otherwise a reply arrow (its own kind, not a ✓ it didn't say).
+  if(r.answerTo){
+    if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--fc-green)',tip:'Answer'};
+    const no=r.verdict==='no'; return {kind:'answer',svg:markIconSvg(no?'close':'confirmed',14),color:no?'var(--fc-red)':'var(--fc-green)',tip:no?'Answer: No':'Answer: Yes'};
+  }
+  if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — answer it with Yes / No, or add an entry and mark it as the answer':'Question'}; }
+  return {kind:'comment',svg:markIconSvg('comment',13),color:'color-mix(in srgb,var(--hint) 55%,transparent)',tip:'Comment'};
+}
+function threadKindEl(r,thread,cls){
+  const k=threadKindIcon(r,thread);
+  const el=document.createElement('span'); el.className=cls+' is-'+k.kind; el.style.color=k.color; el.innerHTML=k.svg; el.dataset.tip=k.tip;
+  return el;
+}
 function formatRemarkDateDisplay(dateStr){
   const s=dateStr||todayDateStr();
   const parts=s.split('-').map(Number);
@@ -29753,7 +29779,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   const line=document.createElement('div'); line.className='node-remark-line thread-entry'; line.dataset.remarkId=r.id;
   const meta=document.createElement('div'); meta.className='thread-meta';
   const c=remarkAuthorColor(r.person);
-  const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(r.person);
+  const kindEl=threadKindEl(r,thread,'thread-kind');
   // An entry emptied and left (with no Yes/No or status chip to keep) is removed, so blank
   // entries never pile up or print. Moving between its own fields keeps it.
   const dropIfBlank=e=>{
@@ -29761,29 +29787,28 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } });
     setTimeout(commit,0); return true;
   };
-  const person=document.createElement('span'); person.contentEditable='true'; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to change';
+  const person=document.createElement('span'); person.contentEditable='true'; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to change'; person.style.setProperty('--pc',c.avatarBg);
   person.addEventListener('mousedown',e=>e.stopPropagation());
   person.addEventListener('click',e=>e.stopPropagation());
   person.addEventListener('focus',()=>{ pushUndo(); });
   person.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); } });
-  person.addEventListener('blur',e=>{ const val=(person.textContent||'').trim(); person.textContent=val; const changed=val!==(r.person||''); r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); const c2=remarkAuthorColor(val); avatar.style.background=c2.avatarBg; avatar.textContent=remarkAuthorInitials(val); });
+  person.addEventListener('blur',e=>{ const val=(person.textContent||'').trim(); person.textContent=val; const changed=val!==(r.person||''); r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); person.style.setProperty('--pc',remarkAuthorColor(val).avatarBg); });
   const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date or time';
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
-  meta.appendChild(avatar); meta.appendChild(person); meta.appendChild(time);
-  const chip=(cls,html,tip)=>{ const ch=document.createElement('span'); ch.className='thread-chip '+cls; ch.innerHTML=html; if(tip)ch.dataset.tip=tip; meta.appendChild(ch); return ch; };
+  meta.appendChild(kindEl); meta.appendChild(person); meta.appendChild(time);
   const isQ=isQuestion(r);
   const qState=isQ?questionState(r,thread):null;
   const note=(cls,text,tip)=>{ const n=document.createElement('span'); n.className=cls; n.textContent=text; if(tip)n.dataset.tip=tip; meta.appendChild(n); return n; };
-  // Only an open question is a chip (in the accent color: the one thing in a thread that needs you); a settled one is quiet text.
-  if(isQ){ if(qState==='open'){ const ch=chip('is-question','Question','Open question — answer it with Yes / No below, or reply and mark the reply as the answer'); ch.dataset.state=qState; }
-    else note('thread-q-note is-'+qState,qState==='answered'?'· question, answered':'· question, won’t answer','Right-click to change'); }
-  if(r.answerTo){ if(r.verdict)note('thread-verdict is-'+r.verdict,r.verdict==='yes'?'✓ Yes':'✗ No','The answer — right-click to change'); else note('thread-verdict is-answer','✓ Answer','Marked as the answer — right-click to change'); }
+  // An open question is its kind icon in the accent color (the one thing in a thread that needs you); a settled one adds quiet text.
+  if(isQ){ if(qState!=='open')note('thread-q-note is-'+qState,qState==='answered'?'· question, answered':'· question, won’t answer','Right-click to change'); }
+  // The icon already says ✓ / ✗ (or ↳ answer); the line says it quietly, like "· decision".
+  if(r.answerTo){ if(r.verdict)note('thread-verdict is-'+r.verdict,r.verdict==='yes'?'· yes':'· no','The answer — right-click to change'); else note('thread-verdict is-answer','· answer','Marked as the answer — right-click to change'); }
   // A status is quiet text on the entry that set it (who and when); the row marker shows it in colour.
   const quoted=threadQuotedQuestion(r,thread);
   if(r.status)note('thread-status-note is-'+markerForThreadStatus(r.status),'· '+THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&markerForThreadStatus(r.status)==='followup'?' for '+r.owner:''),'Set the row to '+THREAD_STATUS_LABEL[r.status]+' — right-click to change');
-  // A decision is a chip on the entry where it was made; it doesn't change the row (owner decision 2026-10-15).
-  if(r.decision)chip('is-decision',markIconSvg('decision',10)+'<span>Decision</span>','Decided here — right-click to change');
+  // A decision is marked on the entry where it was made (its kind icon, and quiet text); it doesn't change the row (owner decision 2026-10-15).
+  if(r.decision)note('thread-status-note is-decision','· decision','Decided here — right-click to change');
   line.appendChild(meta);
   if(quoted){ const qq=document.createElement('div'); qq.className='thread-quote'; qq.textContent='↳ '+quoted; qq.dataset.tip='Answers this question'; line.appendChild(qq); }
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
@@ -29877,8 +29902,8 @@ function renderThreadComposer(node,thread,place,commit){
   const ask=_threadAskNodeIds.has(node.id);
   const author=threadDefaultAuthor();
   const c=remarkAuthorColor(author);
-  const avatar=document.createElement('span'); avatar.className='node-remark-avatar'; avatar.style.background=c.avatarBg; avatar.textContent=remarkAuthorInitials(author);
-  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
+  const avatar=threadKindEl(ask?{type:'question'}:{},null,'thread-kind');
+  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.style.setProperty('--pc',c.avatarBg); who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
   who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
   const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;

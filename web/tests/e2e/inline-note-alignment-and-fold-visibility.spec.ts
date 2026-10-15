@@ -96,7 +96,7 @@ test.describe('Inline note/remark/Q&A lines align with row text and survive fold
         childRowHidden: !document.querySelector('.node-row[data-id="2"]'),
         noteVisible: !!document.querySelector('#note-line-1'),
         remarkVisible: !!document.querySelector('.node-remark-line'),
-        qaVisible: !!document.querySelector('.thread-chip.is-question'), // Q&A is a discussion item now
+        qaVisible: !!document.querySelector('.thread-kind.is-question'), // Q&A is a discussion item now
       };
     });
 
