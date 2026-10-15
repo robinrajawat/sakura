@@ -46,7 +46,8 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   const q = page.locator('.thread-entry:has(#inline-remark-text-rq1)');
   await expect(q.locator('.thread-q-note')).toHaveText('· question, answered');
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
-  await expect(a.locator('.thread-verdict.is-yes')).toHaveText('✓ Yes');
+  await expect(a.locator('.thread-verdict.is-yes')).toHaveText('· yes');
+  await expect(a.locator('.thread-kind.is-answer')).toHaveCount(1);
   await expect(a.locator('.node-remark-text-inline')).toHaveText('All of them');
   // A decision becomes Agreed, on the thread and the row, and stays marked as a decision on its entry.
   await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-status-note.is-confirmed')).toHaveText('· agreed');
@@ -204,7 +205,7 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
   // The header names the thread; the status prints once on the row, and quietly on the entry that set it.
   expect(r.labels).toEqual(['Thread · 4 · Decision']);
   expect(r.notes).toEqual(['· question, answered', '· agreed', '· decision']);
-  expect(r.verdicts).toEqual(['✓ Yes']);
+  expect(r.verdicts).toEqual(['· yes']);
   expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
   // No chips: each entry's kind is its icon (a faint comment icon for a plain comment).
   expect(r.pills).toEqual([]);

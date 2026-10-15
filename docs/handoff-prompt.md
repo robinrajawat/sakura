@@ -199,7 +199,7 @@ misaligned it). The reply line offers Out of scope too; an answer's quote is cut
 
 **2026-10-15: thread entries show a kind icon instead of an avatar (Robin).** Owner-approved mockup:
 the column left of each entry says what it is (`threadKindIcon` / `threadKindEl`): decision =
-handshake (green), status = its marker icon in the marker colour, answer = ✓ / ✗, question = the
+handshake (green), status = its marker icon in the marker colour, answer = ✓ / ✗ (a reply arrow for one without Yes/No; the line then says "· yes" / "· no" / "· answer" in muted text, so the check isn't shown twice — Robin asked), question = the
 question icon (accent while open, hint grey once settled), plain comment = the comment icon, faint
 (**not a dot** — Robin: rows use dots). Names carry the per-person colour (`--pc` from
 `remarkAuthorColor().avatarBg`; lightened via color-mix in dark mode). The open-Question chip and the
