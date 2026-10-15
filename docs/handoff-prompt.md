@@ -197,6 +197,18 @@ fold is "· show N earlier" in the header, "+ Reply" always shows on touch scree
 the date once per day, and the entry menu's Rewrite with AI has a left sparkle icon (the trailing ✦
 misaligned it). The reply line offers Out of scope too; an answer's quote is cut to ~42 characters. A follow-up can name an owner (`owner` on the status entry, entry menu "Assign follow-up…", `threadOwnerMenuItems`): "· follow-up for Ana" in thread and PDF, "Row · Ana" in the open-items list, where same-named rows add "(in Parent)". Open items: a follow-up shows its thread's latest line (`sub` on `showSbContextMenu` items, `.sb-context-sub`), and a folded **Decisions · N** row lists decision entries (not counted in progress; Robin keeps the name "Open items"). "Reply" is renamed **Add to thread** (hover line, entry menu; "Reply as" → "Add as"): Robin mostly logs what others said in his own document, so it isn't a reply. After merge (#539), Out of scope moved from an open group to a folded **Out of scope · N** row at the bottom of Open items (Robin: it isn't open). The note's icon is a sheet of paper (lucide sticky-note path) instead of a single speech bubble, so it no longer looks like the thread's two bubbles (Robin, 2026-10-15). An entry's time is correctable: the date popover has a Time field (`setRemarkDateTime` moves `createdAt` with date and time, so the thread re-orders). The input line has a right-click menu (`threadComposerMenuItems`: Add, question toggle, Rewrite with AI, Close); "Add as" can remove a name (per document, this browser: `sakura_thread_hidden_authors_<docId>` in localStorage); Backspace that removes an entry or closes the empty line returns the caret to the end of the row's text (`beginEdit`). Backspace on an empty reply line closes it (not on key repeat). Quick Insert (Ctrl/Cmd+Space) now works in thread entries, the reply line and the inline note (`handleGenericQaKeydown`; it was missing). Robin asked about newest-first; kept oldest first (a conversation reads in order).
 
+**2026-10-15: linking answers to questions (Robin).** Robin: Sakura is a documentation/thinking tool,
+not a discussion tool — keep time order and the data model, accept a little repetition, make linking
+quick. Data model unchanged (`answerTo` + optional `verdict`; several entries may answer one question).
+UI: question menu **Answer** → `openThreadComposer(nodeId,false,questionId)` (state `_threadAnswerTo`;
+plain text then becomes the answer); reply line shows a **to: ‹question› ▾** picker
+(`data-act="answer-to"`) whenever the thread has 2+ questions, Yes / No default to the latest open
+question; entry menu **Mark as the answer** (one earlier question) / **Answer to ›** (several: lists
+earlier questions, answered ones too, check on current, **Not an answer**) — `threadQuestions`,
+`threadQuestionLabel`. The ↳ quote only shows with 2+ questions in the thread (`threadQuotedQuestion`).
+Plain text typed without a link stays a comment (deliberate: not every line after a question is an
+answer). Covered by `tests/e2e/thread-answer-linking.spec.ts`.
+
 **2026-10-15: Position › Left / Center for tables and charts (Robin).** `data-position="center"` on
 the table (absent = left), set from the table menu's **Position ›** (after Chart size). Applies via a
 `pos-center` class on the outline wrap (`buildNodeTableObject` showDisplay; removed while editing) and
