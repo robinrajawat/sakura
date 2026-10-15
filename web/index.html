@@ -4032,7 +4032,7 @@ body.printing-generic #gpe-overlay{
 <li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a question, an answer (✓ Yes / ✗ No, or ↳ for an answer without Yes/No), a decision (handshake), a status such as Follow-up (its marker icon), or a plain comment (a faint speech bubble) — then its <strong>author</strong> (each person in a document gets their own name color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Right-click the line to add it, make it a question, Rewrite with AI (when AI is on) or close it. While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
-<li>A <strong>question</strong> carries a Question chip, in your accent colour, until it's answered; then it reads “· question, answered” in grey. An answer that comes a few entries after its question quotes it (“↳ Does it…”). Answer it from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line), or right-click a reply → <strong>Mark as the answer</strong>. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
+<li>A <strong>question</strong>'s icon is in your accent colour until it's answered; then it reads “· question, answered” in grey. Right-click a question → <strong>Answer</strong> to answer that one; or answer from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line). When the thread has more than one question, the reply line shows which one it answers (“to: …”) and lets you pick another. Right-click an entry → <strong>Mark as the answer</strong> (or <strong>Answer to ›</strong> with several questions) links it, or moves a wrong link; a question can have several answers. With several questions, an answer that comes a few entries after its question quotes it (“↳ Does it…”). Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
 <li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
@@ -5068,6 +5068,7 @@ let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
 // A node's thread: reply box state and chip icons (see renderNodeThread).
 var _threadComposerNodeId=null;   // the node whose reply box is open even with no entries yet
 var _threadAskNodeIds=new Set();  // reply boxes whose next entry is a question
+var _threadAnswerTo=new Map();  // reply boxes answering a chosen question: nodeId -> question entry id
 var _threadDrafts=new Map();      // node id -> what is typed in its reply box, kept across renders
 var _threadAuthor=null;           // who the reply box writes as (null: the last author used)
 var THREAD_FLAG_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg>';
@@ -29798,11 +29799,13 @@ function addThreadStatus(nodeId,status,text,sameAuthorOnly){
   return e;
 }
 // Opens a node's thread with its reply line focused (right-click / Insert "Thread…", "+ Add to thread").
-function openThreadComposer(nodeId,ask){
+// answerTo: a question's id when opened from that question's "Answer" (the next entry answers it).
+function openThreadComposer(nodeId,ask,answerTo){
   if(nodeId==null)return;
   forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId);
   inlineExpandRemarksNodeIds.add(nodeId);
   _threadComposerNodeId=nodeId; if(ask)_threadAskNodeIds.add(nodeId); else _threadAskNodeIds.delete(nodeId);
+  if(answerTo&&!ask)_threadAnswerTo.set(nodeId,answerTo); else _threadAnswerTo.delete(nodeId);
   _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
 }
@@ -29921,10 +29924,15 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   line.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadEntryMenuItems(node,r,thread,textEl,commit)); });
   place(line);
 }
+// The thread's questions (with text), oldest first; a short label for menus and the reply line's picker.
+function threadQuestions(thread){ return (thread||[]).filter(e=>isQuestion(e)&&htmlHasVisibleText(e.text)); }
+function threadQuestionLabel(q,max){ const t=stripHtmlToText(q.text||'').replace(/\s+/g,' ').trim(); max=max||44; return t.length>max?t.slice(0,max-2).trimEnd()+'\u2026':t; }
 // The question an answer replies to, as a short quote, when other entries came in between (right
 // after its question, an answer needs no quote).
 function threadQuotedQuestion(r,thread){
   if(!r||!r.answerTo||!Array.isArray(thread))return '';
+  // With one question in the thread, which one an answer answers is obvious: no quote (owner: keep repetition down).
+  if(threadQuestions(thread).length<2)return '';
   const qi=thread.findIndex(x=>x&&x.id===r.answerTo), ri=thread.indexOf(r);
   if(qi<0||ri<0||ri===qi+1)return '';
   const tmp=document.createElement('div'); tmp.innerHTML=sakuraSanitizeRichHtml(thread[qi].text||'');
@@ -29939,13 +29947,26 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   const items=[];
   // Add to thread first: it's what you most often want from an entry.
   items.push({label:'Add to thread', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>openThreadComposer(node.id,false)});
+  // Which question an entry answers (owner design): one question in the thread → a plain item; more →
+  // an "Answer to ›" list (any question before it, answered ones too, so a question can collect several
+  // answers), where picking another moves the link and "Not an answer" removes it.
+  const earlierQs=threadQuestions(thread.slice(0,Math.max(0,thread.indexOf(r)))).filter(q=>q.id!==r.id);
+  const linkItems=()=>{
+    if(isQuestion(r)||!earlierQs.length)return [];
+    if(earlierQs.length===1)return [r.answerTo?{label:'Not the answer', onClick:change(()=>{ delete r.answerTo; delete r.verdict; })}:{label:'Mark as the answer', icon:CHECK, onClick:change(()=>{ r.answerTo=earlierQs[0].id; })}];
+    return [{label:r.answerTo?'Answer to':'Mark as the answer to', icon:ico('<polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>'), submenu:[
+      ...earlierQs.slice().reverse().map(q=>({label:threadQuestionLabel(q), sub:(q.person?q.person+' \u00b7 ':'')+(questionState(q,thread)==='open'?'open':'answered'), icon:r.answerTo===q.id?CHECK:'', onClick:change(()=>{ r.answerTo=q.id; })})),
+      ...(r.answerTo?[{divider:true},{label:'Not an answer', onClick:change(()=>{ delete r.answerTo; delete r.verdict; })}]:[])
+    ]}];
+  };
   if(r.answerTo){
     items.push({label:'Answer Yes', icon:r.verdict==='yes'?CHECK:'', onClick:change(()=>{ if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; })});
     items.push({label:'Answer No', icon:r.verdict==='no'?CHECK:'', onClick:change(()=>{ if(r.verdict==='no')delete r.verdict; else r.verdict='no'; })});
-    items.push({label:'Not the answer', onClick:change(()=>{ delete r.answerTo; delete r.verdict; })});
+    items.push(...linkItems());
   } else {
-    const q=isQuestion(r)?null:questionToAnswer(thread,r);
-    if(q)items.push({label:'Mark as the answer', icon:CHECK, onClick:change(()=>{ r.answerTo=q.id; })});
+    // Answering a question: the reply line opens linked to it.
+    if(isQuestion(r))items.push({label:'Answer', icon:ico('<polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>'), onClick:()=>openThreadComposer(node.id,false,r.id)});
+    items.push(...linkItems());
     if(isQuestion(r)){ const st=questionState(r,thread); if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won’t answer', onClick:change(()=>{ if(st==='wont')delete r.wontAnswer; else r.wontAnswer=true; })}); }
     items.push({label:isQuestion(r)?'Make it a comment':'Make it a question', icon:isQuestion(r)?markIconSvg('comment'):qaDotIconSvg(14), onClick:change(()=>{ if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); } else r.type='question'; })});
   }
@@ -29982,8 +30003,14 @@ function renderThreadComposer(node,thread,place,commit){
   who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
   const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;
-  const openQ=questionToAnswer(thread);
-  input.dataset.placeholder=ask?'Ask a question…':(openQ?'Add to thread, or answer Yes / No…':'Add to thread…');
+  // The question this line answers: one chosen from a question's "Answer" (then even plain text is the
+  // answer), otherwise the latest open one for Yes / No. With two or more questions to pick from, a
+  // "to: …" picker shows which (owner design).
+  const chosenId=_threadAnswerTo.get(node.id);
+  const chosen=!ask&&chosenId?thread.find(e=>e.id===chosenId&&isQuestion(e)):null;
+  if(chosenId&&!chosen)_threadAnswerTo.delete(node.id);
+  const openQ=ask?null:(chosen||questionToAnswer(thread));
+  input.dataset.placeholder=ask?'Ask a question…':chosen?'Answer “'+threadQuestionLabel(chosen,40)+'”…':(openQ?'Add to thread, or answer Yes / No…':'Add to thread…');
   const submit=extra=>{
     const html=sakuraSanitizeRichHtml(input.innerHTML);
     const hasText=htmlHasVisibleText(html);
@@ -30000,11 +30027,12 @@ function renderThreadComposer(node,thread,place,commit){
       // A row marked Follow-up / Agreed / Out of scope before it had a thread: its first entry carries that status.
       if(!thread.length&&!(extra&&extra.status)&&threadStatusForMarker(node.marker))e.status=threadStatusForMarker(node.marker);
       if(extra&&extra.verdict&&openQ){ e.answerTo=openQ.id; e.verdict=extra.verdict; }
+      else if(chosen&&!(extra&&extra.status)){ e.answerTo=chosen.id; delete e.type; }
       // A status from the reply line is its own entry, so it records who moved it and when.
       if(extra&&extra.status)e.status=extra.status;
       remarks.push(e);
     }
-    _threadComposerNodeId=node.id; _threadAskNodeIds.delete(node.id); _threadDrafts.delete(node.id);
+    _threadComposerNodeId=node.id; _threadAskNodeIds.delete(node.id); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
     _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
     commit();
   };
@@ -30028,6 +30056,17 @@ function renderThreadComposer(node,thread,place,commit){
   const askBtn=btn('ask','Ask',ask?'Your next entry is a question — click to make it a reply':'Make your next entry a question',ask);
   askBtn.addEventListener('click',e=>{ e.stopPropagation(); _threadComposerNodeId=node.id; if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
   actions.appendChild(askBtn);
+  // Which question Yes / No (or a chosen answer) goes to, when there's a choice to make.
+  const qs=ask?[]:threadQuestions(thread);
+  if(chosen||qs.length>=2){
+    const to=btn('answer-to',openQ?'to: '+esc(threadQuestionLabel(openQ,28))+' \u25be':'Answer a question \u25be',openQ?'Which question this answers — click to pick another':'Pick the question this answers');
+    to.addEventListener('click',e=>{ e.stopPropagation(); const rr=to.getBoundingClientRect();
+      showSbContextMenu(rr.left,rr.bottom+4,[
+        ...qs.slice().reverse().map(q=>({label:threadQuestionLabel(q), sub:(q.person?q.person+' \u00b7 ':'')+(questionState(q,thread)==='open'?'open':'answered'), icon:openQ&&q.id===openQ.id?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'', onClick:()=>{ _threadAnswerTo.set(node.id,q.id); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }})),
+        ...(chosen?[{divider:true},{label:'Not an answer', onClick:()=>{ _threadAnswerTo.delete(node.id); _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }}]:[])
+      ]); });
+    actions.appendChild(to);
+  }
   if(openQ){
     const yes=btn('yes','Yes','Answer “'+stripHtmlToText(openQ.text).slice(0,60)+'” with Yes (and what you typed)');
     yes.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'yes'}); });
