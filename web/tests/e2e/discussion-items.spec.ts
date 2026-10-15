@@ -6,9 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // A row has one flat thread: entries are a Comment or a Question, each with one author and a time;
-// an answer is a reply carrying Yes / No (or a reply marked as the answer); a status chip
-// (Issue / Follow-up / Resolved / Decision) sits on the entry it was set on. The thread status and the
-// row marker are one status: Issue ⇄ ⚠, Follow-up ⇄ ⚑, Resolved / Decision ⇄ ✓ Confirmed.
+// an answer is a reply carrying Yes / No (or a reply marked as the answer); a status (Agreed /
+// Follow-up / Out of scope) sits on the entry it was set on, and the latest one is the row marker.
+// A Decision is a chip on an entry; it doesn't change the row.
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 
@@ -48,17 +48,18 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
   await expect(a.locator('.thread-verdict.is-yes')).toHaveText('✓ Yes');
   await expect(a.locator('.node-remark-text-inline')).toHaveText('All of them');
-  // A decision becomes the Decision status, and the row turns Confirmed.
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-status-note.is-decision')).toHaveText('· decision');
+  // A decision becomes Agreed, on the thread and the row, with a Decision chip on its entry.
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-status-note.is-confirmed')).toHaveText('· agreed');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-chip.is-decision')).toHaveText('Decision');
   expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('confirmed');
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'd1'))")).not.toContain('"kind"');
   expect(errors).toEqual([]);
 });
 
-test('reply line: hidden until "+ Reply"; Enter adds a comment, Ask a question, Yes answers it, the author sticks', async ({ page }) => {
+test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a question, Yes answers it, the author sticks', async ({ page }) => {
   const errors = await seed(page);
   const box = page.locator('.thread-composer-input[data-node-id="2"]');
-  // At rest the thread ends in "+ Reply", shown while the thread is hovered.
+  // At rest the thread ends in "+ Add to thread", shown while the thread is hovered.
   await expect(box).toHaveCount(0);
   const replyLink = page.locator('.thread-reply-link').first();
   // Only its label fades: the line itself stays opaque, so the depth guides it carries stay drawn.
@@ -74,7 +75,7 @@ test('reply line: hidden until "+ Reply"; Enter adds a comment, Ask a question, 
   // The box stays focused for the next entry.
   await expect(box).toBeFocused();
 
-  // Reply as someone else.
+  // Add as someone else.
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-author-btn').click();
   await page.locator('.sb-context-menu').getByText('Someone else…').click();
   await page.keyboard.type('Kristoffer');
@@ -108,11 +109,11 @@ test('row marker and thread status are one status, both ways', async ({ page }) 
   expect(await page.evaluate(latestStatus)).toBe('followup');
   await expect(page.locator('.thread-entry .thread-status-note.is-followup')).toHaveCount(1);
 
-  // Thread → marker: Resolve on the reply line turns the row Confirmed, as its own entry.
+  // Thread → marker: Agree on the reply line turns the row Agreed, as its own entry.
   await page.evaluate('openThreadComposer(2, false)');
-  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="resolve"]').click();
+  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="confirm"]').click();
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('confirmed');
-  expect(await page.evaluate(latestStatus)).toBe('resolved');
+  expect(await page.evaluate(latestStatus)).toBe('confirmed');
   // The earlier Follow-up stays as history.
   await expect(page.locator('.thread-entry .thread-status-note.is-followup')).toHaveCount(1);
 
@@ -126,24 +127,35 @@ test('row marker and thread status are one status, both ways', async ({ page }) 
 
   // A status from the entry menu sets the marker.
   await page.locator('.thread-entry:has(#inline-remark-text-c1)').click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Decision', { exact: true }).click();
+  await page.locator('.sb-context-menu .sb-context-choice', { hasText: 'Agreed' }).click();
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('confirmed');
 
-  // Issue opens the row's reply box to say what's wrong; the first entry carries the Issue chip,
-  // and Resolve closes it.
-  await page.evaluate("setNodeMarker(3, 'issue'); render()");
+  // Follow-up opens the row's reply box to say what's left; what you type fills the entry that
+  // set it, and Agree settles it.
+  await page.evaluate("setNodeMarker(3, 'followup'); render()");
   const box3 = page.locator('.thread-composer-input[data-node-id="3"]');
   await expect(box3).toBeFocused();
   await page.keyboard.type('Load script fails on the EU file');
   await page.keyboard.press('Enter');
-  await expect(page.locator('.thread-entry', { hasText: 'Load script fails' }).locator('.thread-status-note.is-issue')).toHaveText('· issue');
-  expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('issue');
-  await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="resolve"]').click();
+  await expect(page.locator('.thread-entry', { hasText: 'Load script fails' }).locator('.thread-status-note.is-followup')).toHaveText('· follow-up');
+  expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('followup');
+  await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="confirm"]').click();
   expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('confirmed');
 
-  // Parked stays row-only.
-  await page.evaluate("setNodeMarker(3, 'parked'); render()");
-  expect(await page.evaluate("threadStatus(nodeThread(3))")).toBe('resolved');
+  // Out of scope is a thread status too: a marker click records who set it and when, as its own entry.
+  const before = await page.evaluate('nodeThread(3).length') as number;
+  await page.evaluate("_threadAuthor = 'Robin'; setNodeMarker(3, 'parked'); render()");
+  expect(await page.evaluate("threadStatus(nodeThread(3))")).toBe('parked');
+  expect(await page.evaluate('nodeThread(3).length')).toBe(before + 1);
+  await expect(page.locator('.thread-entry.is-event', { hasText: 'Robin' }).locator('.thread-status-note.is-parked')).toHaveText('· out of scope');
+
+  // A marker on a row with no thread starts one, so the status still says who and when.
+  await page.evaluate("setNodeMarker(1, 'confirmed'); render()");
+  expect(await page.evaluate("JSON.stringify(nodeThread(1).map(e => [e.person, e.status]))")).toBe('[["Robin","confirmed"]]');
+  expect(await page.evaluate("nodes.find(n => n.id === 1).marker")).toBe('confirmed');
+  // Clearing it takes the blank status entry away again.
+  await page.evaluate("setNodeMarker(1, 'confirmed'); render()");
+  expect(await page.evaluate('nodeThread(1).length')).toBe(0);
   expect(errors).toEqual([]);
 });
 
@@ -184,11 +196,11 @@ test('PDF prints the whole thread with author, time and chips', async ({ page })
     };
   });
   // The header names the thread; the status prints once on the row, and quietly on the entry that set it.
-  expect(r.labels).toEqual(['Thread · 4']);
-  expect(r.notes).toEqual(['· question, answered', '· decision']);
+  expect(r.labels).toEqual(['Thread · 4 · Decision']);
+  expect(r.notes).toEqual(['· question, answered', '· agreed']);
   expect(r.verdicts).toEqual(['✓ Yes']);
   expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
-  expect(r.pills).toEqual([]);
+  expect(r.pills).toEqual(['Decision']);
   expect(r.qaSection).toContain('Unlinked question');
   expect(r.qaSection).not.toContain('EU customers');
   expect(errors).toEqual([]);
@@ -226,26 +238,36 @@ test('right-click and Insert offer one Thread item, no separate comment/question
   await expect(page.locator('#context-menu [data-action="qa"]')).toHaveCount(0);
 });
 
-test('entry menu: Reply first, question toggle, status as labelled marker choices', async ({ page }) => {
+test('entry menu: Reply first, question toggle, decision, status as labelled marker choices', async ({ page }) => {
   await seed(page);
   const entry = page.locator('.thread-entry:has(#inline-remark-text-c1) .node-remark-text-inline');
   await entry.click({ button: 'right' });
   const menu = page.locator('.sb-context-menu');
-  await expect(menu.locator('.sb-context-item').first()).toHaveText('Reply');
+  await expect(menu.locator('.sb-context-item').first()).toHaveText('Add to thread');
   await expect(menu.getByText('Make it a question', { exact: true })).toBeVisible();
-  await expect(menu.locator('.sb-context-choice')).toHaveText(['Issue', 'Follow-up', 'Resolved', 'Decision']);
+  await expect(menu.locator('.sb-context-choice')).toHaveText(['Agreed', 'Follow-up', 'Out of scope']);
   await expect(menu.locator('.sb-context-choice.current')).toHaveCount(0);
   await menu.locator('.sb-context-choice', { hasText: 'Follow-up' }).click();
   await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-status-note')).toHaveText('· follow-up');
 
   await entry.click({ button: 'right' });
   await expect(menu.locator('.sb-context-choice.current')).toHaveText('Follow-up');
-  await menu.getByText('Reply', { exact: true }).click();
+  // A decision is a chip on the entry; the row keeps its marker.
+  await menu.getByText('Mark as decision', { exact: true }).click();
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-chip.is-decision')).toHaveText('Decision');
+  expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('followup');
+  await entry.click({ button: 'right' });
+  await expect(menu.getByText('Not a decision', { exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  // The header says the thread holds a decision.
+  await expect(page.locator('.thread-head .thread-head-decision')).toHaveText('· Decision');
+  await entry.click({ button: 'right' });
+  await menu.getByText('Add to thread', { exact: true }).click();
   await expect(page.locator('.thread-composer-input[data-node-id="2"]')).toBeFocused();
   expect(await page.evaluate('_threadAskNodeIds.has(2)')).toBe(false);
 });
 
-test('depth guides run unbroken through a thread, its "+ Reply" line included', async ({ page }) => {
+test('depth guides run unbroken through a thread, its "+ Add to thread" line included', async ({ page }) => {
   await seed(page);
   const guides = (sel: string) => page.locator(sel).first().evaluate((el) => {
     const op = (n: Element | null): number => { let o = 1; for (; n; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity); return o; };
@@ -274,7 +296,7 @@ test('grey thread: only an open question takes the accent colour; an answer quot
   await expect(page.locator('.thread-head').first()).toHaveCSS('text-transform', 'none');
 
   // The Yes came two entries after its question, so it quotes it; an answer right after needs no quote.
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-ans) .thread-quote')).toHaveText('↳ Does it make sense to use the shipping condition + plant combination?');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-ans) .thread-quote')).toHaveText('↳ Does it make sense to use the shipping con…');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-rq1-a) .thread-quote')).toHaveCount(0);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-q-note')).toHaveText('· question, answered');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-chip.is-question')).toHaveText('Question');
@@ -287,4 +309,95 @@ test('Ctrl/Cmd+Alt+M opens a reply line in the selected row\'s thread', async ({
   await page.evaluate('editingId = null; selectedId = 3; render();');
   await page.keyboard.press('Control+Alt+KeyM');
   await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toBeFocused();
+});
+
+test('the reply line offers all three statuses: Out of scope sets the row aside with what you typed', async ({ page }) => {
+  const errors = await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  const composer = page.locator('.thread-composer:has([data-node-id="2"])');
+  await page.locator('.thread-composer-input[data-node-id="2"]').click();
+  await page.keyboard.type('Not part of phase one');
+  await composer.locator('.thread-btn[data-act="parked"]').click();
+  expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('parked');
+  await expect(page.locator('.thread-entry', { hasText: 'Not part of phase one' }).locator('.thread-status-note.is-parked')).toHaveText('· out of scope');
+  expect(errors).toEqual([]);
+});
+
+test('a follow-up names its owner, in the thread, the PDF note and the open-items list', async ({ page }) => {
+  const errors = await seed(page, `remarks.push({ id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails.', createdAt: 4, status: 'followup' });`);
+  await page.evaluate('syncRowMarkerFromThread(3); render()');
+  await page.locator('.thread-entry:has(#inline-remark-text-k1) .node-remark-text-inline').click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Assign follow-up…', { exact: true }).click();
+  await page.locator('.sb-context-menu').getByText('Ana', { exact: true }).click();
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-k1) .thread-status-note')).toHaveText('· follow-up for Ana');
+  await page.locator('#marker-summary .open-items-btn').click();
+  await expect(page.locator('.open-items-menu .sb-context-item', { hasText: 'Data load' })).toHaveText(/^Data load · Ana/);
+  expect(errors).toEqual([]);
+});
+
+test('open-items list: rows with the same name add their parent', async ({ page }) => {
+  await seed(page);
+  await page.evaluate(`
+    const n = (id, depth, text) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
+    nodes = [n(1, 0, 'Order types'), n(2, 1, 'Export'), n(3, 0, 'Plants'), n(4, 1, 'Export'), n(5, 1, 'Pick-up')];
+    nodes[1].marker = 'followup'; nodes[3].marker = 'followup'; nodes[4].marker = 'followup';
+    remarks = []; rebuildParentIds(); render();`);
+  await page.locator('#marker-summary .open-items-btn').click();
+  const labels = await page.locator('.open-items-menu .sb-context-item .sb-context-label').allTextContents();
+  expect(labels).toEqual(expect.arrayContaining(['Export (in Order types)', 'Export (in Plants)', 'Pick-up']));
+});
+
+test('Quick Insert (Ctrl/Cmd+Space) works in the reply line', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  const box = page.locator('.thread-composer-input[data-node-id="2"]');
+  await box.click();
+  await page.keyboard.type('A ');
+  await page.keyboard.press('ControlOrMeta+Space');
+  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await page.keyboard.press('Enter');
+  await expect(box).toHaveText('A —');
+});
+
+test('Quick Insert (Ctrl/Cmd+Space) works in the inline note', async ({ page }) => {
+  await seed(page);
+  await page.evaluate("nodes[1].note = 'Note'; inlineExpandNoteNodeIds = new Set([2]); render()");
+  const note = page.locator('.node-note-line[data-node-id="2"]');
+  await note.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' ');
+  await page.keyboard.press('ControlOrMeta+Space');
+  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await page.keyboard.press('Enter');
+  await expect(note).toContainText('Note —');
+});
+
+test('open-items list: a follow-up shows its thread\'s latest line; decisions fold at the bottom', async ({ page }) => {
+  await seed(page, `remarks.push(
+    { id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails on the EU file.', createdAt: 4, status: 'followup' },
+    { id: 'd1', anchorNodeId: 2, person: 'Maria', date: '2026-10-14', text: 'Cut over on Saturday.', createdAt: 5, decision: true });`);
+  await page.evaluate('syncRowMarkerFromThread(3); render()');
+  await page.locator('#marker-summary .open-items-btn').click();
+  const menu = page.locator('.open-items-menu');
+  await expect(menu.locator('.sb-context-item', { hasText: 'Data load' }).locator('.sb-context-sub')).toHaveText('Karsten: Script fails on the EU file.');
+  const fold = menu.locator('.sb-context-fold', { hasText: 'Decisions · 1' });
+  await fold.click();
+  const item = menu.locator('.sb-context-fold-body .sb-context-item', { hasText: 'Cut over on Saturday.' });
+  await expect(item.locator('.sb-context-sub')).toHaveText('Cutover');
+  await item.click();
+  await expect(page.locator('#inline-remark-text-d1')).toBeFocused();
+});
+
+test('Backspace on an empty reply line closes it; with text it just deletes', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('openThreadComposer(2, false)');
+  const box = page.locator('.thread-composer-input[data-node-id="2"]');
+  await box.click();
+  await page.keyboard.type('ab');
+  await page.keyboard.press('Backspace');
+  await expect(box).toHaveText('a');
+  await page.keyboard.press('Backspace');
+  await expect(box).toHaveCount(1);
+  await page.keyboard.press('Backspace');
+  await expect(box).toHaveCount(0);
 });

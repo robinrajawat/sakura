@@ -40,12 +40,12 @@ test.describe('generated diagramGenColors block (src/state/diagramGenColors.ts s
     }
 
     const result = await page.evaluate(() => {
-      // Tree: root(0) -> a(1, marker:'issue'), b(2, tags:['billing']) — a genuine fan-out at
+      // Tree: root(0) -> a(1, marker:'followup'), b(2, tags:['billing']) — a genuine fan-out at
       // root, with a's explicit marker outranking anything else and b picking up a tag color.
       // @ts-expect-error — bare globals from index.html
       nodes = [
         { id: 1, text: 'Root', depth: 0, parentId: null, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: '' },
-        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: 'issue' },
+        { id: 2, text: 'A', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: [], checked: false, isCheckbox: false, marker: 'followup' },
         { id: 3, text: 'B', depth: 1, parentId: 1, styles: {}, note: '', noteTitle: '', codeBlock: null, tags: ['billing'], checked: false, isCheckbox: false, marker: '' }
       ];
 
@@ -61,14 +61,14 @@ test.describe('generated diagramGenColors block (src/state/diagramGenColors.ts s
         tagKey,
         tagKeyDeterministic,
         rootColor: colorMap.get(0),
-        aColor: colorMap.get(1), // marker 'issue' -> red
+        aColor: colorMap.get(1), // marker 'followup' -> amber
         bColor: colorMap.get(2) // tag 'billing' -> its hashed hue
       };
     });
 
     expect(result.tagKey).toBe(result.tagKeyDeterministic); // deterministic hash
     expect(result.rootColor).toBe('gray');
-    expect(result.aColor).toBe('red'); // DIAGRAM_GEN_MARKER_COLOR.issue
+    expect(result.aColor).toBe('amber'); // DIAGRAM_GEN_MARKER_COLOR.followup
     expect(result.bColor).toBe(result.tagKey);
 
     // Proof the rest of the script still runs — an unrelated, physically-distant function is

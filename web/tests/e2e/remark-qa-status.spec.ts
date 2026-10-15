@@ -75,16 +75,16 @@ const statusNote = (page: Page, id: string) => page.locator(`.thread-entry:has(#
 
 test('old follow-ups migrate to thread status, and the row marker follows the thread', async ({ page }) => {
   const errors = await open(page);
-  await expect(statusNote(page, 'rDone')).toHaveText('· resolved');
+  await expect(statusNote(page, 'rDone')).toHaveText('· agreed');
   await expect(statusNote(page, 'rOld')).toHaveText('· follow-up');
   // The latest chip is the thread's status, so the row is a Follow-up.
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toContain('followUp');
   expect(await sumButtons(page)).toEqual(['1 follow-up', '1 question']);
 
-  // Resolving from the reply line settles the row.
+  // Agree on the reply line settles the row.
   await page.evaluate('openThreadComposer(2, false)');
-  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="resolve"]').click();
+  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="confirm"]').click();
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('confirmed');
   expect(await sumButtons(page)).toEqual(['1 question']);
   // One undo brings the follow-up back.
@@ -172,7 +172,7 @@ test('PDF shows each entry\'s question state and status, and no Open items summa
   const r = await exportPdf(page);
   // Only an open question prints as a pill; settled questions and statuses are quiet text.
   expect(r.pills).toEqual(['Question · Open']);
-  expect(r.notes).toEqual(expect.arrayContaining(['· follow-up', '· resolved', '· question, answered', '· question, won’t answer']));
+  expect(r.notes).toEqual(expect.arrayContaining(['· follow-up', '· agreed', '· question, answered', '· question, won’t answer']));
   expect(r.pills).not.toContain('Follow-up');
   // Owner decision: the closing "Open items" summary page was removed.
   expect(r.section).toBe(false);
@@ -213,8 +213,10 @@ test('a long thread shows its latest three entries; the rest fold, and the PDF p
     .map(e => (e as HTMLElement).dataset.remarkId).filter(id => ['rPlain', 'rqDone', 'rqDone-a', 'c1', 'c2', 'c3'].includes(id!)));
   // Oldest first: rPlain (2), the old Q&A (2) and its answer (3), then c1..c3.
   expect(await itemIds()).toEqual(['c1', 'c2', 'c3']);
-  const more = page.locator('.node-remark-resolved-toggle', { hasText: 'earlier entr' });
-  await expect(more).toHaveText(/3 earlier entries/);
+  // The header says how to see the rest; there's no extra line for it.
+  const more = page.locator('.node-row[data-id="4"] ~ .thread-head .thread-head-more').first();
+  await expect(more).toHaveText('· show 3 earlier');
+  await expect(page.locator('.node-remark-resolved-toggle', { hasText: 'earlier entr' })).toHaveCount(0);
   await more.click();
   expect(await itemIds()).toEqual(['rPlain', 'rqDone', 'rqDone-a', 'c1', 'c2', 'c3']);
 

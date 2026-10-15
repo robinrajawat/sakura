@@ -95,10 +95,10 @@ describe('assignDiagramGenColorsCore', () => {
   });
 
   it('an explicit marker outranks a tag', () => {
-    const t = tree([0, 1], [undefined, ['billing']], [undefined, 'issue']);
+    const t = tree([0, 1], [undefined, ['billing']], [undefined, 'followup']);
     const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([[2, { shape: 'ui' }]]);
     const result = assignDiagramGenColorsCore(t, { rootIdxs: [0] }, nodeMeta);
-    expect(result.get(1)).toBe('red'); // DIAGRAM_GEN_MARKER_COLOR.issue
+    expect(result.get(1)).toBe('amber'); // DIAGRAM_GEN_MARKER_COLOR.followup
   });
 
   it('an unrecognized marker falls through to tag/branch color instead', () => {
@@ -159,7 +159,7 @@ describe('applyDiagramGenShapeColorOverridesCore', () => {
   });
 
   it('skips a node with an explicit recognized marker — marker keeps outranking shape', () => {
-    const t = tree([0, 1], undefined, [undefined, 'issue']);
+    const t = tree([0, 1], undefined, [undefined, 'followup']);
     const colorByIdx = new Map([[1, 'red']]); // set by assignDiagramGenColorsCore's own marker logic
     const nodeMeta = new Map<number, ColorAssignNodeMetaEntry>([[2, { shape: 'ui' }]]);
     applyDiagramGenShapeColorOverridesCore(t, { scopeIdxs: [0, 1] }, colorByIdx, nodeMeta, true);

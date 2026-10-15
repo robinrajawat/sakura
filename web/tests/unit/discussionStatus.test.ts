@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  htmlHasVisibleText, qaState, isCountableQuestion,
+  normalizeThreadStatus, htmlHasVisibleText, qaState, isCountableQuestion,
   normalizeDiscussionFilter, nodesWithOpenItems, openCountLabel,
   documentProgress, attentionParts, progressSummaryText,
   threadEntries, questionState, openQuestions, questionToAnswer, threadStatus, threadStatusEntry,
@@ -69,31 +69,37 @@ describe('one thread', () => {
   });
   it('the thread status is the latest status chip', () => {
     expect(threadStatus(thread)).toBeNull();
-    const t = [E({ status: 'followup' }), E({}), E({ status: 'decision' }), E({})];
-    expect(threadStatus(t)).toBe('decision');
+    const t = [E({ status: 'followup' }), E({}), E({ status: 'parked' }), E({})];
+    expect(threadStatus(t)).toBe('parked');
+    // Older Resolved / Decision read as Confirmed.
+    expect(threadStatus([E({ status: 'decision' })])).toBe('confirmed');
     expect(threadStatusEntry(t)).toBe(t[2]);
   });
 });
 
 describe('row marker ⇄ thread status', () => {
-  it('maps both ways; Parked and N/A are row-only', () => {
-    expect(markerForThreadStatus('followup')).toBe('followup');
+  it('three markers, each a thread status of the same name; older statuses map onto them', () => {
+    for (const m of ['confirmed', 'followup', 'parked']) {
+      expect(markerForThreadStatus(m)).toBe(m);
+      expect(threadStatusForMarker(m)).toBe(m);
+      expect(isThreadMarker(m)).toBe(true);
+    }
     expect(markerForThreadStatus('resolved')).toBe('confirmed');
     expect(markerForThreadStatus('decision')).toBe('confirmed');
+    expect(markerForThreadStatus('issue')).toBe('followup');
+    expect(markerForThreadStatus('na')).toBe('parked');
+    expect(threadStatusForMarker('issue')).toBe('followup');
     expect(markerForThreadStatus(null)).toBeNull();
-    expect(threadStatusForMarker('followup')).toBe('followup');
-    expect(threadStatusForMarker('confirmed')).toBe('resolved');
-    expect(markerForThreadStatus('issue')).toBe('issue');
-    expect(threadStatusForMarker('issue')).toBe('issue');
-    expect(threadStatusForMarker('parked')).toBeNull();
-    expect(isThreadMarker('confirmed')).toBe(true);
-    expect(isThreadMarker('parked')).toBe(false);
+    expect(isThreadMarker('')).toBe(false);
+    expect(normalizeThreadStatus('bogus')).toBeNull();
   });
-  it('syncs the marker from the thread, keeping row-only markers when the thread has no status', () => {
+  it('syncs the marker from the thread', () => {
     expect(syncedMarker('', [E({ status: 'followup' })])).toBe('followup');
-    expect(syncedMarker('issue', [E({ status: 'resolved' })])).toBe('confirmed');
+    expect(syncedMarker('followup', [E({ status: 'resolved' })])).toBe('confirmed');
+    expect(syncedMarker('', [E({ status: 'issue' })])).toBe('followup');
+    expect(syncedMarker('', [E({ status: 'na' })])).toBe('parked');
     expect(syncedMarker('followup', [E({})])).toBe('');
-    expect(syncedMarker('parked', [E({})])).toBe('parked');
+    expect(syncedMarker('parked', [E({})])).toBe('');
   });
   it('links older documents once: thread status → marker, marker → status on the latest entry', () => {
     const nodes = [{ id: 1 }, { id: 2, marker: 'followup' }, { id: 3, marker: 'issue' }, { id: 4, marker: 'confirmed' }, { id: 5, marker: 'issue' }, { id: 6, marker: 'parked' }];
@@ -101,14 +107,20 @@ describe('row marker ⇄ thread status', () => {
       E({ anchorNodeId: 1, createdAt: 1, status: 'decision' }),
       E({ anchorNodeId: 2, createdAt: 1 }), E({ anchorNodeId: 2, createdAt: 2 }),
       E({ anchorNodeId: 3, createdAt: 1, status: 'followup' }),
-      E({ anchorNodeId: 5, createdAt: 1, status: 'followup' }), E({ anchorNodeId: 5, createdAt: 2 }),
+      E({ anchorNodeId: 5, createdAt: 1, status: 'resolved' }), E({ anchorNodeId: 5, createdAt: 2 }),
       E({ anchorNodeId: 6, createdAt: 1, status: 'decision' })
     ];
     const changes = linkMarkersToThreads(nodes, entries);
-    // Row 3's old Issue mark gives way to its thread's Follow-up; row 5's goes on its latest entry;
-    // Parked (row-only) stays over row 6's decision.
-    expect([...changes]).toEqual([[1, 'confirmed'], [3, 'followup']]);
-    expect(entries.map((e) => e.status || null)).toEqual(['decision', null, 'followup', 'followup', 'followup', 'issue', 'decision']);
+    // Row 3's old Issue mark already agrees with its thread's Follow-up; row 5's goes on its latest
+    // entry as Follow-up; row 6 keeps showing Out of scope (once row-only): it joins the thread after
+    // the decision.
+    expect([...changes]).toEqual([[1, 'confirmed']]);
+    expect(entries.map((e) => e.status || null)).toEqual(['decision', null, 'followup', 'followup', 'resolved', 'followup', 'decision', 'parked']);
+    expect(entries[7]).toMatchObject({ anchorNodeId: 6, person: '', text: '', createdAt: 2 });
+    // An N/A row whose thread has no status puts Out of scope on the latest entry.
+    const quiet = [E({ anchorNodeId: 7, createdAt: 1 })];
+    linkMarkersToThreads([{ id: 7, marker: 'na' }], quiet);
+    expect(quiet[0].status).toBe('parked');
   });
 });
 
@@ -125,7 +137,7 @@ describe('migrateDiscussionToThread', () => {
     const { entries, changed } = migrateDiscussionToThread(old);
     expect(changed).toBe(true);
     expect(entries.map((e) => [e.id, e.type || '', e.status || '', e.answerTo || '', e.verdict || ''])).toEqual([
-      ['f', '', 'followup', '', ''], ['g', '', 'resolved', '', ''], ['d', '', 'decision', '', ''],
+      ['f', '', 'followup', '', ''], ['g', '', 'confirmed', '', ''], ['d', '', 'confirmed', '', ''],
       ['q', 'question', '', '', ''], ['q-a', '', '', 'q', 'yes'], ['w', 'question', '', '', ''], ['c', '', '', '', '']
     ]);
     expect(entries[4]).toMatchObject({ text: 'Ops agreed', person: '', createdAt: 5, date: '2026-10-14' });
@@ -133,6 +145,13 @@ describe('migrateDiscussionToThread', () => {
     expect(needsThreadMigration(entries)).toBe(false);
     expect(migrateDiscussionToThread(entries)).toEqual({ entries, changed: false });
     expect(old[0].followUp).toBe(true); // the input is not mutated
+    expect(entries[2].decision).toBe(true); // an old decision is Agreed with a Decision chip
+    // Older statuses map onto the three: Resolved → Agreed, Decision → Agreed + chip, Issue →
+    // Follow-up, N/A → Out of scope.
+    const saved = migrateDiscussionToThread([E({ id: 'r', status: 'resolved' }), E({ id: 'd', status: 'decision' }), E({ id: 'i', status: 'issue' }), E({ id: 'n', status: 'na' }), E({ id: 'p', status: 'parked' })]);
+    expect(saved.changed).toBe(true);
+    expect(saved.entries.map((e) => e.status)).toEqual(['confirmed', 'confirmed', 'followup', 'parked', 'parked']);
+    expect(saved.entries.map((e) => !!e.decision)).toEqual([false, true, false, false, false]);
   });
 });
 
@@ -172,7 +191,7 @@ describe('nodesWithOpenItems', () => {
     E({ id: 'b', anchorNodeId: 2, type: 'question', text: 'B?' }), E({ anchorNodeId: 2, answerTo: 'b', verdict: 'no' }),
     E({ id: 'c', anchorNodeId: 3, type: 'question', text: 'C?', wontAnswer: true })
   ];
-  it('finds nodes with open questions; openItems adds Issue and Follow-up rows', () => {
+  it('finds nodes with open questions; openItems adds Follow-up rows (older Issue too)', () => {
     expect([...nodesWithOpenItems('openQa', entries)]).toEqual([1]);
     const nodes = [{ id: 6, marker: 'issue' }, { id: 7, marker: 'followup' }, { id: 8, marker: 'confirmed' }];
     expect([...nodesWithOpenItems('openItems', entries, nodes)].sort()).toEqual([1, 6, 7]);
@@ -204,15 +223,15 @@ describe('documentProgress / attentionParts / progressSummaryText', () => {
     E({ id: 'z', anchorNodeId: 99, type: 'question', text: 'Other doc?' })
   ];
 
-  it('counts what needs attention, parked and settled', () => {
-    expect(documentProgress(nodes, qa, entries)).toEqual({ issues: 1, followups: 2, parked: 1, questions: 2, settled: 4, total: 10 });
+  it('counts what needs attention, out of scope and settled (older Issue / N/A included)', () => {
+    expect(documentProgress(nodes, qa, entries)).toEqual({ followups: 3, parked: 2, questions: 2, settled: 3, total: 10 });
   });
   it('lists only kinds with something open, most urgent first', () => {
-    expect(attentionParts(documentProgress(nodes, qa, entries)).map((a) => a.label)).toEqual(['1 issue', '2 follow-ups', '2 questions']);
+    expect(attentionParts(documentProgress(nodes, qa, entries)).map((a) => a.label)).toEqual(['3 follow-ups', '2 questions']);
     expect(attentionParts(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toEqual([]);
   });
   it('describes the summary in words', () => {
-    expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 1 issue, 2 follow-ups, 2 open questions. 4 of 10 settled, 1 parked.');
+    expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 3 follow-ups, 2 open questions. 3 of 10 settled, 2 out of scope.');
     expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention. 1 of 1 settled.');
   });
 });

@@ -185,6 +185,17 @@ question (chip, row-icon count, PDF pill) uses `var(--accent)`. Settled question
 (`.thread-q-note`, "· question, answered"), an answer that isn't right after its question quotes it
 (`threadQuotedQuestion`, `.thread-quote`), the header is grey sentence case, and `addThread`
 (Ctrl/Cmd+Alt+M, as in Word/Docs) opens the reply line. Name stays "Thread".
+Merged as #538. Then (Robin, 2026-10-15, "I am just trying to simplify things"): **three markers**,
+Agreed (`confirmed`), Follow-up (`followup`), Out of scope (`parked`). Issue merged into Follow-up
+(reversing the earlier "keep Issue"), Parked and N/A merged into Out of scope, Confirmed renamed
+Agreed. Every marker is the thread status: setting one records an entry by the current author
+(`addThreadStatus`), so each says who and when; Follow-up opens the reply line. **Decision** is a
+chip on an entry (`decision: true`, entry menu "Mark as decision"), not a status; it doesn't change
+the row; the thread header (and PDF label) adds "· Decision", which jumps to it. Old values normalise on open (`normalizeThreadStatus`; `normalizeNode` for markers;
+`migrateDiscussionToThread` turns old decision statuses/kinds into Agreed + `decision`). Also: the
+fold is "· show N earlier" in the header, "+ Reply" always shows on touch screens, the editor shows
+the date once per day, and the entry menu's Rewrite with AI has a left sparkle icon (the trailing ✦
+misaligned it). The reply line offers Out of scope too; an answer's quote is cut to ~42 characters. A follow-up can name an owner (`owner` on the status entry, entry menu "Assign follow-up…", `threadOwnerMenuItems`): "· follow-up for Ana" in thread and PDF, "Row · Ana" in the open-items list, where same-named rows add "(in Parent)". Open items: a follow-up shows its thread's latest line (`sub` on `showSbContextMenu` items, `.sb-context-sub`), and a folded **Decisions · N** row lists decision entries (not counted in progress; Robin keeps the name "Open items"). "Reply" is renamed **Add to thread** (hover line, entry menu; "Reply as" → "Add as"): Robin mostly logs what others said in his own document, so it isn't a reply. Backspace on an empty reply line closes it (not on key repeat). Quick Insert (Ctrl/Cmd+Space) now works in thread entries, the reply line and the inline note (`handleGenericQaKeydown`; it was missing). Robin asked about newest-first; kept oldest first (a conversation reads in order).
 
 **2026-10-12: post-cutdown polish session — #479–#494, all merged. Nothing open, nothing parked in
 git.** The cutdown below is finished (all 9 items merged); this session was owner-driven UI polish

@@ -4,12 +4,15 @@
  * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
  * order. An entry has an author, a time and text; it is a comment, or a question
  * (`type: 'question'`). An answer is an entry that answers a question (`answerTo`), with a Yes/No
- * (`verdict`) and/or text. A status chip (`status`: issue, follow-up, resolved or decision) sits on
- * the entry it was set on, so its author gives the context; the thread's status is the latest one.
+ * (`verdict`) and/or text. A status (`status`) sits on the entry it was set on, so its author and
+ * time say who set it and when; the thread's status is the latest one.
  *
- * The thread status and the row marker are one status shown in two places: Issue ⇄ ⚠ Issue,
- * Follow-up ⇄ ⚑ Follow-up, Resolved / Decision ⇄ ✓ Confirmed. Parked and N/A ("not now", "doesn't
- * apply") stay row-only. An unanswered question shows as Open on its own (derived, never stored).
+ * Owner decision (2026-10-15): the row marker *is* the thread's status, and there are three:
+ * Agreed ('confirmed'), Follow-up ('followup') and Out of scope ('parked') — stored in the thread
+ * and shown on the row. Clicking a marker adds it to the thread, so it records who and when.
+ * Older values read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out
+ * of scope. "Open" is no marker: an unanswered question shows on its own (derived, never stored).
+ * A decision is no status either: `decision: true` marks the entry where something was decided.
  *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
  * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
@@ -17,7 +20,18 @@
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
 
-export type ThreadStatus = 'issue' | 'followup' | 'resolved' | 'decision';
+export type ThreadStatus = 'confirmed' | 'followup' | 'parked';
+
+/** The row markers, in menu order: Agreed, Follow-up, Out of scope. */
+export const THREAD_STATUSES: readonly ThreadStatus[] = ['confirmed', 'followup', 'parked'];
+
+/** A stored status or marker in today's terms (older values read as their successor); unknown → none. */
+export function normalizeThreadStatus(s: unknown): ThreadStatus | null {
+  if (s === 'resolved' || s === 'decision') return 'confirmed';
+  if (s === 'issue') return 'followup';
+  if (s === 'na') return 'parked';
+  return (THREAD_STATUSES as readonly unknown[]).includes(s) ? (s as ThreadStatus) : null;
+}
 
 export interface ThreadEntry {
   id?: string;
@@ -33,7 +47,10 @@ export interface ThreadEntry {
   /** For an answer: the id of the question it answers. */
   answerTo?: string;
   verdict?: 'yes' | 'no';
-  status?: ThreadStatus;
+  /** Older documents may hold 'resolved', 'decision', 'issue' or 'na' until migrated. */
+  status?: ThreadStatus | 'resolved' | 'decision' | 'issue' | 'na';
+  /** The entry where something was decided (a chip on the entry; it doesn't change the row). */
+  decision?: boolean;
   /** A question closed without an answer. */
   wontAnswer?: boolean;
   context?: string;
@@ -116,7 +133,7 @@ export function questionToAnswer<T extends ThreadEntry>(thread: T[], before?: T)
 
 /** The thread's status: the latest status chip in it, or null. */
 export function threadStatus(thread: ThreadEntry[]): ThreadStatus | null {
-  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status) return thread[i].status as ThreadStatus;
+  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status) return normalizeThreadStatus(thread[i].status);
   return null;
 }
 
@@ -126,25 +143,19 @@ export function threadStatusEntry<T extends ThreadEntry>(thread: T[]): T | null 
   return null;
 }
 
-/** The row marker a thread status shows as. */
-export function markerForThreadStatus(s: ThreadStatus | null): 'issue' | 'followup' | 'confirmed' | null {
-  if (s === 'issue') return 'issue';
-  if (s === 'followup') return 'followup';
-  if (s === 'resolved' || s === 'decision') return 'confirmed';
-  return null;
+/** The row marker a thread status shows as: the same value. */
+export function markerForThreadStatus(s: ThreadStatus | string | null | undefined): ThreadStatus | null {
+  return normalizeThreadStatus(s);
 }
 
-/** The status a row marker sets on its thread (null for row-only markers). */
+/** The status a row marker sets on its thread: the same value. */
 export function threadStatusForMarker(m: string | null | undefined): ThreadStatus | null {
-  if (m === 'issue') return 'issue';
-  if (m === 'followup') return 'followup';
-  if (m === 'confirmed') return 'resolved';
-  return null;
+  return normalizeThreadStatus(m);
 }
 
-/** Markers the thread drives; Parked and N/A are row-only. */
+/** Every marker is the thread's status. */
 export function isThreadMarker(m: string | null | undefined): boolean {
-  return m === 'issue' || m === 'followup' || m === 'confirmed';
+  return normalizeThreadStatus(m) != null;
 }
 
 /**
@@ -167,7 +178,7 @@ function localDateStr(ms: number): string {
 
 /** True when any entry still has an older shape (remark follow-up, discussion kind, inline answer). */
 export function needsThreadMigration(entries: ThreadEntry[]): boolean {
-  return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null));
+  return (entries || []).some((r) => r && (r.followUp != null || r.resolvedAt != null || r.kind != null || r.answer != null || (r.status != null && r.status !== normalizeThreadStatus(r.status))));
 }
 
 /**
@@ -186,8 +197,10 @@ export function migrateDiscussionToThread<R extends ThreadEntry>(entries: R[]): 
     const kind = r.kind;
     const answer = r.answer;
     const verdict = r.verdict;
-    if (r.followUp) r.status = r.resolvedAt ? 'resolved' : 'followup';
-    if (kind === 'decision') r.status = 'decision';
+    if (r.followUp) r.status = r.resolvedAt ? 'confirmed' : 'followup';
+    if (kind === 'decision' || r.status === 'decision') { r.status = 'confirmed'; r.decision = true; }
+    if (r.status) r.status = normalizeThreadStatus(r.status) || undefined;
+    if (!r.status) delete r.status;
     if (kind === 'question') r.type = 'question';
     delete r.followUp; delete r.resolvedAt; delete r.kind; delete r.answer;
     if (kind === 'question') delete r.verdict;
@@ -246,8 +259,8 @@ export function migrateQaToRemarks<Q extends StatusQaItem & { createdAt?: number
 
 /**
  * Links row markers and threads once, for documents from before they were linked: a row with a
- * thread status but no marker gets the matching marker; a row marked Issue, Follow-up or Confirmed
- * whose thread has no status puts that status on the thread's latest entry. Returns the marker changes
+ * thread status but no marker gets the matching marker; a marked row whose thread has no status
+ * puts the marker on the thread's latest entry. Returns the marker changes
  * (node id → marker); entries are updated in place.
  */
 export function linkMarkersToThreads(nodes: { id: number; marker?: string | null }[], entries: ThreadEntry[]): Map<number, string> {
@@ -267,11 +280,21 @@ export function linkMarkersToThreads(nodes: { id: number; marker?: string | null
     const last = thread[thread.length - 1];
     if (st && !n.marker) changes.set(n.id, markerForThreadStatus(st) as string);
     else if (!st && isThreadMarker(n.marker)) last.status = threadStatusForMarker(n.marker) as ThreadStatus;
-    else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== n.marker) {
-      // Issue used to be row-only, so an older row can be marked Issue over a thread with another
-      // status: the Issue goes on the latest entry when that one has no chip yet; otherwise the
-      // thread's status wins.
-      if (n.marker === 'issue' && !last.status) last.status = 'issue';
+    else if (st && normalizeThreadStatus(n.marker) === 'parked' && st !== 'parked') {
+      // Out of scope (Parked / N/A) used to be row-only, so an older row can show it over a thread
+      // with another status. The row keeps what it shows: the marker goes into the thread after its
+      // latest entry (no author or time of its own: the old marker never stored them).
+      if (!last.status) last.status = 'parked';
+      else {
+        const at = (last.createdAt || 0) + 1;
+        (entries as ThreadEntry[]).push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: 'parked' });
+      }
+    }
+    else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== normalizeThreadStatus(n.marker)) {
+      // Issue used to be row-only, so an older row can be marked Issue (now Follow-up) over a thread
+      // with another status: it goes on the latest entry when that one has no status yet; otherwise
+      // the thread's status wins.
+      if (normalizeThreadStatus(n.marker) === 'followup' && !last.status) last.status = 'followup';
       else changes.set(n.id, markerForThreadStatus(st) as string);
     }
   }
@@ -308,18 +331,18 @@ export function allSettledQuestions(entries: ThreadEntry[], nodeIds?: Set<number
   return out;
 }
 
-/** openItems = everything that needs attention: Issue/Follow-up rows and open questions. */
+/** openItems = everything that needs attention: Follow-up rows and open questions. */
 export type DiscussionFilter = 'openQa' | 'openItems';
 
 export function normalizeDiscussionFilter(v: unknown): DiscussionFilter | null {
   return v === 'openQa' || v === 'openItems' ? v : null;
 }
 
-/** Ids of the nodes with an open question; for openItems also rows marked Issue or Follow-up. */
+/** Ids of the nodes with an open question; for openItems also rows marked Follow-up. */
 export function nodesWithOpenItems(filter: DiscussionFilter, entries: ThreadEntry[], nodes: ProgressNode[] = []): Set<number> {
   const ids = new Set<number>();
   for (const q of allOpenQuestions(entries)) ids.add(q.anchorNodeId as number);
-  if (filter === 'openItems') for (const n of nodes || []) if (n.marker === 'issue' || n.marker === 'followup') ids.add(n.id);
+  if (filter === 'openItems') for (const n of nodes || []) if (normalizeThreadStatus(n.marker) === 'followup') ids.add(n.id);
   return ids;
 }
 
@@ -337,30 +360,30 @@ export interface ProgressNode {
 
 /** Everything the toolbar summary counts, for the rows of one document. */
 export interface DocumentProgress {
-  issues: number;
   followups: number;
+  /** Out of scope rows. */
   parked: number;
   questions: number;
-  /** Confirmed + N/A rows, answered or won't-answer questions. */
+  /** Agreed rows, answered or won't-answer questions. */
   settled: number;
-  /** Everything tracked: needs attention + parked + settled. */
+  /** Everything tracked: needs attention + out of scope + settled. */
   total: number;
 }
 
 /**
- * The toolbar summary's counts. Row markers (which threads drive): Issue and Follow-up need
- * attention, Parked is set aside, Confirmed and N/A are settled. Questions count once each, open
+ * The toolbar summary's counts. Row markers (which threads drive): Follow-up needs attention,
+ * Out of scope is set aside, Agreed is settled. Questions count once each, open
  * or settled, when on a row of this document; unlinked Q&A entries count too.
  */
 export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[], entries: ThreadEntry[]): DocumentProgress {
-  const p: DocumentProgress = { issues: 0, followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
+  const p: DocumentProgress = { followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
   const ids = new Set<number>();
   for (const n of nodes || []) {
     ids.add(n.id);
-    if (n.marker === 'issue') p.issues++;
-    else if (n.marker === 'followup') p.followups++;
-    else if (n.marker === 'parked') p.parked++;
-    else if (n.marker === 'confirmed' || n.marker === 'na') p.settled++;
+    const m = normalizeThreadStatus(n.marker);
+    if (m === 'followup') p.followups++;
+    else if (m === 'parked') p.parked++;
+    else if (m === 'confirmed') p.settled++;
   }
   for (const q of qaItems || []) {
     if (q.sourceNodeId == null || !ids.has(q.sourceNodeId) || !isCountableQuestion(q)) continue;
@@ -369,34 +392,33 @@ export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[],
   }
   p.questions += allOpenQuestions(entries, ids).length;
   p.settled += allSettledQuestions(entries, ids).length;
-  p.total = p.issues + p.followups + p.parked + p.questions + p.settled;
+  p.total = p.followups + p.parked + p.questions + p.settled;
   return p;
 }
 
-export type AttentionKey = 'issue' | 'followup' | 'question';
+export type AttentionKey = 'followup' | 'question';
 
 export interface AttentionPart {
   key: AttentionKey;
   n: number;
-  /** Short label for the toolbar: "1 issue", "6 follow-ups", "2 questions". */
+  /** Short label for the toolbar: "6 follow-ups", "2 questions". */
   label: string;
 }
 
 const ATTENTION_WORDS: Record<AttentionKey, [string, string]> = {
-  issue: ['issue', 'issues'],
   followup: ['follow-up', 'follow-ups'],
   question: ['question', 'questions']
 };
 
 /** What still needs attention, most urgent first, leaving out kinds with nothing open. */
 export function attentionParts(p: DocumentProgress): AttentionPart[] {
-  const counts: [AttentionKey, number][] = [['issue', p.issues], ['followup', p.followups], ['question', p.questions]];
+  const counts: [AttentionKey, number][] = [['followup', p.followups], ['question', p.questions]];
   return counts.filter(([, n]) => n > 0).map(([key, n]) => ({ key, n, label: n + ' ' + ATTENTION_WORDS[key][n === 1 ? 0 : 1] }));
 }
 
-/** The summary's tooltip / accessible name: "Needs attention: 1 issue, 2 open questions. 8 of 15 settled." */
+/** The summary's tooltip / accessible name: "Needs attention: 1 follow-up, 2 open questions. 8 of 15 settled." */
 export function progressSummaryText(p: DocumentProgress): string {
   const parts = attentionParts(p).map((a) => (a.key === 'question' ? openCountLabel(a.n, 'question') : a.label));
   const head = parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
-  return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' parked' : '') + '.';
+  return head + ' ' + p.settled + ' of ' + p.total + ' settled' + (p.parked ? ', ' + p.parked + ' out of scope' : '') + '.';
 }

@@ -19,7 +19,7 @@ test.beforeEach(async ({ page }) => {
     document.getElementById('sakura-landing-overlay')?.style.setProperty('display', 'none');
     document.getElementById('welcome-overlay')?.classList.remove('open');
     // @ts-expect-error -- bare globals from index.html
-    nodes = [{ id: 1, depth: 0, text: 'Pricing', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {}, tables: [], marker: 'issue' }];
+    nodes = [{ id: 1, depth: 0, text: 'Pricing', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {}, tables: [], marker: 'followup' }];
     // @ts-expect-error
     nextId = 2; collapsedIds = new Set(); selectedId = null; editingId = null; setDocStatus('review', false); render(); updateMarkerSummary();
   });

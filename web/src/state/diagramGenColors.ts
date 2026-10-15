@@ -52,7 +52,7 @@ const _DIAGRAM_GEN_TAG_CYCLE = ['blue', 'green', 'amber', 'red', 'purple', 'teal
 // Duplicated from index.html's own DIAGRAM_GEN_BRANCH_CYCLE — see this file's header for why.
 const _DIAGRAM_GEN_BRANCH_CYCLE = ['purple', 'teal', 'coral', 'pink', 'blue', 'green', 'amber', 'red'];
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_COLOR — see this file's header for why.
-const _DIAGRAM_GEN_MARKER_COLOR: Record<string, string> = { confirmed: 'green', issue: 'red', parked: 'gray', followup: 'amber', na: 'pink' };
+const _DIAGRAM_GEN_MARKER_COLOR: Record<string, string> = { confirmed: 'green', parked: 'gray', followup: 'amber' };
 // Duplicated from index.html's own DIAGRAM_GEN_SHAPE_COLOR — see this file's header for why.
 const _DIAGRAM_GEN_SHAPE_COLOR: Record<string, string> = { ui: 'blue', service: 'teal', middleware: 'purple', backend: 'coral', datastore: 'coral', external: 'gray', actor: 'pink', decision: 'amber' };
 

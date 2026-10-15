@@ -98,10 +98,8 @@ const _DIAGRAM_GEN_PALETTE_LEGEND: Record<string, { fill: string; stroke: string
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_COLOR — see this file's header for why.
 const _DIAGRAM_GEN_MARKER_COLOR_LEGEND: Record<string, string> = {
   confirmed: 'green',
-  issue: 'red',
   parked: 'gray',
   followup: 'amber',
-  na: 'pink',
 };
 
 // Duplicated from index.html's own DIAGRAM_GEN_LAYER_ORDER — see this file's header for why.
@@ -149,11 +147,9 @@ const _DIAGRAM_GEN_SHAPE_LABEL_LEGEND: Record<string, string> = {
 
 // Duplicated from index.html's own DIAGRAM_GEN_MARKER_LABEL — see this file's header for why.
 const _DIAGRAM_GEN_MARKER_LABEL_LEGEND: Record<string, string> = {
-  confirmed: 'Confirmed',
-  issue: 'Issue',
-  parked: 'Parked',
+  confirmed: 'Agreed',
+  parked: 'Out of scope',
   followup: 'Follow-up',
-  na: 'N/A',
 };
 
 function escXmlAttrLocal(s: unknown): string {

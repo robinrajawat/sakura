@@ -55,7 +55,7 @@ test.describe('generated diagramGenLegend block (src/state/diagramGenLegend.ts s
       return { entries, cellsXml };
     });
 
-    expect(result.entries.map((e: { label: string }) => e.label)).toEqual(['UI / Frontend', 'Decision', 'Confirmed']);
+    expect(result.entries.map((e: { label: string }) => e.label)).toEqual(['UI / Frontend', 'Decision', 'Agreed']);
     expect(result.cellsXml).toContain('id="gd-legend-sw0"');
     expect(result.cellsXml).toContain('UI / Frontend');
     expect(result.cellsXml).toContain('x="100"');
