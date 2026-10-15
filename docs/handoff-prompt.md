@@ -712,6 +712,11 @@ new one with it. Covered by `tests/e2e/discussion-items.spec.ts`, `remark-qa-sta
 **Parked / open questions for the owner:**
 - Zoom row as title: owner parked it. Idea on record: breadcrumb shows only ancestors and the zoomed
   row becomes the (larger) title, removing the duplicated name.
+- PDF status stamp (owner, 2026-10-15): compared mockups (date in the stamp, round seal, flat pill,
+  corner sash, status line under the title, status icons in the stamp) and kept the current stamp.
+  Parked idea: record the date a document is set to **Approved** or **Rejected** (not Draft; Review
+  optional) and show it on the PDF. Needs a new saved field such as `docStatusAt`, set when the status
+  changes (none exists today). Undecided: in the stamp or in the cover's meta line.
 - One Help paragraph (right-clicking empty space) still mentions "Documents/Templates buttons";
   it covers several features that weren't re-verified, so it was left alone.
 
