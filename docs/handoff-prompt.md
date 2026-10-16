@@ -165,8 +165,9 @@ stored?" `<details>` (shared `.signin-privacy` styles): data kept, no ads/analyt
 else sees your documents unless shared, what Google sign-in shares. Desktop's **Full privacy
 details** hides the screen (not a "continue without signing in" dismissal) and opens Settings →
 About → Privacy & data. Hosted AI already had its own disclosure. Robin: trust matters; About
-itself stays in Settings (with the Help → Get Started shortcut), not the account menu. Covered by
-`signin-privacy.spec.ts`.
+itself stays in Settings (with the Help → Get Started shortcut), not the account menu. Robin also
+decided the coffee icon stays support-only (account menu, About): not reused for any editor, thread
+or To-Do feature. Covered by `signin-privacy.spec.ts`.
 
 **2026-10-16: sync status as an avatar ring (#563).** In the account menu, syncing / synced no longer
 show as text (it changed width and made the menu jump). The header (`#account-manage-btn`) gets
