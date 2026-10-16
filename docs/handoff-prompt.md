@@ -159,7 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: Copy thread keeps colours and kinds (Robin).** The rich copy now has each name in its
+**2026-10-16: account menu trimmed (Robin).** The header (avatar, name, email) is now the Manage
+account button (`#account-manage-btn`, a `role=button` div), with one quiet line under the email:
+sync status, then the Private / Public profile link (`#account-visibility-badge`, plain text now,
+click stops propagation). Below: Settings, Help, Send feedback; a single "Buy me a coffee" row
+(`#account-support-btn`, paragraph and gold button gone); Sign out last, in `#account-signout-wrap`
+(shown only when signed in, neutral until hover). About moved out of the menu to a Help → Get
+Started row (`#help-about-open-btn` → Settings → About). Covered by `account-menu-layout.spec.ts`.
+
+**2026-10-16: Copy thread keeps colours and kinds (#560).** The rich copy now has each name in its
 colour (`remarkAuthorColor`) and each entry's kind as a coloured text symbol (`threadCopyGlyph`:
 ✓ ⚑ ⊘ ? ↳ ✗ 🤝 •, colours resolved from CSS variables by `resolveCssColor`), since email and chat
 apps strip SVG and CSS variables. Plain text unchanged. Covered by `thread-copy.spec.ts`.
@@ -171,20 +179,6 @@ quote and text. Written as `text/html` plus `text/plain` (Robin: rich text, so t
 Robin rejected two other suggestions: a question isn't double-counted as a follow-up, and a
 decision is not "agreed" (an entry shows "· decision" alone unless someone also set Agreed).
 Covered by `tests/e2e/thread-copy.spec.ts`.
-
-**2026-10-16: four follow-ups to #557 (#558).** (1) Filters were never cleared when another
-document opened, so a filter could silently hide rows in the next one: `clearFiltersForDocChange`
-runs in `applyTabSnapshot`, `clearToNoDocumentState` and `switchDoc` (before the snapshot, so the
-old document's folds are restored first). `filterOpened` is declared with the other filter state
-at the top, since boot calls `applyTabSnapshot` early. (2) Show as › **Move “‹column›” to column 2**
-(`valueColumnFix` in `src/utils/tableDisplay.ts`) when column 2 is text and a later column holds
-the numbers; it really moves the column (`tableMoveColumn`), since Cards, Progress bars and charts
-all read column 2. (3) Open items shows each item's age on the right (`openItemAge` in
-`discussionStatus.ts`, `meta` on `showSbContextMenu` items, `.sb-context-meta`); a follow-up counts
-from its status entry. (4) A folded row's "+N" badge shows the Follow-up flag and count of hidden
-follow-ups (`.fold-badge-fu`, replacing the plain dot then). Covered by
-`marker-jump-and-filter-folds.spec.ts`, `show-as-fixits.spec.ts`, `folded-branch-marker-indicator.spec.ts`
-and unit tests.
 
 ### Where things stand (the model to keep in mind)
 
