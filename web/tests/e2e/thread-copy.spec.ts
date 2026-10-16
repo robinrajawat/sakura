@@ -41,7 +41,10 @@ test('Copy thread puts the thread on the clipboard as rich text and plain lines'
   expect(clip.text).toMatch(/Ana · [^\n]* · yes\nAll partners\./);
   expect(clip.text).toMatch(/Robin · [^\n]*2026[^\n]* · decision\nWe go with Nov 2\./);
   expect(clip.html).toContain('<b>EDI</b>');
-  expect(clip.html).toContain('<b>Karsten</b>');
+  // Names in their colour and each entry's kind as a coloured symbol (SVG doesn't survive a paste).
+  expect(clip.html).toMatch(/<b style="color:#[0-9a-f]{6}">Karsten<\/b>/i);
+  expect(clip.html).toMatch(/<span style="color:rgb\([^"]+\);font-weight:600">\u{1F91D}<\/span>/u);
+  expect(clip.html).toMatch(/<span style="color:rgb\([^"]+\);font-weight:600">\u2713<\/span>/);
   // The entry menu offers it too.
   await page.locator('#inline-remark-text-d').click({ button: 'right' });
   await expect(page.locator('.sb-context-menu').getByText('Copy thread', { exact: true })).toBeVisible();

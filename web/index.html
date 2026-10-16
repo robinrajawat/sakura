@@ -30077,6 +30077,20 @@ function threadHtmlToPlain(html){
   const d=new DOMParser().parseFromString(s,'text/html');
   return (d.body.textContent||'').split('\n').map(l=>l.replace(/\s+/g,' ').trim()).filter(Boolean).join('\n');
 }
+// A pasted email or chat drops SVG and CSS variables, so the rich copy carries each entry's kind as a
+// text symbol in its colour (the kind icon's meaning and colour, resolved to rgb), and the name in
+// its per-person colour (owner, 2026-10-16).
+const THREAD_COPY_GLYPH={decision:'\u{1F91D}',followup:'\u2691',confirmed:'\u2713',parked:'\u2298',yes:'\u2713',no:'\u2717',answer:'\u21b3',question:'?',comment:'\u2022'};
+function threadCopyGlyph(r,thread){
+  const k=threadKindIcon(r,thread);
+  const key=k.kind==='status'?k.marker:k.kind==='answer'?(r.verdict||'answer'):k.kind;
+  return {glyph:THREAD_COPY_GLYPH[key]||THREAD_COPY_GLYPH.comment, color:resolveCssColor(k.color)};
+}
+function resolveCssColor(value){
+  const probe=document.createElement('span'); probe.style.color=value; probe.style.display='none';
+  document.body.appendChild(probe); const c=getComputedStyle(probe).color; probe.remove();
+  return c||'';
+}
 function threadCopyContent(nodeId){
   const n=nodes.find(x=>x.id===nodeId); const thread=nodeThread(nodeId);
   if(!n||!thread.length)return null;
@@ -30088,7 +30102,9 @@ function threadCopyContent(nodeId){
     const meta=[formatThreadTimeAbsolute(r,thread[i-1]),r.context||'',...threadEntryNotes(r,thread)].filter(Boolean).join(' \u00b7 ');
     const quoted=threadQuotedQuestion(r,thread);
     const body=htmlHasVisibleText(r.text)?sakuraSanitizeRichHtml(r.text||''):'';
-    html.push('<div style="margin-top:8px"><div><b>'+esc(name)+'</b>'+(meta?' <span style="'+grey+'">\u00b7 '+esc(meta)+'</span>':'')+'</div>'
+    const g=threadCopyGlyph(r,thread);
+    const nameColor=r.person?remarkAuthorColor(r.person).avatarBg:'';
+    html.push('<div style="margin-top:8px"><div><span style="color:'+g.color+';font-weight:600">'+g.glyph+'</span>&nbsp; <b'+(nameColor?' style="color:'+nameColor+'"':'')+'>'+esc(name)+'</b>'+(meta?' <span style="'+grey+'">\u00b7 '+esc(meta)+'</span>':'')+'</div>'
       +(quoted?'<div style="'+grey+'">\u21b3 '+esc(quoted)+'</div>':'')+(body?'<div>'+body+'</div>':'')+'</div>');
     text.push('', name+(meta?' \u00b7 '+meta:''), ...(quoted?['\u21b3 '+quoted]:[]), ...(body?[threadHtmlToPlain(body)]:[]));
   });
