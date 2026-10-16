@@ -353,16 +353,23 @@ test('a follow-up names its owner, in the thread, the PDF note and the open-item
   expect(errors).toEqual([]);
 });
 
-test('open-items list: rows with the same name add their parent', async ({ page }) => {
+// Rows with the same name name their parent on the grey line (owner, 2026-10-16), so the row's own
+// name keeps the first line; the same name under the same parent is numbered in outline order.
+test('open-items list: rows with the same name name their parent on the second line', async ({ page }) => {
   await seed(page);
   await page.evaluate(`
     const n = (id, depth, text) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
-    nodes = [n(1, 0, 'Order types'), n(2, 1, 'Export'), n(3, 0, 'Plants'), n(4, 1, 'Export'), n(5, 1, 'Pick-up')];
-    nodes[1].marker = 'followup'; nodes[3].marker = 'followup'; nodes[4].marker = 'followup';
-    remarks = []; rebuildParentIds(); render();`);
+    nodes = [n(1, 0, 'Order types'), n(2, 1, 'Export'), n(3, 0, 'Plants'), n(4, 1, 'Export'), n(5, 1, 'Pick-up'), n(6, 1, 'Export')];
+    nodes[1].marker = 'followup'; nodes[3].marker = 'followup'; nodes[4].marker = 'followup'; nodes[5].marker = 'followup';
+    remarks = [{ id: 'k1', anchorNodeId: 2, person: 'Karsten', date: '2026-10-16', text: 'Check the plant.', createdAt: 1, status: 'followup' }];
+    rebuildParentIds(); render();`);
   await page.locator('#marker-summary .open-items-btn').click();
-  const labels = await page.locator('.open-items-menu .sb-context-item .sb-context-label').allTextContents();
-  expect(labels).toEqual(expect.arrayContaining(['Export (in Order types)', 'Export (in Plants)', 'Pick-up']));
+  const rows = await page.locator('.open-items-menu .sb-context-item').evaluateAll((els) => els.map((el) => [
+    (el.querySelector('.sb-context-label')?.firstChild?.textContent || '').trim(), el.querySelector('.sb-context-sub')?.textContent || '']));
+  expect(rows).toEqual([
+    ['Export', 'in Order types · Karsten: Check the plant.'],
+    ['Export (1)', 'in Plants'], ['Pick-up', ''], ['Export (2)', 'in Plants']
+  ]);
 });
 
 test('Quick Insert (Ctrl/Cmd+Space) works in the reply line', async ({ page }) => {
