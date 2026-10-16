@@ -159,7 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: four follow-ups to #557 (Robin).** (1) Filters were never cleared when another
+**2026-10-16: Copy thread (Robin).** Right-click the "Thread · N" header or an entry → **Copy
+thread** (`copyThread` → `threadCopyContent`): row name, then each entry's author, time
+(`formatThreadTimeAbsolute`, date once per day) and notes (`threadEntryNotes`: the PDF's words),
+quote and text. Written as `text/html` plus `text/plain` (Robin: rich text, so the paste decides).
+Robin rejected two other suggestions: a question isn't double-counted as a follow-up, and a
+decision is not "agreed" (an entry shows "· decision" alone unless someone also set Agreed).
+Covered by `tests/e2e/thread-copy.spec.ts`.
+
+**2026-10-16: four follow-ups to #557 (#558).** (1) Filters were never cleared when another
 document opened, so a filter could silently hide rows in the next one: `clearFiltersForDocChange`
 runs in `applyTabSnapshot`, `clearToNoDocumentState` and `switchDoc` (before the snapshot, so the
 old document's folds are restored first). `filterOpened` is declared with the other filter state
@@ -183,11 +191,6 @@ used to leave them unfolded, so turning a filter off changed the outline's foldi
 `unfoldForFilter` records what it opened and `refoldAfterFilter` folds exactly that back once no
 filter is on (folds the user changed meanwhile stay; threads it opened close). The tag filter now
 unfolds too. Covered by `tests/e2e/marker-jump-and-filter-folds.spec.ts`.
-
-**2026-10-16: open-items list header and duplicate rows (#556).** The filter switch sits on the
-title line as **Filter outline**. Rows sharing a name put their parent on the grey line ("in
-Exclusion Scenarios · Karsten: …"); same name and same parent are numbered in outline order
-("Export (ZOR) (2)"). Covered in `discussion-items.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

@@ -4045,6 +4045,7 @@ body.printing-generic #gpe-overlay{
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Right-click the line to add it, make it a question, Rewrite with AI (when AI is on) or close it. While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong>'s icon is in your accent colour until it's answered; then it reads “· question, answered” in grey. Right-click a question → <strong>Answer</strong> to answer that one; or answer from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line). When the thread has more than one question, the reply line shows which one it answers (“to: …”) and lets you pick another. Right-click an entry → <strong>Mark as the answer</strong> (or <strong>Answer to ›</strong> with several questions) links it, or moves a wrong link; a question can have several answers. With several questions, an answer that comes a few entries after its question quotes it (“↳ Does it…”). Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
+<li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text.</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. Clicking the marker badge on a row opens its thread at the entry that set it (Shift+click filters by that marker). The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
 <li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
@@ -29896,6 +29897,7 @@ function renderNodeThread(node,placeLine){
     head.dataset.tip='Click to hide the thread';
     head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
+    head.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[{label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)}]); });
     // A decision made in the thread shows in its header too (owner request, 2026-10-15): one click
     // jumps to the entry, unfolding the thread if it's hidden. The row's icons stay as they are.
     const decisions=thread.filter(r=>r.decision);
@@ -30058,6 +30060,51 @@ function threadQuotedQuestion(r,thread){
   // A short reminder, not a second copy of the question.
   return t.length>44?t.slice(0,42).trimEnd()+'…':t;
 }
+const THREAD_COPY_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+// Copy thread (owner, 2026-10-16): the whole thread as rich text (names bold, the time and quiet
+// notes grey, entry text as written) with a plain-text twin, so Ctrl+V keeps the formatting and
+// Ctrl+Shift+V pastes clean lines -- for an email or a chat. Same words as the PDF transcript.
+function threadEntryNotes(r,thread){
+  const out=[];
+  if(isQuestion(r)){ const st=questionState(r,thread); out.push(st==='open'?'open question':st==='answered'?'question, answered':'question, won\u2019t answer'); }
+  if(r.answerTo)out.push(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'answer');
+  if(r.status)out.push(THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&markerForThreadStatus(r.status)==='followup'?' for '+r.owner:''));
+  if(r.decision)out.push('decision');
+  return out;
+}
+function threadHtmlToPlain(html){
+  const s=String(html||'').replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li)>/gi,'\n').replace(/<li[^>]*>/gi,'\u2022 ');
+  const d=new DOMParser().parseFromString(s,'text/html');
+  return (d.body.textContent||'').split('\n').map(l=>l.replace(/\s+/g,' ').trim()).filter(Boolean).join('\n');
+}
+function threadCopyContent(nodeId){
+  const n=nodes.find(x=>x.id===nodeId); const thread=nodeThread(nodeId);
+  if(!n||!thread.length)return null;
+  const title='Thread \u00b7 '+(stripHtmlToText(n.text||'')||'Untitled row');
+  const grey='color:#6b7280';
+  const html=['<div><b>'+esc(title)+'</b></div>'], text=[title];
+  thread.forEach((r,i)=>{
+    const name=r.person||(r.answerTo?'Answer':'Unnamed');
+    const meta=[formatThreadTimeAbsolute(r,thread[i-1]),r.context||'',...threadEntryNotes(r,thread)].filter(Boolean).join(' \u00b7 ');
+    const quoted=threadQuotedQuestion(r,thread);
+    const body=htmlHasVisibleText(r.text)?sakuraSanitizeRichHtml(r.text||''):'';
+    html.push('<div style="margin-top:8px"><div><b>'+esc(name)+'</b>'+(meta?' <span style="'+grey+'">\u00b7 '+esc(meta)+'</span>':'')+'</div>'
+      +(quoted?'<div style="'+grey+'">\u21b3 '+esc(quoted)+'</div>':'')+(body?'<div>'+body+'</div>':'')+'</div>');
+    text.push('', name+(meta?' \u00b7 '+meta:''), ...(quoted?['\u21b3 '+quoted]:[]), ...(body?[threadHtmlToPlain(body)]:[]));
+  });
+  return {html:html.join(''), text:text.join('\n')};
+}
+async function copyThread(nodeId){
+  const c=threadCopyContent(nodeId); if(!c){ showToast('Nothing to copy'); return; }
+  try{
+    if(navigator.clipboard&&window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([c.html],{type:'text/html'}),'text/plain':new Blob([c.text],{type:'text/plain'})})]);
+    } else if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(c.text);
+    } else throw new Error('Clipboard API unavailable');
+    showToast('Thread copied');
+  }catch(e){ showToast('Copy failed'); }
+}
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
@@ -30097,6 +30144,7 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   // A follow-up can name who owns it; the open-items list shows the name.
   if(markerForThreadStatus(r.status)==='followup')items.push({label:r.owner?'Follow-up for '+r.owner+'…':'Assign follow-up…', icon:ico('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'), onClick:()=>{ const rect=textEl.getBoundingClientRect(); setTimeout(()=>showSbContextMenu(rect.left,rect.bottom+4,threadOwnerMenuItems(r,commit)),0); }});
   items.push({divider:true});
+  items.push({label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)});
   if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
   items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
   return items;
