@@ -159,7 +159,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: sign-in screens say what gets stored.** The desktop sign-in screen
+**2026-10-16: To-Dos restyled like a thread.** Owner-approved mock (iterated: no `!!!`, no left
+edge, no connector lines; "it has to be a chip", "elegant"). Open tasks are flat rows with an
+inset hairline (`.todo-row+.todo-row::before`), no cards. Status is the shape of `.todo-check`
+(row `data-status`: dashed / half / three-quarter / red bar; `data-tip` names it) and the status
+chip shows only when expanded. The due date sits in a right column at rest (`.has-due`, absolute)
+and returns to the chip line when expanded. Priority, repeat, link and subtask progress are one
+chip shape; only High/Medium are coloured. Completed is grey, no strikethrough. All in one CSS
+block after `.todo-row.qa-flash`; hub.html unchanged. Covered by `todos-thread-style.spec.ts` plus
+the updated `todos-panel-card-styling` / `todos-checkbox-shape` specs.
+
+**2026-10-16: sign-in screens say what gets stored (#564).** The desktop sign-in screen
 (`#sakura-landing-privacy`) and hub.html's (`#auth-privacy`) have a closed-by-default "What gets
 stored?" `<details>` (shared `.signin-privacy` styles): data kept, no ads/analytics/tracking, no one
 else sees your documents unless shared, what Google sign-in shares. Desktop's **Full privacy
@@ -173,16 +183,6 @@ show as text (it changed width and made the menu jump). The header (`#account-ma
 `sync-syncing|synced|error`, which colours the avatar ring accent / green / red, and its tooltip says
 the state. Only an error still shows words ("Sync error", detail in the tooltip). Set in
 `updateSyncStatusUI`. Covered by `account-menu-layout.spec.ts`.
-
-**2026-10-16: account menu trimmed (#561).** The header (avatar, name, email) is now the Manage
-account button (`#account-manage-btn`, a `role=button` div), with one quiet line under the email:
-sync status, then the Private / Public profile link (`#account-visibility-badge`, plain text now,
-click stops propagation). Below: Settings, Help, Send feedback; a single "Buy me a coffee" row
-(`#account-support-btn`, paragraph and gold button gone); Sign out last, in `#account-signout-wrap`
-(shown only when signed in, neutral until hover). About moved out of the menu to a Help → Get
-Started row (`#help-about-open-btn` → Settings → About). The coffee icon is gold (`#account-menu
-.account-support-icon`; a `.export-menu-rich` selector lost to the later `.export-icon` rule, so
-it shipped grey in #561). Covered by `account-menu-layout.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
