@@ -159,7 +159,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: To-Dos restyled like a thread.** Owner-approved mock (iterated: no `!!!`, no left
+**2026-10-16: To-Dos grouped by status, with a Now card.** The owner rejected the #565 look ("status as a
+chip was making sense") and picked concept 1 of three from-scratch mocks (by state / by date / focus),
+plus a Now card. `openSectionsHtml` in `renderTodos`: `pickNowTodo` (In Progress; overdue, then
+priority, then due date, then list order) in `.todos-now`, then `.todos-group-doing|next|hold`;
+empty groups hidden; each group keeps `sortOpenList` order, and drag still reorders by id (it does
+not change status). Status chip only under On hold; High/Medium priority chips, Low only when
+expanded; repeat/link/subtasks are quiet text; the due date is the right column; completed ticks
+are a light ring. Not chosen: grouping by date (fights the default manual sort), a status-shaped
+circle. hub.html unchanged. Covered by `todos-grouped.spec.ts`.
+
+**2026-10-16: To-Dos restyled like a thread (#565).** Superseded the same day by the grouped layout above; Owner-approved mock (iterated: no `!!!`, no left
 edge, no connector lines; "it has to be a chip", "elegant"). Open tasks are flat rows with an
 inset hairline (`.todo-row+.todo-row::before`), no cards. Status is the shape of `.todo-check`
 (row `data-status`: dashed / half / three-quarter / red bar; `data-tip` names it) and the status
@@ -174,15 +184,9 @@ the updated `todos-panel-card-styling` / `todos-checkbox-shape` specs.
 stored?" `<details>` (shared `.signin-privacy` styles): data kept, no ads/analytics/tracking, no one
 else sees your documents unless shared, what Google sign-in shares. Desktop's **Full privacy
 details** hides the screen (not a "continue without signing in" dismissal) and opens Settings →
-About → Privacy & data. Hosted AI already had its own disclosure. Robin: trust matters; About
+About → Privacy & data. Hosted AI already had its own disclosure. Owner: trust matters; About
 itself stays in Settings (with the Help → Get Started shortcut), not the account menu. Covered by
 `signin-privacy.spec.ts`.
-
-**2026-10-16: sync status as an avatar ring (#563).** In the account menu, syncing / synced no longer
-show as text (it changed width and made the menu jump). The header (`#account-manage-btn`) gets
-`sync-syncing|synced|error`, which colours the avatar ring accent / green / red, and its tooltip says
-the state. Only an error still shows words ("Sync error", detail in the tooltip). Set in
-`updateSyncStatusUI`. Covered by `account-menu-layout.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

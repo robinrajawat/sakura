@@ -26,9 +26,10 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // looked before #402: a flat list, no border, no background distinct from the panel, and a
 // chevron that click-to-expands a row to reveal its priority/status/due/link/repeat/subtasks --
 // hovering alone reveals nothing. This file asserts that restored shape, not the card one.
-// The 2026-10 thread-style redesign (owner-approved mock, after cards in #402-#420 and again later):
-// flat rows split by an inset hairline, no card border or surface. Click-to-expand is unchanged.
-test.describe('To-Dos panel: flat thread-style rows with click-to-expand', () => {
+// The 2026-10 redesign (owner-approved concept, after cards in #402-#420 and again later): flat rows
+// grouped under status headings (see todos-grouped.spec.ts), no card border or surface. Only the one
+// "Now" task is a card. Click-to-expand is unchanged.
+test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
   test('an open task row is flat: no border, no surface of its own', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Flat row styling check');
     const result = await page.evaluate(() => {
@@ -41,19 +42,6 @@ test.describe('To-Dos panel: flat thread-style rows with click-to-expand', () =>
     expect(row).toBeTruthy();
     expect(result.rowBg).toBe('rgba(0, 0, 0, 0)');
     expect(parseFloat(result.rowBorder)).toBe(0);
-  });
-
-  test('a second task is separated from the first by an inset hairline', async ({ page }) => {
-    await openTodosPanelWithTask(page, 'First task');
-    await page.fill('#todos-input', 'Second task');
-    await page.press('#todos-input', 'Enter');
-    const line = await page.locator('.todo-row').nth(1).evaluate((r) => {
-      const b = getComputedStyle(r, '::before');
-      return { content: b.content, height: b.height, left: parseFloat(b.left) };
-    });
-    expect(line.content).toBe('""');
-    expect(line.height).toBe('1px');
-    expect(line.left).toBeGreaterThan(20); // starts at the title, not the panel edge
   });
 
   test('hovering a row reveals nothing -- only a background highlight, no chips', async ({ page }) => {
