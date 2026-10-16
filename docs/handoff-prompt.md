@@ -159,13 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: account menu trimmed (Robin).** The header (avatar, name, email) is now the Manage
+**2026-10-16: account menu trimmed (#561).** The header (avatar, name, email) is now the Manage
 account button (`#account-manage-btn`, a `role=button` div), with one quiet line under the email:
 sync status, then the Private / Public profile link (`#account-visibility-badge`, plain text now,
 click stops propagation). Below: Settings, Help, Send feedback; a single "Buy me a coffee" row
 (`#account-support-btn`, paragraph and gold button gone); Sign out last, in `#account-signout-wrap`
 (shown only when signed in, neutral until hover). About moved out of the menu to a Help → Get
-Started row (`#help-about-open-btn` → Settings → About). Covered by `account-menu-layout.spec.ts`.
+Started row (`#help-about-open-btn` → Settings → About). The coffee icon is gold (`#account-menu
+.account-support-icon`; a `.export-menu-rich` selector lost to the later `.export-icon` rule, so
+it shipped grey in #561). Covered by `account-menu-layout.spec.ts`.
 
 **2026-10-16: Copy thread keeps colours and kinds (#560).** The rich copy now has each name in its
 colour (`remarkAuthorColor`) and each entry's kind as a coloured text symbol (`threadCopyGlyph`:
