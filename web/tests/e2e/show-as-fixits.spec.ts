@@ -135,3 +135,21 @@ test('a date column that isn\'t first is offered as the timeline\'s date', async
   await expect(page.locator('.pv-timeline.horizontal .pv-tl-date').first()).toHaveText('2026-09-14');
   expect(await storedTable(page)).toContain('data-timeline-date="1"');
 });
+
+test('numbers further right are offered as column 2, so Cards, Progress bars and charts use them', async ({ page }) => {
+  const EFFORT = '<table><thead><tr><th>Task</th><th>Owner</th><th>Effort</th></tr></thead><tbody>'
+    + '<tr><td>Build</td><td>Ana</td><td>5</td></tr><tr><td>Test</td><td>Sam</td><td>3</td></tr></tbody></table>';
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await seed(page, EFFORT);
+  await page.goto('file://' + indexPath);
+  const sub = await openShowAs(page);
+  await expect(sub.locator('.sb-context-item').first()).toBeVisible();
+  const rows = await menuRows(sub);
+  const at = rows.findIndex((r) => r[0] === 'Progress bars');
+  expect(rows[at + 1]).toEqual(['Move “Effort” to column 2', 'So Cards, Progress bars and charts use its numbers']);
+  await sub.getByText('Move “Effort” to column 2').click();
+  expect(await storedTable(page)).toMatch(/<th>Task<\/th><th>Effort<\/th><th>Owner<\/th>/);
+  const sub2 = await openShowAs(page);
+  await expect(sub2.getByText('Move “Effort” to column 2')).toHaveCount(0);
+  await expect(sub2.locator('.sb-context-item', { hasText: 'Cards' }).first()).toBeEnabled();
+});

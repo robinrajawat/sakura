@@ -424,3 +424,16 @@ export function progressSummaryText(p: DocumentProgress): string {
   // the count instead of counting as settled, so the ratio didn't measure progress.
   return parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
 }
+
+/**
+ * How long an open item has been open, short enough for the Open items list: "today", "3d" (under
+ * two weeks), "5w" (under two months), then "4mo". Empty when the time is unknown.
+ */
+export function openItemAge(createdAt: number | undefined | null, now: number): string {
+  if (!createdAt || !Number.isFinite(createdAt)) return '';
+  const days = Math.floor(Math.max(0, now - createdAt) / 86400000);
+  if (days < 1) return 'today';
+  if (days < 14) return days + 'd';
+  if (days < 60) return Math.floor(days / 7) + 'w';
+  return Math.floor(days / 30) + 'mo';
+}

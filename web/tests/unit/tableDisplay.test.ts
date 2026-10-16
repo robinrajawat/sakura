@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  cardsAvailability, cardsChangeColumn, cardsRows, cardValueNumber, CARDS_MAX_ROWS,
+  cardsAvailability, valueColumnFix, cardsChangeColumn, cardsRows, cardValueNumber, CARDS_MAX_ROWS,
   isTotalLabel, typedTotalRowIndex, sumColumn, computeTotalRow, totalRowMismatches, cardsTotal
 } from '../../src/utils/tableDisplay';
 
@@ -183,5 +183,16 @@ describe('Cards and the total row', () => {
     expect(cardsTotal(g, false)).toEqual({ label: 'Total', value: '10 days', change: '', details: [] });
     expect(cardsTotal(g, true)).toEqual({ label: 'Total', value: '18 days', change: '', details: [] });
     expect(cardsTotal([['M', 'V'], ['A', '1']], false)).toBeNull();
+  });
+});
+
+describe('valueColumnFix', () => {
+  it('finds a later number column when the second column is text', () => {
+    expect(valueColumnFix([['Task', 'Owner', 'Effort'], ['Build', 'Ana', '5'], ['Test', 'Sam', '3']])).toBe(2);
+  });
+  it('is -1 when the second column already holds numbers, or no column does', () => {
+    expect(valueColumnFix([['Task', 'Effort', 'Owner'], ['Build', '5', 'Ana'], ['Test', '3', 'Sam']])).toBe(-1);
+    expect(valueColumnFix([['Task', 'Owner', 'Note'], ['Build', 'Ana', 'x'], ['Test', 'Sam', 'y']])).toBe(-1);
+    expect(valueColumnFix([['Task', 'Owner'], ['Build', 'Ana']])).toBe(-1);
   });
 });

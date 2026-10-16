@@ -68,3 +68,27 @@ test('filters fold back what they opened when cleared; folds changed meanwhile a
   expect(await folded()).toEqual([1, 3, 5]);
   expect(errors).toEqual([]);
 });
+
+test('opening another document clears the filter and folds back what it opened', async ({ page }) => {
+  const errors = await seed(page);
+  await page.evaluate("currentDocId = 'docA'; applyOpenItemsFilter('followup')");
+  expect(await page.evaluate('[...collapsedIds]')).toEqual([]);
+  await page.evaluate("clearFiltersForDocChange()");
+  expect(await page.evaluate('[activeMarkerFilter, activeTagFilter, activeDiscussionFilter]')).toEqual([null, null, null]);
+  expect(await page.evaluate('[...collapsedIds]')).toEqual([3]);
+  // The real path: switching documents goes through the same reset.
+  await page.evaluate("setTagFilter('ops'); createDoc()");
+  expect(await page.evaluate('activeTagFilter')).toBe(null);
+  expect(errors).toEqual([]);
+});
+
+test('Open items shows how long each item has been open; a folded branch shows its follow-ups', async ({ page }) => {
+  const errors = await seed(page);
+  await page.evaluate("remarks.find(r => r.id === 'f1').createdAt = Date.now() - 3 * 86400000; render()");
+  await page.locator('.open-items-btn').click();
+  await expect(page.locator('.sb-context-item', { hasText: 'Cutover' }).locator('.sb-context-meta')).toHaveText('3d');
+  await page.keyboard.press('Escape');
+  // "Scope" is folded with a follow-up inside: its badge shows the follow-up icon and count.
+  await expect(page.locator('.node-row[data-id="3"] .fold-badge .fold-badge-fu')).toHaveText('1');
+  expect(errors).toEqual([]);
+});
