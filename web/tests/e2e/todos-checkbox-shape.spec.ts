@@ -27,8 +27,8 @@ async function expandRow(page: import('@playwright/test').Page, id: string) {
   await page.click(`.todo-expand-toggle[data-id="${id}"]`);
 }
 
-// The completion control is a circle (an outline ring at rest, filling with a pale accent tint
-// + an accent-colored checkmark once done), left-leading the row. The per-subtask checkbox
+// The completion control is a circle (an outline ring at rest, a solid grey disc with a checkmark
+// once done, like a completed thread entry), left-leading the row. The per-subtask checkbox
 // (.todo-subtask-check, a real <input type="checkbox"> styled to match) is the same shape.
 // Priority has never doubled up on the ring's own color -- it's display:none entirely until
 // either a priority is actually set or the row is expanded, at which point it's a plain neutral
@@ -41,7 +41,7 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     expect(radius).toBe('50%');
   });
 
-  test('a checked task control tints with the accent color and shows an accent checkmark', async ({ page }) => {
+  test('a checked task control turns a solid neutral grey, not the accent', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Checked fill check');
     const id = await row.getAttribute('data-id');
     const before = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).backgroundColor);
@@ -59,8 +59,9 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
       };
       return { bg: getComputedStyle(cb).backgroundColor, borderColor: getComputedStyle(cb).borderColor, accentRgb: toRgb(accent) };
     }, id);
-    expect(result.bg).not.toBe(before); // a pale accent tint, not the plain unchecked fill
-    expect(result.borderColor).toBe(result.accentRgb); // the ring itself does go full accent once checked
+    expect(result.bg).not.toBe(before); // filled, not the plain unchecked ring
+    expect(result.bg).toBe(result.borderColor); // a solid disc
+    expect(result.borderColor).not.toBe(result.accentRgb); // grey, never the accent
   });
 
   test('the completion control sits to the left of the task text, not to its right', async ({ page }) => {
@@ -90,7 +91,7 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     expect(highColor).toBe(plainColor);
   });
 
-  test('a checked control always rings full accent, regardless of priority', async ({ page }) => {
+  test('a checked control is the same grey regardless of priority', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Priority checked-state check');
     const id = await row.getAttribute('data-id');
     await expandRow(page, id!);
@@ -110,8 +111,12 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
       };
       return { borderColor: getComputedStyle(cb).borderColor, accentRgb: toRgb(accent) };
     }, id);
-    expect(result.borderColor).toBe(result.accentRgb);
-    expect(result.borderColor).not.toBe('rgb(209, 162, 58)'); // not the medium-priority color
+    expect(result.borderColor).not.toBe(result.accentRgb);
+    const hint = await page.evaluate(() => {
+      const probe = document.createElement('span'); probe.style.color = 'var(--hint)'; document.body.appendChild(probe);
+      const c = getComputedStyle(probe).color; probe.remove(); return c;
+    });
+    expect(result.borderColor).toBe(hint); // the neutral hint grey, not the medium-priority color
   });
 
   test('the per-subtask checkbox is also a circle', async ({ page }) => {

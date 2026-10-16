@@ -26,11 +26,11 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // looked before #402: a flat list, no border, no background distinct from the panel, and a
 // chevron that click-to-expands a row to reveal its priority/status/due/link/repeat/subtasks --
 // hovering alone reveals nothing. This file asserts that restored shape, not the card one.
-// The 2026-10 To-Dos redesign (owner-approved mockup) brings open tasks back as light cards so a long
-// subtask list stays grouped with its task; completed tasks stay flat. Click-to-expand is unchanged.
-test.describe('To-Dos panel: open tasks are light cards with click-to-expand', () => {
-  test('an open task row is a card: its own background and a 1px border', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Card row styling check');
+// The 2026-10 thread-style redesign (owner-approved mock, after cards in #402-#420 and again later):
+// flat rows split by an inset hairline, no card border or surface. Click-to-expand is unchanged.
+test.describe('To-Dos panel: flat thread-style rows with click-to-expand', () => {
+  test('an open task row is flat: no border, no surface of its own', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Flat row styling check');
     const result = await page.evaluate(() => {
       const r = document.querySelector('.todo-row')!;
       return {
@@ -39,20 +39,33 @@ test.describe('To-Dos panel: open tasks are light cards with click-to-expand', (
       };
     });
     expect(row).toBeTruthy();
-    expect(result.rowBg).not.toBe('rgba(0, 0, 0, 0)');
-    expect(parseFloat(result.rowBorder)).toBe(1);
+    expect(result.rowBg).toBe('rgba(0, 0, 0, 0)');
+    expect(parseFloat(result.rowBorder)).toBe(0);
   });
 
-  test('hovering a row reveals nothing -- only a border highlight, no chips', async ({ page }) => {
+  test('a second task is separated from the first by an inset hairline', async ({ page }) => {
+    await openTodosPanelWithTask(page, 'First task');
+    await page.fill('#todos-input', 'Second task');
+    await page.press('#todos-input', 'Enter');
+    const line = await page.locator('.todo-row').nth(1).evaluate((r) => {
+      const b = getComputedStyle(r, '::before');
+      return { content: b.content, height: b.height, left: parseFloat(b.left) };
+    });
+    expect(line.content).toBe('""');
+    expect(line.height).toBe('1px');
+    expect(line.left).toBeGreaterThan(20); // starts at the title, not the panel edge
+  });
+
+  test('hovering a row reveals nothing -- only a background highlight, no chips', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Hover reveals nothing check');
     const id = await row.getAttribute('data-id');
-    const before = await row.evaluate(el => getComputedStyle(el).borderTopColor);
+    const before = await row.evaluate(el => getComputedStyle(el).backgroundColor);
     const priorityBefore = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
     await row.hover();
     await page.waitForTimeout(150);
-    const after = await row.evaluate(el => getComputedStyle(el).borderTopColor);
+    const after = await row.evaluate(el => getComputedStyle(el).backgroundColor);
     const priorityAfter = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
-    expect(after).not.toBe(before); // a plain hover highlight (the card border) does apply
+    expect(after).not.toBe(before); // a plain hover highlight does apply
     expect(priorityBefore).toBe('none');
     expect(priorityAfter).toBe('none'); // but hovering alone never reveals chips
   });
@@ -68,7 +81,7 @@ test.describe('To-Dos panel: open tasks are light cards with click-to-expand', (
     expect(priorityAfter).not.toBe('none');
   });
 
-  test('a completed row mutes and strikes through its text, not the whole row', async ({ page }) => {
+  test('a completed row mutes its text without striking it through, not the whole row', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Complete check');
     const id = await row.getAttribute('data-id');
     const rowOpacityBefore = await row.evaluate(el => getComputedStyle(el).opacity);
@@ -82,7 +95,7 @@ test.describe('To-Dos panel: open tasks are light cards with click-to-expand', (
       return { rowOpacity: getComputedStyle(r).opacity, textDecoration: getComputedStyle(t).textDecorationLine };
     }, id);
     expect(result.rowOpacity).toBe(rowOpacityBefore); // the row itself doesn't dim
-    expect(result.textDecoration).toContain('line-through'); // the text does
+    expect(result.textDecoration).toBe('none'); // muted grey only, like a completed subtask
   });
 
   test('the panel stops above the status bar instead of running behind it', async ({ page }) => {
