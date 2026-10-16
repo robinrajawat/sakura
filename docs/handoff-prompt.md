@@ -159,7 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: Copy thread (Robin).** Right-click the "Thread · N" header or an entry → **Copy
+**2026-10-16: Copy thread keeps colours and kinds (Robin).** The rich copy now has each name in its
+colour (`remarkAuthorColor`) and each entry's kind as a coloured text symbol (`threadCopyGlyph`:
+✓ ⚑ ⊘ ? ↳ ✗ 🤝 •, colours resolved from CSS variables by `resolveCssColor`), since email and chat
+apps strip SVG and CSS variables. Plain text unchanged. Covered by `thread-copy.spec.ts`.
+
+**2026-10-16: Copy thread (#559).** Right-click the "Thread · N" header or an entry → **Copy
 thread** (`copyThread` → `threadCopyContent`): row name, then each entry's author, time
 (`formatThreadTimeAbsolute`, date once per day) and notes (`threadEntryNotes`: the PDF's words),
 quote and text. Written as `text/html` plus `text/plain` (Robin: rich text, so the paste decides).
@@ -180,17 +185,6 @@ from its status entry. (4) A folded row's "+N" badge shows the Follow-up flag an
 follow-ups (`.fold-badge-fu`, replacing the plain dot then). Covered by
 `marker-jump-and-filter-folds.spec.ts`, `show-as-fixits.spec.ts`, `folded-branch-marker-indicator.spec.ts`
 and unit tests.
-
-**2026-10-16: a marker opens its thread entry; filters fold back (#557).** Clicking a row's marker
-badge used to filter the outline by that marker. A marker is the thread's status, so it now opens
-the thread at the entry that set it (`revealMarkerEntry` → `threadStatusEntry` →
-`revealInlineObject`); a marker with no status entry (set before #539) opens the row's thread.
-Shift+click on the badge still filters by that marker. Follow-ups in the Open items list jump to
-the same entry. Filters (open items, a marker, a tag) unfold the branches hiding their rows, but
-used to leave them unfolded, so turning a filter off changed the outline's folding. Now
-`unfoldForFilter` records what it opened and `refoldAfterFilter` folds exactly that back once no
-filter is on (folds the user changed meanwhile stay; threads it opened close). The tag filter now
-unfolds too. Covered by `tests/e2e/marker-jump-and-filter-folds.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
