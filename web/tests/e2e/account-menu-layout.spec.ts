@@ -46,6 +46,7 @@ test('signed out: three items and support, no sign out or About', async ({ page 
     'account-support-btn',
   ]);
   await expect(page.locator('#account-about-btn')).toHaveCount(0);
+  await expect(page.locator('#account-support-btn .export-icon')).toHaveCSS('color', 'rgb(192, 138, 30)');
 });
 
 test('signed in: sync and visibility share one line, sign out is last', async ({ page }) => {
