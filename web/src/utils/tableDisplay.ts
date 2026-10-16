@@ -103,6 +103,25 @@ export function cardsAvailability(grid: string[][]): DisplayAvailability {
   return { ok: true };
 }
 
+/**
+ * Cards, Progress bars and charts read their value from the second column. When that column isn't
+ * mostly numbers but a later one is, returns that later column's index, so Show as can offer to
+ * move it next to the labels; -1 otherwise.
+ */
+export function valueColumnFix(grid: string[][]): number {
+  const cols = cdColumnCount(grid);
+  if (cols < 3) return -1;
+  const rows = cdBodyRows(grid);
+  const mostlyNumbers = (ci: number): boolean => {
+    const values = rows.map((r) => r[ci] ?? '').filter((v) => !cdIsPlaceholder(v));
+    const numeric = values.filter((v) => cardValueNumber(v) !== null).length;
+    return numeric > 0 && numeric * 2 >= values.length;
+  };
+  if (mostlyNumbers(1)) return -1;
+  for (let ci = 2; ci < cols; ci++) if (mostlyNumbers(ci)) return ci;
+  return -1;
+}
+
 export interface CardDetail {
   /** The column's header, shown before the text only when a card has more than one detail column. */
   label: string;

@@ -93,12 +93,14 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       const badge = row.querySelector('.fold-badge')!;
       return {
         ownBadgeShown: !!row.querySelector('.node-marker-badge'),
-        fold: { hasDot: !!badge.querySelector('.fold-badge-dot'), tip: badge.getAttribute('data-tip') || '' },
+        fold: { hasDot: !!badge.querySelector('.fold-badge-dot'), fu: badge.querySelector('.fold-badge-fu')?.textContent || '', tip: badge.getAttribute('data-tip') || '' },
       };
     });
 
     expect(result.ownBadgeShown).toBe(true);
-    expect(result.fold.hasDot).toBe(true);
+    // Hidden follow-ups show as the follow-up icon and a count, in place of the plain dot.
+    expect(result.fold.hasDot).toBe(false);
+    expect(result.fold.fu).toBe('1');
     expect(result.fold.tip).toContain('marked Follow-up');
   });
 

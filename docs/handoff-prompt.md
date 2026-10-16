@@ -159,7 +159,21 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: a marker opens its thread entry; filters fold back (Robin).** Clicking a row's marker
+**2026-10-16: four follow-ups to #557 (Robin).** (1) Filters were never cleared when another
+document opened, so a filter could silently hide rows in the next one: `clearFiltersForDocChange`
+runs in `applyTabSnapshot`, `clearToNoDocumentState` and `switchDoc` (before the snapshot, so the
+old document's folds are restored first). `filterOpened` is declared with the other filter state
+at the top, since boot calls `applyTabSnapshot` early. (2) Show as › **Move “‹column›” to column 2**
+(`valueColumnFix` in `src/utils/tableDisplay.ts`) when column 2 is text and a later column holds
+the numbers; it really moves the column (`tableMoveColumn`), since Cards, Progress bars and charts
+all read column 2. (3) Open items shows each item's age on the right (`openItemAge` in
+`discussionStatus.ts`, `meta` on `showSbContextMenu` items, `.sb-context-meta`); a follow-up counts
+from its status entry. (4) A folded row's "+N" badge shows the Follow-up flag and count of hidden
+follow-ups (`.fold-badge-fu`, replacing the plain dot then). Covered by
+`marker-jump-and-filter-folds.spec.ts`, `show-as-fixits.spec.ts`, `folded-branch-marker-indicator.spec.ts`
+and unit tests.
+
+**2026-10-16: a marker opens its thread entry; filters fold back (#557).** Clicking a row's marker
 badge used to filter the outline by that marker. A marker is the thread's status, so it now opens
 the thread at the entry that set it (`revealMarkerEntry` → `threadStatusEntry` →
 `revealInlineObject`); a marker with no status entry (set before #539) opens the row's thread.
@@ -174,12 +188,6 @@ unfolds too. Covered by `tests/e2e/marker-jump-and-filter-folds.spec.ts`.
 title line as **Filter outline**. Rows sharing a name put their parent on the grey line ("in
 Exclusion Scenarios · Karsten: …"); same name and same parent are numbered in outline order
 ("Export (ZOR) (2)"). Covered in `discussion-items.spec.ts`.
-
-**2026-10-16: open-items summary hides when nothing is open; one filter (#555).** No "All settled"
-chip; the summary shows only while something is open or the filter is on. The Decisions chip shows
-on its own. The **Filter outline** switch (also right-click / Shift+click on the summary) is the one
-open-items filter; "N more" turns it on. Covered in `menu-stamp-polish.spec.ts` and
-`remark-qa-status.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
@@ -196,10 +204,8 @@ open-items filter; "N more" turns it on. Covered in `menu-stamp-polish.spec.ts` 
 
 ### In progress / not built
 
-- Show as fix-its for number columns (Cards, Progress bars, charts still need the number in
-  column B). Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
-- Suggested, not chosen: an item's age ("3d") in the Open items list; a "down is good" option so a
-  falling change shows green.
+- Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
+- Suggested, not chosen: a "down is good" option so a falling change shows green.
 
 ### Parked / open questions for the owner
 

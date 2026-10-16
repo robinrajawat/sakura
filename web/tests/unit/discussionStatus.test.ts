@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  normalizeThreadStatus, htmlHasVisibleText, qaState, isCountableQuestion,
+  openItemAge, normalizeThreadStatus, htmlHasVisibleText, qaState, isCountableQuestion,
   normalizeDiscussionFilter, nodesWithOpenItems, openCountLabel,
   documentProgress, attentionParts, progressSummaryText,
   threadEntries, questionState, openQuestions, questionToAnswer, threadStatus, threadStatusEntry,
@@ -233,5 +233,20 @@ describe('documentProgress / attentionParts / progressSummaryText', () => {
   it('describes the summary in words', () => {
     expect(progressSummaryText(documentProgress(nodes, qa, entries))).toBe('Needs attention: 3 follow-ups, 2 open questions.');
     expect(progressSummaryText(documentProgress([{ id: 1, marker: 'confirmed' }], [], []))).toBe('Nothing needs attention.');
+  });
+});
+
+describe('openItemAge', () => {
+  const now = Date.UTC(2026, 9, 16, 12);
+  const daysAgo = (d: number) => now - d * 86400000;
+  it('says today, then days, weeks and months', () => {
+    expect(openItemAge(daysAgo(0.5), now)).toBe('today');
+    expect(openItemAge(daysAgo(3), now)).toBe('3d');
+    expect(openItemAge(daysAgo(20), now)).toBe('2w');
+    expect(openItemAge(daysAgo(130), now)).toBe('4mo');
+  });
+  it('is empty when the time is unknown', () => {
+    expect(openItemAge(undefined, now)).toBe('');
+    expect(openItemAge(0, now)).toBe('');
   });
 });

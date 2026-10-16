@@ -794,6 +794,8 @@ body.zen-mode #quick-bar{display:none}
    the badge's own color via currentColor, so there's exactly one element per folded row instead
    of a sometimes-there second one. The tooltip (see the folded&&hasChildren block in render())
    names what's actually inside. */
+/* Follow-ups inside a folded branch show on its badge (owner, 2026-10-16): open work stays visible. */
+.fold-badge-fu{display:inline-flex;align-items:center;gap:2px;margin-left:5px;color:var(--fc-orange)}.fold-badge-fu svg{display:block}
 .fold-badge-dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.6;margin-right:4px;vertical-align:middle}
 /* Scoped to .node-row -- .fold-badge is reused inside Preview mode's inline text flow too,
    where this offset isn't wanted (see .node-row .node-note-dot above). */
@@ -907,6 +909,7 @@ body.zen-mode #quick-bar{display:none}
 .open-items-menu{width:340px;max-width:calc(100vw - 16px)}
 .open-items-menu .sb-context-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A second, quieter line under an item: e.g. why a follow-up is open (its thread's latest line). */
+.sb-context-meta{flex:none;margin-left:auto;padding-left:12px;align-self:flex-start;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .sb-context-sub{display:block;margin-top:1px;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sb-context-item:has(.sb-context-sub) .sb-context-icon{align-self:flex-start;margin-top:1px}
 .sb-context-fold .sb-context-chevron{transition:transform .15s}
@@ -5072,6 +5075,7 @@ let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
 // Open-items filter from the toolbar: null, 'openQa' (open questions) or 'openItems'.
 let activeDiscussionFilter=null;
+let filterOpened=null; // {docId, folds:Set, threads:Set} while a filter has unfolded anything (unfoldForFilter)
 // Nodes whose whole thread is unfolded this session (a long thread shows only its latest entries).
 let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
 // A node's thread: reply box state and chip icons (see renderNodeThread).
@@ -7262,6 +7266,28 @@ function cardsAvailability(grid) {
     return { ok: true };
 }
 /**
+ * Cards, Progress bars and charts read their value from the second column. When that column isn't
+ * mostly numbers but a later one is, returns that later column's index, so Show as can offer to
+ * move it next to the labels; -1 otherwise.
+ */
+function valueColumnFix(grid) {
+    const cols = cdColumnCount(grid);
+    if (cols < 3)
+        return -1;
+    const rows = cdBodyRows(grid);
+    const mostlyNumbers = (ci) => {
+        const values = rows.map((r) => r[ci] ?? '').filter((v) => !cdIsPlaceholder(v));
+        const numeric = values.filter((v) => cardValueNumber(v) !== null).length;
+        return numeric > 0 && numeric * 2 >= values.length;
+    };
+    if (mostlyNumbers(1))
+        return -1;
+    for (let ci = 2; ci < cols; ci++)
+        if (mostlyNumbers(ci))
+            return ci;
+    return -1;
+}
+/**
  * The cards a table shows: one per filled body row, label · value · change as written, and a
  * detail line for each other column with text in that row. A detail's label is its column header
  * when the table has two detail columns (so "Owner Ana" and "Due Fri" can be told apart), and empty
@@ -7772,6 +7798,22 @@ function progressSummaryText(p) {
     // No "N of M settled" (owner, 2026-10-15): a follow-up closed by removing its marker drops out of
     // the count instead of counting as settled, so the ratio didn't measure progress.
     return parts.length ? 'Needs attention: ' + parts.join(', ') + '.' : 'Nothing needs attention.';
+}
+/**
+ * How long an open item has been open, short enough for the Open items list: "today", "3d" (under
+ * two weeks), "5w" (under two months), then "4mo". Empty when the time is unknown.
+ */
+function openItemAge(createdAt, now) {
+    if (!createdAt || !Number.isFinite(createdAt))
+        return '';
+    const days = Math.floor(Math.max(0, now - createdAt) / 86400000);
+    if (days < 1)
+        return 'today';
+    if (days < 14)
+        return days + 'd';
+    if (days < 60)
+        return Math.floor(days / 7) + 'w';
+    return Math.floor(days / 30) + 'mo';
 }
 
 /* GENERATED:discussionStatus:END */
@@ -8347,6 +8389,9 @@ function buildChartFeatureItems(table,commit){
     return opt('board:'+ci,'Lanes by '+head[ci],true,'',lanes.length+' lanes: '+lanes.map(l=>l.label).join(', '));
   });
   const tlFix=timelineDateFixColumn(table);
+  // Cards, Progress bars and charts read column 2; when the numbers sit further right, offer to move them there.
+  const valFix=valueColumnFix(tableTextGrid(table));
+  const valFixItem=valFix>=0?[{label:'Move \u201c'+head[valFix]+'\u201d to column 2', sub:'So Cards, Progress bars and charts use its numbers', onClick:()=>{ for(let ci=valFix;ci>1;ci--)tableMoveColumn(table,table.rows[0].cells[ci],-1); commit(); showToast('Moved \u201c'+head[valFix]+'\u201d to column 2'); }}]:[];
   const showAs=[
     {heading:'Layout'},
     opt('table','Table',true),
@@ -8354,6 +8399,7 @@ function buildChartFeatureItems(table,commit){
     opt('inline','Inline',tableChipsEligible(table),chipsReason),
     opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
     opt('progress','Progress bars',tableProgressEligible(table),colsReason(2,3,'Needs a % or number column.')),
+    ...valFixItem,
     opt('board','Status board',!!tableStatusBoardInfo(table,true),'A status board needs a Status column (e.g. Open, In progress, Blocked, Done) and at least two items.'),
     ...laneItems,
     opt('proscons','Pros & cons',tableProsConsEligible(table),colsReason(2,2,'Pros & cons needs headers like Pros / Cons (or Advantages / Disadvantages, For / Against).')),
@@ -11775,6 +11821,7 @@ function captureActiveTabSnapshot(){
 }
 
 function applyTabSnapshot(tab){
+  clearFiltersForDocChange();
   hideCrossTabWarning();
   nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
@@ -11879,7 +11926,7 @@ function switchDoc(id){
     }
     openTabs.push(tab);
   }
-  commitEdit(); captureActiveTabSnapshot(); saveToStorage();
+  commitEdit(); clearFiltersForDocChange(); captureActiveTabSnapshot(); saveToStorage();
   applyTabSnapshot(tab);
   persistOpenTabs(); renderTabStrip();
   showToast('Switched document');
@@ -12138,6 +12185,7 @@ function ensureDocumentForEditing(){
 // Clears all in-memory document state and brings the UI to the empty welcome screen with no
 // document open — used when the last tab is closed, or on startup if nothing was restored.
 function clearToNoDocumentState(){
+  clearFiltersForDocChange();
   nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
@@ -14403,7 +14451,7 @@ async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmai
   try{ localStorage.setItem(docKey(docId),JSON.stringify({nodes:tab.nodes,nextId:tab.nextId,selectedId:tab.selectedId,multiSelectedIds:[],selectionAnchorId:null,collapsed:[...tab.collapsedIds],title:tab.title,author:tab.author})) }catch(e){}
   sharedDocMeta[docId]={ownerUid,role,ownerDisplayName,ownerEmail};
   openTabs.push(tab);
-  commitEdit(); captureActiveTabSnapshot(); saveToStorage();
+  commitEdit(); clearFiltersForDocChange(); captureActiveTabSnapshot(); saveToStorage();
   applyTabSnapshot(tab);
   persistOpenTabs(); renderTabStrip();
   updateSharedDocBanner();
@@ -19749,7 +19797,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to open its thread entry, Shift+click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } revealMarkerEntry(node.id);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; const tStatus=threadStatus(tThread); const allResolved=!openR&&(tStatus==='resolved'||tStatus==='decision'); const tHolder=threadStatusEntry(tThread); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+(tStatus?' \u00b7 '+THREAD_STATUS_LABEL[tStatus]+(tStatus==='decision'&&tHolder&&htmlHasVisibleText(tHolder.text)?': '+stripHtmlToText(tHolder.text).slice(0,80):''):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); badge.innerHTML=(subtreeKinds.length?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to open its thread entry, Shift+click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } revealMarkerEntry(node.id);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--fc-blue)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; const tStatus=threadStatus(tThread); const allResolved=!openR&&(tStatus==='resolved'||tStatus==='decision'); const tHolder=threadStatusEntry(tThread); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+(tStatus?' \u00b7 '+THREAD_STATUS_LABEL[tStatus]+(tStatus==='decision'&&tHolder&&htmlHasVisibleText(tHolder.text)?': '+stripHtmlToText(tHolder.text).slice(0,80):''):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--fc-red)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeMarkerTypes(idx).get('followup')||0; badge.innerHTML=(subtreeKinds.length&&!hiddenFu?'<span class="fold-badge-dot"></span>':'')+'+'+hiddenCount+(hiddenFu?'<span class="fold-badge-fu">'+markIconSvg('followup',9)+hiddenFu+'</span>':''); badge.dataset.tip='Click to expand · '+hiddenCount+' hidden node'+(hiddenCount===1?'':'s')+(subtreeKinds.length?' — contains '+subtreeKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); expandNode(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -25921,7 +25969,7 @@ function _sbBuildItemButton(it, container, list){
     return t;
   }
   const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
-  btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+(it.sub?'<span class="sb-context-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
+  btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+(it.sub?'<span class="sb-context-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.meta?'<span class="sb-context-meta">'+esc(it.meta)+'</span>':'')+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
   if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; container.appendChild(btn); return null; }
   if(it.submenu){
     btn._sbSubmenu=it.submenu; btn.setAttribute('aria-haspopup','menu');
@@ -30749,7 +30797,13 @@ function revealMarkerEntry(nodeId){
 // opens threads with open questions). Turning the last filter off folds back exactly what the
 // filter opened, so filtering on and off leaves the outline as it was (owner, 2026-10-16); folds
 // the user changed meanwhile are kept.
-let filterOpened=null; // {docId, folds:Set, threads:Set} while a filter has unfolded anything
+// Filters belong to the document they were set on: opening another one clears them (and folds back
+// what they opened) before the switch, so the next document isn't silently filtered.
+function clearFiltersForDocChange(){
+  if(!anyFilterActive()&&!filterOpened)return;
+  activeTagFilter=null; activeMarkerFilter=null; activeDiscussionFilter=null;
+  refoldAfterFilter();
+}
 function anyFilterActive(){ return !!(activeTagFilter||activeMarkerFilter||activeDiscussionFilter); }
 function unfoldForFilter(ids,threadIds){
   if(!filterOpened||filterOpened.docId!==currentDocId)filterOpened={docId:currentDocId,folds:new Set(),threads:new Set()};
@@ -30803,7 +30857,8 @@ function openItemsMenuItems(){
     if(!entries.length)return;
     if(items.length)items.push({divider:true});
     items.push({heading:heading+' · '+entries.length});
-    entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, sub:en.sub||'', icon:icon(key), onClick:en.go}));
+    // How long each has been open (owner, 2026-10-16), so stale items stand out.
+    entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, sub:en.sub||'', meta:openItemAge(en.since,Date.now()), icon:icon(key), onClick:en.go}));
     if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!allOn)applyOpenItemsFilter('openItems'); }});
   };
   // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
@@ -30824,14 +30879,15 @@ function openItemsMenuItems(){
       const num=byPlace.get(k)>1?' ('+nth.get(k)+')':'';
       const pt=byName.get(rowText(n))>1?parentText(n):'';
       const sub=[pt?'in '+pt:'', m==='followup'?latestLine(n):''].filter(Boolean).join(' \u00B7 ');
-      return {label:rowText(n)+num+(o?' \u00B7 '+o:''), sub, go:()=>revealMarkerEntry(n.id)};
+      const h=threadStatusEntry(nodeThread(n.id));
+      return {label:rowText(n)+num+(o?' \u00B7 '+o:''), sub, since:h&&h.createdAt, go:()=>revealMarkerEntry(n.id)};
     });
   };
   addGroup('followup','Follow-ups',markerRows('followup'));
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   // Under a question, the row it's on and who asked ("Customer comms · Maria"), like a follow-up's line.
   const askedOn=r=>{ const n=nodes[idx.get(r.anchorNodeId)]; return [n?rowText(n):'',r.person||''].filter(Boolean).join(' \u00B7 '); };
-  addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), sub:askedOn(r), go:()=>revealInlineObject('remark',r.id)})));
+  addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), sub:askedOn(r), since:r.createdAt, go:()=>revealInlineObject('remark',r.id)})));
   return items;
 }
 // Thread entries marked as decisions, on rows of this document, in outline order.
