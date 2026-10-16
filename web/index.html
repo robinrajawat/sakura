@@ -566,6 +566,16 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 #sakura-landing-heading{font:700 21px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
 #sakura-landing-sub{font:400 13.5px 'Inter',sans-serif;color:var(--muted);line-height:1.5;margin:0 0 24px}
 #sakura-landing-google-signin-btn:hover{background:var(--hover)}
+.signin-privacy{margin-top:18px;font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.5}
+.signin-privacy summary{cursor:pointer;color:var(--hint);list-style:none;display:inline-flex;align-items:center;gap:4px}
+.signin-privacy summary::-webkit-details-marker{display:none}
+.signin-privacy summary svg{transition:transform .15s}
+.signin-privacy[open] summary svg{transform:rotate(180deg)}
+.signin-privacy summary:hover{color:var(--fg)}
+.signin-privacy ul{text-align:left;margin:10px 0 8px;padding-left:18px}
+.signin-privacy li{margin:3px 0}
+.signin-privacy a{color:var(--accent);text-decoration:none}
+.signin-privacy a:hover{text-decoration:underline}
 #icon-library-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
 #icon-library-overlay.open{opacity:1;pointer-events:all}
 #icon-library-overlay.closing{opacity:0;pointer-events:none}
@@ -3269,6 +3279,16 @@ body.printing-generic #gpe-overlay{
         </div>
       </div>
       <button type="button" id="sakura-landing-continue-btn" style="background:none;border:none;color:var(--muted);font-size:13px;margin-top:14px;cursor:pointer;text-decoration:underline;text-underline-offset:2px">Continue without signing in</button>
+      <details id="sakura-landing-privacy" class="signin-privacy">
+        <summary>What gets stored?<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+        <ul>
+          <li>Your documents, folders, To-Dos and settings, so they sync. Nothing else.</li>
+          <li>No ads, no analytics, no tracking.</li>
+          <li>No one else can see your documents unless you share one.</li>
+          <li>Google sign-in shares only your name, email and photo.</li>
+        </ul>
+        <a href="#" id="sakura-landing-privacy-link">Full privacy details</a>
+      </details>
     </div>
   </div>
   <div id="appbar">
@@ -13942,6 +13962,12 @@ function dismissLandingOverlay(){
 }
 el('sakura-landing-continue-btn')?.addEventListener('click',dismissLandingOverlay);
 el('sakura-landing-google-signin-btn')?.addEventListener('click',()=>signInWithGoogleAccount());
+// "Full privacy details" on the sign-in screen: hides it (without counting as "continue without
+// signing in", so it still shows on the next load) and opens Settings -> About -> Privacy & data.
+el('sakura-landing-privacy-link')?.addEventListener('click',e=>{
+  e.preventDefault(); hideLandingOverlay();
+  setTimeout(()=>{ el('settings-toggle').click(); document.querySelector('.settings-rail-btn[data-cat="about"]')?.click(); requestAnimationFrame(()=>el('settings-section-about-privacy')?.scrollIntoView({block:'start'})); },0);
+});
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('sakura-landing-overlay')?.style.display==='flex')dismissLandingOverlay();
 });

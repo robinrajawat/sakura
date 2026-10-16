@@ -216,7 +216,7 @@ The install icon itself is genuinely transparent (real alpha, not a flattened op
 
 ## Account, Sync & Sharing
 
-Signing in (Google or email, from the account button top-right) is entirely optional — everything above keeps working fully offline and locally without it. Signing in does two things:
+Signing in (Google or email, from the account button top-right) is entirely optional — everything above keeps working fully offline and locally without it. The sign-in screen (and hub.html's) has a **What gets stored?** fold-out: your documents, folders, To-Dos and settings and nothing else; no ads, analytics or tracking; no one else sees your documents unless you share one; Google sign-in shares only your name, email and photo. On the desktop screen, **Full privacy details** opens Settings → About → Privacy & data. Signing in does two things:
 
 - **Sync** — your documents, folders, To-Dos, and settings sync to your account and follow you to another browser or device (newer-wins per item, not a field-level merge). A status-bar dot shows sync health. While signed in, this sync is your live, continuous off-device copy — there's nothing extra to set up.
 - **Sharing** — share an individual document with another Sakura account as **Can view** or **Can edit**. A "Share" chip appears under a document's title once you're signed in; type a name or email to search (only accounts with **Profile visibility** set to Public, Settings → Account, Private by default, show up in results), pick a role, and click a result to share immediately. Documents shared with you appear in a **Shared** section in the file explorer, alongside who shared them and your access level. A bell icon next to the account button notifies you when someone shares something with you.
