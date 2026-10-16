@@ -30701,8 +30701,8 @@ function setTagFilter(tag){
 // Toolbar marker summary — how many nodes carry each marker across the whole document, folded
 // branches included, so outstanding Issues/Follow-ups stay visible when the outline is collapsed.
 // Toolbar open-items summary: what still needs attention, in words ("6 follow-ups ·
-// 2 questions"), or "All settled". Settled items (Agreed rows, answered questions, resolved
-// follow-ups) only count toward the progress in its list. Hidden on a document that tracks nothing.
+// 2 questions"). Hidden when nothing is open (it still shows "All settled" while the open-items
+// filter is on, so the filter can be turned off).
 // Counting lives in src/utils/discussionStatus.ts (documentProgress, attentionParts).
 // A function, not a const: render() calls updateMarkerSummary during boot, before a top-level
 // const this far down would be initialised.
@@ -30719,7 +30719,9 @@ function updateMarkerSummary(){
   const p=documentProgress(nodes,qaItems,remarks);
   const filtering=!!(activeMarkerFilter||activeDiscussionFilter);
   const dn=documentDecisions().length;
-  group.hidden=!p.total&&!p.parked&&!dn&&!filtering;
+  const open=attentionParts(p).length>0;
+  // Nothing open, nothing to say (owner, 2026-10-15): no "All settled" chip; decisions keep theirs.
+  group.hidden=!open&&!dn&&!filtering;
   const parts=attentionParts(p);
   const segs=parts.length
     ? parts.map(a=>`<span class="oi-part" data-key="${a.key}" style="--mc:${openItemKindColor(a.key)}">${openItemKindIcon(a.key)}<span>${a.label}</span></span>`).join('<span class="oi-sep" aria-hidden="true">·</span>')
@@ -30728,7 +30730,7 @@ function updateMarkerSummary(){
   // Decisions are a record, not open items (owner, 2026-10-15): their own chip, only when there are some.
   const dLabel=dn+(dn===1?' decision':' decisions');
   const dBtn=dn?`<button type="button" class="decisions-btn" aria-haspopup="menu" data-tip="What was decided in threads. Click for the list." aria-label="${dLabel}"><span class="oi-part" style="--mc:${openItemKindColor('decision')}">${openItemKindIcon('decision')}<span>${dLabel}</span></span></button>`:'';
-  const oiBtn=(p.total||p.parked||filtering)?`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list; right-click (or Shift+click) to show only open items." aria-label="${esc(text)}">${segs}</button>`:'';
+  const oiBtn=(open||filtering)?`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list; right-click (or Shift+click) to show only open items." aria-label="${esc(text)}">${segs}</button>`:'';
   const html=oiBtn+(oiBtn&&dBtn?'<span class="oi-divider" aria-hidden="true"></span>':'')+dBtn;
   if(box.innerHTML!==html)box.innerHTML=html;
 }
@@ -30764,14 +30766,15 @@ function openItemsMenuItems(){
   const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
   const FILTER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
   const icon=key=>`<span class="oi-menu-icon" style="color:${openItemKindColor(key)}">${openItemKindIcon(key)}</span>`;
-  const cur=currentOpenItemsFilter();
-  const addGroup=(key,heading,entries,filterKind)=>{
+  // One way to filter (owner, 2026-10-15): the switch at the top shows every open item; the groups
+  // have no filters of their own. "N more" turns that switch on.
+  const allOn=currentOpenItemsFilter()==='openItems';
+  const addGroup=(key,heading,entries)=>{
     if(!entries.length)return;
     if(items.length)items.push({divider:true});
-    const on=cur===filterKind;
-    items.push({heading:heading+' · '+entries.length, action:{icon:FILTER_ICON, active:on, label:on?'Clear this filter':'Show only '+heading.toLowerCase()+' in the outline', onClick:()=>applyOpenItemsFilter(filterKind)}});
+    items.push({heading:heading+' · '+entries.length});
     entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, sub:en.sub||'', icon:icon(key), onClick:en.go}));
-    if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!on)applyOpenItemsFilter(filterKind); }});
+    if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!allOn)applyOpenItemsFilter('openItems'); }});
   };
   // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
   const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
@@ -30784,11 +30787,11 @@ function openItemsMenuItems(){
     list.forEach(n=>seen.set(rowText(n),(seen.get(rowText(n))||0)+1));
     return list.map(n=>{ const o=m==='followup'?ownerOf(n):''; const pt=seen.get(rowText(n))>1?parentText(n):''; return {label:rowText(n)+(pt?' (in '+pt+')':'')+(o?' · '+o:''), sub:m==='followup'?latestLine(n):'', go:()=>revealNodeInDoc(currentDocId,n.id)}; });
   };
-  addGroup('followup','Follow-ups',markerRows('followup'),'followup');
+  addGroup('followup','Follow-ups',markerRows('followup'));
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
   // Under a question, the row it's on and who asked ("Customer comms · Maria"), like a follow-up's line.
   const askedOn=r=>{ const n=nodes[idx.get(r.anchorNodeId)]; return [n?rowText(n):'',r.person||''].filter(Boolean).join(' \u00B7 '); };
-  addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), sub:askedOn(r), go:()=>revealInlineObject('remark',r.id)})),'openQa');
+  addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), sub:askedOn(r), go:()=>revealInlineObject('remark',r.id)})));
   return items;
 }
 // Thread entries marked as decisions, on rows of this document, in outline order.
