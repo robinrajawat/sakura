@@ -54,9 +54,21 @@ test('signed in: sync and visibility share one line, sign out is last', async ({
   await page.locator('#account-toggle').click();
   const items = await visibleItems(page);
   expect(items[items.length - 1]).toBe('account-signout-btn');
-  await expect(page.locator('#account-sync-status')).toHaveText('Synced just now');
-  await expect(page.locator('#account-meta-sep')).toBeVisible();
+  // Synced shows as a ring on the avatar, not as text, so the line doesn't change width.
+  await expect(page.locator('#account-manage-btn')).toHaveClass(/sync-synced/);
+  await expect(page.locator('#account-sync-status')).toBeHidden();
+  await expect(page.locator('#account-meta-sep')).toBeHidden();
   await expect(page.locator('#account-visibility-badge')).toHaveText(/Private profile/);
+});
+
+test('a sync error still shows words next to the red ring', async ({ page }) => {
+  await showSignedIn(page);
+  // @ts-expect-error — global from index.html
+  await page.evaluate(() => updateSyncStatusUI('error'));
+  await page.locator('#account-toggle').click();
+  await expect(page.locator('#account-manage-btn')).toHaveClass(/sync-error/);
+  await expect(page.locator('#account-sync-status')).toHaveText('Sync error');
+  await expect(page.locator('#account-meta-sep')).toBeVisible();
 });
 
 test('header opens Settings → Account; visibility link does not', async ({ page }) => {
