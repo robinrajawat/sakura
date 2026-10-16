@@ -915,10 +915,10 @@ body.zen-mode #quick-bar{display:none}
 @media (prefers-reduced-motion:reduce){.sb-context-fold .sb-context-chevron{transition:none}}
 .oi-menu-icon{display:inline-flex}
 .oi-head{display:flex;flex-direction:column;gap:6px;padding:6px 8px 8px;margin-bottom:2px;border-bottom:1px solid var(--border)}
-.oi-head-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.oi-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .decisions-menu .sb-context-heading{padding-top:6px}
 .oi-head-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg)}
-.oi-switch{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:2px;padding:6px 2px;border:none;background:none;cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--fg);text-align:left;border-radius:6px}
+.oi-switch{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;margin:-2px -2px -2px 0;padding:2px;border:none;background:none;cursor:pointer;font:500 11.5px 'Inter',sans-serif;color:var(--muted);text-align:left;border-radius:6px}
 .oi-switch:hover .oi-switch-label{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--border)}
 .oi-switch:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
 .oi-switch-track{position:relative;flex:0 0 auto;width:28px;height:16px;border-radius:999px;background:color-mix(in srgb,var(--fg) 18%,transparent);transition:background .15s}
@@ -30780,12 +30780,22 @@ function openItemsMenuItems(){
   const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
   // Under a follow-up, its thread's latest line says why it's open, without jumping there.
   const latestLine=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--){ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); if(x)return (t[i].person?t[i].person+': ':'')+x; } return ''; };
-  // Rows with the same name (two "Export (ZOR)" under different parents) add their parent's name.
+  // Rows with the same name (two "Export (ZOR)" under different parents) name their parent on the
+  // grey line ("in Exclusion Scenarios · Karsten: …"), so the row's own name keeps the first line;
+  // same name under the same parent too: numbered in outline order ("Export (ZOR) (2)").
   const parentText=n=>{ const p=n.parentId!=null?nodes.find(x=>x.id===n.parentId):null; return p?rowText(p):''; };
   const markerRows=m=>{
-    const list=nodes.filter(n=>n.marker===m), seen=new Map();
-    list.forEach(n=>seen.set(rowText(n),(seen.get(rowText(n))||0)+1));
-    return list.map(n=>{ const o=m==='followup'?ownerOf(n):''; const pt=seen.get(rowText(n))>1?parentText(n):''; return {label:rowText(n)+(pt?' (in '+pt+')':'')+(o?' · '+o:''), sub:m==='followup'?latestLine(n):'', go:()=>revealNodeInDoc(currentDocId,n.id)}; });
+    const list=nodes.filter(n=>n.marker===m), byName=new Map(), byPlace=new Map(), nth=new Map();
+    const place=n=>rowText(n)+'\u0000'+n.parentId;
+    list.forEach(n=>{ byName.set(rowText(n),(byName.get(rowText(n))||0)+1); byPlace.set(place(n),(byPlace.get(place(n))||0)+1); });
+    return list.map(n=>{
+      const o=m==='followup'?ownerOf(n):'';
+      const k=place(n); nth.set(k,(nth.get(k)||0)+1);
+      const num=byPlace.get(k)>1?' ('+nth.get(k)+')':'';
+      const pt=byName.get(rowText(n))>1?parentText(n):'';
+      const sub=[pt?'in '+pt:'', m==='followup'?latestLine(n):''].filter(Boolean).join(' \u00B7 ');
+      return {label:rowText(n)+num+(o?' \u00B7 '+o:''), sub, go:()=>revealNodeInDoc(currentDocId,n.id)};
+    });
   };
   addGroup('followup','Follow-ups',markerRows('followup'));
   const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
@@ -30823,8 +30833,9 @@ function openOpenItemsMenu(btn){
   const hasOpen=attentionParts(p).length>0;
   const allOn=currentOpenItemsFilter()==='openItems';
   const head=document.createElement('div'); head.className='oi-head';
-  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span></div>`
-    +(hasOpen||allOn?`<button type="button" class="oi-switch${allOn?' on':''}" role="switch" aria-checked="${allOn}"><span class="oi-switch-label">Show only open items in the outline</span><span class="oi-switch-track" aria-hidden="true"><span></span></span></button>`:'');
+  // The switch sits on the title line (owner, 2026-10-16): a short label, the full sentence as its tooltip.
+  const sw=hasOpen||allOn?`<button type="button" class="oi-switch${allOn?' on':''}" role="switch" aria-checked="${allOn}" aria-label="Show only open items in the outline" data-tip="Show only open items in the outline"><span class="oi-switch-label">Filter outline</span><span class="oi-switch-track" aria-hidden="true"><span></span></span></button>`:'';
+  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span>${sw}</div>`;
   menu.insertBefore(head,menu.firstChild);
   head.querySelector('.oi-switch')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); applyOpenItemsFilter('openItems'); });
   // Right-align under the summary; showSbContextMenu keeps it on screen.
