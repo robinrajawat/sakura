@@ -363,6 +363,13 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 #auth-link-submit{width:100%;padding:10px;border:none;border-radius:9px;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;cursor:pointer}
 #auth-link-forgot,#auth-link-cancel{background:none;border:none;color:var(--muted);font-size:10.5px;cursor:pointer;padding:0;font-family:inherit}
 #auth-status{font-size:12px;color:var(--muted);margin-top:16px;min-height:15px}
+.signin-privacy{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.5}
+.signin-privacy summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:4px;padding:6px 4px}
+.signin-privacy summary::-webkit-details-marker{display:none}
+.signin-privacy summary svg{transition:transform .15s}
+.signin-privacy[open] summary svg{transform:rotate(180deg)}
+.signin-privacy ul{text-align:left;margin:8px 0 0;padding-left:18px}
+.signin-privacy li{margin:3px 0}
 </style>
 </head>
 <body>
@@ -400,6 +407,15 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
         <button id="auth-link-cancel" type="button">Cancel</button>
       </div>
     </div>
+    <details id="auth-privacy" class="signin-privacy">
+      <summary>What gets stored?<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></summary>
+      <ul>
+        <li>Your documents, folders, To-Dos and settings, so they sync. Nothing else.</li>
+        <li>No ads, no analytics, no tracking.</li>
+        <li>No one else can see your documents unless you share one.</li>
+        <li>Google sign-in shares only your name, email and photo.</li>
+      </ul>
+    </details>
     <div id="auth-status"></div>
   </div>
 </div>

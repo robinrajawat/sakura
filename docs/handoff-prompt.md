@@ -159,7 +159,16 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: sync status as an avatar ring (Robin).** In the account menu, syncing / synced no longer
+**2026-10-16: sign-in screens say what gets stored.** The desktop sign-in screen
+(`#sakura-landing-privacy`) and hub.html's (`#auth-privacy`) have a closed-by-default "What gets
+stored?" `<details>` (shared `.signin-privacy` styles): data kept, no ads/analytics/tracking, no one
+else sees your documents unless shared, what Google sign-in shares. Desktop's **Full privacy
+details** hides the screen (not a "continue without signing in" dismissal) and opens Settings →
+About → Privacy & data. Hosted AI already had its own disclosure. Robin: trust matters; About
+itself stays in Settings (with the Help → Get Started shortcut), not the account menu. Covered by
+`signin-privacy.spec.ts`.
+
+**2026-10-16: sync status as an avatar ring (#563).** In the account menu, syncing / synced no longer
 show as text (it changed width and made the menu jump). The header (`#account-manage-btn`) gets
 `sync-syncing|synced|error`, which colours the avatar ring accent / green / red, and its tooltip says
 the state. Only an error still shows words ("Sync error", detail in the tooltip). Set in
@@ -174,11 +183,6 @@ click stops propagation). Below: Settings, Help, Send feedback; a single "Buy me
 Started row (`#help-about-open-btn` → Settings → About). The coffee icon is gold (`#account-menu
 .account-support-icon`; a `.export-menu-rich` selector lost to the later `.export-icon` rule, so
 it shipped grey in #561). Covered by `account-menu-layout.spec.ts`.
-
-**2026-10-16: Copy thread keeps colours and kinds (#560).** The rich copy now has each name in its
-colour (`remarkAuthorColor`) and each entry's kind as a coloured text symbol (`threadCopyGlyph`:
-✓ ⚑ ⊘ ? ↳ ✗ 🤝 •, colours resolved from CSS variables by `resolveCssColor`), since email and chat
-apps strip SVG and CSS variables. Plain text unchanged. Covered by `thread-copy.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
