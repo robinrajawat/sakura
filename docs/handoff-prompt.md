@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-16: sync status as an avatar ring (Robin).** In the account menu, syncing / synced no longer
+show as text (it changed width and made the menu jump). The header (`#account-manage-btn`) gets
+`sync-syncing|synced|error`, which colours the avatar ring accent / green / red, and its tooltip says
+the state. Only an error still shows words ("Sync error", detail in the tooltip). Set in
+`updateSyncStatusUI`. Covered by `account-menu-layout.spec.ts`.
+
 **2026-10-16: account menu trimmed (#561).** The header (avatar, name, email) is now the Manage
 account button (`#account-manage-btn`, a `role=button` div), with one quiet line under the email:
 sync status, then the Private / Public profile link (`#account-visibility-badge`, plain text now,
@@ -173,14 +179,6 @@ it shipped grey in #561). Covered by `account-menu-layout.spec.ts`.
 colour (`remarkAuthorColor`) and each entry's kind as a coloured text symbol (`threadCopyGlyph`:
 ✓ ⚑ ⊘ ? ↳ ✗ 🤝 •, colours resolved from CSS variables by `resolveCssColor`), since email and chat
 apps strip SVG and CSS variables. Plain text unchanged. Covered by `thread-copy.spec.ts`.
-
-**2026-10-16: Copy thread (#559).** Right-click the "Thread · N" header or an entry → **Copy
-thread** (`copyThread` → `threadCopyContent`): row name, then each entry's author, time
-(`formatThreadTimeAbsolute`, date once per day) and notes (`threadEntryNotes`: the PDF's words),
-quote and text. Written as `text/html` plus `text/plain` (Robin: rich text, so the paste decides).
-Robin rejected two other suggestions: a question isn't double-counted as a follow-up, and a
-decision is not "agreed" (an entry shows "· decision" alone unless someone also set Agreed).
-Covered by `tests/e2e/thread-copy.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
