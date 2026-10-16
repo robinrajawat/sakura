@@ -66,10 +66,10 @@ async function open(page: Page) {
 // The toolbar open-items summary's parts ("1 follow-up", "1 question").
 const sumButtons = (page: Page) => page.evaluate(() =>
   [...document.querySelectorAll('#marker-summary .oi-part')].map(b => (b as HTMLElement).textContent));
-// Opens the summary's list and clicks the filter icon on one group's heading ("Open questions", …).
-async function clickGroupFilter(page: Page, heading: string) {
+// Opens the summary's list and flips "Show only open items in the outline" (the one filter).
+async function clickOpenItemsSwitch(page: Page) {
   await page.locator('#marker-summary .open-items-btn').click();
-  await page.locator('.open-items-menu .sb-context-heading', { hasText: heading }).locator('.sb-context-heading-action').click();
+  await page.locator('.open-items-menu .oi-switch').click();
 }
 const statusNote = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-status-note`);
 
@@ -131,7 +131,7 @@ test('a question (formerly Q&A): its icon tracks the answer, Yes answers it, won
   expect(errors).toEqual([]);
 });
 
-test('the open-items list filters to the rows holding open questions', async ({ page }) => {
+test('the open-items switch filters to the rows holding open items', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals
@@ -141,13 +141,13 @@ test('the open-items list filters to the rows holding open questions', async ({ 
     [...document.querySelectorAll('.node-row')].filter(r => (r as HTMLElement).offsetParent !== null)
       .map(r => (r as HTMLElement).dataset.id + (r.classList.contains('marker-filter-context') ? '(context)' : '')));
 
-  await clickGroupFilter(page, 'Open questions');
-  expect(await visibleRows()).toEqual(['1(context)', '3']);
+  await clickOpenItemsSwitch(page);
+  expect(await visibleRows()).toEqual(['1(context)', '2', '3']);
   // The filter opened the matching row's thread.
   await expect(page.locator('#inline-remark-text-rqOpen')).toBeVisible();
-  await expect(page.locator('#tag-filter-bar')).toContainText('Open questions');
+  await expect(page.locator('#tag-filter-bar')).toContainText('Open items');
 
-  await clickGroupFilter(page, 'Open questions');
+  await clickOpenItemsSwitch(page);
   expect((await visibleRows()).length).toBe(5);
   await expect(page.locator('#tag-filter-bar')).toBeHidden();
   expect(errors).toEqual([]);

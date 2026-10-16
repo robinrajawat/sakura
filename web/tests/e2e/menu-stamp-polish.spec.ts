@@ -119,19 +119,10 @@ test.describe('Toolbar open-items summary', () => {
     await btn.click();
     await expect(page.locator('.open-items-menu')).toHaveCount(0);
 
-    // No repeated "Show only these" rows: each heading has a filter icon instead.
+    // One way to filter (owner, 2026-10-15): the switch below; group headings have no filter icons.
     await btn.click();
-    await expect(menu.locator('.sb-context-item', { hasText: 'Show only these' })).toHaveCount(0);
-    const followHeading = menu.locator('.sb-context-heading', { hasText: 'Follow-ups' });
-    await followHeading.locator('.sb-context-heading-action').click();
-    // @ts-expect-error
-    expect(await page.evaluate(() => activeMarkerFilter)).toBe('followup');
-    await expect(btn).toHaveClass(/active/);
+    await expect(menu.locator('.sb-context-heading-action')).toHaveCount(0);
     await btn.click();
-    await expect(followHeading.locator('.sb-context-heading-action')).toHaveClass(/on/);
-    await followHeading.locator('.sb-context-heading-action').click();
-    // @ts-expect-error
-    expect(await page.evaluate(() => activeMarkerFilter)).toBeNull();
 
     // The switch at the top shows every open item at once (here: the three follow-ups).
     await btn.click();
@@ -172,12 +163,13 @@ test.describe('Toolbar open-items summary', () => {
     expect(m.scrolls).toBe(true);
   });
 
-  test('shows "All settled" when nothing needs attention', async ({ page }) => {
+  test('hides when nothing is open (owner, 2026-10-15)', async ({ page }) => {
     await open(page);
-    await seed(page, [n(1, 0, 'Agreed', null)]);
+    await seed(page, [n(1, 0, 'Agreed', null), n(2, 0, 'Set aside', null)]);
     // @ts-expect-error -- bare globals from index.html
-    await page.evaluate(() => { nodes[0].marker = 'confirmed'; render(); });
-    await expect(page.locator('#marker-summary .open-items-btn')).toHaveText('All settled');
+    await page.evaluate(() => { nodes[0].marker = 'confirmed'; nodes[1].marker = 'parked'; render(); });
+    await expect(page.locator('#ag-markers')).toBeHidden();
+    await expect(page.locator('#marker-summary .open-items-btn')).toHaveCount(0);
   });
 
   // Owner (2026-10-15): the list is open items only (no "N of M settled" bar: a follow-up closed by
@@ -190,12 +182,8 @@ test.describe('Toolbar open-items summary', () => {
       nodes[0].marker = 'confirmed'; nodes[1].marker = 'parked'; render();
     });
     const btn = page.locator('#marker-summary .open-items-btn');
-    await expect(btn).toHaveText('All settled');
-    await btn.click();
+    await expect(btn).toHaveCount(0);
     const menu = page.locator('.open-items-menu');
-    await expect(menu.locator('.oi-head-title')).toHaveText('Nothing needs attention');
-    await expect(menu).not.toContainText('Legacy EDI');
-    await btn.click();
 
     await page.evaluate(() => {
       // @ts-expect-error
@@ -205,6 +193,8 @@ test.describe('Toolbar open-items summary', () => {
     });
     await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 1 open question.');
     await btn.click();
+    await expect(menu).not.toContainText('settled');
+    await expect(menu).not.toContainText('Legacy EDI');
     const q = menu.locator('.sb-context-item', { hasText: 'Who tells the customers?' });
     await expect(q.locator('.sb-context-sub')).toHaveText('Customer comms · Maria');
   });
@@ -274,8 +264,7 @@ test.describe('Open-items summary shortcut', () => {
     await open(page);
     await seed(page, [n(1, 0, 'Agreed', null)]);
     // @ts-expect-error -- bare globals from index.html
-    await page.evaluate(() => { nodes[0].marker = 'confirmed'; render(); });
-    await page.locator('#marker-summary .open-items-btn').click({ button: 'right' });
+    await page.evaluate(() => { nodes[0].marker = 'confirmed'; render(); quickToggleOpenItemsFilter(); });
     // @ts-expect-error
     expect(await page.evaluate(() => activeDiscussionFilter)).toBeNull();
   });
