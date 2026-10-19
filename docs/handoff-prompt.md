@@ -159,7 +159,21 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: pasting a table and selecting rows without the hidden Esc step.** Owner: "when I have to
+**2026-10-19: Show as › Row cards; table folds survive a reload; To-Do "go to" line.** Owner: "present
+this kind of table in a better way, like a card summary … a grid", "not automatic, only via show
+as", desktop app. `renderRowCardsHtml` (next to `renderProsConsHtml`, via
+`tableFeatureDisplayHtml`, so PDF/note renders get it too) for `data-table-display="rowcards"`:
+`.pv-rowcards-box` (container query) › `.pv-rowcards[data-cols]` grid, columns chosen so 4 rows
+are 4 across or 2 × 2, never 3 + 1. First column = `.pv-rc-title`, a ≤48-char second column =
+`.pv-rc-sub`, the rest labelled `.pv-rc-field`s; empty cells skipped; cell HTML kept (sanitized).
+Like every Show as display, double-click / Edit data opens the table. Bug fixes: (1)
+`collapsedTableNodeIds` / `collapsedImageNodeIds` were never saved, so a folded table on a top-level
+row reopened on every reload; now `collapsedTables` / `collapsedImages` in the doc payload and in tab
+snapshots (`applyTabSnapshot`, `loadTabFromStorageObj`), and the dots call `scheduleAutoSave`. (2) A
+click beside a linked To-Do's source text opened the task; the whole `.todo-source-row` now jumps.
+Tests: `table-rowcards.spec.ts`, `table-fold-persists.spec.ts`, `followup-to-todo.spec.ts`.
+
+**2026-10-19: pasting a table and selecting rows without the hidden Esc step (#573).** Owner: "when I have to
 paste a table to a node … the row doesn't have to be in editable mode … hard to understand how to
 paste or multiselect the nodes". `pasteTableIntoNode(e,id,html)` (above the document paste
 handler) now runs in both branches: a `<table>` pasted while editing a row (and not a Sakura clip,
@@ -177,18 +191,6 @@ clicking it jumps to the row (`.todo-nodejump-open`) or opens the URL. The link 
 on the resting chip line; changing it is the open task's Link row. New optional `from` field on a
 task (kept by `loadTodos`; hub keeps unknown fields as-is), set by `sakuraAddTodoForNode` from the
 follow-up entry's `person`. Covered by `followup-to-todo.spec.ts`.
-
-**2026-10-19: table editing — grips, cell selection, undo while editing (#571).** Owner: "unable to select
-multiple lines, delete a row, column, no way to undo". `attachTableSelection` (above
-`buildNodeTableObject`) adds a `.tbl-grips` overlay beside the live table (row grips left, column
-grips above; click selects + opens Insert / Move / Delete, Shift+click extends) and a rectangular
-range (drag, Shift+click, Shift+arrows) marked `.tbl-sel` (stripped by `cleanEditorHtml`): Delete
-clears cells or deletes grip-selected rows/columns, Ctrl/Cmd+C/X copies TSV + HTML, the cell menu
-gains Clear / Delete N rows / Delete N columns. Inside the editing session `commit(kind)` keeps a
-`past`/`future` stack (typing in one cell within 1 s coalesces); Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z /
-Ctrl+Y restore via `restoreTo` under `_tableStructOpDepth`. The session is still one app undo step.
-The table now serializes on its own (`serialize()`), not via `wrap`. Note-tables
-(`enterScopedTableEdit`) unchanged. Covered by `table-edit-selection-undo.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

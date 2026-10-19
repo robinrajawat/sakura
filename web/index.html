@@ -1583,6 +1583,19 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .tbl-grip.sel{opacity:1}.tbl-grip.sel::after{background:var(--accent)}
 .node-table-line td.tbl-sel,.node-table-line th.tbl-sel{background:color-mix(in srgb,var(--accent) 13%,transparent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
 .node-table-line.tbl-has-sel td,.node-table-line.tbl-has-sel th{caret-color:transparent}
+.pv-rowcards-box{width:100%;container-type:inline-size}
+.pv-rowcards{display:grid;grid-template-columns:repeat(var(--rc-cols,3),minmax(0,1fr));gap:12px;width:100%;align-items:stretch;cursor:context-menu}
+.pv-rowcards[data-cols="1"]{--rc-cols:1}.pv-rowcards[data-cols="2"]{--rc-cols:2}.pv-rowcards[data-cols="3"]{--rc-cols:3}.pv-rowcards[data-cols="4"]{--rc-cols:4}
+@container (max-width:1000px){.pv-rowcards[data-cols="4"]{--rc-cols:2}}
+@container (max-width:720px){.pv-rowcards[data-cols="3"]{--rc-cols:2}}
+@container (max-width:480px){.pv-rowcards{--rc-cols:1}}
+.pv-rc-card{border:1px solid var(--border);border-radius:10px;padding:12px 14px 13px;background:var(--bg);min-width:0;display:flex;flex-direction:column;gap:9px;break-inside:avoid;page-break-inside:avoid}
+.pv-rc-head{display:flex;flex-direction:column;gap:2px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+.pv-rc-title{font:600 14px/1.35 'Inter',sans-serif;color:var(--fg);overflow-wrap:anywhere}
+.pv-rc-sub{font:500 12.5px/1.35 'Inter',sans-serif;color:var(--accent);overflow-wrap:anywhere}
+.pv-rc-label{font:600 10.5px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.pv-rc-value{font:400 13px/1.45 'Inter',sans-serif;color:var(--fg);overflow-wrap:anywhere}
+.pv-rc-value b,.pv-rc-value strong{font-weight:600}
 .pv-proscons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;break-inside:avoid;page-break-inside:avoid}
 .pv-pc-col{--pc:var(--fc-green);border:1px solid color-mix(in srgb,var(--pc) 30%,var(--border));border-top:3px solid var(--pc);border-radius:10px;padding:10px 12px 12px;background:color-mix(in srgb,var(--pc) 5%,var(--bg));min-width:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-pc-col.cons{--pc:var(--fc-red)}
@@ -3172,7 +3185,7 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-row.completed:not(.expanded) .todo-priority,#todos-body .todo-row.completed:not(.expanded) .todo-status{display:none}
 #todos-body .todo-row.completed .todo-due.set{color:var(--hint)}
 /* Where a task points (and who raised it): one quiet line that navigates. */
-.todo-source-row{display:flex;min-width:0;margin-top:2px}
+.todo-source-row{display:flex;min-width:0;margin-top:2px;cursor:pointer}
 .todo-source{appearance:none;border:none;background:none;padding:2px 4px;margin-left:-4px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;font:400 11.5px 'Inter',sans-serif;color:var(--muted);cursor:pointer;text-decoration:none;text-align:left}
 .todo-source:hover{color:var(--fg);background:var(--hover)}
 .todo-source svg{flex-shrink:0}
@@ -6209,6 +6222,35 @@ function tableProsConsInfo(table){
 }
 function tableProsConsEligible(table){ return !!tableProsConsInfo(table); }
 function isTableShownAsProsCons(table){ return !!(table&&table.getAttribute('data-table-display')==='proscons'); }
+// Row cards (owner request 2026-10-19): a wide table whose rows read as records -- a level and its
+// risk, approach and severity, say -- shown as one card per row in a grid. The first column is the
+// card's title, a short second column its subtitle, every other column a labelled field (the header
+// as a small label above the cell). Cells keep their formatting (bold, italics, links). Picked from
+// Show as only; never switched on automatically.
+function tableRowCardsEligible(table){ return !!table&&tableColumnCount(table)>=2&&table.rows.length>=2; }
+function isTableShownAsRowCards(table){ return !!(table&&table.getAttribute('data-table-display')==='rowcards'); }
+function renderRowCardsHtml(table){
+  if(!tableRowCardsEligible(table))return null;
+  const head=tableHeaderRow(table)||table.rows[0];
+  const labels=[...head.cells].map(c=>tableCellText(c).trim());
+  const rows=[...table.rows].filter(r=>r!==head&&!tableIsHeaderRow(table,r));
+  const cellHtml=c=>{ if(!c)return ''; const k=c.cloneNode(true); k.querySelectorAll(TABLE_HANDLE_SEL).forEach(h=>h.remove()); return sakuraSanitizeRichHtml(k.innerHTML).trim(); };
+  const cards=rows.map(r=>{
+    const cells=[...r.cells];
+    const title=cellHtml(cells[0]);
+    const sub=cells[1]&&tableCellText(cells[1]).trim().length<=48?cellHtml(cells[1]):'';
+    const from=sub?2:1;
+    const fields=[];
+    for(let ci=from;ci<Math.max(cells.length,labels.length);ci++){
+      const v=cellHtml(cells[ci]); if(!v||!tableCellText(cells[ci]).trim())continue;
+      fields.push(`<div class="pv-rc-field">${labels[ci]?`<div class="pv-rc-label">${esc(labels[ci])}</div>`:''}<div class="pv-rc-value">${v}</div></div>`);
+    }
+    return `<div class="pv-rc-card"><div class="pv-rc-head"><div class="pv-rc-title">${title||'&nbsp;'}</div>${sub?`<div class="pv-rc-sub">${sub}</div>`:''}</div>${fields.join('')}</div>`;
+  });
+  // Balanced grid: 4 rows sit 4 across (2 x 2 when narrower), never 3 + 1; more rows go 3 or 4 across.
+  const n=cards.length, cols=n<=4?n:(n%4===0?4:3);
+  return `<div class="pv-rowcards-box"><div class="pv-rowcards" data-cols="${cols}">${cards.join('')}</div></div>`;
+}
 function renderProsConsHtml(table){
   const info=tableProsConsInfo(table); if(!info)return null;
   const TICK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -6385,6 +6427,7 @@ function tableFeatureDisplayHtml(table){
   if(isTableShownAsTimeline(table)&&tableTimelineEligible(table))return renderTimelineHtml(table);
   if(isTableShownAsBoard(table)&&tableStatusBoardEligible(table))return renderStatusBoardHtml(table);
   if(isTableShownAsProsCons(table)&&tableProsConsEligible(table))return renderProsConsHtml(table);
+  if(isTableShownAsRowCards(table)&&tableRowCardsEligible(table))return renderRowCardsHtml(table);
   if(isTableFeaturedAsChart(table)){
     // A Cards table edited out of shape (too many rows, text in the value column…) shows as a table.
     const ok=getTableChartType(table)==='cards'?cardsAvailability(tableTextGrid(table)).ok:tableChartability(table).ok;
@@ -6392,7 +6435,7 @@ function tableFeatureDisplayHtml(table){
   }
   return null;
 }
-function isTableFeatured(table){ return isTableShownAsChips(table)||isTableShownAsInline(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableShownAsProsCons(table)||isTableFeaturedAsChart(table); }
+function isTableFeatured(table){ return isTableShownAsRowCards(table)||isTableShownAsChips(table)||isTableShownAsInline(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableShownAsProsCons(table)||isTableFeaturedAsChart(table); }
 function isTableFeaturedAsChart(table){
   return !!(table&&table.getAttribute('data-feature-chart')==='1');
 }
@@ -8456,7 +8499,7 @@ function buildTableEditItems(table,cell,commit){
 // above (buildTableEditItems, which needs a `cell` for its own row/column items but not for these)
 // and the read-only display-mode menu (buildNodeTableObject) -- letting someone feature a table as
 // a chart or Cards without first having to enter edit mode at all.
-// The table's display: one "Show as ›" submenu (Table, Chips, Inline, Cards, Progress bars, Status
+// The table's display: one "Show as ›" submenu (Table, Chips, Inline, Cards, Row cards, Progress bars, Status
 // board, Pros & cons under a "Layout" heading, then
 // Vertical / Horizontal under a "Timeline" heading and the chart shapes under a "Chart" heading), then its options in a fixed order — Heat-map (a table), title
 // (a chart or Cards), size (a chart). Anything that doesn't apply is listed but disabled, with the
@@ -8467,6 +8510,7 @@ function currentTableDisplay(table){
   if(isTableShownAsProgress(table))return 'progress';
   if(isTableShownAsBoard(table)){ const by=tableMarkedColumn(table,'data-board-by'); return by>=0?'board:'+by:'board'; }
   if(isTableShownAsProsCons(table))return 'proscons';
+  if(isTableShownAsRowCards(table))return 'rowcards';
   if(isTableShownAsTimeline(table))return isTimelineHorizontal(table)?'timeline:horizontal':'timeline';
   if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
   return 'table';
@@ -8482,11 +8526,11 @@ function setTableDisplay(table,mode){
   else table.removeAttribute('data-timeline-layout');
   if(mode==='chips'){ setTableChips(table,true); return; }
   if(mode==='progress'){ setTableProgress(table,true); return; }
-  if(mode==='timeline'||mode==='timeline:horizontal'||mode==='board'||mode==='proscons'||mode==='inline'){
+  if(mode==='timeline'||mode==='timeline:horizontal'||mode==='board'||mode==='proscons'||mode==='inline'||mode==='rowcards'){
     const attr=mode.startsWith('timeline')?'timeline':mode;
     table.setAttribute('data-table-display',attr); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
     table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse');
-    showToast({timeline:'Showing as timeline',board:'Showing as status board',proscons:'Showing as pros & cons',inline:'Showing inline'}[attr]); return;
+    showToast({timeline:'Showing as timeline',board:'Showing as status board',proscons:'Showing as pros & cons',inline:'Showing inline',rowcards:'Showing as row cards'}[attr]); return;
   }
   table.removeAttribute('data-table-display');
   if(mode==='table'){ table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as table'); return; }
@@ -8530,6 +8574,7 @@ function buildChartFeatureItems(table,commit){
     opt('chips','Chips',tableChipsEligible(table),chipsReason),
     opt('inline','Inline',tableChipsEligible(table),chipsReason),
     opt('cards','Cards',typeAvail.cards.ok,typeAvail.cards.reason),
+    opt('rowcards','Row cards',tableRowCardsEligible(table),'Needs a header row and at least one row below it.'),
     opt('progress','Progress bars',tableProgressEligible(table),colsReason(2,3,'Needs a % or number column.')),
     ...valFixItem,
     opt('board','Status board',!!tableStatusBoardInfo(table,true),'A status board needs a Status column (e.g. Open, In progress, Blocked, Done) and at least two items.'),
@@ -12037,7 +12082,7 @@ function saveToStorage(){
       if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
     });
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,docLinkedUrlLabel,qa:qaItems,diagrams:diagramMeta,remarks};
+    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],collapsedTables:[...collapsedTableNodeIds],collapsedImages:[...collapsedImageNodeIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,docLinkedUrlLabel,qa:qaItems,diagrams:diagramMeta,remarks};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -12093,6 +12138,10 @@ function loadDocFromStorage(id){
     multiSelectedIds=Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nodes.some(n=>n.id===idv)):[];
     selectionAnchorId=d.selectionAnchorId??(selectedId??null);
     collapsedIds=new Set(Array.isArray(d.collapsed)?d.collapsed:[]);
+    // A table or image strip folded away stays folded after a refresh (owner bug report 2026-10-19:
+    // a table on a top-level row reopened every reload; one under a folded parent only looked fine).
+    collapsedTableNodeIds=new Set(Array.isArray(d.collapsedTables)?d.collapsedTables:[]);
+    collapsedImageNodeIds=new Set(Array.isArray(d.collapsedImages)?d.collapsedImages:[]);
     focusedId=Number.isFinite(d.focusedId)&&nodes.some(n=>n.id===d.focusedId)?d.focusedId:null;
     if(el('header-title'))el('header-title').value=d.title||'';
     if(el('doc-author'))el('doc-author').value=d.author||'';
@@ -12204,7 +12253,7 @@ function warnGhostDocFallback(id,context){
 function captureActiveTabSnapshot(){
   if(activeTabDocId==null)return;
   const tab=findOpenTab(activeTabDocId); if(!tab)return;
-  tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.dirty=dirty;
+  tab.nodes=nodes; tab.nextId=nextId; tab.selectedId=selectedId; tab.multiSelectedIds=multiSelectedIds; tab.selectionAnchorId=selectionAnchorId; tab.collapsedIds=collapsedIds; tab.collapsedTableNodeIds=collapsedTableNodeIds; tab.collapsedImageNodeIds=collapsedImageNodeIds; tab.focusedId=focusedId; tab.undoStack=undoStack; tab.redoStack=redoStack; tab.dirty=dirty;
   tab.title=el('header-title')?.value||''; tab.author=el('doc-author')?.value||''; tab.docStatus=docStatus; tab.docLinkedUrl=docLinkedUrl; tab.docLinkedUrlLabel=docLinkedUrlLabel; tab.qa=qaItems.slice(); tab.diagrams=diagrams.slice(); tab.remarks=Array.isArray(remarks)?remarks.slice():[];
   tab.searchQuery=searchQuery; tab.searchMatches=searchMatches; tab.searchIndex=searchIndex;
   const pane=el('editor-pane'); tab.scrollTop=pane?pane.scrollTop:0;
@@ -12213,7 +12262,7 @@ function captureActiveTabSnapshot(){
 function applyTabSnapshot(tab){
   clearFiltersForDocChange();
   hideCrossTabWarning();
-  nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; dirty=!!tab.dirty;
+  nodes=tab.nodes; nextId=tab.nextId; selectedId=tab.selectedId; multiSelectedIds=tab.multiSelectedIds||[]; selectionAnchorId=tab.selectionAnchorId; collapsedIds=tab.collapsedIds||new Set(); collapsedTableNodeIds=tab.collapsedTableNodeIds||new Set(); collapsedImageNodeIds=tab.collapsedImageNodeIds||new Set(); focusedId=Number.isFinite(tab.focusedId)?tab.focusedId:null; undoStack=tab.undoStack||[]; redoStack=tab.redoStack||[]; dirty=!!tab.dirty;
   editingId=null; selectAllMode=false; flashNodeId=null;
   if(el('header-title'))el('header-title').value=tab.title||''; if(el('doc-author'))el('doc-author').value=tab.author||'';
   setDocStatus(typeof tab.docStatus==='string'?tab.docStatus:'',false);
@@ -12241,7 +12290,7 @@ function loadTabFromStorageObj(id){
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
     const nds=d.nodes.map(normalizeNode);
-    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'', docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], remarks:Array.isArray(d.remarks)?d.remarks:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
+    return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'', docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], remarks:Array.isArray(d.remarks)?d.remarks:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),collapsedTableNodeIds:new Set(Array.isArray(d.collapsedTables)?d.collapsedTables:[]),collapsedImageNodeIds:new Set(Array.isArray(d.collapsedImages)?d.collapsedImages:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
 
@@ -12576,7 +12625,7 @@ function ensureDocumentForEditing(){
 // document open — used when the last tab is closed, or on startup if nothing was restored.
 function clearToNoDocumentState(){
   clearFiltersForDocChange();
-  nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
+  nodes=[]; nextId=1; selectedId=null; editingId=null; undoStack=[]; redoStack=[]; multiSelectedIds=[]; selectionAnchorId=null; collapsedIds=new Set(); collapsedTableNodeIds=new Set(); collapsedImageNodeIds=new Set(); focusedId=null; dirty=false; selectAllMode=false; flashNodeId=null;
   searchOpen=false; if(el('search-bar'))el('search-bar').hidden=true; searchQuery=''; searchMatches=[]; searchIndex=-1; if(el('search-input'))el('search-input').value='';
   if(el('header-title'))el('header-title').value=''; if(el('doc-author'))el('doc-author').value=defaultAuthorName||'';
   setDocStatus('',false);
@@ -12832,7 +12881,7 @@ async function restoreDocRevision(docId,ts){
   if(docId===currentDocId){
     commitEdit();
     recordDocRevision(docId,{nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Before restoring an older version');
-    nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); editingId=null;
+    nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); collapsedTableNodeIds=new Set(); collapsedImageNodeIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
       // Revision diagrams never include their exported preview image (see recordDocRevision);
       // see below for how restored ones get theirs back. Older revisions recorded before this existed have
@@ -14829,7 +14878,7 @@ async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmai
         mergedDiagrams=mergedDiagrams.map(dg=>blobs[dg.id]?{...dg,xml:blobs[dg.id].xml}:dg);
       }catch(e){ console.warn('[sakura] openSharedDocument: diagrams subcollection fetch failed:',e); }
     }
-    tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:mergedDiagrams,remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),focusedId:null,undoStack:[],redoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
+    tab={docId,title:d.title||'',author:d.author||'',docStatus:typeof d.docStatus==='string'?d.docStatus:'',docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'',docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'',qa:Array.isArray(d.qa)?d.qa:[],diagrams:mergedDiagrams,remarks:Array.isArray(d.remarks)?d.remarks:[],nodes:nds,nextId:d.nextId||1,selectedId:d.selectedId??(nds[0]?.id??null),multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),collapsedTableNodeIds:new Set(Array.isArray(d.collapsedTables)?d.collapsedTables:[]),collapsedImageNodeIds:new Set(Array.isArray(d.collapsedImages)?d.collapsedImages:[]),focusedId:null,undoStack:[],redoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
     // Mirrors loadDocFromStorage's own identical line — without this, applyTabSnapshot (called
     // below) has no equivalent step of its own, so hydrateDiagramBlobsForDoc would treat every
     // one of these as un-hydrated and go looking for it in THIS device's local IndexedDB
@@ -20250,7 +20299,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           tdot.addEventListener('click',e=>{
             e.stopPropagation();
             if(collapsedTableNodeIds.has(node.id))collapsedTableNodeIds.delete(node.id); else collapsedTableNodeIds.add(node.id);
-            render();
+            scheduleAutoSave(); render();
           });
           row.appendChild(tdot);
         }
@@ -20263,7 +20312,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           idot.addEventListener('click',e=>{
             e.stopPropagation();
             if(collapsedImageNodeIds.has(node.id))collapsedImageNodeIds.delete(node.id); else collapsedImageNodeIds.add(node.id);
-            render();
+            scheduleAutoSave(); render();
           });
           row.appendChild(idot);
         }
@@ -31729,7 +31778,7 @@ let dockActiveTab=null;
       // to place a cursor — the row would flip open/closed instead of focusing the text. Since
       // .todo-expand-toggle already exists as the dedicated, always-reliable toggle target (see
       // its own comment above), the text line no longer needs to double as a toggle surface too.
-      if(elx.tagName==='BUTTON'||elx.tagName==='A'||elx.tagName==='INPUT'||elx.tagName==='TEXTAREA'||elx.isContentEditable||elx.classList.contains('todo-drag-handle')||elx.classList.contains('todo-textwrap'))return true;
+      if(elx.tagName==='BUTTON'||elx.tagName==='A'||elx.tagName==='INPUT'||elx.tagName==='TEXTAREA'||elx.isContentEditable||elx.classList.contains('todo-drag-handle')||elx.classList.contains('todo-textwrap')||elx.classList.contains('todo-source-row'))return true;
       elx=elx.parentElement;
     }
     return false;
@@ -32685,9 +32734,20 @@ let dockActiveTab=null;
     });
     body.querySelectorAll('.todo-nodejump-open').forEach(btn=>{
       btn.addEventListener('click',e=>{
-        e.preventDefault();
+        // Go to the row, nothing else: without this the click also reached the task row and
+        // opened its edit view (owner bug report 2026-10-19, To-Dos docked so the panel stays open).
+        e.preventDefault(); e.stopPropagation();
         const t=todos.find(x=>x.id===btn.getAttribute('data-id'));
         if(t && t.nodeRef) jumpToTodoNodeRef(t.nodeRef);
+      });
+    });
+    // The whole "From … · Doc › Row" line goes to the row, not just its text: a click beside or just
+    // under the text used to count as a click on the task and open it instead.
+    body.querySelectorAll('.todo-source-row').forEach(line=>{
+      line.addEventListener('click',e=>{
+        if(e.target.closest('.todo-source'))return;
+        e.stopPropagation();
+        line.querySelector('.todo-source')?.click();
       });
     });
     body.querySelectorAll('.todo-repeat').forEach(btn=>{
