@@ -69,10 +69,15 @@ test('the task says who raised it and where it points; clicking that goes to the
   await expect(page.locator(`.todo-link[data-id="${id}"]`)).toHaveCount(0);
   await src.click();
   await expect(page.locator('#todo-link-popover.open, .todo-link-popover.open')).toHaveCount(0);
+  // Going to the row doesn't also open the task (it used to, when the panel stayed open).
+  if (!(await page.locator('#todos-panel.open').count())) await page.keyboard.press('Control+Shift+T');
+  await expect(page.locator(`.todo-row[data-id="${id}"]`)).toBeVisible();
+  await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
+  // A click beside the text, on the same line, also goes to the row rather than opening the task.
+  await src.locator('xpath=..').click({ position: { x: (await src.locator('xpath=..').boundingBox())!.width - 4, y: 6 } });
+  if (!(await page.locator('#todos-panel.open').count())) await page.keyboard.press('Control+Shift+T');
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
   // Open the task: the Link property is where it can be changed.
-  await page.keyboard.press('Control+Shift+T').catch(() => {});
-  if (!(await page.locator('#todos-panel.open').count())) await page.keyboard.press('Control+Shift+T');
   await page.click(`.todo-expand-toggle[data-id="${id}"]`, { force: true });
   await expect(page.locator(`.todo-props .todo-link[data-id="${id}"]`)).toBeVisible();
 });

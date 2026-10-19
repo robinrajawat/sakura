@@ -72,6 +72,7 @@ test('disabled displays show their reason; Lanes by Release / Phase groups the t
     ['# Layout', ''], ['Table', ''],
     ['Chips', 'Needs 2 columns; this has 3'], ['Inline', ''],
     ['Cards', 'Cards need numbers in the second column'],
+    ['Row cards', ''],
     ['Progress bars', 'Needs a % or number column'],
     ['Status board', 'A status board needs a Status column'],
     // Only the repeating column is offered, with a preview of its lanes.
