@@ -111,3 +111,19 @@ test('going to a task from a follow-up opens the thread at that entry; the open 
   await page.locator(`.todo-props .todo-link-edit`).click();
   await expect(page.locator('#todo-link-popover.open')).toHaveCount(1);
 });
+
+test('a click that starts on the source line and ends just off it still goes to the row, not open the task', async ({ page }) => {
+  await seed(page, '', 'We need to investigate this before we decide');
+  await page.evaluate('addFollowupToTodos(nodes[1], remarks[0])');
+  const id = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0].id);
+  await openTodos(page);
+  const b = (await page.locator(`.todo-row[data-id="${id}"] .todo-source-row-text`).boundingBox())!;
+  // The hand moves a few pixels between press and release, off the line onto the task's padding.
+  await page.mouse.move(b.x + 20, b.y + b.height - 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x + 22, b.y + b.height + 4);
+  await page.mouse.up();
+  await expect(page.locator('#inline-remark-text-f1')).toBeVisible();
+  await openTodos(page);
+  await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
+});

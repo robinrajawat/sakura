@@ -32880,8 +32880,17 @@ let dockActiveTab=null;
       });
     });
     body.querySelectorAll('.todo-row').forEach(row=>{
+      // A click counts by where it started: one that starts on the "From … · Doc › Row" line (or
+      // another control) and ends a few pixels off it, which the browser reports as a click on the
+      // row, still goes there instead of opening the task (owner bug report 2026-10-19).
+      let downTarget=null;
+      row.addEventListener('mousedown', e=>{ downTarget=e.target; });
       row.addEventListener('click', e=>{
+        const down=downTarget; downTarget=null;
         if(todoRowClickIsInteractive(e.target,row))return;
+        const downSource=down&&row.contains(down)&&down.closest&&down.closest('.todo-source-row');
+        if(downSource){ downSource.querySelector('.todo-source')?.click(); return; }
+        if(down&&row.contains(down)&&todoRowClickIsInteractive(down,row))return;
         toggleTodoExpanded(row.getAttribute('data-id'));
       });
       row.querySelector('.todo-expand-toggle')?.addEventListener('click', e=>{
