@@ -64,9 +64,13 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     const priorityBefore = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
     await page.click(`.todo-expand-toggle[data-id="${id}"]`);
     await page.waitForTimeout(100);
-    const priorityAfter = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
+    // Expanded, the row lists its properties; priority shows every option at once.
+    await expect(page.locator(`.todo-prop-opt[data-id="${id}"][data-field="priority"]`)).toHaveCount(4);
+    await expect(page.locator(`.todo-prop-opt[data-id="${id}"][data-field="status"]`)).toHaveCount(5);
+    await expect(page.locator(`.todo-due[data-id="${id}"]`)).toBeVisible();
+    await expect(page.locator(`.todo-link[data-id="${id}"]`)).toBeVisible();
+    await expect(page.locator(`.todo-subtask-add-btn[data-id="${id}"]`)).toBeVisible();
     expect(priorityBefore).toBe('none');
-    expect(priorityAfter).not.toBe('none');
   });
 
   test('a completed row mutes its text without striking it through, not the whole row', async ({ page }) => {

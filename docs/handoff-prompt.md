@@ -159,7 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-16: To-Dos grouped by status, with a Now card.** The owner rejected the #565 look ("status as a
+**2026-10-19: To-Do editing as a property list; N badge gone.** An expanded row renders
+`todoPropsHtml` instead of the chip line: Priority and Status as one-click option groups
+(`.todo-prop-opt` → `setTodoProp`; the cycling `.todo-priority`/`.todo-status` buttons stay for the
+resting row only), Due (+ repeat) and Link reusing the row's own buttons and popovers, and a foot
+with subtasks and the row actions. The open row is a small card. The add row's "N" badge
+(`#todos-add-row::after`) is removed; the N shortcut still works. Covered by `todos-grouped.spec.ts`.
+
+**2026-10-16: To-Dos grouped by status, with a Now card (#566).** The owner rejected the #565 look ("status as a
 chip was making sense") and picked concept 1 of three from-scratch mocks (by state / by date / focus),
 plus a Now card. `openSectionsHtml` in `renderTodos`: `pickNowTodo` (In Progress; overdue, then
 priority, then due date, then list order) in `.todos-now`, then `.todos-group-doing|next|hold`;
@@ -178,15 +185,6 @@ and returns to the chip line when expanded. Priority, repeat, link and subtask p
 chip shape; only High/Medium are coloured. Completed is grey, no strikethrough. All in one CSS
 block after `.todo-row.qa-flash`; hub.html unchanged. Covered by `todos-thread-style.spec.ts` plus
 the updated `todos-panel-card-styling` / `todos-checkbox-shape` specs.
-
-**2026-10-16: sign-in screens say what gets stored (#564).** The desktop sign-in screen
-(`#sakura-landing-privacy`) and hub.html's (`#auth-privacy`) have a closed-by-default "What gets
-stored?" `<details>` (shared `.signin-privacy` styles): data kept, no ads/analytics/tracking, no one
-else sees your documents unless shared, what Google sign-in shares. Desktop's **Full privacy
-details** hides the screen (not a "continue without signing in" dismissal) and opens Settings →
-About → Privacy & data. Hosted AI already had its own disclosure. Owner: trust matters; About
-itself stays in Settings (with the Help → Get Started shortcut), not the account menu. Covered by
-`signin-privacy.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

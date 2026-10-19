@@ -70,7 +70,8 @@ test('status shows as a chip only under On hold; the heading says it elsewhere',
   await expect(page.locator('.todo-status[data-id="w"]')).toBeVisible();
   await expect(page.locator('.todo-status[data-id="w"]')).toContainText('Waiting');
   await page.click('.todo-expand-toggle[data-id="q"]', { force: true });
-  await expect(page.locator('.todo-status[data-id="q"]')).toBeVisible(); // editable once expanded
+  // Editable once expanded: every status is one click away, and the current one is marked.
+  await expect(page.locator('.todo-prop-opt[data-id="q"][data-field="status"][data-value="progress"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('priority: High and Medium are chips at rest, Low only appears when the row is expanded', async ({ page }) => {
@@ -83,7 +84,7 @@ test('priority: High and Medium are chips at rest, Low only appears when the row
   await expect(page.locator('.todo-priority[data-id="m"]')).toBeVisible();
   await expect(page.locator('.todo-priority[data-id="l"]')).toBeHidden();
   await page.click('.todo-expand-toggle[data-id="l"]', { force: true });
-  await expect(page.locator('.todo-priority[data-id="l"]')).toBeVisible();
+  await expect(page.locator('.todo-prop-opt[data-id="l"][data-field="priority"][data-value="low"]')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('the due date sits in the right column at rest and returns to the chip line when expanded', async ({ page }) => {
@@ -100,4 +101,17 @@ test('the due date sits in the right column at rest and returns to the chip line
   await expect(page.locator('.todo-repeat[data-id="d"]')).toContainText('Weekly');
   await page.click('.todo-expand-toggle[data-id="d"]', { force: true });
   expect(await due.evaluate((el) => getComputedStyle(el).position)).toBe('static');
+});
+
+test('the open row sets priority and status in one click, and moves the task to its new group', async ({ page }) => {
+  await openWith(page, [{ id: 'k', text: 'Plain task' }]);
+  await expect(page.locator('#todos-add-row')).not.toContainText('N'); // no shortcut badge
+  await page.click('.todo-expand-toggle[data-id="k"]', { force: true });
+  await page.click('.todo-prop-opt[data-id="k"][data-field="priority"][data-value="high"]');
+  await page.click('.todo-prop-opt[data-id="k"][data-field="status"][data-value="waiting"]');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0]);
+  expect(saved.priority).toBe('high');
+  expect(saved.status).toBe('waiting');
+  expect(await idsIn(page, '.todos-group-hold')).toEqual(['k']);
+  await expect(page.locator('.todo-row[data-id="k"]')).toHaveClass(/expanded/); // stays open where it moved
 });
