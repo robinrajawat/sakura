@@ -159,7 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: table editing — grips, cell selection, undo while editing.** Owner: "unable to select
+**2026-10-19: linked To-Dos say where they point and who raised them.** Owner: the link chip
+opened "Change link" on click, said too little, and a follow-up's author was missing. At rest a
+linked task shows `.todo-source-row` under the title ("From Ajay · Doc › Row", or the web link);
+clicking it jumps to the row (`.todo-nodejump-open`) or opens the URL. The link chip is no longer
+on the resting chip line; changing it is the open task's Link row. New optional `from` field on a
+task (kept by `loadTodos`; hub keeps unknown fields as-is), set by `sakuraAddTodoForNode` from the
+follow-up entry's `person`. Covered by `followup-to-todo.spec.ts`.
+
+**2026-10-19: table editing — grips, cell selection, undo while editing (#571).** Owner: "unable to select
 multiple lines, delete a row, column, no way to undo". `attachTableSelection` (above
 `buildNodeTableObject`) adds a `.tbl-grips` overlay beside the live table (row grips left, column
 grips above; click selects + opens Insert / Move / Delete, Shift+click extends) and a rectangular
@@ -178,15 +186,6 @@ No Date; rows show the due date on the right and the same chips (`.todo-pri`, `.
 (`#task-detail-priority-opts`, `#task-detail-status-opts`; Repeat stays a cycling chip);
 completed rows are quiet (no strikethrough, light tick). Swipe cards kept (they carry the swipe
 backgrounds). `--fc-purple` added to hub's themes. Covered by `hub-todos-grouped.spec.ts`.
-
-**2026-10-19: Follow-up → To-Do (#569).** Right-click the entry holding a Follow-up → Add to To-Dos
-(`addFollowupToTodos` → `window.sakuraAddTodoForNode`, a write bridge into the To-Dos closure):
-text = the entry's text or the row's, owner as `@First-Last`, `nodeRef` to the row; an open linked
-task is reused ("Open in To-Dos"). The entry shows "· in To-Dos" / "· To-Do done"
-(`.thread-todo-note`, current status holder only); completing or deleting a linked task repaints
-the document (`refreshLinkedRow`). Owner decisions: finishing the task does not settle the
-follow-up; follow-ups owned by others can be added (the mention says whose). Covered by
-`followup-to-todo.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

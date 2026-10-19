@@ -3170,6 +3170,16 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-row.completed .todo-text{color:var(--muted);text-decoration:none}
 #todos-body .todo-row.completed:not(.expanded) .todo-priority,#todos-body .todo-row.completed:not(.expanded) .todo-status{display:none}
 #todos-body .todo-row.completed .todo-due.set{color:var(--hint)}
+/* Where a task points (and who raised it): one quiet line that navigates. */
+.todo-source-row{display:flex;min-width:0;margin-top:2px}
+.todo-source{appearance:none;border:none;background:none;padding:2px 4px;margin-left:-4px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;font:400 11.5px 'Inter',sans-serif;color:var(--muted);cursor:pointer;text-decoration:none;text-align:left}
+.todo-source:hover{color:var(--fg);background:var(--hover)}
+.todo-source svg{flex-shrink:0}
+.todo-source-doc{flex-shrink:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-source-row-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-source-sep{color:var(--hint);flex-shrink:0}
+.todo-source-from{flex-shrink:0;color:var(--muted);font:500 11.5px 'Inter',sans-serif}
+.todo-source.missing{color:var(--fc-red);cursor:default}
 /* Editing: an open row becomes a small card with labelled properties. */
 #todos-body .todo-row.expanded{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border),0 4px 14px rgba(0,0,0,.06);margin:4px 0}
 #todos-body .todos-now .todo-row.expanded{box-shadow:none;margin:0}
@@ -30531,7 +30541,7 @@ function followupTodoText(node,r){
 }
 function addFollowupToTodos(node,r){
   if(typeof window.sakuraAddTodoForNode!=='function'||!currentDocId)return;
-  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node,r));
+  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node,r),stripHtmlToText(r.person||'').trim());
   if(!id){ showToast('Nothing to add — the follow-up and its row are empty'); return; }
   showToast('Added to To-Dos','success');
   render();
@@ -31718,6 +31728,8 @@ let dockActiveTab=null;
         // nodeRef on load, which looked exactly like "the link doesn't survive a reload".
         nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && (t.nodeRef.nodeId===null || Number.isFinite(t.nodeRef.nodeId))) ? {docId:t.nodeRef.docId, nodeId:(t.nodeRef.nodeId===null?null:t.nodeRef.nodeId)} : null,
         repeat: ['daily','weekdays','weekly'].includes(t.repeat) ? t.repeat : null,
+        // Who raised it, for a task added from a thread follow-up (the entry's author).
+        from: (typeof t.from==='string' && t.from.trim()) ? t.from.trim().slice(0,80) : null,
         subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
         subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen
       })); todos.forEach(t=>{ if(t.nodeRef){ t.link=null; t.linkLabel=null; } }); }
@@ -33134,11 +33146,24 @@ let dockActiveTab=null;
     // for a plain checklist-style task, rather than leaving a same-height but visually-empty gap
     // under every task that has no priority/due/etc. set. See .todo-row-nochips below.
     // What the chip line shows at rest: High/Medium priority, an On hold status (Doing and Up next
-    // are said by the group heading), link, repeat, subtasks. The due date has its own right column.
+    // are said by the group heading), repeat, subtasks. A link has its own source line below. The due date has its own right column.
     // Everything is back on the line once the row is expanded.
     const holdStatus=status==='waiting'||status==='blocked'||status==='review';
-    const hasVisibleChips=(!t.done&&(priority==='high'||priority==='med'||holdStatus))||hasAttachment||hasSubtasks||(!!t.repeat&&!hasSubtasks);
+    const hasVisibleChips=(!t.done&&(priority==='high'||priority==='med'||holdStatus))||hasSubtasks||(!!t.repeat&&!hasSubtasks);
     const expanded=todosExpandedIds.has(t.id);
+    // At rest a link reads as where the task points, and clicking it goes there (a row: jump to it;
+    // a web link: open it). Changing the link is in the open task's Link row. A task added from a
+    // thread follow-up also says who raised it.
+    const fromHtml=t.from?`<span class="todo-source-from">From ${esc(t.from)}</span>`:'';
+    const sourceHtml=!hasAttachment&&!fromHtml?'':`<div class="todo-source-row">`
+      + (nodeRef
+        ? (nodeRefInfo.missing
+            ? `${fromHtml}<span class="todo-source missing">${isDocRef?'Document not found':'Row not found'}</span>`
+            : `<button type="button" class="todo-source todo-nodejump-open" data-id="${t.id}" data-tip="${escAttr(isDocRef?'Open '+(nodeRefInfo.docTitle||'Untitled'):'Go to this row in '+(nodeRefInfo.docTitle||'Untitled'))}">${isDocRef?docRefIconSvg(11):nodeRefIconSvg(11)}${fromHtml?fromHtml+'<span class="todo-source-sep">·</span>':''}<span class="todo-source-doc">${esc(nodeRefInfo.docTitle||'Untitled')}</span>${isDocRef?'':`<span class="todo-source-sep">›</span><span class="todo-source-row-text">${esc(nodeRefInfo.text||'(untitled row)')}</span>`}</button>`)
+        : (link
+            ? `<a class="todo-source" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span class="todo-source-row-text">${esc(linkDisplay)}</span></a>`
+            : fromHtml))
+      +`</div>`;
     const priorityBtn=`<button class="todo-priority${priority!=='none'?' set':''}" data-id="${t.id}" data-priority="${priority}" data-tip="${priorityTitle(priority)}" aria-label="Cycle priority">`
         +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${priority!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
         +`<span>${priorityLabel(priority)}</span>`
@@ -33174,7 +33199,7 @@ let dockActiveTab=null;
       +`</div>`
       + (expanded
         ? todoPropsHtml(t,{priorityBtn,statusBtn,dueBtn,linkBtn,repeatBtn,actionsHtml})
-        : `<div class="todo-meta-row">`+priorityBtn+statusBtn+dueBtn+linkBtn+repeatBtn+subtaskMetaHtml(t)+actionsHtml+`</div>`)
+        : `<div class="todo-meta-row">`+priorityBtn+statusBtn+dueBtn+repeatBtn+subtaskMetaHtml(t)+actionsHtml+`</div>`+sourceHtml)
       + subtasksSectionHtml(t)
       +`</div>`
       +`<button type="button" class="todo-expand-toggle" data-id="${t.id}" data-tip="${todosExpandedIds.has(t.id)?'Collapse':'Expand'}" aria-label="${todosExpandedIds.has(t.id)?'Collapse task details':'Expand task details'}"><svg class="todo-expand-chevron${todosExpandedIds.has(t.id)?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>`
@@ -33945,13 +33970,13 @@ let dockActiveTab=null;
   // Backspace/Delete merge removes follows that row's content onto the surviving row.
   // Write bridge for "Add to To-Dos" on a thread follow-up (main scope): a task linked back to its
   // row. A row that already has an open linked task gets that one back instead of a duplicate.
-  window.sakuraAddTodoForNode=function(docId,nodeId,text){
+  window.sakuraAddTodoForNode=function(docId,nodeId,text,from){
     if(!docId||nodeId==null) return null;
     const open=todos.find(t=>!t.done&&t.nodeRef&&t.nodeRef.docId===docId&&t.nodeRef.nodeId===nodeId);
     if(open) return open.id;
     const trimmed=String(text||'').trim().slice(0,500);
     if(!trimmed) return null;
-    const t={ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:{docId, nodeId}, repeat:null, subtasks:[], subtasksOpen:true };
+    const t={ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:{docId, nodeId}, repeat:null, subtasks:[], subtasksOpen:true, from:(String(from||'').trim().slice(0,80)||null) };
     todos.push(t);
     saveTodos();
     renderTodos();
