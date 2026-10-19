@@ -159,7 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: Follow-up → To-Do.** Right-click the entry holding a Follow-up → Add to To-Dos
+**2026-10-19: hub.html To-Dos match desktop.** The phone list is grouped like desktop (`pickNowTodo`
+→ "Now", then Doing / Up next / On hold, in list order) instead of Overdue / Today / Upcoming /
+No Date; rows show the due date on the right and the same chips (`.todo-pri`, `.todo-st`,
+`.todo-prop`); the task sheet's Priority / Status are one-tap option groups
+(`#task-detail-priority-opts`, `#task-detail-status-opts`; Repeat stays a cycling chip);
+completed rows are quiet (no strikethrough, light tick). Swipe cards kept (they carry the swipe
+backgrounds). `--fc-purple` added to hub's themes. Covered by `hub-todos-grouped.spec.ts`.
+
+**2026-10-19: Follow-up → To-Do (#569).** Right-click the entry holding a Follow-up → Add to To-Dos
 (`addFollowupToTodos` → `window.sakuraAddTodoForNode`, a write bridge into the To-Dos closure):
 text = the entry's text or the row's, owner as `@First-Last`, `nodeRef` to the row; an open linked
 task is reused ("Open in To-Dos"). The entry shows "· in To-Dos" / "· To-Do done"
@@ -176,16 +184,6 @@ with subtasks and the row actions. The open row is a small card. The add row's "
 (`#todos-add-row::after`) is removed; the N shortcut still works. Then (owner: "two plus icons"): the
 add button is a return arrow shown only once something is typed, and empty Due/Link read "Add
 date"/"Add link". Covered by `todos-grouped.spec.ts`.
-
-**2026-10-16: To-Dos grouped by status, with a Now card (#566).** The owner rejected the #565 look ("status as a
-chip was making sense") and picked concept 1 of three from-scratch mocks (by state / by date / focus),
-plus a Now card. `openSectionsHtml` in `renderTodos`: `pickNowTodo` (In Progress; overdue, then
-priority, then due date, then list order) in `.todos-now`, then `.todos-group-doing|next|hold`;
-empty groups hidden; each group keeps `sortOpenList` order, and drag still reorders by id (it does
-not change status). Status chip only under On hold; High/Medium priority chips, Low only when
-expanded; repeat/link/subtasks are quiet text; the due date is the right column; completed ticks
-are a light ring. Not chosen: grouping by date (fights the default manual sort), a status-shaped
-circle. hub.html unchanged. Covered by `todos-grouped.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
