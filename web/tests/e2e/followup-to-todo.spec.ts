@@ -55,3 +55,24 @@ test('finishing the task marks the follow-up "To-Do done" but leaves the follow-
   await expect(entry(page).locator('.thread-todo-note.is-done')).toHaveText('· To-Do done');
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
 });
+
+test('the task says who raised it and where it points; clicking that goes to the row, changing it is in the open task', async ({ page }) => {
+  await seed(page, '', 'Can they schedule before 7 AM?');
+  await (await menuItem(page, 'Add to To-Dos')).click();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Control+Shift+T');
+  const id = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0].id);
+  const src = page.locator(`.todo-row[data-id="${id}"] .todo-source`);
+  await expect(src).toContainText('From Ana');
+  await expect(src).toContainText('Pallet labels');
+  // At rest there is no "change link" control on the row; clicking the source line navigates.
+  await expect(page.locator(`.todo-link[data-id="${id}"]`)).toHaveCount(0);
+  await src.click();
+  await expect(page.locator('#todo-link-popover.open, .todo-link-popover.open')).toHaveCount(0);
+  await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
+  // Open the task: the Link property is where it can be changed.
+  await page.keyboard.press('Control+Shift+T').catch(() => {});
+  if (!(await page.locator('#todos-panel.open').count())) await page.keyboard.press('Control+Shift+T');
+  await page.click(`.todo-expand-toggle[data-id="${id}"]`, { force: true });
+  await expect(page.locator(`.todo-props .todo-link[data-id="${id}"]`)).toBeVisible();
+});
