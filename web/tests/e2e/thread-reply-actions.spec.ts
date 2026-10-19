@@ -31,15 +31,15 @@ async function seed(page: Page) {
   return errors;
 }
 
-test('reply line: Ask | Yes / No | statuses, each with its kind icon', async ({ page }) => {
+test('reply line: Ask, Decision | Yes / No | statuses, each with its kind icon', async ({ page }) => {
   const errors = await seed(page);
   await page.evaluate('openThreadComposer(1, false)');
   const acts = page.locator('.thread-composer .thread-actions');
   const shape = await acts.evaluate((a) => [...a.children].map((c) => c.classList.contains('thread-btn-sep') ? '|'
     : c.classList.contains('thread-btn-group') || c.classList.contains('thread-btn-statuses') ? [...c.children].map((b) => (b as HTMLElement).dataset.act).join(',')
       : (c as HTMLElement).dataset.act));
-  expect(shape).toEqual(['ask', '|', 'yes,no', '|', 'followup,parked']);
-  await expect(acts.locator('.thread-btn .thread-btn-kind svg')).toHaveCount(5);
+  expect(shape).toEqual(['ask', 'decision', '|', 'yes,no', '|', 'followup,parked']);
+  await expect(acts.locator('.thread-btn .thread-btn-kind svg')).toHaveCount(6);
   // Actions start right under the text, and the keyboard hint right under them (one left column).
   const order = await page.locator('.thread-composer .thread-composer-foot').evaluate((f) => [...f.children].map((c) => c.className));
   expect(order).toEqual(['thread-actions', 'thread-composer-hint']);
@@ -52,6 +52,25 @@ test('reply line: Ask | Yes / No | statuses, each with its kind icon', async ({ 
   expect(x[0]).toBeLessThan(4);
   expect(x[1]).toBeLessThan(4);
   expect(x[2]).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('Decision on the reply line adds what you typed as a decision entry; the row marker stays', async ({ page }) => {
+  const errors = await seed(page);
+  await page.evaluate('openThreadComposer(1, false)');
+  const dec = page.locator('.thread-composer .thread-btn[data-act="decision"]');
+  // Nothing typed: nothing is added.
+  await dec.click();
+  expect(await page.evaluate('remarks.length')).toBe(2);
+  await page.locator('.thread-composer .thread-composer-input').click();
+  await page.keyboard.type('Go live Saturday 06:00');
+  await page.locator('.thread-composer .thread-btn[data-act="decision"]').click();
+  const added = await page.evaluate("(() => { const r = remarks[remarks.length - 1]; return [r.text, !!r.decision, r.type || '', r.status || '', nodes[0].marker || '']; })()");
+  expect(added).toEqual(['Go live Saturday 06:00', true, '', '', '']);
+  await expect(page.locator('.thread-head')).toContainText('Decision');
+  // A question can't be a decision: Ask hides the button.
+  await page.evaluate('openThreadComposer(1, true)');
+  await expect(page.locator('.thread-composer .thread-btn[data-act="decision"]')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

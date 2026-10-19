@@ -1821,6 +1821,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-note-line li{margin:2px 0;padding-left:2px}
 .node-note-line li ul,.node-note-line li ol{margin:2px 0}
 .node-note-line a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.node-remark-text-inline a,.thread-composer-input a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .node-note-line table{border-collapse:collapse;margin:6px 0;font-size:12px;table-layout:fixed;max-width:none}
 /* height/box-sizing, not min-height: min-height is ignored on a cell with no line box of
    its own, which a cell holding only .row-resize-handle's own absolutely-positioned div still
@@ -3207,6 +3208,9 @@ body.printing-generic #gpe-overlay{
 .todo-prop-opt.on[data-field="priority"][data-value="high"],.todo-prop-opt.on[data-value="blocked"]{color:var(--fc-red);background:color-mix(in srgb,var(--fc-red) 11%,transparent)}
 .todo-prop-opt.on[data-field="priority"][data-value="med"]{color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 12%,transparent)}
 .todo-prop-val{display:flex;flex-wrap:wrap;gap:4px;margin-left:-6px}
+.todo-prop-val:has(.todo-link-edit){flex-wrap:nowrap;align-items:center;min-width:0;margin-left:0}
+.todo-props .todo-source-row{margin-top:0;min-width:0;flex:0 1 auto}
+#todos-body .todo-props .todo-link-edit{flex:0 0 auto;height:20px;padding:0 4px;color:var(--hint)}
 #todos-body .todo-props .todo-due,#todos-body .todo-props .todo-link,#todos-body .todo-props .todo-repeat{display:inline-flex;height:22px;padding:0 6px;border:none;border-radius:6px;background:none;font:500 11.5px 'Inter',sans-serif;color:var(--muted)}
 #todos-body .todo-props .todo-due.set,#todos-body .todo-props .todo-link.set,#todos-body .todo-props .todo-repeat.set{color:var(--fg)}
 #todos-body .todo-props .todo-due.overdue{color:var(--fc-red)}
@@ -4190,7 +4194,8 @@ body.printing-generic #gpe-overlay{
 <li>A <strong>question</strong>'s icon is in your accent colour until it's answered; then it reads “· question, answered” in grey. Right-click a question → <strong>Answer</strong> to answer that one; or answer from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line). When the thread has more than one question, the reply line shows which one it answers (“to: …”) and lets you pick another. Right-click an entry → <strong>Mark as the answer</strong> (or <strong>Answer to ›</strong> with several questions) links it, or moves a wrong link; a question can have several answers. With several questions, an answer that comes a few entries after its question quotes it (“↳ Does it…”). Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text.</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. Clicking the marker badge on a row opens its thread at the entry that set it (Shift+click filters by that marker). The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
-<li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
+<li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, type it and click <strong>Decision</strong> on the reply line (or right-click → Add as decision), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
+<li><strong>Links</strong>: a pasted web address becomes a link. Click a link in an entry to open it (Ctrl/Cmd+click while editing it); right-click it to open, copy, edit or remove it</li>
 <li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
@@ -10942,22 +10947,31 @@ document.addEventListener('drop',e=>{
 // is found again by its position among the note's links outside tables (tables show as separate
 // figures while the note isn't focused, so their links don't keep the same order).
 function noteLinkMenuItems(node,noteLine,link){
+  return richLinkMenuItems(noteLine,link,{
+    get:()=>{ const i=getIndex(nodes,node.id); return i<0?null:(nodes[i].note||''); },
+    set:html=>{ const i=getIndex(nodes,node.id); if(i<0)return; nodes[i].note=html; nodes[i].modifiedAt=Date.now(); },
+    isPendingFocus:f=>f.kind==='note'&&f.nodeId===node.id
+  });
+}
+// Open / Copy / Edit / Remove for a link in a rich-text field (a note, a thread entry). `store`
+// reads and writes the field's saved HTML; the link is found there by its position.
+function richLinkMenuItems(field,link,store){
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const href=link.getAttribute('href')||''; const openHref=link.href; const label=link.textContent||'';
   const textLinks=root=>[...root.querySelectorAll('a[href]')].filter(a=>!a.closest('table,.pv-diagram-figure'));
-  const pos=textLinks(noteLine).indexOf(link);
+  const pos=textLinks(field).indexOf(link);
   const changeStoredLink=fn=>{
-    // Blur first: it commits the live text, and a note still focused when render() replaces it
+    // Blur first: it commits the live text, and a field still focused when render() replaces it
     // would commit its old content over this change on the way out.
-    if(document.activeElement===noteLine)noteLine.blur();
-    const i=getIndex(nodes,node.id); if(i<0||pos<0)return;
-    const box=document.createElement('div'); box.innerHTML=nodes[i].note||'';
+    if(document.activeElement===field)field.blur();
+    const html=store.get(); if(html===null||pos<0)return;
+    const box=document.createElement('div'); box.innerHTML=html;
     const a=textLinks(box)[pos]; if(!a)return;
     pushUndo(); fn(a);
-    nodes[i].note=sakuraSanitizeRichHtml(box.innerHTML); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave();
-    // Don't refocus the note after render: its focus handler would record a second undo step
+    store.set(sakuraSanitizeRichHtml(box.innerHTML)); markDirty(); scheduleAutoSave();
+    // Don't refocus the field after render: its focus handler would record a second undo step
     // holding this change, so the first Undo would seem to do nothing.
-    if(_pendingInlineFocus&&_pendingInlineFocus.kind==='note'&&_pendingInlineFocus.nodeId===node.id)_pendingInlineFocus=null;
+    if(_pendingInlineFocus&&store.isPendingFocus(_pendingInlineFocus))_pendingInlineFocus=null;
     render();
   };
   const unwrap=a=>a.replaceWith(...a.childNodes);
@@ -24402,7 +24416,7 @@ let hideNodeTooltip=function(){};
   const GENERIC_SEL='[data-tip]';
   // A link in an inline note names its address and how to open it (a plain click only places
   // the caret while the note is being edited).
-  const NOTE_LINK_SEL='.node-note-line a[href]';
+  const NOTE_LINK_SEL='.node-note-line a[href],.node-remark-text-inline a[href]';
   const TRIGGER_SEL=NOTE_LINK_SEL+','+TIMESTAMP_SEL+','+GENERIC_SEL;
   let hoveredEl=null;
   hideNodeTooltip=function(){ hoveredEl=null; tip.classList.remove('visible'); };
@@ -24421,7 +24435,7 @@ let hideNodeTooltip=function(){};
     const isTimestamp=trg.matches(TIMESTAMP_SEL);
     let text;
     if(trg.matches(NOTE_LINK_SEL)){
-      const href=trg.getAttribute('href')||''; const editing=document.activeElement===trg.closest('.node-note-line');
+      const href=trg.getAttribute('href')||''; const editing=document.activeElement===trg.closest('.node-note-line,.node-remark-text-inline');
       text=(href.length>90?href.slice(0,88)+'…':href)+'\n'+(editing?'Ctrl/Cmd+click to open':'Click to open')+' · right-click to edit';
     } else if(isTimestamp){
       const row=trg.closest('.node-row'); const id=row?Number(row.dataset.id):NaN; const idx=getIndex(nodes,id);
@@ -30499,8 +30513,15 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     textEl.addEventListener('blur',()=>{ if(!htmlHasVisibleText(textEl.innerHTML))line.classList.remove('is-editing'); });
   }
   textEl.dataset.placeholder=r.verdict||r.status?'':'Write…';
-  textEl.addEventListener('mousedown',e=>e.stopPropagation());
-  textEl.addEventListener('click',e=>e.stopPropagation());
+  // A link opens on a plain click while the entry isn't being edited, and on Ctrl/Cmd+click while it is
+  // (like a note's links); right-click it to copy, edit or remove it.
+  let wasFocused=false;
+  textEl.addEventListener('mousedown',e=>{ e.stopPropagation(); wasFocused=document.activeElement===textEl;
+    const a=e.target.closest&&e.target.closest('a[href]');
+    if(a&&e.button===0&&(!wasFocused||e.ctrlKey||e.metaKey))e.preventDefault(); });
+  textEl.addEventListener('click',e=>{ e.stopPropagation();
+    const a=e.target.closest&&e.target.closest('a[href]');
+    if(a&&textEl.contains(a)&&(!wasFocused||e.ctrlKey||e.metaKey)){ e.preventDefault(); window.open(a.href,'_blank','noopener,noreferrer'); } });
   textEl.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'remarkText',remarkId:r.id}; });
   textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); updateMarkerSummary(); });
   textEl.addEventListener('blur',e=>{
@@ -30523,7 +30544,10 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   });
   attachThreadPaste(textEl);
   line.appendChild(textEl);
-  line.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadEntryMenuItems(node,r,thread,textEl,commit)); });
+  line.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation();
+    const a=e.target.closest&&e.target.closest('a[href]');
+    const linkItems=a&&textEl.contains(a)?[...richLinkMenuItems(textEl,a,{ get:()=>remarks.includes(r)?(r.text||''):null, set:html=>{ r.text=html; }, isPendingFocus:f=>f.kind==='remarkText'&&f.remarkId===r.id }),{divider:true}]:[];
+    showSbContextMenu(e.clientX,e.clientY,[...linkItems,...threadEntryMenuItems(node,r,thread,textEl,commit)]); });
   place(line);
 }
 // Pasting into a thread entry or the reply line (owner: keep rich text, lose the clutter): bold,
@@ -30550,6 +30574,11 @@ function cleanThreadPasteHtml(html){
 function attachThreadPaste(el){
   el.addEventListener('paste',e=>{
     const html=e.clipboardData?.getData('text/html')||'';
+    const plain=(e.clipboardData?.getData('text/plain')||'').trim();
+    // A bare web address pasted on its own becomes a link (a selection becomes its label).
+    const url=!html&&/^https?:\/\/\S+$/i.test(plain)?sanitizeHrefUrl(plain):'';
+    if(url){ e.preventDefault(); const label=(window.getSelection()||'').toString().trim()||plain;
+      document.execCommand('insertHTML',false,'<a href="'+escAttr(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+'</a>&nbsp;'); return; }
     if(!html)return; // plain text: the browser's own paste is already clean
     e.preventDefault();
     document.execCommand('insertHTML',false,cleanThreadPasteHtml(html));
@@ -30643,7 +30672,7 @@ function followupTodoText(node,r){
 }
 function addFollowupToTodos(node,r){
   if(typeof window.sakuraAddTodoForNode!=='function'||!currentDocId)return;
-  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node,r),stripHtmlToText(r.person||'').trim());
+  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node,r),stripHtmlToText(r.person||'').trim(),r.id);
   if(!id){ showToast('Nothing to add — the follow-up and its row are empty'); return; }
   showToast('Added to To-Dos','success');
   render();
@@ -30746,6 +30775,7 @@ function renderThreadComposer(node,thread,place,commit){
       else if(chosen&&!(extra&&extra.status)){ e.answerTo=chosen.id; delete e.type; }
       // A status from the reply line is its own entry, so it records who moved it and when.
       if(extra&&extra.status)e.status=extra.status;
+      if(extra&&extra.decision)e.decision=true;
       remarks.push(e);
     }
     _threadComposerNodeId=node.id; _threadAskNodeIds.delete(node.id); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
@@ -30778,6 +30808,12 @@ function renderThreadComposer(node,thread,place,commit){
   const askBtn=btn('ask',kicon(qaDotIconSvg(11),'var(--accent)')+'Ask',ask?'Your next entry is a question — click to make it a reply':'Make your next entry a question',ask);
   askBtn.addEventListener('click',e=>{ e.stopPropagation(); _threadComposerNodeId=node.id; if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
   actions.appendChild(askBtn);
+  // A decision is a kind of entry (the green chip), not a status: it needs words, and the row's marker stays as is.
+  if(!ask){
+    const dec=btn('decision',kicon(markIconSvg('decision',11),'var(--fc-green)')+'Decision','Add what you typed as a decision');
+    dec.addEventListener('click',e=>{ e.stopPropagation(); if(!htmlHasVisibleText(input.innerHTML)){ showToast('Type the decision first'); input.focus(); return; } submit({decision:true}); });
+    actions.appendChild(dec);
+  }
   // Which question Yes / No (or a chosen answer) goes to, when there's a choice to make.
   const qs=ask?[]:threadQuestions(thread);
   if(chosen||qs.length>=2){
@@ -30839,6 +30875,7 @@ function threadComposerMenuItems(node,input,ask,submit){
   const refocus=()=>{ _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; };
   const items=[];
   if(hasText)items.push({label:ask?'Add question':'Add to thread', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>submit()});
+  if(hasText&&!ask)items.push({label:'Add as decision', icon:markIconSvg('decision'), onClick:()=>submit({decision:true})});
   items.push({label:ask?'Make it a comment':'Make it a question', icon:ask?markIconSvg('comment'):qaDotIconSvg(14), onClick:()=>{ if(hasText)_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); refocus(); render(); }});
   if(featureAiEnabled&&hasText)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); refocus(); render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
   items.push({divider:true});
@@ -32315,7 +32352,7 @@ let dockActiveTab=null;
   // (revealNodeInDoc) — a direct reference doesn't warrant reopening the find-bar the way a
   // fresh text search (jumpToNodeInDoc) does. A whole-document ref just switches documents,
   // the same action collectDocMatches' own search results already use for "open this doc".
-  function jumpToTodoNodeRef(ref){
+  function jumpToTodoNodeRef(ref,t){
     const info=resolveNodeRef(ref);
     if(!info || info.missing){
       showTodosToast(ref&&!ref.nodeId ? 'That document no longer exists' : 'That node no longer exists');
@@ -32326,6 +32363,13 @@ let dockActiveTab=null;
       if(typeof switchDoc==='function' && ref.docId!==currentDocId) switchDoc(ref.docId);
     } else if(typeof revealNodeInDoc==='function'){
       revealNodeInDoc(ref.docId, ref.nodeId);
+      // A task added from a thread follow-up goes to that entry, with the thread open (owner,
+      // 2026-10-19); older such tasks, saved without the entry's id, open the row's thread.
+      if(t && (t.remarkId || t.from)){
+        const entry=t.remarkId && remarks.find(r=>r.id===t.remarkId && r.anchorNodeId===ref.nodeId);
+        if(entry) revealInlineObject('remark', entry.id);
+        else if(typeof revealMarkerEntry==='function') revealMarkerEntry(ref.nodeId);
+      }
     }
   }
   // Document picker for the "Link to a node" tab — same title-matching collectDocMatches uses
@@ -32738,7 +32782,7 @@ let dockActiveTab=null;
         // opened its edit view (owner bug report 2026-10-19, To-Dos docked so the panel stays open).
         e.preventDefault(); e.stopPropagation();
         const t=todos.find(x=>x.id===btn.getAttribute('data-id'));
-        if(t && t.nodeRef) jumpToTodoNodeRef(t.nodeRef);
+        if(t && t.nodeRef) jumpToTodoNodeRef(t.nodeRef, t);
       });
     });
     // The whole "From … · Doc › Row" line goes to the row, not just its text: a click beside or just
@@ -33233,7 +33277,7 @@ let dockActiveTab=null;
       + row('Priority', opts('priority',TODO_PRIORITY_OPTS,t.priority||'none'))
       + row('Status', opts('status',TODO_STATUS_OPTS,t.status||'none'))
       + row('Due', `<span class="todo-prop-val">${p.dueBtn}${p.repeatBtn}</span>`)
-      + row('Link', `<span class="todo-prop-val">${p.linkBtn}</span>`)
+      + row('Link', `<span class="todo-prop-val">${p.linkSourceHtml?p.linkSourceHtml+p.linkEditBtn:p.linkBtn}</span>`)
       + `<div class="todo-props-foot">${subtaskMetaHtml(t)}${p.actionsHtml}</div>`
     +`</div>`;
   }
@@ -33290,7 +33334,10 @@ let dockActiveTab=null;
         +`<span>${due?esc(fmtDue(due)):'Add date'}</span>`
         + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
       +`</button>`;
-    const linkBtn=`<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
+    const linkBtnAttrs=`data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}"`;
+    // In the open task a set link reads like the resting source line (click goes there); the pencil changes it.
+    const linkEditBtn=`<button type="button" class="todo-link todo-link-edit${nodeRef?' node-link':''}" ${linkBtnAttrs} data-tip="Change link" aria-label="Change link">${markIconSvg('edit',12)}</button>`;
+    const linkBtn=`<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" ${linkBtnAttrs} data-tip="${hasAttachment?'Change link':'Attach a link'}">`
         + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
         +`<span>${hasAttachment?esc(linkDisplay):'Add link'}</span>`
       +`</button>`;
@@ -33311,7 +33358,7 @@ let dockActiveTab=null;
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`</div>`
       + (expanded
-        ? todoPropsHtml(t,{priorityBtn,statusBtn,dueBtn,linkBtn,repeatBtn,actionsHtml})
+        ? todoPropsHtml(t,{priorityBtn,statusBtn,dueBtn,linkBtn,linkEditBtn,linkSourceHtml:hasAttachment?sourceHtml:'',repeatBtn,actionsHtml})
         : `<div class="todo-meta-row">`+priorityBtn+statusBtn+dueBtn+repeatBtn+subtaskMetaHtml(t)+actionsHtml+`</div>`+sourceHtml)
       + subtasksSectionHtml(t)
       +`</div>`
@@ -34083,13 +34130,14 @@ let dockActiveTab=null;
   // Backspace/Delete merge removes follows that row's content onto the surviving row.
   // Write bridge for "Add to To-Dos" on a thread follow-up (main scope): a task linked back to its
   // row. A row that already has an open linked task gets that one back instead of a duplicate.
-  window.sakuraAddTodoForNode=function(docId,nodeId,text,from){
+  window.sakuraAddTodoForNode=function(docId,nodeId,text,from,remarkId){
     if(!docId||nodeId==null) return null;
     const open=todos.find(t=>!t.done&&t.nodeRef&&t.nodeRef.docId===docId&&t.nodeRef.nodeId===nodeId);
     if(open) return open.id;
     const trimmed=String(text||'').trim().slice(0,500);
     if(!trimmed) return null;
     const t={ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:{docId, nodeId}, repeat:null, subtasks:[], subtasksOpen:true, from:(String(from||'').trim().slice(0,80)||null) };
+    if(remarkId) t.remarkId=String(remarkId);
     todos.push(t);
     saveTodos();
     renderTodos();

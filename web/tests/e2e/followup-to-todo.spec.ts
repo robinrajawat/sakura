@@ -27,6 +27,13 @@ async function seed(page: Page, owner: string, text: string) {
   }, [owner, text]);
 }
 
+// Opens the To-Dos panel unless it is open (a jump to a thread entry leaves the caret in it, where the shortcut doesn't apply).
+async function openTodos(page: Page) {
+  if (await page.locator('#todos-panel.open').count()) return;
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press('Control+Shift+T');
+}
+
 const entry = (page: Page) => page.locator('.thread-entry:has(#inline-remark-text-f1)');
 async function menuItem(page: Page, label: string) {
   await entry(page).locator('.node-remark-text-inline').click({ button: 'right' });
@@ -70,14 +77,37 @@ test('the task says who raised it and where it points; clicking that goes to the
   await src.click();
   await expect(page.locator('#todo-link-popover.open, .todo-link-popover.open')).toHaveCount(0);
   // Going to the row doesn't also open the task (it used to, when the panel stayed open).
-  if (!(await page.locator('#todos-panel.open').count())) await page.keyboard.press('Control+Shift+T');
+  await openTodos(page);
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).toBeVisible();
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
   // A click beside the text, on the same line, also goes to the row rather than opening the task.
   await src.locator('xpath=..').click({ position: { x: (await src.locator('xpath=..').boundingBox())!.width - 4, y: 6 } });
-  if (!(await page.locator('#todos-panel.open').count())) await page.keyboard.press('Control+Shift+T');
+  await openTodos(page);
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
   // Open the task: the Link property is where it can be changed.
   await page.click(`.todo-expand-toggle[data-id="${id}"]`, { force: true });
   await expect(page.locator(`.todo-props .todo-link[data-id="${id}"]`)).toBeVisible();
+});
+
+test('going to a task from a follow-up opens the thread at that entry; the open task\'s Link row goes there too', async ({ page }) => {
+  await seed(page, '', 'We need to investigate this before we decide');
+  await page.evaluate('inlineExpandRemarksNodeIds = new Set(); render();');
+  await page.evaluate('addFollowupToTodos(nodes[1], remarks[0])');
+  const t = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0]);
+  expect(t.remarkId).toBe('f1');
+  await page.keyboard.press('Control+Shift+T');
+  await page.locator(`.todo-row[data-id="${t.id}"] .todo-source`).click();
+  await expect(page.locator('#inline-remark-text-f1')).toBeVisible();
+  // In the open task, the link itself navigates; only the pencil changes it.
+  await page.evaluate('inlineExpandRemarksNodeIds = new Set(); render();');
+  await expect(page.locator('#inline-remark-text-f1')).toHaveCount(0);
+  await openTodos(page);
+  await page.click(`.todo-expand-toggle[data-id="${t.id}"]`, { force: true });
+  await page.locator(`.todo-props .todo-source`).click();
+  await expect(page.locator('#todo-link-popover.open')).toHaveCount(0);
+  await expect(page.locator('#inline-remark-text-f1')).toBeVisible();
+  await openTodos(page);
+  if (!(await page.locator('.todo-props').count())) await page.click(`.todo-expand-toggle[data-id="${t.id}"]`, { force: true });
+  await page.locator(`.todo-props .todo-link-edit`).click();
+  await expect(page.locator('#todo-link-popover.open')).toHaveCount(1);
 });

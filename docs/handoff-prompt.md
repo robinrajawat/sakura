@@ -159,7 +159,19 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: Show as › Row cards; table folds survive a reload; To-Do "go to" line.** Owner: "present
+**2026-10-19: thread Decision button, links in thread entries, To-Do link goes to the thread.** Owner:
+"in the thread, I would like to add a decision possibility", "if I add a link in the thread … no way
+to navigate or edit", a follow-up To-Do's link "opens the todo task in edit mode". The reply line has
+**Decision** next to Ask (`submit({decision:true})`, needs text, hidden while asking; also "Add as
+decision" in its right-click menu); it sets `r.decision`, not a status. Thread entry links: plain click
+opens when not editing, Ctrl/Cmd+click while editing, right-click → `richLinkMenuItems` (the note's
+Open/Copy/Edit/Remove, now shared via a `store` {get,set,isPendingFocus}); `attachThreadPaste` turns a
+pasted bare URL into a link. To-Dos: `sakuraAddTodoForNode` stores `remarkId`; `jumpToTodoNodeRef(ref,t)`
+opens the thread at that entry (older tasks with `from` open the row's thread via `revealMarkerEntry`).
+The open task's Link row shows the source line (navigates) plus a pencil `.todo-link-edit` (Change link).
+Tests: `thread-links.spec.ts`, `thread-reply-actions.spec.ts`, `followup-to-todo.spec.ts`.
+
+**2026-10-19: Show as › Row cards; table folds survive a reload; To-Do "go to" line (#574).** Owner: "present
 this kind of table in a better way, like a card summary … a grid", "not automatic, only via show
 as", desktop app. `renderRowCardsHtml` (next to `renderProsConsHtml`, via
 `tableFeatureDisplayHtml`, so PDF/note renders get it too) for `data-table-display="rowcards"`:
@@ -183,14 +195,6 @@ the row label's Shift/Ctrl-click uses it too; `.fold-dot` does so only with a mo
 click still folds). While editing, Shift+↓ with the text selected to its end (Shift+↑ from its
 start) leaves editing and selects rows. `updateRowSelectionPill()` (called from `render`) shows
 `#row-sel-pill` for 2+ selected rows. Covered by `paste-table-select-rows.spec.ts`.
-
-**2026-10-19: linked To-Dos say where they point and who raised them (#572).** Owner: the link chip
-opened "Change link" on click, said too little, and a follow-up's author was missing. At rest a
-linked task shows `.todo-source-row` under the title ("From Ajay · Doc › Row", or the web link);
-clicking it jumps to the row (`.todo-nodejump-open`) or opens the URL. The link chip is no longer
-on the resting chip line; changing it is the open task's Link row. New optional `from` field on a
-task (kept by `loadTodos`; hub keeps unknown fields as-is), set by `sakuraAddTodoForNode` from the
-follow-up entry's `person`. Covered by `followup-to-todo.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
