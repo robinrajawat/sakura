@@ -3094,6 +3094,8 @@ body.printing-generic #gpe-overlay{
 .todos-add-plus{background:none;color:var(--hint)}
 #todos-add-btn{background:none;color:var(--accent);width:24px;height:24px;margin-top:2px}
 #todos-add-btn:hover{background:var(--hover);opacity:1}
+#todos-add-row:focus-within #todos-input:placeholder-shown~#todos-add-btn{display:none}
+#todos-add-row:focus-within .todos-add-plus{color:var(--accent)}
 .todos-group-label,.todos-section-label{display:flex;align-items:center;gap:7px;font:600 10.5px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:14px 10px 4px}
 .todos-group-count{font-weight:500;color:color-mix(in srgb,var(--hint) 60%,transparent)}
 .todos-group-doing .todos-group-label::before,.todos-group-hold .todos-group-label::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--fc-green)}
@@ -4673,7 +4675,7 @@ body.printing-generic #gpe-overlay{
   <div id="todos-add-row">
     <span class="todos-add-plus" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
     <textarea id="todos-input" rows="1" placeholder="Add a task…" spellcheck="false" maxlength="500"></textarea>
-    <button id="todos-add-btn" data-tip="Add task" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    <button id="todos-add-btn" data-tip="Add task" aria-label="Add task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></button>
   </div>
   <div id="todos-bulk-bar">
     <span id="todos-bulk-count">0 selected</span>
@@ -32837,12 +32839,12 @@ let dockActiveTab=null;
       +`</button>`;
     const dueBtn=`<button class="todo-due${due?' set':''}${overdue?' overdue':''}${t.repeat?' recurring':''}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?(t.repeat?`Change due date · ${repeatTitle(t.repeat)}`:'Change due date'):'Set due date'}">`
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
-        +`<span>${due?esc(fmtDue(due)):'Due date'}</span>`
+        +`<span>${due?esc(fmtDue(due)):'Add date'}</span>`
         + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
       +`</button>`;
     const linkBtn=`<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
         + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
-        +`<span>${hasAttachment?esc(linkDisplay):'Link'}</span>`
+        +`<span>${hasAttachment?esc(linkDisplay):'Add link'}</span>`
       +`</button>`;
     const repeatBtn=(!hasSubtasks ? `<button class="todo-repeat${t.repeat?' set':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
