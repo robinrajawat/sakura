@@ -159,6 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-19: Follow-up → To-Do.** Right-click the entry holding a Follow-up → Add to To-Dos
+(`addFollowupToTodos` → `window.sakuraAddTodoForNode`, a write bridge into the To-Dos closure):
+text = the entry's text or the row's, owner as `@First-Last`, `nodeRef` to the row; an open linked
+task is reused ("Open in To-Dos"). The entry shows "· in To-Dos" / "· To-Do done"
+(`.thread-todo-note`, current status holder only); completing or deleting a linked task repaints
+the document (`refreshLinkedRow`). Owner decisions: finishing the task does not settle the
+follow-up; follow-ups owned by others can be added (the mention says whose). Covered by
+`followup-to-todo.spec.ts`.
+
 **2026-10-19: To-Do editing as a property list; N badge gone (#567).** An expanded row renders
 `todoPropsHtml` instead of the chip line: Priority and Status as one-click option groups
 (`.todo-prop-opt` → `setTodoProp`; the cycling `.todo-priority`/`.todo-status` buttons stay for the
@@ -177,16 +186,6 @@ not change status). Status chip only under On hold; High/Medium priority chips, 
 expanded; repeat/link/subtasks are quiet text; the due date is the right column; completed ticks
 are a light ring. Not chosen: grouping by date (fights the default manual sort), a status-shaped
 circle. hub.html unchanged. Covered by `todos-grouped.spec.ts`.
-
-**2026-10-16: To-Dos restyled like a thread (#565).** Superseded the same day by the grouped layout above; Owner-approved mock (iterated: no `!!!`, no left
-edge, no connector lines; "it has to be a chip", "elegant"). Open tasks are flat rows with an
-inset hairline (`.todo-row+.todo-row::before`), no cards. Status is the shape of `.todo-check`
-(row `data-status`: dashed / half / three-quarter / red bar; `data-tip` names it) and the status
-chip shows only when expanded. The due date sits in a right column at rest (`.has-due`, absolute)
-and returns to the chip line when expanded. Priority, repeat, link and subtask progress are one
-chip shape; only High/Medium are coloured. Completed is grey, no strikethrough. All in one CSS
-block after `.todo-row.qa-flash`; hub.html unchanged. Covered by `todos-thread-style.spec.ts` plus
-the updated `todos-panel-card-styling` / `todos-checkbox-shape` specs.
 
 ### Where things stand (the model to keep in mind)
 

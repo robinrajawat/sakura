@@ -1825,6 +1825,9 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Status pills (PDF) and the row thread's chips: Question, Yes / No, Answer, Follow-up, Resolved, Decision. */
 .node-qa-status{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:4px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
 .pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"],.thread-chip.is-followup{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
+.thread-todo-note{font-size:12px;color:var(--muted);cursor:pointer}
+.thread-todo-note:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.thread-todo-note.is-done{color:var(--fc-green)}
 .pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"],.pv-status-pill[data-state="decision"],.pv-status-pill[data-state="yes"],.pv-status-pill[data-state="answer"],.thread-chip.is-resolved,.thread-chip.is-decision,.thread-chip.is-answer,.thread-chip.is-question[data-state="answered"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
 .pv-status-pill[data-state="wont"],.thread-chip.is-question[data-state="wont"]{background:var(--chip);color:var(--muted)}
 .pv-status-pill[data-state="question"],.thread-chip.is-question{background:color-mix(in srgb,var(--accent) 14%,transparent);color:color-mix(in srgb,var(--accent) 80%,var(--fg))}
@@ -30096,6 +30099,16 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   if(r.status)note('thread-status-note is-'+markerForThreadStatus(r.status),'· '+THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&markerForThreadStatus(r.status)==='followup'?' for '+r.owner:''),'Set the row to '+THREAD_STATUS_LABEL[r.status]+' — right-click to change');
   // A decision is marked on the entry where it was made (its kind icon, and quiet text); it doesn't change the row (owner decision 2026-10-15).
   if(r.decision)note('thread-status-note is-decision','· decision','Decided here — right-click to change');
+  // The follow-up's task, if it has one: "· in To-Dos" while open, "· To-Do done" once finished. Click opens it.
+  if(markerForThreadStatus(r.status)==='followup'&&threadStatusEntry(thread)===r){
+    const refs=todoRefsForNode(node.id);
+    if(refs.length){
+      const openTodo=refs.find(t=>!t.done);
+      const n=note('thread-todo-note'+(openTodo?'':' is-done'),openTodo?'· in To-Dos':'· To-Do done',openTodo?'Open the task in To-Dos':'The task is done — settle the follow-up when you’re ready');
+      n.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+      n.addEventListener('click',e=>{ e.stopPropagation(); window.sakuraFlashTodo?.((openTodo||refs[0]).id); });
+    }
+  }
   line.appendChild(meta);
   if(quoted){ const qq=document.createElement('div'); qq.className='thread-quote'; qq.textContent='↳ '+quoted; qq.dataset.tip='Answers this question'; line.appendChild(qq); }
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
@@ -30240,6 +30253,22 @@ async function copyThread(nodeId){
     showToast('Thread copied');
   }catch(e){ showToast('Copy failed'); }
 }
+// "Add to To-Dos" on a follow-up: the task is what the follow-up says (or the row, when it says
+// nothing), with its owner as an @mention ("Ana Lee" → @Ana-Lee, a mention is one word), linked to
+// the row. Completing the task doesn't change the document: the follow-up shows "· To-Do done" and
+// the owner settles it (owner decision 2026-10-19).
+function followupTodoText(node,r){
+  const said=stripHtmlToText(r.text||'').trim()||stripHtmlToText(node.text||'').trim();
+  const owner=String(r.owner||'').trim().replace(/[^A-Za-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'');
+  return (owner&&/^[A-Za-z]/.test(owner)?'@'+owner+' ':'')+said;
+}
+function addFollowupToTodos(node,r){
+  if(typeof window.sakuraAddTodoForNode!=='function'||!currentDocId)return;
+  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node,r));
+  if(!id){ showToast('Nothing to add — the follow-up and its row are empty'); return; }
+  showToast('Added to To-Dos','success');
+  render();
+}
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
@@ -30278,6 +30307,13 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   items.push({choices:NODE_MARKERS.map(st=>({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), color:'var(--fc-'+nodeMarkerColor(st)+')', current:cur===st, tip:cur===st?'Clear '+THREAD_STATUS_LABEL[st]:'', onClick:change(()=>{ if(cur===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else r.status=st; })}))});
   // A follow-up can name who owns it; the open-items list shows the name.
   if(markerForThreadStatus(r.status)==='followup')items.push({label:r.owner?'Follow-up for '+r.owner+'…':'Assign follow-up…', icon:ico('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'), onClick:()=>{ const rect=textEl.getBoundingClientRect(); setTimeout(()=>showSbContextMenu(rect.left,rect.bottom+4,threadOwnerMenuItems(r,commit)),0); }});
+  // A follow-up can become a task in To-Dos, linked back to this row (owner decision 2026-10-19).
+  if(markerForThreadStatus(r.status)==='followup'){
+    const openTodo=todoRefsForNode(node.id).find(t=>!t.done);
+    items.push(openTodo
+      ? {label:'Open in To-Dos', icon:todoDotIconSvg(14), onClick:()=>window.sakuraFlashTodo?.(openTodo.id)}
+      : {label:'Add to To-Dos', icon:todoDotIconSvg(14), onClick:()=>addFollowupToTodos(node,r)});
+  }
   items.push({divider:true});
   items.push({label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)});
   if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
@@ -31515,9 +31551,15 @@ let dockActiveTab=null;
     saveTodos();
     renderTodos();
   }
+  // A task linked to a row in the open document shows on that row (its dot, a follow-up's
+  // "in To-Dos" note), so completing or deleting it repaints the document too.
+  function refreshLinkedRow(t){
+    if(t&&t.nodeRef&&typeof currentDocId!=='undefined'&&t.nodeRef.docId===currentDocId&&typeof render==='function') setTimeout(render,0);
+  }
   function toggleTodo(id){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
+    refreshLinkedRow(t);
     if(t.subtasks && t.subtasks.length) return; // completion is derived from subtasks, not manually toggled
     if(!t.done && t.repeat){
       const priorDueDate=t.dueDate;
@@ -31644,6 +31686,7 @@ let dockActiveTab=null;
     todos.splice(idx,1);
     saveTodos();
     renderTodos();
+    refreshLinkedRow(removed);
     showTodosActionToast('Task deleted','Undo',()=>{
       const insertAt=Math.min(idx, todos.length);
       todos.splice(insertAt,0,removed);
@@ -33633,6 +33676,20 @@ let dockActiveTab=null;
   };
   // Write bridge for row merges (repointNodeLinks, main scope): a to-do linked to a row that a
   // Backspace/Delete merge removes follows that row's content onto the surviving row.
+  // Write bridge for "Add to To-Dos" on a thread follow-up (main scope): a task linked back to its
+  // row. A row that already has an open linked task gets that one back instead of a duplicate.
+  window.sakuraAddTodoForNode=function(docId,nodeId,text){
+    if(!docId||nodeId==null) return null;
+    const open=todos.find(t=>!t.done&&t.nodeRef&&t.nodeRef.docId===docId&&t.nodeRef.nodeId===nodeId);
+    if(open) return open.id;
+    const trimmed=String(text||'').trim().slice(0,500);
+    if(!trimmed) return null;
+    const t={ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:{docId, nodeId}, repeat:null, subtasks:[], subtasksOpen:true };
+    todos.push(t);
+    saveTodos();
+    renderTodos();
+    return t.id;
+  };
   window.sakuraTodosRepointNode=function(docId,fromId,toId){
     if(!docId||fromId==null||toId==null)return;
     let changed=false;
