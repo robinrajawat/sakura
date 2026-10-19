@@ -159,7 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: thread Decision button, links in thread entries, To-Do link goes to the thread.** Owner:
+**2026-10-19: a folded To-Do's link no longer opens the task when the hand moves.** Owner: "when the
+note is folded, when I click on the link it unfolds the task instead of navigation". Cause: a press on
+the "From … · Doc › Row" line released a few pixels off it is reported as a click on `.todo-row`,
+which toggled the task. The row's click handler now remembers its `mousedown` target: a click that
+started on `.todo-source-row` navigates, one that started on any other control does nothing.
+Test: `followup-to-todo.spec.ts` (press on the line, release just below it).
+
+**2026-10-19: thread Decision button, links in thread entries, To-Do link goes to the thread (#576).** Owner:
 "in the thread, I would like to add a decision possibility", "if I add a link in the thread … no way
 to navigate or edit", a follow-up To-Do's link "opens the todo task in edit mode". The reply line has
 **Decision** next to Ask (`submit({decision:true})`, needs text, hidden while asking; also "Add as
@@ -184,17 +191,6 @@ row reopened on every reload; now `collapsedTables` / `collapsedImages` in the d
 snapshots (`applyTabSnapshot`, `loadTabFromStorageObj`), and the dots call `scheduleAutoSave`. (2) A
 click beside a linked To-Do's source text opened the task; the whole `.todo-source-row` now jumps.
 Tests: `table-rowcards.spec.ts`, `table-fold-persists.spec.ts`, `followup-to-todo.spec.ts`.
-
-**2026-10-19: pasting a table and selecting rows without the hidden Esc step (#573).** Owner: "when I have to
-paste a table to a node … the row doesn't have to be in editable mode … hard to understand how to
-paste or multiselect the nodes". `pasteTableIntoNode(e,id,html)` (above the document paste
-handler) now runs in both branches: a `<table>` pasted while editing a row (and not a Sakura clip,
-`extractSakuraClipPayload`) attaches to that row instead of being split into rows. Clicking a
-`.node-dot` selects its row via `selectRowFromPointer(id,e)` (Shift extends, Ctrl/Cmd toggles;
-the row label's Shift/Ctrl-click uses it too; `.fold-dot` does so only with a modifier, plain
-click still folds). While editing, Shift+↓ with the text selected to its end (Shift+↑ from its
-start) leaves editing and selects rows. `updateRowSelectionPill()` (called from `render`) shows
-`#row-sel-pill` for 2+ selected rows. Covered by `paste-table-select-rows.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
