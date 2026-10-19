@@ -159,7 +159,19 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: hub.html To-Dos match desktop.** The phone list is grouped like desktop (`pickNowTodo`
+**2026-10-19: table editing — grips, cell selection, undo while editing.** Owner: "unable to select
+multiple lines, delete a row, column, no way to undo". `attachTableSelection` (above
+`buildNodeTableObject`) adds a `.tbl-grips` overlay beside the live table (row grips left, column
+grips above; click selects + opens Insert / Move / Delete, Shift+click extends) and a rectangular
+range (drag, Shift+click, Shift+arrows) marked `.tbl-sel` (stripped by `cleanEditorHtml`): Delete
+clears cells or deletes grip-selected rows/columns, Ctrl/Cmd+C/X copies TSV + HTML, the cell menu
+gains Clear / Delete N rows / Delete N columns. Inside the editing session `commit(kind)` keeps a
+`past`/`future` stack (typing in one cell within 1 s coalesces); Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z /
+Ctrl+Y restore via `restoreTo` under `_tableStructOpDepth`. The session is still one app undo step.
+The table now serializes on its own (`serialize()`), not via `wrap`. Note-tables
+(`enterScopedTableEdit`) unchanged. Covered by `table-edit-selection-undo.spec.ts`.
+
+**2026-10-19: hub.html To-Dos match desktop (#570).** The phone list is grouped like desktop (`pickNowTodo`
 → "Now", then Doing / Up next / On hold, in list order) instead of Overdue / Today / Upcoming /
 No Date; rows show the due date on the right and the same chips (`.todo-pri`, `.todo-st`,
 `.todo-prop`); the task sheet's Priority / Status are one-tap option groups
@@ -175,15 +187,6 @@ task is reused ("Open in To-Dos"). The entry shows "· in To-Dos" / "· To-Do do
 the document (`refreshLinkedRow`). Owner decisions: finishing the task does not settle the
 follow-up; follow-ups owned by others can be added (the mention says whose). Covered by
 `followup-to-todo.spec.ts`.
-
-**2026-10-19: To-Do editing as a property list; N badge gone (#567).** An expanded row renders
-`todoPropsHtml` instead of the chip line: Priority and Status as one-click option groups
-(`.todo-prop-opt` → `setTodoProp`; the cycling `.todo-priority`/`.todo-status` buttons stay for the
-resting row only), Due (+ repeat) and Link reusing the row's own buttons and popovers, and a foot
-with subtasks and the row actions. The open row is a small card. The add row's "N" badge
-(`#todos-add-row::after`) is removed; the N shortcut still works. Then (owner: "two plus icons"): the
-add button is a return arrow shown only once something is typed, and empty Due/Link read "Add
-date"/"Add link". Covered by `todos-grouped.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

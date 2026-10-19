@@ -1573,6 +1573,15 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .tbl-status-pill[data-group="blocked"]{--pill:var(--fc-red)}
 .tbl-status-pill[data-group="done"]{--pill:var(--fc-green)}
 .node-table-line.editing{position:relative}
+.tbl-grips{position:absolute;inset:0;pointer-events:none;z-index:2}
+.tbl-grip{position:absolute;pointer-events:auto;appearance:none;border:none;padding:0;margin:0;background:transparent;cursor:pointer;opacity:0;transition:opacity .12s}
+.tbl-grip::after{content:'';position:absolute;border-radius:3px;background:var(--hint)}
+.tbl-grip-row{width:12px}.tbl-grip-row::after{left:4px;top:50%;width:4px;height:16px;margin-top:-8px}
+.tbl-grip-col{height:10px}.tbl-grip-col::after{top:3px;left:50%;height:4px;width:16px;margin-left:-8px}
+.tbl-grip.hot{opacity:.55}.tbl-grip:hover{opacity:1}
+.tbl-grip.sel{opacity:1}.tbl-grip.sel::after{background:var(--accent)}
+.node-table-line td.tbl-sel,.node-table-line th.tbl-sel{background:color-mix(in srgb,var(--accent) 13%,transparent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
+.node-table-line.tbl-has-sel td,.node-table-line.tbl-has-sel th{caret-color:transparent}
 .pv-proscons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;align-items:start;cursor:context-menu;break-inside:avoid;page-break-inside:avoid}
 .pv-pc-col{--pc:var(--fc-green);border:1px solid color-mix(in srgb,var(--pc) 30%,var(--border));border-top:3px solid var(--pc);border-radius:10px;padding:10px 12px 12px;background:color-mix(in srgb,var(--pc) 5%,var(--bg));min-width:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-pc-col.cons{--pc:var(--fc-red)}
@@ -8963,6 +8972,219 @@ function openCurrencyPicker(table,cell,current,onPick){
 // clicking it IS the edit action, the same directness a much earlier bug report in this file's
 // history asked for and a note-embedded table could never safely give without risking the note's
 // own text being silently edited along with it.
+// Table editing: a rectangular cell selection plus row / column grips (owner request 2026-10-19).
+// Drag across cells, Shift+click, or Shift+arrows (Up/Down always; Left/Right from the cell's edge)
+// select a range; a grip at a row's left or a column's top selects the whole row / column and opens
+// its menu. With a selection, Delete / Backspace clears the cells (or deletes the selected rows /
+// columns when whole ones are selected), Ctrl/Cmd+C or X copies it as a spreadsheet range, and Esc
+// clears it. The grips live in an overlay outside the <table>, and `.tbl-sel` is stripped by
+// cleanEditorHtml, so neither is ever saved.
+function attachTableSelection(wrap,table,api){
+  let anchor=null, focus=null, mode='cells', dragFrom=null, pendingCopy=null;
+  const overlay=document.createElement('div'); overlay.className='tbl-grips'; overlay.contentEditable='false';
+  wrap.appendChild(overlay);
+  const cellPos=cell=>({r:[...table.rows].indexOf(cell.closest('tr')), c:cell.cellIndex});
+  const cellAt=(r,c)=>{ const row=table.rows[r]; return row?row.cells[Math.min(c,row.cells.length-1)]||null:null; };
+  const lastCol=()=>Math.max(0,tableColumnCount(table)-1);
+  const has=()=>!!(anchor&&focus&&(mode!=='cells'||anchor.r!==focus.r||anchor.c!==focus.c));
+  const bounds=()=>({r0:Math.min(anchor.r,focus.r), r1:Math.max(anchor.r,focus.r), c0:Math.min(anchor.c,focus.c), c1:Math.max(anchor.c,focus.c)});
+  const cellsIn=b=>{ const out=[]; for(let r=b.r0;r<=b.r1;r++){ const row=table.rows[r]; if(!row)continue; for(let c=b.c0;c<=b.c1;c++){ if(row.cells[c])out.push(row.cells[c]); } } return out; };
+  const paint=()=>{
+    table.querySelectorAll('.tbl-sel').forEach(c=>c.classList.remove('tbl-sel'));
+    overlay.querySelectorAll('.tbl-grip.sel').forEach(g=>g.classList.remove('sel'));
+    const on=has(); wrap.classList.toggle('tbl-has-sel',on);
+    if(!on)return;
+    const b=bounds();
+    cellsIn(b).forEach(c=>c.classList.add('tbl-sel'));
+    if(mode==='rows')overlay.querySelectorAll('.tbl-grip-row').forEach(g=>{ const r=+g.dataset.r; if(r>=b.r0&&r<=b.r1)g.classList.add('sel'); });
+    if(mode==='cols')overlay.querySelectorAll('.tbl-grip-col').forEach(g=>{ const c=+g.dataset.c; if(c>=b.c0&&c<=b.c1)g.classList.add('sel'); });
+  };
+  const setRange=(a,f,m)=>{ anchor=a; focus=f; mode=m||'cells'; paint(); if(has()){ const s=window.getSelection(); s&&s.removeAllRanges(); } };
+  const clear=()=>{ anchor=focus=null; mode='cells'; paint(); };
+  const runStruct=(fn)=>{
+    _tableStructOpDepth++;
+    let target=null;
+    try{ target=fn(); } finally{ _tableStructOpDepth--; }
+    clear();
+    _attachTableResizeHandles(table); applyTableAutoAlign(table);
+    if(target&&target.isConnected)api.placeCaretIn(target);
+    api.commit();
+    layout();
+  };
+  const selectedRows=()=>{ const b=bounds(); return {from:b.r0,to:b.r1,count:b.r1-b.r0+1}; };
+  const selectedCols=()=>{ const b=bounds(); return {from:b.c0,to:b.c1,count:b.c1-b.c0+1}; };
+  const deleteRows=()=>{ const {from,to}=selectedRows(); runStruct(()=>{ let t=null; for(let r=to;r>=from;r--){ const c=cellAt(r,0); if(c&&table.rows.length>1)t=tableDeleteRow(table,c); } return t; }); };
+  const deleteCols=()=>{ const {from,to}=selectedCols(); runStruct(()=>{ let t=null; for(let c=to;c>=from;c--){ const cell=cellAt(0,c); if(cell&&tableColumnCount(table)>1)t=tableDeleteColumn(table,cell); } return t; }); };
+  const clearCells=()=>{ const cells=cellsIn(bounds()); const f=cellAt(focus.r,focus.c); runStruct(()=>{ cells.forEach(c=>setTableCellText(c,'')); return f; }); };
+  const deleteSelection=()=>{ if(mode==='rows')deleteRows(); else if(mode==='cols')deleteCols(); else clearCells(); };
+  const grid=()=>{ const b=bounds(); const rows=[]; for(let r=b.r0;r<=b.r1;r++){ const row=[]; for(let c=b.c0;c<=b.c1;c++){ const cell=cellAt(r,c); row.push(cell?tableCellText(cell):''); } rows.push(row); } return rows; };
+  const escHtml=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Copy / cut: the browser only fires `copy` with something selected, so select the focus cell's
+  // text for that one event and put the whole range on the clipboard instead.
+  const onCopy=e=>{
+    if(!pendingCopy||!has())return;
+    const g=grid();
+    e.preventDefault(); e.stopPropagation();
+    e.clipboardData.setData('text/plain',g.map(r=>r.join('\t')).join('\n'));
+    e.clipboardData.setData('text/html','<table>'+g.map(r=>'<tr>'+r.map(v=>'<td>'+escHtml(v)+'</td>').join('')+'</tr>').join('')+'</table>');
+    const cut=pendingCopy==='cut'; pendingCopy=null;
+    setTimeout(()=>{ if(cut)clearCells(); else { const s=window.getSelection(); s&&s.removeAllRanges(); paint(); } },0);
+  };
+  wrap.addEventListener('copy',onCopy); wrap.addEventListener('cut',onCopy);
+  // Mouse: drag across cells, or Shift+click, makes a range.
+  const onDown=e=>{
+    const cell=e.target.closest&&e.target.closest('td,th');
+    if(!cell||!table.contains(cell)||isTableHandleEl(e.target))return;
+    if(e.button!==0)return; // a right-click keeps the range for its menu
+    if(e.shiftKey){
+      const active=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('td,th');
+      const from=anchor||(active&&table.contains(active)?cellPos(active):null);
+      if(from){ e.preventDefault(); setRange(from,cellPos(cell),'cells'); return; }
+    }
+    if(has())clear();
+    dragFrom=cellPos(cell);
+  };
+  const onMove=e=>{
+    if(!dragFrom||!(e.buttons&1))return;
+    const cell=e.target.closest&&e.target.closest('td,th');
+    if(!cell||!table.contains(cell))return;
+    const p=cellPos(cell);
+    if(p.r===dragFrom.r&&p.c===dragFrom.c&&!has())return;
+    e.preventDefault();
+    setRange(dragFrom,p,'cells');
+  };
+  const onUp=()=>{ dragFrom=null; };
+  table.addEventListener('mousedown',onDown);
+  table.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  // Hovering a row or column shows its grip.
+  const onOver=e=>{
+    const cell=e.target.closest&&e.target.closest('td,th');
+    overlay.querySelectorAll('.tbl-grip.hot').forEach(g=>g.classList.remove('hot'));
+    if(!cell||!table.contains(cell))return;
+    const p=cellPos(cell);
+    overlay.querySelector('.tbl-grip-row[data-r="'+p.r+'"]')?.classList.add('hot');
+    overlay.querySelector('.tbl-grip-col[data-c="'+p.c+'"]')?.classList.add('hot');
+  };
+  table.addEventListener('mouseover',onOver);
+  const gripMenu=(g,kind,idx)=>{
+    const ref=kind==='row'?cellAt(idx,0):cellAt(0,idx);
+    if(!ref)return;
+    const n=kind==='row'?selectedRows().count:selectedCols().count;
+    const isHead=kind==='row'&&tableIsHeaderRow(table,ref.closest('tr'));
+    const body=tableBodyRows(table); const bi=kind==='row'?body.indexOf(ref.closest('tr')):-1;
+    const items=kind==='row'?[
+      {label:'Insert row above', disabled:isHead, onClick:()=>runStruct(()=>tableInsertRow(table,ref,false))},
+      {label:'Insert row below', onClick:()=>runStruct(()=>tableInsertRow(table,ref,true))},
+      {label:'Move row up', disabled:isHead||bi<=0, onClick:()=>runStruct(()=>tableMoveRow(table,ref,-1))},
+      {label:'Move row down', disabled:isHead||bi<0||bi>=body.length-1, onClick:()=>runStruct(()=>tableMoveRow(table,ref,1))},
+      {divider:true},
+      {label:n>1?'Delete '+n+' rows':'Delete row', danger:true, disabled:table.rows.length-n<1, onClick:deleteRows}
+    ]:[
+      {label:'Insert column left', onClick:()=>runStruct(()=>tableInsertColumn(table,ref,false))},
+      {label:'Insert column right', onClick:()=>runStruct(()=>tableInsertColumn(table,ref,true))},
+      {label:'Move column left', disabled:idx<=0, onClick:()=>runStruct(()=>tableMoveColumn(table,ref,-1))},
+      {label:'Move column right', disabled:idx>=lastCol(), onClick:()=>runStruct(()=>tableMoveColumn(table,ref,1))},
+      {divider:true},
+      {label:n>1?'Delete '+n+' columns':'Delete column', danger:true, disabled:tableColumnCount(table)-n<1, onClick:deleteCols}
+    ];
+    const r=g.getBoundingClientRect();
+    showSbContextMenu(kind==='row'?r.right+4:r.left,kind==='row'?r.top:r.bottom+4,items);
+    // Keep the cell focused while the menu is used (a blur would end the editing session).
+    document.querySelector('.sb-context-menu')?.addEventListener('mousedown',ev=>ev.preventDefault());
+  };
+  const makeGrip=(kind,idx)=>{
+    const g=document.createElement('button');
+    g.type='button'; g.tabIndex=-1; g.className='tbl-grip tbl-grip-'+kind;
+    g.dataset[kind==='row'?'r':'c']=String(idx);
+    g.setAttribute('aria-label',kind==='row'?'Select row':'Select column');
+    g.dataset.tip=kind==='row'?'Select row — Shift+click to add rows':'Select column — Shift+click to add columns';
+    g.addEventListener('mousedown',e=>{ e.preventDefault(); e.stopPropagation(); });
+    g.addEventListener('click',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const m=kind==='row'?'rows':'cols';
+      const here=kind==='row'?{r:idx,c:lastCol()}:{r:table.rows.length-1,c:idx};
+      if(e.shiftKey&&mode===m&&anchor){ setRange(anchor,here,m); return; }
+      setRange(kind==='row'?{r:idx,c:0}:{r:0,c:idx},here,m);
+      gripMenu(g,kind,idx);
+    });
+    return g;
+  };
+  function layout(){
+    overlay.innerHTML='';
+    if(!table.isConnected)return;
+    const wr=wrap.getBoundingClientRect(), tr=table.getBoundingClientRect();
+    [...table.rows].forEach((row,r)=>{
+      const rr=row.getBoundingClientRect(); const g=makeGrip('row',r);
+      g.style.left=(tr.left-wr.left-14)+'px'; g.style.top=(rr.top-wr.top)+'px'; g.style.height=rr.height+'px';
+      overlay.appendChild(g);
+    });
+    [...(table.rows[0]?.cells||[])].forEach((cell,c)=>{
+      const cr=cell.getBoundingClientRect(); const g=makeGrip('col',c);
+      g.style.top=(tr.top-wr.top-10)+'px'; g.style.left=(cr.left-wr.left)+'px'; g.style.width=cr.width+'px';
+      overlay.appendChild(g);
+    });
+    paint();
+  }
+  const caretAtEdge=(cell,end)=>{
+    const s=window.getSelection(); if(!s||!s.rangeCount||!s.isCollapsed)return false;
+    const rg=document.createRange(); rg.selectNodeContents(cell);
+    const at=s.getRangeAt(0);
+    if(end)rg.setStart(at.endContainer,at.endOffset); else rg.setEnd(at.startContainer,at.startOffset);
+    return rg.toString().length===0;
+  };
+  // Returns true when the key was handled here.
+  function handleKey(e,cell){
+    const arrow=e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='ArrowLeft'||e.key==='ArrowRight';
+    if(arrow&&e.shiftKey&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+      const vertical=e.key==='ArrowUp'||e.key==='ArrowDown';
+      if(!has()&&!vertical&&!caretAtEdge(cell,e.key==='ArrowRight'))return false;
+      const from=has()?anchor:cellPos(cell); const at=has()?focus:cellPos(cell);
+      const nx={r:at.r,c:at.c};
+      if(e.key==='ArrowUp')nx.r=Math.max(0,at.r-1);
+      if(e.key==='ArrowDown')nx.r=Math.min(table.rows.length-1,at.r+1);
+      if(e.key==='ArrowLeft')nx.c=Math.max(0,at.c-1);
+      if(e.key==='ArrowRight')nx.c=Math.min(lastCol(),at.c+1);
+      e.preventDefault(); e.stopPropagation();
+      setRange(from,nx,mode==='rows'||mode==='cols'?'cells':mode);
+      return true;
+    }
+    if(!has())return false;
+    if(e.key==='Delete'||e.key==='Backspace'){ e.preventDefault(); e.stopPropagation(); deleteSelection(); return true; }
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); const f=cellAt(focus.r,focus.c); clear(); if(f)api.placeCaretIn(f); return true; }
+    if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==='c'||e.key==='x'||e.key==='C'||e.key==='X')){
+      const src=cellsIn(bounds()).find(c=>tableCellText(c))||null;
+      if(!src){ if(e.key.toLowerCase()==='x'){ e.preventDefault(); clearCells(); } return true; }
+      pendingCopy=e.key.toLowerCase()==='x'?'cut':'copy';
+      const rg=document.createRange(); rg.selectNodeContents(src); const s=window.getSelection(); s.removeAllRanges(); s.addRange(rg);
+      return true; // the browser goes on to fire copy / cut, which onCopy answers
+    }
+    if(e.ctrlKey||e.metaKey||e.altKey||e.key==='Shift')return false;
+    // Any other key (typing, arrows, Tab, Enter) ends the range and carries on in the focus cell.
+    const f=cellAt(focus.r,focus.c); clear(); if(f&&e.key.length===1)api.placeCaretIn(f);
+    return false;
+  }
+  function menuItems(cell){
+    if(!has()||!cell||!cell.classList.contains('tbl-sel'))return [];
+    const rows=selectedRows(), cols=selectedCols(), cells=cellsIn(bounds()).length;
+    return [
+      {label:'Clear '+cells+' cells', onClick:clearCells},
+      {label:rows.count>1?'Delete '+rows.count+' rows':'Delete row', danger:true, disabled:table.rows.length-rows.count<1, onClick:deleteRows},
+      {label:cols.count>1?'Delete '+cols.count+' columns':'Delete column', danger:true, disabled:tableColumnCount(table)-cols.count<1, onClick:deleteCols},
+      {divider:true}
+    ];
+  }
+  const onResize=()=>layout();
+  window.addEventListener('resize',onResize);
+  function detach(){
+    document.removeEventListener('mouseup',onUp);
+    window.removeEventListener('resize',onResize);
+    table.removeEventListener('mousedown',onDown); table.removeEventListener('mousemove',onMove); table.removeEventListener('mouseover',onOver);
+    wrap.removeEventListener('copy',onCopy); wrap.removeEventListener('cut',onCopy);
+    overlay.remove(); wrap.classList.remove('tbl-has-sel');
+  }
+  return {layout,handleKey,menuItems,clear,has,detach};
+}
 function buildNodeTableObject(node,tIdx){
   const wrap=document.createElement('div');
   wrap.className='node-table-line pv-diagram-figure pv-table-figure';
@@ -9014,8 +9236,17 @@ function buildNodeTableObject(node,tIdx){
     // change (same contract as the image markup editor): a session that only clicks in and out
     // changes nothing and pushes nothing, and Ctrl/Cmd+Z afterwards restores the table (or the
     // chart/Cards it's rendered as) exactly as it was before the session started.
-    let lastCommitted=tidyTableHtml(sakuraSanitizeRichHtml(cleanEditorHtml(wrap)));
+    // Serialize the table alone (not `wrap`): the grips overlay sits beside it in the same wrapper.
+    const serialize=()=>{ const box=document.createElement('div'); box.appendChild(liveTable.cloneNode(true)); return tidyTableHtml(sakuraSanitizeRichHtml(cleanEditorHtml(box))); };
+    let lastCommitted=serialize();
     let undoPushed=false;
+    // Undo inside the editing session (owner request 2026-10-19): every change -- typing (runs of it
+    // in one cell within a second count as one step), inserting, deleting, moving, sorting, pasting --
+    // can be stepped back with Ctrl/Cmd+Z and forward with Ctrl/Cmd+Shift+Z or Ctrl+Y. The whole
+    // session is still one app-level undo step afterwards.
+    const past=[], future=[];
+    let lastTypeAt=0, lastTypeCell=null;
+    const caretCellPos=()=>{ const a=document.activeElement; const c=a&&a.closest&&a.closest('td,th'); return c&&liveTable.contains(c)?{r:[...liveTable.rows].indexOf(c.closest('tr')),c:c.cellIndex}:{r:0,c:0}; };
     const ensureUndo=()=>{ if(!undoPushed){ undoPushed=true; pushUndo(); } };
     // Same double-commit hazard enterScopedTableEdit's own exited-guard documents: removing a
     // row/column that holds the current caret forces its own native, synchronous focus change,
@@ -9031,6 +9262,7 @@ function buildNodeTableObject(node,tIdx){
       wrap.removeEventListener('focusout',onFocusOut);
       wrap.removeEventListener('paste',onPaste);
       wrap.removeEventListener('keydown',onKeyDown);
+      sel.detach();
     };
     function exit(){
       if(exited)return;
@@ -9038,7 +9270,7 @@ function buildNodeTableObject(node,tIdx){
       detach();
       showDisplay();
     }
-    function commit(){
+    function commit(kind){
       if(exited)return;
       if(!liveTable.isConnected){
         exited=true;
@@ -9051,25 +9283,52 @@ function buildNodeTableObject(node,tIdx){
         return;
       }
       applyTableAutoAlign(liveTable);
-      const html=tidyTableHtml(sakuraSanitizeRichHtml(cleanEditorHtml(wrap)));
-      if(html===lastCommitted)return;
+      const html=serialize();
+      if(html===lastCommitted){ sel.layout(); return; }
       ensureUndo();
+      const now=Date.now(), active=document.activeElement;
+      const coalesce=kind==='type'&&lastTypeCell===active&&now-lastTypeAt<1000;
+      if(!coalesce){ past.push({html:lastCommitted,pos:caretCellPos()}); if(past.length>200)past.shift(); }
+      if(kind==='type'){ lastTypeAt=now; lastTypeCell=active; } else lastTypeCell=null;
+      future.length=0;
       lastCommitted=html;
       node.tables[tIdx]=html;
       node.modifiedAt=Date.now();
       markDirty(); scheduleAutoSave();
+      sel.layout();
     }
-    const onInput=e=>{ e.stopPropagation(); commit(); };
+    const restoreTo=(html,pos)=>{
+      const d=document.createElement('div'); d.innerHTML=html; const t=d.querySelector('table'); if(!t)return;
+      sel.clear();
+      _tableStructOpDepth++;
+      try{
+        while(liveTable.attributes.length)liveTable.removeAttribute(liveTable.attributes[0].name);
+        [...t.attributes].forEach(a=>liveTable.setAttribute(a.name,a.value));
+        liveTable.innerHTML=t.innerHTML;
+        liveTable.querySelectorAll('td,th').forEach(c=>c.contentEditable='true');
+      } finally{ _tableStructOpDepth--; }
+      _attachTableResizeHandles(liveTable); applyTableAutoAlign(liveTable);
+      lastCommitted=html; lastTypeCell=null;
+      node.tables[tIdx]=html; node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave();
+      const r=Math.max(0,Math.min(pos?pos.r:0,liveTable.rows.length-1)); const row=liveTable.rows[r];
+      const target=row?row.cells[Math.max(0,Math.min(pos?pos.c:0,row.cells.length-1))]:null;
+      if(target)placeCaretIn(target);
+      sel.layout();
+    };
+    const undoStep=()=>{ if(!past.length)return; const prev=past.pop(); future.push({html:lastCommitted,pos:caretCellPos()}); restoreTo(prev.html,prev.pos); };
+    const redoStep=()=>{ if(!future.length)return; const next=future.pop(); past.push({html:lastCommitted,pos:caretCellPos()}); restoreTo(next.html,next.pos); };
+    const sel=attachTableSelection(wrap,liveTable,{commit:()=>commit(),placeCaretIn:el=>placeTableCaret(el)});
+    const onInput=e=>{ e.stopPropagation(); commit('type'); };
     wrap.addEventListener('input',onInput);
     const onCtx=e=>{
       e.preventDefault(); e.stopPropagation();
       const cell=e.target.closest&&e.target.closest('td,th');
-      showSbContextMenu(e.clientX,e.clientY,buildTableEditItems(liveTable,cell,commit));
+      showSbContextMenu(e.clientX,e.clientY,[...sel.menuItems(cell),...buildTableEditItems(liveTable,cell,()=>commit())]);
       const sbMenu=document.querySelector('.sb-context-menu');
       if(sbMenu)sbMenu.addEventListener('mousedown',ev=>ev.preventDefault());
     };
     wrap.addEventListener('contextmenu',onCtx);
-    const detachPickers=attachTableCellPickers(wrap,liveTable,commit);
+    const detachPickers=attachTableCellPickers(wrap,liveTable,()=>commit());
     const onFocusOut=e=>{ if(_tableStructOpDepth>0||wrap.contains(e.relatedTarget))return; commit(); exit(); };
     wrap.addEventListener('focusout',onFocusOut);
     // Paste. A spreadsheet range (tab-separated text, or an HTML table, as Excel / Google Sheets /
@@ -9125,6 +9384,11 @@ function buildNodeTableObject(node,tIdx){
     const onKeyDown=e=>{
       const cell=e.target.closest&&e.target.closest('td,th');
       if(!cell||!liveTable.contains(cell))return;
+      if((e.ctrlKey||e.metaKey)&&!e.altKey){
+        const k=e.key.toLowerCase();
+        if(k==='z'||k==='y'){ e.preventDefault(); e.stopPropagation(); if(k==='y'||e.shiftKey)redoStep(); else undoStep(); return; }
+      }
+      if(sel.handleKey(e,cell))return;
       if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); commit(); exit(); return; }
       if(e.ctrlKey||e.metaKey||e.altKey)return;
       const r=[...liveTable.rows].indexOf(cell.closest('tr')); const c=cell.cellIndex;
@@ -9182,6 +9446,7 @@ function buildNodeTableObject(node,tIdx){
       }
     }
     if(!placed){ if(opts&&opts.selectText)selectTableCellText(focusCell); else placeCaretIn(focusCell); }
+    sel.layout();
   }
   showDisplay();
   // Lets "Add table…" (grid picker) open a brand-new table straight into editing.
@@ -9597,12 +9862,14 @@ function cleanEditorHtml(editor){
   // elements baked into every cell's stored HTML, re-exported to the PDF, and sitting
   // in the way of the contenteditable caret the next time this exact (unprocessed) HTML is
   // reloaded without going through _attachTableResizeHandles' own cleanup-and-reattach first.
-  if(!editor.querySelector('.editor-img-selected,.col-resize-handle,.row-resize-handle,[data-auto-align],.tbl-cell-picker')) return editor.innerHTML;
+  if(!editor.querySelector('.editor-img-selected,.col-resize-handle,.row-resize-handle,[data-auto-align],.tbl-cell-picker,.tbl-sel,.tbl-grips')) return editor.innerHTML;
   const clone=editor.cloneNode(true);
   // data-auto-align is applyTableAutoAlign's render-time marker (numeric columns right-align on
   // their own) -- recomputed on every render, never stored.
   clone.querySelectorAll('[data-auto-align]').forEach(el=>el.removeAttribute('data-auto-align'));
   clone.querySelectorAll('.editor-img-selected').forEach(el=>el.classList.remove('editor-img-selected'));
+  clone.querySelectorAll('.tbl-sel').forEach(el=>{ el.classList.remove('tbl-sel'); if(!el.getAttribute('class'))el.removeAttribute('class'); });
+  clone.querySelectorAll('.tbl-grips').forEach(el=>el.remove());
   clone.querySelectorAll('.col-resize-handle,.row-resize-handle,.tbl-cell-picker').forEach(el=>el.remove());
   return clone.innerHTML;
 }
