@@ -83,10 +83,7 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     const id = await row.getAttribute('data-id');
     const plainColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
     await expandRow(page, id!);
-    // Cycle none -> low -> med -> high.
-    await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.click(`.todo-priority[data-id="${id}"]`);
+    await page.click(`.todo-prop-opt[data-id="${id}"][data-field="priority"][data-value="high"]`);
     await page.waitForTimeout(100);
     const highColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
     expect(highColor).toBe(plainColor);
@@ -97,8 +94,7 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     const id = await row.getAttribute('data-id');
     const plainColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
     await expandRow(page, id!);
-    await page.click(`.todo-priority[data-id="${id}"]`);
-    await page.click(`.todo-priority[data-id="${id}"]`); // now medium priority (amber, #d1a23a -- distinct from accent)
+    await page.click(`.todo-prop-opt[data-id="${id}"][data-field="priority"][data-value="med"]`); // medium priority (amber -- distinct from accent)
     await page.click(`.todo-check[data-id="${id}"]`);
     // The Completed section always starts collapsed; open it to see the task that just moved there.
     await page.click('#todos-completed-collapse-btn[aria-label="Expand completed"]');

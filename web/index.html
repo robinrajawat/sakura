@@ -2785,16 +2785,14 @@ body.printing-generic #gpe-overlay{
 #todos-panel-maximize,#todos-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;width:28px;height:28px;flex:0 0 auto;padding:0;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #todos-panel-maximize:hover,#todos-panel-close:hover{color:var(--fg);background:var(--hover)}
 /* "Add a task" — a quiet first row under the header: dashed outline at rest, a normal input once
-   focused. The add button only appears while the row is in use (Enter adds too); at rest the row
-   shows the N shortcut instead. */
+   focused. The add button only appears while the row is in use (Enter adds too). N still focuses it
+   from anywhere in the panel; the hint badge was dropped as clutter. */
 #todos-add-row{display:flex;align-items:flex-start;gap:8px;margin:0 10px 8px;padding:5px 6px 5px 10px;border:1px dashed var(--border);border-radius:9px;flex-shrink:0;transition:border-color .12s,background .12s,box-shadow .12s}
 #todos-add-row:hover{background:var(--hover)}
 #todos-add-row:focus-within{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:var(--edit-bg);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
 .todos-add-plus{flex:0 0 auto;width:18px;height:18px;margin-top:5px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 #todos-input{flex:1 1 auto;min-width:0;box-sizing:border-box;appearance:none;resize:none;overflow:hidden;min-height:28px;max-height:120px;border:none;background:transparent;color:var(--fg);font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.4;padding:5px 0;outline:none}
 #todos-input::placeholder{color:var(--hint)}
-#todos-add-row::after{content:'N';align-self:center;flex:0 0 auto;font:500 10.5px 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:5px;padding:1px 5px}
-#todos-add-row:focus-within::after{display:none}
 #todos-add-btn{appearance:none;border:none;background:var(--accent);color:#fff;width:28px;height:28px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:opacity .12s}
 #todos-add-row:focus-within #todos-add-btn{display:inline-flex}
 #todos-add-btn:hover{opacity:.88}
@@ -3158,6 +3156,26 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-row.completed .todo-text{color:var(--muted);text-decoration:none}
 #todos-body .todo-row.completed:not(.expanded) .todo-priority,#todos-body .todo-row.completed:not(.expanded) .todo-status{display:none}
 #todos-body .todo-row.completed .todo-due.set{color:var(--hint)}
+/* Editing: an open row becomes a small card with labelled properties. */
+#todos-body .todo-row.expanded{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border),0 4px 14px rgba(0,0,0,.06);margin:4px 0}
+#todos-body .todos-now .todo-row.expanded{box-shadow:none;margin:0}
+.todo-props{display:flex;flex-direction:column;gap:7px;margin-top:8px;padding-top:10px;border-top:1px solid var(--border)}
+.todo-prop{display:grid;grid-template-columns:56px 1fr;align-items:center;column-gap:8px}
+.todo-prop-label{font:500 11px 'Inter',sans-serif;color:var(--hint)}
+.todo-prop-opts{display:flex;flex-wrap:wrap;gap:2px;margin-left:-6px}
+.todo-prop-opt{appearance:none;border:none;background:none;font:500 11.5px 'Inter',sans-serif;color:var(--muted);padding:3px 7px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
+.todo-prop-opt:hover{color:var(--fg);background:var(--hover)}
+.todo-prop-opt.on{color:var(--fg);background:color-mix(in srgb,var(--fg) 8%,transparent)}
+.todo-prop-opt.on[data-field="priority"][data-value="high"],.todo-prop-opt.on[data-value="blocked"]{color:var(--fc-red);background:color-mix(in srgb,var(--fc-red) 11%,transparent)}
+.todo-prop-opt.on[data-field="priority"][data-value="med"]{color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 12%,transparent)}
+.todo-prop-val{display:flex;flex-wrap:wrap;gap:4px;margin-left:-6px}
+#todos-body .todo-props .todo-due,#todos-body .todo-props .todo-link,#todos-body .todo-props .todo-repeat{display:inline-flex;height:22px;padding:0 6px;border:none;border-radius:6px;background:none;font:500 11.5px 'Inter',sans-serif;color:var(--muted)}
+#todos-body .todo-props .todo-due.set,#todos-body .todo-props .todo-link.set,#todos-body .todo-props .todo-repeat.set{color:var(--fg)}
+#todos-body .todo-props .todo-due.overdue{color:var(--fc-red)}
+#todos-body .todo-props .todo-due:hover,#todos-body .todo-props .todo-link:hover,#todos-body .todo-props .todo-repeat:hover{background:var(--hover);color:var(--fg)}
+.todo-props-foot{display:flex;align-items:center;gap:6px;margin-top:2px;padding-top:8px;border-top:1px solid var(--border)}
+#todos-body .todo-props-foot .todo-subtask-add-btn{display:inline-flex;font-size:11.5px;margin-left:-4px}
+#todos-body .todo-props-foot .todo-actions{opacity:1;pointer-events:auto}
 .node-table-line.qa-flash{animation:todo-flash 1.1s ease}
 @keyframes todo-flash{0%{background:color-mix(in srgb,var(--accent) 28%,transparent)}100%{background:transparent}}
 /* Fixed mode: same reveal state as :hover, but permanent — no layout shift, no hidden controls. */
@@ -31795,6 +31813,15 @@ let dockActiveTab=null;
     saveTodos();
     renderTodos();
   }
+  function setTodoProp(id, field, value){
+    const t=todos.find(x=>x.id===id);
+    if(!t) return;
+    if(field==='priority'&&PRIORITIES.includes(value)) t.priority=value;
+    else if(field==='status'&&STATUSES.includes(value)) t.status=value;
+    else return;
+    saveTodos();
+    renderTodos();
+  }
   function setDueDate(id, dateStr){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
@@ -32269,6 +32296,9 @@ let dockActiveTab=null;
     });
     body.querySelectorAll('.todo-status').forEach(btn=>{
       btn.addEventListener('click',()=>cycleStatus(btn.getAttribute('data-id')));
+    });
+    body.querySelectorAll('.todo-prop-opt').forEach(btn=>{
+      btn.addEventListener('click',()=>setTodoProp(btn.getAttribute('data-id'), btn.getAttribute('data-field'), btn.getAttribute('data-value')));
     });
     body.querySelectorAll('.todo-due').forEach(btn=>{
       btn.addEventListener('click',()=>openDueDateEditor(btn));
@@ -32752,6 +32782,24 @@ let dockActiveTab=null;
   function docRefIconSvg(size){
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
   }
+  // The open (expanded) row: a short list of labelled properties instead of a row of ghost chips.
+  // Priority and status show every option, so one click sets the value; due date, repeat and link
+  // reuse the row's own buttons (and their popovers); subtasks and the row actions sit at the foot.
+  const TODO_PRIORITY_OPTS=[['none','None'],['low','Low'],['med','Medium'],['high','High']];
+  const TODO_STATUS_OPTS=[['none','None'],['progress','In progress'],['waiting','Waiting'],['review','Review'],['blocked','Blocked']];
+  function todoPropsHtml(t,p){
+    const opts=(field,list,current)=>`<span class="todo-prop-opts" role="group" aria-label="${field==='priority'?'Priority':'Status'}">`
+      +list.map(([v,label])=>`<button type="button" class="todo-prop-opt${current===v?' on':''}" data-id="${t.id}" data-field="${field}" data-value="${v}" aria-pressed="${current===v}">${label}</button>`).join('')
+      +`</span>`;
+    const row=(label,val)=>`<div class="todo-prop"><span class="todo-prop-label">${label}</span>${val}</div>`;
+    return `<div class="todo-props">`
+      + row('Priority', opts('priority',TODO_PRIORITY_OPTS,t.priority||'none'))
+      + row('Status', opts('status',TODO_STATUS_OPTS,t.status||'none'))
+      + row('Due', `<span class="todo-prop-val">${p.dueBtn}${p.repeatBtn}</span>`)
+      + row('Link', `<span class="todo-prop-val">${p.linkBtn}</span>`)
+      + `<div class="todo-props-foot">${subtaskMetaHtml(t)}${p.actionsHtml}</div>`
+    +`</div>`;
+  }
   function todoRowHtml(t, draggable){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
@@ -32778,6 +32826,32 @@ let dockActiveTab=null;
     // Everything is back on the line once the row is expanded.
     const holdStatus=status==='waiting'||status==='blocked'||status==='review';
     const hasVisibleChips=(!t.done&&(priority==='high'||priority==='med'||holdStatus))||hasAttachment||hasSubtasks||(!!t.repeat&&!hasSubtasks);
+    const expanded=todosExpandedIds.has(t.id);
+    const priorityBtn=`<button class="todo-priority${priority!=='none'?' set':''}" data-id="${t.id}" data-priority="${priority}" data-tip="${priorityTitle(priority)}" aria-label="Cycle priority">`
+        +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${priority!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
+        +`<span>${priorityLabel(priority)}</span>`
+      +`</button>`;
+    const statusBtn=`<button class="todo-status${status!=='none'?' set':''}" data-id="${t.id}" data-status="${status}" data-tip="${statusTitle(status)}" aria-label="Cycle status">`
+        +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${status!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
+        +`<span>${statusLabel(status)}</span>`
+      +`</button>`;
+    const dueBtn=`<button class="todo-due${due?' set':''}${overdue?' overdue':''}${t.repeat?' recurring':''}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?(t.repeat?`Change due date · ${repeatTitle(t.repeat)}`:'Change due date'):'Set due date'}">`
+        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
+        +`<span>${due?esc(fmtDue(due)):'Due date'}</span>`
+        + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
+      +`</button>`;
+    const linkBtn=`<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
+        + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
+        +`<span>${hasAttachment?esc(linkDisplay):'Link'}</span>`
+      +`</button>`;
+    const repeatBtn=(!hasSubtasks ? `<button class="todo-repeat${t.repeat?' set':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
+        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
+        +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
+      +`</button>` : '');
+    const actionsHtml=`<span class="todo-actions">${hasAttachment?(nodeRef
+          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
+          : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
+        ):''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`;
     return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}${todosExpandedIds.has(t.id)?' expanded':''}${due?' has-due':''}" data-id="${t.id}" data-status="${status}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
@@ -32786,34 +32860,9 @@ let dockActiveTab=null;
       +`<div class="todo-textwrap">`
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +`</div>`
-      +`<div class="todo-meta-row">`
-      + `<button class="todo-priority${priority!=='none'?' set':''}" data-id="${t.id}" data-priority="${priority}" data-tip="${priorityTitle(priority)}" aria-label="Cycle priority">`
-        +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${priority!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
-        +`<span>${priorityLabel(priority)}</span>`
-      +`</button>`
-      + `<button class="todo-status${status!=='none'?' set':''}" data-id="${t.id}" data-status="${status}" data-tip="${statusTitle(status)}" aria-label="Cycle status">`
-        +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${status!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
-        +`<span>${statusLabel(status)}</span>`
-      +`</button>`
-      + `<button class="todo-due${due?' set':''}${overdue?' overdue':''}${t.repeat?' recurring':''}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?(t.repeat?`Change due date · ${repeatTitle(t.repeat)}`:'Change due date'):'Set due date'}">`
-        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
-        +`<span>${due?esc(fmtDue(due)):'Due date'}</span>`
-        + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
-      +`</button>`
-      + `<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}" data-tip="${hasAttachment?'Change link':'Attach a link'}">`
-        + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
-        +`<span>${hasAttachment?esc(linkDisplay):'Link'}</span>`
-      +`</button>`
-      + (!hasSubtasks ? `<button class="todo-repeat${t.repeat?' set':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
-        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
-        +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
-      +`</button>` : '')
-      + subtaskMetaHtml(t)
-      + `<span class="todo-actions">${hasAttachment?(nodeRef
-          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
-          : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
-        ):''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`
-      +`</div>`
+      + (expanded
+        ? todoPropsHtml(t,{priorityBtn,statusBtn,dueBtn,linkBtn,repeatBtn,actionsHtml})
+        : `<div class="todo-meta-row">`+priorityBtn+statusBtn+dueBtn+linkBtn+repeatBtn+subtaskMetaHtml(t)+actionsHtml+`</div>`)
       + subtasksSectionHtml(t)
       +`</div>`
       +`<button type="button" class="todo-expand-toggle" data-id="${t.id}" data-tip="${todosExpandedIds.has(t.id)?'Collapse':'Expand'}" aria-label="${todosExpandedIds.has(t.id)?'Collapse task details':'Expand task details'}"><svg class="todo-expand-chevron${todosExpandedIds.has(t.id)?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>`
