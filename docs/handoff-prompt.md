@@ -159,7 +159,18 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: linked To-Dos say where they point and who raised them.** Owner: the link chip
+**2026-10-19: pasting a table and selecting rows without the hidden Esc step.** Owner: "when I have to
+paste a table to a node … the row doesn't have to be in editable mode … hard to understand how to
+paste or multiselect the nodes". `pasteTableIntoNode(e,id,html)` (above the document paste
+handler) now runs in both branches: a `<table>` pasted while editing a row (and not a Sakura clip,
+`extractSakuraClipPayload`) attaches to that row instead of being split into rows. Clicking a
+`.node-dot` selects its row via `selectRowFromPointer(id,e)` (Shift extends, Ctrl/Cmd toggles;
+the row label's Shift/Ctrl-click uses it too; `.fold-dot` does so only with a modifier, plain
+click still folds). While editing, Shift+↓ with the text selected to its end (Shift+↑ from its
+start) leaves editing and selects rows. `updateRowSelectionPill()` (called from `render`) shows
+`#row-sel-pill` for 2+ selected rows. Covered by `paste-table-select-rows.spec.ts`.
+
+**2026-10-19: linked To-Dos say where they point and who raised them (#572).** Owner: the link chip
 opened "Change link" on click, said too little, and a follow-up's author was missing. At rest a
 linked task shows `.todo-source-row` under the title ("From Ajay · Doc › Row", or the web link);
 clicking it jumps to the row (`.todo-nodejump-open`) or opens the URL. The link chip is no longer
@@ -178,14 +189,6 @@ gains Clear / Delete N rows / Delete N columns. Inside the editing session `comm
 Ctrl+Y restore via `restoreTo` under `_tableStructOpDepth`. The session is still one app undo step.
 The table now serializes on its own (`serialize()`), not via `wrap`. Note-tables
 (`enterScopedTableEdit`) unchanged. Covered by `table-edit-selection-undo.spec.ts`.
-
-**2026-10-19: hub.html To-Dos match desktop (#570).** The phone list is grouped like desktop (`pickNowTodo`
-→ "Now", then Doing / Up next / On hold, in list order) instead of Overdue / Today / Upcoming /
-No Date; rows show the due date on the right and the same chips (`.todo-pri`, `.todo-st`,
-`.todo-prop`); the task sheet's Priority / Status are one-tap option groups
-(`#task-detail-priority-opts`, `#task-detail-status-opts`; Repeat stays a cycling chip);
-completed rows are quiet (no strikethrough, light tick). Swipe cards kept (they carry the swipe
-backgrounds). `--fc-purple` added to hub's themes. Covered by `hub-todos-grouped.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
