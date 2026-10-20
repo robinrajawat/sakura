@@ -159,7 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-19: a folded To-Do's link no longer opens the task when the hand moves.** Owner: "when the
+**2026-10-20: the inline diagram preview keeps a margin.** Owner: "are we not keeping any margins
+within the preview?" draw.io exports with no border, so a diagram's own frame ran straight into the
+preview's edge. `.node-diagram-preview-thumb` now has `padding:12px` (`box-sizing:border-box`; the
+empty placeholder keeps `padding:0`). PDF is unchanged (no frame there). Test:
+`node-diagram-inline-preview.spec.ts` (image inset ≥10px on every side).
+
+**2026-10-19: a folded To-Do's link no longer opens the task when the hand moves (#577).** Owner: "when the
 note is folded, when I click on the link it unfolds the task instead of navigation". Cause: a press on
 the "From … · Doc › Row" line released a few pixels off it is reported as a click on `.todo-row`,
 which toggled the task. The row's click handler now remembers its `mousedown` target: a click that
@@ -177,20 +183,6 @@ pasted bare URL into a link. To-Dos: `sakuraAddTodoForNode` stores `remarkId`; `
 opens the thread at that entry (older tasks with `from` open the row's thread via `revealMarkerEntry`).
 The open task's Link row shows the source line (navigates) plus a pencil `.todo-link-edit` (Change link).
 Tests: `thread-links.spec.ts`, `thread-reply-actions.spec.ts`, `followup-to-todo.spec.ts`.
-
-**2026-10-19: Show as › Row cards; table folds survive a reload; To-Do "go to" line (#574).** Owner: "present
-this kind of table in a better way, like a card summary … a grid", "not automatic, only via show
-as", desktop app. `renderRowCardsHtml` (next to `renderProsConsHtml`, via
-`tableFeatureDisplayHtml`, so PDF/note renders get it too) for `data-table-display="rowcards"`:
-`.pv-rowcards-box` (container query) › `.pv-rowcards[data-cols]` grid, columns chosen so 4 rows
-are 4 across or 2 × 2, never 3 + 1. First column = `.pv-rc-title`, a ≤48-char second column =
-`.pv-rc-sub`, the rest labelled `.pv-rc-field`s; empty cells skipped; cell HTML kept (sanitized).
-Like every Show as display, double-click / Edit data opens the table. Bug fixes: (1)
-`collapsedTableNodeIds` / `collapsedImageNodeIds` were never saved, so a folded table on a top-level
-row reopened on every reload; now `collapsedTables` / `collapsedImages` in the doc payload and in tab
-snapshots (`applyTabSnapshot`, `loadTabFromStorageObj`), and the dots call `scheduleAutoSave`. (2) A
-click beside a linked To-Do's source text opened the task; the whole `.todo-source-row` now jumps.
-Tests: `table-rowcards.spec.ts`, `table-fold-persists.spec.ts`, `followup-to-todo.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
