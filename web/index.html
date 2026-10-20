@@ -1744,6 +1744,30 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Enlarged viewer (openNodeImageViewer). .niv-tools holds the markup editor's "Mark up" toggle;
    .niv-annot-layer is the SVG overlay sized exactly to the picture that draws (and, while marking,
    takes pointer input for) the image's annotations. */
+/* Diagram preview (owner, 2026-10-20: "a click should open a preview"): clicking an inline diagram opens
+   its saved SVG in a large window to zoom and pan; Edit goes on to draw.io. */
+#diagram-viewer{position:fixed;inset:0;z-index:2550;display:none;background:rgba(20,18,15,.45)}
+#diagram-viewer.open{display:block}
+.dv-window{position:absolute;inset:28px;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.28);overflow:hidden}
+.dv-bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;height:48px;padding:0 12px 0 18px;border-bottom:1px solid var(--border);font-family:'Inter',sans-serif}
+.dv-title{font:600 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.dv-where{font:400 12.5px 'Inter',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.dv-spacer{flex:1 1 auto}
+.dv-zoom{display:flex;align-items:center;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--bg)}
+.dv-zoom button{appearance:none;border:none;background:none;width:30px;height:28px;color:var(--muted);font-size:16px;cursor:pointer;border-radius:7px}
+.dv-zoom button:hover{color:var(--fg);background:var(--hover)}
+.dv-zoom-level{min-width:48px;text-align:center;font:500 12.5px 'Inter',sans-serif;color:var(--fg);font-variant-numeric:tabular-nums}
+.dv-btn{appearance:none;height:30px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.dv-btn:hover{background:var(--hover)}
+.dv-btn.dv-edit{background:var(--accent);border-color:var(--accent);color:#fff}
+.dv-btn.dv-edit:hover{background:color-mix(in srgb,var(--accent) 88%,#000)}
+.dv-close{appearance:none;border:none;background:none;width:30px;height:30px;border-radius:8px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.dv-close:hover{background:var(--hover);color:var(--fg)}
+.dv-canvas{position:relative;flex:1 1 auto;overflow:hidden;cursor:grab;touch-action:none;background-color:color-mix(in srgb,var(--bg) 96%,var(--fg));background-image:radial-gradient(color-mix(in srgb,var(--fg) 14%,transparent) 1px,transparent 1px);background-size:18px 18px}
+.dv-canvas.dragging{cursor:grabbing}
+.dv-canvas img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none;pointer-events:none;background:#fff;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.dv-hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font:400 12px 'Inter',sans-serif;color:var(--muted);background:color-mix(in srgb,var(--bg) 90%,transparent);border:1px solid var(--border);border-radius:20px;padding:5px 12px;pointer-events:none;white-space:nowrap;animation:dv-hint-out .4s ease 4s forwards}
+@keyframes dv-hint-out{to{opacity:0}}
 #node-image-viewer{position:fixed;inset:0;z-index:2600;display:none;align-items:center;justify-content:center;background:rgba(15,14,12,.72);padding:24px;box-sizing:border-box}
 #node-image-viewer.open{display:flex}
 .niv-panel{display:flex;flex-direction:column;width:min(1200px,100%);max-height:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
@@ -13344,6 +13368,100 @@ function updateDiagramEditorPagesBadge(d){
     badge.style.display='none';
   }
 }
+// Diagram preview: the saved SVG in a large window, zoomed with the wheel (or a pinch) around the
+// pointer, panned by dragging. Opens fitted to the window; Edit hands over to the draw.io editor.
+let _dvState=null;
+function _dvEnsure(){
+  let ov=el('diagram-viewer'); if(ov)return ov;
+  ov=document.createElement('div'); ov.id='diagram-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
+  ov.innerHTML='<div class="dv-window"><div class="dv-bar"><span class="dv-title"></span><span class="dv-where"></span><span class="dv-spacer"></span>'
+    +'<div class="dv-zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><span class="dv-zoom-level">100%</span><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+)">+</button></div>'
+    +'<button type="button" class="dv-btn dv-fit" data-tip="Fit to window (F)">Fit</button><button type="button" class="dv-btn dv-actual" data-tip="Actual size (0)">100%</button>'
+    +'<button type="button" class="dv-btn dv-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button>'
+    +'<button type="button" class="dv-close" aria-label="Close" data-tip="Close (Esc)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'<div class="dv-canvas"><img alt="" draggable="false" /><div class="dv-hint">Scroll or pinch to zoom · drag to move · Esc to close</div></div></div>';
+  document.body.appendChild(ov);
+  const canvas=ov.querySelector('.dv-canvas');
+  ov.addEventListener('mousedown',e=>{ if(e.target===ov)closeDiagramViewer(); });
+  ov.querySelector('.dv-close').addEventListener('click',closeDiagramViewer);
+  ov.querySelector('.dv-zoom-in').addEventListener('click',()=>_dvZoomBy(1.25));
+  ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.25));
+  ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit());
+  ov.querySelector('.dv-actual').addEventListener('click',()=>_dvSetScale(1));
+  ov.querySelector('.dv-edit').addEventListener('click',()=>{ const id=_dvState&&_dvState.id; closeDiagramViewer(); if(id)openDiagramEditor(id); });
+  canvas.addEventListener('wheel',e=>{
+    e.preventDefault(); if(!_dvState)return;
+    const r=canvas.getBoundingClientRect();
+    _dvZoomBy(Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0015)), e.clientX-r.left, e.clientY-r.top);
+  },{passive:false});
+  canvas.addEventListener('pointerdown',e=>{
+    if(!_dvState||e.button!==0)return;
+    _dvState.drag={x:e.clientX,y:e.clientY,tx:_dvState.tx,ty:_dvState.ty};
+    canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging');
+  });
+  canvas.addEventListener('pointermove',e=>{
+    const dr=_dvState&&_dvState.drag; if(!dr)return;
+    _dvState.tx=dr.tx+(e.clientX-dr.x); _dvState.ty=dr.ty+(e.clientY-dr.y); _dvApply();
+  });
+  const endDrag=()=>{ if(_dvState)_dvState.drag=null; canvas.classList.remove('dragging'); };
+  canvas.addEventListener('pointerup',endDrag); canvas.addEventListener('pointercancel',endDrag);
+  canvas.addEventListener('dblclick',e=>{ if(!_dvState)return; const r=canvas.getBoundingClientRect(); if(Math.abs(_dvState.scale-_dvState.fit)<0.01)_dvSetScale(1,e.clientX-r.left,e.clientY-r.top); else _dvFit(); });
+  // Capture phase on the document: the editor's own key handlers would otherwise see Esc and +/- first.
+  document.addEventListener('keydown',e=>{
+    if(!ov.classList.contains('open'))return;
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeDiagramViewer(); }
+    else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.25); }
+    else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.25); }
+    else if(e.key==='0'){ e.preventDefault(); e.stopPropagation(); _dvSetScale(1); }
+    else if(e.key==='f'||e.key==='F'){ e.preventDefault(); e.stopPropagation(); _dvFit(); }
+  },true);
+  return ov;
+}
+function _dvApply(){
+  const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
+  const img=ov.querySelector('.dv-canvas img');
+  img.style.transform=`translate(${_dvState.tx}px,${_dvState.ty}px) scale(${_dvState.scale})`;
+  ov.querySelector('.dv-zoom-level').textContent=Math.round(_dvState.scale*100)+'%';
+}
+function _dvSetScale(scale,cx,cy){
+  if(!_dvState)return;
+  const canvas=el('diagram-viewer').querySelector('.dv-canvas');
+  if(cx===undefined){ cx=canvas.clientWidth/2; cy=canvas.clientHeight/2; }
+  const next=Math.min(8,Math.max(0.1,scale)), k=next/_dvState.scale;
+  _dvState.tx=cx-(cx-_dvState.tx)*k; _dvState.ty=cy-(cy-_dvState.ty)*k; _dvState.scale=next;
+  _dvApply();
+}
+function _dvZoomBy(f,cx,cy){ if(_dvState)_dvSetScale(_dvState.scale*f,cx,cy); }
+// Fit the whole diagram with a margin, never blowing a small one up past twice its size.
+function _dvFit(){
+  if(!_dvState)return;
+  const canvas=el('diagram-viewer').querySelector('.dv-canvas');
+  const W=canvas.clientWidth, H=canvas.clientHeight, w=_dvState.w, h=_dvState.h;
+  const fit=Math.min(2,Math.max(0.1,Math.min((W-96)/w,(H-96)/h)));
+  _dvState.fit=fit; _dvState.scale=fit; _dvState.tx=(W-w*fit)/2; _dvState.ty=(H-h*fit)/2;
+  _dvApply();
+}
+function openDiagramViewer(diagramId){
+  const d=findDiagram(diagramId); if(!d)return;
+  if(!d.previewSvg){ openDiagramEditor(diagramId); return; }
+  const ov=_dvEnsure();
+  const node=nodes.find(n=>n.id===d.anchorNodeId);
+  ov.querySelector('.dv-title').textContent=d.title||'Untitled diagram';
+  const where=node&&(node.text||'').trim();
+  ov.querySelector('.dv-where').textContent=where?'· in “'+where+'”':'';
+  const img=ov.querySelector('.dv-canvas img');
+  _dvState={id:d.id,scale:1,fit:1,tx:0,ty:0,w:1,h:1,drag:null,returnFocus:document.activeElement};
+  img.style.transform='';
+  img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; _dvState.w=img.naturalWidth||800; _dvState.h=img.naturalHeight||600; img.style.width=_dvState.w+'px'; img.style.height=_dvState.h+'px'; _dvFit(); };
+  img.src=d.previewSvg;
+  ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
+}
+function closeDiagramViewer(){
+  const ov=el('diagram-viewer'); if(!ov||!ov.classList.contains('open'))return;
+  ov.classList.remove('open');
+  const back=_dvState&&_dvState.returnFocus; _dvState=null;
+  if(back&&back.isConnected&&typeof back.focus==='function')back.focus();
+}
 function openDiagramEditor(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
   const overlay=el('diagram-editor-overlay'); if(!overlay)return;
@@ -20639,7 +20757,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const gLine=document.createElement('div'); gLine.className='node-diagram-line'; gLine.style.position='relative';
       gLine.style.paddingLeft=hideTreeLines?(gDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
       const card=document.createElement('div'); card.className='node-diagram-preview-card';
-      const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'; thumb.dataset.tip='Click to open in the diagram editor';
+      const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'; thumb.dataset.tip='Click to preview';
       if(d.previewSvg){
         const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
         img.addEventListener('error',()=>{ thumb.classList.add('node-diagram-preview-empty'); thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
@@ -20650,7 +20768,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         thumb.dataset.tip='No preview yet — click to open and generate one';
       }
       thumb.addEventListener('mousedown',e=>e.stopPropagation());
-      thumb.addEventListener('click',e=>{e.stopPropagation(); openDiagramEditor(d.id);});
+      thumb.addEventListener('click',e=>{e.stopPropagation(); openDiagramViewer(d.id);});
       const meta=document.createElement('div'); meta.className='node-diagram-preview-meta';
       const title=document.createElement('span'); title.className='node-diagram-preview-title'; title.contentEditable='true'; title.textContent=d.title||''; title.dataset.placeholder='Untitled diagram'; title.dataset.tip='Click to rename'; title.spellcheck=false;
       title.addEventListener('mousedown',e=>e.stopPropagation());

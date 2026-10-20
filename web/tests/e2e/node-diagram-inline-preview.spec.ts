@@ -93,7 +93,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(thumb.locator('svg')).toHaveCount(1);
   });
 
-  test('clicking the preview thumbnail or its open-editor icon opens the real diagram editor', async ({ page }) => {
+  test('clicking the thumbnail opens the preview; its Edit button (or the open-editor icon) opens the real diagram editor', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -115,6 +115,11 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     }, FAKE_PREVIEW_SVG);
 
     await page.locator('.node-diagram-preview-thumb').click();
+    await expect(page.locator('#diagram-viewer')).toHaveClass(/open/);
+    await expect(page.locator('#diagram-editor-overlay')).not.toHaveClass(/open/);
+    await expect(page.locator('#diagram-viewer .dv-edit')).toHaveText('Edit');
+    await page.locator('#diagram-viewer .dv-edit').click();
+    await expect(page.locator('#diagram-viewer')).not.toHaveClass(/open/);
     await expect(page.locator('#diagram-editor-overlay')).toHaveClass(/open/);
   });
 
@@ -140,6 +145,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     }, FAKE_PREVIEW_SVG);
 
     await page.locator('.node-diagram-preview-thumb').click();
+    await page.locator('#diagram-viewer .dv-edit').click();
     await expect(page.locator('#diagram-editor-overlay')).toHaveClass(/open/);
 
     const titleInput = page.locator('#diagram-editor-title-input');
@@ -341,5 +347,60 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(title).toHaveText('Keep me');
     // @ts-expect-error
     expect(await page.evaluate(() => diagrams[0].title)).toBe('Keep me');
+  });
+
+  // Owner, 2026-10-20: "a click should open a preview" with zoom in/out, not straight into draw.io.
+  test('the preview opens fitted, zooms with the wheel and the buttons, pans by dragging, and closes with Esc', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Order flow', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Night delivery', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]);
+      // @ts-expect-error
+      render();
+    }, LARGE_PREVIEW_SVG);
+    await page.locator('.node-diagram-preview-thumb').click();
+    const viewer = page.locator('#diagram-viewer');
+    await expect(viewer).toHaveClass(/open/);
+    await expect(viewer.locator('.dv-title')).toHaveText('Night delivery');
+    await expect(viewer.locator('.dv-where')).toContainText('Order flow');
+    const img = viewer.locator('.dv-canvas img');
+    const canvas = viewer.locator('.dv-canvas');
+    // Fitted: the whole diagram is inside the window, centred.
+    const [ib, cb] = [await img.boundingBox(), await canvas.boundingBox()];
+    expect(ib!.x).toBeGreaterThanOrEqual(cb!.x);
+    expect(ib!.x + ib!.width).toBeLessThanOrEqual(cb!.x + cb!.width);
+    expect(Math.abs((ib!.x + ib!.width / 2) - (cb!.x + cb!.width / 2))).toBeLessThan(2);
+    const level = viewer.locator('.dv-zoom-level');
+    const fitText = await level.textContent();
+    await viewer.locator('.dv-actual').click();
+    await expect(level).toHaveText('100%');
+    await viewer.locator('.dv-zoom-in').click();
+    await expect(level).toHaveText('125%');
+    await viewer.locator('.dv-zoom-out').click();
+    await expect(level).toHaveText('100%');
+    // Wheel zooms in around the pointer.
+    await page.mouse.move(cb!.x + cb!.width / 2, cb!.y + cb!.height / 2);
+    await page.mouse.wheel(0, -300);
+    await expect.poll(async () => parseInt((await level.textContent())!)).toBeGreaterThan(100);
+    // Drag pans.
+    const before = (await img.boundingBox())!;
+    await page.mouse.down();
+    await page.mouse.move(cb!.x + cb!.width / 2 + 60, cb!.y + cb!.height / 2 + 30, { steps: 4 });
+    await page.mouse.up();
+    const after = (await img.boundingBox())!;
+    expect(Math.round(after.x - before.x)).toBe(60);
+    expect(Math.round(after.y - before.y)).toBe(30);
+    await viewer.locator('.dv-fit').click();
+    await expect(level).toHaveText(fitText!);
+    await page.keyboard.press('Escape');
+    await expect(viewer).not.toHaveClass(/open/);
+    await expect(page.locator('#diagram-editor-overlay')).not.toHaveClass(/open/);
   });
 });
