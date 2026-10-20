@@ -296,10 +296,10 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await page.locator('#todos-panel-maximize').click();
     await expect(page.locator('#todos-panel')).not.toHaveClass(/maximized/);
 
-    // ⋯ holds Version history, Export as PDF and Select.
+    // ⋯ holds the inline versions (none yet), Save a version now, Export as PDF and Select.
     await page.locator('#todos-more-trigger').click();
     await expect(page.locator('#todos-more-menu')).toHaveClass(/open/);
-    await expect(page.locator('#todos-more-menu .todo-dd-item')).toHaveText(['Version history', 'Export as PDF', 'Select or reorder tasks']);
+    await expect(page.locator('#todos-more-menu .todo-dd-item')).toHaveText(['Save a version now', 'Export as PDF', 'Select or reorder tasks']);
     await page.locator('#todos-more-trigger').click();
     await expect(page.locator('#todos-more-menu')).not.toHaveClass(/open/);
 

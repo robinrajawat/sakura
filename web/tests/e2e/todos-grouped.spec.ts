@@ -169,7 +169,7 @@ test('the task menu sets priority and status in one click and moves the task to 
   expect(await idsIn(page, '.todos-group-hold')).toEqual(['k']);
 });
 
-test('unfolding a task (its count, or the cut-off title) shows the full title and subtasks on grey, with a "N done" foot; it is kept', async ({ page }) => {
+test('unfolding a task (its count, or the cut-off title) shows the full title and subtasks (no grey fill), with a "N done" foot; it is kept', async ({ page }) => {
   const long = 'A very long task title that keeps going '.repeat(8);
   await openWith(page, [
     { id: 'L', text: long },
@@ -180,9 +180,9 @@ test('unfolding a task (its count, or the cut-off title) shows the full title an
   await expect(page.locator('.todo-row[data-id="L"]')).toHaveClass(/expanded/);
   const lines = await page.locator('.todo-text[data-id="L"]').evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
   expect(lines).toBeGreaterThan(2);
-  const bg = await page.locator('.todo-row[data-id="L"]').evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).boxShadow]);
-  expect(bg[0]).not.toBe('rgba(0, 0, 0, 0)');
-  expect(bg[1]).toBe('none'); // a grey area, not a card
+  // No fill or card once the pointer leaves it (owner: "why are we highlighting a task?").
+  await page.mouse.move(2, 2);
+  await expect.poll(() => page.locator('.todo-row[data-id="L"]').evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).boxShadow])).toEqual(['rgba(0, 0, 0, 0)', 'none']);
   // The count unfolds the subtasks: open ones listed, done ones are "2 done" in the foot.
   await page.click('.todo-subtasks-toggle[data-id="S"]');
   await expect(page.locator('.todo-subtask-row[data-parent="S"]')).toHaveCount(1);

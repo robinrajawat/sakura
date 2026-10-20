@@ -2864,7 +2864,8 @@ body.printing-generic #gpe-overlay{
 #todos-add-btn{appearance:none;border:none;background:var(--accent);color:#fff;width:28px;height:28px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:opacity .12s}
 #todos-add-row:focus-within #todos-add-btn{display:inline-flex}
 #todos-add-btn:hover{opacity:.88}
-#todos-more-menu{right:0;left:auto;min-width:210px}
+#todos-more-menu{right:0;left:auto;min-width:270px;max-height:min(440px,70vh)}
+#todos-more-menu .todo-more-item{justify-content:flex-start}
 #todos-filter-menu{right:0;left:auto}
 .todo-more-item{display:flex;align-items:center;justify-content:flex-start;gap:9px}
 .todo-more-item svg{flex:0 0 auto;color:var(--muted)}
@@ -2894,6 +2895,9 @@ body.printing-generic #gpe-overlay{
 .doc-link-menu-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .doc-link-menu-btn.primary:hover{filter:brightness(1.06)}
 .todo-dd-menu.open{display:flex}
+.todo-history-item .todo-history-when{flex:0 0 auto}
+.todo-history-item .todo-history-meta{margin-left:auto;padding-left:14px;color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.todo-dd-empty{padding:6px 12px;font:400 12px 'Inter',sans-serif;color:var(--muted)}
 .todo-dd-label{font:600 10px 'Inter',sans-serif;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px 3px}
 .todo-dd-divider{height:1px;background:var(--border);margin:5px 2px}
 .todo-dd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:8px 10px;border-radius:8px;font:400 12.5px 'Inter',sans-serif;cursor:pointer;transition:background .12s}
@@ -3169,7 +3173,7 @@ body.printing-generic #gpe-overlay{
 .todos-group-doing .todos-group-label::before,.todos-group-hold .todos-group-label::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--fc-green)}
 .todos-group-hold .todos-group-label::before{background:var(--fc-purple)}
 #todos-body .todo-row{padding:6px 10px;margin-bottom:0;gap:10px;border-radius:8px}
-#todos-body .todo-row.expanded{background:var(--hover)}
+/* An unfolded task has no grey fill (owner, 2026-10-20: "why are we highlighting a task?"); the indented subtasks show it is open. */
 #todos-body .todo-text{font-size:13px;line-height:1.45}
 #todos-body .todo-main{gap:4px}
 #todos-body .todo-check{border-color:color-mix(in srgb,var(--hint) 60%,transparent);background:transparent;margin-top:1.5px}
@@ -3232,8 +3236,10 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-row:hover .todo-more-btn,.todo-more-btn:focus-visible{opacity:1}
 .todo-more-btn:hover{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
 .todo-pri-dot{cursor:pointer}
-#todos-body .todo-row.expanded{background:var(--hover)}
-#todos-body .todo-text:focus{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border);border-radius:5px;padding:1px 5px;margin:-1px -5px;cursor:text}
+/* A subtask is edited the same way as its task: a white box on the text while typing, no grey row
+   behind it (owner, 2026-10-20: "editing the sub-task looks different"). */
+#todos-body .todo-text:focus,#todos-body .todo-subtask-text:focus{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border);border-radius:5px;padding:1px 5px;margin:-1px -5px;cursor:text;color:var(--fg)}
+#todos-body .todo-subtask-row:hover{background:none}
 #todos-body .todo-subtasks-toggle .todo-subtasks-chevron{display:inline-block;transition:transform .15s}
 #todos-body .todo-subtasks-toggle.open{color:var(--fg);background:color-mix(in srgb,var(--fg) 7%,transparent)}
 #todos-body .todo-subtasks-toggle.open .todo-subtasks-chevron{transform:rotate(90deg)}
@@ -4756,7 +4762,10 @@ body.printing-generic #gpe-overlay{
     <div class="todo-dd-wrap" id="todos-more-wrap">
       <button type="button" class="todo-dd-trigger" id="todos-more-trigger" data-tip="More" aria-label="More To-Do actions" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
       <div class="todo-dd-menu" id="todos-more-menu" role="menu">
-        <button type="button" class="todo-dd-item todo-more-item" id="todos-history-btn" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>Version history</button>
+        <span class="todo-dd-label">Restore an earlier version</span>
+        <div id="todos-history-inline"></div>
+        <button type="button" class="todo-dd-item todo-more-item" id="todos-history-save-btn" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save a version now</button>
+        <div class="todo-dd-divider"></div>
         <button type="button" class="todo-dd-item todo-more-item" id="todos-export-pdf-item" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Export as PDF</button>
         <button type="button" class="todo-dd-item todo-more-item" id="todos-select-toggle" role="menuitem" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg>Select or reorder tasks</button>
       </div>
@@ -5231,19 +5240,6 @@ body.printing-generic #gpe-overlay{
       <div class="history-modal-footer">
         <span class="history-modal-footer-hint" id="history-modal-footer-hint">Keeps the last 10 versions per document</span>
         <button id="history-save-now-btn" class="btn">Save a version now</button>
-      </div>
-    </div>
-  </div>
-  <div id="todos-history-overlay" class="history-modal-overlay">
-    <div class="history-modal">
-      <div class="history-modal-header">
-        <span class="history-modal-title">To-Dos Version History</span>
-        <button id="todos-history-close-x" class="history-modal-close-x" data-tip="Close">×</button>
-      </div>
-      <div id="todos-history-body" class="history-modal-body"></div>
-      <div class="history-modal-footer">
-        <span class="history-modal-footer-hint">Keeps the last 20 versions, app-wide (not tied to any document)</span>
-        <button id="todos-history-save-now-btn" class="btn">Save a version now</button>
       </div>
     </div>
   </div>
@@ -13391,9 +13387,9 @@ function _dvEnsure(){
   const canvas=ov.querySelector('.dv-canvas');
   ov.addEventListener('mousedown',e=>{ if(e.target===ov)closeDiagramViewer(); });
   ov.querySelector('.dv-close').addEventListener('click',closeDiagramViewer);
-  ov.querySelector('.dv-zoom-in').addEventListener('click',()=>_dvZoomBy(1.25));
-  ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.25));
-  ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit());
+  ov.querySelector('.dv-zoom-in').addEventListener('click',()=>_dvZoomBy(1.2));
+  ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.2));
+  ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit(true));
   ov.querySelector('.dv-actual').addEventListener('click',()=>_dvSetScale(1));
   ov.querySelector('.dv-edit').addEventListener('click',()=>{ const id=_dvState&&_dvState.id; closeDiagramViewer(); if(id)openDiagramEditor(id); });
   // Like Figma/Miro: a pinch (sent as Ctrl+wheel) or Ctrl/Cmd+wheel zooms around the pointer; a plain
@@ -13404,7 +13400,11 @@ function _dvEnsure(){
     const unit=e.deltaMode===1?16:e.deltaMode===2?canvas.clientHeight:1;
     if(e.ctrlKey||e.metaKey){
       const r=canvas.getBoundingClientRect();
-      _dvZoomBy(Math.exp(-e.deltaY*unit*0.01), e.clientX-r.left, e.clientY-r.top);
+      // Gentle steps (owner, 2026-10-20: zoom was "very aggressive"): a mouse-wheel notch is
+      // ~100px, which used to zoom 2.7x; capping each event keeps a notch near 12% and lets a
+      // pinch's many small events glide.
+      const d=Math.max(-20,Math.min(20,e.deltaY*unit));
+      _dvZoomBy(Math.exp(-d*0.006), e.clientX-r.left, e.clientY-r.top, false);
     } else {
       const dx=e.shiftKey&&!e.deltaX?e.deltaY:e.deltaX, dy=e.shiftKey&&!e.deltaX?0:e.deltaY;
       _dvState.tx-=dx*unit; _dvState.ty-=dy*unit; _dvApply();
@@ -13421,41 +13421,43 @@ function _dvEnsure(){
   });
   const endDrag=()=>{ if(_dvState)_dvState.drag=null; canvas.classList.remove('dragging'); };
   canvas.addEventListener('pointerup',endDrag); canvas.addEventListener('pointercancel',endDrag);
-  canvas.addEventListener('dblclick',e=>{ if(!_dvState)return; const r=canvas.getBoundingClientRect(); if(Math.abs(_dvState.scale-_dvState.fit)<0.01)_dvSetScale(1,e.clientX-r.left,e.clientY-r.top); else _dvFit(); });
+  canvas.addEventListener('dblclick',e=>{ if(!_dvState)return; const r=canvas.getBoundingClientRect(); if(Math.abs(_dvState.scale-_dvState.fit)<0.01)_dvSetScale(1,e.clientX-r.left,e.clientY-r.top); else _dvFit(true); });
   // Capture phase on the document: the editor's own key handlers would otherwise see Esc and +/- first.
   document.addEventListener('keydown',e=>{
     if(!ov.classList.contains('open'))return;
     if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeDiagramViewer(); }
-    else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.25); }
-    else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.25); }
+    else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.2); }
+    else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.2); }
     else if(e.key==='0'){ e.preventDefault(); e.stopPropagation(); _dvSetScale(1); }
-    else if(e.key==='f'||e.key==='F'){ e.preventDefault(); e.stopPropagation(); _dvFit(); }
+    else if(e.key==='f'||e.key==='F'){ e.preventDefault(); e.stopPropagation(); _dvFit(true); }
   },true);
   return ov;
 }
-function _dvApply(){
+// Buttons, keys and double-click ease into the new zoom; wheel, pinch and drag follow the hand directly.
+function _dvApply(animate){
   const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
   const img=ov.querySelector('.dv-canvas img');
+  img.style.transition=animate?'transform .18s ease-out':'none';
   img.style.transform=`translate(${_dvState.tx}px,${_dvState.ty}px) scale(${_dvState.scale})`;
   ov.querySelector('.dv-zoom-level').textContent=Math.round(_dvState.scale*100)+'%';
 }
-function _dvSetScale(scale,cx,cy){
+function _dvSetScale(scale,cx,cy,animate=true){
   if(!_dvState)return;
   const canvas=el('diagram-viewer').querySelector('.dv-canvas');
   if(cx===undefined){ cx=canvas.clientWidth/2; cy=canvas.clientHeight/2; }
   const next=Math.min(8,Math.max(0.1,scale)), k=next/_dvState.scale;
   _dvState.tx=cx-(cx-_dvState.tx)*k; _dvState.ty=cy-(cy-_dvState.ty)*k; _dvState.scale=next;
-  _dvApply();
+  _dvApply(animate);
 }
-function _dvZoomBy(f,cx,cy){ if(_dvState)_dvSetScale(_dvState.scale*f,cx,cy); }
+function _dvZoomBy(f,cx,cy,animate){ if(_dvState)_dvSetScale(_dvState.scale*f,cx,cy,animate); }
 // Fit the whole diagram with a margin, never blowing a small one up past twice its size.
-function _dvFit(){
+function _dvFit(animate){
   if(!_dvState)return;
   const canvas=el('diagram-viewer').querySelector('.dv-canvas');
   const W=canvas.clientWidth, H=canvas.clientHeight, w=_dvState.w, h=_dvState.h;
   const fit=Math.min(2,Math.max(0.1,Math.min((W-96)/w,(H-96)/h)));
   _dvState.fit=fit; _dvState.scale=fit; _dvState.tx=(W-w*fit)/2; _dvState.ty=(H-h*fit)/2;
-  _dvApply();
+  _dvApply(animate);
 }
 function openDiagramViewer(diagramId){
   const d=findDiagram(diagramId); if(!d)return;
@@ -32062,7 +32064,7 @@ let dockActiveTab=null;
   // history modal, since that's tightly coupled to per-document/per-node concepts Todos doesn't
   // have.
   const TODOS_REVISION_KEY='sakura_todos_revisions_v1';
-  const TODOS_REVISION_MAX=20;
+  const TODOS_REVISION_MAX=5; // owner, 2026-10-20: the last 5 are enough, listed inline in the ⋯ menu
   const TODOS_REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes, same cadence as document revisions
   function loadTodosRevisions(){ try{ const raw=localStorage.getItem(TODOS_REVISION_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[] }catch(e){ return [] } }
   function saveTodosRevisions(list){ try{ localStorage.setItem(TODOS_REVISION_KEY,JSON.stringify(list)) }catch(e){} if(typeof markMetaChanged==='function')markMetaChanged('todosRevisions'); }
@@ -34064,47 +34066,32 @@ let dockActiveTab=null;
     if(!panel) return;
     if(panel.classList.contains('open')) closeTodosPanel(); else openTodosPanel();
   }
-  function openTodosHistory(){
-    const overlay=document.getElementById('todos-history-overlay'); if(!overlay)return;
-    renderTodosHistoryList();
-    overlay.classList.add('open');
-  }
-  function closeTodosHistory(){
-    document.getElementById('todos-history-overlay')?.classList.remove('open');
-  }
   function todosHistorySummary(list){
-    if(!Array.isArray(list)||!list.length)return '(empty)';
+    if(!Array.isArray(list)||!list.length)return 'empty';
     const open=list.filter(t=>!t.done).length; const done=list.length-open;
-    return open+' open, '+done+' completed';
+    return open+' open, '+done+' done';
   }
-  function renderTodosHistoryList(){
-    const body=document.getElementById('todos-history-body'); if(!body)return;
-    body.innerHTML='';
-    const nowRow=document.createElement('div'); nowRow.className='history-row history-row-now';
-    const nowInfo=document.createElement('div'); nowInfo.className='history-row-info';
-    const nowTime=document.createElement('div'); nowTime.className='history-row-time'; nowTime.textContent='Now';
-    const nowMeta=document.createElement('div'); nowMeta.className='history-row-meta'; nowMeta.textContent=todosHistorySummary(todos);
-    nowInfo.appendChild(nowTime); nowInfo.appendChild(nowMeta);
-    nowRow.appendChild(nowInfo);
-    body.appendChild(nowRow);
-    const revisions=loadTodosRevisions().slice().reverse(); // newest first
+  // Version history lives inline in the ⋯ menu (owner, 2026-10-20: "keep them inline rather than a
+  // popup"): the last 5 versions, newest first, each one click to restore.
+  function renderTodosHistoryInline(){
+    const box=document.getElementById('todos-history-inline'); if(!box)return;
+    box.innerHTML='';
+    const revisions=loadTodosRevisions().slice().reverse().slice(0,TODOS_REVISION_MAX);
     if(!revisions.length){
-      const empty=document.createElement('div'); empty.className='history-empty';
-      empty.textContent='No earlier versions yet — one is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" below.';
-      body.appendChild(empty);
+      const empty=document.createElement('div'); empty.className='todo-dd-empty';
+      empty.textContent='No earlier versions yet';
+      empty.dataset.tip='A version is saved automatically every 10 minutes while you make changes';
+      box.appendChild(empty);
       return;
     }
     revisions.forEach(rev=>{
-      const row=document.createElement('div'); row.className='history-row';
-      const info=document.createElement('div'); info.className='history-row-info';
-      const time=document.createElement('div'); time.className='history-row-time';
-      time.textContent=new Date(rev.ts).toLocaleString()+(rev.reason&&rev.reason!=='Auto'?' · '+rev.reason:'');
-      const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=todosHistorySummary(rev.todos);
-      info.appendChild(time); info.appendChild(meta);
-      const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore';
-      restoreBtn.addEventListener('click',()=>restoreTodosRevision(rev.ts));
-      row.appendChild(info); row.appendChild(restoreBtn);
-      body.appendChild(row);
+      const b=document.createElement('button'); b.type='button'; b.className='todo-dd-item todo-more-item todo-history-item'; b.setAttribute('role','menuitem');
+      b.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg><span class="todo-history-when"></span><span class="todo-history-meta"></span>';
+      b.querySelector('.todo-history-when').textContent=(typeof historyMenuWhen==='function'?historyMenuWhen(rev.ts):new Date(rev.ts).toLocaleString());
+      b.querySelector('.todo-history-meta').textContent=todosHistorySummary(rev.todos);
+      if(rev.reason&&rev.reason!=='Auto')b.dataset.tip=rev.reason;
+      b.addEventListener('click',()=>{ closeTodoDropdowns(); restoreTodosRevision(rev.ts); });
+      box.appendChild(b);
     });
   }
   async function restoreTodosRevision(ts){
@@ -34114,12 +34101,10 @@ let dockActiveTab=null;
     todos=JSON.parse(JSON.stringify(rev.todos));
     saveTodos();
     renderTodos();
-    renderTodosHistoryList();
     showTodosToast('Version restored');
   }
   function saveTodosVersionNow(){
     recordTodosRevision(todos,'Manual checkpoint');
-    renderTodosHistoryList();
     showTodosToast('Version saved');
   }
 
@@ -34638,6 +34623,7 @@ let dockActiveTab=null;
     const menu=document.getElementById('todos-more-menu');
     const isOpen=menu.classList.contains('open');
     closeTodoDropdowns();
+    if(!isOpen) renderTodosHistoryInline();
     menu.classList.toggle('open', !isOpen);
     e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
     if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
@@ -34654,13 +34640,7 @@ let dockActiveTab=null;
     e.preventDefault(); input.focus();
   });
   document.getElementById('todos-export-pdf-item')?.addEventListener('click',()=>{ closeTodoDropdowns(); exportTodosAsPdf(); });
-  document.getElementById('todos-history-btn')?.addEventListener('click', ()=>{ closeTodoDropdowns(); openTodosHistory(); });
-  document.getElementById('todos-history-close-x')?.addEventListener('click', closeTodosHistory);
-  document.getElementById('todos-history-save-now-btn')?.addEventListener('click', saveTodosVersionNow);
-  onOverlayBackdropClick(document.getElementById('todos-history-overlay'),closeTodosHistory);
-  document.addEventListener('keydown', e=>{
-    if(e.key==='Escape'&&document.getElementById('todos-history-overlay')?.classList.contains('open')){ e.preventDefault(); e.stopImmediatePropagation(); closeTodosHistory(); }
-  },true);
+  document.getElementById('todos-history-save-btn')?.addEventListener('click', ()=>{ closeTodoDropdowns(); saveTodosVersionNow(); });
   document.getElementById('todos-search-trigger')?.addEventListener('click', toggleTodosSearch);
   document.getElementById('todos-search-input')?.addEventListener('input', e=>{
     searchQuery=e.target.value;
@@ -34710,7 +34690,6 @@ let dockActiveTab=null;
   document.addEventListener('keydown',e=>{
     const panel=document.getElementById('todos-panel');
     if(e.key==='Escape'&&panel&&panel.classList.contains('open')){
-      if(document.getElementById('todos-history-overlay')?.classList.contains('open')) return; // its own Escape handler closes it instead
       const active=document.activeElement;
       if(active&&(active.id==='todos-input'||active.id==='todos-search-input'||active.classList.contains('todo-text'))){ active.blur(); return; }
       closeTodosPanel();

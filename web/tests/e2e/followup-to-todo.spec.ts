@@ -33,6 +33,13 @@ async function openTodos(page: Page) {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.keyboard.press('Control+Shift+T');
 }
+// Going to a row can close the panel a moment after the click, so reopen until the task is on screen.
+async function showTask(page: Page, id: string) {
+  await expect(async () => {
+    await openTodos(page);
+    await expect(page.locator(`.todo-row[data-id="${id}"]`)).toBeVisible({ timeout: 1000 });
+  }).toPass();
+}
 
 const entry = (page: Page) => page.locator('.thread-entry:has(#inline-remark-text-f1)');
 async function menuItem(page: Page, label: string) {
@@ -77,19 +84,14 @@ test('the task says who raised it and where it points; clicking that goes to the
   await src.click();
   await expect(page.locator('#todo-link-popover.open, .todo-link-popover.open')).toHaveCount(0);
   // Going to the row doesn't also open the task (it used to, when the panel stayed open).
-  await openTodos(page);
-  await expect(page.locator(`.todo-row[data-id="${id}"]`)).toBeVisible();
+  await showTask(page, id);
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
   // A click beside the text, on the same line, also goes to the row rather than opening the task.
   await src.locator('xpath=..').click({ position: { x: (await src.locator('xpath=..').boundingBox())!.width - 4, y: 6 } });
-  await openTodos(page);
+  await showTask(page, id);
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
-  // The task menu is where the link is changed. Going to the row can close the panel a moment after
-  // the click, so make sure the row is on screen (reopening the panel if needed) before right-clicking.
-  await expect(async () => {
-    await openTodos(page);
-    await expect(page.locator(`.todo-row[data-id="${id}"]`)).toBeVisible({ timeout: 1000 });
-  }).toPass();
+  // The task menu is where the link is changed.
+  await showTask(page, id);
   await page.locator(`.todo-row[data-id="${id}"]`).click({ button: 'right', position: { x: 4, y: 10 } });
   await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Change link…' }).click();
   await expect(page.locator('#todo-link-popover.open')).toHaveCount(1);
