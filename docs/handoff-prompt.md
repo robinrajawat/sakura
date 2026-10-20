@@ -159,6 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: Shorter More menu; folded badge is just the count.** Owner approved mockup
+`inline-objects/more-menu-mockup.png`: Duplicate joins the Add icon row; Zoom in, Collapse/expand, Tags, Version history and
+Leave out of export sit behind a "Row ›" flyout (owner moved Zoom/Collapse there from a Branch row) (`flyout()` in `renderContextMorePanel`,
+triggers carry `data-flyout="insert|row"`). Owner then found the badge icons louder than the row's own dots
+and asked for "only the count, rest on hover": `.fold-badge` is "+N" only, `.fold-badge-open` (accent) when
+open questions or follow-ups are inside, tooltip lists counts (`foldBadgeTipParts`, `FOLD_KIND_NAMES`).
+
 **2026-10-20: Folded counts show open questions, not notes/threads.** Owner: "drop notes, threads and instead
 have open questions"; Agreed/Out of scope/decisions stay out too (tooltip only). `FOLD_KIND_ICONS` is now
 diagram/table/image/question; `subtreeContentCounts` counts `openQuestions(threadEntries(...))` per hidden row.
@@ -172,14 +179,6 @@ only when what is hidden has no icon (To-Do refs, Q&A links, other markers). `sh
 `TOAST_UNDO_MS` (4s) when the message mentions undo. Screenshot `inline-objects/fold-badge-kinds.png`.
 Also (owner: "why are we showing bit of background?") `.node-marker-badge` has no tint at rest, only on hover.
 Tests: `fold-badge-kinds.spec.ts`, `folded-branch-indicator-standard.spec.ts`.
-
-**2026-10-20: Row icons follow the text.** Owner picked my suggestion "row icons sit far from their text" and
-"too many page-shaped icons"; mockup `inline-objects/row-icons-mockup.png`, then asked for the icons at the end of
-the last line of a wrapped row. `moveRowIconsInline(row)` (called just before `frag.appendChild(row)` in
-render) moves every `ROW_ICON_SEL` child into one `span.node-row-icons` at the end of `.node-label`
-(inline-flex, `vertical-align:middle`); a row being edited has no label and keeps them as before. No setting
-(owner asked; I advised none). "Left out of export" dot/menu icon is now an eye with a slash (`NOEXPORT_DOT_SVG`).
-Test: `row-icons-inline.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

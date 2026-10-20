@@ -389,7 +389,7 @@ test.describe('Images as node objects', () => {
       // @ts-expect-error
       collapsedIds = new Set([1]); render();
     });
-    await expect(page.locator('.node-row[data-id="1"] .fold-badge')).toHaveAttribute('data-tip', /contains an image/);
+    await expect(page.locator('.node-row[data-id="1"] .fold-badge')).toHaveAttribute('data-tip', /1 image/);
   });
 
   test('copy/paste (Ctrl/Cmd+C → paste), duplicate and backspace-merge carry images with fresh ids', async ({ page }) => {

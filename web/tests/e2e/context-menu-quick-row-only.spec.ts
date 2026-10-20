@@ -69,10 +69,13 @@ test.describe('Right-click menu is fixed: quick row + "More" with everything els
 
     await page.locator('#context-more-toggle').click();
     // Add-to-node leftovers (diagram-gen, date-time) live behind the Insert › flyout.
-    await page.locator('#context-more-panel .context-submenu-trigger').hover();
-    for (const action of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'tags', 'diagram-gen', 'date-time', 'delete']) {
+    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
+    for (const action of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'diagram-gen', 'date-time', 'delete']) {
       await expect(page.locator(`#context-more-panel [data-action="${action}"]`), action).toBeVisible();
     }
+    // Row settings live behind the Row › flyout.
+    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="row"]').hover();
+    await expect(page.locator('#context-more-panel [data-action="tags"]')).toBeVisible();
     for (const visibleAction of quick) {
       await expect(page.locator(`#context-more-panel [data-action="${visibleAction}"]`)).toHaveCount(0);
     }

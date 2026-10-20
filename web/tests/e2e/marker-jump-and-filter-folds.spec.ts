@@ -88,7 +88,8 @@ test('Open items shows how long each item has been open; a folded branch shows i
   await page.locator('.open-items-btn').click();
   await expect(page.locator('.sb-context-item', { hasText: 'Cutover' }).locator('.sb-context-meta')).toHaveText('3d');
   await page.keyboard.press('Escape');
-  // "Scope" is folded with a follow-up inside: its badge shows the follow-up icon and count.
-  await expect(page.locator('.node-row[data-id="3"] .fold-badge .fold-badge-fu')).toHaveText('1');
+  // "Scope" is folded with a follow-up inside: its count turns accent-coloured and its tooltip counts it.
+  await expect(page.locator('.node-row[data-id="3"] .fold-badge')).toHaveClass(/fold-badge-open/);
+  await expect(page.locator('.node-row[data-id="3"] .fold-badge')).toHaveAttribute('data-tip', /1 follow-up/);
   expect(errors).toEqual([]);
 });

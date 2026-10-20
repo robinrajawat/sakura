@@ -120,7 +120,7 @@ test.describe('Fixed main toolbar', () => {
     await seedDoc(page);
     await page.locator('.node-row[data-id="3"]').click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
-    await page.locator('#context-more-panel .context-submenu-trigger').hover();
+    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
     for (const action of ['above', 'below', 'child', 'duplicate', 'up', 'down', 'date-time', 'delete']) {
       await expect(page.locator(`#context-more-panel [data-action="${action}"]`)).toBeVisible();
     }
@@ -218,12 +218,13 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'up', 'down', 'duplicate', 'focus', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'tags', 'version-history', 'no-export', 'delete']);
-    // Add and Move are single icon rows; the add-to-node leftovers sit behind one Insert › flyout.
+    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'up', 'down', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'focus', 'fold', 'tags', 'version-history', 'no-export', 'delete']);
+    // Add (with Duplicate) and Move are icon rows; the add-to-node leftovers sit behind Insert ›,
+    // Zoom in, Collapse/expand and the row's settings behind Row › (owner, 2026-10-20: shorter More).
     await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(2);
-    await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(2);
-    await page.locator('#context-more-panel .context-submenu-trigger').hover();
-    await expect(page.locator('#context-more-panel .context-submenu')).toBeVisible();
+    await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(7);
+    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
+    await expect(page.locator('#context-more-panel .context-submenu').first()).toBeVisible();
     expect(errors).toEqual([]);
   });
 });

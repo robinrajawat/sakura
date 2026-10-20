@@ -3,8 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Owner, 2026-10-20: a folded row's "+N" showed only a grey dot when something was hidden inside.
-// It now shows what: small diagram/table/image icons with counts. Undo toasts stay 4s.
-// Owner, later the same day: drop notes and threads, show open questions instead (tooltip lists the rest).
+// Then icons with counts; later the same day the owner found them louder than the row's own dots,
+// so the badge is just the count again, accent-tinted when open questions or follow-ups are inside,
+// with counts in its tooltip. Undo toasts stay 4s.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
@@ -28,17 +29,15 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('a folded row\'s count names what is hidden inside, with counts', async ({ page }) => {
+test('a folded row shows only its count; open questions tint it, and the tooltip says what is inside', async ({ page }) => {
   const badge = page.locator('.node-row[data-id="1"] .fold-badge');
-  await expect(badge).toHaveText('+412'); // +4 rows, 1 table, 2 open questions (notes and the answered thread are not counted)
-  const kinds = badge.locator('.fold-badge-kind');
-  await expect(kinds).toHaveCount(2); // table, then open questions
-  await expect(kinds.nth(0)).toHaveAttribute('title', '1 table inside');
-  await expect(kinds.nth(1)).toHaveAttribute('title', '2 open questions inside');
-  await expect(badge.locator('.fold-badge-dot')).toHaveCount(0);
-  await expect(badge).toHaveAttribute('data-tip', /a note/); // notes still named in the tooltip
-  // Nothing inside: just the count.
+  await expect(badge).toHaveText('+4'); // no icons beside the count (they competed with the row's own dots)
+  await expect(badge).toHaveClass(/fold-badge-open/); // 2 open questions inside
+  // Counted kinds first, then the rest in words (the answered thread has no open question).
+  await expect(badge).toHaveAttribute('data-tip', 'Click to expand · 4 hidden rows — 1 table, 2 open questions; also a note, a thread');
+  // Nothing inside: just the count, not tinted.
   await expect(page.locator('.node-row[data-id="5"] .fold-badge')).toHaveText('+1');
+  await expect(page.locator('.node-row[data-id="5"] .fold-badge')).not.toHaveClass(/fold-badge-open/);
 });
 
 test('an Undo toast stays up longer than a plain one', async ({ page }) => {
