@@ -218,7 +218,7 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'up', 'down', 'duplicate', 'focus', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'tags', 'version-history', 'delete']);
+    expect(more).toEqual(['child', 'above', 'below', 'up', 'down', 'duplicate', 'focus', 'fold', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'tags', 'version-history', 'no-export', 'delete']);
     // Add and Move are single icon rows; the add-to-node leftovers sit behind one Insert › flyout.
     await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(2);
     await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(2);
