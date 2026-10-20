@@ -27,6 +27,11 @@ const LARGE_PREVIEW_SVG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns
 // an inline preview card (thumbnail + title); actually editing the diagram still requires
 // opening the real editor, reached by clicking the preview itself or its "open" icon.
 test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () => {
+  // The welcome dialog can open after dismissOverlays() has looked for it and then swallow clicks
+  // (seen intermittently in CI); marking it seen up front keeps it closed.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('sakura_welcome_seen', '1'));
+  });
   test('clicking the diagram dot expands an inline preview instead of jumping straight to the editor', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -377,6 +382,8 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(ib!.x).toBeGreaterThanOrEqual(cb!.x);
     expect(ib!.x + ib!.width).toBeLessThanOrEqual(cb!.x + cb!.width);
     expect(Math.abs((ib!.x + ib!.width / 2) - (cb!.x + cb!.width / 2))).toBeLessThan(2);
+    // The sheet keeps a margin around a borderless draw.io export (owner: "cutting very sharp from left").
+    expect(await img.evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft))).toBeGreaterThanOrEqual(16);
     const level = viewer.locator('.dv-zoom-level');
     const fitText = await level.textContent();
     await viewer.locator('.dv-actual').click();
@@ -385,10 +392,19 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(level).toHaveText('125%');
     await viewer.locator('.dv-zoom-out').click();
     await expect(level).toHaveText('100%');
-    // Wheel zooms in around the pointer.
+    // Ctrl+wheel (what a pinch sends) zooms in around the pointer.
     await page.mouse.move(cb!.x + cb!.width / 2, cb!.y + cb!.height / 2);
-    await page.mouse.wheel(0, -300);
+    await page.keyboard.down('Control');
+    await page.mouse.wheel(0, -100);
+    await page.keyboard.up('Control');
     await expect.poll(async () => parseInt((await level.textContent())!)).toBeGreaterThan(100);
+    // A plain scroll (a two-finger swipe) pans instead of zooming, so every part can be reached.
+    const zoomed = await level.textContent();
+    const beforeScroll = (await img.boundingBox())!;
+    await page.mouse.wheel(40, 120);
+    await expect.poll(async () => Math.round((await img.boundingBox())!.y - beforeScroll.y)).toBe(-120);
+    expect(Math.round((await img.boundingBox())!.x - beforeScroll.x)).toBe(-40);
+    await expect(level).toHaveText(zoomed!);
     // Drag pans.
     const before = (await img.boundingBox())!;
     await page.mouse.down();

@@ -159,10 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-20: Clicking a diagram opens a preview, not draw.io.** Owner: "should it open as a preview
+**2026-10-20: Clicking a diagram opens a preview, not draw.io (#582).** Owner: "should it open as a preview
 where we can zoom in/zoom out?", approved mockup `inline-objects/diagram-preview-mockup.png` with the
 button just "Edit" (no minimap, no laser pointer). `openDiagramViewer` shows `d.previewSvg` in
-`#diagram-viewer`: opens fitted (`_dvFit`, max 200%), wheel/pinch zooms around the pointer, drag pans,
+`#diagram-viewer`: opens fitted (`_dvFit`, max 200%), pinch or Ctrl/Cmd+wheel zooms around the pointer, a
+plain scroll or drag pans (owner: zooming on a trackpad swipe hid parts of the diagram), the sheet has a
+24px margin (`--dv-pad`; draw.io exports are borderless),
 Fit / 100% / − / + (keys F, 0, -, +; double-click toggles fit/100%), Esc closes, Edit →
 `openDiagramEditor`. A diagram with no preview yet still opens the editor. Test:
 `node-diagram-inline-preview.spec.ts`.
@@ -172,7 +174,10 @@ size from settings breaks the alignments in the editor". Cause: `.node-label,.no
 `line-height:calc(1.25 * var(--editor-scale))` on top of an already scaled font size, so at 140% the
 line was 1.75× the font and every bullet sat high. Now `line-height:1.25`; the bullet/fold/checkbox/
 badge offsets use `--row-line` (set per heading level via `:has(> .style-heading-N)`), and bullets and
-the checkbox scale with the text. Test: `editor-text-size-alignment.spec.ts`.
+the checkbox scale with the text. Follow-up (owner: "the dot indicators, are they not supposed to
+scale?"): the row-end indicators (note/thread/diagram/table/image/To-Do/Q&A dots, marker badges, tags,
+checkbox progress) get `zoom:var(--editor-scale)` and offset by `--row-line-base` (the 100% line
+height), since zoom also scales their margins. Test: `editor-text-size-alignment.spec.ts`.
 
 **2026-10-20: To-Do rows without an edit card (#580).** Owner: subtasks invisible "unless you get into edit
 mode", "can we avoid this editable view completely?", mockups `todo-no-edit-card.png`,
