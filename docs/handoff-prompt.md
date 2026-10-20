@@ -166,6 +166,11 @@ numbered Follow-ups (row (parent) · owner · age, latest line) and Open questio
 plain. `openItemsLists()` now feeds both the menu and the copy. Test: `open-items-agenda.spec.ts`.
 Same PR: owner found threads/Q&A on "Leave out of export" rows leaking into the PDF's end lists ("Comments without a
 row", "Q&A"); `noExportNodeIds()` now filters both. Test added to `node-no-export.spec.ts`.
+Same PR: To-Dos menus shrunk with flyouts (owner: "version should be kept as sub menu", "todo menu also looks too big").
+Header ⋯ = Version history › (`#todos-history-trigger` opens `#todos-history-menu`, position:fixed because the panel
+clips, placed left of the menu), Export as PDF, Select. Task menu (`todoContextItems`): Repeat › with current value as
+meta, More › (Rewrite, Duplicate, Copy, Move to top/bottom). `wireTodoMenuKeyNav` steps only visible items in the
+focused list. Tests: `todos-history-inline.spec.ts`.
 Still offered, not picked: Open items page in the PDF.
 
 **2026-10-20: F8 steps through open items.** Owner picked it ("do it") from my list for review meetings.

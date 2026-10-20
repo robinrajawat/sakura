@@ -169,6 +169,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-extract-btn, #todos-summary-btn')).toHaveCount(0);
     await expect(page.locator('.todo-subtask-ai')).toHaveCount(0);
     await page.locator('.todo-row[data-id="t2"]').click({ button: 'right', position: { x: 4, y: 10 } });
+    await page.locator('.sb-context-menu .sb-context-item', { hasText: 'More' }).hover();
     await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Rewrite with AI' })).toHaveCount(1);
     await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Break into subtasks' })).toHaveCount(0);
     await page.keyboard.press('Escape');
@@ -296,10 +297,10 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await page.locator('#todos-panel-maximize').click();
     await expect(page.locator('#todos-panel')).not.toHaveClass(/maximized/);
 
-    // ⋯ holds the inline versions (none yet), Save a version now, Export as PDF and Select.
+    // ⋯ holds Version history (a flyout), Export as PDF and Select.
     await page.locator('#todos-more-trigger').click();
     await expect(page.locator('#todos-more-menu')).toHaveClass(/open/);
-    await expect(page.locator('#todos-more-menu .todo-dd-item')).toHaveText(['Save a version now', 'Export as PDF', 'Select or reorder tasks']);
+    await expect(page.locator('#todos-more-menu > .todo-dd-flyout-wrap > .todo-dd-item, #todos-more-menu > .todo-dd-item')).toHaveText(['Version history', 'Export as PDF', 'Select or reorder tasks']);
     await page.locator('#todos-more-trigger').click();
     await expect(page.locator('#todos-more-menu')).not.toHaveClass(/open/);
 

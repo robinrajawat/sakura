@@ -2876,6 +2876,14 @@ body.printing-generic #gpe-overlay{
 #todos-add-btn:hover{opacity:.88}
 #todos-more-menu{right:0;left:auto;min-width:270px;max-height:min(440px,70vh)}
 #todos-more-menu .todo-more-item{justify-content:flex-start}
+/* Version history is a flyout of the ⋯ menu (owner, 2026-10-20: "version should be kept as sub menu"). */
+#todos-more-menu{overflow:visible;min-width:220px}
+.todo-dd-flyout-wrap{position:relative}
+.todo-dd-flyout-label{flex:1 1 auto}
+.todo-dd-chevron{margin-left:auto;color:var(--muted)}
+.todo-dd-flyout-trigger[aria-expanded="true"]{background:var(--hover,color-mix(in srgb,var(--fg) 7%,transparent))}
+/* Fixed, placed by script: the To-Dos panel clips anything that overflows it. */
+#todos-history-menu{position:fixed;top:0;left:0;right:auto;min-width:270px;z-index:1000}
 #todos-filter-menu{right:0;left:auto}
 .todo-more-item{display:flex;align-items:center;justify-content:flex-start;gap:9px}
 .todo-more-item svg{flex:0 0 auto;color:var(--muted)}
@@ -4773,9 +4781,14 @@ body.printing-generic #gpe-overlay{
     <div class="todo-dd-wrap" id="todos-more-wrap">
       <button type="button" class="todo-dd-trigger" id="todos-more-trigger" data-tip="More" aria-label="More To-Do actions" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
       <div class="todo-dd-menu" id="todos-more-menu" role="menu">
-        <span class="todo-dd-label">Restore an earlier version</span>
-        <div id="todos-history-inline"></div>
-        <button type="button" class="todo-dd-item todo-more-item" id="todos-history-save-btn" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save a version now</button>
+        <div class="todo-dd-flyout-wrap">
+          <button type="button" class="todo-dd-item todo-more-item todo-dd-flyout-trigger" id="todos-history-trigger" role="menuitem" aria-haspopup="menu" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg><span class="todo-dd-flyout-label">Version history</span><svg class="todo-dd-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>
+          <div class="todo-dd-menu todo-dd-flyout" id="todos-history-menu" role="menu">
+            <span class="todo-dd-label">Restore an earlier version</span>
+            <div id="todos-history-inline"></div>
+    <button type="button" class="todo-dd-item todo-more-item" id="todos-history-save-btn" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save a version now</button>
+          </div>
+        </div>
         <div class="todo-dd-divider"></div>
         <button type="button" class="todo-dd-item todo-more-item" id="todos-export-pdf-item" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Export as PDF</button>
         <button type="button" class="todo-dd-item todo-more-item" id="todos-select-toggle" role="menuitem" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg>Select or reorder tasks</button>
@@ -33638,9 +33651,11 @@ let dockActiveTab=null;
     return {getAttribute:k=>src.getAttribute(k), getBoundingClientRect:()=>at.getBoundingClientRect()};
   }
   // The task menu (⋯ on hover, or right-click) holds every setting that isn't on the row itself:
-  // there is no edit card (owner, 2026-10-20: "can we avoid this editable view completely?").
+  // there is no edit card (owner, 2026-10-20: "can we avoid this editable view completely?"). It was
+  // too tall (owner, same day: "make it better with sub menus"): Priority and Status stay one click;
+  // Repeat and the less used actions sit behind flyouts.
   function todoContextItems(t){
-    const items=[];
+    const items=[], more=[];
     const hasSubtasks=!!(t.subtasks && t.subtasks.length);
     if(!t.done){
       const st=t.status||'none', waiting=st==='waiting'||st==='review'||st==='blocked';
@@ -33653,27 +33668,29 @@ let dockActiveTab=null;
         items.push({heading:'Waiting reason'});
         items.push({choices:choice('status',TODO_WAIT_REASON_OPTS,st), cols:3});
       }
-      if(!hasSubtasks){
-        items.push({heading:'Repeat'});
-        items.push({choices:[[null,'Off'],['daily','Daily'],['weekdays','Weekdays'],['weekly','Weekly']].map(([v,label])=>({label, current:(t.repeat||null)===v, onClick:()=>setTodoRepeat(t.id,v)})), cols:4});
-      }
       items.push({divider:true});
       items.push({label: t.dueDate?'Change due date…':'Add due date…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-due'); if(a) openDueDateEditor(a); }});
       items.push({label: (t.link||t.nodeRef)?'Change link…':'Add link…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-link'); if(a) openLinkEditor(a); }});
       if(!t.repeat) items.push({label:'Add subtask', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', onClick:()=>openSubtaskInput(t.id)});
-      if(typeof featureAiEnabled==='undefined'||featureAiEnabled) items.push({label:'Rewrite with AI', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
-      items.push({divider:true});
-      items.push({label: t.focus?'Remove focus':'Focus on this', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>', onClick:()=>setTodoFocus(t.id,!t.focus)});
+      if(!hasSubtasks){
+        const reps=[[null,'Off'],['daily','Daily'],['weekdays','Weekdays'],['weekly','Weekly']];
+        items.push({label:'Repeat', meta:(reps.find(([v])=>(t.repeat||null)===v)||reps[0])[1], icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>', submenu:reps.map(([v,label])=>({label, icon:(t.repeat||null)===v?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'', onClick:()=>setTodoRepeat(t.id,v)}))});
+      }
       items.push({divider:true});
     }
     if(!hasSubtasks){
       items.push({label: t.done?'Mark as open':'Mark as complete', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>', onClick: async()=>{ toggleTodo(t.id); }});
     }
-    items.push({label:'Duplicate task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ duplicateTodo(t.id); }});
-    items.push({label:'Copy task text', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await copyTodoText(t.id); }});
-    items.push({divider:true});
-    items.push({label:'Move to top', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, true); }});
-    items.push({label:'Move to bottom', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, false); }});
+    if(!t.done){
+      items.push({label: t.focus?'Remove focus':'Focus on this', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>', onClick:()=>setTodoFocus(t.id,!t.focus)});
+    }
+    if(!t.done&&(typeof featureAiEnabled==='undefined'||featureAiEnabled)) more.push({label:'Rewrite with AI', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
+    more.push({label:'Duplicate task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ duplicateTodo(t.id); }});
+    more.push({label:'Copy task text', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await copyTodoText(t.id); }});
+    more.push({divider:true});
+    more.push({label:'Move to top', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, true); }});
+    more.push({label:'Move to bottom', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, false); }});
+    items.push({label:'More', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>', submenu:more});
     items.push({divider:true});
     items.push({label:'Delete task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', danger:true, onClick: async()=>{ deleteTodo(t.id); }});
     return items;
@@ -34752,7 +34769,9 @@ let dockActiveTab=null;
     const menu=document.getElementById(menuId);
     if(!menu) return;
     menu.addEventListener('keydown',e=>{
-      const items=[...menu.querySelectorAll('.todo-dd-item')];
+      // Only items that are showing, in the list that has focus (a flyout steps through its own).
+      const list=document.activeElement?.closest('.todo-dd-menu')||menu;
+      const items=[...list.querySelectorAll('.todo-dd-item')].filter(i=>i.offsetParent&&i.closest('.todo-dd-menu')===list);
       const idx=items.indexOf(document.activeElement);
       if(e.key==='ArrowDown'){ e.preventDefault(); items[(idx+1+items.length)%items.length]?.focus(); }
       else if(e.key==='ArrowUp'){ e.preventDefault(); items[(idx-1+items.length)%items.length]?.focus(); }
@@ -34822,6 +34841,30 @@ let dockActiveTab=null;
     if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
   });
   wireTodoMenuKeyNav('todos-more-menu');
+  // Version history flyout: opens on hover, click or →; to the left of the menu when there's room
+  // (the panel sits on the right), otherwise to the right, or over it on a narrow screen.
+  (function(){
+    const trig=document.getElementById('todos-history-trigger'), fly=document.getElementById('todos-history-menu');
+    const more=document.getElementById('todos-more-menu');
+    if(!trig||!fly||!more)return;
+    const openFly=focusFirst=>{
+      if(!fly.classList.contains('open')){
+        renderTodosHistoryInline();
+        fly.classList.add('open'); trig.setAttribute('aria-expanded','true');
+        const r=more.getBoundingClientRect(), t=trig.getBoundingClientRect(), w=fly.offsetWidth, h=fly.offsetHeight;
+        let left=r.left-w-6; if(left<8)left=Math.min(r.right+6,window.innerWidth-w-8);
+        fly.style.left=Math.max(8,left)+'px'; fly.style.top=Math.max(8,Math.min(t.top-7,window.innerHeight-h-8))+'px';
+      }
+      if(focusFirst)fly.querySelector('.todo-dd-item')?.focus();
+    };
+    const closeFly=()=>{ fly.classList.remove('open'); trig.setAttribute('aria-expanded','false'); };
+    // Hover already opened it, so a click keeps it open rather than toggling it shut.
+    trig.addEventListener('click',e=>{ e.stopPropagation(); openFly(false); });
+    trig.addEventListener('mouseenter',()=>openFly(false));
+    more.querySelectorAll(':scope > .todo-dd-item').forEach(b=>b.addEventListener('mouseenter',closeFly));
+    trig.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); openFly(true); } });
+    fly.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft'||e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeFly(); trig.focus(); } });
+  })();
   // N jumps to "Add a task" — only while focus is inside the To-Dos panel and not in a text field,
   // so it never steals the letter from typing anywhere else.
   document.getElementById('todos-panel')?.addEventListener('keydown',e=>{
