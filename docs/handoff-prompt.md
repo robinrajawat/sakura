@@ -159,6 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: Row icons follow the text.** Owner picked my suggestion "row icons sit far from their text" and
+"too many page-shaped icons"; mockup `inline-objects/row-icons-mockup.png`, then asked for the icons at the end of
+the last line of a wrapped row. `moveRowIconsInline(row)` (called just before `frag.appendChild(row)` in
+render) moves every `ROW_ICON_SEL` child into one `span.node-row-icons` at the end of `.node-label`
+(inline-flex, `vertical-align:middle`); a row being edited has no label and keeps them as before. No setting
+(owner asked; I advised none). "Left out of export" dot/menu icon is now an eye with a slash (`NOEXPORT_DOT_SVG`).
+Test: `row-icons-inline.spec.ts`.
+
 **2026-10-20: Leave rows out of export.** Owner: "exclude certain nodes from export … a marker or something?"
 I advised a row setting, not a marker (markers are thread statuses). Approved mockup
 `inline-objects/export-exclude-mockup.png`. `node.noExport` (kept by `normalizeNode` only when true); right-click
@@ -175,16 +183,6 @@ task?", "editing the sub-task looks different". `TODOS_REVISION_MAX=5`; the hist
 `historyMenuWhen`, "N open, M done"), then Save a version now. An unfolded task (`.todo-row.expanded`) has
 no grey fill. A focused `.todo-subtask-text` gets the same white box as `.todo-text`. Screenshot
 `inline-objects/todo-history-inline.png`. Test: `todos-history-inline.spec.ts`.
-
-**2026-10-20: Clicking a diagram opens a preview, not draw.io (#582).** Owner: "should it open as a preview
-where we can zoom in/zoom out?", approved mockup `inline-objects/diagram-preview-mockup.png` with the
-button just "Edit" (no minimap, no laser pointer). `openDiagramViewer` shows `d.previewSvg` in
-`#diagram-viewer`: opens fitted (`_dvFit`, max 200%), pinch or Ctrl/Cmd+wheel zooms around the pointer, a
-plain scroll or drag pans (owner: zooming on a trackpad swipe hid parts of the diagram); each Ctrl/pinch wheel event is capped at ±20px, `exp(-d*0.006)`, so a mouse notch zooms ~12% (owner: zoom was "very aggressive"), and buttons/keys step 1.2× with a .18s ease, the sheet has a
-24px margin (`--dv-pad`; draw.io exports are borderless),
-Fit / 100% / − / + (keys F, 0, -, +; double-click toggles fit/100%), Esc closes, Edit →
-`openDiagramEditor`. A diagram with no preview yet still opens the editor. Test:
-`node-diagram-inline-preview.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
