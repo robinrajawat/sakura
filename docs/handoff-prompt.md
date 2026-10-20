@@ -159,7 +159,18 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-20: the inline diagram preview keeps a margin.** Owner: "are we not keeping any margins
+**2026-10-20: To-Do panel redesign: Now is your Focus task, one-line rows, three statuses.** Owner:
+"how does something end up in now?", "make this whole todo UX/UI better", "too much empty space",
+then approved mockup v3 (`/mnt/project-files/inline-objects/todo-panel-mockup-v3.png` in the project).
+Now = the task with `t.focus` (right-click › Focus on this / Remove focus; `setTodoFocus`, one at a
+time; hub sheet has a Focus chip); `pickNowTodo` no longer picks by itself. Rows at rest are one line
+(`.todo-main` flex row): title clamped to 2 lines + `.todo-pri-dot` (High filled, Medium hollow,
+amber), right side = Waiting reason chip, n/m, repeat, due ("Overdue · …"). Subtasks render only when
+the row is expanded (the n/m opens it). Statuses in the picker: None / In progress / Waiting, plus a
+Reason row (Needs review = `review`, Blocked = `blocked`); stored values unchanged. "On hold" → "Waiting".
+Same in hub.html. Tests: `todos-grouped.spec.ts`, `hub-todos-grouped.spec.ts`.
+
+**2026-10-20: the inline diagram preview keeps a margin (#578).** Owner: "are we not keeping any margins
 within the preview?" draw.io exports with no border, so a diagram's own frame ran straight into the
 preview's edge. `.node-diagram-preview-thumb` now has `padding:12px` (`box-sizing:border-box`; the
 empty placeholder keeps `padding:0`). PDF is unchanged (no frame there). Test:
@@ -171,18 +182,6 @@ the "From … · Doc › Row" line released a few pixels off it is reported as a
 which toggled the task. The row's click handler now remembers its `mousedown` target: a click that
 started on `.todo-source-row` navigates, one that started on any other control does nothing.
 Test: `followup-to-todo.spec.ts` (press on the line, release just below it).
-
-**2026-10-19: thread Decision button, links in thread entries, To-Do link goes to the thread (#576).** Owner:
-"in the thread, I would like to add a decision possibility", "if I add a link in the thread … no way
-to navigate or edit", a follow-up To-Do's link "opens the todo task in edit mode". The reply line has
-**Decision** next to Ask (`submit({decision:true})`, needs text, hidden while asking; also "Add as
-decision" in its right-click menu); it sets `r.decision`, not a status. Thread entry links: plain click
-opens when not editing, Ctrl/Cmd+click while editing, right-click → `richLinkMenuItems` (the note's
-Open/Copy/Edit/Remove, now shared via a `store` {get,set,isPendingFocus}); `attachThreadPaste` turns a
-pasted bare URL into a link. To-Dos: `sakuraAddTodoForNode` stores `remarkId`; `jumpToTodoNodeRef(ref,t)`
-opens the thread at that entry (older tasks with `from` open the row's thread via `revealMarkerEntry`).
-The open task's Link row shows the source line (navigates) plus a pencil `.todo-link-edit` (Change link).
-Tests: `thread-links.spec.ts`, `thread-reply-actions.spec.ts`, `followup-to-todo.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

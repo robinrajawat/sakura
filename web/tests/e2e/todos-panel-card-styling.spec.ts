@@ -27,8 +27,8 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // chevron that click-to-expands a row to reveal its priority/status/due/link/repeat/subtasks --
 // hovering alone reveals nothing. This file asserts that restored shape, not the card one.
 // The 2026-10 redesign (owner-approved concept, after cards in #402-#420 and again later): flat rows
-// grouped under status headings (see todos-grouped.spec.ts), no card border or surface. Only the one
-// "Now" task is a card. Click-to-expand is unchanged.
+// grouped under status headings (see todos-grouped.spec.ts), no card border or surface. The Now
+// task (the one you chose to focus on) is a tinted row, not a card. Click-to-expand is unchanged.
 test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
   test('an open task row is flat: no border, no surface of its own', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Flat row styling check');
@@ -66,7 +66,7 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     await page.waitForTimeout(100);
     // Expanded, the row lists its properties; priority shows every option at once.
     await expect(page.locator(`.todo-prop-opt[data-id="${id}"][data-field="priority"]`)).toHaveCount(4);
-    await expect(page.locator(`.todo-prop-opt[data-id="${id}"][data-field="status"]`)).toHaveCount(5);
+    await expect(page.locator(`.todo-prop-opt[data-id="${id}"][data-field="status"]`)).toHaveCount(3); // None / In progress / Waiting
     await expect(page.locator(`.todo-due[data-id="${id}"]`)).toBeVisible();
     await expect(page.locator(`.todo-link[data-id="${id}"]`)).toBeVisible();
     await expect(page.locator(`.todo-subtask-add-btn[data-id="${id}"]`)).toBeVisible();
