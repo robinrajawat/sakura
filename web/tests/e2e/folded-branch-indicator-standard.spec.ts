@@ -30,7 +30,7 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 // this, and separately now use a distinct color per content type instead of all sharing
 // --accent, so they're distinguishable from each other without needing the tooltip.
 test.describe('Folded-branch content indicators are consolidated into the +N badge', () => {
-  test('a folded node with no own note but a descendant note shows only a grey dot on the badge, and names it in its tooltip', async ({ page }) => {
+  test('a folded node with no own note but a descendant note shows just the count on the badge, and names it in its tooltip', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -48,13 +48,11 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
       const badge = row.querySelector('.fold-badge')!;
-      return { hasDot: !!badge.querySelector('.fold-badge-dot'), kind: badge.querySelector('.fold-badge-kind')?.getAttribute('title') || '', tip: badge.getAttribute('data-tip') || '' };
+      return { text: badge.textContent, tip: badge.getAttribute('data-tip') || '' };
     });
 
-    // Owner, 2026-10-20: notes get no count of their own on the badge (only diagrams, tables, images,
-    // open questions and follow-ups do), so a hidden note alone shows the grey dot.
-    expect(result.hasDot).toBe(true);
-    expect(result.kind).toBe('');
+    // Owner, 2026-10-20: the badge is just the count; what is inside is named in its tooltip.
+    expect(result.text).toBe('+1');
     expect(result.tip).toContain('a note');
   });
 
@@ -120,7 +118,7 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
     expect(result.badgeHasDot).toBe(false);
   });
 
-  test('several distinct hidden content types in one folded branch produce one dot-prefixed badge, tooltip listing all of them', async ({ page }) => {
+  test('several distinct hidden content types in one folded branch produce one badge, tooltip listing all of them', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -146,7 +144,7 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
 
     expect(result.count).toBe(1); // exactly one badge, as always
     expect(result.tip).toContain('a note');
-    expect(result.tip).toContain('a diagram');
+    expect(result.tip).toContain('1 diagram');
   });
 
   // Own-node dots each carry a distinct color (so note/diagram/qa/etc. are tellable apart at a

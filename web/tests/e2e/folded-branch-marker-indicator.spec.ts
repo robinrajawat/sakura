@@ -42,10 +42,12 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
       const badge = row.querySelector('.fold-badge')!;
-      return { hasDot: !!badge.querySelector('.fold-badge-dot'), tip: badge.getAttribute('data-tip') || '' };
+      return { open: badge.classList.contains('fold-badge-open'), text: badge.textContent, tip: badge.getAttribute('data-tip') || '' };
     });
 
-    expect(result.hasDot).toBe(true);
+    // Owner, 2026-10-20: the badge is just the count; what is inside is in its tooltip.
+    expect(result.text).toBe('+1');
+    expect(result.open).toBe(false);
     expect(result.tip).toContain('marked Agreed');
   });
 
@@ -67,10 +69,10 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       render();
       const row = document.querySelector('.node-row[data-id="1"]')!;
       const badge = row.querySelector('.fold-badge')!;
-      return !!badge.querySelector('.fold-badge-dot'); // nothing else hidden, so no dot at all
+      return badge.getAttribute('data-tip') || '';
     });
 
-    expect(result).toBe(false);
+    expect(result).not.toContain('marked');
   });
 
   test('a folded node\'s own marker badge and a differently-typed descendant marker both show, as distinct indicators', async ({ page }) => {
@@ -93,15 +95,15 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       const badge = row.querySelector('.fold-badge')!;
       return {
         ownBadgeShown: !!row.querySelector('.node-marker-badge'),
-        fold: { hasDot: !!badge.querySelector('.fold-badge-dot'), fu: badge.querySelector('.fold-badge-fu')?.textContent || '', tip: badge.getAttribute('data-tip') || '' },
+        fold: { open: badge.classList.contains('fold-badge-open'), text: badge.textContent, tip: badge.getAttribute('data-tip') || '' },
       };
     });
 
     expect(result.ownBadgeShown).toBe(true);
-    // Hidden follow-ups show as the follow-up icon and a count, in place of the plain dot.
-    expect(result.fold.hasDot).toBe(false);
-    expect(result.fold.fu).toBe('1');
-    expect(result.fold.tip).toContain('marked Follow-up');
+    // Hidden follow-ups turn the count accent-coloured and are counted in the tooltip.
+    expect(result.fold.open).toBe(true);
+    expect(result.fold.text).toBe('+1');
+    expect(result.fold.tip).toContain('1 follow-up');
   });
 
   test('several distinct marker types hidden in the subtree are all named in one shared tooltip', async ({ page }) => {
@@ -127,8 +129,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
     });
 
     expect(result.count).toBe(1); // one badge total, not one per marker type
-    expect(result.tip).toContain('marked Follow-up');
-    expect(result.tip).toContain('marked Follow-up');
+    expect(result.tip).toContain('2 follow-ups');
   });
 
   test('the badge tooltip counts how many hidden descendants carry that marker type', async ({ page }) => {
@@ -154,7 +155,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       return badge.dataset.tip;
     });
 
-    expect(result).toBe('Click to expand · 3 hidden nodes — contains 3 nodes marked Follow-up');
+    expect(result).toBe('Click to expand · 3 hidden rows — 3 follow-ups');
   });
 
   test('a single hidden descendant with a marker gets singular tooltip wording, not "1 nodes"', async ({ page }) => {
@@ -178,7 +179,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       return badge.dataset.tip;
     });
 
-    expect(result).toBe('Click to expand · 1 hidden node — contains 1 node marked Agreed');
+    expect(result).toBe('Click to expand · 1 hidden row — contains 1 node marked Agreed');
   });
 
   test('an expanded node (not folded) never shows a fold-badge, even with a marked child', async ({ page }) => {
