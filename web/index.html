@@ -4177,6 +4177,7 @@ body.printing-generic #gpe-overlay{
 <li>Click <span class="help-kbd">▾/▸</span> → fold / unfold subtree</li>
 <li><span class="help-kbd">←</span> / <span class="help-kbd">→</span> → collapse / expand selected</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">F</span> → search this tree; <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">H</span> → search and replace (Replace / Replace all, undoable)</li>
+<li><span class="help-kbd">F8</span> / <span class="help-kbd">Shift</span> + <span class="help-kbd">F8</span> → next / previous open item (follow-up or open question), unfolding its branch</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">C</span> / ▶ at the right end of the toolbar → collapse all (folds every top-level section)</li>
 <li>Same shortcut / same button again → expand all — it's a single toggle, the icon flips to show which one it'll do next</li>
 <li>Both cover inline objects too: Expand all opens every note, Q&amp;A, remark and diagram under its row and unfolds tables and images; Collapse all closes and folds them. While anything is still closed, the button offers Expand all</li>
@@ -24846,6 +24847,8 @@ const SHORTCUTS = {
   toggleNote:     {combo:'mod+shift+n',   label:'Add/edit note',            category:'Notes & Panels',     guarded:false, action:()=>{if(selectedId!==null)openInlineNoteAndFocus(selectedId);}},
   addThread:      {combo:'mod+alt+m',     label:'Add to thread',            category:'Notes & Panels',     guarded:false, action:()=>{const id=editingId!==null?editingId:selectedId; if(id!==null)runQuickAction('remark',id);}},
   toggleTodos:    {combo:'mod+shift+t',   label:'Open/close Todos',         category:'Notes & Panels',     guarded:false, action:()=>{if(typeof toggleDockTab==='function') toggleDockTab('todos');}},
+  nextOpenItem:   {combo:'f8',            label:'Next open item (follow-up or open question)', category:'Notes & Panels', guarded:false, action:()=>stepOpenItem(1)},
+  prevOpenItem:   {combo:'shift+f8',      label:'Previous open item',       category:'Notes & Panels',     guarded:false, action:()=>stepOpenItem(-1)},
 };
 // Drop saved overrides for shortcuts that no longer exist (e.g. the removed Pad/Diagrams-panel
 // toggles), so they don't linger in the "N shortcuts customized" count.
@@ -30510,6 +30513,42 @@ function setCodeBgMatch(on, persist=true){
 
 
 
+
+// F8 / Shift+F8 — step through the document's open items (follow-ups and open questions) in
+// outline order, unfolding as it goes (owner, 2026-10-20). Capture phase so it works while typing.
+let _openItemCursor=null;
+function openItemsInOutlineOrder(){
+  const byNode=new Map(); (remarks||[]).forEach(r=>{ if(!byNode.has(r.anchorNodeId))byNode.set(r.anchorNodeId,[]); byNode.get(r.anchorNodeId).push(r); });
+  const list=[];
+  nodes.forEach((n,i)=>{
+    if(n.marker==='followup')list.push({key:'f'+n.id,i,go:()=>revealMarkerEntry(n.id)});
+    const rs=byNode.get(n.id); if(rs)openQuestions(threadEntries(rs,n.id)).forEach(q=>list.push({key:'q'+q.id,i,go:()=>revealInlineObject('remark',q.id)}));
+  });
+  return list;
+}
+function stepOpenItem(dir){
+  const list=openItemsInOutlineOrder();
+  if(!list.length){ showToast('Nothing open in this document'); return; }
+  let pos=list.findIndex(x=>x.key===_openItemCursor);
+  const sel=getIndex(nodes,selectedId);
+  if(pos<0||list[pos].i!==sel){
+    // Start from the selected row: the first item after it (or the last one before it).
+    if(dir>0){ pos=list.findIndex(x=>x.i>sel); if(pos<0)pos=0; }
+    else { pos=-1; list.forEach((x,k)=>{ if(x.i<sel)pos=k; }); if(pos<0)pos=list.length-1; }
+  } else pos=(pos+dir+list.length)%list.length;
+  _openItemCursor=list[pos].key;
+  commitEdit();
+  list[pos].go();
+  showToast('Open item '+(pos+1)+' of '+list.length+' · F8 next, Shift+F8 previous');
+}
+document.addEventListener('keydown', e=>{
+  if(isRecordingShortcut) return;
+  const id=matchesShortcut(e,'nextOpenItem')?'nextOpenItem':matchesShortcut(e,'prevOpenItem')?'prevOpenItem':null;
+  if(!id||currentDocId==null&&!nodes.length)return;
+  if(e.target?.closest?.('[role="dialog"]'))return;
+  e.preventDefault(); e.stopPropagation();
+  fireShortcut(id);
+}, true);
 
 // Ctrl/Cmd+Shift+T — toggle Todos. Combo lives in the SHORTCUTS registry (toggleTodos).
 // Capture phase so it fires even with a Todos task or the add-task box focused.

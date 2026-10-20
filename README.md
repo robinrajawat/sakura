@@ -292,6 +292,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Collapse / expand selected | ← / → |
 | Collapse all / Expand all (branches and every inline note, Q&A, remark, diagram, table and image; Ctrl/Cmd+Z puts every fold back) | Ctrl/Cmd+Alt+C |
 | Zoom into branch (Focus) / Exit | Ctrl/Cmd+. / Ctrl/Cmd+, |
+| Next / previous open item (follow-up or open question, in outline order; unfolds its branch) | F8 / Shift+F8 |
 | Search this document / Search & replace | Ctrl/Cmd+F / Ctrl/Cmd+H |
 | Quick Assist (command + search) | Ctrl/Cmd+K |
 | Quick Insert (character insert, while editing text) | Ctrl/Cmd+Space |
