@@ -388,7 +388,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     // Wheel zooms in around the pointer.
     await page.mouse.move(cb!.x + cb!.width / 2, cb!.y + cb!.height / 2);
     await page.mouse.wheel(0, -300);
-    expect(parseInt((await level.textContent())!)).toBeGreaterThan(100);
+    await expect.poll(async () => parseInt((await level.textContent())!)).toBeGreaterThan(100);
     // Drag pans.
     const before = (await img.boundingBox())!;
     await page.mouse.down();
