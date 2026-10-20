@@ -159,7 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-20: Text size keeps bullets and checkboxes on the text line.** Owner: "increasing the text
+**2026-10-20: Clicking a diagram opens a preview, not draw.io.** Owner: "should it open as a preview
+where we can zoom in/zoom out?", approved mockup `inline-objects/diagram-preview-mockup.png` with the
+button just "Edit" (no minimap, no laser pointer). `openDiagramViewer` shows `d.previewSvg` in
+`#diagram-viewer`: opens fitted (`_dvFit`, max 200%), wheel/pinch zooms around the pointer, drag pans,
+Fit / 100% / − / + (keys F, 0, -, +; double-click toggles fit/100%), Esc closes, Edit →
+`openDiagramEditor`. A diagram with no preview yet still opens the editor. Test:
+`node-diagram-inline-preview.spec.ts`.
+
+**2026-10-20: Text size keeps bullets and checkboxes on the text line (#581).** Owner: "increasing the text
 size from settings breaks the alignments in the editor". Cause: `.node-label,.node-input` had
 `line-height:calc(1.25 * var(--editor-scale))` on top of an already scaled font size, so at 140% the
 line was 1.75× the font and every bullet sat high. Now `line-height:1.25`; the bullet/fold/checkbox/
@@ -177,17 +185,6 @@ option in `_sbBuildItemButton`), due/link popovers anchored via `todoMenuAnchor`
 full title, open subtasks, foot "N done" + "+ Add subtask" on hover. White box only on
 `.todo-text:focus`. The Now row lost its accent tint (owner: it read as the current/selected row
 while navigating); the Now heading and bold title mark it. Phone (hub.html) keeps its task sheet. Tests: `todos-grouped.spec.ts`.
-
-**2026-10-20: To-Do panel redesign: Now is your Focus task, one-line rows, three statuses (#579).** Owner:
-"how does something end up in now?", "make this whole todo UX/UI better", "too much empty space",
-then approved mockup v3 (`/mnt/project-files/inline-objects/todo-panel-mockup-v3.png` in the project).
-Now = the task with `t.focus` (right-click › Focus on this / Remove focus; `setTodoFocus`, one at a
-time; hub sheet has a Focus chip); `pickNowTodo` no longer picks by itself. Rows at rest are one line
-(`.todo-main` flex row): title clamped to 2 lines + `.todo-pri-dot` (High filled, Medium hollow,
-amber), right side = Waiting reason chip, n/m, repeat, due ("Overdue · …"). Subtasks render only when
-the row is expanded (the n/m opens it). Statuses in the picker: None / In progress / Waiting, plus a
-Reason row (Needs review = `review`, Blocked = `blocked`); stored values unchanged. "On hold" → "Waiting".
-Same in hub.html. Tests: `todos-grouped.spec.ts`, `hub-todos-grouped.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
