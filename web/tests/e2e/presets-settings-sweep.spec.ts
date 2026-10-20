@@ -132,7 +132,7 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     await openSettingsCategory(page, 'data');
     const exportSection = page.locator('#settings-panel .settings-section[data-cat="data"]').filter({ has: page.locator('.settings-section-title', { hasText: /^Export & copy$/ }) });
     const rows = exportSection.locator('.settings-list-row .settings-switch-text');
-    expect(await rows.allTextContents()).toEqual(['Cover page', 'PDF branding', 'PDF branding text', 'Use accent color in exports']);
+    expect(await rows.allTextContents()).toEqual(['Cover page', 'Open items page', 'PDF branding', 'PDF branding text', 'Use accent color in exports']);
     // Branding defaults to on (its description now says so), and the text row follows it.
     await expect(page.locator('#preview-branding-toggle')).toHaveAttribute('aria-checked', 'true');
     await expect(exportSection).toContainText('On by default');
