@@ -159,6 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: Folded counts say what is inside; Undo toasts stay 4s.** Owner picked both from my UX list
+("do it"). `foldBadgeKindsHtml(idx)` adds `.fold-badge-kind` icon+count chips (note/thread/diagram/table/image,
+`FOLD_KIND_ICONS`, counts from `subtreeContentCounts`) after "+N"; the old grey `.fold-badge-dot` now shows
+only when what is hidden has no icon (To-Do refs, Q&A links, other markers). `showToast` defaults to
+`TOAST_UNDO_MS` (4s) when the message mentions undo. Screenshot `inline-objects/fold-badge-kinds.png`.
+Also (owner: "why are we showing bit of background?") `.node-marker-badge` has no tint at rest, only on hover.
+Tests: `fold-badge-kinds.spec.ts`, `folded-branch-indicator-standard.spec.ts`.
+
 **2026-10-20: Row icons follow the text.** Owner picked my suggestion "row icons sit far from their text" and
 "too many page-shaped icons"; mockup `inline-objects/row-icons-mockup.png`, then asked for the icons at the end of
 the last line of a wrapped row. `moveRowIconsInline(row)` (called just before `frag.appendChild(row)` in
@@ -175,14 +183,6 @@ More → `no-export` action (label via `ctxDynamicLabel`: Leave out of / Include
 `withoutNoExportNodes` drops the row and its subtree: `exportOpml`, `renderPreviewBody` (PDF; word counts too).
 The PDF is headless (no visible preview), so instead of the mockup's "N rows left out" line a toast
 (`noExportToast`) says how many were skipped. Test: `node-no-export.spec.ts`.
-
-**2026-10-20: To-Do history inline, no unfolded highlight, one edit look.** Owner: "todo version history
-can be limited to last 5 versions, and keep them inline rather than a popup", "why are we highlighting a
-task?", "editing the sub-task looks different". `TODOS_REVISION_MAX=5`; the history overlay is gone and
-`renderTodosHistoryInline` lists versions in `#todos-history-inline` inside the header ⋯ menu (clock,
-`historyMenuWhen`, "N open, M done"), then Save a version now. An unfolded task (`.todo-row.expanded`) has
-no grey fill. A focused `.todo-subtask-text` gets the same white box as `.todo-text`. Screenshot
-`inline-objects/todo-history-inline.png`. Test: `todos-history-inline.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
