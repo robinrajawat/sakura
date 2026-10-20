@@ -18602,17 +18602,16 @@ function subtreeHasNote(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1
 // What a folded row hides, as small icons with counts on its "+N" badge (owner, 2026-10-20: the
 // grey dot alone didn't say what was inside). Same icons and colours as the row dots.
 const FOLD_KIND_ICONS=[
-  ['note','var(--fc-gray)','<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>','note','notes'],
-  ['thread','var(--muted)','<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>','thread','threads'],
   ['diagram','var(--fc-blue)','<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>','diagram','diagrams'],
   ['table','var(--fc-blue)','<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>','table','tables'],
-  ['image','var(--fc-green)','<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>','image','images']
+  ['image','var(--fc-green)','<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/>','image','images'],
+  ['question','var(--accent)','<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>','open question','open questions']
 ];
 function subtreeContentCounts(idx){
-  const end=getSubtreeEnd(nodes,idx); const c={note:0,thread:0,diagram:0,table:0,image:0}; const ids=new Set();
-  for(let i=idx+1;i<end;i++){ const n=nodes[i]; ids.add(n.id); if(n.note&&n.note.trim())c.note++; if(Array.isArray(n.tables))c.table+=n.tables.length; if(Array.isArray(n.images))c.image+=n.images.length; }
+  const end=getSubtreeEnd(nodes,idx); const c={diagram:0,table:0,image:0,question:0}; const ids=new Set();
+  for(let i=idx+1;i<end;i++){ const n=nodes[i]; ids.add(n.id); if(Array.isArray(n.tables))c.table+=n.tables.length; if(Array.isArray(n.images))c.image+=n.images.length; }
   if(Array.isArray(diagrams))c.diagram=diagrams.filter(d=>ids.has(d.anchorNodeId)).length;
-  if(Array.isArray(remarks))c.thread=new Set(remarks.filter(r=>ids.has(r.anchorNodeId)).map(r=>r.anchorNodeId)).size;
+  if(Array.isArray(remarks))ids.forEach(id=>{ if(remarks.some(r=>r.anchorNodeId===id))c.question+=openQuestions(threadEntries(remarks,id)).length; });
   return c;
 }
 function foldBadgeKindsHtml(idx){

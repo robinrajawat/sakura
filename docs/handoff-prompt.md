@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: Folded counts show open questions, not notes/threads.** Owner: "drop notes, threads and instead
+have open questions"; Agreed/Out of scope/decisions stay out too (tooltip only). `FOLD_KIND_ICONS` is now
+diagram/table/image/question; `subtreeContentCounts` counts `openQuestions(threadEntries(...))` per hidden row.
+Badge caps at 6 parts (+N, 3 kinds, questions, follow-ups). Tests: `fold-badge-kinds.spec.ts`,
+`folded-branch-indicator-standard.spec.ts`.
+
 **2026-10-20: Folded counts say what is inside; Undo toasts stay 4s.** Owner picked both from my UX list
 ("do it"). `foldBadgeKindsHtml(idx)` adds `.fold-badge-kind` icon+count chips (note/thread/diagram/table/image,
 `FOLD_KIND_ICONS`, counts from `subtreeContentCounts`) after "+N"; the old grey `.fold-badge-dot` now shows
@@ -174,15 +180,6 @@ render) moves every `ROW_ICON_SEL` child into one `span.node-row-icons` at the e
 (inline-flex, `vertical-align:middle`); a row being edited has no label and keeps them as before. No setting
 (owner asked; I advised none). "Left out of export" dot/menu icon is now an eye with a slash (`NOEXPORT_DOT_SVG`).
 Test: `row-icons-inline.spec.ts`.
-
-**2026-10-20: Leave rows out of export.** Owner: "exclude certain nodes from export … a marker or something?"
-I advised a row setting, not a marker (markers are thread statuses). Approved mockup
-`inline-objects/export-exclude-mockup.png`. `node.noExport` (kept by `normalizeNode` only when true); right-click
-More → `no-export` action (label via `ctxDynamicLabel`: Leave out of / Include in export; applies to the multi-selection);
-`setNodesNoExport`, row dot `.node-noexport-dot` (`NOEXPORT_DOT_SVG`, click includes it again).
-`withoutNoExportNodes` drops the row and its subtree: `exportOpml`, `renderPreviewBody` (PDF; word counts too).
-The PDF is headless (no visible preview), so instead of the mockup's "N rows left out" line a toast
-(`noExportToast`) says how many were skipped. Test: `node-no-export.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

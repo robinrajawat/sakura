@@ -30,7 +30,7 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 // this, and separately now use a distinct color per content type instead of all sharing
 // --accent, so they're distinguishable from each other without needing the tooltip.
 test.describe('Folded-branch content indicators are consolidated into the +N badge', () => {
-  test('a folded node with no own note but a descendant note shows a note icon with its count on the badge, and names it in its tooltip', async ({ page }) => {
+  test('a folded node with no own note but a descendant note shows only a grey dot on the badge, and names it in its tooltip', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -51,9 +51,10 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
       return { hasDot: !!badge.querySelector('.fold-badge-dot'), kind: badge.querySelector('.fold-badge-kind')?.getAttribute('title') || '', tip: badge.getAttribute('data-tip') || '' };
     });
 
-    // Owner, 2026-10-20: the grey dot became the icon of what is inside, with a count.
-    expect(result.hasDot).toBe(false);
-    expect(result.kind).toBe('1 note inside');
+    // Owner, 2026-10-20: notes get no count of their own on the badge (only diagrams, tables, images,
+    // open questions and follow-ups do), so a hidden note alone shows the grey dot.
+    expect(result.hasDot).toBe(true);
+    expect(result.kind).toBe('');
     expect(result.tip).toContain('a note');
   });
 
