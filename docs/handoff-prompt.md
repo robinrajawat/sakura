@@ -164,6 +164,7 @@ contradicts README.md, trust README.md.)*
 `FOLD_KIND_ICONS`, counts from `subtreeContentCounts`) after "+N"; the old grey `.fold-badge-dot` now shows
 only when what is hidden has no icon (To-Do refs, Q&A links, other markers). `showToast` defaults to
 `TOAST_UNDO_MS` (4s) when the message mentions undo. Screenshot `inline-objects/fold-badge-kinds.png`.
+Also (owner: "why are we showing bit of background?") `.node-marker-badge` has no tint at rest, only on hover.
 Tests: `fold-badge-kinds.spec.ts`, `folded-branch-indicator-standard.spec.ts`.
 
 **2026-10-20: Row icons follow the text.** Owner picked my suggestion "row icons sit far from their text" and
