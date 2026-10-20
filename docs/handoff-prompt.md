@@ -159,6 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: Leave rows out of export.** Owner: "exclude certain nodes from export … a marker or something?"
+I advised a row setting, not a marker (markers are thread statuses). Approved mockup
+`inline-objects/export-exclude-mockup.png`. `node.noExport` (kept by `normalizeNode` only when true); right-click
+More → `no-export` action (label via `ctxDynamicLabel`: Leave out of / Include in export; applies to the multi-selection);
+`setNodesNoExport`, row dot `.node-noexport-dot` (`NOEXPORT_DOT_SVG`, click includes it again).
+`withoutNoExportNodes` drops the row and its subtree: `exportOpml`, `renderPreviewBody` (PDF; word counts too).
+The PDF is headless (no visible preview), so instead of the mockup's "N rows left out" line a toast
+(`noExportToast`) says how many were skipped. Test: `node-no-export.spec.ts`.
+
 **2026-10-20: To-Do history inline, no unfolded highlight, one edit look.** Owner: "todo version history
 can be limited to last 5 versions, and keep them inline rather than a popup", "why are we highlighting a
 task?", "editing the sub-task looks different". `TODOS_REVISION_MAX=5`; the history overlay is gone and
@@ -176,16 +185,6 @@ plain scroll or drag pans (owner: zooming on a trackpad swipe hid parts of the d
 Fit / 100% / − / + (keys F, 0, -, +; double-click toggles fit/100%), Esc closes, Edit →
 `openDiagramEditor`. A diagram with no preview yet still opens the editor. Test:
 `node-diagram-inline-preview.spec.ts`.
-
-**2026-10-20: Text size keeps bullets and checkboxes on the text line (#581).** Owner: "increasing the text
-size from settings breaks the alignments in the editor". Cause: `.node-label,.node-input` had
-`line-height:calc(1.25 * var(--editor-scale))` on top of an already scaled font size, so at 140% the
-line was 1.75× the font and every bullet sat high. Now `line-height:1.25`; the bullet/fold/checkbox/
-badge offsets use `--row-line` (set per heading level via `:has(> .style-heading-N)`), and bullets and
-the checkbox scale with the text. Follow-up (owner: "the dot indicators, are they not supposed to
-scale?"): the row-end indicators (note/thread/diagram/table/image/To-Do/Q&A dots, marker badges, tags,
-checkbox progress) get `zoom:var(--editor-scale)` and offset by `--row-line-base` (the 100% line
-height), since zoom also scales their margins. Test: `editor-text-size-alignment.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
