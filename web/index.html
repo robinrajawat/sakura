@@ -13387,9 +13387,9 @@ function _dvEnsure(){
   const canvas=ov.querySelector('.dv-canvas');
   ov.addEventListener('mousedown',e=>{ if(e.target===ov)closeDiagramViewer(); });
   ov.querySelector('.dv-close').addEventListener('click',closeDiagramViewer);
-  ov.querySelector('.dv-zoom-in').addEventListener('click',()=>_dvZoomBy(1.25));
-  ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.25));
-  ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit());
+  ov.querySelector('.dv-zoom-in').addEventListener('click',()=>_dvZoomBy(1.2));
+  ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.2));
+  ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit(true));
   ov.querySelector('.dv-actual').addEventListener('click',()=>_dvSetScale(1));
   ov.querySelector('.dv-edit').addEventListener('click',()=>{ const id=_dvState&&_dvState.id; closeDiagramViewer(); if(id)openDiagramEditor(id); });
   // Like Figma/Miro: a pinch (sent as Ctrl+wheel) or Ctrl/Cmd+wheel zooms around the pointer; a plain
@@ -13400,7 +13400,11 @@ function _dvEnsure(){
     const unit=e.deltaMode===1?16:e.deltaMode===2?canvas.clientHeight:1;
     if(e.ctrlKey||e.metaKey){
       const r=canvas.getBoundingClientRect();
-      _dvZoomBy(Math.exp(-e.deltaY*unit*0.01), e.clientX-r.left, e.clientY-r.top);
+      // Gentle steps (owner, 2026-10-20: zoom was "very aggressive"): a mouse-wheel notch is
+      // ~100px, which used to zoom 2.7x; capping each event keeps a notch near 12% and lets a
+      // pinch's many small events glide.
+      const d=Math.max(-20,Math.min(20,e.deltaY*unit));
+      _dvZoomBy(Math.exp(-d*0.006), e.clientX-r.left, e.clientY-r.top, false);
     } else {
       const dx=e.shiftKey&&!e.deltaX?e.deltaY:e.deltaX, dy=e.shiftKey&&!e.deltaX?0:e.deltaY;
       _dvState.tx-=dx*unit; _dvState.ty-=dy*unit; _dvApply();
@@ -13417,41 +13421,43 @@ function _dvEnsure(){
   });
   const endDrag=()=>{ if(_dvState)_dvState.drag=null; canvas.classList.remove('dragging'); };
   canvas.addEventListener('pointerup',endDrag); canvas.addEventListener('pointercancel',endDrag);
-  canvas.addEventListener('dblclick',e=>{ if(!_dvState)return; const r=canvas.getBoundingClientRect(); if(Math.abs(_dvState.scale-_dvState.fit)<0.01)_dvSetScale(1,e.clientX-r.left,e.clientY-r.top); else _dvFit(); });
+  canvas.addEventListener('dblclick',e=>{ if(!_dvState)return; const r=canvas.getBoundingClientRect(); if(Math.abs(_dvState.scale-_dvState.fit)<0.01)_dvSetScale(1,e.clientX-r.left,e.clientY-r.top); else _dvFit(true); });
   // Capture phase on the document: the editor's own key handlers would otherwise see Esc and +/- first.
   document.addEventListener('keydown',e=>{
     if(!ov.classList.contains('open'))return;
     if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeDiagramViewer(); }
-    else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.25); }
-    else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.25); }
+    else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.2); }
+    else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.2); }
     else if(e.key==='0'){ e.preventDefault(); e.stopPropagation(); _dvSetScale(1); }
-    else if(e.key==='f'||e.key==='F'){ e.preventDefault(); e.stopPropagation(); _dvFit(); }
+    else if(e.key==='f'||e.key==='F'){ e.preventDefault(); e.stopPropagation(); _dvFit(true); }
   },true);
   return ov;
 }
-function _dvApply(){
+// Buttons, keys and double-click ease into the new zoom; wheel, pinch and drag follow the hand directly.
+function _dvApply(animate){
   const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
   const img=ov.querySelector('.dv-canvas img');
+  img.style.transition=animate?'transform .18s ease-out':'none';
   img.style.transform=`translate(${_dvState.tx}px,${_dvState.ty}px) scale(${_dvState.scale})`;
   ov.querySelector('.dv-zoom-level').textContent=Math.round(_dvState.scale*100)+'%';
 }
-function _dvSetScale(scale,cx,cy){
+function _dvSetScale(scale,cx,cy,animate=true){
   if(!_dvState)return;
   const canvas=el('diagram-viewer').querySelector('.dv-canvas');
   if(cx===undefined){ cx=canvas.clientWidth/2; cy=canvas.clientHeight/2; }
   const next=Math.min(8,Math.max(0.1,scale)), k=next/_dvState.scale;
   _dvState.tx=cx-(cx-_dvState.tx)*k; _dvState.ty=cy-(cy-_dvState.ty)*k; _dvState.scale=next;
-  _dvApply();
+  _dvApply(animate);
 }
-function _dvZoomBy(f,cx,cy){ if(_dvState)_dvSetScale(_dvState.scale*f,cx,cy); }
+function _dvZoomBy(f,cx,cy,animate){ if(_dvState)_dvSetScale(_dvState.scale*f,cx,cy,animate); }
 // Fit the whole diagram with a margin, never blowing a small one up past twice its size.
-function _dvFit(){
+function _dvFit(animate){
   if(!_dvState)return;
   const canvas=el('diagram-viewer').querySelector('.dv-canvas');
   const W=canvas.clientWidth, H=canvas.clientHeight, w=_dvState.w, h=_dvState.h;
   const fit=Math.min(2,Math.max(0.1,Math.min((W-96)/w,(H-96)/h)));
   _dvState.fit=fit; _dvState.scale=fit; _dvState.tx=(W-w*fit)/2; _dvState.ty=(H-h*fit)/2;
-  _dvApply();
+  _dvApply(animate);
 }
 function openDiagramViewer(diagramId){
   const d=findDiagram(diagramId); if(!d)return;

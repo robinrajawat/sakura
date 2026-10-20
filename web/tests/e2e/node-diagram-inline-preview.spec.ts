@@ -389,7 +389,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await viewer.locator('.dv-actual').click();
     await expect(level).toHaveText('100%');
     await viewer.locator('.dv-zoom-in').click();
-    await expect(level).toHaveText('125%');
+    await expect(level).toHaveText('120%');
     await viewer.locator('.dv-zoom-out').click();
     await expect(level).toHaveText('100%');
     // Ctrl+wheel (what a pinch sends) zooms in around the pointer.
@@ -398,6 +398,8 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await page.mouse.wheel(0, -100);
     await page.keyboard.up('Control');
     await expect.poll(async () => parseInt((await level.textContent())!)).toBeGreaterThan(100);
+    // One wheel notch is a gentle step, not a jump (owner: zoom was "very aggressive").
+    expect(parseInt((await level.textContent())!)).toBeLessThanOrEqual(115);
     // A plain scroll (a two-finger swipe) pans instead of zooming, so every part can be reached.
     const zoomed = await level.textContent();
     const beforeScroll = (await img.boundingBox())!;

@@ -171,7 +171,7 @@ no grey fill. A focused `.todo-subtask-text` gets the same white box as `.todo-t
 where we can zoom in/zoom out?", approved mockup `inline-objects/diagram-preview-mockup.png` with the
 button just "Edit" (no minimap, no laser pointer). `openDiagramViewer` shows `d.previewSvg` in
 `#diagram-viewer`: opens fitted (`_dvFit`, max 200%), pinch or Ctrl/Cmd+wheel zooms around the pointer, a
-plain scroll or drag pans (owner: zooming on a trackpad swipe hid parts of the diagram), the sheet has a
+plain scroll or drag pans (owner: zooming on a trackpad swipe hid parts of the diagram); each Ctrl/pinch wheel event is capped at ±20px, `exp(-d*0.006)`, so a mouse notch zooms ~12% (owner: zoom was "very aggressive"), and buttons/keys step 1.2× with a .18s ease, the sheet has a
 24px margin (`--dv-pad`; draw.io exports are borderless),
 Fit / 100% / − / + (keys F, 0, -, +; double-click toggles fit/100%), Esc closes, Edit →
 `openDiagramEditor`. A diagram with no preview yet still opens the editor. Test:
