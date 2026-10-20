@@ -218,6 +218,39 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(box!.width).toBeGreaterThan(300);
   });
 
+  test('the preview keeps a margin between the diagram and the frame, even when the diagram fills the width', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    // Wider than the editor, so the image is scaled down to fill the frame (owner's case: a
+    // diagram whose own border ran straight into the preview's edge).
+    const wide = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="3000" height="1500"><rect width="3000" height="1500" fill="white" stroke="red"/></svg>');
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Wide', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]);
+      // @ts-expect-error
+      render();
+    }, wide);
+
+    const thumb = page.locator('.node-diagram-preview-thumb');
+    const t = (await thumb.boundingBox())!;
+    const i = (await thumb.locator('img').boundingBox())!;
+    expect(i.x - t.x).toBeGreaterThanOrEqual(10);
+    expect(i.y - t.y).toBeGreaterThanOrEqual(10);
+    expect(t.x + t.width - (i.x + i.width)).toBeGreaterThanOrEqual(10);
+    expect(t.y + t.height - (i.y + i.height)).toBeGreaterThanOrEqual(10);
+  });
+
   test('a node with no diagrams shows no diagram dot and no inline preview', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
