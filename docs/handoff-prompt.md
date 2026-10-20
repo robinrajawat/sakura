@@ -159,11 +159,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: Copy open items as an agenda.** Owner saw mockup `inline-objects/agenda-copy-mockup.png` and
+asked for a copy button before "Filter outline" instead of a menu-foot item: `.oi-copy` in `.oi-head-actions`
+(only when something is open) calls `copyOpenItemsAgenda()`; `openItemsAgendaContent()` writes title, date + counts,
+numbered Follow-ups (row (parent) · owner · age, latest line) and Open questions (on row · asked by · age), rich +
+plain. `openItemsLists()` now feeds both the menu and the copy. Test: `open-items-agenda.spec.ts`.
+Still offered, not picked: Open items page in the PDF.
+
 **2026-10-20: F8 steps through open items.** Owner picked it ("do it") from my list for review meetings.
 `SHORTCUTS.nextOpenItem` (f8) / `prevOpenItem` (shift+f8), capture-phase listener; `stepOpenItem(dir)` walks
 `openItemsInOutlineOrder()` (follow-up markers, then open questions per row) from the selected row, wraps,
 reveals via `revealMarkerEntry`/`revealInlineObject`, toast "Open item N of M". Test: `next-open-item.spec.ts`.
-Still offered, not picked: copy Open items as an agenda; Open items page in the PDF.
 
 **2026-10-20: Untitled in the sidebar; accent count jumps; Expand all undo.** Owner: "do all of these". With
 `currentDocId==null` `renderSidebarDocs` puts a `.sdoc-unsaved` "Untitled · not saved" row on top instead of "No
@@ -173,13 +179,6 @@ carries `foldState()`, `restoreFromSnapshot` applies it, undo/redo keep carrying
 an Agreed marker scrolled the page with its entry already visible: `revealInlineObject` now scrolls only when
 `!isInEditorView(target)` and focuses with `preventScroll`. Test:
 `sidebar-untitled-fold-jump-undo.spec.ts`.
-
-**2026-10-20: Shorter More menu; folded badge is just the count.** Owner approved mockup
-`inline-objects/more-menu-mockup.png`: Duplicate joins the Add icon row; Zoom in, Collapse/expand, Tags, Version history and
-Leave out of export sit behind a "Row ›" flyout (owner moved Zoom/Collapse there from a Branch row) (`flyout()` in `renderContextMorePanel`,
-triggers carry `data-flyout="insert|row"`). Owner then found the badge icons louder than the row's own dots
-and asked for "only the count, rest on hover": `.fold-badge` is "+N" only, `.fold-badge-open` (accent) when
-open questions or follow-ups are inside, tooltip lists counts (`foldBadgeTipParts`, `FOLD_KIND_NAMES`).
 
 ### Where things stand (the model to keep in mind)
 

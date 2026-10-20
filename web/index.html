@@ -952,6 +952,11 @@ body.zen-mode #quick-bar{display:none}
 .oi-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .decisions-menu .sb-context-heading{padding-top:6px}
 .oi-head-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg)}
+.oi-head-actions{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
+.oi-copy{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:none;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+.oi-copy:hover{background:var(--hover,color-mix(in srgb,var(--fg) 8%,transparent));color:var(--fg)}
+.oi-copy:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.oi-copy svg{width:13px;height:13px}
 .oi-switch{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;margin:-2px -2px -2px 0;padding:2px;border:none;background:none;cursor:pointer;font:500 11.5px 'Inter',sans-serif;color:var(--muted);text-align:left;border-radius:6px}
 .oi-switch:hover .oi-switch-label{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--border)}
 .oi-switch:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
@@ -31774,12 +31779,37 @@ function applyOpenItemsFilter(kind){
 // The list behind the summary: open items grouped by kind (Out of scope folded at the bottom), each jumping to its row or
 // inline item. Filtering is one switch at the top (everything open) plus a small filter icon on each
 // group heading (just that kind) — no repeated "Show only these" rows.
-function openItemsMenuItems(){
-  const items=[];
+// The document's open items, in outline order: follow-ups (with owner, parent and latest line) and
+// open questions. The Open items menu and "Copy as agenda" both read it.
+function openItemsLists(){
   const idx=new Map(nodes.map((n,i)=>[n.id,i]));
   // The row's text as it reads on screen (getNodePlainText would also drop its (parentheses)).
   const rowText=n=>stripHtmlToText(n.text||'')||'Untitled row';
   const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
+  // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
+  const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
+  // Under a follow-up, its thread's latest line says why it's open, without jumping there.
+  const latestOf=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--){ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); if(x)return {person:t[i].person||'',text:x}; } return null; };
+  // Rows with the same name (two "Export (ZOR)" under different parents) name their parent on the
+  // grey line ("in Exclusion Scenarios · Karsten: …"), so the row's own name keeps the first line;
+  // same name under the same parent too: numbered in outline order ("Export (ZOR) (2)").
+  const parentText=n=>{ const p=n.parentId!=null?nodes.find(x=>x.id===n.parentId):null; return p?rowText(p):''; };
+  const list=nodes.filter(n=>n.marker==='followup'), byName=new Map(), byPlace=new Map(), nth=new Map();
+  const place=n=>rowText(n)+'\u0000'+n.parentId;
+  list.forEach(n=>{ byName.set(rowText(n),(byName.get(rowText(n))||0)+1); byPlace.set(place(n),(byPlace.get(place(n))||0)+1); });
+  const followups=list.map(n=>{
+    const k=place(n); nth.set(k,(nth.get(k)||0)+1);
+    const h=threadStatusEntry(nodeThread(n.id));
+    return {nodeId:n.id, row:rowText(n)+(byPlace.get(k)>1?' ('+nth.get(k)+')':''), owner:ownerOf(n),
+      parent:byName.get(rowText(n))>1?parentText(n):'', fullParent:parentText(n), latest:latestOf(n), since:h&&h.createdAt};
+  });
+  // A question names the row it's on and who asked ("Customer comms · Maria").
+  const questions=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId)).map(r=>{ const n=nodes[idx.get(r.anchorNodeId)];
+    return {remarkId:r.id, text:stripHtmlToText(r.text), row:n?rowText(n):'', person:r.person||'', since:r.createdAt}; });
+  return {followups, questions};
+}
+function openItemsMenuItems(){
+  const items=[];
   const FILTER_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
   const icon=key=>`<span class="oi-menu-icon" style="color:${openItemKindColor(key)}">${openItemKindIcon(key)}</span>`;
   // One way to filter (owner, 2026-10-15): the switch at the top shows every open item; the groups
@@ -31793,34 +31823,51 @@ function openItemsMenuItems(){
     entries.slice(0,OPEN_ITEMS_PER_GROUP).forEach(en=>items.push({label:en.label, sub:en.sub||'', meta:openItemAge(en.since,Date.now()), icon:icon(key), onClick:en.go}));
     if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!allOn)applyOpenItemsFilter('openItems'); }});
   };
-  // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
-  const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
-  // Under a follow-up, its thread's latest line says why it's open, without jumping there.
-  const latestLine=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--){ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); if(x)return (t[i].person?t[i].person+': ':'')+x; } return ''; };
-  // Rows with the same name (two "Export (ZOR)" under different parents) name their parent on the
-  // grey line ("in Exclusion Scenarios · Karsten: …"), so the row's own name keeps the first line;
-  // same name under the same parent too: numbered in outline order ("Export (ZOR) (2)").
-  const parentText=n=>{ const p=n.parentId!=null?nodes.find(x=>x.id===n.parentId):null; return p?rowText(p):''; };
-  const markerRows=m=>{
-    const list=nodes.filter(n=>n.marker===m), byName=new Map(), byPlace=new Map(), nth=new Map();
-    const place=n=>rowText(n)+'\u0000'+n.parentId;
-    list.forEach(n=>{ byName.set(rowText(n),(byName.get(rowText(n))||0)+1); byPlace.set(place(n),(byPlace.get(place(n))||0)+1); });
-    return list.map(n=>{
-      const o=m==='followup'?ownerOf(n):'';
-      const k=place(n); nth.set(k,(nth.get(k)||0)+1);
-      const num=byPlace.get(k)>1?' ('+nth.get(k)+')':'';
-      const pt=byName.get(rowText(n))>1?parentText(n):'';
-      const sub=[pt?'in '+pt:'', m==='followup'?latestLine(n):''].filter(Boolean).join(' \u00B7 ');
-      const h=threadStatusEntry(nodeThread(n.id));
-      return {label:rowText(n)+num+(o?' \u00B7 '+o:''), sub, since:h&&h.createdAt, go:()=>revealMarkerEntry(n.id)};
-    });
-  };
-  addGroup('followup','Follow-ups',markerRows('followup'));
-  const qs=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId));
-  // Under a question, the row it's on and who asked ("Customer comms · Maria"), like a follow-up's line.
-  const askedOn=r=>{ const n=nodes[idx.get(r.anchorNodeId)]; return [n?rowText(n):'',r.person||''].filter(Boolean).join(' \u00B7 '); };
-  addGroup('question','Open questions',qs.map(r=>({label:stripHtmlToText(r.text), sub:askedOn(r), since:r.createdAt, go:()=>revealInlineObject('remark',r.id)})));
+  const {followups,questions}=openItemsLists();
+  addGroup('followup','Follow-ups',followups.map(f=>({label:f.row+(f.owner?' \u00B7 '+f.owner:''),
+    sub:[f.parent?'in '+f.parent:'', f.latest?(f.latest.person?f.latest.person+': ':'')+f.latest.text:''].filter(Boolean).join(' \u00B7 '),
+    since:f.since, go:()=>revealMarkerEntry(f.nodeId)})));
+  addGroup('question','Open questions',questions.map(q=>({label:q.text, sub:[q.row,q.person].filter(Boolean).join(' \u00B7 '), since:q.since, go:()=>revealInlineObject('remark',q.remarkId)})));
   return items;
+}
+// "Copy as agenda" (owner, 2026-10-20): every open item, numbered, for a meeting invite or email.
+// Rich text for mail and docs (names in their colours), a plain numbered list everywhere else.
+function openItemsAgendaContent(now=Date.now()){
+  const {followups,questions}=openItemsLists();
+  if(!followups.length&&!questions.length)return null;
+  const grey='color:#6b7280';
+  const docTitle=(el('header-title')?.value||'').trim()||'Untitled';
+  const title=docTitle+': open items';
+  const counts=[followups.length?followups.length+' follow-up'+(followups.length>1?'s':''):'', questions.length?questions.length+' open question'+(questions.length>1?'s':''):''].filter(Boolean).join(' \u00b7 ');
+  const dateLine=new Date(now).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 '+counts;
+  const name=p=>{ const c=remarkAuthorColor(p).avatarBg; return '<b style="color:'+c+'">'+esc(p)+'</b>'; };
+  const age=t=>{ const a=openItemAge(t,now); return a?a+' open':''; };
+  const html=['<div><b>'+esc(title)+'</b></div>','<div style="'+grey+'">'+esc(dateLine)+'</div>'], text=[title,dateLine];
+  const section=(heading,entries,rowHtml,rowText)=>{
+    if(!entries.length)return;
+    html.push('<div style="margin-top:10px"><b>'+esc(heading)+'</b></div><ol style="margin:4px 0 0;padding-left:22px">'+entries.map(e=>'<li style="margin-bottom:4px">'+rowHtml(e)+'</li>').join('')+'</ol>');
+    text.push('',heading,...entries.map((e,i)=>(i+1)+'. '+rowText(e)));
+  };
+  section('Follow-ups',followups,f=>{
+    return '<b>'+esc(f.row)+'</b>'+(f.fullParent?' <span style="'+grey+'">('+esc(f.fullParent)+')</span>':'')
+      +(f.owner?' \u00b7 '+name(f.owner):'')+(age(f.since)?' <span style="'+grey+'">\u00b7 '+esc(age(f.since))+'</span>':'')
+      +(f.latest?'<div style="'+grey+'">'+(f.latest.person?esc(f.latest.person)+': ':'')+esc(f.latest.text)+'</div>':'');
+  },f=>f.row+(f.fullParent?' ('+f.fullParent+')':'')+(f.owner?' \u00b7 '+f.owner:'')+(age(f.since)?' \u00b7 '+age(f.since):'')
+    +(f.latest?'\n   '+(f.latest.person?f.latest.person+': ':'')+f.latest.text:''));
+  section('Open questions',questions,q=>esc(q.text)+'<div style="'+grey+'">'+[q.row?'on '+esc(q.row):'',q.person?'asked by '+name(q.person):'',esc(age(q.since))].filter(Boolean).join(' \u00b7 ')+'</div>',
+    q=>q.text+'\n   '+[q.row?'on '+q.row:'',q.person?'asked by '+q.person:'',age(q.since)].filter(Boolean).join(' \u00b7 '));
+  return {html:html.join(''), text:text.join('\n')};
+}
+async function copyOpenItemsAgenda(){
+  const c=openItemsAgendaContent(); if(!c){ showToast('Nothing open to copy'); return; }
+  try{
+    if(navigator.clipboard&&window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([c.html],{type:'text/html'}),'text/plain':new Blob([c.text],{type:'text/plain'})})]);
+    } else if(navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(c.text);
+    } else throw new Error('Clipboard API unavailable');
+    showToast('Open items copied as an agenda');
+  }catch(e){ showToast('Copy failed'); }
 }
 // Thread entries marked as decisions, on rows of this document, in outline order.
 function documentDecisions(){
@@ -31853,8 +31900,11 @@ function openOpenItemsMenu(btn){
   const head=document.createElement('div'); head.className='oi-head';
   // The switch sits on the title line (owner, 2026-10-16): a short label, the full sentence as its tooltip.
   const sw=hasOpen||allOn?`<button type="button" class="oi-switch${allOn?' on':''}" role="switch" aria-checked="${allOn}" aria-label="Show only open items in the outline" data-tip="Show only open items in the outline"><span class="oi-switch-label">Filter outline</span><span class="oi-switch-track" aria-hidden="true"><span></span></span></button>`:'';
-  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span>${sw}</div>`;
+  // Copy sits before the switch (owner, 2026-10-20): every open item as a numbered agenda.
+  const copy=hasOpen?`<button type="button" class="oi-copy" aria-label="Copy as agenda" data-tip="Copy as agenda">${THREAD_COPY_ICON}</button>`:'';
+  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span><span class="oi-head-actions">${copy}${sw}</span></div>`;
   menu.insertBefore(head,menu.firstChild);
+  head.querySelector('.oi-copy')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); copyOpenItemsAgenda(); });
   head.querySelector('.oi-switch')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); applyOpenItemsFilter('openItems'); });
   // Right-align under the summary; showSbContextMenu keeps it on screen.
   menu.style.left=Math.max(8,Math.min(r.right-menu.offsetWidth,window.innerWidth-menu.offsetWidth-8))+'px';
