@@ -159,6 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: To-Do history inline, no unfolded highlight, one edit look.** Owner: "todo version history
+can be limited to last 5 versions, and keep them inline rather than a popup", "why are we highlighting a
+task?", "editing the sub-task looks different". `TODOS_REVISION_MAX=5`; the history overlay is gone and
+`renderTodosHistoryInline` lists versions in `#todos-history-inline` inside the header ⋯ menu (clock,
+`historyMenuWhen`, "N open, M done"), then Save a version now. An unfolded task (`.todo-row.expanded`) has
+no grey fill. A focused `.todo-subtask-text` gets the same white box as `.todo-text`. Screenshot
+`inline-objects/todo-history-inline.png`. Test: `todos-history-inline.spec.ts`.
+
 **2026-10-20: Clicking a diagram opens a preview, not draw.io (#582).** Owner: "should it open as a preview
 where we can zoom in/zoom out?", approved mockup `inline-objects/diagram-preview-mockup.png` with the
 button just "Edit" (no minimap, no laser pointer). `openDiagramViewer` shows `d.previewSvg` in
@@ -178,18 +186,6 @@ the checkbox scale with the text. Follow-up (owner: "the dot indicators, are the
 scale?"): the row-end indicators (note/thread/diagram/table/image/To-Do/Q&A dots, marker badges, tags,
 checkbox progress) get `zoom:var(--editor-scale)` and offset by `--row-line-base` (the 100% line
 height), since zoom also scales their margins. Test: `editor-text-size-alignment.spec.ts`.
-
-**2026-10-20: To-Do rows without an edit card (#580).** Owner: subtasks invisible "unless you get into edit
-mode", "can we avoid this editable view completely?", mockups `todo-no-edit-card.png`,
-`todo-long-title.png` (in `/mnt/project-files/inline-objects/`). The expanded card (`todoPropsHtml`,
-`.todo-expand-toggle`, row action buttons) is gone. Settings are in `todoContextItems` (⋯ =
-`.todo-more-btn` on hover, or right-click): Priority/Status/Reason/Repeat as choice grids (`cols`
-option in `_sbBuildItemButton`), due/link popovers anchored via `todoMenuAnchor`, Add subtask
-(`openSubtaskInput`). `.todo-pri-dot` and the due date open their editors from the row.
-"Unfolded" (`t.unfolded`, saved; the n/m count or a clamped title's click toggles it) = grey row,
-full title, open subtasks, foot "N done" + "+ Add subtask" on hover. White box only on
-`.todo-text:focus`. The Now row lost its accent tint (owner: it read as the current/selected row
-while navigating); the Now heading and bold title mark it. Phone (hub.html) keeps its task sheet. Tests: `todos-grouped.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
