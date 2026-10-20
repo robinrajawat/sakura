@@ -159,7 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-20: To-Do rows without an edit card.** Owner: subtasks invisible "unless you get into edit
+**2026-10-20: Text size keeps bullets and checkboxes on the text line.** Owner: "increasing the text
+size from settings breaks the alignments in the editor". Cause: `.node-label,.node-input` had
+`line-height:calc(1.25 * var(--editor-scale))` on top of an already scaled font size, so at 140% the
+line was 1.75× the font and every bullet sat high. Now `line-height:1.25`; the bullet/fold/checkbox/
+badge offsets use `--row-line` (set per heading level via `:has(> .style-heading-N)`), and bullets and
+the checkbox scale with the text. Test: `editor-text-size-alignment.spec.ts`.
+
+**2026-10-20: To-Do rows without an edit card (#580).** Owner: subtasks invisible "unless you get into edit
 mode", "can we avoid this editable view completely?", mockups `todo-no-edit-card.png`,
 `todo-long-title.png` (in `/mnt/project-files/inline-objects/`). The expanded card (`todoPropsHtml`,
 `.todo-expand-toggle`, row action buttons) is gone. Settings are in `todoContextItems` (⋯ =
@@ -181,12 +188,6 @@ amber), right side = Waiting reason chip, n/m, repeat, due ("Overdue · …"). S
 the row is expanded (the n/m opens it). Statuses in the picker: None / In progress / Waiting, plus a
 Reason row (Needs review = `review`, Blocked = `blocked`); stored values unchanged. "On hold" → "Waiting".
 Same in hub.html. Tests: `todos-grouped.spec.ts`, `hub-todos-grouped.spec.ts`.
-
-**2026-10-20: the inline diagram preview keeps a margin (#578).** Owner: "are we not keeping any margins
-within the preview?" draw.io exports with no border, so a diagram's own frame ran straight into the
-preview's edge. `.node-diagram-preview-thumb` now has `padding:12px` (`box-sizing:border-box`; the
-empty placeholder keeps `padding:0`). PDF is unchanged (no frame there). Test:
-`node-diagram-inline-preview.spec.ts` (image inset ≥10px on every side).
 
 ### Where things stand (the model to keep in mind)
 
