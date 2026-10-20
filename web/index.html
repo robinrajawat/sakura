@@ -19978,6 +19978,9 @@ function withoutNoExportNodes(list){
   list.forEach(n=>{ const d=n.depth||0; if(skip!==null){ if(d>skip)return; skip=null; } if(n.noExport){ skip=d; return; } out.push(n); });
   return out;
 }
+// Ids of the rows left out (marked rows and everything under them), so what hangs off them (threads,
+// Q&A) stays out of the export's end-of-document lists too (owner, 2026-10-20: objects were leaking).
+function noExportNodeIds(list){ const kept=new Set(withoutNoExportNodes(list).map(n=>n.id)); return new Set(list.filter(n=>!kept.has(n.id)).map(n=>n.id)); }
 const CTX_ACTION_META={
   child:{label:'Add child',glyph:'＋',group:'insert'},
   above:{label:'Insert above',glyph:'⤴',group:'insert'},
@@ -29667,7 +29670,8 @@ function renderPreviewBody(){
   });
   // Questions linked to a row are discussion items and print under it; what's left here is Q&A
   // that was never linked to a row (older documents).
-  const qaValidItems=qaItems.filter(it=>it.type!=='section'&&(it.question||'').trim());
+  const leftOutIds=noExportNodeIds(nodes);
+  const qaValidItems=qaItems.filter(it=>it.type!=='section'&&(it.question||'').trim()&&!leftOutIds.has(it.sourceNodeId));
   if(qaValidItems.length){
     const qaSection=document.createElement('div'); qaSection.id='pv-qa-section';
     const qaHeading=document.createElement('div'); qaHeading.className='pv-qa-heading'; qaHeading.textContent='Q&A';
@@ -29685,7 +29689,7 @@ function renderPreviewBody(){
   if(Array.isArray(remarks)&&remarks.length){
     // Blank entries (an old "Add remark…" never typed into, often orphaned when its row was deleted)
     // have nothing to print.
-    const leftoverRemarks=remarks.filter(rm=>!_previewRemarksRenderedInline.has(rm.id)&&htmlHasVisibleText(rm.text));
+    const leftoverRemarks=remarks.filter(rm=>!_previewRemarksRenderedInline.has(rm.id)&&!leftOutIds.has(rm.anchorNodeId)&&htmlHasVisibleText(rm.text));
     if(leftoverRemarks.length){
       const remarksSection=document.createElement('div'); remarksSection.id='pv-remarks-section';
       const remarksHeading=document.createElement('div'); remarksHeading.className='pv-qa-heading'; remarksHeading.textContent='Comments without a row';

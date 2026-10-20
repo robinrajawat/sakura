@@ -164,6 +164,8 @@ asked for a copy button before "Filter outline" instead of a menu-foot item: `.o
 (only when something is open) calls `copyOpenItemsAgenda()`; `openItemsAgendaContent()` writes title, date + counts,
 numbered Follow-ups (row (parent) · owner · age, latest line) and Open questions (on row · asked by · age), rich +
 plain. `openItemsLists()` now feeds both the menu and the copy. Test: `open-items-agenda.spec.ts`.
+Same PR: owner found threads/Q&A on "Leave out of export" rows leaking into the PDF's end lists ("Comments without a
+row", "Q&A"); `noExportNodeIds()` now filters both. Test added to `node-no-export.spec.ts`.
 Still offered, not picked: Open items page in the PDF.
 
 **2026-10-20: F8 steps through open items.** Owner picked it ("do it") from my list for review meetings.

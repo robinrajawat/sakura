@@ -72,3 +72,22 @@ test('the PDF and the OPML export skip the row and everything under it', async (
   expect(opml).not.toContain('Internal cost estimate');
   expect(opml).not.toContain('Two forty per stop');
 });
+
+test('threads and Q&A on left-out rows and their sub-rows stay out of the PDF lists too', async ({ page }) => {
+  // Owner, 2026-10-20: "objects are leaking into the export".
+  const text = await page.evaluate(() => {
+    // @ts-expect-error
+    nodes[2].noExport = true;
+    // @ts-expect-error
+    remarks = [{ id: 'a', anchorNodeId: 3, text: 'Cost thread', person: 'A', createdAt: 1 }, { id: 'b', anchorNodeId: 4, text: 'Sub-row question', type: 'question', createdAt: 2 }, { id: 'c', anchorNodeId: 5, text: 'Kept thread', createdAt: 3 }];
+    // @ts-expect-error
+    qaItems = [{ id: 'qa1', question: 'Sub-row Q&A', sourceNodeId: 4 }];
+    // @ts-expect-error
+    render(); previewCollapsedIds = new Set(); const restore = _applyNodeContentExportState(); renderPreviewBody(); restore();
+    return document.getElementById('preview-body')?.innerText || '';
+  });
+  expect(text).toContain('Kept thread');
+  expect(text).not.toContain('Cost thread');
+  expect(text).not.toContain('Sub-row question');
+  expect(text).not.toContain('Sub-row Q&A');
+});
