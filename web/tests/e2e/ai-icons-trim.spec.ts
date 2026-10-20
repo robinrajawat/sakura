@@ -169,6 +169,8 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-extract-btn, #todos-summary-btn')).toHaveCount(0);
     await expect(page.locator('.todo-rewrite')).toHaveCount(2);
     await expect(page.locator('.todo-subtask-ai')).toHaveCount(0);
+    // Subtasks fold behind their count at rest; open the task to see them.
+    await page.click('.todo-subtasks-toggle[data-id="t1"]');
     await expect(page.locator('.todo-subtask-rewrite')).toHaveCount(1);
     expect(errors).toEqual([]);
   });

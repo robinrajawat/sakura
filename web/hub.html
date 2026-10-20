@@ -319,11 +319,14 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-subtask-input::placeholder{color:var(--hint)}
 .todo-subtask-chip{display:inline-flex;align-items:center;gap:5px;font:600 10.5px 'Inter',sans-serif;color:var(--muted);background:var(--chip);padding:3.5px 9px;border-radius:999px}
 .todo-subtask-chip svg{width:10px;height:10px}
-/* Same structure as the desktop To-Dos panel (2026-10): Now card, then Doing / Up next / On hold.
-   A row: title with its due date on the right; High / Medium and On hold status as chips;
-   repeat and subtask progress as quiet text. */
+/* Same structure as the desktop To-Dos panel (2026-10-20): Now (the focus task), then Doing /
+   Up next / Waiting. A row: title with a priority dot and its due date on the right; a Waiting
+   reason as a chip; repeat and subtask progress as quiet text. */
 .todo-row-head{display:flex;align-items:baseline;gap:10px}
-.todo-row-head .todo-row-text{flex:1;min-width:0}
+.todo-row-head .todo-row-text{flex:0 1 auto;min-width:0}
+.todo-pri-dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--fc-orange);background:var(--fc-orange);margin-left:-3px;align-self:flex-start;margin-top:8px}
+.todo-pri-dot.pr-med{background:transparent}
+.todo-row-head .todo-row-due{margin-left:auto}
 .todo-row-due{flex-shrink:0;font:500 12.5px 'Inter',sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
 .todo-row-due.overdue{color:var(--fc-red);font-weight:600}
 .todo-row-meta{gap:6px 8px;font:500 12px 'Inter',sans-serif;color:var(--muted)}
@@ -340,8 +343,8 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
 .todo-group-doing::before,.todo-group-hold::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fc-green);margin-right:7px;vertical-align:1px}
 .todo-group-hold::before{background:var(--fc-purple)}
 .todo-now-label{color:var(--accent)}
-.todo-now .todo-row-text{font-size:17.5px;font-weight:600}
-.todo-now .swipe-row{box-shadow:0 0 0 1px var(--border),0 10px 26px -12px rgba(0,0,0,.22)}
+.todo-now .todo-row-text{font-weight:600}
+.todo-now .swipe-content{background:color-mix(in srgb,var(--accent) 7%,var(--edit-bg))}
 /* Completed: quiet, no strikethrough, a light tick instead of the accent disc. */
 #todo-completed-list .todo-row-text.done{text-decoration:none}
 #todo-completed-list .todo-check.done{background:transparent;box-shadow:inset 0 0 0 1.25px color-mix(in srgb,var(--hint) 60%,transparent)}
@@ -564,7 +567,9 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
       </div>
       <div class="todo-detail-prop"><span class="todo-detail-prop-label">Priority</span><div class="todo-detail-opts" id="task-detail-priority-opts" role="group" aria-label="Priority"></div></div>
       <div class="todo-detail-prop"><span class="todo-detail-prop-label">Status</span><div class="todo-detail-opts" id="task-detail-status-opts" role="group" aria-label="Status"></div></div>
+      <div class="todo-detail-prop" id="task-detail-reason-prop" style="display:none"><span class="todo-detail-prop-label">Reason</span><div class="todo-detail-opts" id="task-detail-reason-opts" role="group" aria-label="Waiting reason"></div></div>
       <div id="task-detail-chip-row">
+        <button type="button" id="task-detail-focus-chip" class="todo-detail-chip" aria-label="Focus on this"></button>
         <button type="button" id="task-detail-repeat-chip" class="todo-detail-chip" data-field="repeat" aria-label="Repeat"></button>
       </div>
       <div id="task-detail-repeat-note" class="todo-detail-note" style="display:none">Repeat is off while this task has subtasks.</div>
@@ -1400,9 +1405,10 @@ function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMo
 // ============================================================================
 var todos=[];
 var todoCompletedOpen=false;
-var TODO_STATUS_LABEL={waiting:'Waiting',progress:'In Progress',blocked:'Blocked',review:'Review'};
+var TODO_STATUS_LABEL={waiting:'Waiting',progress:'In Progress',blocked:'Blocked',review:'Needs review'};
 var TODO_PRIORITY_LABEL={low:'Low',med:'Medium',high:'High'};
 var TODO_REPEAT_LABEL={daily:'Daily',weekdays:'Weekdays',weekly:'Weekly'};
+var FOCUS_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>';
 var REPEAT_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
 // nextRepeatDate is defined in the hubTodos generated block above (same name/signature —
 // no wrapper needed here, since callers reference the ambient global either way).
@@ -1601,14 +1607,14 @@ function renderGreeting(){
   else sub=openCount+' task'+(openCount===1?'':'s')+' open';
   subEl.textContent=sub;
 }
-// Same row as the desktop To-Dos panel (2026-10): the title with its due date on the right (red
-// when overdue); under it High / Medium priority and an On hold status as chips (the group heading
-// says Doing / Up next), then repeat and subtask progress as quiet text. Low priority shows only in
-// the task sheet.
+// Same row as the desktop To-Dos panel (2026-10-20): the title with a priority dot after it (High
+// filled, Medium hollow) and its due date on the right ("Overdue · …" in red); under it a Waiting
+// reason (Needs review, Blocked) as a chip, then repeat and subtask progress as quiet text. Low
+// priority shows only in the task sheet.
 function todoRowInnerHtml(t,dateDisplay,overdue){
   var chips=[];
-  if(t.priority==='high'||t.priority==='med')chips.push('<span class="todo-pri pr-'+t.priority+'">'+(t.priority==='high'?'High':'Medium')+'</span>');
-  if(t.status==='waiting'||t.status==='blocked'||t.status==='review')chips.push('<span class="todo-st st-'+t.status+'">'+TODO_STATUS_LABEL[t.status]+'</span>');
+  var dot=(t.priority==='high'||t.priority==='med')?'<span class="todo-pri-dot pr-'+t.priority+'" aria-label="'+(t.priority==='high'?'High':'Medium')+' priority"></span>':'';
+  if(t.status==='blocked'||t.status==='review')chips.push('<span class="todo-st st-'+t.status+'">'+TODO_STATUS_LABEL[t.status]+'</span>');
   if(t.repeat)chips.push('<span class="todo-prop">'+REPEAT_SVG+TODO_REPEAT_LABEL[t.repeat]+'</span>');
   if(t.subtasks && t.subtasks.length){
     var doneCt=t.subtasks.filter(function(s){return s.done;}).length;
@@ -1616,8 +1622,8 @@ function todoRowInnerHtml(t,dateDisplay,overdue){
   }
   var meta = chips.length ? '<div class="todo-row-meta">'+chips.join('')+'</div>' : '';
   return '<div class="todo-row">'
-    +'<div class="todo-row-main"><div class="todo-row-head"><div class="todo-row-text">'+esc(t.text)+'</div>'
-    +(dateDisplay?'<span class="todo-row-due'+(overdue?' overdue':'')+'">'+dateDisplay+'</span>':'')+'</div>'+meta+'</div>'
+    +'<div class="todo-row-main"><div class="todo-row-head"><div class="todo-row-text">'+esc(t.text)+'</div>'+dot
+    +(dateDisplay?'<span class="todo-row-due'+(overdue?' overdue':'')+'">'+(overdue?'Overdue \u00b7 ':'')+dateDisplay+'</span>':'')+'</div>'+meta+'</div>'
     +'</div>';
 }
 function daysOverdueLabel(dueDate,today){
@@ -1645,22 +1651,12 @@ function shortDueLabel(dueDate,today){
   if(days===-1)return 'Yesterday';
   return formatShortDueDate(dueDate);
 }
-var TODO_PRIORITY_RANK={high:0,med:1,low:2,none:3};
-function pickNowTodo(open,today){
-  var doing=open.filter(function(t){return t.status==='progress';});
-  if(!doing.length)return null;
-  return doing.map(function(t,i){return {t:t,i:i};}).sort(function(a,b){
-    var ao=a.t.dueDate&&a.t.dueDate<today?0:1, bo=b.t.dueDate&&b.t.dueDate<today?0:1;
-    if(ao!==bo)return ao-bo;
-    var ap=TODO_PRIORITY_RANK[a.t.priority]; if(ap===undefined)ap=3;
-    var bp=TODO_PRIORITY_RANK[b.t.priority]; if(bp===undefined)bp=3;
-    if(ap!==bp)return ap-bp;
-    var ad=a.t.dueDate||'9999', bd=b.t.dueDate||'9999';
-    if(ad!==bd)return ad<bd?-1:1;
-    return a.i-b.i;
-  })[0].t;
+// Now is the one task you chose to focus on (the desktop panel's right-click › Focus on this, or
+// Focus in the task sheet here); nothing lands there on its own.
+function pickNowTodo(open){
+  return open.find(function(t){return t.focus;})||null;
 }
-// Grouped by status (Now, Doing, Up next, On hold), the same structure as the desktop To-Dos
+// Grouped by status (Now, Doing, Up next, Waiting), the same structure as the desktop To-Dos
 // panel, so a task sits in the same place on both. Rows stay minimal: the title, its due date,
 // and a chip only where it tells you something the heading doesn't.
 function renderTodos(){
@@ -1694,14 +1690,14 @@ function renderTodos(){
   var open=todos.filter(function(t){return !t.done});
   var done=todos.filter(function(t){return t.done});
   var today=todayStr();
-  // Grouped by status, like the desktop To-Dos panel: one "Now" task first (In Progress; overdue,
-  // then priority, then earliest due), then Doing / Up next / On hold, each in list order.
-  var now=pickNowTodo(open,today);
+  // Grouped by status, like the desktop To-Dos panel: the focus task first (Now), then Doing /
+  // Up next / Waiting, each in list order.
+  var now=pickNowTodo(open);
   var rest=open.filter(function(t){return t!==now;});
   var groups=[
     {key:'doing',label:'Doing',tasks:rest.filter(function(t){return t.status==='progress';})},
     {key:'next',label:'Up next',tasks:rest.filter(function(t){return !t.status||t.status==='none';})},
-    {key:'hold',label:'On hold',tasks:rest.filter(function(t){return t.status==='waiting'||t.status==='blocked'||t.status==='review';})}
+    {key:'hold',label:'Waiting',tasks:rest.filter(function(t){return t.status==='waiting'||t.status==='blocked'||t.status==='review';})}
   ];
   var row=function(t){
     var overdue=!!(t.dueDate&&t.dueDate<today);
@@ -1930,7 +1926,10 @@ function cycleNext(arr,current){
 }
 // Priority and Status list every option, so one tap sets the value (same as the desktop task card).
 var TODO_PRIORITY_OPTS=[['none','None'],['low','Low'],['med','Medium'],['high','High']];
-var TODO_STATUS_OPTS=[['none','None'],['progress','In progress'],['waiting','Waiting'],['review','Review'],['blocked','Blocked']];
+// Three statuses; Review and Blocked are kinds of Waiting, picked as its reason (stored as their own
+// status values, same as desktop).
+var TODO_STATUS_OPTS=[['none','None'],['progress','In progress'],['waiting','Waiting']];
+var TODO_WAIT_REASON_OPTS=[['waiting','None'],['review','Needs review'],['blocked','Blocked']];
 function renderTaskOpts(elId,field,list,current){
   document.getElementById(elId).innerHTML=list.map(function(o){
     var on=current===o[0];
@@ -1939,7 +1938,14 @@ function renderTaskOpts(elId,field,list,current){
 }
 function renderTaskChips(t,hasSubtasks){
   renderTaskOpts('task-detail-priority-opts','priority',TODO_PRIORITY_OPTS,t.priority||'none');
-  renderTaskOpts('task-detail-status-opts','status',TODO_STATUS_OPTS,t.status||'none');
+  var st=t.status||'none', waiting=st==='waiting'||st==='review'||st==='blocked';
+  renderTaskOpts('task-detail-status-opts','status',TODO_STATUS_OPTS,waiting?'waiting':st);
+  document.getElementById('task-detail-reason-prop').style.display=waiting?'':'none';
+  if(waiting)renderTaskOpts('task-detail-reason-opts','status',TODO_WAIT_REASON_OPTS,st);
+  var focusEl=document.getElementById('task-detail-focus-chip');
+  focusEl.className='todo-detail-chip'+(t.focus?' set':'');
+  focusEl.setAttribute('aria-pressed',t.focus?'true':'false');
+  focusEl.innerHTML=FOCUS_SVG+(t.focus?'In Now':'Focus on this');
 
   var r=t.repeat||'none';
   var repeatEl=document.getElementById('task-detail-repeat-chip');
@@ -2120,7 +2126,7 @@ function commitTaskText(){
   t.text=val;
   saveTodos(); renderTodos();
 }
-['task-detail-priority-opts','task-detail-status-opts'].forEach(function(id){
+['task-detail-priority-opts','task-detail-status-opts','task-detail-reason-opts'].forEach(function(id){
   document.getElementById(id).addEventListener('click',function(e){
     var btn=e.target.closest('.todo-detail-opt'); if(!btn)return;
     var t=findTodo(taskDetailId); if(!t)return;
@@ -2130,6 +2136,13 @@ function commitTaskText(){
     else return;
     saveAndRefreshTask();
   });
+});
+document.getElementById('task-detail-focus-chip').addEventListener('click',function(){
+  var t=findTodo(taskDetailId); if(!t)return;
+  var on=!t.focus;
+  todos.forEach(function(x){ if(x.focus) delete x.focus; });
+  if(on)t.focus=true;
+  saveAndRefreshTask();
 });
 document.getElementById('task-detail-repeat-chip').addEventListener('click',function(){
   var t=findTodo(taskDetailId); if(!t)return;
