@@ -63,7 +63,7 @@ test('finishing the task marks the follow-up "To-Do done" but leaves the follow-
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
 });
 
-test('the task says who raised it and where it points; clicking that goes to the row, changing it is in the open task', async ({ page }) => {
+test('the task says who raised it and where it points; clicking that goes to the row, changing it is in the task menu', async ({ page }) => {
   await seed(page, '', 'Can they schedule before 7 AM?');
   await (await menuItem(page, 'Add to To-Dos')).click();
   await page.keyboard.press('Escape');
@@ -73,7 +73,7 @@ test('the task says who raised it and where it points; clicking that goes to the
   await expect(src).toContainText('From Ana');
   await expect(src).toContainText('Pallet labels');
   // At rest there is no "change link" control on the row; clicking the source line navigates.
-  await expect(page.locator(`.todo-link[data-id="${id}"]`)).toHaveCount(0);
+  await expect(page.locator(`.todo-link[data-id="${id}"]`)).toBeHidden();
   await src.click();
   await expect(page.locator('#todo-link-popover.open, .todo-link-popover.open')).toHaveCount(0);
   // Going to the row doesn't also open the task (it used to, when the panel stayed open).
@@ -84,12 +84,18 @@ test('the task says who raised it and where it points; clicking that goes to the
   await src.locator('xpath=..').click({ position: { x: (await src.locator('xpath=..').boundingBox())!.width - 4, y: 6 } });
   await openTodos(page);
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
-  // Open the task: the Link property is where it can be changed.
-  await page.click(`.todo-expand-toggle[data-id="${id}"]`, { force: true });
-  await expect(page.locator(`.todo-props .todo-link[data-id="${id}"]`)).toBeVisible();
+  // The task menu is where the link is changed. Going to the row can close the panel a moment after
+  // the click, so make sure the row is on screen (reopening the panel if needed) before right-clicking.
+  await expect(async () => {
+    await openTodos(page);
+    await expect(page.locator(`.todo-row[data-id="${id}"]`)).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await page.locator(`.todo-row[data-id="${id}"]`).click({ button: 'right', position: { x: 4, y: 10 } });
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Change link…' }).click();
+  await expect(page.locator('#todo-link-popover.open')).toHaveCount(1);
 });
 
-test('going to a task from a follow-up opens the thread at that entry; the open task\'s Link row goes there too', async ({ page }) => {
+test('going to a task from a follow-up opens the thread at that entry; the menu changes the link', async ({ page }) => {
   await seed(page, '', 'We need to investigate this before we decide');
   await page.evaluate('inlineExpandRemarksNodeIds = new Set(); render();');
   await page.evaluate('addFollowupToTodos(nodes[1], remarks[0])');
@@ -98,17 +104,11 @@ test('going to a task from a follow-up opens the thread at that entry; the open 
   await page.keyboard.press('Control+Shift+T');
   await page.locator(`.todo-row[data-id="${t.id}"] .todo-source`).click();
   await expect(page.locator('#inline-remark-text-f1')).toBeVisible();
-  // In the open task, the link itself navigates; only the pencil changes it.
-  await page.evaluate('inlineExpandRemarksNodeIds = new Set(); render();');
-  await expect(page.locator('#inline-remark-text-f1')).toHaveCount(0);
-  await openTodos(page);
-  await page.click(`.todo-expand-toggle[data-id="${t.id}"]`, { force: true });
-  await page.locator(`.todo-props .todo-source`).click();
+  // The source line only navigates; "Change link…" in the task menu changes it.
   await expect(page.locator('#todo-link-popover.open')).toHaveCount(0);
-  await expect(page.locator('#inline-remark-text-f1')).toBeVisible();
   await openTodos(page);
-  if (!(await page.locator('.todo-props').count())) await page.click(`.todo-expand-toggle[data-id="${t.id}"]`, { force: true });
-  await page.locator(`.todo-props .todo-link-edit`).click();
+  await page.locator(`.todo-row[data-id="${t.id}"]`).click({ button: 'right', position: { x: 4, y: 10 } });
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Change link…' }).click();
   await expect(page.locator('#todo-link-popover.open')).toHaveCount(1);
 });
 

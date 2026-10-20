@@ -159,7 +159,19 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-20: To-Do panel redesign: Now is your Focus task, one-line rows, three statuses.** Owner:
+**2026-10-20: To-Do rows without an edit card.** Owner: subtasks invisible "unless you get into edit
+mode", "can we avoid this editable view completely?", mockups `todo-no-edit-card.png`,
+`todo-long-title.png` (in `/mnt/project-files/inline-objects/`). The expanded card (`todoPropsHtml`,
+`.todo-expand-toggle`, row action buttons) is gone. Settings are in `todoContextItems` (⋯ =
+`.todo-more-btn` on hover, or right-click): Priority/Status/Reason/Repeat as choice grids (`cols`
+option in `_sbBuildItemButton`), due/link popovers anchored via `todoMenuAnchor`, Add subtask
+(`openSubtaskInput`). `.todo-pri-dot` and the due date open their editors from the row.
+"Unfolded" (`t.unfolded`, saved; the n/m count or a clamped title's click toggles it) = grey row,
+full title, open subtasks, foot "N done" + "+ Add subtask" on hover. White box only on
+`.todo-text:focus`. The Now row lost its accent tint (owner: it read as the current/selected row
+while navigating); the Now heading and bold title mark it. Phone (hub.html) keeps its task sheet. Tests: `todos-grouped.spec.ts`.
+
+**2026-10-20: To-Do panel redesign: Now is your Focus task, one-line rows, three statuses (#579).** Owner:
 "how does something end up in now?", "make this whole todo UX/UI better", "too much empty space",
 then approved mockup v3 (`/mnt/project-files/inline-objects/todo-panel-mockup-v3.png` in the project).
 Now = the task with `t.focus` (right-click › Focus on this / Remove focus; `setTodoFocus`, one at a
@@ -175,13 +187,6 @@ within the preview?" draw.io exports with no border, so a diagram's own frame ra
 preview's edge. `.node-diagram-preview-thumb` now has `padding:12px` (`box-sizing:border-box`; the
 empty placeholder keeps `padding:0`). PDF is unchanged (no frame there). Test:
 `node-diagram-inline-preview.spec.ts` (image inset ≥10px on every side).
-
-**2026-10-19: a folded To-Do's link no longer opens the task when the hand moves (#577).** Owner: "when the
-note is folded, when I click on the link it unfolds the task instead of navigation". Cause: a press on
-the "From … · Doc › Row" line released a few pixels off it is reported as a click on `.todo-row`,
-which toggled the task. The row's click handler now remembers its `mousedown` target: a click that
-started on `.todo-source-row` navigates, one that started on any other control does nothing.
-Test: `followup-to-todo.spec.ts` (press on the line, release just below it).
 
 ### Where things stand (the model to keep in mind)
 

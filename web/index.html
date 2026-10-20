@@ -3133,13 +3133,12 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-main{gap:4px}
 #todos-body .todo-check{border-color:color-mix(in srgb,var(--hint) 60%,transparent);background:transparent;margin-top:1.5px}
 #todos-body .todo-check:hover{border-color:var(--accent)}
-/* Now: the task you chose to focus on; its own section, a warm tinted row with a bold title. */
+/* Now: the task you chose to focus on; its own section and a bold title, no tint (a tinted row read as
+   the selected one while moving around the list; owner 2026-10-20). */
 #todos-body .todos-group-label.todos-now-label{color:var(--accent)}
-#todos-body .todos-now .todo-row:not(.expanded){background:color-mix(in srgb,var(--accent) 6%,var(--hover))}
-#todos-body .todos-now .todo-row:not(.expanded):hover{background:color-mix(in srgb,var(--accent) 9%,var(--hover))}
 #todos-body .todos-now .todo-text{font-weight:600}
 /* Status: the group heading says Doing / Up next / Waiting; only a Waiting reason shows, as a chip. */
-#todos-body .todo-row:not(.expanded) .todo-status{display:none}
+#todos-body .todo-row .todo-status{display:none}
 #todos-body .todos-group-hold .todo-row:not(.expanded) .todo-status.set:is([data-status="review"],[data-status="blocked"]){display:inline-flex}
 #todos-body .todo-status.set{height:19px;padding:0 7px 0 6px;border:1px solid var(--border);border-radius:6px;font:500 11px 'Inter',sans-serif;color:var(--fg);gap:5px}
 #todos-body .todo-status.set svg{width:6px;height:6px}
@@ -3148,7 +3147,7 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-status[data-status="blocked"] svg{color:var(--fc-red)}
 #todos-body .todo-status[data-status="review"] svg{color:var(--fc-blue)}
 /* Priority: at rest a dot after the title (High filled, Medium hollow, amber); the chip only in the open task. */
-#todos-body .todo-row:not(.expanded) .todo-priority{display:none}
+#todos-body .todo-row .todo-priority{display:none}
 .todo-pri-dot{flex:0 0 auto;width:6px;height:6px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--fc-orange);background:var(--fc-orange);align-self:center;cursor:default}
 .todo-pri-dot[data-priority="med"]{background:transparent}
 #todos-body .todo-priority.set{height:19px;padding:0 7px;border:none;border-radius:6px;font:500 11px 'Inter',sans-serif;color:var(--muted);background:color-mix(in srgb,var(--muted) 11%,transparent)}
@@ -3159,31 +3158,53 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-repeat.set,#todos-body .todo-link.set,#todos-body .todo-meta-row .todo-subtasks-toggle{height:19px;padding:0 4px;background:none;border:none;color:var(--muted);font:400 11.5px 'Inter',sans-serif}
 #todos-body .todo-repeat.set:hover,#todos-body .todo-link.set:hover,#todos-body .todo-meta-row .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
 #todos-body .todo-meta-row{gap:4px 6px}
-#todos-body .todo-row:not(.expanded) .todo-due-repeat-icon{display:none}
+#todos-body .todo-row .todo-due-repeat-icon{display:none}
 #todos-body .todo-subtasks-toggle .todo-subtasks-chevron{order:3}
 #todos-body .todo-subtasks-toggle span:last-child{order:1}
 #todos-body .todo-subtasks-progress-track{order:2;width:22px;height:3px;background:color-mix(in srgb,var(--muted) 20%,transparent)}
 #todos-body .todo-subtasks-progress-fill{background:var(--fc-green)}
 /* At rest one line: title (two lines at most) and its priority dot on the left; reason chip,
    subtask count, repeat and due date on the right. Back to the stacked card while editing. */
-#todos-body .todo-row:not(.expanded) .todo-main{flex-direction:row;flex-wrap:wrap;align-items:flex-start;column-gap:10px}
-#todos-body .todo-row:not(.expanded) .todo-textwrap{flex:1 1 0;min-width:0;display:flex;align-items:flex-start;gap:7px}
-#todos-body .todo-row:not(.expanded) .todo-textwrap .todo-pri-dot{margin-top:7.5px;align-self:flex-start}
+#todos-body .todo-row .todo-main{flex-direction:row;flex-wrap:wrap;align-items:flex-start;column-gap:10px}
+#todos-body .todo-row .todo-textwrap{flex:1 1 0;min-width:0;display:flex;align-items:flex-start;gap:7px}
+#todos-body .todo-row .todo-textwrap .todo-pri-dot{margin-top:7.5px;align-self:flex-start}
 #todos-body .todo-row:not(.expanded) .todo-text:not(:focus){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-#todos-body .todo-row:not(.expanded) .todo-meta-row{flex:0 0 auto;flex-wrap:nowrap;margin-left:auto;padding-top:1px}
-#todos-body .todo-row:not(.expanded) .todo-actions,#todos-body .todo-row:not(.expanded) .todo-subtask-add-btn{display:none}
-#todos-body .todo-row:not(.expanded) .todo-source-row{flex-basis:100%}
-#todos-body .todo-row:not(.expanded) .todo-subtasks-toggle .todo-subtasks-chevron,#todos-body .todo-row:not(.expanded) .todo-subtasks-progress-track{display:none}
-#todos-body .todo-row:not(.expanded) .todo-status{order:1}
-#todos-body .todo-row:not(.expanded) .todo-subtasks-toggle{order:2}
-#todos-body .todo-row:not(.expanded) .todo-repeat{order:3}
-#todos-body .todo-row:not(.expanded) .todo-due{order:4}
-#todos-body .todo-row:not(.expanded) .todo-due.set{padding:0 0 0 2px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;height:19px}
-#todos-body .todo-row:not(.expanded) .todo-due.set svg,#todos-body .todo-row:not(.expanded) .todo-due:not(.set){display:none}
-#todos-body .todo-row:not(.expanded) .todo-due.overdue{color:var(--fc-red);font-weight:500}
-#todos-body .todo-expand-toggle{position:absolute;top:7px;right:4px;opacity:0}
-#todos-body .todo-row.expanded .todo-expand-toggle,#todos-body .todo-expand-toggle:focus-visible{opacity:1}
-#todos-body .todo-row.has-due:not(.expanded) .todo-expand-toggle:focus-visible{opacity:0}
+#todos-body .todo-row .todo-meta-row{flex:0 0 auto;flex-wrap:nowrap;margin-left:auto;padding-top:1px}
+#todos-body .todo-row .todo-actions,#todos-body .todo-row .todo-subtask-add-btn{display:none}
+#todos-body .todo-row .todo-source-row{flex-basis:100%}
+#todos-body .todo-row .todo-subtasks-toggle .todo-subtasks-chevron,#todos-body .todo-row .todo-subtasks-progress-track{display:none}
+#todos-body .todo-row .todo-status{order:1}
+#todos-body .todo-row .todo-subtasks-toggle{order:2}
+#todos-body .todo-row .todo-repeat{order:3}
+#todos-body .todo-row .todo-due{order:4}
+#todos-body .todo-row .todo-due.set{padding:0 0 0 2px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;height:19px}
+#todos-body .todo-row .todo-due.set svg,#todos-body .todo-row .todo-due:not(.set){display:none}
+#todos-body .todo-row .todo-due.overdue{color:var(--fc-red);font-weight:500}
+/* No edit card: a link is said by its source line, the menu (⋯) holds the actions. The ⋯ shows while
+   the row is hovered. An unfolded task is for reading: a soft grey area with the full title, its
+   subtasks under the title and a quiet foot ("6 done", "+ Add subtask" on hover). The white box
+   appears only while the title itself is being edited. */
+#todos-body .todo-meta-row .todo-link,#todos-body .todo-repeat:not(.set){display:none}
+#todos-body .todo-row-nochips .todo-meta-row{max-height:none;overflow:visible;margin-top:0}
+#todos-body .todo-due.set{cursor:pointer}
+.todo-more-btn{appearance:none;border:none;background:none;color:var(--muted);width:20px;height:19px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;order:9;opacity:0;margin-left:2px;transition:opacity .12s,background .12s}
+#todos-body .todo-row:hover .todo-more-btn,.todo-more-btn:focus-visible{opacity:1}
+.todo-more-btn:hover{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
+.todo-pri-dot{cursor:pointer}
+#todos-body .todo-row.expanded{background:var(--hover)}
+#todos-body .todo-text:focus{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border);border-radius:5px;padding:1px 5px;margin:-1px -5px;cursor:text}
+#todos-body .todo-subtasks-toggle .todo-subtasks-chevron{display:inline-block;transition:transform .15s}
+#todos-body .todo-subtasks-toggle.open{color:var(--fg);background:color-mix(in srgb,var(--fg) 7%,transparent)}
+#todos-body .todo-subtasks-toggle.open .todo-subtasks-chevron{transform:rotate(90deg)}
+#todos-body .todo-row.expanded .todo-subtasks-list{flex-basis:100%;margin-top:3px}
+#todos-body .todo-subtask-text{color:var(--muted)}
+.todo-subtasks-foot{flex-basis:100%;display:flex;align-items:center;gap:12px;min-height:20px;padding-left:1px}
+#todos-body .todo-subtasks-done-toggle{appearance:none;border:none;background:none;padding:1px 0;margin:0;font:500 11px 'Inter',sans-serif;color:var(--hint);cursor:pointer;width:auto}
+#todos-body .todo-subtasks-done-toggle:hover{color:var(--fg);background:none}
+#todos-body .todo-subtasks-foot .todo-subtask-add-btn{display:inline-flex;padding:1px 0;font:500 11px 'Inter',sans-serif;color:var(--hint);opacity:0;transition:opacity .12s}
+#todos-body .todo-row:hover .todo-subtasks-foot .todo-subtask-add-btn,#todos-body .todo-subtasks-foot.bare .todo-subtask-add-btn,#todos-body .todo-subtasks-foot .todo-subtask-add-btn:focus-visible{opacity:1}
+#todos-body .todo-subtasks-foot .todo-subtask-add-btn:hover{color:var(--accent);background:none}
+#todos-body .todo-subtask-input-row{flex-basis:100%}
 /* Subtasks: indented, small neutral circles; finished ones are a light outlined tick. */
 #todos-body .todo-subtasks-list{margin-top:4px;gap:2px}
 #todos-body .todo-subtask-text{font-size:12.5px}
@@ -3208,27 +3229,6 @@ body.printing-generic #gpe-overlay{
 .todo-source-from{flex-shrink:0;color:var(--muted);font:500 11.5px 'Inter',sans-serif}
 .todo-source.missing{color:var(--fc-red);cursor:default}
 /* Editing: an open row becomes a small card with labelled properties. */
-#todos-body .todo-row.expanded{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border),0 4px 14px rgba(0,0,0,.06);margin:4px 0}
-.todo-props{display:flex;flex-direction:column;gap:7px;margin-top:8px;padding-top:10px;border-top:1px solid var(--border)}
-.todo-prop{display:grid;grid-template-columns:56px 1fr;align-items:center;column-gap:8px}
-.todo-prop-label{font:500 11px 'Inter',sans-serif;color:var(--hint)}
-.todo-prop-opts{display:flex;flex-wrap:wrap;gap:2px;margin-left:-6px}
-.todo-prop-opt{appearance:none;border:none;background:none;font:500 11.5px 'Inter',sans-serif;color:var(--muted);padding:3px 7px;border-radius:6px;cursor:pointer;transition:background .12s,color .12s}
-.todo-prop-opt:hover{color:var(--fg);background:var(--hover)}
-.todo-prop-opt.on{color:var(--fg);background:color-mix(in srgb,var(--fg) 8%,transparent)}
-.todo-prop-opt.on[data-field="priority"][data-value="high"],.todo-prop-opt.on[data-value="blocked"]{color:var(--fc-red);background:color-mix(in srgb,var(--fc-red) 11%,transparent)}
-.todo-prop-opt.on[data-field="priority"][data-value="med"]{color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 12%,transparent)}
-.todo-prop-val{display:flex;flex-wrap:wrap;gap:4px;margin-left:-6px}
-.todo-prop-val:has(.todo-link-edit){flex-wrap:nowrap;align-items:center;min-width:0;margin-left:0}
-.todo-props .todo-source-row{margin-top:0;min-width:0;flex:0 1 auto}
-#todos-body .todo-props .todo-link-edit{flex:0 0 auto;height:20px;padding:0 4px;color:var(--hint)}
-#todos-body .todo-props .todo-due,#todos-body .todo-props .todo-link,#todos-body .todo-props .todo-repeat{display:inline-flex;height:22px;padding:0 6px;border:none;border-radius:6px;background:none;font:500 11.5px 'Inter',sans-serif;color:var(--muted)}
-#todos-body .todo-props .todo-due.set,#todos-body .todo-props .todo-link.set,#todos-body .todo-props .todo-repeat.set{color:var(--fg)}
-#todos-body .todo-props .todo-due.overdue{color:var(--fc-red)}
-#todos-body .todo-props .todo-due:hover,#todos-body .todo-props .todo-link:hover,#todos-body .todo-props .todo-repeat:hover{background:var(--hover);color:var(--fg)}
-.todo-props-foot{display:flex;align-items:center;gap:6px;margin-top:2px;padding-top:8px;border-top:1px solid var(--border)}
-#todos-body .todo-props-foot .todo-subtask-add-btn{display:inline-flex;font-size:11.5px;margin-left:-4px}
-#todos-body .todo-props-foot .todo-actions{opacity:1;pointer-events:auto}
 .node-table-line.qa-flash{animation:todo-flash 1.1s ease}
 @keyframes todo-flash{0%{background:color-mix(in srgb,var(--accent) 28%,transparent)}100%{background:transparent}}
 /* Fixed mode: same reveal state as :hover, but permanent — no layout shift, no hidden controls. */
@@ -26456,6 +26456,7 @@ function _sbBuildItemButton(it, container, list){
   }
   if(it.choices){
     const grid=document.createElement('div'); grid.className='sb-context-choices'; container.appendChild(grid);
+    if(it.cols)grid.style.gridTemplateColumns='repeat('+it.cols+',auto)';
     it.choices.forEach(t=>{
       const b=document.createElement('button'); b.type='button'; b.className='sb-context-item sb-context-choice'+(t.current?' current':'');
       if(t.color)b.style.setProperty('--choice-color',t.color);
@@ -31804,9 +31805,16 @@ let dockActiveTab=null;
   // model entirely. Session-only, like todosSelectedIds: re-rendering the whole list on every
   // mutation (renderTodos rebuilds body.innerHTML) means this external Set is what keeps a row
   // expanded across those rebuilds, not any DOM state on the row itself.
-  let todosExpandedIds=new Set(); let todosDoneSubsShownIds=new Set(); // tasks whose completed subtasks are unfolded (session-only)
+  let todosDoneSubsShownIds=new Set(); // tasks whose completed subtasks are unfolded (session-only)
+  // Unfolding a task (its subtask count, a cut-off title, or the row itself) shows the full title,
+  // its subtasks and a "+ Add subtask" foot, still for reading (owner, 2026-10-20: "it should still
+  // read like a grey area but with full description"). There is no edit card: the title edits in
+  // place, and everything else is on the row or in its menu. Each task remembers whether it's open.
   function toggleTodoExpanded(id){
-    if(todosExpandedIds.has(id)) todosExpandedIds.delete(id); else todosExpandedIds.add(id);
+    const t=todos.find(x=>x.id===id);
+    if(!t) return;
+    if(t.unfolded) delete t.unfolded; else t.unfolded=true;
+    saveTodos();
     renderTodos();
   }
   // Whether a click landed on something that already has its own meaning (editing text,
@@ -31823,9 +31831,8 @@ let dockActiveTab=null;
       // empty space inside the block-level wrapper that isn't covered by the editable element
       // at all. A click landing in that gap used to fall through as a "background" click and
       // toggle the row's expand state right when the person was trying to click into the title
-      // to place a cursor — the row would flip open/closed instead of focusing the text. Since
-      // .todo-expand-toggle already exists as the dedicated, always-reliable toggle target (see
-      // its own comment above), the text line no longer needs to double as a toggle surface too.
+      // to place a cursor — the row would flip open/closed instead of focusing the text. The
+      // subtask count (and a cut-off title's own click) unfold the task instead.
       if(elx.tagName==='BUTTON'||elx.tagName==='A'||elx.tagName==='INPUT'||elx.tagName==='TEXTAREA'||elx.isContentEditable||elx.classList.contains('todo-drag-handle')||elx.classList.contains('todo-textwrap')||elx.classList.contains('todo-source-row'))return true;
       elx=elx.parentElement;
     }
@@ -31882,7 +31889,8 @@ let dockActiveTab=null;
         from: (typeof t.from==='string' && t.from.trim()) ? t.from.trim().slice(0,80) : null,
         subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
         subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen,
-        focus: !!t.focus
+        focus: !!t.focus,
+        unfolded: !!t.unfolded
       })); todos.forEach(t=>{ if(t.nodeRef){ t.link=null; t.linkLabel=null; } }); }
     }catch(e){ todos=[]; }
   }
@@ -32022,6 +32030,24 @@ let dockActiveTab=null;
   }
   function repeatLabel(r){ return r==='daily'?'Daily':r==='weekdays'?'Weekdays':r==='weekly'?'Weekly':'Repeat'; }
   function repeatTitle(r){ return r?('Repeats '+repeatLabel(r).toLowerCase()):'Set repeat'; }
+  // "+ Add subtask" (the unfolded task's foot, or the menu): unfold the task if needed, then focus
+  // its subtask input.
+  function openSubtaskInput(id){
+    const t=todos.find(x=>x.id===id);
+    if(!t || t.repeat) return;
+    if(!t.unfolded){ t.unfolded=true; saveTodos(); renderTodos(); }
+    const row=document.querySelector(`#todos-body .todo-subtask-input-row[data-id="${id}"]`);
+    if(!row) return;
+    row.style.display='block';
+    row.querySelector('.todo-subtask-input')?.focus();
+  }
+  function setTodoRepeat(id, value){
+    const t=todos.find(x=>x.id===id);
+    if(!t || (t.subtasks && t.subtasks.length)) return;
+    t.repeat=REPEATS.includes(value)?value:null;
+    saveTodos();
+    renderTodos();
+  }
   function cycleRepeat(id){
     const t=todos.find(x=>x.id===id);
     if(!t || (t.subtasks && t.subtasks.length)) return;
@@ -32810,22 +32836,39 @@ let dockActiveTab=null;
       btn.addEventListener('click',e=>{ e.stopPropagation(); const id=btn.getAttribute('data-id'); if(todosDoneSubsShownIds.has(id))todosDoneSubsShownIds.delete(id); else todosDoneSubsShownIds.add(id); renderTodos(); });
     });
     body.querySelectorAll('.todo-subtasks-toggle').forEach(btn=>{
-      // At rest subtasks are folded behind their n/m count; clicking it opens the task.
-      btn.addEventListener('click',()=>{
-        const id=btn.getAttribute('data-id');
-        if(btn.closest('.todo-row.expanded')){ toggleSubtasksOpen(id); return; }
-        const t=todos.find(x=>x.id===id); if(t) t.subtasksOpen=true;
-        toggleTodoExpanded(id);
-      });
+      // The n/m count shows or hides the task's subtasks (and its full title).
+      btn.addEventListener('click',e=>{ e.stopPropagation(); toggleTodoExpanded(btn.getAttribute('data-id')); });
     });
     body.querySelectorAll('.todo-subtask-add-btn').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const id=btn.getAttribute('data-id');
-        const row=body.querySelector(`.todo-subtask-input-row[data-id="${id}"]`);
-        if(!row) return;
-        row.style.display='block';
-        const input=row.querySelector('.todo-subtask-input');
-        if(input) input.focus();
+      btn.addEventListener('click',e=>{ e.stopPropagation(); openSubtaskInput(btn.getAttribute('data-id')); });
+    });
+    body.querySelectorAll('.todo-more-btn').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        const t=todos.find(x=>x.id===btn.getAttribute('data-id'));
+        if(!t) return;
+        const r=btn.getBoundingClientRect();
+        showSbContextMenu(r.left, r.bottom+4, todoContextItems(t));
+      });
+    });
+    body.querySelectorAll('.todo-pri-dot').forEach(dot=>{
+      dot.addEventListener('mousedown',e=>{ e.preventDefault(); e.stopPropagation(); });
+      dot.addEventListener('click',e=>{
+        e.stopPropagation();
+        const t=todos.find(x=>x.id===dot.getAttribute('data-id'));
+        if(!t) return;
+        const r=dot.getBoundingClientRect();
+        showSbContextMenu(r.left, r.bottom+4, todoContextItems(t));
+      });
+    });
+    // A cut-off title (two lines and "…") unfolds on the first click, for reading; a click on the
+    // full title then edits it.
+    body.querySelectorAll('.todo-row:not(.expanded) .todo-text').forEach(elx=>{
+      elx.addEventListener('mousedown',e=>{
+        if(e.button!==0||document.activeElement===elx) return;
+        if(elx.scrollHeight<=elx.clientHeight+1) return;
+        e.preventDefault();
+        toggleTodoExpanded(elx.getAttribute('data-id'));
       });
     });
     body.querySelectorAll('.todo-subtask-input').forEach(inp=>{
@@ -32906,10 +32949,6 @@ let dockActiveTab=null;
         const downSource=down&&row.contains(down)&&down.closest&&down.closest('.todo-source-row');
         if(downSource){ downSource.querySelector('.todo-source')?.click(); return; }
         if(down&&row.contains(down)&&todoRowClickIsInteractive(down,row))return;
-        toggleTodoExpanded(row.getAttribute('data-id'));
-      });
-      row.querySelector('.todo-expand-toggle')?.addEventListener('click', e=>{
-        e.stopPropagation();
         toggleTodoExpanded(row.getAttribute('data-id'));
       });
       row.addEventListener('contextmenu', e=>{
@@ -33162,27 +33201,18 @@ let dockActiveTab=null;
   // todoRowHtml) rather than on a line of their own — one row of pills per task.
   function subtaskMetaHtml(t){
     const subs=t.subtasks||[];
+    if(!subs.length) return '';
     const doneCount=subs.filter(s=>s.done).length;
-    const open=t.subtasksOpen!==false;
-    let html='';
-    if(subs.length){
-      const pct=Math.round((doneCount/subs.length)*100);
-      html+=`<button type="button" class="todo-subtasks-toggle" data-id="${t.id}" aria-label="Toggle subtasks">`
-        +`<svg class="todo-subtasks-chevron${open?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`
-        +`<span class="todo-subtasks-progress-track"><span class="todo-subtasks-progress-fill" style="width:${pct}%"></span></span>`
-        +`<span>${doneCount}/${subs.length}</span>`
-      +`</button>`;
-    }
-    if(!t.repeat){
-      html+=`<button type="button" class="todo-subtask-add-btn" data-id="${t.id}" data-tip="Add subtask" aria-label="Add subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Subtask</span></button>`;
-    }
-    return html;
+    const open=!!t.unfolded;
+    return `<button type="button" class="todo-subtasks-toggle${open?' open':''}" data-id="${t.id}" aria-expanded="${open}" data-tip="${open?'Hide subtasks':'Show subtasks'}" aria-label="${open?'Hide subtasks':'Show subtasks'}">`
+      +`<svg class="todo-subtasks-chevron${open?' open':''}" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`
+      +`<span>${doneCount}/${subs.length}</span>`
+    +`</button>`;
   }
   function subtasksSectionHtml(t){
     const subs=t.subtasks||[];
-    const open=t.subtasksOpen!==false;
     let html='';
-    if(subs.length && open){
+    if(subs.length){
       html+=`<div class="todo-subtasks-list">`;
       const subRowHtml=s=>{
         return `<div class="todo-subtask-row" data-parent="${t.id}" data-sub="${s.id}">`
@@ -33192,17 +33222,20 @@ let dockActiveTab=null;
           +`<button type="button" class="todo-subtask-delete" data-parent="${t.id}" data-sub="${s.id}" aria-label="Delete subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
         +`</div>`;
       };
-      // Open subtasks first; completed ones fold into a single "N completed" row so finished
-      // work stops dominating the card. Expanding it is session-only, like other fold state.
+      // Open subtasks first; completed ones are one quiet "N done" in the foot (click to show them),
+      // next to "+ Add subtask", which shows while the task is hovered.
       const openSubs=subs.filter(x=>!x.done), doneSubs=subs.filter(x=>x.done);
+      const shown=todosDoneSubsShownIds.has(t.id);
       openSubs.forEach(x=>{ html+=subRowHtml(x); });
-      if(doneSubs.length){
-        const shown=todosDoneSubsShownIds.has(t.id);
-        html+=`<button type="button" class="todo-subtasks-done-toggle${shown?' open':''}" data-id="${t.id}" aria-expanded="${shown}"><span class="todo-subtasks-done-icon" aria-hidden="true"></span>${doneSubs.length} completed<svg class="todo-subtasks-done-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>`;
-        if(shown) doneSubs.forEach(x=>{ html+=subRowHtml(x); });
-      }
+      if(shown) doneSubs.forEach(x=>{ html+=subRowHtml(x); });
       html+=`</div>`;
     }
+    const doneCount=subs.filter(x=>x.done).length;
+    // A task without subtasks shows "+ Add subtask" all the time, so its unfolded area is never an empty gap.
+    if(doneCount||!t.repeat) html+=`<div class="todo-subtasks-foot${subs.length?'':' bare'}">`
+      +(doneCount?`<button type="button" class="todo-subtasks-done-toggle${todosDoneSubsShownIds.has(t.id)?' open':''}" data-id="${t.id}" aria-expanded="${todosDoneSubsShownIds.has(t.id)}">${todosDoneSubsShownIds.has(t.id)?'Hide '+doneCount+' done':doneCount+' done'}</button>`:'')
+      +(!t.repeat?`<button type="button" class="todo-subtask-add-btn" data-id="${t.id}" data-tip="Add subtask" aria-label="Add subtask"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add subtask</span></button>`:'')
+    +`</div>`;
     html+=`<div class="todo-subtask-input-row" data-id="${t.id}" style="display:none">`
       +`<input type="text" class="todo-subtask-input" data-id="${t.id}" placeholder="Add a subtask…" maxlength="300" />`
       +`<span class="todo-subtask-charcount" data-id="${t.id}">0/300</span>`
@@ -33256,10 +33289,41 @@ let dockActiveTab=null;
     saveTodos();
     renderTodos();
   }
+  // A popover opened from the menu (due date, link) reads the task's values from its row button and
+  // sits under the row's ⋯ button.
+  function todoMenuAnchor(id, sel){
+    const row=document.querySelector(`#todos-body .todo-row[data-id="${id}"]`);
+    const src=row&&row.querySelector(sel);
+    const at=row&&(row.querySelector('.todo-more-btn')||row);
+    if(!src||!at) return null;
+    return {getAttribute:k=>src.getAttribute(k), getBoundingClientRect:()=>at.getBoundingClientRect()};
+  }
+  // The task menu (⋯ on hover, or right-click) holds every setting that isn't on the row itself:
+  // there is no edit card (owner, 2026-10-20: "can we avoid this editable view completely?").
   function todoContextItems(t){
     const items=[];
     const hasSubtasks=!!(t.subtasks && t.subtasks.length);
     if(!t.done){
+      const st=t.status||'none', waiting=st==='waiting'||st==='review'||st==='blocked';
+      const choice=(field,list,current)=>list.map(([v,label])=>({label, current:current===v, onClick:()=>setTodoProp(t.id,field,v)}));
+      items.push({heading:'Priority'});
+      items.push({choices:choice('priority',TODO_PRIORITY_OPTS,t.priority||'none'), cols:4});
+      items.push({heading:'Status'});
+      items.push({choices:choice('status',TODO_STATUS_OPTS,waiting?'waiting':st), cols:3});
+      if(waiting){
+        items.push({heading:'Waiting reason'});
+        items.push({choices:choice('status',TODO_WAIT_REASON_OPTS,st), cols:3});
+      }
+      if(!hasSubtasks){
+        items.push({heading:'Repeat'});
+        items.push({choices:[[null,'Off'],['daily','Daily'],['weekdays','Weekdays'],['weekly','Weekly']].map(([v,label])=>({label, current:(t.repeat||null)===v, onClick:()=>setTodoRepeat(t.id,v)})), cols:4});
+      }
+      items.push({divider:true});
+      items.push({label: t.dueDate?'Change due date…':'Add due date…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-due'); if(a) openDueDateEditor(a); }});
+      items.push({label: (t.link||t.nodeRef)?'Change link…':'Add link…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-link'); if(a) openLinkEditor(a); }});
+      if(!t.repeat) items.push({label:'Add subtask', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', onClick:()=>openSubtaskInput(t.id)});
+      if(typeof featureAiEnabled==='undefined'||featureAiEnabled) items.push({label:'Rewrite with AI', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
+      items.push({divider:true});
       items.push({label: t.focus?'Remove focus':'Focus on this', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>', onClick:()=>setTodoFocus(t.id,!t.focus)});
       items.push({divider:true});
     }
@@ -33271,11 +33335,6 @@ let dockActiveTab=null;
     items.push({divider:true});
     items.push({label:'Move to top', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, true); }});
     items.push({label:'Move to bottom', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, false); }});
-    if(hasSubtasks){
-      items.push({divider:true});
-      const open=t.subtasksOpen!==false;
-      items.push({label: open?'Collapse sub-tasks':'Expand sub-tasks', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>', onClick: async()=>{ toggleSubtasksOpen(t.id); }});
-    }
     items.push({divider:true});
     items.push({label:'Delete task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', danger:true, onClick: async()=>{ deleteTodo(t.id); }});
     return items;
@@ -33291,30 +33350,14 @@ let dockActiveTab=null;
   function docRefIconSvg(size){
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
   }
-  // The open (expanded) row: a short list of labelled properties instead of a row of ghost chips.
-  // Priority and status show every option, so one click sets the value; due date, repeat and link
-  // reuse the row's own buttons (and their popovers); subtasks and the row actions sit at the foot.
+  // Options for the task menu (⋯ or right-click): Priority and Status show every option, so one
+  // click sets the value.
   const TODO_PRIORITY_OPTS=[['none','None'],['low','Low'],['med','Medium'],['high','High']];
   // Three statuses; Review and Blocked are kinds of Waiting, picked as its reason (still stored as
   // their own status values, so filters, sync and older lists keep working).
   const TODO_STATUS_OPTS=[['none','None'],['progress','In progress'],['waiting','Waiting']];
   const TODO_WAIT_REASON_OPTS=[['waiting','None'],['review','Needs review'],['blocked','Blocked']];
-  function todoPropsHtml(t,p){
-    const opts=(field,list,current,aria)=>`<span class="todo-prop-opts" role="group" aria-label="${aria||(field==='priority'?'Priority':'Status')}">`
-      +list.map(([v,label])=>`<button type="button" class="todo-prop-opt${current===v?' on':''}" data-id="${t.id}" data-field="${field}" data-value="${v}" aria-pressed="${current===v}">${label}</button>`).join('')
-      +`</span>`;
-    const st=t.status||'none';
-    const waiting=st==='waiting'||st==='review'||st==='blocked';
-    const row=(label,val)=>`<div class="todo-prop"><span class="todo-prop-label">${label}</span>${val}</div>`;
-    return `<div class="todo-props">`
-      + row('Priority', opts('priority',TODO_PRIORITY_OPTS,t.priority||'none'))
-      + row('Status', opts('status',TODO_STATUS_OPTS,waiting?'waiting':st))
-      + (waiting?row('Reason', opts('status',TODO_WAIT_REASON_OPTS,st,'Waiting reason')):'')
-      + row('Due', `<span class="todo-prop-val">${p.dueBtn}${p.repeatBtn}</span>`)
-      + row('Link', `<span class="todo-prop-val">${p.linkSourceHtml?p.linkSourceHtml+p.linkEditBtn:p.linkBtn}</span>`)
-      + `<div class="todo-props-foot">${subtaskMetaHtml(t)}${p.actionsHtml}</div>`
-    +`</div>`;
-  }
+
   function todoRowHtml(t, draggable){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
@@ -33342,8 +33385,8 @@ let dockActiveTab=null;
     // source line below. Everything is back as labelled properties once the row is expanded.
     const reasonStatus=status==='blocked'||status==='review';
     const hasVisibleChips=(!t.done&&reasonStatus)||hasSubtasks||(!!t.repeat&&!hasSubtasks)||!!due;
-    const expanded=todosExpandedIds.has(t.id);
-    const priDot=(!t.done&&!expanded&&(priority==='high'||priority==='med'))?`<span class="todo-pri-dot" data-priority="${priority}" data-tip="${priority==='high'?'High priority':'Medium priority'}"></span>`:'';
+    const expanded=!!t.unfolded&&!t.done;
+    const priDot=(!t.done&&(priority==='high'||priority==='med'))?`<span class="todo-pri-dot" data-id="${t.id}" data-priority="${priority}" data-tip="${priority==='high'?'High priority':'Medium priority'} — click to change"></span>`:'';
     // At rest a link reads as where the task points, and clicking it goes there (a row: jump to it;
     // a web link: open it). Changing the link is in the open task's Link row. A task added from a
     // thread follow-up also says who raised it.
@@ -33371,8 +33414,6 @@ let dockActiveTab=null;
         + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
       +`</button>`;
     const linkBtnAttrs=`data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}"`;
-    // In the open task a set link reads like the resting source line (click goes there); the pencil changes it.
-    const linkEditBtn=`<button type="button" class="todo-link todo-link-edit${nodeRef?' node-link':''}" ${linkBtnAttrs} data-tip="Change link" aria-label="Change link">${markIconSvg('edit',12)}</button>`;
     const linkBtn=`<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" ${linkBtnAttrs} data-tip="${hasAttachment?'Change link':'Attach a link'}">`
         + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
         +`<span>${hasAttachment?esc(linkDisplay):'Add link'}</span>`
@@ -33381,11 +33422,8 @@ let dockActiveTab=null;
         +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
         +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
       +`</button>` : '');
-    const actionsHtml=`<span class="todo-actions">${hasAttachment?(nodeRef
-          ? `<button type="button" class="todo-link-open todo-nodejump-open" data-id="${t.id}" data-tip="${nodeRefInfo.missing?(isDocRef?'That document no longer exists':'That node no longer exists'):(isDocRef?'Jump to document':'Jump to node')}" aria-label="${isDocRef?'Jump to document':'Jump to node'}">${isDocRef?docRefIconSvg(12):nodeRefIconSvg(12)}</button>`
-          : `<a class="todo-link-open" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link" aria-label="Open link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>`
-        ):''}<button class="todo-rewrite" data-id="${t.id}" data-tip="Rewrite with AI" aria-label="Rewrite with AI"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button><button class="todo-delete" data-id="${t.id}" data-tip="Delete task" aria-label="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></span>`;
-    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}${todosExpandedIds.has(t.id)?' expanded':''}${due?' has-due':''}" data-id="${t.id}" data-status="${status}" ${draggable?'draggable="true"':''}>`
+    const moreBtn=t.done?'':`<button type="button" class="todo-more-btn" data-id="${t.id}" data-tip="More" aria-label="Task menu"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>`;
+    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}${expanded?' expanded':''}${due?' has-due':''}" data-id="${t.id}" data-status="${status}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
@@ -33394,12 +33432,10 @@ let dockActiveTab=null;
       +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
       +priDot
       +`</div>`
-      + (expanded
-        ? todoPropsHtml(t,{priorityBtn,statusBtn,dueBtn,linkBtn,linkEditBtn,linkSourceHtml:hasAttachment?sourceHtml:'',repeatBtn,actionsHtml})
-        : `<div class="todo-meta-row">`+priorityBtn+statusBtn+dueBtn+repeatBtn+subtaskMetaHtml(t)+actionsHtml+`</div>`+sourceHtml)
+      +`<div class="todo-meta-row">`+priorityBtn+statusBtn+linkBtn+subtaskMetaHtml(t)+repeatBtn+dueBtn+moreBtn+`</div>`
+      +sourceHtml
       + (expanded?subtasksSectionHtml(t):'')
       +`</div>`
-      +`<button type="button" class="todo-expand-toggle" data-id="${t.id}" data-tip="${todosExpandedIds.has(t.id)?'Collapse':'Expand'}" aria-label="${todosExpandedIds.has(t.id)?'Collapse task details':'Expand task details'}"><svg class="todo-expand-chevron${todosExpandedIds.has(t.id)?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>`
       +`</div>`;
   }
 
