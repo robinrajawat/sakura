@@ -159,6 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: Untitled in the sidebar; accent count jumps; Expand all undo.** Owner: "do all of these". With
+`currentDocId==null` `renderSidebarDocs` puts a `.sdoc-unsaved` "Untitled · not saved" row on top instead of "No
+documents". Folded badge mousedown calls `openFoldBadge` (unfold, then `revealMarkerEntry`/`revealInlineObject` for
+the first follow-up or open question inside). `expandAll`/`collapseAll` call `pushFoldUndo()`: `snapshot(true)`
+carries `foldState()`, `restoreFromSnapshot` applies it, undo/redo keep carrying it. Owner also reported clicking
+an Agreed marker scrolled the page with its entry already visible: `revealInlineObject` now scrolls only when
+`!isInEditorView(target)` and focuses with `preventScroll`. Test:
+`sidebar-untitled-fold-jump-undo.spec.ts`.
+
 **2026-10-20: Shorter More menu; folded badge is just the count.** Owner approved mockup
 `inline-objects/more-menu-mockup.png`: Duplicate joins the Add icon row; Zoom in, Collapse/expand, Tags, Version history and
 Leave out of export sit behind a "Row ›" flyout (owner moved Zoom/Collapse there from a Branch row) (`flyout()` in `renderContextMorePanel`,
@@ -166,19 +175,9 @@ triggers carry `data-flyout="insert|row"`). Owner then found the badge icons lou
 and asked for "only the count, rest on hover": `.fold-badge` is "+N" only, `.fold-badge-open` (accent) when
 open questions or follow-ups are inside, tooltip lists counts (`foldBadgeTipParts`, `FOLD_KIND_NAMES`).
 
-**2026-10-20: Folded counts show open questions, not notes/threads.** Owner: "drop notes, threads and instead
-have open questions"; Agreed/Out of scope/decisions stay out too (tooltip only). `FOLD_KIND_ICONS` is now
-diagram/table/image/question; `subtreeContentCounts` counts `openQuestions(threadEntries(...))` per hidden row.
-Badge caps at 6 parts (+N, 3 kinds, questions, follow-ups). Tests: `fold-badge-kinds.spec.ts`,
-`folded-branch-indicator-standard.spec.ts`.
-
-**2026-10-20: Folded counts say what is inside; Undo toasts stay 4s.** Owner picked both from my UX list
-("do it"). `foldBadgeKindsHtml(idx)` adds `.fold-badge-kind` icon+count chips (note/thread/diagram/table/image,
-`FOLD_KIND_ICONS`, counts from `subtreeContentCounts`) after "+N"; the old grey `.fold-badge-dot` now shows
-only when what is hidden has no icon (To-Do refs, Q&A links, other markers). `showToast` defaults to
-`TOAST_UNDO_MS` (4s) when the message mentions undo. Screenshot `inline-objects/fold-badge-kinds.png`.
-Also (owner: "why are we showing bit of background?") `.node-marker-badge` has no tint at rest, only on hover.
-Tests: `fold-badge-kinds.spec.ts`, `folded-branch-indicator-standard.spec.ts`.
+**2026-10-20: Undo toasts stay 4s; markers without tint.** `showToast` defaults to `TOAST_UNDO_MS` (4s) when the
+message mentions undo. `.node-marker-badge` has no tint at rest, only on hover (owner: "why are we showing bit of
+background?"). The folded-count icons from the same PR were later replaced by the count-only badge (entry above).
 
 ### Where things stand (the model to keep in mind)
 
