@@ -84,7 +84,12 @@ test('the task says who raised it and where it points; clicking that goes to the
   await src.locator('xpath=..').click({ position: { x: (await src.locator('xpath=..').boundingBox())!.width - 4, y: 6 } });
   await openTodos(page);
   await expect(page.locator(`.todo-row[data-id="${id}"]`)).not.toHaveClass(/expanded/);
-  // The task menu is where the link is changed.
+  // The task menu is where the link is changed. Going to the row can close the panel a moment after
+  // the click, so make sure the row is on screen (reopening the panel if needed) before right-clicking.
+  await expect(async () => {
+    await openTodos(page);
+    await expect(page.locator(`.todo-row[data-id="${id}"]`)).toBeVisible({ timeout: 1000 });
+  }).toPass();
   await page.locator(`.todo-row[data-id="${id}"]`).click({ button: 'right', position: { x: 4, y: 10 } });
   await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Change link…' }).click();
   await expect(page.locator('#todo-link-popover.open')).toHaveCount(1);
