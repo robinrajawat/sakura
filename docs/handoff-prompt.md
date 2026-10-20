@@ -171,7 +171,10 @@ Header ⋯ = Version history › (`#todos-history-trigger` opens `#todos-history
 clips, placed left of the menu), Export as PDF, Select. Task menu (`todoContextItems`): Repeat › with current value as
 meta, More › (Rewrite, Duplicate, Copy, Move to top/bottom). `wireTodoMenuKeyNav` steps only visible items in the
 focused list. Tests: `todos-history-inline.spec.ts`.
-Still offered, not picked: Open items page in the PDF.
+Same PR: PDF Open items page (owner approved `inline-objects/pdf-open-items-mockup.png`). Pref `openItemsPageEnabled`
+(default off, `#open-items-page-toggle` under Cover page). `exportPreviewAsPdf` inserts `buildPdfOpenItemsPage()`
+(`#pv-open-items`) after the Contents page, or under the title/inline Contents; removed in cleanup. Every printed row
+now gets `pv-anchor-<id>`, and `fillPdfTocPageNumbers` also numbers `.pv-oi-item`. Test: `pdf-open-items-page.spec.ts`.
 
 **2026-10-20: F8 steps through open items.** Owner picked it ("do it") from my list for review meetings.
 `SHORTCUTS.nextOpenItem` (f8) / `prevOpenItem` (shift+f8), capture-phase listener; `stepOpenItem(dir)` walks

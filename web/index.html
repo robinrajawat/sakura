@@ -2343,6 +2343,18 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 .pv-serif-body .pv-text{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif}
 #pv-doc-header{position:relative;margin:0 0 22px;padding-bottom:14px;border-bottom:1px solid var(--border)}.pv-h-row{display:flex;align-items:center;gap:5px}
 #pv-qa-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
+#pv-open-items .pv-oi-title{font:700 22px 'Inter',sans-serif;color:#1f1c14;margin:0 0 4px}
+#pv-open-items .pv-oi-meta{font:400 12px 'Inter',sans-serif;color:#79756b;margin-bottom:20px}
+#pv-open-items .pv-oi-heading{display:flex;align-items:center;gap:7px;font:600 13.5px 'Inter',sans-serif;margin:18px 0 8px}
+#pv-open-items .pv-oi-heading svg{width:13px;height:13px}
+#pv-open-items .pv-oi-list{margin:0;padding-left:22px;font:400 12.5px/1.45 'Inter',sans-serif}
+#pv-open-items .pv-oi-list li{margin-bottom:8px;break-inside:avoid}
+#pv-open-items .pv-oi-item{display:flex;align-items:baseline;gap:12px;color:inherit !important;text-decoration:none !important}
+#pv-open-items .pv-oi-text{flex:1 1 auto;min-width:0}
+#pv-open-items .pv-oi-sub{display:block;color:#79756b}
+#pv-open-items .pv-oi-grey{color:#79756b}
+#pv-open-items .pv-toc-page{flex:none;color:#79756b;font-variant-numeric:tabular-nums}
+#pv-open-items .pv-toc-page:not(:empty)::before{content:'p. '}
 #pv-remarks-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
 .pv-qa-heading{font:700 22px 'Inter',sans-serif;color:var(--pv-heading);margin-bottom:16px}
 .pv-qa-row{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
@@ -3739,6 +3751,7 @@ body.printing-generic #gpe-overlay{
             <div class="settings-section-title">Export &amp; copy</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (document title, author, word/read-time stats) before the contents page when exporting to PDF. The small wordmark above the title only appears if "PDF branding" below is also on.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open items page</span><span class="settings-row-desc">Add a page after the contents listing every follow-up and open question, with the page each is on, when exporting to PDF. Left out when nothing is open.</span></div><button id="open-items-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open items page"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding</span><span class="settings-row-desc">Shows a small letter-spaced mark on the cover page of PDF exports, and in the bottom-right corner of every page. Reads "SAKURA" by default, or your own text below. On by default — off removes it everywhere, including the cover page.</span></div><button id="preview-branding-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="PDF branding"></button></div>
               <div class="settings-list-row" id="preview-branding-text-row"><div class="settings-row-text"><span class="settings-switch-text">PDF branding text</span><span class="settings-row-desc">Replaces "SAKURA" in the mark above with your own company or team name. Leave blank to use the default. Only shown when PDF branding is on.</span></div><input id="preview-branding-text-input" type="text" class="meta-input" placeholder="SAKURA" style="width:160px;text-align:left" /></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Use accent color in exports</span><span class="settings-row-desc">PDF exports (documents and the To-Dos list) use your current accent color (Settings → Appearance) for titles, checkmarks, and highlights. Off: every export uses the same fixed color instead, regardless of what the app is themed to at export time — useful if you want documents you share with others to look consistent no matter which accent you personally have set.</span></div><button id="export-accent-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Use accent color in exports"></button></div>
@@ -5327,7 +5340,7 @@ let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoSta
 // suddenly fall back to. So this tracks the opposite: which nodes someone has explicitly folded
 // away, not which have opted into being shown. Session-only, like the other four.
 let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=true; let sbSearchQuery=''; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
-let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let exportUseAccentColor=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false;
+let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let exportUseAccentColor=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/export code, specifically so loadPrefs() restoring
 // a saved value isn't immediately overwritten by this line's own default when script
@@ -14025,7 +14038,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorReadingWidthEnabled,editorReadingWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,sidebarSearchVisible,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -14048,7 +14061,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorReadingWidthEnabled=!!d.editorReadingWidthEnabled; editorReadingWidth=Number.isFinite(Number(d.editorReadingWidth))?Math.max(600,Math.min(1400,Math.round(Number(d.editorReadingWidth)))):900; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; sidebarSearchVisible=d.sidebarSearchVisible===undefined?true:!!d.sidebarSearchVisible; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -14197,6 +14210,7 @@ function setAccentBranches(on,persist=true){accentBranches=!!on; const toggle=el
 function setSectionMarkingsEnabled(on,persist=true){sectionMarkingsEnabled=!!on; const toggle=el('section-markings-toggle'); if(toggle){toggle.classList.toggle('on',sectionMarkingsEnabled); toggle.setAttribute('aria-checked',String(sectionMarkingsEnabled))} document.body.classList.toggle('hide-section-markings',!sectionMarkingsEnabled); if(persist){savePrefs(); scheduleAutoSave()}}
 function setSvgSectionIconsEnabled(on,persist=true){svgSectionIconsEnabled=!!on; const toggle=el('svg-section-icons-toggle'); if(toggle){toggle.classList.toggle('on',svgSectionIconsEnabled); toggle.setAttribute('aria-checked',String(svgSectionIconsEnabled))} if(persist){savePrefs(); scheduleAutoSave()} render()}
 function setRowHighlightStyle(style,persist=true){rowHighlightStyle=['original','dot','bar','outline'].includes(style)?style:'original'; document.body.classList.remove('row-hl-original','row-hl-dot','row-hl-bar','row-hl-outline'); document.body.classList.add('row-hl-'+rowHighlightStyle); const sel=el('row-highlight-style-select'); if(sel)sel.value=rowHighlightStyle; if(persist){savePrefs(); scheduleAutoSave()}}
+function setOpenItemsPageEnabled(on,persist=true){openItemsPageEnabled=!!on; const toggle=el('open-items-page-toggle'); if(toggle){toggle.classList.toggle('on',openItemsPageEnabled); toggle.setAttribute('aria-checked',String(openItemsPageEnabled))} if(persist)savePrefs()}
 function setCoverPageEnabled(on,persist=true){coverPageEnabled=!!on; const toggle=el('cover-page-toggle'); if(toggle){toggle.classList.toggle('on',coverPageEnabled); toggle.setAttribute('aria-checked',String(coverPageEnabled))} if(persist){savePrefs(); scheduleAutoSave()}}
 function setExportUseAccentColor(on,persist=true){exportUseAccentColor=!!on; const toggle=el('export-accent-toggle'); if(toggle){toggle.classList.toggle('on',exportUseAccentColor); toggle.setAttribute('aria-checked',String(exportUseAccentColor))} if(persist){savePrefs(); scheduleAutoSave()}}
 // Shared by exportPreviewAsPdf, printHtmlAsPdf (To-Dos), and the general print stylesheet — one source of truth for whether exports carry the app's
@@ -24444,6 +24458,7 @@ el('qb-collapse').addEventListener('click',()=>{commitEdit(); toggleFoldAll(); f
     ev.stopPropagation()}); node.addEventListener('blur',()=>closeGenericQuickAssist()); node.addEventListener('input',()=>{ensureDocumentForEditing(); scheduleAutoSave()})});
 
 el('svg-section-icons-toggle')?.addEventListener('click',()=>setSvgSectionIconsEnabled(!svgSectionIconsEnabled)); el('svg-section-icons-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setSvgSectionIconsEnabled(!svgSectionIconsEnabled);}});
+el('open-items-page-toggle')?.addEventListener('click',()=>setOpenItemsPageEnabled(!openItemsPageEnabled)); el('open-items-page-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setOpenItemsPageEnabled(!openItemsPageEnabled);}});
 el('cover-page-toggle')?.addEventListener('click',()=>setCoverPageEnabled(!coverPageEnabled)); el('cover-page-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setCoverPageEnabled(!coverPageEnabled);}});
 el('export-accent-toggle')?.addEventListener('click',()=>setExportUseAccentColor(!exportUseAccentColor)); el('export-accent-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setExportUseAccentColor(!exportUseAccentColor);}});
 el('global-search-bar-toggle').addEventListener('click',()=>setGlobalSearchVisible(!globalSearchVisible)); el('global-search-bar-toggle').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setGlobalSearchVisible(!globalSearchVisible);}});
@@ -26452,7 +26467,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupNodeQuickAssistSettings(); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateFormatIconColors(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupNodeQuickAssistSettings(); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateFormatIconColors(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
@@ -29528,6 +29543,7 @@ function renderPreviewBody(){
     // they now always render their full pv-inline-block right below (see that block further
     // down), so a truncated snippet of the same content right next to it would just be noise.
     // Plain single-line notes already show their full text inline via pv-note-inline-full above.
+    if(!mainEl.id)mainEl.id='pv-anchor-'+node.id;
     doc.appendChild(mainEl);
     if(!(folded&&hasChildren)){
       // inlinePad previously matched only the row's own paddingLeft (the depth step), so
@@ -29955,6 +29971,12 @@ function exportPreviewAsPdf(onDone){
         page-break-after:auto !important; break-after:auto !important;
         padding:0 !important; margin:0 0 26px !important;
       }
+      body.printing-preview #pv-open-items{
+        display:block !important; padding:28px 40px 12px !important;
+        page-break-after:always !important; break-after:page !important;
+        font-family:'Inter',Helvetica,Arial,sans-serif !important; color:#1f1c14 !important;
+      }
+      body.printing-preview #pv-doc-header + #pv-open-items, body.printing-preview #preview-toc.pv-toc-inline + #pv-open-items{ padding:0 !important; margin-bottom:0 !important; }
       body.printing-preview #sakura-cover-page{
         display:flex !important; flex-direction:column; align-items:center; justify-content:center;
         text-align:center; padding:120px 60px 80px; box-sizing:border-box;
@@ -30136,7 +30158,17 @@ function exportPreviewAsPdf(onDone){
     const overlay=el('preview-overlay');
     overlay?.insertBefore(coverEl,overlay.firstChild);
   }
-  placePdfTocInline(coverEl);
+  const tocInline=placePdfTocInline(coverEl);
+  el('pv-open-items')?.remove(); // a previous export's page, if its cleanup hasn't run yet
+  const openItemsEl=openItemsPageEnabled?buildPdfOpenItemsPage():null;
+  if(openItemsEl){
+    // After the Contents: its own page when Contents has one, else right under the title (or the
+    // inline Contents), with the document starting on the next page.
+    const toc=el('preview-toc'), body=el('preview-body');
+    if(!tocInline&&toc&&!toc.classList.contains('pv-toc-hidden-auto')&&toc.parentNode)toc.after(openItemsEl);
+    else if(tocInline)toc.after(openItemsEl);
+    else { const header=el('pv-doc-header'); if(header)header.after(openItemsEl); else body?.prepend(openItemsEl); }
+  }
   const originalTitle=document.title;
   document.title=String(meta.title||'Sakura').replace(/[\\/:*?"<>|]+/g,'_');
   let _pdfCleanupDone=false;
@@ -30144,6 +30176,7 @@ function exportPreviewAsPdf(onDone){
     if(_pdfCleanupDone)return; _pdfCleanupDone=true;
     homePdfToc();
     coverEl?.remove();
+    openItemsEl?.remove();
     document.body.classList.remove('has-cover-page');
     document.title=originalTitle;
     document.body.classList.remove('printing-preview');
@@ -30225,7 +30258,7 @@ function pdfPaperSize(){
 // footer: the cover, when there is one, is page 1.
 function fillPdfTocPageNumbers(paper){
   const toc=el('preview-toc'), overlay=el('preview-overlay');
-  const items=toc&&!toc.classList.contains('pv-toc-hidden-auto')?[...toc.querySelectorAll('.pv-toc-item')]:[];
+  const items=[...(toc&&!toc.classList.contains('pv-toc-hidden-auto')?toc.querySelectorAll('.pv-toc-item'):[]),...document.querySelectorAll('#pv-open-items .pv-oi-item')];
   if(!overlay||!items.length)return Promise.resolve();
   const MM=96/25.4;
   const colW=Math.floor((paper.w-2*PDF_PAGE_MARGIN_MM)*MM), colH=Math.floor((paper.h-2*PDF_PAGE_MARGIN_MM)*MM), gap=40;
@@ -31800,8 +31833,9 @@ function applyOpenItemsFilter(kind){
 // open questions. The Open items menu and "Copy as agenda" both read it.
 function openItemsLists(){
   const idx=new Map(nodes.map((n,i)=>[n.id,i]));
-  // The row's text as it reads on screen (getNodePlainText would also drop its (parentheses)).
-  const rowText=n=>stripHtmlToText(n.text||'')||'Untitled row';
+  // The row's text as it reads on screen (getNodePlainText would also drop its (parentheses)); a
+  // [Section] row without its brackets.
+  const rowText=n=>stripHtmlToText(n.text||'').replace(/^\s*\[(.+)\]\s*$/,'$1')||'Untitled row';
   const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
   // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
   const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
@@ -31822,7 +31856,7 @@ function openItemsLists(){
   });
   // A question names the row it's on and who asked ("Customer comms · Maria").
   const questions=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId)).map(r=>{ const n=nodes[idx.get(r.anchorNodeId)];
-    return {remarkId:r.id, text:stripHtmlToText(r.text), row:n?rowText(n):'', person:r.person||'', since:r.createdAt}; });
+    return {remarkId:r.id, nodeId:r.anchorNodeId, text:stripHtmlToText(r.text), row:n?rowText(n):'', person:r.person||'', since:r.createdAt}; });
   return {followups, questions};
 }
 function openItemsMenuItems(){
@@ -31874,6 +31908,31 @@ function openItemsAgendaContent(now=Date.now()){
   section('Open questions',questions,q=>esc(q.text)+'<div style="'+grey+'">'+[q.row?'on '+esc(q.row):'',q.person?'asked by '+name(q.person):'',esc(age(q.since))].filter(Boolean).join(' \u00b7 ')+'</div>',
     q=>q.text+'\n   '+[q.row?'on '+q.row:'',q.person?'asked by '+q.person:'',age(q.since)].filter(Boolean).join(' \u00b7 '));
   return {html:html.join(''), text:text.join('\n')};
+}
+// The PDF's Open items page (Settings › Export & copy, owner 2026-10-20): the same list as "Copy as
+// agenda", each entry linked to its row with the page it's on. Rows left out of the export are left
+// out here too; with nothing open there is no page.
+function buildPdfOpenItemsPage(now=Date.now()){
+  const out=noExportNodeIds(nodes);
+  const lists=openItemsLists();
+  const followups=lists.followups.filter(f=>!out.has(f.nodeId)), questions=lists.questions.filter(q=>!out.has(q.nodeId));
+  if(!followups.length&&!questions.length)return null;
+  const page=document.createElement('section'); page.id='pv-open-items';
+  const counts=[followups.length?followups.length+' follow-up'+(followups.length>1?'s':''):'', questions.length?questions.length+' open question'+(questions.length>1?'s':''):''].filter(Boolean).join(' \u00b7 ');
+  const name=p=>'<b style="color:'+remarkAuthorColor(p).avatarBg+'">'+esc(p)+'</b>';
+  const age=t=>{ const a=openItemAge(t,now); return a?a+' open':''; };
+  let html='<div class="pv-oi-title">Open items</div><div class="pv-oi-meta">'+esc(counts)+'</div>';
+  const group=(key,heading,entries,line)=>{
+    if(!entries.length)return;
+    html+='<div class="pv-oi-heading"><span style="color:'+openItemKindColor(key)+'">'+openItemKindIcon(key)+'</span>'+esc(heading)+'</div><ol class="pv-oi-list">'
+      +entries.map(e=>'<li><a class="pv-oi-item" href="#pv-anchor-'+e.nodeId+'"><span class="pv-oi-text">'+line(e)+'</span><span class="pv-toc-page"></span></a></li>').join('')+'</ol>';
+  };
+  group('followup','Follow-ups',followups,f=>'<b>'+esc(f.row)+'</b>'+(f.fullParent?' <span class="pv-oi-grey">('+esc(f.fullParent)+')</span>':'')
+    +(f.owner?' \u00b7 '+name(f.owner):'')+(age(f.since)?' <span class="pv-oi-grey">\u00b7 '+esc(age(f.since))+'</span>':'')
+    +(f.latest?'<span class="pv-oi-sub">'+(f.latest.person?esc(f.latest.person)+': ':'')+esc(f.latest.text)+'</span>':''));
+  group('question','Open questions',questions,q=>esc(q.text)+'<span class="pv-oi-sub">'+[q.row?'on '+esc(q.row):'',q.person?'asked by '+name(q.person):'',esc(age(q.since))].filter(Boolean).join(' \u00b7 ')+'</span>');
+  page.innerHTML=html;
+  return page;
 }
 async function copyOpenItemsAgenda(){
   const c=openItemsAgendaContent(); if(!c){ showToast('Nothing open to copy'); return; }
