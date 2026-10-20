@@ -46,6 +46,8 @@ test('open tasks are grouped: Now (the focus task), then Doing, Up next and Wait
   await expect(page.locator('.todos-group-next')).toHaveCount(0);
   expect(await idsIn(page, '.todos-group-hold')).toEqual(['d', 'e', 'f']);
   await expect(page.locator('.todos-now .todos-group-label')).toHaveText('Now');
+  // The heading marks Now; the row itself has no tint, so it isn't mistaken for the selected row.
+  expect(await page.locator('.todos-now .todo-row').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
   await expect(page.locator('.todos-group-hold .todos-group-label')).toContainText('Waiting');
 });
 

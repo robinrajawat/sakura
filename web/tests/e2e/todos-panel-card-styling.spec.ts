@@ -36,7 +36,7 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // hovering alone reveals nothing. This file asserts that restored shape, not the card one.
 // The 2026-10 redesign (owner-approved concept, after cards in #402-#420 and again later): flat rows
 // grouped under status headings (see todos-grouped.spec.ts), no card border or surface. The Now
-// task (the one you chose to focus on) is a tinted row, not a card. Since 2026-10-20 there is no edit
+// task (the one you chose to focus on) has a bold title and no tint. Since 2026-10-20 there is no edit
 // card at all: settings live in the task menu (⋯ on hover, or right-click) and an unfolded task is
 // a soft grey reading area with its full title and subtasks.
 test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {

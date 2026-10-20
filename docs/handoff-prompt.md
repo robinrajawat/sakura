@@ -168,7 +168,8 @@ option in `_sbBuildItemButton`), due/link popovers anchored via `todoMenuAnchor`
 (`openSubtaskInput`). `.todo-pri-dot` and the due date open their editors from the row.
 "Unfolded" (`t.unfolded`, saved; the n/m count or a clamped title's click toggles it) = grey row,
 full title, open subtasks, foot "N done" + "+ Add subtask" on hover. White box only on
-`.todo-text:focus`. Phone (hub.html) keeps its task sheet. Tests: `todos-grouped.spec.ts`.
+`.todo-text:focus`. The Now row lost its accent tint (owner: it read as the current/selected row
+while navigating); the Now heading and bold title mark it. Phone (hub.html) keeps its task sheet. Tests: `todos-grouped.spec.ts`.
 
 **2026-10-20: To-Do panel redesign: Now is your Focus task, one-line rows, three statuses (#579).** Owner:
 "how does something end up in now?", "make this whole todo UX/UI better", "too much empty space",
