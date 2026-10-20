@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-20: F8 steps through open items.** Owner picked it ("do it") from my list for review meetings.
+`SHORTCUTS.nextOpenItem` (f8) / `prevOpenItem` (shift+f8), capture-phase listener; `stepOpenItem(dir)` walks
+`openItemsInOutlineOrder()` (follow-up markers, then open questions per row) from the selected row, wraps,
+reveals via `revealMarkerEntry`/`revealInlineObject`, toast "Open item N of M". Test: `next-open-item.spec.ts`.
+Still offered, not picked: copy Open items as an agenda; Open items page in the PDF.
+
 **2026-10-20: Untitled in the sidebar; accent count jumps; Expand all undo.** Owner: "do all of these". With
 `currentDocId==null` `renderSidebarDocs` puts a `.sdoc-unsaved` "Untitled · not saved" row on top instead of "No
 documents". Folded badge mousedown calls `openFoldBadge` (unfold, then `revealMarkerEntry`/`revealInlineObject` for
@@ -174,10 +180,6 @@ Leave out of export sit behind a "Row ›" flyout (owner moved Zoom/Collapse the
 triggers carry `data-flyout="insert|row"`). Owner then found the badge icons louder than the row's own dots
 and asked for "only the count, rest on hover": `.fold-badge` is "+N" only, `.fold-badge-open` (accent) when
 open questions or follow-ups are inside, tooltip lists counts (`foldBadgeTipParts`, `FOLD_KIND_NAMES`).
-
-**2026-10-20: Undo toasts stay 4s; markers without tint.** `showToast` defaults to `TOAST_UNDO_MS` (4s) when the
-message mentions undo. `.node-marker-badge` has no tint at rest, only on hover (owner: "why are we showing bit of
-background?"). The folded-count icons from the same PR were later replaced by the count-only badge (entry above).
 
 ### Where things stand (the model to keep in mind)
 
