@@ -23,8 +23,15 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // Click-to-expand (not hover) reveals priority/status/due/link/repeat/subtask-add -- a row's
 // own .todo-expand-toggle chevron, or a click anywhere non-interactive on the row, toggles its
 // .expanded class.
-async function expandRow(page: import('@playwright/test').Page, id: string) {
-  await page.click(`.todo-expand-toggle[data-id="${id}"]`);
+// There is no edit card: priority is set from the task menu (right-click or ⋯), and "+ Add subtask"
+// is in the same menu.
+async function setPriority(page: import('@playwright/test').Page, id: string, label: string) {
+  await page.locator(`.todo-row[data-id="${id}"]`).click({ button: 'right', position: { x: 4, y: 10 } });
+  await page.locator('.sb-context-menu .sb-context-heading:text-is("Priority") + .sb-context-choices .sb-context-choice', { hasText: label }).click();
+}
+async function addSubtask(page: import('@playwright/test').Page, id: string) {
+  await page.locator(`.todo-row[data-id="${id}"]`).click({ button: 'right', position: { x: 4, y: 10 } });
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Add subtask' }).click();
 }
 
 // The completion control is a circle (an outline ring at rest, the same light ring with a grey tick
@@ -76,14 +83,13 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     expect(result.checkLeft).toBeLessThan(result.textLeft);
   });
 
-  // Priority reads via the colored dot in the (expanded-only) priority chip, not via the
+  // Priority reads via the colored dot after the title, not via the
   // checkbox ring -- the ring stays the same neutral color at every priority level.
   test('an unchecked control\'s ring color stays neutral regardless of priority', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Priority ring check');
     const id = await row.getAttribute('data-id');
     const plainColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
-    await expandRow(page, id!);
-    await page.click(`.todo-prop-opt[data-id="${id}"][data-field="priority"][data-value="high"]`);
+    await setPriority(page, id!, 'High');
     await page.waitForTimeout(100);
     const highColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
     expect(highColor).toBe(plainColor);
@@ -93,8 +99,7 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
     const row = await openTodosPanelWithTask(page, 'Priority checked-state check');
     const id = await row.getAttribute('data-id');
     const plainColor = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderColor);
-    await expandRow(page, id!);
-    await page.click(`.todo-prop-opt[data-id="${id}"][data-field="priority"][data-value="med"]`); // medium priority (amber -- distinct from accent)
+    await setPriority(page, id!, 'Medium'); // medium priority (amber -- distinct from accent)
     await page.click(`.todo-check[data-id="${id}"]`);
     // The Completed section always starts collapsed; open it to see the task that just moved there.
     await page.click('#todos-completed-collapse-btn[aria-label="Expand completed"]');
@@ -116,8 +121,7 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
   test('the per-subtask checkbox is also a circle', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask checkbox shape check');
     const id = await row.getAttribute('data-id');
-    await expandRow(page, id!);
-    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await addSubtask(page, id!);
     await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
     await page.waitForTimeout(100);
@@ -129,8 +133,7 @@ test.describe('The To-Dos completion control is a left-led circle', () => {
   test('the per-subtask checkbox stays to the left of its subtask text', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask checkbox position check');
     const id = await row.getAttribute('data-id');
-    await expandRow(page, id!);
-    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
+    await addSubtask(page, id!);
     await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'A subtask');
     await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
     await page.waitForTimeout(100);

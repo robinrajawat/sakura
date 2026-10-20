@@ -146,7 +146,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     expect(errors).toEqual([]);
   });
 
-  test('To-Dos header has no AI buttons; a task keeps Rewrite and its subtasks keep Rewrite, with no "Break into subtasks"', async ({ page }) => {
+  test('To-Dos header has no AI buttons; a task keeps Rewrite (in its menu) and its subtasks keep Rewrite, with no "Break into subtasks"', async ({ page }) => {
     const errors = trackErrors(page);
     await page.addInitScript(() => {
       localStorage.setItem('sakura_todos_v1', JSON.stringify([
@@ -167,8 +167,11 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-panel')).toHaveClass(/open/);
     await expect(page.locator('#todos-panel-header button')).not.toHaveCount(0);
     await expect(page.locator('#todos-extract-btn, #todos-summary-btn')).toHaveCount(0);
-    await expect(page.locator('.todo-rewrite')).toHaveCount(2);
     await expect(page.locator('.todo-subtask-ai')).toHaveCount(0);
+    await page.locator('.todo-row[data-id="t2"]').click({ button: 'right', position: { x: 4, y: 10 } });
+    await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Rewrite with AI' })).toHaveCount(1);
+    await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Break into subtasks' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
     // Subtasks fold behind their count at rest; open the task to see them.
     await page.click('.todo-subtasks-toggle[data-id="t1"]');
     await expect(page.locator('.todo-subtask-rewrite')).toHaveCount(1);

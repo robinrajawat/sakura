@@ -5,6 +5,14 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
+// No edit card: "Add subtask" (and every other setting) is in the task menu, right-click or ⋯.
+async function addSubtask(page: import('@playwright/test').Page, id: string, text: string) {
+  await page.locator(`.todo-row[data-id="${id}"]`).click({ button: 'right', position: { x: 4, y: 10 } });
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Add subtask' }).click();
+  await page.fill(`.todo-subtask-input[data-id="${id}"]`, text);
+  await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+}
+
 async function openTodosPanelWithTask(page: import('@playwright/test').Page, text: string) {
   await page.goto('file://' + indexPath);
   await page.evaluate(() => {
@@ -28,7 +36,9 @@ async function openTodosPanelWithTask(page: import('@playwright/test').Page, tex
 // hovering alone reveals nothing. This file asserts that restored shape, not the card one.
 // The 2026-10 redesign (owner-approved concept, after cards in #402-#420 and again later): flat rows
 // grouped under status headings (see todos-grouped.spec.ts), no card border or surface. The Now
-// task (the one you chose to focus on) is a tinted row, not a card. Click-to-expand is unchanged.
+// task (the one you chose to focus on) is a tinted row, not a card. Since 2026-10-20 there is no edit
+// card at all: settings live in the task menu (⋯ on hover, or right-click) and an unfolded task is
+// a soft grey reading area with its full title and subtasks.
 test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
   test('an open task row is flat: no border, no surface of its own', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Flat row styling check');
@@ -58,19 +68,20 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     expect(priorityAfter).toBe('none'); // but hovering alone never reveals chips
   });
 
-  test('clicking the expand chevron reveals priority/status/due/link/repeat/subtask-add', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Expand reveal check');
+  test('the task menu (⋯ on hover) holds priority, status, due date, link and add-subtask; there is no edit card', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Menu check');
     const id = await row.getAttribute('data-id');
-    const priorityBefore = await page.locator(`.todo-priority[data-id="${id}"]`).evaluate(el => getComputedStyle(el).display);
-    await page.click(`.todo-expand-toggle[data-id="${id}"]`);
-    await page.waitForTimeout(100);
-    // Expanded, the row lists its properties; priority shows every option at once.
-    await expect(page.locator(`.todo-prop-opt[data-id="${id}"][data-field="priority"]`)).toHaveCount(4);
-    await expect(page.locator(`.todo-prop-opt[data-id="${id}"][data-field="status"]`)).toHaveCount(3); // None / In progress / Waiting
-    await expect(page.locator(`.todo-due[data-id="${id}"]`)).toBeVisible();
-    await expect(page.locator(`.todo-link[data-id="${id}"]`)).toBeVisible();
-    await expect(page.locator(`.todo-subtask-add-btn[data-id="${id}"]`)).toBeVisible();
-    expect(priorityBefore).toBe('none');
+    await expect(page.locator('.todo-expand-toggle, .todo-props, .todo-prop-opt')).toHaveCount(0);
+    await row.hover();
+    await page.click(`.todo-more-btn[data-id="${id}"]`);
+    const menu = page.locator('.sb-context-menu');
+    await expect(menu.locator('.sb-context-heading:text-is("Priority") + .sb-context-choices .sb-context-choice')).toHaveCount(4);
+    await expect(menu.locator('.sb-context-heading:text-is("Status") + .sb-context-choices .sb-context-choice')).toHaveCount(3); // None / In progress / Waiting
+    for (const label of ['Add due date…', 'Add link…', 'Add subtask', 'Focus on this', 'Delete task']) {
+      await expect(menu.locator('.sb-context-item', { hasText: label })).toHaveCount(1);
+    }
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.todo-row').first()).not.toHaveClass(/expanded/);
   });
 
   test('a completed row mutes its text without striking it through, not the whole row', async ({ page }) => {
@@ -102,13 +113,10 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
 
   // Subtask lists are open by default (not collapsed) and are a plain indented block with a
   // straight left border -- no branch/tree connector, no shaded background of its own.
-  test('the subtask list is open by default with no left rule or branch connector; completed subtasks fold behind "N completed"', async ({ page }) => {
+  test('the subtask list is open by default with no left rule or branch connector; completed subtasks fold behind "N done"', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask plain-block check');
     const id = await row.getAttribute('data-id');
-    await page.click(`.todo-expand-toggle[data-id="${id}"]`);
-    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
-    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'First subtask');
-    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await addSubtask(page, id!, 'First subtask');
     await page.waitForTimeout(100);
     // Open by default -- no extra click needed to see it.
     await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
@@ -120,16 +128,14 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     });
     expect(result.borderLeftWidth).toBe(0);
     expect(result.trunkContent === 'none' || result.trunkContent === '""').toBe(true); // no branch ::before trunk
-    // Completing it folds it behind "1 completed"; clicking that shows it again, muted and not struck through.
+    // Completing it folds it behind "1 done"; clicking that shows it again, muted and not struck through.
     // A second subtask keeps the parent open (completing every subtask completes the task).
-    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
-    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'Second subtask');
-    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await addSubtask(page, id!, 'Second subtask');
     await expect(page.locator('.todo-subtask-row')).toHaveCount(2);
     await page.locator('.todo-subtask-check').first().click();
     await expect(page.locator('.todo-subtask-row')).toHaveCount(1);
     const fold = page.locator(`.todo-subtasks-done-toggle[data-id="${id}"]`);
-    await expect(fold).toContainText('1 completed');
+    await expect(fold).toHaveText('1 done');
     await fold.click();
     await expect(page.locator('.todo-subtask-row')).toHaveCount(2);
     expect(await page.locator('.todo-subtask-text.completed').evaluate(el => getComputedStyle(el).textDecorationLine)).toBe('none');
@@ -138,10 +144,7 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
   test('a multi-line subtask keeps its circle on the first line of text', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask alignment check');
     const id = await row.getAttribute('data-id');
-    await page.click(`.todo-expand-toggle[data-id="${id}"]`);
-    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
-    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'High level solution design and architecture and the submission in LeanIX for the architecture review board, plus enough words to wrap');
-    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
+    await addSubtask(page, id!, 'High level solution design and architecture and the submission in LeanIX for the architecture review board, plus enough words to wrap');
     const m = await page.locator('.todo-subtask-row').first().evaluate((r) => {
       const c = r.querySelector('.todo-subtask-check')!.getBoundingClientRect();
       const t = r.querySelector('.todo-subtask-text')!;
@@ -152,16 +155,12 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     expect(m.offset).toBeLessThanOrEqual(2);
   });
 
-  // The subtask progress indicator is a small, plain gray bar (not a wide accent-tinted one).
-  test('the subtask progress bar is small and gray, not accent-tinted', async ({ page }) => {
-    const row = await openTodosPanelWithTask(page, 'Subtask progress bar check');
+  // The subtask count is plain text ("0/1"), with no progress bar beside it.
+  test('the subtask count has no progress bar', async ({ page }) => {
+    const row = await openTodosPanelWithTask(page, 'Subtask count check');
     const id = await row.getAttribute('data-id');
-    await page.click(`.todo-expand-toggle[data-id="${id}"]`);
-    await page.click(`.todo-subtask-add-btn[data-id="${id}"]`);
-    await page.fill(`.todo-subtask-input[data-id="${id}"]`, 'First subtask');
-    await page.press(`.todo-subtask-input[data-id="${id}"]`, 'Enter');
-    await page.waitForTimeout(100);
-    const width = await page.locator('.todo-subtasks-progress-track').evaluate(el => getComputedStyle(el).width);
-    expect(parseFloat(width)).toBeLessThan(40); // small, not a wide fixed-width bar
+    await addSubtask(page, id!, 'First subtask');
+    await expect(page.locator(`.todo-subtasks-toggle[data-id="${id}"]`)).toContainText('0/1');
+    await expect(page.locator('.todo-subtasks-progress-track')).toBeHidden();
   });
 });
