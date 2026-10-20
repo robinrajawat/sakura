@@ -2369,6 +2369,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #pv-doc-header.has-status-stamp #pv-doc-title{padding-right:150px}
 #pv-doc-kicker{width:28px;height:3px;border-radius:2px;background:var(--accent);margin:0 0 12px}
 #pv-doc-title{font:800 28px/1.25 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);word-break:break-word}
+/* One text line tall and top-aligned, so the icons centre on the line without making it taller. */
+.node-label .node-row-icons{display:inline-flex;align-items:center;gap:0;margin-left:2px;vertical-align:top;height:1lh;white-space:nowrap;text-decoration:none;font-style:normal;font-weight:400}
+.node-label .node-row-icons>*{margin-top:0!important;align-self:center}
 #pv-doc-meta{margin-top:7px;font:400 12.5px 'Inter',sans-serif;color:var(--muted);letter-spacing:.01em}
 #pv-doc-subtitle{margin-top:10px;font:500 15px 'Inter',sans-serif;color:var(--muted);line-height:1.4;word-break:break-word}
 .pv-section{flex:1;min-width:60px;display:flex;align-items:center;gap:10px;margin:0 0 6px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
@@ -19891,8 +19894,8 @@ function handleDrop(draggedId,targetId,mode='below'){if(!draggedId)return; if(mo
 // the main toolbar where one exists — plain glyphs for glyph-style toolbar
 // buttons, the same SVG path data for icon-style ones) ──────────────────────
 // "Leave out of export" (owner, 2026-10-20): a row, and everything under it, is skipped by the PDF and
-// OPML exports. It stays as it is in the editor, apart from one quiet crossed-out-page dot.
-const NOEXPORT_DOT_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
+// OPML exports. It stays as it is in the editor, apart from one quiet eye-with-a-slash dot.
+const NOEXPORT_DOT_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-2.2 3.4"/><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
 function setNodesNoExport(ids,on){
   const list=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean).filter(n=>!!n.noExport!==on); if(!list.length)return;
   pushUndo(); const now=Date.now();
@@ -19902,6 +19905,17 @@ function setNodesNoExport(ids,on){
 }
 // The export itself never mentions left-out rows; a toast says how many were skipped.
 function noExportToast(list){ const n=list.length-withoutNoExportNodes(list).length; if(n)showToast(n+' row'+(n===1?'':'s')+' left out of the export'); }
+// Row-end icons (markers, thread/note/table/… dots, the folded "+N" badge, tags, checkbox
+// progress) sit right after the row's text, at the end of its last line, instead of at the
+// far right edge (owner, 2026-10-20). They move into one inline box at the end of the label;
+// a row being edited has no label, so it keeps them as before.
+const ROW_ICON_SEL='.node-marker-badge,.node-note-dot,.node-qa-dot,.node-arw-dot,.fold-badge,.node-tag-chip,.cb-progress';
+function moveRowIconsInline(row){
+  const lbl=row.querySelector(':scope > .node-label'); if(!lbl)return;
+  const icons=[...row.children].filter(c=>c.matches(ROW_ICON_SEL)); if(!icons.length)return;
+  const box=document.createElement('span'); box.className='node-row-icons';
+  icons.forEach(i=>box.appendChild(i)); lbl.appendChild(box);
+}
 // Drops rows marked noExport and their descendants from an ordered, depth-indented node list.
 function withoutNoExportNodes(list){
   const out=[]; let skip=null;
@@ -19927,7 +19941,7 @@ const CTX_ACTION_META={
   'date-time':{label:'Insert date/time',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',group:'node'},
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'info'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'info'},
-  'no-export':{label:'Leave out of export',dynamicLabel:true,svg:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="3" y1="3" x2="21" y2="21"/>',group:'info'},
+  'no-export':{label:'Leave out of export',dynamicLabel:true,svg:'<path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-2.2 3.4"/><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/>',group:'info'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
 const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
@@ -20516,7 +20530,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Dynalist-style note preview is now rendered as a sub-line directly under this row (see just
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
-  row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode))return; const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); frag.appendChild(row);
+  row.addEventListener('click',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode))return; const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
   if((forceInlineNoteId===node.id||inlineExpandNoteNodeIds.has(node.id))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
