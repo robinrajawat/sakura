@@ -939,7 +939,7 @@ body.zen-mode #quick-bar{display:none}
 .oi-divider{flex:0 0 1px;width:1px;height:16px;align-self:center;background:var(--border);margin:0 3px}
 .open-items-menu{width:340px;max-width:calc(100vw - 16px)}
 .open-items-menu .sb-context-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* A second, quieter line under an item: e.g. why a follow-up is open (its thread's latest line). */
+/* A second, quieter line under an item: e.g. why a follow-up is open (the thread line that set it). */
 .sb-context-meta{flex:none;margin-left:auto;padding-left:12px;align-self:flex-start;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .sb-context-sub{display:block;margin-top:1px;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sb-context-item:has(.sb-context-sub) .sb-context-icon{align-self:flex-start;margin-top:1px}
@@ -31829,7 +31829,7 @@ function applyOpenItemsFilter(kind){
 // The list behind the summary: open items grouped by kind (Out of scope folded at the bottom), each jumping to its row or
 // inline item. Filtering is one switch at the top (everything open) plus a small filter icon on each
 // group heading (just that kind) — no repeated "Show only these" rows.
-// The document's open items, in outline order: follow-ups (with owner, parent and latest line) and
+// The document's open items, in outline order: follow-ups (with owner, parent and the line that set it) and
 // open questions. The Open items menu and "Copy as agenda" both read it.
 function openItemsLists(){
   const idx=new Map(nodes.map((n,i)=>[n.id,i]));
@@ -31839,8 +31839,16 @@ function openItemsLists(){
   const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
   // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
   const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
-  // Under a follow-up, its thread's latest line says why it's open, without jumping there.
-  const latestOf=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--){ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); if(x)return {id:t[i].id,person:t[i].person||'',text:x}; } return null; };
+  // Under a follow-up, the entry that set it says why it's open, without jumping there (owner,
+  // 2026-10-21: not the thread's latest line, which may be a later reply). A follow-up set without
+  // text quotes the nearest line before it, else the first one after.
+  const latestOf=n=>{ const t=nodeThread(n.id), h=threadStatusEntry(t), at=h?t.indexOf(h):t.length-1;
+    const line=i=>{ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); return x?{id:t[i].id,person:t[i].person||'',text:x}:null; };
+    for(let i=at;i>=0;i--){ const l=line(i); if(l)return l; }
+    for(let i=at+1;i<t.length;i++){ const l=line(i); if(l)return l; }
+    return null; };
+  // The thread's latest line, for "waiting on open question N" when a later question is still open.
+  const lastIdOf=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--) if(stripHtmlToText(t[i].text||'').trim())return t[i].id; return null; };
   // Rows with the same name (two "Export (ZOR)" under different parents) name their parent on the
   // grey line ("in Exclusion Scenarios · Karsten: …"), so the row's own name keeps the first line;
   // same name under the same parent too: numbered in outline order ("Export (ZOR) (2)").
@@ -31852,7 +31860,7 @@ function openItemsLists(){
     const k=place(n); nth.set(k,(nth.get(k)||0)+1);
     const h=threadStatusEntry(nodeThread(n.id));
     return {nodeId:n.id, row:rowText(n)+(byPlace.get(k)>1?' ('+nth.get(k)+')':''), owner:ownerOf(n),
-      parent:byName.get(rowText(n))>1?parentText(n):'', fullParent:parentText(n), latest:latestOf(n), since:h&&h.createdAt};
+      parent:byName.get(rowText(n))>1?parentText(n):'', fullParent:parentText(n), latest:latestOf(n), lastId:lastIdOf(n), since:h&&h.createdAt};
   });
   // A question names the row it's on and who asked ("Customer comms · Maria").
   const questions=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId)).map(r=>{ const n=nodes[idx.get(r.anchorNodeId)];
@@ -31884,8 +31892,9 @@ function openItemsMenuItems(){
 // "Copy as agenda" and the PDF's Open items page are snapshots, so they say when (owner, 2026-10-21):
 // "As of 21 Oct 2026" on top, "since 13 Oct" on a follow-up, the asked date on a question, instead of
 // an age that is wrong a week later. Each item: its row (or question) on line 1, the section · owner ·
-// date on a grey line 2, then a follow-up's latest line, or "Waiting on open question N" when that
-// line is one of the open questions listed below. Names print plain, not in their avatar colours.
+// date on a grey line 2, then the line that set the follow-up ("· waiting on open question N" when a
+// later line is one of the open questions listed below), or "Waiting on open question N" when the
+// follow-up was set on such a question. Names print plain, not in their avatar colours.
 function openItemDate(ts,now,withYear){
   if(!Number.isFinite(ts)||ts<=0)return '';
   const d=new Date(ts);
@@ -31904,14 +31913,15 @@ function openItemsSnapshot(now=Date.now(),leaveOut=null){
     asOf:'As of '+openItemDate(now,now,true)+' \u00b7 '+counts,
     followups:followups.map(f=>({nodeId:f.nodeId, title:f.row,
       meta:[{text:f.fullParent},{text:f.owner,name:true},{text:since(f.since)}].filter(m=>m.text),
-      sub:!f.latest?null:qNum.has(f.latest.id)?{text:'Waiting on open question '+qNum.get(f.latest.id)}:{person:f.latest.person,text:f.latest.text}})),
+      sub:!f.latest?null:qNum.has(f.latest.id)?{text:'Waiting on open question '+qNum.get(f.latest.id)}
+        :{person:f.latest.person,text:f.latest.text,waiting:f.lastId!==f.latest.id&&qNum.has(f.lastId)?'waiting on open question '+qNum.get(f.lastId):''}})),
     questions:questions.map(q=>({nodeId:q.nodeId, title:q.text,
       meta:[{text:q.row},{text:q.person,name:true},{text:openItemDate(q.since,now)}].filter(m=>m.text), sub:null}))
   };
 }
 function openItemHtml(it,bold){
   const meta=it.meta.map(m=>m.name?'<b style="color:#1f1c14">'+esc(m.text)+'</b>':esc(m.text)).join(' \u00b7 ');
-  const sub=it.sub?(it.sub.person?'<b style="color:#1f1c14">'+esc(it.sub.person)+':</b> ':'')+esc(it.sub.text):'';
+  const sub=it.sub?(it.sub.person?'<b style="color:#1f1c14">'+esc(it.sub.person)+':</b> ':'')+esc(it.sub.text)+(it.sub.waiting?' \u00b7 '+esc(it.sub.waiting):''):'';
   return {title:bold?'<b>'+esc(it.title)+'</b>':esc(it.title), meta, sub};
 }
 function openItemsAgendaContent(now=Date.now()){
@@ -31923,7 +31933,7 @@ function openItemsAgendaContent(now=Date.now()){
     if(!entries.length)return;
     html.push('<div style="margin-top:10px"><b>'+esc(heading)+'</b></div><ol style="margin:4px 0 0;padding-left:22px">'+entries.map(e=>{ const h=openItemHtml(e,bold);
       return '<li style="margin-bottom:4px">'+h.title+(h.meta?'<div style="'+grey+'">'+h.meta+'</div>':'')+(h.sub?'<div style="'+grey+'">'+h.sub+'</div>':'')+'</li>'; }).join('')+'</ol>');
-    text.push('',heading,...entries.map((e,i)=>(i+1)+'. '+e.title+(e.meta.length?'\n   '+e.meta.map(m=>m.text).join(' \u00b7 '):'')+(e.sub?'\n   '+(e.sub.person?e.sub.person+': ':'')+e.sub.text:'')));
+    text.push('',heading,...entries.map((e,i)=>(i+1)+'. '+e.title+(e.meta.length?'\n   '+e.meta.map(m=>m.text).join(' \u00b7 '):'')+(e.sub?'\n   '+(e.sub.person?e.sub.person+': ':'')+e.sub.text+(e.sub.waiting?' \u00b7 '+e.sub.waiting:''):'')));
   };
   section('Follow-ups',snap.followups,true);
   section('Open questions',snap.questions,false);

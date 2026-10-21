@@ -49,15 +49,37 @@ test('the copy button sits before Filter outline and copies a numbered agenda', 
   expect(copied['text/html']).toContain('Ben</b>');
 });
 
-test('a follow-up whose latest line is an open question points at it instead of repeating it', async ({ page }) => {
+test('a follow-up quotes the entry that set it, not a later reply', async ({ page }) => {
+  // Owner, 2026-10-21: Kristoffer set the follow-up, Marlene replied later; the list quoted Marlene.
+  const text = await page.evaluate(() => {
+    // @ts-expect-error
+    remarks.push({ id: 'r1', anchorNodeId: 2, text: 'Same as today', person: 'Marlene', createdAt: Date.now() });
+    // @ts-expect-error
+    const menu = openItemsMenuItems().find((i) => i.label === 'Export · Ben');
+    // @ts-expect-error
+    return { agenda: openItemsAgendaContent().text, menu: menu.sub };
+  });
+  expect(text.agenda).toMatch(/1\. Export\n.*\n {3}Ana: Check the CSV$/m);
+  expect(text.agenda).not.toContain('Same as today');
+  expect(text.menu).toBe('Ana: Check the CSV');
+});
+
+test('a follow-up set on an open question, or followed by one, points at it', async ({ page }) => {
   const text = await page.evaluate(() => {
     // @ts-expect-error
     remarks.push({ id: 'q2', anchorNodeId: 2, text: 'Which columns?', type: 'question', person: 'Ana', createdAt: Date.now() });
     // @ts-expect-error
     return openItemsAgendaContent().text;
   });
-  expect(text).toMatch(/1\. Export\n.*\n {3}Waiting on open question 1/);
+  expect(text).toMatch(/1\. Export\n.*\n {3}Ana: Check the CSV · waiting on open question 1/);
   expect(text).toContain('1. Which columns?');
+  const own = await page.evaluate(() => {
+    // @ts-expect-error
+    remarks = [{ id: 'q3', anchorNodeId: 2, text: 'Which columns?', type: 'question', person: 'Ana', status: 'followup', createdAt: Date.now() }];
+    // @ts-expect-error
+    return openItemsAgendaContent().text;
+  });
+  expect(own).toMatch(/1\. Export\n.*\n {3}Waiting on open question 1/);
 });
 
 test('with nothing open there is no copy button', async ({ page }) => {

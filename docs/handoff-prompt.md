@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-21: A follow-up quotes the entry that set it.** Owner: Open items and the PDF quoted Marlene's later reply
+instead of Kristoffer's follow-up. `openItemsLists()` `latestOf` now takes `threadStatusEntry` (nearest text at or
+before it, else after), not the thread's last line; `lastId` keeps the last line so the snapshot adds
+"· waiting on open question N" when a later question is open ("Waiting on open question N" alone when the follow-up was
+set on that question). Tests: `open-items-agenda.spec.ts`. Screenshot `inline-objects/open-items-followup-line.png`.
+
 **2026-10-21: Open items snapshot shows dates.** Owner: "Does how many old days make sense, perhaps a timestamp?" Approved
 mockup `inline-objects/pdf-open-items-tidy-mockup.png`. PDF page and agenda copy share `openItemsSnapshot()`:
 "As of <date>" header, line 1 = row/question (+ page in PDF), grey line 2 = section · owner · "since 13 Oct" (question:
@@ -181,11 +187,6 @@ Same PR: PDF Open items page (owner approved `inline-objects/pdf-open-items-mock
 (default off, `#open-items-page-toggle` under Cover page). `exportPreviewAsPdf` inserts `buildPdfOpenItemsPage()`
 (`#pv-open-items`) after the Contents page, or under the title/inline Contents; removed in cleanup. Every printed row
 now gets `pv-anchor-<id>`, and `fillPdfTocPageNumbers` also numbers `.pv-oi-item`. Test: `pdf-open-items-page.spec.ts`.
-
-**2026-10-20: F8 steps through open items.** Owner picked it ("do it") from my list for review meetings.
-`SHORTCUTS.nextOpenItem` (f8) / `prevOpenItem` (shift+f8), capture-phase listener; `stepOpenItem(dir)` walks
-`openItemsInOutlineOrder()` (follow-up markers, then open questions per row) from the selected row, wraps,
-reveals via `revealMarkerEntry`/`revealInlineObject`, toast "Open item N of M". Test: `next-open-item.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 
