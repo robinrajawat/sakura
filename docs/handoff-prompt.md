@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-21: Open items snapshot shows dates.** Owner: "Does how many old days make sense, perhaps a timestamp?" Approved
+mockup `inline-objects/pdf-open-items-tidy-mockup.png`. PDF page and agenda copy share `openItemsSnapshot()`:
+"As of <date>" header, line 1 = row/question (+ page in PDF), grey line 2 = section · owner · "since 13 Oct" (question:
+row · asker · date, `openItemDate`, honours ISO format), then latest line or "Waiting on open question N" when that line
+is a listed question; names plain bold. The in-app menu keeps live ages. Tests: `open-items-agenda.spec.ts`.
+
 **2026-10-20: Copy open items as an agenda.** Owner saw mockup `inline-objects/agenda-copy-mockup.png` and
 asked for a copy button before "Filter outline" instead of a menu-foot item: `.oi-copy` in `.oi-head-actions`
 (only when something is open) calls `copyOpenItemsAgenda()`; `openItemsAgendaContent()` writes title, date + counts,
@@ -180,15 +186,6 @@ now gets `pv-anchor-<id>`, and `fillPdfTocPageNumbers` also numbers `.pv-oi-item
 `SHORTCUTS.nextOpenItem` (f8) / `prevOpenItem` (shift+f8), capture-phase listener; `stepOpenItem(dir)` walks
 `openItemsInOutlineOrder()` (follow-up markers, then open questions per row) from the selected row, wraps,
 reveals via `revealMarkerEntry`/`revealInlineObject`, toast "Open item N of M". Test: `next-open-item.spec.ts`.
-
-**2026-10-20: Untitled in the sidebar; accent count jumps; Expand all undo.** Owner: "do all of these". With
-`currentDocId==null` `renderSidebarDocs` puts a `.sdoc-unsaved` "Untitled · not saved" row on top instead of "No
-documents". Folded badge mousedown calls `openFoldBadge` (unfold, then `revealMarkerEntry`/`revealInlineObject` for
-the first follow-up or open question inside). `expandAll`/`collapseAll` call `pushFoldUndo()`: `snapshot(true)`
-carries `foldState()`, `restoreFromSnapshot` applies it, undo/redo keep carrying it. Owner also reported clicking
-an Agreed marker scrolled the page with its entry already visible: `revealInlineObject` now scrolls only when
-`!isInEditorView(target)` and focuses with `preventScroll`. Test:
-`sidebar-untitled-fold-jump-undo.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

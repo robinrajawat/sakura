@@ -2348,7 +2348,7 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 #pv-open-items .pv-oi-heading{display:flex;align-items:center;gap:7px;font:600 13.5px 'Inter',sans-serif;margin:18px 0 8px}
 #pv-open-items .pv-oi-heading svg{width:13px;height:13px}
 #pv-open-items .pv-oi-list{margin:0;padding-left:22px;font:400 12.5px/1.45 'Inter',sans-serif}
-#pv-open-items .pv-oi-list li{margin-bottom:8px;break-inside:avoid}
+#pv-open-items .pv-oi-list li{margin-bottom:9px;break-inside:avoid}
 #pv-open-items .pv-oi-item{display:flex;align-items:baseline;gap:12px;color:inherit !important;text-decoration:none !important}
 #pv-open-items .pv-oi-text{flex:1 1 auto;min-width:0}
 #pv-open-items .pv-oi-sub{display:block;color:#79756b}
@@ -31840,7 +31840,7 @@ function openItemsLists(){
   // A follow-up names its owner when one was set ("Export (ZOR) · Karsten").
   const ownerOf=n=>{ const h=threadStatusEntry(nodeThread(n.id)); return h&&h.owner&&markerForThreadStatus(h.status)==='followup'?h.owner:''; };
   // Under a follow-up, its thread's latest line says why it's open, without jumping there.
-  const latestOf=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--){ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); if(x)return {person:t[i].person||'',text:x}; } return null; };
+  const latestOf=n=>{ const t=nodeThread(n.id); for(let i=t.length-1;i>=0;i--){ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); if(x)return {id:t[i].id,person:t[i].person||'',text:x}; } return null; };
   // Rows with the same name (two "Export (ZOR)" under different parents) name their parent on the
   // grey line ("in Exclusion Scenarios · Karsten: …"), so the row's own name keeps the first line;
   // same name under the same parent too: numbered in outline order ("Export (ZOR) (2)").
@@ -31881,56 +31881,70 @@ function openItemsMenuItems(){
   addGroup('question','Open questions',questions.map(q=>({label:q.text, sub:[q.row,q.person].filter(Boolean).join(' \u00B7 '), since:q.since, go:()=>revealInlineObject('remark',q.remarkId)})));
   return items;
 }
-// "Copy as agenda" (owner, 2026-10-20): every open item, numbered, for a meeting invite or email.
-// Rich text for mail and docs (names in their colours), a plain numbered list everywhere else.
-function openItemsAgendaContent(now=Date.now()){
-  const {followups,questions}=openItemsLists();
+// "Copy as agenda" and the PDF's Open items page are snapshots, so they say when (owner, 2026-10-21):
+// "As of 21 Oct 2026" on top, "since 13 Oct" on a follow-up, the asked date on a question, instead of
+// an age that is wrong a week later. Each item: its row (or question) on line 1, the section · owner ·
+// date on a grey line 2, then a follow-up's latest line, or "Waiting on open question N" when that
+// line is one of the open questions listed below. Names print plain, not in their avatar colours.
+function openItemDate(ts,now,withYear){
+  if(!Number.isFinite(ts)||ts<=0)return '';
+  const d=new Date(ts);
+  if(dateTimeFormat==='iso'){ const pad=x=>String(x).padStart(2,'0'); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',...(withYear||d.getFullYear()!==new Date(now).getFullYear()?{year:'numeric'}:{})});
+}
+function openItemsSnapshot(now=Date.now(),leaveOut=null){
+  const lists=openItemsLists();
+  const followups=leaveOut?lists.followups.filter(f=>!leaveOut.has(f.nodeId)):lists.followups;
+  const questions=leaveOut?lists.questions.filter(q=>!leaveOut.has(q.nodeId)):lists.questions;
   if(!followups.length&&!questions.length)return null;
-  const grey='color:#6b7280';
-  const docTitle=(el('header-title')?.value||'').trim()||'Untitled';
-  const title=docTitle+': open items';
+  const qNum=new Map(questions.map((q,i)=>[q.remarkId,i+1]));
   const counts=[followups.length?followups.length+' follow-up'+(followups.length>1?'s':''):'', questions.length?questions.length+' open question'+(questions.length>1?'s':''):''].filter(Boolean).join(' \u00b7 ');
-  const dateLine=new Date(now).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' \u00b7 '+counts;
-  const name=p=>{ const c=remarkAuthorColor(p).avatarBg; return '<b style="color:'+c+'">'+esc(p)+'</b>'; };
-  const age=t=>{ const a=openItemAge(t,now); return a?a+' open':''; };
-  const html=['<div><b>'+esc(title)+'</b></div>','<div style="'+grey+'">'+esc(dateLine)+'</div>'], text=[title,dateLine];
-  const section=(heading,entries,rowHtml,rowText)=>{
-    if(!entries.length)return;
-    html.push('<div style="margin-top:10px"><b>'+esc(heading)+'</b></div><ol style="margin:4px 0 0;padding-left:22px">'+entries.map(e=>'<li style="margin-bottom:4px">'+rowHtml(e)+'</li>').join('')+'</ol>');
-    text.push('',heading,...entries.map((e,i)=>(i+1)+'. '+rowText(e)));
+  const since=t=>{ const d=openItemDate(t,now); return d?'since '+d:''; };
+  return {
+    asOf:'As of '+openItemDate(now,now,true)+' \u00b7 '+counts,
+    followups:followups.map(f=>({nodeId:f.nodeId, title:f.row,
+      meta:[{text:f.fullParent},{text:f.owner,name:true},{text:since(f.since)}].filter(m=>m.text),
+      sub:!f.latest?null:qNum.has(f.latest.id)?{text:'Waiting on open question '+qNum.get(f.latest.id)}:{person:f.latest.person,text:f.latest.text}})),
+    questions:questions.map(q=>({nodeId:q.nodeId, title:q.text,
+      meta:[{text:q.row},{text:q.person,name:true},{text:openItemDate(q.since,now)}].filter(m=>m.text), sub:null}))
   };
-  section('Follow-ups',followups,f=>{
-    return '<b>'+esc(f.row)+'</b>'+(f.fullParent?' <span style="'+grey+'">('+esc(f.fullParent)+')</span>':'')
-      +(f.owner?' \u00b7 '+name(f.owner):'')+(age(f.since)?' <span style="'+grey+'">\u00b7 '+esc(age(f.since))+'</span>':'')
-      +(f.latest?'<div style="'+grey+'">'+(f.latest.person?esc(f.latest.person)+': ':'')+esc(f.latest.text)+'</div>':'');
-  },f=>f.row+(f.fullParent?' ('+f.fullParent+')':'')+(f.owner?' \u00b7 '+f.owner:'')+(age(f.since)?' \u00b7 '+age(f.since):'')
-    +(f.latest?'\n   '+(f.latest.person?f.latest.person+': ':'')+f.latest.text:''));
-  section('Open questions',questions,q=>esc(q.text)+'<div style="'+grey+'">'+[q.row?'on '+esc(q.row):'',q.person?'asked by '+name(q.person):'',esc(age(q.since))].filter(Boolean).join(' \u00b7 ')+'</div>',
-    q=>q.text+'\n   '+[q.row?'on '+q.row:'',q.person?'asked by '+q.person:'',age(q.since)].filter(Boolean).join(' \u00b7 '));
+}
+function openItemHtml(it,bold){
+  const meta=it.meta.map(m=>m.name?'<b style="color:#1f1c14">'+esc(m.text)+'</b>':esc(m.text)).join(' \u00b7 ');
+  const sub=it.sub?(it.sub.person?'<b style="color:#1f1c14">'+esc(it.sub.person)+':</b> ':'')+esc(it.sub.text):'';
+  return {title:bold?'<b>'+esc(it.title)+'</b>':esc(it.title), meta, sub};
+}
+function openItemsAgendaContent(now=Date.now()){
+  const snap=openItemsSnapshot(now); if(!snap)return null;
+  const grey='color:#6b7280';
+  const title=((el('header-title')?.value||'').trim()||'Untitled')+': open items';
+  const html=['<div><b>'+esc(title)+'</b></div>','<div style="'+grey+'">'+esc(snap.asOf)+'</div>'], text=[title,snap.asOf];
+  const section=(heading,entries,bold)=>{
+    if(!entries.length)return;
+    html.push('<div style="margin-top:10px"><b>'+esc(heading)+'</b></div><ol style="margin:4px 0 0;padding-left:22px">'+entries.map(e=>{ const h=openItemHtml(e,bold);
+      return '<li style="margin-bottom:4px">'+h.title+(h.meta?'<div style="'+grey+'">'+h.meta+'</div>':'')+(h.sub?'<div style="'+grey+'">'+h.sub+'</div>':'')+'</li>'; }).join('')+'</ol>');
+    text.push('',heading,...entries.map((e,i)=>(i+1)+'. '+e.title+(e.meta.length?'\n   '+e.meta.map(m=>m.text).join(' \u00b7 '):'')+(e.sub?'\n   '+(e.sub.person?e.sub.person+': ':'')+e.sub.text:'')));
+  };
+  section('Follow-ups',snap.followups,true);
+  section('Open questions',snap.questions,false);
   return {html:html.join(''), text:text.join('\n')};
 }
 // The PDF's Open items page (Settings › Export & copy, owner 2026-10-20): the same list as "Copy as
 // agenda", each entry linked to its row with the page it's on. Rows left out of the export are left
 // out here too; with nothing open there is no page.
 function buildPdfOpenItemsPage(now=Date.now()){
-  const out=noExportNodeIds(nodes);
-  const lists=openItemsLists();
-  const followups=lists.followups.filter(f=>!out.has(f.nodeId)), questions=lists.questions.filter(q=>!out.has(q.nodeId));
-  if(!followups.length&&!questions.length)return null;
+  const snap=openItemsSnapshot(now,noExportNodeIds(nodes)); if(!snap)return null;
   const page=document.createElement('section'); page.id='pv-open-items';
-  const counts=[followups.length?followups.length+' follow-up'+(followups.length>1?'s':''):'', questions.length?questions.length+' open question'+(questions.length>1?'s':''):''].filter(Boolean).join(' \u00b7 ');
-  const name=p=>'<b style="color:'+remarkAuthorColor(p).avatarBg+'">'+esc(p)+'</b>';
-  const age=t=>{ const a=openItemAge(t,now); return a?a+' open':''; };
-  let html='<div class="pv-oi-title">Open items</div><div class="pv-oi-meta">'+esc(counts)+'</div>';
-  const group=(key,heading,entries,line)=>{
+  let html='<div class="pv-oi-title">Open items</div><div class="pv-oi-meta">'+esc(snap.asOf)+'</div>';
+  const group=(key,heading,entries,bold)=>{
     if(!entries.length)return;
     html+='<div class="pv-oi-heading"><span style="color:'+openItemKindColor(key)+'">'+openItemKindIcon(key)+'</span>'+esc(heading)+'</div><ol class="pv-oi-list">'
-      +entries.map(e=>'<li><a class="pv-oi-item" href="#pv-anchor-'+e.nodeId+'"><span class="pv-oi-text">'+line(e)+'</span><span class="pv-toc-page"></span></a></li>').join('')+'</ol>';
+      +entries.map(e=>{ const h=openItemHtml(e,bold);
+        return '<li><a class="pv-oi-item" href="#pv-anchor-'+e.nodeId+'"><span class="pv-oi-text">'+h.title+'</span><span class="pv-toc-page"></span></a>'
+          +(h.meta?'<span class="pv-oi-sub">'+h.meta+'</span>':'')+(h.sub?'<span class="pv-oi-sub">'+h.sub+'</span>':'')+'</li>'; }).join('')+'</ol>';
   };
-  group('followup','Follow-ups',followups,f=>'<b>'+esc(f.row)+'</b>'+(f.fullParent?' <span class="pv-oi-grey">('+esc(f.fullParent)+')</span>':'')
-    +(f.owner?' \u00b7 '+name(f.owner):'')+(age(f.since)?' <span class="pv-oi-grey">\u00b7 '+esc(age(f.since))+'</span>':'')
-    +(f.latest?'<span class="pv-oi-sub">'+(f.latest.person?esc(f.latest.person)+': ':'')+esc(f.latest.text)+'</span>':''));
-  group('question','Open questions',questions,q=>esc(q.text)+'<span class="pv-oi-sub">'+[q.row?'on '+esc(q.row):'',q.person?'asked by '+name(q.person):'',esc(age(q.since))].filter(Boolean).join(' \u00b7 ')+'</span>');
+  group('followup','Follow-ups',snap.followups,true);
+  group('question','Open questions',snap.questions,false);
   page.innerHTML=html;
   return page;
 }

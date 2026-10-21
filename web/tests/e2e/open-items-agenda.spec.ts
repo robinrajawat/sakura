@@ -40,11 +40,24 @@ test('the copy button sits before Filter outline and copies a numbered agenda', 
   const copied = await page.evaluate(() => (window as unknown as { _copied: Record<string, string> })._copied);
   const text = copied['text/plain'];
   expect(text).toContain('Launch plan: open items');
-  expect(text).toContain('1 follow-up · 1 open question');
-  expect(text).toMatch(/Follow-ups\n1\. Export \(Scope\) · Ben · 3d open\n {3}Ana: Check the CSV/);
-  expect(text).toMatch(/Open questions\n1\. Who signs off\?\n {3}on Comms · asked by Maria/);
+  // A snapshot says when (owner, 2026-10-21): dates, not ages.
+  expect(text).toMatch(/^As of \d{1,2} \w{3} \d{4} · 1 follow-up · 1 open question$/m);
+  expect(text).toMatch(/Follow-ups\n1\. Export\n {3}Scope · Ben · since \d{1,2} \w{3}\n {3}Ana: Check the CSV/);
+  expect(text).toMatch(/Open questions\n1\. Who signs off\?\n {3}Comms · Maria · \d{1,2} \w{3}/);
+  expect(text).not.toMatch(/\dd open/);
   expect(copied['text/html']).toContain('<ol');
   expect(copied['text/html']).toContain('Ben</b>');
+});
+
+test('a follow-up whose latest line is an open question points at it instead of repeating it', async ({ page }) => {
+  const text = await page.evaluate(() => {
+    // @ts-expect-error
+    remarks.push({ id: 'q2', anchorNodeId: 2, text: 'Which columns?', type: 'question', person: 'Ana', createdAt: Date.now() });
+    // @ts-expect-error
+    return openItemsAgendaContent().text;
+  });
+  expect(text).toMatch(/1\. Export\n.*\n {3}Waiting on open question 1/);
+  expect(text).toContain('1. Which columns?');
 });
 
 test('with nothing open there is no copy button', async ({ page }) => {
