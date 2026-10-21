@@ -14,6 +14,10 @@
  * of scope. "Open" is no marker: an unanswered question shows on its own (derived, never stored).
  * A decision is no status either: `decision: true` marks the entry where something was decided.
  *
+ * Owner decision (2026-10-21): each Follow-up entry is its own open item, like a question. It stays
+ * open until it is marked done (`done`, `doneAt`) or a later Agreed / Out of scope settles the row;
+ * the row shows Follow-up while any is open.
+ *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
  * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
  *
@@ -53,6 +57,11 @@ export interface ThreadEntry {
   decision?: boolean;
   /** A question closed without an answer. */
   wontAnswer?: boolean;
+  /** Who owns a follow-up. */
+  owner?: string;
+  /** A follow-up marked done, and when (epoch ms). */
+  done?: boolean;
+  doneAt?: number;
   context?: string;
   // Older shapes, read only by the migration.
   followUp?: boolean;
@@ -131,16 +140,38 @@ export function questionToAnswer<T extends ThreadEntry>(thread: T[], before?: T)
   return open.length ? open[open.length - 1] : null;
 }
 
-/** The thread's status: the latest status chip in it, or null. */
-export function threadStatus(thread: ThreadEntry[]): ThreadStatus | null {
-  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status) return normalizeThreadStatus(thread[i].status);
+export function isFollowup(e: ThreadEntry): boolean {
+  return normalizeThreadStatus(e.status) === 'followup';
+}
+
+export type FollowupState = 'open' | 'done' | 'settled';
+
+/** A follow-up's state: done once marked done, settled by a later Agreed / Out of scope, else open. */
+export function followupState(f: ThreadEntry, thread: ThreadEntry[]): FollowupState {
+  if (f.done) return 'done';
+  const at = (thread || []).indexOf(f);
+  if ((thread || []).some((e, i) => i > at && e.status && !isFollowup(e))) return 'settled';
+  return 'open';
+}
+
+/** Open follow-ups in a thread, oldest first. */
+export function openFollowups<T extends ThreadEntry>(thread: T[]): T[] {
+  return (thread || []).filter((e) => isFollowup(e) && followupState(e, thread) === 'open');
+}
+
+/** The entry holding the thread's status: the latest open follow-up, else the latest Agreed / Out
+ * of scope entry, or null. */
+export function threadStatusEntry<T extends ThreadEntry>(thread: T[]): T | null {
+  const open = openFollowups(thread);
+  if (open.length) return open[open.length - 1];
+  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status && !isFollowup(thread[i])) return thread[i];
   return null;
 }
 
-/** The entry holding the thread's status. */
-export function threadStatusEntry<T extends ThreadEntry>(thread: T[]): T | null {
-  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status) return thread[i];
-  return null;
+/** The thread's status: Follow-up while one is open, else the latest Agreed / Out of scope, or null. */
+export function threadStatus(thread: ThreadEntry[]): ThreadStatus | null {
+  const e = threadStatusEntry(thread);
+  return e ? normalizeThreadStatus(e.status) : null;
 }
 
 /** The row marker a thread status shows as: the same value. */
@@ -321,6 +352,13 @@ export function allOpenQuestions(entries: ThreadEntry[], nodeIds?: Set<number>):
   return out;
 }
 
+/** Every open follow-up of the document's threads (rows in `nodeIds` only, when given). */
+export function allOpenFollowups(entries: ThreadEntry[], nodeIds?: Set<number>): ThreadEntry[] {
+  const out: ThreadEntry[] = [];
+  groupByNode(entries, nodeIds).forEach((list, id) => out.push(...openFollowups(threadEntries(list, id))));
+  return out;
+}
+
 /** Every answered or won't-answer question (rows in `nodeIds` only, when given). */
 export function allSettledQuestions(entries: ThreadEntry[], nodeIds?: Set<number>): ThreadEntry[] {
   const out: ThreadEntry[] = [];
@@ -338,12 +376,25 @@ export function normalizeDiscussionFilter(v: unknown): DiscussionFilter | null {
   return v === 'openQa' || v === 'openItems' ? v : null;
 }
 
-/** Ids of the nodes with an open question; for openItems also rows marked Follow-up. */
+/** Ids of the nodes with an open question; for openItems also those with an open follow-up. */
 export function nodesWithOpenItems(filter: DiscussionFilter, entries: ThreadEntry[], nodes: ProgressNode[] = []): Set<number> {
   const ids = new Set<number>();
   for (const q of allOpenQuestions(entries)) ids.add(q.anchorNodeId as number);
-  if (filter === 'openItems') for (const n of nodes || []) if (normalizeThreadStatus(n.marker) === 'followup') ids.add(n.id);
+  if (filter === 'openItems') {
+    for (const f of allOpenFollowups(entries)) ids.add(f.anchorNodeId as number);
+    for (const n of nodes || []) if (normalizeThreadStatus(n.marker) === 'followup') ids.add(n.id);
+  }
   return ids;
+}
+
+/** How many open follow-ups each row has: one per open Follow-up entry, and one for a row marked
+ * Follow-up without such an entry (marked before markers were recorded in the thread). */
+export function openFollowupCounts(nodes: ProgressNode[], entries: ThreadEntry[]): Map<number, number> {
+  const ids = new Set((nodes || []).map((n) => n.id));
+  const counts = new Map<number, number>();
+  for (const f of allOpenFollowups(entries, ids)) counts.set(f.anchorNodeId as number, (counts.get(f.anchorNodeId as number) || 0) + 1);
+  for (const n of nodes || []) if (normalizeThreadStatus(n.marker) === 'followup' && !counts.has(n.id)) counts.set(n.id, 1);
+  return counts;
 }
 
 /** "1 open question", "2 open follow-ups" — the label for a count. */
@@ -373,17 +424,17 @@ export interface DocumentProgress {
 
 /**
  * The toolbar summary's counts. Row markers (which threads drive): Follow-up needs attention,
- * Out of scope is set aside, Agreed is settled. Questions count once each, open
- * or settled, when on a row of this document; unlinked Q&A entries count too.
+ * Out of scope is set aside, Agreed is settled; open follow-ups and questions count once each,
+ * questions also when settled, when on a row of this document; unlinked Q&A entries count too.
  */
 export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[], entries: ThreadEntry[]): DocumentProgress {
   const p: DocumentProgress = { followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
   const ids = new Set<number>();
+  openFollowupCounts(nodes, entries).forEach((c) => { p.followups += c; });
   for (const n of nodes || []) {
     ids.add(n.id);
     const m = normalizeThreadStatus(n.marker);
-    if (m === 'followup') p.followups++;
-    else if (m === 'parked') p.parked++;
+    if (m === 'parked') p.parked++;
     else if (m === 'confirmed') p.settled++;
   }
   for (const q of qaItems || []) {

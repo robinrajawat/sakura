@@ -159,6 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-21: Each follow-up is its own open item.** Owner picked "Per-entry follow-ups" (questions and decisions
+already were). `discussionStatus.ts`: `followupState` (open / done via `done`+`doneAt` / settled by a later Agreed or
+Out of scope), `openFollowups`, `allOpenFollowups`, `openFollowupCounts`; `threadStatus` = Follow-up while any is open,
+else latest Agreed / Out of scope. Entry menu: Mark follow-up done / Reopen follow-up; done or settled follow-ups have
+a grey icon. Reply line always offers Follow-up. Clearing the marker takes back every open follow-up. Open items, agenda,
+PDF page, F8, toolbar count and the fold "+N" list each one; `followupTodoRefs` ties To-Dos to their entry (remarkId).
+Tests: `followup-per-entry.spec.ts`, unit `discussionStatus.test.ts`. Screenshot `inline-objects/followup-per-entry.png`.
+
 **2026-10-21: A follow-up quotes the entry that set it.** Owner: Open items and the PDF quoted Marlene's later reply
 instead of Kristoffer's follow-up. `openItemsLists()` `latestOf` now takes `threadStatusEntry` (nearest text at or
 before it, else after), not the thread's last line; `lastId` keeps the last line so the snapshot adds
@@ -171,28 +179,12 @@ mockup `inline-objects/pdf-open-items-tidy-mockup.png`. PDF page and agenda copy
 row · asker · date, `openItemDate`, honours ISO format), then latest line or "Waiting on open question N" when that line
 is a listed question; names plain bold. The in-app menu keeps live ages. Tests: `open-items-agenda.spec.ts`.
 
-**2026-10-20: Copy open items as an agenda.** Owner saw mockup `inline-objects/agenda-copy-mockup.png` and
-asked for a copy button before "Filter outline" instead of a menu-foot item: `.oi-copy` in `.oi-head-actions`
-(only when something is open) calls `copyOpenItemsAgenda()`; `openItemsAgendaContent()` writes title, date + counts,
-numbered Follow-ups (row (parent) · owner · age, latest line) and Open questions (on row · asked by · age), rich +
-plain. `openItemsLists()` now feeds both the menu and the copy. Test: `open-items-agenda.spec.ts`.
-Same PR: owner found threads/Q&A on "Leave out of export" rows leaking into the PDF's end lists ("Comments without a
-row", "Q&A"); `noExportNodeIds()` now filters both. Test added to `node-no-export.spec.ts`.
-Same PR: To-Dos menus shrunk with flyouts (owner: "version should be kept as sub menu", "todo menu also looks too big").
-Header ⋯ = Version history › (`#todos-history-trigger` opens `#todos-history-menu`, position:fixed because the panel
-clips, placed left of the menu), Export as PDF, Select. Task menu (`todoContextItems`): Repeat › with current value as
-meta, More › (Rewrite, Duplicate, Copy, Move to top/bottom). `wireTodoMenuKeyNav` steps only visible items in the
-focused list. Tests: `todos-history-inline.spec.ts`.
-Same PR: PDF Open items page (owner approved `inline-objects/pdf-open-items-mockup.png`). Pref `openItemsPageEnabled`
-(default off, `#open-items-page-toggle` under Cover page). `exportPreviewAsPdf` inserts `buildPdfOpenItemsPage()`
-(`#pv-open-items`) after the Contents page, or under the title/inline Contents; removed in cleanup. Every printed row
-now gets `pv-anchor-<id>`, and `fillPdfTocPageNumbers` also numbers `.pv-oi-item`. Test: `pdf-open-items-page.spec.ts`.
-
 ### Where things stand (the model to keep in mind)
 
 - A row has one **thread** of **entries** (Comment or Question, one author + time each; answers
   link to a question via `answerTo`/`verdict`). Three markers, each the thread's status: Agreed
-  (`confirmed`), Follow-up (`followup`, may name an owner), Out of scope (`parked`). **Decision** is
+  (`confirmed`), Follow-up (`followup`, may name an owner; each Follow-up entry is open until done),
+  Out of scope (`parked`). **Decision** is
   a chip on an entry, not a status. Logic lives in `src/utils/discussionStatus.ts`; README.md
   "Thread" describes the behaviour.
 - The toolbar **Open items** summary lists only what's open (follow-ups, open questions);
