@@ -4,6 +4,7 @@ import {
   normalizeDiscussionFilter, nodesWithOpenItems, openCountLabel,
   documentProgress, attentionParts, progressSummaryText,
   threadEntries, questionState, openQuestions, questionToAnswer, threadStatus, threadStatusEntry,
+  followupState, openFollowups, allOpenFollowups, openFollowupCounts,
   markerForThreadStatus, threadStatusForMarker, isThreadMarker, syncedMarker, linkMarkersToThreads,
   migrateDiscussionToThread, needsThreadMigration, migrateQaToRemarks, type ThreadEntry
 } from '../../src/utils/discussionStatus';
@@ -74,6 +75,35 @@ describe('one thread', () => {
     // Older Resolved / Decision read as Confirmed.
     expect(threadStatus([E({ status: 'decision' })])).toBe('confirmed');
     expect(threadStatusEntry(t)).toBe(t[2]);
+  });
+  it('each follow-up is open until done or settled by a later Agreed / Out of scope (owner, 2026-10-21)', () => {
+    const t = [E({ id: 'a', status: 'confirmed' }), E({ id: 'f1', status: 'followup' }), E({ id: 'c' }), E({ id: 'f2', status: 'followup' })];
+    expect(openFollowups(t).map((e) => e.id)).toEqual(['f1', 'f2']);
+    expect(threadStatus(t)).toBe('followup');
+    expect(threadStatusEntry(t)?.id).toBe('f2');
+    // A later Follow-up doesn't close an earlier one; done closes just that one.
+    t[3].done = true;
+    expect(followupState(t[3], t)).toBe('done');
+    expect(openFollowups(t).map((e) => e.id)).toEqual(['f1']);
+    expect(threadStatusEntry(t)?.id).toBe('f1');
+    // With every follow-up done, the earlier Agreed is the status again.
+    t[1].done = true;
+    expect(threadStatus(t)).toBe('confirmed');
+    expect(threadStatusEntry(t)?.id).toBe('a');
+    // Agreed after them settles every open one.
+    const u = [E({ id: 'f1', status: 'followup' }), E({ id: 'f2', status: 'followup' }), E({ id: 'ok', status: 'confirmed' })];
+    expect(followupState(u[0], u)).toBe('settled');
+    expect(openFollowups(u)).toEqual([]);
+    expect(threadStatus(u)).toBe('confirmed');
+    // Only done follow-ups: no status.
+    expect(threadStatus([E({ status: 'followup', done: true })])).toBeNull();
+  });
+  it('counts open follow-ups per row; a Follow-up row without an entry counts once', () => {
+    const entries = [E({ id: 'x', anchorNodeId: 1, createdAt: 1, status: 'followup' }), E({ id: 'y', anchorNodeId: 1, createdAt: 2, status: 'followup' }),
+      E({ id: 'z', anchorNodeId: 2, createdAt: 1, status: 'followup', done: true })];
+    expect(allOpenFollowups(entries).map((e) => e.id)).toEqual(['x', 'y']);
+    expect([...openFollowupCounts([{ id: 1, marker: 'followup' }, { id: 2 }, { id: 3, marker: 'followup' }], entries)]).toEqual([[1, 2], [3, 1]]);
+    expect(documentProgress([{ id: 1, marker: 'followup' }, { id: 2 }], [], entries).followups).toBe(2);
   });
 });
 
