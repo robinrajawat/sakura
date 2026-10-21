@@ -159,6 +159,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-21: To-Dos grouped by when.** Owner: "still not fully satisfied with the overall design of todo"; picked
+"Group by when" and approved mockup `inline-objects/todos-by-when-v2.png` ("give it a shot"). `openSectionsHtml`:
+Now, then Overdue / Today / This week (to Sunday; weekend = coming week) / Later / No date via `todoWhenGroup`, doing
+first in each. Status = the check ring (green doing, dashed purple waiting, `.is-waiting`); `todoRowHtml(t,draggable,group)`
+puts one grey line under the title (`.todo-meta-row` full width, `.rm` items joined by "·" in markup order: status,
+due, repeat, subtasks; source row joins it). Due text depends on group ("Due yesterday" red only in Now). Unfolded
+count is a ⌃; empty subtask foot hidden; hairlines between groups; ⋯ absolute top-right. hub.html unchanged.
+Tests: `todos-grouped.spec.ts`. Screenshot `inline-objects/todos-by-when-built.png`.
+
 **2026-10-21: Each follow-up is its own open item.** Owner picked "Per-entry follow-ups" (questions and decisions
 already were). `discussionStatus.ts`: `followupState` (open / done via `done`+`doneAt` / settled by a later Agreed or
 Out of scope), `openFollowups`, `allOpenFollowups`, `openFollowupCounts`; `threadStatus` = Follow-up while any is open,
@@ -172,12 +181,6 @@ instead of Kristoffer's follow-up. `openItemsLists()` `latestOf` now takes `thre
 before it, else after), not the thread's last line; `lastId` keeps the last line so the snapshot adds
 "· waiting on open question N" when a later question is open ("Waiting on open question N" alone when the follow-up was
 set on that question). Tests: `open-items-agenda.spec.ts`. Screenshot `inline-objects/open-items-followup-line.png`.
-
-**2026-10-21: Open items snapshot shows dates.** Owner: "Does how many old days make sense, perhaps a timestamp?" Approved
-mockup `inline-objects/pdf-open-items-tidy-mockup.png`. PDF page and agenda copy share `openItemsSnapshot()`:
-"As of <date>" header, line 1 = row/question (+ page in PDF), grey line 2 = section · owner · "since 13 Oct" (question:
-row · asker · date, `openItemDate`, honours ISO format), then latest line or "Waiting on open question N" when that line
-is a listed question; names plain bold. The in-app menu keeps live ages. Tests: `open-items-agenda.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

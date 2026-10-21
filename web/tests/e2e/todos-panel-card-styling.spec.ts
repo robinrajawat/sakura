@@ -155,12 +155,15 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     expect(m.offset).toBeLessThanOrEqual(2);
   });
 
-  // The subtask count is plain text ("0/1"), with no progress bar beside it.
+  // The subtask count is plain text ("0 of 1"), with no progress bar beside it.
   test('the subtask count has no progress bar', async ({ page }) => {
     const row = await openTodosPanelWithTask(page, 'Subtask count check');
     const id = await row.getAttribute('data-id');
     await addSubtask(page, id!, 'First subtask');
-    await expect(page.locator(`.todo-subtasks-toggle[data-id="${id}"]`)).toContainText('0/1');
+    // Adding a subtask unfolds the task: then the toggle is only a fold chevron; folded, it reads "0 of 1".
+    const toggle = page.locator(`.todo-subtasks-toggle[data-id="${id}"]`);
+    if (await toggle.evaluate((el) => el.classList.contains('open'))) await toggle.click();
+    await expect(toggle).toContainText('0 of 1');
     await expect(page.locator('.todo-subtasks-progress-track')).toBeHidden();
   });
 });
