@@ -31,24 +31,34 @@ const openMenu = (page: import('@playwright/test').Page, id: string) =>
 const idsIn = (page: import('@playwright/test').Page, sel: string) =>
   page.locator(`${sel} .todo-row`).evaluateAll((rows) => rows.map((r) => r.getAttribute('data-id')));
 
-test('open tasks are grouped: Now (the focus task), then Doing, Up next and Waiting', async ({ page }) => {
+test('open tasks are grouped by when: Now (the focus task), Overdue, Today, This week, Later, No date; doing first (owner, 2026-10-21)', async ({ page }) => {
   await openWith(page, [
-    { id: 'a', text: 'In progress, later', status: 'progress', dueDate: iso(5) },
-    { id: 'b', text: 'In progress, overdue', status: 'progress', dueDate: iso(-2), priority: 'high' },
-    { id: 'c', text: 'Not started, focused', focus: true },
-    { id: 'd', text: 'Waiting on someone', status: 'waiting' },
-    { id: 'e', text: 'Blocked', status: 'blocked' },
-    { id: 'f', text: 'In review', status: 'review' },
+    { id: 'n1', text: 'No date, not started' },
+    { id: 'n2', text: 'No date, doing', status: 'progress' },
+    { id: 'o', text: 'Overdue', dueDate: iso(-2), priority: 'high' },
+    { id: 't', text: 'Today', dueDate: iso(0) },
+    { id: 'l', text: 'Later', dueDate: iso(30) },
+    { id: 'c', text: 'Focused, overdue', focus: true, dueDate: iso(-1) },
+    { id: 'w', text: 'Waiting on someone', status: 'waiting', dueDate: iso(30) },
   ]);
-  // Now = the task you chose, whatever its status, shown once (not repeated in its group).
+  // Now = the task you chose, whatever its date, shown once (not repeated in its group).
   expect(await idsIn(page, '.todos-now')).toEqual(['c']);
-  expect(await idsIn(page, '.todos-group-doing')).toEqual(['a', 'b']);
-  await expect(page.locator('.todos-group-next')).toHaveCount(0);
-  expect(await idsIn(page, '.todos-group-hold')).toEqual(['d', 'e', 'f']);
-  await expect(page.locator('.todos-now .todos-group-label')).toHaveText('Now');
+  expect(await idsIn(page, '.todos-group-overdue')).toEqual(['o']);
+  expect(await idsIn(page, '.todos-group-today')).toEqual(['t']);
+  expect(await idsIn(page, '.todos-group-later')).toEqual(['l', 'w']);
+  expect(await idsIn(page, '.todos-group-none')).toEqual(['n2', 'n1']);
+  const labels = await page.locator('#todos-body .todos-group-label').allTextContents();
+  expect(labels.map((l) => l.replace(/\d+$/, ''))).toEqual(['Now', 'Overdue', 'Today', 'Later', 'No date']);
+  // Overdue is the one red heading; Now is grey like the rest.
+  const color = (sel: string) => page.locator(sel).evaluate((el) => getComputedStyle(el).color);
+  expect(await color('.todos-group-overdue .todos-group-label')).not.toBe(await color('.todos-group-none .todos-group-label'));
+  expect(await color('.todos-now .todos-group-label')).toBe(await color('.todos-group-none .todos-group-label'));
   // The heading marks Now; the row itself has no tint, so it isn't mistaken for the selected row.
   expect(await page.locator('.todos-now .todo-row').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
-  await expect(page.locator('.todos-group-hold .todos-group-label')).toContainText('Waiting');
+  // The ring says the status: green while doing, dashed while waiting.
+  const ring = (id: string) => page.locator(`.todo-row[data-id="${id}"] .todo-check`).evaluate((el) => getComputedStyle(el).borderTopStyle + ' ' + getComputedStyle(el).borderTopColor);
+  expect(await ring('w')).toMatch(/^dashed/);
+  expect(await ring('n2')).not.toBe(await ring('n1'));
 });
 
 test('nothing lands in Now on its own; right-click › Focus on this moves a task there, one at a time', async ({ page }) => {
@@ -74,18 +84,18 @@ test('no task in focus means no Now section, and empty groups are not shown', as
   await openWith(page, [{ id: 'x', text: 'Plain' }]);
   await expect(page.locator('.todo-row[data-id="x"]')).toBeVisible();
   await expect(page.locator('.todos-now')).toHaveCount(0);
-  await expect(page.locator('.todos-group-doing')).toHaveCount(0);
-  await expect(page.locator('.todos-group-hold')).toHaveCount(0);
+  await expect(page.locator('.todos-group-overdue, .todos-group-today, .todos-group-week, .todos-group-later')).toHaveCount(0);
+  await expect(page.locator('.todos-group-none .todos-group-label')).toContainText('No date');
 });
 
-test('under Waiting only a reason shows, as a chip; the task menu picks the reason', async ({ page }) => {
+test('a waiting task says so (with its reason) on its grey line; the task menu picks the reason', async ({ page }) => {
   await openWith(page, [
     { id: 'q', text: 'Doing', status: 'progress' },
     { id: 'w', text: 'Waiting', status: 'waiting' },
     { id: 'r', text: 'Review', status: 'review' },
   ]);
   await expect(page.locator('.todo-status[data-id="q"]')).toBeHidden();
-  await expect(page.locator('.todo-status[data-id="w"]')).toBeHidden();
+  await expect(page.locator('.todo-status[data-id="w"]')).toHaveText('Waiting');
   await expect(page.locator('.todo-status[data-id="r"]')).toBeVisible();
   await expect(page.locator('.todo-status[data-id="r"]')).toContainText('Needs review');
   await openMenu(page, 'w');
@@ -93,7 +103,8 @@ test('under Waiting only a reason shows, as a chip; the task menu picks the reas
   await menuChoices(page, 'Waiting reason').filter({ hasText: 'Blocked' }).click();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]').find((t: { id: string }) => t.id === 'w'));
   expect(saved.status).toBe('blocked');
-  expect(await idsIn(page, '.todos-group-hold')).toEqual(['w', 'r']);
+  await expect(page.locator('.todo-row[data-id="w"]')).toHaveClass(/is-waiting/);
+  await expect(page.locator('.todo-status[data-id="w"]')).toHaveText('Blocked');
   // Blocked is still Waiting: the Status row keeps Waiting marked.
   await openMenu(page, 'w');
   await expect(menuChoices(page, 'Status').filter({ hasText: 'Waiting' })).toHaveAttribute('aria-pressed', 'true');
@@ -122,19 +133,28 @@ test('priority: a dot after the title (High filled, Medium hollow), Low none; cl
   await expect(page.locator('.todo-row[data-id="m"]')).not.toHaveClass(/expanded/); // no edit view
 });
 
-test('at rest a task is one line: title left, due date on the right saying Overdue', async ({ page }) => {
-  await openWith(page, [{ id: 'd', text: 'Task with a due date', dueDate: iso(-3), repeat: 'weekly' }]);
+test('the date and repeat sit on one grey line under the title; under Overdue the date itself stays grey', async ({ page }) => {
+  await openWith(page, [{ id: 'd', text: 'Task with a due date', dueDate: iso(-3), repeat: 'weekly' }, { id: 'p', text: 'Plain' }]);
   const due = page.locator('.todo-due[data-id="d"]');
   const text = page.locator('.todo-text[data-id="d"]');
-  const row = page.locator('.todo-row[data-id="d"]');
-  await expect(due).toHaveClass(/overdue/);
-  await expect(due).toContainText(/^Overdue · /);
-  const [db, tb, rb] = await Promise.all([due.boundingBox(), text.boundingBox(), row.boundingBox()]);
-  expect(Math.abs((db!.y + db!.height / 2) - (tb!.y + tb!.height / 2))).toBeLessThan(6); // same line
-  expect(rb!.x + rb!.width - (db!.x + db!.width)).toBeLessThan(44); // right edge, before the hover ⋯
-  // Repeat shows once, as quiet text, not again on the date.
+  await expect(due).not.toHaveClass(/overdue/);
+  await expect(due).not.toContainText('Overdue');
+  const [db, tb] = await Promise.all([due.boundingBox(), text.boundingBox()]);
+  expect(db!.y).toBeGreaterThan(tb!.y + tb!.height - 2); // under the title
+  expect(Math.abs(db!.x - tb!.x)).toBeLessThan(3); // left-aligned with it
+  // Repeat shows once, as quiet text after the date ("Oct 18 · Weekly"), not again on the date.
   await expect(page.locator('.todo-due[data-id="d"] .todo-due-repeat-icon')).toBeHidden();
   await expect(page.locator('.todo-repeat[data-id="d"]')).toContainText('Weekly');
+  expect(await page.locator('.todo-repeat[data-id="d"]').evaluate((el) => getComputedStyle(el, '::before').content)).toBe('"·"');
+  // A task with nothing to say is one line.
+  const plain = await page.locator('.todo-row[data-id="p"]').boundingBox();
+  expect(plain!.height).toBeLessThan(34);
+});
+
+test('in Now the date says "Due …" and is red when late', async ({ page }) => {
+  await openWith(page, [{ id: 'n', text: 'Focused', focus: true, dueDate: iso(-1) }]);
+  await expect(page.locator('.todo-due[data-id="n"]')).toHaveText('Due yesterday');
+  await expect(page.locator('.todo-due[data-id="n"]')).toHaveClass(/overdue/);
 });
 
 test('long titles stop at two lines at rest; subtasks fold behind their count until the task is opened', async ({ page }) => {
@@ -146,7 +166,7 @@ test('long titles stop at two lines at rest; subtasks fold behind their count un
   const lines = await page.locator('.todo-text[data-id="L"]').evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
   expect(lines).toBe(2);
   await expect(page.locator('.todo-subtask-row[data-parent="S"]')).toHaveCount(0);
-  await expect(page.locator('.todo-subtasks-toggle[data-id="S"]')).toContainText('1/2');
+  await expect(page.locator('.todo-subtasks-toggle[data-id="S"]')).toContainText('1 of 2');
   await page.click('.todo-subtasks-toggle[data-id="S"]');
   await expect(page.locator('.todo-row[data-id="S"]')).toHaveClass(/expanded/);
   await expect(page.locator('.todo-subtask-row[data-parent="S"]')).toHaveCount(1);
@@ -166,7 +186,8 @@ test('the task menu sets priority and status in one click and moves the task to 
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0]);
   expect(saved.priority).toBe('high');
   expect(saved.status).toBe('waiting');
-  expect(await idsIn(page, '.todos-group-hold')).toEqual(['k']);
+  expect(await idsIn(page, '.todos-group-none')).toEqual(['k']);
+  await expect(page.locator('.todo-row[data-id="k"]')).toHaveClass(/is-waiting/);
 });
 
 test('unfolding a task (its count, or the cut-off title) shows the full title and subtasks (no grey fill), with a "N done" foot; it is kept', async ({ page }) => {
