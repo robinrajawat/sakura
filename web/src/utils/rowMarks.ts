@@ -284,3 +284,47 @@ export function setRowMarksOn(node: RowMarksHolder, marks: unknown): void {
     delete node.marksText;
   }
 }
+
+/** Turns the old typed markup into formatting (owner, 2026-10-22: rows are rich text, the typed
+ * syntax goes): `**x**` becomes bold and `__x__` italic, read exactly the way the old renderer
+ * read them (left to right, the nearest closing pair, no nesting, never inside a `[[link]]`).
+ * Existing marks move with their characters. Returns the same text and marks when there is
+ * nothing to convert. */
+export function convertLegacyRowMarkup(text: string, marks?: unknown): { text: string; marks: RowMark[]; changed: boolean } {
+  const src = String(text || '');
+  const formats = toCharFormats(marks, src.length);
+  if (src.indexOf('**') < 0 && src.indexOf('__') < 0) return { text: src, marks: fromCharFormats(formats), changed: false };
+  let out = '';
+  const outFormats: CharFormat[] = [];
+  const keep = (from: number, to: number, add?: 'b' | 'i') => {
+    for (let j = from; j < to; j++) {
+      out += src[j];
+      outFormats.push(add ? { ...formats[j], [add]: true } : formats[j]);
+    }
+  };
+  let changed = false;
+  let i = 0;
+  while (i < src.length) {
+    if (src[i] === '[' && src[i + 1] === '[') {
+      const close = src.indexOf(']]', i + 2);
+      if (close > i + 2) {
+        keep(i, close + 2);
+        i = close + 2;
+        continue;
+      }
+    }
+    const pair = src.slice(i, i + 2);
+    if (pair === '**' || pair === '__') {
+      const end = src.indexOf(pair, i + 2);
+      if (end > i + 2) {
+        keep(i + 2, end, pair === '**' ? 'b' : 'i');
+        i = end + 2;
+        changed = true;
+        continue;
+      }
+    }
+    keep(i, i + 1);
+    i++;
+  }
+  return { text: out, marks: fromCharFormats(outFormats), changed };
+}

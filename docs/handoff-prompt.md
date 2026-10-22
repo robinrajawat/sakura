@@ -159,6 +159,21 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Rich text rows, PR 4 of 4: typed syntax removed, old documents converted.** Typed `**`, `__`,
+`[Section]` (and the long-gone `(note)`/`!`/backticks/`>`) are plain text: `parseStyledText`/`previewParseStyledText`
+draw only `[[links]]`, `parseStyledTextForClipboardCore` only escapes, `getNodePlainText` removes only `[[ ]]`.
+Section = Headings menu → Section (`styles.heading` 7, `SECTION_HEADING_LEVEL`; `normalizeStyles` used to drop 7);
+`nodeIsSection` = heading 7 or a top-level row with "Treat top-level rows as sections". Conversion
+(`convertLegacyRows`, `ROW_FORMAT`=2): a stored doc without `rowFormat` is converted when read (loadDocFromStorage,
+loadTabFromStorageObj, shared-doc open, version restore, undo snapshot): `**x**`/`__x__` → marks
+(`convertLegacyRowMarkup`, same reading as the old renderer, never inside `[[ ]]`), a `[Label]`-only row → Section
+"Label", a top-level `[Label] rest` shown as a section (pref on) → "Label · rest". `keepLegacyRowsVersion` records
+the old doc as version "Before rich text rows" and writes the converted rows back (not for view-only shared docs).
+Every writer of in-memory nodes stamps `rowFormat:ROW_FORMAT`. One-time toast explains it. Pasted / imported /
+AI text with Markdown `**`/`__` becomes formatting (`makeNodeFromTyped`, `setRowTextFromTyped`). PDF section
+headings print the row with its formatting (no label split). Tests: `row-rich-text.spec.ts` (conversion, plain
+`**` after, Section menu, paste), `typed-markup-plain.spec.ts` (was inline-bold-italic-selection).
+
 **2026-10-22: Rich text rows, PR 3 of 4: rich copy keeps row formatting.** Copying rows (`serializeClipboardHtml`)
 now writes a row's formatted words as `<b>/<i>/<u>/<s>` and inline colour/background styles with fixed light-mode
 colours (`clipboardRowMarkTags`, highlight mixed 45% toward white like the app), so Outlook, Word and chat keep it.
@@ -179,16 +194,6 @@ concatenate marks; duplicate, undo and copy/paste (clip payload `mk`/`mt`) keep 
 prevented so the editor keeps focus. Old `**`/`__` still render; their conversion moved to PR 4 (with removing
 the syntax) so PR 2 changes no stored data. Tests `row-rich-text.spec.ts`; the old "Ctrl+B wraps in **" tests went.
 Next: PR 3 exports (rich copy, OPML/plain use the words), PR 4 convert `**`/`__`/`[Section]` + remove the syntax.
-
-**2026-10-22: Rich text rows, PR 1 of 4: one words helper + outliner baseline tests.** Owner decided rows become
-rich text (bold, italic, underline, strike, highlight, text colour on a selection; Section = a Headings format; `code`
-and `>quote` dropped). Plan: Claude Doc "Rich text rows plan" (https://claude.ai/artifact/P9e5bpPp5Wgr8yQ11oxS2i).
-Owner: "make sure we are not putting the outliner at risk", so this PR adds `outliner-keyboard-baseline.spec.ts`
-(real keys: Enter, split, Backspace/Delete merge, Tab/Shift+Tab, Alt+arrows, multi-line paste, markup through
-split/merge) and routes every reader of a row's words (search, sort, labels, word counts, tags, @-suggest, Open
-items, decisions, copy, TOC) through `getNodePlainText`, which now returns the words as the editor shows them (hides
-`[[ ]]`, `[section]`, `**`, `__`; keeps parentheses, backticks, `!`, `>`). Backlink matching still uses
-`stripSemanticMarkers` (PR 2). Next: PR 2 storage + conversion + editor, PR 3 exports, PR 4 remove old syntax.
 
 ### Where things stand (the model to keep in mind)
 

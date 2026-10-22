@@ -108,60 +108,13 @@ export function depthTextColorCore(depth: number, fg: string, muted: string): st
   return muted;
 }
 
-/** Pure: matches index.html's own `parseStyledTextForClipboard` exactly — renders one node's
- * text as clipboard-safe inline HTML, recognizing the same markup the editor itself uses:
- * `**bold**`/`__italic__` spans are rendered as `<b>`/`<i>`, a leading `[Section]` token followed
- * by `= description` renders as a colored label plus a muted description (the "semantic guide"
- * shorthand — the only marker with real structural meaning elsewhere, e.g. the Table of
- * Contents), and any other `[section]` span found anywhere in the text is individually colored,
- * with everything else HTML-escaped plain text. The `(note)`/`!alert`/`` `code` `` markers this
- * once also styled were removed along with their editor-side chip rendering — plain punctuation
- * now, so they're left as ordinary escaped text like anything else. */
+/** Renders one run of a row's text for the clipboard: HTML-escaped words. Typed markup
+ * (`**bold**`, `__italic__`, `[Section]`) no longer formats anything (owner, 2026-10-22: rows are
+ * rich text); formatting comes from the row's marks (`clipboardRowMarkTags`). `colors` is kept
+ * so every renderer of a run has the same shape. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function parseStyledTextForClipboardCore(text: string, colors: ClipboardColors): string {
-  const src = String(text || '');
-  const softSection = softenCore(colors.semSection, colors.muted);
-  const descTone = softenCore(colors.muted, colors.fg);
-  const semanticGuide = src.match(/^(\[[^\]]+\])\s*=\s*(.+)$/);
-  if (semanticGuide) {
-    const token = semanticGuide[1];
-    const desc = semanticGuide[2];
-    return (
-      `<span style="color:${softSection};">${escapeHtml(token.slice(1, -1))}</span>` +
-      `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`
-    );
-  }
-  let out = '';
-  let i = 0;
-  while (i < src.length) {
-    const ch = src[i];
-    if (ch === '*' && src[i + 1] === '*') {
-      const end = src.indexOf('**', i + 2);
-      if (end > i + 2) {
-        out += `<b>${escapeHtml(src.slice(i + 2, end))}</b>`;
-        i = end + 2;
-        continue;
-      }
-    }
-    if (ch === '_' && src[i + 1] === '_') {
-      const end = src.indexOf('__', i + 2);
-      if (end > i + 2) {
-        out += `<i>${escapeHtml(src.slice(i + 2, end))}</i>`;
-        i = end + 2;
-        continue;
-      }
-    }
-    if (ch === '[') {
-      const end = src.indexOf(']', i + 1);
-      if (end > i + 1) {
-        out += `<span style="color:${softSection};">${escapeHtml(src.slice(i + 1, end))}</span>`;
-        i = end + 1;
-        continue;
-      }
-    }
-    out += escapeHtml(ch);
-    i++;
-  }
-  return out;
+  return escapeHtml(String(text || ''));
 }
 
 /** Formatting on part of a row (node.marks), as inline styles another app keeps when pasted:

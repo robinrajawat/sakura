@@ -243,3 +243,76 @@ test('rich copy of rows keeps the formatting for other apps (fixed colours, no a
   expect(html).toContain('Call <b>vendor</b> <span style="color:#27824f;">today</span>');
   expect(html).not.toContain('var(--');
 });
+
+// PR 4: the typed syntax goes. Documents saved before (no rowFormat) are converted once.
+async function openSavedDoc(page: Page, docId: string, doc: Record<string, unknown>) {
+  await page.addInitScript(({ docId, doc }) => {
+    if (sessionStorage.getItem('seeded-' + docId)) return;
+    sessionStorage.setItem('seeded-' + docId, '1');
+    localStorage.setItem('sakura_doc_v1_' + docId, JSON.stringify(doc));
+    localStorage.setItem('sakura_docs_index_v1', JSON.stringify([{ id: docId, title: 'Old', updatedAt: Date.now() }]));
+    localStorage.setItem('sakura_current_doc_v1', docId);
+    localStorage.setItem('sakura_open_tabs_v1', JSON.stringify({ tabs: [docId], pinned: [], active: docId }));
+  }, { docId, doc });
+  await page.goto('file://' + indexPath);
+  await page.waitForFunction('typeof render === "function" && typeof nodes !== "undefined" && nodes.length > 0');
+  await page.evaluate(() => { document.getElementById('sakura-landing-overlay')?.remove(); document.getElementById('welcome-overlay')?.remove(); });
+}
+const row = (id: number, depth: number, text: string) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} });
+
+test('an old document converts once: **bold**/__italic__ to formatting, a [Label] row to the Section format, old text kept in history', async ({ page }) => {
+  await openSavedDoc(page, 'legacydoc', {
+    nodes: [row(1, 0, '[Release 2.4] Plan'), row(2, 1, 'Ship **today** or __never__'), row(3, 1, '[Intro]'), row(4, 1, 'plain [x] text')],
+    nextId: 5, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Old', author: ''
+  });
+  await expect.poll(() => rows(page)).toEqual([
+    { text: 'Release 2.4 · Plan', marks: [] },
+    { text: 'Ship today or never', marks: [{ s: 5, e: 10, k: 'b' }, { s: 14, e: 19, k: 'i' }] },
+    { text: 'Intro', marks: [] },
+    { text: 'plain [x] text', marks: [] }
+  ]);
+  expect(await page.evaluate(() => (window as any).eval('nodes[2].styles.heading'))).toBe(7);
+  await expect(page.locator('.node-row[data-id="3"]')).toHaveClass(/is-section/);
+  await expect.poll(() => page.evaluate(() => (window as any).eval(`(async () => (await loadDocRevisions('legacydoc')).map(r => r.reason + ':' + r.nodes[1].text))()`))).toContain('Before rich text rows:Ship **today** or __never__');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_doc_v1_legacydoc') || '{}'));
+  expect(stored.rowFormat).toBe(2);
+  expect(stored.nodes[1].text).toBe('Ship today or never');
+});
+
+test('in a converted document, typed ** and [ ] stay plain text', async ({ page }) => {
+  await openSavedDoc(page, 'newdoc', {
+    rowFormat: 2,
+    nodes: [row(1, 1, '2 **x** 3'), row(2, 1, '[Not a section]')],
+    nextId: 3, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'New', author: ''
+  });
+  expect(await rows(page)).toEqual([{ text: '2 **x** 3', marks: [] }, { text: '[Not a section]', marks: [] }]);
+  await expect(page.locator('.node-row[data-id="1"] .node-label')).toHaveText('2 **x** 3');
+  await expect(page.locator('.node-row[data-id="2"]')).not.toHaveClass(/is-section/);
+  // typing them while editing keeps them too
+  await page.locator('.node-row[data-id="1"] .node-label').click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' __y__');
+  await page.keyboard.press('Escape');
+  expect((await rows(page))[0]).toEqual({ text: '2 **x** 3 __y__', marks: [] });
+});
+
+test('Headings menu → Section makes a row a section', async ({ page }) => {
+  await seed(page, [{ depth: 1, text: 'Scope' }]);
+  const id = await rowId(page, 'Scope');
+  await page.locator(`.node-row[data-id="${id}"] .node-label`).click();
+  await page.keyboard.press('Escape');
+  await page.locator('#heading-toggle-btn').click();
+  await page.locator('#heading-palette .heading-option[data-level="7"]').click();
+  await expect(page.locator(`.node-row[data-id="${id}"]`)).toHaveClass(/is-section/);
+  const saved = await page.evaluate(() => (window as any).eval('JSON.parse(JSON.stringify(nodes)).map(normalizeNode)[0].styles.heading'));
+  expect(saved).toBe(7);
+});
+
+test('pasted Markdown-style **bold** / __italic__ lines become formatting', async ({ page }) => {
+  await seed(page, [{ text: 'Top' }]);
+  await page.evaluate(() => (window as any).eval(`selectedId = nodes[0].id; pasteParsedNodes(parseTextToTreeNodes('**Goal** one\\n__note__ two'))`));
+  expect((await rows(page)).slice(1)).toEqual([
+    { text: 'Goal one', marks: [{ s: 0, e: 4, k: 'b' }] },
+    { text: 'note two', marks: [{ s: 0, e: 4, k: 'i' }] }
+  ]);
+});

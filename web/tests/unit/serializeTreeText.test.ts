@@ -47,9 +47,9 @@ describe('serializeTreeTextCore', () => {
     expect(lines[2]).toContain('└──');
   });
 
-  it('strips semantic markers from node text via getNodePlainText', () => {
-    const result = serializeTreeTextCore([node(0, '[Section] title')], false, false, 4, false);
-    expect(result).toBe('Section title');
+  it('writes the row\'s words via getNodePlainText ([[link]] brackets removed, typed [ ] kept)', () => {
+    const result = serializeTreeTextCore([node(0, '[Section] see [[Other]]')], false, false, 4, false);
+    expect(result).toBe('[Section] see Other');
   });
 
   it('prepends dotted outline numbers when outlineNumbering is true', () => {

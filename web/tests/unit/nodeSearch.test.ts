@@ -97,13 +97,13 @@ describe('computeSearchMatchIds', () => {
 });
 
 describe('computeSearchMatchIds on formatted rows', () => {
-  // Search reads a row's words, not its markup (2026-10-22, rows moving to rich text).
-  it('finds words inside bold, italic and links, and never matches the markup itself', () => {
-    const nodes = tree(['Plain row', 'A **bold** word', 'An __italic__ one', 'See [[Route Determination]]']);
+  // Search reads a row's words (2026-10-22, rows are rich text: formatting lives in node.marks,
+  // never in the words; a link shows its name).
+  it('finds words across a link and matches typed ** as the plain characters they are', () => {
+    const nodes = tree(['Plain row', 'A bold word', '2 ** 3', 'See [[Route Determination]]']);
     expect(computeSearchMatchIds(nodes, 'bold word', false, false)).toEqual([2]);
-    expect(computeSearchMatchIds(nodes, 'italic one', false, true)).toEqual([3]);
     expect(computeSearchMatchIds(nodes, 'See Route', true, false)).toEqual([4]);
-    expect(computeSearchMatchIds(nodes, '**', false, false)).toEqual([]);
+    expect(computeSearchMatchIds(nodes, '**', false, false)).toEqual([3]);
   });
 });
 

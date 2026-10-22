@@ -77,20 +77,19 @@ const storedTable = (page: import('@playwright/test').Page, nodeIdx: number) =>
   // @ts-expect-error -- bare globals
   page.evaluate((i) => nodes[i].tables[0] as string, nodeIdx);
 
-test('PDF section headings and Contents keep a leading [label] intact: "Release 2.4 · Plan"', async ({ page }) => {
+test('PDF section headings and Contents keep an old leading [label] intact: "Release 2.4 · Plan" (converted once to text)', async ({ page }) => {
   const errors = await load(page);
   const r = await page.evaluate(() => {
     // @ts-expect-error -- bare global
     renderPreviewBody();
     return {
       sections: [...document.querySelectorAll('#preview-body .pv-section')].map((e) => e.textContent),
-      labels: [...document.querySelectorAll('#preview-body .pv-section-label')].map((e) => e.textContent),
       toc: [...document.querySelectorAll('#preview-toc .pv-toc-label')].map((e) => e.textContent)
     };
   });
   expect(r.sections).toEqual(['Release 2.4 · Plan', 'Risks', 'Plan [draft]']);
-  expect(r.labels).toEqual(['Release 2.4', 'Risks']);
-  expect(r.toc).toEqual(['Release 2.4 · Plan', 'Risks', 'Plan draft']);
+  // typed brackets are plain text since rows became rich text, so "[draft]" stays as written
+  expect(r.toc).toEqual(['Release 2.4 · Plan', 'Risks', 'Plan [draft]']);
   expect(errors).toEqual([]);
 });
 
