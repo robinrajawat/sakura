@@ -47,9 +47,11 @@ test('open tasks show in sections: Pinned, Today (incl. overdue), Upcoming, Anyt
   expect(await idsIn(page, '.todos-group-anytime')).toEqual(['a']);
   expect(await idsIn(page, '.todos-group-waiting')).toEqual(['w']);
   const labels = await page.locator('#todos-body .todos-group-label').allTextContents();
-  // Plain labels: no counts, no icons (the header says how many are open).
+  // No counts (the header says how many are open); every section, Done included, has one grey icon.
   expect(labels).toEqual(['Pinned', 'Today', 'Upcoming', 'Anytime', 'Waiting']);
-  await expect(page.locator('#todos-body .todos-group-label svg')).toHaveCount(0);
+  for (const label of await page.locator('#todos-body .todos-group-label, #todos-body .todos-section-label').all()) {
+    await expect(label.locator('.todos-section-icon')).toHaveCount(1);
+  }
   await expect(page.locator('.todos-header-sep')).toHaveCount(0);
   // Done is one folded line; nothing done means no Done line at all.
   await expect(page.locator('#todos-completed-collapse-btn')).toHaveText('Done1');
