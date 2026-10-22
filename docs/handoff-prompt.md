@@ -159,6 +159,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: PDF section names keep their formatting.** Found in an editor/export audit; owner: "this is bad if it's
+true". A section heading's name was added as plain text, so `[[links]]`, `**bold**` and `__italic__` printed as typed
+(in capitals). It now goes through `previewParseStyledText` like any row; the Contents page uses `pvTocText` (markup
+stripped). Italic in Sakura is `__x__` (the Italic button and Ctrl+I write it); a typed `*x*` is not markup, by design.
+Test `pdf-section-markup.spec.ts`.
+Same PR: downloaded diagrams had no margin. Owner: use draw.io's own margin, don't pad the file ourselves. Every
+xmlsvg export now sends `border: DIAGRAM_EXPORT_BORDER` (12) and sets `d.previewBorder`; the thumbnail drops its 12px
+padding (`.has-export-border`) and the preview's white margin stays 24px in total (`--dv-pad`). Pictures saved
+before have no border: Download re-exports them once first (`regenerateDiagramThumbnail`, needs draw.io online).
+`previewBorder` is carried on copy/paste, duplicate and version restore.
+
 **2026-10-22: Diagram download and right-click menu.** Owner: "would it make sense to have a diagram download option in
 the preview?" and "also delete button? quick right click menu in the diagram thumbnails?". The preview bar has
 **Download** (PNG image at 2x on white, or SVG = draw.io's xmlsvg, which reopens editable in draw.io), named after the
@@ -170,11 +181,6 @@ SVG data URL is decoded by hand. Tests in `node-diagram-inline-preview.spec.ts`.
 labels plain). Every section label, Done included, has one grey 12px icon (`TODO_SECTION_ICON`: pin, sun, calendar,
 tray (Anytime = no date; layers and ∞ were rejected), hourglass, circle-check); no colours per section (only overdue dates are red). Done's chevron moved after its
 count so the icons line up. Desktop only (hub.html unchanged). Screenshot `inline-objects/todos-section-icons.png`.
-
-**2026-10-22: Row icons never wrap alone.** Owner saw a row's note icon sit alone on the next line on a laptop
-screen (text ending "…Flexible Night Delivery." filled its line; the stored text ended in a space, a break point).
-`moveRowIconsInline` now puts the icon box inside `.node-row-tail` (`white-space:nowrap`) with the label's last word
-(`rowIconsTail`; not inside links). Tests `row-icons-inline.spec.ts`. Screenshot `inline-objects/row-icons-last-word.png`.
 
 ### Where things stand (the model to keep in mind)
 
