@@ -4049,7 +4049,7 @@ body.printing-generic #gpe-overlay{
 <li><strong>Theme &amp; accent</strong> — Settings → Appearance: Light/Dark theme and six accent colours (Terracotta, the default, plus Teal, Indigo, Violet, Moss, and Amber). <strong>Auto theme</strong> sits below it — Off (the Light/Dark switch only, changed by hand) or System (follows your OS/browser's dark mode setting live). Manually clicking Light/Dark in System mode holds as a temporary override until the system value naturally catches up and agrees with it again</li>
 <li><strong>Status bar</strong> — always shown, including in zen mode: word count and current depth on the left; on the right, saved status, the Secure Storage lock chip (only while locked), the auto-rewrite indicator (while auto-rewrite is on), and Quick Assist when it's docked there</li>
 <li><strong>App bar</strong> — always shown, including in zen mode, so Settings is always one click away. "Declutter app bar" (in the app bar's own right-click menu) hides the title field, file explorer toggle, and Documents/Templates buttons</li>
-<li><strong>Toolbar</strong> — always shown above the editor (hidden only in zen mode), one fixed set of buttons in unlabeled groups: Undo, Redo · Outdent, Indent · Heading style · Note, Checkbox, Tags · Generate outline, Rewrite node (AI) — and Collapse all + Zoom as a small pair at the right end. It wraps onto a second line on a narrow window rather than scrolling. Everything else — Insert above/below, Add child, Duplicate, Move up/down, Delete — is in a node's right-click menu (and the keyboard shortcuts below). Formatting is in the bar that appears over selected words, and for whole rows in right-click › More › Format</li>
+<li><strong>Toolbar</strong> — always shown above the editor (hidden only in zen mode), one fixed set of buttons in unlabeled groups: Undo, Redo · Outdent, Indent · Heading style · Note, Checkbox, Tags · Generate outline, Rewrite node (AI) — and Collapse all + Zoom as a small pair at the right end. It wraps onto a second line on a narrow window rather than scrolling. Everything else — Insert above/below, Add child, Duplicate, Move up/down, Delete — is in a node's right-click menu (and the keyboard shortcuts below). Formatting is in the bar that appears over selected words; a shortcut with nothing selected formats the whole row</li>
 <li>The tree always renders in a clean indented view, closer to Dynalist or Workflowy — no │├└─ connector characters. Every row gets a small dot instead of a triangle fold-arrow — a folded parent shows as a ring with a dot inside, hovering either kind reveals −/+ — plus a faint vertical guide line per indent level so nesting stays easy to trace. This isn't a setting; it's the app's only tree style</li>
 <li><strong>Text size</strong> — Settings → Appearance → Text size: a slider from 85% to 140%</li>
 <li>All of the above are saved automatically and restored next time you open the app. "Reset to default settings" (Settings → Data) reverts appearance and behaviour preferences to their defaults without touching your documents</li>
@@ -4121,7 +4121,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">
 <h4>Formatting</h4>
 <ul>
-<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Link (a web address or another row) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too; with nothing selected they format the whole row, as does right-click › More › Format. Typed symbols like ** or [ ] are plain text</li>
+<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too; with nothing selected they format every word of the row. Links to other rows are typed with @. Typed symbols like ** or [ ] are plain text</li>
 <li>Section: Headings menu → Section (a light label with its own Contents entry)</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 <li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
@@ -4888,6 +4888,7 @@ body.printing-generic #gpe-overlay{
   <button type="button" class="selection-fmt-btn" data-cmd="underline" data-tip="Underline (Ctrl/Cmd+U)"><u>U</u></button>
   <button type="button" class="selection-fmt-btn" data-cmd="strikeThrough" data-tip="Strikethrough"><s>S</s></button>
   <button type="button" class="selection-fmt-btn" id="sfmt-colors" data-cmd="colors" data-tip="Colour and highlight" aria-label="Colour and highlight"><span class="sfmt-a">A</span></button>
+  <button type="button" class="selection-fmt-btn" id="sfmt-clear" data-cmd="clear" data-tip="Clear formatting" aria-label="Clear formatting"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h12v3"/><path d="M10 4 7.5 20"/><path d="M5 20h5"/><path d="m15 14 6 6"/><path d="m21 14-6 6"/></svg></button>
   <button type="button" class="selection-fmt-btn" id="sfmt-link" data-cmd="link" data-tip="Link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   <button type="button" class="selection-fmt-btn sfmt-ai" id="sfmt-rewrite" data-cmd="rewrite" data-tip="Rewrite selection (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
   </div>
@@ -11733,21 +11734,37 @@ function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:N
 // "Label · rest", the way its PDF heading read. Saving writes rowFormat:ROW_FORMAT, so typing
 // those characters afterwards stays plain text. The first save after converting keeps the old
 // text in version history (maybeAutoSnapshotBeforeSave). Returns how many rows changed.
-const ROW_FORMAT=2;
+// rowFormat 3 (owner, 2026-10-22: one formatting system): a whole-row bold, italic, underline,
+// strike, highlight or text colour becomes the same formatting on all the row's words
+// (foldRowStylesIntoMarks); only heading stays a row style.
+const ROW_FORMAT=3;
+const ROW_STYLE_MARK_KINDS=[['bold','b'],['italic','i'],['underline','u'],['strike','s'],['highlight','hl'],['color','c']];
+function foldRowStylesIntoMarks(node){
+  const st=node.styles; if(!st)return false;
+  let changed=false; const len=(node.text||'').length; let marks=rowMarksOf(node);
+  ROW_STYLE_MARK_KINDS.forEach(([key,kind])=>{
+    if(!st[key])return;
+    if(len){ const cur=key==='highlight'||key==='color'?st[key]:true; marks=setRowMark(marks,len,0,len,kind,cur); }
+    st[key]=false; changed=true;
+  });
+  if(changed)setRowMarksOn(node,marks);
+  return changed;
+}
 // After converting a stored document: keep its old text as a version ("Before rich text rows")
 // and store the converted rows, so the conversion happens once. A shared document you can only
 // view is converted in memory each time instead (nothing of it is saved).
 function keepLegacyRowsVersion(id,d,convertedNodes){
   const meta=sharedDocMeta&&sharedDocMeta[id]; if(meta&&meta.role!=='editor')return;
-  recordDocRevision(id,d,'Before rich text rows');
+  recordDocRevision(id,d,d&&d.rowFormat===2?'Before whole-row styles became word formatting':'Before rich text rows');
   try{ const raw=localStorage.getItem(docKey(id)); if(!raw)return; const cur=JSON.parse(raw); if(cur.rowFormat===ROW_FORMAT)return;
     cur.nodes=convertedNodes||nodes; cur.rowFormat=ROW_FORMAT; localStorage.setItem(docKey(id),JSON.stringify(cur)); }catch(e){}
   setTimeout(()=>{ if(currentDocId===id){ markDirty(); scheduleAutoSave(); } },0);
 }
 function convertLegacyRows(list,savedFormat){
   if(savedFormat===ROW_FORMAT||!Array.isArray(list))return 0;
-  let changed=0;
-  list.forEach(node=>{
+  let changed=0; let folded=0;
+  if(!(savedFormat>=3))list.forEach(node=>{ if(foldRowStylesIntoMarks(node))folded++; });
+  if(!(savedFormat>=2))list.forEach(node=>{
     const before=node.text||''; const marks=rowMarksOf(node); const trimmed=before.trim();
     const sec=trimmed.startsWith('[[')?null:trimmed.match(/^\[([^\]]+)\]\s*([\s\S]*)$/);
     let text=before; let heading=null;
@@ -11758,8 +11775,9 @@ function convertLegacyRows(list,savedFormat){
     node.text=conv.text; setRowMarksOn(node,conv.marks); if(heading!==null)node.styles.heading=heading;
     changed++;
   });
-  if(changed&&!convertLegacyRows._toastShown){ convertLegacyRows._toastShown=true; setTimeout(()=>{ try{ if(localStorage.getItem('sakura_rich_rows_toast_v1'))return; localStorage.setItem('sakura_rich_rows_toast_v1','1') }catch(e){} if(typeof showToast==='function')showToast('Rows are rich text now: select words and press Ctrl/Cmd+B, I or U, or use the toolbar. Typed **, __ and [Section] were turned into formatting.',null,false,9000) },800) }
-  return changed;
+  // Folding styles looks the same on screen, so only the typed-markup conversion explains itself.
+  if(changed&&!convertLegacyRows._toastShown){ convertLegacyRows._toastShown=true; setTimeout(()=>{ try{ if(localStorage.getItem('sakura_rich_rows_toast_v1'))return; localStorage.setItem('sakura_rich_rows_toast_v1','1') }catch(e){} if(typeof showToast==='function')showToast('Rows are rich text now: select words to format them from the bar above them, or press Ctrl/Cmd+B, I or U. Typed **, __ and [Section] were turned into formatting.',null,false,9000) },800) }
+  return changed+folded;
 }
 function normalizeNodeMarks(out,src){if(!src||!Array.isArray(src.marks)||!src.marks.length)return out; out.marks=src.marks; out.marksText=typeof src.marksText==='string'?src.marksText:out.text; setRowMarksOn(out,rowMarksOf(out)); return out}
 function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables,images,marks){const _now=Date.now(); return normalizeNodeMarks({id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],images:Array.isArray(images)?cloneNodeImagesWithNewIds(images,_now,newNodeImageId):[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null},{marks})}
@@ -19653,26 +19671,6 @@ function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.s
   return {cls,html,hasQuotes:false};
 }
 function updateToolbarStates(){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const hasSelection=selectedNodes.length>0; document.querySelectorAll('.fmt-btn').forEach(btn=>{const styleName=btn.dataset.style; const active=hasSelection&&selectedNodes.every(n=>!!n.styles[styleName]); btn.classList.toggle('toggle-on',active); btn.disabled=!hasSelection; btn.style.opacity=hasSelection?'1':'.55'});
-  const hlBtn=el('hl-toggle-btn'); const hlCaret=el('hl-caret-btn');
-  if(hlBtn){
-    const colors=hasSelection?selectedNodes.map(n=>n.styles.highlight):[];
-    const allSame=colors.length&&colors.every(c=>c&&c===colors[0]);
-    const activeColor=allSame?colors[0]:null;
-    hlBtn.style.color=activeColor?HIGHLIGHT_COLORS[activeColor]:'';
-    hlBtn.style.borderColor=activeColor?HIGHLIGHT_COLORS[activeColor]:'';
-    hlBtn.style.background=activeColor?`color-mix(in srgb,${HIGHLIGHT_COLORS[activeColor]} 20%,transparent)`:'';
-  }
-  if(hlCaret){hlCaret.disabled=!hasSelection; hlCaret.style.opacity=hasSelection?'1':'.55'}
-  const fcBtn=el('fc-toggle-btn'); const fcCaret=el('fc-caret-btn');
-  if(fcBtn){
-    const fcolors=hasSelection?selectedNodes.map(n=>n.styles.color):[];
-    const fcAllSame=fcolors.length&&fcolors.every(c=>c&&c===fcolors[0]);
-    const fcActive=fcAllSame?fcolors[0]:null;
-    fcBtn.style.color=fcActive?`var(--fc-${fcActive})`:'';
-    fcBtn.style.borderColor=fcActive?`var(--fc-${fcActive})`:'';
-    fcBtn.style.background=fcActive?`color-mix(in srgb, var(--fc-${fcActive}) 20%, transparent)`:'';
-  }
-  if(fcCaret){fcCaret.disabled=!hasSelection; fcCaret.style.opacity=hasSelection?'1':'.55'}
   const headingBtn=el('heading-toggle-btn');
   if(headingBtn){
     const levels=hasSelection?selectedNodes.map(n=>n.styles.heading||0):[];
@@ -20433,15 +20431,9 @@ const CTX_ACTION_META={
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'info'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'info'},
   'no-export':{label:'Leave out of export',dynamicLabel:true,svg:'<path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-2.2 3.4"/><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/>',group:'info'},
-  'fmt-bold':{label:'Bold (Ctrl/Cmd+B)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">B</text>',group:'format'},
-  'fmt-italic':{label:'Italic (Ctrl/Cmd+I)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none" font-style="italic">I</text>',group:'format'},
-  'fmt-underline':{label:'Underline (Ctrl/Cmd+U)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">U</text><line x1="7" y1="21" x2="17" y2="21"/>',group:'format'},
-  'fmt-strike':{label:'Strikethrough',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">S</text><line x1="5" y1="12" x2="19" y2="12"/>',group:'format'},
-  'fmt-highlight':{label:'Highlight (Ctrl/Cmd+Shift+H)',svg:'<path d="M4 17.5 15 6.5a2 2 0 0 1 3 3L7 20.5"/><path d="m4 17.5-1 3.5 3.5-1"/>',group:'format'},
-  'fmt-color':{label:'Text colour (Ctrl/Cmd+Shift+F)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">A</text><line x1="5" y1="21.5" x2="19" y2="21.5" stroke="var(--fc-red)" stroke-width="2.5"/>',group:'format'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','fmt-bold','fmt-italic','fmt-underline','fmt-strike','fmt-highlight','fmt-color','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -20587,9 +20579,6 @@ function renderContextMorePanel(){
   // sit in the Row › flyout.
   iconRow('Add',['child','above','below','duplicate']);
   iconRow('Move',['up','down']);
-  // Whole-row formatting for the selected rows (owner, 2026-10-22: the toolbar's format buttons
-  // went; words inside a row are formatted from the selection popover).
-  iconRow('Format',['fmt-bold','fmt-italic','fmt-underline','fmt-strike','fmt-highlight','fmt-color']);
   // Sort children — three actions on one compact row (label + icon buttons) rather than three
   // full-height rows; the whole row is hidden when the node has no children to sort (see
   // updateContextMenuState).
@@ -21379,14 +21368,13 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   updateDirtyIndicator(); updateMarkerSummary(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
   document.querySelectorAll('.bl-link').forEach(lnk=>{const target=findNodeByText(lnk.dataset.blTarget||''); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Jump to: '+lnk.dataset.blTarget:'No node found: '+lnk.dataset.blTarget;});
 }
-function toggleNodeStyle(styleName){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const makeActive=!selectedNodes.every(n=>!!n.styles[styleName]); let value; if(styleName==='highlight')value=makeActive?lastHighlightColor:false; else if(styleName==='color')value=makeActive?lastFontColor:false; else value=makeActive; selectedNodes.forEach(n=>n.styles[styleName]=value); markDirty(); render()}
-function setHighlightColor(color){if(applyRowMarkToSelection('hl',color)){setLastHighlightColor(color); hideHighlightPalette(); updateFormatIconColors(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); setLastHighlightColor(color); selectedNodes.forEach(n=>n.styles.highlight=color); markDirty(); render(); hideHighlightPalette(); updateFormatIconColors()}
-function clearHighlight(){if(applyRowMarkToSelection('hl',false)){hideHighlightPalette(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); selectedNodes.forEach(n=>n.styles.highlight=false); markDirty(); render(); hideHighlightPalette()}
+// Whole rows (a shortcut with nothing selected): the same word formatting on every word of each
+// selected row (owner, 2026-10-22: one formatting system, no separate whole-row styles).
+// value undefined toggles: on unless every row already has it all over.
+function setWholeRowMarks(kind,value){const ids=getSelectedIds(); const list=ids.map(id=>nodes[getIndex(nodes,id)]).filter(n=>n&&(n.text||'').length); if(!list.length)return false; let v=value; if(v===undefined){const allOn=list.every(n=>rowMarkCovers(rowMarksOf(n),n.text.length,0,n.text.length,kind)); v=allOn?false:(kind==='hl'?lastHighlightColor:kind==='c'?lastFontColor:true)} pushUndo(); list.forEach(n=>{setRowMarksOn(n,setRowMark(rowMarksOf(n),n.text.length,0,n.text.length,kind,v)); n.modifiedAt=Date.now()}); markDirty(); render(); return true}
+function toggleNodeStyle(styleName){const kind=ROW_STYLE_TO_MARK[styleName]; if(kind)setWholeRowMarks(kind)}
 function applyHeadingOption(level){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const allSame=selectedNodes.every(n=>(n.styles.heading||0)===level); const newLevel=level===0?0:(allSame?0:level); selectedNodes.forEach(n=>n.styles.heading=newLevel); markDirty(); render(); hideHeadingPalette()}
 function hideHeadingPalette(){el('heading-palette')?.classList.remove('open'); el('heading-toggle-btn')?.setAttribute('aria-expanded','false')}
-function updateFormatIconColors(){const fcBar=el('fc-color-bar'); if(fcBar)fcBar.setAttribute('fill',`var(--fc-${lastFontColor})`); const hlBar=el('hl-color-bar'); if(hlBar)hlBar.setAttribute('fill',HIGHLIGHT_COLORS[lastHighlightColor]||'#eab308')}
-function setFontColor(color){if(applyRowMarkToSelection('c',color)){setLastFontColor(color); hideFontColorPalette(); updateFormatIconColors(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); setLastFontColor(color); selectedNodes.forEach(n=>n.styles.color=color); markDirty(); render(); hideFontColorPalette(); updateFormatIconColors()}
-function clearFontColor(){if(applyRowMarkToSelection('c',false)){hideFontColorPalette(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); selectedNodes.forEach(n=>n.styles.color=false); markDirty(); render(); hideFontColorPalette()}
 function hideHighlightPalette(){el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open')}
 function hideFontColorPalette(){el('fc-palette')?.classList.remove('open')}
 function insertSiblingBefore(id,begin=true){const idx=getIndex(nodes,id); if(idx<0)return; pushUndo(); markDirty(); const node=nodes[idx]; const nn=makeBlankNode(node.depth,node.parentId); nodes.splice(idx,0,nn); rebuildParentIds(); setSingleSelection(nn.id); flashNode(nn.id); if(begin)beginEdit(nn.id,false); else render()}
@@ -24801,6 +24789,22 @@ function rowEditorHtml(node){const h=rowMarksToHtml(node.text||'',rowMarksOf(nod
 // false, doing nothing, when no words are selected -- callers then style the whole row as before.
 const ROW_STYLE_TO_MARK={bold:'b',italic:'i',underline:'u',strike:'s',highlight:'hl',color:'c'};
 const ROW_MARK_TO_STYLE=Object.fromEntries(Object.entries(ROW_STYLE_TO_MARK).map(([k,v])=>[v,k]));
+// Clear formatting on the selected words of the row being edited: every format but links.
+function clearRowFormattingInSelection(){
+  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null;
+  const idx=editingId!==null?getIndex(nodes,editingId):-1;
+  if(!r||r.start===r.end||idx<0)return false;
+  const node=nodes[idx]; const read=readRowMarksFromDom(input); node.text=read.text; setRowMarksOn(node,read.marks);
+  pushUndo();
+  const folded=foldRowStylesIntoMarks(node);
+  const len=node.text.length; let m=rowMarksOf(node);
+  ['b','i','u','s','hl','c'].forEach(k=>{ m=setRowMark(m,len,r.start,r.end,k,false); });
+  setRowMarksOn(node,m); node.modifiedAt=Date.now();
+  if(folded){ const id=node.id; render(); const again=editingId===id?getEditingInput():null; if(again)setEditableSelectionRange(again,r.start,r.end); }
+  else{ input.innerHTML=rowEditorHtml(node); setEditableSelectionRange(input,r.start,r.end); }
+  markDirty(); scheduleAutoSave();
+  return true;
+}
 function applyRowMarkToSelection(kind,value){
   const input=getEditingInput(); if(!input)return false;
   const range=getEditableSelectionRange(input); if(!range||range.start===range.end)return false;
@@ -24938,7 +24942,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='above'){if(selectedId!==null)insertSiblingBefore(selectedId,true); return}
   if(action==='below'){if(selectedId!==null)insertSiblingAfter(selectedId,true); return}
   if(action==='duplicate'){duplicateSelected(); return}
-  if(action.startsWith('fmt-')){toggleNodeStyle(action.slice(4)); return}
   if(action==='focus'){if(selectedId!==null)enterFocus(selectedId); return}
   if(action==='up'){moveSelected(-1); focusPane(); return}
   if(action==='down'){moveSelected(1); focusPane(); return}
@@ -25044,20 +25047,6 @@ el('search-input').addEventListener('keydown',e=>{
 document.querySelectorAll('.fmt-btn').forEach(btn=>btn.addEventListener('click',()=>handleToolbarStyle(btn.dataset.style)));
 el('heading-toggle-btn')?.addEventListener('click',e=>{e.stopPropagation(); const pal=el('heading-palette'); if(!pal)return; const opening=!pal.classList.contains('open'); closeAllPanelsExceptGlobalSearch?.(); if(opening){pal.querySelectorAll('.heading-option').forEach(o=>o.classList.remove('heading-option-active')); const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const levels=selectedNodes.map(n=>n.styles.heading||0); const allSame=levels.length&&levels.every(l=>l===levels[0]); if(allSame)pal.querySelector(`.heading-option[data-level="${levels[0]}"]`)?.classList.add('heading-option-active'); pal.classList.add('open'); el('heading-toggle-btn')?.setAttribute('aria-expanded','true')}});
 document.querySelectorAll('.heading-option').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation(); applyHeadingOption(Number(btn.dataset.level))}));
-el('hl-caret-btn')?.addEventListener('click',e=>{e.stopPropagation(); const pal=el('hl-palette'); if(!pal)return; const opening=!pal.classList.contains('open'); closeAllPanelsExceptGlobalSearch?.(); if(opening){pal.querySelectorAll('.hl-swatch').forEach(sw=>sw.classList.remove('hl-swatch-active')); const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const colors=selectedNodes.map(n=>n.styles.highlight); const allSame=colors.length&&colors.every(c=>c&&c===colors[0]); if(allSame)el('hl-swatch-'+colors[0])?.classList.add('hl-swatch-active'); pal.classList.add('open')}});
-el('hl-swatch-yellow')?.addEventListener('click',e=>{e.stopPropagation(); setHighlightColor('yellow')});
-el('hl-swatch-green')?.addEventListener('click',e=>{e.stopPropagation(); setHighlightColor('green')});
-el('hl-swatch-blue')?.addEventListener('click',e=>{e.stopPropagation(); setHighlightColor('blue')});
-el('hl-swatch-pink')?.addEventListener('click',e=>{e.stopPropagation(); setHighlightColor('pink')});
-el('hl-swatch-none')?.addEventListener('click',e=>{e.stopPropagation(); clearHighlight()});
-el('fc-caret-btn')?.addEventListener('click',e=>{e.stopPropagation(); const pal=el('fc-palette'); if(!pal)return; const opening=!pal.classList.contains('open'); closeAllPanelsExceptGlobalSearch?.(); if(opening){pal.querySelectorAll('.hl-swatch').forEach(sw=>sw.classList.remove('hl-swatch-active')); const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const colors=selectedNodes.map(n=>n.styles.color); const allSame=colors.length&&colors.every(c=>c&&c===colors[0]); if(allSame)el('fc-swatch-'+colors[0])?.classList.add('hl-swatch-active'); pal.classList.add('open')}});
-el('fc-swatch-red')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('red')});
-el('fc-swatch-orange')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('orange')});
-el('fc-swatch-green')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('green')});
-el('fc-swatch-blue')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('blue')});
-el('fc-swatch-purple')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('purple')});
-el('fc-swatch-gray')?.addEventListener('click',e=>{e.stopPropagation(); setFontColor('gray')});
-el('fc-swatch-none')?.addEventListener('click',e=>{e.stopPropagation(); clearFontColor()});
 el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('import-menu').classList.toggle('open')});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('export-menu').classList.toggle('open');});
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
@@ -25232,11 +25221,32 @@ function pasteTableIntoNode(e,id,html){
   if(typeof showToast==='function')showToast('Table added to this row');
   return true;
 }
+// Just a web address on the clipboard (one line, http(s)/mailto/www.), ready to store, or ''.
+function pastedLinkUrl(text){
+  const t=String(text||'').trim();
+  if(!t||/\s/.test(t)||!/^(https?:\/\/|mailto:|www\.)/i.test(t))return '';
+  const url=/^www\./i.test(t)?'https://'+t:t;
+  return isRowLinkUrl(url)?url:'';
+}
+// The same in notes and thread entries: a web address pasted over selected words links them.
+// Capture phase, so it runs before those editors' own paste handling.
+document.addEventListener('paste',e=>{
+  const url=pastedLinkUrl(e.clipboardData?.getData('text/plain'));
+  const sel=window.getSelection(); if(!url||!sel||sel.isCollapsed||!sel.toString().trim())return;
+  const editorId=selectionFmtEditorFor(sel.anchorNode); const editor=editorId?el(editorId):null;
+  if(!editor||editor.classList.contains('node-input')||!editor.contains(sel.focusNode))return;
+  e.preventDefault(); e.stopPropagation();
+  if(editorId==='note-editor'&&typeof pushNoteSessionUndo==='function')pushNoteSessionUndo();
+  document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(sel.toString())}</a>`);
+  syncRemarkTextFromEditorIfApplicable(editor); syncNoteTextFromEditorIfApplicable(editor);
+},true);
 document.addEventListener('paste',e=>{
   if(nodeImageViewerIsOpen())return;
   if(editingId!==null && e.target===getEditingInput()){
     if(pasteImagesIntoNodeIfImageOnly(e,editingId))return;
     const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim();
+    // A web address pasted over selected words links them (the way Docs and Notion do).
+    if(pastedLinkUrl(trimmedText)&&applyRowMarkToSelection('a',pastedLinkUrl(trimmedText))){ e.preventDefault(); return }
     if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){
       const opmlParsed=parseOpmlToTreeNodes(text);
       if(opmlParsed.length>1){ e.preventDefault(); commitEdit(); pasteParsedNodes(opmlParsed,'Imported'); return }
@@ -26882,7 +26892,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupNodeQuickAssistSettings(); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateFormatIconColors(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setEditorReadingWidth(editorReadingWidth,false); setEditorReadingWidthEnabled(editorReadingWidthEnabled,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupNodeQuickAssistSettings(); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
@@ -35729,26 +35739,18 @@ function openSelectionFmtPalette(){
   pop.dataset.pick='colors';
 }
 function closeSelectionFmtSwatches(){ const pop=el('selection-fmt-popover'); if(pop)delete pop.dataset.pick; }
-// Link on words in a row (owner, 2026-10-22: "both, via a small menu"): the bar turns into
-// Web address / Another row (and Remove link when the words already link somewhere). The row
-// and character range are kept here because typing the address moves focus out of the row.
+// Link on words in a row: the bar becomes an address box (owner, 2026-10-22: links to other rows
+// are typed with @, so Link is for web addresses only). The row and character range are kept here
+// because typing the address moves focus out of the row.
 let _sfmtLinkTarget=null;
-function openSelectionFmtLinkMenu(){
-  const pop=el('selection-fmt-popover'); const box=el('sfmt-swatches'); const input=getEditingInput();
-  const r=input?getEditableSelectionRange(input):null; const idx=editingId!==null?getIndex(nodes,editingId):-1;
-  if(!pop||!box||!r||r.start===r.end||idx<0)return;
-  const node=nodes[idx]; const marks=rowMarksOf(node);
-  const linked=marks.find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start);
+function prepareSelectionFmtLinkTarget(){
+  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null; const idx=editingId!==null?getIndex(nodes,editingId):-1;
+  if(!r||r.start===r.end||idx<0)return false;
+  const node=nodes[idx]; const linked=rowMarksOf(node).find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start);
   _sfmtLinkTarget={nodeId:node.id,start:r.start,end:r.end,url:linked?linked.v:''};
-  const globe='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>';
-  const rowIcon='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 12v6"/></svg>';
-  box.innerHTML=`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`
-    +`<button type="button" class="sfmt-menu-item" data-sw="web">${globe}<span>${linked?'Edit web address':'Web address'}</span></button>`
-    +(backlinksEnabled?`<button type="button" class="sfmt-menu-item" data-sw="row">${rowIcon}<span>Another row</span></button>`:'')
-    +(linked?`<button type="button" class="sfmt-menu-item sfmt-danger" data-sw="unlink"><span>Remove link</span></button>`:'');
-  pop.dataset.pick='link';
+  return true;
 }
-// "Web address": the bar becomes an address box, Enter applies, Escape goes back.
+// The address box: Enter applies, Escape closes, Remove (when the words are linked) unlinks.
 function openSelectionFmtUrlBox(){
   const pop=el('selection-fmt-popover'); const box=el('sfmt-swatches'); if(!pop||!box||!_sfmtLinkTarget)return;
   // Finish the row edit first (the address box is about to take focus anyway), so its re-render
@@ -35756,7 +35758,8 @@ function openSelectionFmtUrlBox(){
   if(editingId!==null){ commitEdit(); render(); }
   box.innerHTML=`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`
     +`<input type="text" class="sfmt-url" id="sfmt-url" placeholder="Paste or type a web address" spellcheck="false" autocomplete="off" aria-label="Web address">`
-    +`<button type="button" class="sfmt-menu-item sfmt-url-ok" data-sw="url-ok" data-tip="Link (Enter)">Link</button>`;
+    +`<button type="button" class="sfmt-menu-item sfmt-url-ok" data-sw="url-ok" data-tip="Link (Enter)">Link</button>`
+    +(_sfmtLinkTarget.url?`<button type="button" class="sfmt-menu-item sfmt-danger" data-sw="unlink" data-tip="Remove link">Remove</button>`:'');
   pop.dataset.pick='url';
   const field=el('sfmt-url'); field.value=_sfmtLinkTarget.url||'';
   field.focus(); field.select();
@@ -35779,22 +35782,6 @@ function applySelectionFmtUrl(){
   if(!url)return;
   if(!isRowLinkUrl(url)){ showToast('That address can\'t be used as a link'); return; }
   applyRowMarkToRange(t.nodeId,t.start,t.end,'a',url);
-}
-// "Another row": the selected words become the search of the row-link picker (the same one
-// typing @ opens), so picking a row puts a [[row link]] in their place.
-function startRowLinkFromSelection(){
-  const t=_sfmtLinkTarget; const input=getEditingInput(); if(!t||!input||editingId!==t.nodeId)return;
-  const idx=getIndex(nodes,t.nodeId); if(idx<0)return;
-  const node=nodes[idx]; const read=readRowMarksFromDom(input);
-  const words=read.text.slice(t.start,t.end).replace(/\s+/g,' ').trim();
-  const newText=read.text.slice(0,t.start)+'@'+words+read.text.slice(t.end);
-  pushUndo();
-  node.text=newText; setRowMarksOn(node,adjustRowMarksForText(read.marks,read.text,newText)); markDirty();
-  input.innerHTML=rowEditorHtml(node);
-  const caret=t.start+1+words.length;
-  setEditableSelectionRange(input,caret,caret);
-  hideSelectionFmtPopover();
-  openAtSuggest(input,node.id,t.start,words);
 }
 function showSelectionFmtPopoverForRange(range,editorId){
   const pop=el('selection-fmt-popover'); if(!pop)return;
@@ -35906,18 +35893,18 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   const btn=sw?null:e.target.closest('.selection-fmt-btn');
   if(!sw&&!btn)return;
   e.preventDefault(); // keep the editor's current selection/focus intact
-  const editorId=_selectionFmtEditorId; const editor=editorId?el(editorId):null;
-  if(!editor)return;
-  const pop=el('selection-fmt-popover'); const isRow=selectionFmtIsRow();
-  if(sw&&(pop.dataset.pick==='link'||pop.dataset.pick==='url')){
+  const pop=el('selection-fmt-popover');
+  // The address box works on the remembered row and range (the row edit ended when it opened).
+  if(sw&&pop.dataset.pick==='url'){
     const a=sw.dataset.sw;
-    if(a==='back'){ if(pop.dataset.pick==='url')openSelectionFmtLinkMenu(); else closeSelectionFmtSwatches(); }
-    else if(a==='web')openSelectionFmtUrlBox();
-    else if(a==='row')startRowLinkFromSelection();
+    if(a==='back')hideSelectionFmtPopover();
     else if(a==='url-ok')applySelectionFmtUrl();
     else if(a==='unlink'){ const t=_sfmtLinkTarget; hideSelectionFmtPopover(); if(t)applyRowMarkToRange(t.nodeId,t.start,t.end,'a',false); }
     return;
   }
+  const editorId=_selectionFmtEditorId; const editor=editorId?el(editorId):null;
+  if(!editor)return;
+  const isRow=selectionFmtIsRow();
   if(sw){
     const kind=sw.dataset.kind; const c=sw.dataset.sw;
     if(c!=='back'){
@@ -35937,8 +35924,9 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   if(cmd==='colors'){ openSelectionFmtPalette(); return; }
   if(isRow){
     if(cmd==='rewrite'){ rewriteSubTextSelection(btn).finally(hideSelectionFmtPopover); return; }
-    if(cmd==='link'){ openSelectionFmtLinkMenu(); return; }
-    if(SELECTION_FMT_ROW_KIND[cmd])applyRowMarkToSelection(SELECTION_FMT_ROW_KIND[cmd]);
+    if(cmd==='link'){ if(prepareSelectionFmtLinkTarget())openSelectionFmtUrlBox(); return; }
+    if(cmd==='clear')clearRowFormattingInSelection();
+    else if(SELECTION_FMT_ROW_KIND[cmd])applyRowMarkToSelection(SELECTION_FMT_ROW_KIND[cmd]);
     updateSelectionFmtButtonStates();
     return;
   }
@@ -35962,6 +35950,16 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
       }
       hideSelectionFmtPopover();
     });
+    return;
+  }
+  if(cmd==='clear'){
+    // removeFormat leaves links; the highlight is a background it may keep, so clear that too.
+    editor.focus();
+    if(editorId==='note-editor'&&typeof pushNoteSessionUndo==='function')pushNoteSessionUndo();
+    document.execCommand('removeFormat',false,null);
+    document.execCommand('hiliteColor',false,'transparent');
+    syncRemarkTextFromEditorIfApplicable(editor); syncNoteTextFromEditorIfApplicable(editor);
+    updateSelectionFmtButtonStates();
     return;
   }
   if(cmd==='rewrite'){

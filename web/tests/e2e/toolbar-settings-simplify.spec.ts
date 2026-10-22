@@ -219,10 +219,10 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'up', 'down', 'fmt-bold', 'fmt-italic', 'fmt-underline', 'fmt-strike', 'fmt-highlight', 'fmt-color', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'focus', 'fold', 'tags', 'version-history', 'no-export', 'delete']);
-    // Add (with Duplicate), Move and Format are icon rows; the add-to-node leftovers sit behind Insert ›,
+    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'up', 'down', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'focus', 'fold', 'tags', 'version-history', 'no-export', 'delete']);
+    // Add (with Duplicate) and Move are icon rows; the add-to-node leftovers sit behind Insert ›,
     // Zoom in, Collapse/expand and the row's settings behind Row › (owner, 2026-10-20: shorter More).
-    await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(3);
+    await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(2);
     await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(7);
     await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
     await expect(page.locator('#context-more-panel .context-submenu').first()).toBeVisible();
