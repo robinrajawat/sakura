@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   adjustRowMarksForText,
   convertLegacyRowMarkup,
+  isRowLinkUrl,
   concatRowMarks,
   normalizeRowMarks,
   readRowMarksFromDom,
@@ -231,5 +232,39 @@ describe('convertLegacyRowMarkup', () => {
       { s: 0, e: 1, k: 'b' },
       { s: 2, e: 5, k: 'c', v: 'red' }
     ]);
+  });
+});
+
+describe('web links (k: a)', () => {
+  it('keeps a safe address and drops script, data and multi-line ones', () => {
+    expect(isRowLinkUrl('https://example.com/a?b=1')).toBe(true);
+    expect(isRowLinkUrl('mailto:x@y.z')).toBe(true);
+    expect(isRowLinkUrl('javascript:alert(1)')).toBe(false);
+    expect(isRowLinkUrl(' data:text/html,x')).toBe(false);
+    expect(isRowLinkUrl('https://a\nb')).toBe(false);
+    expect(normalizeRowMarks([{ s: 0, e: 3, k: 'a', v: 'javascript:x' }], 5)).toEqual([]);
+  });
+  it('renders as a link with the address escaped, and reads back from the editor', () => {
+    const html = rowMarksToHtml('see docs', [{ s: 4, e: 8, k: 'a', v: 'https://x.y/?a="1"&b' }], esc);
+    expect(html).toBe(
+      'see <a class="row-weblink" href="https://x.y/?a=&quot;1&quot;&amp;b" data-a="https://x.y/?a=&quot;1&quot;&amp;b" target="_blank" rel="noopener noreferrer">docs</a>'
+    );
+    const root: RowMarkDomNode = {
+      nodeType: 1,
+      tagName: 'DIV',
+      childNodes: [
+        { nodeType: 3, nodeValue: 'see ' },
+        { nodeType: 1, tagName: 'A', childNodes: [{ nodeType: 3, nodeValue: 'docs' }], getAttribute: (n) => (n === 'data-a' ? 'https://x.y' : null) }
+      ]
+    };
+    expect(readRowMarksFromDom(root)).toEqual({ text: 'see docs', marks: [{ s: 4, e: 8, k: 'a', v: 'https://x.y' }] });
+  });
+  it('a new address replaces the old one; false removes it', () => {
+    const one = setRowMark([], 8, 0, 8, 'a', 'https://a.b');
+    expect(setRowMark(one, 8, 0, 4, 'a', 'https://c.d')).toEqual([
+      { s: 0, e: 4, k: 'a', v: 'https://c.d' },
+      { s: 4, e: 8, k: 'a', v: 'https://a.b' }
+    ]);
+    expect(setRowMark(one, 8, 0, 8, 'a', false)).toEqual([]);
   });
 });
