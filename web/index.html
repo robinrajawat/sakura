@@ -12857,7 +12857,7 @@ async function renderVersionHistoryList(){
     for(const rev of revisions){
       const n=rev.nodes.find(x=>x.id===historyModalNodeId);
       if(!n)continue;
-      const text=(n.text||'').trim();
+      const text=getNodePlainText(n).trim();
       if(text===lastText)continue; // only show where it actually changed vs. the version right after it
       lastText=text;
       const row=document.createElement('div'); row.className='history-row';
@@ -13210,7 +13210,7 @@ function diagramDisplayPages(d){
  * orchestration alone" split used throughout this project. (This module used to also hold the
  * Pad Diagrams list's "needs attention" check and drag-reorder helper; both went with that list.)
  *
- * `stripSemanticMarkers` (from src/utils/stripSemanticMarkers.ts, already a generated block
+ * `getNodePlainText` (from src/utils/stripSemanticMarkers.ts, already a generated block
  * spliced in elsewhere in index.html) is referenced as an ambient global via `declare function`
  * below — type-only, fully erased from the compiled JS output, resolving at runtime to the real
  * already-spliced function since every generated block shares one script scope. This is NOT a
@@ -13226,7 +13226,7 @@ function computeDiagramAnchorLabel(diagram, nodes) {
     const node = nodes.find((n) => n.id === diagram.anchorNodeId);
     if (!node)
         return 'Linked node no longer exists';
-    const text = stripSemanticMarkers(node.text || '').trim();
+    const text = getNodePlainText(node).trim();
     return 'Under: ' + (text ? text.slice(0, 60) : '(untitled node)');
 }
 /** Pure: a diagram is "orphaned" when it's anchored to a node id that no longer exists in the
@@ -13501,7 +13501,7 @@ function openDiagramViewer(diagramId){
   const ov=_dvEnsure();
   const node=nodes.find(n=>n.id===d.anchorNodeId);
   ov.querySelector('.dv-title').textContent=d.title||'Untitled diagram';
-  const where=node&&(node.text||'').trim();
+  const where=node&&getNodePlainText(node).trim();
   ov.querySelector('.dv-where').textContent=where?'· in “'+where+'”':'';
   const img=ov.querySelector('.dv-canvas img');
   _dvState={id:d.id,scale:1,fit:1,tx:0,ty:0,w:1,h:1,drag:null,returnFocus:document.activeElement};
@@ -13730,7 +13730,7 @@ let _diagramAnchorTarget=null; // the diagram object currently being (re)anchore
 let _diagramAnchorBtn=null; // the trigger button, remembered so the search input's own typing (which has no button of its own) can still re-render/reposition correctly
 function getDiagramAnchorCandidates(query){
   const q=String(query||'').trim().toLowerCase();
-  const list=nodes.map(n=>({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)',depth:n.depth||0}));
+  const list=nodes.map(n=>({id:n.id,text:getNodePlainText(n).trim()||'(untitled node)',depth:n.depth||0}));
   const filtered=q?list.filter(n=>n.text.toLowerCase().includes(q)):list;
   // Depth-first ordering (root/section nodes before deeply-nested ones) so the list surfaces
   // the nodes most likely to be anchor targets first — a stable sort keeps each depth's own
@@ -13801,7 +13801,7 @@ function renderDiagramAnchorSuggest(query,d,btn,isFilterUpdate){
       const item=document.createElement('div');
       item.className='diagram-anchor-item';
       item.style.paddingLeft=(8+Math.min(n.depth,6)*10)+'px';
-      item.textContent=n.text;
+      item.textContent=getNodePlainText(n);
       item.addEventListener('mousedown',e=>{ e.preventDefault(); setDiagramAnchor(d,n.id); });
       results.appendChild(item);
     });
@@ -17532,7 +17532,7 @@ function collectNodeTextMatches(q){
       let perDoc=0;
       for(const n of docNodes){
         if(perDoc>=2||out.length>=6)break;
-        const text=String(n.text||''); if(!qaHayMatches(text,tokens))continue;
+        const text=getNodePlainText(n); if(!qaHayMatches(text,tokens))continue;
         perDoc++;
         out.push(isTrash?{
           group:'In documents',
@@ -17654,16 +17654,16 @@ function collectTagMatches(q){
         const matchedTag=tags.find(t=>qaHayMatches(t,tokens));
         if(!matchedTag)continue;
         perDoc++;
-        const restLabel=esc(String(n.text||'').slice(0,50));
+        const restLabel=esc(getNodePlainText(n).slice(0,50));
         out.push(isTrash?{
           group:'Tags',
-          label:'#'+matchedTag+' — '+String(n.text||'').slice(0,50),
+          label:'#'+matchedTag+' — '+getNodePlainText(n).slice(0,50),
           labelHtml:'<mark class="gs-hit">#'+esc(matchedTag)+'</mark> — '+restLabel,
           meta:'In Trash · '+(docTitle||'Untitled'),
           action:()=>{closeAllPanelsExceptGlobalSearch(); revealTrashedDocInSidebar(d.id)}
         }:{
           group:'Tags',
-          label:'#'+matchedTag+' — '+String(n.text||'').slice(0,50),
+          label:'#'+matchedTag+' — '+getNodePlainText(n).slice(0,50),
           labelHtml:'<mark class="gs-hit">#'+esc(matchedTag)+'</mark> — '+restLabel,
           meta:(d.id===currentDocId?'● ':'')+(docTitle||'Untitled'),
           action:()=>{closeAllPanelsExceptGlobalSearch(); revealNodeInDoc(d.id,n.id)}
@@ -18944,7 +18944,7 @@ function sortChildBlocks(parentIdx,mode){
   const blocks=getChildBlocks(parentIdx);
   if(blocks.length<2)return false;
   pushUndo();
-  const decorated=blocks.map(b=>({...b,text:String(nodes[b.start].text||'').replace(/<[^>]*>/g,'').toLowerCase(),height:subtreeHeight(b.start,b.end)}));
+  const decorated=blocks.map(b=>({...b,text:getNodePlainText(nodes[b.start]).toLowerCase(),height:subtreeHeight(b.start,b.end)}));
   let sorted;
   if(mode==='az') sorted=decorated.slice().sort((a,b)=>a.text.localeCompare(b.text));
   else if(mode==='za') sorted=decorated.slice().sort((a,b)=>b.text.localeCompare(a.text));
@@ -19188,14 +19188,22 @@ function stripSemanticMarkers(text) {
         .replace(/(\s)>(\S)/g, '$1$2');
 }
 /**
- * Returns a node's display text with semantic markup stripped — a literal extraction of
+ * Returns a node's words as the editor shows them: `[[link]]` and `[section]` brackets,
+ * `**bold**` and `__italic__` markers are removed; everything else the editor displays as typed
+ * (parentheses, backticks, `!`, `>`) is kept. The one helper every reader of a row's words goes through (search, sorting,
+ * labels, word counts, plain-text exports), so the row's storage format can change in one place
+ * (owner, 2026-10-22: rows move to rich text). Originally a literal extraction of
  * index.html's top-level `getNodePlainText()`. Wired into index.html via
  * scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
  * `stripSemanticMarkers` itself — name and signature match the original exactly, no wrapper
  * needed.
  */
 function getNodePlainText(node) {
-    return stripSemanticMarkers(node.text || '');
+    return String(node.text || '')
+        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
+        .replace(/\[([^\]]+)\]/g, '$1')
+        .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
+        .replace(/__([\s\S]+?)__/g, '$1');
 }
 
 /* GENERATED:stripSemanticMarkers:END */
@@ -19605,13 +19613,13 @@ function computeSearchMatchIds(nodes, query, matchCase, wholeWord) {
         // would silently skip matches when reused across different node strings — same reasoning
         // preserved from the original inline comment.
         const re = new RegExp('\\b' + escapeRegExpLiteral(raw) + '\\b', matchCase ? '' : 'i');
-        return nodes.filter((n) => re.test(String(n.text || ''))).map((n) => n.id);
+        return nodes.filter((n) => re.test(getNodePlainText(n))).map((n) => n.id);
     }
     if (matchCase) {
-        return nodes.filter((n) => String(n.text || '').includes(raw)).map((n) => n.id);
+        return nodes.filter((n) => getNodePlainText(n).includes(raw)).map((n) => n.id);
     }
     const q = raw.toLowerCase();
-    return nodes.filter((n) => String(n.text || '').toLowerCase().includes(q)).map((n) => n.id);
+    return nodes.filter((n) => getNodePlainText(n).toLowerCase().includes(q)).map((n) => n.id);
 }
 /** Pure: the next `searchIndex` value given a (possibly stale) current index and the new match
  * count — matches the original's exact reset rule: -1 when there are no matches, otherwise the
@@ -20437,9 +20445,10 @@ function closeAtSuggest() {
 function getAtCandidates(query) {
   const q = query.toLowerCase();
   return nodes.filter(n => {
-    if (!n.text || !n.text.trim()) return false;
+    const words = getNodePlainText(n);
+    if (!words.trim()) return false;
     if (_atState && n.id === _atState.nodeId) return false;
-    return !q || n.text.toLowerCase().includes(q);
+    return !q || words.toLowerCase().includes(q);
   }).slice(0, 12);
 }
 
@@ -20455,7 +20464,7 @@ function renderAtSuggest() {
       const item = document.createElement('div');
       item.className = 'at-suggest-item' + (i === _atActiveIdx ? ' at-active' : '');
       const q = _atState.query.toLowerCase();
-      const text = n.text || '';
+      const text = getNodePlainText(n);
       if (q) {
         const lo = text.toLowerCase().indexOf(q);
         item.innerHTML = lo >= 0
@@ -20982,7 +20991,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // into a childless node, or every node deleted). Previously this only ran inside the normal-
   // tree branch, so an active filter's bar/chips could keep showing stale state — or simply
   // never get hidden — once the pane had no rows to filter in the first place.
-  applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')) el('sb-depth').textContent=`Depth ${selectedDepth===null?'—':selectedDepth}`; if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates();
+  applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')) el('sb-depth').textContent=`Depth ${selectedDepth===null?'—':selectedDepth}`; if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates();
   updateDirtyIndicator(); updateMarkerSummary(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
   document.querySelectorAll('.bl-link').forEach(lnk=>{const target=findNodeByText(lnk.dataset.blTarget||''); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Jump to: '+lnk.dataset.blTarget:'No node found: '+lnk.dataset.blTarget;});
 }
@@ -22944,12 +22953,11 @@ function diagramGenTrimText(text){
  * zero call-site changes (only the wrapper bodies themselves needed updating).
  *
  * `getSubtreeEnd`/`getParentIndex` (from `src/core/nodeQueries.ts`, already a generated block)
- * and `stripSemanticMarkers` (from `src/utils/stripSemanticMarkers.ts`, likewise already
- * generated) are referenced as ambient globals via `declare function` below — type-only, fully
+ * are referenced as ambient globals via `declare function` below — type-only, fully
  * erased from the compiled output, resolving at runtime to the real already-spliced functions.
  * `diagramGenHardTruncateCore` (from `src/core/diagramGenDims.ts`, this subsystem's own first
- * slice, already generated) is referenced the same way. `getNodePlainText` (a hand-written
- * one-liner in index.html wrapping `stripSemanticMarkers`, NOT itself a generated block) is
+ * slice, already generated) is referenced the same way. `getNodePlainText` (from
+ * `src/utils/stripSemanticMarkers.ts`) is
  * inlined directly as a private helper instead — same precedent as `nodeSearch.ts` inlining
  * `escapeRegExpLiteral` and `diagramDisplayList.ts` inlining `diagramStatusOf`/`diagramStatusLabel`.
  *
@@ -22976,7 +22984,11 @@ const _DIAGRAM_GEN_TOPOLOGY_CHAR_BUDGET = 66;
 /** Pure: matches index.html's own `getNodePlainText` exactly — duplicated here rather than
  * referenced via `declare function`, see this file's header for why. */
 function nodePlainText(node) {
-    return stripSemanticMarkers(node.text || '');
+    return String(node.text || '')
+        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
+        .replace(/\[([^\]]+)\]/g, '$1')
+        .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
+        .replace(/__([\s\S]+?)__/g, '$1');
 }
 function metaFor(nodeMeta, node) {
     return nodeMeta ? nodeMeta.get(node.id) : undefined;
@@ -29227,7 +29239,7 @@ function previewStyleClasses(node){
   return [node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':''].filter(Boolean).join(' ');
 }
 // Contents-page text: the row's words without any markup (** bold **, __ italic __, [[ links ]], [label]).
-function pvTocText(text){ return stripSemanticMarkers(text).replace(/\*\*([\s\S]+?)\*\*/g,'$1').replace(/__([\s\S]+?)__/g,'$1').trim(); }
+function pvTocText(text){ return getNodePlainText({text}).trim(); }
 function previewNodeInnerHtml(node,textOverride){
   const inner=previewParseStyledText(textOverride!==undefined?textOverride:(node.text||''))||'&nbsp;';
   return node.styles.highlight?`<span class="hl-mark hl-mark-${esc(node.styles.highlight)}">${inner}</span>`:inner;
@@ -29396,7 +29408,7 @@ function renderPreviewBody(){
   const docAuthor=String(el('doc-author')?.value||'').trim();
   // Rows left out of export (and everything under them) are not printed or counted.
   const exportNodes=withoutNoExportNodes(nodes);
-  const wordCount=exportNodes.reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0);
+  const wordCount=exportNodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0);
   const readMins=Math.max(1,Math.round(wordCount/200));
   const metaParts=[];
   if(docAuthor)metaParts.push(`By ${docAuthor}`);
@@ -30177,7 +30189,7 @@ function exportPreviewAsPdf(onDone){
     if(wordmark)coverEl.appendChild(wordmark); coverEl.appendChild(titleEl); coverEl.appendChild(rule);
     const rawAuthor=String(meta.author||'').trim();
     if(rawAuthor){ const authorEl=document.createElement('div'); authorEl.id='sakura-cover-author'; authorEl.textContent=rawAuthor; coverEl.appendChild(authorEl); }
-    const wordCount=withoutNoExportNodes(nodes).reduce((sum,n)=>{const t=String(n.text||'').trim(); return sum+(t?t.split(/\s+/).length:0)},0);
+    const wordCount=withoutNoExportNodes(nodes).reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0);
     const readMins=Math.max(1,Math.round(wordCount/200));
     const coverMetaParts=[`${wordCount.toLocaleString()} word${wordCount===1?'':'s'}`,`${readMins} min read`];
     if(lastSavedAt)coverMetaParts.push(`Updated ${new Date(lastSavedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}`);
@@ -31027,7 +31039,7 @@ function resolveCssColor(value){
 function threadCopyContent(nodeId){
   const n=nodes.find(x=>x.id===nodeId); const thread=nodeThread(nodeId);
   if(!n||!thread.length)return null;
-  const title='Thread \u00b7 '+(stripHtmlToText(n.text||'')||'Untitled row');
+  const title='Thread \u00b7 '+(getNodePlainText(n).trim()||'Untitled row');
   const grey='color:#6b7280';
   const html=['<div><b>'+esc(title)+'</b></div>'], text=[title];
   thread.forEach((r,i)=>{
@@ -31059,7 +31071,7 @@ async function copyThread(nodeId){
 // the row. Completing the task doesn't change the document: the follow-up shows "· To-Do done" and
 // the owner settles it (owner decision 2026-10-19).
 function followupTodoText(node,r){
-  const said=stripHtmlToText(r.text||'').trim()||stripHtmlToText(node.text||'').trim();
+  const said=stripHtmlToText(r.text||'').trim()||getNodePlainText(node).trim();
   const owner=String(r.owner||'').trim().replace(/[^A-Za-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'');
   return (owner&&/^[A-Za-z]/.test(owner)?'@'+owner+' ':'')+said;
 }
@@ -31346,7 +31358,7 @@ function buildAnchorTree(collapsedSet){
     }
     const hasChildren=nodeHasChildren(nodes,i);
     const collapsed=collapsedSet.has(n.id);
-    out.push({id:n.id,text:stripSemanticMarkers(n.text||'').trim()||'(untitled node)',depth:n.depth||0,hasChildren,collapsed});
+    out.push({id:n.id,text:getNodePlainText(n).trim()||'(untitled node)',depth:n.depth||0,hasChildren,collapsed});
     if(hasChildren&&collapsed)skipDepth=n.depth;
   }
   return out.slice(0,300);
@@ -31371,7 +31383,7 @@ function buildAnchorTreeItemEl(n,onToggle,onPick){
     const spacer=document.createElement('span'); spacer.className='remark-anchor-tree-fold remark-anchor-tree-fold-spacer';
     item.appendChild(spacer);
   }
-  const label=document.createElement('span'); label.textContent=n.text;
+  const label=document.createElement('span'); label.textContent=getNodePlainText(n);
   item.appendChild(label);
   item.addEventListener('mousedown',e=>{ e.preventDefault(); onPick(n.id); });
   return item;
@@ -31902,7 +31914,7 @@ function openItemsLists(){
   const idx=new Map(nodes.map((n,i)=>[n.id,i]));
   // The row's text as it reads on screen (getNodePlainText would also drop its (parentheses)); a
   // [Section] row without its brackets.
-  const rowText=n=>stripHtmlToText(n.text||'').replace(/^\s*\[(.+)\]\s*$/,'$1')||'Untitled row';
+  const rowText=n=>getNodePlainText(n).trim()||'Untitled row';
   const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
   // Each open Follow-up entry is its own item (owner, 2026-10-21), named by its row and owner
   // ("Export (ZOR) · Karsten"). A row marked Follow-up before markers were recorded in the thread
@@ -32048,7 +32060,7 @@ function documentDecisions(){
 // The Decisions chip's list: what was decided, and on which row. Each jumps to its entry.
 function openDecisionsMenu(btn){
   const list=documentDecisions(); if(!list.length)return;
-  const rowText=id=>{ const n=nodes.find(x=>x.id===id); return n?(stripHtmlToText(n.text||'')||'Untitled row'):''; };
+  const rowText=id=>{ const n=nodes.find(x=>x.id===id); return n?(getNodePlainText(n).trim()||'Untitled row'):''; };
   const icon=`<span class="oi-menu-icon" style="color:${openItemKindColor('decision')}">${openItemKindIcon('decision')}</span>`;
   const items=[{heading:'Decisions \u00B7 '+list.length}].concat(list.map(r=>{ const t=stripHtmlToText(r.text||'').replace(/\s+/g,' ').trim(); const row=rowText(r.anchorNodeId);
     return {label:t||row, sub:t?[row,r.person||''].filter(Boolean).join(' \u00B7 '):(r.person||''), icon, onClick:()=>revealInlineObject('remark',r.id)}; }));
@@ -32997,7 +33009,7 @@ function waitingCandidates(todos) {
     if(!Array.isArray(docNodes)) return {missing:true};
     const node=docNodes.find(n=>n.id===ref.nodeId);
     if(!node) return {missing:true};
-    return {missing:false, isDoc:false, text:String(node.text||'').trim(), docTitle:docTitle||'Untitled'};
+    return {missing:false, isDoc:false, text:getNodePlainText(node).trim(), docTitle:docTitle||'Untitled'};
   }
   // Same switch-doc/expand/scroll/flash behavior Notes and Tags search results already use
   // (revealNodeInDoc) — a direct reference doesn't warrant reopening the find-bar the way a
@@ -33052,7 +33064,7 @@ function waitingCandidates(todos) {
       let perDoc=0;
       for(const n of docNodes){
         if(perDoc>=3||out.length>=8) break;
-        const text=String(n.text||''); if(!text.trim()||!hayMatch(text,tokens)) continue;
+        const text=getNodePlainText(n); if(!text.trim()||!hayMatch(text,tokens)) continue;
         perDoc++;
         out.push({docId:d.id, nodeId:n.id, docTitle:docTitle||'Untitled', snippetHtml:snippet(text.slice(0,90),q)});
       }

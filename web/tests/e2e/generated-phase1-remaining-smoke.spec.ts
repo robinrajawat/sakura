@@ -80,12 +80,12 @@ test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTi
     });
     expect(relTime).toBe('1m ago');
 
-    // 4. stripSemanticMarkers/getNodePlainText — real markup stripping.
+    // 4. getNodePlainText — strips only what the editor hides ([[link]], [section], **, __).
     const stripped = await page.evaluate(() => {
       // @ts-expect-error
-      return getNodePlainText({ text: '[Section] `code` (aside) [[link]]' });
+      return getNodePlainText({ text: '[Section] `code` (aside) **bold** [[link]]' });
     });
-    expect(stripped).toBe('Section code aside link');
+    expect(stripped).toBe('Section `code` (aside) bold link');
 
     // 5. computeOutlineNumbers, with outlineNumbering both on and off — the exact parameter
     // that had to become explicit at every real call site in this cutover. (serializeMarkdown,

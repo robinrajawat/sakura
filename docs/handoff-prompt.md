@@ -159,6 +159,16 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Rich text rows, PR 1 of 4: one words helper + outliner baseline tests.** Owner decided rows become
+rich text (bold, italic, underline, strike, highlight, text colour on a selection; Section = a Headings format; `code`
+and `>quote` dropped). Plan: Claude Doc "Rich text rows plan" (https://claude.ai/artifact/P9e5bpPp5Wgr8yQ11oxS2i).
+Owner: "make sure we are not putting the outliner at risk", so this PR adds `outliner-keyboard-baseline.spec.ts`
+(real keys: Enter, split, Backspace/Delete merge, Tab/Shift+Tab, Alt+arrows, multi-line paste, markup through
+split/merge) and routes every reader of a row's words (search, sort, labels, word counts, tags, @-suggest, Open
+items, decisions, copy, TOC) through `getNodePlainText`, which now returns the words as the editor shows them (hides
+`[[ ]]`, `[section]`, `**`, `__`; keeps parentheses, backticks, `!`, `>`). Backlink matching still uses
+`stripSemanticMarkers` (PR 2). Next: PR 2 storage + conversion + editor, PR 3 exports, PR 4 remove old syntax.
+
 **2026-10-22: Row icons are grey.** Owner, after a side-by-side mockup (`mockups/icons-colour-vs-grey.png` in project
 files): "grey will make the look much more elegant". Note, table, diagram, image and To-Do dots and the Agreed marker
 use `var(--muted)`; only a Follow-up marker (orange) and a thread with open questions (accent count) keep colour.
@@ -168,17 +178,6 @@ Editor only (PDF unchanged). Test in `row-icons-inline.spec.ts`.
 card is now exactly draw.io's export, margin included (`--dv-pad` 0 when `d.previewBorder` is set). The white fill
 stays because draw.io exports a transparent background (lines on the dotted grey backdrop would be hard to read).
 Older pictures without draw.io's margin get 12px from us instead.
-
-**2026-10-22: PDF section names keep their formatting.** Found in an editor/export audit; owner: "this is bad if it's
-true". A section heading's name was added as plain text, so `[[links]]`, `**bold**` and `__italic__` printed as typed
-(in capitals). It now goes through `previewParseStyledText` like any row; the Contents page uses `pvTocText` (markup
-stripped). Italic in Sakura is `__x__` (the Italic button and Ctrl+I write it); a typed `*x*` is not markup, by design.
-Test `pdf-section-markup.spec.ts`.
-Same PR: downloaded diagrams had no margin. Owner: use draw.io's own margin, don't pad the file ourselves. Every
-xmlsvg export now sends `border: DIAGRAM_EXPORT_BORDER` (12) and sets `d.previewBorder`; the thumbnail drops its 12px
-padding (`.has-export-border`) and the preview shows draw.io's margin only (see next entry). Pictures saved
-before have no border: Download re-exports them once first (`regenerateDiagramThumbnail`, needs draw.io online).
-`previewBorder` is carried on copy/paste, duplicate and version restore.
 
 ### Where things stand (the model to keep in mind)
 

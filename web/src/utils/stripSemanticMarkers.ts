@@ -30,12 +30,20 @@ export interface PlainTextNode {
 }
 
 /**
- * Returns a node's display text with semantic markup stripped — a literal extraction of
+ * Returns a node's words as the editor shows them: `[[link]]` and `[section]` brackets,
+ * `**bold**` and `__italic__` markers are removed; everything else the editor displays as typed
+ * (parentheses, backticks, `!`, `>`) is kept. The one helper every reader of a row's words goes through (search, sorting,
+ * labels, word counts, plain-text exports), so the row's storage format can change in one place
+ * (owner, 2026-10-22: rows move to rich text). Originally a literal extraction of
  * index.html's top-level `getNodePlainText()`. Wired into index.html via
  * scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
  * `stripSemanticMarkers` itself — name and signature match the original exactly, no wrapper
  * needed.
  */
 export function getNodePlainText(node: PlainTextNode): string {
-  return stripSemanticMarkers(node.text || '');
+  return String(node.text || '')
+    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
+    .replace(/\[([^\]]+)\]/g, '$1')
+    .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
+    .replace(/__([\s\S]+?)__/g, '$1');
 }

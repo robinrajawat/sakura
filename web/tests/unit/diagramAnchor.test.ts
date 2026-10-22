@@ -3,16 +3,16 @@ import {
   computeDiagramAnchorLabel,
   isDiagramOrphaned
 } from '../../src/state/diagramAnchor';
-import { stripSemanticMarkers } from '../../src/utils/stripSemanticMarkers';
+import { getNodePlainText } from '../../src/utils/stripSemanticMarkers';
 
-// diagramAnchor.ts references stripSemanticMarkers as an ambient global (a `declare function`,
+// diagramAnchor.ts references getNodePlainText as an ambient global (a `declare function`,
 // erased at compile time — see the module's own header comment for why). In the real app that
 // global is provided by stripSemanticMarkers.ts's own generated block sharing the same script
 // scope; in this Node test environment there is no such shared scope, so it's wired up
 // explicitly here from the real implementation — not a mock, the actual tested function.
 beforeAll(() => {
-  const g = globalThis as unknown as { stripSemanticMarkers: typeof stripSemanticMarkers };
-  g.stripSemanticMarkers = stripSemanticMarkers;
+  const g = globalThis as unknown as { getNodePlainText: typeof getNodePlainText };
+  g.getNodePlainText = getNodePlainText;
 });
 
 interface TestNode {
@@ -31,9 +31,9 @@ describe('computeDiagramAnchorLabel', () => {
     expect(computeDiagramAnchorLabel({ id: 'd1', anchorNodeId: 999 }, nodes)).toBe('Linked node no longer exists');
   });
 
-  it('returns the anchored node\'s text, stripped of semantic markers', () => {
+  it('returns the anchored node\'s text, as the editor shows it', () => {
     const nodes: TestNode[] = [{ id: 1, text: '[Header] some `code` text' }];
-    expect(computeDiagramAnchorLabel({ id: 'd1', anchorNodeId: 1 }, nodes)).toBe('Under: Header some code text');
+    expect(computeDiagramAnchorLabel({ id: 'd1', anchorNodeId: 1 }, nodes)).toBe('Under: Header some `code` text');
   });
 
   it('falls back to "(untitled node)" when the anchored node has empty text', () => {

@@ -11,7 +11,7 @@
  * orchestration alone" split used throughout this project. (This module used to also hold the
  * Pad Diagrams list's "needs attention" check and drag-reorder helper; both went with that list.)
  *
- * `stripSemanticMarkers` (from src/utils/stripSemanticMarkers.ts, already a generated block
+ * `getNodePlainText` (from src/utils/stripSemanticMarkers.ts, already a generated block
  * spliced in elsewhere in index.html) is referenced as an ambient global via `declare function`
  * below — type-only, fully erased from the compiled JS output, resolving at runtime to the real
  * already-spliced function since every generated block shares one script scope. This is NOT a
@@ -19,7 +19,7 @@
  * kill the whole script if it survived compilation.
  */
 
-declare function stripSemanticMarkers(text: string | null | undefined): string;
+declare function getNodePlainText(node: { text?: string | null }): string;
 
 interface AnchorableNode {
   id: number;
@@ -38,7 +38,7 @@ export function computeDiagramAnchorLabel(diagram: AnchorableDiagram, nodes: Anc
   if (diagram.anchorNodeId == null) return 'Not linked to a node';
   const node = nodes.find((n) => n.id === diagram.anchorNodeId);
   if (!node) return 'Linked node no longer exists';
-  const text = stripSemanticMarkers(node.text || '').trim();
+  const text = getNodePlainText(node).trim();
   return 'Under: ' + (text ? text.slice(0, 60) : '(untitled node)');
 }
 

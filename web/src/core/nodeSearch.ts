@@ -21,6 +21,7 @@
  */
 
 import type { QueryableNode } from './nodeQueries';
+import { getNodePlainText } from '../utils/stripSemanticMarkers';
 
 interface SearchableNode extends QueryableNode {
   text?: string;
@@ -51,13 +52,13 @@ export function computeSearchMatchIds(
     // would silently skip matches when reused across different node strings — same reasoning
     // preserved from the original inline comment.
     const re = new RegExp('\\b' + escapeRegExpLiteral(raw) + '\\b', matchCase ? '' : 'i');
-    return nodes.filter((n) => re.test(String(n.text || ''))).map((n) => n.id);
+    return nodes.filter((n) => re.test(getNodePlainText(n))).map((n) => n.id);
   }
   if (matchCase) {
-    return nodes.filter((n) => String(n.text || '').includes(raw)).map((n) => n.id);
+    return nodes.filter((n) => getNodePlainText(n).includes(raw)).map((n) => n.id);
   }
   const q = raw.toLowerCase();
-  return nodes.filter((n) => String(n.text || '').toLowerCase().includes(q)).map((n) => n.id);
+  return nodes.filter((n) => getNodePlainText(n).toLowerCase().includes(q)).map((n) => n.id);
 }
 
 /** Pure: the next `searchIndex` value given a (possibly stale) current index and the new match
