@@ -161,7 +161,7 @@ contradicts README.md, trust README.md.)*
 
 **2026-10-22: To-Dos section icons.** Owner: "Don't you think it would make sense to add the icons?" (after #599 made
 labels plain). Every section label, Done included, has one grey 12px icon (`TODO_SECTION_ICON`: pin, sun, calendar,
-infinity (Anytime = no date), hourglass, circle-check); no colours per section (only overdue dates are red). Done's chevron moved after its
+tray (Anytime = no date; layers and ∞ were rejected), hourglass, circle-check); no colours per section (only overdue dates are red). Done's chevron moved after its
 count so the icons line up. Desktop only (hub.html unchanged). Screenshot `inline-objects/todos-section-icons.png`.
 
 **2026-10-22: Row icons never wrap alone.** Owner saw a row's note icon sit alone on the next line on a laptop
