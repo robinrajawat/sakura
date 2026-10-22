@@ -26,7 +26,7 @@ export interface RowMark {
 }
 
 /** One character's formatting: on/off kinds plus the highlight and colour names. */
-interface CharFormat {
+export interface CharFormat {
   b?: true;
   i?: true;
   u?: true;
@@ -185,21 +185,31 @@ export function rowMarkRuns(text: string, marks: unknown): Array<{ text: string;
   return runs;
 }
 
+/** The app's own tags for one run's formatting (editor, rows, PDF): palette names resolve
+ * through the `--fc-*` and `.hl-mark-*` styles, so dark mode keeps working. */
+export function rowMarkTags(html: string, f: CharFormat): string {
+  let out = html;
+  if (f.b) out = '<b>' + out + '</b>';
+  if (f.i) out = '<i>' + out + '</i>';
+  if (f.u) out = '<u>' + out + '</u>';
+  if (f.s) out = '<s>' + out + '</s>';
+  if (f.c) out = `<span class="row-fc" data-c="${f.c}" style="color:var(--fc-${f.c})">` + out + '</span>';
+  if (f.hl) out = `<mark class="row-hl hl-mark hl-mark-${f.hl}" data-hl="${f.hl}">` + out + '</mark>';
+  return out;
+}
+
 /** Renders a row as HTML: each run goes through `renderText` (the row's usual parser, which
- * escapes it and draws links) and is wrapped in the tags for its formatting. */
-export function rowMarksToHtml(text: string, marks: unknown, renderText: (s: string) => string): string {
+ * escapes it and draws links) and is wrapped by `wrap` for its formatting — the app's own tags
+ * by default; rich copy passes one with fixed colours for other apps. */
+export function rowMarksToHtml(
+  text: string,
+  marks: unknown,
+  renderText: (s: string) => string,
+  wrap: (html: string, f: CharFormat) => string = rowMarkTags
+): string {
   if (!Array.isArray(marks) || !marks.length) return renderText(String(text || ''));
   return rowMarkRuns(text, marks)
-    .map(({ text: t, f }) => {
-      let html = renderText(t);
-      if (f.b) html = '<b>' + html + '</b>';
-      if (f.i) html = '<i>' + html + '</i>';
-      if (f.u) html = '<u>' + html + '</u>';
-      if (f.s) html = '<s>' + html + '</s>';
-      if (f.c) html = `<span class="row-fc" data-c="${f.c}" style="color:var(--fc-${f.c})">` + html + '</span>';
-      if (f.hl) html = `<mark class="row-hl hl-mark hl-mark-${f.hl}" data-hl="${f.hl}">` + html + '</mark>';
-      return html;
-    })
+    .map(({ text: t, f }) => wrap(renderText(t), f))
     .join('');
 }
 

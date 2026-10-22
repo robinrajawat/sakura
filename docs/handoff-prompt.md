@@ -159,6 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Rich text rows, PR 3 of 4: rich copy keeps row formatting.** Copying rows (`serializeClipboardHtml`)
+now writes a row's formatted words as `<b>/<i>/<u>/<s>` and inline colour/background styles with fixed light-mode
+colours (`clipboardRowMarkTags`, highlight mixed 45% toward white like the app), so Outlook, Word and chat keep it.
+`rowMarksToHtml` takes an optional `wrap` for that; the app's own tags are `rowMarkTags`. OPML and plain-text copy
+carry the words only (no standard for formatting there). The PDF already prints it (PR 2); hub.html has no row view.
+Next: PR 4, convert old `**`/`__`/`[Section]` to formatting and remove the typed syntax.
+
 **2026-10-22: Rich text rows, PR 2 of 4: formatting on selected words.** Select words in a row and Ctrl/Cmd+B / I
 / U, the strike/highlight/text-colour shortcuts, or the toolbar's Bold, Italic, highlight and colour swatches format
 just those words; nothing selected still styles the whole row (`node.styles`). Storage (`src/utils/rowMarks.ts`): the
@@ -182,11 +189,6 @@ split/merge) and routes every reader of a row's words (search, sort, labels, wor
 items, decisions, copy, TOC) through `getNodePlainText`, which now returns the words as the editor shows them (hides
 `[[ ]]`, `[section]`, `**`, `__`; keeps parentheses, backticks, `!`, `>`). Backlink matching still uses
 `stripSemanticMarkers` (PR 2). Next: PR 2 storage + conversion + editor, PR 3 exports, PR 4 remove old syntax.
-
-**2026-10-22: Row icons are grey.** Owner, after a side-by-side mockup (`mockups/icons-colour-vs-grey.png` in project
-files): "grey will make the look much more elegant". Note, table, diagram, image and To-Do dots and the Agreed marker
-use `var(--muted)`; only a Follow-up marker (orange) and a thread with open questions (accent count) keep colour.
-Editor only (PDF unchanged). Test in `row-icons-inline.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

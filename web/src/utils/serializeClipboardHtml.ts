@@ -1,4 +1,5 @@
 import type { QueryableNode } from '../core/nodeQueries';
+import type { CharFormat, RowMark, RowMarksHolder } from './rowMarks';
 
 /**
  * Export domain — third slice. `serializeClipboardHtml` renders the rich-text (HTML) half of
@@ -37,6 +38,15 @@ declare function computeOutlineNumbers(list: QueryableNode[], outlineNumbering: 
 
 declare function escapeHtml(value: unknown): string;
 
+// From src/utils/rowMarks.ts (formatting on part of a row), also already generated.
+declare function rowMarksOf(node: RowMarksHolder | null | undefined): RowMark[];
+declare function rowMarksToHtml(
+  text: string,
+  marks: unknown,
+  renderText: (s: string) => string,
+  wrap?: (html: string, f: CharFormat) => string
+): string;
+
 /** Fixed light-mode palette for anything copied to the system clipboard as rich text. Paste
  * destinations (email, Slack, Word, Notion...) are almost always light-background regardless of
  * Sakura's own theme, and most don't honor a background color set on the copied HTML — so text
@@ -59,6 +69,10 @@ export function getClipboardExportColorsCore() {
     fcBlue: '#2766c2',
     fcPurple: '#7d3fb5',
     fcGray: '#6f6b63',
+    hlYellow: '#eab308',
+    hlGreen: '#22c55e',
+    hlBlue: '#0ea5e9',
+    hlPink: '#ec4899',
   };
 }
 
@@ -150,10 +164,27 @@ export function parseStyledTextForClipboardCore(text: string, colors: ClipboardC
   return out;
 }
 
+/** Formatting on part of a row (node.marks), as inline styles another app keeps when pasted:
+ * fixed light-mode text colours, and highlights mixed toward white the way the app shows them. */
+export function clipboardRowMarkTags(html: string, f: CharFormat, colors: ClipboardColors): string {
+  let out = html;
+  if (f.b) out = '<b>' + out + '</b>';
+  if (f.i) out = '<i>' + out + '</i>';
+  if (f.u) out = '<u>' + out + '</u>';
+  if (f.s) out = '<s>' + out + '</s>';
+  const pick = (prefix: 'fc' | 'hl', name: string) =>
+    (colors as Record<string, string>)[prefix + name.charAt(0).toUpperCase() + name.slice(1)];
+  const fc = f.c ? pick('fc', f.c) : '';
+  if (fc) out = `<span style="color:${fc};">` + out + '</span>';
+  const hl = f.hl ? pick('hl', f.hl) : '';
+  if (hl) out = `<span style="background:${softenCore(hl, '#ffffff', 0.45)};">` + out + '</span>';
+  return out;
+}
+
 /** The subset of a real outline node `serializeClipboardHtmlCore` reads. `styles` is loose on
  * purpose — a node without any of these flags set is the common case, matching the original's
  * defensive `node.styles.bold?...` handling. */
-export interface ClipboardNode extends QueryableNode {
+export interface ClipboardNode extends QueryableNode, RowMarksHolder {
   styles: { bold?: boolean; italic?: boolean; underline?: boolean; strike?: boolean };
 }
 
@@ -198,7 +229,7 @@ export function serializeClipboardHtmlCore(
       ]
         .filter(Boolean)
         .join(';');
-      return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${softenCore(colors.vert, colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${parseStyledTextForClipboardCore(node.text || '', colors) || '&nbsp;'}</span></div>`;
+      return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${softenCore(colors.vert, colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${rowMarksToHtml(node.text || '', rowMarksOf(node), (t) => parseStyledTextForClipboardCore(t, colors), (h, f) => clipboardRowMarkTags(h, f, colors)) || '&nbsp;'}</span></div>`;
     })
     .join('');
   return `<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#ffffff;padding:12px;border-radius:8px;">${rows}</body></html>`;

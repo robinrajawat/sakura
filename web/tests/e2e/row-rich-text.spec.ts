@@ -236,3 +236,10 @@ test('a saved document with formatting opens with it (marks read while the page 
   await expect.poll(() => rows(page)).toEqual([{ text: 'Saved bold words', marks: [{ s: 6, e: 10, k: 'b' }] }]);
   await expect(page.locator('.node-label b')).toHaveText('bold');
 });
+
+test('rich copy of rows keeps the formatting for other apps (fixed colours, no app styles)', async ({ page }) => {
+  await seed(page, [{ text: 'Call vendor today', marks: [{ s: 5, e: 11, k: 'b' }, { s: 12, e: 17, k: 'c', v: 'green' }] }]);
+  const html = await page.evaluate(() => (window as any).eval('serializeClipboardHtml(nodes)'));
+  expect(html).toContain('Call <b>vendor</b> <span style="color:#27824f;">today</span>');
+  expect(html).not.toContain('var(--');
+});

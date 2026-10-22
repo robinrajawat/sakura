@@ -19390,28 +19390,32 @@ function rowMarkRuns(text, marks) {
     }
     return runs;
 }
+/** The app's own tags for one run's formatting (editor, rows, PDF): palette names resolve
+ * through the `--fc-*` and `.hl-mark-*` styles, so dark mode keeps working. */
+function rowMarkTags(html, f) {
+    let out = html;
+    if (f.b)
+        out = '<b>' + out + '</b>';
+    if (f.i)
+        out = '<i>' + out + '</i>';
+    if (f.u)
+        out = '<u>' + out + '</u>';
+    if (f.s)
+        out = '<s>' + out + '</s>';
+    if (f.c)
+        out = `<span class="row-fc" data-c="${f.c}" style="color:var(--fc-${f.c})">` + out + '</span>';
+    if (f.hl)
+        out = `<mark class="row-hl hl-mark hl-mark-${f.hl}" data-hl="${f.hl}">` + out + '</mark>';
+    return out;
+}
 /** Renders a row as HTML: each run goes through `renderText` (the row's usual parser, which
- * escapes it and draws links) and is wrapped in the tags for its formatting. */
-function rowMarksToHtml(text, marks, renderText) {
+ * escapes it and draws links) and is wrapped by `wrap` for its formatting — the app's own tags
+ * by default; rich copy passes one with fixed colours for other apps. */
+function rowMarksToHtml(text, marks, renderText, wrap = rowMarkTags) {
     if (!Array.isArray(marks) || !marks.length)
         return renderText(String(text || ''));
     return rowMarkRuns(text, marks)
-        .map(({ text: t, f }) => {
-        let html = renderText(t);
-        if (f.b)
-            html = '<b>' + html + '</b>';
-        if (f.i)
-            html = '<i>' + html + '</i>';
-        if (f.u)
-            html = '<u>' + html + '</u>';
-        if (f.s)
-            html = '<s>' + html + '</s>';
-        if (f.c)
-            html = `<span class="row-fc" data-c="${f.c}" style="color:var(--fc-${f.c})">` + html + '</span>';
-        if (f.hl)
-            html = `<mark class="row-hl hl-mark hl-mark-${f.hl}" data-hl="${f.hl}">` + html + '</mark>';
-        return html;
-    })
+        .map(({ text: t, f }) => wrap(renderText(t), f))
         .join('');
 }
 /** Reads the editor's contenteditable back into `{text, marks}`. `text` is exactly the
@@ -22062,6 +22066,10 @@ function getClipboardExportColorsCore() {
         fcBlue: '#2766c2',
         fcPurple: '#7d3fb5',
         fcGray: '#6f6b63',
+        hlYellow: '#eab308',
+        hlGreen: '#22c55e',
+        hlBlue: '#0ea5e9',
+        hlPink: '#ec4899',
     };
 }
 /** Pure: mixes `base` toward `color` by `ratio` (0 = pure `base`, 1 = pure `color`) in RGB
@@ -22151,6 +22159,27 @@ function parseStyledTextForClipboardCore(text, colors) {
     }
     return out;
 }
+/** Formatting on part of a row (node.marks), as inline styles another app keeps when pasted:
+ * fixed light-mode text colours, and highlights mixed toward white the way the app shows them. */
+function clipboardRowMarkTags(html, f, colors) {
+    let out = html;
+    if (f.b)
+        out = '<b>' + out + '</b>';
+    if (f.i)
+        out = '<i>' + out + '</i>';
+    if (f.u)
+        out = '<u>' + out + '</u>';
+    if (f.s)
+        out = '<s>' + out + '</s>';
+    const pick = (prefix, name) => colors[prefix + name.charAt(0).toUpperCase() + name.slice(1)];
+    const fc = f.c ? pick('fc', f.c) : '';
+    if (fc)
+        out = `<span style="color:${fc};">` + out + '</span>';
+    const hl = f.hl ? pick('hl', f.hl) : '';
+    if (hl)
+        out = `<span style="background:${softenCore(hl, '#ffffff', 0.45)};">` + out + '</span>';
+    return out;
+}
 /** Pure: matches index.html's own `serializeClipboardHtml` exactly — renders `scopeNodes` as a
  * self-contained HTML document (the `text/html` clipboard payload `copyNodesToClipboard` writes
  * alongside `serializeTreeText`'s plain-text version): one `<div>` per node, each showing the
@@ -22187,7 +22216,7 @@ function serializeClipboardHtmlCore(scopeNodes, rebaseDepth, outlineNumbering, t
         ]
             .filter(Boolean)
             .join(';');
-        return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${softenCore(colors.vert, colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${parseStyledTextForClipboardCore(node.text || '', colors) || '&nbsp;'}</span></div>`;
+        return `<div style="font-family:Consolas,'Courier New',monospace; white-space:pre; color:${colors.muted}; margin:2px 0;"><span style="color:${softenCore(colors.vert, colors.muted)};opacity:0.35;letter-spacing:-0.5px;font-weight:500;">${prefixHtml}</span>${numHtml}<span style="${textStyle}">${rowMarksToHtml(node.text || '', rowMarksOf(node), (t) => parseStyledTextForClipboardCore(t, colors), (h, f) => clipboardRowMarkTags(h, f, colors)) || '&nbsp;'}</span></div>`;
     })
         .join('');
     return `<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#ffffff;padding:12px;border-radius:8px;">${rows}</body></html>`;
