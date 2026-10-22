@@ -2866,7 +2866,6 @@ body.printing-generic #gpe-overlay{
 #todos-title{font:700 14.5px 'Inter',sans-serif;color:var(--fg);user-select:none;white-space:nowrap}
 #todos-open-label{flex:1 1 auto;min-width:0;margin-left:8px;font:500 12px 'Inter',sans-serif;color:var(--muted);user-select:none;white-space:nowrap}
 #todos-panel-header .todo-dd-trigger{width:28px;height:28px;border-radius:8px}
-.todos-header-sep{width:1px;height:16px;background:var(--border);margin:0 4px;flex:0 0 auto}
 #todos-panel.anchored #todos-panel-header{cursor:default}
 #todos-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
 #todos-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
@@ -3176,7 +3175,8 @@ body.printing-generic #gpe-overlay{
    long work items (owner, 2026-10-22), so the right side stays narrow and nothing else sits beside it. */
 #todos-add-row{border-color:transparent;padding-left:6px}
 #todos-add-row:hover{background:var(--hover)}
-#todos-add-row:focus-within{border-color:var(--border);box-shadow:none}
+/* Flat while typing too: the caret and the accent + say it's active, no box (owner, 2026-10-22). */
+#todos-add-row:focus-within{border-color:transparent;background:transparent;box-shadow:none}
 .todos-add-plus{background:none;color:var(--hint)}
 #todos-add-btn{background:none;color:var(--accent);width:24px;height:24px;margin-top:2px}
 #todos-add-btn:hover{background:var(--hover);opacity:1}
@@ -3184,9 +3184,10 @@ body.printing-generic #gpe-overlay{
 #todos-add-row:focus-within .todos-add-plus{color:var(--accent)}
 .todos-group-label,.todos-section-label{display:flex;align-items:center;gap:6px;font:600 12px 'Inter',sans-serif;color:var(--fg);padding:14px 10px 3px;letter-spacing:0;text-transform:none}
 .todos-group-count{font-weight:500;font-size:11.5px;color:var(--hint)}
-.todos-group-label .todo-pin-icon{color:var(--hint)}
 #todos-body .todos-group-waiting .todos-group-label{color:var(--muted)}
-#todos-body .todos-section-label{color:var(--hint);font-weight:500;padding-top:16px}
+/* Done reads like the other section labels; only its count (it is folded) and arrow differ. */
+#todos-body .todos-section-label{color:var(--fg);font:600 12px 'Inter',sans-serif;letter-spacing:0;text-transform:none;padding-top:14px}
+#todos-body .todos-section-label .todos-section-chevron{color:var(--hint)}
 #todos-body .todos-section-collapse-btn{gap:5px}
 #todos-body .todo-row{padding:6px 10px;margin-bottom:0;gap:10px;border-radius:8px}
 #todos-body .todo-main{gap:2px}
@@ -4724,7 +4725,6 @@ body.printing-generic #gpe-overlay{
         <button type="button" class="todo-dd-item todo-more-item" id="todos-select-toggle" role="menuitem" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg>Select or reorder tasks</button>
       </div>
     </div>
-    <span class="todos-header-sep" aria-hidden="true"></span>
     <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
@@ -33167,7 +33167,8 @@ function waitingCandidates(todos) {
   function openSectionsHtml(open,manualOrder){
     let html='';
     groupTodos(open,toISODate(new Date())).forEach(g=>{
-      html+=`<div class="todos-group todos-group-${g.key}"><div class="todos-group-label">${g.key==='pinned'?PIN_SVG(11):''}${g.label}<span class="todos-group-count">${g.items.length}</span></div>`;
+      // Plain labels, no counts or icons (owner, 2026-10-22: the header already says "6 open").
+      html+=`<div class="todos-group todos-group-${g.key}"><div class="todos-group-label">${g.label}</div>`;
       g.items.forEach(t=>{ html+=todoRowHtml(t,manualOrder,g.key); });
       html+=`</div>`;
     });
@@ -33243,7 +33244,7 @@ function waitingCandidates(todos) {
     }
     // Done folds into one line, shown only once something is done.
     if(todos.some(t=>t.done)){
-      html+=`<div class="todos-section-label"><button type="button" class="todos-section-collapse-btn" id="todos-completed-collapse-btn" aria-label="${completedOpen?'Hide done tasks':'Show done tasks'}"><svg class="todos-section-chevron${completedOpen?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg><span>Done${done.length?' · '+done.length:''}</span></button>${done.length&&completedOpen?'<button type="button" class="todos-clear-completed-btn" id="todos-clear-completed-btn">Clear done</button>':''}</div>`;
+      html+=`<div class="todos-section-label"><button type="button" class="todos-section-collapse-btn" id="todos-completed-collapse-btn" aria-label="${completedOpen?'Hide done tasks':'Show done tasks'}"><svg class="todos-section-chevron${completedOpen?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg><span>Done</span>${done.length?'<span class="todos-group-count">'+done.length+'</span>':''}</button>${done.length&&completedOpen?'<button type="button" class="todos-clear-completed-btn" id="todos-clear-completed-btn">Clear done</button>':''}</div>`;
       if(completedOpen){
         if(!done.length){
           html+=`<div class="todos-empty">${todos.some(t=>t.done)?'No done tasks match your search.':'Nothing done yet.'}</div>`;

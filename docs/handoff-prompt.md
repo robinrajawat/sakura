@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: To-Dos panel flattened.** Owner asked if the flat look works, "even the header (top row is kind of
+mixed)". Removed the header divider (`.todos-header-sep`); section labels are plain words (no counts, no pin icon; the
+header's "N open" covers it); Done uses the same label style with its count ("Done 32", `.todos-group-count`); the
+Add-a-task row stays flat while focused (no box). Screenshot `inline-objects/todos-flat-header.png`.
+
 **2026-10-22: Waiting for and follow-up owner edited in place.** Owner: "I personally like inline editing rather
 than popups"; an in-menu text box was tried and rejected ("we can do better"); Waiting for is free text, "could be just a
 note not just person". Task menu: **Waiting for…** (plain item, no flyout) -> `startWaitingEdit` adds the row's waiting
@@ -167,20 +172,6 @@ line (`todoWaitingDraftId` while unsaved) with the caret in `.todo-waiting-name`
 (`.todo-waiting-suggest`); Enter / blur keep, Esc cancels, empty stops waiting; **Not waiting** when waiting. Limit 200
 chars (model, hub). Follow-up owner "Someone else…" -> `editThreadOwnerInline` types into the entry's "· follow-up for"
 note. Screenshot `inline-objects/todos-waiting-inline.png`.
-
-**2026-10-22: To-Dos rebuilt on a lean model.** Owner rejected #596 ("not looking good"), asked to start from scratch,
-generic and outside-in ("understandable for any user"), then cut the model with me. A task = title, due, repeat,
-subtasks, `pinned`, `waitingFor` ('' = nobody named) + `waitingSince`, link (`link`/`linkLabel` or `nodeRef`, plus
-`remarkId`), done. Dropped: priority, status (In progress / Needs review / Blocked), focus/Now, `from`, saved fold state,
-sort and filters, edit card, duplicate / move to top-bottom. New shared block `src/utils/todoModel.ts`
-(`normalizeTodo` migrates on load: focus or progress -> pinned, waiting/blocked/review -> waiting for the first
-@mention; `todoSection`, `groupTodos`, `waitingCandidates`) generated into index.html (`todoModel`) and hub.html
-(`hubTodoModel`). Panel: sections Pinned / Today (incl. overdue) / Upcoming / Anytime / Waiting, Done folded;
-`todoRowHtml` = checkbox, title (2-line clamp, edits in place at full length; owner: long professional IT tasks),
-`.todo-side` (subtasks n/m, repeat, link arrow, date via `dueShort`; ⋯ replaces the date on hover); waiting line;
-open task (session `todosOpenIds`) shows subtasks + "From Doc › Row". Menu: Pin, Waiting for… ›, Due date…, Repeat ›,
-Link to row…, Rewrite with AI (AI on), Copy, Delete. Hub: same sections, sheet has Waiting for (text) and Pin. Mockup
-`inline-objects/todos-final-model-mockup.png`. Tests: unit `todoModel.test.ts`, e2e `todos-grouped.spec.ts` (rewritten).
 
 ### Where things stand (the model to keep in mind)
 
