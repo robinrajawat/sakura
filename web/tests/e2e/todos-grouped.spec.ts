@@ -67,7 +67,7 @@ test('older lists migrate on open: Now and In progress become pinned, Waiting / 
   expect(await idsIn(page, '.todos-group-pinned')).toEqual(['f', 'g']);
   expect(await idsIn(page, '.todos-group-waiting')).toEqual(['b', 'r']);
   await expect(page.locator('.todo-row[data-id="b"] .todo-waiting-line')).toHaveText('Waiting for Karsten');
-  await expect(page.locator('.todo-row[data-id="r"] .todo-waiting-line')).toHaveText('Waiting');
+  await expect(page.locator('.todo-row[data-id="r"] .todo-waiting-line')).toHaveText('Waiting', { useInnerText: true });
   // The next save writes the new shape.
   await page.locator('.todo-row[data-id="r"] .todo-check').click();
   const saved = await stored(page);
@@ -96,20 +96,52 @@ test('Pin moves a task to Pinned (any number of them); Unpin puts it back', asyn
   expect(await idsIn(page, '.todos-group-anytime')).toEqual(['a']);
 });
 
-test('Waiting for… offers people from the list, says who and since when, and Not waiting ends it', async ({ page }) => {
+test('Waiting for… is typed on the row itself: any text, names suggested, Enter keeps it, emptying it stops waiting', async ({ page }) => {
   await openWith(page, [{ id: 'a', text: 'Confirm capacity with @Karsten' }, { id: 'b', text: 'Ping @Ana' }]);
   await openMenu(page, 'a');
-  await menuItem(page, 'Waiting for…').hover();
-  const sub = page.locator('.sb-context-submenu');
-  await expect(sub.locator('.sb-context-item')).toHaveText([/Ana|Karsten/, /Ana|Karsten/, 'Someone else…']);
-  await sub.locator('.sb-context-item').filter({ hasText: 'Karsten' }).click();
+  await menuItem(page, 'Waiting for…').click();
+  await expect(page.locator('.sb-context-submenu')).toHaveCount(0); // no flyout
+  const name = page.locator('.todo-row[data-id="a"] .todo-waiting-name');
+  await expect(name).toBeFocused();
+  // Known names are suggested under the caret; typing narrows them.
+  await expect(page.locator('.sb-context-menu .sb-context-item')).toHaveText([/Ana|Karsten/, /Ana|Karsten/]);
+  await page.keyboard.type('Kar');
+  await expect(page.locator('.sb-context-menu .sb-context-item')).toHaveText(['Karsten']);
+  await page.locator('.sb-context-menu .sb-context-item').click();
   expect(await idsIn(page, '.todos-group-waiting')).toEqual(['a']);
   await expect(page.locator('.todo-row[data-id="a"] .todo-waiting-line')).toHaveText(/^Waiting for Karsten · since /);
-  await openMenu(page, 'a');
-  await menuItem(page, 'Waiting for…').hover();
-  await page.locator('.sb-context-submenu').locator('.sb-context-item').filter({ hasText: 'Not waiting' }).click();
+  // Any text works, not just a person: click the name and edit it in place.
+  await page.locator('.todo-row[data-id="a"] .todo-waiting-name').click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type('vendor quote for the new licences');
+  await page.keyboard.press('Enter');
+  expect((await stored(page)).find((t: { id: string }) => t.id === 'a')).toMatchObject({ waitingFor: 'vendor quote for the new licences' });
+  await expect(page.locator('#sakura-modal-input')).toBeHidden();
+  // Esc cancels an edit.
+  await page.locator('.todo-row[data-id="a"] .todo-waiting-name').click();
+  await page.keyboard.type(' XYZ');
+  await page.keyboard.press('Escape'); // no name matches, so no suggestions: one Esc cancels
+  await expect(page.locator('.todo-row[data-id="a"] .todo-waiting-name')).toHaveText('vendor quote for the new licences');
+  // Emptying it stops waiting.
+  await page.locator('.todo-row[data-id="a"] .todo-waiting-name').click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.press('Backspace');
+  await page.keyboard.press('Enter');
   expect(await idsIn(page, '.todos-group-anytime')).toEqual(['a', 'b']);
   await expect(page.locator('.todo-waiting-line')).toHaveCount(0);
+});
+
+test('the menu ends waiting with Not waiting; Esc on a new waiting line leaves the task as it was', async ({ page }) => {
+  await openWith(page, [{ id: 'a', text: 'Order licences', waitingFor: 'Procurement' }, { id: 'b', text: 'Plain' }]);
+  await openMenu(page, 'a');
+  await menuItem(page, 'Not waiting').click();
+  await expect(page.locator('.todo-waiting-line')).toHaveCount(0);
+  await openMenu(page, 'b');
+  await menuItem(page, 'Waiting for…').click();
+  await expect(page.locator('.todo-row[data-id="b"] .todo-waiting-name')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.todo-waiting-line')).toHaveCount(0);
+  expect((await stored(page)).find((t: { id: string }) => t.id === 'b')).not.toHaveProperty('waitingFor');
 });
 
 test('a row is one line: title, then subtask count, repeat, link arrow and the date on the right', async ({ page }) => {

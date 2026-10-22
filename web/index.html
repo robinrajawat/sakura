@@ -1955,6 +1955,8 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 .thread-verdict{font-size:12px;color:var(--muted)}
 .thread-status-note,.thread-q-note{font-size:12px;color:var(--muted)}
+.thread-owner-edit{outline:none;color:var(--fg);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;display:inline-block;min-width:4ch}
+.thread-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
@@ -3216,8 +3218,15 @@ body.printing-generic #gpe-overlay{
 /* The date and the ⋯ share one slot at the end, so the ⋯ never covers the icons before it. */
 #todos-body .todo-end{position:relative;display:inline-flex;justify-content:flex-end;min-width:18px}
 /* Waiting: one grey line under the title, click to change who. */
-#todos-body .todo-waiting-line{appearance:none;border:none;background:none;padding:0;margin:0;align-self:flex-start;font:400 11.5px 'Inter',sans-serif;color:var(--hint);cursor:pointer;text-align:left}
-#todos-body .todo-waiting-line:hover{color:var(--fg)}
+#todos-body .todo-waiting-line{align-self:flex-start;font:400 11.5px 'Inter',sans-serif;color:var(--hint);cursor:text}
+/* The name is edited in place: no box, just the caret; a faint underline while editing. */
+#todos-body .todo-waiting-name{outline:none;color:var(--muted);border-bottom:1px solid transparent;padding:0 1px;overflow-wrap:anywhere}
+#todos-body .todo-waiting-line:hover .todo-waiting-name{color:var(--fg)}
+#todos-body .todo-waiting-name:focus{color:var(--fg);border-bottom-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+#todos-body .todo-waiting-name:focus:empty::before{content:attr(data-placeholder);color:var(--hint);opacity:.7}
+/* Waiting with nothing said reads just "Waiting" until you click in. */
+#todos-body .todo-waiting-line:not(:focus-within):has(.todo-waiting-name:empty) .todo-waiting-for{display:none}
+#todos-body .todo-waiting-line:not(:focus-within) .todo-waiting-name:empty{min-width:6px}
 #todos-body .todo-row.is-waiting .todo-text{color:var(--muted)}
 /* An open task: full title, its open subtasks, a quiet foot ("6 done", "+ Add subtask") and where it
    links to. No fill (owner, 2026-10-20: "why are we highlighting a task?"). */
@@ -4310,7 +4319,7 @@ body.printing-generic #gpe-overlay{
 <li>Click a task's background (or its subtask count) to open it: the full title, its subtasks with <strong>Add subtask</strong>, and where it links to. Click again to close it</li>
 <li>Unfold <strong>Done</strong> to see finished tasks; <strong>Clear done</strong> removes them all, with an Undo toast inside the panel</li>
 <li>An overdue count badge appears on the To-Dos button itself whenever you have open, overdue tasks — visible without opening the panel</li>
-<li><strong>Waiting for…</strong> (task menu) moves a task to Waiting and names who it waits on; the row then says "Waiting for Karsten · since Oct 14". Click that line to change the name</li>
+<li><strong>Waiting for…</strong> (task menu) moves a task to Waiting: type who or what it waits for right on the row (names are suggested), Enter to keep. The row then says "Waiting for Karsten · since Oct 14"; click it to edit, empty it or pick Not waiting to stop</li>
 <li>A task can either <strong>repeat</strong> or hold <strong>sub-tasks</strong> — never both at once. Click the <strong>Repeat</strong> chip to cycle None → Daily → Weekdays → Weekly; checking off a recurring task doesn't complete it, it just advances the due date to the next occurrence (a toast confirms the new date), so recurring tasks never pile up in Completed. Once a repeat is set, a small repeat glyph also shows on the due-date chip, even before you've set a due date, so it's clear at a glance that a task recurs</li>
 <li>Click a task to expand it, then click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
 <li>Right-click a task, or hover it and click ⋯, for its menu: Pin, Waiting for…, Due date…, Repeat, Link to row…, Rewrite with AI (when AI is on), Copy, Delete</li>
@@ -31204,9 +31213,24 @@ function threadOwnerMenuItems(r,commit){
   const items=[{heading:'Follow-up for'}];
   threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===r.owner?CHECK:'', onClick:set(n)}));
   if(items.length>1)items.push({divider:true});
-  items.push({label:'Someone else…', onClick:async()=>{ const v=await sakuraPrompt({title:'Follow-up for', body:'Who owns this follow-up?', defaultValue:r.owner||'', confirmLabel:'Assign'}); const name=(v||'').trim(); if(name)set(name)(); }});
+  // Anyone else is typed in place, on the entry's "· follow-up for ▏" note (owner, 2026-10-22: inline
+  // editing over popups). Enter keeps it; Esc or leaving it empty changes nothing.
+  items.push({label:'Someone else…', onClick:()=>editThreadOwnerInline(r,set)});
   if(r.owner)items.push({label:'No one', onClick:set('')});
   return items;
+}
+function editThreadOwnerInline(r,set){
+  const noteEl=document.getElementById('inline-remark-text-'+r.id)?.closest('.thread-entry')?.querySelector('.thread-status-note');
+  if(!noteEl)return;
+  noteEl.textContent='\u00b7 follow-up for ';
+  const name=document.createElement('span'); name.className='thread-owner-edit'; name.contentEditable='true'; name.spellcheck=false; name.dataset.placeholder='name';
+  noteEl.appendChild(name);
+  let done=false;
+  const finish=keep=>{ if(done)return; done=true; const v=(name.textContent||'').trim().slice(0,80); if(keep&&v)set(v)(); else render(); };
+  ['mousedown','click'].forEach(ev=>name.addEventListener(ev,e=>e.stopPropagation()));
+  name.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); finish(true); } else if(e.key==='Escape'){ e.preventDefault(); finish(false); } });
+  name.addEventListener('blur',()=>finish(true));
+  name.focus();
 }
 function threadAuthorMenuItems(node,anchor){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -32260,7 +32284,7 @@ function normalizeTodo(raw, now) {
     if (t.pinned || t.focus || t.status === 'progress')
         out.pinned = true;
     if (typeof t.waitingFor === 'string')
-        out.waitingFor = t.waitingFor.trim().slice(0, 80);
+        out.waitingFor = t.waitingFor.trim().slice(0, 200);
     else if (OLD_WAITING_STATUSES.includes(t.status))
         out.waitingFor = firstMention(t.text);
     if (out.waitingFor !== undefined && Number.isFinite(t.waitingSince))
@@ -32296,7 +32320,8 @@ function groupTodos(todos, todayIso) {
 function waitingLabel(t) {
     return t.waitingFor ? 'Waiting for ' + t.waitingFor : 'Waiting';
 }
-/** Names offered by "Waiting for…": everyone @mentioned or waited on in the list, most used first. */
+/** Names suggested while typing "Waiting for": everyone @mentioned, plus short earlier waiting texts
+ *  (three words at most, so a long note is not offered back), most used first. */
 function waitingCandidates(todos) {
     const counts = new Map();
     const add = (n) => {
@@ -32306,7 +32331,7 @@ function waitingCandidates(todos) {
         counts.set(key, (counts.get(key) || 0) + 1);
     };
     todos.forEach(t => {
-        if (t.waitingFor)
+        if (t.waitingFor && t.waitingFor.split(/\s+/).length <= 3)
             add(t.waitingFor);
         const re = /(^|\s)@([A-Za-z][\w.-]*)/g;
         let m;
@@ -32338,6 +32363,8 @@ function waitingCandidates(todos) {
   // place, and everything else is on the row or in its menu. Each task remembers whether it's open.
   // Which tasks are open (unfolded) is view state, kept for the session only (not saved with the task).
   let todosOpenIds=new Set();
+  // The task whose waiting line was just added from the menu and waits for a name (not saved yet).
+  let todoWaitingDraftId=null;
   function toggleTodoExpanded(id){
     if(todosOpenIds.has(id)) todosOpenIds.delete(id); else todosOpenIds.add(id);
     renderTodos();
@@ -32787,18 +32814,47 @@ function waitingCandidates(todos) {
     if(name===null){ delete t.waitingFor; delete t.waitingSince; }
     else{
       const was=isWaiting(t);
-      t.waitingFor=String(name).trim().replace(/^@/,'').slice(0,80);
+      t.waitingFor=String(name).trim().replace(/^@/,'').slice(0,200);
       if(!was) t.waitingSince=Date.now();
     }
     saveTodos();
     renderTodos();
   }
-  async function askWaitingFor(id){
+  // "Waiting for" is edited in place on the row (owner, 2026-10-22: inline editing over popups and
+  // menu boxes). It is free text, a person or a note ("vendor quote"): the menu adds the line with the
+  // caret in it, known names are suggested as you type (like @mentions), Enter keeps it, Esc cancels,
+  // and emptying it stops waiting.
+  function startWaitingEdit(id){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
-    const name=await sakuraPrompt({title:'Waiting for', body:'Who is this task waiting on?', defaultValue:t.waitingFor||'', confirmLabel:'Save'});
-    if(name===null) return;
-    setTodoWaiting(id, name);
+    if(!isWaiting(t)) todoWaitingDraftId=id;
+    renderTodos();
+    const nameEl=document.querySelector(`#todos-body .todo-waiting-name[data-id="${id}"]`);
+    if(!nameEl) return;
+    nameEl.focus();
+    const r=document.createRange(); r.selectNodeContents(nameEl); r.collapse(false);
+    const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    showWaitingSuggestions(nameEl);
+  }
+  function showWaitingSuggestions(nameEl){
+    const id=nameEl.getAttribute('data-id');
+    const q=(nameEl.textContent||'').trim().toLowerCase();
+    const names=waitingCandidates(todos).filter(n=>n.toLowerCase()!==q&&(!q||n.toLowerCase().includes(q))).slice(0,6);
+    if(!names.length){ if(_sbContextEl&&_sbContextEl.classList.contains('todo-waiting-suggest')) closeSbContextMenu(); return; }
+    const r=nameEl.getBoundingClientRect();
+    showSbContextMenu(r.left-36, r.bottom+4, names.map(n=>({label:n, onClick:()=>commitWaitingName(id,n)})));
+    _sbContextEl.classList.add('todo-waiting-suggest');
+  }
+  function commitWaitingName(id, raw){
+    const name=String(raw||'').replace(/\u200B/g,'').trim();
+    todoWaitingDraftId=null;
+    if(_sbContextEl&&_sbContextEl.classList.contains('todo-waiting-suggest')) closeSbContextMenu();
+    setTodoWaiting(id, name?name:null);
+  }
+  function cancelWaitingEdit(){
+    todoWaitingDraftId=null;
+    if(_sbContextEl&&_sbContextEl.classList.contains('todo-waiting-suggest')) closeSbContextMenu();
+    renderTodos();
   }
   function setDueDate(id, dateStr){
     const t=todos.find(x=>x.id===id);
@@ -33267,7 +33323,19 @@ function waitingCandidates(todos) {
       });
     });
     body.querySelectorAll('.todo-waiting-line').forEach(line=>{
-      line.addEventListener('click',e=>{ e.stopPropagation(); askWaitingFor(line.getAttribute('data-id')); });
+      const nameEl=line.querySelector('.todo-waiting-name');
+      const id=line.getAttribute('data-id');
+      let done=false;
+      ['mousedown','click'].forEach(ev=>line.addEventListener(ev,e=>{ e.stopPropagation(); if(ev==='click'&&e.target!==nameEl){ nameEl.focus(); } }));
+      nameEl.addEventListener('focus',()=>{ done=false; showWaitingSuggestions(nameEl); });
+      nameEl.addEventListener('input',()=>showWaitingSuggestions(nameEl));
+      nameEl.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); done=true; commitWaitingName(id, nameEl.textContent); }
+        else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); done=true; cancelWaitingEdit(); }
+      });
+      nameEl.addEventListener('paste',e=>{ e.preventDefault(); document.execCommand('insertText',false,(e.clipboardData?.getData('text/plain')||'').replace(/\s+/g,' ')); });
+      // Leaving the name keeps what was typed, unless a suggestion is being clicked.
+      nameEl.addEventListener('blur',()=>{ setTimeout(()=>{ if(done||!document.body.contains(nameEl)) return; done=true; commitWaitingName(id, nameEl.textContent); },200); });
     });
     body.querySelectorAll('.todo-subtask-input').forEach(inp=>{
       const updateCount=()=>{
@@ -33653,12 +33721,9 @@ function waitingCandidates(todos) {
     if(!t.done){
       items.push({label: t.pinned?'Unpin':'Pin', icon:PIN_SVG(13), onClick:()=>setTodoPinned(t.id,!t.pinned)});
       const waiting=isWaiting(t);
-      const names=waitingCandidates(todos).slice(0,6);
-      if(waiting&&t.waitingFor&&!names.some(n=>n.toLowerCase()===t.waitingFor.toLowerCase())) names.unshift(t.waitingFor);
-      const waitSub=names.map(n=>({label:n, icon:waiting&&(t.waitingFor||'').toLowerCase()===n.toLowerCase()?CHECK:'', onClick:()=>setTodoWaiting(t.id,n)}));
-      waitSub.push({label:names.length?'Someone else…':'Someone…', onClick:()=>askWaitingFor(t.id)});
-      if(waiting){ waitSub.push({divider:true}); waitSub.push({label:'Not waiting', onClick:()=>setTodoWaiting(t.id,null)}); }
-      items.push({label:'Waiting for…', meta:waiting?(t.waitingFor||'—'):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M7 2v4a5 5 0 0 0 10 0V2M7 22v-4a5 5 0 0 1 10 0v4"/></svg>', submenu:waitSub});
+      const HOURGLASS='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M7 2v4a5 5 0 0 0 10 0V2M7 22v-4a5 5 0 0 1 10 0v4"/></svg>';
+      // Who it waits for is typed on the row itself; the menu only starts or ends waiting.
+      items.push(waiting?{label:'Not waiting', icon:HOURGLASS, onClick:()=>setTodoWaiting(t.id,null)}:{label:'Waiting for…', icon:HOURGLASS, onClick:()=>startWaitingEdit(t.id)});
       items.push({divider:true});
       items.push({label:'Due date…', meta:t.dueDate?fmtDue(t.dueDate):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-due'); if(a) openDueDateEditor(a); }});
       if(!hasSubtasks){
@@ -33740,7 +33805,7 @@ function waitingCandidates(todos) {
     const linkBtn=`<button type="button" class="todo-link rest-hidden" data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}" tabindex="-1" aria-hidden="true"></button>`;
     const moreBtn=`<button type="button" class="todo-more-btn" data-id="${t.id}" data-tip="More" aria-label="Task menu"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>`;
     const since=t.waitingSince?' · since '+new Date(t.waitingSince).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';
-    const waitingHtml=waiting?`<button type="button" class="todo-waiting-line" data-id="${t.id}" data-tip="Change who this waits for">${esc(waitingLabel(t))}${since}</button>`:'';
+    const waitingHtml=(waiting||todoWaitingDraftId===t.id)&&!t.done?`<div class="todo-waiting-line" data-id="${t.id}">Waiting<span class="todo-waiting-for"> for </span><span class="todo-waiting-name" contenteditable="true" spellcheck="false" data-id="${t.id}" data-placeholder="who or what" data-tip="Edit what this waits for">${esc(t.waitingFor||'')}</span>${since}</div>`:'';
     return `<div class="todo-row${t.done?' completed':''}${expanded?' expanded':''}${waiting?' is-waiting':''}${overdue?' is-overdue':''}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')

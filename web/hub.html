@@ -554,7 +554,7 @@ main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;
         </div>
         <button type="button" id="task-detail-due-clear" class="todo-due-clear">Clear</button>
       </div>
-      <div class="todo-detail-prop"><span class="todo-detail-prop-label">Waiting for</span><input type="text" id="task-detail-waiting" class="todo-detail-waiting" placeholder="Not waiting" maxlength="80" autocomplete="off" aria-label="Waiting for"></div>
+      <div class="todo-detail-prop"><span class="todo-detail-prop-label">Waiting for</span><input type="text" id="task-detail-waiting" class="todo-detail-waiting" placeholder="Not waiting" maxlength="200" autocomplete="off" aria-label="Waiting for"></div>
       <div id="task-detail-chip-row">
         <button type="button" id="task-detail-pin-chip" class="todo-detail-chip" aria-label="Pin"></button>
         <button type="button" id="task-detail-repeat-chip" class="todo-detail-chip" data-field="repeat" aria-label="Repeat"></button>
@@ -1625,7 +1625,7 @@ function normalizeTodo(raw, now) {
     if (t.pinned || t.focus || t.status === 'progress')
         out.pinned = true;
     if (typeof t.waitingFor === 'string')
-        out.waitingFor = t.waitingFor.trim().slice(0, 80);
+        out.waitingFor = t.waitingFor.trim().slice(0, 200);
     else if (OLD_WAITING_STATUSES.includes(t.status))
         out.waitingFor = firstMention(t.text);
     if (out.waitingFor !== undefined && Number.isFinite(t.waitingSince))
@@ -1661,7 +1661,8 @@ function groupTodos(todos, todayIso) {
 function waitingLabel(t) {
     return t.waitingFor ? 'Waiting for ' + t.waitingFor : 'Waiting';
 }
-/** Names offered by "Waiting for…": everyone @mentioned or waited on in the list, most used first. */
+/** Names suggested while typing "Waiting for": everyone @mentioned, plus short earlier waiting texts
+ *  (three words at most, so a long note is not offered back), most used first. */
 function waitingCandidates(todos) {
     const counts = new Map();
     const add = (n) => {
@@ -1671,7 +1672,7 @@ function waitingCandidates(todos) {
         counts.set(key, (counts.get(key) || 0) + 1);
     };
     todos.forEach(t => {
-        if (t.waitingFor)
+        if (t.waitingFor && t.waitingFor.split(/\s+/).length <= 3)
             add(t.waitingFor);
         const re = /(^|\s)@([A-Za-z][\w.-]*)/g;
         let m;
@@ -2204,7 +2205,7 @@ function commitTaskText(){
 // Waiting for: a name (or anything) makes the task wait; clearing the field stops waiting.
 document.getElementById('task-detail-waiting').addEventListener('change',function(e){
   var t=findTodo(taskDetailId); if(!t)return;
-  var name=e.target.value.trim().replace(/^@/,'').slice(0,80);
+  var name=e.target.value.trim().replace(/^@/,'').slice(0,200);
   if(!name){ delete t.waitingFor; delete t.waitingSince; }
   else{ if(!isWaiting(t))t.waitingSince=Date.now(); t.waitingFor=name==='Someone'?'':name; }
   saveAndRefreshTask();

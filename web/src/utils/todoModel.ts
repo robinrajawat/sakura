@@ -32,7 +32,7 @@ export interface TodoItem {
   subtasks: TodoSubtask[];
   /** Pinned tasks sit on top of the list. Any number can be pinned. */
   pinned?: boolean;
-  /** Present when the task is waiting on someone: their name, or '' when nobody is named. */
+  /** Present when the task is waiting: free text naming who or what ("Karsten", "vendor quote"), or '' when not said. */
   waitingFor?: string;
   /** When the task started waiting (ms), if known. */
   waitingSince?: number;
@@ -105,7 +105,7 @@ export function normalizeTodo(raw: unknown, now: number): TodoItem | null {
     nodeRef
   };
   if (t.pinned || t.focus || t.status === 'progress') out.pinned = true;
-  if (typeof t.waitingFor === 'string') out.waitingFor = t.waitingFor.trim().slice(0, 80);
+  if (typeof t.waitingFor === 'string') out.waitingFor = t.waitingFor.trim().slice(0, 200);
   else if (OLD_WAITING_STATUSES.includes(t.status)) out.waitingFor = firstMention(t.text);
   if (out.waitingFor !== undefined && Number.isFinite(t.waitingSince)) out.waitingSince = t.waitingSince;
   if (typeof t.remarkId === 'string' && t.remarkId) out.remarkId = t.remarkId;
@@ -139,7 +139,8 @@ export function waitingLabel(t: TodoItem): string {
   return t.waitingFor ? 'Waiting for ' + t.waitingFor : 'Waiting';
 }
 
-/** Names offered by "Waiting for…": everyone @mentioned or waited on in the list, most used first. */
+/** Names suggested while typing "Waiting for": everyone @mentioned, plus short earlier waiting texts
+ *  (three words at most, so a long note is not offered back), most used first. */
 export function waitingCandidates(todos: TodoItem[]): string[] {
   const counts = new Map<string, number>();
   const add = (n: string) => {
@@ -148,7 +149,7 @@ export function waitingCandidates(todos: TodoItem[]): string[] {
     counts.set(key, (counts.get(key) || 0) + 1);
   };
   todos.forEach(t => {
-    if (t.waitingFor) add(t.waitingFor);
+    if (t.waitingFor && t.waitingFor.split(/\s+/).length <= 3) add(t.waitingFor);
     const re = /(^|\s)@([A-Za-z][\w.-]*)/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(t.text))) add(firstMention('@' + m[2]));
