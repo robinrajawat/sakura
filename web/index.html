@@ -1993,6 +1993,7 @@ body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread
    pane. Only the empty/placeholder state (nothing to size from yet) gets a fixed small box. */
 .node-diagram-preview-thumb{display:inline-block;max-width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--canvas-bg);overflow:hidden;color:var(--hint);cursor:pointer;line-height:0}
 .node-diagram-preview-thumb:hover{border-color:var(--accent)}
+.node-diagram-preview-thumb.has-export-border{padding:0}
 .node-diagram-preview-thumb img{display:block;max-width:100%;max-height:70vh;width:auto;height:auto}
 .node-diagram-preview-thumb.node-diagram-preview-empty{padding:0;width:240px;height:150px;display:flex;align-items:center;justify-content:center}
 .node-diagram-preview-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:4px}
@@ -12940,7 +12941,7 @@ async function restoreDocRevision(docId,ts){
       // A restored diagram whose content is unchanged keeps its current preview; the rest are
       // rebuilt in the background (regenerateMissingDiagramPreviews, after the render below).
       const curById=new Map(diagrams.map(d=>[d.id,d]));
-      diagrams=rev.diagrams.map(d=>{ const cur=curById.get(d.id); const same=cur&&cur.xml&&cur.xml===d.xml&&cur.previewSvg; return {...d,previewSvg:same?cur.previewSvg:'',pageSvgs:same&&Array.isArray(cur.pageSvgs)?cur.pageSvgs:[],_hydrated:true}; });
+      diagrams=rev.diagrams.map(d=>{ const cur=curById.get(d.id); const same=cur&&cur.xml&&cur.xml===d.xml&&cur.previewSvg; return {...d,previewSvg:same?cur.previewSvg:'',previewBorder:same?(cur.previewBorder||0):0,pageSvgs:same&&Array.isArray(cur.pageSvgs)?cur.pageSvgs:[],_hydrated:true}; });
     }
     if(Array.isArray(rev.qa)){
       qaItems=rev.qa.map(q=>({...q}));
@@ -13265,9 +13266,9 @@ function regenerateDiagramThumbnail(id,{silent=false}={}){
     if(!msg||!msg.event)return;
     if(msg.event==='init'){
       iframe.contentWindow.postMessage(JSON.stringify({action:'load',xml:d.xml||''}),'*');
-      setTimeout(()=>{ if(!done&&iframe.contentWindow)iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*'); },400);
+      setTimeout(()=>{ if(!done&&iframe.contentWindow)iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg',border:DIAGRAM_EXPORT_BORDER}),'*'); },400);
     } else if(msg.event==='export'){
-      if(msg.data){ d.previewSvg=msg.data; d.pageSvgs=[{name:'',svg:msg.data}]; markDirty(); scheduleAutoSave(); render(); if(!silent)showToast('Thumbnail updated'); }
+      if(msg.data){ d.previewSvg=msg.data; d.previewBorder=DIAGRAM_EXPORT_BORDER; d.pageSvgs=[{name:'',svg:msg.data}]; markDirty(); scheduleAutoSave(); render(); if(!silent)showToast('Thumbnail updated'); }
       cleanup();
     }
   };
@@ -13307,6 +13308,7 @@ function cloneDiagramRecord(src){
     title:src.title?src.title+' (copy)':'',
     xml:src.xml||'',
     previewSvg:src.previewSvg||'',
+    previewBorder:src.previewBorder||0,
     pageSvgs:Array.isArray(src.pageSvgs)?src.pageSvgs.map(p=>({...p})):[],
     pageCount:src.pageCount||1,
     status:diagramStatusOf(src),
@@ -13362,17 +13364,24 @@ let _dvState=null;
 // Download a diagram as SVG (draw.io's own export, so it reopens as an editable diagram in draw.io)
 // or as a PNG at twice its size on white, for pasting into mail and slides (owner, 2026-10-22).
 function diagramFileBase(d){ return ((d.title||'').trim()||'diagram').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').slice(0,80); }
+// draw.io adds this margin around the shapes when it exports a diagram's picture (the export
+// action's own `border`), so downloads and every view get breathing room without us padding the
+// file (owner, 2026-10-22: "use margin within draw.io api"). Pictures saved before carry none;
+// d.previewBorder records which kind a diagram has.
+const DIAGRAM_EXPORT_BORDER=12;
 async function downloadDiagram(id,format){
   const d=findDiagram(id); if(!d)return;
   if(!d.previewSvg){ showToast('No preview yet — open the diagram in the editor once to create one'); return; }
   const base=diagramFileBase(d);
+  // A picture saved before draw.io added the margin is re-exported once first (needs draw.io online;
+  // without it the file is downloaded as it is).
+  if(!d.previewBorder&&d.xml){ showToast('Preparing the diagram…'); await regenerateDiagramThumbnail(id,{silent:true}); }
   try{
     // Decoded by hand: the page's CSP doesn't allow fetch() on data: URLs.
-    const src=d.previewSvg, comma=src.indexOf(','), head=src.slice(0,comma);
+    const src=findDiagram(id)?.previewSvg||d.previewSvg, comma=src.indexOf(','), head=src.slice(0,comma);
     const svgText=/;base64/i.test(head)?new TextDecoder().decode(Uint8Array.from(atob(src.slice(comma+1)),ch=>ch.charCodeAt(0))):decodeURIComponent(src.slice(comma+1));
-    const svgBlob=new Blob([svgText],{type:'image/svg+xml'});
-    if(format==='svg'){ downloadFileBlob(base+'.svg',svgBlob); return; }
-    const img=new Image(); img.src=d.previewSvg; await img.decode();
+    if(format==='svg'){ downloadFileBlob(base+'.svg',new Blob([svgText],{type:'image/svg+xml'})); return; }
+    const img=new Image(); img.src=src; await img.decode();
     const k=2, w=img.naturalWidth||800, h=img.naturalHeight||600;
     const c=document.createElement('canvas'); c.width=w*k; c.height=h*k;
     const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
@@ -13496,6 +13505,8 @@ function openDiagramViewer(diagramId){
   const img=ov.querySelector('.dv-canvas img');
   _dvState={id:d.id,scale:1,fit:1,tx:0,ty:0,w:1,h:1,drag:null,returnFocus:document.activeElement};
   img.style.transform='';
+  // 24px of white around the drawing either way: draw.io's own margin counts toward it.
+  ov.style.setProperty('--dv-pad',Math.max(0,24-(d.previewBorder||0))+'px');
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
   img.src=d.previewSvg;
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
@@ -13602,7 +13613,7 @@ function openDiagramEditor(diagramId){
       // override path. This means only the currently active page is captured for the thumbnail
       // and for the PDF export; see the "N pages" badge and Help section for the
       // reminder this is a known limitation, not a bug.
-      iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg'}),'*');
+      iframe.contentWindow.postMessage(JSON.stringify({action:'export',format:'xmlsvg',border:DIAGRAM_EXPORT_BORDER}),'*');
       const savedAt='Saved '+new Date().toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       if(status){ status.textContent=savedAt; status.classList.remove('diagram-editor-status-unsaved'); status.classList.add('diagram-editor-status-saved'); }
       updateDiagramEditorPagesBadge(d);
@@ -13610,6 +13621,7 @@ function openDiagramEditor(diagramId){
     } else if(msg.event==='export'){
       if(msg.data){
         d.previewSvg=msg.data;
+        d.previewBorder=DIAGRAM_EXPORT_BORDER;
         d.pageSvgs=[{name:'',svg:msg.data}];
         // Deliberately NOT touching d.xml here (a prior version of this code did, hoping the
         // export's own xml field could substitute for an explicit save). A real captured session
@@ -20907,7 +20919,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const gLine=document.createElement('div'); gLine.className='node-diagram-line'; gLine.style.position='relative';
       gLine.style.paddingLeft=hideTreeLines?(gDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
       const card=document.createElement('div'); card.className='node-diagram-preview-card';
-      const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'; thumb.dataset.tip='Click to preview · right-click for more';
+      const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'+(d.previewSvg&&d.previewBorder?' has-export-border':''); thumb.dataset.tip='Click to preview · right-click for more';
       if(d.previewSvg){
         const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
         img.addEventListener('error',()=>{ thumb.classList.add('node-diagram-preview-empty'); thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
@@ -21535,7 +21547,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
       if(Array.isArray(ex.dgs)&&ex.dgs.length){
         ex.dgs.forEach(dg=>{
           const ts=Date.now();
-          diagrams.push({id:newDiagramId(),title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||'',anchorNodeId:targetNode.id,createdAt:ts,modifiedAt:ts,_hydrated:true});
+          diagrams.push({id:newDiagramId(),title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',previewBorder:dg.previewBorder||0,pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||'',anchorNodeId:targetNode.id,createdAt:ts,modifiedAt:ts,_hydrated:true});
           dgAdded++;
         });
       }
@@ -21963,7 +21975,7 @@ function buildNodeClipboardPayload(scopeNodes){
       ...(imgs.length?{imgs:JSON.parse(JSON.stringify(imgs))}:{}),
       ...(qas.length?{qas}:{}),
       ...(rms.length?{rms}:{}),
-      dgs:dgs.map(dg=>({title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||''}))
+      dgs:dgs.map(dg=>({title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',previewBorder:dg.previewBorder||0,pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,status:dg.status||'draft',note:dg.note||''}))
     });
   });
   return extras.length?{v:1,extras}:null;
@@ -29212,6 +29224,8 @@ function previewParseStyledText(text,searchQ=''){const src=String(text||'');let 
 function previewStyleClasses(node){
   return [node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':''].filter(Boolean).join(' ');
 }
+// Contents-page text: the row's words without any markup (** bold **, __ italic __, [[ links ]], [label]).
+function pvTocText(text){ return stripSemanticMarkers(text).replace(/\*\*([\s\S]+?)\*\*/g,'$1').replace(/__([\s\S]+?)__/g,'$1').trim(); }
 function previewNodeInnerHtml(node,textOverride){
   const inner=previewParseStyledText(textOverride!==undefined?textOverride:(node.text||''))||'&nbsp;';
   return node.styles.highlight?`<span class="hl-mark hl-mark-${esc(node.styles.highlight)}">${inner}</span>`:inner;
@@ -29431,11 +29445,12 @@ function renderPreviewBody(){
       const secText=document.createElement('span'); secText.className='pv-section-text';
       if(secParts.label){ const lab=document.createElement('span'); lab.className='pv-section-label'; lab.textContent=secParts.label; secText.appendChild(lab); }
       if(secParts.label&&secParts.rest){ const sep=document.createElement('span'); sep.className='pv-section-sep'; sep.textContent=' · '; secText.appendChild(sep); }
-      if(secParts.rest)secText.appendChild(document.createTextNode(secParts.rest));
+      // The name keeps its inline markup (bold, italic, [[links]]) like any other row, rather than printing it as typed.
+      if(secParts.rest){ const nm=document.createElement('span'); nm.innerHTML=previewParseStyledText(secParts.rest); secText.appendChild(nm); }
       div.appendChild(secText);
       hrow.appendChild(div);
       mainEl=hrow; contentEl=div;
-      tocEntries.push({id:node.id,text:stripSemanticMarkers(secParts.title).trim()||secParts.title,level:1,kind:'section'});
+      tocEntries.push({id:node.id,text:pvTocText(secParts.title)||secParts.title,level:1,kind:'section'});
     } else if(headingLevel>0){
       const hrow=document.createElement('div'); hrow.className='pv-h-row pv-h-row-heading'; hrow.id='pv-anchor-'+node.id;
       hrow.style.paddingLeft=depth===0?'0px':((Math.min(depth,7)-1)*18)+'px';
@@ -29447,7 +29462,7 @@ function renderPreviewBody(){
       h.innerHTML=previewNodeInnerHtml(node,pvMainText);
       hrow.appendChild(h);
       mainEl=hrow; contentEl=h;
-      tocEntries.push({id:node.id,text:stripSemanticMarkers(node.text||'').trim()||'Untitled',level:headingLevel,kind:'heading'});
+      tocEntries.push({id:node.id,text:pvTocText(node.text||'')||'Untitled',level:headingLevel,kind:'heading'});
     } else {
       lastHeadingLevel=null;
       const isCb=isCheckboxNode(node);

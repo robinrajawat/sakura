@@ -432,7 +432,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
       // @ts-expect-error
       collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
       // @ts-expect-error
-      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Night: delivery', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Night: delivery', xml: '<mxGraphModel/>', previewSvg: svg, previewBorder: 12, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
       // @ts-expect-error
       inlineExpandDiagramNodeIds = new Set([1]);
       // @ts-expect-error
@@ -453,13 +453,15 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     const [png] = await Promise.all([page.waitForEvent('download'), menu.getByText('PNG image').click()]);
     expect(png.suggestedFilename()).toBe('Night- delivery.png');
     const buf = fs.readFileSync(await png.path());
-    // PNG header, and twice the diagram's 800x500 size.
+    // PNG header: twice the diagram's 800x500 size (its margin comes from draw.io's own export border).
     expect(buf.readUInt32BE(16)).toBe(1600);
     expect(buf.readUInt32BE(20)).toBe(1000);
     await viewer.locator('.dv-download').click();
     const [svg] = await Promise.all([page.waitForEvent('download'), page.locator('.sb-context-menu').getByText('SVG', { exact: false }).click()]);
     expect(svg.suggestedFilename()).toBe('Night- delivery.svg');
-    expect(fs.readFileSync(await svg.path(), 'utf8')).toContain('<svg');
+    const svgText = fs.readFileSync(await svg.path(), 'utf8');
+    expect(svgText).toContain('<svg');
+    expect(svgText).toContain('width="800"');
   });
 
   test('right-clicking the thumbnail offers Preview, Edit, Rename, Download and Delete (with undo)', async ({ page }) => {
@@ -488,5 +490,31 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(await page.evaluate(() => diagrams.length)).toBe(0);
     await page.locator('#toast .toast-action-btn').click();
     await expect(page.locator('.node-diagram-preview-thumb')).toHaveCount(1);
+  });
+  // Owner, 2026-10-22: the margin comes from draw.io's export (its `border`), not from padding the file ourselves.
+  test('a picture with draw.io\'s margin drops the thumbnail padding; an older tight one is re-exported before download', async ({ page }) => {
+    await seedOne(page);
+    const thumb = page.locator('.node-diagram-preview-thumb');
+    await expect(thumb).toHaveClass(/has-export-border/);
+    expect(await thumb.evaluate((el) => getComputedStyle(el).paddingLeft)).toBe('0px');
+    await thumb.click();
+    expect(await page.locator('#diagram-viewer').evaluate((el) => (el as HTMLElement).style.getPropertyValue('--dv-pad'))).toBe('12px');
+    await page.keyboard.press('Escape');
+
+    const tight = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><rect width="100" height="50"/></svg>');
+    const bordered = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="124" height="74"><rect x="12" y="12" width="100" height="50"/></svg>');
+    await page.evaluate(([t, b]) => {
+      const w = window as any;
+      w.eval('diagrams[0].previewSvg = ' + JSON.stringify(t) + '; delete diagrams[0].previewBorder; render();');
+      // Stands in for the offscreen draw.io frame (no network in tests).
+      w.regenerateDiagramThumbnail = async (id: string) => { const d = w.findDiagram(id); d.previewSvg = b; d.previewBorder = 12; w.__regen = (w.__regen || 0) + 1; };
+    }, [tight, bordered]);
+    await expect(thumb).not.toHaveClass(/has-export-border/);
+    expect(await thumb.evaluate((el) => getComputedStyle(el).paddingLeft)).toBe('12px');
+    await thumb.click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Download').hover();
+    const [svg] = await Promise.all([page.waitForEvent('download'), page.locator('.sb-context-menu').getByText('SVG', { exact: false }).click()]);
+    expect(fs.readFileSync(await svg.path(), 'utf8')).toContain('width="124"');
+    expect(await page.evaluate(() => (window as any).__regen)).toBe(1);
   });
 });
