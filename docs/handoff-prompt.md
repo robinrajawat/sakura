@@ -159,6 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Diagram download and right-click menu.** Owner: "would it make sense to have a diagram download option in
+the preview?" and "also delete button? quick right click menu in the diagram thumbnails?". The preview bar has
+**Download** (PNG image at 2x on white, or SVG = draw.io's xmlsvg, which reopens editable in draw.io), named after the
+diagram title (`downloadDiagram`, `diagramFileBase`). Right-clicking a thumbnail (`showDiagramThumbMenu`): Preview, Edit,
+Rename (focuses the title in place), Download ›, Delete (Undo toast). The page CSP blocks `fetch()` on data: URLs, so the
+SVG data URL is decoded by hand. Tests in `node-diagram-inline-preview.spec.ts`.
+
 **2026-10-22: To-Dos section icons.** Owner: "Don't you think it would make sense to add the icons?" (after #599 made
 labels plain). Every section label, Done included, has one grey 12px icon (`TODO_SECTION_ICON`: pin, sun, calendar,
 tray (Anytime = no date; layers and ∞ were rejected), hourglass, circle-check); no colours per section (only overdue dates are red). Done's chevron moved after its
@@ -168,11 +175,6 @@ count so the icons line up. Desktop only (hub.html unchanged). Screenshot `inlin
 screen (text ending "…Flexible Night Delivery." filled its line; the stored text ended in a space, a break point).
 `moveRowIconsInline` now puts the icon box inside `.node-row-tail` (`white-space:nowrap`) with the label's last word
 (`rowIconsTail`; not inside links). Tests `row-icons-inline.spec.ts`. Screenshot `inline-objects/row-icons-last-word.png`.
-
-**2026-10-22: To-Dos panel flattened.** Owner asked if the flat look works, "even the header (top row is kind of
-mixed)". Removed the header divider (`.todos-header-sep`); section labels are plain words (no counts, no pin icon; the
-header's "N open" covers it); Done uses the same label style with its count ("Done 32", `.todos-group-count`); the
-Add-a-task row stays flat while focused (no box). Screenshot `inline-objects/todos-flat-header.png`.
 
 ### Where things stand (the model to keep in mind)
 

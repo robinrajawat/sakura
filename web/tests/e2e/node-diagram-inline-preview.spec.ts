@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -420,5 +421,72 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await page.keyboard.press('Escape');
     await expect(viewer).not.toHaveClass(/open/);
     await expect(page.locator('#diagram-editor-overlay')).not.toHaveClass(/open/);
+  });
+  // Owner, 2026-10-22: a download option in the preview, and a quick right-click menu on the thumbnail.
+  async function seedOne(page: import('@playwright/test').Page) {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Order flow', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: 'Night: delivery', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]);
+      // @ts-expect-error
+      render();
+    }, LARGE_PREVIEW_SVG);
+  }
+
+  test('the preview downloads the diagram as a 2x PNG or as SVG, named after its title', async ({ page }) => {
+    await seedOne(page);
+    await page.locator('.node-diagram-preview-thumb').click();
+    const viewer = page.locator('#diagram-viewer');
+    await expect(viewer).toHaveClass(/open/);
+    await viewer.locator('.dv-download').click();
+    const menu = page.locator('.sb-context-menu');
+    await expect(menu).toBeVisible();
+    // The menu sits above the viewer, not hidden behind it.
+    await expect(menu.getByText('PNG image')).toBeVisible();
+    const [png] = await Promise.all([page.waitForEvent('download'), menu.getByText('PNG image').click()]);
+    expect(png.suggestedFilename()).toBe('Night- delivery.png');
+    const buf = fs.readFileSync(await png.path());
+    // PNG header, and twice the diagram's 800x500 size.
+    expect(buf.readUInt32BE(16)).toBe(1600);
+    expect(buf.readUInt32BE(20)).toBe(1000);
+    await viewer.locator('.dv-download').click();
+    const [svg] = await Promise.all([page.waitForEvent('download'), page.locator('.sb-context-menu').getByText('SVG', { exact: false }).click()]);
+    expect(svg.suggestedFilename()).toBe('Night- delivery.svg');
+    expect(fs.readFileSync(await svg.path(), 'utf8')).toContain('<svg');
+  });
+
+  test('right-clicking the thumbnail offers Preview, Edit, Rename, Download and Delete (with undo)', async ({ page }) => {
+    await seedOne(page);
+    const thumb = page.locator('.node-diagram-preview-thumb');
+    await thumb.click({ button: 'right' });
+    const menu = page.locator('.sb-context-menu');
+    await expect(menu.locator('.sb-context-item')).toHaveText([/Preview/, /Edit/, /Rename/, /Download/, /Delete/]);
+    await menu.getByText('Preview').click();
+    await expect(page.locator('#diagram-viewer')).toHaveClass(/open/);
+    await page.keyboard.press('Escape');
+
+    await thumb.click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Rename').click();
+    const title = page.locator('.node-diagram-preview-title');
+    await expect(title).toBeFocused();
+    await page.keyboard.type('Route plan');
+    await page.keyboard.press('Enter');
+    // @ts-expect-error
+    await expect.poll(() => page.evaluate(() => diagrams[0].title)).toBe('Route plan');
+
+    await thumb.click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Delete').click();
+    await expect(page.locator('.node-diagram-preview-thumb')).toHaveCount(0);
+    // @ts-expect-error
+    expect(await page.evaluate(() => diagrams.length)).toBe(0);
+    await page.locator('#toast .toast-action-btn').click();
+    await expect(page.locator('.node-diagram-preview-thumb')).toHaveCount(1);
   });
 });
