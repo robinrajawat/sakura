@@ -11,6 +11,7 @@ import {
 import { buildPrefix } from '../../src/core/nodeQueries';
 import { computeOutlineNumbers } from '../../src/utils/computeOutlineNumbers';
 import { escapeHtml } from '../../src/utils/escapeHtml';
+import { rowMarksOf, rowMarksToHtml } from '../../src/utils/rowMarks';
 
 // serializeClipboardHtml.ts references buildPrefix/computeOutlineNumbers/escapeHtml as ambient
 // globals (declare function, erased at compile time — see the module's own header for why). In
@@ -22,10 +23,14 @@ beforeAll(() => {
     buildPrefix: typeof buildPrefix;
     computeOutlineNumbers: typeof computeOutlineNumbers;
     escapeHtml: typeof escapeHtml;
+    rowMarksOf: typeof rowMarksOf;
+    rowMarksToHtml: typeof rowMarksToHtml;
   };
   g.buildPrefix = buildPrefix;
   g.computeOutlineNumbers = computeOutlineNumbers;
   g.escapeHtml = escapeHtml;
+  g.rowMarksOf = rowMarksOf;
+  g.rowMarksToHtml = rowMarksToHtml;
 });
 
 function node(depth: number, text: string, styles: ClipboardNode['styles'] = {}): ClipboardNode {
@@ -181,5 +186,21 @@ describe('serializeClipboardHtmlCore', () => {
     const hidden = serializeClipboardHtmlCore(tree, false, false, 4, true);
     expect(shown).toContain('│');
     expect(hidden).not.toContain('│');
+  });
+});
+
+describe('serializeClipboardHtmlCore with formatting on part of a row', () => {
+  it('copies bold, colour and highlight on the formatted words as inline styles', () => {
+    const n: ClipboardNode = {
+      ...node(0, 'Call vendor today'),
+      marks: [
+        { s: 5, e: 11, k: 'b' },
+        { s: 12, e: 17, k: 'c', v: 'red' },
+        { s: 12, e: 17, k: 'hl', v: 'yellow' }
+      ],
+      marksText: 'Call vendor today'
+    };
+    const html = serializeClipboardHtmlCore([n], true, false, 4, false);
+    expect(html).toContain('Call <b>vendor</b> <span style="background:rgb(246, 221, 144);"><span style="color:#c0392b;">today</span></span>');
   });
 });

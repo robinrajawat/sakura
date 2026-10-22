@@ -30,7 +30,7 @@ Sakura is a single `.html` file. Open it in a browser and it runs — no install
 Key capabilities:
 
 - Nested outline editing with indent/outdent, drag-and-drop reordering and nesting, duplication, and multi-select
-- Bold, italic, underline, strike, highlight, and text color on the selected words of a row (select words, then the shortcut or toolbar button; Ctrl/Cmd+Z undoes it), or on the whole row when nothing is selected. Formatting stays with its words through Enter (split), Backspace/Delete (merge), copy/paste, duplicate and the PDF
+- Bold, italic, underline, strike, highlight, and text color on the selected words of a row (select words, then the shortcut or toolbar button; Ctrl/Cmd+Z undoes it), or on the whole row when nothing is selected. Formatting stays with its words through Enter (split), Backspace/Delete (merge), copy/paste, duplicate, the PDF and rich copy (pasted into email, Word or chat with fixed light-mode colours); OPML and plain-text copy carry the words only
 - Heading 1–6 per node, applied independent of tree depth, carried through to PDF export
 - Lightweight semantic styling via plain-text conventions: `[Section]`, `(note)`, `!alert`, `` `code` ``, a leading `Label: ` (bolds the label), and `SAP Note 12345`/`OSS Note 12345` (auto-links to me.sap.com)
 - Fold/unfold subtrees, with a "+N hidden" badge that's clickable to expand
