@@ -2094,6 +2094,8 @@ body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread
 .bl-link{display:inline;padding:1px 3px;margin:0 -1px;border-radius:4px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);cursor:pointer;font-weight:500;transition:background .1s}
 .bl-link:hover{background:color-mix(in srgb,var(--accent) 22%,transparent)}
 .bl-link.bl-unresolved{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);cursor:default;font-weight:400;font-style:italic}
+.node-input .bl-link{cursor:text}
+#preview-body .bl-link{background:none;padding:0;margin:0;border-radius:0;color:var(--pv-heading-2);font-weight:400;cursor:default}
 #at-suggest{position:fixed;z-index:700;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:200px;max-width:320px;max-height:220px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
 
 #at-suggest.open{display:block}
@@ -3650,7 +3652,7 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="panels" id="settings-section-backlinks">
             <div class="settings-section-title">Backlinks</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backlinks</span><span class="settings-row-desc">@mention other nodes; existing [[mentions]] still render as links either way</span></div><button id="feat-backlinks-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Backlinks"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backlinks</span><span class="settings-row-desc">Type @ in a row to link another row; existing links work either way</span></div><button id="feat-backlinks-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Backlinks"></button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="hub" id="settings-section-todos">
@@ -3885,7 +3887,7 @@ body.printing-generic #gpe-overlay{
             <div class="settings-section-title">Auto-rewrite on commit</div>
             <div class="settings-list">
               <div class="settings-list-row">
-                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite on commit</span><span class="settings-row-desc">Runs Rewrite automatically on nodes as you finish editing them — no manual click. Queued and sent as a single batched request after two minutes without further edits, or as soon as five nodes have queued up — not one request per node, to avoid burning through provider rate limits during continuous note-taking. Short nodes (under five words), checkbox items, headings, and text containing [[backlinks]] or `code` are left alone. Uses the same Rewrite prompt configured above — there's no separate prompt for auto-rewrite. Requires a usable active provider — an API key configured above for a BYOK provider, or just being signed in for Sakura Hosted AI; if that's not the case right now (no key set, Secure Storage is locked, or hosted is selected and you're signed out), queued nodes wait rather than being discarded and send automatically as soon as the provider becomes usable again. Turns itself off after repeated AI-call failures rather than retrying silently forever — a separate case from simply not having a key yet. Shows a live status in the bottom status bar whenever it's on — how many nodes are queued and when they'll be sent.</span></div>
+                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite on commit</span><span class="settings-row-desc">Runs Rewrite automatically on nodes as you finish editing them — no manual click. Queued and sent as a single batched request after two minutes without further edits, or as soon as five nodes have queued up — not one request per node, to avoid burning through provider rate limits during continuous note-taking. Short nodes (under five words), checkbox items, headings, and rows with row links or `code` are left alone. Uses the same Rewrite prompt configured above — there's no separate prompt for auto-rewrite. Requires a usable active provider — an API key configured above for a BYOK provider, or just being signed in for Sakura Hosted AI; if that's not the case right now (no key set, Secure Storage is locked, or hosted is selected and you're signed out), queued nodes wait rather than being discarded and send automatically as soon as the provider becomes usable again. Turns itself off after repeated AI-call failures rather than retrying silently forever — a separate case from simply not having a key yet. Shows a live status in the bottom status bar whenever it's on — how many nodes are queued and when they'll be sent.</span></div>
                 <button class="toggle-switch" type="button" role="switch" id="auto-rewrite-toggle" aria-checked="false" aria-label="Enable auto-rewrite on commit"></button>
               </div>
             </div>
@@ -4085,9 +4087,10 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing" id="help-section-backlinks">
 <h4>@ Mentions &amp; Backlinks</h4>
 <ul>
-<li>While editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type — pick with mouse or arrow keys + Enter. The reference is saved as <span class="help-kbd">[[Node name]]</span> and renders as a clickable link that jumps to the target node</li>
-<li>Deleting a referenced node automatically removes its <span class="help-kbd">[[mention]]</span> links from all other nodes</li>
-<li>Turning the feature off (Settings → Panels → Backlinks) suppresses the @ dropdown. Existing <span class="help-kbd">[[mentions]]</span> in node text still render as clickable links regardless — they navigate on click even when the feature is off</li>
+<li>While editing a row, type <span class="help-kbd">@</span> to link another row by name; a dropdown filters as you type — pick with mouse or arrow keys + Enter. The row's name goes in as a link; click it to jump to that row</li>
+<li>The link points at the row itself, so it keeps working when that row is renamed (a link showing the old name updates to the new one)</li>
+<li>Deleting a linked row turns its links in other rows into plain words</li>
+<li>Turning the feature off (Settings → Panels → Backlinks) suppresses the @ dropdown. Existing links still work</li>
 </ul>
 </div>
           <div class="help-section" data-cat="editing" id="help-section-focus">
@@ -4137,7 +4140,7 @@ body.printing-generic #gpe-overlay{
 <li>Batches larger than 30 nodes are sent in sequential chunks automatically, with a status toast showing progress (e.g. "Rewriting nodes 1–30…")</li>
 <li><strong>Sakura Hosted AI</strong> — Settings → AI → the "AI Mode" switch at the top → "Sakura Hosted AI", then sign in. No key to find or paste; Sakura's own credentials handle the request via a small Cloudflare Worker, capped by a daily per-account quota. The request text for that one call goes to Sakura's server and on to a third-party provider Sakura selects, not stored either way — see Settings → About → Privacy &amp; data for the full picture. Selecting it collapses the panel down to just sign-in status — no model or key fields, since there's nothing to configure. Prefer your own key, or want usage with no daily cap? Flip the same switch to "Bring your own key" instead</li>
 <li>Settings → AI → AI Mode → "Bring your own key" reveals the Provider dropdown, Model, and API Key fields (hidden entirely under Sakura Hosted AI) — choose a provider, paste the API key for it, then head to the Rewrite section to optionally customise the rewrite prompt. All AI features — Rewrite (node, selection, note and remark lines, To-Do tasks and subtasks), Auto-rewrite, Generate outline — share whichever AI Mode and provider/key is currently active. "Reset to default" next to the prompt box restores the original grammar-and-spelling-only wording; "Rephrase" swaps in a different canned prompt that's allowed to restructure sentences and vary wording, not just correct errors — both replace the box's contents and save immediately, the same way, so review before relying on either. There's only one active prompt: switching to Rephrase also changes what Auto-rewrite on commit does, if it's on, since auto-rewrite always uses whichever prompt is currently active. "Reset AI settings", at the bottom of the "Bring your own key" section, restores your provider and model choices, clears every saved key, and also resets the shared rewrite prompt — want just the prompt reset, without touching your keys? Use "Reset to default" next to the prompt box instead. Switching AI Mode back and forth remembers whichever BYOK provider you were last on for the rest of the session (not saved across a reload if you leave on Sakura Hosted AI)</li>
-<li><strong>Auto-rewrite on commit</strong> (Settings → AI → Auto-rewrite on commit, off by default) — runs Rewrite automatically on a node as soon as you finish editing it, no manual click needed. Only text typed by hand counts: if any part of an edit session came from a paste or drop (checked via the browser's own paste/drop signal on that edit), that node is skipped for auto-rewrite on that commit — paste it, then use the manual Rewrite button if you want AI on it. Committing a node with no actual text change (e.g. clicking in and back out without editing) is also skipped — it doesn't re-queue nodes that haven't changed. It doesn't send one request per node: committed nodes are queued and sent as a single batched request once either an idle pause passes or enough nodes have queued up, whichever comes first — both the pause length (1-300s, default 120s) and the queue size (2-50, default 5) are configurable in Settings, not fixed — built this way specifically to avoid exhausting provider rate limits during continuous note-taking. A small ✦ dot appears next to any node currently queued (or mid-batch, waiting on the response) — click that dot to pull just that node back out of the queue before it's sent — separate from the status bar chip, which shows the overall off / idle / queued-count-with-a-live-countdown / paused / rewriting state and doubles as the control itself: click it to turn auto-rewrite on or off directly (see below for what clicking does instead while it's paused), right-click it for its settings (exclusions, minimum word count, idle pause, queue size). The countdown ticks down to the batch's send time and resets to the full idle-pause value every time another node joins the queue — a fresh edit means a fresh wait, not a shorter one. Both the queued count and the countdown are independently hideable from the chip (Settings → AI → Auto-rewrite on commit, below the queue-size setting) if either feels like more detail than you want at a glance — the chip still distinguishes "something's queued" from idle even with both turned off, just without the numbers; the tooltip on hover always shows the full detail regardless of what the chip itself displays. Exclusions (checkboxes, headings, <span class="help-kbd">[[backlinks]]</span>/<span class="help-kbd">`code`</span> syntax) and the minimum word count are each independently configurable checkboxes in Settings, not fixed. Needs a usable active provider to do anything — for a BYOK provider that means a key configured above; for Sakura Hosted AI, being signed in. If that's not the case right now — no key set, Secure Storage is locked so the saved one can't be read, or hosted is selected and you're signed out — the chip turns red and shows "paused," queued nodes are held rather than discarded, and the batch sends automatically the moment the provider becomes usable again (e.g. right after unlocking, or right after signing in) rather than waiting for the next edit to retrigger it. Clicking the chip while paused acts as the fix — unlocks Secure Storage directly if that's the cause, or jumps to the key field in Settings if not. That's separate from the retry-exhaustion case: if it fails three times in a row with a key that is available (e.g. an expired key), it turns itself off and tells you why, rather than silently retrying forever. Switching documents discards anything still queued rather than rewriting into the wrong document. Nodes created by Generate outline, paste-a-tree, and OPML import are never queued for auto-rewrite regardless of this setting — only nodes you type into interactively go through <span class="help-kbd">commitEdit</span> at all</li>
+<li><strong>Auto-rewrite on commit</strong> (Settings → AI → Auto-rewrite on commit, off by default) — runs Rewrite automatically on a node as soon as you finish editing it, no manual click needed. Only text typed by hand counts: if any part of an edit session came from a paste or drop (checked via the browser's own paste/drop signal on that edit), that node is skipped for auto-rewrite on that commit — paste it, then use the manual Rewrite button if you want AI on it. Committing a node with no actual text change (e.g. clicking in and back out without editing) is also skipped — it doesn't re-queue nodes that haven't changed. It doesn't send one request per node: committed nodes are queued and sent as a single batched request once either an idle pause passes or enough nodes have queued up, whichever comes first — both the pause length (1-300s, default 120s) and the queue size (2-50, default 5) are configurable in Settings, not fixed — built this way specifically to avoid exhausting provider rate limits during continuous note-taking. A small ✦ dot appears next to any node currently queued (or mid-batch, waiting on the response) — click that dot to pull just that node back out of the queue before it's sent — separate from the status bar chip, which shows the overall off / idle / queued-count-with-a-live-countdown / paused / rewriting state and doubles as the control itself: click it to turn auto-rewrite on or off directly (see below for what clicking does instead while it's paused), right-click it for its settings (exclusions, minimum word count, idle pause, queue size). The countdown ticks down to the batch's send time and resets to the full idle-pause value every time another node joins the queue — a fresh edit means a fresh wait, not a shorter one. Both the queued count and the countdown are independently hideable from the chip (Settings → AI → Auto-rewrite on commit, below the queue-size setting) if either feels like more detail than you want at a glance — the chip still distinguishes "something's queued" from idle even with both turned off, just without the numbers; the tooltip on hover always shows the full detail regardless of what the chip itself displays. Exclusions (checkboxes, headings, rows with row links or <span class="help-kbd">`code`</span>) and the minimum word count are each independently configurable checkboxes in Settings, not fixed. Needs a usable active provider to do anything — for a BYOK provider that means a key configured above; for Sakura Hosted AI, being signed in. If that's not the case right now — no key set, Secure Storage is locked so the saved one can't be read, or hosted is selected and you're signed out — the chip turns red and shows "paused," queued nodes are held rather than discarded, and the batch sends automatically the moment the provider becomes usable again (e.g. right after unlocking, or right after signing in) rather than waiting for the next edit to retrigger it. Clicking the chip while paused acts as the fix — unlocks Secure Storage directly if that's the cause, or jumps to the key field in Settings if not. That's separate from the retry-exhaustion case: if it fails three times in a row with a key that is available (e.g. an expired key), it turns itself off and tells you why, rather than silently retrying forever. Switching documents discards anything still queued rather than rewriting into the wrong document. Nodes created by Generate outline, paste-a-tree, and OPML import are never queued for auto-rewrite regardless of this setting — only nodes you type into interactively go through <span class="help-kbd">commitEdit</span> at all</li>
 <li><strong>Built-in providers</strong> — seven BYOK providers ship with Sakura: Gemini (free), Groq (free, fast), Claude API, ChatGPT (OpenAI), OpenRouter (free models), Cerebras, and GitHub Models (free, needs your GitHub account). Cerebras's own free access varies by account and model — check their Billing tab if a request fails with a payment-required error. This is the complete, fixed list — Sakura doesn't support adding another provider. All need an API key — selecting a provider shows a direct link to where you get one. GitHub Models requires a GitHub personal access token with <code>models:read</code> scope; model IDs in the dropdown already include the required vendor prefix (e.g. <code>openai/gpt-4o</code>). These seven only show up under AI Mode → "Bring your own key" — Sakura Hosted AI needs no key at all and is the other AI Mode option, see the bullet above</li>
 <li><strong>Provider fallback</strong> — Settings → AI → Provider → Fallback order: enable the toggle to let Sakura automatically retry with the next checked provider when the active one fails — quota, rate limit, wrong model ID, or any other error. The active provider is always tried first; the list sets the retry order. Providers without a saved key are skipped automatically, and if none of the checked providers besides the active one have a key, a notice under the list says so directly rather than letting it fail silently the first time it's actually needed. A toast names both the failed provider and the one that succeeded (e.g. “Quota hit on Groq — rewritten with Gemini ✦” or “Error on Groq — rewritten with Gemini ✦”). The only error that does not trigger fallback is a bad API key (401) — that surfaces directly so you know to update it. Default order on a fresh install: Groq → Gemini → Cerebras → OpenRouter, with the first three enabled</li>
 <li><strong>Usage today</strong> — below the API key field, Sakura counts requests made to the currently selected provider today (and shows the count next to each provider in the Fallback order list once any requests are made). This is a local, best-effort counter — it resets on your computer's local calendar day, which can drift slightly from a provider's own reset clock (e.g. Gemini resets at midnight Pacific), and it isn't fetched from the provider itself. Treat it as a rough gauge of how much you've used a provider today, not an authoritative quota reading — check the provider's own dashboard (e.g. Google AI Studio) for the real number if it matters</li>
@@ -10146,6 +10149,8 @@ function repointNodeLinks(fromId,toId){
   if(Array.isArray(diagrams))diagrams.forEach(d=>{ if(d&&d.anchorNodeId===fromId)d.anchorNodeId=toId; });
   [inlineExpandNoteNodeIds,inlineExpandRemarksNodeIds,inlineExpandQaNodeIds,inlineExpandDiagramNodeIds].forEach(s=>{ if(s&&s.has(fromId))s.add(toId); });
   if(currentDocId&&typeof window.sakuraTodosRepointNode==='function')window.sakuraTodosRepointNode(currentDocId,fromId,toId);
+  const fromV=String(fromId), toV=String(toId);
+  nodes.forEach(n=>{ const marks=rowMarksOf(n); if(marks.some(m=>m.k==='r'&&m.v===fromV))setRowMarksOn(n,marks.map(m=>m.k==='r'&&m.v===fromV?{...m,v:toV}:m)); });
 }
 // Duplicate and copy/paste: Q&A and remarks are linked to a row by its id, so a copied row gets
 // its own copies of them (fresh ids, same content and status) instead of leaving them behind.
@@ -11737,7 +11742,10 @@ function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:N
 // rowFormat 3 (owner, 2026-10-22: one formatting system): a whole-row bold, italic, underline,
 // strike, highlight or text colour becomes the same formatting on all the row's words
 // (foldRowStylesIntoMarks); only heading stays a row style.
-const ROW_FORMAT=3;
+// rowFormat 4 (owner, 2026-10-22: no syntax in row text): a typed [[Row name]] becomes the words
+// "Row name" linked to that row by its id (convertLegacyRowLinks), so the link survives renames;
+// a name no row has any more becomes plain words.
+const ROW_FORMAT=4;
 const ROW_STYLE_MARK_KINDS=[['bold','b'],['italic','i'],['underline','u'],['strike','s'],['highlight','hl'],['color','c']];
 function foldRowStylesIntoMarks(node){
   const st=node.styles; if(!st)return false;
@@ -11755,7 +11763,7 @@ function foldRowStylesIntoMarks(node){
 // view is converted in memory each time instead (nothing of it is saved).
 function keepLegacyRowsVersion(id,d,convertedNodes){
   const meta=sharedDocMeta&&sharedDocMeta[id]; if(meta&&meta.role!=='editor')return;
-  recordDocRevision(id,d,d&&d.rowFormat===2?'Before whole-row styles became word formatting':'Before rich text rows');
+  const was=d&&d.rowFormat; recordDocRevision(id,d,was===3?'Before row links became real links':was===2?'Before whole-row styles became word formatting':'Before rich text rows');
   try{ const raw=localStorage.getItem(docKey(id)); if(!raw)return; const cur=JSON.parse(raw); if(cur.rowFormat===ROW_FORMAT)return;
     cur.nodes=convertedNodes||nodes; cur.rowFormat=ROW_FORMAT; localStorage.setItem(docKey(id),JSON.stringify(cur)); }catch(e){}
   setTimeout(()=>{ if(currentDocId===id){ markDirty(); scheduleAutoSave(); } },0);
@@ -11775,6 +11783,11 @@ function convertLegacyRows(list,savedFormat){
     node.text=conv.text; setRowMarksOn(node,conv.marks); if(heading!==null)node.styles.heading=heading;
     changed++;
   });
+  if(!(savedFormat>=4)){
+    const byName=new Map(); list.forEach(n=>{ const t=String(n.text||'').trim().toLowerCase(); if(!t)return; if(!byName.has(t))byName.set(t,n.id); const p=stripSemanticMarkers(t).trim(); if(p&&!byName.has(p))byName.set(p,n.id); });
+    const resolve=name=>{ const t=String(name||'').trim().toLowerCase(); const id=byName.get(t)??byName.get(stripSemanticMarkers(t).trim()); return id==null?null:String(id) };
+    list.forEach(node=>{ const before=node.text||''; if(before.indexOf('[[')<0)return; const conv=convertLegacyRowLinks(before,rowMarksOf(node),resolve); if(!conv.changed)return; node.text=conv.text; setRowMarksOn(node,conv.marks); folded++; });
+  }
   // Folding styles looks the same on screen, so only the typed-markup conversion explains itself.
   if(changed&&!convertLegacyRows._toastShown){ convertLegacyRows._toastShown=true; setTimeout(()=>{ try{ if(localStorage.getItem('sakura_rich_rows_toast_v1'))return; localStorage.setItem('sakura_rich_rows_toast_v1','1') }catch(e){} if(typeof showToast==='function')showToast('Rows are rich text now: select words to format them from the bar above them, or press Ctrl/Cmd+B, I or U. Typed **, __ and [Section] were turned into formatting.',null,false,9000) },800) }
   return changed+folded;
@@ -14345,7 +14358,7 @@ async function confirmDeleteIfNeeded(){
   const internalRefs=roots.flatMap(id=>{const bi=getBacklinksTo(id); return bi.filter(r=>rootIdSet.has(r));});
   const extCount=referrers.length;
   const intCount=internalRefs.length;
-  const blWarning=extCount?`\n\n${extCount} node${extCount===1?'':'s'} link to this — the [[reference${extCount===1?'':'s'}]] will be removed from ${extCount===1?'that node':'those nodes'}.`:(intCount?`\n\nThis subtree contains ${intCount} internal [[backlink${intCount===1?'':'s'}]] that will be lost.`:'');
+  const blWarning=extCount?`\n\n${extCount} row${extCount===1?' links':'s link'} to this — ${extCount===1?'that link becomes':'those links become'} plain words.`:(intCount?`\n\nThis subtree contains ${intCount} internal row link${intCount===1?'':'s'} that will be lost.`:'');
   // Inline objects (notes, tables, images, Q&A, remarks, diagrams) are deleted with the rows.
   // Owner rule: only ask when part of the delete can't be undone -- diagrams, which live outside
   // the undo snapshot -- with a prominent warning; the dialog then also says what Undo restores.
@@ -14354,7 +14367,7 @@ async function confirmDeleteIfNeeded(){
   const linkedWarning=[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('');
   // Plain "are you sure, you can undo" case is gone entirely (Category A of the popup audit —
   // Ctrl+Z / the delete toast already cover it). What's left here is different in kind: a
-  // warning that OTHER rows will lose a [[backlink]], or that diagrams will be deleted for good.
+  // warning that OTHER rows will lose a row link, or that diagrams will be deleted for good.
   // Everything else is silent (the delete toast names what went; Undo restores it).
   if(!extCount&&!intCount&&!impact.diagrams)return true;
   return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?${blWarning}${linkedWarning}`,warning:impactText.permanent,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
@@ -19224,16 +19237,15 @@ function stripSemanticMarkers(text) {
         .replace(/(\s)>(\S)/g, '$1$2');
 }
 /**
- * Returns a node's words as the editor shows them: only `[[link]]` brackets are removed (a link
- * shows its name). Typed `**`, `__` and `[ ]` are plain characters since rows became rich text
- * (owner, 2026-10-22); formatting lives in node.marks and never changes the words. The one helper
- * every reader of a row's words goes through (search, sorting, labels, word counts, plain-text
- * exports). Wired into index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers`
- * block, alongside `stripSemanticMarkers` itself.
+ * Returns a node's words as the editor shows them, exactly as typed: since rows became rich text
+ * (owner, 2026-10-22) formatting and row links live in node.marks and never change the words, so
+ * typed `**`, `__`, `[ ]` and `[[ ]]` are plain characters. The one helper every reader of a
+ * row's words goes through (search, sorting, labels, word counts, plain-text exports). Wired into
+ * index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
+ * `stripSemanticMarkers` itself.
  */
 function getNodePlainText(node) {
-    return String(node.text || '')
-        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
+    return String(node.text || '');
 }
 
 /* GENERATED:stripSemanticMarkers:END */
@@ -19245,7 +19257,8 @@ function getNodePlainText(node) {
  * The row's words stay a plain string in `node.text`; the formatting lives beside it in
  * `node.marks` as character ranges: `{s, e, k, v?}` covers `text.slice(s, e)` with kind `k`
  * (`b` bold, `i` italic, `u` underline, `s` strikethrough, `hl` highlight, `c` text colour, `a`
- * web link) and, for `hl`/`c`, the palette name `v`, for `a` the address `v`. Keeping the words plain means everything that reads them
+ * web link, `r` link to another row) and, for `hl`/`c`, the palette name `v`, for `a` the address
+ * `v`, for `r` the linked row's id `v`. Keeping the words plain means everything that reads them
  * (search, sorting, Enter/Backspace split and merge, backlinks, exports) keeps working untouched,
  * and a formatting bug can only misplace formatting, never lose words.
  *
@@ -19256,10 +19269,11 @@ function getNodePlainText(node) {
  * Wired into index.html via scripts/generate-index-blocks.mjs's `rowMarks` block.
  */
 const ROW_MARK_FLAGS = ['b', 'i', 'u', 's'];
-const ROW_MARK_KINDS = ['b', 'i', 'u', 's', 'hl', 'c', 'a'];
+const ROW_MARK_KINDS = ['b', 'i', 'u', 's', 'hl', 'c', 'a', 'r'];
 const ROW_MARK_VALUE_RE = /^[a-z0-9-]{1,24}$/;
+const ROW_LINK_ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
 function isValuedKind(k) {
-    return k === 'hl' || k === 'c' || k === 'a';
+    return k === 'hl' || k === 'c' || k === 'a' || k === 'r';
 }
 /** A web address a row link may hold: one line, not too long, and never a script/data URL. */
 function isRowLinkUrl(v) {
@@ -19271,7 +19285,9 @@ function isRowLinkUrl(v) {
     return !/^\s*(javascript|data|vbscript):/i.test(v);
 }
 function isValidMarkValue(k, v) {
-    return k === 'a' ? isRowLinkUrl(v) : typeof v === 'string' && ROW_MARK_VALUE_RE.test(v);
+    if (k === 'a')
+        return isRowLinkUrl(v);
+    return typeof v === 'string' && (k === 'r' ? ROW_LINK_ID_RE : ROW_MARK_VALUE_RE).test(v);
 }
 function escapeAttr(s) {
     return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -19292,6 +19308,8 @@ function charFormatKey(f) {
         key += 'c=' + f.c + ';';
     if (f.a)
         key += 'a=' + f.a + ';';
+    if (f.r)
+        key += 'r=' + f.r + ';';
     return key;
 }
 function toCharFormats(marks, len) {
@@ -19369,15 +19387,21 @@ function rowMarkCovers(marks, len, start, end, k) {
     return true;
 }
 /** Sets kind `k` on [start, end): `value` true (a palette name for `hl`/`c`, an address for
- * `a`) adds it, false removes it. A new highlight, colour or link replaces the old one there. */
+ * `a`, a row id for `r`) adds it, false removes it. A new highlight, colour or link replaces the
+ * old one there; words link to a web address or to a row, never both. */
 function setRowMark(marks, len, start, end, k, value) {
     const formats = toCharFormats(marks, len);
     const from = Math.max(0, start);
     const to = Math.min(len, end);
     for (let i = from; i < to; i++) {
         if (isValuedKind(k)) {
-            if (isValidMarkValue(k, value))
+            if (isValidMarkValue(k, value)) {
                 formats[i][k] = value;
+                if (k === 'a')
+                    delete formats[i].r;
+                if (k === 'r')
+                    delete formats[i].a;
+            }
             else
                 delete formats[i][k];
         }
@@ -19414,18 +19438,10 @@ function adjustRowMarksForText(marks, oldText, newText) {
         middle.push({ ...(inherit || {}) });
     return fromCharFormats(formats.slice(0, p).concat(middle, formats.slice(a.length - q)));
 }
-/** The row's text cut into runs of equal formatting. A `[[link]]` is never cut in two: it takes
- * the formatting of the first character of its name, so a link chip renders whole. */
+/** The row's text cut into runs of equal formatting. */
 function rowMarkRuns(text, marks) {
     const src = String(text || '');
     const formats = toCharFormats(marks, src.length);
-    const linkRe = /\[\[[\s\S]*?\]\](?!\])/g;
-    let m;
-    while ((m = linkRe.exec(src))) {
-        const f = formats[Math.min(m.index + 2, m.index + m[0].length - 1)];
-        for (let i = m.index; i < m.index + m[0].length; i++)
-            formats[i] = f;
-    }
     const runs = [];
     let start = 0;
     for (let i = 1; i <= src.length; i++) {
@@ -19454,6 +19470,8 @@ function rowMarkTags(html, f) {
         const href = escapeAttr(f.a);
         out = `<a class="row-weblink" href="${href}" data-a="${href}" target="_blank" rel="noopener noreferrer">` + out + '</a>';
     }
+    if (f.r)
+        out = `<span class="bl-link" data-r="${f.r}">` + out + '</span>';
     if (f.hl)
         out = `<mark class="row-hl hl-mark hl-mark-${f.hl}" data-hl="${f.hl}">` + out + '</mark>';
     return out;
@@ -19503,6 +19521,11 @@ function readRowMarksFromDom(root) {
         const a = n.getAttribute ? n.getAttribute('data-a') : null;
         if (a && isRowLinkUrl(a))
             next.a = a;
+        const r = n.getAttribute ? n.getAttribute('data-r') : null;
+        if (r && ROW_LINK_ID_RE.test(r)) {
+            next.r = r;
+            delete next.a;
+        }
         const kids = n.childNodes;
         if (kids)
             for (let i = 0; i < kids.length; i++)
@@ -19579,6 +19602,60 @@ function convertLegacyRowMarkup(text, marks) {
             }
         }
         keep(i, i + 1);
+        i++;
+    }
+    return { text: out, marks: fromCharFormats(outFormats), changed };
+}
+/** Turns the old typed row links into real ones (owner, 2026-10-22: no syntax in row text): each
+ * `[[Name]]` becomes the plain words `Name` linked to the row `resolve` finds for that name (its
+ * id), or just the words when no row has that name any more. Read exactly the way the old
+ * renderer read them: the nearest `]]` not followed by a third `]`, and the name shown without
+ * any `**`/`__` or leading `>`. Existing formatting moves with the characters. */
+function convertLegacyRowLinks(text, marks, resolve) {
+    const src = String(text || '');
+    const formats = toCharFormats(marks, src.length);
+    if (src.indexOf('[[') < 0)
+        return { text: src, marks: fromCharFormats(formats), changed: false };
+    let out = '';
+    const outFormats = [];
+    let changed = false;
+    let i = 0;
+    while (i < src.length) {
+        if (src[i] === '[' && src[i + 1] === '[') {
+            let end = -1;
+            let from = i + 2;
+            while (from < src.length - 1) {
+                const p = src.indexOf(']]', from);
+                if (p < 0)
+                    break;
+                if (p + 2 >= src.length || src[p + 2] !== ']') {
+                    end = p;
+                    break;
+                }
+                from = p + 1;
+            }
+            if (end > i + 2) {
+                const name = src.slice(i + 2, end);
+                const shown = name.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/__([^_]+)__/g, '$1').replace(/^>/, '').trim();
+                const id = resolve(name);
+                const link = id && ROW_LINK_ID_RE.test(id) ? id : null;
+                for (let j = 0; j < shown.length; j++) {
+                    const f = { ...(shown === name ? formats[i + 2 + j] : formats[i + 2]) };
+                    delete f.a;
+                    if (link)
+                        f.r = link;
+                    else
+                        delete f.r;
+                    out += shown[j];
+                    outFormats.push(f);
+                }
+                i = end + 2;
+                changed = true;
+                continue;
+            }
+        }
+        out += src[i];
+        outFormats.push(formats[i]);
         i++;
     }
     return { text: out, marks: fromCharFormats(outFormats), changed };
@@ -19664,7 +19741,7 @@ const SECTION_EMOJI_ICONS={
 // it's a plain lookup against the curated list above, not a general "is this an emoji" test.
 function matchSectionEmojiIcon(text){for(const key in SECTION_EMOJI_ICONS){if(text.startsWith(key+' '))return {inner:SECTION_EMOJI_ICONS[key],rest:text.slice(key.length+1)}}return null}
 function highlightSearchInHtml(html,q){if(!q)return html;const lq=q.toLowerCase();const result=[];let i=0;while(i<html.length){if(html[i]==='<'){const end=html.indexOf('>',i);if(end<0){result.push(html.slice(i));break}result.push(html.slice(i,end+1));i=end+1;continue}if(html[i]==='&'){const end=html.indexOf(';',i);if(end<0){result.push(html[i]);i++;continue}result.push(html.slice(i,end+1));i=end+1;continue}let j=i;let plain='';while(j<html.length&&html[j]!=='<'&&html[j]!=='&'){plain+=html[j];j++;}const lplain=plain.toLowerCase();let pi=0;let out='';while(pi<plain.length){const fi=lplain.indexOf(lq,pi);if(fi<0){out+=plain.slice(pi);break}out+=plain.slice(pi,fi)+`<mark class="search-highlight">${plain.slice(fi,fi+lq.length)}</mark>`;pi=fi+lq.length;}result.push(out);i=j;}return result.join('');}
-function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;while(i<src.length){const ch=src[i];if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\*\*([^*]+)\*\*/g,'$1').replace(/__([^_]+)__/g,'$1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${escAttr(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
+function parseStyledText(text,searchQ=''){const out=esc(String(text||'')); return searchQ?highlightSearchInHtml(out,searchQ):out}
 function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.styles.heading?('style-heading-'+node.styles.heading):''; const cls=['node-label',node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':'',headingCls].filter(Boolean).join(' '); const raw=node.text||'';
   const inner=rowMarksToHtml(raw,rowMarksOf(node),t=>parseStyledText(t,searchQ))||'&nbsp;';
   const html=node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${inner}</span>`:inner;
@@ -20169,7 +20246,7 @@ function caretOffsetFromPoint(labelEl,x,y,fallbackLen){
 }
 // Words dragged over in a row that isn't being edited: start editing it with the same words
 // selected, so the selection popover (and the formatting shortcuts) can act on them. Offsets count
-// the label's text like caretOffsetFromPoint does: exact for plain text, best-effort around [[links]].
+// the label's text like caretOffsetFromPoint does.
 function selectLabelWordsForEditing(node,row,sel){
   const lbl=row.querySelector('.node-label'); const r=sel.rangeCount?sel.getRangeAt(0):null;
   if(!lbl||!r||!lbl.contains(r.startContainer)||!lbl.contains(r.endContainer))return;
@@ -20198,8 +20275,11 @@ function commitEdit(){if(editingId===null)return; const _eid=editingId; const id
     // would just restore the same value that's already showing.
     const liveText=nodes[idx].text; const liveMarks=rowMarksOf(nodes[idx]); if(changed){nodes[idx].text=origText; setRowMarksOn(nodes[idx],editSessionOriginalMarks)} pushUndo(); nodes[idx].text=liveText; setRowMarksOn(nodes[idx],liveMarks);
   }
-  const oldTextForRename=changed?origText:null; if(changed){nodes[idx].text=newText; markDirty(); if(backlinksEnabled&&oldTextForRename)renameBacklinksFor(oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
-function cancelEdit(){editingId=null; render()}
+  const oldTextForRename=changed?origText:null; if(changed){nodes[idx].text=newText; markDirty(); if(oldTextForRename)renameBacklinksFor(nodes[idx].id,oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
+// Escape leaves the row keeping what was typed (the text is live already), the same as clicking
+// away: through commitEdit, so the edit gets its undo step and a rename updates links showing
+// the old name.
+function cancelEdit(){commitEdit(); render()}
 // A block can only move up/down past an adjacent block that is its SAME-DEPTH sibling. Walking
 // back (up) or looking at the node right after the subtree (down) and landing on anything other
 // than depth===myDepth means there's no sibling there -- just an ancestor's boundary (idx is
@@ -20707,11 +20787,10 @@ function removeCheckbox(id){
 // heading: the toolbar's Heading style.
 
 // === Backlinks ===
-function getBacklinkRefs(text){
-  const refs=[]; const re=/\[\[([\s\S]*?)\]\](?!\])/g; let m;
-  while((m=re.exec(text))!==null) refs.push(m[1]);
-  return refs;
-}
+// A row link is formatting on the words (mark kind r, its value the linked row's id; owner,
+// 2026-10-22: no [[ ]] syntax in row text), so it keeps working when the linked row is renamed.
+function rowLinkIdsOf(node){ return rowMarksOf(node).filter(m=>m.k==='r').map(m=>m.v); }
+function findNodeByRowLinkId(v){ return v==null?null:(nodes.find(n=>String(n.id)===String(v))||null); }
 
 function findNodeByText(text){
   const t=text.trim().toLowerCase();
@@ -20719,65 +20798,59 @@ function findNodeByText(text){
   return nodes.find(n=>{const nt=String(n.text||'').trim().toLowerCase(); return nt===t||stripSemanticMarkers(nt).trim().toLowerCase()===tp;})||null;
 }
 
+// Rows outside nodeIds that link to any row in nodeIds.
 function getBacklinkReferrers(nodeIds){
-  const targetTexts=new Set();
-  const targetPlain=new Set();
-  nodeIds.forEach(id=>{const idx=getIndex(nodes,id); if(idx>=0&&nodes[idx].text.trim()){targetTexts.add(nodes[idx].text.trim().toLowerCase()); const p=stripSemanticMarkers(nodes[idx].text).trim().toLowerCase(); if(p)targetPlain.add(p);}});
+  const ids=new Set(nodeIds.map(String)); const own=new Set(nodeIds);
   const result=[];
-  const nodeIdSet=new Set(nodeIds);
   nodes.forEach(n=>{
-    if(nodeIdSet.has(n.id))return;
-    const refs=getBacklinkRefs(n.text||'');
-    const matched=refs.filter(r=>{const rt=r.trim().toLowerCase(); return targetTexts.has(rt)||targetPlain.has(stripSemanticMarkers(rt).trim().toLowerCase());});
-    if(matched.length) result.push({id:n.id, refs:matched});
+    if(own.has(n.id))return;
+    const refs=rowLinkIdsOf(n).filter(v=>ids.has(v));
+    if(refs.length) result.push({id:n.id, refs});
   });
   return result;
 }
 
-function cleanupBacklinksFor(deletedTexts){
-  // Remove [[ref]] entirely from nodes that reference any of the deleted texts
-  const lower=deletedTexts.map(t=>t.trim().toLowerCase());
+// Deleted rows: links to them become plain words (the words stay, only the link goes).
+function cleanupRowLinksTo(deletedIds){
+  const gone=new Set(deletedIds.map(String)); if(!gone.size)return;
   nodes.forEach(n=>{
-    if(!n.text.includes('[['))return;
-    const newText=n.text.replace(/\[\[([\s\S]*?)\]\](?!\])/g,(match,ref)=>{
-      return lower.includes(ref.trim().toLowerCase())?'':match;
-    }).replace(/\s{2,}/g,' ').trim();
-    if(newText!==n.text) n.text=newText;
+    const marks=rowMarksOf(n); if(!marks.some(m=>m.k==='r'&&gone.has(m.v)))return;
+    setRowMarksOn(n,marks.filter(m=>!(m.k==='r'&&gone.has(m.v))));
   });
 }
-// Same idea as cleanupBacklinksFor above, but for a rename rather than a delete: every other
-// node's [[Old Name]] reference to the just-renamed node is rewritten to [[New Name]] instead
-// of being left to silently point at a string that no longer matches anything (getBacklinksTo
-// and getBacklinkReferrers both resolve purely by matching current node text — there's no
-// stable id in a [[mention]], see commitAtSuggest). A no-op if nothing actually referenced the
-// old text. Only called for a genuine text change on commit, not on every keystroke.
-function renameBacklinksFor(oldText,newTextForRename){
-  const oldTrim=String(oldText||'').trim(); if(!oldTrim)return;
-  const newTrim=String(newTextForRename||'').trim();
-  if(oldTrim.toLowerCase()===newTrim.toLowerCase())return; // case-only change, or nothing to do
-  const oldLower=oldTrim.toLowerCase();
-  let any=false;
+// A renamed row: a link whose words were exactly the row's old name now shows the new name, so a
+// link reads like the row it points to; a link worded differently keeps its words. The link
+// itself points at the row's id and never needs updating. Only called for a genuine text change
+// on commit, not on every keystroke.
+function renameBacklinksFor(id,oldText,newTextForRename){
+  const oldWords=String(oldText||'').trim(); const newWords=String(newTextForRename||'').trim();
+  if(!oldWords||!newWords||oldWords===newWords)return false;
+  const v=String(id); let any=false;
   nodes.forEach(n=>{
-    if(!n.text.includes('[['))return;
-    const updated=n.text.replace(/\[\[([\s\S]*?)\]\](?!\])/g,(match,ref)=>{
-      if(ref.trim().toLowerCase()!==oldLower)return match;
-      any=true;
-      return '[['+newTrim+']]';
-    });
-    if(updated!==n.text) n.text=updated;
+    if(n.id===id)return;
+    const marks=rowMarksOf(n); const text=n.text||'';
+    const spans=marks.filter(m=>m.k==='r'&&m.v===v&&text.slice(m.s,m.e).trim()===oldWords).sort((a,b)=>b.s-a.s);
+    if(!spans.length)return;
+    let t=text; let mk=marks;
+    // Right to left, so earlier links keep their positions; each link's own formatting moves onto
+    // the new name on its own (adjusting the whole row would let a name that grows at its end
+    // fall outside the link).
+    spans.forEach(m=>{ const lead=t.slice(m.s,m.e).length-t.slice(m.s,m.e).trimStart().length; const s0=m.s+lead; const e0=s0+oldWords.length; const len=t.length;
+      const mid=adjustRowMarksForText(sliceRowMarks(mk,len,s0,e0),oldWords,newWords);
+      mk=concatRowMarks(concatRowMarks(sliceRowMarks(mk,len,0,s0),s0,mid,newWords.length),s0+newWords.length,sliceRowMarks(mk,len,e0,len),len-e0);
+      t=t.slice(0,s0)+newWords+t.slice(e0); });
+    n.text=t; setRowMarksOn(n,mk); any=true;
   });
   return any;
 }
 
+// Clicking a row link selects the linked row and scrolls to it.
+function openRowLink(lnk){ const target=findNodeByRowLinkId(lnk&&lnk.dataset.r); if(!target)return; commitEdit(); exitFocusIfOutsideCurrent(target.id); setSingleSelection(target.id); render(); scrollToNode(target.id); }
+
 function getBacklinksTo(targetId){
-  const targetIdx=getIndex(nodes,targetId); if(targetIdx<0)return [];
-  const targetText=String(nodes[targetIdx].text||'').trim().toLowerCase();
-  if(!targetText)return [];
-  const targetPlain=stripSemanticMarkers(targetText).trim().toLowerCase();
-  return nodes.filter(n=>{
-    if(n.id===targetId)return false;
-    return getBacklinkRefs(n.text||'').some(r=>{const rt=r.trim().toLowerCase(); return rt===targetText||stripSemanticMarkers(rt).trim().toLowerCase()===targetPlain;});
-  }).map(n=>n.id);
+  if(getIndex(nodes,targetId)<0)return [];
+  const v=String(targetId);
+  return nodes.filter(n=>n.id!==targetId&&rowLinkIdsOf(n).includes(v)).map(n=>n.id);
 }
 
 
@@ -20840,30 +20913,26 @@ function renderAtSuggest() {
   pop.classList.add('open');
 }
 
+// Picking a row puts its name in place of "@query", linked to it (mark kind r), plus a space so
+// what you type next isn't part of the link. You stay in the row, caret after the space.
 function commitAtSuggest(node) {
   if (!_atState) return;
   const {inputEl, nodeId, atPos} = _atState;
-  const val = inputEl.textContent||'';
-  const before = val.slice(0, atPos);
-  const afterAt = val.slice(atPos + 1); // skip the @
-  // strip the query (chars typed after @)
   const queryLen = _atState.query.length;
-  const after = afterAt.slice(queryLen);
-  const inserted = '[[' + node.text + ']]';
-  const newVal = before + inserted + after;
-  inputEl.textContent = newVal;
-  // update node text immediately
-  const idx = getIndex(nodes,nodeId);
-  if (idx >= 0) nodes[idx].text = newVal;
-  // move cursor after inserted text
-  const newPos = before.length + inserted.length;
+  const read = readRowMarksFromDom(inputEl);
+  const val = read.text; const len = val.length;
+  const name = getNodePlainText(node).trim();
+  const after = val.slice(atPos + 1 + queryLen);
+  const ins = name + (/^\s/.test(after) ? '' : ' ');
+  const head = concatRowMarks(sliceRowMarks(read.marks, len, 0, atPos), atPos, [{s: 0, e: name.length, k: 'r', v: String(node.id)}], ins.length);
+  const marks = concatRowMarks(head, atPos + ins.length, sliceRowMarks(read.marks, len, atPos + 1 + queryLen, len), after.length);
   closeAtSuggest();
-  // Set text on node, exit edit mode, render
-  const nidx = getIndex(nodes,nodeId);
-  if (nidx >= 0) nodes[nidx].text = newVal;
-  editingId = null;
+  const idx = getIndex(nodes, nodeId); if (idx < 0) return;
+  nodes[idx].text = val.slice(0, atPos) + ins + after;
+  setRowMarksOn(nodes[idx], marks);
+  inputEl.innerHTML = rowEditorHtml(nodes[idx]);
+  setInputCaret(inputEl, atPos + name.length + 1);
   markDirty();
-  render();
 }
 
 function handleAtInput(inputEl, nodeId) {
@@ -20871,18 +20940,13 @@ function handleAtInput(inputEl, nodeId) {
   if (!backlinksEnabled) { closeAtSuggest(); return; }
   const val = inputEl.textContent||'';
   const pos = getEditableCaretOffset(inputEl) ?? val.length;
-  // Find last @ before cursor that isn't part of [[...]]
+  // Find the last @ before the cursor on this line
   let atPos = -1;
   for (let i = pos - 1; i >= 0; i--) {
     if (val[i] === '@') { atPos = i; break; }
     if (val[i] === '\n') break;
   }
   if (atPos < 0) { closeAtSuggest(); return; }
-  // Don't trigger if @ is inside [[...]]
-  const before = val.slice(0, atPos);
-  const openBracket = before.lastIndexOf('[[');
-  const closeBracket = before.lastIndexOf(']]');
-  if (openBracket > closeBracket) { closeAtSuggest(); return; }
   const query = val.slice(atPos + 1, pos);
   if (query.includes(' ') && query.length > 30) { closeAtSuggest(); return; }
   if (_atState && _atState.atPos === atPos && _atState.query === query) return;
@@ -21010,7 +21074,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Dynalist-style note preview is now rendered as a sub-line directly under this row (see just
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
-  row.addEventListener('click',e=>{if(e.target.closest('.node-label a.row-weblink')){e.stopPropagation(); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode)){selectLabelWordsForEditing(node,row,_sel); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
+  row.addEventListener('click',e=>{if(e.target.closest('.node-label a.row-weblink')){e.stopPropagation(); return} const rowLink=e.target.closest('.node-label .bl-link[data-r]'); if(rowLink){e.stopPropagation(); openRowLink(rowLink); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode)){selectLabelWordsForEditing(node,row,_sel); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
   if((forceInlineNoteId===node.id||inlineExpandNoteNodeIds.has(node.id))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
@@ -21351,7 +21415,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // never get hidden — once the pane had no rows to filter in the first place.
   applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')) el('sb-depth').textContent=`Depth ${selectedDepth===null?'—':selectedDepth}`; if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates();
   updateDirtyIndicator(); updateMarkerSummary(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
-  document.querySelectorAll('.bl-link').forEach(lnk=>{const target=findNodeByText(lnk.dataset.blTarget||''); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Jump to: '+lnk.dataset.blTarget:'No node found: '+lnk.dataset.blTarget;});
+  document.querySelectorAll('#editor-pane .bl-link[data-r]').forEach(lnk=>{const target=findNodeByRowLinkId(lnk.dataset.r); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Go to: '+(getNodePlainText(target).trim()||'(empty row)'):'The linked row no longer exists';});
 }
 // Whole rows (a shortcut with nothing selected): the same word formatting on every word of each
 // selected row (owner, 2026-10-22: one formatting system, no separate whole-row styles).
@@ -21785,11 +21849,11 @@ function deleteEmptyNodeAndFocusPrev(id){
   const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0)return;
   const prevId=pos>0?nodes[vis[pos-1]].id:null;
   pushUndo(); markDirty();
-  const deletedTexts=nodes[idx].text?[nodes[idx].text]:[]; const deletedIds=[nodes[idx].id];
+  const deletedIds=[nodes[idx].id];
   nodes.splice(idx,1);
   removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
-  cleanupBacklinksFor(deletedTexts);
+  cleanupRowLinksTo(deletedIds);
   rebuildParentIds();
   if(prevId!==null){ beginEdit(prevId,true); return }
   editingId=null; selectedId=null; selectionAnchorId=null; clearMultiSelection(); render();
@@ -21812,15 +21876,14 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
   const caretAt=prevOldText.length; const prevNewText=prevOldText+mergedText;
   const mergedMarks=concatRowMarks(rowMarksOf(nodes[prevIdx]),prevOldText.length,rowMarksOf(nodes[idx]),mergedText.length);
   pushUndo(); markDirty();
-  const deletedTexts=mergedText?[mergedText]:[]; const deletedIds=[nodes[idx].id];
+  const deletedIds=[nodes[idx].id];
   // The absorbed node's pictures move onto the surviving row (appended after its own) rather
   // than vanishing with it -- node.images is user content, never silently dropped.
   nodes[prevIdx]={...nodes[prevIdx],text:prevNewText,...mergedNodeContent(nodes[prevIdx],nodes[idx])}; setRowMarksOn(nodes[prevIdx],mergedMarks);
   repointNodeLinks(nodes[idx].id,prevId);
   nodes.splice(idx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
-  cleanupBacklinksFor(deletedTexts);
-  if(backlinksEnabled&&prevOldText!==prevNewText)renameBacklinksFor(prevOldText,prevNewText);
+  cleanupRowLinksTo(deletedIds);
   rebuildParentIds();
   beginEditAt(prevId,caretAt);
 }
@@ -21842,13 +21905,12 @@ function mergeNextNodeIntoAndFocus(id,liveText){
   const caretAt=curOldText.length; const curNewText=curOldText+nextText;
   const mergedMarks=concatRowMarks(rowMarksOf(nodes[idx]),curOldText.length,rowMarksOf(nodes[nextIdx]),nextText.length);
   pushUndo(); markDirty();
-  const deletedTexts=nextText?[nextText]:[]; const deletedIds=[nodes[nextIdx].id];
+  const deletedIds=[nodes[nextIdx].id];
   nodes[idx]={...nodes[idx],text:curNewText,...mergedNodeContent(nodes[idx],nodes[nextIdx])}; setRowMarksOn(nodes[idx],mergedMarks);
   repointNodeLinks(nodes[nextIdx].id,id);
   nodes.splice(nextIdx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
-  cleanupBacklinksFor(deletedTexts);
-  if(backlinksEnabled&&curOldText!==curNewText)renameBacklinksFor(curOldText,curNewText);
+  cleanupRowLinksTo(deletedIds);
   rebuildParentIds();
   beginEditAt(id,caretAt);
 }
@@ -21863,7 +21925,6 @@ function splitNodeAtCursorAndFocus(id,beforeText,afterText){
   const oldText=nodes[idx].text||''; const oldMarks=rowMarksOf(nodes[idx]);
   pushUndo(); markDirty();
   nodes[idx]={...nodes[idx],text:beforeText}; setRowMarksOn(nodes[idx],sliceRowMarks(oldMarks,oldText.length,0,beforeText.length));
-  if(backlinksEnabled&&oldText!==beforeText)renameBacklinksFor(oldText,beforeText);
   const nn=makeBlankNode(nodes[idx].depth,nodes[idx].parentId); nn.text=afterText; setRowMarksOn(nn,sliceRowMarks(oldMarks,oldText.length,oldText.length-afterText.length,oldText.length));
   nodes.splice(getSubtreeEnd(nodes,idx),0,nn);
   rebuildParentIds();
@@ -21876,15 +21937,15 @@ function deleteSelected(){
   const roots=getSelectionRootIndexes(); if(!roots.length)return;
   const count=getDeleteImpactCount();
   const goneWith=deletedObjectsPhrase(collectDeleteImpact(roots.flatMap(i=>nodes.slice(i,getSubtreeEnd(nodes,i)).map(n=>n.id))));
-  // Collect texts of nodes being deleted for backlink cleanup, and their ids so any of them
-  // still sitting in the auto-rewrite queue get purged along with the nodes themselves.
-  const deletedTexts=[]; const deletedIds=[];
-  roots.forEach(i=>{const end=getSubtreeEnd(nodes,i); nodes.slice(i,end).forEach(n=>{ if(n.text)deletedTexts.push(n.text); deletedIds.push(n.id); });});
+  // Ids of the rows being deleted: links to them become plain words, and any still queued for
+  // auto-rewrite are purged along with the rows themselves.
+  const deletedIds=[];
+  roots.forEach(i=>{const end=getSubtreeEnd(nodes,i); nodes.slice(i,end).forEach(n=>{ deletedIds.push(n.id); });});
   pushUndo(); markDirty();
   deleteRootIndexes(nodes,roots);
   removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
-  cleanupBacklinksFor(deletedTexts);
+  cleanupRowLinksTo(deletedIds);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
@@ -22323,7 +22384,7 @@ function buildNodeClipboardPayload(scopeNodes){
     // Q&A and remarks ride along too (older builds ignore the unknown `qas`/`rms` keys).
     const {qas,rms}=nodeDiscussionCopies(n.id);
     // Formatting on part of the row rides along with the text it was made for (`mt`): the
-    // pasted row's text can differ slightly (plain-text serializers drop [[ ]]), so paste moves
+    // pasted row's text can differ slightly (a plain-text serializer may change it), so paste moves
     // the marks onto it with adjustRowMarksForText.
     const mk=rowMarksOf(n);
     if(!dgs.length&&!imgs.length&&!qas.length&&!rms.length&&!mk.length)return;
@@ -23331,8 +23392,7 @@ const _DIAGRAM_GEN_TOPOLOGY_CHAR_BUDGET = 66;
 /** Pure: matches index.html's own `getNodePlainText` exactly — duplicated here rather than
  * referenced via `declare function`, see this file's header for why. */
 function nodePlainText(node) {
-    return String(node.text || '')
-        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
+    return String(node.text || '');
 }
 function metaFor(nodeMeta, node) {
     return nodeMeta ? nodeMeta.get(node.id) : undefined;
@@ -25100,8 +25160,8 @@ document.addEventListener('mousedown',e=>{
   if(pop&&!pop.contains(e.target))closeNodeQuickAssist();
 },true);
 el('editor-pane').addEventListener('click',e=>{
-  const blLink=e.target.closest('.bl-link');
-  if(blLink){e.stopPropagation(); const target=findNodeByText(blLink.dataset.blTarget||''); if(target){exitFocusIfOutsideCurrent(target.id); setSingleSelection(target.id); render(); scrollToNode(target.id);} return;}
+  const blLink=e.target.closest('.bl-link[data-r]');
+  if(blLink&&!blLink.closest('.node-input')){e.stopPropagation(); openRowLink(blLink); return;}
   if(e.target.closest('.sem-sap-note')){e.stopPropagation(); return;}
   hideContextMenu(); if(!e.target.closest('.node-row'))focusPane();
 }); el('editor-pane').addEventListener('dblclick',e=>{if(e.target.closest('.node-row'))return; if(!nodes.length)createRootAndEdit('')});
@@ -26184,7 +26244,7 @@ const AUTO_REWRITE_MAX_FAILS=3;
 // on/off switch remains): a batch is sent after AUTO_REWRITE_IDLE_SEC seconds without further
 // edits, or immediately once AUTO_REWRITE_BATCH_CAP nodes have queued. Nodes shorter than
 // AUTO_REWRITE_MIN_WORDS words are treated as labels and skipped, and checkbox items, headings
-// and text containing [[backlinks]] or `code` are never auto-rewritten (rewriting them risks
+// and rows with row links or `code` are never auto-rewritten (rewriting them risks
 // corrupting syntax Sakura parses specially).
 const AUTO_REWRITE_IDLE_SEC=120;
 const AUTO_REWRITE_BATCH_CAP=5;
@@ -26196,7 +26256,7 @@ function shouldAutoRewriteNode(node){
   if(t.split(/\s+/).length<AUTO_REWRITE_MIN_WORDS)return false;
   if(isCheckboxNode(node))return false;
   if(node.styles&&node.styles.heading)return false;
-  if(t.includes('[[')||t.includes('`'))return false;
+  if(t.includes('`')||rowLinkIdsOf(node).length)return false;
   return true;
 }
 function queueAutoRewrite(nodeId){
@@ -29607,11 +29667,11 @@ function previewToggleQa(id){
   if(previewOpenQaIds.has(id))previewOpenQaIds.delete(id); else previewOpenQaIds.add(id);
   renderPreviewBody();
 }
-function previewParseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;while(i<src.length){const ch=src[i];if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const lt=src.slice(i+2,end);out+=`<span style="color:var(--pv-heading-2);font-weight:400">${esc(lt)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
+function previewParseStyledText(text,searchQ=''){const out=esc(String(text||'')); return searchQ?highlightSearchInHtml(out,searchQ):out}
 function previewStyleClasses(node){
   return [node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':''].filter(Boolean).join(' ');
 }
-// Contents-page text: the row's words without any markup (** bold **, __ italic __, [[ links ]], [label]).
+// Contents-page text: the row's words, without their formatting.
 function pvTocText(text){ return getNodePlainText({text}).trim(); }
 function previewNodeInnerHtml(node,textOverride){
   // Formatting on part of the row (node.marks) applies to the row's own text only, not to a

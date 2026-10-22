@@ -72,8 +72,8 @@ describe('stripSemanticMarkers', () => {
 });
 
 describe('getNodePlainText', () => {
-  it('strips markers from a node\'s text field', () => {
-    expect(getNodePlainText({ text: '[[Linked]] item' })).toBe('Linked item');
+  it('returns a node\'s text field', () => {
+    expect(getNodePlainText({ text: 'Linked item' })).toBe('Linked item');
   });
 
   it('handles a node with no text field', () => {
@@ -84,9 +84,9 @@ describe('getNodePlainText', () => {
     expect(getNodePlainText({ text: null })).toBe('');
   });
   // Rows are rich text (2026-10-22): formatting lives in node.marks, typed ** __ [ ] are plain
-  // characters, and a [[link]] shows its name.
-  it('removes only [[link]] brackets', () => {
+  // characters, and so are [[ ]] (row links are marks too, since rowFormat 4).
+  it('keeps every typed character', () => {
     expect(getNodePlainText({ text: 'See [[Route Determination]] for **this** and [that] (aside)' }))
-      .toBe('See Route Determination for **this** and [that] (aside)');
+      .toBe('See [[Route Determination]] for **this** and [that] (aside)');
   });
 });

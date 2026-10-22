@@ -159,6 +159,18 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Row links are real links.** Owner: "make the editor as standard as possible"; no syntax left in row
+text. A row link is mark kind `r` (v = the linked row's id, `ROW_LINK_ID_RE`), drawn as `span.bl-link[data-r]`
+(`rowMarkTags`, read back by `readRowMarksFromDom`); words link to a web address or a row, never both (`setRowMark`).
+`@` (`commitAtSuggest`) puts the row's name in as linked words plus a space and keeps you editing. Click →
+`openRowLink`. Rename-safe by id; `renameBacklinksFor(id,old,new)` (commitEdit only) updates link words that were
+exactly the old name. Delete → `cleanupRowLinksTo(ids)`: links become plain words (words stay). Merge →
+`repointNodeLinks` repoints `r` marks. `getBacklinksTo`/`getBacklinkReferrers` read marks. `ROW_FORMAT`=4:
+`convertLegacyRowLinks` turns `[[Name]]` into linked words (unknown name → plain words), version "Before row links
+became real links". Typed `[[ ]]` is now plain text everywhere (`parseStyledText`/`previewParseStyledText` just
+escape; `getNodePlainText` returns the text as typed). Escape in a row now goes through `commitEdit` (`cancelEdit`),
+so it gets an undo step like clicking away. Tests: `row-links.spec.ts`, `rowMarks.test.ts`.
+
 **2026-10-22: One formatting system; paste a link; Link is web-only.** Owner agreed ("just do it"). Whole-row
 bold/italic/underline/strike/highlight/colour are no longer row styles: `ROW_FORMAT`=3, and `convertLegacyRows`
 folds them into marks over all the words once (`foldRowStylesIntoMarks`; empty rows just drop them; heading stays a
@@ -187,37 +199,6 @@ being edited left a plain page selection; the row click now starts editing with 
 of it (`applyRowMarkToRange`, `ROW_MARK_TO_STYLE`). Toolbar lost Bold, Italic, Highlight ▾, Text colour ▾ (it keeps
 Heading style); whole rows: right-click › More › Format icon row (`fmt-*` actions → `toggleNodeStyle`) or the
 shortcuts. AI ▾ Rewrite node = whole rows only; selected words = ✦. Ctrl/Cmd+K stays Quick Assist.
-
-**2026-10-22: One selection popover, now in rows too; web links in rows.** Owner: "use the selection popover all
-over the application". Selecting words in the row being edited shows `#selection-fmt-popover` (`selectionFmtEditorFor`
-accepts `.node-input` = `in-<editingId>`; `data-mode="row"`), its buttons going through `applyRowMarkToSelection`
-(`SELECTION_FMT_ROW_KIND`; active state from `rowSelectionHasMark`). Bar: B I U S | Highlight ▾ / A ▾ (row only) |
-Link | ✦ Rewrite. ▾ swaps the bar for the palette in place (`openSelectionFmtSwatches`, `data-pick`); the colour bar
-under each button shows what a click applies (last colour). Notes/thread entries (`data-mode="rich"`) gained
-Underline and highlight colours (`selectionHighlightRgba`); no text colour there (they store real colours, so theme
-colours would not follow dark mode). Link in rows (owner chose "both, via a small menu"): Web address = an address box
-inside the bar (`openSelectionFmtUrlBox`; commits the row edit first so focus stays in the box; `normalizeTypedLinkUrl`
-adds https:// or mailto:), Another row = the `@` row picker searching the selected words, Remove link when linked.
-Web link = 7th mark kind `a` (v = address, `isRowLinkUrl` refuses script/data/multi-line), drawn as
-`a.row-weblink` (row click on it opens it, no edit), kept in rich copy and PDF; OPML/plain = words. Row selection
-Rewrite now keeps formatting (it used to wipe the row's marks). `applyRowMarkToRange(nodeId,s,e,k,v)` formats a row
-by id. Phones: the bar sits below the selection (the OS copy bar is above). The document mousedown that closes the bar
-uses `composedPath` (the bar swaps its own buttons). Tests: `selection-popover-rows.spec.ts`, `rowMarks.test.ts`.
-Not done: To-Do titles (plain text) don't get the bar yet.
-
-### Where things stand (the model to keep in mind)
-
-- A row has one **thread** of **entries** (Comment or Question, one author + time each; answers
-  link to a question via `answerTo`/`verdict`). Three markers, each the thread's status: Agreed
-  (`confirmed`), Follow-up (`followup`, may name an owner; each Follow-up entry is open until done),
-  Out of scope (`parked`). **Decision** is
-  a chip on an entry, not a status. Logic lives in `src/utils/discussionStatus.ts`; README.md
-  "Thread" describes the behaviour.
-- The toolbar **Open items** summary lists only what's open (follow-ups, open questions);
-  decisions have their own chip. Robin keeps the names "Thread" and "Open items".
-- Inline objects render in one order, outline and PDF: note → tables → images → diagrams → thread.
-- Owner principle: every inline object must justify its place; prefer simplifying or extending an
-  existing object over adding a new one. Sakura is a documentation/thinking tool, not a chat tool.
 
 ### In progress / not built
 

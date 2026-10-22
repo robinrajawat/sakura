@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   adjustRowMarksForText,
+  convertLegacyRowLinks,
   convertLegacyRowMarkup,
   isRowLinkUrl,
   concatRowMarks,
@@ -142,16 +143,13 @@ describe('rowMarkRuns / rowMarksToHtml', () => {
         '<mark class="row-hl hl-mark hl-mark-yellow" data-hl="yellow">three</mark>'
     );
   });
-  it('never cuts a [[link]] in two', () => {
-    // bold on "see [[Row" only: the link takes the formatting of its name's first letter
+  it('typed [[ ]] is plain text, cut like any other words', () => {
     const runs = rowMarkRuns('see [[Row name]] ok', [{ s: 0, e: 9, k: 'b' }]);
-    expect(runs.map((r) => r.text)).toEqual(['see [[Row name]]', ' ok']);
-    const inner = rowMarkRuns('see [[Row name]] ok', [{ s: 6, e: 9, k: 'i' }]);
-    expect(inner.map((r) => [r.text, !!r.f.i])).toEqual([
-      ['see ', false],
-      ['[[Row name]]', true],
-      [' ok', false]
-    ]);
+    expect(runs.map((r) => r.text)).toEqual(['see [[Row', ' name]] ok']);
+  });
+  it('renders a row link as a link span holding the row id', () => {
+    const html = rowMarksToHtml('see Plan ok', [{ s: 4, e: 8, k: 'r', v: '12' }, { s: 4, e: 6, k: 'b' }], (t) => t);
+    expect(html).toBe('see <span class="bl-link" data-r="12"><b>Pl</b></span><span class="bl-link" data-r="12">an</span> ok');
   });
 });
 
@@ -266,5 +264,69 @@ describe('web links (k: a)', () => {
       { s: 4, e: 8, k: 'a', v: 'https://a.b' }
     ]);
     expect(setRowMark(one, 8, 0, 8, 'a', false)).toEqual([]);
+  });
+});
+
+describe('row links (kind r)', () => {
+  const t = (x: string): RowMarkDomNode => ({ nodeType: 3, nodeValue: x });
+  const el = (tag: string, kids: RowMarkDomNode[], attrs: Record<string, string> = {}): RowMarkDomNode => ({
+    nodeType: 1,
+    tagName: tag.toUpperCase(),
+    childNodes: kids,
+    getAttribute: (n: string) => attrs[n] ?? null
+  });
+  it('keeps a row id and drops anything else as the value', () => {
+    expect(normalizeRowMarks([{ s: 0, e: 4, k: 'r', v: '17' }], 4)).toEqual([{ s: 0, e: 4, k: 'r', v: '17' }]);
+    expect(normalizeRowMarks([{ s: 0, e: 4, k: 'r', v: '" onclick="x' }], 4)).toEqual([]);
+    expect(normalizeRowMarks([{ s: 0, e: 4, k: 'r' }], 4)).toEqual([]);
+  });
+  it('words link to a web address or a row, never both', () => {
+    const web = setRowMark([], 4, 0, 4, 'a', 'https://example.com');
+    expect(setRowMark(web, 4, 0, 4, 'r', '3')).toEqual([{ s: 0, e: 4, k: 'r', v: '3' }]);
+    expect(setRowMark([{ s: 0, e: 4, k: 'r', v: '3' }], 4, 0, 2, 'a', 'https://example.com')).toEqual([
+      { s: 0, e: 2, k: 'a', v: 'https://example.com' },
+      { s: 2, e: 4, k: 'r', v: '3' }
+    ]);
+  });
+  it('reads a row link back from the editor', () => {
+    const root = el('div', [t('see '), el('span', [t('Plan')], { class: 'bl-link', 'data-r': '9' }), t(' ok')]);
+    expect(readRowMarksFromDom(root)).toEqual({ text: 'see Plan ok', marks: [{ s: 4, e: 8, k: 'r', v: '9' }] });
+  });
+  it('a renamed link keeps pointing at its row', () => {
+    const marks = adjustRowMarksForText([{ s: 4, e: 8, k: 'r', v: '9' }], 'see Plan ok', 'see Plans ok');
+    expect(marks).toEqual([{ s: 4, e: 9, k: 'r', v: '9' }]);
+  });
+});
+
+describe('convertLegacyRowLinks', () => {
+  const ids: Record<string, string> = { plan: '4', 'route determination': '7' };
+  const resolve = (name: string) => ids[name.trim().toLowerCase()] ?? null;
+  it('turns [[Name]] into the linked words', () => {
+    expect(convertLegacyRowLinks('See [[Plan]] first', [], resolve)).toEqual({
+      text: 'See Plan first',
+      marks: [{ s: 4, e: 8, k: 'r', v: '4' }],
+      changed: true
+    });
+  });
+  it('a name no row has any more becomes plain words', () => {
+    expect(convertLegacyRowLinks('See [[Gone]]', [], resolve)).toEqual({ text: 'See Gone', marks: [], changed: true });
+  });
+  it('keeps formatting around and on the link', () => {
+    const r = convertLegacyRowLinks('**[[Route Determination]]** ok', [{ s: 0, e: 27, k: 'b' }], resolve);
+    expect(r.text).toBe('**Route Determination** ok');
+    expect(r.marks).toEqual([
+      { s: 0, e: 23, k: 'b' },
+      { s: 2, e: 21, k: 'r', v: '7' }
+    ]);
+  });
+  it('reads names the old way: nearest ]] not followed by a third ]', () => {
+    expect(convertLegacyRowLinks('[[a]]] and [[Plan]]', [], resolve).text).toBe('a] and Plan');
+  });
+  it('leaves rows without [[ alone', () => {
+    expect(convertLegacyRowLinks('plain [x]', [{ s: 0, e: 5, k: 'i' }], resolve)).toEqual({
+      text: 'plain [x]',
+      marks: [{ s: 0, e: 5, k: 'i' }],
+      changed: false
+    });
   });
 });

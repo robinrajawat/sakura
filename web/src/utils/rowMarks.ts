@@ -5,7 +5,8 @@
  * The row's words stay a plain string in `node.text`; the formatting lives beside it in
  * `node.marks` as character ranges: `{s, e, k, v?}` covers `text.slice(s, e)` with kind `k`
  * (`b` bold, `i` italic, `u` underline, `s` strikethrough, `hl` highlight, `c` text colour, `a`
- * web link) and, for `hl`/`c`, the palette name `v`, for `a` the address `v`. Keeping the words plain means everything that reads them
+ * web link, `r` link to another row) and, for `hl`/`c`, the palette name `v`, for `a` the address
+ * `v`, for `r` the linked row's id `v`. Keeping the words plain means everything that reads them
  * (search, sorting, Enter/Backspace split and merge, backlinks, exports) keeps working untouched,
  * and a formatting bug can only misplace formatting, never lose words.
  *
@@ -16,7 +17,7 @@
  * Wired into index.html via scripts/generate-index-blocks.mjs's `rowMarks` block.
  */
 
-export type RowMarkKind = 'b' | 'i' | 'u' | 's' | 'hl' | 'c' | 'a';
+export type RowMarkKind = 'b' | 'i' | 'u' | 's' | 'hl' | 'c' | 'a' | 'r';
 
 export interface RowMark {
   s: number;
@@ -34,15 +35,17 @@ export interface CharFormat {
   hl?: string;
   c?: string;
   a?: string;
+  r?: string;
 }
 
 const ROW_MARK_FLAGS: ReadonlyArray<'b' | 'i' | 'u' | 's'> = ['b', 'i', 'u', 's'];
-const ROW_MARK_KINDS: ReadonlyArray<RowMarkKind> = ['b', 'i', 'u', 's', 'hl', 'c', 'a'];
+const ROW_MARK_KINDS: ReadonlyArray<RowMarkKind> = ['b', 'i', 'u', 's', 'hl', 'c', 'a', 'r'];
 const ROW_MARK_VALUE_RE = /^[a-z0-9-]{1,24}$/;
-type ValuedKind = 'hl' | 'c' | 'a';
+const ROW_LINK_ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
+type ValuedKind = 'hl' | 'c' | 'a' | 'r';
 
 function isValuedKind(k: RowMarkKind): k is ValuedKind {
-  return k === 'hl' || k === 'c' || k === 'a';
+  return k === 'hl' || k === 'c' || k === 'a' || k === 'r';
 }
 
 /** A web address a row link may hold: one line, not too long, and never a script/data URL. */
@@ -53,7 +56,8 @@ export function isRowLinkUrl(v: unknown): v is string {
 }
 
 function isValidMarkValue(k: ValuedKind, v: unknown): v is string {
-  return k === 'a' ? isRowLinkUrl(v) : typeof v === 'string' && ROW_MARK_VALUE_RE.test(v);
+  if (k === 'a') return isRowLinkUrl(v);
+  return typeof v === 'string' && (k === 'r' ? ROW_LINK_ID_RE : ROW_MARK_VALUE_RE).test(v);
 }
 
 function escapeAttr(s: string): string {
@@ -71,6 +75,7 @@ function charFormatKey(f: CharFormat | undefined): string {
   if (f.hl) key += 'hl=' + f.hl + ';';
   if (f.c) key += 'c=' + f.c + ';';
   if (f.a) key += 'a=' + f.a + ';';
+  if (f.r) key += 'r=' + f.r + ';';
   return key;
 }
 
@@ -141,7 +146,8 @@ export function rowMarkCovers(marks: unknown, len: number, start: number, end: n
 }
 
 /** Sets kind `k` on [start, end): `value` true (a palette name for `hl`/`c`, an address for
- * `a`) adds it, false removes it. A new highlight, colour or link replaces the old one there. */
+ * `a`, a row id for `r`) adds it, false removes it. A new highlight, colour or link replaces the
+ * old one there; words link to a web address or to a row, never both. */
 export function setRowMark(
   marks: unknown,
   len: number,
@@ -155,8 +161,11 @@ export function setRowMark(
   const to = Math.min(len, end);
   for (let i = from; i < to; i++) {
     if (isValuedKind(k)) {
-      if (isValidMarkValue(k, value)) formats[i][k] = value;
-      else delete formats[i][k];
+      if (isValidMarkValue(k, value)) {
+        formats[i][k] = value;
+        if (k === 'a') delete formats[i].r;
+        if (k === 'r') delete formats[i].a;
+      } else delete formats[i][k];
     } else if (value) {
       formats[i][k] = true;
     } else {
@@ -186,17 +195,10 @@ export function adjustRowMarksForText(marks: unknown, oldText: string, newText: 
   return fromCharFormats(formats.slice(0, p).concat(middle, formats.slice(a.length - q)));
 }
 
-/** The row's text cut into runs of equal formatting. A `[[link]]` is never cut in two: it takes
- * the formatting of the first character of its name, so a link chip renders whole. */
+/** The row's text cut into runs of equal formatting. */
 export function rowMarkRuns(text: string, marks: unknown): Array<{ text: string; f: CharFormat }> {
   const src = String(text || '');
   const formats = toCharFormats(marks, src.length);
-  const linkRe = /\[\[[\s\S]*?\]\](?!\])/g;
-  let m: RegExpExecArray | null;
-  while ((m = linkRe.exec(src))) {
-    const f = formats[Math.min(m.index + 2, m.index + m[0].length - 1)];
-    for (let i = m.index; i < m.index + m[0].length; i++) formats[i] = f;
-  }
   const runs: Array<{ text: string; f: CharFormat }> = [];
   let start = 0;
   for (let i = 1; i <= src.length; i++) {
@@ -220,6 +222,7 @@ export function rowMarkTags(html: string, f: CharFormat): string {
     const href = escapeAttr(f.a);
     out = `<a class="row-weblink" href="${href}" data-a="${href}" target="_blank" rel="noopener noreferrer">` + out + '</a>';
   }
+  if (f.r) out = `<span class="bl-link" data-r="${f.r}">` + out + '</span>';
   if (f.hl) out = `<mark class="row-hl hl-mark hl-mark-${f.hl}" data-hl="${f.hl}">` + out + '</mark>';
   return out;
 }
@@ -274,6 +277,11 @@ export function readRowMarksFromDom(root: RowMarkDomNode): { text: string; marks
     if (c && ROW_MARK_VALUE_RE.test(c)) next.c = c;
     const a = n.getAttribute ? n.getAttribute('data-a') : null;
     if (a && isRowLinkUrl(a)) next.a = a;
+    const r = n.getAttribute ? n.getAttribute('data-r') : null;
+    if (r && ROW_LINK_ID_RE.test(r)) {
+      next.r = r;
+      delete next.a;
+    }
     const kids = n.childNodes;
     if (kids) for (let i = 0; i < kids.length; i++) walk(kids[i], next);
   };
@@ -352,6 +360,61 @@ export function convertLegacyRowMarkup(text: string, marks?: unknown): { text: s
       }
     }
     keep(i, i + 1);
+    i++;
+  }
+  return { text: out, marks: fromCharFormats(outFormats), changed };
+}
+
+/** Turns the old typed row links into real ones (owner, 2026-10-22: no syntax in row text): each
+ * `[[Name]]` becomes the plain words `Name` linked to the row `resolve` finds for that name (its
+ * id), or just the words when no row has that name any more. Read exactly the way the old
+ * renderer read them: the nearest `]]` not followed by a third `]`, and the name shown without
+ * any `**`/`__` or leading `>`. Existing formatting moves with the characters. */
+export function convertLegacyRowLinks(
+  text: string,
+  marks: unknown,
+  resolve: (name: string) => string | null
+): { text: string; marks: RowMark[]; changed: boolean } {
+  const src = String(text || '');
+  const formats = toCharFormats(marks, src.length);
+  if (src.indexOf('[[') < 0) return { text: src, marks: fromCharFormats(formats), changed: false };
+  let out = '';
+  const outFormats: CharFormat[] = [];
+  let changed = false;
+  let i = 0;
+  while (i < src.length) {
+    if (src[i] === '[' && src[i + 1] === '[') {
+      let end = -1;
+      let from = i + 2;
+      while (from < src.length - 1) {
+        const p = src.indexOf(']]', from);
+        if (p < 0) break;
+        if (p + 2 >= src.length || src[p + 2] !== ']') {
+          end = p;
+          break;
+        }
+        from = p + 1;
+      }
+      if (end > i + 2) {
+        const name = src.slice(i + 2, end);
+        const shown = name.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/__([^_]+)__/g, '$1').replace(/^>/, '').trim();
+        const id = resolve(name);
+        const link = id && ROW_LINK_ID_RE.test(id) ? id : null;
+        for (let j = 0; j < shown.length; j++) {
+          const f: CharFormat = { ...(shown === name ? formats[i + 2 + j] : formats[i + 2]) };
+          delete f.a;
+          if (link) f.r = link;
+          else delete f.r;
+          out += shown[j];
+          outFormats.push(f);
+        }
+        i = end + 2;
+        changed = true;
+        continue;
+      }
+    }
+    out += src[i];
+    outFormats.push(formats[i]);
     i++;
   }
   return { text: out, marks: fromCharFormats(outFormats), changed };

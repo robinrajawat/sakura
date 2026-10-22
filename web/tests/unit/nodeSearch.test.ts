@@ -98,9 +98,9 @@ describe('computeSearchMatchIds', () => {
 
 describe('computeSearchMatchIds on formatted rows', () => {
   // Search reads a row's words (2026-10-22, rows are rich text: formatting lives in node.marks,
-  // never in the words; a link shows its name).
+  // never in the words; a row link is a mark on its words).
   it('finds words across a link and matches typed ** as the plain characters they are', () => {
-    const nodes = tree(['Plain row', 'A bold word', '2 ** 3', 'See [[Route Determination]]']);
+    const nodes = tree(['Plain row', 'A bold word', '2 ** 3', 'See Route Determination']);
     expect(computeSearchMatchIds(nodes, 'bold word', false, false)).toEqual([2]);
     expect(computeSearchMatchIds(nodes, 'See Route', true, false)).toEqual([4]);
     expect(computeSearchMatchIds(nodes, '**', false, false)).toEqual([3]);

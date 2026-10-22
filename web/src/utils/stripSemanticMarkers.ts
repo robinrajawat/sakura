@@ -30,14 +30,13 @@ export interface PlainTextNode {
 }
 
 /**
- * Returns a node's words as the editor shows them: only `[[link]]` brackets are removed (a link
- * shows its name). Typed `**`, `__` and `[ ]` are plain characters since rows became rich text
- * (owner, 2026-10-22); formatting lives in node.marks and never changes the words. The one helper
- * every reader of a row's words goes through (search, sorting, labels, word counts, plain-text
- * exports). Wired into index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers`
- * block, alongside `stripSemanticMarkers` itself.
+ * Returns a node's words as the editor shows them, exactly as typed: since rows became rich text
+ * (owner, 2026-10-22) formatting and row links live in node.marks and never change the words, so
+ * typed `**`, `__`, `[ ]` and `[[ ]]` are plain characters. The one helper every reader of a
+ * row's words goes through (search, sorting, labels, word counts, plain-text exports). Wired into
+ * index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
+ * `stripSemanticMarkers` itself.
  */
 export function getNodePlainText(node: PlainTextNode): string {
-  return String(node.text || '')
-    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
+  return String(node.text || '');
 }

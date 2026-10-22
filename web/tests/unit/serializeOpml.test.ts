@@ -43,9 +43,9 @@ describe('nodesToOutlineXmlCore', () => {
     expect(xml).toBe('<outline text="&lt;a&gt; &amp; &quot;quote&quot; &#39;apos&#39;"/>');
   });
 
-  it('writes the row\'s words via getNodePlainText ([[link]] brackets removed, typed [ ] kept)', () => {
+  it('writes the row\'s words via getNodePlainText (typed [ ] and [[ ]] kept)', () => {
     const xml = nodesToOutlineXmlCore([node(0, '[Section] see [[Other]]')], 0, -1, true, stripHtmlToText);
-    expect(xml).toBe('<outline text="[Section] see Other"/>');
+    expect(xml).toBe('<outline text="[Section] see [[Other]]"/>');
   });
 
   it('prefixes checkbox nodes with [x] or [ ] based on checked state', () => {

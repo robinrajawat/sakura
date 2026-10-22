@@ -62,7 +62,7 @@ test.describe('generated diagramAnchor block (src/state/diagramAnchor.ts spliced
       };
     });
 
-    expect(anchorResult.linkedLabel).toBe('Under: Project Plan overview');
+    expect(anchorResult.linkedLabel).toBe('Under: Project Plan [[overview]]');
     expect(anchorResult.unlinkedLabel).toBe('Not linked to a node');
     expect(anchorResult.orphanedLabel).toBe('Linked node no longer exists');
     expect(anchorResult.linkedIsOrphaned).toBe(false);
