@@ -26,12 +26,11 @@
  * zero call-site changes (only the wrapper bodies themselves needed updating).
  *
  * `getSubtreeEnd`/`getParentIndex` (from `src/core/nodeQueries.ts`, already a generated block)
- * and `stripSemanticMarkers` (from `src/utils/stripSemanticMarkers.ts`, likewise already
- * generated) are referenced as ambient globals via `declare function` below — type-only, fully
+ * are referenced as ambient globals via `declare function` below — type-only, fully
  * erased from the compiled output, resolving at runtime to the real already-spliced functions.
  * `diagramGenHardTruncateCore` (from `src/core/diagramGenDims.ts`, this subsystem's own first
- * slice, already generated) is referenced the same way. `getNodePlainText` (a hand-written
- * one-liner in index.html wrapping `stripSemanticMarkers`, NOT itself a generated block) is
+ * slice, already generated) is referenced the same way. `getNodePlainText` (from
+ * `src/utils/stripSemanticMarkers.ts`) is
  * inlined directly as a private helper instead — same precedent as `nodeSearch.ts` inlining
  * `escapeRegExpLiteral` and `diagramDisplayList.ts` inlining `diagramStatusOf`/`diagramStatusLabel`.
  *
@@ -50,7 +49,6 @@
 
 declare function getSubtreeEnd(nodes: TopologyNode[], idx: number): number;
 declare function getParentIndex(nodes: TopologyNode[], idx: number): number;
-declare function stripSemanticMarkers(text: string | null | undefined): string;
 declare function diagramGenHardTruncateCore(text: string, budget: number): string;
 
 // index.html's own DIAGRAM_GEN_CHAR_BUDGET = 2 * Math.floor((DIAGRAM_GEN_MAX_W - DIAGRAM_GEN_PAD)
@@ -81,7 +79,11 @@ export type NodeMetaMap = Map<number, NodeMetaEntry> | null | undefined;
 /** Pure: matches index.html's own `getNodePlainText` exactly — duplicated here rather than
  * referenced via `declare function`, see this file's header for why. */
 function nodePlainText(node: TopologyNode): string {
-  return stripSemanticMarkers(node.text || '');
+  return String(node.text || '')
+    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
+    .replace(/\[([^\]]+)\]/g, '$1')
+    .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
+    .replace(/__([\s\S]+?)__/g, '$1');
 }
 
 function metaFor(nodeMeta: NodeMetaMap, node: TopologyNode): NodeMetaEntry | undefined {

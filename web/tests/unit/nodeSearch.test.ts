@@ -96,6 +96,17 @@ describe('computeSearchMatchIds', () => {
   });
 });
 
+describe('computeSearchMatchIds on formatted rows', () => {
+  // Search reads a row's words, not its markup (2026-10-22, rows moving to rich text).
+  it('finds words inside bold, italic and links, and never matches the markup itself', () => {
+    const nodes = tree(['Plain row', 'A **bold** word', 'An __italic__ one', 'See [[Route Determination]]']);
+    expect(computeSearchMatchIds(nodes, 'bold word', false, false)).toEqual([2]);
+    expect(computeSearchMatchIds(nodes, 'italic one', false, true)).toEqual([3]);
+    expect(computeSearchMatchIds(nodes, 'See Route', true, false)).toEqual([4]);
+    expect(computeSearchMatchIds(nodes, '**', false, false)).toEqual([]);
+  });
+});
+
 describe('resolveSearchIndex', () => {
   it('returns -1 when there are no matches, regardless of current index', () => {
     expect(resolveSearchIndex(0, 0)).toBe(-1);

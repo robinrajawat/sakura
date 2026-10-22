@@ -83,4 +83,13 @@ describe('getNodePlainText', () => {
   it('handles a node with null text', () => {
     expect(getNodePlainText({ text: null })).toBe('');
   });
+  // Rows are moving to rich text (2026-10-22): every reader of a row's words goes through this one
+  // helper, so it strips the inline bold/italic markup too.
+  it('strips **bold** and __italic__ along with the semantic markers', () => {
+    expect(getNodePlainText({ text: 'See [[Route Determination]] for **bold** and __italic__ words' }))
+      .toBe('See Route Determination for bold and italic words');
+  });
+  it('leaves a lone ** or __ that is not markup alone', () => {
+    expect(getNodePlainText({ text: 'a ** b and snake__case' })).toBe('a ** b and snake__case');
+  });
 });
