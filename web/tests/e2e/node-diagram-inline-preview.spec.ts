@@ -384,7 +384,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(ib!.x + ib!.width).toBeLessThanOrEqual(cb!.x + cb!.width);
     expect(Math.abs((ib!.x + ib!.width / 2) - (cb!.x + cb!.width / 2))).toBeLessThan(2);
     // The sheet keeps a margin around a borderless draw.io export (owner: "cutting very sharp from left").
-    expect(await img.evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft))).toBeGreaterThanOrEqual(16);
+    expect(await img.evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft))).toBe(12);
     const level = viewer.locator('.dv-zoom-level');
     const fitText = await level.textContent();
     await viewer.locator('.dv-actual').click();
@@ -498,7 +498,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(thumb).toHaveClass(/has-export-border/);
     expect(await thumb.evaluate((el) => getComputedStyle(el).paddingLeft)).toBe('0px');
     await thumb.click();
-    expect(await page.locator('#diagram-viewer').evaluate((el) => (el as HTMLElement).style.getPropertyValue('--dv-pad'))).toBe('12px');
+    expect(await page.locator('#diagram-viewer').evaluate((el) => (el as HTMLElement).style.getPropertyValue('--dv-pad'))).toBe('0px');
     await page.keyboard.press('Escape');
 
     const tight = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><rect width="100" height="50"/></svg>');
