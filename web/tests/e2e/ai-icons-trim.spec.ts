@@ -262,7 +262,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-panel')).toHaveClass(/open/);
     await expect(page.locator('#todos-open-row')).toHaveCount(0);
     const order = await page.locator('#todos-panel-header > *').evaluateAll((els) => els.map((e) => e.id || e.className));
-    expect(order).toEqual(['todos-title', 'todos-open-label', 'todos-search-wrap', 'todos-more-wrap', 'todos-header-sep', 'todos-panel-maximize', 'todos-panel-close']);
+    expect(order).toEqual(['todos-title', 'todos-open-label', 'todos-search-wrap', 'todos-more-wrap', 'todos-panel-maximize', 'todos-panel-close']);
     await expect(page.locator('#todos-add-row #todos-input')).toHaveCount(1);
     await expect(page.locator('#todos-add-row #todos-add-btn')).toHaveAttribute('data-tip', 'Add task');
     await expect(page.locator('#todos-panel-close')).toHaveAttribute('data-tip', 'Close (Esc)');
