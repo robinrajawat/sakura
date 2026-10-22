@@ -71,7 +71,7 @@ test.describe('Fixed main toolbar', () => {
     expect(shown).toEqual([
       'undo-btn', 'redo-btn',
       'qb-outdent', 'qb-indent',
-      'bold', 'italic', 'hl-toggle-btn', 'fc-toggle-btn', 'heading-toggle-btn',
+      'heading-toggle-btn',
       'qb-insert', 'qb-ai',
       'qb-collapse', 'qb-zoom',
     ]);
@@ -85,9 +85,10 @@ test.describe('Fixed main toolbar', () => {
     await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
     await expect(page.locator('#ai-menu .tb-menu-label')).toHaveText(['Rewrite node', 'Generate outline']);
     await page.locator('#qb-ai').click();
-    // Colour pickers stay attached to Highlight and Text colour.
-    await expect(page.locator('#hl-caret-btn')).toBeVisible();
-    await expect(page.locator('#fc-caret-btn')).toBeVisible();
+    // Bold/Italic/Highlight/Text colour moved to the selection popover (words) and right-click ›
+    // More › Format (whole rows), owner 2026-10-22.
+    await expect(page.locator('#hl-caret-btn')).toHaveCount(0);
+    await expect(page.locator('#fc-caret-btn')).toHaveCount(0);
     await expect(page.locator('#quick-bar .ag-label')).toHaveCount(0);
     for (const gone of ['#qb-above', '#qb-child', '#qb-duplicate', '#qb-up', '#qb-down', '#qb-delete', '#qb-smart-paste', '#insert-dt-btn', '#more-toggle', '#more-menu', '.fmt-btn[data-style="underline"]', '.fmt-btn[data-style="strike"]', '#editor-toolbar-toggle']) {
       await expect(page.locator(gone)).toHaveCount(0);
@@ -218,10 +219,10 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
     const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'up', 'down', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'focus', 'fold', 'tags', 'version-history', 'no-export', 'delete']);
-    // Add (with Duplicate) and Move are icon rows; the add-to-node leftovers sit behind Insert ›,
+    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'up', 'down', 'fmt-bold', 'fmt-italic', 'fmt-underline', 'fmt-strike', 'fmt-highlight', 'fmt-color', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'focus', 'fold', 'tags', 'version-history', 'no-export', 'delete']);
+    // Add (with Duplicate), Move and Format are icon rows; the add-to-node leftovers sit behind Insert ›,
     // Zoom in, Collapse/expand and the row's settings behind Row › (owner, 2026-10-20: shorter More).
-    await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(2);
+    await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(3);
     await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(7);
     await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
     await expect(page.locator('#context-more-panel .context-submenu').first()).toBeVisible();
@@ -364,10 +365,9 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     await seedDoc(page);
     // Toolbar: always shown, every fixed button visible despite the old hidden lists.
     await expect(page.locator('#quick-bar')).toBeVisible();
-    for (const id of ['#undo-btn', '#qb-outdent', '#hl-wrap', '#qb-insert', '#qb-ai', '#qb-collapse', '#qb-zoom']) {
+    for (const id of ['#undo-btn', '#qb-outdent', '#heading-wrap', '#qb-insert', '#qb-ai', '#qb-collapse', '#qb-zoom']) {
       await expect(page.locator(id), id).toBeVisible();
     }
-    await expect(page.locator('.fmt-btn[data-style="bold"]')).toBeVisible();
     await expect(page.locator('#editor-zen-toggle')).toBeVisible();
     // Tab bar always on; status bar items fixed; app bar items all shown.
     await expect(page.locator('#doc-tab-strip-row')).toBeVisible();

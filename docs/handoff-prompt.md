@@ -159,6 +159,18 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Calmer selection bar; toolbar formatting removed.** Owner asked whether the popover was the most
+elegant design and what else it could simplify, then "do it". Bar is now B · I · U · S · A · Link · ✦ with no dividers.
+A (`data-cmd="colors"`) swaps the bar for one palette in place (`openSelectionFmtPalette`, `data-pick="colors"`):
+text colours over highlights in rows, highlights only in notes/threads; swatches carry `data-kind` c/hl. The A
+previews the selection's own colour and highlight (`rowSelectionColors`, `--sfmt-a-fg/-bg`). The bar shows on mouse
+release, not mid-drag (`_sfmtPointerDown`). Bug "bar sometimes doesn't appear": dragging over a row that isn't
+being edited left a plain page selection; the row click now starts editing with those words selected
+(`selectLabelWordsForEditing`). A whole-row style of the same kind becomes word formatting when the bar changes part
+of it (`applyRowMarkToRange`, `ROW_MARK_TO_STYLE`). Toolbar lost Bold, Italic, Highlight ▾, Text colour ▾ (it keeps
+Heading style); whole rows: right-click › More › Format icon row (`fmt-*` actions → `toggleNodeStyle`) or the
+shortcuts. AI ▾ Rewrite node = whole rows only; selected words = ✦. Ctrl/Cmd+K stays Quick Assist.
+
 **2026-10-22: One selection popover, now in rows too; web links in rows.** Owner: "use the selection popover all
 over the application". Selecting words in the row being edited shows `#selection-fmt-popover` (`selectionFmtEditorFor`
 accepts `.node-input` = `in-<editingId>`; `data-mode="row"`), its buttons going through `applyRowMarkToSelection`
@@ -190,13 +202,6 @@ Every writer of in-memory nodes stamps `rowFormat:ROW_FORMAT`. One-time toast ex
 AI text with Markdown `**`/`__` becomes formatting (`makeNodeFromTyped`, `setRowTextFromTyped`). PDF section
 headings print the row with its formatting (no label split). Tests: `row-rich-text.spec.ts` (conversion, plain
 `**` after, Section menu, paste), `typed-markup-plain.spec.ts` (was inline-bold-italic-selection).
-
-**2026-10-22: Rich text rows, PR 3 of 4: rich copy keeps row formatting.** Copying rows (`serializeClipboardHtml`)
-now writes a row's formatted words as `<b>/<i>/<u>/<s>` and inline colour/background styles with fixed light-mode
-colours (`clipboardRowMarkTags`, highlight mixed 45% toward white like the app), so Outlook, Word and chat keep it.
-`rowMarksToHtml` takes an optional `wrap` for that; the app's own tags are `rowMarkTags`. OPML and plain-text copy
-carry the words only (no standard for formatting there). The PDF already prints it (PR 2); hub.html has no row view.
-Next: PR 4, convert old `**`/`__`/`[Section]` to formatting and remove the typed syntax.
 
 ### Where things stand (the model to keep in mind)
 
