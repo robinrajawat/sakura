@@ -13359,13 +13359,48 @@ function updateDiagramEditorPagesBadge(d){
 // Diagram preview: the saved SVG in a large window, zoomed with the wheel (or a pinch) around the
 // pointer, panned by dragging. Opens fitted to the window; Edit hands over to the draw.io editor.
 let _dvState=null;
+// Download a diagram as SVG (draw.io's own export, so it reopens as an editable diagram in draw.io)
+// or as a PNG at twice its size on white, for pasting into mail and slides (owner, 2026-10-22).
+function diagramFileBase(d){ return ((d.title||'').trim()||'diagram').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').slice(0,80); }
+async function downloadDiagram(id,format){
+  const d=findDiagram(id); if(!d)return;
+  if(!d.previewSvg){ showToast('No preview yet — open the diagram in the editor once to create one'); return; }
+  const base=diagramFileBase(d);
+  try{
+    // Decoded by hand: the page's CSP doesn't allow fetch() on data: URLs.
+    const src=d.previewSvg, comma=src.indexOf(','), head=src.slice(0,comma);
+    const svgText=/;base64/i.test(head)?new TextDecoder().decode(Uint8Array.from(atob(src.slice(comma+1)),ch=>ch.charCodeAt(0))):decodeURIComponent(src.slice(comma+1));
+    const svgBlob=new Blob([svgText],{type:'image/svg+xml'});
+    if(format==='svg'){ downloadFileBlob(base+'.svg',svgBlob); return; }
+    const img=new Image(); img.src=d.previewSvg; await img.decode();
+    const k=2, w=img.naturalWidth||800, h=img.naturalHeight||600;
+    const c=document.createElement('canvas'); c.width=w*k; c.height=h*k;
+    const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+    const png=await new Promise(res=>c.toBlob(res,'image/png'));
+    if(!png)throw new Error('empty');
+    downloadFileBlob(base+'.png',png);
+  }catch(err){ showToast('Could not create the '+format.toUpperCase()+' — try SVG, or export from the diagram editor'); }
+}
+function diagramDownloadItems(id){ return [{label:'PNG image', onClick:()=>downloadDiagram(id,'png')},{label:'SVG (opens in draw.io)', onClick:()=>downloadDiagram(id,'svg')}]; }
+// Right-click on an inline diagram's thumbnail.
+function showDiagramThumbMenu(e,d,titleEl){
+  e.preventDefault(); e.stopPropagation();
+  showSbContextMenu(e.clientX,e.clientY,[
+    {label:'Preview', onClick:()=>openDiagramViewer(d.id)},
+    {label:'Edit', onClick:()=>openDiagramEditor(d.id)},
+    {label:'Rename', onClick:()=>{ if(!titleEl||!titleEl.isConnected)return; titleEl.focus(); const r=document.createRange(); r.selectNodeContents(titleEl); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }},
+    {label:'Download', submenu:diagramDownloadItems(d.id)},
+    {divider:true},
+    {label:'Delete', danger:true, onClick:async()=>{ await deleteDiagram(d.id); render(); }}
+  ]);
+}
 function _dvEnsure(){
   let ov=el('diagram-viewer'); if(ov)return ov;
   ov=document.createElement('div'); ov.id='diagram-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
   ov.innerHTML='<div class="dv-window"><div class="dv-bar"><span class="dv-title"></span><span class="dv-where"></span><span class="dv-spacer"></span>'
     +'<div class="dv-zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><span class="dv-zoom-level">100%</span><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+)">+</button></div>'
     +'<button type="button" class="dv-btn dv-fit" data-tip="Fit to window (F)">Fit</button><button type="button" class="dv-btn dv-actual" data-tip="Actual size (0)">100%</button>'
-    +'<button type="button" class="dv-btn dv-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button>'
+    +'<button type="button" class="dv-btn dv-download" data-tip="Download as PNG or SVG"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Download</button><button type="button" class="dv-btn dv-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button>'
     +'<button type="button" class="dv-close" aria-label="Close" data-tip="Close (Esc)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
     +'<div class="dv-canvas"><img alt="" draggable="false" /><div class="dv-hint">Pinch or Ctrl+scroll to zoom · scroll or drag to move · Esc to close</div></div></div>';
   document.body.appendChild(ov);
@@ -13376,6 +13411,12 @@ function _dvEnsure(){
   ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.2));
   ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit(true));
   ov.querySelector('.dv-actual').addEventListener('click',()=>_dvSetScale(1));
+  ov.querySelector('.dv-download').addEventListener('click',e=>{
+    const id=_dvState&&_dvState.id; if(!id)return;
+    const r=e.currentTarget.getBoundingClientRect();
+    showSbContextMenu(r.left,r.bottom+4,diagramDownloadItems(id));
+    const m=document.querySelector('.sb-context-menu'); if(m)m.style.zIndex='2600';
+  });
   ov.querySelector('.dv-edit').addEventListener('click',()=>{ const id=_dvState&&_dvState.id; closeDiagramViewer(); if(id)openDiagramEditor(id); });
   // Like Figma/Miro: a pinch (sent as Ctrl+wheel) or Ctrl/Cmd+wheel zooms around the pointer; a plain
   // scroll pans, so a two-finger swipe on a trackpad moves around the diagram instead of zooming
@@ -20866,7 +20907,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const gLine=document.createElement('div'); gLine.className='node-diagram-line'; gLine.style.position='relative';
       gLine.style.paddingLeft=hideTreeLines?(gDepth*32+0*editorScale+23)+'px':(0*editorScale+24)+'px';
       const card=document.createElement('div'); card.className='node-diagram-preview-card';
-      const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'; thumb.dataset.tip='Click to preview';
+      const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'; thumb.dataset.tip='Click to preview · right-click for more';
       if(d.previewSvg){
         const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
         img.addEventListener('error',()=>{ thumb.classList.add('node-diagram-preview-empty'); thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
@@ -20878,6 +20919,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       }
       thumb.addEventListener('mousedown',e=>e.stopPropagation());
       thumb.addEventListener('click',e=>{e.stopPropagation(); openDiagramViewer(d.id);});
+      thumb.addEventListener('contextmenu',e=>showDiagramThumbMenu(e,d,card.querySelector('.node-diagram-preview-title')));
       const meta=document.createElement('div'); meta.className='node-diagram-preview-meta';
       const title=document.createElement('span'); title.className='node-diagram-preview-title'; title.contentEditable='true'; title.textContent=d.title||''; title.dataset.placeholder='Untitled diagram'; title.dataset.tip='Click to rename'; title.spellcheck=false;
       title.addEventListener('mousedown',e=>e.stopPropagation());
