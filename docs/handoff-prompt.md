@@ -159,6 +159,23 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: One selection popover, now in rows too; web links in rows.** Owner: "use the selection popover all
+over the application". Selecting words in the row being edited shows `#selection-fmt-popover` (`selectionFmtEditorFor`
+accepts `.node-input` = `in-<editingId>`; `data-mode="row"`), its buttons going through `applyRowMarkToSelection`
+(`SELECTION_FMT_ROW_KIND`; active state from `rowSelectionHasMark`). Bar: B I U S | Highlight ▾ / A ▾ (row only) |
+Link | ✦ Rewrite. ▾ swaps the bar for the palette in place (`openSelectionFmtSwatches`, `data-pick`); the colour bar
+under each button shows what a click applies (last colour). Notes/thread entries (`data-mode="rich"`) gained
+Underline and highlight colours (`selectionHighlightRgba`); no text colour there (they store real colours, so theme
+colours would not follow dark mode). Link in rows (owner chose "both, via a small menu"): Web address = an address box
+inside the bar (`openSelectionFmtUrlBox`; commits the row edit first so focus stays in the box; `normalizeTypedLinkUrl`
+adds https:// or mailto:), Another row = the `@` row picker searching the selected words, Remove link when linked.
+Web link = 7th mark kind `a` (v = address, `isRowLinkUrl` refuses script/data/multi-line), drawn as
+`a.row-weblink` (row click on it opens it, no edit), kept in rich copy and PDF; OPML/plain = words. Row selection
+Rewrite now keeps formatting (it used to wipe the row's marks). `applyRowMarkToRange(nodeId,s,e,k,v)` formats a row
+by id. Phones: the bar sits below the selection (the OS copy bar is above). The document mousedown that closes the bar
+uses `composedPath` (the bar swaps its own buttons). Tests: `selection-popover-rows.spec.ts`, `rowMarks.test.ts`.
+Not done: To-Do titles (plain text) don't get the bar yet.
+
 **2026-10-22: Rich text rows, PR 4 of 4: typed syntax removed, old documents converted.** Typed `**`, `__`,
 `[Section]` (and the long-gone `(note)`/`!`/backticks/`>`) are plain text: `parseStyledText`/`previewParseStyledText`
 draw only `[[links]]`, `parseStyledTextForClipboardCore` only escapes, `getNodePlainText` removes only `[[ ]]`.
@@ -180,20 +197,6 @@ colours (`clipboardRowMarkTags`, highlight mixed 45% toward white like the app),
 `rowMarksToHtml` takes an optional `wrap` for that; the app's own tags are `rowMarkTags`. OPML and plain-text copy
 carry the words only (no standard for formatting there). The PDF already prints it (PR 2); hub.html has no row view.
 Next: PR 4, convert old `**`/`__`/`[Section]` to formatting and remove the typed syntax.
-
-**2026-10-22: Rich text rows, PR 2 of 4: formatting on selected words.** Select words in a row and Ctrl/Cmd+B / I
-/ U, the strike/highlight/text-colour shortcuts, or the toolbar's Bold, Italic, highlight and colour swatches format
-just those words; nothing selected still styles the whole row (`node.styles`). Storage (`src/utils/rowMarks.ts`): the
-words stay plain in `node.text`; formatting is `node.marks` = `[{s,e,k,v?}]` ranges (k = b/i/u/s/hl/c, v = palette
-name) plus `node.marksText`, the text they were made for. Rows without formatting store neither. Any code that
-changes `node.text` without knowing about marks is safe: `rowMarksOf(node)` sees `marksText` differ and moves the
-marks to the new text (common start/end kept). Editor: `rowEditorHtml` draws the marks; the input listener reads
-text + marks back from the DOM (`readRowMarksFromDom`, only our tags count). Enter/Backspace/Delete slice and
-concatenate marks; duplicate, undo and copy/paste (clip payload `mk`/`mt`) keep them; label (`renderLabel`) and PDF
-(`previewNodeInnerHtml`) render them, a `[[link]]` never cut in two. A toolbar mousedown with words selected is
-prevented so the editor keeps focus. Old `**`/`__` still render; their conversion moved to PR 4 (with removing
-the syntax) so PR 2 changes no stored data. Tests `row-rich-text.spec.ts`; the old "Ctrl+B wraps in **" tests went.
-Next: PR 3 exports (rich copy, OPML/plain use the words), PR 4 convert `**`/`__`/`[Section]` + remove the syntax.
 
 ### Where things stand (the model to keep in mind)
 

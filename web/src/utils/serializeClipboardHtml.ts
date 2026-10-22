@@ -130,6 +130,7 @@ export function clipboardRowMarkTags(html: string, f: CharFormat, colors: Clipbo
   const fc = f.c ? pick('fc', f.c) : '';
   if (fc) out = `<span style="color:${fc};">` + out + '</span>';
   const hl = f.hl ? pick('hl', f.hl) : '';
+  if (f.a) out = `<a href="${escapeHtml(f.a).replace(/"/g, '&quot;')}">` + out + '</a>';
   if (hl) out = `<span style="background:${softenCore(hl, '#ffffff', 0.45)};">` + out + '</span>';
   return out;
 }
