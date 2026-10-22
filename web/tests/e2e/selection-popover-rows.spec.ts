@@ -58,7 +58,7 @@ test('selecting words in a row shows the popover with the row formats; B and U f
   const id = await selectWord(page, 'Call the vendor today', 'vendor');
   await expect(pop(page)).toHaveClass(/open/);
   await expect(pop(page)).toHaveAttribute('data-mode', 'row');
-  await expect(popBtn(page, 'color')).toBeVisible();
+  await expect(popBtn(page, 'colors')).toBeVisible();
   await expect(popBtn(page, 'link')).toBeVisible();
   await popBtn(page, 'bold').click();
   await popBtn(page, 'underline').click();
@@ -73,20 +73,68 @@ test('selecting words in a row shows the popover with the row formats; B and U f
   expect((await rows(page))[0].marks).toEqual([{ s: 9, e: 15, k: 'u' }]);
 });
 
-test('the ▾ next to Highlight swaps the bar for the palette in place; a swatch applies and goes back', async ({ page }) => {
+test('A swaps the bar for one palette in place: text colours over highlights; a swatch applies and goes back', async ({ page }) => {
   await seed(page, [{ text: 'Call the vendor today' }]);
   await selectWord(page, 'Call the vendor today', 'vendor');
-  await popBtn(page, 'pick-hl').click();
-  await expect(pop(page)).toHaveAttribute('data-pick', 'hl');
-  await page.locator('#sfmt-swatches [data-sw="green"]').click();
+  await popBtn(page, 'colors').click();
+  await expect(pop(page)).toHaveAttribute('data-pick', 'colors');
+  await page.locator('#sfmt-swatches [data-kind="hl"][data-sw="green"]').click();
   expect((await rows(page))[0].marks).toEqual([{ s: 9, e: 15, k: 'hl', v: 'green' }]);
   await expect(pop(page)).not.toHaveAttribute('data-pick', /./);
-  // the next plain Highlight click uses green, and toggles it off here
-  await popBtn(page, 'highlight').click();
-  expect((await rows(page))[0].marks).toEqual([]);
-  await popBtn(page, 'pick-c').click();
-  await page.locator('#sfmt-swatches [data-sw="red"]').click();
+  await popBtn(page, 'colors').click();
+  await page.locator('#sfmt-swatches [data-kind="c"][data-sw="red"]').click();
+  expect((await rows(page))[0].marks).toEqual([
+    { s: 9, e: 15, k: 'hl', v: 'green' },
+    { s: 9, e: 15, k: 'c', v: 'red' }
+  ]);
+  // the A previews the words' colour and highlight
+  expect(await pop(page).evaluate((p) => (p as HTMLElement).style.getPropertyValue('--sfmt-a-fg'))).toBe('var(--fc-red)');
+  await popBtn(page, 'colors').click();
+  await page.locator('#sfmt-swatches [data-kind="hl"][data-sw="none"]').click();
   expect((await rows(page))[0].marks).toEqual([{ s: 9, e: 15, k: 'c', v: 'red' }]);
+});
+
+test('dragging over the words of a row that is not being edited starts editing with them selected, and the bar shows on release', async ({ page }) => {
+  await seed(page, [{ text: 'Call the vendor today' }]);
+  const id = await rowId(page, 'Call the vendor today');
+  const box = await page.locator(`.node-row[data-id="${id}"] .node-label`).evaluate((lbl) => {
+    const t = lbl.firstChild as Text; const r = document.createRange();
+    r.setStart(t, 9); r.setEnd(t, 10); const a = r.getBoundingClientRect();
+    r.setStart(t, 14); r.setEnd(t, 15); const b = r.getBoundingClientRect();
+    return { x1: a.left + 1, x2: b.right - 1, y: (a.top + a.bottom) / 2 };
+  });
+  await page.mouse.move(box.x1, box.y);
+  await page.mouse.down();
+  await page.mouse.move((box.x1 + box.x2) / 2, box.y, { steps: 4 });
+  await expect(pop(page)).not.toHaveClass(/open/); // not while dragging
+  await page.mouse.move(box.x2, box.y, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.locator(`#in-${id}`)).toBeFocused();
+  await expect(pop(page)).toHaveClass(/open/);
+  await popBtn(page, 'bold').click();
+  expect((await rows(page))[0].marks).toEqual([{ s: 9, e: 15, k: 'b' }]);
+});
+
+test('a whole-row style becomes word formatting when part of it is changed from the bar', async ({ page }) => {
+  await seed(page, [{ text: 'Call the vendor today' }]);
+  await page.evaluate(() => (window as any).eval(`nodes[0].styles.bold = true; nodes[0].styles.highlight = 'yellow'; render();`));
+  await selectWord(page, 'Call the vendor today', 'vendor');
+  await popBtn(page, 'bold').click();
+  expect(await page.evaluate(() => (window as any).eval('[!!nodes[0].styles.bold, nodes[0].styles.highlight]'))).toEqual([false, 'yellow']);
+  expect((await rows(page))[0].marks).toEqual([
+    { s: 0, e: 9, k: 'b' },
+    { s: 15, e: 21, k: 'b' }
+  ]);
+});
+
+test('right-click › More › Format styles whole rows (the toolbar has no format buttons now)', async ({ page }) => {
+  await seed(page, [{ text: 'One' }, { text: 'Two' }]);
+  await expect(page.locator('#ag-format .fmt-btn')).toHaveCount(0);
+  const id = await rowId(page, 'One');
+  await page.locator(`.node-row[data-id="${id}"] .node-label`).click({ button: 'right' });
+  await page.locator('#context-more-toggle').click();
+  await page.locator('#context-more-panel [data-action="fmt-italic"]').click();
+  expect(await page.evaluate(() => (window as any).eval('!!nodes[0].styles.italic'))).toBe(true);
 });
 
 test('Link › Web address turns the selected words into a web link; Remove link takes it off', async ({ page, context }) => {
@@ -169,7 +217,7 @@ test('Rewrite on selected words keeps the formatting around and on them', async 
   ]);
 });
 
-test('notes keep their popover: no text colour, Link still opens the address dialog', async ({ page }) => {
+test('notes get the same bar; their palette has highlights only', async ({ page }) => {
   await seed(page, [{ text: 'Row' }]);
   await page.evaluate(() => (window as any).eval(`nodes[0].note = 'Some note words'; selectedId = 1; openInlineNoteAndFocus(1);`));
   const line = page.locator('.node-note-line[data-node-id="1"]');
@@ -178,7 +226,9 @@ test('notes keep their popover: no text colour, Link still opens the address dia
   for (let i = 0; i < 5; i++) await page.keyboard.press('Shift+ArrowLeft');
   await expect(pop(page)).toHaveClass(/open/);
   await expect(pop(page)).toHaveAttribute('data-mode', 'rich');
-  await expect(popBtn(page, 'color')).toBeHidden();
   await popBtn(page, 'underline').click();
   await expect(line.locator('u')).toHaveText('words');
+  await popBtn(page, 'colors').click();
+  await expect(page.locator('#sfmt-swatches [data-kind="c"]')).toHaveCount(0);
+  await expect(page.locator('#sfmt-swatches [data-kind="hl"]')).toHaveCount(5);
 });

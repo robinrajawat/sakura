@@ -1492,20 +1492,16 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .selection-fmt-btn{appearance:none;border:none;background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;padding:5px 9px;border-radius:6px;cursor:pointer;min-width:26px;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s}
 .selection-fmt-btn:hover{background:var(--hover)}
 .selection-fmt-btn.active{color:var(--accent)}
-#sfmt-highlight.active,#sfmt-color.active{color:var(--accent)}
+#sfmt-colors .sfmt-a{padding:1px 3px;border-radius:3px;color:var(--sfmt-a-fg,inherit);background:var(--sfmt-a-bg,transparent)}
 .selection-fmt-btn.sfmt-ai{color:var(--accent);opacity:.8}
 .selection-fmt-btn.sfmt-ai:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .selection-fmt-btn.sfmt-ai.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .selection-fmt-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
-.sfmt-main{display:flex;align-items:center;gap:1px}
-.selection-fmt-popover[data-mode="row"] .sfmt-rich-only,.selection-fmt-popover:not([data-mode="row"]) .sfmt-row-only{display:none}
-body.feature-off-ai .sfmt-ai-sep{display:none}
-.selection-fmt-btn.sfmt-split{flex-direction:column;gap:2px;padding:4px 7px 3px;border-radius:6px 0 0 6px}
-.selection-fmt-btn.sfmt-caret{min-width:0;padding:5px 4px;border-radius:0 6px 6px 0;color:var(--muted)}
-.sfmt-chip{display:block;width:13px;height:3px;border-radius:2px;background:var(--hl-chip,#eab308)}
-#sfmt-fc-chip{background:var(--fc-chip,var(--fc-gray))}
+.sfmt-main{display:flex;align-items:center;gap:2px}
+.sfmt-palette{display:flex;flex-direction:column;gap:5px;padding:2px 0}
+.sfmt-palette-row{display:flex;align-items:center;gap:5px}
 .sfmt-a{font:700 13px/1 'Inter',sans-serif}
-.sfmt-swatches{display:none;align-items:center;gap:5px;padding:2px 4px}
+.sfmt-swatches{display:none;align-items:center;gap:6px;padding:2px 4px}
 .selection-fmt-popover[data-pick] .sfmt-main{display:none}
 .selection-fmt-popover[data-pick] .sfmt-swatches{display:flex}
 .sfmt-swatches .hl-swatch,.sfmt-swatches .hl-swatch-none{width:20px;height:20px}
@@ -4053,7 +4049,7 @@ body.printing-generic #gpe-overlay{
 <li><strong>Theme &amp; accent</strong> — Settings → Appearance: Light/Dark theme and six accent colours (Terracotta, the default, plus Teal, Indigo, Violet, Moss, and Amber). <strong>Auto theme</strong> sits below it — Off (the Light/Dark switch only, changed by hand) or System (follows your OS/browser's dark mode setting live). Manually clicking Light/Dark in System mode holds as a temporary override until the system value naturally catches up and agrees with it again</li>
 <li><strong>Status bar</strong> — always shown, including in zen mode: word count and current depth on the left; on the right, saved status, the Secure Storage lock chip (only while locked), the auto-rewrite indicator (while auto-rewrite is on), and Quick Assist when it's docked there</li>
 <li><strong>App bar</strong> — always shown, including in zen mode, so Settings is always one click away. "Declutter app bar" (in the app bar's own right-click menu) hides the title field, file explorer toggle, and Documents/Templates buttons</li>
-<li><strong>Toolbar</strong> — always shown above the editor (hidden only in zen mode), one fixed set of buttons in unlabeled groups: Undo, Redo · Outdent, Indent · Bold, Italic, Highlight (with its colour picker), Text colour (with its picker), Heading style · Note, Checkbox, Tags · Generate outline, Rewrite node (AI) — and Collapse all + Zoom as a small pair at the right end. It wraps onto a second line on a narrow window rather than scrolling. Everything else — Insert above/below, Add child, Duplicate, Move up/down, Delete — is in a node's right-click menu (and the keyboard shortcuts below); Underline, Strikethrough, and Insert date/time are keyboard shortcuts</li>
+<li><strong>Toolbar</strong> — always shown above the editor (hidden only in zen mode), one fixed set of buttons in unlabeled groups: Undo, Redo · Outdent, Indent · Heading style · Note, Checkbox, Tags · Generate outline, Rewrite node (AI) — and Collapse all + Zoom as a small pair at the right end. It wraps onto a second line on a narrow window rather than scrolling. Everything else — Insert above/below, Add child, Duplicate, Move up/down, Delete — is in a node's right-click menu (and the keyboard shortcuts below). Formatting is in the bar that appears over selected words, and for whole rows in right-click › More › Format</li>
 <li>The tree always renders in a clean indented view, closer to Dynalist or Workflowy — no │├└─ connector characters. Every row gets a small dot instead of a triangle fold-arrow — a folded parent shows as a ring with a dot inside, hovering either kind reveals −/+ — plus a faint vertical guide line per indent level so nesting stays easy to trace. This isn't a setting; it's the app's only tree style</li>
 <li><strong>Text size</strong> — Settings → Appearance → Text size: a slider from 85% to 140%</li>
 <li>All of the above are saved automatically and restored next time you open the app. "Reset to default settings" (Settings → Data) reverts appearance and behaviour preferences to their defaults without touching your documents</li>
@@ -4125,7 +4121,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">
 <h4>Formatting</h4>
 <ul>
-<li>Select words in a row and press Ctrl/Cmd+B, I or U (or use the toolbar's Bold, Italic, highlight and text colour) to format just those words; with nothing selected it formats the whole row. Typed symbols like ** or [ ] are plain text</li>
+<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Link (a web address or another row) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too; with nothing selected they format the whole row, as does right-click › More › Format. Typed symbols like ** or [ ] are plain text</li>
 <li>Section: Headings menu → Section (a light label with its own Contents entry)</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 <li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
@@ -4172,7 +4168,7 @@ body.printing-generic #gpe-overlay{
 <ul>
 <li>Export ▾ → PDF renders the document straight from its current content and opens the browser's print dialog — choose "Save as PDF" there. No separate step needed first</li>
 <li>The PDF always contains the whole document: folded sections, notes and code blocks, Q&amp;A, and remarks are all included, each right under the node it belongs to</li>
-<li>Headings come from the Heading 1–6 style you apply in the editor (Format toolbar, next to Text color) — not from tree depth. A node with no heading style of its own renders as plain body text; [Bracketed] section markers render as section headings</li>
+<li>Headings come from the Heading 1–6 style you apply in the editor (the toolbar's Heading style button) — not from tree depth. A node with no heading style of its own renders as plain body text; [Bracketed] section markers render as section headings</li>
 <li>A Contents page built from headings (levels 1–2) and Section rows is included at the start of every PDF export. Every page gets a footer with the export date and "Page N of M"</li>
 <li>Settings → Data &amp; backup → Export &amp; copy: "Cover page" adds a title page before the contents page; "PDF branding" adds a small mark on the cover page and in every page's bottom-right corner (on by default, with your own text if you set one); "Use accent color in exports" picks between your accent color and a fixed color</li>
 <li>Notes render as their real rich content (images, lists, links) in exports, not the small dot from the editor</li>
@@ -4476,43 +4472,6 @@ body.printing-generic #gpe-overlay{
     <span class="quick-sep"></span>
     <div class="action-group" id="ag-format">
       <div class="ag-buttons">
-        <button class="btn icon-btn quick-btn fmt-btn" data-style="bold" data-tip="Bold (Ctrl/Cmd+B)"><strong>B</strong></button>
-        <button class="btn icon-btn quick-btn fmt-btn" data-style="italic" data-tip="Italic (Ctrl/Cmd+I)"><em>I</em></button>
-        <div class="hl-wrap" id="hl-wrap">
-          <button class="btn icon-btn quick-btn fmt-btn hl-btn" data-style="highlight" id="hl-toggle-btn" data-tip="Highlight (Ctrl/Cmd+Shift+H)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 17.5 15 6.5a2 2 0 0 1 3 3L7 20.5"/>
-              <path d="m4 17.5-1 3.5 3.5-1"/>
-              <rect id="hl-color-bar" x="2" y="21.6" width="20" height="2.4" rx="1" fill="#eab308" stroke="none"/>
-            </svg>
-          </button>
-          <button class="btn icon-btn hl-caret-btn" id="hl-caret-btn" data-tip="Highlight color" aria-label="Highlight color">▾</button>
-          <div class="hl-palette" id="hl-palette">
-            <button class="hl-swatch" id="hl-swatch-yellow" style="background:#eab308" data-tip="Yellow"></button>
-            <button class="hl-swatch" id="hl-swatch-green" style="background:#22c55e" data-tip="Green"></button>
-            <button class="hl-swatch" id="hl-swatch-blue" style="background:#0ea5e9" data-tip="Blue"></button>
-            <button class="hl-swatch" id="hl-swatch-pink" style="background:#ec4899" data-tip="Pink"></button>
-            <button class="hl-swatch-none" id="hl-swatch-none" data-tip="Remove highlight"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-          </div>
-        </div>
-        <div class="hl-wrap" id="fc-wrap">
-          <button class="btn icon-btn quick-btn fmt-btn hl-btn" data-style="color" id="fc-toggle-btn" data-tip="Text color (Ctrl/Cmd+Shift+F)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="none">
-              <text x="12" y="16.5" font-family="'Inter',Arial,sans-serif" font-size="15" font-weight="700" text-anchor="middle" fill="currentColor">A</text>
-              <rect id="fc-color-bar" x="2" y="19" width="20" height="3.4" rx="1" fill="var(--fc-gray)" stroke="none"/>
-            </svg>
-          </button>
-          <button class="btn icon-btn hl-caret-btn" id="fc-caret-btn" data-tip="Text color picker" aria-label="Text color picker">▾</button>
-          <div class="hl-palette" id="fc-palette">
-            <button class="hl-swatch" id="fc-swatch-red" style="background:var(--fc-red)" data-tip="Red"></button>
-            <button class="hl-swatch" id="fc-swatch-orange" style="background:var(--fc-orange)" data-tip="Orange"></button>
-            <button class="hl-swatch" id="fc-swatch-green" style="background:var(--fc-green)" data-tip="Green"></button>
-            <button class="hl-swatch" id="fc-swatch-blue" style="background:var(--fc-blue)" data-tip="Blue"></button>
-            <button class="hl-swatch" id="fc-swatch-purple" style="background:var(--fc-purple)" data-tip="Purple"></button>
-            <button class="hl-swatch" id="fc-swatch-gray" style="background:var(--fc-gray)" data-tip="Gray"></button>
-            <button class="hl-swatch-none" id="fc-swatch-none" data-tip="Reset to default color"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-          </div>
-        </div>
         <div class="hl-wrap" id="heading-wrap">
           <button class="btn icon-btn quick-btn hl-btn" id="heading-toggle-btn" data-tip="Heading style" aria-haspopup="true" aria-expanded="false">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -4928,12 +4887,8 @@ body.printing-generic #gpe-overlay{
   <button type="button" class="selection-fmt-btn" data-cmd="italic" data-tip="Italic (Ctrl/Cmd+I)"><em>I</em></button>
   <button type="button" class="selection-fmt-btn" data-cmd="underline" data-tip="Underline (Ctrl/Cmd+U)"><u>U</u></button>
   <button type="button" class="selection-fmt-btn" data-cmd="strikeThrough" data-tip="Strikethrough"><s>S</s></button>
-  <span class="selection-fmt-sep"></span>
-  <button type="button" class="selection-fmt-btn sfmt-split" id="sfmt-highlight" data-cmd="highlight" data-tip="Highlight"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l6 6-3 3H6v-6l3-3Z"/><path d="M14 6l4 4"/><path d="M17.5 3.5a2.12 2.12 0 0 1 3 3L18 9l-3-3 2.5-2.5Z"/></svg><span class="sfmt-chip" id="sfmt-hl-chip"></span></button><button type="button" class="selection-fmt-btn sfmt-caret" data-cmd="pick-hl" data-tip="Highlight colours" aria-label="Highlight colours"><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M1.5 3.5h7L5 7.5z"/></svg></button>
-  <button type="button" class="selection-fmt-btn sfmt-split sfmt-row-only" id="sfmt-color" data-cmd="color" data-tip="Text colour"><span class="sfmt-a">A</span><span class="sfmt-chip" id="sfmt-fc-chip"></span></button><button type="button" class="selection-fmt-btn sfmt-caret sfmt-row-only" data-cmd="pick-c" data-tip="Text colours" aria-label="Text colours"><svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor"><path d="M1.5 3.5h7L5 7.5z"/></svg></button>
-  <span class="selection-fmt-sep"></span>
+  <button type="button" class="selection-fmt-btn" id="sfmt-colors" data-cmd="colors" data-tip="Colour and highlight" aria-label="Colour and highlight"><span class="sfmt-a">A</span></button>
   <button type="button" class="selection-fmt-btn" id="sfmt-link" data-cmd="link" data-tip="Link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
-  <span class="selection-fmt-sep sfmt-ai-sep"></span>
   <button type="button" class="selection-fmt-btn sfmt-ai" id="sfmt-rewrite" data-cmd="rewrite" data-tip="Rewrite selection (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
   </div>
   <div class="sfmt-swatches" id="sfmt-swatches" role="group" aria-label="Colours"></div>
@@ -20214,6 +20169,19 @@ function caretOffsetFromPoint(labelEl,x,y,fallbackLen){
     return fallbackLen
   }catch(err){ return fallbackLen }
 }
+// Words dragged over in a row that isn't being edited: start editing it with the same words
+// selected, so the selection popover (and the formatting shortcuts) can act on them. Offsets count
+// the label's text like caretOffsetFromPoint does: exact for plain text, best-effort around [[links]].
+function selectLabelWordsForEditing(node,row,sel){
+  const lbl=row.querySelector('.node-label'); const r=sel.rangeCount?sel.getRangeAt(0):null;
+  if(!lbl||!r||!lbl.contains(r.startContainer)||!lbl.contains(r.endContainer))return;
+  const len=(node.text||'').length;
+  const at=(container,off)=>{ const rg=document.createRange(); rg.setStart(lbl,0); rg.setEnd(container,off); return rg.toString().length; };
+  const a=Math.min(at(r.startContainer,r.startOffset),len), b=Math.min(at(r.endContainer,r.endOffset),len);
+  if(b<=a)return;
+  beginEditAt(node.id,b);
+  const input=getEditingInput(); if(input)setEditableSelectionRange(input,a,b);
+}
 function setInputCaret(input,pos=-1){if(!input)return; if(typeof input.setSelectionRange==='function'){const len=input.value.length; const p=pos<0?len:Math.min(Math.max(pos,0),len); try{input.setSelectionRange(p,p)}catch(e){} return} const len=(input.textContent||'').length; const p=pos<0?len:Math.min(Math.max(pos,0),len); setEditableCaretOffset(input,p);}
 // Undo snapshot is taken here rather than in beginEdit(), and only when this session actually
 // produces a change — either the text itself differs, or the committed text is about to be
@@ -20465,9 +20433,15 @@ const CTX_ACTION_META={
   tags:{label:'Tags…',svg:'<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',group:'info'},
   'version-history':{label:'Version history…',svg:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',group:'info'},
   'no-export':{label:'Leave out of export',dynamicLabel:true,svg:'<path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-2.2 3.4"/><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/>',group:'info'},
+  'fmt-bold':{label:'Bold (Ctrl/Cmd+B)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">B</text>',group:'format'},
+  'fmt-italic':{label:'Italic (Ctrl/Cmd+I)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none" font-style="italic">I</text>',group:'format'},
+  'fmt-underline':{label:'Underline (Ctrl/Cmd+U)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">U</text><line x1="7" y1="21" x2="17" y2="21"/>',group:'format'},
+  'fmt-strike':{label:'Strikethrough',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">S</text><line x1="5" y1="12" x2="19" y2="12"/>',group:'format'},
+  'fmt-highlight':{label:'Highlight (Ctrl/Cmd+Shift+H)',svg:'<path d="M4 17.5 15 6.5a2 2 0 0 1 3 3L7 20.5"/><path d="m4 17.5-1 3.5 3.5-1"/>',group:'format'},
+  'fmt-color':{label:'Text colour (Ctrl/Cmd+Shift+F)',svg:'<text x="12" y="17.5" font-family="\'Inter\',Arial,sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">A</text><line x1="5" y1="21.5" x2="19" y2="21.5" stroke="var(--fc-red)" stroke-width="2.5"/>',group:'format'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','fmt-bold','fmt-italic','fmt-underline','fmt-strike','fmt-highlight','fmt-color','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
 // Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
 // editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
 // no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
@@ -20613,6 +20587,9 @@ function renderContextMorePanel(){
   // sit in the Row › flyout.
   iconRow('Add',['child','above','below','duplicate']);
   iconRow('Move',['up','down']);
+  // Whole-row formatting for the selected rows (owner, 2026-10-22: the toolbar's format buttons
+  // went; words inside a row are formatted from the selection popover).
+  iconRow('Format',['fmt-bold','fmt-italic','fmt-underline','fmt-strike','fmt-highlight','fmt-color']);
   // Sort children — three actions on one compact row (label + icon buttons) rather than three
   // full-height rows; the whole row is hidden when the node has no children to sort (see
   // updateContextMenuState).
@@ -21059,7 +21036,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Dynalist-style note preview is now rendered as a sub-line directly under this row (see just
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
-  row.addEventListener('click',e=>{if(e.target.closest('.node-label a.row-weblink')){e.stopPropagation(); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode))return; const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
+  row.addEventListener('click',e=>{if(e.target.closest('.node-label a.row-weblink')){e.stopPropagation(); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode)){selectLabelWordsForEditing(node,row,_sel); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
   if((forceInlineNoteId===node.id||inlineExpandNoteNodeIds.has(node.id))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
@@ -24823,6 +24800,7 @@ function rowEditorHtml(node){const h=rowMarksToHtml(node.text||'',rowMarksOf(nod
 // removes, undefined toggles (a highlight or colour toggles with the last one used). Returns
 // false, doing nothing, when no words are selected -- callers then style the whole row as before.
 const ROW_STYLE_TO_MARK={bold:'b',italic:'i',underline:'u',strike:'s',highlight:'hl',color:'c'};
+const ROW_MARK_TO_STYLE=Object.fromEntries(Object.entries(ROW_STYLE_TO_MARK).map(([k,v])=>[v,k]));
 function applyRowMarkToSelection(kind,value){
   const input=getEditingInput(); if(!input)return false;
   const range=getEditableSelectionRange(input); if(!range||range.start===range.end)return false;
@@ -24834,13 +24812,18 @@ function applyRowMarkToRange(nodeId,start,end,kind,value){
   const idx=getIndex(nodes,nodeId); if(idx<0||start>=end)return false;
   const node=nodes[idx]; const input=editingId===nodeId?getEditingInput():null;
   if(input){ const read=readRowMarksFromDom(input); node.text=read.text; setRowMarksOn(node,read.marks); }
-  const cur=rowMarksOf(node); const len=(node.text||'').length;
+  pushUndo();
+  // A whole-row style of the same kind (the older way, still set by a shortcut with nothing
+  // selected) becomes formatting on all the words first, so the selection can change part of it.
+  const len=(node.text||'').length; const styleKey=ROW_MARK_TO_STYLE[kind];
+  const folded=!!(styleKey&&node.styles&&node.styles[styleKey]&&len);
+  if(folded){ setRowMarksOn(node,setRowMark(rowMarksOf(node),len,0,len,kind,kind==='hl'||kind==='c'?node.styles[styleKey]:true)); node.styles[styleKey]=false; }
+  const cur=rowMarksOf(node);
   let v=value;
   if(v===undefined)v=rowMarkCovers(cur,len,start,end,kind)?false:(kind==='hl'?lastHighlightColor:kind==='c'?lastFontColor:true);
-  pushUndo();
   setRowMarksOn(node,setRowMark(cur,len,start,end,kind,v)); node.modifiedAt=Date.now();
-  if(input){ input.innerHTML=rowEditorHtml(node); setEditableSelectionRange(input,start,end); }
-  else render();
+  if(input&&!folded){ input.innerHTML=rowEditorHtml(node); setEditableSelectionRange(input,start,end); }
+  else{ render(); const again=editingId===nodeId?getEditingInput():null; if(again)setEditableSelectionRange(again,start,end); }
   markDirty(); scheduleAutoSave();
   return true;
 }
@@ -24955,6 +24938,7 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='above'){if(selectedId!==null)insertSiblingBefore(selectedId,true); return}
   if(action==='below'){if(selectedId!==null)insertSiblingAfter(selectedId,true); return}
   if(action==='duplicate'){duplicateSelected(); return}
+  if(action.startsWith('fmt-')){toggleNodeStyle(action.slice(4)); return}
   if(action==='focus'){if(selectedId!==null)enterFocus(selectedId); return}
   if(action==='up'){moveSelected(-1); focusPane(); return}
   if(action==='down'){moveSelected(1); focusPane(); return}
@@ -26521,11 +26505,10 @@ function insertAiOutline(parsed){
 }
 
 el('qb-ai-rewrite').addEventListener('click',()=>{
-  // Priority 1: sub-text selection in an active edit
-  if(editingId!==null){const inp=getEditingInput(); const rg=inp?getEditableSelectionRange(inp):null; if(rg&&rg.start!==rg.end){rewriteSubTextSelection(); return;}}
-  // Priority 2: multi-selected nodes
+  // Whole rows only: rewriting selected words is the selection popover's ✦ (one place for it).
+  // Multi-selected nodes
   if(multiSelectedIds.length>1){rewriteMultipleNodes(multiSelectedIds); return;}
-  // Priority 3: single selected node
+  // Single selected node
   if(selectedId!==null){rewriteNodeText(selectedId); return;}
   showToast('Select a node first');
 });
@@ -35689,7 +35672,7 @@ function selectionIsHighlighted(){
     return !!val&&!/^(transparent|rgba\(0,\s*0,\s*0,\s*0\)|rgb\(255,\s*255,\s*255\))$/i.test(val.trim());
   }catch(e){ return false; }
 }
-const SELECTION_FMT_ROW_KIND={bold:'b',italic:'i',underline:'u',strikeThrough:'s',highlight:'hl',color:'c'};
+const SELECTION_FMT_ROW_KIND={bold:'b',italic:'i',underline:'u',strikeThrough:'s'};
 function selectionFmtIsRow(){ return !!_selectionFmtEditorId&&editingId!==null&&_selectionFmtEditorId==='in-'+editingId; }
 // Whether every selected character of the row being edited has this format.
 function rowSelectionHasMark(kind){
@@ -35701,17 +35684,26 @@ function rowSelectionHasMark(kind){
 function updateSelectionFmtButtonStates(){
   const pop=el('selection-fmt-popover'); if(!pop)return;
   const isRow=selectionFmtIsRow();
-  ['bold','italic','underline','strikeThrough','highlight','color'].forEach(cmd=>{
+  ['bold','italic','underline','strikeThrough'].forEach(cmd=>{
     const btn=pop.querySelector(`[data-cmd="${cmd}"]`); if(!btn)return;
     let on=false;
     if(isRow)on=rowSelectionHasMark(SELECTION_FMT_ROW_KIND[cmd]);
-    else if(cmd==='highlight')on=selectionIsHighlighted();
-    else if(cmd!=='color'){ try{ on=document.queryCommandState(cmd); }catch(e){} }
+    else{ try{ on=document.queryCommandState(cmd); }catch(e){} }
     btn.classList.toggle('active',on);
   });
-  // The colour bar under Highlight / A shows what a click applies (the last colour picked).
-  pop.style.setProperty('--hl-chip',HIGHLIGHT_COLORS[lastHighlightColor]||HIGHLIGHT_COLORS.yellow);
-  pop.style.setProperty('--fc-chip',`var(--fc-${lastFontColor})`);
+  // The A previews the selection's own colour and highlight, so it doubles as the state.
+  const {c,hl}=isRow?rowSelectionColors():{c:null,hl:selectionIsHighlighted()?'yellow':null};
+  pop.style.setProperty('--sfmt-a-fg',c?`var(--fc-${c})`:'inherit');
+  pop.style.setProperty('--sfmt-a-bg',hl?selectionHighlightRgba(hl):'transparent');
+}
+// The text colour and highlight every selected character of the row shares (null when mixed or none).
+function rowSelectionColors(){
+  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null;
+  const i=editingId!==null?getIndex(nodes,editingId):-1;
+  if(!r||r.start===r.end||i<0)return {c:null,hl:null};
+  const marks=rowMarksOf(nodes[i]);
+  const shared=k=>{ const m=marks.find(x=>x.k===k&&x.s<=r.start&&x.e>=r.end); return m?m.v:null; };
+  return {c:shared('c'),hl:shared('hl')};
 }
 // Notes and thread entries store real colours, so a highlight there is the palette colour, see-through.
 function selectionHighlightRgba(name){
@@ -35719,17 +35711,22 @@ function selectionHighlightRgba(name){
   const n=parseInt(hex.slice(1),16);
   return `rgba(${n>>16},${(n>>8)&255},${n&255},.35)`;
 }
-// The ▾ next to Highlight or A swaps the bar for that palette in place (no second popup);
-// ‹ or Escape goes back.
-function openSelectionFmtSwatches(kind){
+// A swaps the bar for one palette in place (no second popup): text colours over highlights in a
+// row; notes and thread entries store real colours, so they get the highlights only. ‹ goes back.
+function openSelectionFmtPalette(){
   const pop=el('selection-fmt-popover'); const box=el('sfmt-swatches'); if(!pop||!box)return;
+  const isRow=selectionFmtIsRow(); const cur=isRow?rowSelectionColors():{c:null,hl:null};
   const cap=c=>c.charAt(0).toUpperCase()+c.slice(1);
-  const items=kind==='hl'
-    ?Object.keys(HIGHLIGHT_COLORS).map(c=>`<button type="button" class="hl-swatch${c===lastHighlightColor?' hl-swatch-active':''}" data-sw="${c}" style="background:${HIGHLIGHT_COLORS[c]}" data-tip="${cap(c)}" aria-label="${cap(c)}"></button>`)
-    :FONT_COLORS.map(c=>`<button type="button" class="hl-swatch sfmt-fc-swatch${c===lastFontColor?' hl-swatch-active':''}" data-sw="${c}" style="color:var(--fc-${c})" data-tip="${cap(c)}" aria-label="${cap(c)}">A</button>`);
-  const none=`<button type="button" class="hl-swatch-none" data-sw="none" data-tip="${kind==='hl'?'No highlight':'No colour'}" aria-label="${kind==='hl'?'No highlight':'No colour'}">✕</button>`;
-  box.innerHTML=`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`+items.join('')+none;
-  pop.dataset.pick=kind;
+  const none=(kind,tip)=>`<button type="button" class="hl-swatch-none" data-kind="${kind}" data-sw="none" data-tip="${tip}" aria-label="${tip}">✕</button>`;
+  const textRow=`<div class="sfmt-palette-row" role="group" aria-label="Text colour">`
+    +FONT_COLORS.map(c=>`<button type="button" class="hl-swatch sfmt-fc-swatch${c===cur.c?' hl-swatch-active':''}" data-kind="c" data-sw="${c}" style="color:var(--fc-${c})" data-tip="${cap(c)} text" aria-label="${cap(c)} text">A</button>`).join('')
+    +none('c','No text colour')+`</div>`;
+  const hlRow=`<div class="sfmt-palette-row" role="group" aria-label="Highlight">`
+    +Object.keys(HIGHLIGHT_COLORS).map(c=>`<button type="button" class="hl-swatch${c===cur.hl?' hl-swatch-active':''}" data-kind="hl" data-sw="${c}" style="background:${HIGHLIGHT_COLORS[c]}" data-tip="${cap(c)} highlight" aria-label="${cap(c)} highlight"></button>`).join('')
+    +none('hl','No highlight')+`</div>`;
+  box.innerHTML=`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`
+    +`<div class="sfmt-palette">${isRow?textRow:''}${hlRow}</div>`;
+  pop.dataset.pick='colors';
 }
 function closeSelectionFmtSwatches(){ const pop=el('selection-fmt-popover'); if(pop)delete pop.dataset.pick; }
 // Link on words in a row (owner, 2026-10-22: "both, via a small menu"): the bar turns into
@@ -35821,7 +35818,12 @@ function showSelectionFmtPopoverForRange(range,editorId){
   pop.style.left=left+'px';
   pop.style.top=top+'px';
 }
+// The bar shows once the mouse is let go, not while a drag is still choosing the words.
+let _sfmtPointerDown=false;
+document.addEventListener('mousedown',e=>{ const pop=el('selection-fmt-popover'); if(!(pop&&pop.contains(e.target)))_sfmtPointerDown=true; },true);
+document.addEventListener('mouseup',()=>{ if(!_sfmtPointerDown)return; _sfmtPointerDown=false; setTimeout(updateSelectionFmtPopover,0); },true);
 function updateSelectionFmtPopover(){
+  if(_sfmtPointerDown){ hideSelectionFmtPopover(); return; }
   const pop=el('selection-fmt-popover');
   if(pop&&pop.classList.contains('open')&&pop.contains(document.activeElement))return; // typing a web address
   const sel=window.getSelection();
@@ -35917,7 +35919,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     return;
   }
   if(sw){
-    const kind=pop.dataset.pick; const c=sw.dataset.sw;
+    const kind=sw.dataset.kind; const c=sw.dataset.sw;
     if(c!=='back'){
       if(kind==='hl'&&c!=='none')setLastHighlightColor(c);
       if(kind==='c'&&c!=='none')setLastFontColor(c);
@@ -35932,7 +35934,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     return;
   }
   const cmd=btn.dataset.cmd;
-  if(cmd==='pick-hl'||cmd==='pick-c'){ openSelectionFmtSwatches(cmd==='pick-hl'?'hl':'c'); return; }
+  if(cmd==='colors'){ openSelectionFmtPalette(); return; }
   if(isRow){
     if(cmd==='rewrite'){ rewriteSubTextSelection(btn).finally(hideSelectionFmtPopover); return; }
     if(cmd==='link'){ openSelectionFmtLinkMenu(); return; }
@@ -35960,13 +35962,6 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
       }
       hideSelectionFmtPopover();
     });
-    return;
-  }
-  if(cmd==='highlight'){
-    editor.focus();
-    document.execCommand('hiliteColor',false,selectionIsHighlighted()?'transparent':selectionHighlightRgba(lastHighlightColor));
-    syncRemarkTextFromEditorIfApplicable(editor); syncNoteTextFromEditorIfApplicable(editor);
-    updateSelectionFmtButtonStates();
     return;
   }
   if(cmd==='rewrite'){

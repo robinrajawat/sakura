@@ -95,14 +95,14 @@ test('italic and underline shortcuts work on a selection', async ({ page }) => {
   ]);
 });
 
-test('toolbar highlight and text colour swatches format the selected words only', async ({ page }) => {
+test('the selection bar colours format the selected words only', async ({ page }) => {
   await seed(page, [{ text: 'Risk: budget overrun' }]);
   const id = await selectWord(page, 'Risk: budget overrun', 'budget');
-  await page.locator('#hl-caret-btn').click();
-  await page.locator('#hl-swatch-green').click();
+  await page.locator('#selection-fmt-popover [data-cmd="colors"]').click();
+  await page.locator('#sfmt-swatches [data-kind="hl"][data-sw="green"]').click();
   await expect(page.locator(`#in-${id}`)).toBeFocused();
-  await page.locator('#fc-caret-btn').click();
-  await page.locator('#fc-swatch-red').click();
+  await page.locator('#selection-fmt-popover [data-cmd="colors"]').click();
+  await page.locator('#sfmt-swatches [data-kind="c"][data-sw="red"]').click();
   expect((await rows(page))[0].marks).toEqual([
     { s: 6, e: 12, k: 'hl', v: 'green' },
     { s: 6, e: 12, k: 'c', v: 'red' }
@@ -112,14 +112,6 @@ test('toolbar highlight and text colour swatches format the selected words only'
   await expect(label.locator('mark[data-hl="green"]')).toHaveText('budget');
   await expect(label.locator('span[data-c="red"]')).toHaveText('budget');
   expect(await page.evaluate(() => (window as any).eval('[nodes[0].styles.highlight, nodes[0].styles.color]'))).toEqual([false, false]);
-});
-
-test('toolbar Bold button on a selection keeps editing and bolds just the words', async ({ page }) => {
-  await seed(page, [{ text: 'alpha beta gamma' }]);
-  const id = await selectWord(page, 'alpha beta gamma', 'beta');
-  await page.locator('.fmt-btn[data-style="bold"]').click();
-  await expect(page.locator(`#in-${id}`)).toBeFocused();
-  expect((await rows(page))[0].marks).toEqual([{ s: 6, e: 10, k: 'b' }]);
 });
 
 test('typing inside bold words stays bold; the text stays plain words', async ({ page }) => {
