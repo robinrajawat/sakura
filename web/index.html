@@ -2391,6 +2391,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #pv-doc-kicker{width:28px;height:3px;border-radius:2px;background:var(--accent);margin:0 0 12px}
 #pv-doc-title{font:800 28px/1.25 'Inter',sans-serif;letter-spacing:-.015em;color:var(--fg);word-break:break-word}
 /* One text line tall and top-aligned, so the icons centre on the line without making it taller. */
+.node-label .node-row-tail{white-space:nowrap}
 .node-label .node-row-icons{display:inline-flex;align-items:center;gap:0;margin-left:2px;vertical-align:top;height:1lh;white-space:nowrap;text-decoration:none;font-style:normal;font-weight:400}
 .node-label .node-row-icons>*{margin-top:0!important;align-self:center}
 #pv-doc-meta{margin-top:7px;font:400 12.5px 'Inter',sans-serif;color:var(--muted);letter-spacing:.01em}
@@ -19945,7 +19946,25 @@ function moveRowIconsInline(row){
   const lbl=row.querySelector(':scope > .node-label'); if(!lbl)return;
   const icons=[...row.children].filter(c=>c.matches(ROW_ICON_SEL)); if(!icons.length)return;
   const box=document.createElement('span'); box.className='node-row-icons';
-  icons.forEach(i=>box.appendChild(i)); lbl.appendChild(box);
+  icons.forEach(i=>box.appendChild(i));
+  // The box is kept on one line with the text's last word, so when the text just fills its line the
+  // icons wrap together with that word instead of on a line of their own (owner, 2026-10-22).
+  const tail=rowIconsTail(lbl);
+  if(tail){ tail.appendChild(box); } else lbl.appendChild(box);
+}
+// Splits the label's last word into a no-wrap span and returns it, or null when there is no plain
+// last word to hold on to (empty label, or it ends inside a link, where the icons' clicks don't belong).
+function rowIconsTail(lbl){
+  const walker=document.createTreeWalker(lbl,NodeFilter.SHOW_TEXT);
+  let last=null; for(let t=walker.nextNode();t;t=walker.nextNode()){ if(t.nodeValue.trim())last=t; }
+  if(!last||last.parentElement.closest('a'))return null;
+  const v=last.nodeValue, end=v.replace(/\s+$/,'').length;
+  const start=Math.max(v.lastIndexOf(' ',end-1),v.lastIndexOf('\u00a0',end-1),v.lastIndexOf('\n',end-1))+1;
+  const word=start>0?last.splitText(start):last;
+  if(end<v.length)word.splitText(end-start);
+  const tail=document.createElement('span'); tail.className='node-row-tail';
+  word.parentNode.insertBefore(tail,word); tail.appendChild(word);
+  return tail;
 }
 // Drops rows marked noExport and their descendants from an ordered, depth-indented node list.
 function withoutNoExportNodes(list){

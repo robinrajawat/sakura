@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Row icons never wrap alone.** Owner saw a row's note icon sit alone on the next line on a laptop
+screen (text ending "…Flexible Night Delivery." filled its line; the stored text ended in a space, a break point).
+`moveRowIconsInline` now puts the icon box inside `.node-row-tail` (`white-space:nowrap`) with the label's last word
+(`rowIconsTail`; not inside links). Tests `row-icons-inline.spec.ts`. Screenshot `inline-objects/row-icons-last-word.png`.
+
 **2026-10-22: To-Dos panel flattened.** Owner asked if the flat look works, "even the header (top row is kind of
 mixed)". Removed the header divider (`.todos-header-sep`); section labels are plain words (no counts, no pin icon; the
 header's "N open" covers it); Done uses the same label style with its count ("Done 32", `.todos-group-count`); the
