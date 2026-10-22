@@ -61,9 +61,12 @@ test.describe('Typed **bold**/__italic__ is plain text; Ctrl+B without a selecti
       text: nodes[0].text,
       // @ts-expect-error
       stylesBold: nodes[0].styles.bold,
+      // @ts-expect-error
+      marks: rowMarksOf(nodes[0]),
     }));
     expect(state.text).toBe('Plain'); // text unchanged -- no ** markup inserted
-    expect(state.stylesBold).toBe(true); // whole-node style flag toggled instead
+    expect(state.stylesBold).toBeFalsy(); // one formatting system: every word bold instead
+    expect(state.marks).toEqual([{ s: 0, e: 5, k: 'b' }]);
   });
 
   test('formatted words actually render bolder, not just structurally as <b>', async ({ page }) => {

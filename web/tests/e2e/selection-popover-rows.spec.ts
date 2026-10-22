@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 // The selection popover (owner, 2026-10-22: one popover everywhere): selecting words in a row
 // shows the same floating bar as notes and thread entries, with the row's own formats, colour
-// palettes swapped in place, and Link as Web address / Another row. Helpers mirror
+// palettes swapped in place, and Link as an address box in the bar (rows link to rows with @). Helpers mirror
 // row-rich-text.spec.ts.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -127,22 +127,11 @@ test('a whole-row style becomes word formatting when part of it is changed from 
   ]);
 });
 
-test('right-click › More › Format styles whole rows (the toolbar has no format buttons now)', async ({ page }) => {
-  await seed(page, [{ text: 'One' }, { text: 'Two' }]);
-  await expect(page.locator('#ag-format .fmt-btn')).toHaveCount(0);
-  const id = await rowId(page, 'One');
-  await page.locator(`.node-row[data-id="${id}"] .node-label`).click({ button: 'right' });
-  await page.locator('#context-more-toggle').click();
-  await page.locator('#context-more-panel [data-action="fmt-italic"]').click();
-  expect(await page.evaluate(() => (window as any).eval('!!nodes[0].styles.italic'))).toBe(true);
-});
-
-test('Link › Web address turns the selected words into a web link; Remove link takes it off', async ({ page, context }) => {
+test('Link opens an address box in the bar that turns the selected words into a web link; Remove link takes it off', async ({ page, context }) => {
   await seed(page, [{ text: 'Read the docs first' }]);
   const id = await selectWord(page, 'Read the docs first', 'docs');
   await popBtn(page, 'link').click();
-  await expect(pop(page)).toHaveAttribute('data-pick', 'link');
-  await page.locator('#sfmt-swatches [data-sw="web"]').click();
+  await expect(pop(page)).toHaveAttribute('data-pick', 'url');
   await expect(page.locator('#sfmt-url')).toBeFocused();
   await page.keyboard.type('example.com/guide');
   await page.keyboard.press('Enter');
@@ -163,6 +152,7 @@ test('Link › Web address turns the selected words into a web link; Remove link
   await expect.poll(async () => (await rows(page))[0].marks.length).toBe(1);
   await selectWord(page, 'Read the docs first', 'docs');
   await popBtn(page, 'link').click();
+  await expect(page.locator('#sfmt-url')).toHaveValue('https://example.com/guide');
   await page.locator('#sfmt-swatches [data-sw="unlink"]').click();
   await expect.poll(async () => (await rows(page))[0].marks).toEqual([]);
 });
@@ -171,7 +161,6 @@ test('Escape in the address box closes it without linking', async ({ page }) => 
   await seed(page, [{ text: 'Read the docs first' }]);
   await selectWord(page, 'Read the docs first', 'docs');
   await popBtn(page, 'link').click();
-  await page.locator('#sfmt-swatches [data-sw="web"]').click();
   await page.keyboard.type('example.com');
   await page.keyboard.press('Escape');
   await expect(pop(page)).not.toHaveClass(/open/);
@@ -182,21 +171,9 @@ test('a script address is refused', async ({ page }) => {
   await seed(page, [{ text: 'Read the docs first' }]);
   await selectWord(page, 'Read the docs first', 'docs');
   await popBtn(page, 'link').click();
-  await page.locator('#sfmt-swatches [data-sw="web"]').click();
   await page.keyboard.type('javascript:alert(1)');
   await page.keyboard.press('Enter');
   await expect.poll(async () => (await rows(page))[0].marks).toEqual([]);
-});
-
-test('Link › Another row searches rows by the selected words and puts a row link in their place', async ({ page }) => {
-  await seed(page, [{ text: 'See budget here' }, { text: 'Budget 2026' }]);
-  await selectWord(page, 'See budget here', 'budget');
-  await popBtn(page, 'link').click();
-  await page.locator('#sfmt-swatches [data-sw="row"]').click();
-  const item = page.locator('#at-suggest .at-suggest-item').first();
-  await expect(item).toHaveText('Budget 2026');
-  await item.dispatchEvent('mousedown');
-  await expect.poll(async () => (await rows(page))[0].text).toBe('See [[Budget 2026]] here');
 });
 
 test('a web link survives rich copy and the PDF preview', async ({ page }) => {
@@ -231,4 +208,46 @@ test('notes get the same bar; their palette has highlights only', async ({ page 
   await popBtn(page, 'colors').click();
   await expect(page.locator('#sfmt-swatches [data-kind="c"]')).toHaveCount(0);
   await expect(page.locator('#sfmt-swatches [data-kind="hl"]')).toHaveCount(5);
+});
+
+test('a web address pasted over selected words in a note links them', async ({ page }) => {
+  await seed(page, [{ text: 'Row' }]);
+  await page.evaluate(() => (window as any).eval(`nodes[0].note = 'See the guide'; selectedId = 1; openInlineNoteAndFocus(1);`));
+  const line = page.locator('.node-note-line[data-node-id="1"]');
+  await expect(line).toBeFocused();
+  await page.keyboard.press('End');
+  for (let i = 0; i < 5; i++) await page.keyboard.press('Shift+ArrowLeft');
+  await page.evaluate(() => {
+    const dt = new DataTransfer(); dt.setData('text/plain', 'www.example.com/guide');
+    document.activeElement!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  });
+  await expect(line.locator('a')).toHaveText('guide');
+  await expect(line.locator('a')).toHaveAttribute('href', 'https://www.example.com/guide');
+  await expect.poll(() => page.evaluate(() => (window as any).eval('nodes[0].note'))).toContain('href="https://www.example.com/guide"');
+});
+
+test('Clear formatting removes every format on the selected words but keeps links', async ({ page }) => {
+  await seed(page, [{ text: 'Read the docs first', marks: [
+    { s: 0, e: 13, k: 'b' }, { s: 5, e: 13, k: 'hl', v: 'yellow' }, { s: 9, e: 13, k: 'a', v: 'https://example.com' }, { s: 9, e: 13, k: 'c', v: 'red' }
+  ] }]);
+  await selectWord(page, 'Read the docs first', 'the docs');
+  await popBtn(page, 'clear').click();
+  expect((await rows(page))[0].marks).toEqual([
+    { s: 0, e: 5, k: 'b' },
+    { s: 9, e: 13, k: 'a', v: 'https://example.com' }
+  ]);
+  await page.keyboard.press(`${mod}+z`);
+  await expect.poll(async () => (await rows(page))[0].marks.length).toBe(4);
+});
+
+test('Clear formatting in a note removes bold and highlight', async ({ page }) => {
+  await seed(page, [{ text: 'Row' }]);
+  await page.evaluate(() => (window as any).eval(`nodes[0].note = 'Some <b>note</b> <span style="background-color: rgba(234, 179, 8, 0.35);">words</span>'; selectedId = 1; openInlineNoteAndFocus(1);`));
+  const line = page.locator('.node-note-line[data-node-id="1"]');
+  await expect(line).toBeFocused();
+  await page.keyboard.press('End');
+  for (let i = 0; i < 10; i++) await page.keyboard.press('Shift+ArrowLeft');
+  await popBtn(page, 'clear').click();
+  await expect(line.locator('b')).toHaveCount(0);
+  await expect.poll(() => line.evaluate((l) => l.innerHTML)).not.toContain('background');
 });

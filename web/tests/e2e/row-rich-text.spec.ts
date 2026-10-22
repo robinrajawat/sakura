@@ -72,12 +72,15 @@ test('Ctrl/Cmd+B again on the same words removes the bold', async ({ page }) => 
   expect((await rows(page))[0].marks).toEqual([]);
 });
 
-test('with nothing selected, Ctrl/Cmd+B still bolds the whole row', async ({ page }) => {
+test('with nothing selected, Ctrl/Cmd+B bolds every word of the row (one formatting system); again takes it off', async ({ page }) => {
   await seed(page, [{ text: 'Whole row' }]);
   const id = await rowId(page, 'Whole row');
   await page.locator(`.node-row[data-id="${id}"] .node-label`).click();
   await page.keyboard.press(`${mod}+b`);
-  expect(await page.evaluate(() => (window as any).eval('!!nodes[0].styles.bold'))).toBe(true);
+  expect(await page.evaluate(() => (window as any).eval('!!nodes[0].styles.bold'))).toBe(false);
+  expect((await rows(page))[0].marks).toEqual([{ s: 0, e: 9, k: 'b' }]);
+  await expect(page.locator(`#in-${id}`)).toBeFocused();
+  await page.keyboard.press(`${mod}+b`);
   expect((await rows(page))[0].marks).toEqual([]);
 });
 
@@ -267,7 +270,7 @@ test('an old document converts once: **bold**/__italic__ to formatting, a [Label
   await expect(page.locator('.node-row[data-id="3"]')).toHaveClass(/is-section/);
   await expect.poll(() => page.evaluate(() => (window as any).eval(`(async () => (await loadDocRevisions('legacydoc')).map(r => r.reason + ':' + r.nodes[1].text))()`))).toContain('Before rich text rows:Ship **today** or __never__');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_doc_v1_legacydoc') || '{}'));
-  expect(stored.rowFormat).toBe(2);
+  expect(stored.rowFormat).toBe(3);
   expect(stored.nodes[1].text).toBe('Ship today or never');
 });
 
@@ -307,4 +310,53 @@ test('pasted Markdown-style **bold** / __italic__ lines become formatting', asyn
     { text: 'Goal one', marks: [{ s: 0, e: 4, k: 'b' }] },
     { text: 'note two', marks: [{ s: 0, e: 4, k: 'i' }] }
   ]);
+});
+
+test('a document saved with whole-row styles converts once to word formatting, old version kept', async ({ page }) => {
+  await openSavedDoc(page, 'styleddoc', {
+    rowFormat: 2,
+    nodes: [
+      { ...row(1, 0, 'Bold row'), styles: { bold: true, highlight: 'green' } },
+      { ...row(2, 0, 'Red row'), styles: { color: 'red', heading: 2 } },
+      { ...row(3, 0, ''), styles: { italic: true } }
+    ],
+    nextId: 4, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Old', author: ''
+  });
+  await expect.poll(() => rows(page)).toEqual([
+    { text: 'Bold row', marks: [{ s: 0, e: 8, k: 'b' }, { s: 0, e: 8, k: 'hl', v: 'green' }] },
+    { text: 'Red row', marks: [{ s: 0, e: 7, k: 'c', v: 'red' }] },
+    { text: '', marks: [] }
+  ]);
+  expect(await page.evaluate(() => (window as any).eval('nodes.map(n => [!!n.styles.bold, !!n.styles.italic, !!n.styles.highlight, !!n.styles.color, n.styles.heading || 0])'))).toEqual([
+    [false, false, false, false, 0],
+    [false, false, false, false, 2],
+    [false, false, false, false, 0]
+  ]);
+  await expect(page.locator('.node-row[data-id="1"] .node-label b')).toHaveText('Bold row');
+  await expect.poll(() => page.evaluate(() => (window as any).eval(`(async () => (await loadDocRevisions('styleddoc')).map(r => r.reason))()`))).toContain('Before whole-row styles became word formatting');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_doc_v1_styleddoc') || '{}'));
+  expect(stored.rowFormat).toBe(3);
+  expect(stored.nodes[0].styles.bold).toBe(false);
+});
+
+test('a web address pasted over selected words links them; pasted elsewhere it is just text', async ({ page }) => {
+  await seed(page, [{ text: 'Read the docs first' }]);
+  const id = await selectWord(page, 'Read the docs first', 'docs');
+  const paste = (t: string) => page.evaluate((t) => {
+    const dt = new DataTransfer(); dt.setData('text/plain', t);
+    document.activeElement!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  }, t);
+  await paste('https://example.com/guide');
+  expect(await rows(page)).toEqual([{ text: 'Read the docs first', marks: [{ s: 9, e: 13, k: 'a', v: 'https://example.com/guide' }] }]);
+  await expect(page.locator(`#in-${id} a.row-weblink`)).toHaveText('docs');
+  // not a single address: left to the normal paste
+  await page.keyboard.press('Escape');
+  await selectWord(page, 'Read the docs first', 'Read');
+  const prevented = await page.evaluate(() => {
+    const dt = new DataTransfer(); dt.setData('text/plain', 'two words');
+    const ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+    document.activeElement!.dispatchEvent(ev); return ev.defaultPrevented;
+  });
+  expect(prevented).toBe(false);
+  expect((await rows(page))[0].marks).toEqual([{ s: 9, e: 13, k: 'a', v: 'https://example.com/guide' }]);
 });

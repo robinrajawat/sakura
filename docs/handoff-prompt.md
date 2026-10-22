@@ -159,6 +159,23 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: One formatting system; paste a link; Link is web-only.** Owner agreed ("just do it"). Whole-row
+bold/italic/underline/strike/highlight/colour are no longer row styles: `ROW_FORMAT`=3, and `convertLegacyRows`
+folds them into marks over all the words once (`foldRowStylesIntoMarks`; empty rows just drop them; heading stays a
+row style), keeping version "Before whole-row styles became word formatting" (`keepLegacyRowsVersion` picks the
+label from the saved rowFormat). Writers: `toggleNodeStyle` → `setWholeRowMarks(kind)` (shortcut with nothing
+selected toggles the format on every word of the selected rows). Readers of `styles.bold` etc. stay for unconverted
+data (old clipboard); `applyRowMarkToRange` still folds a style it meets. Removed: right-click More › Format row
+(`fmt-*`), the old toolbar colour functions/listeners. Paste: a lone web address (`pastedLinkUrl`: http(s), mailto,
+`www.` → https) pasted over selected words links them, in rows (`applyRowMarkToSelection('a')`) and in notes/thread
+entries (capture-phase listener, `insertHTML` anchor). Link (owner: "another row… not making sense; for backlinks @
+is much easier"): the bar's Link opens the address box directly (`prepareSelectionFmtLinkTarget`), with Remove when
+already linked; the Another row option is gone. The address box's clicks are handled before the editor check (the
+row edit has ended by then). Owner: "no way to remove formatting": the bar gained Clear formatting (`data-cmd="clear"`,
+`clearRowFormattingInSelection` drops every mark but links; notes/threads use removeFormat + clear the highlight).
+Typing shortcuts `[ ] `/`[x] ` (checkbox) and `# ` (heading) on Enter are gone (owner agreed: typed text stays as
+typed); OPML import still reads `[ ]`/`[x]` checkbox prefixes.
+
 **2026-10-22: Calmer selection bar; toolbar formatting removed.** Owner asked whether the popover was the most
 elegant design and what else it could simplify, then "do it". Bar is now B · I · U · S · A · Link · ✦ with no dividers.
 A (`data-cmd="colors"`) swaps the bar for one palette in place (`openSelectionFmtPalette`, `data-pick="colors"`):
@@ -187,21 +204,6 @@ Rewrite now keeps formatting (it used to wipe the row's marks). `applyRowMarkToR
 by id. Phones: the bar sits below the selection (the OS copy bar is above). The document mousedown that closes the bar
 uses `composedPath` (the bar swaps its own buttons). Tests: `selection-popover-rows.spec.ts`, `rowMarks.test.ts`.
 Not done: To-Do titles (plain text) don't get the bar yet.
-
-**2026-10-22: Rich text rows, PR 4 of 4: typed syntax removed, old documents converted.** Typed `**`, `__`,
-`[Section]` (and the long-gone `(note)`/`!`/backticks/`>`) are plain text: `parseStyledText`/`previewParseStyledText`
-draw only `[[links]]`, `parseStyledTextForClipboardCore` only escapes, `getNodePlainText` removes only `[[ ]]`.
-Section = Headings menu → Section (`styles.heading` 7, `SECTION_HEADING_LEVEL`; `normalizeStyles` used to drop 7);
-`nodeIsSection` = heading 7 or a top-level row with "Treat top-level rows as sections". Conversion
-(`convertLegacyRows`, `ROW_FORMAT`=2): a stored doc without `rowFormat` is converted when read (loadDocFromStorage,
-loadTabFromStorageObj, shared-doc open, version restore, undo snapshot): `**x**`/`__x__` → marks
-(`convertLegacyRowMarkup`, same reading as the old renderer, never inside `[[ ]]`), a `[Label]`-only row → Section
-"Label", a top-level `[Label] rest` shown as a section (pref on) → "Label · rest". `keepLegacyRowsVersion` records
-the old doc as version "Before rich text rows" and writes the converted rows back (not for view-only shared docs).
-Every writer of in-memory nodes stamps `rowFormat:ROW_FORMAT`. One-time toast explains it. Pasted / imported /
-AI text with Markdown `**`/`__` becomes formatting (`makeNodeFromTyped`, `setRowTextFromTyped`). PDF section
-headings print the row with its formatting (no label split). Tests: `row-rich-text.spec.ts` (conversion, plain
-`**` after, Section menu, paste), `typed-markup-plain.spec.ts` (was inline-bold-italic-selection).
 
 ### Where things stand (the model to keep in mind)
 
