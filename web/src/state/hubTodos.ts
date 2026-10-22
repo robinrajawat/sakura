@@ -30,15 +30,12 @@ export interface Todo {
   done: boolean;
   createdAt: number;
   completedAt: number | null;
-  priority: string;
-  status: string;
   dueDate: string | null;
   link: string | null;
   linkLabel: string | null;
   nodeRef: unknown;
   repeat: unknown;
   subtasks: unknown[];
-  subtasksOpen: boolean;
 }
 
 export interface HubTodosDeps {
@@ -76,15 +73,12 @@ export function createTodo(text: string): Todo {
     done: false,
     createdAt: d.now(),
     completedAt: null,
-    priority: 'none',
-    status: 'none',
     dueDate: null,
     link: null,
     linkLabel: null,
     nodeRef: null,
     repeat: null,
-    subtasks: [],
-    subtasksOpen: true
+    subtasks: []
   };
 }
 

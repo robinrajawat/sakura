@@ -85,7 +85,7 @@ test('the flyout opens with the keyboard and ← closes it', async ({ page }) =>
 test('subtask editing looks like task editing; an unfolded task has no grey fill', async ({ page }) => {
   await open(page, [task('a', 'Parent task', { subtasks: [{ id: 's1', text: 'A subtask', done: false }, { id: 's2', text: 'Finished', done: true }] })]);
   const row = page.locator('#todos-body .todo-row[data-id="a"]');
-  await row.getByRole('button', { name: 'Show subtasks' }).click();
+  await row.locator('.todo-subtasks-toggle').click();
   await expect(row).toHaveClass(/expanded/);
   await page.mouse.move(2, 2); // off the row, so the hover fill fades out
   await expect.poll(() => row.evaluate((r) => getComputedStyle(r).backgroundColor)).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
@@ -101,17 +101,16 @@ test('subtask editing looks like task editing; an unfolded task has no grey fill
   expect(taskLook.shadow).not.toBe('none');
 });
 
-test('the task menu keeps Priority and Status one click; Repeat and More are flyouts', async ({ page }) => {
+test('the task menu is short; Repeat and Waiting for are flyouts', async ({ page }) => {
   // Owner, 2026-10-20: "todo menu also looks too big, we can make it better with sub menus".
   await open(page, [task('a', 'Only task')]);
   await page.locator('#todos-body .todo-row[data-id="a"]').click({ button: 'right', position: { x: 4, y: 10 } });
   const menu = page.locator('.sb-context-menu').first();
-  await expect(menu.locator(':scope > .sb-context-item')).toHaveText(['Add due date…', 'Add link…', 'Add subtask', /^Repeat\s*Off$/, 'Mark as complete', 'Focus on this', 'More', 'Delete task']);
+  await expect(menu.locator(':scope > .sb-context-item')).toHaveText(['Pin', 'Waiting for…', 'Due date…', 'Repeat', 'Link to row…', 'Rewrite with AI', 'Copy', 'Delete']);
   await menu.locator('.sb-context-item', { hasText: 'Repeat' }).hover();
   await page.locator('.sb-context-submenu .sb-context-item', { hasText: 'Weekdays' }).click();
   // @ts-expect-error -- read back through storage
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1'))[0].repeat)).toBe('weekdays');
   await page.locator('#todos-body .todo-row[data-id="a"]').click({ button: 'right', position: { x: 4, y: 10 } });
-  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'More' }).hover();
-  await expect(page.locator('.sb-context-submenu .sb-context-item')).toHaveText(['Rewrite with AI', 'Duplicate task', 'Copy task text', 'Move to top', 'Move to bottom']);
+  await expect(page.locator('.sb-context-menu').first().locator('.sb-context-item', { hasText: 'Repeat' })).toContainText('Weekdays');
 });

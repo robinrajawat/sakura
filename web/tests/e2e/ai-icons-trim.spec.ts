@@ -169,7 +169,6 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-extract-btn, #todos-summary-btn')).toHaveCount(0);
     await expect(page.locator('.todo-subtask-ai')).toHaveCount(0);
     await page.locator('.todo-row[data-id="t2"]').click({ button: 'right', position: { x: 4, y: 10 } });
-    await page.locator('.sb-context-menu .sb-context-item', { hasText: 'More' }).hover();
     await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Rewrite with AI' })).toHaveCount(1);
     await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Break into subtasks' })).toHaveCount(0);
     await page.keyboard.press('Escape');
@@ -263,14 +262,14 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-panel')).toHaveClass(/open/);
     await expect(page.locator('#todos-open-row')).toHaveCount(0);
     const order = await page.locator('#todos-panel-header > *').evaluateAll((els) => els.map((e) => e.id || e.className));
-    expect(order).toEqual(['todos-title', 'todos-open-label', 'todos-search-wrap', 'todos-filter-wrap', 'todos-more-wrap', 'todos-header-sep', 'todos-panel-maximize', 'todos-panel-close']);
+    expect(order).toEqual(['todos-title', 'todos-open-label', 'todos-search-wrap', 'todos-more-wrap', 'todos-header-sep', 'todos-panel-maximize', 'todos-panel-close']);
     await expect(page.locator('#todos-add-row #todos-input')).toHaveCount(1);
     await expect(page.locator('#todos-add-row #todos-add-btn')).toHaveAttribute('data-tip', 'Add task');
     await expect(page.locator('#todos-panel-close')).toHaveAttribute('data-tip', 'Close (Esc)');
 
     const layout = async () => page.evaluate(() => {
       const panel = document.getElementById('todos-panel')!.getBoundingClientRect();
-      const ids = ['todos-title', 'todos-search-trigger', 'todos-filter-trigger', 'todos-more-trigger', 'todos-panel-maximize', 'todos-panel-close'];
+      const ids = ['todos-title', 'todos-search-trigger', 'todos-more-trigger', 'todos-panel-maximize', 'todos-panel-close'];
       const rects = ids.map((id) => document.getElementById(id)!.getBoundingClientRect());
       const mids = rects.map((r) => Math.round(r.top + r.height / 2));
       const input = document.getElementById('todos-input')!.getBoundingClientRect();

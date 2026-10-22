@@ -159,6 +159,20 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: To-Dos rebuilt on a lean model.** Owner rejected #596 ("not looking good"), asked to start from scratch,
+generic and outside-in ("understandable for any user"), then cut the model with me. A task = title, due, repeat,
+subtasks, `pinned`, `waitingFor` ('' = nobody named) + `waitingSince`, link (`link`/`linkLabel` or `nodeRef`, plus
+`remarkId`), done. Dropped: priority, status (In progress / Needs review / Blocked), focus/Now, `from`, saved fold state,
+sort and filters, edit card, duplicate / move to top-bottom. New shared block `src/utils/todoModel.ts`
+(`normalizeTodo` migrates on load: focus or progress -> pinned, waiting/blocked/review -> waiting for the first
+@mention; `todoSection`, `groupTodos`, `waitingCandidates`) generated into index.html (`todoModel`) and hub.html
+(`hubTodoModel`). Panel: sections Pinned / Today (incl. overdue) / Upcoming / Anytime / Waiting, Done folded;
+`todoRowHtml` = checkbox, title (2-line clamp, edits in place at full length; owner: long professional IT tasks),
+`.todo-side` (subtasks n/m, repeat, link arrow, date via `dueShort`; ⋯ replaces the date on hover); waiting line;
+open task (session `todosOpenIds`) shows subtasks + "From Doc › Row". Menu: Pin, Waiting for… ›, Due date…, Repeat ›,
+Link to row…, Rewrite with AI (AI on), Copy, Delete. Hub: same sections, sheet has Waiting for (text) and Pin. Mockup
+`inline-objects/todos-final-model-mockup.png`. Tests: unit `todoModel.test.ts`, e2e `todos-grouped.spec.ts` (rewritten).
+
 **2026-10-21: To-Dos grouped by when.** Owner: "still not fully satisfied with the overall design of todo"; picked
 "Group by when" and approved mockup `inline-objects/todos-by-when-v2.png` ("give it a shot"). `openSectionsHtml`:
 Now, then Overdue / Today / This week (to Sunday; weekend = coming week) / Later / No date via `todoWhenGroup`, doing
@@ -175,12 +189,6 @@ else latest Agreed / Out of scope. Entry menu: Mark follow-up done / Reopen foll
 a grey icon. Reply line always offers Follow-up. Clearing the marker takes back every open follow-up. Open items, agenda,
 PDF page, F8, toolbar count and the fold "+N" list each one; `followupTodoRefs` ties To-Dos to their entry (remarkId).
 Tests: `followup-per-entry.spec.ts`, unit `discussionStatus.test.ts`. Screenshot `inline-objects/followup-per-entry.png`.
-
-**2026-10-21: A follow-up quotes the entry that set it.** Owner: Open items and the PDF quoted Marlene's later reply
-instead of Kristoffer's follow-up. `openItemsLists()` `latestOf` now takes `threadStatusEntry` (nearest text at or
-before it, else after), not the thread's last line; `lastId` keeps the last line so the snapshot adds
-"· waiting on open question N" when a later question is open ("Waiting on open question N" alone when the follow-up was
-set on that question). Tests: `open-items-agenda.spec.ts`. Screenshot `inline-objects/open-items-followup-line.png`.
 
 ### Where things stand (the model to keep in mind)
 
