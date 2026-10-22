@@ -159,6 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Names typed inside the menu, no popup.** Owner: "I personally like inline editing rather than popups"
+(the To-Do "Waiting for › Someone else…" opened `sakuraPrompt`). `showSbContextMenu` items now support
+`{input:true, placeholder, value, maxLength, onSubmit}`: a text box in the menu, Enter saves and closes, ↑/↓ reach it,
+Esc closes without saving, clicks inside don't close the menu. Used by `waitingMenuItems(t)` (task menu flyout and the
+row's waiting line, which now opens the same choices in place) and the follow-up owner menu (`threadOwnerMenuItems`).
+Prefer this over `sakuraPrompt` for short names. Screenshot `inline-objects/todos-waiting-inline.png`.
+
 **2026-10-22: To-Dos rebuilt on a lean model.** Owner rejected #596 ("not looking good"), asked to start from scratch,
 generic and outside-in ("understandable for any user"), then cut the model with me. A task = title, due, repeat,
 subtasks, `pinned`, `waitingFor` ('' = nobody named) + `waitingSince`, link (`link`/`linkLabel` or `nodeRef`, plus
@@ -172,23 +179,6 @@ sort and filters, edit card, duplicate / move to top-bottom. New shared block `s
 open task (session `todosOpenIds`) shows subtasks + "From Doc › Row". Menu: Pin, Waiting for… ›, Due date…, Repeat ›,
 Link to row…, Rewrite with AI (AI on), Copy, Delete. Hub: same sections, sheet has Waiting for (text) and Pin. Mockup
 `inline-objects/todos-final-model-mockup.png`. Tests: unit `todoModel.test.ts`, e2e `todos-grouped.spec.ts` (rewritten).
-
-**2026-10-21: To-Dos grouped by when.** Owner: "still not fully satisfied with the overall design of todo"; picked
-"Group by when" and approved mockup `inline-objects/todos-by-when-v2.png` ("give it a shot"). `openSectionsHtml`:
-Now, then Overdue / Today / This week (to Sunday; weekend = coming week) / Later / No date via `todoWhenGroup`, doing
-first in each. Status = the check ring (green doing, dashed purple waiting, `.is-waiting`); `todoRowHtml(t,draggable,group)`
-puts one grey line under the title (`.todo-meta-row` full width, `.rm` items joined by "·" in markup order: status,
-due, repeat, subtasks; source row joins it). Due text depends on group ("Due yesterday" red only in Now). Unfolded
-count is a ⌃; empty subtask foot hidden; hairlines between groups; ⋯ absolute top-right. hub.html unchanged.
-Tests: `todos-grouped.spec.ts`. Screenshot `inline-objects/todos-by-when-built.png`.
-
-**2026-10-21: Each follow-up is its own open item.** Owner picked "Per-entry follow-ups" (questions and decisions
-already were). `discussionStatus.ts`: `followupState` (open / done via `done`+`doneAt` / settled by a later Agreed or
-Out of scope), `openFollowups`, `allOpenFollowups`, `openFollowupCounts`; `threadStatus` = Follow-up while any is open,
-else latest Agreed / Out of scope. Entry menu: Mark follow-up done / Reopen follow-up; done or settled follow-ups have
-a grey icon. Reply line always offers Follow-up. Clearing the marker takes back every open follow-up. Open items, agenda,
-PDF page, F8, toolbar count and the fold "+N" list each one; `followupTodoRefs` ties To-Dos to their entry (remarkId).
-Tests: `followup-per-entry.spec.ts`, unit `discussionStatus.test.ts`. Screenshot `inline-objects/followup-per-entry.png`.
 
 ### Where things stand (the model to keep in mind)
 

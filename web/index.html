@@ -1419,6 +1419,11 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .table-grid-picker-cell.on{background:color-mix(in srgb,var(--accent) 22%,var(--bg));border-color:color-mix(in srgb,var(--accent) 70%,var(--border))}
 .table-grid-picker-hint{font:400 11px 'Inter',sans-serif;color:var(--muted);text-align:center}
 .sb-context-label{flex:1 1 auto}
+.sb-context-input-wrap{padding:2px 2px 1px}
+.sb-context-item.sb-context-input{cursor:text;border:1px solid var(--border);background:var(--bg);padding:6px 9px;outline:none;box-sizing:border-box}
+.sb-context-item.sb-context-input:hover{background:var(--bg)}
+.sb-context-item.sb-context-input:focus,.sb-context-item.sb-context-input.sb-context-active{background:var(--bg);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
+.sb-context-input::placeholder{color:var(--hint)}
 .sb-context-heading{font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:7px 8px 3px;user-select:none}
 .sb-context-tiles{display:grid;grid-template-columns:repeat(6,30px);gap:2px;padding:0 4px 2px}
 .sb-context-item.sb-context-tile{width:30px;height:30px;padding:0;justify-content:center;gap:0}
@@ -26622,9 +26627,20 @@ function makeDocItem(d, allFolders, filterActive){
 let _sbContextEl = null;
 let _sbContextButtons = [];
 let _sbContextActiveIndex = -1;
-function _sbContextUpdateHighlight(){ _sbContextButtons.forEach((b,i)=>b.classList.toggle('sb-context-active',i===_sbContextActiveIndex)); }
+function _sbContextUpdateHighlight(){
+  _sbContextButtons.forEach((b,i)=>b.classList.toggle('sb-context-active',i===_sbContextActiveIndex));
+  // A menu text box takes the caret while highlighted, and gives it back when the highlight moves on.
+  const cur=_sbContextButtons[_sbContextActiveIndex];
+  if(cur&&cur.classList.contains('sb-context-input')){ if(document.activeElement!==cur)cur.focus(); }
+  else if(document.activeElement?.classList?.contains('sb-context-input'))document.activeElement.blur();
+}
 function _sbContextKeyHandler(e){
   if(!_sbContextEl||!_sbContextButtons.length)return;
+  // Typing in a menu text box: Enter saves; ↑ ↓ and Esc still move/close; every other key edits the text.
+  if(e.target?.classList?.contains('sb-context-input')){
+    if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); e.target._sbSubmit(); return; }
+    if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Escape'){ e.stopPropagation(); return; }
+  }
   // Handled keys stop here (this runs in the capture phase): an open menu owns them, so e.g. Esc
   // closing a table cell's menu doesn't also end that table's editing session, and arrows don't
   // move the caret between cells underneath it.
@@ -26641,7 +26657,7 @@ function _sbContextKeyHandler(e){
 function closeSbContextMenu(e){
   // A click on a submenu's own parent item opens that submenu, and a fold row unfolds in place,
   // instead of closing everything.
-  if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger, .sb-context-fold'))return;
+  if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger, .sb-context-fold, .sb-context-input-wrap'))return;
   if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
 // One level of submenu for showSbContextMenu: an item with `submenu:[...items]` renders as a parent
 // row with a chevron and opens a flyout beside it on hover, click, or →. The flyout is a child of
@@ -26649,6 +26665,24 @@ function closeSbContextMenu(e){
 let _sbSubEl=null, _sbSubParent=null;
 function _sbBuildItemButton(it, container, list){
   if(it.divider){ const d=document.createElement('div'); d.className='sb-context-divider'; container.appendChild(d); return null; }
+  // A text box inside the menu (e.g. a To-Do's "Waiting for" name): type, then Enter saves and
+  // closes the menu. It takes the place of a popup prompt; arrow keys move in and out of it.
+  if(it.input){
+    const wrap=document.createElement('div'); wrap.className='sb-context-input-wrap';
+    const inp=document.createElement('input'); inp.type='text'; inp.className='sb-context-item sb-context-input';
+    inp.placeholder=it.placeholder||''; inp.value=it.value||''; inp.setAttribute('aria-label',it.label||it.placeholder||'');
+    if(it.maxLength)inp.maxLength=it.maxLength;
+    inp._sbSubmit=async()=>{ const v=inp.value; closeSbContextMenu(); await it.onSubmit(v); };
+    inp.addEventListener('click',e=>e.stopPropagation());
+    inp.addEventListener('focus',()=>{
+      // Clicking into a flyout's box makes the flyout the arrow-key list, as → would.
+      if(_sbSubEl&&container===_sbSubEl&&!_sbSubParent)_sbFocusSubmenu();
+      _sbContextActiveIndex=_sbContextButtons.indexOf(inp); _sbContextUpdateHighlight();
+    });
+    inp.addEventListener('mouseenter',()=>{ if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false); });
+    wrap.appendChild(inp); container.appendChild(wrap); list.push(inp);
+    return inp;
+  }
   // A small section heading, and a compact grid of icon-only tiles (name on hover) — used by the
   // card icon picker so two dozen icons fit in one short submenu.
   if(it.heading){
@@ -31204,7 +31238,8 @@ function threadOwnerMenuItems(r,commit){
   const items=[{heading:'Follow-up for'}];
   threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===r.owner?CHECK:'', onClick:set(n)}));
   if(items.length>1)items.push({divider:true});
-  items.push({label:'Someone else…', onClick:async()=>{ const v=await sakuraPrompt({title:'Follow-up for', body:'Who owns this follow-up?', defaultValue:r.owner||'', confirmLabel:'Assign'}); const name=(v||'').trim(); if(name)set(name)(); }});
+  // Anyone else is typed into the menu itself, not a popup (owner, 2026-10-22: inline over popups).
+  items.push({input:true, label:'Follow-up for', placeholder:'Someone else…', maxLength:80, onSubmit:v=>{ const name=(v||'').trim(); if(name)set(name)(); }});
   if(r.owner)items.push({label:'No one', onClick:set('')});
   return items;
 }
@@ -32793,12 +32828,17 @@ function waitingCandidates(todos) {
     saveTodos();
     renderTodos();
   }
-  async function askWaitingFor(id){
-    const t=todos.find(x=>x.id===id);
-    if(!t) return;
-    const name=await sakuraPrompt({title:'Waiting for', body:'Who is this task waiting on?', defaultValue:t.waitingFor||'', confirmLabel:'Save'});
-    if(name===null) return;
-    setTodoWaiting(id, name);
+  // "Waiting for" choices: people already in the list, a name box for anyone else (no popup;
+  // owner, 2026-10-22), and Not waiting. Shared by the task menu's flyout and the row's waiting line.
+  function waitingMenuItems(t){
+    const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const waiting=isWaiting(t);
+    const names=waitingCandidates(todos).slice(0,6);
+    if(waiting&&t.waitingFor&&!names.some(n=>n.toLowerCase()===t.waitingFor.toLowerCase())) names.unshift(t.waitingFor);
+    const items=names.map(n=>({label:n, icon:waiting&&(t.waitingFor||'').toLowerCase()===n.toLowerCase()?CHECK:'', onClick:()=>setTodoWaiting(t.id,n)}));
+    items.push({input:true, label:'Waiting for', placeholder:names.length?'Someone else…':'Type a name…', maxLength:80, onSubmit:v=>setTodoWaiting(t.id,v)});
+    if(waiting){ items.push({divider:true}); items.push({label:'Not waiting', onClick:()=>setTodoWaiting(t.id,null)}); }
+    return items;
   }
   function setDueDate(id, dateStr){
     const t=todos.find(x=>x.id===id);
@@ -33267,7 +33307,13 @@ function waitingCandidates(todos) {
       });
     });
     body.querySelectorAll('.todo-waiting-line').forEach(line=>{
-      line.addEventListener('click',e=>{ e.stopPropagation(); askWaitingFor(line.getAttribute('data-id')); });
+      line.addEventListener('click',e=>{
+        e.stopPropagation();
+        const t=todos.find(x=>x.id===line.getAttribute('data-id'));
+        if(!t) return;
+        const r=line.getBoundingClientRect();
+        showSbContextMenu(r.left, r.bottom+4, waitingMenuItems(t));
+      });
     });
     body.querySelectorAll('.todo-subtask-input').forEach(inp=>{
       const updateCount=()=>{
@@ -33653,11 +33699,7 @@ function waitingCandidates(todos) {
     if(!t.done){
       items.push({label: t.pinned?'Unpin':'Pin', icon:PIN_SVG(13), onClick:()=>setTodoPinned(t.id,!t.pinned)});
       const waiting=isWaiting(t);
-      const names=waitingCandidates(todos).slice(0,6);
-      if(waiting&&t.waitingFor&&!names.some(n=>n.toLowerCase()===t.waitingFor.toLowerCase())) names.unshift(t.waitingFor);
-      const waitSub=names.map(n=>({label:n, icon:waiting&&(t.waitingFor||'').toLowerCase()===n.toLowerCase()?CHECK:'', onClick:()=>setTodoWaiting(t.id,n)}));
-      waitSub.push({label:names.length?'Someone else…':'Someone…', onClick:()=>askWaitingFor(t.id)});
-      if(waiting){ waitSub.push({divider:true}); waitSub.push({label:'Not waiting', onClick:()=>setTodoWaiting(t.id,null)}); }
+      const waitSub=waitingMenuItems(t);
       items.push({label:'Waiting for…', meta:waiting?(t.waitingFor||'—'):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M7 2v4a5 5 0 0 0 10 0V2M7 22v-4a5 5 0 0 1 10 0v4"/></svg>', submenu:waitSub});
       items.push({divider:true});
       items.push({label:'Due date…', meta:t.dueDate?fmtDue(t.dueDate):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-due'); if(a) openDueDateEditor(a); }});

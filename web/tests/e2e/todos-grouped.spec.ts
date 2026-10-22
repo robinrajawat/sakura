@@ -101,7 +101,8 @@ test('Waiting for… offers people from the list, says who and since when, and N
   await openMenu(page, 'a');
   await menuItem(page, 'Waiting for…').hover();
   const sub = page.locator('.sb-context-submenu');
-  await expect(sub.locator('.sb-context-item')).toHaveText([/Ana|Karsten/, /Ana|Karsten/, 'Someone else…']);
+  await expect(sub.locator('button.sb-context-item')).toHaveText([/Ana|Karsten/, /Ana|Karsten/]);
+  await expect(sub.locator('input.sb-context-input')).toHaveAttribute('placeholder', 'Someone else…');
   await sub.locator('.sb-context-item').filter({ hasText: 'Karsten' }).click();
   expect(await idsIn(page, '.todos-group-waiting')).toEqual(['a']);
   await expect(page.locator('.todo-row[data-id="a"] .todo-waiting-line')).toHaveText(/^Waiting for Karsten · since /);
@@ -110,6 +111,37 @@ test('Waiting for… offers people from the list, says who and since when, and N
   await page.locator('.sb-context-submenu').locator('.sb-context-item').filter({ hasText: 'Not waiting' }).click();
   expect(await idsIn(page, '.todos-group-anytime')).toEqual(['a', 'b']);
   await expect(page.locator('.todo-waiting-line')).toHaveCount(0);
+});
+
+test('anyone else is typed into the menu itself (no popup); the waiting line opens the same choices', async ({ page }) => {
+  await openWith(page, [{ id: 'a', text: 'Order licences' }]);
+  await openMenu(page, 'a');
+  await menuItem(page, 'Waiting for…').hover();
+  const box = page.locator('.sb-context-submenu input.sb-context-input');
+  await expect(box).toHaveAttribute('placeholder', 'Type a name…');
+  await box.click();
+  await expect(page.locator('.sb-context-submenu')).toBeVisible(); // clicking into the box keeps the menu open
+  await page.keyboard.type('Procurement');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.sb-context-menu')).toHaveCount(0);
+  await expect(page.locator('#sakura-modal-input')).toBeHidden();
+  await expect(page.locator('.todo-row[data-id="a"] .todo-waiting-line')).toHaveText(/^Waiting for Procurement · since /);
+  // Clicking the waiting line offers the same choices in place.
+  await page.locator('.todo-row[data-id="a"] .todo-waiting-line').click();
+  const menu = page.locator('.sb-context-menu');
+  await expect(menu.locator('button.sb-context-item')).toHaveText(['Procurement', 'Not waiting']);
+  await menu.locator('input.sb-context-input').fill('Vendor');
+  await menu.locator('input.sb-context-input').press('Enter');
+  await expect(page.locator('.todo-row[data-id="a"] .todo-waiting-line')).toHaveText(/^Waiting for Vendor · since /);
+  // Keyboard: arrows reach the box, Esc closes without saving.
+  await page.locator('.todo-row[data-id="a"] .todo-waiting-line').click();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(menu.locator('input.sb-context-input')).toBeFocused();
+  await page.keyboard.type('Nobody');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.sb-context-menu')).toHaveCount(0);
+  await expect(page.locator('.todo-row[data-id="a"] .todo-waiting-line')).toHaveText(/^Waiting for Vendor/);
 });
 
 test('a row is one line: title, then subtask count, repeat, link arrow and the date on the right', async ({ page }) => {

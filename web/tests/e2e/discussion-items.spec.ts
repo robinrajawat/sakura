@@ -353,6 +353,21 @@ test('a follow-up names its owner, in the thread, the PDF note and the open-item
   expect(errors).toEqual([]);
 });
 
+test('a follow-up owner not yet in the document is typed into the menu, not a popup', async ({ page }) => {
+  const errors = await seed(page, `remarks.push({ id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails.', createdAt: 4, status: 'followup' });`);
+  await page.evaluate('syncRowMarkerFromThread(3); render()');
+  await page.locator('.thread-entry:has(#inline-remark-text-k1) .node-remark-text-inline').click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Assign follow-up…', { exact: true }).click();
+  const box = page.locator('.sb-context-menu input.sb-context-input');
+  await expect(box).toHaveAttribute('placeholder', 'Someone else…');
+  await box.click();
+  await page.keyboard.type('Vendor desk');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#sakura-modal-input')).toBeHidden();
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-k1) .thread-status-note')).toHaveText('· follow-up for Vendor desk');
+  expect(errors).toEqual([]);
+});
+
 // Rows with the same name name their parent on the grey line (owner, 2026-10-16), so the row's own
 // name keeps the first line; the same name under the same parent is numbered in outline order.
 test('open-items list: rows with the same name name their parent on the second line', async ({ page }) => {
