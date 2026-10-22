@@ -69,7 +69,7 @@ Key capabilities:
 - Use `[Text]`, `(Text)`, `!Text`, and `` `Text` `` inline for section labels, muted notes, alerts, and inline code
 - `SAP Note 12345` or `OSS Note 12345` (a 5–10 digit number) auto-links to that note on me.sap.com
 - Hover a row's tree connector or dot to see when the node was created and last modified
-- **Checkboxes** — toolbar Insert ▾ → Checkbox, or type `[ ] `/`[x] ` at the start of a node while editing (auto-converts on commit). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
+- **Checkboxes** — toolbar Insert ▾ → Checkbox, or right-click → Insert › Checkbox (typing `[ ] ` stays plain text). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
 - `Ctrl/Cmd+Space` opens **Quick Insert** — a small menu for inserting an em dash, en dash, arrow, checkmark, cross mark, middle dot, or date/time without leaving the keyboard. Same menu, same shortcut, in every editable area of the app (nodes, inline notes, threads, To-Dos, the title field) — not just while editing a node
 
 ## Documents & Tabs

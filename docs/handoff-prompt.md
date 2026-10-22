@@ -173,6 +173,8 @@ is much easier"): the bar's Link opens the address box directly (`prepareSelecti
 already linked; the Another row option is gone. The address box's clicks are handled before the editor check (the
 row edit has ended by then). Owner: "no way to remove formatting": the bar gained Clear formatting (`data-cmd="clear"`,
 `clearRowFormattingInSelection` drops every mark but links; notes/threads use removeFormat + clear the highlight).
+Typing shortcuts `[ ] `/`[x] ` (checkbox) and `# ` (heading) on Enter are gone (owner agreed: typed text stays as
+typed); OPML import still reads `[ ]`/`[x]` checkbox prefixes.
 
 **2026-10-22: Calmer selection bar; toolbar formatting removed.** Owner asked whether the popover was the most
 elegant design and what else it could simplify, then "do it". Bar is now B · I · U · S · A · Link · ✦ with no dividers.

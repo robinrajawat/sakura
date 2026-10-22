@@ -4124,7 +4124,7 @@ body.printing-generic #gpe-overlay{
 <li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too; with nothing selected they format every word of the row. Links to other rows are typed with @. Typed symbols like ** or [ ] are plain text</li>
 <li>Section: Headings menu → Section (a light label with its own Contents entry)</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
-<li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
+
 <li>Tag icon in the toolbar or right-click → Tags → tag popover (toggle existing tags or add new ones)</li>
 </ul>
 </div>
@@ -20192,13 +20192,13 @@ function commitEdit(){if(editingId===null)return; const _eid=editingId; const id
   // 'input' listener in render()), so comparing it against newText here would always match —
   // that used to make this "changed" check always false and silently skip pushUndo() for
   // ordinary typing. Compare against the text captured at beginEdit() instead.
-  const changed=idx>=0&&input&&origText!==null&&origText!==newText; const willAutoConvert=idx>=0&&newText!=null&&(/^\[( |x)\]\s?/i.test(newText)||/^#{1,6}\s+/.test(newText));
-  if(idx>=0&&(changed||willAutoConvert)){
+  const changed=idx>=0&&input&&origText!==null&&origText!==newText;
+  if(idx>=0&&changed){
     // Snapshot must capture the PRE-edit text, not the already-live-updated text, or Undo
     // would just restore the same value that's already showing.
     const liveText=nodes[idx].text; const liveMarks=rowMarksOf(nodes[idx]); if(changed){nodes[idx].text=origText; setRowMarksOn(nodes[idx],editSessionOriginalMarks)} pushUndo(); nodes[idx].text=liveText; setRowMarksOn(nodes[idx],liveMarks);
   }
-  const oldTextForRename=changed?origText:null; if(changed){nodes[idx].text=newText; markDirty(); if(backlinksEnabled&&oldTextForRename)renameBacklinksFor(oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0)autoConvertHeadingSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
+  const oldTextForRename=changed?origText:null; if(changed){nodes[idx].text=newText; markDirty(); if(backlinksEnabled&&oldTextForRename)renameBacklinksFor(oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
 function cancelEdit(){editingId=null; render()}
 // A block can only move up/down past an adjacent block that is its SAME-DEPTH sibling. Walking
 // back (up) or looking at the node right after the subtree (down) and landing on anything other
@@ -20702,24 +20702,9 @@ function removeCheckbox(id){
   markDirty(); render();
 }
 
-function autoConvertCheckboxSyntax(id){
-  const idx=getIndex(nodes,id); if(idx<0)return;
-  const text=nodes[idx].text||'';
-  const m=text.match(/^\[( |x)\]\s?(.*)$/i);
-  if(m){nodes[idx].isCheckbox=true; nodes[idx].checked=(m[1].toLowerCase()==='x'); nodes[idx].text=m[2]; markDirty();}
-}
-// Same on-commit auto-convert precedent as checkboxes above — # through ###### at the very
-// start of a node, followed by a space, sets that node's real heading level (styles.heading,
-// the same field the Heading toolbar button sets) and strips the markdown prefix from the
-// text. Deliberately capped at 6 (matching the toolbar's own H1-H6 options) rather than
-// reaching level 7 ("Section") — that level has its own separate [Text] bracket convention
-// already, and folding # into it would make one visual result reachable two unrelated ways.
-function autoConvertHeadingSyntax(id){
-  const idx=getIndex(nodes,id); if(idx<0)return;
-  const text=nodes[idx].text||'';
-  const m=text.match(/^(#{1,6})\s+(.*)$/);
-  if(m){nodes[idx].styles.heading=m[1].length; nodes[idx].text=m[2]; markDirty();}
-}
+// Typing "[ ] " or "# " at the start of a row used to turn it into a checkbox or heading on Enter;
+// gone (owner, 2026-10-22): what you type in a row stays as typed. Checkbox: Insert ▾ / right-click;
+// heading: the toolbar's Heading style.
 
 // === Backlinks ===
 function getBacklinkRefs(text){
@@ -35423,7 +35408,6 @@ function waitingCandidates(todos) {
           <li><span class="cs-desc">Select words + Ctrl/Cmd+B / I / U, or a highlight or text colour → formats just those words</span></li>
           <li><span class="cs-desc">Headings menu → Section</span></li>
           <li><span class="cs-desc"><span class="help-kbd">@Node name</span> → clickable backlink (type @ while editing to pick)</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">[ ] text</span> or <span class="help-kbd">[x] text</span> → auto-converts to checkbox on commit</span></li>
           <li><span class="cs-desc">Outline numbering — Settings → Editing → "Outline numbering" (1, 1.1, 1.1.1)</span></li>
         </ul>
       </div>
@@ -35440,7 +35424,6 @@ function waitingCandidates(todos) {
           <li><span class="cs-combo" data-cs-shortcut="heading1"></span>–<span class="help-kbd">6</span> <span class="cs-desc">heading 1–6 (independent of depth)</span></li>
           <li><span class="cs-desc">select words first → formats just those words</span></li>
           <li><span class="cs-desc">@Node name → backlink (type @ while editing to pick)</span></li>
-          <li><span class="cs-desc">[ ] or [x] at start → auto-converts to checkbox on commit</span></li>
         </ul>
       </div>
 
