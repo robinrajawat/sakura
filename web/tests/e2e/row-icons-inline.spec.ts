@@ -99,3 +99,27 @@ test('text ending in a space still keeps its icons on the last word\'s line', as
   }, text);
   expect(alone).toBe(0);
 });
+
+// Owner, 2026-10-22: "grey will make the look much more elegant". Row icons are grey; a Follow-up
+// marker and a thread with open questions keep their colour, so what is still open stands out.
+test('row icons are grey; only open items keep colour', async ({ page }) => {
+  await page.evaluate(() => {
+    const n = (id: number, text: string, x: object = {}) => ({ id, depth: 0, text, parentId: null, isCheckbox: false, checked: false, note: '', noteTitle: '', tags: [], styles: {}, ...x });
+    const t = '<table><tbody><tr><th>A</th></tr><tr><td>1</td></tr></tbody></table>';
+    // @ts-expect-error -- bare globals from index.html
+    nodes = [n(1, 'Agreed with note and table', { marker: 'confirmed', note: 'x', tables: [t] }), n(2, 'Follow-up', { marker: 'followup' }), n(3, 'Open question'), n(4, 'Diagram row')].map(normalizeNode);
+    // @ts-expect-error
+    remarks = [{ id: 'q', anchorNodeId: 3, person: 'Ana', text: 'Why?', createdAt: 1, kind: 'question' }];
+    // @ts-expect-error
+    diagrams = [{ id: 'd', anchorNodeId: 4, title: '', xml: '', previewSvg: '', pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: 1, modifiedAt: 1, _hydrated: true }];
+    // @ts-expect-error
+    inlineExpandTableNodeIds = new Set(); render();
+  });
+  const color = (sel: string) => page.locator(sel).first().evaluate((el) => getComputedStyle(el).color);
+  const muted = await page.evaluate(() => { const d = document.createElement('span'); d.style.color = 'var(--muted)'; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c; });
+  for (const sel of ['.node-row[data-id="1"] .node-marker-badge', '.node-row[data-id="1"] .node-note-dot:not(.node-marker-badge)', '.node-row[data-id="4"] .node-diagram-dot']) {
+    expect(await color(sel), sel).toBe(muted);
+  }
+  expect(await color('.node-row[data-id="2"] .node-marker-badge')).not.toBe(muted);
+  expect(await color('.node-row[data-id="3"] .node-remark-dot')).not.toBe(muted);
+});
