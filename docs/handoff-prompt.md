@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Row icons are grey.** Owner, after a side-by-side mockup (`mockups/icons-colour-vs-grey.png` in project
+files): "grey will make the look much more elegant". Note, table, diagram, image and To-Do dots and the Agreed marker
+use `var(--muted)`; only a Follow-up marker (orange) and a thread with open questions (accent count) keep colour.
+Editor only (PDF unchanged). Test in `row-icons-inline.spec.ts`.
+
 **2026-10-22: Diagram preview: no extra sheet.** Owner: "we can remove our white sheet, right?" The preview's white
 card is now exactly draw.io's export, margin included (`--dv-pad` 0 when `d.previewBorder` is set). The white fill
 stays because draw.io exports a transparent background (lines on the dotted grey backdrop would be hard to read).
@@ -174,13 +179,6 @@ xmlsvg export now sends `border: DIAGRAM_EXPORT_BORDER` (12) and sets `d.preview
 padding (`.has-export-border`) and the preview shows draw.io's margin only (see next entry). Pictures saved
 before have no border: Download re-exports them once first (`regenerateDiagramThumbnail`, needs draw.io online).
 `previewBorder` is carried on copy/paste, duplicate and version restore.
-
-**2026-10-22: Diagram download and right-click menu.** Owner: "would it make sense to have a diagram download option in
-the preview?" and "also delete button? quick right click menu in the diagram thumbnails?". The preview bar has
-**Download** (PNG image at 2x on white, or SVG = draw.io's xmlsvg, which reopens editable in draw.io), named after the
-diagram title (`downloadDiagram`, `diagramFileBase`). Right-clicking a thumbnail (`showDiagramThumbMenu`): Preview, Edit,
-Rename (focuses the title in place), Download ›, Delete (Undo toast). The page CSP blocks `fetch()` on data: URLs, so the
-SVG data URL is decoded by hand. Tests in `node-diagram-inline-preview.spec.ts`.
 
 ### Where things stand (the model to keep in mind)
 

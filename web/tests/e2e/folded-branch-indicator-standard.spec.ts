@@ -147,9 +147,10 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
     expect(result.tip).toContain('1 diagram');
   });
 
-  // Own-node dots each carry a distinct color (so note/diagram/qa/etc. are tellable apart at a
-  // glance without reading the tooltip) -- unaffected by the folded-badge consolidation above.
-  test('own-node dots use distinct colors per type', async ({ page }) => {
+  // Own-node dots are told apart by their icon, not their colour: they are all grey unless something
+  // is still open (owner, 2026-10-22: "grey will make the look much more elegant") -- unaffected by
+  // the folded-badge consolidation above.
+  test('own-node dots share one grey and differ by icon', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -173,9 +174,12 @@ test.describe('Folded-branch content indicators are consolidated into the +N bad
       return {
         ownNoteColor: getComputedStyle(ownNoteDot).color,
         ownDiscussionColor: getComputedStyle(ownDiscussionDot).color,
+        noteIcon: ownNoteDot.innerHTML,
+        discussionIcon: ownDiscussionDot.innerHTML,
       };
     });
 
-    expect(result.ownNoteColor).not.toBe(result.ownDiscussionColor); // distinct types, distinct colors
+    expect(result.ownNoteColor).toBe(result.ownDiscussionColor); // the answered question is not open: grey like the note
+    expect(result.noteIcon).not.toBe(result.discussionIcon); // distinct types, distinct icons
   });
 });
