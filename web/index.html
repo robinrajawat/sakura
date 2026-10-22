@@ -3189,6 +3189,8 @@ body.printing-generic #gpe-overlay{
 /* Done reads like the other section labels; only its count (it is folded) and arrow differ. */
 #todos-body .todos-section-label{color:var(--fg);font:600 12px 'Inter',sans-serif;letter-spacing:0;text-transform:none;padding-top:14px}
 #todos-body .todos-section-label .todos-section-chevron{color:var(--hint)}
+/* Section icons: one per section, same size, grey, in one column with the task checkboxes. */
+#todos-body .todos-section-icon{flex:0 0 auto;color:var(--hint)}
 #todos-body .todos-section-collapse-btn{gap:5px}
 #todos-body .todo-row{padding:6px 10px;margin-bottom:0;gap:10px;border-radius:8px}
 #todos-body .todo-main{gap:2px}
@@ -33186,13 +33188,24 @@ function waitingCandidates(todos) {
   function openSectionsHtml(open,manualOrder){
     let html='';
     groupTodos(open,toISODate(new Date())).forEach(g=>{
-      // Plain labels, no counts or icons (owner, 2026-10-22: the header already says "6 open").
-      html+=`<div class="todos-group todos-group-${g.key}"><div class="todos-group-label">${g.label}</div>`;
+      // One quiet icon per section and no counts (owner, 2026-10-22: the header already says "6 open";
+      // every section has an icon, or none does).
+      html+=`<div class="todos-group todos-group-${g.key}"><div class="todos-group-label">${TODO_SECTION_ICON(g.key)}${g.label}</div>`;
       g.items.forEach(t=>{ html+=todoRowHtml(t,manualOrder,g.key); });
       html+=`</div>`;
     });
     return html;
   }
+  const TODO_SECTION_PATHS={
+    today:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+    upcoming:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    // Anytime = no date, the backlog: a tray (owner, 2026-10-22: Things' layers read as "layers", and an
+    // infinity sign looked too much like Waiting's hourglass).
+    anytime:'<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+    waiting:'<path d="M6 2h12M6 22h12M7 2v4a5 5 0 0 0 10 0V2M7 22v-4a5 5 0 0 1 10 0v4"/>',
+    done:'<circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9.5"/>'
+  };
+  const TODO_SECTION_ICON=key=>key==='pinned'?PIN_SVG(12).replace('class="todo-pin-icon"','class="todos-section-icon"'):`<svg class="todos-section-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TODO_SECTION_PATHS[key]||''}</svg>`;
   const PIN_SVG=size=>`<svg class="todo-pin-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>`;
 
   function renderTodos(){
@@ -33263,7 +33276,7 @@ function waitingCandidates(todos) {
     }
     // Done folds into one line, shown only once something is done.
     if(todos.some(t=>t.done)){
-      html+=`<div class="todos-section-label"><button type="button" class="todos-section-collapse-btn" id="todos-completed-collapse-btn" aria-label="${completedOpen?'Hide done tasks':'Show done tasks'}"><svg class="todos-section-chevron${completedOpen?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg><span>Done</span>${done.length?'<span class="todos-group-count">'+done.length+'</span>':''}</button>${done.length&&completedOpen?'<button type="button" class="todos-clear-completed-btn" id="todos-clear-completed-btn">Clear done</button>':''}</div>`;
+      html+=`<div class="todos-section-label"><button type="button" class="todos-section-collapse-btn" id="todos-completed-collapse-btn" aria-label="${completedOpen?'Hide done tasks':'Show done tasks'}">${TODO_SECTION_ICON('done')}<span>Done</span>${done.length?'<span class="todos-group-count">'+done.length+'</span>':''}<svg class="todos-section-chevron${completedOpen?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>${done.length&&completedOpen?'<button type="button" class="todos-clear-completed-btn" id="todos-clear-completed-btn">Clear done</button>':''}</div>`;
       if(completedOpen){
         if(!done.length){
           html+=`<div class="todos-empty">${todos.some(t=>t.done)?'No done tasks match your search.':'Nothing done yet.'}</div>`;

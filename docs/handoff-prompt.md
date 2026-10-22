@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: To-Dos section icons.** Owner: "Don't you think it would make sense to add the icons?" (after #599 made
+labels plain). Every section label, Done included, has one grey 12px icon (`TODO_SECTION_ICON`: pin, sun, calendar,
+tray (Anytime = no date; layers and ∞ were rejected), hourglass, circle-check); no colours per section (only overdue dates are red). Done's chevron moved after its
+count so the icons line up. Desktop only (hub.html unchanged). Screenshot `inline-objects/todos-section-icons.png`.
+
 **2026-10-22: Row icons never wrap alone.** Owner saw a row's note icon sit alone on the next line on a laptop
 screen (text ending "…Flexible Night Delivery." filled its line; the stored text ended in a space, a break point).
 `moveRowIconsInline` now puts the icon box inside `.node-row-tail` (`white-space:nowrap`) with the label's last word
@@ -168,15 +173,6 @@ screen (text ending "…Flexible Night Delivery." filled its line; the stored te
 mixed)". Removed the header divider (`.todos-header-sep`); section labels are plain words (no counts, no pin icon; the
 header's "N open" covers it); Done uses the same label style with its count ("Done 32", `.todos-group-count`); the
 Add-a-task row stays flat while focused (no box). Screenshot `inline-objects/todos-flat-header.png`.
-
-**2026-10-22: Waiting for and follow-up owner edited in place.** Owner: "I personally like inline editing rather
-than popups"; an in-menu text box was tried and rejected ("we can do better"); Waiting for is free text, "could be just a
-note not just person". Task menu: **Waiting for…** (plain item, no flyout) -> `startWaitingEdit` adds the row's waiting
-line (`todoWaitingDraftId` while unsaved) with the caret in `.todo-waiting-name` (contenteditable); names from
-`waitingCandidates` (mentions + earlier texts of at most 3 words) show under the caret via `showSbContextMenu`
-(`.todo-waiting-suggest`); Enter / blur keep, Esc cancels, empty stops waiting; **Not waiting** when waiting. Limit 200
-chars (model, hub). Follow-up owner "Someone else…" -> `editThreadOwnerInline` types into the entry's "· follow-up for"
-note. Screenshot `inline-objects/todos-waiting-inline.png`.
 
 ### Where things stand (the model to keep in mind)
 
