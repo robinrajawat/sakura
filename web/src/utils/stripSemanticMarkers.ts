@@ -30,20 +30,14 @@ export interface PlainTextNode {
 }
 
 /**
- * Returns a node's words as the editor shows them: `[[link]]` and `[section]` brackets,
- * `**bold**` and `__italic__` markers are removed; everything else the editor displays as typed
- * (parentheses, backticks, `!`, `>`) is kept. The one helper every reader of a row's words goes through (search, sorting,
- * labels, word counts, plain-text exports), so the row's storage format can change in one place
- * (owner, 2026-10-22: rows move to rich text). Originally a literal extraction of
- * index.html's top-level `getNodePlainText()`. Wired into index.html via
- * scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
- * `stripSemanticMarkers` itself — name and signature match the original exactly, no wrapper
- * needed.
+ * Returns a node's words as the editor shows them: only `[[link]]` brackets are removed (a link
+ * shows its name). Typed `**`, `__` and `[ ]` are plain characters since rows became rich text
+ * (owner, 2026-10-22); formatting lives in node.marks and never changes the words. The one helper
+ * every reader of a row's words goes through (search, sorting, labels, word counts, plain-text
+ * exports). Wired into index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers`
+ * block, alongside `stripSemanticMarkers` itself.
  */
 export function getNodePlainText(node: PlainTextNode): string {
   return String(node.text || '')
-    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
-    .replace(/\[([^\]]+)\]/g, '$1')
-    .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
-    .replace(/__([\s\S]+?)__/g, '$1');
+    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
 }

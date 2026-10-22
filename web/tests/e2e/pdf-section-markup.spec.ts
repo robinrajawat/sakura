@@ -28,7 +28,7 @@ test.beforeEach(async ({ page }) => {
   }, { docId: DOC_ID });
 });
 
-test('PDF section names render bold, italic and [[links]] instead of printing the markup; Contents shows plain words', async ({ page }) => {
+test('PDF section names render bold, italic and [[links]] (old typed markup converted to formatting); Contents shows plain words', async ({ page }) => {
   await page.goto('file://' + indexPath);
   await page.waitForFunction(() => typeof (window as any).exportPdfDirect === 'function');
   const r = await page.evaluate(async () => {
@@ -41,8 +41,8 @@ test('PDF section names render bold, italic and [[links]] instead of printing th
     const sec = document.querySelector('#pv-anchor-1 .pv-section-text') as HTMLElement;
     return {
       text: sec.textContent,
-      bold: sec.querySelector('strong')?.textContent,
-      italic: sec.querySelector('em')?.textContent,
+      bold: sec.querySelector('b')?.textContent,
+      italic: sec.querySelector('i')?.textContent,
       toc: [...document.querySelectorAll('#preview-toc .pv-toc-label')].map((e) => e.textContent)
     };
   });

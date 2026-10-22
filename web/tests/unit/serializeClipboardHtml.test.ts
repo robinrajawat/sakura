@@ -91,26 +91,9 @@ describe('getClipboardExportColorsCore', () => {
 describe('parseStyledTextForClipboardCore', () => {
   const colors: ClipboardColors = getClipboardExportColorsCore();
 
-  it('renders a [section] = description semantic guide', () => {
-    const html = parseStyledTextForClipboardCore('[Setup] = install dependencies', colors);
-    expect(html).toContain('Setup');
-    expect(html).toContain('install dependencies');
-    expect(html).toContain('<span');
-  });
-
-  it('renders inline [bracket] spans within ordinary text', () => {
-    const html = parseStyledTextForClipboardCore('see [Section] below', colors);
-    expect(html).toContain('Section');
-  });
-
-  it('renders **bold** spans as <b>', () => {
-    const html = parseStyledTextForClipboardCore('this is **important** text', colors);
-    expect(html).toBe('this is <b>important</b> text');
-  });
-
-  it('renders __italic__ spans as <i>', () => {
-    const html = parseStyledTextForClipboardCore('this is __emphasized__ text', colors);
-    expect(html).toBe('this is <i>emphasized</i> text');
+  it('typed markup is plain text now: [section], **bold** and __italic__ stay as typed, escaped', () => {
+    expect(parseStyledTextForClipboardCore('[Setup] = install <deps>', colors)).toBe('[Setup] = install &lt;deps&gt;');
+    expect(parseStyledTextForClipboardCore('this is **important** and __this__', colors)).toBe('this is **important** and __this__');
   });
 
   it('no longer gives (note)/!alert/`code` any special styling -- plain escaped text', () => {

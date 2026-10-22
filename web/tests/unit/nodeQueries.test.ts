@@ -9,8 +9,6 @@ import {
   hasLaterSiblingAtDepth,
   buildPrefix,
   buildVertFlags,
-  isSectionNodeText,
-  sectionHeadingParts,
   nodeIsSection,
   isIdSelected,
   getSelectionRangeIds,
@@ -87,12 +85,6 @@ function oBuildVertFlags(scopedNodes: QueryableNode[], idx: number, depthOffset 
   const node = scopedNodes[idx];
   const depth = node.depth + depthOffset;
   return new Array(Math.max(0, depth)).fill(true);
-}
-function oIsSectionNodeText(text: string | null | undefined) {
-  return /^\[[^\]]+\]$/.test(String(text || '').trim());
-}
-function oNodeIsSection(node: QueryableNode | null | undefined, sectionMarkersDepthZero: boolean) {
-  return oIsSectionNodeText(node && node.text) || (sectionMarkersDepthZero && !!node && (node.depth || 0) === 0);
 }
 function oIsIdSelected(id: number | null, selectAllMode: boolean, multiSelectedIds: number[], selectedId: number | null) {
   return selectAllMode || multiSelectedIds.includes(id as number) || (!multiSelectedIds.length && id === selectedId);
@@ -214,43 +206,21 @@ describe('buildPrefix / buildVertFlags', () => {
   });
 });
 
-describe('sectionHeadingParts', () => {
-  it('lifts a leading [label] out of the text, keeping the rest intact', () => {
-    expect(sectionHeadingParts('[Release 2.4] Plan')).toEqual({ label: 'Release 2.4', rest: 'Plan', title: 'Release 2.4 · Plan' });
-    expect(sectionHeadingParts('  [Risks]   Open questions ')).toEqual({ label: 'Risks', rest: 'Open questions', title: 'Risks · Open questions' });
-    expect(sectionHeadingParts('[A] and [B]')).toEqual({ label: 'A', rest: 'and [B]', title: 'A · and [B]' });
+describe('nodeIsSection', () => {
+  it('the Section format (heading 7) is always a section; a depth-0 node only when the setting is on', () => {
+    const section = { ...n(100, 1, 'Intro'), styles: { heading: 7 } };
+    expect(nodeIsSection(section, false)).toBe(true);
+    expect(nodeIsSection({ ...n(101, 0, 'Heading'), styles: { heading: 1 } }, false)).toBe(false);
+    expect(nodeIsSection(n(102, 0, 'not a section'), false)).toBe(false);
+    expect(nodeIsSection(n(102, 0, 'not a section'), true)).toBe(true);
+    expect(nodeIsSection(n(103, 1, 'deeper'), true)).toBe(false);
   });
-  it('a whole-text [Section] marker is just its label', () => {
-    expect(sectionHeadingParts('[Intro]')).toEqual({ label: 'Intro', rest: '', title: 'Intro' });
+  it('typed [Brackets] no longer make a section', () => {
+    expect(nodeIsSection(n(104, 1, '[Intro]'), false)).toBe(false);
   });
-  it('text without a leading label is returned whole (no stray bracket trimming)', () => {
-    expect(sectionHeadingParts('Plan [draft]')).toEqual({ label: '', rest: 'Plan [draft]', title: 'Plan [draft]' });
-    expect(sectionHeadingParts('Overview')).toEqual({ label: '', rest: 'Overview', title: 'Overview' });
-    expect(sectionHeadingParts('[[Linked node]] notes')).toEqual({ label: '', rest: '[[Linked node]] notes', title: '[[Linked node]] notes' });
-    expect(sectionHeadingParts('[unclosed text')).toEqual({ label: '', rest: '[unclosed text', title: '[unclosed text' });
-    expect(sectionHeadingParts('')).toEqual({ label: '', rest: '', title: '' });
-    expect(sectionHeadingParts(null)).toEqual({ label: '', rest: '', title: '' });
-  });
-});
-
-describe('isSectionNodeText / nodeIsSection', () => {
-  it('matches the oracle for a range of texts and settings', () => {
-    const texts = ['[Section]', '[A B C]', 'plain text', '', null, undefined, '  [Padded]  ', '[unclosed'];
-    for (const t of texts) {
-      expect(isSectionNodeText(t)).toBe(oIsSectionNodeText(t));
-    }
-    for (const node of [...sectionsTree, null, undefined]) {
-      for (const flag of [true, false]) {
-        expect(nodeIsSection(node, flag)).toBe(oNodeIsSection(node, flag));
-      }
-    }
-  });
-
-  it('a [Bracketed] node is always a section; a depth-0 plain node only when the setting is on', () => {
-    expect(nodeIsSection(sectionsTree[0], false)).toBe(true); // '[Intro]'
-    expect(nodeIsSection(sectionsTree[2], false)).toBe(false); // 'not a section', depth 0, setting off
-    expect(nodeIsSection(sectionsTree[2], true)).toBe(true); // same node, setting on
-    expect(nodeIsSection(sectionsTree[1], true)).toBe(false); // depth 1, never a section via the setting
+  it('is false for no node', () => {
+    expect(nodeIsSection(null, true)).toBe(false);
+    expect(nodeIsSection(undefined, true)).toBe(false);
   });
 });
 

@@ -43,9 +43,9 @@ describe('nodesToOutlineXmlCore', () => {
     expect(xml).toBe('<outline text="&lt;a&gt; &amp; &quot;quote&quot; &#39;apos&#39;"/>');
   });
 
-  it('strips semantic markers from node text via getNodePlainText', () => {
-    const xml = nodesToOutlineXmlCore([node(0, '[Section] title')], 0, -1, true, stripHtmlToText);
-    expect(xml).toBe('<outline text="Section title"/>');
+  it('writes the row\'s words via getNodePlainText ([[link]] brackets removed, typed [ ] kept)', () => {
+    const xml = nodesToOutlineXmlCore([node(0, '[Section] see [[Other]]')], 0, -1, true, stripHtmlToText);
+    expect(xml).toBe('<outline text="[Section] see Other"/>');
   });
 
   it('prefixes checkbox nodes with [x] or [ ] based on checked state', () => {
@@ -143,7 +143,7 @@ describe('serializeOpmlCore', () => {
     expect(xml).toBe(
       '<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n<head>\n<title>My List</title>\n<dateCreated>' +
         fixedDate.toUTCString() +
-        '</dateCreated>\n</head>\n<body>\n<outline text="Section Todos"><outline text="[ ] Buy milk" _note="urgent"/></outline>\n</body>\n</opml>'
+        '</dateCreated>\n</head>\n<body>\n<outline text="[Section] Todos"><outline text="[ ] Buy milk" _note="urgent"/></outline>\n</body>\n</opml>'
     );
   });
 });

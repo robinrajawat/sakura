@@ -33,7 +33,7 @@ describe('computeDiagramAnchorLabel', () => {
 
   it('returns the anchored node\'s text, as the editor shows it', () => {
     const nodes: TestNode[] = [{ id: 1, text: '[Header] some `code` text' }];
-    expect(computeDiagramAnchorLabel({ id: 'd1', anchorNodeId: 1 }, nodes)).toBe('Under: Header some `code` text');
+    expect(computeDiagramAnchorLabel({ id: 'd1', anchorNodeId: 1 }, nodes)).toBe('Under: [Header] some `code` text');
   });
 
   it('falls back to "(untitled node)" when the anchored node has empty text', () => {

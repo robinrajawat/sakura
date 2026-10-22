@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   adjustRowMarksForText,
+  convertLegacyRowMarkup,
   concatRowMarks,
   normalizeRowMarks,
   readRowMarksFromDom,
@@ -197,5 +198,38 @@ describe('rowMarksOf / setRowMarksOn', () => {
     node.text = 'oh hello world';
     expect(rowMarksOf(node)).toEqual([{ s: 9, e: 14, k: 'i' }]);
     expect(node.marksText).toBe('oh hello world');
+  });
+});
+
+describe('convertLegacyRowMarkup', () => {
+  it('turns **bold** and __italic__ into formatting and removes the markers', () => {
+    expect(convertLegacyRowMarkup('A **bold** and __it__ word')).toEqual({
+      text: 'A bold and it word',
+      marks: [
+        { s: 2, e: 6, k: 'b' },
+        { s: 11, e: 13, k: 'i' }
+      ],
+      changed: true
+    });
+  });
+  it('leaves text without markup alone, and an unmatched ** literal', () => {
+    expect(convertLegacyRowMarkup('2 ** 3 = 8')).toEqual({ text: '2 ** 3 = 8', marks: [], changed: false });
+    expect(convertLegacyRowMarkup('snake__case')).toEqual({ text: 'snake__case', marks: [], changed: false });
+  });
+  it('reads like the old renderer: no nesting, nearest closing pair', () => {
+    expect(convertLegacyRowMarkup('**a __b__ c**').text).toBe('a __b__ c');
+  });
+  it('never touches a [[link]]', () => {
+    expect(convertLegacyRowMarkup('see [[**Row**]] and **this**')).toEqual({
+      text: 'see [[**Row**]] and this',
+      marks: [{ s: 20, e: 24, k: 'b' }],
+      changed: true
+    });
+  });
+  it('keeps existing formatting on the characters it moves', () => {
+    expect(convertLegacyRowMarkup('**x** red', [{ s: 6, e: 9, k: 'c', v: 'red' }]).marks).toEqual([
+      { s: 0, e: 1, k: 'b' },
+      { s: 2, e: 5, k: 'c', v: 'red' }
+    ]);
   });
 });

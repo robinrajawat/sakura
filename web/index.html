@@ -4098,10 +4098,10 @@ body.printing-generic #gpe-overlay{
 </ul>  
 </div>
           <div class="help-section" data-cat="editing">
-<h4>Semantics</h4>
+<h4>Formatting</h4>
 <ul>
-<li><span class="sem-example">**Text**</span> → <strong>bold</strong> — or select words and press Ctrl/Cmd+B (I, U, or the highlight and text colour buttons) to format just those words</li>
-<li><span class="sem-example">__Text__</span> → <em>italic</em> </li>
+<li>Select words in a row and press Ctrl/Cmd+B, I or U (or use the toolbar's Bold, Italic, highlight and text colour) to format just those words; with nothing selected it formats the whole row. Typed symbols like ** or [ ] are plain text</li>
+<li>Section: Headings menu → Section (a light label with its own Contents entry)</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 <li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
 <li>Tag icon in the toolbar or right-click → Tags → tag popover (toggle existing tags or add new ones)</li>
@@ -4148,7 +4148,7 @@ body.printing-generic #gpe-overlay{
 <li>Export ▾ → PDF renders the document straight from its current content and opens the browser's print dialog — choose "Save as PDF" there. No separate step needed first</li>
 <li>The PDF always contains the whole document: folded sections, notes and code blocks, Q&amp;A, and remarks are all included, each right under the node it belongs to</li>
 <li>Headings come from the Heading 1–6 style you apply in the editor (Format toolbar, next to Text color) — not from tree depth. A node with no heading style of its own renders as plain body text; [Bracketed] section markers render as section headings</li>
-<li>A Contents page built from headings (levels 1–2) and [Section] markers is included at the start of every PDF export. Every page gets a footer with the export date and "Page N of M"</li>
+<li>A Contents page built from headings (levels 1–2) and Section rows is included at the start of every PDF export. Every page gets a footer with the export date and "Page N of M"</li>
 <li>Settings → Data &amp; backup → Export &amp; copy: "Cover page" adds a title page before the contents page; "PDF branding" adds a small mark on the cover page and in every page's bottom-right corner (on by default, with your own text if you set one); "Use accent color in exports" picks between your accent color and a fixed color</li>
 <li>Notes render as their real rich content (images, lists, links) in exports, not the small dot from the editor</li>
 </ul>
@@ -4504,7 +4504,7 @@ body.printing-generic #gpe-overlay{
             <button class="heading-option heading-option-h4" data-level="4" data-tip="Nested subsection">Heading 4</button>
             <button class="heading-option heading-option-h5" data-level="5" data-tip="Lower-level subsection">Heading 5</button>
             <button class="heading-option heading-option-h6" data-level="6" data-tip="Lowest-level subsection">Heading 6</button>
-            <button class="heading-option heading-option-h7" data-level="7" data-tip="Same look as typing [Text] — a light inline label, but as a real heading with its own Contents entry">Section</button>
+            <button class="heading-option heading-option-h7" data-level="7" data-tip="A light label that starts a section, with its own Contents entry">Section</button>
             <button class="heading-option heading-option-clear" data-level="0">Body text</button>
           </div>
         </div>
@@ -11732,7 +11732,7 @@ function captionFromLegacyAlt(alt) {
 
 /* GENERATED:nodeImages:END */
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
-function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
+function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=SECTION_HEADING_LEVEL?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
 function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})},n)}
 // images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
@@ -11740,10 +11740,51 @@ function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:N
 // must be independent objects, not shared references into the source node.
 // Formatting on part of a row (node.marks beside node.text, see src/utils/rowMarks.ts): kept only
 // when there is some, and checked against the row's text on the way in.
+// Documents saved before rows became rich text (owner, 2026-10-22) have no rowFormat: their typed
+// markup is converted once when they're read -- **bold** / __italic__ to formatting
+// (convertLegacyRowMarkup), a row that was only "[Label]" to the Section format (heading 7) named
+// "Label", and a top-level "[Label] rest" row shown as a section (sectionMarkersDepthZero) to
+// "Label · rest", the way its PDF heading read. Saving writes rowFormat:ROW_FORMAT, so typing
+// those characters afterwards stays plain text. The first save after converting keeps the old
+// text in version history (maybeAutoSnapshotBeforeSave). Returns how many rows changed.
+const ROW_FORMAT=2;
+// After converting a stored document: keep its old text as a version ("Before rich text rows")
+// and store the converted rows, so the conversion happens once. A shared document you can only
+// view is converted in memory each time instead (nothing of it is saved).
+function keepLegacyRowsVersion(id,d,convertedNodes){
+  const meta=sharedDocMeta&&sharedDocMeta[id]; if(meta&&meta.role!=='editor')return;
+  recordDocRevision(id,d,'Before rich text rows');
+  try{ const raw=localStorage.getItem(docKey(id)); if(!raw)return; const cur=JSON.parse(raw); if(cur.rowFormat===ROW_FORMAT)return;
+    cur.nodes=convertedNodes||nodes; cur.rowFormat=ROW_FORMAT; localStorage.setItem(docKey(id),JSON.stringify(cur)); }catch(e){}
+  setTimeout(()=>{ if(currentDocId===id){ markDirty(); scheduleAutoSave(); } },0);
+}
+function convertLegacyRows(list,savedFormat){
+  if(savedFormat===ROW_FORMAT||!Array.isArray(list))return 0;
+  let changed=0;
+  list.forEach(node=>{
+    const before=node.text||''; const marks=rowMarksOf(node); const trimmed=before.trim();
+    const sec=trimmed.startsWith('[[')?null:trimmed.match(/^\[([^\]]+)\]\s*([\s\S]*)$/);
+    let text=before; let heading=null;
+    if(sec&&!sec[2].trim()){ text=sec[1].trim(); heading=7 }
+    else if(sec&&sectionMarkersDepthZero&&(node.depth||0)===0){ text=sec[1].trim()+' · '+sec[2].trim() }
+    const conv=convertLegacyRowMarkup(text,text===before?marks:adjustRowMarksForText(marks,before,text));
+    if(conv.text===before&&heading===null&&!conv.changed)return;
+    node.text=conv.text; setRowMarksOn(node,conv.marks); if(heading!==null)node.styles.heading=heading;
+    changed++;
+  });
+  if(changed&&!convertLegacyRows._toastShown){ convertLegacyRows._toastShown=true; setTimeout(()=>{ try{ if(localStorage.getItem('sakura_rich_rows_toast_v1'))return; localStorage.setItem('sakura_rich_rows_toast_v1','1') }catch(e){} if(typeof showToast==='function')showToast('Rows are rich text now: select words and press Ctrl/Cmd+B, I or U, or use the toolbar. Typed **, __ and [Section] were turned into formatting.',null,false,9000) },800) }
+  return changed;
+}
 function normalizeNodeMarks(out,src){if(!src||!Array.isArray(src.marks)||!src.marks.length)return out; out.marks=src.marks; out.marksText=typeof src.marksText==='string'?src.marksText:out.text; setRowMarksOn(out,rowMarksOf(out)); return out}
 function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables,images,marks){const _now=Date.now(); return normalizeNodeMarks({id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],images:Array.isArray(images)?cloneNodeImagesWithNewIds(images,_now,newNodeImageId):[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null},{marks})}
+// A row from pasted or imported text, or an AI outline: Markdown-style **bold** / __italic__ in it
+// becomes real formatting (convertLegacyRowMarkup), since typed markup is plain text in a row.
+// Replaces a row's text with AI output: its formatting follows the words (rowMarksOf), and
+// Markdown-style **bold** / __italic__ in the reply becomes formatting.
+function setRowTextFromTyped(node,text){node.text=String(text??''); const c=convertLegacyRowMarkup(node.text,rowMarksOf(node)); if(c.changed){node.text=c.text; setRowMarksOn(node,c.marks)}}
+function makeNodeFromTyped(text,depth,parentId,styles,note,isCheckbox,tables){const c=convertLegacyRowMarkup(text); return makeNode(c.text,depth,parentId,styles,note,isCheckbox,tables,undefined,c.marks)}
 function makeBlankNode(depth=0,parentId=null){return makeNode('',depth,parentId)}
-function snapshot(withFolds){return JSON.stringify({nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,focusedId,remarks,qaItems,...(withFolds?{folds:foldState()}:{})})}
+function snapshot(withFolds){return JSON.stringify({rowFormat:ROW_FORMAT,nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,focusedId,remarks,qaItems,...(withFolds?{folds:foldState()}:{})})}
 // Folds aren't part of normal undo; Expand all / Collapse all push a snapshot that carries them so
 // Ctrl/Cmd+Z puts every fold back (owner, 2026-10-20). Undo/redo of such a step keeps carrying them.
 function foldState(){return {collapsed:[...collapsedIds],notes:[...inlineExpandNoteNodeIds],qa:[...inlineExpandQaNodeIds],closedQa:[...showClosedQaNodeIds],remarks:[...inlineExpandRemarksNodeIds],allRemarks:[...showAllRemarksNodeIds],diagrams:[...inlineExpandDiagramNodeIds],tables:[...collapsedTableNodeIds],images:[...collapsedImageNodeIds]}}
@@ -11758,7 +11799,7 @@ const snapshotHasFolds=s=>s.includes('"folds":{');
 // be issued that exact id again and silently inherit whatever orphaned entry was still anchored
 // to it -- reattaching old content to unrelated new content. Never reusing an id, even across
 // undo/redo, closes that without touching the intentional orphan/re-anchor behavior at all.
-function restoreFromSnapshot(s){const d=JSON.parse(s);nodes=(d.nodes||[]).map(normalizeNode);nextId=Math.max(nextId,d.nextId||1);selectedId=d.selectedId??(nodes[0]?.id??null);multiSelectedIds=Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(id=>nodes.some(n=>n.id===id)):[];selectionAnchorId=d.selectionAnchorId??(selectedId??null);focusedId=(d.focusedId!=null&&nodes.some(n=>n.id===d.focusedId))?d.focusedId:null;editingId=null;selectAllMode=false;flashNodeId=null;if(Array.isArray(d.remarks))remarks=d.remarks;if(Array.isArray(d.qaItems))qaItems=d.qaItems;if(d.folds)applyFoldState(d.folds)}
+function restoreFromSnapshot(s){const d=JSON.parse(s);nodes=(d.nodes||[]).map(normalizeNode); convertLegacyRows(nodes,d.rowFormat);nextId=Math.max(nextId,d.nextId||1);selectedId=d.selectedId??(nodes[0]?.id??null);multiSelectedIds=Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(id=>nodes.some(n=>n.id===id)):[];selectionAnchorId=d.selectionAnchorId??(selectedId??null);focusedId=(d.focusedId!=null&&nodes.some(n=>n.id===d.focusedId))?d.focusedId:null;editingId=null;selectAllMode=false;flashNodeId=null;if(Array.isArray(d.remarks))remarks=d.remarks;if(Array.isArray(d.qaItems))qaItems=d.qaItems;if(d.folds)applyFoldState(d.folds)}
 function pushUndo(){undoStack.push(snapshot()); if(undoStack.length>200)undoStack.shift(); redoStack=[]}
 function undo(){if(!undoStack.length)return; const s=undoStack.pop(); redoStack.push(snapshot(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render()}
 function redo(){if(!redoStack.length)return; const s=redoStack.pop(); undoStack.push(snapshot(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render()}
@@ -11910,7 +11951,7 @@ function ensureDocSystem(){
           const metaRaw=localStorage.getItem(META_KEY);
           const meta=metaRaw?JSON.parse(metaRaw):{};
           const id=genDocId();
-          const payload={nodes:d.nodes,nextId:d.nextId||1,selectedId:d.selectedId??null,multiSelectedIds:d.multiSelectedIds||[],selectionAnchorId:d.selectionAnchorId??null,collapsed:[],title:'',author:meta.author||''};
+          const payload={...(d.rowFormat?{rowFormat:d.rowFormat}:{}),nodes:d.nodes,nextId:d.nextId||1,selectedId:d.selectedId??null,multiSelectedIds:d.multiSelectedIds||[],selectionAnchorId:d.selectionAnchorId??null,collapsed:[],title:'',author:meta.author||''};
           try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
           list=touchDocIndex(id,'Untitled');
           saveCurrentDocId(id);
@@ -11990,7 +12031,7 @@ function trimDiagramsForRevision(arr){
 async function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
   const list=await loadDocRevisions(id);
-  list.push({ts:Date.now(),reason:reason||'Auto',nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
+  list.push({ts:Date.now(),reason:reason||'Auto',...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
   while(list.length>REVISION_MAX_PER_DOC)list.shift();
   await saveDocRevisions(id,list);
 }
@@ -12135,7 +12176,7 @@ function saveToStorage(){
       if(_hydrated&&!d.blobSynced) return {...meta,xml:xml||'',previewSvg:previewSvg||'',pageSvgs:Array.isArray(pageSvgs)?pageSvgs:[]};
       return meta;
     });
-    const payload={nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],collapsedTables:[...collapsedTableNodeIds],collapsedImages:[...collapsedImageNodeIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,docLinkedUrlLabel,qa:qaItems,diagrams:diagramMeta,remarks};
+    const payload={rowFormat:ROW_FORMAT,nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,collapsed:[...collapsedIds],collapsedTables:[...collapsedTableNodeIds],collapsedImages:[...collapsedImageNodeIds],focusedId,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,docLinkedUrlLabel,qa:qaItems,diagrams:diagramMeta,remarks};
     // This is the write that actually persists the in-memory document. If it throws (most
     // commonly QuotaExceededError once localStorage is full), everything downstream of it —
     // including the IndexedDB mirror and File System Access backup, which both re-read from
@@ -12187,7 +12228,7 @@ function loadDocFromStorage(id){
   try{
     const raw=localStorage.getItem(docKey(id)); if(!raw)return false;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes)){ return false; }
-    nodes=d.nodes.map(normalizeNode); nextId=d.nextId||1; selectedId=d.selectedId??(nodes[0]?.id??null);
+    nodes=d.nodes.map(normalizeNode); if(convertLegacyRows(nodes,d.rowFormat))keepLegacyRowsVersion(id,d); nextId=d.nextId||1; selectedId=d.selectedId??(nodes[0]?.id??null);
     multiSelectedIds=Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nodes.some(n=>n.id===idv)):[];
     selectionAnchorId=d.selectionAnchorId??(selectedId??null);
     collapsedIds=new Set(Array.isArray(d.collapsed)?d.collapsed:[]);
@@ -12342,7 +12383,7 @@ function loadTabFromStorageObj(id){
   try{
     const raw=localStorage.getItem(docKey(id)); if(!raw)return null;
     const d=JSON.parse(raw); if(!Array.isArray(d.nodes))return null;
-    const nds=d.nodes.map(normalizeNode);
+    const nds=d.nodes.map(normalizeNode); if(convertLegacyRows(nds,d.rowFormat))keepLegacyRowsVersion(id,d,nds);
     return {docId:id, title:d.title||'', author:d.author||'', docStatus:typeof d.docStatus==='string'?d.docStatus:'', docLinkedUrl:typeof d.docLinkedUrl==='string'?d.docLinkedUrl:'', docLinkedUrlLabel:typeof d.docLinkedUrlLabel==='string'?d.docLinkedUrlLabel:'', qa:Array.isArray(d.qa)?d.qa:[], diagrams:Array.isArray(d.diagrams)?d.diagrams:[], remarks:Array.isArray(d.remarks)?d.remarks:[], nodes:nds, nextId:d.nextId||1, selectedId:d.selectedId??(nds[0]?.id??null), multiSelectedIds:Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(idv=>nds.some(n=>n.id===idv)):[], selectionAnchorId:d.selectionAnchorId??null, collapsedIds:new Set(Array.isArray(d.collapsed)?d.collapsed:[]),collapsedTableNodeIds:new Set(Array.isArray(d.collapsedTables)?d.collapsedTables:[]),collapsedImageNodeIds:new Set(Array.isArray(d.collapsedImages)?d.collapsedImages:[]), focusedId:(Number.isFinite(d.focusedId)&&nds.some(n=>n.id===d.focusedId))?d.focusedId:null, undoStack:[], redoStack:[], dirty:false, scrollTop:0, searchQuery:'', searchMatches:[], searchIndex:-1};
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
@@ -12645,7 +12686,7 @@ function restoreOpenTabsOnStartup(forceActiveId){
 function createDoc(folderId){
   commitEdit(); saveToStorage();
   const id=genDocId();
-  const payload={nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:el('doc-author')?.value||defaultAuthorName||''};
+  const payload={rowFormat:ROW_FORMAT,nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:el('doc-author')?.value||defaultAuthorName||''};
   try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
   touchDocIndex(id,'Untitled');
   if(folderId){ setFolderForDoc(id,folderId); }
@@ -12659,7 +12700,7 @@ function ensureDocumentForEditing(){
   if(currentDocId)return;
   const id=genDocId();
   const resolvedAuthor=el('doc-author')?.value||defaultAuthorName||'';
-  const payload={nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:resolvedAuthor};
+  const payload={rowFormat:ROW_FORMAT,nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:resolvedAuthor};
   try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
   touchDocIndex(id,'Untitled');
   const tab={docId:id,title:'',author:resolvedAuthor,docStatus:'',docLinkedUrl:'',docLinkedUrlLabel:'',nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsedIds:new Set(),undoStack:[],redoStack:[],dirty:false,scrollTop:0,searchQuery:'',searchMatches:[],searchIndex:-1};
@@ -12692,7 +12733,7 @@ function clearToNoDocumentState(){
 }
 function startupEnsureBlankDoc(){
   const id=genDocId();
-  const payload={nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:defaultAuthorName||''};
+  const payload={rowFormat:ROW_FORMAT,nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:defaultAuthorName||''};
   try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
   touchDocIndex(id,'Untitled');
   currentDocId=id; saveCurrentDocId(id);
@@ -12929,11 +12970,11 @@ function describeOrphanedLinksAfterRestore(nodeList,diagramList,remarkList){
 async function restoreDocRevision(docId,ts){
   const revisions=await loadDocRevisions(docId);
   const rev=revisions.find(r=>r.ts===ts); if(!rev)return;
-  const freshNodes=rev.nodes.map(normalizeNode);
+  const freshNodes=rev.nodes.map(normalizeNode); convertLegacyRows(freshNodes,rev.rowFormat);
   let restoreOrphanMsg='';
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Before restoring an older version');
+    recordDocRevision(docId,{rowFormat:ROW_FORMAT,nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); collapsedTableNodeIds=new Set(); collapsedImageNodeIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
       // Revision diagrams never include their exported preview image (see recordDocRevision);
@@ -13002,7 +13043,7 @@ async function restoreDocRevision(docId,ts){
       restoredDiagramsMeta.push(meta);
     }
     const restoredDocStatus='docStatus' in rev?(rev.docStatus||''):prevDocStatusCurrent;
-    const payload={nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,qa:restoredQa,diagrams:restoredDiagramsMeta,remarks:prevRemarksCurrent};
+    const payload={rowFormat:ROW_FORMAT,nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,qa:restoredQa,diagrams:restoredDiagramsMeta,remarks:prevRemarksCurrent};
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,prevRemarksCurrent);
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
@@ -13040,7 +13081,7 @@ async function saveManualDocVersion(docId=historyModalDocId){
   if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
-    await recordDocRevision(docId,{nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Manual checkpoint');
+    await recordDocRevision(docId,{rowFormat:ROW_FORMAT,nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Manual checkpoint');
   } else {
     try{
       const raw=localStorage.getItem(docKey(docId));
@@ -15080,7 +15121,7 @@ async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmai
     const snap=await mod.getDoc(mod.doc(db,'users',ownerUid,'docs',docId));
     if(!snap.exists()){ showToast('This document is no longer available'); return; }
     const d=snap.data();
-    const nds=Array.isArray(d.nodes)?d.nodes.map(normalizeNode):[];
+    const nds=Array.isArray(d.nodes)?d.nodes.map(normalizeNode):[]; convertLegacyRows(nds,d.rowFormat);
     // Diagram xml and attachment dataUrl live in their own subcollections now (see
     // pushDocToCloud), not inline on d itself — merge them back in here so the rest of this
     // function (and the _hydrated marking just below) sees the same full shape it always has. A
@@ -15109,7 +15150,7 @@ async function openSharedDocument(ownerUid,docId,role,ownerDisplayName,ownerEmai
   // Mirror into localStorage under the same docKey the rest of the app already reads/writes —
   // saveToStorage/queueSync/pushDocToCloud all key off this; sharedDocMeta (checked in both) is
   // what keeps it from being mistaken for a document this account owns.
-  try{ localStorage.setItem(docKey(docId),JSON.stringify({nodes:tab.nodes,nextId:tab.nextId,selectedId:tab.selectedId,multiSelectedIds:[],selectionAnchorId:null,collapsed:[...tab.collapsedIds],title:tab.title,author:tab.author})) }catch(e){}
+  try{ localStorage.setItem(docKey(docId),JSON.stringify({rowFormat:ROW_FORMAT,nodes:tab.nodes,nextId:tab.nextId,selectedId:tab.selectedId,multiSelectedIds:[],selectionAnchorId:null,collapsed:[...tab.collapsedIds],title:tab.title,author:tab.author})) }catch(e){}
   sharedDocMeta[docId]={ownerUid,role,ownerDisplayName,ownerEmail};
   openTabs.push(tab);
   commitEdit(); clearFiltersForDocChange(); captureActiveTabSnapshot(); saveToStorage();
@@ -17852,7 +17893,7 @@ const QA_COMMANDS=[
   {id:'qa-icon-only',label:'Quick Assist icon only',keywords:['quick assist icon only','icon only','collapse quick assist'],get:()=>qaIconOnly,set:v=>setQaIconOnly(v)},
   {id:'appbar-io-icononly',label:'Icon-only Import/Export',keywords:['icon only import export','app bar icon only','collapse import export'],get:()=>appbarIconOnlyExportImport,set:v=>setAppbarIconOnlyExportImport(v)},
   {id:'preview-toc-sections',label:'PDF contents page: include sections',keywords:['table of contents','toc','contents','section markers','preview contents'],get:()=>previewTocIncludeSections,set:v=>setPreviewTocIncludeSections(v)},
-  {id:'section-marker-depth0',label:'Treat depth 0 as section markers',keywords:['section marker','section','depth 0','top level','bracket'],get:()=>sectionMarkersDepthZero,set:v=>setSectionMarkersDepthZero(v)},
+  {id:'section-marker-depth0',label:'Treat top-level rows as sections',keywords:['section marker','section','depth 0','top level'],get:()=>sectionMarkersDepthZero,set:v=>setSectionMarkersDepthZero(v)},
   {id:'accent-branches',label:'Accent color on branches',keywords:['accent branches','colored branches','coloured branches','branch color','branch colour'],get:()=>accentBranches,set:v=>setAccentBranches(v)},
   {id:'restore-tabs',label:'Reopen tabs on launch',keywords:['restore tabs','reopen tabs'],get:()=>restoreTabsOnLaunch,set:v=>setRestoreTabsOnLaunch(v)},
   {id:'always-blank',label:'Start each session blank',keywords:['start blank','blank session','always start blank'],get:()=>alwaysStartBlank,set:v=>setAlwaysStartBlank(v)},
@@ -18588,28 +18629,15 @@ function buildVertFlags(scopedNodes, idx, depthOffset = 0) {
     const depth = node.depth + depthOffset;
     return new Array(Math.max(0, depth)).fill(true);
 }
-/** Pure: does this raw node text look like a `[Section]` marker? */
-function isSectionNodeText(text) {
-    return /^\[[^\]]+\]$/.test(String(text || '').trim());
-}
-/** Pure: splits a section node's raw text into its leading `[label]` and the rest, for the PDF's
- * section heading and Contents entry. `[Release 2.4] Plan` → `{label:'Release 2.4', rest:'Plan'}`,
- * `[Intro]` → `{label:'Intro', rest:''}`, `Plan [draft]` → `{label:'', rest:'Plan [draft]'}` (only a
- * LEADING bracketed token is a label — the same token the clipboard/copy renderer lifts out as a
- * coloured label without its brackets). A `[[wikilink]]` is never a label. `title` is the
- * one-line plain form: `label · rest`, or whichever part is non-empty. */
-function sectionHeadingParts(text) {
-    const src = String(text || '').trim();
-    const m = src.startsWith('[[') ? null : src.match(/^\[([^\]]+)\]\s*([\s\S]*)$/);
-    const label = m ? m[1].trim() : '';
-    const rest = m ? m[2].trim() : src;
-    const title = label && rest ? label + ' · ' + rest : label || rest;
-    return { label, rest, title };
-}
-/** Whether a node should render/export as a section header — either explicit `[Section]` markup,
- * or (when the `sectionMarkersDepthZero` preference is on) simply being a top-level node. */
+/** The Section format: heading level 7 in the Headings menu (owner, 2026-10-22: rows are rich
+ * text; a typed `[Label]` no longer makes a section — old ones were converted to this format). */
+const SECTION_HEADING_LEVEL = 7;
+/** Whether a node should render/export as a section header — the Section format, or (when the
+ * `sectionMarkersDepthZero` preference is on) simply being a top-level node. */
 function nodeIsSection(node, sectionMarkersDepthZero) {
-    return isSectionNodeText(node && node.text) || (sectionMarkersDepthZero && !!node && (node.depth || 0) === 0);
+    if (!node)
+        return false;
+    return (node.styles?.heading ?? 0) === SECTION_HEADING_LEVEL || (sectionMarkersDepthZero && (node.depth || 0) === 0);
 }
 /** Whether `id` is part of the current selection — the primary single selection, "select all"
  * mode, or a multi-selection range. */
@@ -19192,22 +19220,16 @@ function stripSemanticMarkers(text) {
         .replace(/(\s)>(\S)/g, '$1$2');
 }
 /**
- * Returns a node's words as the editor shows them: `[[link]]` and `[section]` brackets,
- * `**bold**` and `__italic__` markers are removed; everything else the editor displays as typed
- * (parentheses, backticks, `!`, `>`) is kept. The one helper every reader of a row's words goes through (search, sorting,
- * labels, word counts, plain-text exports), so the row's storage format can change in one place
- * (owner, 2026-10-22: rows move to rich text). Originally a literal extraction of
- * index.html's top-level `getNodePlainText()`. Wired into index.html via
- * scripts/generate-index-blocks.mjs's `stripSemanticMarkers` block, alongside
- * `stripSemanticMarkers` itself — name and signature match the original exactly, no wrapper
- * needed.
+ * Returns a node's words as the editor shows them: only `[[link]]` brackets are removed (a link
+ * shows its name). Typed `**`, `__` and `[ ]` are plain characters since rows became rich text
+ * (owner, 2026-10-22); formatting lives in node.marks and never changes the words. The one helper
+ * every reader of a row's words goes through (search, sorting, labels, word counts, plain-text
+ * exports). Wired into index.html via scripts/generate-index-blocks.mjs's `stripSemanticMarkers`
+ * block, alongside `stripSemanticMarkers` itself.
  */
 function getNodePlainText(node) {
     return String(node.text || '')
-        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
-        .replace(/\[([^\]]+)\]/g, '$1')
-        .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
-        .replace(/__([\s\S]+?)__/g, '$1');
+        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
 }
 
 /* GENERATED:stripSemanticMarkers:END */
@@ -19486,6 +19508,50 @@ function setRowMarksOn(node, marks) {
         delete node.marksText;
     }
 }
+/** Turns the old typed markup into formatting (owner, 2026-10-22: rows are rich text, the typed
+ * syntax goes): `**x**` becomes bold and `__x__` italic, read exactly the way the old renderer
+ * read them (left to right, the nearest closing pair, no nesting, never inside a `[[link]]`).
+ * Existing marks move with their characters. Returns the same text and marks when there is
+ * nothing to convert. */
+function convertLegacyRowMarkup(text, marks) {
+    const src = String(text || '');
+    const formats = toCharFormats(marks, src.length);
+    if (src.indexOf('**') < 0 && src.indexOf('__') < 0)
+        return { text: src, marks: fromCharFormats(formats), changed: false };
+    let out = '';
+    const outFormats = [];
+    const keep = (from, to, add) => {
+        for (let j = from; j < to; j++) {
+            out += src[j];
+            outFormats.push(add ? { ...formats[j], [add]: true } : formats[j]);
+        }
+    };
+    let changed = false;
+    let i = 0;
+    while (i < src.length) {
+        if (src[i] === '[' && src[i + 1] === '[') {
+            const close = src.indexOf(']]', i + 2);
+            if (close > i + 2) {
+                keep(i, close + 2);
+                i = close + 2;
+                continue;
+            }
+        }
+        const pair = src.slice(i, i + 2);
+        if (pair === '**' || pair === '__') {
+            const end = src.indexOf(pair, i + 2);
+            if (end > i + 2) {
+                keep(i + 2, end, pair === '**' ? 'b' : 'i');
+                i = end + 2;
+                changed = true;
+                continue;
+            }
+        }
+        keep(i, i + 1);
+        i++;
+    }
+    return { text: out, marks: fromCharFormats(outFormats), changed };
+}
 
 /* GENERATED:rowMarks:END */
 // A node counts as a section if its text uses [Bracket] syntax (any depth, always has),
@@ -19567,7 +19633,7 @@ const SECTION_EMOJI_ICONS={
 // it's a plain lookup against the curated list above, not a general "is this an emoji" test.
 function matchSectionEmojiIcon(text){for(const key in SECTION_EMOJI_ICONS){if(text.startsWith(key+' '))return {inner:SECTION_EMOJI_ICONS[key],rest:text.slice(key.length+1)}}return null}
 function highlightSearchInHtml(html,q){if(!q)return html;const lq=q.toLowerCase();const result=[];let i=0;while(i<html.length){if(html[i]==='<'){const end=html.indexOf('>',i);if(end<0){result.push(html.slice(i));break}result.push(html.slice(i,end+1));i=end+1;continue}if(html[i]==='&'){const end=html.indexOf(';',i);if(end<0){result.push(html[i]);i++;continue}result.push(html.slice(i,end+1));i=end+1;continue}let j=i;let plain='';while(j<html.length&&html[j]!=='<'&&html[j]!=='&'){plain+=html[j];j++;}const lplain=plain.toLowerCase();let pi=0;let out='';while(pi<plain.length){const fi=lplain.indexOf(lq,pi);if(fi<0){out+=plain.slice(pi);break}out+=plain.slice(pi,fi)+`<mark class="search-highlight">${plain.slice(fi,fi+lq.length)}</mark>`;pi=fi+lq.length;}result.push(out);i=j;}return result.join('');}
-function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;while(i<src.length){const ch=src[i];if(ch==='*'&&src[i+1]==='*'){const end=src.indexOf('**',i+2);if(end>i+2){out+=`<strong>${esc(src.slice(i+2,end))}</strong>`;i=end+2;continue}}if(ch==='_'&&src[i+1]==='_'){const end=src.indexOf('__',i+2);if(end>i+2){out+=`<em>${esc(src.slice(i+2,end))}</em>`;i=end+2;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\*\*([^*]+)\*\*/g,'$1').replace(/__([^_]+)__/g,'$1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${escAttr(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
+function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;while(i<src.length){const ch=src[i];if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\*\*([^*]+)\*\*/g,'$1').replace(/__([^_]+)__/g,'$1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${escAttr(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
 function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.styles.heading?('style-heading-'+node.styles.heading):''; const cls=['node-label',node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':'',headingCls].filter(Boolean).join(' '); const raw=node.text||'';
   const inner=rowMarksToHtml(raw,rowMarksOf(node),t=>parseStyledText(t,searchQ))||'&nbsp;';
   const html=node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${inner}</span>`:inner;
@@ -21827,7 +21893,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   // point's own depth makes pasted content land as siblings of the node being edited, which
   // is what every other insertion path in this file already does.
   const offsetDepth=computePasteOffsetDepth(nodes,insertIdx);
-  const mapped=parsed.map(n=>makeNode(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'',false,n.tables)); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
+  const mapped=parsed.map(n=>makeNodeFromTyped(n.text||'',n.depth+offsetDepth,null,n.styles||emptyStyles(),n.note||'',false,n.tables)); insertParsedNodesCore(nodes,insertIdx,mapped); rebuildParentIds();
   let dgAdded=0; let imgAdded=0; let qaAdded=0; let rmAdded=0;
   if(Array.isArray(clipExtras)&&clipExtras.length){
     clipExtras.forEach(ex=>{
@@ -22106,58 +22172,13 @@ function depthTextColorCore(depth, fg, muted) {
         return softenCore(fg, muted, 0.38);
     return muted;
 }
-/** Pure: matches index.html's own `parseStyledTextForClipboard` exactly — renders one node's
- * text as clipboard-safe inline HTML, recognizing the same markup the editor itself uses:
- * `**bold**`/`__italic__` spans are rendered as `<b>`/`<i>`, a leading `[Section]` token followed
- * by `= description` renders as a colored label plus a muted description (the "semantic guide"
- * shorthand — the only marker with real structural meaning elsewhere, e.g. the Table of
- * Contents), and any other `[section]` span found anywhere in the text is individually colored,
- * with everything else HTML-escaped plain text. The `(note)`/`!alert`/`` `code` `` markers this
- * once also styled were removed along with their editor-side chip rendering — plain punctuation
- * now, so they're left as ordinary escaped text like anything else. */
+/** Renders one run of a row's text for the clipboard: HTML-escaped words. Typed markup
+ * (`**bold**`, `__italic__`, `[Section]`) no longer formats anything (owner, 2026-10-22: rows are
+ * rich text); formatting comes from the row's marks (`clipboardRowMarkTags`). `colors` is kept
+ * so every renderer of a run has the same shape. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function parseStyledTextForClipboardCore(text, colors) {
-    const src = String(text || '');
-    const softSection = softenCore(colors.semSection, colors.muted);
-    const descTone = softenCore(colors.muted, colors.fg);
-    const semanticGuide = src.match(/^(\[[^\]]+\])\s*=\s*(.+)$/);
-    if (semanticGuide) {
-        const token = semanticGuide[1];
-        const desc = semanticGuide[2];
-        return (`<span style="color:${softSection};">${escapeHtml(token.slice(1, -1))}</span>` +
-            `<span style="color:${descTone};"> = ${escapeHtml(desc)}</span>`);
-    }
-    let out = '';
-    let i = 0;
-    while (i < src.length) {
-        const ch = src[i];
-        if (ch === '*' && src[i + 1] === '*') {
-            const end = src.indexOf('**', i + 2);
-            if (end > i + 2) {
-                out += `<b>${escapeHtml(src.slice(i + 2, end))}</b>`;
-                i = end + 2;
-                continue;
-            }
-        }
-        if (ch === '_' && src[i + 1] === '_') {
-            const end = src.indexOf('__', i + 2);
-            if (end > i + 2) {
-                out += `<i>${escapeHtml(src.slice(i + 2, end))}</i>`;
-                i = end + 2;
-                continue;
-            }
-        }
-        if (ch === '[') {
-            const end = src.indexOf(']', i + 1);
-            if (end > i + 1) {
-                out += `<span style="color:${softSection};">${escapeHtml(src.slice(i + 1, end))}</span>`;
-                i = end + 1;
-                continue;
-            }
-        }
-        out += escapeHtml(ch);
-        i++;
-    }
-    return out;
+    return escapeHtml(String(text || ''));
 }
 /** Formatting on part of a row (node.marks), as inline styles another app keeps when pasted:
  * fixed light-mode text colours, and highlights mixed toward white the way the app shows them. */
@@ -23301,10 +23322,7 @@ const _DIAGRAM_GEN_TOPOLOGY_CHAR_BUDGET = 66;
  * referenced via `declare function`, see this file's header for why. */
 function nodePlainText(node) {
     return String(node.text || '')
-        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
-        .replace(/\[([^\]]+)\]/g, '$1')
-        .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
-        .replace(/__([\s\S]+?)__/g, '$1');
+        .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
 }
 function metaFor(nodeMeta, node) {
     return nodeMeta ? nodeMeta.get(node.id) : undefined;
@@ -24314,7 +24332,7 @@ function importOpmlText(xmlText){
   // splices into the *current* document instead — inconsistent with every other import path.
   createDoc();
   pushUndo(); markDirty();
-  const mapped=parsed.map(n=>makeNode(n.text||'',n.depth,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox,n.tables));
+  const mapped=parsed.map(n=>makeNodeFromTyped(n.text||'',n.depth,null,n.styles||emptyStyles(),n.note||'',!!n.isCheckbox,n.tables));
   // makeNode() has no `checked` parameter (every new node starts unchecked) — apply the
   // checkbox state parsed out of the OPML text as a second pass instead of losing it.
   mapped.forEach((node,i)=>{ if(parsed[i].isCheckbox && parsed[i].checked) node.checked=true; });
@@ -26037,7 +26055,7 @@ function applyAiBatchResults(entries,finalTexts){
     const finalText=finalTexts[j]; if(!finalText)return;
     const freshIdx=getIndex(nodes,entry.id); if(freshIdx<0)return;
     if(aiSnapshotChanged(entry.expectedText,nodes[freshIdx].text))return;
-    nodes[freshIdx].text=finalText;
+    setRowTextFromTyped(nodes[freshIdx],finalText);
     appliedCount++;
   });
   return {appliedCount,total:entries.length};
@@ -26063,7 +26081,7 @@ async function rewriteNodeText(nodeId){
     // matches what was actually sent to the AI, the user edited it again while waiting —
     // applying the result now would silently overwrite that newer edit.
     if(aiSnapshotChanged(original,nodes[freshIdx].text)){ showToast('You edited this node — AI rewrite discarded so it wouldn\'t overwrite it'); return; }
-    pushUndo(); nodes[freshIdx].text=result; scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
+    pushUndo(); setRowTextFromTyped(nodes[freshIdx],result); scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
   finally{aiRewriteInFlight.delete(nodeId); if(btn)btn.classList.remove('ai-busy');}
 }
@@ -26417,13 +26435,13 @@ function insertAiOutline(parsed){
   pushUndo(); markDirty();
   let mapped, anchorId=null;
   if(!nodes.length||selectedId===null||getIndex(nodes,selectedId)<0){
-    mapped=parsed.map(n=>makeNode(n.text||'',n.depth,null,n.styles||emptyStyles()));
+    mapped=parsed.map(n=>makeNodeFromTyped(n.text||'',n.depth,null,n.styles||emptyStyles()));
     nodes=mapped;
   } else {
     const idx=getIndex(nodes,selectedId);
     anchorId=selectedId;
     const baseDepth=nodes[idx].depth+1;
-    mapped=parsed.map(n=>makeNode(n.text||'',n.depth+baseDepth,null,n.styles||emptyStyles()));
+    mapped=parsed.map(n=>makeNodeFromTyped(n.text||'',n.depth+baseDepth,null,n.styles||emptyStyles()));
     nodes.splice(getSubtreeEnd(nodes,idx),0,...mapped);
   }
   rebuildParentIds();
@@ -29545,7 +29563,7 @@ function previewToggleQa(id){
   if(previewOpenQaIds.has(id))previewOpenQaIds.delete(id); else previewOpenQaIds.add(id);
   renderPreviewBody();
 }
-function previewParseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;while(i<src.length){const ch=src[i];if(ch==='*'&&src[i+1]==='*'){const end=src.indexOf('**',i+2);if(end>i+2){out+=`<strong>${esc(src.slice(i+2,end))}</strong>`;i=end+2;continue}}if(ch==='_'&&src[i+1]==='_'){const end=src.indexOf('__',i+2);if(end>i+2){out+=`<em>${esc(src.slice(i+2,end))}</em>`;i=end+2;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const lt=src.slice(i+2,end);out+=`<span style="color:var(--pv-heading-2);font-weight:400">${esc(lt)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
+function previewParseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;while(i<src.length){const ch=src[i];if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const lt=src.slice(i+2,end);out+=`<span style="color:var(--pv-heading-2);font-weight:400">${esc(lt)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
 function previewStyleClasses(node){
   return [node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':''].filter(Boolean).join(' ');
 }
@@ -29766,19 +29784,13 @@ function renderPreviewBody(){
       lastHeadingLevel='section';
       hrow.appendChild(foldEl);
       const div=document.createElement('div'); div.className='pv-section';
-      // A leading `[label]` is the section's label (the outline's own `[Text]` section-label
-      // convention, rendered without its brackets like the copy/clipboard renderer does); any text
-      // after it is the section's name: `[Release 2.4] Plan` → "Release 2.4 · Plan".
-      const secParts=sectionHeadingParts(pvMainText);
+      // The section's name is the row's own text with its formatting (rowMarksToHtml), like any row.
       const secText=document.createElement('span'); secText.className='pv-section-text';
-      if(secParts.label){ const lab=document.createElement('span'); lab.className='pv-section-label'; lab.textContent=secParts.label; secText.appendChild(lab); }
-      if(secParts.label&&secParts.rest){ const sep=document.createElement('span'); sep.className='pv-section-sep'; sep.textContent=' · '; secText.appendChild(sep); }
-      // The name keeps its inline markup (bold, italic, [[links]]) like any other row, rather than printing it as typed.
-      if(secParts.rest){ const nm=document.createElement('span'); nm.innerHTML=previewParseStyledText(secParts.rest); secText.appendChild(nm); }
+      secText.innerHTML=previewNodeInnerHtml(node,pvMainText);
       div.appendChild(secText);
       hrow.appendChild(div);
       mainEl=hrow; contentEl=div;
-      tocEntries.push({id:node.id,text:pvTocText(secParts.title)||secParts.title,level:1,kind:'section'});
+      tocEntries.push({id:node.id,text:pvTocText(pvMainText)||'Untitled',level:1,kind:'section'});
     } else if(headingLevel>0){
       const hrow=document.createElement('div'); hrow.className='pv-h-row pv-h-row-heading'; hrow.id='pv-anchor-'+node.id;
       hrow.style.paddingLeft=depth===0?'0px':((Math.min(depth,7)-1)*18)+'px';
@@ -35349,8 +35361,8 @@ function waitingCandidates(todos) {
       <div class="cs-card" data-cs-anchor="semantics">
         <h3>Semantics</h3>
         <ul>
-          <li><span class="cs-desc"><span class="help-kbd">**Text**</span> → <strong>bold</strong> (or select words + Ctrl/Cmd+B / I / U, or a highlight or text colour)</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">__Text__</span> → <em>italic</em></span></li>
+          <li><span class="cs-desc">Select words + Ctrl/Cmd+B / I / U, or a highlight or text colour → formats just those words</span></li>
+          <li><span class="cs-desc">Headings menu → Section</span></li>
           <li><span class="cs-desc"><span class="help-kbd">@Node name</span> → clickable backlink (type @ while editing to pick)</span></li>
           <li><span class="cs-desc"><span class="help-kbd">[ ] text</span> or <span class="help-kbd">[x] text</span> → auto-converts to checkbox on commit</span></li>
           <li><span class="cs-desc">Outline numbering — Settings → Editing → "Outline numbering" (1, 1.1, 1.1.1)</span></li>
@@ -35367,8 +35379,7 @@ function waitingCandidates(todos) {
           <li><span class="cs-combo" data-cs-shortcut="highlight"></span> <span class="cs-desc">highlight</span></li>
           <li><span class="cs-combo" data-cs-shortcut="textColor"></span> <span class="cs-desc">text color</span></li>
           <li><span class="cs-combo" data-cs-shortcut="heading1"></span>–<span class="help-kbd">6</span> <span class="cs-desc">heading 1–6 (independent of depth)</span></li>
-          <li><span class="cs-desc">[Text] → Section</span> · <span class="cs-desc">(Text) → note</span></li>
-          <li><span class="cs-desc">!Text → alert</span> · <span class="cs-desc">`Text` → code</span></li>
+          <li><span class="cs-desc">select words first → formats just those words</span></li>
           <li><span class="cs-desc">@Node name → backlink (type @ while editing to pick)</span></li>
           <li><span class="cs-desc">[ ] or [x] at start → auto-converts to checkbox on commit</span></li>
         </ul>

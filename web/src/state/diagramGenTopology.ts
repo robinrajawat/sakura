@@ -80,10 +80,7 @@ export type NodeMetaMap = Map<number, NodeMetaEntry> | null | undefined;
  * referenced via `declare function`, see this file's header for why. */
 function nodePlainText(node: TopologyNode): string {
   return String(node.text || '')
-    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1')
-    .replace(/\[([^\]]+)\]/g, '$1')
-    .replace(/\*\*([\s\S]+?)\*\*/g, '$1')
-    .replace(/__([\s\S]+?)__/g, '$1');
+    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
 }
 
 function metaFor(nodeMeta: NodeMetaMap, node: TopologyNode): NodeMetaEntry | undefined {
