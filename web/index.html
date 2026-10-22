@@ -13505,8 +13505,9 @@ function openDiagramViewer(diagramId){
   const img=ov.querySelector('.dv-canvas img');
   _dvState={id:d.id,scale:1,fit:1,tx:0,ty:0,w:1,h:1,drag:null,returnFocus:document.activeElement};
   img.style.transform='';
-  // 24px of white around the drawing either way: draw.io's own margin counts toward it.
-  ov.style.setProperty('--dv-pad',Math.max(0,24-(d.previewBorder||0))+'px');
+  // The white card is exactly draw.io's export, margin included (owner, 2026-10-22: no extra sheet
+  // of our own); an older picture without draw.io's margin gets the same 12px from us instead.
+  ov.style.setProperty('--dv-pad',(d.previewBorder?0:DIAGRAM_EXPORT_BORDER)+'px');
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
   img.src=d.previewSvg;
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();

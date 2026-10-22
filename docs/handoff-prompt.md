@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Diagram preview: no extra sheet.** Owner: "we can remove our white sheet, right?" The preview's white
+card is now exactly draw.io's export, margin included (`--dv-pad` 0 when `d.previewBorder` is set). The white fill
+stays because draw.io exports a transparent background (lines on the dotted grey backdrop would be hard to read).
+Older pictures without draw.io's margin get 12px from us instead.
+
 **2026-10-22: PDF section names keep their formatting.** Found in an editor/export audit; owner: "this is bad if it's
 true". A section heading's name was added as plain text, so `[[links]]`, `**bold**` and `__italic__` printed as typed
 (in capitals). It now goes through `previewParseStyledText` like any row; the Contents page uses `pvTocText` (markup
@@ -166,7 +171,7 @@ stripped). Italic in Sakura is `__x__` (the Italic button and Ctrl+I write it); 
 Test `pdf-section-markup.spec.ts`.
 Same PR: downloaded diagrams had no margin. Owner: use draw.io's own margin, don't pad the file ourselves. Every
 xmlsvg export now sends `border: DIAGRAM_EXPORT_BORDER` (12) and sets `d.previewBorder`; the thumbnail drops its 12px
-padding (`.has-export-border`) and the preview's white margin stays 24px in total (`--dv-pad`). Pictures saved
+padding (`.has-export-border`) and the preview shows draw.io's margin only (see next entry). Pictures saved
 before have no border: Download re-exports them once first (`regenerateDiagramThumbnail`, needs draw.io online).
 `previewBorder` is carried on copy/paste, duplicate and version restore.
 
@@ -176,11 +181,6 @@ the preview?" and "also delete button? quick right click menu in the diagram thu
 diagram title (`downloadDiagram`, `diagramFileBase`). Right-clicking a thumbnail (`showDiagramThumbMenu`): Preview, Edit,
 Rename (focuses the title in place), Download ›, Delete (Undo toast). The page CSP blocks `fetch()` on data: URLs, so the
 SVG data URL is decoded by hand. Tests in `node-diagram-inline-preview.spec.ts`.
-
-**2026-10-22: To-Dos section icons.** Owner: "Don't you think it would make sense to add the icons?" (after #599 made
-labels plain). Every section label, Done included, has one grey 12px icon (`TODO_SECTION_ICON`: pin, sun, calendar,
-tray (Anytime = no date; layers and ∞ were rejected), hourglass, circle-check); no colours per section (only overdue dates are red). Done's chevron moved after its
-count so the icons line up. Desktop only (hub.html unchanged). Screenshot `inline-objects/todos-section-icons.png`.
 
 ### Where things stand (the model to keep in mind)
 
