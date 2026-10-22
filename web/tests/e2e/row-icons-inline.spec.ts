@@ -29,7 +29,7 @@ test('icons sit right after a short row\'s text, in text order', async ({ page }
   const row = page.locator('.node-row[data-id="1"]');
   const icons = row.locator('.node-label .node-row-icons');
   await expect(icons.locator('.node-marker-badge, .node-note-dot, .node-tag-chip')).toHaveCount(3);
-  const textRight = await row.locator('.node-label').evaluate((l) => { const r = document.createRange(); r.selectNodeContents(l.firstChild!); return r.getBoundingClientRect().right; });
+  const textRight = await row.locator('.node-label').evaluate((l) => { const r = document.createRange(); r.setStart(l, 0); r.setEndBefore(l.querySelector('.node-row-icons')!); return r.getBoundingClientRect().right; });
   const iconsLeft = (await icons.boundingBox())!.x;
   expect(iconsLeft - textRight).toBeGreaterThanOrEqual(0);
   expect(iconsLeft - textRight).toBeLessThan(12);
@@ -57,4 +57,45 @@ test('clicking the text still edits at the click point; clicking an icon does it
   await page.keyboard.press('Escape');
   await page.locator('.node-row[data-id="3"] .fold-badge').click();
   await expect(page.locator('.node-row[data-id="4"]')).toBeVisible();
+});
+
+// Owner, 2026-10-22: when the text just fills its last line, the icons wrapped onto a line of their
+// own ("looks a bit strange"). The last word now goes down with them.
+test('icons never sit alone on a line: the last word wraps with them', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const lbl = document.querySelector('.node-row[data-id="1"] .node-label') as HTMLElement;
+    const icons = lbl.querySelector('.node-row-icons') as HTMLElement;
+    const r = document.createRange(); r.setStart(lbl, 0); r.setEndBefore(icons);
+    const textW = r.getBoundingClientRect().width;
+    // Room for the text on one line, but not for the icons after it.
+    lbl.style.width = (textW + 4) + 'px'; lbl.style.maxWidth = (textW + 4) + 'px'; lbl.style.flex = '0 0 auto';
+    const ib = icons.getBoundingClientRect();
+    const first = document.createRange(); first.setStart(lbl.firstChild!, 0); first.setEnd(lbl.firstChild!, 1);
+    // The last word ("row") is the text just before the icons.
+    const tail = icons.parentElement!; const word = document.createRange(); word.selectNodeContents(tail.firstChild!);
+    return { iconsTop: ib.top, lastWordTop: word.getBoundingClientRect().top, firstTop: first.getBoundingClientRect().top, word: tail.firstChild!.textContent, label: lbl.textContent };
+  });
+  expect(result.word).toBe('row');
+  expect(result.iconsTop).toBeGreaterThan(result.firstTop + 5); // the icons did wrap
+  expect(Math.abs(result.lastWordTop - result.iconsTop)).toBeLessThan(8); // and took the last word along
+});
+
+test('text ending in a space still keeps its icons on the last word\'s line', async ({ page }) => {
+  const text = 'Customers already activated for drop fee today will remain unchanged; no new customers will be activated for drop fee because of Flexible Night Delivery. ';
+  const alone = await page.evaluate((text) => {
+    // @ts-expect-error -- bare globals from index.html
+    nodes[1].text = text; render();
+    const lbl = document.querySelector('.node-row[data-id="2"] .node-label') as HTMLElement;
+    const box = lbl.querySelector('.node-row-icons') as HTMLElement;
+    lbl.style.flex = '0 0 auto';
+    // At every width, the icons share a line with the text's last character.
+    for (let w = 900; w > 300; w -= 3) {
+      lbl.style.width = w + 'px';
+      const tail = box.parentElement!.firstChild as Text;
+      const r = document.createRange(); r.setStart(tail, tail.length - 1); r.setEnd(tail, tail.length);
+      if (box.getBoundingClientRect().top > r.getBoundingClientRect().top + 5) return w;
+    }
+    return 0;
+  }, text);
+  expect(alone).toBe(0);
 });
