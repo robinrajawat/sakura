@@ -10,6 +10,20 @@ export { escapeHtml } from './utils/escapeHtml';
 export { generateId } from './utils/generateId';
 export { formatRelativeTime } from './utils/formatRelativeTime';
 export { stripSemanticMarkers, getNodePlainText, type PlainTextNode } from './utils/stripSemanticMarkers';
+export {
+  normalizeRowMarks,
+  sliceRowMarks,
+  concatRowMarks,
+  rowMarkCovers,
+  setRowMark,
+  adjustRowMarksForText,
+  rowMarkRuns,
+  rowMarksToHtml,
+  readRowMarksFromDom,
+  rowMarksOf,
+  setRowMarksOn,
+  type RowMark
+} from './utils/rowMarks';
 export { computeOutlineNumbers, type OutlineNode } from './utils/computeOutlineNumbers';
 export {
   getIndex,

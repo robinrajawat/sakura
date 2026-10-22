@@ -1,0 +1,201 @@
+import { describe, expect, it } from 'vitest';
+import {
+  adjustRowMarksForText,
+  concatRowMarks,
+  normalizeRowMarks,
+  readRowMarksFromDom,
+  rowMarksOf,
+  setRowMarksOn,
+  rowMarkCovers,
+  rowMarkRuns,
+  rowMarksToHtml,
+  setRowMark,
+  sliceRowMarks,
+  type RowMarkDomNode,
+  type RowMarksHolder
+} from '../../src/utils/rowMarks';
+
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+describe('normalizeRowMarks', () => {
+  it('drops invalid, empty and out-of-range marks and clamps to the text', () => {
+    expect(
+      normalizeRowMarks(
+        [
+          { s: 0, e: 3, k: 'b' },
+          { s: 2, e: 2, k: 'i' },
+          { s: 1, e: 99, k: 'u' },
+          { s: 0, e: 2, k: 'zz' },
+          { s: 0, e: 2, k: 'hl', v: 'Bad Value!' },
+          null
+        ],
+        5
+      )
+    ).toEqual([
+      { s: 0, e: 3, k: 'b' },
+      { s: 1, e: 5, k: 'u' }
+    ]);
+  });
+
+  it('merges touching and overlapping ranges of the same kind', () => {
+    expect(
+      normalizeRowMarks(
+        [
+          { s: 0, e: 2, k: 'b' },
+          { s: 2, e: 4, k: 'b' },
+          { s: 3, e: 6, k: 'b' }
+        ],
+        10
+      )
+    ).toEqual([{ s: 0, e: 6, k: 'b' }]);
+  });
+
+  it('returns [] for no marks or empty text', () => {
+    expect(normalizeRowMarks(undefined, 5)).toEqual([]);
+    expect(normalizeRowMarks([{ s: 0, e: 1, k: 'b' }], 0)).toEqual([]);
+  });
+});
+
+describe('split and merge', () => {
+  const marks = [
+    { s: 0, e: 5, k: 'b' as const },
+    { s: 3, e: 8, k: 'hl' as const, v: 'yellow' }
+  ];
+  it('slices marks for each half of a split', () => {
+    expect(sliceRowMarks(marks, 10, 0, 4)).toEqual([
+      { s: 0, e: 4, k: 'b' },
+      { s: 3, e: 4, k: 'hl', v: 'yellow' }
+    ]);
+    expect(sliceRowMarks(marks, 10, 4, 10)).toEqual([
+      { s: 0, e: 1, k: 'b' },
+      { s: 0, e: 4, k: 'hl', v: 'yellow' }
+    ]);
+  });
+  it('concatenates the halves back to the original', () => {
+    const a = sliceRowMarks(marks, 10, 0, 4);
+    const b = sliceRowMarks(marks, 10, 4, 10);
+    expect(concatRowMarks(a, 4, b, 6)).toEqual(normalizeRowMarks(marks, 10));
+  });
+});
+
+describe('setRowMark / rowMarkCovers', () => {
+  it('adds and removes an on/off kind on a range', () => {
+    const bold = setRowMark([], 10, 2, 6, 'b', true);
+    expect(bold).toEqual([{ s: 2, e: 6, k: 'b' }]);
+    expect(rowMarkCovers(bold, 10, 2, 6, 'b')).toBe(true);
+    expect(rowMarkCovers(bold, 10, 1, 6, 'b')).toBe(false);
+    expect(setRowMark(bold, 10, 3, 5, 'b', false)).toEqual([
+      { s: 2, e: 3, k: 'b' },
+      { s: 5, e: 6, k: 'b' }
+    ]);
+  });
+  it('a new highlight colour replaces the old one on those characters', () => {
+    const y = setRowMark([], 10, 0, 6, 'hl', 'yellow');
+    expect(setRowMark(y, 10, 2, 4, 'hl', 'green')).toEqual([
+      { s: 0, e: 2, k: 'hl', v: 'yellow' },
+      { s: 2, e: 4, k: 'hl', v: 'green' },
+      { s: 4, e: 6, k: 'hl', v: 'yellow' }
+    ]);
+    expect(setRowMark(y, 10, 0, 6, 'hl', false)).toEqual([]);
+  });
+});
+
+describe('adjustRowMarksForText', () => {
+  it('shifts marks after an insertion and extends a mark the insertion falls inside', () => {
+    const marks = [
+      { s: 0, e: 4, k: 'b' as const },
+      { s: 6, e: 9, k: 'i' as const }
+    ];
+    // "bold, ita" -> "bolder, ita": 2 chars inserted inside the bold word
+    expect(adjustRowMarksForText(marks, 'bold, ita', 'bolder, ita')).toEqual([
+      { s: 0, e: 6, k: 'b' },
+      { s: 8, e: 11, k: 'i' }
+    ]);
+  });
+  it('a replaced word takes the formatting of what it replaced', () => {
+    const marks = [{ s: 4, e: 11, k: 'b' as const }];
+    expect(adjustRowMarksForText(marks, 'See [[Old]] now', 'See [[Newer]] now')).toEqual([{ s: 4, e: 13, k: 'b' }]);
+  });
+  it('returns [] when there were no marks', () => {
+    expect(adjustRowMarksForText(undefined, 'a', 'b')).toEqual([]);
+  });
+});
+
+describe('rowMarkRuns / rowMarksToHtml', () => {
+  it('renders plain text unchanged without marks', () => {
+    expect(rowMarksToHtml('a < b', [], esc)).toBe('a &lt; b');
+  });
+  it('wraps each run in its formatting tags', () => {
+    const html = rowMarksToHtml(
+      'one two three',
+      [
+        { s: 0, e: 3, k: 'b' },
+        { s: 4, e: 7, k: 'c', v: 'red' },
+        { s: 8, e: 13, k: 'hl', v: 'yellow' }
+      ],
+      esc
+    );
+    expect(html).toBe(
+      '<b>one</b> <span class="row-fc" data-c="red" style="color:var(--fc-red)">two</span> ' +
+        '<mark class="row-hl hl-mark hl-mark-yellow" data-hl="yellow">three</mark>'
+    );
+  });
+  it('never cuts a [[link]] in two', () => {
+    // bold on "see [[Row" only: the link takes the formatting of its name's first letter
+    const runs = rowMarkRuns('see [[Row name]] ok', [{ s: 0, e: 9, k: 'b' }]);
+    expect(runs.map((r) => r.text)).toEqual(['see [[Row name]]', ' ok']);
+    const inner = rowMarkRuns('see [[Row name]] ok', [{ s: 6, e: 9, k: 'i' }]);
+    expect(inner.map((r) => [r.text, !!r.f.i])).toEqual([
+      ['see ', false],
+      ['[[Row name]]', true],
+      [' ok', false]
+    ]);
+  });
+});
+
+describe('readRowMarksFromDom', () => {
+  const t = (s: string): RowMarkDomNode => ({ nodeType: 3, nodeValue: s });
+  const el = (tag: string, kids: RowMarkDomNode[], attrs: Record<string, string> = {}): RowMarkDomNode => ({
+    nodeType: 1,
+    tagName: tag.toUpperCase(),
+    childNodes: kids,
+    getAttribute: (n: string) => attrs[n] ?? null
+  });
+  it('reads text and formatting from the tags the editor writes', () => {
+    const root = el('div', [
+      el('b', [t('Bold')]),
+      t(' and '),
+      el('mark', [el('i', [t('both')])], { 'data-hl': 'yellow' }),
+      el('span', [t('!')], { 'data-c': 'red' })
+    ]);
+    expect(readRowMarksFromDom(root)).toEqual({
+      text: 'Bold and both!',
+      marks: [
+        { s: 0, e: 4, k: 'b' },
+        { s: 9, e: 13, k: 'i' },
+        { s: 9, e: 13, k: 'hl', v: 'yellow' },
+        { s: 13, e: 14, k: 'c', v: 'red' }
+      ]
+    });
+  });
+  it('ignores tags it does not know (pasted styles, the whole-row highlight wrapper)', () => {
+    const root = el('div', [el('span', [el('font', [t('plain')])], { class: 'hl-mark hl-mark-yellow' }), el('br', [])]);
+    expect(readRowMarksFromDom(root)).toEqual({ text: 'plain', marks: [] });
+  });
+});
+
+describe('rowMarksOf / setRowMarksOn', () => {
+  it('stores marks with the text they cover, and nothing when empty', () => {
+    const node: RowMarksHolder = { text: 'hello world' };
+    setRowMarksOn(node, [{ s: 0, e: 5, k: 'b' }]);
+    expect(node).toEqual({ text: 'hello world', marks: [{ s: 0, e: 5, k: 'b' }], marksText: 'hello world' });
+    setRowMarksOn(node, []);
+    expect(node).toEqual({ text: 'hello world' });
+  });
+  it('moves marks to text changed elsewhere and stores the result', () => {
+    const node = { text: 'hello world', marks: [{ s: 6, e: 11, k: 'i' as const }], marksText: 'hello world' };
+    node.text = 'oh hello world';
+    expect(rowMarksOf(node)).toEqual([{ s: 9, e: 14, k: 'i' }]);
+    expect(node.marksText).toBe('oh hello world');
+  });
+});

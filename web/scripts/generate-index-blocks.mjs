@@ -176,6 +176,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'rowMarks',
+    sourceFile: 'src/utils/rowMarks.ts',
+    testFile: 'tests/unit/rowMarks.test.ts',
+    // Formatting on part of a row (node.marks beside the plain node.text). New functions, no
+    // originals to match; called from the editor, renderLabel and the PDF row renderer.
+    footer: ''
+  },
+  {
     name: 'computeOutlineNumbers',
     sourceFile: 'src/utils/computeOutlineNumbers.ts',
     testFile: 'tests/unit/computeOutlineNumbers.test.ts',

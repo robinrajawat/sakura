@@ -159,6 +159,20 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-22: Rich text rows, PR 2 of 4: formatting on selected words.** Select words in a row and Ctrl/Cmd+B / I
+/ U, the strike/highlight/text-colour shortcuts, or the toolbar's Bold, Italic, highlight and colour swatches format
+just those words; nothing selected still styles the whole row (`node.styles`). Storage (`src/utils/rowMarks.ts`): the
+words stay plain in `node.text`; formatting is `node.marks` = `[{s,e,k,v?}]` ranges (k = b/i/u/s/hl/c, v = palette
+name) plus `node.marksText`, the text they were made for. Rows without formatting store neither. Any code that
+changes `node.text` without knowing about marks is safe: `rowMarksOf(node)` sees `marksText` differ and moves the
+marks to the new text (common start/end kept). Editor: `rowEditorHtml` draws the marks; the input listener reads
+text + marks back from the DOM (`readRowMarksFromDom`, only our tags count). Enter/Backspace/Delete slice and
+concatenate marks; duplicate, undo and copy/paste (clip payload `mk`/`mt`) keep them; label (`renderLabel`) and PDF
+(`previewNodeInnerHtml`) render them, a `[[link]]` never cut in two. A toolbar mousedown with words selected is
+prevented so the editor keeps focus. Old `**`/`__` still render; their conversion moved to PR 4 (with removing
+the syntax) so PR 2 changes no stored data. Tests `row-rich-text.spec.ts`; the old "Ctrl+B wraps in **" tests went.
+Next: PR 3 exports (rich copy, OPML/plain use the words), PR 4 convert `**`/`__`/`[Section]` + remove the syntax.
+
 **2026-10-22: Rich text rows, PR 1 of 4: one words helper + outliner baseline tests.** Owner decided rows become
 rich text (bold, italic, underline, strike, highlight, text colour on a selection; Section = a Headings format; `code`
 and `>quote` dropped). Plan: Claude Doc "Rich text rows plan" (https://claude.ai/artifact/P9e5bpPp5Wgr8yQ11oxS2i).
@@ -173,11 +187,6 @@ items, decisions, copy, TOC) through `getNodePlainText`, which now returns the w
 files): "grey will make the look much more elegant". Note, table, diagram, image and To-Do dots and the Agreed marker
 use `var(--muted)`; only a Follow-up marker (orange) and a thread with open questions (accent count) keep colour.
 Editor only (PDF unchanged). Test in `row-icons-inline.spec.ts`.
-
-**2026-10-22: Diagram preview: no extra sheet.** Owner: "we can remove our white sheet, right?" The preview's white
-card is now exactly draw.io's export, margin included (`--dv-pad` 0 when `d.previewBorder` is set). The white fill
-stays because draw.io exports a transparent background (lines on the dotted grey backdrop would be hard to read).
-Older pictures without draw.io's margin get 12px from us instead.
 
 ### Where things stand (the model to keep in mind)
 

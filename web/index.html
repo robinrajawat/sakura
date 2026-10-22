@@ -447,8 +447,9 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
    renders using that explicit axis value over font-weight's own "bolder" computation, so
    without this the <strong> tag was structurally correct but visually indistinguishable from
    surrounding text. Same fix .style-bold already gets, just scoped to the inline marker. */
-.node-label strong{font-variation-settings:'wght' 700}
+.node-label strong,.node-label b,.node-input b,.node-input strong{font-weight:700;font-variation-settings:'wght' 700}
 .hl-mark{border-radius:3px;padding:1px 4px;margin:0 -2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .hl-mark-yellow{background:color-mix(in srgb,#eab308 45%,transparent)}
 .hl-mark-green{background:color-mix(in srgb,#22c55e 42%,transparent)}
 .hl-mark-blue{background:color-mix(in srgb,#0ea5e9 40%,transparent)}
@@ -4099,8 +4100,8 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">
 <h4>Semantics</h4>
 <ul>
-<li><span class="sem-example">**Text**</span> → <strong>bold</strong> — or select text and press Ctrl/Cmd+B to bold just that selection</li>
-<li><span class="sem-example">__Text__</span> → <em>italic</em> — or select text and press Ctrl/Cmd+I to italicize just that selection</li>
+<li><span class="sem-example">**Text**</span> → <strong>bold</strong> — or select words and press Ctrl/Cmd+B (I, U, or the highlight and text colour buttons) to format just those words</li>
+<li><span class="sem-example">__Text__</span> → <em>italic</em> </li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 <li><span class="sem-example">[ ] task</span> or <span class="sem-example">[x] task</span> → auto-converts to a checkbox node on commit</li>
 <li>Tag icon in the toolbar or right-click → Tags → tag popover (toggle existing tags or add new ones)</li>
@@ -11733,11 +11734,14 @@ function captionFromLegacyAlt(alt) {
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=6?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return {id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})}}
+function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})},n)}
 // images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
 // creating a NEW node from an existing one's content (duplicate, paste), so the copy's pictures
 // must be independent objects, not shared references into the source node.
-function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables,images){const _now=Date.now(); return {id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],images:Array.isArray(images)?cloneNodeImagesWithNewIds(images,_now,newNodeImageId):[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null}}
+// Formatting on part of a row (node.marks beside node.text, see src/utils/rowMarks.ts): kept only
+// when there is some, and checked against the row's text on the way in.
+function normalizeNodeMarks(out,src){if(!src||!Array.isArray(src.marks)||!src.marks.length)return out; out.marks=src.marks; out.marksText=typeof src.marksText==='string'?src.marksText:out.text; setRowMarksOn(out,rowMarksOf(out)); return out}
+function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables,images,marks){const _now=Date.now(); return normalizeNodeMarks({id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],images:Array.isArray(images)?cloneNodeImagesWithNewIds(images,_now,newNodeImageId):[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null},{marks})}
 function makeBlankNode(depth=0,parentId=null){return makeNode('',depth,parentId)}
 function snapshot(withFolds){return JSON.stringify({nodes,nextId,selectedId,multiSelectedIds,selectionAnchorId,currentTheme,focusedId,remarks,qaItems,...(withFolds?{folds:foldState()}:{})})}
 // Folds aren't part of normal undo; Expand all / Collapse all push a snapshot that carries them so
@@ -19207,6 +19211,279 @@ function getNodePlainText(node) {
 }
 
 /* GENERATED:stripSemanticMarkers:END */
+/* GENERATED:rowMarks:START — DO NOT EDIT BY HAND. Source of truth: src/utils/rowMarks.ts (tests: tests/unit/rowMarks.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Formatting on part of a row's text (owner, 2026-10-22: rows become rich text — bold, italic,
+ * underline, strikethrough, highlight and text colour on a selection).
+ *
+ * The row's words stay a plain string in `node.text`; the formatting lives beside it in
+ * `node.marks` as character ranges: `{s, e, k, v?}` covers `text.slice(s, e)` with kind `k`
+ * (`b` bold, `i` italic, `u` underline, `s` strikethrough, `hl` highlight, `c` text colour) and,
+ * for `hl`/`c`, the palette name `v`. Keeping the words plain means everything that reads them
+ * (search, sorting, Enter/Backspace split and merge, backlinks, exports) keeps working untouched,
+ * and a formatting bug can only misplace formatting, never lose words.
+ *
+ * Every operation goes through a per-character format list (rows are short), which keeps the
+ * range arithmetic in one place: `toCharFormats` expands ranges, `fromCharFormats` collapses
+ * them back into sorted, merged, non-empty ranges.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `rowMarks` block.
+ */
+const ROW_MARK_FLAGS = ['b', 'i', 'u', 's'];
+const ROW_MARK_KINDS = ['b', 'i', 'u', 's', 'hl', 'c'];
+const ROW_MARK_VALUE_RE = /^[a-z0-9-]{1,24}$/;
+function isRowMarkKind(k) {
+    return typeof k === 'string' && ROW_MARK_KINDS.includes(k);
+}
+function charFormatKey(f) {
+    if (!f)
+        return '';
+    let key = '';
+    for (const k of ROW_MARK_FLAGS)
+        if (f[k])
+            key += k + ';';
+    if (f.hl)
+        key += 'hl=' + f.hl + ';';
+    if (f.c)
+        key += 'c=' + f.c + ';';
+    return key;
+}
+function toCharFormats(marks, len) {
+    const out = [];
+    for (let i = 0; i < len; i++)
+        out.push({});
+    if (!Array.isArray(marks))
+        return out;
+    for (const m of marks) {
+        if (!m || typeof m !== 'object')
+            continue;
+        const { s, e, k, v } = m;
+        if (!isRowMarkKind(k) || !Number.isFinite(s) || !Number.isFinite(e))
+            continue;
+        const from = Math.max(0, Math.floor(s));
+        const to = Math.min(len, Math.floor(e));
+        if (to <= from)
+            continue;
+        if (k === 'hl' || k === 'c') {
+            if (typeof v !== 'string' || !ROW_MARK_VALUE_RE.test(v))
+                continue;
+            for (let i = from; i < to; i++)
+                out[i][k] = v;
+        }
+        else {
+            for (let i = from; i < to; i++)
+                out[i][k] = true;
+        }
+    }
+    return out;
+}
+function fromCharFormats(formats) {
+    const marks = [];
+    for (const k of ROW_MARK_KINDS) {
+        let start = -1;
+        let cur;
+        for (let i = 0; i <= formats.length; i++) {
+            const val = i < formats.length ? formats[i][k] : undefined;
+            if (val === cur)
+                continue;
+            if (cur !== undefined && start >= 0) {
+                marks.push(k === 'hl' || k === 'c' ? { s: start, e: i, k, v: cur } : { s: start, e: i, k });
+            }
+            cur = val;
+            start = val !== undefined ? i : -1;
+        }
+    }
+    return marks.sort((a, b) => a.s - b.s || a.e - b.e || ROW_MARK_KINDS.indexOf(a.k) - ROW_MARK_KINDS.indexOf(b.k));
+}
+/** Cleans stored marks for a text of length `len`: drops invalid or empty ranges, clamps to
+ * the text, merges touching ranges of the same kind. Returns `[]` when there is nothing left. */
+function normalizeRowMarks(marks, len) {
+    if (!Array.isArray(marks) || !marks.length || len <= 0)
+        return [];
+    return fromCharFormats(toCharFormats(marks, len));
+}
+/** The marks of `text.slice(start, end)`, re-based to start at 0 (Enter splitting a row). */
+function sliceRowMarks(marks, len, start, end) {
+    return fromCharFormats(toCharFormats(marks, len).slice(Math.max(0, start), Math.max(0, end)));
+}
+/** The marks of `textA + textB` (Backspace/Delete merging two rows). */
+function concatRowMarks(marksA, lenA, marksB, lenB) {
+    return fromCharFormats(toCharFormats(marksA, lenA).concat(toCharFormats(marksB, lenB)));
+}
+/** True when every character in [start, end) has kind `k` (any value for `hl`/`c`). */
+function rowMarkCovers(marks, len, start, end, k) {
+    const formats = toCharFormats(marks, len);
+    const from = Math.max(0, start);
+    const to = Math.min(len, end);
+    if (to <= from)
+        return false;
+    for (let i = from; i < to; i++)
+        if (!formats[i][k])
+            return false;
+    return true;
+}
+/** Sets kind `k` on [start, end): `value` true (or a palette name for `hl`/`c`) adds it,
+ * false removes it. A new highlight or colour replaces the old one on those characters. */
+function setRowMark(marks, len, start, end, k, value) {
+    const formats = toCharFormats(marks, len);
+    const from = Math.max(0, start);
+    const to = Math.min(len, end);
+    for (let i = from; i < to; i++) {
+        if (k === 'hl' || k === 'c') {
+            if (typeof value === 'string' && ROW_MARK_VALUE_RE.test(value))
+                formats[i][k] = value;
+            else
+                delete formats[i][k];
+        }
+        else if (value) {
+            formats[i][k] = true;
+        }
+        else {
+            delete formats[i][k];
+        }
+    }
+    return fromCharFormats(formats);
+}
+/** Keeps marks in step when a row's text is changed outside the editor (a backlink rename, a
+ * find-and-replace): the common start and end of the two texts keep their formatting, and the
+ * replaced middle takes the formatting of the first character it replaced (or of the character
+ * before it, for a pure insertion) — the same thing typing there would do. */
+function adjustRowMarksForText(marks, oldText, newText) {
+    const a = String(oldText || '');
+    const b = String(newText || '');
+    if (!Array.isArray(marks) || !marks.length || !b.length)
+        return [];
+    if (a === b)
+        return normalizeRowMarks(marks, b.length);
+    let p = 0;
+    while (p < a.length && p < b.length && a[p] === b[p])
+        p++;
+    let q = 0;
+    while (q < a.length - p && q < b.length - p && a[a.length - 1 - q] === b[b.length - 1 - q])
+        q++;
+    const formats = toCharFormats(marks, a.length);
+    const inherit = p < a.length - q ? formats[p] : p > 0 ? formats[p - 1] : formats[p];
+    const middle = [];
+    for (let i = 0; i < b.length - p - q; i++)
+        middle.push({ ...(inherit || {}) });
+    return fromCharFormats(formats.slice(0, p).concat(middle, formats.slice(a.length - q)));
+}
+/** The row's text cut into runs of equal formatting. A `[[link]]` is never cut in two: it takes
+ * the formatting of the first character of its name, so a link chip renders whole. */
+function rowMarkRuns(text, marks) {
+    const src = String(text || '');
+    const formats = toCharFormats(marks, src.length);
+    const linkRe = /\[\[[\s\S]*?\]\](?!\])/g;
+    let m;
+    while ((m = linkRe.exec(src))) {
+        const f = formats[Math.min(m.index + 2, m.index + m[0].length - 1)];
+        for (let i = m.index; i < m.index + m[0].length; i++)
+            formats[i] = f;
+    }
+    const runs = [];
+    let start = 0;
+    for (let i = 1; i <= src.length; i++) {
+        if (i < src.length && charFormatKey(formats[i]) === charFormatKey(formats[start]))
+            continue;
+        runs.push({ text: src.slice(start, i), f: formats[start] || {} });
+        start = i;
+    }
+    return runs;
+}
+/** Renders a row as HTML: each run goes through `renderText` (the row's usual parser, which
+ * escapes it and draws links) and is wrapped in the tags for its formatting. */
+function rowMarksToHtml(text, marks, renderText) {
+    if (!Array.isArray(marks) || !marks.length)
+        return renderText(String(text || ''));
+    return rowMarkRuns(text, marks)
+        .map(({ text: t, f }) => {
+        let html = renderText(t);
+        if (f.b)
+            html = '<b>' + html + '</b>';
+        if (f.i)
+            html = '<i>' + html + '</i>';
+        if (f.u)
+            html = '<u>' + html + '</u>';
+        if (f.s)
+            html = '<s>' + html + '</s>';
+        if (f.c)
+            html = `<span class="row-fc" data-c="${f.c}" style="color:var(--fc-${f.c})">` + html + '</span>';
+        if (f.hl)
+            html = `<mark class="row-hl hl-mark hl-mark-${f.hl}" data-hl="${f.hl}">` + html + '</mark>';
+        return html;
+    })
+        .join('');
+}
+/** Reads the editor's contenteditable back into `{text, marks}`. `text` is exactly the
+ * element's textContent; formatting comes only from the tags this file writes (plus the
+ * browser's own strong/em/strike/del), so pasted or stray markup can't add anything else. */
+function readRowMarksFromDom(root) {
+    const formats = [];
+    let text = '';
+    const walk = (n, f) => {
+        if (n.nodeType === 3) {
+            const t = n.nodeValue || '';
+            text += t;
+            for (let i = 0; i < t.length; i++)
+                formats.push({ ...f });
+            return;
+        }
+        if (n.nodeType !== 1)
+            return;
+        const tag = String(n.tagName || '').toLowerCase();
+        const next = { ...f };
+        if (tag === 'b' || tag === 'strong')
+            next.b = true;
+        else if (tag === 'i' || tag === 'em')
+            next.i = true;
+        else if (tag === 'u')
+            next.u = true;
+        else if (tag === 's' || tag === 'strike' || tag === 'del')
+            next.s = true;
+        const hl = n.getAttribute ? n.getAttribute('data-hl') : null;
+        if (hl && ROW_MARK_VALUE_RE.test(hl))
+            next.hl = hl;
+        const c = n.getAttribute ? n.getAttribute('data-c') : null;
+        if (c && ROW_MARK_VALUE_RE.test(c))
+            next.c = c;
+        const kids = n.childNodes;
+        if (kids)
+            for (let i = 0; i < kids.length; i++)
+                walk(kids[i], next);
+    };
+    const kids = root.childNodes;
+    if (kids)
+        for (let i = 0; i < kids.length; i++)
+            walk(kids[i], {});
+    return { text, marks: fromCharFormats(formats) };
+}
+/** A row's marks for its current text. Code that changes `node.text` without knowing about
+ * marks (find-and-replace, a backlink rename, an AI rewrite, a sync) leaves `marksText` behind;
+ * the first read afterwards moves the marks to the new text (`adjustRowMarksForText`) and
+ * stores the result, so formatting follows the words wherever the text was changed. */
+function rowMarksOf(node) {
+    if (!node || !Array.isArray(node.marks) || !node.marks.length)
+        return [];
+    const text = String(node.text || '');
+    if (node.marksText !== text)
+        setRowMarksOn(node, adjustRowMarksForText(node.marks, String(node.marksText ?? ''), text));
+    return node.marks || [];
+}
+/** Stores `marks` for the row's current text; no marks leaves no fields behind. */
+function setRowMarksOn(node, marks) {
+    const text = String(node.text || '');
+    const clean = normalizeRowMarks(marks, text.length);
+    if (clean.length) {
+        node.marks = clean;
+        node.marksText = text;
+    }
+    else {
+        delete node.marks;
+        delete node.marksText;
+    }
+}
+
+/* GENERATED:rowMarks:END */
 // A node counts as a section if its text uses [Bracket] syntax (any depth, always has),
 // OR — when the setting is on — it's simply at depth 0, with no bracket text required.
 // The two are independent and additive, per the setting's own description: [Bracket]
@@ -19288,7 +19565,7 @@ function matchSectionEmojiIcon(text){for(const key in SECTION_EMOJI_ICONS){if(te
 function highlightSearchInHtml(html,q){if(!q)return html;const lq=q.toLowerCase();const result=[];let i=0;while(i<html.length){if(html[i]==='<'){const end=html.indexOf('>',i);if(end<0){result.push(html.slice(i));break}result.push(html.slice(i,end+1));i=end+1;continue}if(html[i]==='&'){const end=html.indexOf(';',i);if(end<0){result.push(html[i]);i++;continue}result.push(html.slice(i,end+1));i=end+1;continue}let j=i;let plain='';while(j<html.length&&html[j]!=='<'&&html[j]!=='&'){plain+=html[j];j++;}const lplain=plain.toLowerCase();let pi=0;let out='';while(pi<plain.length){const fi=lplain.indexOf(lq,pi);if(fi<0){out+=plain.slice(pi);break}out+=plain.slice(pi,fi)+`<mark class="search-highlight">${plain.slice(fi,fi+lq.length)}</mark>`;pi=fi+lq.length;}result.push(out);i=j;}return result.join('');}
 function parseStyledText(text,searchQ=''){const src=String(text||'');let out='';let i=0;while(i<src.length){const ch=src[i];if(ch==='*'&&src[i+1]==='*'){const end=src.indexOf('**',i+2);if(end>i+2){out+=`<strong>${esc(src.slice(i+2,end))}</strong>`;i=end+2;continue}}if(ch==='_'&&src[i+1]==='_'){const end=src.indexOf('__',i+2);if(end>i+2){out+=`<em>${esc(src.slice(i+2,end))}</em>`;i=end+2;continue}}if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){const linkText=src.slice(i+2,end);const displayText=linkText.replace(/\*\*([^*]+)\*\*/g,'$1').replace(/__([^_]+)__/g,'$1').replace(/^>/,'').trim();out+=`<span class="bl-link" data-bl-target="${escAttr(linkText)}">${esc(displayText)}</span>`;i=end+2;continue}}out+=esc(ch);i++}return searchQ?highlightSearchInHtml(out,searchQ):out}
 function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.styles.heading?('style-heading-'+node.styles.heading):''; const cls=['node-label',node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':'',headingCls].filter(Boolean).join(' '); const raw=node.text||'';
-  const inner=parseStyledText(raw,searchQ)||'&nbsp;';
+  const inner=rowMarksToHtml(raw,rowMarksOf(node),t=>parseStyledText(t,searchQ))||'&nbsp;';
   const html=node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${inner}</span>`:inner;
   return {cls,html,hasQuotes:false};
 }
@@ -19704,7 +19981,7 @@ el('editor-pane')?.addEventListener('keyup',e=>{
   if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End'||e.key==='PageUp'||e.key==='PageDown')typewriterRecenter();
 });
 
-function beginEdit(id,atEnd=true){if(id===null||getIndex(nodes,id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document",null,false,2600); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(nodes,id)].text; render()}
+function beginEdit(id,atEnd=true){if(id===null||getIndex(nodes,id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document",null,false,2600); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(nodes,id)].text; editSessionOriginalMarks=rowMarksOf(nodes[getIndex(nodes,id)]); render()}
 // Standard mirror-div technique: clones the textarea's exact text-layout styles (width, font,
 // padding, wrapping) into a hidden div so the browser wraps the text identically, then measures
 // where a marker lands to get the true visual line index -- this is the only reliable way to know
@@ -19791,7 +20068,7 @@ function setEditableSelectionRange(el,start,end){
 }
 // Places the caret at a specific offset rather than just start/end -- used by single-click-to-edit
 // below, so clicking mid-sentence doesn't force the caret to jump to one end of the line first.
-function beginEditAt(id,caretPos){if(id===null||getIndex(nodes,id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document",null,false,2600); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(nodes,id)].text; render()}
+function beginEditAt(id,caretPos){if(id===null||getIndex(nodes,id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document",null,false,2600); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=caretPos; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(nodes,id)].text; editSessionOriginalMarks=rowMarksOf(nodes[getIndex(nodes,id)]); render()}
 // Best-effort mapping from a click point to a character offset in the node's raw text. Walks the
 // rendered label's text nodes (via the browser's native caret-from-point APIs) and sums lengths up
 // to the click position. This can be slightly off for lines with inline formatting syntax (bold,
@@ -19825,7 +20102,7 @@ function commitEdit(){if(editingId===null)return; const _eid=editingId; const id
   if(idx>=0&&(changed||willAutoConvert)){
     // Snapshot must capture the PRE-edit text, not the already-live-updated text, or Undo
     // would just restore the same value that's already showing.
-    const liveText=nodes[idx].text; if(changed)nodes[idx].text=origText; pushUndo(); nodes[idx].text=liveText;
+    const liveText=nodes[idx].text; const liveMarks=rowMarksOf(nodes[idx]); if(changed){nodes[idx].text=origText; setRowMarksOn(nodes[idx],editSessionOriginalMarks)} pushUndo(); nodes[idx].text=liveText; setRowMarksOn(nodes[idx],liveMarks);
   }
   const oldTextForRename=changed?origText:null; if(changed){nodes[idx].text=newText; markDirty(); if(backlinksEnabled&&oldTextForRename)renameBacklinksFor(oldTextForRename,newText);} const realChange=idx>=0&&editSessionOriginalText!==null&&nodes[idx].text!==editSessionOriginalText; editingId=null; editSessionOriginalText=null; if(idx>=0)autoConvertCheckboxSyntax(_eid); if(idx>=0)autoConvertHeadingSyntax(_eid); if(idx>=0&&realChange&&!autoRewritePasteTainted)queueAutoRewrite(_eid);}
 function cancelEdit(){editingId=null; render()}
@@ -20580,7 +20857,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   const iColor=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)');
   const input=document.createElement('div'); input.className='node-input'+stCls; input.contentEditable='true'; input.style.color=iColor;
   input.id='in-'+node.id; input.spellcheck=spellcheckEnabled;
-  const hlWrap=h=>node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${h}</span>`:h;
+
   // Plain escaped text while editing, NOT parseStyledText's output -- parseStyledText is a
   // display-only, one-way renderer: `(note)` becomes a pill showing just "note", `[Section]`
   // becomes a chip showing just "Section", `` `code` `` drops the backticks, etc. -- the
@@ -20591,11 +20868,13 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // trigger it beyond entering and leaving edit mode. The pretty semantic styling still applies
   // correctly the instant you're not editing (.node-label uses parseStyledText, unaffected by
   // this), just no longer live-previewed while the caret's actually in the node.
-  input.innerHTML=hlWrap(esc(node.text||'')||'<br>');
+  input.innerHTML=rowEditorHtml(node);
   input.addEventListener('keydown',onEditorKeyDown);
   input.addEventListener('input',(e)=>{
-    const i=getIndex(nodes,node.id); const plain=input.textContent||'';
-    if(i>=0){nodes[i].text=plain; nodes[i].modifiedAt=Date.now();}
+    // Words and formatting both come from the editor's DOM (readRowMarksFromDom: text is exactly
+    // textContent, formatting only from the tags rowMarksToHtml writes).
+    const i=getIndex(nodes,node.id); const read=readRowMarksFromDom(input); const plain=read.text;
+    if(i>=0){nodes[i].text=plain; setRowMarksOn(nodes[i],read.marks); nodes[i].modifiedAt=Date.now();}
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
@@ -20996,13 +21275,13 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   document.querySelectorAll('.bl-link').forEach(lnk=>{const target=findNodeByText(lnk.dataset.blTarget||''); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Jump to: '+lnk.dataset.blTarget:'No node found: '+lnk.dataset.blTarget;});
 }
 function toggleNodeStyle(styleName){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const makeActive=!selectedNodes.every(n=>!!n.styles[styleName]); let value; if(styleName==='highlight')value=makeActive?lastHighlightColor:false; else if(styleName==='color')value=makeActive?lastFontColor:false; else value=makeActive; selectedNodes.forEach(n=>n.styles[styleName]=value); markDirty(); render()}
-function setHighlightColor(color){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); setLastHighlightColor(color); selectedNodes.forEach(n=>n.styles.highlight=color); markDirty(); render(); hideHighlightPalette(); updateFormatIconColors()}
-function clearHighlight(){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); selectedNodes.forEach(n=>n.styles.highlight=false); markDirty(); render(); hideHighlightPalette()}
+function setHighlightColor(color){if(applyRowMarkToSelection('hl',color)){setLastHighlightColor(color); hideHighlightPalette(); updateFormatIconColors(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); setLastHighlightColor(color); selectedNodes.forEach(n=>n.styles.highlight=color); markDirty(); render(); hideHighlightPalette(); updateFormatIconColors()}
+function clearHighlight(){if(applyRowMarkToSelection('hl',false)){hideHighlightPalette(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); selectedNodes.forEach(n=>n.styles.highlight=false); markDirty(); render(); hideHighlightPalette()}
 function applyHeadingOption(level){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const allSame=selectedNodes.every(n=>(n.styles.heading||0)===level); const newLevel=level===0?0:(allSame?0:level); selectedNodes.forEach(n=>n.styles.heading=newLevel); markDirty(); render(); hideHeadingPalette()}
 function hideHeadingPalette(){el('heading-palette')?.classList.remove('open'); el('heading-toggle-btn')?.setAttribute('aria-expanded','false')}
 function updateFormatIconColors(){const fcBar=el('fc-color-bar'); if(fcBar)fcBar.setAttribute('fill',`var(--fc-${lastFontColor})`); const hlBar=el('hl-color-bar'); if(hlBar)hlBar.setAttribute('fill',HIGHLIGHT_COLORS[lastHighlightColor]||'#eab308')}
-function setFontColor(color){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); setLastFontColor(color); selectedNodes.forEach(n=>n.styles.color=color); markDirty(); render(); hideFontColorPalette(); updateFormatIconColors()}
-function clearFontColor(){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); selectedNodes.forEach(n=>n.styles.color=false); markDirty(); render(); hideFontColorPalette()}
+function setFontColor(color){if(applyRowMarkToSelection('c',color)){setLastFontColor(color); hideFontColorPalette(); updateFormatIconColors(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); setLastFontColor(color); selectedNodes.forEach(n=>n.styles.color=color); markDirty(); render(); hideFontColorPalette(); updateFormatIconColors()}
+function clearFontColor(){if(applyRowMarkToSelection('c',false)){hideFontColorPalette(); return} const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); selectedNodes.forEach(n=>n.styles.color=false); markDirty(); render(); hideFontColorPalette()}
 function hideHighlightPalette(){el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open')}
 function hideFontColorPalette(){el('fc-palette')?.classList.remove('open')}
 function insertSiblingBefore(id,begin=true){const idx=getIndex(nodes,id); if(idx<0)return; pushUndo(); markDirty(); const node=nodes[idx]; const nn=makeBlankNode(node.depth,node.parentId); nodes.splice(idx,0,nn); rebuildParentIds(); setSingleSelection(nn.id); flashNode(nn.id); if(begin)beginEdit(nn.id,false); else render()}
@@ -21453,11 +21732,12 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
   const prevIdx=vis[pos-1]; const prevId=nodes[prevIdx].id;
   const mergedText=liveText||''; const prevOldText=nodes[prevIdx].text||'';
   const caretAt=prevOldText.length; const prevNewText=prevOldText+mergedText;
+  const mergedMarks=concatRowMarks(rowMarksOf(nodes[prevIdx]),prevOldText.length,rowMarksOf(nodes[idx]),mergedText.length);
   pushUndo(); markDirty();
   const deletedTexts=mergedText?[mergedText]:[]; const deletedIds=[nodes[idx].id];
   // The absorbed node's pictures move onto the surviving row (appended after its own) rather
   // than vanishing with it -- node.images is user content, never silently dropped.
-  nodes[prevIdx]={...nodes[prevIdx],text:prevNewText,...mergedNodeContent(nodes[prevIdx],nodes[idx])};
+  nodes[prevIdx]={...nodes[prevIdx],text:prevNewText,...mergedNodeContent(nodes[prevIdx],nodes[idx])}; setRowMarksOn(nodes[prevIdx],mergedMarks);
   repointNodeLinks(nodes[idx].id,prevId);
   nodes.splice(idx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
@@ -21482,9 +21762,10 @@ function mergeNextNodeIntoAndFocus(id,liveText){
   const nextIdx=vis[pos+1]; if(nodeHasChildren(nodes,nextIdx))return;
   const curOldText=liveText||''; const nextText=nodes[nextIdx].text||'';
   const caretAt=curOldText.length; const curNewText=curOldText+nextText;
+  const mergedMarks=concatRowMarks(rowMarksOf(nodes[idx]),curOldText.length,rowMarksOf(nodes[nextIdx]),nextText.length);
   pushUndo(); markDirty();
   const deletedTexts=nextText?[nextText]:[]; const deletedIds=[nodes[nextIdx].id];
-  nodes[idx]={...nodes[idx],text:curNewText,...mergedNodeContent(nodes[idx],nodes[nextIdx])};
+  nodes[idx]={...nodes[idx],text:curNewText,...mergedNodeContent(nodes[idx],nodes[nextIdx])}; setRowMarksOn(nodes[idx],mergedMarks);
   repointNodeLinks(nodes[nextIdx].id,id);
   nodes.splice(nextIdx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
@@ -21501,11 +21782,11 @@ function mergeNextNodeIntoAndFocus(id,liveText){
 // cursor would sit right after a real newline split.
 function splitNodeAtCursorAndFocus(id,beforeText,afterText){
   const idx=getIndex(nodes,id); if(idx<0)return;
+  const oldText=nodes[idx].text||''; const oldMarks=rowMarksOf(nodes[idx]);
   pushUndo(); markDirty();
-  const oldText=nodes[idx].text||'';
-  nodes[idx]={...nodes[idx],text:beforeText};
+  nodes[idx]={...nodes[idx],text:beforeText}; setRowMarksOn(nodes[idx],sliceRowMarks(oldMarks,oldText.length,0,beforeText.length));
   if(backlinksEnabled&&oldText!==beforeText)renameBacklinksFor(oldText,beforeText);
-  const nn=makeBlankNode(nodes[idx].depth,nodes[idx].parentId); nn.text=afterText;
+  const nn=makeBlankNode(nodes[idx].depth,nodes[idx].parentId); nn.text=afterText; setRowMarksOn(nn,sliceRowMarks(oldMarks,oldText.length,oldText.length-afterText.length,oldText.length));
   nodes.splice(getSubtreeEnd(nodes,idx),0,nn);
   rebuildParentIds();
   setSingleSelection(nn.id);
@@ -21528,7 +21809,7 @@ function deleteSelected(){
   cleanupBacklinksFor(deletedTexts);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
-function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images)); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
+function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
 function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const insertIdx=getIndex(nodes,selectedId);
   // parseTextToTreeNodes (and friends) always normalize the parsed block's own top-level
@@ -21547,6 +21828,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   if(Array.isArray(clipExtras)&&clipExtras.length){
     clipExtras.forEach(ex=>{
       const targetNode=mapped[ex.i]; if(!targetNode)return;
+      if(Array.isArray(ex.mk)&&typeof ex.mt==='string')setRowMarksOn(targetNode,adjustRowMarksForText(ex.mk,ex.mt,targetNode.text||''));
       if(Array.isArray(ex.imgs)&&ex.imgs.length){
         const copies=cloneNodeImagesWithNewIds(ex.imgs,Date.now(),newNodeImageId);
         if(!Array.isArray(targetNode.images))targetNode.images=[];
@@ -21980,9 +22262,14 @@ function buildNodeClipboardPayload(scopeNodes){
     const imgs=Array.isArray(n.images)?n.images:[];
     // Q&A and remarks ride along too (older builds ignore the unknown `qas`/`rms` keys).
     const {qas,rms}=nodeDiscussionCopies(n.id);
-    if(!dgs.length&&!imgs.length&&!qas.length&&!rms.length)return;
+    // Formatting on part of the row rides along with the text it was made for (`mt`): the
+    // pasted row's text can differ slightly (plain-text serializers drop [[ ]]), so paste moves
+    // the marks onto it with adjustRowMarksForText.
+    const mk=rowMarksOf(n);
+    if(!dgs.length&&!imgs.length&&!qas.length&&!rms.length&&!mk.length)return;
     extras.push({
       i,
+      ...(mk.length?{mk,mt:n.text||''}:{}),
       ...(imgs.length?{imgs:JSON.parse(JSON.stringify(imgs))}:{}),
       ...(qas.length?{qas}:{}),
       ...(rms.length?{rms}:{}),
@@ -24368,21 +24655,16 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     }
   }
   if(matchesShortcut(e,'bold')){
-    // Dynalist-style inline bold: with an actual text selection inside the row, wrap (or
-    // unwrap, toggling) just that substring in **markers** instead of bolding the whole node --
-    // same "raw markup while editing, styled only in view mode" model **already used for the
-    // [Section]/(note)/`code` semantic markers, kept consistent rather than live-converting**
-    // as you type (which is exactly the caret-corruption bug class a past session hit and fixed
-    // for those markers). No selection (collapsed caret) falls back to the existing whole-node
-    // style toggle, unchanged.
+    // With words selected, Ctrl/Cmd+B (and I, U, S, highlight, text colour below) formats just
+    // those words (applyRowMarkToSelection); with a collapsed caret it styles the whole row.
     const boldSel=getEditableSelectionRange(e.target);
-    if(boldSel&&boldSel.start!==boldSel.end){e.preventDefault(); toggleInlineMarkupOnSelection('**'); return}
+    if(boldSel&&boldSel.start!==boldSel.end){e.preventDefault(); applyRowMarkToSelection('b'); return}
     e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('bold'); beginEdit(id,true); return
   } if(matchesShortcut(e,'italic')){
     const italicSel=getEditableSelectionRange(e.target);
-    if(italicSel&&italicSel.start!==italicSel.end){e.preventDefault(); toggleInlineMarkupOnSelection('__'); return}
+    if(italicSel&&italicSel.start!==italicSel.end){e.preventDefault(); applyRowMarkToSelection('i'); return}
     e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('italic'); beginEdit(id,true); return
-  } if(matchesShortcut(e,'underline')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('underline'); beginEdit(id,true); return} if(matchesShortcut(e,'strike')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('strike'); beginEdit(id,true); return} if(matchesShortcut(e,'highlight')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('highlight'); beginEdit(id,true); return} if(matchesShortcut(e,'textColor')){e.preventDefault(); commitEdit(); selectedId=id; toggleNodeStyle('color'); beginEdit(id,true); return} if(matchesShortcut(e,'heading1')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(1); beginEdit(id,true); return} if(matchesShortcut(e,'heading2')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(2); beginEdit(id,true); return} if(matchesShortcut(e,'heading3')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(3); beginEdit(id,true); return} if(matchesShortcut(e,'heading4')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(4); beginEdit(id,true); return} if(matchesShortcut(e,'heading5')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(5); beginEdit(id,true); return} if(matchesShortcut(e,'heading6')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(6); beginEdit(id,true); return} if(matchesShortcut(e,'headingClear')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(0); beginEdit(id,true); return} if(e.key==='Escape'){e.preventDefault(); cancelEdit(); return} if(e.key==='Enter'){e.preventDefault(); const input=e.target; const currentValue=String(input?.textContent||''); const idx=getIndex(nodes,id); const currentNode=nodes[idx]; const isLastRow=idx===nodes.length-1; const isEffectivelyEmpty=!currentValue.trim()&&!String(currentNode?.text||'').trim(); if(isEffectivelyEmpty){
+  } if(matchesShortcut(e,'underline')){e.preventDefault(); if(applyRowMarkToSelection('u'))return; commitEdit(); selectedId=id; toggleNodeStyle('underline'); beginEdit(id,true); return} if(matchesShortcut(e,'strike')){e.preventDefault(); if(applyRowMarkToSelection('s'))return; commitEdit(); selectedId=id; toggleNodeStyle('strike'); beginEdit(id,true); return} if(matchesShortcut(e,'highlight')){e.preventDefault(); if(applyRowMarkToSelection('hl'))return; commitEdit(); selectedId=id; toggleNodeStyle('highlight'); beginEdit(id,true); return} if(matchesShortcut(e,'textColor')){e.preventDefault(); if(applyRowMarkToSelection('c'))return; commitEdit(); selectedId=id; toggleNodeStyle('color'); beginEdit(id,true); return} if(matchesShortcut(e,'heading1')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(1); beginEdit(id,true); return} if(matchesShortcut(e,'heading2')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(2); beginEdit(id,true); return} if(matchesShortcut(e,'heading3')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(3); beginEdit(id,true); return} if(matchesShortcut(e,'heading4')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(4); beginEdit(id,true); return} if(matchesShortcut(e,'heading5')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(5); beginEdit(id,true); return} if(matchesShortcut(e,'heading6')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(6); beginEdit(id,true); return} if(matchesShortcut(e,'headingClear')){e.preventDefault(); commitEdit(); selectedId=id; applyHeadingOption(0); beginEdit(id,true); return} if(e.key==='Escape'){e.preventDefault(); cancelEdit(); return} if(e.key==='Enter'){e.preventDefault(); const input=e.target; const currentValue=String(input?.textContent||''); const idx=getIndex(nodes,id); const currentNode=nodes[idx]; const isLastRow=idx===nodes.length-1; const isEffectivelyEmpty=!currentValue.trim()&&!String(currentNode?.text||'').trim(); if(isEffectivelyEmpty){
     // Continuous-editing feel: a blank row no longer dead-ends on Enter. At the very end of
     // the whole document, repeated Enter walks a blank row back out one level at a time
     // instead of doing nothing, so a nested aside can be un-nested just by continuing to hit
@@ -24425,8 +24707,38 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     const tabCaretOff=getEditableCaretOffset(e.target)??0;
     commitEdit(); selectedId=id; if(e.shiftKey)outdentSelected(); else indentSelected(); beginEditAt(selectedId,tabCaretOff); return}
 }
-function createRootAndEdit(firstChar=''){pushUndo(); markDirty(); const n=makeNode(firstChar,0,null,emptyStyles()); nodes=[n]; selectedId=n.id; editingId=n.id; editSessionOriginalText=n.text; autoRewritePasteTainted=false; selectAllMode=false; clearMultiSelection(); selectionAnchorId=n.id; flashNodeId=null; render()}
-function handleToolbarStyle(styleName){commitEdit(); toggleNodeStyle(styleName)}
+function createRootAndEdit(firstChar=''){pushUndo(); markDirty(); const n=makeNode(firstChar,0,null,emptyStyles()); nodes=[n]; selectedId=n.id; editingId=n.id; editSessionOriginalText=n.text; editSessionOriginalMarks=[]; autoRewritePasteTainted=false; selectAllMode=false; clearMultiSelection(); selectionAnchorId=n.id; flashNodeId=null; render()}
+// The row editor's content: the words with their formatting (rowMarksToHtml), inside the
+// whole-row highlight when the row has one.
+function rowEditorHtml(node){const h=rowMarksToHtml(node.text||'',rowMarksOf(node),esc)||'<br>'; return node.styles.highlight?`<span class="hl-mark hl-mark-${node.styles.highlight}">${h}</span>`:h}
+// Formatting on the selected words of the row being edited (owner, 2026-10-22: rows are rich
+// text). kind is b/i/u/s/hl/c (src/utils/rowMarks.ts); value true/a colour name adds, false
+// removes, undefined toggles (a highlight or colour toggles with the last one used). Returns
+// false, doing nothing, when no words are selected -- callers then style the whole row as before.
+const ROW_STYLE_TO_MARK={bold:'b',italic:'i',underline:'u',strike:'s',highlight:'hl',color:'c'};
+function applyRowMarkToSelection(kind,value){
+  const input=getEditingInput(); if(!input)return false;
+  const range=getEditableSelectionRange(input); if(!range||range.start===range.end)return false;
+  const idx=getIndex(nodes,editingId); if(idx<0)return false;
+  const node=nodes[idx]; const read=readRowMarksFromDom(input); node.text=read.text; setRowMarksOn(node,read.marks);
+  const cur=rowMarksOf(node); const len=node.text.length; const {start,end}=range;
+  let v=value;
+  if(v===undefined)v=rowMarkCovers(cur,len,start,end,kind)?false:(kind==='hl'?lastHighlightColor:kind==='c'?lastFontColor:true);
+  pushUndo();
+  setRowMarksOn(node,setRowMark(cur,len,start,end,kind,v)); node.modifiedAt=Date.now();
+  input.innerHTML=rowEditorHtml(node);
+  setEditableSelectionRange(input,start,end);
+  markDirty(); scheduleAutoSave();
+  return true;
+}
+// A toolbar button or swatch pressed while words are selected in the row being edited: keep
+// the editor focused (no blur, no commit) so the click can format just those words.
+document.addEventListener('mousedown',e=>{
+  if(editingId===null||!e.target.closest('.fmt-btn,.hl-swatch,#hl-caret-btn,#fc-caret-btn'))return;
+  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null;
+  if(r&&r.start!==r.end)e.preventDefault();
+},true);
+function handleToolbarStyle(styleName){if(ROW_STYLE_TO_MARK[styleName]&&applyRowMarkToSelection(ROW_STYLE_TO_MARK[styleName]))return; commitEdit(); toggleNodeStyle(styleName)}
 // Narrower than isControlTarget: real text-entry contexts only (input/textarea/contenteditable),
 // not button/select. Undo/redo have no reason to be swallowed just because focus happens to be
 // resting on a button (e.g. after clicking a fold-arrow or toolbar icon) — a button has no
@@ -25773,6 +26085,8 @@ let autoRewriteEnabled=false; let autoRewriteQueue=new Set(); let _autoRewriteTi
 // Rewrite click instead. Reset at the start of every edit session in beginEdit().
 let autoRewritePasteTainted=false;
 let editSessionOriginalText=null;
+// The row's formatting at the start of the edit, restored with the text for commitEdit's undo snapshot.
+let editSessionOriginalMarks=[];
 const AUTO_REWRITE_MAX_FAILS=3;
 // Fixed tuning (these used to be Settings → AI → Auto-rewrite on commit sub-options; only the
 // on/off switch remains): a batch is sent after AUTO_REWRITE_IDLE_SEC seconds without further
@@ -26005,38 +26319,6 @@ function refreshStatusbarDividers(){
 // whole-node style toggle it sits next to already behaves). Mirrors rewriteSubTextSelection
 // below -- mutate node.text and the live contenteditable directly and reselect, rather than a
 // full render(), so this never disturbs anything outside the current row.
-function toggleInlineMarkupOnSelection(marker){
-  const input=getEditingInput(); if(!input)return false;
-  const range=getEditableSelectionRange(input); if(!range||range.start===range.end)return false;
-  const {start,end}=range; const mlen=marker.length;
-  const idx=getIndex(nodes,editingId); if(idx<0)return false;
-  const full=input.textContent||'';
-  // Double-clicking a marked-up word (e.g. the "word" in "__word__") commonly selects the WHOLE
-  // token including the marker characters themselves -- browsers' native word-selection treats
-  // '_' (and often '*') as part of the word, not a boundary -- not just the inner text between
-  // them. Detect both selection shapes: markers immediately OUTSIDE the selection (selecting just
-  // "word"), or markers INSIDE it at both ends (selecting "__word__" whole), so Ctrl+B/I still
-  // correctly unwraps either way instead of wrapping it a second time.
-  const outsideWrapped=full.slice(start-mlen,start)===marker&&full.slice(end,end+mlen)===marker;
-  const insideWrapped=!outsideWrapped&&end-start>=2*mlen&&full.slice(start,start+mlen)===marker&&full.slice(end-mlen,end)===marker;
-  let newText,newStart,newEnd;
-  if(outsideWrapped){
-    newText=full.slice(0,start-mlen)+full.slice(start,end)+full.slice(end+mlen);
-    newStart=start-mlen; newEnd=end-mlen;
-  } else if(insideWrapped){
-    newText=full.slice(0,start)+full.slice(start+mlen,end-mlen)+full.slice(end);
-    newStart=start; newEnd=end-2*mlen;
-  } else {
-    newText=full.slice(0,start)+marker+full.slice(start,end)+marker+full.slice(end);
-    newStart=start+mlen; newEnd=end+mlen;
-  }
-  pushUndo();
-  nodes[idx].text=newText; input.textContent=newText;
-  input.dispatchEvent(new Event('input'));
-  setEditableSelectionRange(input,newStart,newEnd);
-  scheduleAutoSave();
-  return true;
-}
 async function rewriteSubTextSelection(){
   const input=getEditingInput(); if(!input)return;
   const range=getEditableSelectionRange(input);
@@ -29241,7 +29523,10 @@ function previewStyleClasses(node){
 // Contents-page text: the row's words without any markup (** bold **, __ italic __, [[ links ]], [label]).
 function pvTocText(text){ return getNodePlainText({text}).trim(); }
 function previewNodeInnerHtml(node,textOverride){
-  const inner=previewParseStyledText(textOverride!==undefined?textOverride:(node.text||''))||'&nbsp;';
+  // Formatting on part of the row (node.marks) applies to the row's own text only, not to a
+  // caller's shortened textOverride, whose character positions differ.
+  const text=textOverride!==undefined?textOverride:(node.text||'');
+  const inner=(text===(node.text||'')?rowMarksToHtml(text,rowMarksOf(node),t=>previewParseStyledText(t)):previewParseStyledText(text))||'&nbsp;';
   return node.styles.highlight?`<span class="hl-mark hl-mark-${esc(node.styles.highlight)}">${inner}</span>`:inner;
 }
 // Pulls '>citation' segments out of a node's text so Preview/exports can render them as their
@@ -35035,8 +35320,8 @@ function waitingCandidates(todos) {
       <div class="cs-card" data-cs-anchor="semantics">
         <h3>Semantics</h3>
         <ul>
-          <li><span class="cs-desc"><span class="help-kbd">**Text**</span> → <strong>bold</strong> (or select text + Ctrl/Cmd+B)</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">__Text__</span> → <em>italic</em> (or select text + Ctrl/Cmd+I)</span></li>
+          <li><span class="cs-desc"><span class="help-kbd">**Text**</span> → <strong>bold</strong> (or select words + Ctrl/Cmd+B / I / U, or a highlight or text colour)</span></li>
+          <li><span class="cs-desc"><span class="help-kbd">__Text__</span> → <em>italic</em></span></li>
           <li><span class="cs-desc"><span class="help-kbd">@Node name</span> → clickable backlink (type @ while editing to pick)</span></li>
           <li><span class="cs-desc"><span class="help-kbd">[ ] text</span> or <span class="help-kbd">[x] text</span> → auto-converts to checkbox on commit</span></li>
           <li><span class="cs-desc">Outline numbering — Settings → Editing → "Outline numbering" (1, 1.1, 1.1.1)</span></li>
