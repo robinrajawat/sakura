@@ -2896,7 +2896,6 @@ body.printing-generic #gpe-overlay{
 .todo-dd-flyout-trigger[aria-expanded="true"]{background:var(--hover,color-mix(in srgb,var(--fg) 7%,transparent))}
 /* Fixed, placed by script: the To-Dos panel clips anything that overflows it. */
 #todos-history-menu{position:fixed;top:0;left:0;right:auto;min-width:270px;z-index:1000}
-#todos-filter-menu{right:0;left:auto}
 .todo-more-item{display:flex;align-items:center;justify-content:flex-start;gap:9px}
 .todo-more-item svg{flex:0 0 auto;color:var(--muted)}
 #todos-select-toggle[aria-pressed="true"]{color:var(--accent)}
@@ -2959,23 +2958,6 @@ body.printing-generic #gpe-overlay{
 .todo-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
 .todo-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--accent);border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
 @keyframes todo-check-pop{to{transform:rotate(40deg) scale(1)}}
-.todo-priority{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--border);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
-.todo-priority.set{display:inline-flex}
-.todo-row.expanded .todo-priority{display:inline-flex}
-.todo-priority:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
-.todo-priority[data-priority="low"]{color:#6c9bd1}
-.todo-priority[data-priority="med"]{color:#d1a23a}
-.todo-priority[data-priority="high"]{color:#c2553d}
-.todo-priority svg{fill:currentColor}
-.todo-status{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--border);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
-.todo-status.set{display:inline-flex}
-.todo-row.expanded .todo-status{display:inline-flex}
-.todo-status:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
-.todo-status[data-status="waiting"]{color:#8a7fc9}
-.todo-status[data-status="progress"]{color:#5aa970}
-.todo-status[data-status="blocked"]{color:#c2553d}
-.todo-status[data-status="review"]{color:#c98f4a}
-.todo-status svg{fill:currentColor}
 /* Feedback Inbox priority/status pills -- same ghost-button recipe as .todo-priority/.todo-status
    just above (transparent until hover, color-only, small dot icon + label), with their own
    attribute values and colors since feedback's states (open/planned/fixed/wontfix,
@@ -3186,10 +3168,10 @@ body.printing-generic #gpe-overlay{
 .todo-link-open{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:opacity .12s,color .12s,background .12s}
 .todo-link-open:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .todo-row.qa-flash{animation:todo-flash 1.1s ease}
-/* To-Dos, grouped (2026-10-20, owner-approved mockup): Now (your focus task), then Doing / Up next /
-   Waiting. At rest a task is one line: title with a priority dot, then a Waiting reason chip,
-   subtask progress, repeat and the due date on the right; a link has its own line below. Expanding
-   a row turns it into a card of labelled properties. */
+/* To-Dos (owner, 2026-10-21, mockup todos-final-model-mockup.png): sections Pinned, Today, Upcoming,
+   Anytime, Waiting, then Done folded. A task is one line: checkbox, title (two lines at most at rest;
+   the full text while editing or open), and on the right small icons and the date. Titles are often
+   long work items (owner, 2026-10-22), so the right side stays narrow and nothing else sits beside it. */
 #todos-add-row{border-color:transparent;padding-left:6px}
 #todos-add-row:hover{background:var(--hover)}
 #todos-add-row:focus-within{border-color:var(--border);box-shadow:none}
@@ -3198,127 +3180,70 @@ body.printing-generic #gpe-overlay{
 #todos-add-btn:hover{background:var(--hover);opacity:1}
 #todos-add-row:focus-within #todos-input:placeholder-shown~#todos-add-btn{display:none}
 #todos-add-row:focus-within .todos-add-plus{color:var(--accent)}
-.todos-group-label,.todos-section-label{display:flex;align-items:center;gap:7px;font:600 10.5px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:14px 10px 4px}
-.todos-group-count{font-weight:500;color:color-mix(in srgb,var(--hint) 60%,transparent)}
-/* Grouped by when (owner, 2026-10-21): a hairline between groups; Overdue is the one red heading. */
-#todos-body .todos-group+.todos-group,#todos-body .todos-group+.todos-section-label{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent);margin-top:6px}
-#todos-body .todos-group-label{padding-top:10px}
-#todos-body .todos-group-overdue .todos-group-label{color:var(--fc-red)}
-/* The ring says the status: green while doing, dashed while waiting (blocked, needs review). */
-#todos-body .todo-row[data-status="progress"]:not(.completed) .todo-check{border:1.8px solid var(--fc-green)}
-#todos-body .todo-row.is-waiting .todo-check{border:1.5px dashed var(--fc-purple)}
+.todos-group-label,.todos-section-label{display:flex;align-items:center;gap:6px;font:600 12px 'Inter',sans-serif;color:var(--fg);padding:14px 10px 3px;letter-spacing:0;text-transform:none}
+.todos-group-count{font-weight:500;font-size:11.5px;color:var(--hint)}
+.todos-group-label .todo-pin-icon{color:var(--hint)}
+#todos-body .todos-group-waiting .todos-group-label{color:var(--muted)}
+#todos-body .todos-section-label{color:var(--hint);font-weight:500;padding-top:16px}
+#todos-body .todos-section-collapse-btn{gap:5px}
 #todos-body .todo-row{padding:6px 10px;margin-bottom:0;gap:10px;border-radius:8px}
-/* An unfolded task has no grey fill (owner, 2026-10-20: "why are we highlighting a task?"); the indented subtasks show it is open. */
-#todos-body .todo-text{font-size:13px;line-height:1.45}
-#todos-body .todo-main{gap:4px}
-#todos-body .todo-check{border-color:color-mix(in srgb,var(--hint) 60%,transparent);background:transparent;margin-top:1.5px}
+#todos-body .todo-main{gap:2px}
+#todos-body .todo-check{border-radius:5px;border-color:color-mix(in srgb,var(--hint) 70%,transparent);background:transparent;margin-top:1.5px}
 #todos-body .todo-check:hover{border-color:var(--accent)}
-/* Now: the task you chose to focus on; its own section and a bold title, no tint (a tinted row read as
-   the selected one while moving around the list; owner 2026-10-20). */
-#todos-body .todos-now .todo-text{font-weight:600}
-/* Status: the group heading says Doing / Up next / Waiting; only a Waiting reason shows, as a chip. */
-#todos-body .todo-row .todo-status{display:none}
-#todos-body .todo-row.is-waiting .todo-status.set{display:inline-flex}
-#todos-body .todo-status.set{height:19px;padding:0 4px 0 0;border:none;background:none;font:500 11.5px 'Inter',sans-serif;color:var(--fc-purple);gap:5px}
-#todos-body .todo-status.set svg{display:none}
-#todos-body .todo-status.set svg{width:6px;height:6px}
-#todos-body .todo-status[data-status="waiting"] svg{color:var(--fc-purple)}
-#todos-body .todo-status[data-status="progress"] svg{color:var(--fc-green)}
-#todos-body .todo-status[data-status="blocked"] svg{color:var(--fc-red)}
-#todos-body .todo-status[data-status="review"] svg{color:var(--fc-blue)}
-/* Priority: at rest a dot after the title (High filled, Medium hollow, amber); the chip only in the open task. */
-#todos-body .todo-row .todo-priority{display:none}
-.todo-pri-dot{flex:0 0 auto;width:6px;height:6px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--fc-orange);background:var(--fc-orange);align-self:center;cursor:default}
-.todo-pri-dot[data-priority="med"]{background:transparent}
-#todos-body .todo-priority.set{height:19px;padding:0 7px;border:none;border-radius:6px;font:500 11px 'Inter',sans-serif;color:var(--muted);background:color-mix(in srgb,var(--muted) 11%,transparent)}
-#todos-body .todo-priority.set svg{display:none}
-#todos-body .todo-priority[data-priority="high"]{color:var(--fc-red);background:color-mix(in srgb,var(--fc-red) 11%,transparent)}
-#todos-body .todo-priority[data-priority="med"]{color:var(--fc-orange);background:color-mix(in srgb,var(--fc-orange) 12%,transparent)}
-/* Properties: quiet icon + text, not chips. */
-#todos-body .todo-repeat.set,#todos-body .todo-link.set,#todos-body .todo-meta-row .todo-subtasks-toggle{height:19px;padding:0 4px 0 0;background:none;border:none;color:var(--hint);font:400 11.5px 'Inter',sans-serif}
-#todos-body .todo-repeat.set:hover,#todos-body .todo-link.set:hover,#todos-body .todo-meta-row .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
-#todos-body .todo-meta-row{gap:4px 6px}
-#todos-body .todo-row .todo-due-repeat-icon{display:none}
-#todos-body .todo-subtasks-toggle .todo-subtasks-chevron{order:3}
-#todos-body .todo-subtasks-toggle span:last-child{order:1}
-#todos-body .todo-subtasks-progress-track{order:2;width:22px;height:3px;background:color-mix(in srgb,var(--muted) 20%,transparent)}
-#todos-body .todo-subtasks-progress-fill{background:var(--fc-green)}
-/* At rest one line: title (two lines at most) and its priority dot on the left; reason chip,
-   subtask count, repeat and due date on the right. Back to the stacked card while editing. */
-#todos-body .todo-row .todo-main{flex-direction:row;flex-wrap:wrap;align-items:flex-start;column-gap:0}
-#todos-body .todo-row .todo-textwrap{flex:1 1 0;min-width:0;display:flex;align-items:flex-start;gap:7px}
-#todos-body .todo-row .todo-textwrap .todo-pri-dot{margin-top:7.5px;align-self:flex-start}
+#todos-body .todo-check:checked::after{left:4.5px;top:1.5px}
+#todos-body .todo-check:disabled{opacity:1;cursor:default}
+#todos-body .todo-line{display:flex;align-items:flex-start;gap:10px;min-width:0}
+#todos-body .todo-textwrap{flex:1 1 auto;min-width:0}
+#todos-body .todo-text{display:block;font-size:13px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}
 #todos-body .todo-row:not(.expanded) .todo-text:not(:focus){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-/* One grey line under the title (owner, 2026-10-21): nothing on the right edge, so long titles wrap
-   cleanly; "·" between the parts. The ⋯ button sits top-right on hover. */
-#todos-body .todo-row{position:relative}
-#todos-body .todo-row .todo-textwrap{flex-basis:100%}
-#todos-body .todo-row .todo-meta-row{flex:0 1 auto;flex-wrap:wrap;margin:-3px 0 0;padding:0;gap:0;min-height:0}
-#todos-body .todo-row .todo-meta-row .rm.rm{padding-right:0;gap:0}
-#todos-body .todo-meta-row .todo-repeat.rm svg{margin-right:4px}
-#todos-body .todo-meta-row .rm~.rm::before,#todos-body .todo-row:not(.todo-row-nochips) .todo-source-row::before{content:'\00b7';margin:0 5px;color:var(--hint);font-weight:400}
-#todos-body .todo-meta-row .todo-subtasks-toggle.open{margin-left:6px}
-#todos-body .todo-row .todo-more-btn{position:absolute;top:6px;right:6px;margin:0;background:var(--bg)}
-#todos-body .todo-row .todo-textwrap{padding-right:18px}
-#todos-body .todo-row .todo-due.rest-hidden{display:none}
-#todos-body .todo-row .todo-actions,#todos-body .todo-row .todo-subtask-add-btn{display:none}
-#todos-body .todo-row .todo-source-row{flex:1 1 0;min-width:120px;margin:-3px 0 0;align-items:center;font-size:11.5px}
-#todos-body .todo-row-nochips .todo-source-row{flex-basis:100%;margin-top:-4px}
-#todos-body .todo-row .todo-subtasks-toggle .todo-subtasks-chevron,#todos-body .todo-row .todo-subtasks-progress-track{display:none}
-#todos-body .todo-row .todo-due.set{padding:0 4px 0 0;font-size:11.5px;color:var(--hint);font-variant-numeric:tabular-nums;height:19px}
-#todos-body .todo-row .todo-due.set svg,#todos-body .todo-row .todo-due:not(.set){display:none}
-#todos-body .todo-row .todo-due.overdue{color:var(--fc-red);font-weight:500}
-/* No edit card: a link is said by its source line, the menu (⋯) holds the actions. The ⋯ shows while
-   the row is hovered. An unfolded task is for reading: a soft grey area with the full title, its
-   subtasks under the title and a quiet foot ("6 done", "+ Add subtask" on hover). The white box
-   appears only while the title itself is being edited. */
-#todos-body .todo-meta-row .todo-link,#todos-body .todo-repeat:not(.set){display:none}
-#todos-body .todo-row-nochips .todo-meta-row{max-height:0;margin-top:-4px}
-#todos-body .todo-due.set{cursor:pointer}
-.todo-more-btn{appearance:none;border:none;background:none;color:var(--muted);width:20px;height:19px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;order:9;opacity:0;margin-left:2px;transition:opacity .12s,background .12s}
-#todos-body .todo-row:hover .todo-more-btn,.todo-more-btn:focus-visible{opacity:1}
-.todo-more-btn:hover{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
-.todo-pri-dot{cursor:pointer}
-/* A subtask is edited the same way as its task: a white box on the text while typing, no grey row
-   behind it (owner, 2026-10-20: "editing the sub-task looks different"). */
 #todos-body .todo-text:focus,#todos-body .todo-subtask-text:focus{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border);border-radius:5px;padding:1px 5px;margin:-1px -5px;cursor:text;color:var(--fg)}
+/* Right side: subtask count, repeat, link arrow, date. The ⋯ covers it while the row is hovered. */
+#todos-body .todo-side{position:relative;flex:0 0 auto;display:flex;align-items:center;gap:7px;min-height:19px;margin-top:1px;color:var(--hint);font:400 11.5px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
+#todos-body .todo-subtasks-toggle{appearance:none;border:none;background:none;padding:0;margin:0;display:inline-flex;align-items:center;gap:3px;color:inherit;font:inherit;cursor:pointer;border-radius:4px}
+#todos-body .todo-subtasks-toggle:hover,#todos-body .todo-subtasks-toggle.open{color:var(--fg)}
+#todos-body .todo-repeat-icon{display:inline-flex}
+#todos-body .todo-jump{appearance:none;border:none;background:none;padding:1px;margin:0;display:inline-flex;color:inherit;border-radius:4px;cursor:pointer;text-decoration:none}
+#todos-body .todo-jump:hover{color:var(--accent);background:var(--hover)}
+#todos-body .todo-due{display:inline-flex;appearance:none;border:none;background:none;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;height:auto;border-radius:4px}
+#todos-body .todo-due:hover{color:var(--fg);background:none}
+#todos-body .todo-due.overdue{color:var(--fc-red);font-weight:500}
+#todos-body .todo-due.rest-hidden,#todos-body .todo-link.rest-hidden{display:none}
+.todo-more-btn{appearance:none;border:none;background:none;color:var(--muted);width:22px;height:20px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .12s,background .12s}
+#todos-body .todo-more-btn{position:absolute;right:-4px;top:50%;transform:translateY(-50%);opacity:0;pointer-events:none;background:var(--hover)}
+#todos-body .todo-row:hover .todo-more-btn,#todos-body .todo-more-btn:focus-visible{opacity:1;pointer-events:auto}
+#todos-body .todo-more-btn:hover{color:var(--fg);background:color-mix(in srgb,var(--fg) 8%,var(--hover))}
+#todos-body .todo-row:hover .todo-end .todo-due{visibility:hidden}
+/* The date and the ⋯ share one slot at the end, so the ⋯ never covers the icons before it. */
+#todos-body .todo-end{position:relative;display:inline-flex;justify-content:flex-end;min-width:18px}
+/* Waiting: one grey line under the title, click to change who. */
+#todos-body .todo-waiting-line{appearance:none;border:none;background:none;padding:0;margin:0;align-self:flex-start;font:400 11.5px 'Inter',sans-serif;color:var(--hint);cursor:pointer;text-align:left}
+#todos-body .todo-waiting-line:hover{color:var(--fg)}
+#todos-body .todo-row.is-waiting .todo-text{color:var(--muted)}
+/* An open task: full title, its open subtasks, a quiet foot ("6 done", "+ Add subtask") and where it
+   links to. No fill (owner, 2026-10-20: "why are we highlighting a task?"). */
+#todos-body .todo-row.expanded .todo-subtasks-list{margin-top:4px;gap:2px}
+#todos-body .todo-subtask-text{font-size:12.5px;color:var(--fg)}
 #todos-body .todo-subtask-row:hover{background:none}
-#todos-body .todo-subtasks-toggle .todo-subtasks-chevron{display:inline-block;transition:transform .15s}
-/* Unfolded, the count goes ("6 done" under the subtasks says it) and a ⌃ folds the task. */
-#todos-body .todo-subtasks-toggle.open{color:var(--hint);background:none}
-#todos-body .todo-row .todo-subtasks-toggle.open .todo-subtasks-chevron{display:inline-block;transform:rotate(-90deg)}
-#todos-body .todo-row.expanded .todo-subtasks-list{flex-basis:100%;margin-top:3px}
-#todos-body .todo-subtask-text{color:var(--muted)}
-.todo-subtasks-foot{flex-basis:100%;display:flex;align-items:center;gap:12px;min-height:20px;padding-left:1px}
+#todos-body .todo-subtask-check{border-radius:4px;border-color:color-mix(in srgb,var(--hint) 60%,transparent);background:transparent}
+#todos-body .todo-subtask-check:checked,#todos-body .todo-row.completed .todo-check:checked{background:transparent;border-color:color-mix(in srgb,var(--hint) 60%,transparent)}
+#todos-body .todo-subtask-check:checked::after,#todos-body .todo-row.completed .todo-check:checked::after{border-color:var(--hint)}
+.todo-subtasks-foot{display:flex;align-items:center;gap:12px;min-height:20px;padding-left:1px}
 #todos-body .todo-subtasks-done-toggle{appearance:none;border:none;background:none;padding:1px 0;margin:0;font:500 11px 'Inter',sans-serif;color:var(--hint);cursor:pointer;width:auto}
 #todos-body .todo-subtasks-done-toggle:hover{color:var(--fg);background:none}
 #todos-body .todo-subtasks-foot .todo-subtask-add-btn{display:inline-flex;padding:1px 0;font:500 11px 'Inter',sans-serif;color:var(--hint);opacity:0;transition:opacity .12s}
 #todos-body .todo-row:hover .todo-subtasks-foot .todo-subtask-add-btn,#todos-body .todo-subtasks-foot.bare .todo-subtask-add-btn,#todos-body .todo-subtasks-foot .todo-subtask-add-btn:focus-visible{opacity:1}
 #todos-body .todo-subtasks-foot .todo-subtask-add-btn:hover{color:var(--accent);background:none}
-#todos-body .todo-subtasks-foot:not(.bare):not(:has(.todo-subtasks-done-toggle)){display:none}
-#todos-body .todo-subtask-input-row{flex-basis:100%}
-/* Subtasks: indented, small neutral circles; finished ones are a light outlined tick. */
-#todos-body .todo-subtasks-list{margin-top:4px;gap:2px}
-#todos-body .todo-subtask-text{font-size:12.5px}
-#todos-body .todo-subtask-check{border-color:color-mix(in srgb,var(--hint) 60%,transparent);background:transparent}
-#todos-body .todo-subtask-check:checked,#todos-body .todo-row.completed .todo-check:checked{background:transparent;border-color:color-mix(in srgb,var(--hint) 60%,transparent)}
-#todos-body .todo-subtask-check:checked::after,#todos-body .todo-row.completed .todo-check:checked::after{border-color:var(--hint)}
-#todos-body .todo-subtasks-done-toggle{color:var(--hint);width:auto;gap:5px}
-#todos-body .todo-subtasks-done-icon{display:none}
-#todos-body .todo-subtasks-done-chevron{margin-left:0}
-/* Completed: one quiet line each; no chips. */
-#todos-body .todo-row.completed .todo-text{color:var(--muted);text-decoration:none}
-#todos-body .todo-row.completed:not(.expanded) .todo-priority,#todos-body .todo-row.completed:not(.expanded) .todo-status{display:none}
-#todos-body .todo-row.completed .todo-due.set{color:var(--hint)}
-/* Where a task points (and who raised it): one quiet line that navigates. */
-.todo-source-row{display:flex;min-width:0;margin-top:2px;cursor:pointer}
+#todos-body .todo-row .todo-actions{display:none}
+/* Done: one quiet line each. */
+#todos-body .todo-row.completed .todo-text{color:var(--hint);text-decoration:none}
+/* Where a task links to (open task only): one quiet line that navigates. */
+.todo-source-row{display:flex;min-width:0;margin-top:3px;cursor:pointer}
 .todo-source{appearance:none;border:none;background:none;padding:2px 4px;margin-left:-4px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;font:400 11.5px 'Inter',sans-serif;color:var(--muted);cursor:pointer;text-decoration:none;text-align:left}
 .todo-source:hover{color:var(--fg);background:var(--hover)}
-.todo-source svg{flex-shrink:0}
-.todo-source-doc{flex-shrink:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.todo-source-row-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-source-doc{flex-shrink:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px}
+.todo-source-row-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px}
 .todo-source-sep{color:var(--hint);flex-shrink:0}
-.todo-source-from{flex-shrink:0;color:var(--muted);font:500 11.5px 'Inter',sans-serif}
+.todo-source-from{flex-shrink:0;color:var(--hint)}
 .todo-source.missing{color:var(--fc-red);cursor:default}
 /* Editing: an open row becomes a small card with labelled properties. */
 .node-table-line.qa-flash{animation:todo-flash 1.1s ease}
@@ -4374,25 +4299,25 @@ body.printing-generic #gpe-overlay{
 <li>An app-level task list — not tied to any document or node. One shared list across your whole workspace</li>
 <li>Open it from the Hub button in the app bar, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">T</span>; the same shortcut closes it again, and it switches straight to this tab if the panel is already open on a different one</li>
 <li>Floating and draggable by its header; drag the thin strip on its left edge to resize its width (remembered between sessions). The <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> button expands it full-screen the same way Note/Pad/Code do (temporarily overriding your custom width, restored when you leave full-screen)</li>
-<li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> loads a Sakura To-Dos file — a <code>.json</code> export from another Sakura session or shared by a colleague — adding its tasks to the end of your list with its own Undo toast; any task whose text matches one you already have is flagged (not skipped) in that toast, since text alone can't tell a real duplicate from two tasks that just happen to read the same. <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> <strong>Export</strong> in the panel header → <strong>PDF</strong> prints the full list — Open then Completed — regardless of any active priority/status/due filter, so a filtered view never silently shortens the printout</li>
+<li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> <strong>Import</strong> loads a Sakura To-Dos file — a <code>.json</code> export from another Sakura session or shared by a colleague — adding its tasks to the end of your list with its own Undo toast; any task whose text matches one you already have is flagged (not skipped) in that toast, since text alone can't tell a real duplicate from two tasks that just happen to read the same. <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> <strong>Export</strong> in the panel header → <strong>PDF</strong> prints the full list in the panel's sections, Done last</li>
 <li>Type a task and press Enter (or use the + button) to add it — the box grows as you type so long tasks stay readable. Shift+Enter inserts a line break instead of adding the task, both here and while editing an existing task's text</li>
 <li>The clock icon next to Export opens <strong>Version History</strong> for the whole list — same idea as a document's Version History, kept separately since To-Dos isn't tied to any document. A version is saved automatically roughly every 10 minutes a change is made, or click "Save a version now" right before something risky. Restoring one replaces the current list (after saving a checkpoint of what was there first, so restoring is never itself destructive) — keeps the last 20 versions, app-wide</li>
-<li>Checking a task off moves it straight to <strong>Completed</strong>, most-recently-finished first; unchecking sends it back to <strong>Open</strong></li>
-<li>The <strong>Open</strong> row shows how many open tasks match the current filter, with a magnifying-glass quick-find icon, sort <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="14" y2="6"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/><polyline points="17 14 20 18 20 4"/></svg></span> and filter <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></span> icons at its right edge. Sort covers Manual order, Priority, and Due date; filter narrows the list to one priority level (or tasks with none). Any icon turns accent-colored whenever it's off its default (or quick-find is open) so you can tell at a glance that something's active</li>
-<li>Click the magnifying-glass icon to open <strong>quick-find</strong> and type to search task text, across both Open and Completed. Matches are highlighted and non-matching tasks are hidden entirely (not just dimmed), so the list actually shortens as you narrow it down — this composes with the priority filter, so a priority filter plus a search term shows only tasks matching both. Esc clears the search text first, then a second Esc (or clicking the icon again) closes it; the search always resets when you close the panel. Dragging to reorder still works correctly while filtered — a task dropped next to a visible neighbor lands there in the full list too, even if other hidden tasks sit between them. This searches task text only, live, within the panel — for a version that also opens the panel and jumps to the match from anywhere in the app, Quick Assist's <code>todo:</code> scope still does that</li>
+<li>Open tasks show in sections: <strong>Pinned</strong> (pin any task from its menu to keep it on top), <strong>Today</strong> (due today or overdue, overdue dates in red), <strong>Upcoming</strong>, <strong>Anytime</strong> (no date) and <strong>Waiting</strong>. Checking a task off moves it to <strong>Done</strong>, folded into one line at the bottom</li>
+<li>A task is one line: the title (two lines at most; click it to edit the full text in place, Shift+Enter for a new line) and on the right its subtask count, a repeat icon, a link arrow that goes where the task points, and the due date</li>
+<li>Click the magnifying-glass icon to open <strong>quick-find</strong> and type to search task text, across both Open and Completed. Matches are highlighted and non-matching tasks are hidden entirely (not just dimmed), so the list actually shortens as you narrow it down — Esc clears the search text first, then a second Esc (or clicking the icon again) closes it; the search always resets when you close the panel. Dragging to reorder still works correctly while filtered — a task dropped next to a visible neighbor lands there in the full list too, even if other hidden tasks sit between them. This searches task text only, live, within the panel — for a version that also opens the panel and jumps to the match from anywhere in the app, Quick Assist's <code>todo:</code> scope still does that</li>
 <li>Turn on the select/reorder toggle (checklist icon in the header) to reveal each open task's drag handle, then drag it to reorder. Completed tasks aren't draggable — they're always ordered by completion time</li>
 <li>Editing a task's text supports <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Z</span> / <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Y</span> to undo/redo that text edit — its own history, shared across all tasks (app-level, like the list itself) rather than per-task. This covers text edits only: adding, deleting, reordering, and completing tasks keep their existing in-panel Undo toasts instead</li>
-<li>Click a task's own background — not its text, and not a checkbox/chip/button, all of which keep doing their own thing on click — to expand it and reveal a spark <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI Rewrite button and a delete button on its chip row, alongside any unset priority/due/link/repeat placeholders. Click the row again to close it — collapsed rows show only the task text (plus any chips that already have a value), so a plain checklist-style task with nothing set takes up as little room as possible. Deleting shows an "Undo" toast, inside the panel itself, for a few seconds in case of a misclick — past that window, Version History (the clock icon) can still bring back a deleted task as part of restoring an earlier snapshot of the whole list</li>
-<li>The <strong>Completed</strong> section header shows a <strong>Clear completed</strong> button whenever it has tasks (respecting the current priority filter) to remove them all in one action, with its own in-panel Undo toast — a batch counterpart to deleting one at a time. All To-Dos toasts (Undo prompts, export confirmation, AI rewrite errors) show inside the panel while it's open rather than the app's global toast, so acting on one never closes the panel</li>
+<li>Click a task's background (or its subtask count) to open it: the full title, its subtasks with <strong>Add subtask</strong>, and where it links to. Click again to close it</li>
+<li>Unfold <strong>Done</strong> to see finished tasks; <strong>Clear done</strong> removes them all, with an Undo toast inside the panel</li>
 <li>An overdue count badge appears on the To-Dos button itself whenever you have open, overdue tasks — visible without opening the panel</li>
-<li><strong>Priority</strong>, <strong>due date</strong>, and <strong>link</strong> chips sit below the task text. Priority cycles None → Low → Medium → High on click; due date shows "Today/Tomorrow" or the date, turning red once it's overdue. All three stay visible once set, and only reveal once you click the task to expand it while unset. Clicking the due date chip opens a small calendar popover with <strong>Today / Tomorrow / Next week</strong> presets up top for the common cases, month navigation for picking any other date, and a "Clear due date" option. Clicking the link chip opens a small popover with two tabs — <strong>Web link</strong> (an optional display-text field, a URL field, and Save; a bare domain or path is treated as an https:// link automatically) and <strong>Link to a node</strong> (a search box over your active documents — the same lookup Quick Assist and Global Search use — with results grouped into Documents, for linking the whole document, and Nodes, for one specific spot in it; leave the box empty to browse and pick a document without typing its title first), plus a Remove link option that clears whichever kind is set. A web-link chip shows your display text if you set one, or the link's hostname otherwise; a document-link chip shows the document's title with a plain document icon, and a node-link chip shows that node's own text with a small hierarchy icon, in place of the link-chain icon, so either reads as "jumps within Sakura" rather than "opens a website" — and both stay live, tracking the current title/text rather than a snapshot. Once any kind of link is attached, an open/jump button appears in the row's actions once it's expanded, next to Rewrite and Delete: for a web link it opens a new tab; for a document or node link it switches to that document if needed (scrolling to and briefly flashing the node, the same way backlinks do, when it's a node link specifically). If the node or document has since been deleted, the chip is shown with a dashed outline and clicking either it or the jump button gives a "That node no longer exists" (or "That document no longer exists") toast instead of failing silently</li>
+<li><strong>Waiting for…</strong> (task menu) moves a task to Waiting and names who it waits on; the row then says "Waiting for Karsten · since Oct 14". Click that line to change the name</li>
 <li>A task can either <strong>repeat</strong> or hold <strong>sub-tasks</strong> — never both at once. Click the <strong>Repeat</strong> chip to cycle None → Daily → Weekdays → Weekly; checking off a recurring task doesn't complete it, it just advances the due date to the next occurrence (a toast confirms the new date), so recurring tasks never pile up in Completed. Once a repeat is set, a small repeat glyph also shows on the due-date chip, even before you've set a due date, so it's clear at a glance that a task recurs</li>
 <li>Click a task to expand it, then click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
-<li>Right-click a task for a context menu — mark complete/open, duplicate the task, copy its text, move it to the top or bottom of the list, expand/collapse its sub-tasks, or delete it. Right-clicking directly on the task's own text, or on a sub-task row, falls through to the normal browser menu instead, so copy/paste and spellcheck still work there</li>
+<li>Right-click a task, or hover it and click ⋯, for its menu: Pin, Waiting for…, Due date…, Repeat, Link to row…, Rewrite with AI (when AI is on), Copy, Delete</li>
 <li>Settings → To-Dos: auto-expire completed tasks after a set number of days, and cap how many completed tasks are kept (oldest drop first). The Completed section starts collapsed each time the panel opens — click its header to expand it</li>
-<li>Typing <strong>@</strong> directly in a task's text renders an inline chip: <span class="todo-at todo-at-person">@name</span> for an assignee, <span class="todo-at todo-at-date">@date</span> (ISO date, <span class="todo-at todo-at-date">@today</span>/<span class="todo-at todo-at-date">@tomorrow</span>, or a weekday like <span class="todo-at todo-at-date">@fri</span>) for a date reference, and <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) for status. A suggestion popup appears as you type, offering the date/status keywords plus any names you've already used as <span class="todo-at todo-at-person">@name</span> elsewhere — Arrow keys to navigate, Enter/Tab to accept, Escape to dismiss. These are colored text only — display convenience within the task text, not linked to the priority/due-date/link fields above</li>
+<li>Typing <strong>@</strong> directly in a task's text renders an inline chip: <span class="todo-at todo-at-person">@name</span> for an assignee, <span class="todo-at todo-at-date">@date</span> (ISO date, <span class="todo-at todo-at-date">@today</span>/<span class="todo-at todo-at-date">@tomorrow</span>, or a weekday like <span class="todo-at todo-at-date">@fri</span>) for a date reference, and <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) for status. A suggestion popup appears as you type, offering the date/status keywords plus any names you've already used as <span class="todo-at todo-at-person">@name</span> elsewhere — Arrow keys to navigate, Enter/Tab to accept, Escape to dismiss. These are colored text only — display convenience within the task text, not linked to the due date or link fields</li>
 <li><span class="todo-tag-chip">#tag</span> renders as a colored tag chip — same autocomplete popup, suggesting tags you've already used. <span class="todo-remark">&gt;remark</span> renders everything from the &gt; to the end of the line as a muted italic aside. Both are display only, same as @ tokens</li>
-<li>Quick-find already searches the raw task text, so it matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text without any special handling — priority stays a separate structured field with its own dedicated filter</li>
+<li>Quick-find already searches the raw task text, so it matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text without any special handling</li>
 <li>Quick Assist searches your tasks too — type a task's text, or scope it with <code>todo: milk</code> — and clicking a result opens the panel and flashes the match</li>
 </ul>
 </div>
@@ -4764,47 +4689,15 @@ body.printing-generic #gpe-overlay{
        (Used to be a header row of icon buttons over a separate "Add a task" row; merged once the
        To-Dos AI header buttons were removed.) The whole bar is still the drag handle when the
        panel is floating, except on the input and the buttons themselves. -->
-  <!-- Header: title + open count, then Search, View (sort + filter in one menu) and ⋯ (Version
-       history, Export as PDF, Select or reorder), then Maximize/Close. The whole bar is the drag
+  <!-- Header: title + open count, then Search and ⋯ (Version history, Export as PDF, Select or
+       reorder), then Maximize/Close. The list has no sort or filter: it is always grouped Pinned,
+       Today, Upcoming, Anytime, Waiting. The whole bar is the drag
        handle when the panel is floating, except on its buttons. "Add a task" is its own quiet row
        just below (#todos-add-row) rather than the biggest thing in the header. -->
   <div id="todos-panel-header">
     <span id="todos-title">To-Dos</span><span id="todos-open-label"></span>
     <div class="todo-dd-wrap" id="todos-search-wrap">
       <button type="button" class="todo-dd-trigger" id="todos-search-trigger" data-tip="Find a task" aria-label="Find a task" aria-haspopup="true" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-    </div>
-    <div class="todo-dd-wrap" id="todos-filter-wrap">
-      <button type="button" class="todo-dd-trigger" id="todos-filter-trigger" data-tip="Sort and filter" aria-label="Sort and filter" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="17" x2="14" y2="17"/></svg></button>
-      <div class="todo-dd-menu" id="todos-filter-menu" role="menu">
-        <span class="todo-dd-label">Sort by</span>
-        <div id="todos-sort-menu" role="group" aria-label="Sort by">
-        <button type="button" class="todo-dd-item" data-value="manual" role="menuitemradio">Manual order<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-value="priority" role="menuitemradio">Priority<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-value="due" role="menuitemradio">Due date<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        </div>
-        <div class="todo-dd-divider"></div>
-        <span class="todo-dd-label">Priority</span>
-        <button type="button" class="todo-dd-item" data-group="priority" data-value="all" role="menuitemradio">All priorities<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="priority" data-value="high" role="menuitemradio">High only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="priority" data-value="med" role="menuitemradio">Medium only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="priority" data-value="low" role="menuitemradio">Low only<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="priority" data-value="none" role="menuitemradio">No priority<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <div class="todo-dd-divider"></div>
-        <span class="todo-dd-label">Status</span>
-        <button type="button" class="todo-dd-item" data-group="status" data-value="all" role="menuitemradio">All statuses<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="status" data-value="waiting" role="menuitemradio">Waiting<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="status" data-value="progress" role="menuitemradio">In progress<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="status" data-value="blocked" role="menuitemradio">Blocked<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="status" data-value="review" role="menuitemradio">In review<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="status" data-value="none" role="menuitemradio">No status<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <div class="todo-dd-divider"></div>
-        <span class="todo-dd-label">Due</span>
-        <button type="button" class="todo-dd-item" data-group="due" data-value="all" role="menuitemradio">Any due date<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="due" data-value="overdue" role="menuitemradio">Overdue<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="due" data-value="today" role="menuitemradio">Due today<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="due" data-value="upcoming" role="menuitemradio">Due later<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-        <button type="button" class="todo-dd-item" data-group="due" data-value="none" role="menuitemradio">No due date<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-      </div>
     </div>
     <div class="todo-dd-wrap" id="todos-more-wrap">
       <button type="button" class="todo-dd-trigger" id="todos-more-trigger" data-tip="More" aria-label="More To-Do actions" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
@@ -4833,25 +4726,6 @@ body.printing-generic #gpe-overlay{
   </div>
   <div id="todos-bulk-bar">
     <span id="todos-bulk-count">0 selected</span>
-    <div class="todo-dd-wrap" id="todos-bulk-priority-wrap">
-      <button type="button" class="todo-bulk-btn" id="todos-bulk-priority-trigger" data-tip="Set priority" aria-label="Set priority" aria-haspopup="true" aria-expanded="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 1-1h13.4a.5.5 0 0 1 .4.8L15 9l3.8 5.2a.5.5 0 0 1-.4.8H5"/></svg>Priority</button>
-      <div class="todo-dd-menu" id="todos-bulk-priority-menu" role="menu">
-        <button type="button" class="todo-dd-item" data-value="high">High</button>
-        <button type="button" class="todo-dd-item" data-value="med">Medium</button>
-        <button type="button" class="todo-dd-item" data-value="low">Low</button>
-        <button type="button" class="todo-dd-item" data-value="none">No priority</button>
-      </div>
-    </div>
-    <div class="todo-dd-wrap" id="todos-bulk-status-wrap">
-      <button type="button" class="todo-bulk-btn" id="todos-bulk-status-trigger" data-tip="Set status" aria-label="Set status" aria-haspopup="true" aria-expanded="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>Status</button>
-      <div class="todo-dd-menu" id="todos-bulk-status-menu" role="menu">
-        <button type="button" class="todo-dd-item" data-value="waiting">Waiting</button>
-        <button type="button" class="todo-dd-item" data-value="progress">In progress</button>
-        <button type="button" class="todo-dd-item" data-value="blocked">Blocked</button>
-        <button type="button" class="todo-dd-item" data-value="review">In review</button>
-        <button type="button" class="todo-dd-item" data-value="none">No status</button>
-      </div>
-    </div>
     <button type="button" class="todo-bulk-btn" id="todos-bulk-due-btn" data-tip="Set due date" aria-label="Set due date"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Due</button>
     <button type="button" class="todo-bulk-btn" id="todos-bulk-complete-btn" data-tip="Mark complete" aria-label="Mark complete"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Complete</button>
     <button type="button" class="todo-bulk-btn danger" id="todos-bulk-delete-btn" data-tip="Delete selected" aria-label="Delete selected"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</button>
@@ -32317,6 +32191,132 @@ function _addTagPopoverFromInput(){
 // Functions don't have this problem — function declarations are hoisted.
 let dockActiveTab=null;
 
+/* GENERATED:todoModel:START — DO NOT EDIT BY HAND. Source of truth: src/utils/todoModel.ts (tests: tests/unit/todoModel.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * The To-Do data model (owner, 2026-10-21: "think from outside in"): a task is its title, a due
+ * date, repeat, subtasks, a pin, who it's waiting for, a link and whether it's done. Everything
+ * a first-time user would have to learn (priority, In progress / Needs review / Blocked, a single
+ * Now task, who raised it) is gone; older lists are migrated on load by `normalizeTodo`.
+ *
+ * Shared by the desktop To-Dos panel (index.html) and the mobile Hub (hub.html) so both read and
+ * write the same shape. Pure: no storage, DOM or clock of its own.
+ */
+const TODO_SECTIONS = [
+    { key: 'pinned', label: 'Pinned' },
+    { key: 'today', label: 'Today' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'anytime', label: 'Anytime' },
+    { key: 'waiting', label: 'Waiting' }
+];
+const OLD_WAITING_STATUSES = ['waiting', 'blocked', 'review'];
+function cleanString(v, max) {
+    return typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null;
+}
+/** The first @mention in a task's text, without the @ ("Ask @Karsten" → "Karsten"), or ''. */
+function firstMention(text) {
+    const re = /(^|\s)@([A-Za-z][\w.-]*)/g;
+    let m;
+    while ((m = re.exec(String(text || '')))) {
+        const name = m[2].replace(/[.-]+$/, '');
+        // Date and status words typed as @today / @waiting are not people.
+        if (!/^(today|tomorrow|yesterday|mon|tue|wed|thu|fri|sat|sun|waiting|blocked|done|review)$/i.test(name))
+            return name;
+    }
+    return '';
+}
+/**
+ * Reads one stored task into the current shape, migrating older ones: a focus (Now) or In
+ * progress task becomes pinned; Waiting, Needs review and Blocked become waiting, for the
+ * first person @mentioned in the title. Priority, status, who raised it and fold state are
+ * dropped. Returns null for something that isn't a task.
+ */
+function normalizeTodo(raw, now) {
+    if (!raw || typeof raw !== 'object')
+        return null;
+    const t = raw;
+    if (typeof t.id !== 'string' || !t.id || typeof t.text !== 'string')
+        return null;
+    const nr = t.nodeRef;
+    const nodeRef = nr && typeof nr === 'object' && typeof nr.docId === 'string' && nr.docId && (nr.nodeId === null || nr.nodeId === undefined || Number.isFinite(nr.nodeId))
+        ? { docId: nr.docId, nodeId: nr.nodeId == null ? null : nr.nodeId }
+        : null;
+    const out = {
+        id: t.id,
+        text: t.text,
+        done: !!t.done,
+        createdAt: Number.isFinite(t.createdAt) ? t.createdAt : now,
+        completedAt: Number.isFinite(t.completedAt) ? t.completedAt : null,
+        dueDate: /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate || '') ? t.dueDate : null,
+        repeat: ['daily', 'weekdays', 'weekly'].includes(t.repeat) ? t.repeat : null,
+        subtasks: Array.isArray(t.subtasks)
+            ? t.subtasks
+                .filter((s) => s && typeof s.id === 'string' && typeof s.text === 'string')
+                .map((s) => ({ id: s.id, text: String(s.text).slice(0, 300), done: !!s.done }))
+            : [],
+        link: nodeRef ? null : cleanString(t.link, 2000),
+        linkLabel: nodeRef ? null : cleanString(t.linkLabel, 80),
+        nodeRef
+    };
+    if (t.pinned || t.focus || t.status === 'progress')
+        out.pinned = true;
+    if (typeof t.waitingFor === 'string')
+        out.waitingFor = t.waitingFor.trim().slice(0, 80);
+    else if (OLD_WAITING_STATUSES.includes(t.status))
+        out.waitingFor = firstMention(t.text);
+    if (out.waitingFor !== undefined && Number.isFinite(t.waitingSince))
+        out.waitingSince = t.waitingSince;
+    if (typeof t.remarkId === 'string' && t.remarkId)
+        out.remarkId = t.remarkId;
+    return out;
+}
+function isWaiting(t) {
+    return typeof t.waitingFor === 'string';
+}
+/**
+ * Where a task shows: done tasks in Done; then Pinned; then Waiting; then by due date — Today
+ * (due today or overdue), Upcoming (later) or Anytime (no date). `todayIso` is today's
+ * YYYY-MM-DD in the user's time zone.
+ */
+function todoSection(t, todayIso) {
+    if (t.done)
+        return 'done';
+    if (t.pinned)
+        return 'pinned';
+    if (isWaiting(t))
+        return 'waiting';
+    if (!t.dueDate)
+        return 'anytime';
+    return t.dueDate <= todayIso ? 'today' : 'upcoming';
+}
+/** Open tasks grouped into sections, in list order within each; empty sections are left out. */
+function groupTodos(todos, todayIso) {
+    return TODO_SECTIONS.map(s => ({ ...s, items: todos.filter(t => todoSection(t, todayIso) === s.key) })).filter(s => s.items.length);
+}
+/** "Waiting for Karsten", or just "Waiting" when nobody is named. */
+function waitingLabel(t) {
+    return t.waitingFor ? 'Waiting for ' + t.waitingFor : 'Waiting';
+}
+/** Names offered by "Waiting for…": everyone @mentioned or waited on in the list, most used first. */
+function waitingCandidates(todos) {
+    const counts = new Map();
+    const add = (n) => {
+        if (!n)
+            return;
+        const key = [...counts.keys()].find(k => k.toLowerCase() === n.toLowerCase()) || n;
+        counts.set(key, (counts.get(key) || 0) + 1);
+    };
+    todos.forEach(t => {
+        if (t.waitingFor)
+            add(t.waitingFor);
+        const re = /(^|\s)@([A-Za-z][\w.-]*)/g;
+        let m;
+        while ((m = re.exec(t.text)))
+            add(firstMention('@' + m[2]));
+    });
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([n]) => n);
+}
+
+/* GENERATED:todoModel:END */
 // =====================================================================
 // === Todos panel (app-level, no document association) ================
 // =====================================================================
@@ -32325,7 +32325,6 @@ let dockActiveTab=null;
   const TODOS_POS_KEY='sakura_todos_pos_v1';
   const TODOS_WIDTH_KEY='sakura_dock_panel_width_v1';
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
-  const PRIORITIES=['none','low','med','high'];
   let todosSelectedIds=new Set(); // bulk-select mode, open tasks only — scoped to this module, not persisted
   // Which rows currently show their full chip row + actions, via clicking the row's own
   // background (see the .todo-row click listener below) — replaces the old hover-to-reveal
@@ -32337,11 +32336,10 @@ let dockActiveTab=null;
   // its subtasks and a "+ Add subtask" foot, still for reading (owner, 2026-10-20: "it should still
   // read like a grey area but with full description"). There is no edit card: the title edits in
   // place, and everything else is on the row or in its menu. Each task remembers whether it's open.
+  // Which tasks are open (unfolded) is view state, kept for the session only (not saved with the task).
+  let todosOpenIds=new Set();
   function toggleTodoExpanded(id){
-    const t=todos.find(x=>x.id===id);
-    if(!t) return;
-    if(t.unfolded) delete t.unfolded; else t.unfolded=true;
-    saveTodos();
+    if(todosOpenIds.has(id)) todosOpenIds.delete(id); else todosOpenIds.add(id);
     renderTodos();
   }
   // Whether a click landed on something that already has its own meaning (editing text,
@@ -32379,8 +32377,7 @@ let dockActiveTab=null;
     sel.removeAllRanges();
     sel.addRange(range);
   }
-  const STATUSES=['none','waiting','progress','blocked','review'];
-  let todos=[]; // {id, text, done, createdAt, completedAt, priority, status, dueDate, link, linkLabel, nodeRef, repeat, subtasks, subtasksOpen} — array order IS open-task order
+  let todos=[]; // TodoItem (see the generated todoModel block) — array order IS open-task order
   // nodeRef ({docId,nodeId}|null) and link/linkLabel are mutually exclusive — a task's "attach a
   // link" slot holds either a web URL or a reference to a node in one of your documents, never
   // both. Whichever is set is what todo-link/todo-link-open render and act on.
@@ -32394,31 +32391,15 @@ let dockActiveTab=null;
   // hiddenElements — those are now fixed (always on; click-to-expand rows; badge on; sub-tasks
   // open; Completed section collapsed; every row element shown), ignored on load and dropped on
   // the next save.
-  let settings={ expiryDays:0, capMax:0, sortMode:'manual', priorityFilter:'all', statusFilter:'all', dueFilter:'all' };
+  let settings={ expiryDays:0, capMax:0 };
 
+  // Every task goes through normalizeTodo, which also migrates older lists (priority and status
+  // dropped, the Now task and In progress pinned, Waiting / Needs review / Blocked waiting).
   function loadTodos(){
     try{
       const raw=localStorage.getItem(TODOS_KEY);
-      if(raw){ const parsed=JSON.parse(raw); if(Array.isArray(parsed)) todos=parsed.map(t=>({
-        id:t.id, text:t.text, done:!!t.done, createdAt:t.createdAt||Date.now(), completedAt:t.completedAt||null,
-        priority: PRIORITIES.includes(t.priority)?t.priority:'none',
-        status: STATUSES.includes(t.status)?t.status:'none',
-        dueDate: /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate||'')?t.dueDate:null,
-        link: (typeof t.link==='string' && t.link.trim()) ? t.link.trim().slice(0,2000) : null,
-        linkLabel: (typeof t.linkLabel==='string' && t.linkLabel.trim()) ? t.linkLabel.trim().slice(0,80) : null,
-        // nodeId is a *number* — node ids come from normalizeNode()'s Number.isFinite(n.id)
-        // check/nextId counter, never a string. Requiring it to be a non-empty string here
-        // (an easy mistake given docId legitimately is one) silently nulled out every saved
-        // nodeRef on load, which looked exactly like "the link doesn't survive a reload".
-        nodeRef: (t.nodeRef && typeof t.nodeRef==='object' && typeof t.nodeRef.docId==='string' && t.nodeRef.docId && (t.nodeRef.nodeId===null || Number.isFinite(t.nodeRef.nodeId))) ? {docId:t.nodeRef.docId, nodeId:(t.nodeRef.nodeId===null?null:t.nodeRef.nodeId)} : null,
-        repeat: ['daily','weekdays','weekly'].includes(t.repeat) ? t.repeat : null,
-        // Who raised it, for a task added from a thread follow-up (the entry's author).
-        from: (typeof t.from==='string' && t.from.trim()) ? t.from.trim().slice(0,80) : null,
-        subtasks: Array.isArray(t.subtasks) ? t.subtasks.filter(s=>s && typeof s.id==='string' && typeof s.text==='string').map(s=>({id:s.id, text:String(s.text).slice(0,300), done:!!s.done})) : [],
-        subtasksOpen: t.subtasksOpen===undefined ? true : !!t.subtasksOpen,
-        focus: !!t.focus,
-        unfolded: !!t.unfolded
-      })); todos.forEach(t=>{ if(t.nodeRef){ t.link=null; t.linkLabel=null; } }); }
+      const parsed=raw?JSON.parse(raw):[];
+      todos=Array.isArray(parsed)?parsed.map(t=>normalizeTodo(t,Date.now())).filter(Boolean):[];
     }catch(e){ todos=[]; }
   }
   function saveTodos(){
@@ -32475,10 +32456,6 @@ let dockActiveTab=null;
       if(raw){ const d=JSON.parse(raw);
         settings.expiryDays = [0,1,3,7,14,30].includes(Number(d.expiryDays)) ? Number(d.expiryDays) : 0;
         settings.capMax = [0,10,25,50,100].includes(Number(d.capMax)) ? Number(d.capMax) : 0;
-        settings.sortMode = ['manual','priority','due'].includes(d.sortMode) ? d.sortMode : 'manual';
-        settings.priorityFilter = ['all','high','med','low','none'].includes(d.priorityFilter) ? d.priorityFilter : 'all';
-        settings.statusFilter = ['all','waiting','progress','blocked','review','none'].includes(d.statusFilter) ? d.statusFilter : 'all';
-        settings.dueFilter = ['all','overdue','today','upcoming','none'].includes(d.dueFilter) ? d.dueFilter : 'all';
       }
     }catch(e){}
   }
@@ -32512,7 +32489,7 @@ let dockActiveTab=null;
   function addTodo(text){
     const trimmed=String(text||'').trim();
     if(!trimmed) return;
-    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:null, repeat:null, subtasks:[], subtasksOpen:true });
+    todos.push({ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, dueDate:null, repeat:null, subtasks:[], link:null, linkLabel:null, nodeRef:null });
     saveTodos();
     renderTodos();
   }
@@ -32562,7 +32539,7 @@ let dockActiveTab=null;
   function openSubtaskInput(id){
     const t=todos.find(x=>x.id===id);
     if(!t || t.repeat) return;
-    if(!t.unfolded){ t.unfolded=true; saveTodos(); renderTodos(); }
+    if(!todosOpenIds.has(t.id)){ todosOpenIds.add(t.id); renderTodos(); }
     const row=document.querySelector(`#todos-body .todo-subtask-input-row[data-id="${id}"]`);
     if(!row) return;
     row.style.display='block';
@@ -32601,7 +32578,6 @@ let dockActiveTab=null;
     if(!Array.isArray(t.subtasks)) t.subtasks=[];
     const isFirst=t.subtasks.length===0;
     t.subtasks.push({id:subUid(), text:trimmed.slice(0,300), done:false});
-    if(isFirst) t.subtasksOpen=true;
     t.repeat=null; // recurring todos don't carry subtasks
     recomputeParentDone(t);
     pruneCompleted();
@@ -32655,13 +32631,6 @@ let dockActiveTab=null;
       renderTodos();
     });
   }
-  function toggleSubtasksOpen(parentId){
-    const t=todos.find(x=>x.id===parentId);
-    if(!t) return;
-    t.subtasksOpen=!t.subtasksOpen;
-    saveTodos();
-    renderTodos();
-  }
   function deleteTodo(id){
     const idx=todos.findIndex(x=>x.id===id);
     if(idx<0) return;
@@ -32701,28 +32670,6 @@ let dockActiveTab=null;
     bar.style.display=count>0?'flex':'none';
     const countEl=document.getElementById('todos-bulk-count');
     if(countEl) countEl.textContent=`${count} selected`;
-  }
-  function bulkSetPriority(priority){
-    const ids=[...todosSelectedIds];
-    if(!ids.length) return;
-    const prev=[];
-    ids.forEach(id=>{ const t=todos.find(x=>x.id===id); if(!t)return; prev.push({id,priority:t.priority||'none'}); t.priority=priority; });
-    saveTodos(); renderTodos();
-    showTodosActionToast(`Priority set on ${prev.length} task${prev.length===1?'':'s'}`,'Undo',()=>{
-      prev.forEach(p=>{ const t=todos.find(x=>x.id===p.id); if(t)t.priority=p.priority; });
-      saveTodos(); renderTodos();
-    });
-  }
-  function bulkSetStatus(status){
-    const ids=[...todosSelectedIds];
-    if(!ids.length) return;
-    const prev=[];
-    ids.forEach(id=>{ const t=todos.find(x=>x.id===id); if(!t)return; prev.push({id,status:t.status||'none'}); t.status=status; });
-    saveTodos(); renderTodos();
-    showTodosActionToast(`Status set on ${prev.length} task${prev.length===1?'':'s'}`,'Undo',()=>{
-      prev.forEach(p=>{ const t=todos.find(x=>x.id===p.id); if(t)t.status=p.status; });
-      saveTodos(); renderTodos();
-    });
   }
   function bulkComplete(){
     const ids=[...todosSelectedIds];
@@ -32825,40 +32772,33 @@ let dockActiveTab=null;
       return;
     }
   }
-  function cyclePriority(id){
+  // Pinned tasks sit on top of the list; any number can be pinned.
+  function setTodoPinned(id, on){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
-    const idx=PRIORITIES.indexOf(t.priority||'none');
-    t.priority=PRIORITIES[(idx+1)%PRIORITIES.length];
+    if(on) t.pinned=true; else delete t.pinned;
     saveTodos();
     renderTodos();
   }
-  function cycleStatus(id){
+  // name: who the task waits for ('' = nobody named), or null to stop waiting.
+  function setTodoWaiting(id, name){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
-    const idx=STATUSES.indexOf(t.status||'none');
-    t.status=STATUSES[(idx+1)%STATUSES.length];
+    if(name===null){ delete t.waitingFor; delete t.waitingSince; }
+    else{
+      const was=isWaiting(t);
+      t.waitingFor=String(name).trim().replace(/^@/,'').slice(0,80);
+      if(!was) t.waitingSince=Date.now();
+    }
     saveTodos();
     renderTodos();
   }
-  // Now holds the one task you chose to focus on (owner, 2026-10-20: "focus task will automatically
-  // be moved to the Now segment"); choosing another moves it, nothing lands there on its own.
-  function setTodoFocus(id, on){
+  async function askWaitingFor(id){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
-    todos.forEach(x=>{ if(x.focus) delete x.focus; });
-    if(on) t.focus=true;
-    saveTodos();
-    renderTodos();
-  }
-  function setTodoProp(id, field, value){
-    const t=todos.find(x=>x.id===id);
-    if(!t) return;
-    if(field==='priority'&&PRIORITIES.includes(value)) t.priority=value;
-    else if(field==='status'&&STATUSES.includes(value)) t.status=value;
-    else return;
-    saveTodos();
-    renderTodos();
+    const name=await sakuraPrompt({title:'Waiting for', body:'Who is this task waiting on?', defaultValue:t.waitingFor||'', confirmLabel:'Save'});
+    if(name===null) return;
+    setTodoWaiting(id, name);
   }
   function setDueDate(id, dateStr){
     const t=todos.find(x=>x.id===id);
@@ -32940,7 +32880,7 @@ let dockActiveTab=null;
       revealNodeInDoc(ref.docId, ref.nodeId);
       // A task added from a thread follow-up goes to that entry, with the thread open (owner,
       // 2026-10-19); older such tasks, saved without the entry's id, open the row's thread.
-      if(t && (t.remarkId || t.from)){
+      if(t && t.remarkId){
         const entry=t.remarkId && remarks.find(r=>r.id===t.remarkId && r.anchorNodeId===ref.nodeId);
         if(entry) revealInlineObject('remark', entry.id);
         else if(typeof revealMarkerEntry==='function') revealMarkerEntry(ref.nodeId);
@@ -33063,10 +33003,7 @@ let dockActiveTab=null;
     const q=String(query||'').trim().toLowerCase();
     if(!q) return true;
     if(String(t.text||'').toLowerCase().includes(q)) return true;
-    const priority=t.priority||'none';
-    if(priority!=='none'&&priorityLabel(priority).toLowerCase().includes(q)) return true;
-    const status=t.status||'none';
-    if(status!=='none'&&statusLabel(status).toLowerCase().includes(q)) return true;
+    if(isWaiting(t)&&waitingLabel(t).toLowerCase().includes(q)) return true;
     if(t.dueDate){
       if(t.dueDate.toLowerCase().includes(q)) return true;
       const fmted=fmtDue(t.dueDate);
@@ -33160,85 +33097,27 @@ let dockActiveTab=null;
     }
   }
 
-  const PRIORITY_RANK={high:3,med:2,low:1,none:0};
-  // "today" and "overdue" are computed once per render call, not cached, since a todo panel
-  // left open across midnight should reclassify its own dates on the next natural re-render
-  // rather than needing a reload — renderTodos() already re-runs this on every mutation.
-  function todoDueBucket(t){
-    if(!t.dueDate) return 'none';
-    const todayIso=toISODate(new Date());
-    if(t.dueDate<todayIso) return 'overdue';
-    if(t.dueDate===todayIso) return 'today';
-    return 'upcoming';
-  }
-  function applyTodoFilters(list){
-    let out=list;
-    if(settings.priorityFilter!=='all') out=out.filter(t=>(t.priority||'none')===settings.priorityFilter);
-    if(settings.statusFilter!=='all') out=out.filter(t=>(t.status||'none')===settings.statusFilter);
-    if(settings.dueFilter!=='all') out=out.filter(t=>todoDueBucket(t)===settings.dueFilter);
-    return out;
-  }
-  function anyTodoFilterActive(){ return settings.priorityFilter!=='all'||settings.statusFilter!=='all'||settings.dueFilter!=='all' }
-  function sortOpenList(list){
-    if(settings.sortMode==='priority'){
-      return [...list].sort((a,b)=>PRIORITY_RANK[b.priority||'none']-PRIORITY_RANK[a.priority||'none']);
-    }
-    if(settings.sortMode==='due'){
-      return [...list].sort((a,b)=>{
-        if(!a.dueDate&&!b.dueDate) return 0;
-        if(!a.dueDate) return 1; // no due date sorts last
-        if(!b.dueDate) return -1;
-        return a.dueDate.localeCompare(b.dueDate);
-      });
-    }
-    return list; // manual: natural array order
-  }
+  // Done tasks, most recently finished first; open tasks keep list order.
   function getVisibleTodos(){
-    const open=sortOpenList(applyTodoFilters(todos.filter(t=>!t.done)));
-    const done=applyTodoFilters(todos.filter(t=>t.done)).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
+    const open=todos.filter(t=>!t.done);
+    const done=todos.filter(t=>t.done).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
     return {open, done};
   }
 
-  // Open tasks are grouped by when they're due (owner, 2026-10-21, mockup todos-by-when-v2.png): Now
-  // (the one task you chose to focus on, right-click › Focus on this) on top, then Overdue, Today,
-  // This week, Later and No date. The status is the ring around the checkbox (green = doing, dashed =
-  // waiting), so it needs no group of its own; tasks you're doing come first within a group. Each
-  // group otherwise keeps the list's own sort order (manual, priority or due date).
-  function pickNowTodo(open){
-    return open.find(t=>t.focus)||null;
-  }
-  // "This week" runs to Sunday; on a Saturday or Sunday it means the coming week.
-  function todoWhenGroup(t){
-    if(!t.dueDate) return 'none';
-    const d=parseISODate(t.dueDate); if(!d) return 'none';
-    const today=new Date(); today.setHours(0,0,0,0);
-    const diff=Math.round((d-today)/86400000);
-    if(diff<0) return 'overdue';
-    if(diff===0) return 'today';
-    let toSunday=(7-today.getDay())%7; if(toSunday<2) toSunday+=7;
-    return diff<=toSunday?'week':'later';
-  }
+  // Open tasks show in sections (owner, 2026-10-21, mockup todos-final-model-mockup.png): Pinned,
+  // Today (due today or overdue), Upcoming, Anytime (no date), Waiting. Done folds into one line at
+  // the bottom. "Today" is computed on every render, so a panel left open across midnight moves its
+  // tasks on the next change.
   function openSectionsHtml(open,manualOrder){
-    const now=pickNowTodo(open);
-    const rest=open.filter(t=>t!==now);
-    const doingFirst=list=>[...list.filter(t=>t.status==='progress'),...list.filter(t=>t.status!=='progress')];
-    const groups=[
-      {key:'overdue', label:'Overdue'},
-      {key:'today', label:'Today'},
-      {key:'week', label:'This week'},
-      {key:'later', label:'Later'},
-      {key:'none', label:'No date'},
-    ].map(g=>({...g, items:doingFirst(rest.filter(t=>todoWhenGroup(t)===g.key))}));
     let html='';
-    if(now) html+=`<div class="todos-group todos-now"><div class="todos-group-label todos-now-label">Now</div>${todoRowHtml(now,manualOrder,'now')}</div>`;
-    groups.forEach(g=>{
-      if(!g.items.length) return;
-      html+=`<div class="todos-group todos-group-${g.key}"><div class="todos-group-label">${g.label}<span class="todos-group-count">${g.items.length}</span></div>`;
+    groupTodos(open,toISODate(new Date())).forEach(g=>{
+      html+=`<div class="todos-group todos-group-${g.key}"><div class="todos-group-label">${g.key==='pinned'?PIN_SVG(11):''}${g.label}<span class="todos-group-count">${g.items.length}</span></div>`;
       g.items.forEach(t=>{ html+=todoRowHtml(t,manualOrder,g.key); });
       html+=`</div>`;
     });
     return html;
   }
+  const PIN_SVG=size=>`<svg class="todo-pin-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>`;
 
   function renderTodos(){
     const body=document.getElementById('todos-body');
@@ -33296,22 +33175,25 @@ let dockActiveTab=null;
     // a child happens to render a grab cursor, so the handle's own visibility alone can't
     // be what gates it.
     const dragUiActive=document.getElementById('todos-panel')?.classList.contains('select-mode');
-    const manualOrder=settings.sortMode==='manual'&&dragUiActive;
+    const manualOrder=!!dragUiActive;
     const openLabelEl=document.getElementById('todos-open-label');
     if(openLabelEl) openLabelEl.textContent=open.length?`${open.length} open`:'';
 
     let html='';
     if(!open.length){
-      html+=`<div class="todos-empty">${todos.some(t=>!t.done)?'No open tasks match this filter.':'No open tasks. Add one above.'}</div>`;
+      html+=`<div class="todos-empty">${todos.some(t=>!t.done)?'No open tasks match your search.':'No open tasks. Add one above.'}</div>`;
     } else {
       html+=openSectionsHtml(open,manualOrder);
     }
-    html+=`<div class="todos-section-label"><button type="button" class="todos-section-collapse-btn" id="todos-completed-collapse-btn" aria-label="${completedOpen?'Collapse completed':'Expand completed'}"><svg class="todos-section-chevron${completedOpen?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg><span>Completed${done.length?' · '+done.length:''}</span></button>${done.length?'<button type="button" class="todos-clear-completed-btn" id="todos-clear-completed-btn">Clear completed</button>':''}</div>`;
-    if(completedOpen){
-      if(!done.length){
-        html+=`<div class="todos-empty">${todos.some(t=>t.done)?'No completed tasks match this filter.':'Nothing completed yet.'}</div>`;
-      } else {
-        done.forEach(t=>{ html+=todoRowHtml(t,false); });
+    // Done folds into one line, shown only once something is done.
+    if(todos.some(t=>t.done)){
+      html+=`<div class="todos-section-label"><button type="button" class="todos-section-collapse-btn" id="todos-completed-collapse-btn" aria-label="${completedOpen?'Hide done tasks':'Show done tasks'}"><svg class="todos-section-chevron${completedOpen?' open':''}" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg><span>Done${done.length?' · '+done.length:''}</span></button>${done.length&&completedOpen?'<button type="button" class="todos-clear-completed-btn" id="todos-clear-completed-btn">Clear done</button>':''}</div>`;
+      if(completedOpen){
+        if(!done.length){
+          html+=`<div class="todos-empty">${todos.some(t=>t.done)?'No done tasks match your search.':'Nothing done yet.'}</div>`;
+        } else {
+          done.forEach(t=>{ html+=todoRowHtml(t,false); });
+        }
       }
     }
     body.innerHTML=html;
@@ -33337,15 +33219,6 @@ let dockActiveTab=null;
     if(clearCompletedBtn) clearCompletedBtn.addEventListener('click', clearCompleted);
     body.querySelectorAll('.todo-rewrite').forEach(btn=>{
       btn.addEventListener('click',()=>rewriteTodo(btn.getAttribute('data-id')));
-    });
-    body.querySelectorAll('.todo-priority').forEach(btn=>{
-      btn.addEventListener('click',()=>cyclePriority(btn.getAttribute('data-id')));
-    });
-    body.querySelectorAll('.todo-status').forEach(btn=>{
-      btn.addEventListener('click',()=>cycleStatus(btn.getAttribute('data-id')));
-    });
-    body.querySelectorAll('.todo-prop-opt').forEach(btn=>{
-      btn.addEventListener('click',()=>setTodoProp(btn.getAttribute('data-id'), btn.getAttribute('data-field'), btn.getAttribute('data-value')));
     });
     body.querySelectorAll('.todo-due').forEach(btn=>{
       btn.addEventListener('click',()=>openDueDateEditor(btn));
@@ -33393,25 +33266,8 @@ let dockActiveTab=null;
         showSbContextMenu(r.left, r.bottom+4, todoContextItems(t));
       });
     });
-    body.querySelectorAll('.todo-pri-dot').forEach(dot=>{
-      dot.addEventListener('mousedown',e=>{ e.preventDefault(); e.stopPropagation(); });
-      dot.addEventListener('click',e=>{
-        e.stopPropagation();
-        const t=todos.find(x=>x.id===dot.getAttribute('data-id'));
-        if(!t) return;
-        const r=dot.getBoundingClientRect();
-        showSbContextMenu(r.left, r.bottom+4, todoContextItems(t));
-      });
-    });
-    // A cut-off title (two lines and "…") unfolds on the first click, for reading; a click on the
-    // full title then edits it.
-    body.querySelectorAll('.todo-row:not(.expanded) .todo-text').forEach(elx=>{
-      elx.addEventListener('mousedown',e=>{
-        if(e.button!==0||document.activeElement===elx) return;
-        if(elx.scrollHeight<=elx.clientHeight+1) return;
-        e.preventDefault();
-        toggleTodoExpanded(elx.getAttribute('data-id'));
-      });
+    body.querySelectorAll('.todo-waiting-line').forEach(line=>{
+      line.addEventListener('click',e=>{ e.stopPropagation(); askWaitingFor(line.getAttribute('data-id')); });
     });
     body.querySelectorAll('.todo-subtask-input').forEach(inp=>{
       const updateCount=()=>{
@@ -33547,8 +33403,13 @@ let dockActiveTab=null;
             range.deleteContents();
             const nl=document.createTextNode('\n');
             range.insertNode(nl);
-            range.setStartAfter(nl);
-            range.setEndAfter(nl);
+            // A line break at the very end needs something after it to put the caret on, or the
+            // browser keeps the caret before it and the next keystrokes land on the old line. The
+            // zero-width space is dropped on save (editTodoText).
+            const after=document.createTextNode('\u200B');
+            nl.after(after);
+            range.setStart(after,1);
+            range.setEnd(after,1);
             sel.removeAllRanges();
             sel.addRange(range);
           }
@@ -33723,32 +33584,15 @@ let dockActiveTab=null;
     openTodoAtSuggest(elx, id, atPos, query, trigger);
   }
 
-  function priorityTitle(p){
-    return p==='high'?'Priority: High (click to cycle)':p==='med'?'Priority: Medium (click to cycle)':p==='low'?'Priority: Low (click to cycle)':'Priority: None (click to set)';
-  }
-
-  function priorityLabel(p){
-    return p==='high'?'High':p==='med'?'Medium':p==='low'?'Low':'Priority';
-  }
-
-  function statusTitle(s){
-    return s==='waiting'?'Status: Waiting (click to cycle)':s==='progress'?'Status: In Progress (click to cycle)':s==='blocked'?'Status: Blocked (click to cycle)':s==='review'?'Status: Review (click to cycle)':'Status: None (click to set)';
-  }
-
-  function statusLabel(s){
-    return s==='waiting'?'Waiting':s==='progress'?'In Progress':s==='blocked'?'Blocked':s==='review'?'Needs review':'Status';
-  }
-
-  // The subtask progress control and the "add subtask" button live in the task's meta row (see
-  // todoRowHtml) rather than on a line of their own — one row of pills per task.
+  // The subtask count sits on the right of the task line, next to the date; clicking it opens the task.
   function subtaskMetaHtml(t){
     const subs=t.subtasks||[];
     if(!subs.length) return '';
     const doneCount=subs.filter(s=>s.done).length;
-    const open=!!t.unfolded;
-    return `<button type="button" class="todo-subtasks-toggle${open?' open':' rm'}" data-id="${t.id}" aria-expanded="${open}" data-tip="${open?'Hide subtasks':'Show subtasks'}" aria-label="${open?'Hide subtasks':'Show subtasks'}">`
-      +`<svg class="todo-subtasks-chevron${open?' open':''}" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`
-      +`<span>${open?'':doneCount+' of '+subs.length}</span>`
+    const open=todosOpenIds.has(t.id);
+    return `<button type="button" class="todo-subtasks-toggle${open?' open':''}" data-id="${t.id}" aria-expanded="${open}" data-tip="${doneCount} of ${subs.length} subtasks done" aria-label="${open?'Hide subtasks':'Show subtasks'}">`
+      +`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg>`
+      +`<span>${doneCount}/${subs.length}</span>`
     +`</button>`;
   }
   function subtasksSectionHtml(t){
@@ -33784,52 +33628,11 @@ let dockActiveTab=null;
     +`</div>`;
     return html;
   }
-  function duplicateTodo(id){
-    const idx=todos.findIndex(x=>x.id===id);
-    if(idx<0) return;
-    const t=todos[idx];
-    const copy={
-      id: uid(), text: t.text, done:false, createdAt: Date.now(), completedAt: null,
-      priority: t.priority||'none', status: t.status||'none', dueDate: t.dueDate||null, link: t.link||null, linkLabel: t.linkLabel||null,
-      nodeRef: t.nodeRef ? {docId:t.nodeRef.docId, nodeId:t.nodeRef.nodeId} : null,
-      repeat: t.repeat||null,
-      subtasks: (t.subtasks||[]).map(s=>({id:subUid(), text:s.text, done:false})),
-      subtasksOpen: t.subtasksOpen!==false
-    };
-    todos.splice(idx+1,0,copy);
-    saveTodos();
-    renderTodos();
-    showTodosActionToast('Task duplicated');
-  }
   async function copyTodoText(id){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
     try{ await navigator.clipboard.writeText(t.text); showTodosActionToast('Copied to clipboard'); }
     catch(e){}
-  }
-  function moveTodoEdge(id, toTop){
-    const idx=todos.findIndex(x=>x.id===id);
-    if(idx<0) return;
-    const t=todos[idx];
-    todos.splice(idx,1);
-    if(t.done){
-      if(toTop){
-        const firstDoneIdx=todos.findIndex(x=>x.done);
-        if(firstDoneIdx<0) todos.push(t); else todos.splice(firstDoneIdx,0,t);
-      } else {
-        todos.push(t);
-      }
-    } else {
-      if(toTop){
-        todos.unshift(t);
-      } else {
-        let insertIdx=todos.findIndex(x=>x.done);
-        if(insertIdx<0) insertIdx=todos.length;
-        todos.splice(insertIdx,0,t);
-      }
-    }
-    saveTodos();
-    renderTodos();
   }
   // A popover opened from the menu (due date, link) reads the task's values from its row button and
   // sits under the row's ⋯ button.
@@ -33840,49 +33643,36 @@ let dockActiveTab=null;
     if(!src||!at) return null;
     return {getAttribute:k=>src.getAttribute(k), getBoundingClientRect:()=>at.getBoundingClientRect()};
   }
-  // The task menu (⋯ on hover, or right-click) holds every setting that isn't on the row itself:
-  // there is no edit card (owner, 2026-10-20: "can we avoid this editable view completely?"). It was
-  // too tall (owner, same day: "make it better with sub menus"): Priority and Status stay one click;
-  // Repeat and the less used actions sit behind flyouts.
+  // The task menu (⋯ on hover, or right-click) holds every setting; there is no edit card. Seven
+  // plain items (owner, 2026-10-21, mockup todos-final-model-mockup.png): Pin, Waiting for…, Due
+  // date, Repeat, Link, Copy, Delete (plus Rewrite with AI when AI is on).
   function todoContextItems(t){
-    const items=[], more=[];
+    const items=[];
     const hasSubtasks=!!(t.subtasks && t.subtasks.length);
+    const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     if(!t.done){
-      const st=t.status||'none', waiting=st==='waiting'||st==='review'||st==='blocked';
-      const choice=(field,list,current)=>list.map(([v,label])=>({label, current:current===v, onClick:()=>setTodoProp(t.id,field,v)}));
-      items.push({heading:'Priority'});
-      items.push({choices:choice('priority',TODO_PRIORITY_OPTS,t.priority||'none'), cols:4});
-      items.push({heading:'Status'});
-      items.push({choices:choice('status',TODO_STATUS_OPTS,waiting?'waiting':st), cols:3});
-      if(waiting){
-        items.push({heading:'Waiting reason'});
-        items.push({choices:choice('status',TODO_WAIT_REASON_OPTS,st), cols:3});
-      }
+      items.push({label: t.pinned?'Unpin':'Pin', icon:PIN_SVG(13), onClick:()=>setTodoPinned(t.id,!t.pinned)});
+      const waiting=isWaiting(t);
+      const names=waitingCandidates(todos).slice(0,6);
+      if(waiting&&t.waitingFor&&!names.some(n=>n.toLowerCase()===t.waitingFor.toLowerCase())) names.unshift(t.waitingFor);
+      const waitSub=names.map(n=>({label:n, icon:waiting&&(t.waitingFor||'').toLowerCase()===n.toLowerCase()?CHECK:'', onClick:()=>setTodoWaiting(t.id,n)}));
+      waitSub.push({label:names.length?'Someone else…':'Someone…', onClick:()=>askWaitingFor(t.id)});
+      if(waiting){ waitSub.push({divider:true}); waitSub.push({label:'Not waiting', onClick:()=>setTodoWaiting(t.id,null)}); }
+      items.push({label:'Waiting for…', meta:waiting?(t.waitingFor||'—'):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M7 2v4a5 5 0 0 0 10 0V2M7 22v-4a5 5 0 0 1 10 0v4"/></svg>', submenu:waitSub});
       items.push({divider:true});
-      items.push({label: t.dueDate?'Change due date…':'Add due date…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-due'); if(a) openDueDateEditor(a); }});
-      items.push({label: (t.link||t.nodeRef)?'Change link…':'Add link…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-link'); if(a) openLinkEditor(a); }});
-      if(!t.repeat) items.push({label:'Add subtask', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>', onClick:()=>openSubtaskInput(t.id)});
+      items.push({label:'Due date…', meta:t.dueDate?fmtDue(t.dueDate):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-due'); if(a) openDueDateEditor(a); }});
       if(!hasSubtasks){
         const reps=[[null,'Off'],['daily','Daily'],['weekdays','Weekdays'],['weekly','Weekly']];
-        items.push({label:'Repeat', meta:(reps.find(([v])=>(t.repeat||null)===v)||reps[0])[1], icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>', submenu:reps.map(([v,label])=>({label, icon:(t.repeat||null)===v?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'', onClick:()=>setTodoRepeat(t.id,v)}))});
+        items.push({label:'Repeat', meta:t.repeat?repeatLabel(t.repeat):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>', submenu:reps.map(([v,label])=>({label, icon:(t.repeat||null)===v?CHECK:'', onClick:()=>setTodoRepeat(t.id,v)}))});
       }
+      const linked=!!(t.link||t.nodeRef);
+      items.push({label: linked?'Change link…':'Link to row…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-link'); if(a) openLinkEditor(a); }});
       items.push({divider:true});
     }
-    if(!hasSubtasks){
-      items.push({label: t.done?'Mark as open':'Mark as complete', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>', onClick: async()=>{ toggleTodo(t.id); }});
-    }
-    if(!t.done){
-      items.push({label: t.focus?'Remove focus':'Focus on this', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>', onClick:()=>setTodoFocus(t.id,!t.focus)});
-    }
-    if(!t.done&&(typeof featureAiEnabled==='undefined'||featureAiEnabled)) more.push({label:'Rewrite with AI', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
-    more.push({label:'Duplicate task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ duplicateTodo(t.id); }});
-    more.push({label:'Copy task text', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await copyTodoText(t.id); }});
-    more.push({divider:true});
-    more.push({label:'Move to top', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, true); }});
-    more.push({label:'Move to bottom', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>', onClick: async()=>{ moveTodoEdge(t.id, false); }});
-    items.push({label:'More', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>', submenu:more});
-    items.push({divider:true});
-    items.push({label:'Delete task', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', danger:true, onClick: async()=>{ deleteTodo(t.id); }});
+    // Rewrite with AI stays (an earlier AI cut-down kept it on tasks); only shown with AI on.
+    if(!t.done&&(typeof featureAiEnabled==='undefined'||featureAiEnabled)) items.push({label:'Rewrite with AI', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
+    items.push({label:'Copy', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await copyTodoText(t.id); }});
+    items.push({label:'Delete', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', danger:true, onClick: async()=>{ deleteTodo(t.id); }});
     return items;
   }
 
@@ -33896,19 +33686,25 @@ let dockActiveTab=null;
   function docRefIconSvg(size){
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
   }
-  // Options for the task menu (⋯ or right-click): Priority and Status show every option, so one
-  // click sets the value.
-  const TODO_PRIORITY_OPTS=[['none','None'],['low','Low'],['med','Medium'],['high','High']];
-  // Three statuses; Review and Blocked are kinds of Waiting, picked as its reason (still stored as
-  // their own status values, so filters, sync and older lists keep working).
-  const TODO_STATUS_OPTS=[['none','None'],['progress','In progress'],['waiting','Waiting']];
-  const TODO_WAIT_REASON_OPTS=[['waiting','None'],['review','Needs review'],['blocked','Blocked']];
+  // The date in a few characters: Today / Tomorrow / Yesterday, a weekday within the coming week,
+  // otherwise "Oct 2".
+  function dueShort(dateStr){
+    const d=parseISODate(dateStr); if(!d) return '';
+    const today=new Date(); today.setHours(0,0,0,0);
+    const diff=Math.round((d-today)/86400000);
+    if(diff>=2&&diff<=6) return d.toLocaleDateString(undefined,{weekday:'short'});
+    return fmtDue(dateStr);
+  }
 
+  // A task is one line (owner, 2026-10-21, mockup todos-final-model-mockup.png): checkbox, title, and
+  // on the right small icons (subtasks n/m, repeat, link) and the date, red when overdue. Titles are
+  // often long (owner, 2026-10-22: "professional day-to-day IT tasks"), so at rest a title shows two
+  // lines at most; clicking it edits the full text in place, and an open task shows it in full. A
+  // waiting task adds one grey line: "Waiting for Karsten · since Oct 14". Opening a task (click its
+  // background or the subtask count) shows its subtasks and where it links to.
   function todoRowHtml(t, draggable, group){
     const due=t.dueDate;
     const overdue=isOverdue(due, t.done);
-    const priority=t.priority||'none';
-    const status=t.status||'none';
     const link=t.link;
     const nodeRef=t.nodeRef||null;
     const isDocRef=!!(nodeRef && !nodeRef.nodeId);
@@ -33917,79 +33713,45 @@ let dockActiveTab=null;
     const linkLabel=t.linkLabel||'';
     const linkDisplay=nodeRef
       ? (nodeRefInfo.missing
-          ? (isDocRef ? 'Document not found' : 'Node not found')
-          : (isDocRef ? (nodeRefInfo.docTitle||'Untitled') : (nodeRefInfo.text ? nodeRefInfo.text.slice(0,60) : '(untitled node)')))
+          ? (isDocRef ? 'Document not found' : 'Row not found')
+          : (isDocRef ? (nodeRefInfo.docTitle||'Untitled') : (nodeRefInfo.text ? nodeRefInfo.text.slice(0,60) : '(untitled row)')))
       : (linkLabel||fmtLink(link));
-    const hasSubtasks=!!(t.subtasks && t.subtasks.length);
-    // Whether this row has anything actually visible on its meta-row besides the (always-present,
-    // hover-only) action buttons — used to collapse that row's reserved height down to ~nothing
-    // for a plain checklist-style task, rather than leaving a same-height but visually-empty gap
-    // under every task that has no priority/due/etc. set. See .todo-row-nochips below.
-    // At rest a task is one line (owner-approved mockup, 2026-10-20): the title (two lines at most)
-    // with a priority dot after it, then on the right a Waiting reason chip (Needs review, Blocked;
-    // the group heading says the rest), subtask progress, repeat and the due date. A link has its own
-    // source line below. Everything is back as labelled properties once the row is expanded.
-    // Grouped by when (owner, 2026-10-21): one grey line under the title, only when there is something
-    // to say: Waiting (with its reason), the date in the group's terms (the heading says Overdue /
-    // Today, so the date stays grey; Now says "Due …" and is red when late), repeat, then subtask
-    // progress while folded.
-    const waitingStatus=status==='waiting'||status==='blocked'||status==='review';
-    const dueText=!due?'':group==='now'?'Due '+fmtDue(due).replace(/^(Today|Tomorrow|Yesterday)$/,w=>w.toLowerCase())
-      :group==='week'?(fmtDue(due)==='Tomorrow'?'Tomorrow':parseISODate(due).toLocaleDateString(undefined,{weekday:'short'}))
-      :group?fmtDue(due):(overdue?'Overdue · ':'')+fmtDue(due);
-    const showDue=!!due&&group!=='today';
-    const hasVisibleChips=(!t.done&&waitingStatus)||hasSubtasks||(!!t.repeat&&!hasSubtasks)||showDue;
-    const expanded=!!t.unfolded&&!t.done;
-    const priDot=(!t.done&&(priority==='high'||priority==='med'))?`<span class="todo-pri-dot" data-id="${t.id}" data-priority="${priority}" data-tip="${priority==='high'?'High priority':'Medium priority'} — click to change"></span>`:'';
-    // At rest a link reads as where the task points, and clicking it goes there (a row: jump to it;
-    // a web link: open it). Changing the link is in the open task's Link row. A task added from a
-    // thread follow-up also says who raised it.
-    const fromHtml=t.from?`<span class="todo-source-from">From ${esc(t.from)}</span>`:'';
-    const sourceHtml=!hasAttachment&&!fromHtml?'':`<div class="todo-source-row">`
-      + (nodeRef
-        ? (nodeRefInfo.missing
-            ? `${fromHtml}<span class="todo-source missing">${isDocRef?'Document not found':'Row not found'}</span>`
-            : `<button type="button" class="todo-source todo-nodejump-open" data-id="${t.id}" data-tip="${escAttr(isDocRef?'Open '+(nodeRefInfo.docTitle||'Untitled'):'Go to this row in '+(nodeRefInfo.docTitle||'Untitled'))}">${isDocRef?docRefIconSvg(11):nodeRefIconSvg(11)}${fromHtml?fromHtml+'<span class="todo-source-sep">·</span>':''}<span class="todo-source-doc">${esc(nodeRefInfo.docTitle||'Untitled')}</span>${isDocRef?'':`<span class="todo-source-sep">›</span><span class="todo-source-row-text">${esc(nodeRefInfo.text||'(untitled row)')}</span>`}</button>`)
-        : (link
-            ? `<a class="todo-source" href="${escAttr(sanitizeHrefUrl(link))}" target="_blank" rel="noopener noreferrer" data-tip="Open link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span class="todo-source-row-text">${esc(linkDisplay)}</span></a>`
-            : fromHtml))
-      +`</div>`;
-    const priorityBtn=`<button class="todo-priority${priority!=='none'?' set':''}" data-id="${t.id}" data-priority="${priority}" data-tip="${priorityTitle(priority)}" aria-label="Cycle priority">`
-        +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${priority!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
-        +`<span>${priorityLabel(priority)}</span>`
-      +`</button>`;
-    const statusBtn=`<button class="todo-status${status!=='none'?' set':''}${!t.done&&waitingStatus?' rm':''}" data-id="${t.id}" data-status="${status}" data-tip="${statusTitle(status)}" aria-label="Cycle status">`
-        +`<svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3.5" fill="${status!=='none'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.2"/></svg>`
-        +`<span>${statusLabel(status)}</span>`
-      +`</button>`;
-    const dueBtn=`<button class="todo-due${due?' set':''}${overdue&&(!group||group==='now')?' overdue':''}${t.repeat?' recurring':''}${showDue?' rm':' rest-hidden'}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?(t.repeat?`Change due date · ${repeatTitle(t.repeat)}`:'Change due date'):'Set due date'}">`
-        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`
-        +`<span>${due?esc(dueText):'Add date'}</span>`
-        + (t.repeat ? `<svg class="todo-due-repeat-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>` : '')
-      +`</button>`;
-    const linkBtnAttrs=`data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}"`;
-    const linkBtn=`<button class="todo-link${hasAttachment?' set':''}${nodeRef?' node-link':''}${(nodeRef&&nodeRefInfo.missing)?' link-missing':''}" ${linkBtnAttrs} data-tip="${hasAttachment?'Change link':'Attach a link'}">`
-        + (nodeRef ? (isDocRef?docRefIconSvg(10):nodeRefIconSvg(10)) : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`)
-        +`<span>${hasAttachment?esc(linkDisplay):'Add link'}</span>`
-      +`</button>`;
-    const repeatBtn=(!hasSubtasks ? `<button class="todo-repeat${t.repeat?' set rm':''}" data-id="${t.id}" data-tip="${repeatTitle(t.repeat)}" aria-label="Set repeat">`
-        +`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
-        +`<span>${t.repeat?repeatLabel(t.repeat):'Repeat'}</span>`
-      +`</button>` : '');
-    const moreBtn=t.done?'':`<button type="button" class="todo-more-btn" data-id="${t.id}" data-tip="More" aria-label="Task menu"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>`;
-    return `<div class="todo-row${t.done?' completed':''}${hasVisibleChips?'':' todo-row-nochips'}${expanded?' expanded':''}${due?' has-due':''}${!t.done&&waitingStatus?' is-waiting':''}" data-id="${t.id}" data-status="${status}" ${draggable?'draggable="true"':''}>`
+    const expanded=todosOpenIds.has(t.id)&&!t.done;
+    const waiting=!t.done&&isWaiting(t);
+    const LINK_SVG=size=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>`;
+    // Where the task links to: the arrow on the line goes there; the open task spells it out.
+    let jumpHtml='', sourceHtml='';
+    if(hasAttachment&&!t.done){
+      if(nodeRef&&nodeRefInfo.missing){
+        sourceHtml=`<div class="todo-source-row"><span class="todo-source missing">${isDocRef?'Document not found':'Row not found'}</span></div>`;
+      } else if(nodeRef){
+        const tip=isDocRef?'Open '+(nodeRefInfo.docTitle||'Untitled'):'Go to '+(nodeRefInfo.text?'“'+nodeRefInfo.text.slice(0,60)+'”':'this row')+' in '+(nodeRefInfo.docTitle||'Untitled');
+        jumpHtml=`<button type="button" class="todo-jump todo-nodejump-open" data-id="${t.id}" data-tip="${escAttr(tip)}" aria-label="${escAttr(tip)}">${LINK_SVG(11)}</button>`;
+        sourceHtml=`<div class="todo-source-row"><button type="button" class="todo-source todo-nodejump-open" data-id="${t.id}" data-tip="${escAttr(tip)}"><span class="todo-source-from">From</span><span class="todo-source-doc">${esc(nodeRefInfo.docTitle||'Untitled')}</span>${isDocRef?'':`<span class="todo-source-sep">›</span><span class="todo-source-row-text">${esc(nodeRefInfo.text||'(untitled row)')}</span>`}</button></div>`;
+      } else {
+        const href=escAttr(sanitizeHrefUrl(link));
+        jumpHtml=`<a class="todo-jump" href="${href}" target="_blank" rel="noopener noreferrer" data-tip="${escAttr('Open '+linkDisplay)}" aria-label="Open link">${LINK_SVG(11)}</a>`;
+        sourceHtml=`<div class="todo-source-row"><a class="todo-source" href="${href}" target="_blank" rel="noopener noreferrer" data-tip="Open link"><span class="todo-source-from">Link</span><span class="todo-source-row-text">${esc(linkDisplay)}</span></a></div>`;
+      }
+    }
+    const repeatIcon=t.repeat&&!t.done?`<span class="todo-repeat-icon" data-tip="${escAttr(repeatTitle(t.repeat))}" aria-label="${escAttr(repeatTitle(t.repeat))}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></span>`:'';
+    const dueBtn=`<button type="button" class="todo-due${due&&!t.done?'':' rest-hidden'}${overdue?' overdue':''}" data-id="${t.id}" data-due="${due||''}" data-tip="${due?(overdue?'Overdue · ':'')+'Change due date':'Set due date'}">${due?esc(dueShort(due)):''}</button>`;
+    // The link editor reads the task's current link from this (hidden) button.
+    const linkBtn=`<button type="button" class="todo-link rest-hidden" data-id="${t.id}" data-link="${link?escAttr(link):''}" data-linklabel="${linkLabel?escAttr(linkLabel):''}" data-noderef-doc="${nodeRef?escAttr(nodeRef.docId):''}" data-noderef-node="${(nodeRef&&nodeRef.nodeId)?escAttr(nodeRef.nodeId):''}" tabindex="-1" aria-hidden="true"></button>`;
+    const moreBtn=`<button type="button" class="todo-more-btn" data-id="${t.id}" data-tip="More" aria-label="Task menu"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>`;
+    const since=t.waitingSince?' · since '+new Date(t.waitingSince).toLocaleDateString(undefined,{month:'short',day:'numeric'}):'';
+    const waitingHtml=waiting?`<button type="button" class="todo-waiting-line" data-id="${t.id}" data-tip="Change who this waits for">${esc(waitingLabel(t))}${since}</button>`:'';
+    return `<div class="todo-row${t.done?' completed':''}${expanded?' expanded':''}${waiting?' is-waiting':''}${overdue?' is-overdue':''}" data-id="${t.id}" ${draggable?'draggable="true"':''}>`
       + (draggable ? `<span class="todo-drag-handle" data-tip="Drag to reorder" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg></span>` : '')
       + (!t.done ? `<input type="checkbox" class="todo-select-check" data-id="${t.id}" ${todosSelectedIds.has(t.id)?'checked':''} aria-label="Select task" />` : '')
-      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${hasSubtasks?'disabled':''} data-tip="${hasSubtasks?'Completes automatically when all subtasks are done':''}" aria-label="Mark task complete" />`
+      +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${(t.subtasks&&t.subtasks.length)?'disabled':''} data-tip="${(t.subtasks&&t.subtasks.length)?'Completes when all subtasks are done':''}" aria-label="Mark task done" />`
       +`<div class="todo-main">`
-      +`<div class="todo-textwrap">`
-      +`<div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div>`
-      +priDot
+      +`<div class="todo-line">`
+      +`<div class="todo-textwrap"><div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div></div>`
+      +`<div class="todo-side">`+(t.done?'':subtaskMetaHtml(t))+repeatIcon+jumpHtml+linkBtn+`<span class="todo-end">`+dueBtn+moreBtn+`</span></div>`
       +`</div>`
-      // In reading order (status, date, repeat, subtasks): the "·" between them follows the markup.
-      +`<div class="todo-meta-row">`+priorityBtn+statusBtn+linkBtn+dueBtn+repeatBtn+subtaskMetaHtml(t)+moreBtn+`</div>`
-      +sourceHtml
-      + (expanded?subtasksSectionHtml(t):'')
+      +waitingHtml
+      + (expanded?subtasksSectionHtml(t)+sourceHtml:'')
       +`</div>`
       +`</div>`;
   }
@@ -34747,7 +34509,7 @@ let dockActiveTab=null;
     if(open) return open.id;
     const trimmed=String(text||'').trim().slice(0,500);
     if(!trimmed) return null;
-    const t={ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, priority:'none', status:'none', dueDate:null, link:null, linkLabel:null, nodeRef:{docId, nodeId}, repeat:null, subtasks:[], subtasksOpen:true, from:(String(from||'').trim().slice(0,80)||null) };
+    const t={ id: uid(), text: trimmed, done:false, createdAt: Date.now(), completedAt: null, dueDate:null, repeat:null, subtasks:[], link:null, linkLabel:null, nodeRef:{docId, nodeId} };
     if(remarkId) t.remarkId=String(remarkId);
     todos.push(t);
     saveTodos();
@@ -34779,21 +34541,6 @@ let dockActiveTab=null;
   // Same idea for an incoming Settings change (filters/toggles) from another device.
   window.sakuraTodosReloadSettingsFromStorage=function(){ loadSettings(); renderTodos(); };
   function initTodosSettingsUi(){
-    const sortMenu=document.getElementById('todos-sort-menu');
-    if(sortMenu) sortMenu.querySelectorAll('.todo-dd-item').forEach(item=>{
-      const isSel=item.getAttribute('data-value')===settings.sortMode;
-      item.classList.toggle('selected', isSel);
-      item.setAttribute('aria-checked', String(isSel));
-    });
-    const filterMenu=document.getElementById('todos-filter-menu');
-    if(filterMenu) filterMenu.querySelectorAll('.todo-dd-item[data-group]').forEach(item=>{
-      const group=item.getAttribute('data-group');
-      const activeVal=group==='priority'?settings.priorityFilter:group==='status'?settings.statusFilter:settings.dueFilter;
-      const isSel=item.getAttribute('data-value')===activeVal;
-      item.classList.toggle('selected', isSel);
-      item.setAttribute('aria-checked', String(isSel));
-    });
-    document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive()||settings.sortMode!=='manual');
     const expirySel=document.getElementById('todos-expiry-select');
     if(expirySel){
       expirySel.value=String(settings.expiryDays);
@@ -34848,18 +34595,12 @@ let dockActiveTab=null;
 
   // ── Plain text export — the To-Dos list only, nothing else in the app ───
   function exportTodosAsPdf(){
-    const filterWasActive=anyTodoFilterActive();
-    // Always export the FULL list, not just what the active priority/status/due filter shows —
-    // this is a one-shot document export, not a live view, and silently dropping filtered-out
-    // tasks here (while the "Sakura To-Dos" JSON export in the same menu always exports
-    // everything) was a real, undocumented way to lose tasks from a printed list. Sort mode is
-    // still applied so the PDF reads the same way the panel does when nothing's filtered.
-    const open=sortOpenList(todos.filter(t=>!t.done));
+    // The whole list in the panel's own sections, Done last.
+    const open=todos.filter(t=>!t.done);
     const done=todos.filter(t=>t.done).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
     function taskRow(t,isDone){
       const chips=[];
-      if(t.priority&&t.priority!=='none') chips.push(`<span class="gpe-chip gpe-chip-${t.priority}">${esc(priorityLabel(t.priority))}</span>`);
-      if(t.status&&t.status!=='none') chips.push(`<span class="gpe-chip">${esc(statusLabel(t.status))}</span>`);
+      if(!isDone&&isWaiting(t)) chips.push(`<span class="gpe-chip">${esc(waitingLabel(t))}</span>`);
       if(t.dueDate) chips.push(`<span class="gpe-chip">Due ${esc(t.dueDate)}</span>`);
       if(isDone&&t.completedAt) chips.push(`<span class="gpe-chip">Completed ${esc(new Date(t.completedAt).toLocaleDateString())}</span>`);
       if(t.link) chips.push(`<span class="gpe-chip">${esc(t.link)}</span>`);
@@ -34870,12 +34611,15 @@ let dockActiveTab=null;
       });
       return html;
     }
-    let body=`<div class="gpe-section-heading">Open (${open.length})</div>`;
-    body+=open.length?open.map(t=>taskRow(t,false)).join(''):'<div class="gpe-empty">(none)</div>';
-    body+=`<div class="gpe-section-heading">Completed (${done.length})</div>`;
+    let body='';
+    groupTodos(open,toISODate(new Date())).forEach(g=>{
+      body+=`<div class="gpe-section-heading">${g.label} (${g.items.length})</div>`+g.items.map(t=>taskRow(t,false)).join('');
+    });
+    if(!open.length) body+=`<div class="gpe-section-heading">Open (0)</div><div class="gpe-empty">(none)</div>`;
+    body+=`<div class="gpe-section-heading">Done (${done.length})</div>`;
     body+=done.length?done.map(t=>taskRow(t,true)).join(''):'<div class="gpe-empty">(none)</div>';
     printHtmlAsPdf('To-Dos','To-Dos',body);
-    showTodosToast(filterWasActive?'To-Dos exported (full list, not just the active filter)':'To-Dos exported');
+    showTodosToast('To-Dos exported');
   }
 
   loadTodos();
@@ -34916,54 +34660,6 @@ let dockActiveTab=null;
       menu.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.setAttribute('aria-expanded','false');
     });
   }
-  document.getElementById('todos-sort-trigger')?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const menu=document.getElementById('todos-sort-menu');
-    const isOpen=menu.classList.contains('open');
-    closeTodoDropdowns();
-    menu.classList.toggle('open', !isOpen);
-    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
-    if(!isOpen) (menu.querySelector('.todo-dd-item.selected')||menu.querySelector('.todo-dd-item'))?.focus();
-  });
-  document.getElementById('todos-filter-trigger')?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const menu=document.getElementById('todos-filter-menu');
-    const isOpen=menu.classList.contains('open');
-    closeTodoDropdowns();
-    menu.classList.toggle('open', !isOpen);
-    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
-    if(!isOpen) (menu.querySelector('.todo-dd-item.selected')||menu.querySelector('.todo-dd-item'))?.focus();
-  });
-  document.getElementById('todos-sort-menu')?.querySelectorAll('.todo-dd-item').forEach(item=>{
-    item.addEventListener('click',e=>{
-      e.stopPropagation();
-      const val=item.getAttribute('data-value');
-      settings.sortMode=['manual','priority','due'].includes(val)?val:'manual';
-      document.getElementById('todos-sort-menu').querySelectorAll('.todo-dd-item').forEach(i=>{
-        i.classList.toggle('selected', i===item);
-        i.setAttribute('aria-checked', String(i===item));
-      });
-      document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive()||settings.sortMode!=='manual');
-      closeTodoDropdowns();
-      saveSettings(); renderTodos();
-    });
-  });
-  document.getElementById('todos-filter-menu')?.querySelectorAll('.todo-dd-item[data-group]').forEach(item=>{
-    item.addEventListener('click',e=>{
-      e.stopPropagation();
-      const group=item.getAttribute('data-group');
-      const val=item.getAttribute('data-value');
-      if(group==='priority') settings.priorityFilter=['all','high','med','low','none'].includes(val)?val:'all';
-      else if(group==='status') settings.statusFilter=['all','waiting','progress','blocked','review','none'].includes(val)?val:'all';
-      else if(group==='due') settings.dueFilter=['all','overdue','today','upcoming','none'].includes(val)?val:'all';
-      document.getElementById('todos-filter-menu').querySelectorAll(`.todo-dd-item[data-group="${group}"]`).forEach(i=>{
-        i.classList.toggle('selected', i===item);
-        i.setAttribute('aria-checked', String(i===item));
-      });
-      document.getElementById('todos-filter-wrap')?.classList.toggle('active', anyTodoFilterActive()||settings.sortMode!=='manual');
-      saveSettings(); renderTodos();
-    });
-  });
   function wireTodoMenuKeyNav(menuId){
     const menu=document.getElementById(menuId);
     if(!menu) return;
@@ -34978,47 +34674,11 @@ let dockActiveTab=null;
       else if(e.key==='End'){ e.preventDefault(); items[items.length-1]?.focus(); }
     });
   }
-  document.getElementById('todos-bulk-priority-trigger')?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const menu=document.getElementById('todos-bulk-priority-menu');
-    const isOpen=menu.classList.contains('open');
-    closeTodoDropdowns();
-    menu.classList.toggle('open', !isOpen);
-    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
-    if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
-  });
-  document.getElementById('todos-bulk-priority-menu')?.querySelectorAll('.todo-dd-item').forEach(item=>{
-    item.addEventListener('click',e=>{
-      e.stopPropagation();
-      bulkSetPriority(item.getAttribute('data-value'));
-      closeTodoDropdowns();
-    });
-  });
-  document.getElementById('todos-bulk-status-trigger')?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const menu=document.getElementById('todos-bulk-status-menu');
-    const isOpen=menu.classList.contains('open');
-    closeTodoDropdowns();
-    menu.classList.toggle('open', !isOpen);
-    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
-    if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
-  });
-  document.getElementById('todos-bulk-status-menu')?.querySelectorAll('.todo-dd-item').forEach(item=>{
-    item.addEventListener('click',e=>{
-      e.stopPropagation();
-      bulkSetStatus(item.getAttribute('data-value'));
-      closeTodoDropdowns();
-    });
-  });
   document.getElementById('todos-bulk-due-btn')?.addEventListener('click',e=>openBulkDueDateEditor(e.currentTarget));
   document.getElementById('todos-bulk-complete-btn')?.addEventListener('click', bulkComplete);
   document.getElementById('todos-bulk-delete-btn')?.addEventListener('click', bulkDelete);
   document.getElementById('todos-bulk-cancel-btn')?.addEventListener('click', ()=>toggleTodoSelectMode(false));
   document.getElementById('todos-select-toggle')?.addEventListener('click', ()=>{ closeTodoDropdowns(); toggleTodoSelectMode(); });
-  wireTodoMenuKeyNav('todos-bulk-priority-menu');
-  wireTodoMenuKeyNav('todos-bulk-status-menu');
-  wireTodoMenuKeyNav('todos-sort-menu');
-  wireTodoMenuKeyNav('todos-filter-menu');
   document.addEventListener('click',e=>{
     if(!e.target.closest('.todo-dd-wrap')) closeTodoDropdowns();
   });
@@ -35290,15 +34950,15 @@ let dockActiveTab=null;
         <ul>
           <li><span class="cs-desc">App-level task list — not tied to any document or node</span> · <span class="cs-combo" data-cs-shortcut="toggleTodos"></span></li>
           <li><span class="cs-desc">Floating, draggable, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></span> to expand full-screen</span></li>
-          <li><span class="cs-desc">Check off a task to move it to <strong>Completed</strong> (newest first); turn on the select/reorder toggle to drag-reorder <strong>Open</strong> tasks</span></li>
-          <li><span class="cs-desc">Priority and due-date chips below each task; both auto-hide until set or hovered.</span></li>
+          <li><span class="cs-desc">Sections: Pinned, Today, Upcoming, Anytime, Waiting; checked-off tasks fold into <strong>Done</strong></span></li>
+          <li><span class="cs-desc">Long titles show two lines; click to edit the full text, click the background to open the task</span></li>
           <li><span class="cs-desc">A task can <strong>repeat</strong> (Daily/Weekdays/Weekly — completing it just advances the due date) or hold <strong>sub-tasks</strong> (nested checklist, parent auto-completes when all are checked) — not both at once</span></li>
-          <li><span class="cs-desc">Right-click a task for a context menu — duplicate, copy text, move to top/bottom, expand/collapse sub-tasks, delete</span></li>
+          <li><span class="cs-desc">Right-click or ⋯: Pin, Waiting for…, Due date…, Repeat, Link to row…, Copy, Delete</span></li>
           <li><span class="cs-desc">Type <span class="help-kbd">@</span> in task text for inline chips, with autocomplete — <span class="todo-at todo-at-person">@name</span> assignee, <span class="todo-at todo-at-date">@date</span> (e.g. <span class="todo-at todo-at-date">@tomorrow</span>, <span class="todo-at todo-at-date">@fri</span>), <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) — display only</span></li>
           <li><span class="cs-desc"><span class="help-kbd">#</span> for a <span class="todo-tag-chip">#tag</span> (autocompletes from prior tags), <span class="help-kbd">&gt;</span> for a <span class="todo-remark">muted remark</span> to end of line — both display only</span></li>
           <li><span class="cs-desc">Quick-find matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text too — it's a plain substring search over the task text</span></li>
-          <li><span class="cs-desc">Filter by priority, status, and due date at once (Overdue/Today/Due later/No due date) — all three combine, and the filter menu stays open so you can set several before closing it</span></li>
-          <li><span class="cs-desc">The same toggle also reveals each task's drag handle. Select multiple open tasks to bulk-set priority, status, or due date, or bulk-complete/delete — each with its own Undo, same as the single-task actions</span></li>
+          <li><span class="cs-desc">Quick-find (magnifier) narrows the list as you type</span></li>
+          <li><span class="cs-desc">Select or reorder (⋯ menu): drag to reorder, or select several open tasks to set a due date, complete or delete them at once</span></li>
           <li><span class="cs-desc">Settings → To-Dos: auto-expiry and a cap on completed tasks</span></li>
           <li><span class="cs-desc">Searchable from Quick Assist — plain text or <code>todo: milk</code></span></li>
         </ul>

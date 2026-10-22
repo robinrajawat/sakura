@@ -35,15 +35,12 @@ describe('createTodo (pure)', () => {
       done: false,
       createdAt: 1_000_000,
       completedAt: null,
-      priority: 'none',
-      status: 'none',
       dueDate: null,
       link: null,
       linkLabel: null,
       nodeRef: null,
       repeat: null,
-      subtasks: [],
-      subtasksOpen: true
+      subtasks: []
     });
   });
 

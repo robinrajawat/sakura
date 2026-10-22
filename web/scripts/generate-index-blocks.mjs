@@ -584,6 +584,21 @@ initHubTodosState({
     footer: ''
   },
   {
+    // The To-Do data model (task fields, migration of older lists, which section a task shows
+    // in). Shared with the mobile Hub (hubTodoModel below) so both write the same shape.
+    name: 'todoModel',
+    sourceFile: 'src/utils/todoModel.ts',
+    testFile: 'tests/unit/todoModel.test.ts',
+    footer: ''
+  },
+  {
+    name: 'hubTodoModel',
+    sourceFile: 'src/utils/todoModel.ts',
+    testFile: 'tests/unit/todoModel.test.ts',
+    targetFile: 'hub.html',
+    footer: ''
+  },
+  {
     // Deleting rows: what goes with them (notes, tables, images, Q&A, remarks, diagrams) and the
     // confirmation wording, split into what Undo restores and what it can't (diagrams). Counting
     // and removing stay hand-written in index.html next to confirmDeleteIfNeeded.

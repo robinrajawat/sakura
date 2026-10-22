@@ -52,7 +52,7 @@ test.describe('generated hubTodos block (src/state/hubTodos.ts spliced into hub.
       loadTodosLocal();
 
       return {
-        t1Shape: { text: t1.text, done: t1.done, priority: t1.priority, subtasksOpen: t1.subtasksOpen },
+        t1Shape: { text: t1.text, done: t1.done, dueDate: t1.dueDate, subtasks: t1.subtasks },
         idsDistinct: t1.id !== t2.id,
         rawAfterSaveLength: rawAfterSave.length,
         rawAfterSaveTexts: rawAfterSave.map((t: any) => t.text),
@@ -63,7 +63,7 @@ test.describe('generated hubTodos block (src/state/hubTodos.ts spliced into hub.
       };
     });
 
-    expect(result.t1Shape).toEqual({ text: 'Buy milk', done: false, priority: 'none', subtasksOpen: true });
+    expect(result.t1Shape).toEqual({ text: 'Buy milk', done: false, dueDate: null, subtasks: [] });
     expect(result.idsDistinct).toBe(true);
     expect(result.rawAfterSaveLength).toBe(2);
     expect(result.rawAfterSaveTexts).toEqual(['Buy milk', 'Walk the dog']);
