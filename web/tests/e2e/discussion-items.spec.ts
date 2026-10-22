@@ -353,14 +353,13 @@ test('a follow-up names its owner, in the thread, the PDF note and the open-item
   expect(errors).toEqual([]);
 });
 
-test('a follow-up owner not yet in the document is typed into the menu, not a popup', async ({ page }) => {
+test('a follow-up owner not yet in the document is typed in place on the entry, not in a popup', async ({ page }) => {
   const errors = await seed(page, `remarks.push({ id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails.', createdAt: 4, status: 'followup' });`);
   await page.evaluate('syncRowMarkerFromThread(3); render()');
   await page.locator('.thread-entry:has(#inline-remark-text-k1) .node-remark-text-inline').click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Assign follow-up…', { exact: true }).click();
-  const box = page.locator('.sb-context-menu input.sb-context-input');
-  await expect(box).toHaveAttribute('placeholder', 'Someone else…');
-  await box.click();
+  await page.locator('.sb-context-menu').getByText('Someone else…', { exact: true }).click();
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-k1) .thread-owner-edit')).toBeFocused();
   await page.keyboard.type('Vendor desk');
   await page.keyboard.press('Enter');
   await expect(page.locator('#sakura-modal-input')).toBeHidden();

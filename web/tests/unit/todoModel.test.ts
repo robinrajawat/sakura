@@ -67,5 +67,6 @@ describe('names', () => {
   it('offers everyone mentioned or waited on, most used first', () => {
     const list = [norm({ text: 'x @Ana @Bo' }), norm({ text: 'y', waitingFor: 'ana' }), norm({ text: '@Cy' })];
     expect(waitingCandidates(list)).toEqual(['Ana', 'Bo', 'Cy']);
+    expect(waitingCandidates([norm({ text: 'z', waitingFor: 'vendor quote for the licences' })])).toEqual([]);
   });
 });

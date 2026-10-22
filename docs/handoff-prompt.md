@@ -159,12 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-22: Names typed inside the menu, no popup.** Owner: "I personally like inline editing rather than popups"
-(the To-Do "Waiting for › Someone else…" opened `sakuraPrompt`). `showSbContextMenu` items now support
-`{input:true, placeholder, value, maxLength, onSubmit}`: a text box in the menu, Enter saves and closes, ↑/↓ reach it,
-Esc closes without saving, clicks inside don't close the menu. Used by `waitingMenuItems(t)` (task menu flyout and the
-row's waiting line, which now opens the same choices in place) and the follow-up owner menu (`threadOwnerMenuItems`).
-Prefer this over `sakuraPrompt` for short names. Screenshot `inline-objects/todos-waiting-inline.png`.
+**2026-10-22: Waiting for and follow-up owner edited in place.** Owner: "I personally like inline editing rather
+than popups"; an in-menu text box was tried and rejected ("we can do better"); Waiting for is free text, "could be just a
+note not just person". Task menu: **Waiting for…** (plain item, no flyout) -> `startWaitingEdit` adds the row's waiting
+line (`todoWaitingDraftId` while unsaved) with the caret in `.todo-waiting-name` (contenteditable); names from
+`waitingCandidates` (mentions + earlier texts of at most 3 words) show under the caret via `showSbContextMenu`
+(`.todo-waiting-suggest`); Enter / blur keep, Esc cancels, empty stops waiting; **Not waiting** when waiting. Limit 200
+chars (model, hub). Follow-up owner "Someone else…" -> `editThreadOwnerInline` types into the entry's "· follow-up for"
+note. Screenshot `inline-objects/todos-waiting-inline.png`.
 
 **2026-10-22: To-Dos rebuilt on a lean model.** Owner rejected #596 ("not looking good"), asked to start from scratch,
 generic and outside-in ("understandable for any user"), then cut the model with me. A task = title, due, repeat,
