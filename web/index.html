@@ -1791,9 +1791,10 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .dv-canvas img{position:absolute;left:0;top:0;transform-origin:0 0;box-sizing:content-box;padding:var(--dv-pad);user-select:none;-webkit-user-drag:none;pointer-events:none;background:#fff;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .dv-hint{z-index:3;position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font:400 12px 'Inter',sans-serif;color:var(--muted);background:color-mix(in srgb,var(--bg) 90%,transparent);border:1px solid var(--border);border-radius:20px;padding:5px 12px;pointer-events:none;white-space:nowrap;animation:dv-hint-out .4s ease 4s forwards}
 @keyframes dv-hint-out{to{opacity:0}}
-#node-image-viewer{position:fixed;inset:0;z-index:2600;display:none;align-items:center;justify-content:center;background:rgba(15,14,12,.72);padding:24px;box-sizing:border-box}
+#node-image-viewer{position:fixed;inset:0;z-index:2600;display:none;align-items:center;justify-content:center;background:rgba(15,14,12,.72);padding:28px;box-sizing:border-box}
 #node-image-viewer.open{display:flex}
-.niv-panel{display:flex;flex-direction:column;width:min(1200px,100%);max-height:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+/* One fixed window, as the diagram preview: stepping between pictures never moves the buttons. */
+.niv-panel{display:flex;flex-direction:column;width:100%;height:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
 .niv-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
 .niv-counter{font:600 12px 'Inter',sans-serif;color:var(--muted);min-width:44px;padding-left:4px}
 .niv-tools{flex:1;display:flex;gap:4px;min-width:0}
@@ -1812,7 +1813,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 @keyframes copied-badge-in{from{opacity:0;transform:translate(-50%,-40%)}}
 .niv-delete:hover{color:var(--fc-red,#c0392b)}
 .niv-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;gap:8px;padding:14px 10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg))}
-.niv-frame{flex:1;min-width:0;display:flex;align-items:flex-start;justify-content:center;overflow:auto;max-height:calc(100vh - 200px)}
+.niv-frame{flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;justify-content:center;overflow:auto}
 .niv-figure{position:relative;line-height:0;max-width:100%;margin:auto}
 .niv-figure{transform-origin:0 0}
 #node-image-viewer.niv-zoomed .niv-frame{overflow:hidden}
@@ -10957,6 +10958,8 @@ function refreshNodeImageViewer(){
   const readOnly=typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc();
   const img=ref.img;
   const pic=ov.querySelector('.niv-img'); if(pic.getAttribute('src')!==img.src)pic.src=img.src; pic.alt=img.caption||'';
+  // The level (e.g. 42% for a big picture fitted in) is known once the picture has loaded.
+  if(!pic.complete)pic.addEventListener('load',()=>_nivZoomApply(false),{once:true}); else requestAnimationFrame(()=>_nivZoomApply(false));
   const fig=ov.querySelector('.niv-figure');
   fig.style.width=img.width?img.width+'%':'';
   fig.classList.toggle('niv-auto',!img.width);
