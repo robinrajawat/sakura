@@ -1080,6 +1080,8 @@ body.zen-mode #quick-bar{display:none}
 .context-top-row .pv-qm-btn{font-size:16px;line-height:1}
 .context-top-row .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
 .context-top-row .pv-qm-btn:active{background:var(--sel)}
+.context-top-row .ctx-more[aria-expanded="true"]{background:var(--hover);color:var(--fg)}
+#context-more-panel{padding-left:0;margin-top:3px;padding-top:4px;border-top:1px solid var(--border)}
 .inline-edit-input{position:fixed;z-index:400;box-sizing:border-box;margin:0;padding:0 4px;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--border));border-radius:6px;background:var(--edit-bg);color:var(--fg);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
 .inline-edit-input::placeholder{color:var(--hint)}
 .inline-edit-input.inline-edit-ask{padding:0 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.10),0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
@@ -20591,7 +20593,7 @@ let _ctxQuickDragId=null;
 // The node right-click menu is the shared menu (showSbContextMenu, owner 2026-10-23: one menu
 // everywhere): on top one icon row -- the Agreed / Follow-up / Out of scope markers, then the quick
 // actions (CTX_QUICK_ROW, customisable: drag to reorder, right-click an icon, or pin from More) --
-// and under it a "More" fold with every other node action: Add / Move / Sort children icon rows,
+// and at its end a ⋯ that unfolds every other node action below: Add / Move / Sort children icon rows,
 // AI, Insert › and Row › submenus, Delete.
 function ctxActionIcon(meta,size){
   return meta.glyph?`<span class="context-icon-glyph">${esc(meta.glyph)}</span>`:`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`;
@@ -20647,10 +20649,10 @@ function ctxMenuItems(nodeId,moreOpen){
   group([...sub('Insert','<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',[['Basics',inGroup('node')],['Discuss',inGroup('discuss')],['Visuals',inGroup('visual')]]),
     ...sub('Row','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/>',[[null,rest(['focus','fold'])],[null,inGroup('info')]])]);
   group(inGroup('delete').map(item));
-  const items=[{iconRow:top, id:'context-quickbar', cls:'context-top-row', label:null}];
-  if(more.length)items.push({divider:true},{label:'More', id:'context-more-toggle', bodyId:'context-more-panel', open:!!moreOpen,
-    icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>', fold:more});
-  return items;
+  // Owner, 2026-10-23: More is a ⋯ at the end of the quick row (after a divider), unfolding below.
+  if(more.length)top.push({sep:true},{label:'More', id:'context-more-toggle', bodyId:'context-more-panel', cls:'ctx-more', open:!!moreOpen,
+    icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>', fold:more});
+  return [{iconRow:top, id:'context-quickbar', cls:'context-top-row', label:null}];
 }
 // Quick-row icons: drag one onto another to reorder; right-click one to move, remove, or reset.
 function ctxQuickButtonInit(btn,actionId){
@@ -27188,6 +27190,7 @@ function _sbBuildItemButton(it, container, list){
   // The node menu's quick row and its Add / Move / Sort rows use it.
   if(it.iconRow){
     const row=document.createElement('div'); row.className='sb-context-iconrow'+(it.cls?' '+it.cls:''); if(it.id)row.id=it.id; row.setAttribute('role','group');
+    const openLater=[];
     if(it.label){ const l=document.createElement('span'); l.className='sb-context-iconrow-label'; l.textContent=it.label; row.appendChild(l); row.setAttribute('aria-label',it.label); }
     it.iconRow.forEach(t=>{
       if(t.sep){ const sp=document.createElement('span'); sp.className='pv-qm-sep'; row.appendChild(sp); return; }
@@ -27195,13 +27198,22 @@ function _sbBuildItemButton(it, container, list){
       b.innerHTML=t.icon||''; b.dataset.tip=t.label; b.setAttribute('aria-label',t.label); b.setAttribute('role','menuitem');
       if(t.action)b.dataset.action=t.action; if(t.data)Object.assign(b.dataset,t.data);
       row.appendChild(b);
+      // An icon with `fold:[...]` (the node menu's ⋯) unfolds its items under the row, like a fold row.
+      if(t.fold){
+        if(t.id)b.id=t.id; b.classList.add('sb-context-keep'); b.setAttribute('aria-haspopup','true');
+        const f=_sbFoldToggle(b, row, t, list);
+        b.addEventListener('click',e=>{ e.stopPropagation(); f.toggle(); });
+        b.addEventListener('mouseenter',()=>{ if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false); _sbContextActiveIndex=list.indexOf(b); _sbContextUpdateHighlight(); });
+        list.push(b); if(t.open)openLater.push(f.unfold);
+        return;
+      }
       if(t.disabled){ b.disabled=true; return; }
       b.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await t.onClick(); });
       b.addEventListener('mouseenter',()=>{ if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false); _sbContextActiveIndex=list.indexOf(b); _sbContextUpdateHighlight(); });
       if(t.init)t.init(b);
       list.push(b);
     });
-    container.appendChild(row);
+    container.appendChild(row); openLater.forEach(f=>f());
     return null;
   }
   if(it.tiles){
@@ -27219,20 +27231,11 @@ function _sbBuildItemButton(it, container, list){
   if(it.fold){
     const t=document.createElement('button'); t.type='button'; t.className='sb-context-item sb-context-fold'; t.setAttribute('aria-expanded','false'); if(it.id)t.id=it.id;
     t.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+'</span><svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
-    let box=null, kids=[];
-    t.addEventListener('click',e=>{
-      e.stopPropagation();
-      if(box){ box.remove(); box=null; kids.forEach(k=>{ const i=list.indexOf(k); if(i>=0)list.splice(i,1); }); kids=[]; t.setAttribute('aria-expanded','false'); return; }
-      unfold(); box.scrollIntoView({block:'nearest'});
-    });
-    const unfold=()=>{
-      box=document.createElement('div'); box.className='sb-context-fold-body'; if(it.bodyId)box.id=it.bodyId;
-      kids=[]; it.fold.forEach(f=>_sbBuildItemButton(f, box, kids));
-      t.after(box); list.splice(list.indexOf(t)+1,0,...kids); t.setAttribute('aria-expanded','true');
-    };
+    const f=_sbFoldToggle(t, t, it, list);
+    t.addEventListener('click',e=>{ e.stopPropagation(); f.toggle(); });
     t.addEventListener('mouseenter',()=>{ if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false); _sbContextActiveIndex=list.indexOf(t); _sbContextUpdateHighlight(); });
     container.appendChild(t); list.push(t);
-    if(it.open)unfold();
+    if(it.open)f.unfold();
     return t;
   }
   const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
@@ -27262,6 +27265,22 @@ function _sbBuildItemButton(it, container, list){
   }
   container.appendChild(btn); list.push(btn);
   return btn;
+}
+// Unfolds `it.fold` items in a body placed after `after`; their buttons join the arrow-key order
+// right after `trigger`. Shared by fold rows and icon-row buttons with a fold.
+function _sbFoldToggle(trigger, after, it, list){
+  let box=null, kids=[];
+  const unfold=()=>{
+    box=document.createElement('div'); box.className='sb-context-fold-body'; if(it.bodyId)box.id=it.bodyId;
+    kids=[]; it.fold.forEach(f=>_sbBuildItemButton(f, box, kids));
+    after.after(box); list.splice(list.indexOf(trigger)+1,0,...kids); trigger.setAttribute('aria-expanded','true');
+  };
+  const toggle=()=>{
+    if(box){ box.remove(); box=null; kids.forEach(k=>{ const i=list.indexOf(k); if(i>=0)list.splice(i,1); }); kids=[]; trigger.setAttribute('aria-expanded','false'); return; }
+    unfold(); box.scrollIntoView({block:'nearest'});
+  };
+  trigger.setAttribute('aria-expanded','false');
+  return {unfold, toggle};
 }
 function _sbOpenSubmenu(trigger, viaKeyboard){
   if(_sbSubEl&&_sbSubEl._trigger===trigger){ if(viaKeyboard)_sbFocusSubmenu(); return; }
