@@ -229,7 +229,7 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
 
     // Export menu: still exactly PDF and OPML, and no folded-content notice despite a folded node.
     await page.evaluate(() => document.getElementById('export-toggle')?.click());
-    await expect(page.locator('#export-menu')).toHaveClass(/open/);
+    await expect(page.locator('#export-menu')).toBeVisible();
     await expect(page.locator('#export-menu')).not.toContainText(/folded/i);
     await page.keyboard.press('Escape');
 
