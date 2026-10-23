@@ -24,20 +24,17 @@ async function seed(page: Page) {
 }
 const stored = (page: Page) => page.evaluate("remarks.find(r => r.id === 'c1').text") as Promise<string>;
 
-test('a link in an entry opens on click, and with Ctrl/Cmd+click while editing', async ({ page, context }) => {
+test('a plain click on a link in an entry places the caret and shows the link card; Ctrl/Cmd+click opens it', async ({ page, context }) => {
   await seed(page);
   let opened = 0;
   context.on('page', (p) => { opened++; p.close().catch(() => {}); });
   const link = page.locator('#inline-remark-text-c1 a');
   await link.click();
-  await expect.poll(() => opened).toBe(1);
-  // Now editing: a plain click places the caret, Ctrl/Cmd+click opens.
-  await page.locator('#inline-remark-text-c1').click({ position: { x: 2, y: 5 } });
-  await link.click();
   await page.waitForTimeout(300);
-  expect(opened).toBe(1);
+  expect(opened).toBe(0);
+  await expect(page.locator('#link-card')).toBeVisible();
   await link.click({ modifiers: ['ControlOrMeta'] });
-  await expect.poll(() => opened).toBe(2);
+  await expect.poll(() => opened).toBe(1);
 });
 
 test('right-click a link in an entry: edit it, undo, remove it', async ({ page }) => {

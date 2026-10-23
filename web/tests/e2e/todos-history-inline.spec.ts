@@ -23,6 +23,8 @@ async function open(page: import('@playwright/test').Page, todos: object[], revi
   });
   await page.keyboard.press('Control+Shift+T');
   await page.waitForSelector('#todos-panel:not([style*="display: none"])');
+  // Opening the panel focuses "Add a task" a moment later; wait for it so it can't steal focus mid-test.
+  await expect(page.locator('#todos-input')).toBeFocused();
 }
 
 test('⋯ › Version history lists the last 5 versions and one click restores', async ({ page }) => {

@@ -140,9 +140,15 @@ test('Link opens an address box in the bar that turns the selected words into a 
   const link = page.locator(`.node-row[data-id="${id}"] .node-label a.row-weblink`);
   await expect(link).toHaveText('docs');
   await expect(link).toHaveAttribute('href', 'https://example.com/guide');
-  // clicking the link opens it rather than starting an edit
+  // A plain click puts the caret in the link and shows the link card (like Google Docs);
+  // Ctrl/Cmd+click opens it (owner, 2026-10-23).
+  await link.click();
+  expect(await page.evaluate(() => (window as any).eval('editingId'))).toBe(id);
+  await expect(page.locator('#link-card')).toBeVisible();
+  await expect(page.locator('#link-card')).toContainText('example.com/guide');
+  await page.keyboard.press('Escape');
   await context.route('https://example.com/**', (r) => r.fulfill({ body: 'ok' }));
-  const [popup] = await Promise.all([context.waitForEvent('page'), link.click()]);
+  const [popup] = await Promise.all([context.waitForEvent('page'), link.click({ modifiers: [mod === 'Meta' ? 'Meta' : 'Control'] })]);
   await popup.close();
   expect(await page.evaluate(() => (window as any).eval('editingId'))).toBe(null);
   // undo removes it; redo brings it back
