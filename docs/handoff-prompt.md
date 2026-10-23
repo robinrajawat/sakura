@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Thumbnail names match.** Owner asked for polish on the day's changes. A diagram's name under its
+thumbnail uses the picture caption's type (500 11px, muted) and, like an uncaptioned picture, shows nothing when untitled
+(`.node-diagram-preview-meta.is-empty`; Rename in the thumbnail menu adds `.renaming` to show the field). The stray
+"open in editor" icon at the far end of the diagram line is gone (`.node-inline-open-panel-btn`, its last user).
+
 **2026-10-23: Link box and preview header polish.** Owner: row links "still not working optimally"; image preview header
 squeezed. An address with spaces (words typed into Address) is refused: the field turns red (`.is-invalid`) and the box
 stays open (`applySelectionFmtUrl`). The Link box starts at the words and stays over the editor (`placeSelectionFmtPopover`
