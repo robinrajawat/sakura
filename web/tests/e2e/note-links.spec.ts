@@ -75,10 +75,12 @@ test('right-click a link: copy, edit and remove, each undoable', async ({ page }
 
   await link.click({ button: 'right' });
   await menu.getByText('Edit link…').click();
-  const inputs = page.locator('#sakura-modal input');
-  await expect(inputs.nth(0)).toHaveValue('Project folder');
-  await inputs.nth(1).fill('https://example.com/b');
-  await page.locator('#sakura-modal button', { hasText: 'Save' }).click();
+  // The same Link box as the selection bar, over the link.
+  await expect(page.locator('#selection-fmt-popover')).toHaveAttribute('data-pick', 'url');
+  await expect(page.locator('#sfmt-link-text')).toHaveValue('Project folder');
+  await expect(page.locator('#sfmt-url')).toBeFocused();
+  await page.locator('#sfmt-url').fill('https://example.com/b');
+  await page.keyboard.press('Enter');
   await expect.poll(() => storedNote(page)).toContain('href="https://example.com/b"');
   expect(await storedNote(page)).toContain('>Project folder</a>');
   await page.keyboard.press('ControlOrMeta+Z');
