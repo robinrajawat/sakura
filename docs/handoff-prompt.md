@@ -159,6 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Link card.** Owner: "unable to get the link popover at all … unable to add the display text" for a
+pasted address in a row. While a field is edited and the caret is in a link, `#link-card` shows under it (address = Open,
+then Copy, Edit, Remove; `showLinkCard`, driven by `selectionchange` over `LINK_CARD_FIELDS`: rows, To-Do titles, notes,
+threads). Edit/Remove reuse each field's right-click items (`linkCardMenuItems`; To-Dos via
+`sakuraTodoTitleFmt.linkItems`). The Link box now opens under the words and labels its fields Text / Address. Fixed:
+right-click › Edit link… while editing a row placed the box from a detached link (rect captured before `commitEdit`).
+
 **2026-10-23: Thumbnail names match.** Owner asked for polish on the day's changes. A diagram's name under its
 thumbnail uses the picture caption's type (500 11px, muted) and, like an uncaptioned picture, shows nothing when untitled
 (`.node-diagram-preview-meta.is-empty`; Rename in the thumbnail menu adds `.renaming` to show the field). The stray
@@ -171,11 +178,6 @@ when `pick==='url'`); opened from Edit link… it has no Back button (`noBack`).
 row text ellipsizes; under 900px the name line sits above the buttons (`.pv-break`). Owner: "why the row text and not
 the caption? unified design": both headers lead with the item's own name, edited in place (`.pv-name`: the picture's
 `.niv-caption` moved up from the bottom bar, which is gone; the diagram's `.dv-title` is an input that renames it).
-
-**2026-10-23: Diagram stamp removed.** Owner: "remove the stamp or status from the diagram. Margin disturbance is
-annoying." The stamp (#629) and the old hidden diagram status (and its draw.io editor chip) are gone; diagrams show
-exactly the draw.io export everywhere (thumbnail, preview, PDF, Copy, Download). Old `stamp`/`status` fields in saved
-documents are ignored. Menus opened inside a preview still sit above it.
 
 ### In progress / not built
 
