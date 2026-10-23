@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Picture size in the menu; menus that fit are not capped.** Owner: picture Size moves from the preview header
+to the thumbnail's right-click menu (`Size ›`, current one `checked`); the header's `.niv-size` buttons are gone.
+Owner saw the diagram thumbnail menu scroll: `_sbFitMenuHeight` now leaves a menu that fits uncapped (a cap equal to
+its own height could round a pixel short and show a scrollbar). Not reproduced here at 1x/1.25x/1.5x; ask for a
+screenshot if it persists.
+
 **2026-10-23: One date picker.** Unification item 2. Thread entry dates and To-Do due dates already looked the same
 (`due-pop-*` CSS); now they share the code too: `renderMonthCalendar(pop, viewMonth, selectedIso, onPick)` draws the month,
 weekday letters and days, `openDatePopoverUnder(pop, btn)` places it (flips above when there's no room).
@@ -167,11 +173,6 @@ weekday letters and days, `openDatePopoverUnder(pop, btn)` places it (flips abov
 generating", Keyboard shortcuts and the Cheatsheet use the same head as the other app dialogs (`.app-modal-head`: title,
 grey line under it, `.app-modal-close-btn` ×). Version history shows the document name under its title; the icon
 library lost its big Close button; the review got a ×. Welcome and "Why Sakura" stay branded.
-
-**2026-10-23: Confirm wording and Reset settings.** Unification item 4. Dialog titles are sentence case questions
-("Delete forever?", "Empty Trash?", "Turn off encryption?", "Delete this row?"), buttons sentence case ("Delete forever",
-"Undo restore", "Switch anyway"). "Clear all nodes" is "Clear all rows". Reset settings no longer asks: it keeps the old
-prefs in sessionStorage (`PREFS_UNDO_KEY`) through the reload, and the toast after the reload offers Undo.
 
 ### In progress / not built
 

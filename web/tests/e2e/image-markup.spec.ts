@@ -404,8 +404,8 @@ test.describe('Image markup', () => {
     const fracs: Array<{ x: number; y: number; w: number; h: number }> = [];
     const widths: number[] = [];
     for (const size of ['small', 'medium', 'full', 'auto']) {
-      await viewer.locator(`.niv-size-btn[data-size="${size}"]`).click();
-      await expect(viewer.locator(`.niv-size-btn[data-size="${size}"]`)).toHaveClass(/active/);
+      await page.evaluate((key) => (window as any).eval(`setNodeImageWidth(_nivState.nodeId, _nivState.imageId, IMAGE_WIDTH_PRESETS.find(p => p.key === '${key}').value); refreshNodeImageViewer();`), size);
+      await page.waitForTimeout(50);
       widths.push((await viewer.locator('.niv-img').boundingBox())!.width);
       const layerBox = (await viewer.locator('.niv-annot-layer').boundingBox())!;
       const imgBox = (await viewer.locator('.niv-img').boundingBox())!;
