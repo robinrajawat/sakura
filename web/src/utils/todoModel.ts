@@ -8,6 +8,8 @@
  * write the same shape. Pure: no storage, DOM or clock of its own.
  */
 
+import { normalizeRowMarks, type RowMark } from './rowMarks';
+
 export type TodoRepeat = 'daily' | 'weekdays' | 'weekly';
 
 export interface TodoSubtask {
@@ -42,6 +44,10 @@ export interface TodoItem {
   nodeRef: TodoNodeRef | null;
   /** The thread entry a follow-up task was added from, so its link opens that entry. */
   remarkId?: string;
+  /** Formatting on the title's words, the same as a row's (src/utils/rowMarks.ts): `marks` were
+   * made for `marksText`; a title changed elsewhere (the Hub's text box) moves them on read. */
+  marks?: RowMark[];
+  marksText?: string;
 }
 
 export type TodoSection = 'pinned' | 'today' | 'upcoming' | 'anytime' | 'waiting' | 'done';
@@ -109,6 +115,13 @@ export function normalizeTodo(raw: unknown, now: number): TodoItem | null {
   else if (OLD_WAITING_STATUSES.includes(t.status)) out.waitingFor = firstMention(t.text);
   if (out.waitingFor !== undefined && Number.isFinite(t.waitingSince)) out.waitingSince = t.waitingSince;
   if (typeof t.remarkId === 'string' && t.remarkId) out.remarkId = t.remarkId;
+  if (typeof t.marksText === 'string') {
+    const marks = normalizeRowMarks(t.marks, t.marksText.length);
+    if (marks.length) {
+      out.marks = marks;
+      out.marksText = t.marksText;
+    }
+  }
   return out;
 }
 

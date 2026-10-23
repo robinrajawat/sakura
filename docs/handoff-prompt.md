@@ -159,6 +159,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: The same selection bar on To-Do titles.** Owner: "keep the same floating bar everywhere". A title is
+stored like a row: `t.text` plain, `t.marks`/`t.marksText` (rowMarks.ts), kept by `normalizeTodo` (value import of
+`normalizeRowMarks`; the generator strips the import line). Panel: `renderTodoTitleHtml` = `rowMarksToHtml` over
+`renderTodoTextHtml` (chips, `>` remarks, SAP Notes per run); `.todo-text` has `id="todo-text-<id>"`; blur saves
+`readTodoTitle` (DOM read, `stripRowMarkChars` drops the chips' zero-width spaces, trimmed); undo entries carry marks.
+Bar: `selectionFmtEditorFor` accepts `.todo-text`; `selectionFmtIsTodo`/`selectionFmtIsMarks` route the bar to
+`window.sakuraTodoTitleFmt` (apply/has/colors/linkTarget/applyRange/sync; DOM offsets mapped around the zero-width
+spaces). Rewrite uses the rich path then `sync`. A web link in a title opens on click unless you're editing it. Hub:
+`hubRowMarks` block; list rows draw formatting (`todoTitleHtml`, links as plain words); its text box changes the text
+and the marks follow on read (`rowMarksOf`). Tests: `todo-title-format.spec.ts`.
+
 **2026-10-22: Row links are real links.** Owner: "make the editor as standard as possible"; no syntax left in row
 text. A row link is mark kind `r` (v = the linked row's id, `ROW_LINK_ID_RE`), drawn as `span.bl-link[data-r]`
 (`rowMarkTags`, read back by `readRowMarksFromDom`); words link to a web address or a row, never both (`setRowMark`).
@@ -187,18 +198,6 @@ row edit has ended by then). Owner: "no way to remove formatting": the bar gaine
 `clearRowFormattingInSelection` drops every mark but links; notes/threads use removeFormat + clear the highlight).
 Typing shortcuts `[ ] `/`[x] ` (checkbox) and `# ` (heading) on Enter are gone (owner agreed: typed text stays as
 typed); OPML import still reads `[ ]`/`[x]` checkbox prefixes.
-
-**2026-10-22: Calmer selection bar; toolbar formatting removed.** Owner asked whether the popover was the most
-elegant design and what else it could simplify, then "do it". Bar is now B · I · U · S · A · Link · ✦ with no dividers.
-A (`data-cmd="colors"`) swaps the bar for one palette in place (`openSelectionFmtPalette`, `data-pick="colors"`):
-text colours over highlights in rows, highlights only in notes/threads; swatches carry `data-kind` c/hl. The A
-previews the selection's own colour and highlight (`rowSelectionColors`, `--sfmt-a-fg/-bg`). The bar shows on mouse
-release, not mid-drag (`_sfmtPointerDown`). Bug "bar sometimes doesn't appear": dragging over a row that isn't
-being edited left a plain page selection; the row click now starts editing with those words selected
-(`selectLabelWordsForEditing`). A whole-row style of the same kind becomes word formatting when the bar changes part
-of it (`applyRowMarkToRange`, `ROW_MARK_TO_STYLE`). Toolbar lost Bold, Italic, Highlight ▾, Text colour ▾ (it keeps
-Heading style); whole rows: right-click › More › Format icon row (`fmt-*` actions → `toggleNodeStyle`) or the
-shortcuts. AI ▾ Rewrite node = whole rows only; selected words = ✦. Ctrl/Cmd+K stays Quick Assist.
 
 ### In progress / not built
 

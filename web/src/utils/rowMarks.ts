@@ -419,3 +419,18 @@ export function convertLegacyRowLinks(
   }
   return { text: out, marks: fromCharFormats(outFormats), changed };
 }
+
+/** Drops every `ch` from the text, moving the formatting of the characters around it along
+ * (a To-Do title's chips put zero-width spaces in its editor that aren't part of the words). */
+export function stripRowMarkChars(text: string, marks: unknown, ch: string): { text: string; marks: RowMark[] } {
+  const src = String(text || '');
+  const formats = toCharFormats(marks, src.length);
+  let out = '';
+  const kept: CharFormat[] = [];
+  for (let i = 0; i < src.length; i++) {
+    if (src[i] === ch) continue;
+    out += src[i];
+    kept.push(formats[i]);
+  }
+  return { text: out, marks: fromCharFormats(kept) };
+}

@@ -600,6 +600,15 @@ initHubTodosState({
     footer: ''
   },
   {
+    // A To-Do title's formatting is stored like a row's (marks beside the plain text), so the
+    // Hub draws it with the same helpers.
+    name: 'hubRowMarks',
+    sourceFile: 'src/utils/rowMarks.ts',
+    testFile: 'tests/unit/rowMarks.test.ts',
+    targetFile: 'hub.html',
+    footer: ''
+  },
+  {
     name: 'hubTodoModel',
     sourceFile: 'src/utils/todoModel.ts',
     testFile: 'tests/unit/todoModel.test.ts',
