@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: One dialog frame.** Unification item 3. Version history, Section icon library, diagram "Review before
+generating", Keyboard shortcuts and the Cheatsheet use the same head as the other app dialogs (`.app-modal-head`: title,
+grey line under it, `.app-modal-close-btn` ×). Version history shows the document name under its title; the icon
+library lost its big Close button; the review got a ×. Welcome and "Why Sakura" stay branded.
+
 **2026-10-23: Confirm wording and Reset settings.** Unification item 4. Dialog titles are sentence case questions
 ("Delete forever?", "Empty Trash?", "Turn off encryption?", "Delete this row?"), buttons sentence case ("Delete forever",
 "Undo restore", "Switch anyway"). "Clear all nodes" is "Clear all rows". Reset settings no longer asks: it keeps the old
@@ -170,13 +175,6 @@ Insert ▾, AI ▾, Export ▾ / Import ▾, the app bar's Import & Export (Expo
 opened by `openSbMenuUnder(btn, items, {alignRight, keyboard})`; a second click on the button closes it
 (`_sbAnchorJustClosed`). Items may carry `id`. Old `.export-menu`/`.tb-menu`/`.todo-dd-menu` markup for these is gone;
 the account, notifications, Share, document Link and Feedback filter stay panels (forms, not menus).
-
-**2026-10-23: Link card.** Owner: "unable to get the link popover at all … unable to add the display text" for a
-pasted address in a row. While a field is edited and the caret is in a link, `#link-card` shows under it (address = Open,
-then Copy, Edit, Remove; `showLinkCard`, driven by `selectionchange` over `LINK_CARD_FIELDS`: rows, To-Do titles, notes,
-threads). Edit/Remove reuse each field's right-click items (`linkCardMenuItems`; To-Dos via
-`sakuraTodoTitleFmt.linkItems`). The Link box now opens under the words and labels its fields Text / Address. Fixed:
-right-click › Edit link… while editing a row placed the box from a detached link (rect captured before `commitEdit`).
 
 ### In progress / not built
 
