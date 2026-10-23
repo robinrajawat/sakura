@@ -63,11 +63,21 @@ test.describe('PDF status stamp', () => {
   });
 });
 
-test.describe('Export menu width', () => {
-  test('hugs its content instead of a 240px minimum', async ({ page }) => {
+test.describe('Import & Export menu', () => {
+  // Owner, 2026-10-23 (one menu everywhere): Export ▾ is the shared menu, opened under its button.
+  test('Import & Export is the shared menu, right-aligned under its button, and a second click closes it', async ({ page }) => {
     await open(page);
-    const minWidth = await page.locator('#export-menu').evaluate((e) => getComputedStyle(e).minWidth);
-    expect(minWidth).toBe('0px');
+    const btn = page.locator('#appbar-more-toggle');
+    await btn.click();
+    const menu = page.locator('#appbar-more-menu');
+    await expect(menu).toHaveClass(/sb-context-menu/);
+    await expect(btn).toHaveAttribute('aria-expanded', 'true');
+    const b = (await btn.boundingBox())!, m = (await menu.boundingBox())!;
+    expect(Math.abs(m.x + m.width - (b.x + b.width))).toBeLessThan(2);
+    expect(m.y).toBeGreaterThan(b.y + b.height - 1);
+    await btn.click();
+    await expect(menu).toHaveCount(0);
+    await expect(btn).toHaveAttribute('aria-expanded', 'false');
   });
 });
 

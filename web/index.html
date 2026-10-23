@@ -465,17 +465,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .tb-menu-trigger svg{flex:0 0 auto}
 .tb-menu-trigger-label{font:500 12.5px 'Inter',sans-serif}
 .tb-caret{opacity:.55}
-.tb-menu.hl-palette{flex-direction:column;align-items:stretch;min-width:210px;gap:1px;padding:6px}
-.tb-menu-item{appearance:none;border:none;background:transparent;display:flex;align-items:center;gap:10px;width:100%;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--fg);font:400 13px 'Inter',sans-serif;text-align:left}
-.tb-menu-item[hidden]{display:none}
-.tb-menu-item svg{flex:0 0 auto;color:var(--muted)}
-.tb-menu-item:hover,.tb-menu-item:focus-visible{background:var(--hover);outline:none}
-.tb-menu-label{flex:1 1 auto}
-.tb-menu-heading{font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:8px 10px 3px;user-select:none}
-.tb-menu-heading:first-child{padding-top:3px}
-.tb-menu-markers{display:flex;gap:4px;padding:2px 8px 4px}
-.tb-menu-divider{height:1px;background:var(--border);margin:4px 2px}
-/* The rewrite item lives inside a closed menu, so mirror its busy spinner on the AI trigger. */
+/* AI work in progress spins the AI button's icon (its menu is closed by then). */
 #ai-wrap:has(.ai-busy) #qb-ai svg:first-child{animation:ai-spin 1.1s linear infinite}
 .hl-palette{position:absolute;top:calc(100% + 8px);left:0;z-index:60;display:none;gap:6px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:8px}
 .hl-palette.open{display:flex}
@@ -1424,6 +1414,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .link-card-btn{all:unset;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;color:var(--muted);cursor:pointer}
 .link-card-btn:hover{background:var(--hover);color:var(--fg)}
 .link-card-btn.danger:hover{color:#dc2626;background:color-mix(in srgb,#dc2626 10%,transparent)}
+.sb-context-check{flex:0 0 auto;margin-left:12px;color:var(--accent)}
 .sb-context-item.sb-context-submenu-open{background:var(--hover)}
 /* Menus opened from inside a preview (Stamp, Download) sit above it. */
 body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open) .sb-context-menu{z-index:2700}
@@ -2938,19 +2929,6 @@ body.printing-generic #gpe-overlay{
 #todos-add-btn{appearance:none;border:none;background:var(--accent);color:#fff;width:28px;height:28px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:opacity .12s}
 #todos-add-row:focus-within #todos-add-btn{display:inline-flex}
 #todos-add-btn:hover{opacity:.88}
-#todos-more-menu{right:0;left:auto;min-width:270px;max-height:min(440px,70vh)}
-#todos-more-menu .todo-more-item{justify-content:flex-start}
-/* Version history is a flyout of the ⋯ menu (owner, 2026-10-20: "version should be kept as sub menu"). */
-#todos-more-menu{overflow:visible;min-width:220px}
-.todo-dd-flyout-wrap{position:relative}
-.todo-dd-flyout-label{flex:1 1 auto}
-.todo-dd-chevron{margin-left:auto;color:var(--muted)}
-.todo-dd-flyout-trigger[aria-expanded="true"]{background:var(--hover,color-mix(in srgb,var(--fg) 7%,transparent))}
-/* Fixed, placed by script: the To-Dos panel clips anything that overflows it. */
-#todos-history-menu{position:fixed;top:0;left:0;right:auto;min-width:270px;z-index:1000}
-.todo-more-item{display:flex;align-items:center;justify-content:flex-start;gap:9px}
-.todo-more-item svg{flex:0 0 auto;color:var(--muted)}
-#todos-select-toggle[aria-pressed="true"]{color:var(--accent)}
 .todo-dd-wrap{position:relative;flex:0 0 auto}
 .todo-dd-trigger{appearance:none;border:none;background:none;width:22px;height:22px;border-radius:6px;color:var(--hint);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 .todo-dd-trigger:hover{color:var(--fg);background:var(--hover)}
@@ -2976,9 +2954,6 @@ body.printing-generic #gpe-overlay{
 .doc-link-menu-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .doc-link-menu-btn.primary:hover{filter:brightness(1.06)}
 .todo-dd-menu.open{display:flex}
-.todo-history-item .todo-history-when{flex:0 0 auto}
-.todo-history-item .todo-history-meta{margin-left:auto;padding-left:14px;color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.todo-dd-empty{padding:6px 12px;font:400 12px 'Inter',sans-serif;color:var(--muted)}
 .todo-dd-label{font:600 10px 'Inter',sans-serif;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px 3px}
 .todo-dd-divider{height:1px;background:var(--border);margin:5px 2px}
 .todo-dd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:8px 10px;border-radius:8px;font:400 12.5px 'Inter',sans-serif;cursor:pointer;transition:background .12s}
@@ -3088,7 +3063,6 @@ body.printing-generic #gpe-overlay{
 .todo-select-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg)}
 #todos-panel.select-mode .todo-row:not(.completed) .todo-check{display:none}
 #todos-panel.select-mode .todo-row:not(.completed) .todo-select-check{display:inline-flex}
-#todos-select-toggle.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 #todos-bulk-bar{display:none;align-items:center;gap:4px;padding:7px 10px;flex-shrink:0;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--accent) 6%,transparent)}
 #todos-bulk-count{font:500 11.5px 'Inter',sans-serif;color:var(--fg);margin-right:auto;white-space:nowrap}
 .todo-bulk-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:11px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
@@ -3518,10 +3492,6 @@ body.printing-generic #gpe-overlay{
         <button class="btn" id="appbar-more-toggle" data-tip="Import &amp; Export">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
         </button>
-        <div class="export-menu export-menu-rich" id="appbar-more-menu" style="padding:4px">
-          <button class="export-item" id="appbar-more-export-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span><span class="export-label">Export</span></button>
-          <button class="export-item" id="appbar-more-import-btn"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span><span class="export-label">Import</span></button>
-        </div>
       </div>
       <div class="export-wrap" id="notif-wrap">
         <button class="btn" id="notif-toggle" data-tip="Notifications" aria-haspopup="true" aria-expanded="false">
@@ -4387,14 +4357,7 @@ body.printing-generic #gpe-overlay{
       </div>
       <div class="export-wrap" style="display:flex;gap:4px">
         <button class="btn" id="import-toggle" data-tip="Import"><svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="btn-label">Import ▾</span></button>
-        <div class="export-menu export-menu-rich" id="import-menu">
-          <button class="export-item" data-import="opml"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg></span><span class="export-label">OPML <span class="export-ext">.opml</span></span></button>
-        </div>
         <button class="btn primary" id="export-toggle" data-tip="Export"><svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="btn-label">Export ▾</span></button>
-        <div class="export-menu export-menu-rich" id="export-menu">
-          <button class="export-item" data-save="pdf"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span><span class="export-label">PDF <span class="export-ext">.pdf</span></span></button>
-          <button class="export-item" data-save="opml"><span class="export-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg></span><span class="export-label">OPML <span class="export-ext">.opml</span></span></button>
-        </div>
       </div>
     </div>
   </div>
@@ -4524,23 +4487,7 @@ body.printing-generic #gpe-overlay{
       <div class="ag-buttons">
         <div class="hl-wrap tb-menu-wrap" id="insert-wrap">
           <button class="btn quick-btn tb-menu-trigger" id="qb-insert" data-tip="Insert into the selected node" aria-label="Insert" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="tb-menu-trigger-label">Insert</span><svg class="tb-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="hl-palette tb-menu" id="insert-menu" role="menu" aria-label="Insert">
-          <div class="tb-menu-heading">Basics</div>
-          <button role="menuitem" class="tb-menu-item" id="qb-note" aria-label="Note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg><span class="tb-menu-label">Note</span></button>
-          <button role="menuitem" class="tb-menu-item" id="qb-checkbox" aria-label="Toggle checkbox"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg><span class="tb-menu-label">Checkbox</span></button>
-          <button role="menuitem" class="tb-menu-item" id="qb-tags" aria-label="Tags"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span class="tb-menu-label">Tags…</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="date-time"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tb-menu-label">Date/time</span></button>
-          <div class="tb-menu-heading">Marker</div>
-          <div class="tb-menu-markers" id="insert-markers" role="group" aria-label="Marker"></div>
-          <div class="tb-menu-heading">Discuss</div>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="remark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg><span class="tb-menu-label">Thread</span></button>
-          <div class="tb-menu-heading">Visuals</div>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="table"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg><span class="tb-menu-label">Table</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="tb-menu-label">Image</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="diagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg><span class="tb-menu-label">Diagram</span></button>
-          <button role="menuitem" class="tb-menu-item" data-insert-action="diagram-gen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg><span class="tb-menu-label">Generate diagram</span></button>
-          </div>
-        </div>
+                  </div>
       </div>
     </div>
     <span class="quick-sep"></span>
@@ -4549,10 +4496,7 @@ body.printing-generic #gpe-overlay{
       <div class="ag-buttons">
         <div class="hl-wrap tb-menu-wrap" id="ai-wrap">
           <button class="btn quick-btn tb-menu-trigger" id="qb-ai" data-tip="AI" aria-label="AI" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg><span class="tb-menu-trigger-label">AI</span><svg class="tb-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="hl-palette tb-menu" id="ai-menu" role="menu" aria-label="AI">
-          <button role="menuitem" class="tb-menu-item ai-rewrite-btn" id="qb-ai-rewrite" data-tip="Rewrite node (AI)" aria-label="Rewrite node"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg><span class="tb-menu-label">Rewrite node</span></button>
-          <button role="menuitem" class="tb-menu-item ai-rewrite-btn" id="qb-ai-outline" data-tip="Generate outline (AI)" aria-label="Generate outline with AI"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg><span class="tb-menu-label">Generate outline</span></button>
-          </div>
+          
         </div>
       </div>
     </div>
@@ -4574,13 +4518,6 @@ body.printing-generic #gpe-overlay{
 <div id="editor-wrap"><div id="editor-title-row"><div id="editor-title-inner"><input id="header-title" type="text" placeholder="Untitled" aria-label="Title" autocomplete="off" /><div id="editor-meta-row">
         <div class="todo-dd-wrap" id="doc-status-wrap">
           <button type="button" class="doc-status-chip unset" id="doc-status-chip" data-tip="Document status" aria-haspopup="true" aria-expanded="false">No status</button>
-          <div class="todo-dd-menu" id="doc-status-menu" role="menu">
-            <button type="button" class="todo-dd-item selected" data-value="" role="menuitemradio" aria-checked="true">No status<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-            <button type="button" class="todo-dd-item" data-value="draft" role="menuitemradio" aria-checked="false">Draft<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-            <button type="button" class="todo-dd-item" data-value="review" role="menuitemradio" aria-checked="false">Review<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-            <button type="button" class="todo-dd-item" data-value="approved" role="menuitemradio" aria-checked="false">Approved<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-            <button type="button" class="todo-dd-item" data-value="rejected" role="menuitemradio" aria-checked="false">Rejected<span class="dd-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></button>
-          </div>
         </div>
         <input id="sb-author" type="text" class="doc-status-chip unset doc-author-chip" placeholder="+ Add author" data-tip="Document author" autocomplete="off" spellcheck="false" />
         <div class="todo-dd-wrap" id="doc-link-wrap">
@@ -4723,19 +4660,6 @@ body.printing-generic #gpe-overlay{
     </div>
     <div class="todo-dd-wrap" id="todos-more-wrap">
       <button type="button" class="todo-dd-trigger" id="todos-more-trigger" data-tip="More" aria-label="More To-Do actions" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
-      <div class="todo-dd-menu" id="todos-more-menu" role="menu">
-        <div class="todo-dd-flyout-wrap">
-          <button type="button" class="todo-dd-item todo-more-item todo-dd-flyout-trigger" id="todos-history-trigger" role="menuitem" aria-haspopup="menu" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg><span class="todo-dd-flyout-label">Version history</span><svg class="todo-dd-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>
-          <div class="todo-dd-menu todo-dd-flyout" id="todos-history-menu" role="menu">
-            <span class="todo-dd-label">Restore an earlier version</span>
-            <div id="todos-history-inline"></div>
-    <button type="button" class="todo-dd-item todo-more-item" id="todos-history-save-btn" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save a version now</button>
-          </div>
-        </div>
-        <div class="todo-dd-divider"></div>
-        <button type="button" class="todo-dd-item todo-more-item" id="todos-export-pdf-item" role="menuitem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Export as PDF</button>
-        <button type="button" class="todo-dd-item todo-more-item" id="todos-select-toggle" role="menuitem" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg>Select or reorder tasks</button>
-      </div>
     </div>
     <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
     <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
@@ -13484,10 +13408,6 @@ function updateDocStatusChip(){
     btn.textContent=docStatusLabel(docStatus);
     btn.classList.toggle('unset',!docStatus);
   }
-  document.querySelectorAll('#doc-status-menu .todo-dd-item').forEach(item=>{
-    const match=item.getAttribute('data-value')===docStatus;
-    item.classList.toggle('selected',match); item.setAttribute('aria-checked',String(match));
-  });
 }
 function setDocStatus(status,persist=true){
   docStatus=DOC_STATUSES.includes(status)?status:'';
@@ -14306,23 +14226,10 @@ function wireQaToolbarDropdown(triggerId,menuId,wrapId){
     if(!e.target.closest('#'+wrapId))el(menuId)?.classList.remove('open');
   });
 }
+// Document status: the shared menu under the chip, the current status ticked.
 el('doc-status-chip')?.addEventListener('click',e=>{
   e.stopPropagation();
-  const menu=el('doc-status-menu'); if(!menu)return;
-  const isOpen=menu.classList.contains('open');
-  document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
-  menu.classList.toggle('open',!isOpen);
-  e.currentTarget.setAttribute('aria-expanded',String(!isOpen));
-});
-document.querySelectorAll('#doc-status-menu .todo-dd-item').forEach(item=>{
-  item.addEventListener('click',e=>{
-    e.stopPropagation();
-    setDocStatus(item.getAttribute('data-value')||'');
-    el('doc-status-menu')?.classList.remove('open');
-  });
-});
-document.addEventListener('mousedown',e=>{
-  if(!e.target.closest('#doc-status-wrap'))el('doc-status-menu')?.classList.remove('open');
+  openSbMenuUnder(e.currentTarget,DOC_STATUSES.map(v=>({label:docStatusLabel(v),checked:(docStatus||'')===v,data:{value:v},onClick:()=>setDocStatus(v)})),{id:'doc-status-menu',label:'Document status',keyboard:e.detail===0});
 });
 // The open document's version history, one click from its title (also on the tab's and File
 // Explorer's right-click menus).
@@ -25478,10 +25385,24 @@ el('search-input').addEventListener('keydown',e=>{
 document.querySelectorAll('.fmt-btn').forEach(btn=>btn.addEventListener('click',()=>handleToolbarStyle(btn.dataset.style)));
 el('heading-toggle-btn')?.addEventListener('click',e=>{e.stopPropagation(); const pal=el('heading-palette'); if(!pal)return; const opening=!pal.classList.contains('open'); closeAllPanelsExceptGlobalSearch?.(); if(opening){pal.querySelectorAll('.heading-option').forEach(o=>o.classList.remove('heading-option-active')); const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const levels=selectedNodes.map(n=>n.styles.heading||0); const allSame=levels.length&&levels.every(l=>l===levels[0]); if(allSame)pal.querySelector(`.heading-option[data-level="${levels[0]}"]`)?.classList.add('heading-option-active'); pal.classList.add('open'); el('heading-toggle-btn')?.setAttribute('aria-expanded','true')}});
 document.querySelectorAll('.heading-option').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation(); applyHeadingOption(Number(btn.dataset.level))}));
-el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)}); el('import-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('import-menu').classList.toggle('open')});
-el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('import-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('export-menu').classList.toggle('open');});
-el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
-el('appbar-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu').classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(false); el('appbar-more-menu').classList.toggle('open')});
+el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
+el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,exportMenuItems(),{id:'export-menu',label:'Export',alignRight:true,keyboard:e.detail===0});});
+el('import-toggle')?.addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,importMenuItems(),{id:'import-menu',label:'Import',alignRight:true,keyboard:e.detail===0});});
+el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
+el('appbar-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('account-menu')?.classList.remove('open'); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,[
+  {label:'Export', icon:SB_EXPORT_ICON, submenu:exportMenuItems()},
+  {label:'Import', icon:SB_IMPORT_ICON, submenu:importMenuItems()}
+],{id:'appbar-more-menu',label:'Import & Export',alignRight:true,keyboard:e.detail===0});});
+// Export ▾ / Import ▾ (and the app bar's Import & Export ›): the shared menu, one item per format.
+const SB_EXPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+const SB_IMPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+const SB_PDF_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>';
+const SB_OPML_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg>';
+function exportMenuItems(){ return [
+  {label:'PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},
+  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{save:'opml'}, onClick:()=>exportOpml()}
+]; }
+function importMenuItems(){ return [{label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{import:'opml'}, onClick:()=>triggerOpmlImport()}]; }
 // Makes a real panel/menu open anchored to the button that was actually clicked (the '...'
 // or Account toggle), instead of its own default position — which is relative to its original,
 // now-invisible wrapper elsewhere in the DOM. Without this, clicking e.g. 'Export' inside the
@@ -25496,8 +25417,6 @@ function anchorMenuToButton(menuEl,anchorEl){
   menuEl.style.right=(window.innerWidth-r.right)+'px';
   menuEl.style.left='auto';
 }
-el('appbar-more-export-btn')?.addEventListener('click',e=>{e.stopPropagation(); const anchor=el('appbar-more-toggle'); el('appbar-more-menu').classList.remove('open'); setTimeout(()=>{el('export-toggle').click(); anchorMenuToButton(el('export-menu'),anchor);},0)});
-el('appbar-more-import-btn')?.addEventListener('click',e=>{e.stopPropagation(); const anchor=el('appbar-more-toggle'); el('appbar-more-menu').classList.remove('open'); setTimeout(()=>{el('import-toggle').click(); anchorMenuToButton(el('import-menu'),anchor);},0)});
 el('account-settings-btn')?.addEventListener('click',e=>{e.stopPropagation(); const anchor=el('account-toggle'); el('account-menu').classList.remove('open'); setTimeout(()=>{el('settings-toggle').click(); anchorMenuToButton(el('settings-panel'),anchor);},0)});
 el('account-help-btn')?.addEventListener('click',e=>{e.stopPropagation(); const anchor=el('account-toggle'); el('account-menu').classList.remove('open'); setTimeout(()=>{el('help-toggle').click(); anchorMenuToButton(el('help-panel'),anchor);},0)});
 el('account-google-signin-btn')?.addEventListener('click',e=>{e.stopPropagation(); signInWithGoogleAccount()});
@@ -25514,8 +25433,6 @@ el('account-signout-btn')?.addEventListener('click',async e=>{
   if(!ok)return;
   signOutOfAccount();
 });
-document.querySelectorAll('.export-item').forEach(item=>item.addEventListener('click',()=>{el('export-menu').classList.remove('open'); const type=item.dataset.save; if(type==='pdf')exportPdfDirect(); else if(type==='opml')exportOpml()}));
-document.querySelectorAll('[data-import]').forEach(item=>item.addEventListener('click',()=>{el('import-menu').classList.remove('open'); if(item.dataset.import==='opml')triggerOpmlImport();}));
 document.addEventListener('click',e=>{
   // A click on anything inside a currently-open blocking modal (role="dialog"
   // aria-modal="true".open — sakuraConfirm/sakuraPrompt's shared overlay, the diagram editor,
@@ -25529,7 +25446,7 @@ document.addEventListener('click',e=>{
   // AI fallback warning ran into: clicking the password prompt's own button silently closed the
   // Settings panel behind it, only visible once the prompt itself closed a moment later.
   if(e.target.closest('[role="dialog"][aria-modal="true"].open'))return;
-  const importMenu=el('import-menu'),importToggle=el('import-toggle'); if(importMenu&&!importMenu.contains(e.target)&&e.target!==importToggle)importMenu.classList.remove('open'); const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),menu=el('export-menu'),toggle=el('export-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'),appbarMoreMenu=el('appbar-more-menu'),appbarMoreToggle=el('appbar-more-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(!menu.contains(e.target)&&e.target!==toggle)menu.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(appbarMoreMenu&&!appbarMoreMenu.contains(e.target)&&e.target!==appbarMoreToggle&&!appbarMoreToggle?.contains(e.target))appbarMoreMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
+  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
 },true);
 // Dedicated capture-phase listener for Quick Insert's outside-click dismissal.
 // Deliberately NOT folded into the bubble-phase listener above: at least 47 buttons in this
@@ -26582,7 +26499,7 @@ const aiRewriteInFlight=new Set();
 async function rewriteNodeText(nodeId){
   if(aiRewriteInFlight.has(nodeId))return; // already rewriting this node — a rapid double-trigger would otherwise fire two concurrent requests
   aiRewriteInFlight.add(nodeId);
-  const btn=el('qb-ai-rewrite'); if(btn)btn.classList.add('ai-busy');
+  const btn=el('qb-ai'); if(btn)btn.classList.add('ai-busy');
   try{
     const idx=getIndex(nodes,nodeId); if(idx<0)return;
     const original=nodes[idx].text||''; if(!original.trim())return;
@@ -26606,7 +26523,7 @@ async function rewriteNodeText(nodeId){
 async function rewriteMultipleNodes(nodeIds){
   if(!nodeIds.length)return;
   if(nodeIds.length===1){await rewriteNodeText(nodeIds[0]); return;}
-  const btn=el('qb-ai-rewrite'); if(btn)btn.classList.add('ai-busy');
+  const btn=el('qb-ai'); if(btn)btn.classList.add('ai-busy');
   try{
     // validIds/texts built together (not filtered separately) so results[j] always maps
     // back to the correct node id below — a stale-index bug here previously misaligned
@@ -26888,7 +26805,7 @@ async function rewriteSubTextSelection(busyBtn){
   const {start,end}=range;
   const selected=(input.textContent||'').slice(start,end);
   if(!selected.trim())return;
-  const btn=busyBtn||el('qb-ai-rewrite'); if(btn)btn.classList.add('ai-busy');
+  const btn=busyBtn||el('qb-ai'); if(btn)btn.classList.add('ai-busy');
   try{
     const result=await callAiApi(selected);
     if(!result)throw new Error('Empty response from AI');
@@ -26987,26 +26904,18 @@ function insertAiOutline(parsed){
   return mapped;
 }
 
-el('qb-ai-rewrite').addEventListener('click',()=>{
+// AI ▾ and Insert ▾ on the toolbar: the shared menu, opened under the button.
+function aiRewriteSelection(){
   // Whole rows only: rewriting selected words is the selection popover's ✦ (one place for it).
-  // Multi-selected nodes
   if(multiSelectedIds.length>1){rewriteMultipleNodes(multiSelectedIds); return;}
-  // Single selected node
   if(selectedId!==null){rewriteNodeText(selectedId); return;}
   showToast('Select a node first');
-});
-el('qb-ai-outline').addEventListener('click',()=>generateOutlineWithAi(el('qb-ai-outline')));
-// These four toolbar buttons lived right next to the Note Panel's own click-outside-to-close
-// listeners and got swept away with them when that panel was removed -- unrelated to notes,
-// restored here verbatim (qb-note repointed to the inline note entry point).
-el('qb-note')?.addEventListener('click', () => {
-  if (selectedId !== null) openInlineNoteAndFocus(selectedId);
-});
+}
 el('qb-zoom')?.addEventListener('click', () => {
   if (focusedId !== null) exitFocus();
   else if (selectedId !== null) enterFocus(selectedId);
 });
-el('qb-checkbox')?.addEventListener('click', () => {
+function toggleCheckboxOnSelection(){
   const targets = multiSelectedIds.length > 1 ? multiSelectedIds : (selectedId !== null ? [selectedId] : []);
   if (!targets.length) return;
   const anyChecked = targets.some(id => { const i = getIndex(nodes,id); return i >= 0 && nodes[i].isCheckbox; });
@@ -27017,50 +26926,37 @@ el('qb-checkbox')?.addEventListener('click', () => {
     else { nodes[i].isCheckbox = true; nodes[i].checked = false; }
   });
   markDirty(); render();
-});
-el('qb-tags')?.addEventListener('click', () => {
-  if (selectedId !== null) openTagManager(selectedId);
-});
-// Toolbar Insert ▾ / AI ▾ menus. Each trigger toggles its own menu; any item click, an outside
-// click, or Esc closes it. Insert's extra rows dispatch through runQuickAction, exactly like the
-// right-click menu, and rows the current document can't use (ctxActionAllowed) are hidden.
-function closeToolbarMenus(){
-  ['insert','ai'].forEach(k=>{ el(k+'-menu')?.classList.remove('open'); el(k==='ai'?'qb-ai':'qb-insert')?.setAttribute('aria-expanded','false'); });
 }
-[['qb-insert','insert-menu'],['qb-ai','ai-menu']].forEach(([btnId,menuId])=>{
-  el(btnId)?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const menu=el(menuId); if(!menu)return;
-    const opening=!menu.classList.contains('open');
-    closeAllPanelsExceptGlobalSearch?.(); closeToolbarMenus();
-    if(!opening)return;
-    menu.querySelectorAll('[data-insert-action]').forEach(b=>{ b.hidden=!ctxActionAllowed(b.dataset.insertAction); });
-    if(menuId==='insert-menu'){
-      // Same marker strip as the top of the right-click menu; the selected node's marker shows active.
-      const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.marker||''):'';
-      const strip=el('insert-markers');
-      if(strip)strip.innerHTML=NODE_MARKERS.map(m=>`<button type="button" class="pv-qm-btn pv-qm-mark tb-menu-marker${cur===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}" aria-label="${nodeMarkerLabel(m)}" aria-pressed="${cur===m}">${markIconSvg(m)}</button>`).join('');
-    }
-    menu.classList.add('open'); el(btnId).setAttribute('aria-expanded','true');
-    menu.querySelector('.tb-menu-item:not([hidden])')?.focus();
-  });
-  el(menuId)?.addEventListener('click',e=>{ if(e.target.closest('.tb-menu-item'))closeToolbarMenus(); });
-  el(menuId)?.addEventListener('keydown',e=>{
-    const items=[...el(menuId).querySelectorAll('.tb-menu-item:not([hidden]),.tb-menu-marker')];
-    const i=items.indexOf(document.activeElement);
-    if(e.key==='ArrowDown'){ e.preventDefault(); items[(i+1)%items.length]?.focus(); }
-    else if(e.key==='ArrowUp'){ e.preventDefault(); items[(i-1+items.length)%items.length]?.focus(); }
-    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeToolbarMenus(); el(btnId)?.focus(); }
-  });
-});
-el('insert-markers')?.addEventListener('click',e=>{
-  const b=e.target.closest('.tb-menu-marker'); if(!b)return;
-  e.stopPropagation();
-  if(selectedId!==null){ setNodeMarker(selectedId,b.dataset.marker); render(); }
-  closeToolbarMenus();
-});
-document.querySelectorAll('#insert-menu [data-insert-action]').forEach(b=>b.addEventListener('click',()=>{ if(selectedId!==null)runQuickAction(b.dataset.insertAction,selectedId,el('qb-insert')?.getBoundingClientRect()); }));
-document.addEventListener('click',e=>{ if(!e.target.closest('#insert-wrap,#ai-wrap'))closeToolbarMenus(); });
+function aiMenuItems(){ return [
+  {id:'qb-ai-rewrite', label:'Rewrite node', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>', title:'Rewrite node (AI)', onClick:aiRewriteSelection},
+  {id:'qb-ai-outline', label:'Generate outline', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg>', title:'Generate outline (AI)', onClick:()=>generateOutlineWithAi(el('qb-ai'))}
+]; }
+// Rows the current document can't use (ctxActionAllowed) are left out; Insert's extra rows run
+// through runQuickAction, exactly like the right-click menu.
+function insertMenuItems(){
+  const one=selectedId!==null&&!selectAllMode;
+  const act=(a,label,icon)=>ctxActionAllowed(a)?[{label,icon,data:{insertAction:a},onClick:()=>{ if(selectedId!==null)runQuickAction(a,selectedId,el('qb-insert')?.getBoundingClientRect()); }}]:[];
+  const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.marker||''):'';
+  return [
+    {heading:'Basics'},
+    {id:'qb-note', label:'Note', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>', disabled:selectedId===null, onClick:()=>{ if(selectedId!==null)openInlineNoteAndFocus(selectedId); }},
+    {id:'qb-checkbox', label:'Checkbox', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg>', disabled:!one, onClick:toggleCheckboxOnSelection},
+    {id:'qb-tags', label:'Tags…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', disabled:!one, onClick:()=>{ if(selectedId!==null)openTagManager(selectedId); }},
+    ...act('date-time','Date/time','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'),
+    {heading:'Marker'},
+    {id:'insert-markers', iconRow:NODE_MARKERS.map(m=>({label:nodeMarkerLabel(m), icon:markIconSvg(m), cls:'pv-qm-mark tb-menu-marker', current:cur===m, data:{marker:m,color:nodeMarkerColor(m)}, onClick:()=>{ if(selectedId!==null){ setNodeMarker(selectedId,m); render(); } }}))},
+    {heading:'Discuss'},
+    ...act('remark','Thread','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>'),
+    {heading:'Visuals'},
+    ...act('table','Table','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>'),
+    ...act('image','Image','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'),
+    ...act('diagram','Diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg>'),
+    ...act('diagram-gen','Generate diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg>')
+  ];
+}
+function closeToolbarMenus(){ if(_sbAnchorBtn&&(_sbAnchorBtn.id==='qb-insert'||_sbAnchorBtn.id==='qb-ai'))closeSbContextMenu(); }
+el('qb-insert')?.addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,insertMenuItems(),{id:'insert-menu',label:'Insert',keyboard:e.detail===0}); });
+el('qb-ai')?.addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,aiMenuItems(),{id:'ai-menu',label:'AI',keyboard:e.detail===0}); });
 // BYOK-only dropdown now — hosted lives in the separate AI Mode toggle above it, not as an 8th
 // option here. getAllAiProviders() (the fixed seven, unchanged) is the right list; hosted is
 // never a valid value for this specific <select>.
@@ -27595,7 +27491,7 @@ function _sbContextKeyHandler(e){
   if(e.key==='ArrowDown'){ e.preventDefault(); _sbContextActiveIndex=(_sbContextActiveIndex+1+_sbContextButtons.length)%_sbContextButtons.length; _sbContextUpdateHighlight(); }
   else if(e.key==='ArrowUp'){ e.preventDefault(); _sbContextActiveIndex=(_sbContextActiveIndex-1+_sbContextButtons.length)%_sbContextButtons.length; _sbContextUpdateHighlight(); }
   else if(e.key==='Enter'){ if(_sbContextActiveIndex>=0){ e.preventDefault(); _sbContextButtons[_sbContextActiveIndex].click(); } }
-  else if(e.key==='Escape'){ e.preventDefault(); closeSbContextMenu(); }
+  else if(e.key==='Escape'){ e.preventDefault(); const a=_sbAnchorBtn; closeSbContextMenu(); a?.focus(); }
 }
 function closeSbContextMenu(e){
   // A click on a submenu's own parent item opens that submenu, and a fold row unfolds in place,
@@ -27603,6 +27499,8 @@ function closeSbContextMenu(e){
   if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger, .sb-context-fold, .sb-context-keep'))return;
   // A right-click inside the menu (e.g. on a quick-row icon) is handled there and keeps it open.
   if(e&&e.type==='contextmenu'&&_sbContextEl&&_sbContextEl.contains(e.target))return;
+  // Closing a dropdown by clicking its own button again: note it, so that click doesn't reopen it.
+  if(_sbAnchorBtn){ if(e&&e.type==='click'&&_sbAnchorBtn.contains(e.target)){ _sbAnchorJustClosed=_sbAnchorBtn; setTimeout(()=>{ _sbAnchorJustClosed=null; },0); } _sbAnchorBtn.setAttribute('aria-expanded','false'); _sbAnchorBtn.classList.remove('menu-open'); _sbAnchorBtn=null; }
   if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
 // One level of submenu for showSbContextMenu: an item with `submenu:[...items]` renders as a parent
 // row with a chevron and opens a flyout beside it on hover, click, or →. The flyout is a child of
@@ -27693,8 +27591,9 @@ function _sbBuildItemButton(it, container, list){
     return t;
   }
   const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
-  btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+(it.sub?'<span class="sb-context-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.meta?'<span class="sb-context-meta">'+esc(it.meta)+'</span>':'')+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
-  if(it.action)btn.dataset.action=it.action; if(it.data)Object.assign(btn.dataset,it.data);
+  btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+(it.sub?'<span class="sb-context-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.meta?'<span class="sb-context-meta">'+esc(it.meta)+'</span>':'')+(it.checked?'<svg class="sb-context-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'')+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
+  if(it.action)btn.dataset.action=it.action; if(it.data)Object.assign(btn.dataset,it.data); if(it.id)btn.id=it.id;
+  if(it.checked!==undefined){ btn.setAttribute('role','menuitemradio'); btn.setAttribute('aria-checked',String(!!it.checked)); }
   if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; container.appendChild(btn); return null; }
   // A hint on an item shows in the app's tooltip, like everywhere else.
   if(it.title)btn.dataset.tip=it.title;
@@ -27706,7 +27605,7 @@ function _sbBuildItemButton(it, container, list){
     btn.appendChild(tr);
   }
   if(it.submenu){
-    btn._sbSubmenu=it.submenu; btn.setAttribute('aria-haspopup','menu');
+    btn._sbSubmenu=it.submenu; btn._sbSubmenuId=it.submenuId||''; btn.setAttribute('aria-haspopup','menu');
     btn.addEventListener('click',e=>{ e.stopPropagation(); _sbOpenSubmenu(btn,false); });
     btn.addEventListener('mouseenter',()=>{ _sbContextActiveIndex=_sbContextButtons.indexOf(btn); _sbContextUpdateHighlight(); _sbOpenSubmenu(btn,false); });
   } else {
@@ -27741,6 +27640,7 @@ function _sbOpenSubmenu(trigger, viaKeyboard){
   _sbCloseSubmenu(false);
   const sub=document.createElement('div'); sub.className='sb-context-menu sb-context-submenu'; sub.setAttribute('role','menu'); sub._trigger=trigger;
   const subButtons=[];
+  if(trigger._sbSubmenuId)sub.id=trigger._sbSubmenuId;
   trigger._sbSubmenu.forEach(it=>_sbBuildItemButton(it, sub, subButtons));
   sub._buttons=subButtons;
   _sbContextEl.appendChild(sub);
@@ -27775,6 +27675,23 @@ function _sbRefitMenu(menu){
 function _sbFitMenuHeight(menu){
   const top=parseFloat(menu.style.top)||menu.getBoundingClientRect().top;
   menu.style.maxHeight=Math.max(120,window.innerHeight-top-8)+'px';
+}
+// A dropdown is the same menu opened under its button (toolbar, chips, panel headers): left-aligned
+// to it, or right-aligned with {alignRight:true}. A second click on the button closes it.
+let _sbAnchorBtn=null, _sbAnchorJustClosed=null;
+function openSbMenuUnder(btn,items,opts={}){
+  if(!btn)return;
+  if(_sbAnchorJustClosed===btn){ _sbAnchorJustClosed=null; return; }
+  if(_sbAnchorBtn===btn&&_sbContextEl){ closeSbContextMenu(); return; }
+  closeAllPanelsExceptGlobalSearch?.();
+  const r=btn.getBoundingClientRect();
+  showSbContextMenu(r.left,r.bottom+4,items,opts);
+  const m=_sbContextEl; if(!m)return;
+  m.classList.add('sb-dropdown');
+  if(opts.alignRight)m.style.left=Math.max(8,Math.min(r.right-m.offsetWidth,window.innerWidth-m.offsetWidth-8))+'px';
+  _sbAnchorBtn=btn; btn.setAttribute('aria-expanded','true'); btn.classList.add('menu-open');
+  // Opened from the keyboard, the first item is highlighted so arrows and Enter work at once.
+  if(opts.keyboard&&_sbContextButtons.length){ _sbContextActiveIndex=0; _sbContextUpdateHighlight(); }
 }
 function showSbContextMenu(x,y,items,opts){
   closeSbContextMenu(); closeMoveMenu(); hideLinkCard();
@@ -35340,26 +35257,23 @@ function waitingCandidates(todos) {
   }
   // Version history lives inline in the ⋯ menu (owner, 2026-10-20: "keep them inline rather than a
   // popup"): the last 5 versions, newest first, each one click to restore.
-  function renderTodosHistoryInline(){
-    const box=document.getElementById('todos-history-inline'); if(!box)return;
-    box.innerHTML='';
+  function todosHistoryMenuItems(){
     const revisions=loadTodosRevisions().slice().reverse().slice(0,TODOS_REVISION_MAX);
-    if(!revisions.length){
-      const empty=document.createElement('div'); empty.className='todo-dd-empty';
-      empty.textContent='No earlier versions yet';
-      empty.dataset.tip='A version is saved automatically every 10 minutes while you make changes';
-      box.appendChild(empty);
-      return;
-    }
-    revisions.forEach(rev=>{
-      const b=document.createElement('button'); b.type='button'; b.className='todo-dd-item todo-more-item todo-history-item'; b.setAttribute('role','menuitem');
-      b.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg><span class="todo-history-when"></span><span class="todo-history-meta"></span>';
-      b.querySelector('.todo-history-when').textContent=(typeof historyMenuWhen==='function'?historyMenuWhen(rev.ts):new Date(rev.ts).toLocaleString());
-      b.querySelector('.todo-history-meta').textContent=todosHistorySummary(rev.todos);
-      if(rev.reason&&rev.reason!=='Auto')b.dataset.tip=rev.reason;
-      b.addEventListener('click',()=>{ closeTodoDropdowns(); restoreTodosRevision(rev.ts); });
-      box.appendChild(b);
-    });
+    const clock='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>';
+    const rows=revisions.length?revisions.map(rev=>({label:(typeof historyMenuWhen==='function'?historyMenuWhen(rev.ts):new Date(rev.ts).toLocaleString()), sub:todosHistorySummary(rev.todos), icon:clock, title:rev.reason&&rev.reason!=='Auto'?rev.reason:'', data:{todosRevision:String(rev.ts)}, onClick:()=>restoreTodosRevision(rev.ts)}))
+      :[{label:'No earlier versions yet', disabled:true, title:'A version is saved automatically every 10 minutes while you make changes'}];
+    return [{heading:'Restore an earlier version'}, ...rows, {divider:true}, {id:'todos-history-save-btn', label:'Save a version now', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>', onClick:()=>saveTodosVersionNow()}];
+  }
+  // ⋯ on the To-Dos header: the shared menu. Version history lives in its flyout (owner, 2026-10-20:
+  // "keep them inline rather than a popup"): the last 5 versions, newest first, each one click to restore.
+  function todosMoreMenuItems(){
+    const selecting=!!document.getElementById('todos-panel')?.classList.contains('select-mode');
+    return [
+      {id:'todos-history-trigger', label:'Version history', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>', submenu:todosHistoryMenuItems(), submenuId:'todos-history-menu'},
+      {divider:true},
+      {id:'todos-export-pdf-item', label:'Export as PDF', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>', onClick:()=>exportTodosAsPdf()},
+      {id:'todos-select-toggle', label:'Select or reorder tasks', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M4.5 8l1 1 2-2"/><line x1="12" y1="6" x2="21" y2="6"/><rect x="3" y="15" width="6" height="6" rx="1"/><line x1="12" y1="16" x2="21" y2="16"/></svg>', checked:selecting, onClick:()=>toggleTodoSelectMode()}
+    ];
   }
   async function restoreTodosRevision(ts){
     const revisions=loadTodosRevisions();
@@ -35759,25 +35673,11 @@ function waitingCandidates(todos) {
       menu.closest('.todo-dd-wrap')?.querySelector('.todo-dd-trigger')?.setAttribute('aria-expanded','false');
     });
   }
-  function wireTodoMenuKeyNav(menuId){
-    const menu=document.getElementById(menuId);
-    if(!menu) return;
-    menu.addEventListener('keydown',e=>{
-      // Only items that are showing, in the list that has focus (a flyout steps through its own).
-      const list=document.activeElement?.closest('.todo-dd-menu')||menu;
-      const items=[...list.querySelectorAll('.todo-dd-item')].filter(i=>i.offsetParent&&i.closest('.todo-dd-menu')===list);
-      const idx=items.indexOf(document.activeElement);
-      if(e.key==='ArrowDown'){ e.preventDefault(); items[(idx+1+items.length)%items.length]?.focus(); }
-      else if(e.key==='ArrowUp'){ e.preventDefault(); items[(idx-1+items.length)%items.length]?.focus(); }
-      else if(e.key==='Home'){ e.preventDefault(); items[0]?.focus(); }
-      else if(e.key==='End'){ e.preventDefault(); items[items.length-1]?.focus(); }
-    });
-  }
+
   document.getElementById('todos-bulk-due-btn')?.addEventListener('click',e=>openBulkDueDateEditor(e.currentTarget));
   document.getElementById('todos-bulk-complete-btn')?.addEventListener('click', bulkComplete);
   document.getElementById('todos-bulk-delete-btn')?.addEventListener('click', bulkDelete);
   document.getElementById('todos-bulk-cancel-btn')?.addEventListener('click', ()=>toggleTodoSelectMode(false));
-  document.getElementById('todos-select-toggle')?.addEventListener('click', ()=>{ closeTodoDropdowns(); toggleTodoSelectMode(); });
   document.addEventListener('click',e=>{
     if(!e.target.closest('.todo-dd-wrap')) closeTodoDropdowns();
   });
@@ -35789,40 +35689,9 @@ function waitingCandidates(todos) {
     }
   });
   document.getElementById('todos-more-trigger')?.addEventListener('click',e=>{
-    e.stopPropagation();
-    const menu=document.getElementById('todos-more-menu');
-    const isOpen=menu.classList.contains('open');
-    closeTodoDropdowns();
-    if(!isOpen) renderTodosHistoryInline();
-    menu.classList.toggle('open', !isOpen);
-    e.currentTarget.setAttribute('aria-expanded', String(!isOpen));
-    if(!isOpen) menu.querySelector('.todo-dd-item')?.focus();
+    e.stopPropagation(); closeTodoDropdowns();
+    openSbMenuUnder(e.currentTarget, todosMoreMenuItems(), {id:'todos-more-menu', label:'More To-Do actions', alignRight:true, keyboard:e.detail===0});
   });
-  wireTodoMenuKeyNav('todos-more-menu');
-  // Version history flyout: opens on hover, click or →; to the left of the menu when there's room
-  // (the panel sits on the right), otherwise to the right, or over it on a narrow screen.
-  (function(){
-    const trig=document.getElementById('todos-history-trigger'), fly=document.getElementById('todos-history-menu');
-    const more=document.getElementById('todos-more-menu');
-    if(!trig||!fly||!more)return;
-    const openFly=focusFirst=>{
-      if(!fly.classList.contains('open')){
-        renderTodosHistoryInline();
-        fly.classList.add('open'); trig.setAttribute('aria-expanded','true');
-        const r=more.getBoundingClientRect(), t=trig.getBoundingClientRect(), w=fly.offsetWidth, h=fly.offsetHeight;
-        let left=r.left-w-6; if(left<8)left=Math.min(r.right+6,window.innerWidth-w-8);
-        fly.style.left=Math.max(8,left)+'px'; fly.style.top=Math.max(8,Math.min(t.top-7,window.innerHeight-h-8))+'px';
-      }
-      if(focusFirst)fly.querySelector('.todo-dd-item')?.focus();
-    };
-    const closeFly=()=>{ fly.classList.remove('open'); trig.setAttribute('aria-expanded','false'); };
-    // Hover already opened it, so a click keeps it open rather than toggling it shut.
-    trig.addEventListener('click',e=>{ e.stopPropagation(); openFly(false); });
-    trig.addEventListener('mouseenter',()=>openFly(false));
-    more.querySelectorAll(':scope > .todo-dd-item').forEach(b=>b.addEventListener('mouseenter',closeFly));
-    trig.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='Enter'||e.key===' '){ e.preventDefault(); e.stopPropagation(); openFly(true); } });
-    fly.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft'||e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeFly(); trig.focus(); } });
-  })();
   // N jumps to "Add a task" — only while focus is inside the To-Dos panel and not in a text field,
   // so it never steals the letter from typing anywhere else.
   document.getElementById('todos-panel')?.addEventListener('keydown',e=>{
@@ -35833,8 +35702,6 @@ function waitingCandidates(todos) {
     const input=document.getElementById('todos-input'); if(!input)return;
     e.preventDefault(); input.focus();
   });
-  document.getElementById('todos-export-pdf-item')?.addEventListener('click',()=>{ closeTodoDropdowns(); exportTodosAsPdf(); });
-  document.getElementById('todos-history-save-btn')?.addEventListener('click', ()=>{ closeTodoDropdowns(); saveTodosVersionNow(); });
   document.getElementById('todos-search-trigger')?.addEventListener('click', toggleTodosSearch);
   document.getElementById('todos-search-input')?.addEventListener('input', e=>{
     searchQuery=e.target.value;

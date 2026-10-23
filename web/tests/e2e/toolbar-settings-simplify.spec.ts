@@ -78,12 +78,13 @@ test.describe('Fixed main toolbar', () => {
     // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
     // Rewrite + Generate outline live in AI ▾.
     await page.locator('#qb-insert').click();
-    await expect(page.locator('#insert-menu .tb-menu-heading')).toHaveText(['Basics', 'Marker', 'Discuss', 'Visuals']);
-    await expect(page.locator('#insert-menu .tb-menu-item:not([hidden]) .tb-menu-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
+    // Both are the shared menu (the right-click menu's look and keys), opened under the button.
+    await expect(page.locator('#insert-menu .sb-context-heading')).toHaveText(['Basics', 'Marker', 'Discuss', 'Visuals']);
+    await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(3);
     await page.locator('#qb-ai').click();
-    await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
-    await expect(page.locator('#ai-menu .tb-menu-label')).toHaveText(['Rewrite node', 'Generate outline']);
+    await expect(page.locator('#insert-menu')).toHaveCount(0);
+    await expect(page.locator('#ai-menu .sb-context-label')).toHaveText(['Rewrite node', 'Generate outline']);
     await page.locator('#qb-ai').click();
     // Bold/Italic/Highlight/Text colour moved to the selection popover (words) and right-click ›
     // More › Format (whole rows), owner 2026-10-22.
@@ -248,7 +249,7 @@ test.describe('Settings', () => {
     await page.locator('.node-row[data-id="1"]').click();
     await page.locator('#qb-insert').click();
     await page.locator('#insert-menu [data-insert-action="remark"]').click();
-    await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
+    await expect(page.locator('#insert-menu')).toHaveCount(0);
     await expect(page.locator('.thread-composer-input[data-node-id="1"]')).toBeFocused();
   });
 
@@ -258,7 +259,7 @@ test.describe('Settings', () => {
     await page.locator('.node-row[data-id="1"]').click();
     await page.locator('#qb-insert').click();
     await page.locator('#insert-markers [data-marker="followup"]').click();
-    await expect(page.locator('#insert-menu')).not.toHaveClass(/open/);
+    await expect(page.locator('#insert-menu')).toHaveCount(0);
     // @ts-expect-error -- bare global from index.html
     expect(await page.evaluate(() => nodes.find((n: { id: number }) => n.id === 1).marker)).toBe('followup');
     await page.locator('#qb-insert').click();

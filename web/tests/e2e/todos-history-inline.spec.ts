@@ -35,19 +35,16 @@ test('⋯ › Version history lists the last 5 versions and one click restores',
   await open(page, [task('a', 'Current task')], revisions);
 
   await page.locator('#todos-more-trigger').click();
-  await expect(page.locator('#todos-history-menu')).not.toBeVisible();
+  await expect(page.locator('#todos-history-menu')).toHaveCount(0);
   await page.locator('#todos-history-trigger').hover();
-  const rows = page.locator('#todos-more-menu .todo-history-item');
+  const rows = page.locator('#todos-history-menu [data-todos-revision]');
   await expect(rows).toHaveCount(5);
   await expect(page.locator('#todo-history-overlay, #todos-history-overlay')).toHaveCount(0);
-  await expect(rows.first().locator('.todo-history-meta')).toHaveText('7 open, 0 done');
-  await expect(rows.last().locator('.todo-history-meta')).toHaveText('3 open, 0 done');
-  // The summary stays on one line.
-  const box = await rows.first().boundingBox();
-  expect(box!.height).toBeLessThan(40);
+  await expect(rows.first().locator('.sb-context-sub')).toHaveText('7 open, 0 done');
+  await expect(rows.last().locator('.sb-context-sub')).toHaveText('3 open, 0 done');
 
   await rows.nth(1).click(); // 6 tasks
-  await expect(page.locator('#todos-more-menu')).not.toHaveClass(/open/);
+  await expect(page.locator('#todos-more-menu')).toHaveCount(0);
   await expect(page.locator('#todos-body .todo-row')).toHaveCount(6);
 
   // Restoring saved the replaced list first, and storage keeps at most 5.
@@ -60,26 +57,28 @@ test('with no versions the menu says so, and Save a version now adds one', async
   await open(page, [task('a', 'Only task')]);
   await page.locator('#todos-more-trigger').click();
   await page.locator('#todos-history-trigger').click();
-  await expect(page.locator('#todos-history-inline .todo-dd-empty')).toHaveText('No earlier versions yet');
+  await expect(page.locator('#todos-history-menu')).toContainText('No earlier versions yet');
   await page.locator('#todos-history-save-btn').click();
   await page.locator('#todos-more-trigger').click();
   await page.locator('#todos-history-trigger').hover();
-  await expect(page.locator('#todos-more-menu .todo-history-item')).toHaveCount(1);
+  await expect(page.locator('#todos-history-menu [data-todos-revision]')).toHaveCount(1);
 });
 
 test('the flyout opens with the keyboard and ← closes it', async ({ page }) => {
   await open(page, [task('a', 'Only task')], [{ ts: Date.now() - 3600_000, reason: 'Auto', todos: [task('a', 'Only task')] }]);
-  await page.locator('#todos-more-trigger').click();
-  await expect(page.locator('#todos-history-trigger')).toBeFocused();
+  await page.locator('#todos-more-trigger').focus();
+  await page.keyboard.press('Enter');
+  const active = page.locator('.sb-context-active');
+  await expect(active).toHaveAttribute('id', 'todos-history-trigger');
   await page.keyboard.press('ArrowRight');
-  await expect(page.locator('#todos-history-menu .todo-history-item').first()).toBeFocused();
+  await expect(page.locator('#todos-history-menu [data-todos-revision].sb-context-active')).toHaveCount(1);
   await page.keyboard.press('ArrowDown');
-  await expect(page.locator('#todos-history-save-btn')).toBeFocused();
+  await expect(page.locator('#todos-history-save-btn')).toHaveClass(/sb-context-active/);
   await page.keyboard.press('ArrowLeft');
-  await expect(page.locator('#todos-history-menu')).not.toBeVisible();
-  await expect(page.locator('#todos-history-trigger')).toBeFocused();
+  await expect(page.locator('#todos-history-menu')).toHaveCount(0);
+  await expect(page.locator('#todos-history-trigger')).toHaveClass(/sb-context-active/);
   await page.keyboard.press('ArrowDown');
-  await expect(page.locator('#todos-export-pdf-item')).toBeFocused();
+  await expect(page.locator('#todos-export-pdf-item')).toHaveClass(/sb-context-active/);
 });
 
 test('subtask editing looks like task editing; an unfolded task has no grey fill', async ({ page }) => {

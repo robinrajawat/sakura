@@ -245,6 +245,9 @@ test('names are one plain colour; a bare Yes takes one line', async ({ page }) =
 
 test('right-click and Insert offer one Thread item, no separate comment/question', async ({ page }) => {
   await seed(page);
+  await page.locator('.node-row[data-id="2"] .node-label').click();
+  await page.keyboard.press('Escape');
+  await page.locator('#qb-insert').click();
   const labels = await page.evaluate(`[...document.querySelectorAll('#insert-menu [data-insert-action]')].map(b => [b.dataset.insertAction, b.textContent.trim()])`) as string[][];
   expect(labels.filter(([a]) => a === 'remark').map(([, t]) => t)).toEqual(['Thread']);
   expect(labels.some(([a]) => a === 'qa')).toBe(false);

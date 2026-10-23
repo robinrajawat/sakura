@@ -54,9 +54,10 @@ async function seedNodes(page: import('@playwright/test').Page) {
 }
 
 async function openExportMenu(page: import('@playwright/test').Page) {
+  // Import & Export is the shared menu; Export › opens its formats beside it.
   await page.locator('#appbar-more-toggle').click();
-  await page.locator('#appbar-more-export-btn').click();
-  await expect(page.locator('#export-menu')).toHaveClass(/open/);
+  await page.locator('#appbar-more-menu').getByText('Export', { exact: true }).click();
+  await expect(page.locator('#appbar-more-menu .sb-context-submenu')).toBeVisible();
 }
 
 test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => {
@@ -66,22 +67,25 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     await dismissOverlays(page);
 
     await openExportMenu(page);
-    const exportItems = page.locator('#export-menu .export-item');
+    const exportItems = page.locator('#appbar-more-menu .sb-context-submenu .sb-context-item');
     await expect(exportItems).toHaveCount(2);
     expect(await exportItems.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.save))).toEqual(['pdf', 'opml']);
-    await expect(page.locator('#export-menu .export-item[data-save="pdf"]')).toBeVisible();
-    await expect(page.locator('#export-menu .export-item[data-save="opml"]')).toBeVisible();
+    await expect(page.locator('.sb-context-item[data-save="pdf"]')).toBeVisible();
+    await expect(page.locator('.sb-context-item[data-save="opml"]')).toBeVisible();
     // No leftover section labels/dividers from the old Copy / Document / Send a copy grouping.
-    await expect(page.locator('#export-menu .export-section-label, #export-menu .export-divider')).toHaveCount(0);
+    await expect(page.locator('#appbar-more-menu .sb-context-heading, #appbar-more-menu .sb-context-divider')).toHaveCount(0);
 
     await page.keyboard.press('Escape');
     await page.locator('#appbar-more-toggle').click();
-    await page.locator('#appbar-more-import-btn').click();
-    await expect(page.locator('#import-menu')).toHaveClass(/open/);
-    const importItems = page.locator('#import-menu .export-item');
+    await page.locator('#appbar-more-menu').getByText('Import', { exact: true }).click();
+    const importItems = page.locator('#appbar-more-menu .sb-context-submenu .sb-context-item');
     await expect(importItems).toHaveCount(1);
     expect(await importItems.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.import))).toEqual(['opml']);
-    await expect(page.locator('#import-menu .export-section-label, #import-menu .export-divider')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    // The Import ▾ button opens the same items.
+    await page.evaluate(() => document.getElementById('import-toggle')?.click());
+    await expect(page.locator('#import-menu .sb-context-item')).toHaveText([/OPML/]);
+    await page.keyboard.press('Escape');
 
     // Removed surfaces are really gone, not just hidden.
     for (const sel of ['#print-btn', '#appbar-more-print-btn', '#abhsec-print', '#sakura-doc-file-input', '#sakura-docx-file-input',
@@ -96,6 +100,7 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     expect(await page.evaluate(() => typeof (window as unknown as { PptxGenJS?: unknown }).PptxGenJS)).toBe('undefined');
 
     // The To-Dos panel exports PDF only — one "Export as PDF" item in its ⋯ menu.
+    await page.evaluate(() => (document.getElementById('todos-more-trigger') as HTMLElement | null)?.click());
     await expect(page.locator('#todos-more-menu [id^="todos-export"]')).toHaveCount(1);
     await expect(page.locator('#todos-more-menu #todos-export-pdf-item')).toHaveCount(1);
 
@@ -113,7 +118,7 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     });
 
     await openExportMenu(page);
-    await page.locator('#export-menu .export-item[data-save="pdf"]').click();
+    await page.locator('#appbar-more-menu .sb-context-item[data-save="pdf"]').click();
 
     await expect.poll(() => page.evaluate(() => (window as unknown as { __printCalls: number }).__printCalls)).toBe(1);
     expect(await page.evaluate(() => document.body.classList.contains('printing-preview'))).toBe(true);
@@ -136,7 +141,7 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
 
     await openExportMenu(page);
     const downloadPromise = page.waitForEvent('download');
-    await page.locator('#export-menu .export-item[data-save="opml"]').click();
+    await page.locator('#appbar-more-menu .sb-context-item[data-save="opml"]').click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.opml$/);
     const filePath = await download.path();
@@ -289,7 +294,7 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     await expect(page.locator('#help-toggle')).toBeVisible();
     // OPML is always in the Export menu now, even though the old prefs had hidden it.
     await openExportMenu(page);
-    await expect(page.locator('#export-menu .export-item[data-save="opml"]')).toBeVisible();
+    await expect(page.locator('#appbar-more-menu .sb-context-item[data-save="opml"]')).toBeVisible();
 
     // The next save writes no removed keys back.
     const saved = await page.evaluate(() => {

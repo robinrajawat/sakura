@@ -159,6 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: One menu for dropdowns.** Owner: "what's left to make it more elegant, standard and unified?" → item 1.
+Insert ▾, AI ▾, Export ▾ / Import ▾, the app bar's Import & Export (Export › / Import › flyouts), the document status chip
+(current one ticked: item `checked`) and the To-Dos ⋯ (Version history › flyout, `submenuId`) are `showSbContextMenu`
+opened by `openSbMenuUnder(btn, items, {alignRight, keyboard})`; a second click on the button closes it
+(`_sbAnchorJustClosed`). Items may carry `id`. Old `.export-menu`/`.tb-menu`/`.todo-dd-menu` markup for these is gone;
+the account, notifications, Share, document Link and Feedback filter stay panels (forms, not menus).
+
 **2026-10-23: Link card.** Owner: "unable to get the link popover at all … unable to add the display text" for a
 pasted address in a row. While a field is edited and the caret is in a link, `#link-card` shows under it (address = Open,
 then Copy, Edit, Remove; `showLinkCard`, driven by `selectionchange` over `LINK_CARD_FIELDS`: rows, To-Do titles, notes,
@@ -170,14 +177,6 @@ right-click › Edit link… while editing a row placed the box from a detached 
 thumbnail uses the picture caption's type (500 11px, muted) and, like an uncaptioned picture, shows nothing when untitled
 (`.node-diagram-preview-meta.is-empty`; Rename in the thumbnail menu adds `.renaming` to show the field). The stray
 "open in editor" icon at the far end of the diagram line is gone (`.node-inline-open-panel-btn`, its last user).
-
-**2026-10-23: Link box and preview header polish.** Owner: row links "still not working optimally"; image preview header
-squeezed. An address with spaces (words typed into Address) is refused: the field turns red (`.is-invalid`) and the box
-stays open (`applySelectionFmtUrl`). The Link box starts at the words and stays over the editor (`placeSelectionFmtPopover`
-when `pick==='url'`); opened from Edit link… it has no Back button (`noBack`). Preview headers: buttons never shrink, the
-row text ellipsizes; under 900px the name line sits above the buttons (`.pv-break`). Owner: "why the row text and not
-the caption? unified design": both headers lead with the item's own name, edited in place (`.pv-name`: the picture's
-`.niv-caption` moved up from the bottom bar, which is gone; the diagram's `.dv-title` is an input that renames it).
 
 ### In progress / not built
 

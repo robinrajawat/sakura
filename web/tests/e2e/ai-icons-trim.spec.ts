@@ -80,7 +80,8 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await seedDoc(page);
 
     // Toolbar AI group: exactly Generate outline + Rewrite node.
-    await expect(page.locator('#ai-menu .tb-menu-item')).toHaveCount(2);
+    await page.locator('#qb-ai').click();
+    await expect(page.locator('#ai-menu .sb-context-item')).toHaveCount(2);
     await expect(page.locator('#qb-ai-outline')).toHaveCount(1);
     await expect(page.locator('#qb-ai-rewrite')).toHaveCount(1);
     for (const id of ['qb-ai-expand', 'qb-ai-summarise', 'qb-ai-tags', 'qb-ai-icon', 'icon-picker-popover',
@@ -298,10 +299,10 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
 
     // ⋯ holds Version history (a flyout), Export as PDF and Select.
     await page.locator('#todos-more-trigger').click();
-    await expect(page.locator('#todos-more-menu')).toHaveClass(/open/);
-    await expect(page.locator('#todos-more-menu > .todo-dd-flyout-wrap > .todo-dd-item, #todos-more-menu > .todo-dd-item')).toHaveText(['Version history', 'Export as PDF', 'Select or reorder tasks']);
+    await expect(page.locator('#todos-more-menu')).toBeVisible();
+    await expect(page.locator('#todos-more-menu > .sb-context-item .sb-context-label')).toHaveText(['Version history', 'Export as PDF', 'Select or reorder tasks']);
     await page.locator('#todos-more-trigger').click();
-    await expect(page.locator('#todos-more-menu')).not.toHaveClass(/open/);
+    await expect(page.locator('#todos-more-menu')).toHaveCount(0);
 
     // N (with focus in the panel, outside any text field) jumps to the add-task input.
     await page.locator('#todos-panel-maximize').focus();
