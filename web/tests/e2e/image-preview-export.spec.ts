@@ -65,13 +65,13 @@ test('a marked-up picture offers With markings (a PNG) or Original, in the previ
   expect(orig.suggestedFilename()).toBe('Login page.svg');
 });
 
-test('zoom: Ctrl+scroll zooms in gentle steps around the pointer, a drag moves it, 0 fits again', async ({ page }) => {
+test('zoom: Ctrl+scroll zooms in gentle steps around the pointer, a drag moves it, F fits again, 0 shows actual size', async ({ page }) => {
   await open(page);
   await page.setViewportSize({ width: 1200, height: 800 });
   await page.locator('.node-image-thumb').first().click();
   const viewer = page.locator('#node-image-viewer');
   const fig = viewer.locator('.niv-figure');
-  await expect(viewer.locator('.niv-zoom-level')).toHaveText('Fit');
+  await expect(viewer.locator('.niv-zoom-level')).toHaveText(/^\d+%$/);
   const box = (await fig.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.keyboard.down('Control');
@@ -88,9 +88,13 @@ test('zoom: Ctrl+scroll zooms in gentle steps around the pointer, a drag moves i
   const after = (await fig.boundingBox())!;
   expect(Math.round(after.x - before.x)).toBe(60);
   await expect(viewer).toHaveClass(/open/);
-  await page.keyboard.press('0');
+  await page.keyboard.press('f');
   await expect.poll(scale).toBe(1);
-  await expect(viewer.locator('.niv-zoom-level')).toHaveText('Fit');
+  // 0 (or a click on the level) shows the picture at its own size, as in the diagram preview.
+  await page.keyboard.press('0');
+  await expect(viewer.locator('.niv-zoom-level')).toHaveText('100%');
+  await viewer.locator('.niv-zoom-fit').click();
+  await expect.poll(scale).toBe(1);
   // + steps in; stepping to another picture or closing starts again at Fit.
   await page.keyboard.press('+');
   await expect.poll(scale).toBeCloseTo(1.2, 5);

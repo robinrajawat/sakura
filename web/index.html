@@ -1768,24 +1768,28 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 #diagram-viewer{--dv-pad:24px;position:fixed;inset:0;z-index:2550;display:none;background:rgba(20,18,15,.45);user-select:none;-webkit-user-select:none}
 #diagram-viewer.open{display:block}
 .dv-window{position:absolute;inset:28px;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.28);overflow:hidden}
-.dv-bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;height:48px;padding:0 12px 0 18px;border-bottom:1px solid var(--border);font-family:'Inter',sans-serif}
+.dv-bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;border-bottom:1px solid var(--border);font-family:'Inter',sans-serif}
 .dv-title{font:600 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .dv-where{font:400 12.5px 'Inter',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 .dv-spacer{flex:1 1 auto}
-.dv-zoom{display:flex;align-items:center;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--bg)}
-.dv-zoom button{appearance:none;border:none;background:none;width:30px;height:28px;color:var(--muted);font-size:16px;cursor:pointer;border-radius:7px}
-.dv-zoom button:hover{color:var(--fg);background:var(--hover)}
-.dv-zoom-level{min-width:48px;text-align:center;font:500 12.5px 'Inter',sans-serif;color:var(--fg);font-variant-numeric:tabular-nums}
-.dv-btn{appearance:none;height:30px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.dv-btn:hover{background:var(--hover)}
-.dv-btn.dv-edit{background:var(--accent);border-color:var(--accent);color:#fff}
-.dv-btn.dv-edit:hover{background:color-mix(in srgb,var(--accent) 88%,#000)}
-.dv-close{appearance:none;border:none;background:none;width:30px;height:30px;border-radius:8px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.dv-close:hover{background:var(--hover);color:var(--fg)}
+/* The header both previews share (image and diagram): .pv-head, .pv-where, .pv-zoom, .pv-fit, plus
+   .niv-btn icon buttons, .niv-markup-toggle for the item's own action and .niv-counter. */
+.pv-where{font:400 12.5px 'Inter',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.pv-zoom{display:flex;align-items:center;height:30px;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;background:var(--bg)}
+.pv-zoom button{appearance:none;border:none;background:none;width:28px;height:28px;color:var(--muted);font-size:16px;cursor:pointer;border-radius:6px}
+.pv-zoom button:hover{color:var(--fg);background:var(--hover)}
+.pv-zoom .pv-level{width:auto;min-width:46px;text-align:center;font:500 12px 'Inter',sans-serif;color:var(--fg);font-variant-numeric:tabular-nums}
+.pv-fit{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:30px;padding:0 11px;border:1px solid var(--border);border-radius:7px;font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer}
+.pv-fit:hover{background:var(--hover)}
+.pv-fit:focus-visible,.pv-zoom button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.dv-canvas .dv-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2}
+.dv-canvas .dv-prev{left:14px}.dv-canvas .dv-next{right:14px}
+.dv-single .dv-nav{display:none}
+.dv-nav:disabled{opacity:.3}
 .dv-canvas{position:relative;flex:1 1 auto;overflow:hidden;cursor:grab;touch-action:none;background-color:color-mix(in srgb,var(--bg) 96%,var(--fg));background-image:radial-gradient(color-mix(in srgb,var(--fg) 14%,transparent) 1px,transparent 1px);background-size:18px 18px}
 .dv-canvas.dragging{cursor:grabbing}
 .dv-canvas img{position:absolute;left:0;top:0;transform-origin:0 0;box-sizing:content-box;padding:var(--dv-pad);user-select:none;-webkit-user-drag:none;pointer-events:none;background:#fff;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.dv-hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font:400 12px 'Inter',sans-serif;color:var(--muted);background:color-mix(in srgb,var(--bg) 90%,transparent);border:1px solid var(--border);border-radius:20px;padding:5px 12px;pointer-events:none;white-space:nowrap;animation:dv-hint-out .4s ease 4s forwards}
+.dv-hint{z-index:3;position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font:400 12px 'Inter',sans-serif;color:var(--muted);background:color-mix(in srgb,var(--bg) 90%,transparent);border:1px solid var(--border);border-radius:20px;padding:5px 12px;pointer-events:none;white-space:nowrap;animation:dv-hint-out .4s ease 4s forwards}
 @keyframes dv-hint-out{to{opacity:0}}
 #node-image-viewer{position:fixed;inset:0;z-index:2600;display:none;align-items:center;justify-content:center;background:rgba(15,14,12,.72);padding:24px;box-sizing:border-box}
 #node-image-viewer.open{display:flex}
@@ -1802,7 +1806,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .niv-size-btn:focus-visible,.niv-btn:focus-visible,.niv-nav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .niv-btn{all:unset;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;color:var(--muted);cursor:pointer}
 .niv-btn:hover{background:var(--hover);color:var(--fg)}
-.niv-btn.is-copied,.dv-btn.is-copied{color:var(--fc-green)}
+.niv-btn.is-copied{color:var(--fc-green)}
 .node-diagram-preview-thumb{position:relative}
 .copied-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:var(--edit-bg);color:var(--fc-green);border:1px solid color-mix(in srgb,var(--fc-green) 35%,var(--border));font:600 11px/1.4 'Inter',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none;animation:copied-badge-in .12s ease-out}
 @keyframes copied-badge-in{from{opacity:0;transform:translate(-50%,-40%)}}
@@ -1814,9 +1818,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 #node-image-viewer.niv-zoomed .niv-frame{overflow:hidden}
 #node-image-viewer.niv-zoomed:not(.niv-marking) .niv-figure{cursor:grab}
 #node-image-viewer.niv-zoomed:not(.niv-marking) .niv-figure.niv-panning{cursor:grabbing}
-.niv-zoom{display:inline-flex;align-items:center;gap:2px}
-.niv-zoom-level{all:unset;font:600 12px 'Inter',sans-serif;color:var(--muted);min-width:42px;text-align:center;cursor:pointer;border-radius:6px;padding:4px 2px}
-.niv-zoom-level:hover{background:var(--hover);color:var(--fg)}
 .niv-img{display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .niv-figure:not(.niv-auto) .niv-img{width:100%;height:auto;max-height:none}
 .niv-annot-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
@@ -10372,7 +10373,7 @@ async function copyNodeImage(nodeId,imageId,feedback){
 function showCopiedOn(target){
   if(!target||!target.isConnected){ showToast('Image copied','success'); return; }
   clearTimeout(target._copiedTimer);
-  if(target.matches('.niv-btn,.dv-btn')){
+  if(target.matches('.niv-btn')){
     if(target._copiedHtml===undefined)target._copiedHtml=target.innerHTML;
     target.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     target.classList.add('is-copied'); target.dataset.tipSaved=target.dataset.tip||''; target.dataset.tip='Copied';
@@ -10874,10 +10875,11 @@ function openNodeImageViewer(nodeId,imageId,opts){
     ov=document.createElement('div'); ov.id='node-image-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','Image viewer');
     ov.innerHTML=
       '<div class="niv-panel">'+
-        '<div class="niv-head">'+
-          '<span class="niv-counter"></span>'+
+        '<div class="niv-head pv-head">'+
+          '<span class="pv-where niv-where"></span><span class="niv-counter"></span>'+
           '<div class="niv-tools"><button type="button" class="niv-markup-toggle" aria-pressed="false" data-tip="Mark up this image — rectangles, arrows, highlighter, text (M)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Mark up</span><span class="niv-markup-count"></span></button></div>'+
-          '<div class="niv-zoom" role="group" aria-label="Zoom"><button type="button" class="niv-btn niv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="niv-zoom-level" data-tip="Fit (0)">Fit</button><button type="button" class="niv-btn niv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'+
+          '<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="niv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level niv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="niv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'+
+          '<button type="button" class="pv-fit niv-zoom-fit" data-tip="Fit to window (F)">Fit</button>'+
           '<div class="niv-size" role="group" aria-label="Display size">'+IMAGE_WIDTH_PRESETS.map(p=>'<button type="button" class="niv-size-btn" data-size="'+p.key+'" data-tip="'+(p.value?('Show at '+p.value+'% width here and in the PDF'):'Natural size, up to the full width')+'">'+p.label+'</button>').join('')+'</div>'+
           '<button type="button" class="niv-btn niv-copy" data-tip="Copy image" aria-label="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'+
           '<button type="button" class="niv-btn niv-download" data-tip="Download" aria-label="Download"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></button>'+
@@ -10887,6 +10889,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
         '<div class="niv-markup-bar" role="toolbar" aria-label="Markup">'+_nivMkBarHtml()+'</div>'+
         '<div class="niv-stage">'+
           '<button type="button" class="niv-nav niv-prev" aria-label="Previous image" data-tip="Previous (←)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'+
+          '<div class="dv-hint">'+PREVIEW_HINT+'</div>'+
           '<div class="niv-frame"><div class="niv-figure"><img class="niv-img" alt=""><svg class="niv-annot-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"></svg></div></div>'+
           '<button type="button" class="niv-nav niv-next" aria-label="Next image" data-tip="Next (→)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'+
         '</div>'+
@@ -10939,7 +10942,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
   _nivState={nodeId,imageId,captionUndoPushed:false,returnFocus:document.activeElement};
   _nivMk=null; ov.classList.remove('niv-marking');
   _nivZoomReset();
-  ov.classList.add('open');
+  ov.classList.add('open'); replayPreviewHint(ov);
   document.body.classList.add('node-image-viewer-open');
   window.addEventListener('keydown',_nivKeyHandler,true);
   refreshNodeImageViewer();
@@ -10957,7 +10960,9 @@ function refreshNodeImageViewer(){
   const fig=ov.querySelector('.niv-figure');
   fig.style.width=img.width?img.width+'%':'';
   fig.classList.toggle('niv-auto',!img.width);
-  ov.querySelector('.niv-counter').textContent=(ref.i+1)+' / '+ref.list.length;
+  ov.querySelector('.niv-counter').textContent=ref.list.length>1?(ref.i+1)+' / '+ref.list.length:'';
+  const where=getNodePlainText(nodes[ref.idx]).trim();
+  ov.querySelector('.niv-where').textContent=where?'in “'+where+'”':'';
   const cap=ov.querySelector('.niv-caption');
   if(document.activeElement!==cap)cap.value=img.caption||'';
   cap.disabled=readOnly; cap.placeholder=readOnly?'':'Add a caption…';
@@ -11007,30 +11012,34 @@ function _nivZoomApply(animate){
   const z=_nivZoom;
   fig.style.transition=animate?'transform .18s ease-out':'none';
   fig.style.transform=z.s===1?'':`translate(${z.tx}px,${z.ty}px) scale(${z.s})`;
-  ov.classList.toggle('niv-zoomed',z.s>1);
+  ov.classList.toggle('niv-zoomed',z.s!==1);
   const pic=fig.querySelector('.niv-img'); const lvl=ov.querySelector('.niv-zoom-level');
   // Shown against the picture's own pixels, as in the diagram preview; "Fit" when not zoomed.
-  if(lvl)lvl.textContent=z.s===1?'Fit':Math.round(z.s*(pic&&pic.naturalWidth?pic.clientWidth/pic.naturalWidth:1)*100)+'%';
+  if(lvl)lvl.textContent=Math.round(z.s*(pic&&pic.naturalWidth?pic.clientWidth/pic.naturalWidth:1)*100)+'%';
 }
 function _nivZoomReset(){ _nivZoom={s:1,tx:0,ty:0,drag:null}; _nivZoomApply(false); }
 // cx/cy: the client point that stays put (the middle of the picture when left out).
 function _nivZoomTo(scale,cx,cy,animate){
   const fig=el('node-image-viewer')?.querySelector('.niv-figure'); if(!fig)return;
-  const z=_nivZoom; const next=Math.min(8,Math.max(1,scale));
+  // Down to half of Fit (or the picture's own size when that's smaller), as in the diagram preview.
+  const z=_nivZoom; const next=Math.min(8,Math.max(Math.min(0.5,_nivActualScale()),scale));
+  if(Math.abs(next-1)<0.001){ _nivZoomReset(); if(animate)_nivZoomApply(true); return; }
   const r=fig.getBoundingClientRect();
   if(cx===undefined){ cx=r.left+r.width/2; cy=r.top+r.height/2; }
-  if(next===1){ _nivZoomReset(); if(animate)_nivZoomApply(true); return; }
   const left=r.left-z.tx, top=r.top-z.ty; // where the picture sits unzoomed
   const u=(cx-left-z.tx)/z.s, v=(cy-top-z.ty)/z.s;
   z.tx=cx-left-next*u; z.ty=cy-top-next*v; z.s=next;
   _nivZoomApply(animate);
 }
 function _nivZoomBy(f,cx,cy,animate=true){ _nivZoomTo(_nivZoom.s*f,cx,cy,animate); }
+// The scale at which the picture shows its own pixels (100%).
+function _nivActualScale(){ const pic=el('node-image-viewer')?.querySelector('.niv-img'); return pic&&pic.clientWidth&&pic.naturalWidth?pic.naturalWidth/pic.clientWidth:1; }
 function _nivZoomWire(ov){
   const stage=ov.querySelector('.niv-stage'); const fig=ov.querySelector('.niv-figure');
   ov.querySelector('.niv-zoom-in').addEventListener('click',()=>_nivZoomBy(1.2));
   ov.querySelector('.niv-zoom-out').addEventListener('click',()=>_nivZoomBy(1/1.2));
-  ov.querySelector('.niv-zoom-level').addEventListener('click',()=>_nivZoomTo(1,undefined,undefined,true));
+  ov.querySelector('.niv-zoom-level').addEventListener('click',()=>_nivZoomTo(_nivActualScale(),undefined,undefined,true));
+  ov.querySelector('.niv-zoom-fit').addEventListener('click',()=>_nivZoomTo(1,undefined,undefined,true));
   stage.addEventListener('wheel',e=>{
     if(!_nivState)return;
     const unit=e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1;
@@ -11039,14 +11048,14 @@ function _nivZoomWire(ov){
       // Capped per event, as in the diagram preview: a mouse-wheel notch is ~12%, a pinch glides.
       const d=Math.max(-20,Math.min(20,e.deltaY*unit));
       _nivZoomBy(Math.exp(-d*0.006),e.clientX,e.clientY,false);
-    } else if(_nivZoom.s>1){
+    } else if(_nivZoom.s!==1){
       e.preventDefault();
       const dx=e.shiftKey&&!e.deltaX?e.deltaY:e.deltaX, dy=e.shiftKey&&!e.deltaX?0:e.deltaY;
       _nivZoom.tx-=dx*unit; _nivZoom.ty-=dy*unit; _nivZoomApply(false);
     }
   },{passive:false});
   fig.addEventListener('pointerdown',e=>{
-    if(_nivMk||_nivZoom.s<=1||e.button!==0)return;
+    if(_nivMk||_nivZoom.s===1||e.button!==0)return;
     e.preventDefault();
     _nivZoom.drag={x:e.clientX,y:e.clientY,tx:_nivZoom.tx,ty:_nivZoom.ty};
     fig.setPointerCapture(e.pointerId); fig.classList.add('niv-panning');
@@ -11059,7 +11068,7 @@ function _nivZoomWire(ov){
   fig.addEventListener('pointerup',end); fig.addEventListener('pointercancel',end);
   fig.addEventListener('dblclick',e=>{
     if(_nivMk)return;
-    if(_nivZoom.s>1){ _nivZoomTo(1,undefined,undefined,true); return; }
+    if(_nivZoom.s!==1){ _nivZoomTo(1,undefined,undefined,true); return; }
     // A closer look: the picture's own pixels, or at least twice the size it's shown at.
     const pic=fig.querySelector('.niv-img'); const shown=pic&&pic.clientWidth?pic.naturalWidth/pic.clientWidth:1;
     _nivZoomTo(Math.max(2,shown),e.clientX,e.clientY,true);
@@ -11122,7 +11131,9 @@ function _nivKeyHandler(e){
   if(e.key==='ArrowRight'){ e.preventDefault(); e.stopPropagation(); stepNodeImageViewer(1); return; }
   if(!mod&&!e.altKey&&(e.key==='+'||e.key==='=')){ e.preventDefault(); e.stopPropagation(); _nivZoomBy(1.2); return; }
   if(!mod&&!e.altKey&&(e.key==='-'||e.key==='_')){ e.preventDefault(); e.stopPropagation(); _nivZoomBy(1/1.2); return; }
-  if(!mod&&!e.altKey&&e.key==='0'){ e.preventDefault(); e.stopPropagation(); _nivZoomTo(1,undefined,undefined,true); return; }
+  // The same keys as the diagram preview: 0 = actual size, F = fit.
+  if(!mod&&!e.altKey&&e.key==='0'){ e.preventDefault(); e.stopPropagation(); _nivZoomTo(_nivActualScale(),undefined,undefined,true); return; }
+  if(!mod&&!e.altKey&&!_nivMk&&(e.key==='f'||e.key==='F')){ e.preventDefault(); e.stopPropagation(); _nivZoomTo(1,undefined,undefined,true); return; }
   // Ctrl/Cmd+C with no text selected copies the picture.
   if(mod&&(e.key==='c'||e.key==='C')&&!String(window.getSelection()||'').trim()){ e.preventDefault(); e.stopPropagation(); copyNodeImage(_nivState.nodeId,_nivState.imageId,ov&&ov.querySelector('.niv-copy')); return; }
   // Tab/Enter/Space still operate the viewer's own buttons natively (no preventDefault); nothing
@@ -13715,16 +13726,27 @@ function showDiagramThumbMenu(e,d,titleEl){
     {label:'Delete diagram', danger:true, onClick:async()=>{ await deleteDiagram(d.id); render(); }}
   ]);
 }
+// The one hint line both previews show for a few seconds.
+const PREVIEW_HINT='Pinch or Ctrl+scroll to zoom · drag to move · Esc to close';
+// Shows the hint again each time a preview opens (the overlay itself is built once).
+function replayPreviewHint(ov){ const h=ov&&ov.querySelector('.dv-hint'); if(!h)return; h.style.animation='none'; void h.offsetWidth; h.style.animation=''; }
 function _dvEnsure(){
   let ov=el('diagram-viewer'); if(ov)return ov;
   ov=document.createElement('div'); ov.id='diagram-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
-  ov.innerHTML='<div class="dv-window"><div class="dv-bar"><span class="dv-title"></span><span class="dv-where"></span><span class="dv-spacer"></span>'
-    +'<div class="dv-zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><span class="dv-zoom-level">100%</span><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+)">+</button></div>'
-    +'<button type="button" class="dv-btn dv-fit" data-tip="Fit to window (F)">Fit</button><button type="button" class="dv-btn dv-actual" data-tip="Actual size (0)">100%</button>'
-    +'<button type="button" class="dv-btn dv-copy" aria-label="Copy image" data-tip="Copy image"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
-    +'<button type="button" class="dv-btn dv-download" data-tip="Download as PNG or SVG"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>Download</button><button type="button" class="dv-btn dv-edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button>'
-    +'<button type="button" class="dv-close" aria-label="Close" data-tip="Close (Esc)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
-    +'<div class="dv-canvas"><img alt="" draggable="false" /><div class="dv-hint">Pinch or Ctrl+scroll to zoom · scroll or drag to move · Esc to close</div></div></div>';
+  // The same header as the image preview (owner, 2026-10-23: one preview): name, place and count on
+  // the left with the item's own action, then zoom, Fit, Copy, Download, Delete and Close.
+  ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><span class="dv-title"></span><span class="pv-where dv-where"></span><span class="niv-counter dv-counter"></span>'
+    +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button><span class="dv-spacer"></span>'
+    +'<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level dv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'
+    +'<button type="button" class="pv-fit dv-fit" data-tip="Fit to window (F)">Fit</button>'
+    +'<button type="button" class="niv-btn dv-copy" aria-label="Copy image" data-tip="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
+    +'<button type="button" class="niv-btn dv-download" aria-label="Download" data-tip="Download as PNG or SVG"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></button>'
+    +'<button type="button" class="niv-btn dv-delete" aria-label="Delete diagram" data-tip="Delete diagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>'
+    +'<button type="button" class="niv-btn dv-close" aria-label="Close" data-tip="Close (Esc)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div>'
+    +'<div class="dv-canvas"><img alt="" draggable="false" />'
+    +'<button type="button" class="niv-nav dv-nav dv-prev" aria-label="Previous diagram" data-tip="Previous (←)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
+    +'<button type="button" class="niv-nav dv-nav dv-next" aria-label="Next diagram" data-tip="Next (→)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
+    +'<div class="dv-hint">'+PREVIEW_HINT+'</div></div></div>';
   document.body.appendChild(ov);
   const canvas=ov.querySelector('.dv-canvas');
   ov.addEventListener('mousedown',e=>{ if(e.target===ov)closeDiagramViewer(); });
@@ -13732,7 +13754,18 @@ function _dvEnsure(){
   ov.querySelector('.dv-zoom-in').addEventListener('click',()=>_dvZoomBy(1.2));
   ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.2));
   ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit(true));
-  ov.querySelector('.dv-actual').addEventListener('click',()=>_dvSetScale(1));
+  ov.querySelector('.dv-zoom-level').addEventListener('click',()=>_dvSetScale(1));
+  ov.querySelector('.dv-prev').addEventListener('click',()=>stepDiagramViewer(-1));
+  ov.querySelector('.dv-next').addEventListener('click',()=>stepDiagramViewer(1));
+  ov.querySelectorAll('.dv-nav').forEach(b=>b.addEventListener('pointerdown',e=>e.stopPropagation()));
+  // Delete, as in the image preview: the next diagram on the row shows, or the preview closes (Undo in the toast).
+  ov.querySelector('.dv-delete').addEventListener('click',async()=>{
+    if(!_dvState)return; const list=_dvSiblings(_dvState.id); const i=list.findIndex(x=>x.id===_dvState.id);
+    const next=list[i+1]||list[i-1]||null; const id=_dvState.id;
+    if(next)stepDiagramViewer(next===list[i+1]?1:-1); else closeDiagramViewer();
+    await deleteDiagram(id); render();
+    if(next&&_dvState)_dvRefreshCounter();
+  });
   ov.querySelector('.dv-download').addEventListener('click',e=>{
     const id=_dvState&&_dvState.id; if(!id)return;
     const r=e.currentTarget.getBoundingClientRect();
@@ -13779,6 +13812,8 @@ function _dvEnsure(){
     else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.2); }
     else if(e.key==='0'){ e.preventDefault(); e.stopPropagation(); _dvSetScale(1); }
     else if(e.key==='f'||e.key==='F'){ e.preventDefault(); e.stopPropagation(); _dvFit(true); }
+    else if(e.key==='ArrowLeft'){ e.preventDefault(); e.stopPropagation(); stepDiagramViewer(-1); }
+    else if(e.key==='ArrowRight'){ e.preventDefault(); e.stopPropagation(); stepDiagramViewer(1); }
     else if((e.ctrlKey||e.metaKey)&&(e.key==='c'||e.key==='C')&&_dvState){ e.preventDefault(); e.stopPropagation(); copyDiagramImage(_dvState.id,ov.querySelector('.dv-copy')); }
   },true);
   return ov;
@@ -13795,7 +13830,8 @@ function _dvSetScale(scale,cx,cy,animate=true){
   if(!_dvState)return;
   const canvas=el('diagram-viewer').querySelector('.dv-canvas');
   if(cx===undefined){ cx=canvas.clientWidth/2; cy=canvas.clientHeight/2; }
-  const next=Math.min(8,Math.max(0.1,scale)), k=next/_dvState.scale;
+  // Down to half of Fit (or actual size when that's smaller), as in the image preview.
+  const next=Math.min(8,Math.max(Math.min(_dvState.fit/2,1),scale)), k=next/_dvState.scale;
   _dvState.tx=cx-(cx-_dvState.tx)*k; _dvState.ty=cy-(cy-_dvState.ty)*k; _dvState.scale=next;
   _dvApply(animate);
 }
@@ -13816,7 +13852,7 @@ function openDiagramViewer(diagramId){
   const node=nodes.find(n=>n.id===d.anchorNodeId);
   ov.querySelector('.dv-title').textContent=d.title||'Untitled diagram';
   const where=node&&getNodePlainText(node).trim();
-  ov.querySelector('.dv-where').textContent=where?'· in “'+where+'”':'';
+  ov.querySelector('.dv-where').textContent=where?'in “'+where+'”':'';
   const img=ov.querySelector('.dv-canvas img');
   _dvState={id:d.id,scale:1,fit:1,tx:0,ty:0,w:1,h:1,drag:null,returnFocus:document.activeElement};
   img.style.transform='';
@@ -13826,6 +13862,21 @@ function openDiagramViewer(diagramId){
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
   img.src=d.previewSvg;
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
+  _dvRefreshCounter(); replayPreviewHint(ov);
+}
+// The diagrams on the same row, in order, that have a picture to show (← / → step through them).
+function _dvSiblings(id){ const d=findDiagram(id); return d?diagrams.filter(x=>x.anchorNodeId===d.anchorNodeId&&x.previewSvg):[]; }
+function _dvRefreshCounter(){
+  const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
+  const list=_dvSiblings(_dvState.id); const i=list.findIndex(x=>x.id===_dvState.id);
+  ov.querySelector('.dv-counter').textContent=list.length>1?(i+1)+' / '+list.length:'';
+  ov.querySelector('.dv-prev').disabled=i<=0; ov.querySelector('.dv-next').disabled=i<0||i>=list.length-1;
+  ov.classList.toggle('dv-single',list.length<2);
+}
+function stepDiagramViewer(delta){
+  if(!_dvState)return; const list=_dvSiblings(_dvState.id); const i=list.findIndex(x=>x.id===_dvState.id);
+  const next=list[i+delta]; if(!next)return;
+  const back=_dvState.returnFocus; openDiagramViewer(next.id); if(_dvState)_dvState.returnFocus=back;
 }
 function closeDiagramViewer(){
   const ov=el('diagram-viewer'); if(!ov||!ov.classList.contains('open'))return;

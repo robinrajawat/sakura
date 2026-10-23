@@ -387,7 +387,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(await img.evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft))).toBe(12);
     const level = viewer.locator('.dv-zoom-level');
     const fitText = await level.textContent();
-    await viewer.locator('.dv-actual').click();
+    await level.click(); // the level is Actual size, as in the image preview
     await expect(level).toHaveText('100%');
     await viewer.locator('.dv-zoom-in').click();
     await expect(level).toHaveText('120%');
@@ -529,5 +529,35 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     const [svg] = await Promise.all([page.waitForEvent('download'), page.locator('.sb-context-menu').getByText('SVG', { exact: false }).click()]);
     expect(fs.readFileSync(await svg.path(), 'utf8')).toContain('width="124"');
     expect(await page.evaluate(() => (window as any).__regen)).toBe(1);
+  });
+
+  // Owner, 2026-10-23: one preview for pictures and diagrams: same header, ← / → and Delete in both.
+  test('the preview steps through the row\'s diagrams with ← / → and the arrows, and Delete shows the next one', async ({ page }) => {
+    await seedOne(page);
+    await page.evaluate((svg) => {
+      const w = window as any;
+      w.eval('diagrams.push(' + JSON.stringify({ id: 'd2', anchorNodeId: 1, title: 'Returns', xml: '<mxGraphModel/>', previewSvg: svg, previewBorder: 12, pageSvgs: [], pageCount: 1, status: 'draft', note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }) + '); render();');
+    }, LARGE_PREVIEW_SVG);
+    await page.locator('.node-diagram-preview-thumb').first().click();
+    const viewer = page.locator('#diagram-viewer');
+    await expect(viewer.locator('.dv-title')).toHaveText('Night: delivery');
+    await expect(viewer.locator('.dv-where')).toHaveText('in “Order flow”');
+    await expect(viewer.locator('.dv-counter')).toHaveText('1 / 2');
+    await expect(viewer.locator('.dv-prev')).toBeDisabled();
+    await page.keyboard.press('ArrowRight');
+    await expect(viewer.locator('.dv-title')).toHaveText('Returns');
+    await expect(viewer.locator('.dv-counter')).toHaveText('2 / 2');
+    await viewer.locator('.dv-prev').click();
+    await expect(viewer.locator('.dv-title')).toHaveText('Night: delivery');
+    await viewer.locator('.dv-delete').click();
+    await expect(viewer.locator('.dv-title')).toHaveText('Returns');
+    await expect(viewer.locator('.dv-counter')).toHaveText('');
+    await expect(viewer.locator('.dv-next')).toBeHidden();
+    // @ts-expect-error
+    expect(await page.evaluate(() => diagrams.map((d) => d.id))).toEqual(['d2']);
+    await viewer.locator('.dv-delete').click();
+    await expect(viewer).not.toHaveClass(/open/);
+    // @ts-expect-error
+    expect(await page.evaluate(() => diagrams.length)).toBe(0);
   });
 });
