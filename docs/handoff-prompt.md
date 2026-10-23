@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Preview headers: name only, buttons aligned.** Owner: no row text in the image/diagram preview header,
+just the item's own name, and line the buttons up. `.pv-where` is gone; both headers are name + count, `.pv-spacer`,
+then the same right-aligned row (item action, zoom, Fit, Copy, Download, Delete, Close). Under 900px the buttons wrap
+to their own right-aligned line (`.pv-break` before the spacer).
+
 **2026-10-23: Picture size in the menu; menus that fit are not capped.** Owner: picture Size moves from the preview header
 to the thumbnail's right-click menu (`Size ›`, current one `checked`); the header's `.niv-size` buttons are gone.
 Owner saw the diagram thumbnail menu scroll: `_sbFitMenuHeight` now leaves a menu that fits uncapped (a cap equal to
@@ -168,11 +173,6 @@ screenshot if it persists.
 **2026-10-23: One date picker.** Unification item 2. Thread entry dates and To-Do due dates already looked the same
 (`due-pop-*` CSS); now they share the code too: `renderMonthCalendar(pop, viewMonth, selectedIso, onPick)` draws the month,
 weekday letters and days, `openDatePopoverUnder(pop, btn)` places it (flips above when there's no room).
-
-**2026-10-23: One dialog frame.** Unification item 3. Version history, Section icon library, diagram "Review before
-generating", Keyboard shortcuts and the Cheatsheet use the same head as the other app dialogs (`.app-modal-head`: title,
-grey line under it, `.app-modal-close-btn` ×). Version history shows the document name under its title; the icon
-library lost its big Close button; the review got a ×. Welcome and "Why Sakura" stay branded.
 
 ### In progress / not built
 

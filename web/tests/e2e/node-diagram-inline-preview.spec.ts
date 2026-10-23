@@ -375,7 +375,8 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     const viewer = page.locator('#diagram-viewer');
     await expect(viewer).toHaveClass(/open/);
     await expect(viewer.locator('.dv-title')).toHaveValue('Night delivery');
-    await expect(viewer.locator('.dv-where')).toContainText('Order flow');
+    // The header shows the diagram's own name only, not the row's text (owner, 2026-10-23).
+    await expect(viewer.locator('.dv-bar')).not.toContainText('Order flow');
     const img = viewer.locator('.dv-canvas img');
     const canvas = viewer.locator('.dv-canvas');
     // Fitted: the whole diagram is inside the window, centred.
@@ -568,7 +569,6 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await page.locator('.node-diagram-preview-thumb').first().click();
     const viewer = page.locator('#diagram-viewer');
     await expect(viewer.locator('.dv-title')).toHaveValue('Night: delivery');
-    await expect(viewer.locator('.dv-where')).toHaveText('in “Order flow”');
     await expect(viewer.locator('.dv-counter')).toHaveText('1 / 2');
     await expect(viewer.locator('.dv-prev')).toBeDisabled();
     await page.keyboard.press('ArrowRight');
