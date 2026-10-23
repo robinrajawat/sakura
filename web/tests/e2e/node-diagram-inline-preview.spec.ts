@@ -606,3 +606,18 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(name).toHaveValue('Route plan f0');
   });
 });
+
+test('a right-click menu that fits is never capped, so it shows no scrollbar (owner, 2026-10-23)', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('sakura_welcome_seen', '1'));
+  await page.setViewportSize({ width: 1280, height: 700 });
+  await page.goto('file://' + indexPath);
+  await dismissOverlays(page);
+  for (const y of [100, 400, 690]) {
+    await page.evaluate((y) => (window as any).eval(`showSbContextMenu(400, ${y}, ['Open','Copy image','Download','Rename','Edit in draw.io','Delete diagram'].map(label => ({ label, onClick: () => {} }))); 0`), y);
+    const m = await page.evaluate(() => { const m = document.querySelector('.sb-context-menu') as HTMLElement; const r = m.getBoundingClientRect(); return { maxH: m.style.maxHeight, sh: m.scrollHeight, ch: m.clientHeight, bottom: r.bottom }; });
+    expect(m.maxH).toBe('none');
+    expect(m.sh).toBeLessThanOrEqual(m.ch);
+    expect(m.bottom).toBeLessThanOrEqual(700);
+    await page.keyboard.press('Escape');
+  }
+});

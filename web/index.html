@@ -1775,7 +1775,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* A long row name or title gives way first (ellipsis); buttons never shrink or wrap their labels.
    On a narrow window the name and count take their own line above the buttons. */
 .pv-head .pv-where{max-width:40%}
-.pv-head button,.pv-head .pv-zoom,.pv-head .niv-size,.pv-head .niv-counter{flex-shrink:0;white-space:nowrap}
+.pv-head button,.pv-head .pv-zoom,.pv-head .niv-counter{flex-shrink:0;white-space:nowrap}
 .pv-head .niv-tools{flex:1 0 auto}
 .pv-break{display:none}
 @media (max-width:900px){
@@ -1807,13 +1807,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .niv-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
 .niv-counter{font:600 12px 'Inter',sans-serif;color:var(--muted);min-width:44px;padding-left:4px}
 .niv-tools{flex:1;display:flex;gap:4px;min-width:0}
-.niv-size{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden}
-.niv-size-btn{all:unset;font:500 12px 'Inter',sans-serif;color:var(--fg);padding:5px 11px;cursor:pointer}
-.niv-size-btn+.niv-size-btn{border-left:1px solid var(--border)}
-.niv-size-btn:hover{background:var(--hover)}
-.niv-size-btn.active{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-weight:600}
-.niv-size-btn:disabled{opacity:.5;cursor:default}
-.niv-size-btn:focus-visible,.niv-btn:focus-visible,.niv-nav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.niv-btn:focus-visible,.niv-nav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .niv-btn{all:unset;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;color:var(--muted);cursor:pointer}
 .niv-btn:hover{background:var(--hover);color:var(--fg)}
 .niv-btn.is-copied{color:var(--fc-green)}
@@ -4265,7 +4259,7 @@ body.printing-generic #gpe-overlay{
 <li>Screenshots and pictures belong to a node as their own objects (not inside its note): a node can hold any number, shown as a compact row of thumbnails directly under it, each with its caption underneath</li>
 <li>Add them by pasting a screenshot (<span class="help-kbd">Ctrl/Cmd+V</span>) while the node is selected, being edited, or its note line has the cursor; by dropping image files onto the node; or right-click → <strong>Add image…</strong> (under "More" by default) to pick one or more files</li>
 <li>New images are shrunk to at most 1600px on the long side and saved as WebP (JPEG where the browser can't make WebP), which keeps documents small enough to sync; SVGs and animated GIFs are kept exactly as they are</li>
-<li>Click a thumbnail to open the enlarged viewer: edit the caption under the picture, step through the node's images with <span class="help-kbd">←</span>/<span class="help-kbd">→</span> or the side arrows, pick a display size (<strong>Auto</strong>, <strong>Small</strong>, <strong>Medium</strong>, <strong>Full</strong> — used in the viewer and in PDF exports), or Delete it. <span class="help-kbd">Esc</span> or clicking outside closes it</li>
+<li>Click a thumbnail to open the enlarged viewer: edit the caption under the picture, step through the node's images with <span class="help-kbd">←</span>/<span class="help-kbd">→</span> or the side arrows, or Delete it. Right-click a thumbnail › <strong>Size</strong> for its display size (<strong>Auto</strong>, <strong>Small</strong>, <strong>Medium</strong>, <strong>Full</strong> — used in the viewer and in PDF exports). <span class="help-kbd">Esc</span> or clicking outside closes it</li>
 <li><strong>Mark up</strong> in the viewer (or <span class="help-kbd">M</span>) to draw on a screenshot without changing the picture: rectangle (<span class="help-kbd">R</span>), arrow (<span class="help-kbd">A</span>), translucent highlighter (<span class="help-kbd">H</span>), and text labels (<span class="help-kbd">T</span> — click, type, <span class="help-kbd">Enter</span>; double-click a label to edit it), in six colours. The select tool (<span class="help-kbd">V</span>) moves a mark (drag, or the arrow keys), recolours it, or deletes it (<span class="help-kbd">Delete</span>). Undo/redo inside the editor with <span class="help-kbd">Ctrl/Cmd+Z</span> / <span class="help-kbd">Ctrl/Cmd+Shift+Z</span>; <strong>Clear markings</strong> removes them all. <span class="help-kbd">Esc</span> backs out one step at a time; <strong>Done</strong> finishes. Marks stay in place at any display size, show on the thumbnails and in PDF exports, and a whole marking session is one step of the document's undo</li>
 <li>Click a caption under a thumbnail to edit it right there (<span class="help-kbd">Enter</span> saves, <span class="help-kbd">Esc</span> cancels). Right-click a thumbnail for Open, Add/Edit caption, Size (Auto, Small, Medium, Full), Mark up…, Move left/right, or Delete image; drag a thumbnail onto another to reorder. Everything is undoable with <span class="help-kbd">Ctrl/Cmd+Z</span></li>
 <li>A small picture dot appears on a node with images — click it to fold or unfold the thumbnails. A folded branch's "+N hidden" badge mentions images inside it</li>
@@ -10420,13 +10414,10 @@ function buildNodeImageStrip(node){
       // the strip, then Delete. Quick edits happen in place; the viewer is for viewing and Mark up.
       const items=[{label:'Open', onClick:()=>openNodeImageViewer(node.id,img.id)},...nodeImageExportItems(node.id,img.id,thumb)];
       if(!readOnly){
-        const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         const curSize=imageWidthPresetKey(img.width);
         items.push({divider:true});
         items.push({label:img.caption?'Edit caption':'Add caption', onClick:()=>editNodeImageCaptionInline(strip,thumb,node.id,img.id)});
-        items.push({label:'Size', submenu:IMAGE_WIDTH_PRESETS.map(pr=>pr.key===curSize
-          ? {label:pr.label, icon:CHECK, current:true, onClick:()=>{}}
-          : {label:pr.label, title:pr.value?('Shown at '+pr.value+'% width here and in the PDF'):'Natural size, up to the full width', onClick:()=>setNodeImageWidth(node.id,img.id,pr.value)})});
+        items.push({label:'Size', submenu:IMAGE_WIDTH_PRESETS.map(pr=>({label:pr.label, checked:pr.key===curSize, title:pr.value?('Shown at '+pr.value+'% width here and in the PDF'):'Natural size, up to the full width', onClick:()=>{ if(pr.key!==curSize)setNodeImageWidth(node.id,img.id,pr.value); }}))});
         items.push({label:'Mark up…', onClick:()=>{ openNodeImageViewer(node.id,img.id); setNodeImageMarkupMode(true); }});
         items.push({divider:true});
         items.push({label:'Move left', disabled:i===0, onClick:()=>moveNodeImage(node.id,img.id,i-1)});
@@ -10813,8 +10804,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
           '<div class="niv-tools"><button type="button" class="niv-markup-toggle" aria-pressed="false" data-tip="Mark up this image — rectangles, arrows, highlighter, text (M)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Mark up</span><span class="niv-markup-count"></span></button></div>'+
           '<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="niv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level niv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="niv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'+
           '<button type="button" class="pv-fit niv-zoom-fit" data-tip="Fit to window (F)">Fit</button>'+
-          '<div class="niv-size" role="group" aria-label="Display size">'+IMAGE_WIDTH_PRESETS.map(p=>'<button type="button" class="niv-size-btn" data-size="'+p.key+'" data-tip="'+(p.value?('Show at '+p.value+'% width here and in the PDF'):'Natural size, up to the full width')+'">'+p.label+'</button>').join('')+'</div>'+
-          '<button type="button" class="niv-btn niv-copy" data-tip="Copy image" aria-label="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'+
+                    '<button type="button" class="niv-btn niv-copy" data-tip="Copy image" aria-label="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'+
           '<button type="button" class="niv-btn niv-download" data-tip="Download" aria-label="Download"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></button>'+
           '<button type="button" class="niv-btn niv-delete" data-tip="Delete image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>'+
           '<button type="button" class="niv-btn niv-close" data-tip="Close (Esc)" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>'+
@@ -10855,13 +10845,6 @@ function openNodeImageViewer(nodeId,imageId,opts){
       if(next){ _nivState.imageId=next.id; _nivState.captionUndoPushed=false; if(_nivMk)_nivMkStartSession(); refreshNodeImageViewer(); } else closeNodeImageViewer();
       showToast('Image deleted — Ctrl/Cmd+Z to undo');
     });
-    ov.querySelectorAll('.niv-size-btn').forEach(btn=>btn.addEventListener('click',()=>{
-      if(!_nivState)return;
-      const p=IMAGE_WIDTH_PRESETS.find(x=>x.key===btn.dataset.size); if(!p)return;
-      setNodeImageWidth(_nivState.nodeId,_nivState.imageId,p.value);
-      _nivZoomReset();
-      refreshNodeImageViewer();
-    }));
     const cap=ov.querySelector('.niv-caption');
     cap.addEventListener('input',()=>{
       if(!_nivState)return;
@@ -10900,8 +10883,6 @@ function refreshNodeImageViewer(){
   const cap=ov.querySelector('.niv-caption');
   if(document.activeElement!==cap)cap.value=img.caption||'';
   cap.disabled=readOnly; cap.placeholder=readOnly?'':'Add a caption…';
-  const key=imageWidthPresetKey(img.width);
-  ov.querySelectorAll('.niv-size-btn').forEach(b=>{ b.classList.toggle('active',b.dataset.size===key); b.disabled=readOnly; });
   ov.querySelector('.niv-delete').style.display=readOnly?'none':'';
   ov.querySelector('.niv-prev').disabled=ref.i<=0;
   ov.querySelector('.niv-next').disabled=ref.i>=ref.list.length-1;
@@ -27657,9 +27638,15 @@ function _sbRefitMenu(menu){
   menu.style.top=Math.max(8,Math.min(top, window.innerHeight-menu.offsetHeight-8))+'px';
   _sbFitMenuHeight(menu);
 }
+// Caps only a menu taller than the room below its top. A menu that fits is left uncapped: with
+// fractional sizes (display scaling, browser zoom) a cap equal to its own height rounds a pixel
+// short and shows a scrollbar on a menu that has nothing to scroll (owner, 2026-10-23: diagram
+// thumbnail menu opened low on the page).
 function _sbFitMenuHeight(menu){
   const top=parseFloat(menu.style.top)||menu.getBoundingClientRect().top;
-  menu.style.maxHeight=Math.max(120,window.innerHeight-top-8)+'px';
+  const room=window.innerHeight-top-8;
+  menu.style.maxHeight='none';
+  menu.style.maxHeight=menu.scrollHeight<=room+2?'none':Math.max(120,Math.floor(room))+'px';
 }
 // A dropdown is the same menu opened under its button (toolbar, chips, panel headers): left-aligned
 // to it, or right-aligned with {alignRight:true}. A second click on the button closes it.

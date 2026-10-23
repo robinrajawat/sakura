@@ -318,8 +318,8 @@ test.describe('Images as node objects', () => {
     const sel = await page.evaluate(() => selectedId);
     await viewer.locator('.niv-caption').fill('Second caption');
     await viewer.locator('.niv-caption').press('Enter');
-    await viewer.locator('.niv-size-btn[data-size="medium"]').click();
-    await expect(viewer.locator('.niv-size-btn[data-size="medium"]')).toHaveClass(/active/);
+    // @ts-expect-error
+    await page.evaluate(() => { setNodeImageWidth(4, 'i2', 60); refreshNodeImageViewer(); });
     let imgs = await page.evaluate(() => {
       // @ts-expect-error
       return nodes.find((n: any) => n.id === 4).images.map((i: any) => ({ id: i.id, caption: i.caption, width: i.width }));
@@ -368,6 +368,22 @@ test.describe('Images as node objects', () => {
     await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Delete image' }).click();
     expect(await nodeImageCount(page, 4)).toBe(2);
     expect(errors).toEqual([]);
+  });
+
+  test('picture size is set from the thumbnail menu (Size ›), not the preview header (owner, 2026-10-23)', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await seedDoc(page, [{ id: 4, depth: 0, text: 'Shot', parentId: null, note: '', tags: [], styles: {}, images: [{ id: 'i1', src: PNG_1x1, caption: '' }] }]);
+    await page.locator('.node-image-strip[data-node-id="4"] .node-image-thumb').first().click({ button: 'right' });
+    await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Size' }).hover();
+    const sub = page.locator('.sb-context-submenu');
+    await expect(sub.locator('[role="menuitemradio"][aria-checked="true"]')).toHaveText(/Auto/);
+    await sub.locator('.sb-context-item', { hasText: 'Medium' }).click();
+    // @ts-expect-error
+    expect(await page.evaluate(() => nodes.find((n: any) => n.id === 4).images[0].width)).toBe(60);
+    await page.locator('.node-image-strip[data-node-id="4"] .node-image-thumb').first().click();
+    await expect(page.locator('#node-image-viewer')).toHaveClass(/open/);
+    await expect(page.locator('#node-image-viewer .niv-size')).toHaveCount(0);
   });
 
   test('the image dot folds/unfolds the strip; a folded branch mentions images', async ({ page }) => {
