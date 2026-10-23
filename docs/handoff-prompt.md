@@ -159,6 +159,10 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: One toast (unified UI part 4).** To-Dos had its own in-panel `#todos-toast` (so Undo wasn't an
+outside click); the docked panel no longer closes on outside clicks, so `showTodosToast`/`showTodosActionToast` now
+just call `showToast`/`showActionToast` and the in-panel toast markup and CSS are gone. Test: `one-toast.spec.ts`.
+
 **2026-10-23: Undo instead of "are you sure" (unified UI part 3).** Rule: undoable → act + `showActionToast(...,'Undo')`;
 `sakuraConfirm` only where nothing brings it back. Converted: `clearAllNodes` (asks only when `impactText.permanent`,
 i.e. diagrams; menu label lost its "…"), `deleteFolderById` (already had Undo), `restoreNodeTextFromRevision`,
@@ -174,19 +178,6 @@ blur keeps unless `blurCancels`. Uses: `renameDoc(id,anchor)` (tab title on dblc
 chart/Cards "Add/Edit title…" over the figure's title (`buildChartFeatureItems(table,commit,figure)`); AI outline
 topic via `askOutlineTopic` (a line under the selected row, `.inline-edit-ask`). `sakuraPrompt` is now only used by
 the AI key password prompt. Tests: `edit-in-place.spec.ts`.
-
-**2026-10-23: Node right-click menu is the shared menu.** Owner asked for a unified UI ("let's just make the
-changes" after an audit list: 1 node menu, 2 leftover sakuraPrompt popups, 3 confirm dialogs → Undo, 4 one toast,
-5 native title tooltips → data-tip; one PR each). `showContextMenu(x,y,id,{more})` now calls
-`showSbContextMenu(...,{id:'context-menu'})` with `ctxMenuItems(nodeId,moreOpen)`: one `iconRow` (markers +
-`ctxQuickRowVisible()`, id `context-quickbar`, drag/right-click via `ctxQuickButtonInit`), then a `fold` "More"
-(ids `context-more-toggle` / `context-more-panel`) holding Add/Move/Sort children icon rows, AI items, Insert › /
-Row › shared submenus (`data-flyout`), Delete. Enabled states: `ctxActionEnabled()`. Shared menu gained: `iconRow`
-items, `action`/`data` on any item, `trail` (pin button, `.sb-context-keep` doesn't close the menu), fold
-`id`/`bodyId`/`open`, menu `opts.id`/`label`. Quick-row changes call `reopenContextMenu(more)`. Old `#context-menu`
-DOM, delegated click handler, `renderContextTopRow`/`renderContextMorePanel`/`updateContextMenuState` and the old
-`.context-*` CSS are gone. Submenu items now live in `.sb-context-submenu` (only while hovered), not in the panel.
-Tests: `context-menu-shared.spec.ts`; context-menu specs updated.
 
 ### In progress / not built
 
