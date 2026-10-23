@@ -3277,9 +3277,6 @@ body.printing-generic #gpe-overlay{
 /* Fixed mode: same reveal state as :hover, but permanent — no layout shift, no hidden controls. */
 #editor-todos-toggle.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
 .todo-overdue-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;padding:0 4px;margin-left:5px;border-radius:999px;background:var(--sem-alert,#b85450);color:#fff;font:700 9.5px 'Inter',sans-serif;line-height:1;vertical-align:middle}
-#todos-toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--edit-bg);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:9px;font:500 11.5px 'Inter',sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s,transform .15s}
-#todos-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
-#todos-toast span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ===== Hub dock-panel pieces ===== */
 /* Small fixed-position dropdown menus (To-Dos Export) */
@@ -3380,8 +3377,6 @@ body.printing-generic #gpe-overlay{
   #status-util-group.collapsed .dock-rail-buttons{width:0}
 }
 
-.todo-toast-action{appearance:none;border:none;background:none;color:var(--accent);font:600 11.5px 'Inter',sans-serif;cursor:pointer;padding:2px 4px;border-radius:5px;text-decoration:underline;text-underline-offset:2px;flex-shrink:0}
-.todo-toast-action:hover{opacity:.85}
 </style>
 </head>
 <body class="theme-light">
@@ -4726,7 +4721,6 @@ body.printing-generic #gpe-overlay{
     <button type="button" id="todos-search-clear-btn" data-tip="Clear" aria-label="Clear search" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
   <div id="todos-body"></div>
-  <div id="todos-toast" role="status" aria-live="polite"></div>
 </div>
 
 
@@ -33670,46 +33664,11 @@ function waitingCandidates(todos) {
     return false;
   }
 
-  // Undo toasts for todo actions render inside the panel itself (rather than the app's
-  // global bottom toast) so clicking Undo never lands on a spot the outside-click-close
-  // handler treats as "outside the panel." Falls back to the global toast if the panel
-  // isn't open (e.g. an action triggered while it's closed).
-  // Plain (non-action) toast counterpart to showTodosActionToast — same in-panel-first
-  // rule, so every todo-triggered message (not just Undo-able ones) behaves consistently:
-  // it shows inside the panel while the panel's open, and falls back to the app's global
-  // toast otherwise.
-  function showTodosToast(msg, type){
-    const panel=document.getElementById('todos-panel');
-    const t=document.getElementById('todos-toast');
-    const isOpen=panel&&panel.classList.contains('open');
-    if(!isOpen||!t){
-      if(typeof showToast==='function') showToast(msg, type);
-      return;
-    }
-    clearTimeout(showTodosActionToast._tm);
-    t.innerHTML='';
-    const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
-    t.classList.add('show');
-    showTodosActionToast._tm=setTimeout(()=>{ t.classList.remove('show'); }, 1600);
-  }
-
-  function showTodosActionToast(msg, actionLabel, onAction, duration=5000){
-    const panel=document.getElementById('todos-panel');
-    const t=document.getElementById('todos-toast');
-    const isOpen=panel&&panel.classList.contains('open');
-    if(!isOpen||!t){
-      if(typeof showActionToast==='function') showActionToast(msg, actionLabel, onAction, duration);
-      return;
-    }
-    clearTimeout(showTodosActionToast._tm);
-    t.innerHTML='';
-    const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
-    const btn=document.createElement('button'); btn.className='todo-toast-action'; btn.textContent=actionLabel;
-    btn.addEventListener('click',()=>{ t.classList.remove('show'); onAction(); });
-    t.appendChild(btn);
-    t.classList.add('show');
-    showTodosActionToast._tm=setTimeout(()=>{ t.classList.remove('show'); }, duration);
-  }
+  // To-Dos messages use the app's one toast (owner, 2026-10-23: unified UI). The panel used to
+  // have its own in-panel toast so Undo didn't count as an outside click; the docked panel no
+  // longer closes on outside clicks, so that reason is gone.
+  function showTodosToast(msg, type){ showToast(msg, type); }
+  function showTodosActionToast(msg, actionLabel, onAction, duration=5000){ showActionToast(msg, actionLabel, onAction, duration); }
 
   // At-a-glance overdue count on the toggle button itself (app bar / status bar),
   // so the person doesn't need to open the panel just to find out something's overdue.
