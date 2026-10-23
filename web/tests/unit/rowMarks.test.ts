@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   adjustRowMarksForText,
+  replaceRowMarkedRange,
   convertLegacyRowLinks,
   convertLegacyRowMarkup,
   isRowLinkUrl,
@@ -338,5 +339,18 @@ describe('stripRowMarkChars', () => {
       text: '@Ana rollout',
       marks: [{ s: 5, e: 12, k: 'b' }]
     });
+  });
+});
+
+describe('replaceRowMarkedRange', () => {
+  it('puts new words in place of the range, taking the first replaced character\'s formatting', () => {
+    const marks = [{ s: 0, e: 3, k: 'b' as const }, { s: 4, e: 23, k: 'i' as const }];
+    expect(replaceRowMarkedRange('See https://example.com now', marks, 4, 23, 'the site')).toEqual({
+      text: 'See the site now',
+      marks: [{ s: 0, e: 3, k: 'b' }, { s: 4, e: 12, k: 'i' }]
+    });
+  });
+  it('clamps the range and handles plain text', () => {
+    expect(replaceRowMarkedRange('abc', undefined, 1, 99, 'XY')).toEqual({ text: 'aXY', marks: [] });
   });
 });

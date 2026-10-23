@@ -1501,6 +1501,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sfmt-menu-item svg{color:var(--muted)}
 .sfmt-menu-item.sfmt-danger{color:var(--muted)}
 .sfmt-menu-item.sfmt-danger:hover{color:var(--sem-alert)}
+.sfmt-url-fields{display:flex;flex-direction:column;gap:4px}
 .sfmt-url{width:min(260px,62vw);border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--fg);font:13px 'Inter',sans-serif;padding:5px 8px;outline:none}
 .sfmt-url:focus{border-color:var(--accent)}
 .sfmt-menu-item.sfmt-url-ok{color:var(--accent);font-weight:600}
@@ -5857,9 +5858,8 @@ function sakuraSanitizeRichHtml(html){
 function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 // Blocks a javascript: URL from reaching an <a href> built from user-typed input — the same
 // filter sakuraSanitizeRichHtml already applies to pasted/imported HTML above, but that
-// sanitizer only runs on rich-text paste/import content. sakuraLinkPrompt (the "Insert Link"
-// dialog used by the node note and selection-formatting editors) is a separate path: it
-// returns whatever URL the person typed with zero validation, so a value like
+// sanitizer only runs on rich-text paste/import content. The Link box in the selection bar
+// (openSelectionFmtUrlBox) is a separate path: it returns whatever URL the person typed with zero validation, so a value like
 // "javascript:alert(document.cookie)" would otherwise reach the DOM verbatim as a clickable
 // link. escAttr alone only prevents breaking out of the href="..." attribute (quote-escaping)
 // — it doesn't examine what scheme the URL itself uses, which is a different, additive gap.
@@ -11028,17 +11028,13 @@ function richLinkMenuItems(field,link,store){
       const done=()=>showToast('Link copied','success');
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(href).then(done,()=>showToast('Could not copy the link'));
     }},
-    {label:'Edit link…', icon:markIconSvg('edit'), onClick:async()=>{
-      const res=await sakuraLinkPrompt({title:'Edit link',text:label,url:href,confirmLabel:'Save'});
-      if(!res)return;
-      const url=sanitizeHrefUrl((res.url||'').trim()); const text=(res.text||'').trim();
-      changeStoredLink(a=>{
-        if(!url){ unwrap(a); return; }
-        a.setAttribute('href',url); a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
-        // Only replace the label when it changed, so formatting inside it survives a URL-only edit.
-        if((text||url)!==label.trim())a.textContent=text||url;
-      });
-    }},
+    {label:'Edit link…', icon:markIconSvg('edit'), onClick:()=>openLinkBoxAt(link,field.id,{text:label,url:href,
+      apply:(text,url)=>changeStoredLink(a=>{
+        a.setAttribute('href',sanitizeHrefUrl(url)); a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
+        // Only replace the label when it changed, so formatting inside it survives an address-only edit.
+        if(text!==label)a.textContent=text;
+      }),
+      remove:()=>changeStoredLink(unwrap)})},
     {label:'Remove link', icon:ico('<path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/>'), onClick:()=>changeStoredLink(unwrap)},
   ];
 }
@@ -19258,11 +19254,6 @@ async function sakuraPasswordPrompt({icon,title,body,confirmLabel='OK',cancelLab
     if(input)input.classList.remove('key-masked');
   }
 }
-async function sakuraLinkPrompt({title='Insert Link',text='',url='',confirmLabel='Insert'}){
-  const res=await _openModal({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',title,body:'',inputValue:text,inputLabel:'Text to display',inputPlaceholder:'Link text (optional)',inputValue2:url||'https://',inputLabel2:'Link',inputPlaceholder2:'https://',buttons:[{label:'Cancel',cls:'',key:'cancel'},{label:confirmLabel,cls:'primary',key:'confirm'}]});
-  if(res.key!=='confirm')return null;
-  return {text:res.inputValue, url:res.inputValue2};
-}
 
 function rebuildParentIds(){rebuildParentIdsCore(nodes)}
 function ensureSelection(){if(!nodes.length){selectedId=null; editingId=null; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; return} multiSelectedIds=multiSelectedIds.filter(id=>getIndex(nodes,id)>=0); if(selectedId===null||getIndex(nodes,selectedId)<0)selectedId=multiSelectedIds[0]??nodes[0].id; if(selectionAnchorId===null||getIndex(nodes,selectionAnchorId)<0)selectionAnchorId=selectedId; if(flashNodeId!==null&&getIndex(nodes,flashNodeId)<0)flashNodeId=null}
@@ -19498,6 +19489,23 @@ function adjustRowMarksForText(marks, oldText, newText) {
     for (let i = 0; i < b.length - p - q; i++)
         middle.push({ ...(inherit || {}) });
     return fromCharFormats(formats.slice(0, p).concat(middle, formats.slice(a.length - q)));
+}
+/** Replaces `text.slice(start, end)` with `insert` (the Link box's Text field). The new words
+ * take the formatting of the first character they replace, the rest keeps its own. */
+function replaceRowMarkedRange(text, marks, start, end, insert) {
+    const src = String(text || '');
+    const from = Math.max(0, Math.min(src.length, start));
+    const to = Math.max(from, Math.min(src.length, end));
+    const add = String(insert || '');
+    const formats = toCharFormats(marks, src.length);
+    const inherit = from < to ? formats[from] : from > 0 ? formats[from - 1] : formats[from];
+    const middle = [];
+    for (let i = 0; i < add.length; i++)
+        middle.push({ ...(inherit || {}) });
+    return {
+        text: src.slice(0, from) + add + src.slice(to),
+        marks: fromCharFormats(formats.slice(0, from).concat(middle, formats.slice(to)))
+    };
 }
 /** The row's text cut into runs of equal formatting. */
 function rowMarkRuns(text, marks) {
@@ -25299,13 +25307,30 @@ function pastedLinkUrl(text){
   const url=/^www\./i.test(t)?'https://'+t:t;
   return isRowLinkUrl(url)?url:'';
 }
-// The same in notes and thread entries: a web address pasted over selected words links them.
-// Capture phase, so it runs before those editors' own paste handling.
+// The address goes in linked, followed by a space so what you type next isn't part of the link.
+function insertRowWebLinkAtCaret(label,url){
+  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null; const idx=editingId!==null?getIndex(nodes,editingId):-1;
+  if(!r||r.start!==r.end||idx<0)return false;
+  const node=nodes[idx]; const read=readRowMarksFromDom(input);
+  const after=read.text.slice(r.start); const ins=label+(/^\s/.test(after)?'':' ');
+  pushUndo();
+  const next=replaceRowMarkedRange(read.text,read.marks,r.start,r.start,ins);
+  node.text=next.text; setRowMarksOn(node,setRowMark(next.marks,next.text.length,r.start,r.start+label.length,'a',url));
+  node.modifiedAt=Date.now();
+  input.innerHTML=rowEditorHtml(node); setInputCaret(input,r.start+ins.length);
+  markDirty(); scheduleAutoSave();
+  return true;
+}
+// The same in notes, thread entries and To-Do titles: a web address pasted over selected words
+// links them. Capture phase, so it runs before those editors' own paste handling.
 document.addEventListener('paste',e=>{
-  const url=pastedLinkUrl(e.clipboardData?.getData('text/plain'));
-  const sel=window.getSelection(); if(!url||!sel||sel.isCollapsed||!sel.toString().trim())return;
+  const plain=(e.clipboardData?.getData('text/plain')||'').trim(); const url=pastedLinkUrl(plain);
+  const sel=window.getSelection(); if(!url||!sel||!sel.rangeCount)return;
   const editorId=selectionFmtEditorFor(sel.anchorNode); const editor=editorId?el(editorId):null;
   if(!editor||editor.classList.contains('node-input')||!editor.contains(sel.focusNode))return;
+  // A To-Do title stores its links as ranges like a row, with or without a selection.
+  if(window.sakuraTodoTitleFmt&&window.sakuraTodoTitleFmt.isTitle(editor)){ e.preventDefault(); e.stopPropagation(); window.sakuraTodoTitleFmt.pasteLink(editor,plain,url); return; }
+  if(sel.isCollapsed||!sel.toString().trim())return;
   e.preventDefault(); e.stopPropagation();
   if(editorId==='note-editor'&&typeof pushNoteSessionUndo==='function')pushNoteSessionUndo();
   document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(sel.toString())}</a>`);
@@ -25318,6 +25343,8 @@ document.addEventListener('paste',e=>{
     const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim();
     // A web address pasted over selected words links them (the way Docs and Notion do).
     if(pastedLinkUrl(trimmedText)&&applyRowMarkToSelection('a',pastedLinkUrl(trimmedText))){ e.preventDefault(); return }
+    // With nothing selected it goes in as a link, as it does in notes and threads.
+    if(pastedLinkUrl(trimmedText)&&insertRowWebLinkAtCaret(trimmedText,pastedLinkUrl(trimmedText))){ e.preventDefault(); return }
     if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){
       const opmlParsed=parseOpmlToTreeNodes(text);
       if(opmlParsed.length>1){ e.preventDefault(); commitEdit(); pasteParsedNodes(opmlParsed,'Imported'); return }
@@ -35552,8 +35579,37 @@ function waitingCandidates(todos) {
     applyRange:applyTodoTitleMarkRange,
     has(elx, kind){ const r=todoTitleRangeFromDom(elx); return !!r&&rowMarkCovers(r.title.marks, r.title.text.length, r.start, r.end, kind); },
     colors(elx){ const r=todoTitleRangeFromDom(elx); if(!r) return {c:null,hl:null}; const shared=k=>{ const m=r.title.marks.find(x=>x.k===k&&x.s<=r.start&&x.e>=r.end); return m?m.v:null; }; return {c:shared('c'),hl:shared('hl')}; },
-    linkTarget(elx){ const id=todoIdOfTitleEl(elx); const r=id?todoTitleRangeFromDom(elx):null; if(!r) return null; const linked=r.title.marks.find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start); return {todoId:id,start:r.start,end:r.end,url:linked?linked.v:''}; }
+    linkTarget(elx){ const id=todoIdOfTitleEl(elx); const r=id?todoTitleRangeFromDom(elx):null; if(!r) return null; const linked=r.title.marks.find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start); return {todoId:id,start:r.start,end:r.end,text:r.title.text.slice(r.start,r.end),url:linked?linked.v:''}; },
+    // The Link box: links [start,end), first putting `text` in place of those words when it differs.
+    setLink(id, start, end, text, url){
+      const t=todos.find(x=>x.id===id); if(!t) return false;
+      if(!text||text===t.text.slice(start,end)) return applyTodoTitleMarkRange(id,start,end,'a',url);
+      const next=replaceRowMarkedRange(t.text, rowMarksOf(t), start, end, text);
+      return replaceTodoTitle(t, next.text, setRowMark(next.marks, next.text.length, start, start+text.length, 'a', url), null);
+    },
+    // A web address pasted into a title: over selected words it links them, otherwise it goes in
+    // as a link of its own, followed by a space so what you type next isn't part of it.
+    pasteLink(elx, label, url){
+      const id=todoIdOfTitleEl(elx); const t=id&&todos.find(x=>x.id===id); const r=getEditableSelectionRange(elx); if(!t||!r) return false;
+      if(r.start!==r.end) return window.sakuraTodoTitleFmt.apply(elx,'a',url);
+      const title=readTodoTitle(elx); const dom=elx.textContent||'';
+      const at=Math.max(0, r.start-(dom.slice(0,r.start).match(/\u200B/g)||[]).length-title.lead);
+      // Spaces typed at the end aren't in the stored title yet; they stay in front of the address.
+      const pos=Math.min(title.text.length, at); const gap=' '.repeat(at-pos);
+      const after=title.text.slice(pos); const ins=gap+label+(/^\s/.test(after)?'':' ');
+      const next=replaceRowMarkedRange(title.text, title.marks, pos, pos, ins);
+      return replaceTodoTitle(t, next.text, setRowMark(next.marks, next.text.length, pos+gap.length, pos+gap.length+label.length, 'a', url), pos+ins.length);
+    }
   };
+  // Stores a title's new words and formatting (undoable) and redraws it; `caret` puts the caret
+  // there when the title is being edited.
+  function replaceTodoTitle(t, text, marks, caret){
+    pushTodosTextUndo(t.id, t.text, rowMarksOf(t));
+    t.text=text; setRowMarksOn(t, marks); saveTodos();
+    const elx=document.getElementById('todo-text-'+t.id);
+    if(elx){ const focused=document.activeElement===elx; elx.innerHTML=renderTodoTitleHtml(t, searchQuery); if(focused&&caret!==null) selectTodoTitleRange(elx,caret,caret); }
+    return true;
+  }
   window.todosTextUndo=todosTextUndo;
   window.todosTextRedo=todosTextRedo;
 })();
@@ -35873,6 +35929,8 @@ function syncNoteTextFromEditorIfApplicable(editor){
 }
 function hideSelectionFmtPopover(){
   const pop=el('selection-fmt-popover'); if(pop){ pop.classList.remove('open'); delete pop.dataset.pick; }
+  // A Link box field keeps focus while hidden otherwise, and swallows the next Ctrl/Cmd+Z.
+  if(pop&&pop.contains(document.activeElement))document.activeElement.blur();
   _selectionFmtEditorId=null;
 }
 // hiliteColor's queryCommandValue reports the current selection's background as a color string —
@@ -35971,35 +36029,104 @@ function openSelectionFmtPalette(){
   pop.dataset.pick='colors';
 }
 function closeSelectionFmtSwatches(){ const pop=el('selection-fmt-popover'); if(pop)delete pop.dataset.pick; }
-// Link on words in a row: the bar becomes an address box (owner, 2026-10-22: links to other rows
-// are typed with @, so Link is for web addresses only). The row and character range are kept here
-// because typing the address moves focus out of the row.
+// The Link box (owner, 2026-10-23: one link experience everywhere): Text and Address fields in
+// the bar, the same for rows, To-Do titles, notes, thread entries and a link's "Edit link…".
+// Links to other rows are typed with @, so it is for web addresses. Selected words that already
+// are a web address fill in Address, so only the words to show are left to type. A target is
+// {text, url, apply(text, url), remove|null}; typing in the box moves focus out of the editor,
+// so each target remembers where its words are.
 let _sfmtLinkTarget=null;
 function prepareSelectionFmtLinkTarget(){
-  const te=selectionFmtTodoEl(); if(te){ _sfmtLinkTarget=window.sakuraTodoTitleFmt.linkTarget(te); return !!_sfmtLinkTarget; }
-  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null; const idx=editingId!==null?getIndex(nodes,editingId):-1;
-  if(!r||r.start===r.end||idx<0)return false;
-  const node=nodes[idx]; const linked=rowMarksOf(node).find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start);
-  _sfmtLinkTarget={nodeId:node.id,start:r.start,end:r.end,url:linked?linked.v:''};
+  _sfmtLinkTarget=selectionFmtLinkTarget();
+  return !!_sfmtLinkTarget;
+}
+function selectionFmtLinkTarget(){
+  const te=selectionFmtTodoEl();
+  if(te){
+    const t=window.sakuraTodoTitleFmt.linkTarget(te); if(!t)return null;
+    return {text:t.text,url:t.url,apply:(text,url)=>window.sakuraTodoTitleFmt.setLink(t.todoId,t.start,t.end,text,url),
+      remove:t.url?()=>window.sakuraTodoTitleFmt.applyRange(t.todoId,t.start,t.end,'a',false):null};
+  }
+  if(selectionFmtIsRow()){
+    const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null; const idx=getIndex(nodes,editingId);
+    if(!r||r.start===r.end||idx<0)return null;
+    const read=readRowMarksFromDom(input); const id=nodes[idx].id;
+    const linked=read.marks.find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start);
+    return {text:read.text.slice(r.start,r.end),url:linked?linked.v:'',apply:(text,url)=>setRowLinkRange(id,r.start,r.end,text,url),
+      remove:linked?()=>applyRowMarkToRange(id,r.start,r.end,'a',false):null};
+  }
+  return richFieldLinkTarget(el(_selectionFmtEditorId));
+}
+// Notes, thread entries and Q&A: the selection (grown to the whole link when it starts inside
+// one) is kept as a Range and put back before the change.
+function richFieldLinkTarget(editor){
+  const sel=window.getSelection(); if(!editor||!editor.id||!sel||!sel.rangeCount)return null;
+  const live=sel.getRangeAt(0);
+  const startEl=live.startContainer.nodeType===1?live.startContainer:live.startContainer.parentElement;
+  const a=startEl&&startEl.closest('a[href]'); const link=a&&editor.contains(a)?a:null;
+  if(link){ const r=document.createRange(); r.selectNodeContents(link); sel.removeAllRanges(); sel.addRange(r); }
+  const at=getEditableSelectionRange(editor); const text=sel.toString(); if(!at||!text.trim())return null;
+  const html=rangeHtml(sel.getRangeAt(0)); const editorId=editor.id; const url=link?link.getAttribute('href')||'':'';
+  // Kept as character offsets: the field can be redrawn when focus moves to the Link box.
+  const restore=()=>{
+    const ed=el(editorId); if(!ed)return null;
+    ed.focus(); setEditableSelectionRange(ed,at.start,at.end);
+    // execCommand('insertHTML') doesn't reliably fire beforeinput, so Note's own undo checkpoint can miss it.
+    if(editorId==='note-editor'&&typeof pushNoteSessionUndo==='function')pushNoteSessionUndo();
+    return ed;
+  };
+  const saved=ed=>{ syncRemarkTextFromEditorIfApplicable(ed); syncNoteTextFromEditorIfApplicable(ed); };
+  // The same words keep their formatting; new words replace them.
+  const insert=(label,href)=>document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(href))}" target="_blank" rel="noopener noreferrer">${label===text?html:esc(label)}</a>`);
+  return {text,url,
+    apply:(label,href)=>{ const ed=restore(); if(!ed)return; insert(label,href); saved(ed); },
+    remove:link?()=>{ const ed=restore(); if(!ed)return; document.execCommand('insertHTML',false,html); saved(ed); }:null};
+}
+function rangeHtml(range){ const box=document.createElement('div'); box.appendChild(range.cloneContents()); box.querySelectorAll('a').forEach(a=>a.replaceWith(...a.childNodes)); return box.innerHTML; }
+// Links [start,end) of a row, first putting `text` in place of those words when it differs.
+function setRowLinkRange(nodeId,start,end,text,url){
+  const idx=getIndex(nodes,nodeId); if(idx<0)return false;
+  const node=nodes[idx];
+  if(!text||text===(node.text||'').slice(start,end))return applyRowMarkToRange(nodeId,start,end,'a',url);
+  if(editingId===nodeId)commitEdit();
+  pushUndo();
+  const next=replaceRowMarkedRange(node.text||'',rowMarksOf(node),start,end,text);
+  node.text=next.text; setRowMarksOn(node,setRowMark(next.marks,next.text.length,start,start+text.length,'a',url));
+  node.modifiedAt=Date.now(); render(); markDirty(); scheduleAutoSave();
   return true;
 }
-// The address box: Enter applies, Escape closes, Remove (when the words are linked) unlinks.
+// The bar over a link that has no selection (a link's right-click "Edit link…").
+function openLinkBoxAt(anchorEl,editorId,target){
+  if(!anchorEl||!target)return;
+  const rect=anchorEl.getBoundingClientRect();
+  showSelectionFmtPopoverForRange({getBoundingClientRect:()=>rect},editorId);
+  _sfmtLinkTarget=target; openSelectionFmtUrlBox();
+}
+// Enter applies (from either field), Escape closes, Remove (when the words are linked) unlinks.
 function openSelectionFmtUrlBox(){
-  const pop=el('selection-fmt-popover'); const box=el('sfmt-swatches'); if(!pop||!box||!_sfmtLinkTarget)return;
-  // Finish the row edit first (the address box is about to take focus anyway), so its re-render
+  const pop=el('selection-fmt-popover'); const box=el('sfmt-swatches'); const t=_sfmtLinkTarget; if(!pop||!box||!t)return;
+  // Finish the row edit first (the box is about to take focus anyway), so its re-render
   // happens now and can't pull focus back from the box.
   if(editingId!==null){ commitEdit(); render(); }
+  const selectedUrl=pastedLinkUrl(t.text);
   box.innerHTML=`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`
+    +`<span class="sfmt-url-fields">`
+    +`<input type="text" class="sfmt-url" id="sfmt-link-text" placeholder="Text to show" spellcheck="false" autocomplete="off" aria-label="Text to show">`
     +`<input type="text" class="sfmt-url" id="sfmt-url" placeholder="Paste or type a web address" spellcheck="false" autocomplete="off" aria-label="Web address">`
+    +`</span>`
     +`<button type="button" class="sfmt-menu-item sfmt-url-ok" data-sw="url-ok" data-tip="Link (Enter)">Link</button>`
-    +(_sfmtLinkTarget.url?`<button type="button" class="sfmt-menu-item sfmt-danger" data-sw="unlink" data-tip="Remove link">Remove</button>`:'');
+    +(t.remove?`<button type="button" class="sfmt-menu-item sfmt-danger" data-sw="unlink" data-tip="Remove link">Remove</button>`:'');
   pop.dataset.pick='url';
-  const field=el('sfmt-url'); field.value=_sfmtLinkTarget.url||'';
-  field.focus(); field.select();
-  field.addEventListener('keydown',e=>{
+  placeSelectionFmtPopover(_sfmtAnchorRect);
+  const textField=el('sfmt-link-text'); const field=el('sfmt-url');
+  textField.value=t.text; t.shown=textField.value;
+  field.value=t.url||selectedUrl||'';
+  // The words are an address themselves: what's left to type is the words to show instead.
+  const first=selectedUrl?textField:field; first.focus(); first.select();
+  [textField,field].forEach(f=>f.addEventListener('keydown',e=>{
     if(e.key==='Enter'){ e.preventDefault(); applySelectionFmtUrl(); }
     else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); hideSelectionFmtPopover(); }
-  });
+  }));
 }
 // What people type: "example.com" means https://, "name@host" means mailto:.
 function normalizeTypedLinkUrl(raw){
@@ -36009,16 +36136,15 @@ function normalizeTypedLinkUrl(raw){
   return 'https://'+v;
 }
 function applySelectionFmtUrl(){
-  const t=_sfmtLinkTarget; const field=el('sfmt-url'); if(!t||!field)return;
+  const t=_sfmtLinkTarget; const field=el('sfmt-url'); const textField=el('sfmt-link-text'); if(!t||!field)return;
   const url=normalizeTypedLinkUrl(field.value);
+  // Text left as it was (or emptied) keeps the words; typed text replaces them.
+  const typed=textField?textField.value.trim():'';
+  const text=textField&&textField.value!==t.shown&&typed?typed:t.text;
   hideSelectionFmtPopover();
   if(!url)return;
   if(!isRowLinkUrl(url)){ showToast('That address can\'t be used as a link'); return; }
-  applySelectionFmtLinkRange(t,url);
-}
-function applySelectionFmtLinkRange(t,url){
-  if(t.todoId)window.sakuraTodoTitleFmt.applyRange(t.todoId,t.start,t.end,'a',url);
-  else applyRowMarkToRange(t.nodeId,t.start,t.end,'a',url);
+  t.apply(text,url);
 }
 function showSelectionFmtPopoverForRange(range,editorId){
   const pop=el('selection-fmt-popover'); if(!pop)return;
@@ -36029,6 +36155,14 @@ function showSelectionFmtPopoverForRange(range,editorId){
   pop.dataset.mode=selectionFmtIsMarks()?'row':'rich';
   pop.classList.add('open');
   updateSelectionFmtButtonStates();
+  placeSelectionFmtPopover(rect);
+}
+// Above the words (below near the top, or on a touch screen); again when the Link box makes the
+// bar taller, so it never covers the words.
+let _sfmtAnchorRect=null;
+function placeSelectionFmtPopover(rect){
+  const pop=el('selection-fmt-popover'); if(!pop||!rect)return;
+  _sfmtAnchorRect=rect;
   // Measure after making it visible (offsetWidth is 0 while display:none), then clamp to the
   // viewport so a selection near an edge doesn't push the popover off-screen.
   const popRect=pop.getBoundingClientRect();
@@ -36136,7 +36270,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     const a=sw.dataset.sw;
     if(a==='back')hideSelectionFmtPopover();
     else if(a==='url-ok')applySelectionFmtUrl();
-    else if(a==='unlink'){ const t=_sfmtLinkTarget; hideSelectionFmtPopover(); if(t)applySelectionFmtLinkRange(t,false); }
+    else if(a==='unlink'){ const t=_sfmtLinkTarget; hideSelectionFmtPopover(); if(t&&t.remove)t.remove(); }
     return;
   }
   if(selectionFmtIsRows()){
@@ -36180,28 +36314,7 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     updateSelectionFmtButtonStates();
     return;
   }
-  if(cmd==='link'){
-    const sel=window.getSelection();
-    const range=sel&&sel.rangeCount?sel.getRangeAt(0).cloneRange():null;
-    const selectedText=sel?sel.toString():'';
-    editor.focus();
-    sakuraLinkPrompt({title:'Insert Link',text:selectedText,url:''}).then(result=>{
-      if(!result)return;
-      editor.focus();
-      if(range){ sel.removeAllRanges(); sel.addRange(range); }
-      const url=(result.url||'').trim();
-      if(url){
-        // Same gap as the toolbar's own Link button — execCommand('insertHTML') doesn't
-        // reliably fire beforeinput, so Note's idle-debounce checkpoint never catches it.
-        if(editorId==='note-editor'&&typeof pushNoteSessionUndo==='function')pushNoteSessionUndo();
-        const text=(result.text||'').trim()||url;
-        document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(url))}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`);
-        syncRemarkTextFromEditorIfApplicable(editor); syncNoteTextFromEditorIfApplicable(editor);
-      }
-      hideSelectionFmtPopover();
-    });
-    return;
-  }
+  if(cmd==='link'){ if(prepareSelectionFmtLinkTarget())openSelectionFmtUrlBox(); return; }
   if(cmd==='clear'){
     // removeFormat leaves links; the highlight is a background it may keep, so clear that too.
     editor.focus();

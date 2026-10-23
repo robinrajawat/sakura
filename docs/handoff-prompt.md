@@ -159,6 +159,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: One Link box everywhere.** Owner pasted a URL in a row, selected it and pressed Link, and expected to
+give it words. The bar's Link box now has Text and Address (`openSelectionFmtUrlBox`, target `{text,url,apply,remove}`
+from `selectionFmtLinkTarget` / `richFieldLinkTarget`), used by rows, To-Do titles, notes, thread entries and a link's
+Edit link… (`openLinkBoxAt`); `sakuraLinkPrompt` is gone. Selected words that are an address fill in Address and focus
+Text; new words replace them (`replaceRowMarkedRange`). A URL pasted with nothing selected becomes a link in rows
+(`insertRowWebLinkAtCaret`) and To-Do titles (`sakuraTodoTitleFmt.pasteLink`). Test: `link-box.spec.ts`.
+
 **2026-10-23: Node menu fixes.** Owner saw a scrollbar when unfolding ⋯ near the window bottom: a grown menu now
 moves up first (`_sbRefitMenu`) and only scrolls when taller than the window. Right-clicking a quick-row icon closed
 the node menu: its Move left/right / Remove / Reset options now open as a flyout under the icon (`_sbOpenSubmenu`,
@@ -169,11 +176,6 @@ repositioned), and a right-click inside a shared menu no longer closes it. Tests
 (`drawioXmlFromFile`, `addDrawioFilesToNode`, `addDroppedFilesToNode` routes images vs diagrams); pasted draw.io XML
 text too. Title = file name. Diagrams aren't in the undo snapshot, so the toast's Undo removes them.
 `addDiagramFromXml(xml,{anchorNodeId,silent})`. Test: `drawio-file-paste.spec.ts`.
-
-**2026-10-23: ⋯ More in the quick row (unified UI part 7).** Owner asked for More as three dots at the end of the
-quick row instead of its own line, so the node menu is one strip. Shared menu: an `iconRow` button with `fold:[...]`
-unfolds its items under the row (`_sbFoldToggle`, shared with fold rows); the ⋯ keeps ids `#context-more-toggle` /
-`#context-more-panel`. Test: `context-more-dots.spec.ts`.
 
 ### In progress / not built
 

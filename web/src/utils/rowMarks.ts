@@ -195,6 +195,29 @@ export function adjustRowMarksForText(marks: unknown, oldText: string, newText: 
   return fromCharFormats(formats.slice(0, p).concat(middle, formats.slice(a.length - q)));
 }
 
+/** Replaces `text.slice(start, end)` with `insert` (the Link box's Text field). The new words
+ * take the formatting of the first character they replace, the rest keeps its own. */
+export function replaceRowMarkedRange(
+  text: string,
+  marks: unknown,
+  start: number,
+  end: number,
+  insert: string
+): { text: string; marks: RowMark[] } {
+  const src = String(text || '');
+  const from = Math.max(0, Math.min(src.length, start));
+  const to = Math.max(from, Math.min(src.length, end));
+  const add = String(insert || '');
+  const formats = toCharFormats(marks, src.length);
+  const inherit = from < to ? formats[from] : from > 0 ? formats[from - 1] : formats[from];
+  const middle: CharFormat[] = [];
+  for (let i = 0; i < add.length; i++) middle.push({ ...(inherit || {}) });
+  return {
+    text: src.slice(0, from) + add + src.slice(to),
+    marks: fromCharFormats(formats.slice(0, from).concat(middle, formats.slice(to)))
+  };
+}
+
 /** The row's text cut into runs of equal formatting. */
 export function rowMarkRuns(text: string, marks: unknown): Array<{ text: string; f: CharFormat }> {
   const src = String(text || '');

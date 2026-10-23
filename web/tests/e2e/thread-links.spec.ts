@@ -48,10 +48,12 @@ test('right-click a link in an entry: edit it, undo, remove it', async ({ page }
   await expect(menu).toContainText('Open link');
   await expect(menu).toContainText('Add to thread');
   await menu.getByText('Edit link…').click();
-  const inputs = page.locator('#sakura-modal input');
-  await expect(inputs.nth(0)).toHaveValue('the plan');
-  await inputs.nth(1).fill('https://example.com/b');
-  await page.locator('#sakura-modal button', { hasText: 'Save' }).click();
+  // The same Link box as the selection bar, over the link.
+  await expect(page.locator('#selection-fmt-popover')).toHaveAttribute('data-pick', 'url');
+  await expect(page.locator('#sfmt-link-text')).toHaveValue('the plan');
+  await expect(page.locator('#sfmt-url')).toBeFocused();
+  await page.locator('#sfmt-url').fill('https://example.com/b');
+  await page.keyboard.press('Enter');
   await expect.poll(() => stored(page)).toContain('href="https://example.com/b"');
   await page.keyboard.press('ControlOrMeta+Z');
   await expect.poll(() => stored(page)).toContain('href="https://example.com/a"');
