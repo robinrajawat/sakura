@@ -464,13 +464,13 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(svgText).toContain('width="800"');
   });
 
-  test('right-clicking the thumbnail offers Preview, Edit, Rename, Download and Delete (with undo)', async ({ page }) => {
+  test('right-clicking the thumbnail offers the same menu as a picture: Open, Copy image, Download, Rename, Edit, Delete (with undo)', async ({ page }) => {
     await seedOne(page);
     const thumb = page.locator('.node-diagram-preview-thumb');
     await thumb.click({ button: 'right' });
     const menu = page.locator('.sb-context-menu');
-    await expect(menu.locator('.sb-context-item')).toHaveText([/Preview/, /Edit/, /Rename/, /Download/, /Delete/]);
-    await menu.getByText('Preview').click();
+    await expect(menu.locator('.sb-context-item')).toHaveText([/^Open$/, /Copy image/, /Download/, /Rename/, /Edit in draw\.io/, /Delete diagram/]);
+    await menu.getByText('Open', { exact: true }).click();
     await expect(page.locator('#diagram-viewer')).toHaveClass(/open/);
     await page.keyboard.press('Escape');
 
@@ -484,12 +484,24 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect.poll(() => page.evaluate(() => diagrams[0].title)).toBe('Route plan');
 
     await thumb.click({ button: 'right' });
-    await page.locator('.sb-context-menu').getByText('Delete').click();
+    await page.locator('.sb-context-menu').getByText('Delete diagram').click();
     await expect(page.locator('.node-diagram-preview-thumb')).toHaveCount(0);
     // @ts-expect-error
     expect(await page.evaluate(() => diagrams.length)).toBe(0);
     await page.locator('#toast .toast-action-btn').click();
     await expect(page.locator('.node-diagram-preview-thumb')).toHaveCount(1);
+  });
+  test('Copy image from the thumbnail menu or the preview puts a PNG on the clipboard', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await seedOne(page);
+    await page.locator('.node-diagram-preview-thumb').click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Copy image').click();
+    await expect(page.locator('#toast')).toContainText('Image copied');
+    expect(await page.evaluate(async () => (await navigator.clipboard.read())[0].types)).toContain('image/png');
+    await page.evaluate(() => navigator.clipboard.writeText(''));
+    await page.locator('.node-diagram-preview-thumb').click();
+    await page.locator('#diagram-viewer .dv-copy').click();
+    await expect.poll(async () => page.evaluate(async () => (await navigator.clipboard.read())[0].types)).toContain('image/png');
   });
   // Owner, 2026-10-22: the margin comes from draw.io's export (its `border`), not from padding the file ourselves.
   test('a picture with draw.io\'s margin drops the thumbnail padding; an older tight one is re-exported before download', async ({ page }) => {

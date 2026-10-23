@@ -69,7 +69,7 @@ test('right-click: Add caption on an uncaptioned image, and Size sets the displa
   const menu = page.locator('.sb-context-menu');
   const labels = await menu.evaluate((m) => [...m.children].map((c) => c.classList.contains('sb-context-divider') ? '---'
     : (c.textContent || '').trim() + (c.classList.contains('disabled') ? ' (off)' : '')));
-  expect(labels).toEqual(['Open', '---', 'Add caption', 'Size', 'Mark up…', '---', 'Move left', 'Move right (off)', '---', 'Delete image']);
+  expect(labels).toEqual(['Open', 'Copy image', 'Download', '---', 'Add caption', 'Size', 'Mark up…', '---', 'Move left', 'Move right (off)', '---', 'Delete image']);
   await menu.getByText('Add caption', { exact: true }).click();
   await page.keyboard.type('Dashboard');
   await page.keyboard.press('Enter');

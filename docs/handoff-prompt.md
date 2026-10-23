@@ -159,23 +159,20 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Image preview gets Download, Copy image and zoom.** Owner: the image preview lacked what the diagram
+preview has. Header buttons and thumbnail menu items Copy image / Download (`nodeImageExportItems`); the picture is drawn
+at its own size with markings on top (`nodeImagePngBlob`), a marked picture's Download also offers Original (the stored
+file, `dataUrlToBlob`). Zoom like the diagram preview, "smooth and not aggressive" (`_nivZoom*`: Ctrl+scroll/pinch capped
+steps, drag/scroll pans, dblclick, +/−/0, level button = Fit); Mark up works zoomed. Diagram thumbnail menu now matches the
+picture's (Open, Copy image, Download ›, Rename, Edit in draw.io, Delete diagram); diagram preview gets Copy too
+(`copyDiagramImage`, `diagramPngBlob`). Tests: `image-preview-export.spec.ts`, `node-diagram-inline-preview.spec.ts`.
+
 **2026-10-23: One Link box everywhere.** Owner pasted a URL in a row, selected it and pressed Link, and expected to
 give it words. The bar's Link box now has Text and Address (`openSelectionFmtUrlBox`, target `{text,url,apply,remove}`
 from `selectionFmtLinkTarget` / `richFieldLinkTarget`), used by rows, To-Do titles, notes, thread entries and a link's
 Edit link… (`openLinkBoxAt`); `sakuraLinkPrompt` is gone. Selected words that are an address fill in Address and focus
 Text; new words replace them (`replaceRowMarkedRange`). A URL pasted with nothing selected becomes a link in rows
 (`insertRowWebLinkAtCaret`) and To-Do titles (`sakuraTodoTitleFmt.pasteLink`). Test: `link-box.spec.ts`.
-
-**2026-10-23: Node menu fixes.** Owner saw a scrollbar when unfolding ⋯ near the window bottom: a grown menu now
-moves up first (`_sbRefitMenu`) and only scrolls when taller than the window. Right-clicking a quick-row icon closed
-the node menu: its Move left/right / Remove / Reset options now open as a flyout under the icon (`_sbOpenSubmenu`,
-repositioned), and a right-click inside a shared menu no longer closes it. Tests in `context-more-dots.spec.ts`.
-
-**2026-10-23: draw.io files pasted or dropped on a row.** Owner asked. `.drawio`/`.dio` and the `.drawio.svg`
-(`content` attribute) / `.drawio.png` (`mxfile` tEXt or zTXt chunk) exports become diagrams on that row
-(`drawioXmlFromFile`, `addDrawioFilesToNode`, `addDroppedFilesToNode` routes images vs diagrams); pasted draw.io XML
-text too. Title = file name. Diagrams aren't in the undo snapshot, so the toast's Undo removes them.
-`addDiagramFromXml(xml,{anchorNodeId,silent})`. Test: `drawio-file-paste.spec.ts`.
 
 ### In progress / not built
 
