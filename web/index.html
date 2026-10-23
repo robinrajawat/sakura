@@ -1915,9 +1915,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-note-line table td:focus,.node-note-line table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
 .node-note-line .pv-table-chart-figure svg{max-width:100%}
 .node-remark-line{position:relative;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:13px;line-height:1.4}
-.node-inline-open-panel-btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;color:var(--hint);opacity:0;cursor:pointer;margin-top:1px}
-.node-remark-line:hover .node-inline-open-panel-btn,.node-qa-line:hover .node-inline-open-panel-btn,.node-note-line-wrap:hover .node-inline-open-panel-btn,.node-diagram-line:hover .node-inline-open-panel-btn{opacity:.6}
-.node-inline-open-panel-btn:hover{opacity:1!important;background:var(--hover);color:var(--accent)}
 .node-remark-avatar{flex:0 0 auto;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700;margin-top:1px}
 .node-remark-person-inline{color:var(--fg);font:600 1em 'Inter','Public Sans',sans-serif;font-family:var(--content-font);padding:0 2px;border-radius:4px;flex:0 0 auto;min-width:8px;outline:none;cursor:text}
 .node-remark-person-inline:empty::before{content:attr(data-placeholder);color:var(--hint);font-weight:400}
@@ -2037,10 +2034,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-diagram-preview-thumb.has-export-border{padding:0}
 .node-diagram-preview-thumb img{display:block;max-width:100%;max-height:70vh;width:auto;height:auto}
 .node-diagram-preview-thumb.node-diagram-preview-empty{padding:0;width:240px;height:150px;display:flex;align-items:center;justify-content:center}
-.node-diagram-preview-meta{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:4px}
+.node-diagram-preview-meta{display:flex;align-items:center;gap:6px;font:500 11px 'Inter',sans-serif;line-height:1.35;color:var(--muted);margin-top:4px}
+/* Like a picture's caption: nothing shows until the diagram has a name (Rename shows the field). */
+.node-diagram-preview-meta.is-empty:not(.renaming){display:none}
 .node-diagram-preview-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;outline:none;cursor:text;border-radius:4px;padding:0 2px}
 .node-diagram-preview-title:empty::before{content:attr(data-placeholder);color:var(--hint)}
-.node-diagram-preview-title:hover,.node-diagram-preview-title:focus{background:var(--hover);overflow:visible;white-space:normal}
+.node-diagram-preview-title:hover{color:var(--fg)}
+.node-diagram-preview-title:focus{color:var(--fg);background:var(--hover);overflow:visible;white-space:normal}
 .node-qa-answer:hover,.node-qa-question:hover{opacity:1}
 .node-qa-answer:focus{opacity:1;color:var(--fg)}
 .node-qa-answer:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
@@ -13723,7 +13723,7 @@ function showDiagramThumbMenu(e,d,titleEl){
     {label:'Copy image', onClick:()=>copyDiagramImage(d.id,thumb)},
     {label:'Download', submenu:diagramDownloadItems(d.id)},
     {divider:true},
-    {label:'Rename', onClick:()=>{ if(!titleEl||!titleEl.isConnected)return; titleEl.focus(); const r=document.createRange(); r.selectNodeContents(titleEl); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }},
+    {label:'Rename', onClick:()=>{ if(!titleEl||!titleEl.isConnected)return; titleEl.parentElement?.classList.add('renaming'); titleEl.focus(); const r=document.createRange(); r.selectNodeContents(titleEl); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }},
     {label:'Edit in draw.io', onClick:()=>openDiagramEditor(d.id)},
     {divider:true},
     {label:'Delete diagram', danger:true, onClick:async()=>{ await deleteDiagram(d.id); render(); }}
@@ -21691,7 +21691,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       thumb.addEventListener('click',e=>{e.stopPropagation(); openDiagramViewer(d.id);});
       thumb.addEventListener('contextmenu',e=>showDiagramThumbMenu(e,d,card.querySelector('.node-diagram-preview-title')));
       const meta=document.createElement('div'); meta.className='node-diagram-preview-meta';
-      const title=document.createElement('span'); title.className='node-diagram-preview-title'; title.contentEditable='true'; title.textContent=d.title||''; title.dataset.placeholder='Untitled diagram'; title.dataset.tip='Click to rename'; title.spellcheck=false;
+      const title=document.createElement('span'); title.className='node-diagram-preview-title'; title.contentEditable='true'; title.textContent=d.title||''; title.dataset.placeholder='Diagram name'; title.dataset.tip='Click to rename'; title.spellcheck=false;
       title.addEventListener('mousedown',e=>e.stopPropagation());
       title.addEventListener('click',e=>e.stopPropagation());
       title.addEventListener('keydown',e=>{
@@ -21706,10 +21706,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         markDirty(); scheduleAutoSave();
         if(_diagramEditorState&&_diagramEditorState.diagramId===d.id){ const ti=el('diagram-editor-title-input'); if(ti)ti.value=val; }
       });
-      const openPanelBtn=document.createElement('span'); openPanelBtn.className='node-inline-open-panel-btn'; openPanelBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'; openPanelBtn.dataset.tip='Open in the diagram editor';
-      openPanelBtn.addEventListener('mousedown',e=>e.stopPropagation());
-      openPanelBtn.addEventListener('click',e=>{e.stopPropagation(); openDiagramEditor(d.id);});
-      meta.appendChild(title); meta.appendChild(openPanelBtn);
+      title.addEventListener('blur',()=>{ meta.classList.remove('renaming'); meta.classList.toggle('is-empty',!title.textContent); });
+      if(!d.title)meta.classList.add('is-empty');
+      meta.appendChild(title);
       card.appendChild(thumb); card.appendChild(meta);
       gLine.appendChild(card);
       if(hideTreeLines&&depthGuideLines){ const gVFlags=focusActive?buildVertFlags(nodes.slice(focusIdx,focusEnd),idx-focusIdx,-focusBaseDepth):buildVertFlags(nodes,idx,0); gVFlags.forEach((hasSib,d2)=>{ if(hasSib){ const vg=document.createElement('span'); vg.className='node-vguide'; vg.style.left=(d2*32+0*editorScale+9)+'px'; gLine.appendChild(vg) } }); if(hasChildren){ const vgOwn=document.createElement('span'); vgOwn.className='node-vguide'; vgOwn.style.left=(gDepth*32+0*editorScale+9)+'px'; gLine.appendChild(vgOwn) } }

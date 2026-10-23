@@ -464,6 +464,33 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(svgText).toContain('width="800"');
   });
 
+  // Owner, 2026-10-23 (unified design): like a picture without a caption, an untitled diagram shows
+  // no name line under it; Rename brings the field up.
+  test('an untitled diagram shows no name line; Rename shows the field and saves', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    await page.evaluate((svg) => {
+      // @ts-expect-error
+      nodes = [{ id: 1, depth: 0, text: 'Parent', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }];
+      // @ts-expect-error
+      collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; undoStack = []; editingId = null; nextId = 2;
+      // @ts-expect-error
+      diagrams = [{ id: 'd1', anchorNodeId: 1, title: '', xml: '<mxGraphModel/>', previewSvg: svg, pageSvgs: [], pageCount: 1, note: '', createdAt: Date.now(), modifiedAt: Date.now(), _hydrated: true }];
+      // @ts-expect-error
+      inlineExpandDiagramNodeIds = new Set([1]); render();
+    }, FAKE_PREVIEW_SVG);
+    const title = page.locator('.node-diagram-preview-title');
+    await expect(title).toBeHidden();
+    await expect(page.locator('.node-diagram-line')).not.toContainText('Untitled');
+    await page.locator('.node-diagram-preview-thumb').click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Rename').click();
+    await expect(title).toBeFocused();
+    await page.keyboard.type('Route plan');
+    await page.keyboard.press('Enter');
+    await expect(title).toBeVisible();
+    await expect(title).toHaveText('Route plan');
+  });
+
   test('right-clicking the thumbnail offers the same menu as a picture: Open, Copy image, Download, Rename, Edit, Delete (with undo)', async ({ page }) => {
     await seedOne(page);
     const thumb = page.locator('.node-diagram-preview-thumb');
