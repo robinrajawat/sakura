@@ -1772,7 +1772,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 #diagram-viewer.open{display:block}
 .dv-window{position:absolute;inset:28px;display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.28);overflow:hidden}
 .dv-bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;border-bottom:1px solid var(--border);font-family:'Inter',sans-serif}
-.dv-title{font:600 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.dv-title{min-width:0}
+/* The item's own name, first in both preview headers and edited in place: a picture's caption, a diagram's name. */
+.pv-name{all:unset;box-sizing:border-box;field-sizing:content;min-width:9ch;max-width:34%;height:30px;padding:0 8px;margin-left:-8px;border:1px solid transparent;border-radius:7px;font:600 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;flex:0 0 auto}
+.pv-name::placeholder{color:var(--hint);font-weight:500}
+.pv-name:hover{border-color:var(--border)}
+.pv-name:focus{border-color:var(--accent);background:var(--edit-bg,var(--bg));text-overflow:clip}
+.pv-name:disabled{color:var(--muted);cursor:default}
 .dv-where{font:400 12.5px 'Inter',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 .dv-spacer{flex:1 1 auto}
 /* The header both previews share (image and diagram): .pv-head, .pv-where, .pv-zoom, .pv-fit, plus
@@ -1788,14 +1794,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* A long row name or title gives way first (ellipsis); buttons never shrink or wrap their labels.
    On a narrow window the name and count take their own line above the buttons. */
 .pv-head .pv-where{max-width:40%}
-.pv-head .dv-title{flex:0 1 auto;max-width:34%}
 .pv-head button,.pv-head .pv-zoom,.pv-head .niv-size,.pv-head .niv-counter{flex-shrink:0;white-space:nowrap}
 .pv-head .niv-tools{flex:1 0 auto}
 .pv-break{display:none}
 @media (max-width:900px){
   .pv-head{flex-wrap:wrap;row-gap:6px}
   .pv-head .pv-where{flex:1 1 0;max-width:none}
-  .pv-head .dv-title{max-width:50%}
+  .pv-head .pv-name{max-width:50%}
   .pv-break{display:block;flex-basis:100%;height:0}
 }
 .pv-zoom{display:flex;align-items:center;height:30px;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;background:var(--bg)}
@@ -1890,9 +1895,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .niv-nav:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
 .niv-nav:disabled{opacity:.3;cursor:default}
 .niv-single .niv-nav{visibility:hidden}
-.niv-caption{border:0;border-top:1px solid var(--border);padding:11px 16px;font:400 14px 'Inter',sans-serif;color:var(--fg);background:var(--bg);outline:none}
-.niv-caption:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
-.niv-caption:disabled{color:var(--muted)}
 /* PDF: one figure per picture, centred, at its chosen width (% of the content width). */
 .pv-node-images{display:flex;flex-direction:column;align-items:center;gap:14px;margin:6px 0 12px}
 .pv-node-image-figure{flex:none;max-width:100%;margin:0;break-inside:avoid;page-break-inside:avoid}
@@ -10902,6 +10904,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
     ov.innerHTML=
       '<div class="niv-panel">'+
         '<div class="niv-head pv-head">'+
+          '<input type="text" class="pv-name niv-caption" placeholder="Add a caption…" maxlength="'+NODE_IMAGE_CAPTION_MAX+'" spellcheck="true" aria-label="Caption" data-tip="Caption · click to edit">'+
           '<span class="pv-where niv-where"></span><span class="niv-counter"></span><span class="pv-break"></span>'+
           '<div class="niv-tools"><button type="button" class="niv-markup-toggle" aria-pressed="false" data-tip="Mark up this image — rectangles, arrows, highlighter, text (M)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Mark up</span><span class="niv-markup-count"></span></button></div>'+
           '<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="niv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level niv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="niv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'+
@@ -10919,7 +10922,6 @@ function openNodeImageViewer(nodeId,imageId,opts){
           '<div class="niv-frame"><div class="niv-figure"><img class="niv-img" alt=""><svg class="niv-annot-layer" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true"></svg></div></div>'+
           '<button type="button" class="niv-nav niv-next" aria-label="Next image" data-tip="Next (→)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'+
         '</div>'+
-        '<input type="text" class="niv-caption" placeholder="Add a caption…" maxlength="'+NODE_IMAGE_CAPTION_MAX+'" spellcheck="true" aria-label="Caption">'+
       '</div>';
     document.body.appendChild(ov);
     ov.addEventListener('mousedown',e=>{ if(e.target===ov){ e.preventDefault(); } });
@@ -13832,7 +13834,7 @@ function _dvEnsure(){
   ov=document.createElement('div'); ov.id='diagram-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
   // The same header as the image preview (owner, 2026-10-23: one preview): name, place and count on
   // the left with the item's own action, then zoom, Fit, Copy, Download, Delete and Close.
-  ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><span class="dv-title"></span><span class="pv-where dv-where"></span><span class="niv-counter dv-counter"></span><span class="pv-break"></span>'
+  ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><input type="text" class="pv-name dv-title" placeholder="Untitled diagram" maxlength="200" spellcheck="false" aria-label="Diagram name" data-tip="Name · click to rename"><span class="pv-where dv-where"></span><span class="niv-counter dv-counter"></span><span class="pv-break"></span>'
     +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button><button type="button" class="pv-stamp dv-stamp" aria-haspopup="true" data-tip="Stamp"></button><span class="dv-spacer"></span>'
     +'<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level dv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'
     +'<button type="button" class="pv-fit dv-fit" data-tip="Fit to window (F)">Fit</button>'
@@ -13852,6 +13854,20 @@ function _dvEnsure(){
   ov.querySelector('.dv-zoom-out').addEventListener('click',()=>_dvZoomBy(1/1.2));
   ov.querySelector('.dv-fit').addEventListener('click',()=>_dvFit(true));
   ov.querySelector('.dv-zoom-level').addEventListener('click',()=>_dvSetScale(1));
+  // The name is edited in the header, as a picture's caption is (Enter keeps, Esc puts it back).
+  const nameEl=ov.querySelector('.dv-title');
+  nameEl.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); nameEl.blur(); }
+    else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); const d=_dvState&&findDiagram(_dvState.id); nameEl.value=d?d.title||'':''; nameEl.blur(); }
+    e.stopPropagation();
+  });
+  nameEl.addEventListener('pointerdown',e=>e.stopPropagation());
+  nameEl.addEventListener('blur',()=>{
+    const d=_dvState&&findDiagram(_dvState.id); if(!d)return;
+    const val=nameEl.value.trim(); nameEl.value=val; if(val===(d.title||''))return;
+    d.title=val; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render();
+    if(_diagramEditorState&&_diagramEditorState.diagramId===d.id){ const ti=el('diagram-editor-title-input'); if(ti)ti.value=val; }
+  });
   ov.querySelector('.dv-stamp').addEventListener('click',e=>{ if(_dvState)showDiagramStampMenu(e.currentTarget,_dvState.id); });
   ov.querySelector('.dv-prev').addEventListener('click',()=>stepDiagramViewer(-1));
   ov.querySelector('.dv-next').addEventListener('click',()=>stepDiagramViewer(1));
@@ -13905,6 +13921,8 @@ function _dvEnsure(){
   // Capture phase on the document: the editor's own key handlers would otherwise see Esc and +/- first.
   document.addEventListener('keydown',e=>{
     if(!ov.classList.contains('open'))return;
+    // Typing the name: keys are text, and Esc only leaves the field (its own handler puts it back).
+    if(e.target&&e.target.classList&&e.target.classList.contains('dv-title'))return;
     if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeDiagramViewer(); }
     else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.2); }
     else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.2); }
@@ -13948,7 +13966,7 @@ function openDiagramViewer(diagramId){
   if(!d.previewSvg){ openDiagramEditor(diagramId); return; }
   const ov=_dvEnsure();
   const node=nodes.find(n=>n.id===d.anchorNodeId);
-  ov.querySelector('.dv-title').textContent=d.title||'Untitled diagram';
+  ov.querySelector('.dv-title').value=d.title||'';
   const where=node&&getNodePlainText(node).trim();
   ov.querySelector('.dv-where').textContent=where?'in “'+where+'”':'';
   const img=ov.querySelector('.dv-canvas img');

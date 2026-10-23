@@ -163,7 +163,9 @@ contradicts README.md, trust README.md.)*
 squeezed. An address with spaces (words typed into Address) is refused: the field turns red (`.is-invalid`) and the box
 stays open (`applySelectionFmtUrl`). The Link box starts at the words and stays over the editor (`placeSelectionFmtPopover`
 when `pick==='url'`); opened from Edit link… it has no Back button (`noBack`). Preview headers: buttons never shrink, the
-row name/title ellipsize (max 40% / 34%); under 900px the name line sits above the buttons (`.pv-break`).
+row text ellipsizes; under 900px the name line sits above the buttons (`.pv-break`). Owner: "why the row text and not
+the caption? unified design": both headers lead with the item's own name, edited in place (`.pv-name`: the picture's
+`.niv-caption` moved up from the bottom bar, which is gone; the diagram's `.dv-title` is an input that renames it).
 
 **2026-10-23: Diagram stamp.** Owner: the diagram status was only visible in the draw.io editor; make it a stamp. New
 field `d.stamp` ('' or the document set draft/review/approved/rejected, `DIAGRAM_STAMPS`); `diagramStampOf` reads old
