@@ -43,6 +43,7 @@ test('Escape cancels, an address with spaces is refused, Remove takes the link o
   await page.evaluate(() => (window as any).eval("setDocLinkedUrl('https://example.com/a', 'A')"));
   const chip = page.locator('#doc-link-chip');
   await chip.click();
+  await expect(page.locator('#doc-link-label-input')).toBeFocused();
   await page.keyboard.type('B');
   await page.keyboard.press('Escape');
   expect(await link(page)).toEqual(['https://example.com/a', 'A']);

@@ -14363,6 +14363,8 @@ el('doc-link-copy-btn')?.addEventListener('click',e=>{
 document.addEventListener('mousedown',e=>{
   if(!e.target.closest('#doc-link-wrap'))closeDocLinkMenu(true);
 });
+// Escape closes it from anywhere (the chip itself is hidden while its name is being renamed).
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('doc-link-menu')?.classList.contains('open')){ e.preventDefault(); closeDocLinkMenu(false); } });
 
 onOverlayBackdropClick(el('history-modal-overlay'),closeVersionHistory);
 el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion());
