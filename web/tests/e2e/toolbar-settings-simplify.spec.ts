@@ -121,12 +121,12 @@ test.describe('Fixed main toolbar', () => {
     await seedDoc(page);
     await page.locator('.node-row[data-id="3"]').click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
-    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
+    await page.locator('#context-more-panel [data-flyout="insert"]').hover();
     for (const action of ['above', 'below', 'child', 'duplicate', 'up', 'down', 'date-time', 'delete']) {
-      await expect(page.locator(`#context-more-panel [data-action="${action}"]`)).toBeVisible();
+      await expect(page.locator(`#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="${action}"]`)).toBeVisible();
     }
     // Duplicate via the menu actually works.
-    await page.locator('#context-more-panel [data-action="duplicate"]').click();
+    await page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="duplicate"]').click();
     expect(await rootTexts(page)).toEqual(['Charlie', 'Alpha', 'Alpha', 'Bravo']);
     // Keyboard shortcuts for the rest are still registered.
     const ids = await page.evaluate(() => ['newChild', 'moveUp', 'moveDown', 'underline', 'strike', 'insertDateTime']
@@ -218,14 +218,16 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     const quick = await page.evaluate(() => Array.from(document.querySelectorAll('#context-quickbar [data-action]')).map((b) => (b as HTMLElement).dataset.action));
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
-    const more = await page.evaluate(() => Array.from(document.querySelectorAll('#context-more-panel [data-action]')).map((b) => (b as HTMLElement).dataset.action));
-    expect(more).toEqual(['child', 'above', 'below', 'duplicate', 'up', 'down', 'sort-az', 'sort-za', 'sort-depth', 'date-time', 'diagram-gen', 'focus', 'fold', 'tags', 'version-history', 'no-export', 'delete']);
-    // Add (with Duplicate) and Move are icon rows; the add-to-node leftovers sit behind Insert ›,
-    // Zoom in, Collapse/expand and the row's settings behind Row › (owner, 2026-10-20: shorter More).
-    await expect(page.locator('#context-more-panel .context-icon-row')).toHaveCount(2);
-    await expect(page.locator('#context-more-panel .context-submenu [data-action]')).toHaveCount(7);
-    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
-    await expect(page.locator('#context-more-panel .context-submenu').first()).toBeVisible();
+    const actions = (sel: string) => page.evaluate((sel) => Array.from(document.querySelectorAll(sel)).map((b) => (b as HTMLElement).dataset.action), sel);
+    expect(await actions('#context-more-panel [data-action]')).toEqual(['child', 'above', 'below', 'duplicate', 'up', 'down', 'sort-az', 'sort-za', 'sort-depth', 'delete']);
+    // Add (with Duplicate) and Move are icon rows (plus Sort children with children); the add-to-node
+    // leftovers sit behind Insert ›, Zoom in, Collapse/expand and the row's settings behind Row ›
+    // (owner, 2026-10-20: shorter More). Submenus are the shared menu's flyouts.
+    await expect(page.locator('#context-more-panel .sb-context-iconrow')).toHaveCount(3);
+    await page.locator('#context-more-panel [data-flyout="insert"]').hover();
+    expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['date-time', 'diagram-gen']);
+    await page.locator('#context-more-panel [data-flyout="row"]').hover();
+    expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['focus', 'fold', 'tags', 'version-history', 'no-export']);
     expect(errors).toEqual([]);
   });
 });
@@ -380,7 +382,7 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     const quick = await page.evaluate(() => Array.from(document.querySelectorAll('#context-quickbar [data-action]')).map((b) => (b as HTMLElement).dataset.action));
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
     await page.locator('#context-more-toggle').click();
-    await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toBeVisible();
+    await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="sort-az"]')).toBeVisible();
     await page.keyboard.press('Escape');
     // Tagging / Quick Assist / Quick Insert are always on.
     await page.locator('#qb-insert').click();
