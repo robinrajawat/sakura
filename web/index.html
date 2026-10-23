@@ -1806,6 +1806,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .niv-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;gap:8px;padding:14px 10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg))}
 .niv-frame{flex:1;min-width:0;display:flex;align-items:flex-start;justify-content:center;overflow:auto;max-height:calc(100vh - 200px)}
 .niv-figure{position:relative;line-height:0;max-width:100%;margin:auto}
+.niv-figure{transform-origin:0 0}
+#node-image-viewer.niv-zoomed .niv-frame{overflow:hidden}
+#node-image-viewer.niv-zoomed:not(.niv-marking) .niv-figure{cursor:grab}
+#node-image-viewer.niv-zoomed:not(.niv-marking) .niv-figure.niv-panning{cursor:grabbing}
+.niv-zoom{display:inline-flex;align-items:center;gap:2px}
+.niv-zoom-level{all:unset;font:600 12px 'Inter',sans-serif;color:var(--muted);min-width:42px;text-align:center;cursor:pointer;border-radius:6px;padding:4px 2px}
+.niv-zoom-level:hover{background:var(--hover);color:var(--fg)}
 .niv-img{display:block;max-width:100%;max-height:calc(100vh - 210px);border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .niv-figure:not(.niv-auto) .niv-img{width:100%;height:auto;max-height:none}
 .niv-annot-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
@@ -10310,6 +10317,60 @@ function _nodeImageRef(nodeId,imageId){
   const i=list.findIndex(im=>im.id===imageId); if(i<0)return null;
   return {idx,i,list,img:list[i]};
 }
+// Copy image and Download (owner, 2026-10-23: the image preview offered neither, unlike diagrams).
+// The picture keeps its own size, with its markings drawn on top the way it shows here and in the
+// PDF; "Original" is the stored file itself.
+function nodeImageFileBase(ref){ return ((ref.img.caption||'').trim()||'image '+(ref.i+1)).replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').slice(0,80); }
+function dataUrlToBlob(src){
+  const comma=src.indexOf(','); const head=src.slice(0,comma); const mime=(head.match(/^data:([^;,]+)/)||[])[1]||'application/octet-stream';
+  const body=src.slice(comma+1);
+  // Decoded by hand: the page's CSP doesn't allow fetch() on data: URLs.
+  const bytes=/;base64/i.test(head)?Uint8Array.from(atob(body),ch=>ch.charCodeAt(0)):new TextEncoder().encode(decodeURIComponent(body));
+  return new Blob([bytes],{type:mime});
+}
+async function nodeImagePngBlob(img){
+  const pic=new Image(); pic.src=img.src; await pic.decode();
+  const w=pic.naturalWidth, h=pic.naturalHeight;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const ctx=c.getContext('2d'); ctx.drawImage(pic,0,0);
+  const marks=Array.isArray(img.annotations)?img.annotations:[];
+  if(marks.length){
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${annotationsToSvg(marks,w,h,{})}</svg>`;
+    const over=new Image(); over.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); await over.decode();
+    ctx.drawImage(over,0,0,w,h);
+  }
+  const blob=await new Promise(res=>c.toBlob(res,'image/png'));
+  if(!blob)throw new Error('empty');
+  return blob;
+}
+const _IMAGE_EXT={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif','image/svg+xml':'svg','image/avif':'avif'};
+async function downloadNodeImage(nodeId,imageId,original){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
+  const base=nodeImageFileBase(ref); const marked=(ref.img.annotations||[]).length>0;
+  try{
+    if((original||!marked)&&/^data:/i.test(ref.img.src)){ const b=dataUrlToBlob(ref.img.src); downloadFileBlob(base+'.'+(_IMAGE_EXT[b.type]||'png'),b); return; }
+    downloadFileBlob(base+'.png',await nodeImagePngBlob(original?{src:ref.img.src}:ref.img));
+  }catch(err){ showToast('Could not download this picture'); }
+}
+async function copyNodeImage(nodeId,imageId){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
+  try{
+    if(!navigator.clipboard||!window.ClipboardItem)throw new Error('no clipboard');
+    // The promise is handed over as it is, so Safari still counts the click as the reason to copy.
+    await navigator.clipboard.write([new ClipboardItem({'image/png':nodeImagePngBlob(ref.img)})]);
+    showToast('Image copied','success');
+  }catch(err){ showToast('Could not copy the picture — try Download'); }
+}
+// Copy image and Download, for the preview's header and the thumbnail's right-click menu.
+function nodeImageExportItems(nodeId,imageId){
+  const ref=_nodeImageRef(nodeId,imageId); if(!ref)return [];
+  const marked=(ref.img.annotations||[]).length>0;
+  return [
+    {label:'Copy image', onClick:()=>copyNodeImage(nodeId,imageId)},
+    marked?{label:'Download', submenu:nodeImageDownloadItems(nodeId,imageId)}:{label:'Download', onClick:()=>downloadNodeImage(nodeId,imageId,false)}
+  ];
+}
+function nodeImageDownloadItems(nodeId,imageId){ return [{label:'With markings', onClick:()=>downloadNodeImage(nodeId,imageId,false)},{label:'Original', onClick:()=>downloadNodeImage(nodeId,imageId,true)}]; }
 function _touchNodeImages(idx){ nodes[idx].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
 function deleteNodeImage(nodeId,imageId){
   const ref=_nodeImageRef(nodeId,imageId); if(!ref)return false;
@@ -10400,7 +10461,7 @@ function buildNodeImageStrip(node){
       e.preventDefault(); e.stopPropagation();
       // Order: view, then the picture's own details (caption, size, markings), then its place in
       // the strip, then Delete. Quick edits happen in place; the viewer is for viewing and Mark up.
-      const items=[{label:'Open', onClick:()=>openNodeImageViewer(node.id,img.id)}];
+      const items=[{label:'Open', onClick:()=>openNodeImageViewer(node.id,img.id)},...nodeImageExportItems(node.id,img.id)];
       if(!readOnly){
         const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         const curSize=imageWidthPresetKey(img.width);
@@ -10792,7 +10853,10 @@ function openNodeImageViewer(nodeId,imageId,opts){
         '<div class="niv-head">'+
           '<span class="niv-counter"></span>'+
           '<div class="niv-tools"><button type="button" class="niv-markup-toggle" aria-pressed="false" data-tip="Mark up this image — rectangles, arrows, highlighter, text (M)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Mark up</span><span class="niv-markup-count"></span></button></div>'+
+          '<div class="niv-zoom" role="group" aria-label="Zoom"><button type="button" class="niv-btn niv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="niv-zoom-level" data-tip="Fit (0)">Fit</button><button type="button" class="niv-btn niv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'+
           '<div class="niv-size" role="group" aria-label="Display size">'+IMAGE_WIDTH_PRESETS.map(p=>'<button type="button" class="niv-size-btn" data-size="'+p.key+'" data-tip="'+(p.value?('Show at '+p.value+'% width here and in the PDF'):'Natural size, up to the full width')+'">'+p.label+'</button>').join('')+'</div>'+
+          '<button type="button" class="niv-btn niv-copy" data-tip="Copy image" aria-label="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'+
+          '<button type="button" class="niv-btn niv-download" data-tip="Download" aria-label="Download"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></button>'+
           '<button type="button" class="niv-btn niv-delete" data-tip="Delete image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>'+
           '<button type="button" class="niv-btn niv-close" data-tip="Close (Esc)" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>'+
         '</div>'+
@@ -10813,6 +10877,16 @@ function openNodeImageViewer(nodeId,imageId,opts){
     ov.querySelector('.niv-close').addEventListener('click',()=>closeNodeImageViewer());
     ov.querySelector('.niv-prev').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(-1); });
     ov.querySelector('.niv-next').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(1); });
+    ov.querySelector('.niv-copy').addEventListener('click',()=>{ if(_nivState)copyNodeImage(_nivState.nodeId,_nivState.imageId); });
+    _nivZoomWire(ov);
+    // A marked-up picture asks which one: with its markings, or the original.
+    ov.querySelector('.niv-download').addEventListener('click',e=>{
+      if(!_nivState)return; const ref=_nodeImageRef(_nivState.nodeId,_nivState.imageId); if(!ref)return;
+      if(!(ref.img.annotations||[]).length){ downloadNodeImage(_nivState.nodeId,_nivState.imageId,false); return; }
+      const r=e.currentTarget.getBoundingClientRect();
+      showSbContextMenu(r.left,r.bottom+4,nodeImageDownloadItems(_nivState.nodeId,_nivState.imageId));
+      const m=document.querySelector('.sb-context-menu'); if(m)m.style.zIndex='2700';
+    });
     ov.querySelector('.niv-delete').addEventListener('click',()=>{
       if(!_nivState)return;
       _nivMkEndText(false);
@@ -10826,6 +10900,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
       if(!_nivState)return;
       const p=IMAGE_WIDTH_PRESETS.find(x=>x.key===btn.dataset.size); if(!p)return;
       setNodeImageWidth(_nivState.nodeId,_nivState.imageId,p.value);
+      _nivZoomReset();
       refreshNodeImageViewer();
     }));
     const cap=ov.querySelector('.niv-caption');
@@ -10839,6 +10914,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
   }
   _nivState={nodeId,imageId,captionUndoPushed:false,returnFocus:document.activeElement};
   _nivMk=null; ov.classList.remove('niv-marking');
+  _nivZoomReset();
   ov.classList.add('open');
   document.body.classList.add('node-image-viewer-open');
   window.addEventListener('keydown',_nivKeyHandler,true);
@@ -10879,6 +10955,7 @@ function stepNodeImageViewer(delta){
   _nivMkEndText(true);
   _nivState.imageId=next.id; _nivState.captionUndoPushed=false;
   if(_nivMk)_nivMkStartSession();
+  _nivZoomReset();
   refreshNodeImageViewer();
 }
 function closeNodeImageViewer(){
@@ -10894,6 +10971,75 @@ function closeNodeImageViewer(){
   document.body.classList.remove('node-image-viewer-open');
   render();
   if(ret&&ret.isConnected&&typeof ret.focus==='function'){ try{ ret.focus({preventScroll:true}); }catch(e){} }
+}
+// Zoom and pan (owner, 2026-10-23: the same as the diagram preview, smooth and not aggressive).
+// Scale 1 is the picture as the preview lays it out; zooming goes up to 8x around the pointer.
+// Ctrl/Cmd+scroll or a pinch zooms in small steps, a plain scroll or a drag moves a zoomed picture,
+// +/−/0 and the header buttons ease in, double-click toggles a closer look. Marks are drawn in the
+// same zoomed layer, so Mark up keeps working while zoomed (a drag draws there instead of moving).
+let _nivZoom={s:1,tx:0,ty:0,drag:null};
+function _nivZoomApply(animate){
+  const ov=el('node-image-viewer'); const fig=ov&&ov.querySelector('.niv-figure'); if(!fig)return;
+  const z=_nivZoom;
+  fig.style.transition=animate?'transform .18s ease-out':'none';
+  fig.style.transform=z.s===1?'':`translate(${z.tx}px,${z.ty}px) scale(${z.s})`;
+  ov.classList.toggle('niv-zoomed',z.s>1);
+  const pic=fig.querySelector('.niv-img'); const lvl=ov.querySelector('.niv-zoom-level');
+  // Shown against the picture's own pixels, as in the diagram preview; "Fit" when not zoomed.
+  if(lvl)lvl.textContent=z.s===1?'Fit':Math.round(z.s*(pic&&pic.naturalWidth?pic.clientWidth/pic.naturalWidth:1)*100)+'%';
+}
+function _nivZoomReset(){ _nivZoom={s:1,tx:0,ty:0,drag:null}; _nivZoomApply(false); }
+// cx/cy: the client point that stays put (the middle of the picture when left out).
+function _nivZoomTo(scale,cx,cy,animate){
+  const fig=el('node-image-viewer')?.querySelector('.niv-figure'); if(!fig)return;
+  const z=_nivZoom; const next=Math.min(8,Math.max(1,scale));
+  const r=fig.getBoundingClientRect();
+  if(cx===undefined){ cx=r.left+r.width/2; cy=r.top+r.height/2; }
+  if(next===1){ _nivZoomReset(); if(animate)_nivZoomApply(true); return; }
+  const left=r.left-z.tx, top=r.top-z.ty; // where the picture sits unzoomed
+  const u=(cx-left-z.tx)/z.s, v=(cy-top-z.ty)/z.s;
+  z.tx=cx-left-next*u; z.ty=cy-top-next*v; z.s=next;
+  _nivZoomApply(animate);
+}
+function _nivZoomBy(f,cx,cy,animate=true){ _nivZoomTo(_nivZoom.s*f,cx,cy,animate); }
+function _nivZoomWire(ov){
+  const stage=ov.querySelector('.niv-stage'); const fig=ov.querySelector('.niv-figure');
+  ov.querySelector('.niv-zoom-in').addEventListener('click',()=>_nivZoomBy(1.2));
+  ov.querySelector('.niv-zoom-out').addEventListener('click',()=>_nivZoomBy(1/1.2));
+  ov.querySelector('.niv-zoom-level').addEventListener('click',()=>_nivZoomTo(1,undefined,undefined,true));
+  stage.addEventListener('wheel',e=>{
+    if(!_nivState)return;
+    const unit=e.deltaMode===1?16:e.deltaMode===2?stage.clientHeight:1;
+    if(e.ctrlKey||e.metaKey){
+      e.preventDefault();
+      // Capped per event, as in the diagram preview: a mouse-wheel notch is ~12%, a pinch glides.
+      const d=Math.max(-20,Math.min(20,e.deltaY*unit));
+      _nivZoomBy(Math.exp(-d*0.006),e.clientX,e.clientY,false);
+    } else if(_nivZoom.s>1){
+      e.preventDefault();
+      const dx=e.shiftKey&&!e.deltaX?e.deltaY:e.deltaX, dy=e.shiftKey&&!e.deltaX?0:e.deltaY;
+      _nivZoom.tx-=dx*unit; _nivZoom.ty-=dy*unit; _nivZoomApply(false);
+    }
+  },{passive:false});
+  fig.addEventListener('pointerdown',e=>{
+    if(_nivMk||_nivZoom.s<=1||e.button!==0)return;
+    e.preventDefault();
+    _nivZoom.drag={x:e.clientX,y:e.clientY,tx:_nivZoom.tx,ty:_nivZoom.ty};
+    fig.setPointerCapture(e.pointerId); fig.classList.add('niv-panning');
+  });
+  fig.addEventListener('pointermove',e=>{
+    const d=_nivZoom.drag; if(!d)return;
+    _nivZoom.tx=d.tx+(e.clientX-d.x); _nivZoom.ty=d.ty+(e.clientY-d.y); _nivZoomApply(false);
+  });
+  const end=()=>{ _nivZoom.drag=null; fig.classList.remove('niv-panning'); };
+  fig.addEventListener('pointerup',end); fig.addEventListener('pointercancel',end);
+  fig.addEventListener('dblclick',e=>{
+    if(_nivMk)return;
+    if(_nivZoom.s>1){ _nivZoomTo(1,undefined,undefined,true); return; }
+    // A closer look: the picture's own pixels, or at least twice the size it's shown at.
+    const pic=fig.querySelector('.niv-img'); const shown=pic&&pic.clientWidth?pic.naturalWidth/pic.clientWidth:1;
+    _nivZoomTo(Math.max(2,shown),e.clientX,e.clientY,true);
+  });
 }
 function nodeImageViewerIsOpen(){ return !!_nivState; }
 // Capture-phase while open, so the outline's own global shortcuts (arrow keys move the selection,
@@ -10950,6 +11096,11 @@ function _nivKeyHandler(e){
   }
   if(e.key==='ArrowLeft'){ e.preventDefault(); e.stopPropagation(); stepNodeImageViewer(-1); return; }
   if(e.key==='ArrowRight'){ e.preventDefault(); e.stopPropagation(); stepNodeImageViewer(1); return; }
+  if(!mod&&!e.altKey&&(e.key==='+'||e.key==='=')){ e.preventDefault(); e.stopPropagation(); _nivZoomBy(1.2); return; }
+  if(!mod&&!e.altKey&&(e.key==='-'||e.key==='_')){ e.preventDefault(); e.stopPropagation(); _nivZoomBy(1/1.2); return; }
+  if(!mod&&!e.altKey&&e.key==='0'){ e.preventDefault(); e.stopPropagation(); _nivZoomTo(1,undefined,undefined,true); return; }
+  // Ctrl/Cmd+C with no text selected copies the picture.
+  if(mod&&(e.key==='c'||e.key==='C')&&!String(window.getSelection()||'').trim()){ e.preventDefault(); e.stopPropagation(); copyNodeImage(_nivState.nodeId,_nivState.imageId); return; }
   // Tab/Enter/Space still operate the viewer's own buttons natively (no preventDefault); nothing
   // reaches the outline's document-level handlers either way.
   if(mod&&!['c','C'].includes(e.key))e.preventDefault();
