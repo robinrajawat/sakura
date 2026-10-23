@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: ⋯ More in the quick row (unified UI part 7).** Owner asked for More as three dots at the end of the
+quick row instead of its own line, so the node menu is one strip. Shared menu: an `iconRow` button with `fold:[...]`
+unfolds its items under the row (`_sbFoldToggle`, shared with fold rows); the ⋯ keeps ids `#context-more-toggle` /
+`#context-more-panel`. Test: `context-more-dots.spec.ts`.
+
 **2026-10-23: Thread names plain (unified UI part 6).** Owner agreed names go the normal text colour, semi-bold
 (not grey: the time beside them is grey). Removed per-person colours everywhere: editor entry and composer author
 (`--pc`), PDF `.pv-remark-meta b`, Copy thread `<b>`; `remarkAuthorColor` and `REMARK_AVATAR_PALETTE` are gone. Tests
@@ -168,10 +173,6 @@ updated: discussion-items, preview-pdf-inline-qa-remarks, thread-copy.
 dots, board due, table check marks, diagram anchor button, diagram-gen review checkboxes/labels, SAP Note links) are
 `data-tip` now, and a shared-menu item's `title` hint shows as `data-tip` (it was set on nothing before). Only a
 disabled menu item still carries `title` (pointer-events are off there). Guard test: `one-tooltip.spec.ts`.
-
-**2026-10-23: One toast (unified UI part 4).** To-Dos had its own in-panel `#todos-toast` (so Undo wasn't an
-outside click); the docked panel no longer closes on outside clicks, so `showTodosToast`/`showTodosActionToast` now
-just call `showToast`/`showActionToast` and the in-panel toast markup and CSS are gone. Test: `one-toast.spec.ts`.
 
 ### In progress / not built
 
