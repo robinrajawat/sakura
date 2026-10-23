@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Thread names plain (unified UI part 6).** Owner agreed names go the normal text colour, semi-bold
+(not grey: the time beside them is grey). Removed per-person colours everywhere: editor entry and composer author
+(`--pc`), PDF `.pv-remark-meta b`, Copy thread `<b>`; `remarkAuthorColor` and `REMARK_AVATAR_PALETTE` are gone. Tests
+updated: discussion-items, preview-pdf-inline-qa-remarks, thread-copy.
+
 **2026-10-23: One tooltip style (unified UI part 5).** The last native `title` hover hints (progress rows, timeline
 dots, board due, table check marks, diagram anchor button, diagram-gen review checkboxes/labels, SAP Note links) are
 `data-tip` now, and a shared-menu item's `title` hint shows as `data-tip` (it was set on nothing before). Only a
@@ -167,14 +172,6 @@ disabled menu item still carries `title` (pointer-events are off there). Guard t
 **2026-10-23: One toast (unified UI part 4).** To-Dos had its own in-panel `#todos-toast` (so Undo wasn't an
 outside click); the docked panel no longer closes on outside clicks, so `showTodosToast`/`showTodosActionToast` now
 just call `showToast`/`showActionToast` and the in-panel toast markup and CSS are gone. Test: `one-toast.spec.ts`.
-
-**2026-10-23: Undo instead of "are you sure" (unified UI part 3).** Rule: undoable → act + `showActionToast(...,'Undo')`;
-`sakuraConfirm` only where nothing brings it back. Converted: `clearAllNodes` (asks only when `impactText.permanent`,
-i.e. diagrams; menu label lost its "…"), `deleteFolderById` (already had Undo), `restoreNodeTextFromRevision`,
-Reset all shortcuts (`resetAllShortcuts`; was never wired: its button's markup is after the main script, so it's now
-a delegated document click). Kept: Delete forever / Empty Trash / feedback / AI provider / encryption / import /
-undo-restore / reset settings (reload) / sign out / switch doc with pending rewrites / unsaved diagram editor / row
-delete when diagrams go. Tests: `undo-not-confirm.spec.ts`, toolbar-settings-simplify Clear all.
 
 ### In progress / not built
 

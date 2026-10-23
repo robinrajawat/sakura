@@ -198,8 +198,7 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
       pills: [...doc.querySelectorAll('.pv-remark-block .pv-remark-entry .pv-status-pill')].map(e => e.textContent),
       kinds: [...doc.querySelectorAll('.pv-remark-block .pv-remark-kind')].map(e => e.className.replace('pv-remark-kind is-', '')),
       decisionIcon: !!doc.querySelector('.pv-remark-block .pv-remark-kind.is-decision svg'),
-      nameColour: !!(doc.querySelector('.pv-remark-block .pv-remark-meta b') as HTMLElement | null)?.style.getPropertyValue('--pc'),
-      // The colour actually shows (an older rule once set every name to the text colour).
+      // Names are plain text colour, semi-bold (owner, 2026-10-23: colour only for open items).
       nameColours: [...doc.querySelectorAll('.pv-remark-block .pv-remark-meta b')].map(e => getComputedStyle(e).color),
       kindHasCircle: getComputedStyle(doc.querySelector('.pv-remark-block .pv-remark-kind')!).borderRadius,
       qaSection: (document.getElementById('pv-qa-section')?.textContent || '')
@@ -214,15 +213,14 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
   expect(r.pills).toEqual([]);
   expect(r.kinds).toEqual(['comment', 'question', 'answer', 'decision']);
   expect(r.decisionIcon).toBe(true);
-  expect(r.nameColour).toBe(true);
-  expect(new Set(r.nameColours).size).toBeGreaterThan(1);
+  expect(new Set(r.nameColours).size).toBe(1);
   expect(r.kindHasCircle).toBe('50%');
   expect(r.qaSection).toContain('Unlinked question');
   expect(r.qaSection).not.toContain('EU customers');
   expect(errors).toEqual([]);
 });
 
-test('each author gets their own name colour; a bare Yes takes one line', async ({ page }) => {
+test('names are one plain colour; a bare Yes takes one line', async ({ page }) => {
   await seed(page, `
     remarks.push(
       { id: 'k', anchorNodeId: 2, person: 'Karsten', date: '2026-10-14', text: 'Fine by me.', createdAt: 5 },
@@ -230,9 +228,10 @@ test('each author gets their own name colour; a bare Yes takes one line', async 
       { id: 'g', anchorNodeId: 2, person: 'Gro Fatima', date: '2026-10-14', text: 'Noted.', createdAt: 7 }
     );
   `);
-  // Karsten, Robin and Gro Fatima used to hash to one colour.
-  const colours = await page.evaluate(`['Ana', 'Karsten', 'Robin', 'Gro Fatima'].map(n => remarkAuthorColor(n).avatarBg)`);
-  expect(new Set(colours as string[]).size).toBe(4);
+  // Names no longer carry per-person colours (owner, 2026-10-23).
+  const colours = await page.evaluate(`[...document.querySelectorAll('.thread-entry .node-remark-person-inline')].map(e => getComputedStyle(e).color)`);
+  expect((colours as string[]).length).toBeGreaterThan(2);
+  expect(new Set(colours as string[]).size).toBe(1);
 
   // A bare Yes reply has no text and shows no text line.
   await page.evaluate(`remarks.push(

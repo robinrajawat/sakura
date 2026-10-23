@@ -118,9 +118,9 @@ test.describe('Linked Q&A prints inline under its node in PDF export, not just i
 
 // Remarks previously rendered as plain italic text with a "— Name · date" line and no box at all,
 // visually inconsistent with the boxed note/Q&A cards right next to it, and dropped the colored
-// author colour the rest of the app already uses for remarks (REMARK_AVATAR_PALETTE). Since
-// 2026-10-15 an entry starts with a kind icon (a comment here) and the name carries the colour.
-test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A, with a kind icon and coloured name', () => {
+// author colour. Since 2026-10-15 an entry starts with a kind icon (a comment here); since
+// 2026-10-23 the name is plain text colour, semi-bold (colour only for open items).
+test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A, with a kind icon and a plain name', () => {
   test('a remark anchored to a node renders inside the shared .pv-inline-block card shell', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -143,14 +143,14 @@ test.describe('Remarks render as the same kind of boxed inline card as notes/Q&A
         hasBoxedBody: !!block?.querySelector('.pv-inline-remark-body'),
         hasLabelColorClass: !!block?.querySelector('.pv-inline-label-remark'),
         kindIsComment: !!kind?.classList.contains('is-comment') && !!kind.querySelector('svg'),
-        nameHasColour: !!name && name.style.getPropertyValue('--pc').length > 0,
+        namePlain: !!name && !name.style.getPropertyValue('--pc') && getComputedStyle(name).fontWeight === '600',
       };
     });
     expect(result.isInlineBlock).toBe(true);
     expect(result.hasBoxedBody).toBe(true);
     expect(result.hasLabelColorClass).toBe(true);
     expect(result.kindIsComment).toBe(true);
-    expect(result.nameHasColour).toBe(true);
+    expect(result.namePlain).toBe(true);
   });
 
   // The trailing section already has its own "Remarks" heading grouping these -- a repeated
