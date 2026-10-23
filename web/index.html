@@ -4062,7 +4062,7 @@ body.printing-generic #gpe-overlay{
 <li><span class="help-kbd">Alt</span> + ↑ / ↓ → move (or right-click → <span class="help-kbd">More</span> → Move up / Move down)</li>
 <li>Drag a row → drop above/below to reorder, or onto the middle of another row to nest as its child. Dragging any node that's part of a multi-selection moves the whole selection together</li>
 <li>Right-click a node with children → <span class="help-kbd">More</span> → Sort children (A → Z, Z → A, or by depth — shallowest subtree first)</li>
-<li>Right-click the open document's tab → Sort top-level nodes (A → Z, Z → A, or by depth) — the same tab menu has Version history and Clear all nodes (asks first; Ctrl/Cmd+Z undoes it)</li>
+<li>Right-click the open document's tab → Sort top-level nodes (A → Z, Z → A, or by depth) — the same tab menu has Version history and Clear all rows (empties it at once, with Undo in the toast)</li>
 </ul>  
 </div>
                     <div class="help-section" data-cat="editing" id="help-section-tags">
@@ -5519,7 +5519,7 @@ function lockVault(){
 }
 async function disableVaultEncryption(){
   if(!vaultUnlocked()){ showToast('Unlock Secure Storage first'); return; }
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',title:'Turn Off Encryption',body:'Your AI provider keys will be written back as plain text — in this browser and in local backup files. Continue?',confirmLabel:'Turn Off',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A2 2 0 0 0 3.82 21h16.36a2 2 0 0 0 1.71-2.96L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',title:'Turn off encryption?',body:'Your AI provider keys will be written back as plain text — in this browser and in local backup files. Continue?',confirmLabel:'Turn off',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   let aiWriteFailed=false;
   try{
@@ -12835,7 +12835,7 @@ function updateHeaderRefChip(){
 
 // A document tab's right-click menu is also the document's own menu: Version history for any
 // tab, and — on the open document's tab only, since they act on the outline that's on screen —
-// Sort top-level nodes (A → Z, Z → A, by depth) and Clear all nodes (with a confirmation).
+// Sort top-level nodes (A → Z, Z → A, by depth) and Clear all rows (Undo in the toast).
 const DOC_MENU_ICON=svg=>'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svg+'</svg>';
 function docTabContextItems(tab){
   const items=[];
@@ -12854,7 +12854,7 @@ function docTabContextItems(tab){
     items.push({label:'Sort top-level nodes Z → A', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'za'); }});
     items.push({label:'Sort top-level nodes by depth', icon:DOC_MENU_ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'depth'); }});
     items.push({divider:true});
-    items.push({label:'Clear all nodes', danger:true, icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>'), onClick: async()=>{ await clearAllNodes(); }});
+    items.push({label:'Clear all rows', danger:true, icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>'), onClick: async()=>{ await clearAllNodes(); }});
   }
   return items;
 }
@@ -14035,7 +14035,7 @@ async function closeDiagramEditor(){
   // Ctrl/Cmd+S) is used *inside* draw.io's own UI. There's no documented way to trigger a save
   // from the host side, so this can't quietly guarantee nothing is lost the way the rest of
   // this session's fixes could — it can only ask honestly.
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>',title:'Close Diagram Editor',body:'Only changes saved inside draw.io (Ctrl/Cmd+S, or its own Save button) are kept — if you made changes since the last save, closing now loses them.\n\nSaved this diagram already?',confirmLabel:'Close',confirmCls:'primary',cancelLabel:'Keep editing'});
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><circle cx="12" cy="16.5" r=".6" fill="currentColor" stroke="none"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L14.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>',title:'Close the diagram editor?',body:'Only changes saved inside draw.io (Ctrl/Cmd+S, or its own Save button) are kept — if you made changes since the last save, closing now loses them.\n\nSaved this diagram already?',confirmLabel:'Close',confirmCls:'primary',cancelLabel:'Keep editing'});
   if(!ok)return;
   closeDiagramEditorInternal();
 }
@@ -14332,7 +14332,7 @@ async function permanentlyDeleteDoc(id){
   const parts=linkedContentSummaryParts(linked);
   let linkedWarning=parts.length?`\n\n${joinSummaryParts(parts)} ${parts.length===1&&linkedContentTotalCount(linked)===1?'is':'are'} linked to this document and will be left permanently unlinked.`:'';
   if(!linked.complete)linkedWarning+=(parts.length?' ':'\n\n')+"(This document isn't open, so only to-dos could be checked — not notes, diagrams, or Q&A.)";
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Delete Forever',body:`Permanently delete "${entry.title||'Untitled'}"?\n\nThis cannot be undone.${linkedWarning}`,confirmLabel:'Delete Forever',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Delete forever?',body:`Permanently delete "${entry.title||'Untitled'}"?\n\nThis cannot be undone.${linkedWarning}`,confirmLabel:'Delete forever',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   permanentlyDeleteDocCore(id);
   renderDocsList(); renderSidebar();
@@ -14343,7 +14343,7 @@ async function emptyTrash(){
   const total=trashedDocs.length;
   if(!total){ showToast('Trash is already empty'); return; }
   const parts=[]; if(trashedDocs.length)parts.push(`${trashedDocs.length} document${trashedDocs.length===1?'':'s'}`);
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Empty Trash',body:`Permanently delete ${parts.join(' and ')} in Trash?\n\nThis cannot be undone.`,confirmLabel:'Empty Trash',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Empty Trash?',body:`Permanently delete ${parts.join(' and ')} in Trash?\n\nThis cannot be undone.`,confirmLabel:'Empty Trash',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   trashedDocs.forEach(d=>permanentlyDeleteDocCore(d.id));
   renderDocsList(); renderSidebar();
@@ -14661,7 +14661,7 @@ async function confirmDeleteIfNeeded(){
   // warning that OTHER rows will lose a row link, or that diagrams will be deleted for good.
   // Everything else is silent (the delete toast names what went; Undo restores it).
   if(!extCount&&!intCount&&!impact.diagrams)return true;
-  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete Nodes':'Delete Node',body:`Delete ${plural?`${count} nodes`:'this node'} and their children?${blWarning}${linkedWarning}`,warning:impactText.permanent,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
+  return await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:plural?'Delete these rows?':'Delete this row?',body:`Delete ${plural?`${count} rows`:'this row'} and the rows under ${plural?'them':'it'}?${blWarning}${linkedWarning}`,warning:impactText.permanent,confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
 }
 /* GENERATED:formatRelativeTime:START — DO NOT EDIT BY HAND. Source of truth: src/utils/formatRelativeTime.ts (tests: tests/unit/formatRelativeTime.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -25213,9 +25213,9 @@ if(_themeMediaQuery){ try{ _themeMediaQuery.addEventListener('change',_onSystemT
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&themeMode!=='manual') applyAutoTheme(); });
 document.querySelectorAll('#accent-swatch-row .accent-swatch').forEach(btn=>{if(btn.dataset.accent!=='custom')btn.addEventListener('click',()=>setAccentPreset(btn.dataset.accent))});
 
-// Clear all nodes — reached from the open document's tab menu (right-click the active tab).
+// Clear all rows — reached from the open document's tab menu (right-click the active tab).
 // Undoable like any other edit, but asks first since it empties the whole document at once.
-async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const allIds=nodes.map(n=>n.id); const impactText=deleteImpactText(collectDeleteImpact(allIds)); if(impactText.permanent){ const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all nodes',body:'Remove every node from this document?'+[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('')+'\n\nYou can undo this with Ctrl/Cmd+Z.',warning:impactText.permanent,confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; } pushUndo(); markDirty(); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane(); showActionToast('Cleared all rows','Undo',()=>undo())}
+async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const allIds=nodes.map(n=>n.id); const impactText=deleteImpactText(collectDeleteImpact(allIds)); if(impactText.permanent){ const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all rows?',body:'Remove every row from this document?'+[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('')+'\n\nYou can undo this with Ctrl/Cmd+Z.',warning:impactText.permanent,confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; } pushUndo(); markDirty(); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane(); showActionToast('Cleared all rows','Undo',()=>undo())}
 el('doc-tab-add-btn')?.addEventListener('click',()=>createDoc());
 el('doc-tab-overview-btn')?.addEventListener('click',e=>{ e.stopPropagation(); const menu=el('doc-tab-overview-menu'); if(menu&&menu.classList.contains('open'))closeTabOverviewMenu(); else openTabOverviewMenu() });
 el('doc-tab-overview-search')?.addEventListener('click',e=>e.stopPropagation());
@@ -27226,7 +27226,7 @@ async function resetAiSettingsToDefault(){
   // is ever reachable while hosted (e.g. called directly, not just via the now-hidden button),
   // preserve that instead of silently bouncing a hosted user back to BYOK/Gemini.
   const wasHosted=aiProvider===AI_HOSTED_PROVIDER_ID;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Reset AI Settings',body:'This restores your provider and model choices to their defaults, clears every saved API key — for all seven built-in providers (Gemini, Groq, Claude, ChatGPT, OpenRouter, Cerebras, GitHub Models) — and also resets the shared rewrite prompt.\n\nYour documents and other app preferences are not affected.\n\nContinue?',confirmLabel:'Reset',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Reset AI settings?',body:'This restores your provider and model choices to their defaults, clears every saved API key — for all seven built-in providers (Gemini, Groq, Claude, ChatGPT, OpenRouter, Cerebras, GitHub Models) — and also resets the shared rewrite prompt.\n\nYour documents and other app preferences are not affected.\n\nContinue?',confirmLabel:'Reset',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   try{
     localStorage.setItem(AI_PREFS_KEY, wasHosted?JSON.stringify({provider:AI_HOSTED_PROVIDER_ID}):'{}');
@@ -28195,7 +28195,7 @@ function bulkRestoreTrashSelected(){
 }
 async function bulkPermanentlyDeleteTrashSelected(){
   const keys=Array.from(sbSelectedTrashKeys); if(!keys.length)return;
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Delete Forever',body:`Permanently delete ${keys.length} selected item${keys.length===1?'':'s'}?\n\nThis cannot be undone.`,confirmLabel:'Delete Forever',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Delete forever?',body:`Permanently delete ${keys.length} selected item${keys.length===1?'':'s'}?\n\nThis cannot be undone.`,confirmLabel:'Delete forever',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   keys.forEach(k=>{
     const [,id]=k.split(/:(.+)/);
@@ -28681,7 +28681,7 @@ async function restoreFromPreRestoreSnapshot(){
   let entry; try{ entry=await idbGet('preRestoreSnapshot'); }catch(e){ showToast('No pre-restore snapshot found'); return }
   if(!entry||!entry.payload||!entry.payload.data){ showToast('No pre-restore snapshot found'); return }
   const keyCount=Object.keys(entry.payload.data).length; const savedAt=entry.savedAt?new Date(entry.savedAt).toLocaleString():'unknown time';
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',title:'Undo Last Restore',body:`This will bring back what was in the app just before your last restore (${savedAt}, ${keyCount} item${keyCount===1?'':'s'}), replacing what's here now.\n\nThis cannot be undone. Continue?`,confirmLabel:'Undo Restore',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',title:'Undo the last restore?',body:`This will bring back what was in the app just before your last restore (${savedAt}, ${keyCount} item${keyCount===1?'':'s'}), replacing what's here now.\n\nThis cannot be undone. Continue?`,confirmLabel:'Undo restore',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok)return;
   try{
     localStorage.clear();
@@ -28938,7 +28938,7 @@ async function importAllDataFromPayload(payload){
   const body=signedIn
     ? `This will replace everything currently in the app (${keyCount} item${keyCount===1?'':'s'} in the backup) — all current documents and folders will be overwritten.\n\nYou're signed in with sync active. This device won't push the restored content up to your account until it's first reconciled against what's already there, so newer work on your other devices won't be silently overwritten — but anything genuinely new only on THIS device since the backup was taken will need re-adding by hand.\n\nThis cannot be undone. Continue?`
     : `This will replace everything currently in the app (${keyCount} item${keyCount===1?'':'s'} in the backup) — all current documents and folders will be overwritten.\n\nThis cannot be undone. Continue?`;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',title:'Import Data',body,confirmLabel:'Import',confirmCls:'danger',cancelLabel:'Cancel'});
+  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',title:'Import data?',body,confirmLabel:'Import',confirmCls:'danger',cancelLabel:'Cancel'});
   if(!ok) return;
   // Snapshot what's here right now before we overwrite it, so a restore that turns out to be
   // the wrong file (old backup, wrong version, etc.) is itself undoable via "Undo last restore".
@@ -29007,17 +29007,29 @@ el('vault-lock-btn')?.addEventListener('click',()=>lockVault());
 el('vault-disable-btn')?.addEventListener('click',()=>disableVaultEncryption());
 updateVaultStatusUI();
 el('sb-import-all-btn')?.addEventListener('click',()=>{ el('sakura-import-file-input')?.click(); });
-async function resetSettingsToDefault(){
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',title:'Reset Settings',body:'This restores appearance and behavior preferences — theme, accent color, text size, and the like — back to their defaults.\n\nYour documents, folders, and AI provider settings are not affected.\n\nContinue?',confirmLabel:'Reset',confirmCls:'danger',cancelLabel:'Cancel'});
-  if(!ok)return;
+// Resets straight away and offers Undo (owner, 2026-10-23: no dialog where Undo can bring it
+// back). The old preferences ride through the reload in sessionStorage; the toast after the
+// reload puts them back.
+const PREFS_UNDO_KEY='sakura_prefs_before_reset';
+function resetSettingsToDefault(){
+  let old=null; try{ old=localStorage.getItem(PREFS_KEY); }catch(e){}
   // Without this, the beforeunload handler's unconditional savePrefs() fires during the
   // reload below and re-writes the very keys we just removed with the still-in-memory
   // (pre-reset) values — silently undoing the reset before the fresh load ever runs.
   suppressPrefsSaveOnUnload=true;
-  try{ localStorage.removeItem(PREFS_KEY); }catch(e){}
+  try{ if(old!=null)sessionStorage.setItem(PREFS_UNDO_KEY,old); localStorage.removeItem(PREFS_KEY); }catch(e){}
   showToast('Settings reset — reloading…');
   setTimeout(()=>location.reload(),600);
 }
+(function offerSettingsResetUndo(){
+  let old=null; try{ old=sessionStorage.getItem(PREFS_UNDO_KEY); sessionStorage.removeItem(PREFS_UNDO_KEY); }catch(e){}
+  if(old==null)return;
+  setTimeout(()=>showActionToast('Settings reset to defaults','Undo',()=>{
+    suppressPrefsSaveOnUnload=true;
+    try{ localStorage.setItem(PREFS_KEY,old); }catch(e){}
+    showToast('Settings restored — reloading…'); setTimeout(()=>location.reload(),400);
+  },8000),300);
+})();
 el('sb-reset-settings-btn')?.addEventListener('click',()=>resetSettingsToDefault());
 el('sakura-import-file-input')?.addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0];
@@ -29065,7 +29077,7 @@ const _origSwitchDoc=switchDoc;
 switchDoc=async function(id){
   if(id!==activeTabDocId && autoRewriteEnabled && autoRewriteQueue.size>0){
     const n=autoRewriteQueue.size;
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',title:'Switch Document',body:`${n} node${n===1?' is':'s are'} still queued for auto-rewrite in this document.\nSwitching now will discard ${n===1?'it':'them'} before ${n===1?'it gets':'they get'} rewritten.`,confirmLabel:'Switch Anyway',confirmCls:'primary',cancelLabel:'Cancel'});
+    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',title:'Switch document?',body:`${n} node${n===1?' is':'s are'} still queued for auto-rewrite in this document.\nSwitching now will discard ${n===1?'it':'them'} before ${n===1?'it gets':'they get'} rewritten.`,confirmLabel:'Switch anyway',confirmCls:'primary',cancelLabel:'Cancel'});
     if(!ok)return;
   }
   clearAutoRewriteQueue(); _origSwitchDoc(id); renderSidebar();

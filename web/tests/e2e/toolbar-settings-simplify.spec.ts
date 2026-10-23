@@ -165,12 +165,12 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
     await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
   });
 
-  test('Clear all nodes empties the document at once, with Undo in the toast (no dialog when Undo can bring it all back)', async ({ page }) => {
+  test('Clear all rows empties the document at once, with Undo in the toast (no dialog when Undo can bring it all back)', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
     await page.locator('.doc-tab.active').click({ button: 'right' });
-    await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Clear all nodes' }).click();
+    await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Clear all rows' }).click();
     await expect(page.locator('#sakura-modal-overlay')).not.toHaveClass(/open/);
     // @ts-expect-error -- bare globals from index.html
     await expect.poll(() => page.evaluate(() => nodes.length)).toBe(0);
@@ -192,7 +192,7 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
     const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
     expect(labels).toContain('Version history…');
     expect(labels.some((l) => l.startsWith('Sort'))).toBe(false);
-    expect(labels).not.toContain('Clear all nodes');
+    expect(labels).not.toContain('Clear all rows');
   });
 });
 

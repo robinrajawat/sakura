@@ -44,3 +44,14 @@ test('Reset all shortcuts needs no dialog; Undo brings your bindings back', asyn
   await undoBtn(page).click();
   expect(await ev(page, 'shortcutOverrides.findInTree')).toBe('mod+j');
 });
+
+test('Reset settings needs no dialog; after the reload Undo brings the old settings back', async ({ page }) => {
+  await ev(page, `outlineNumbering = true; savePrefs(); 0`);
+  await Promise.all([page.waitForEvent('load'), ev(page, 'resetSettingsToDefault(); 0')]);
+  await expect(page.locator('#sakura-modal-overlay')).not.toHaveClass(/open/);
+  await page.waitForFunction('typeof render === "function"');
+  expect(await ev(page, 'outlineNumbering')).toBeFalsy();
+  await Promise.all([page.waitForEvent('load'), undoBtn(page).click()]);
+  await page.waitForFunction('typeof render === "function"');
+  expect(await ev(page, 'outlineNumbering')).toBe(true);
+});
