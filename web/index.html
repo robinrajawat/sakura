@@ -1762,26 +1762,23 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .dv-bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;border-bottom:1px solid var(--border);font-family:'Inter',sans-serif}
 .dv-title{min-width:0}
 /* The item's own name, first in both preview headers and edited in place: a picture's caption, a diagram's name. */
-.pv-name{all:unset;box-sizing:border-box;field-sizing:content;min-width:9ch;max-width:34%;height:30px;padding:0 8px;margin-left:-8px;border:1px solid transparent;border-radius:7px;font:600 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;flex:0 0 auto}
+.pv-name{all:unset;box-sizing:border-box;field-sizing:content;min-width:9ch;max-width:50%;height:30px;padding:0 8px;margin-left:-8px;border:1px solid transparent;border-radius:7px;font:600 14px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;flex:0 1 auto}
 .pv-name::placeholder{color:var(--hint);font-weight:500}
 .pv-name:hover{border-color:var(--border)}
 .pv-name:focus{border-color:var(--accent);background:var(--edit-bg,var(--bg));text-overflow:clip}
 .pv-name:disabled{color:var(--muted);cursor:default}
-.dv-where{font:400 12.5px 'Inter',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
-.dv-spacer{flex:1 1 auto}
-/* The header both previews share (image and diagram): .pv-head, .pv-where, .pv-zoom, .pv-fit, plus
-   .niv-btn icon buttons, .niv-markup-toggle for the item's own action and .niv-counter. */
-.pv-where{font:400 12.5px 'Inter',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
-/* A long row name or title gives way first (ellipsis); buttons never shrink or wrap their labels.
-   On a narrow window the name and count take their own line above the buttons. */
-.pv-head .pv-where{max-width:40%}
+/* The header both previews share (image and diagram): the item's own name (.pv-name) and count on
+   the left, then one right-aligned row in the same order for both: the item's action (Edit / Mark
+   up), zoom, Fit, Copy, Download, Delete, Close (owner, 2026-10-23: no row text, buttons aligned). */
+/* A long name gives way first (ellipsis); buttons never shrink or wrap their labels. On a narrow
+   window the name and count take their own line above the buttons. */
+.pv-spacer{flex:1 1 auto}
 .pv-head button,.pv-head .pv-zoom,.pv-head .niv-counter{flex-shrink:0;white-space:nowrap}
-.pv-head .niv-tools{flex:1 0 auto}
+.pv-head .niv-tools{flex:0 0 auto;display:flex}
 .pv-break{display:none}
 @media (max-width:900px){
   .pv-head{flex-wrap:wrap;row-gap:6px}
-  .pv-head .pv-where{flex:1 1 0;max-width:none}
-  .pv-head .pv-name{max-width:50%}
+  .pv-head .pv-name{max-width:none;flex:0 1 auto}
   .pv-break{display:block;flex-basis:100%;height:0}
 }
 .pv-zoom{display:flex;align-items:center;height:30px;box-sizing:border-box;border:1px solid var(--border);border-radius:7px;background:var(--bg)}
@@ -1804,7 +1801,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 #node-image-viewer.open{display:flex}
 /* One fixed window, as the diagram preview: stepping between pictures never moves the buttons. */
 .niv-panel{display:flex;flex-direction:column;width:100%;height:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
-.niv-head{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.niv-head{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;border-bottom:1px solid var(--border)}
 .niv-counter{font:600 12px 'Inter',sans-serif;color:var(--muted);min-width:44px;padding-left:4px}
 .niv-tools{flex:1;display:flex;gap:4px;min-width:0}
 .niv-btn:focus-visible,.niv-nav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -10800,7 +10797,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
       '<div class="niv-panel">'+
         '<div class="niv-head pv-head">'+
           '<input type="text" class="pv-name niv-caption" placeholder="Add a caption…" maxlength="'+NODE_IMAGE_CAPTION_MAX+'" spellcheck="true" aria-label="Caption" data-tip="Caption · click to edit">'+
-          '<span class="pv-where niv-where"></span><span class="niv-counter"></span><span class="pv-break"></span>'+
+          '<span class="niv-counter"></span><span class="pv-break"></span><span class="pv-spacer"></span>'+
           '<div class="niv-tools"><button type="button" class="niv-markup-toggle" aria-pressed="false" data-tip="Mark up this image — rectangles, arrows, highlighter, text (M)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Mark up</span><span class="niv-markup-count"></span></button></div>'+
           '<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="niv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level niv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="niv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'+
           '<button type="button" class="pv-fit niv-zoom-fit" data-tip="Fit to window (F)">Fit</button>'+
@@ -10878,8 +10875,6 @@ function refreshNodeImageViewer(){
   fig.style.width=img.width?img.width+'%':'';
   fig.classList.toggle('niv-auto',!img.width);
   ov.querySelector('.niv-counter').textContent=ref.list.length>1?(ref.i+1)+' / '+ref.list.length:'';
-  const where=getNodePlainText(nodes[ref.idx]).trim();
-  ov.querySelector('.niv-where').textContent=where?'in “'+where+'”':'';
   const cap=ov.querySelector('.niv-caption');
   if(document.activeElement!==cap)cap.value=img.caption||'';
   cap.disabled=readOnly; cap.placeholder=readOnly?'':'Add a caption…';
@@ -13693,8 +13688,8 @@ function _dvEnsure(){
   ov=document.createElement('div'); ov.id='diagram-viewer'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
   // The same header as the image preview (owner, 2026-10-23: one preview): name, place and count on
   // the left with the item's own action, then zoom, Fit, Copy, Download, Delete and Close.
-  ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><input type="text" class="pv-name dv-title" placeholder="Untitled diagram" maxlength="200" spellcheck="false" aria-label="Diagram name" data-tip="Name · click to rename"><span class="pv-where dv-where"></span><span class="niv-counter dv-counter"></span><span class="pv-break"></span>'
-    +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button><span class="dv-spacer"></span>'
+  ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><input type="text" class="pv-name dv-title" placeholder="Untitled diagram" maxlength="200" spellcheck="false" aria-label="Diagram name" data-tip="Name · click to rename"><span class="niv-counter dv-counter"></span><span class="pv-break"></span><span class="pv-spacer"></span>'
+    +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button>'
     +'<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level dv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'
     +'<button type="button" class="pv-fit dv-fit" data-tip="Fit to window (F)">Fit</button>'
     +'<button type="button" class="niv-btn dv-copy" aria-label="Copy image" data-tip="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
@@ -13825,8 +13820,6 @@ function openDiagramViewer(diagramId){
   const ov=_dvEnsure();
   const node=nodes.find(n=>n.id===d.anchorNodeId);
   ov.querySelector('.dv-title').value=d.title||'';
-  const where=node&&getNodePlainText(node).trim();
-  ov.querySelector('.dv-where').textContent=where?'in “'+where+'”':'';
   const img=ov.querySelector('.dv-canvas img');
   _dvState={id:d.id,scale:1,fit:1,tx:0,ty:0,w:1,h:1,drag:null,returnFocus:document.activeElement};
   img.style.transform='';
