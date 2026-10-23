@@ -1037,40 +1037,25 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       });
     }
 
-    test('a plain click on the link opens it, instead of just placing the caret', async ({ page }) => {
+    // Owner, 2026-10-23: one link rule everywhere (rows, To-Dos, notes, threads): a plain click puts
+    // the caret in the link and its card offers Open; Ctrl/Cmd+click opens it straight away.
+    test('a plain click on the link places the caret and shows the link card, without opening it', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await stubWindowOpen(page);
       await seedNodeWithNote(page, linkNote);
 
+      await page.locator('#note-line-1 a').click();
       await page.locator('#note-line-1 a').click();
 
       const result = await page.evaluate(() => ({
         // @ts-expect-error
-        openCalls: window._openCalls,
+        openCalls: window._openCalls.length,
         noteIsFocused: document.activeElement?.id === 'note-line-1',
       }));
-      expect(result.openCalls).toHaveLength(1);
-      expect(result.openCalls[0][0]).toBe('https://example.com/');
-      // Focusing the note as a side effect of the click is fine/expected -- the point is the link
-      // also actually opened, not that focus is somehow suppressed.
+      expect(result.openCalls).toBe(0);
       expect(result.noteIsFocused).toBe(true);
-    });
-
-    test('a second click on the link, once the note is already focused, edits normally and does not reopen it', async ({ page }) => {
-      await page.goto('file://' + indexPath);
-      await dismissOverlays(page);
-      await stubWindowOpen(page);
-      await seedNodeWithNote(page, linkNote);
-
-      await page.locator('#note-line-1 a').click();
-      await page.locator('#note-line-1 a').click();
-
-      const openCallCount = await page.evaluate(() =>
-        // @ts-expect-error
-        window._openCalls.length
-      );
-      expect(openCallCount).toBe(1);
+      await expect(page.locator('#link-card')).toBeVisible();
     });
 
     test('ctrl/cmd-click opens the link while the note is being edited', async ({ page }) => {

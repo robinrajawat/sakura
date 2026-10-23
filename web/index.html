@@ -4227,7 +4227,7 @@ body.printing-generic #gpe-overlay{
 <li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text.</li>
 <li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. Clicking the marker badge on a row opens its thread at the entry that set it (Shift+click filters by that marker). The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, type it and click <strong>Decision</strong> on the reply line (or right-click → Add as decision), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
-<li><strong>Links</strong>: a pasted web address becomes a link. Click a link in an entry to open it (Ctrl/Cmd+click while editing it); right-click it, or put the caret in it while editing, to open, copy, edit or remove it</li>
+<li><strong>Links</strong>: a pasted web address becomes a link. Click a link to put the caret in it: a small card under it opens, copies, edits or removes it (Ctrl/Cmd+click opens it straight away; right-click has the same items)</li>
 <li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
@@ -21333,7 +21333,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Dynalist-style note preview is now rendered as a sub-line directly under this row (see just
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
-  row.addEventListener('click',e=>{if(e.target.closest('.node-label a.row-weblink')){e.stopPropagation(); return} const rowLink=e.target.closest('.node-label .bl-link[data-r]'); if(rowLink){e.stopPropagation(); openRowLink(rowLink); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode)){selectLabelWordsForEditing(node,row,_sel); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{const wl=e.target.closest('a.row-weblink'); if(e.target.closest('.node-input')&&!wl)return; e.preventDefault(); const wlBox=wl?{getBoundingClientRect:(r=>()=>r)(wl.getBoundingClientRect()),href:wl.href}:null; commitEdit(); const at=wl?rowWebLinkAt(node,wl):null; showContextMenu(e.clientX,e.clientY,node.id,at?{linkItems:markLinkMenuItems(wlBox,at,(st,en,text,url)=>setRowLinkRange(node.id,st,en,text,url),(st,en)=>applyRowMarkToRange(node.id,st,en,'a',false))}:undefined)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
+  row.addEventListener('click',e=>{const _wl=e.target.closest('.node-label a.row-weblink'); if(_wl){ e.stopPropagation(); if(e.ctrlKey||e.metaKey||(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()))return; /* A plain click on a link puts the caret there, like Google Docs: the link card under it offers Open, Copy, Edit and Remove. Ctrl/Cmd+click opens it (owner, 2026-10-23: editing a row link). */ e.preventDefault(); commitEdit(); const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; beginEditAt(node.id,lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen); return} const rowLink=e.target.closest('.node-label .bl-link[data-r]'); if(rowLink){e.stopPropagation(); openRowLink(rowLink); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode)){selectLabelWordsForEditing(node,row,_sel); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{const wl=e.target.closest('a.row-weblink'); if(e.target.closest('.node-input')&&!wl)return; e.preventDefault(); const wlBox=wl?{getBoundingClientRect:(r=>()=>r)(wl.getBoundingClientRect()),href:wl.href}:null; commitEdit(); const at=wl?rowWebLinkAt(node,wl):null; showContextMenu(e.clientX,e.clientY,node.id,at?{linkItems:markLinkMenuItems(wlBox,at,(st,en,text,url)=>setRowLinkRange(node.id,st,en,text,url),(st,en)=>applyRowMarkToRange(node.id,st,en,'a',false))}:undefined)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
   if((forceInlineNoteId===node.id||inlineExpandNoteNodeIds.has(node.id))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
@@ -21422,11 +21422,11 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     // is a fresh element with a new per-node id every render().
     noteLine.addEventListener('click',e=>{
       e.stopPropagation();
-      // A plain click opens the link only while the note wasn't already focused (see the
-      // mousedown handler's own comment above); while editing, Ctrl/Cmd+click opens it. Browsers
-      // don't follow a modifier-click inside a contenteditable either, so that's handled here too.
+      // A plain click puts the caret in the link (the link card offers Open, Copy, Edit, Remove);
+      // Ctrl/Cmd+click opens it, as in rows, To-Dos and threads (owner, 2026-10-23). Browsers don't
+      // follow a modifier-click inside a contenteditable, so that's handled here.
       const link=e.target.closest&&e.target.closest('a[href]');
-      if(link&&noteLine.contains(link)&&(!_noteLineWasFocused||e.ctrlKey||e.metaKey)){
+      if(link&&noteLine.contains(link)&&(e.ctrlKey||e.metaKey)){
         e.preventDefault();
         window.open(link.href,link.target||'_blank','noopener,noreferrer');
         return;
@@ -25458,8 +25458,8 @@ let hideNodeTooltip=function(){};
     const isTimestamp=trg.matches(TIMESTAMP_SEL);
     let text;
     if(trg.matches(NOTE_LINK_SEL)){
-      const href=trg.getAttribute('href')||''; const editing=document.activeElement===trg.closest('.node-note-line,.node-remark-text-inline');
-      text=(href.length>90?href.slice(0,88)+'…':href)+'\n'+(editing?'Ctrl/Cmd+click to open':'Click to open')+' · right-click to edit';
+      const href=trg.getAttribute('href')||'';
+      text=(href.length>90?href.slice(0,88)+'…':href)+'\nCtrl/Cmd+click to open · click to edit';
     } else if(isTimestamp){
       const row=trg.closest('.node-row'); const id=row?Number(row.dataset.id):NaN; const idx=getIndex(nodes,id);
       if(idx<0)return;
@@ -31713,15 +31713,14 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     textEl.addEventListener('blur',()=>{ if(!htmlHasVisibleText(textEl.innerHTML))line.classList.remove('is-editing'); });
   }
   textEl.dataset.placeholder=r.verdict||r.status?'':'Write…';
-  // A link opens on a plain click while the entry isn't being edited, and on Ctrl/Cmd+click while it is
-  // (like a note's links); right-click it to copy, edit or remove it.
-  let wasFocused=false;
-  textEl.addEventListener('mousedown',e=>{ e.stopPropagation(); wasFocused=document.activeElement===textEl;
+  // A plain click puts the caret in a link (the link card offers Open, Copy, Edit, Remove);
+  // Ctrl/Cmd+click opens it, as in rows, To-Dos and notes; right-click has the same items.
+  textEl.addEventListener('mousedown',e=>{ e.stopPropagation();
     const a=e.target.closest&&e.target.closest('a[href]');
-    if(a&&e.button===0&&(!wasFocused||e.ctrlKey||e.metaKey))e.preventDefault(); });
+    if(a&&e.button===0&&(e.ctrlKey||e.metaKey))e.preventDefault(); });
   textEl.addEventListener('click',e=>{ e.stopPropagation();
     const a=e.target.closest&&e.target.closest('a[href]');
-    if(a&&textEl.contains(a)&&(!wasFocused||e.ctrlKey||e.metaKey)){ e.preventDefault(); window.open(a.href,'_blank','noopener,noreferrer'); } });
+    if(a&&textEl.contains(a)&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); window.open(a.href,'_blank','noopener,noreferrer'); } });
   textEl.addEventListener('focus',()=>{ pushUndo(); _pendingInlineFocus={kind:'remarkText',remarkId:r.id}; });
   textEl.addEventListener('input',()=>{ r.text=textEl.innerHTML; markDirty(); scheduleAutoSave(); updateMarkerSummary(); });
   textEl.addEventListener('blur',e=>{
@@ -35557,10 +35556,10 @@ function waitingCandidates(todos) {
   // rather than following the link — mousedown+preventDefault, before that focus/placement
   // behavior gets a chance to run, is what makes it actually navigate reliably.
   document.getElementById('todos-body')?.addEventListener('mousedown',e=>{
-    // A web link on a title's words opens like one in a row; while you edit that title, a click
-    // just places the caret.
+    // A web link on a title's words behaves like one in a row: a plain click puts the caret in it
+    // (the link card offers Open, Copy, Edit, Remove); Ctrl/Cmd+click opens it.
     const web=e.target.closest('.todo-text a.row-weblink');
-    const link=e.target.closest('.sem-sap-note')||(web&&document.activeElement!==web.closest('.todo-text')?web:null);
+    const link=e.target.closest('.sem-sap-note')||(web&&(e.ctrlKey||e.metaKey)?web:null);
     if(!link)return;
     e.preventDefault(); e.stopPropagation();
     window.open(link.href,'_blank','noopener,noreferrer');
