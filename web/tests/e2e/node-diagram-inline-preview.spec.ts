@@ -374,7 +374,7 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await page.locator('.node-diagram-preview-thumb').click();
     const viewer = page.locator('#diagram-viewer');
     await expect(viewer).toHaveClass(/open/);
-    await expect(viewer.locator('.dv-title')).toHaveText('Night delivery');
+    await expect(viewer.locator('.dv-title')).toHaveValue('Night delivery');
     await expect(viewer.locator('.dv-where')).toContainText('Order flow');
     const img = viewer.locator('.dv-canvas img');
     const canvas = viewer.locator('.dv-canvas');
@@ -464,12 +464,12 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     expect(svgText).toContain('width="800"');
   });
 
-  test('right-clicking the thumbnail offers the same menu as a picture: Open, Copy image, Download, Rename, Stamp, Edit, Delete (with undo)', async ({ page }) => {
+  test('right-clicking the thumbnail offers the same menu as a picture: Open, Copy image, Download, Rename, Edit, Delete (with undo)', async ({ page }) => {
     await seedOne(page);
     const thumb = page.locator('.node-diagram-preview-thumb');
     await thumb.click({ button: 'right' });
     const menu = page.locator('.sb-context-menu');
-    await expect(menu.locator('.sb-context-item')).toHaveText([/^Open$/, /Copy image/, /Download/, /Rename/, /Stamp/, /Edit in draw\.io/, /Delete diagram/]);
+    await expect(menu.locator('.sb-context-item')).toHaveText([/^Open$/, /Copy image/, /Download/, /Rename/, /Edit in draw\.io/, /Delete diagram/]);
     await menu.getByText('Open', { exact: true }).click();
     await expect(page.locator('#diagram-viewer')).toHaveClass(/open/);
     await page.keyboard.press('Escape');
@@ -540,17 +540,17 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     }, LARGE_PREVIEW_SVG);
     await page.locator('.node-diagram-preview-thumb').first().click();
     const viewer = page.locator('#diagram-viewer');
-    await expect(viewer.locator('.dv-title')).toHaveText('Night: delivery');
+    await expect(viewer.locator('.dv-title')).toHaveValue('Night: delivery');
     await expect(viewer.locator('.dv-where')).toHaveText('in “Order flow”');
     await expect(viewer.locator('.dv-counter')).toHaveText('1 / 2');
     await expect(viewer.locator('.dv-prev')).toBeDisabled();
     await page.keyboard.press('ArrowRight');
-    await expect(viewer.locator('.dv-title')).toHaveText('Returns');
+    await expect(viewer.locator('.dv-title')).toHaveValue('Returns');
     await expect(viewer.locator('.dv-counter')).toHaveText('2 / 2');
     await viewer.locator('.dv-prev').click();
-    await expect(viewer.locator('.dv-title')).toHaveText('Night: delivery');
+    await expect(viewer.locator('.dv-title')).toHaveValue('Night: delivery');
     await viewer.locator('.dv-delete').click();
-    await expect(viewer.locator('.dv-title')).toHaveText('Returns');
+    await expect(viewer.locator('.dv-title')).toHaveValue('Returns');
     await expect(viewer.locator('.dv-counter')).toHaveText('');
     await expect(viewer.locator('.dv-next')).toBeHidden();
     // @ts-expect-error
@@ -559,5 +559,23 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(viewer).not.toHaveClass(/open/);
     // @ts-expect-error
     expect(await page.evaluate(() => diagrams.length)).toBe(0);
+  });
+
+  // Owner, 2026-10-23: both previews lead with the item's own name, edited in place.
+  test('the preview header leads with the diagram name; renaming it there renames the diagram, Esc puts it back', async ({ page }) => {
+    await seedOne(page);
+    await page.locator('.node-diagram-preview-thumb').click();
+    const name = page.locator('#diagram-viewer .dv-title');
+    await expect(name).toHaveValue('Night: delivery');
+    await name.click(); await name.fill('Route plan'); await page.keyboard.press('Enter');
+    // @ts-expect-error
+    await expect.poll(() => page.evaluate(() => diagrams[0].title)).toBe('Route plan');
+    await expect(page.locator('.node-diagram-preview-title')).toHaveText('Route plan');
+    await name.click(); await name.fill('Oops'); await page.keyboard.press('Escape');
+    await expect(name).toHaveValue('Route plan');
+    await expect(page.locator('#diagram-viewer')).toHaveClass(/open/);
+    // Keys typed in the name are text, not preview shortcuts.
+    await name.click(); await page.keyboard.press('End'); await page.keyboard.type(' f0');
+    await expect(name).toHaveValue('Route plan f0');
   });
 });
