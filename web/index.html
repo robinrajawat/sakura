@@ -1080,6 +1080,9 @@ body.zen-mode #quick-bar{display:none}
 .context-top-row .pv-qm-btn{font-size:16px;line-height:1}
 .context-top-row .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
 .context-top-row .pv-qm-btn:active{background:var(--sel)}
+.inline-edit-input{position:fixed;z-index:400;box-sizing:border-box;margin:0;padding:0 4px;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--border));border-radius:6px;background:var(--edit-bg);color:var(--fg);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+.inline-edit-input::placeholder{color:var(--hint)}
+.inline-edit-input.inline-edit-ask{padding:0 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.10),0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
 .sb-context-iconrow{display:flex;align-items:center;gap:3px;padding:1px 4px}
 .sb-context-iconrow-label{flex:1 1 auto;font:400 12px 'Inter',sans-serif;color:var(--fg);padding:0 8px 0 6px;white-space:nowrap}
 .sb-context-iconrow .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
@@ -8490,7 +8493,7 @@ function buildTableEditItems(table,cell,commit){
   }
   // How the table shows (Show as, title, size, heat-map) sits just above the Delete group, which
   // stays last.
-  const chartItems=buildChartFeatureItems(table,commit);
+  const chartItems=buildChartFeatureItems(table,commit,table.parentElement);
   if(chartItems.length)groups.splice(groups.length-1,0,chartItems);
   const items=[];
   groups.forEach((g,i)=>{ if(i)items.push({divider:true}); items.push(...g); });
@@ -8540,7 +8543,7 @@ function setTableDisplay(table,mode){
   table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse');
   showToast('Showing as '+(type==='cards'?'Cards':CHART_TYPE_LABELS[type].toLowerCase()));
 }
-function buildChartFeatureItems(table,commit){
+function buildChartFeatureItems(table,commit,figure){
   const items=[];
   const cur=currentTableDisplay(table);
   const typeAvail=tableChartTypeAvailability(table);
@@ -8623,10 +8626,12 @@ function buildChartFeatureItems(table,commit){
   } else items.push(na('Total row','A total row applies to a table or Cards.'));
   if(titled){
     const curTitle=getTableChartTitle(table);
-    items.push({label:curTitle?'Edit title\u2026':'Add title\u2026', onClick:async()=>{
-      const v=await sakuraPrompt({title:curTitle?'Edit title':'Add title', body:'Shown above the '+(cur==='cards'?'cards':'chart')+', in the document and the PDF. Leave empty to remove it.', defaultValue:curTitle, confirmLabel:'Save'});
-      if(v===null)return;
-      setTableChartTitle(table,v); commit();
+    // Typed in place, over the figure's title line; empty removes it.
+    items.push({label:curTitle?'Edit title\u2026':'Add title\u2026', onClick:()=>{ if(!figure)return;
+      const f=figure.getBoundingClientRect(); const shown=figure.querySelector('.pv-table-chart-title, .pv-chart-svg-title');
+      const r=shown?shown.getBoundingClientRect():{left:f.left,top:f.top,width:Math.min(f.width,420),height:24};
+      editTextInPlace(shown||figure,{rect:r, value:curTitle, placeholder:(cur==='cards'?'Cards':'Chart')+' title', font:"600 13px 'Inter',sans-serif", minWidth:Math.min(f.width,420),
+        onCommit:v=>{ if(v!==curTitle){ setTableChartTitle(table,v); commit(); } }});
     }});
   } else items.push(na('Add title\u2026','A title goes above a chart or Cards.'));
   if(isChart){
@@ -9560,7 +9565,7 @@ function buildNodeTableObject(node,tIdx){
     }
     // Order: how it shows (Show as + its options), then working with the data (Edit data, Copy),
     // then Delete on its own.
-    if(table)items.push(...buildChartFeatureItems(table,commit),{divider:true});
+    if(table)items.push(...buildChartFeatureItems(table,commit,wrap),{divider:true});
     // "Edit data": shows a chart's/Cards' underlying table in the same editing session a plain
     // table gets on click (cells editable, the row/column menu on right-click), and re-renders the
     // chart/Cards from the edited values when it ends (Esc, click outside).
@@ -12518,7 +12523,7 @@ function renderTabStrip(){
     const isActive=tab.docId===activeTabDocId;
     const row=document.createElement('div');
     const tabIsDirty=isActive?dirty:!!tab.dirty;
-    row.className='doc-tab'+(isActive?' active':'')+(tabIsDirty?' is-dirty':'')+(tab.pinned?' pinned':'');
+    row.dataset.docId=tab.docId; row.className='doc-tab'+(isActive?' active':'')+(tabIsDirty?' is-dirty':'')+(tab.pinned?' pinned':'');
     row.setAttribute('role','tab'); row.setAttribute('aria-selected',String(isActive));
     const indexEntry=docIndexMap.get(tab.docId);
     const title=isActive?(el('header-title')?.value||'Untitled'):(indexEntry?.title||tab.title||'Untitled');
@@ -12545,7 +12550,7 @@ function renderTabStrip(){
     row.innerHTML=`<span class="doc-tab-pin-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span><span class="doc-tab-dirty"></span><span class="doc-tab-title"></span><span class="doc-tab-close" data-tip="Close tab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span>`;
     row.querySelector('.doc-tab-title').textContent=truncateTitle(title||'Untitled',60);
     row.addEventListener('click',e=>{ if(e.target.closest('.doc-tab-close'))return; if(!isActive)switchDoc(tab.docId) });
-    row.addEventListener('dblclick',e=>{ if(e.target.closest('.doc-tab-close'))return; e.preventDefault(); renameDoc(tab.docId) });
+    row.addEventListener('dblclick',e=>{ if(e.target.closest('.doc-tab-close'))return; e.preventDefault(); renameDoc(tab.docId,row.querySelector('.doc-tab-title')) });
     row.querySelector('.doc-tab-close').addEventListener('click',e=>{ e.stopPropagation(); closeTab(tab.docId) });
     row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docTabContextItems(tab)); });
     strip.appendChild(row);
@@ -12731,14 +12736,26 @@ function startupEnsureBlankDoc(){
   currentDocId=id; saveCurrentDocId(id);
   return id;
 }
-async function renameDoc(id){
-  const list=loadDocsIndex(); const entry=list.find(d=>d.id===id); const current=entry?entry.title:'';
-  const name=await sakuraPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',title:'Rename Document',body:'Enter a new name for this document:',defaultValue:current||'Untitled',confirmLabel:'Rename',cancelLabel:'Cancel'});
-  if(name===null)return;
+// Renames in place: on the sidebar entry or the tab you used, else the first one showing; with
+// neither showing, the open document's title at the top takes the edit.
+function renameDoc(id,anchor){
+  return new Promise(resolve=>{
+    const entry=loadDocsIndex().find(d=>d.id===id); const current=entry?entry.title:'';
+    const sel=CSS.escape(String(id));
+    const target=anchor||[...document.querySelectorAll(`.sdoc-name-btn[data-doc-id="${sel}"], .doc-tab[data-doc-id="${sel}"] .doc-tab-title`)].find(e=>e.getClientRects().length);
+    if(!target){
+      if(id!==currentDocId)switchDoc(id);
+      const h=el('header-title'); if(h){ h.focus(); h.select(); }
+      resolve(); return;
+    }
+    editTextInPlace(target,{value:current||'',placeholder:'Untitled',label:'Document name',onCommit:v=>{ if(v!==(current||''))applyDocRename(id,v); resolve(); },onCancel:resolve});
+  });
+}
+function applyDocRename(id,name){
   const trimmed=name.trim()||'Untitled';
   if(id===currentDocId){ if(el('header-title'))el('header-title').value=trimmed; saveToStorage() }
   else { touchDocIndex(id,trimmed); try{const raw=localStorage.getItem(docKey(id)); if(raw){const d=JSON.parse(raw); d.title=trimmed; localStorage.setItem(docKey(id),JSON.stringify(d))}}catch(e){showToast('Storage full — rename may not have saved. Free up space or export a backup.')} const openTab=findOpenTab(id); if(openTab)openTab.title=trimmed; renderTabStrip(); }
-  renderDocsList();
+  renderDocsList(); if(typeof renderSidebar==='function')renderSidebar();
 }
 async function duplicateDoc(id){
   commitEdit(); if(id===currentDocId) saveToStorage();
@@ -14063,7 +14080,7 @@ function renderDocsList(){
     nameBtn.addEventListener('click',()=>{ el('docs-menu').classList.remove('open'); if(!isCurrent)switchDoc(d.id) });
     row.appendChild(nameBtn);
     const renameBtn=document.createElement('button'); renameBtn.className='docs-icon'; renameBtn.dataset.tip='Rename'; renameBtn.textContent='✎';
-    renameBtn.addEventListener('click',e=>{e.stopPropagation(); renameDoc(d.id)}); row.appendChild(renameBtn);
+    renameBtn.addEventListener('click',e=>{e.stopPropagation(); renameDoc(d.id,nameBtn)}); row.appendChild(renameBtn);
     const dupBtn=document.createElement('button'); dupBtn.className='docs-icon'; dupBtn.dataset.tip='Duplicate'; dupBtn.textContent='⧉';
     dupBtn.addEventListener('click',e=>{e.stopPropagation(); duplicateDoc(d.id)}); row.appendChild(dupBtn);
     const delBtn=document.createElement('button'); delBtn.className='docs-icon'; delBtn.dataset.tip='Move to Trash'; delBtn.innerHTML=TRASH_ICON.replace('width="24" height="24"','width="12" height="12"').replace('stroke-width="1.8"','stroke-width="2.2"');
@@ -19152,6 +19169,33 @@ function onOverlayBackdropClick(overlay,closeFn){
 async function sakuraConfirm({icon,title,body,warning='',confirmLabel='OK',confirmCls='primary',cancelLabel='Cancel'}){
   const res=await _openModal({icon,title,body,warning,inputValue:null,buttons:[{label:cancelLabel,cls:'',key:'cancel'},{label:confirmLabel,cls:confirmCls,key:'confirm'}]});
   return res.key==='confirm';
+}
+// Edits a short value where it is shown, not in a dialog (owner, 2026-10-22/23: inline editing over
+// popups). A text box sits exactly over the shown text, in its font, laid over the page (fixed), so
+// a re-render underneath can't remove it. Enter keeps, Esc cancels; clicking away keeps too unless
+// opts.blurCancels. opts.rect places it somewhere other than over `target` (e.g. under a row).
+function editTextInPlace(target,opts){
+  const o=opts||{};
+  const r=o.rect||target.getBoundingClientRect();
+  const cs=target?getComputedStyle(target):null;
+  const input=document.createElement('input'); input.type='text'; input.className='inline-edit-input'+(o.cls?' '+o.cls:'');
+  input.value=o.value||''; input.placeholder=o.placeholder||''; input.spellcheck=false; input.setAttribute('aria-label',o.label||o.placeholder||'Edit');
+  input.style.left=Math.round(r.left-4)+'px'; input.style.top=Math.round(r.top+(r.height-Math.max(r.height,24))/2)+'px';
+  input.style.width=Math.round(Math.min(window.innerWidth-r.left-8,Math.max(r.width+12,o.minWidth||160)))+'px';
+  input.style.height=Math.round(Math.max(r.height,24))+'px';
+  if(o.font)input.style.font=o.font; else if(cs)input.style.font=cs.font;
+  document.body.appendChild(input);
+  const hidden=!o.rect&&target; if(hidden)target.style.visibility='hidden';
+  let done=false;
+  const finish=keep=>{
+    if(done)return; done=true; const v=input.value; input.remove(); if(hidden)target.style.visibility='';
+    if(keep)o.onCommit?.(v.trim()); else o.onCancel?.();
+  };
+  input.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); finish(true); } else if(e.key==='Escape'){ e.preventDefault(); finish(false); } });
+  ['mousedown','click','dblclick','contextmenu','paste','copy','cut'].forEach(t=>input.addEventListener(t,e=>e.stopPropagation()));
+  input.addEventListener('blur',()=>finish(!o.blurCancels));
+  requestAnimationFrame(()=>{ input.focus(); input.select(); });
+  return input;
 }
 async function sakuraPrompt({icon,title,body,defaultValue='',confirmLabel='Rename',cancelLabel='Cancel'}){
   const res=await _openModal({icon,title,body,inputValue:defaultValue,buttons:[{label:cancelLabel,cls:'',key:'cancel'},{label:confirmLabel,cls:'primary',key:'confirm'}]});
@@ -26442,9 +26486,25 @@ async function callAiApiOutline(topic){
 // Orchestrates: ask for a topic → call the AI → parse the result with the same engine that
 // powers "paste a tree" → insert via pasteParsedNodes (replaces an empty doc, or inserts after
 // the current selection — identical behavior to a manual paste).
+// The outline's topic is typed in place: a line under the selected row (where the outline goes, as
+// its children) or at the top of the document, not a dialog. Enter generates; Esc or clicking away
+// drops it.
+function askOutlineTopic(triggerBtn){
+  return new Promise(resolve=>{
+    const pane=el('editor-pane-inner'); const pr=(pane||document.body).getBoundingClientRect();
+    const row=selectedId!==null?document.querySelector(`.node-row[data-id="${selectedId}"]`):null;
+    const label=row?.querySelector('.node-label');
+    let r;
+    if(label&&label.getClientRects().length){ const lr=label.getBoundingClientRect(), rr=row.getBoundingClientRect(); r={left:lr.left+24, top:rr.bottom+2, width:Math.max(240,pr.right-lr.left-48), height:28}; }
+    else if(triggerBtn&&triggerBtn.getClientRects().length&&!triggerBtn.classList.contains('icon-btn')){ const b=triggerBtn.getBoundingClientRect(); r={left:b.left, top:b.bottom+6, width:Math.max(320,b.width), height:28}; }
+    else { const first=document.querySelector('.node-row'); const t=first?first.getBoundingClientRect().top:pr.top+16; r={left:pr.left+32, top:Math.max(pr.top+8,t-34), width:Math.max(240,pr.width-64), height:28}; }
+    editTextInPlace(pane||document.body,{rect:r, cls:'inline-edit-ask', placeholder:'What should the outline cover? e.g. "onboarding checklist for a new hire" — Enter to generate', label:'Outline topic', font:"400 14px 'Inter',sans-serif", blurCancels:true,
+      onCommit:v=>resolve(v), onCancel:()=>resolve(null)});
+  });
+}
 async function generateOutlineWithAi(triggerBtn){
   if(!featureAiEnabled){showToast('AI Capabilities is turned off in Settings'); return}
-  const topic=await sakuraPrompt({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z"/></svg>',title:'Generate Outline with AI',body:'Describe what you want an outline for — e.g. "competitor analysis" or "onboarding checklist for a new hire".\n\n'+(nodes.length&&selectedId!==null?'The outline will be inserted after the selected node as its children.':'The outline will be added to the document.'),defaultValue:'',confirmLabel:'Generate'});
+  const topic=await askOutlineTopic(triggerBtn);
   if(topic===null)return;
   const trimmed=topic.trim();
   if(!trimmed){showToast('Enter a topic first'); return}
@@ -27030,10 +27090,10 @@ function makeDocItem(d, allFolders, filterActive){
   docIcon.addEventListener('click',e=>{ e.stopPropagation(); showDocIconMenu(e, d.id); });
   item.appendChild(docIcon);
 
-  const nb = document.createElement('button'); nb.className='sdoc-name-btn';
+  const nb = document.createElement('button'); nb.className='sdoc-name-btn'; nb.dataset.docId=d.id;
   nb.textContent = truncateTitle(d.title||'Untitled',60); nb.dataset.tip = truncateTitle(d.title||'Untitled',120);
   nb.addEventListener('keydown',e=>{
-    if(e.key==='F2'){ e.preventDefault(); e.stopPropagation(); renameDoc(d.id).then(()=>renderSidebar()); }
+    if(e.key==='F2'){ e.preventDefault(); e.stopPropagation(); renameDoc(d.id,nb); }
   });
   nb.addEventListener('click',e=>{
     const nowCurrent=d.id===currentDocId;
@@ -27070,7 +27130,7 @@ function makeDocItem(d, allFolders, filterActive){
   }
 
   const renBtn = makeDocActionBtn('Rename','✎');
-  renBtn.addEventListener('click',async e=>{ e.stopPropagation(); await renameDoc(d.id); renderSidebar(); });
+  renBtn.addEventListener('click',e=>{ e.stopPropagation(); renameDoc(d.id,nb); });
   const dupBtn = makeDocActionBtn('Duplicate','⧉');
   dupBtn.addEventListener('click',async e=>{ e.stopPropagation(); await duplicateDoc(d.id); renderSidebar(); });
   const delBtn = makeDocActionBtn('Move to Trash',TRASH_ICON.replace('width="24" height="24"','width="11" height="11"').replace('stroke-width="1.8"','stroke-width="2.5"'),'danger');

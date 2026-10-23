@@ -159,6 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Short values edited in place (unified UI part 2).** `editTextInPlace(target,opts)` lays a text box
+(fixed, in the target's font, `.inline-edit-input`) over the shown text, or at `opts.rect`; Enter keeps, Esc cancels,
+blur keeps unless `blurCancels`. Uses: `renameDoc(id,anchor)` (tab title on dblclick, sidebar `.sdoc-name-btn
+[data-doc-id]` on F2/✎/Rename, docs menu name; with none showing, focuses `#header-title`) → `applyDocRename`;
+chart/Cards "Add/Edit title…" over the figure's title (`buildChartFeatureItems(table,commit,figure)`); AI outline
+topic via `askOutlineTopic` (a line under the selected row, `.inline-edit-ask`). `sakuraPrompt` is now only used by
+the AI key password prompt. Tests: `edit-in-place.spec.ts`.
+
 **2026-10-23: Node right-click menu is the shared menu.** Owner asked for a unified UI ("let's just make the
 changes" after an audit list: 1 node menu, 2 leftover sakuraPrompt popups, 3 confirm dialogs → Undo, 4 one toast,
 5 native title tooltips → data-tip; one PR each). `showContextMenu(x,y,id,{more})` now calls
@@ -180,22 +188,6 @@ Comment, Question, Answer (one earlier question → links it; several → "Answe
 before it"), Decision, Agreed, Follow-up, Out of scope; current one ticked (meta ✓). One choice: picking clears the
 other kind fields (decision, status/done/owner, answerTo/verdict, question type + its answers' links). An answer
 also gets Yes / No. Same PR as the To-Do bar. Tests: `thread-kind-menu.spec.ts`.
-
-**2026-10-23: The same selection bar on To-Do titles.** Owner: "keep the same floating bar everywhere". A title is
-stored like a row: `t.text` plain, `t.marks`/`t.marksText` (rowMarks.ts), kept by `normalizeTodo` (value import of
-`normalizeRowMarks`; the generator strips the import line). Panel: `renderTodoTitleHtml` = `rowMarksToHtml` over
-`renderTodoTextHtml` (chips, `>` remarks, SAP Notes per run); `.todo-text` has `id="todo-text-<id>"`; blur saves
-`readTodoTitle` (DOM read, `stripRowMarkChars` drops the chips' zero-width spaces, trimmed); undo entries carry marks.
-Bar: `selectionFmtEditorFor` accepts `.todo-text`; `selectionFmtIsTodo`/`selectionFmtIsMarks` route the bar to
-`window.sakuraTodoTitleFmt` (apply/has/colors/linkTarget/applyRange/sync; DOM offsets mapped around the zero-width
-spaces). Rewrite uses the rich path then `sync`. A web link in a title opens on click unless you're editing it. Hub:
-`hubRowMarks` block; list rows draw formatting (`todoTitleHtml`, links as plain words); its text box changes the text
-and the marks follow on read (`rowMarksOf`). Tests: `todo-title-format.spec.ts`.
-Same PR (owner asked if the bar was elegant without separators, and if whole-row formatting was cut too far): bar has
-three `.sfmt-sep` dividers (B I U S | A Tx | Link | ✦); with 2+ rows (or all) selected and nothing being edited the
-bar shows over the first one (`updateRowsFmtBar`, called from `render`, mouseup and scroll; `_selectionFmtEditorId`
-= `'rows'`, `data-mode="rows"` hides Link): buttons → `setWholeRowMarks`, Clear → `rowsFmtClear`, ✦ →
-`rewriteMultipleNodes`. Tests in `selection-popover-rows.spec.ts`.
 
 ### In progress / not built
 
