@@ -169,6 +169,11 @@ Bar: `selectionFmtEditorFor` accepts `.todo-text`; `selectionFmtIsTodo`/`selecti
 spaces). Rewrite uses the rich path then `sync`. A web link in a title opens on click unless you're editing it. Hub:
 `hubRowMarks` block; list rows draw formatting (`todoTitleHtml`, links as plain words); its text box changes the text
 and the marks follow on read (`rowMarksOf`). Tests: `todo-title-format.spec.ts`.
+Same PR (owner asked if the bar was elegant without separators, and if whole-row formatting was cut too far): bar has
+three `.sfmt-sep` dividers (B I U S | A Tx | Link | ✦); with 2+ rows (or all) selected and nothing being edited the
+bar shows over the first one (`updateRowsFmtBar`, called from `render`, mouseup and scroll; `_selectionFmtEditorId`
+= `'rows'`, `data-mode="rows"` hides Link): buttons → `setWholeRowMarks`, Clear → `rowsFmtClear`, ✦ →
+`rewriteMultipleNodes`. Tests in `selection-popover-rows.spec.ts`.
 
 **2026-10-22: Row links are real links.** Owner: "make the editor as standard as possible"; no syntax left in row
 text. A row link is mark kind `r` (v = the linked row's id, `ROW_LINK_ID_RE`), drawn as `span.bl-link[data-r]`
