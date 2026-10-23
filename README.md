@@ -80,7 +80,7 @@ Sakura supports multiple open documents at once, shown as tabs above the toolbar
 
 - Clicking a document in the file explorer, or the **+** at the end of the tab strip, opens it as a tab
 - **Each tab keeps its own undo/redo history, scroll position, and selection independently.** Switching tabs does not reset undo history the way switching documents used to
-- **Double-click a tab** to rename it
+- **Double-click a tab** to rename it — the name is edited right there on the tab (Enter keeps, Esc cancels); F2 or Rename in the sidebar does the same on the sidebar entry
 - The **X icon** on a tab closes the tab only — the document itself is not deleted and remains in the file explorer
 - The **dropdown arrow** at the right of the tab strip opens a searchable list of all open tabs (arrow keys + Enter to jump, or click a result) — useful once you have more tabs open than fit on screen
 - **"Reopen tabs on launch"** (toggle via Quick Assist — no Settings UI control for this yet) controls whether your previously open tabs come back automatically, or whether each session starts with just one
@@ -186,7 +186,7 @@ Both modes are available side by side in the same dropdown, and every AI feature
 
 - **Rewrite** — toolbar AI ▾ → Rewrite node rewrites the selected node (or a batch, if multiple are selected); for just some words, select them and use ✦ in the bar that appears over them. There's no whole-document rewrite. Right-click a note or remark line for its own Rewrite with AI, and each To-Do task (in its menu) and sub-task has one too. The rewrite prompt itself is fully customizable in Settings, with a one-click reset to the default grammar-and-spelling-only wording.
 - **Auto-rewrite on commit** (off by default) — automatically runs Rewrite on a node as soon as you finish typing it (pastes/drops are excluded). Batches nodes into a single request after two minutes without further edits or once five are queued, rather than firing one request per node, to avoid burning through rate limits. Nodes under five words, checkbox items, headings, and rows with row links or `` `code` `` are left alone. The only setting is the on/off switch. A status-bar chip shows the live queued/countdown/rewriting state and doubles as its own on/off toggle.
-- **Generate outline** (`Ctrl/Cmd+Shift+O`) — describe a topic and get an AI-generated nested outline inserted into the current document (or a new blank one).
+- **Generate outline** (`Ctrl/Cmd+Shift+O`) — type the topic on the line that opens under the selected row (or at the top of the document; Enter generates, Esc drops it) and get an AI-generated nested outline inserted into the current document (or a new blank one).
 - **Provider fallback** — an optional toggle that automatically retries with the next configured provider (in your chosen order) if the active one fails for any reason other than a bad key, which always surfaces directly instead of silently falling back.
 - **Usage today** — a local, best-effort request counter per provider, shown in Settings; it's a rough gauge only, not fetched from the provider, and can drift slightly from that provider's own reset clock.
 
