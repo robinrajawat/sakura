@@ -1802,6 +1802,10 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .niv-size-btn:focus-visible,.niv-btn:focus-visible,.niv-nav:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .niv-btn{all:unset;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;color:var(--muted);cursor:pointer}
 .niv-btn:hover{background:var(--hover);color:var(--fg)}
+.niv-btn.is-copied,.dv-btn.is-copied{color:var(--fc-green)}
+.node-diagram-preview-thumb{position:relative}
+.copied-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:var(--edit-bg);color:var(--fc-green);border:1px solid color-mix(in srgb,var(--fc-green) 35%,var(--border));font:600 11px/1.4 'Inter',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.12);pointer-events:none;animation:copied-badge-in .12s ease-out}
+@keyframes copied-badge-in{from{opacity:0;transform:translate(-50%,-40%)}}
 .niv-delete:hover{color:var(--fc-red,#c0392b)}
 .niv-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;gap:8px;padding:14px 10px;background:color-mix(in srgb,var(--fg) 4%,var(--bg))}
 .niv-frame{flex:1;min-width:0;display:flex;align-items:flex-start;justify-content:center;overflow:auto;max-height:calc(100vh - 200px)}
@@ -10352,21 +10356,41 @@ async function downloadNodeImage(nodeId,imageId,original){
     downloadFileBlob(base+'.png',await nodeImagePngBlob(original?{src:ref.img.src}:ref.img));
   }catch(err){ showToast('Could not download this picture'); }
 }
-async function copyNodeImage(nodeId,imageId){
+// `feedback`: the button or thumbnail that shows "Copied" (owner, 2026-10-23: the toast sits
+// behind the preview, so Copy felt unresponsive there).
+async function copyNodeImage(nodeId,imageId,feedback){
   const ref=_nodeImageRef(nodeId,imageId); if(!ref)return;
   try{
     if(!navigator.clipboard||!window.ClipboardItem)throw new Error('no clipboard');
     // The promise is handed over as it is, so Safari still counts the click as the reason to copy.
     await navigator.clipboard.write([new ClipboardItem({'image/png':nodeImagePngBlob(ref.img)})]);
-    showToast('Image copied','success');
+    showCopiedOn(feedback);
   }catch(err){ showToast('Could not copy the picture — try Download'); }
 }
+// "Copied" right where the copy was asked for: a header button turns into a check, a thumbnail
+// shows a small badge, for a moment. With nothing to show it on, the usual toast.
+function showCopiedOn(target){
+  if(!target||!target.isConnected){ showToast('Image copied','success'); return; }
+  clearTimeout(target._copiedTimer);
+  if(target.matches('.niv-btn,.dv-btn')){
+    if(target._copiedHtml===undefined)target._copiedHtml=target.innerHTML;
+    target.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    target.classList.add('is-copied'); target.dataset.tipSaved=target.dataset.tip||''; target.dataset.tip='Copied';
+    target._copiedTimer=setTimeout(()=>{ target.innerHTML=target._copiedHtml; delete target._copiedHtml; target.classList.remove('is-copied'); target.dataset.tip=target.dataset.tipSaved; delete target.dataset.tipSaved; },1400);
+    return;
+  }
+  target.querySelector(':scope > .copied-badge')?.remove();
+  const badge=document.createElement('span'); badge.className='copied-badge'; badge.setAttribute('role','status');
+  badge.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Copied';
+  target.appendChild(badge);
+  target._copiedTimer=setTimeout(()=>badge.remove(),1400);
+}
 // Copy image and Download, for the preview's header and the thumbnail's right-click menu.
-function nodeImageExportItems(nodeId,imageId){
+function nodeImageExportItems(nodeId,imageId,thumb){
   const ref=_nodeImageRef(nodeId,imageId); if(!ref)return [];
   const marked=(ref.img.annotations||[]).length>0;
   return [
-    {label:'Copy image', onClick:()=>copyNodeImage(nodeId,imageId)},
+    {label:'Copy image', onClick:()=>copyNodeImage(nodeId,imageId,thumb)},
     marked?{label:'Download', submenu:nodeImageDownloadItems(nodeId,imageId)}:{label:'Download', onClick:()=>downloadNodeImage(nodeId,imageId,false)}
   ];
 }
@@ -10461,7 +10485,7 @@ function buildNodeImageStrip(node){
       e.preventDefault(); e.stopPropagation();
       // Order: view, then the picture's own details (caption, size, markings), then its place in
       // the strip, then Delete. Quick edits happen in place; the viewer is for viewing and Mark up.
-      const items=[{label:'Open', onClick:()=>openNodeImageViewer(node.id,img.id)},...nodeImageExportItems(node.id,img.id)];
+      const items=[{label:'Open', onClick:()=>openNodeImageViewer(node.id,img.id)},...nodeImageExportItems(node.id,img.id,thumb)];
       if(!readOnly){
         const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         const curSize=imageWidthPresetKey(img.width);
@@ -10877,7 +10901,7 @@ function openNodeImageViewer(nodeId,imageId,opts){
     ov.querySelector('.niv-close').addEventListener('click',()=>closeNodeImageViewer());
     ov.querySelector('.niv-prev').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(-1); });
     ov.querySelector('.niv-next').addEventListener('click',e=>{ e.stopPropagation(); stepNodeImageViewer(1); });
-    ov.querySelector('.niv-copy').addEventListener('click',()=>{ if(_nivState)copyNodeImage(_nivState.nodeId,_nivState.imageId); });
+    ov.querySelector('.niv-copy').addEventListener('click',e=>{ if(_nivState)copyNodeImage(_nivState.nodeId,_nivState.imageId,e.currentTarget); });
     _nivZoomWire(ov);
     // A marked-up picture asks which one: with its markings, or the original.
     ov.querySelector('.niv-download').addEventListener('click',e=>{
@@ -11100,7 +11124,7 @@ function _nivKeyHandler(e){
   if(!mod&&!e.altKey&&(e.key==='-'||e.key==='_')){ e.preventDefault(); e.stopPropagation(); _nivZoomBy(1/1.2); return; }
   if(!mod&&!e.altKey&&e.key==='0'){ e.preventDefault(); e.stopPropagation(); _nivZoomTo(1,undefined,undefined,true); return; }
   // Ctrl/Cmd+C with no text selected copies the picture.
-  if(mod&&(e.key==='c'||e.key==='C')&&!String(window.getSelection()||'').trim()){ e.preventDefault(); e.stopPropagation(); copyNodeImage(_nivState.nodeId,_nivState.imageId); return; }
+  if(mod&&(e.key==='c'||e.key==='C')&&!String(window.getSelection()||'').trim()){ e.preventDefault(); e.stopPropagation(); copyNodeImage(_nivState.nodeId,_nivState.imageId,ov&&ov.querySelector('.niv-copy')); return; }
   // Tab/Enter/Space still operate the viewer's own buttons natively (no preventDefault); nothing
   // reaches the outline's document-level handlers either way.
   if(mod&&!['c','C'].includes(e.key))e.preventDefault();
@@ -13639,24 +13663,25 @@ async function diagramPngBlob(src){
   return png;
 }
 // Copy image, as for pictures: paste it into mail, chat or a document.
-async function copyDiagramImage(id){
+async function copyDiagramImage(id,feedback){
   const d=findDiagram(id); if(!d)return;
   if(!d.previewSvg){ showToast('No preview yet — open the diagram in the editor once to create one'); return; }
   try{
     if(!navigator.clipboard||!window.ClipboardItem)throw new Error('no clipboard');
     await navigator.clipboard.write([new ClipboardItem({'image/png':diagramPngBlob(d.previewSvg)})]);
-    showToast('Image copied','success');
+    showCopiedOn(feedback);
   }catch(err){ showToast('Could not copy the diagram — try Download'); }
 }
 function diagramDownloadItems(id){ return [{label:'PNG image', onClick:()=>downloadDiagram(id,'png')},{label:'SVG (opens in draw.io)', onClick:()=>downloadDiagram(id,'svg')}]; }
 // Right-click on an inline diagram's thumbnail.
 function showDiagramThumbMenu(e,d,titleEl){
   e.preventDefault(); e.stopPropagation();
+  const thumb=e.currentTarget;
   // The same order and names as a picture's menu: view and take it out, then its own details,
   // then Delete.
   showSbContextMenu(e.clientX,e.clientY,[
     {label:'Open', onClick:()=>openDiagramViewer(d.id)},
-    {label:'Copy image', onClick:()=>copyDiagramImage(d.id)},
+    {label:'Copy image', onClick:()=>copyDiagramImage(d.id,thumb)},
     {label:'Download', submenu:diagramDownloadItems(d.id)},
     {divider:true},
     {label:'Rename', onClick:()=>{ if(!titleEl||!titleEl.isConnected)return; titleEl.focus(); const r=document.createRange(); r.selectNodeContents(titleEl); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }},
@@ -13689,7 +13714,7 @@ function _dvEnsure(){
     showSbContextMenu(r.left,r.bottom+4,diagramDownloadItems(id));
     const m=document.querySelector('.sb-context-menu'); if(m)m.style.zIndex='2600';
   });
-  ov.querySelector('.dv-copy').addEventListener('click',()=>{ if(_dvState)copyDiagramImage(_dvState.id); });
+  ov.querySelector('.dv-copy').addEventListener('click',e=>{ if(_dvState)copyDiagramImage(_dvState.id,e.currentTarget); });
   ov.querySelector('.dv-edit').addEventListener('click',()=>{ const id=_dvState&&_dvState.id; closeDiagramViewer(); if(id)openDiagramEditor(id); });
   // Like Figma/Miro: a pinch (sent as Ctrl+wheel) or Ctrl/Cmd+wheel zooms around the pointer; a plain
   // scroll pans, so a two-finger swipe on a trackpad moves around the diagram instead of zooming
@@ -13729,7 +13754,7 @@ function _dvEnsure(){
     else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.2); }
     else if(e.key==='0'){ e.preventDefault(); e.stopPropagation(); _dvSetScale(1); }
     else if(e.key==='f'||e.key==='F'){ e.preventDefault(); e.stopPropagation(); _dvFit(true); }
-    else if((e.ctrlKey||e.metaKey)&&(e.key==='c'||e.key==='C')&&_dvState){ e.preventDefault(); e.stopPropagation(); copyDiagramImage(_dvState.id); }
+    else if((e.ctrlKey||e.metaKey)&&(e.key==='c'||e.key==='C')&&_dvState){ e.preventDefault(); e.stopPropagation(); copyDiagramImage(_dvState.id,ov.querySelector('.dv-copy')); }
   },true);
   return ov;
 }

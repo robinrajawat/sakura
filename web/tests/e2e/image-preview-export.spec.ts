@@ -35,8 +35,10 @@ test('the preview downloads an unmarked picture as it is, and copies it as an im
   await expect(viewer).toHaveClass(/open/);
   const [dl] = await Promise.all([page.waitForEvent('download'), viewer.locator('.niv-download').click()]);
   expect(dl.suggestedFilename()).toBe('Login page.svg');
+  // The button itself says it worked (the toast would sit behind the preview).
   await viewer.locator('.niv-copy').click();
-  await expect(page.locator('#toast, .toast').first()).toContainText('Image copied');
+  await expect(viewer.locator('.niv-copy')).toHaveClass(/is-copied/);
+  await expect(viewer.locator('.niv-copy')).not.toHaveClass(/is-copied/, { timeout: 3000 });
   const types = await page.evaluate(async () => (await navigator.clipboard.read())[0].types);
   expect(types).toContain('image/png');
 });
@@ -55,6 +57,9 @@ test('a marked-up picture offers With markings (a PNG) or Original, in the previ
 
   await page.locator('.node-image-thumb').first().click({ button: 'right' });
   await expect(menu).toContainText('Copy image');
+  await menu.getByText('Copy image').click();
+  await expect(page.locator('.node-image-thumb .copied-badge')).toHaveText('Copied');
+  await page.locator('.node-image-thumb').first().click({ button: 'right' });
   await menu.getByText('Download').hover();
   const [orig] = await Promise.all([page.waitForEvent('download'), page.locator('.sb-context-menu').getByText('Original').click()]);
   expect(orig.suggestedFilename()).toBe('Login page.svg');
