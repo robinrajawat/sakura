@@ -80,7 +80,7 @@ test('comparison columns show ticks, crosses and partly as icons; free text stay
   const t = page.locator('.node-table-line').nth(1);
   const checks = await t.locator('tbody tr').evaluateAll((rows) => rows.map((r) => [...r.querySelectorAll('td')].slice(1).map((c) => c.querySelector('.tbl-check')?.getAttribute('data-check') ?? c.textContent)));
   expect(checks).toEqual([['yes', 'no'], ['yes', 'partial'], ['Yes, from Q2', 'no']]);
-  await expect(t.locator('.tbl-check').first()).toHaveAttribute('title', 'yes');
+  await expect(t.locator('.tbl-check').first()).toHaveAttribute('data-tip', 'yes');
   // Display only.
   // @ts-expect-error -- bare global from index.html
   expect(await page.evaluate(() => nodes[1].tables[0])).not.toContain('tbl-check');

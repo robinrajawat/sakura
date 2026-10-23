@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: One tooltip style (unified UI part 5).** The last native `title` hover hints (progress rows, timeline
+dots, board due, table check marks, diagram anchor button, diagram-gen review checkboxes/labels, SAP Note links) are
+`data-tip` now, and a shared-menu item's `title` hint shows as `data-tip` (it was set on nothing before). Only a
+disabled menu item still carries `title` (pointer-events are off there). Guard test: `one-tooltip.spec.ts`.
+
 **2026-10-23: One toast (unified UI part 4).** To-Dos had its own in-panel `#todos-toast` (so Undo wasn't an
 outside click); the docked panel no longer closes on outside clicks, so `showTodosToast`/`showTodosActionToast` now
 just call `showToast`/`showActionToast` and the in-panel toast markup and CSS are gone. Test: `one-toast.spec.ts`.
@@ -170,14 +175,6 @@ Reset all shortcuts (`resetAllShortcuts`; was never wired: its button's markup i
 a delegated document click). Kept: Delete forever / Empty Trash / feedback / AI provider / encryption / import /
 undo-restore / reset settings (reload) / sign out / switch doc with pending rewrites / unsaved diagram editor / row
 delete when diagrams go. Tests: `undo-not-confirm.spec.ts`, toolbar-settings-simplify Clear all.
-
-**2026-10-23: Short values edited in place (unified UI part 2).** `editTextInPlace(target,opts)` lays a text box
-(fixed, in the target's font, `.inline-edit-input`) over the shown text, or at `opts.rect`; Enter keeps, Esc cancels,
-blur keeps unless `blurCancels`. Uses: `renameDoc(id,anchor)` (tab title on dblclick, sidebar `.sdoc-name-btn
-[data-doc-id]` on F2/✎/Rename, docs menu name; with none showing, focuses `#header-title`) → `applyDocRename`;
-chart/Cards "Add/Edit title…" over the figure's title (`buildChartFeatureItems(table,commit,figure)`); AI outline
-topic via `askOutlineTopic` (a line under the selected row, `.inline-edit-ask`). `sakuraPrompt` is now only used by
-the AI key password prompt. Tests: `edit-in-place.spec.ts`.
 
 ### In progress / not built
 

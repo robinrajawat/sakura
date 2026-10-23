@@ -5980,7 +5980,7 @@ function renderProgressHtml(table){
     const over=pct===100&&hasTarget?Math.round(d.value/d.target*100):null;
     const shown=pct===null?(d.raw||'\u2014'):(over??Math.round(pct))+'%';
     const tip=hasTarget&&pct!==null?`${d.raw} of ${d.targetRaw}`:'';
-    return `<div class="pv-progress-row"${tip?` title="${esc(tip)}"`:''}><span class="pv-progress-label">${esc(d.label)}</span>`
+    return `<div class="pv-progress-row"${tip?` data-tip="${esc(tip)}"`:''}><span class="pv-progress-label">${esc(d.label)}</span>`
       +`<span class="pv-progress-track"><span class="pv-progress-fill${pct!==null&&pct>=100?' done':''}" style="width:${pct===null?0:pct.toFixed(1)}%"></span></span>`
       +`<span class="pv-progress-value">${esc(shown)}</span></div>`;
   }).join('');
@@ -6034,7 +6034,7 @@ function renderTimelineHtml(table){
   const items=ordered.map((d,k)=>{
     const ph=phases[k];
     return `<div class="pv-tl-item${ph?' '+ph:''}"><div class="pv-tl-date">${esc(d.date||'TBD')}</div>`
-      +`<div class="pv-tl-rail"><span class="pv-tl-dot"${ph?` title="${label[ph]}"`:''}></span></div>`
+      +`<div class="pv-tl-rail"><span class="pv-tl-dot"${ph?` data-tip="${label[ph]}"`:''}></span></div>`
       +`<div class="pv-tl-body"><div class="pv-tl-event">${esc(d.event)}${ph==='next'?'<span class="pv-tl-next">Next</span>':''}</div>${d.detail?`<div class="pv-tl-detail">${esc(d.detail)}</div>`:''}</div></div>`;
   }).join('');
   return isTimelineHorizontal(table)
@@ -6100,7 +6100,7 @@ function renderStatusBoardHtml(table){
       const at=parseCellDate(d.due);
       const overdue=l.group!=='done'&&at!==null&&/\b\d{4}\b/.test(d.due)&&at<today;
       const meta=(d.owner?`<span class="pv-board-owner">${personChipsHtml(d.owner)||esc(d.owner)}</span>`:'')
-        +(d.due?`<span class="pv-board-due${overdue?' overdue':''}"${overdue?' title="Overdue"':''}>${esc(d.due)}</span>`:'');
+        +(d.due?`<span class="pv-board-due${overdue?' overdue':''}"${overdue?' data-tip="Overdue"':''}>${esc(d.due)}</span>`:'');
       return `<div class="pv-board-card"><div class="pv-board-item">${esc(d.item||'\u2014')}</div>`
         +(meta?`<div class="pv-board-meta">${meta}</div>`:'')
         +(d.note?`<div class="pv-board-note">${esc(d.note)}</div>`:'')+`</div>`;
@@ -6234,7 +6234,7 @@ function applyTableCheckIcons(table){
     body.forEach(r=>{
       const c=r.cells[ci]; if(!c)return;
       const text=tableCellText(c).trim(); const v=checkValue(text); if(!v)return;
-      c.innerHTML=`<span class="tbl-check" data-check="${v}" title="${esc(text)}" aria-label="${LABEL[v]}">${ICON[v]}</span>`;
+      c.innerHTML=`<span class="tbl-check" data-check="${v}" data-tip="${esc(text)}" aria-label="${LABEL[v]}">${ICON[v]}</span>`;
     });
   }
 }
@@ -13393,7 +13393,7 @@ function updateDiagramEditorAnchorLabel(d){
   const label=el('diagram-editor-anchor-label'); const btn=el('diagram-editor-anchor-btn');
   const text=diagramAnchorLabel(d);
   if(label)label.textContent=text;
-  if(btn){ btn.title=text; btn.classList.toggle('diagram-editor-anchor-unlinked',d.anchorNodeId==null||diagramIsOrphaned(d)); }
+  if(btn){ btn.dataset.tip=text; btn.classList.toggle('diagram-editor-anchor-unlinked',d.anchorNodeId==null||diagramIsOrphaned(d)); }
 }
 function updateDiagramEditorPagesBadge(d){
   const badge=el('diagram-editor-pages-badge'); if(!badge)return;
@@ -24187,10 +24187,10 @@ function diagramGenOpenReview(scope,labels,proposedMeta,existing){
     const isScopeRoot=depth===0;     // passthrough dissolves a node INTO its parent — meaningless for a scope's own entry point, which has no in-scope parent to dissolve into
     const row=document.createElement('div'); row.className='dgr-row'; row.dataset.nodeId=String(node.id);
     row.style.paddingLeft=(6+depth*16)+'px';
-    const selectCb=document.createElement('input'); selectCb.type='checkbox'; selectCb.className='dgr-select-cb'; selectCb.title='Select for bulk edit';
+    const selectCb=document.createElement('input'); selectCb.type='checkbox'; selectCb.className='dgr-select-cb'; selectCb.dataset.tip='Select for bulk edit';
     row.appendChild(selectCb);
     const text=document.createElement('span'); text.className='dgr-row-text';
-    text.textContent=getNodePlainText(node).trim()||'(untitled)'; text.title=text.textContent;
+    text.textContent=getNodePlainText(node).trim()||'(untitled)'; text.dataset.tip=text.textContent;
     row.appendChild(text);
     const controls=document.createElement('div'); controls.className='dgr-row-controls';
     const sel=document.createElement('select'); sel.className='dgr-shape-select';
@@ -24210,10 +24210,10 @@ function diagramGenOpenReview(scope,labels,proposedMeta,existing){
     });
     const validShapeValues=new Set([...sel.options].map(o=>o.value));
     sel.value=validShapeValues.has(meta.shape)?meta.shape:'';
-    const contLbl=document.createElement('label'); contLbl.className='dgr-toggle-label'; contLbl.title=canContain?'Wrap this node\u2019s whole subtree in one titled region':'No children to wrap — nothing for a container to contain';
+    const contLbl=document.createElement('label'); contLbl.className='dgr-toggle-label'; contLbl.dataset.tip=canContain?'Wrap this node\u2019s whole subtree in one titled region':'No children to wrap — nothing for a container to contain';
     const contCb=document.createElement('input'); contCb.type='checkbox'; contCb.className='dgr-toggle'; contCb.checked=canContain&&!!meta.container;
     contLbl.appendChild(contCb); contLbl.appendChild(document.createTextNode('Container'));
-    const seqLbl=document.createElement('label'); seqLbl.className='dgr-toggle-label'; seqLbl.title=canSequence?'Chain this node\u2019s children to each other instead of fanning out':'Fewer than 2 children — nothing to chain';
+    const seqLbl=document.createElement('label'); seqLbl.className='dgr-toggle-label'; seqLbl.dataset.tip=canSequence?'Chain this node\u2019s children to each other instead of fanning out':'Fewer than 2 children — nothing to chain';
     const seqCb=document.createElement('input'); seqCb.type='checkbox'; seqCb.className='dgr-toggle';
     const dirSel=document.createElement('select'); dirSel.className='dgr-dir-select';
     [['vertical','\u2193 Vertical'],['horizontal','\u2192 Horizontal']].forEach(([v,label])=>{ const o=document.createElement('option'); o.value=v; o.textContent=label; dirSel.appendChild(o); });
@@ -27252,6 +27252,8 @@ function _sbBuildItemButton(it, container, list){
   btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+(it.sub?'<span class="sb-context-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.meta?'<span class="sb-context-meta">'+esc(it.meta)+'</span>':'')+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
   if(it.action)btn.dataset.action=it.action; if(it.data)Object.assign(btn.dataset,it.data);
   if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; container.appendChild(btn); return null; }
+  // A hint on an item shows in the app's tooltip, like everywhere else.
+  if(it.title)btn.dataset.tip=it.title;
   // A small button at the item's right end that acts without closing the menu (e.g. "Add to quick row").
   if(it.trail){
     const tr=document.createElement('span'); tr.className='sb-context-trail sb-context-keep'+(it.trail.cls?' '+it.trail.cls:''); tr.setAttribute('role','button');
@@ -28731,7 +28733,7 @@ function linkifySapNotesInElement(root){
       if(m.index>lastIndex)frag.appendChild(document.createTextNode(text.slice(lastIndex,m.index)));
       const a=document.createElement('a');
       a.className='sem-sap-note'; a.href='https://me.sap.com/notes/'+m[2];
-      a.target='_blank'; a.rel='noopener noreferrer'; a.title='Open SAP Note '+m[2]+' on me.sap.com';
+      a.target='_blank'; a.rel='noopener noreferrer'; a.dataset.tip='Open SAP Note '+m[2]+' on me.sap.com';
       a.textContent=m[0];
       frag.appendChild(a);
       lastIndex=re.lastIndex;
@@ -33637,7 +33639,7 @@ function waitingCandidates(todos) {
       }
       if((ch==='S'||ch==='s'||ch==='O'||ch==='o')&&(i===0||/\s/.test(src[i-1]))){
         const noteMatch=src.slice(i).match(/^(SAP|OSS)\s+Note\s+(\d{5,10})\b/i);
-        if(noteMatch){ const num=noteMatch[2]; out+=`<a class="sem-sap-note" href="https://me.sap.com/notes/${num}" target="_blank" rel="noopener noreferrer" title="Open SAP Note ${num} on me.sap.com">${esc(noteMatch[0])}</a>`; i+=noteMatch[0].length; continue; }
+        if(noteMatch){ const num=noteMatch[2]; out+=`<a class="sem-sap-note" href="https://me.sap.com/notes/${num}" target="_blank" rel="noopener noreferrer" data-tip="Open SAP Note ${num} on me.sap.com">${esc(noteMatch[0])}</a>`; i+=noteMatch[0].length; continue; }
       }
       out+=esc(ch); i++;
     }
