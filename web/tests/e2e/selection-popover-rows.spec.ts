@@ -145,7 +145,7 @@ test('Link opens an address box in the bar that turns the selected words into a 
   await link.click();
   expect(await page.evaluate(() => (window as any).eval('editingId'))).toBe(id);
   await expect(page.locator('#link-card')).toBeVisible();
-  await expect(page.locator('#link-card')).toContainText('example.com/guide');
+  await expect(page.locator('#link-card-addr')).toHaveValue('https://example.com/guide');
   await page.keyboard.press('Escape');
   await context.route('https://example.com/**', (r) => r.fulfill({ body: 'ok' }));
   const [popup] = await Promise.all([context.waitForEvent('page'), link.click({ modifiers: [mod === 'Meta' ? 'Meta' : 'Control'] })]);
@@ -163,19 +163,18 @@ test('Link opens an address box in the bar that turns the selected words into a 
   await expect.poll(async () => (await rows(page))[0].marks).toEqual([]);
 });
 
-// Owner, 2026-10-23: in a scrolled document the card's Edit opened the Link box and a scroll closed it at
-// once, so a pasted address in a row could not be given display text.
-test("the link card's Edit gives a pasted address display text, even when the page scrolls", async ({ page }) => {
+// Owner, 2026-10-23: in a scrolled document the Link box closed at once, and editing took two steps;
+// the card's own Text field renames the link, and a scroll doesn't close it while you type.
+test("the link card's Text field gives a pasted address display text, even when the page scrolls", async ({ page }) => {
   await seed(page, [{ text: 'Read the docs first' }]);
   const id = await selectWord(page, 'Read the docs first', 'docs');
   await popBtn(page, 'link').click();
   await page.keyboard.type('example.com/guide');
   await page.keyboard.press('Enter');
   await page.locator(`.node-row[data-id="${id}"] .node-label a.row-weblink`).click();
-  await page.locator('#link-card .link-card-btn[data-i="2"]').click();
-  await expect(pop(page)).toHaveAttribute('data-pick', 'url');
+  await page.locator('#link-card-text').click();
   await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
-  await page.locator('#sfmt-link-text').fill('guide');
+  await page.keyboard.type('guide');
   await page.keyboard.press('Enter');
   await expect.poll(() => rows(page)).toEqual([{ text: 'Read the guide first', marks: [{ s: 9, e: 14, k: 'a', v: 'https://example.com/guide' }] }]);
 });

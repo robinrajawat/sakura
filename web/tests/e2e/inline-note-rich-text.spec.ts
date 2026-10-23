@@ -1058,19 +1058,18 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await expect(page.locator('#link-card')).toBeVisible();
     });
 
-    // Owner, 2026-10-23: the card's pencil opened the Link box and it closed at once (focusing the
-    // box scrolled the page, and a scroll hid the bar), so a pasted address could not be renamed.
-    test("the card's Edit opens the Link box and renames the link", async ({ page }) => {
+    // Owner, 2026-10-23: the Link box closed on a page scroll, and editing took two steps; the
+    // card's own Text field renames the link, and a scroll doesn't close it while you type.
+    test("the card's Text field renames the link, even when the page scrolls", async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await stubWindowOpen(page);
       await seedNodeWithNote(page, linkNote);
 
       await page.locator('#note-line-1 a').click();
-      await page.locator('#link-card .link-card-btn[data-i="2"]').click();
-      await expect(page.locator('#selection-fmt-popover')).toHaveAttribute('data-pick', 'url');
+      await page.locator('#link-card-text').click();
       await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
-      await page.locator('#sfmt-link-text').fill('The new name');
+      await page.keyboard.type('The new name');
       await page.keyboard.press('Enter');
       await expect.poll(() => page.evaluate(() =>
         // @ts-expect-error

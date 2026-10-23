@@ -97,3 +97,17 @@ test('the Hub keeps and shows a title\'s formatting', async ({ page }) => {
   await expect(row.locator('mark.hl-mark-yellow')).toHaveText('Ship');
   expect((await stored(page))[0].marks).toEqual([{ s: 0, e: 4, k: 'hl', v: 'yellow' }, { s: 9, e: 14, k: 'b' }]);
 });
+
+test('the link card in a title renames its link in place', async ({ page }) => {
+  await openWith(page, [{ id: 'a', text: 'Read the docs first', marks: [{ s: 9, e: 13, k: 'a', v: 'https://example.com/guide' }], marksText: 'Read the docs first' }]);
+  await title(page, 'a').click();
+  await page.keyboard.press('Home');
+  for (let i = 0; i < 11; i++) await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#link-card')).toBeVisible();
+  await expect(page.locator('#link-card-text')).toHaveValue('docs');
+  await page.locator('#link-card-text').click();
+  await page.keyboard.type('guide');
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => (await stored(page))[0].text).toBe('Read the guide first');
+  expect((await stored(page))[0].marks).toEqual([{ s: 9, e: 14, k: 'a', v: 'https://example.com/guide' }]);
+});

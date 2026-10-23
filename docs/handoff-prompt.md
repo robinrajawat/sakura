@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Edit a link in the card itself.** Owner: "why are we making it two step?" (click the link, then the pencil).
+The link card now holds the Text and Address fields (`#link-card-text`, `#link-card-addr`) plus Open, Copy, Remove; the pencil
+is gone. The words' target is taken on the first press in a field (`linkCardTarget`, from the Edit item's `linkTarget`);
+Enter or clicking away keeps, Escape cancels, an emptied Address removes, an address with spaces turns red. First press in
+Text selects it all, so a name replaces a pasted address. Right-click › Edit link… still opens the bar's Link box.
+
 **2026-10-23: Link box stays open when the page scrolls.** Owner: no way to set the display text of a pasted address.
 The card's pencil (rows, notes, threads) opened the Link box, but in a scrolled document focusing it scrolled the page and the bar's scroll handler hid it at once.
 The scroll handler now keeps the bar open while focus is inside it (the Link box).
@@ -168,11 +174,6 @@ opened it, so the caret could never land in it and the link card (#632) never sh
 notes and thread entries: a plain click puts the caret in the link (row: `beginEditAt` from the click point) and the card
 offers Open, Copy, Edit, Remove; Ctrl/Cmd+click opens it. Notes/threads used to open on the first click; changed for the
 same rule. Hover tip: "Ctrl/Cmd+click to open · click to edit".
-
-**2026-10-23: Preview headers: name only, buttons aligned.** Owner: no row text in the image/diagram preview header,
-just the item's own name, and line the buttons up. `.pv-where` is gone; both headers are name + count, `.pv-spacer`,
-then the same right-aligned row (item action, zoom, Fit, Copy, Download, Delete, Close). Under 900px the buttons wrap
-to their own right-aligned line (`.pv-break` before the spacer).
 
 ### In progress / not built
 

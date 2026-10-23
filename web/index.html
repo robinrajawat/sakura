@@ -1395,8 +1395,14 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sb-context-chevron{flex:0 0 auto;margin-left:10px;opacity:.55}
 #link-card{position:fixed;z-index:165;display:none;align-items:center;gap:2px;max-width:min(420px,calc(100vw - 16px));padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.12);font:400 12px 'Inter',sans-serif}
 #link-card.open{display:flex}
-.link-card-url{min-width:0;flex:0 1 auto;padding:4px 8px;border-radius:6px;color:var(--accent);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.link-card-url:hover{background:var(--hover);text-decoration:underline}
+.link-card-fields{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 6px;min-width:0;padding-left:4px}
+.link-card-lbl{font:500 11px 'Inter',sans-serif;color:var(--muted)}
+/* Read like text until pointed at or typed in, so the card stays light. */
+.link-card-input{width:min(250px,58vw);min-width:0;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--fg);font:13px 'Inter',sans-serif;padding:3px 6px;outline:none;text-overflow:ellipsis}
+#link-card-addr{color:var(--accent)}
+.link-card-input:hover{border-color:var(--border)}
+.link-card-input:focus{border-color:var(--accent);background:var(--edit-bg);text-overflow:clip}
+.link-card-input.is-invalid{border-color:var(--fc-red);box-shadow:0 0 0 2px color-mix(in srgb,var(--fc-red) 18%,transparent)}
 .link-card-sep{width:1px;height:18px;background:var(--border);margin:0 3px;flex:0 0 auto}
 .link-card-btn{all:unset;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;color:var(--muted);cursor:pointer}
 .link-card-btn:hover{background:var(--hover);color:var(--fg)}
@@ -11118,18 +11124,18 @@ function richLinkMenuItems(field,link,store){
     render();
   };
   const unwrap=a=>a.replaceWith(...a.childNodes);
-  return linkMenuItems({href,openHref,
-    onEdit:()=>openLinkBoxAt(link,field.id,{text:label,url:href,
-      apply:(text,url)=>changeStoredLink(a=>{
-        a.setAttribute('href',sanitizeHrefUrl(url)); a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
-        // Only replace the label when it changed, so formatting inside it survives an address-only edit.
-        if(text!==label)a.textContent=text;
-      }),
-      remove:()=>changeStoredLink(unwrap)}),
-    onRemove:()=>changeStoredLink(unwrap)});
+  const target={text:label,url:href,
+    apply:(text,url)=>changeStoredLink(a=>{
+      a.setAttribute('href',sanitizeHrefUrl(url)); a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
+      // Only replace the label when it changed, so formatting inside it survives an address-only edit.
+      if(text!==label)a.textContent=text;
+    }),
+    remove:()=>changeStoredLink(unwrap)};
+  return linkMenuItems({href,openHref,target,onEdit:()=>openLinkBoxAt(link,field.id,target),onRemove:target.remove});
 }
 // Open / Copy / Edit / Remove: the one menu for a link anywhere (notes, thread entries, rows, To-Do titles).
-function linkMenuItems({href,openHref,onEdit,onRemove}){
+// `target` ({text, url, apply(text, url), remove}) rides on Edit, for the link card's own fields.
+function linkMenuItems({href,openHref,onEdit,onRemove,target}){
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   return [
     {label:'Open link', icon:ico('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'), onClick:()=>{ window.open(openHref,'_blank','noopener,noreferrer'); }},
@@ -11137,7 +11143,7 @@ function linkMenuItems({href,openHref,onEdit,onRemove}){
       const done=()=>showToast('Link copied','success');
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(href).then(done,()=>showToast('Could not copy the link'));
     }},
-    {label:'Edit link…', icon:markIconSvg('edit'), onClick:onEdit},
+    {label:'Edit link…', icon:markIconSvg('edit'), onClick:onEdit, linkTarget:target},
     {label:'Remove link', icon:ico('<path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/>'), onClick:onRemove},
   ];
 }
@@ -11146,13 +11152,12 @@ function linkMenuItems({href,openHref,onEdit,onRemove}){
 function markLinkMenuItems(link,at,setLink,unlink){
   const rect=link.getBoundingClientRect();
   const anchor={getBoundingClientRect:()=>rect};
-  return linkMenuItems({href:at.url,openHref:link.href||at.url,
-    onEdit:()=>openLinkBoxAt(anchor,'link-box',{text:at.text,url:at.url,apply:(text,url)=>setLink(at.s,at.e,text,url),remove:()=>unlink(at.s,at.e)}),
-    onRemove:()=>unlink(at.s,at.e)});
+  const target={text:at.text,url:at.url,apply:(text,url)=>setLink(at.s,at.e,text,url),remove:()=>unlink(at.s,at.e)};
+  return linkMenuItems({href:at.url,openHref:link.href||at.url,target,onEdit:()=>openLinkBoxAt(anchor,'link-box',target),onRemove:target.remove});
 }
 // The link card (owner, 2026-10-23: "unable to get the link popover"): while you edit words and
-// the caret is in a link, a small card under it shows the address (click to open) with Copy, Edit
-// and Remove: the right-click link menu's actions, where Docs-style editors put them. Same card in
+// the caret is in a link, a small card under it has the link's Text and Address to edit in place,
+// with Open, Copy and Remove. Same card in
 // rows, To-Do titles, notes and thread entries.
 const LINK_CARD_FIELDS='.node-input,.todo-text,.node-note-line,.node-remark-text-inline';
 // The right-click link menu's items for `link` in the field being edited, worked out on use (Edit
@@ -11171,36 +11176,77 @@ function linkCardMenuItems(link){
   const r=remarks.find(x=>String(x.id)===field.dataset.remarkId); if(!r)return null;
   return richLinkMenuItems(field,link,{ get:()=>remarks.includes(r)?(r.text||''):null, set:html=>{ r.text=html; }, isPendingFocus:f=>f.kind==='remarkText'&&f.remarkId===r.id });
 }
-let _linkCardEl=null, _linkCardLink=null;
-function hideLinkCard(){ _linkCardEl?.classList.remove('open'); _linkCardLink=null; }
+let _linkCardEl=null, _linkCardLink=null, _linkCardTarget=null;
+function hideLinkCard(){
+  const had=_linkCardEl?.contains(document.activeElement);
+  _linkCardEl?.classList.remove('open'); _linkCardLink=null; _linkCardTarget=null;
+  if(had)document.activeElement.blur();
+}
+// The words' own link target, taken the moment a card field is pressed (rows and To-Do titles
+// save the field being edited first, so it acts on what that field shows).
+function linkCardTarget(){
+  if(!_linkCardTarget&&_linkCardLink)_linkCardTarget=linkCardMenuItems(_linkCardLink)?.[2]?.linkTarget||null;
+  return _linkCardTarget;
+}
+// Enter (or clicking away) keeps the change; an emptied Address removes the link; an address with
+// spaces turns the field red and keeps the card open.
+function applyLinkCard(fromBlur){
+  const t=linkCardTarget(); const tf=el('link-card-text'), uf=el('link-card-addr'); if(!t||!tf||!uf){ hideLinkCard(); return; }
+  const raw=uf.value.trim(); const url=normalizeTypedLinkUrl(raw);
+  if(url&&(/\s/.test(raw)||!isRowLinkUrl(url))){
+    if(fromBlur){ hideLinkCard(); return; }
+    uf.classList.add('is-invalid'); uf.dataset.tip='Not a web address. Addresses have no spaces'; uf.focus(); uf.select(); return;
+  }
+  const typed=tf.value.trim(); const text=typed||t.text;
+  hideLinkCard();
+  if(!url){ t.remove?.(); return; }
+  if(text!==t.text||url!==t.url)t.apply(text,url);
+}
 function showLinkCard(link){
   if(_linkCardLink===link&&_linkCardEl?.classList.contains('open')){ placeLinkCard(); return; }
   if(!_linkCardEl){
-    _linkCardEl=document.createElement('div'); _linkCardEl.id='link-card'; _linkCardEl.setAttribute('role','toolbar'); _linkCardEl.setAttribute('aria-label','Link');
-    // Pressing the card mustn't take the caret out of the words (that would hide the card).
-    _linkCardEl.addEventListener('mousedown',e=>e.preventDefault());
+    _linkCardEl=document.createElement('div'); _linkCardEl.id='link-card'; _linkCardEl.setAttribute('role','group'); _linkCardEl.setAttribute('aria-label','Link');
+    // Pressing a button mustn't take the caret out of the words (that would hide the card); a field takes focus.
+    _linkCardEl.addEventListener('mousedown',e=>{
+      const f=e.target.closest('.link-card-input'); if(!f){ e.preventDefault(); return; }
+      linkCardTarget();
+      // The first press on Text selects it all, so typing a name replaces a pasted address.
+      if(f.id==='link-card-text'&&document.activeElement!==f){ e.preventDefault(); f.focus(); f.select(); }
+    });
+    _linkCardEl.addEventListener('keydown',e=>{
+      if(!e.target.closest('.link-card-input'))return;
+      if(e.key==='Enter'){ e.preventDefault(); applyLinkCard(false); }
+      else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); hideLinkCard(); }
+      else if(e.target.id==='link-card-addr')e.target.classList.remove('is-invalid');
+    });
+    _linkCardEl.addEventListener('focusout',e=>{ if(_linkCardEl.classList.contains('open')&&!_linkCardEl.contains(e.relatedTarget)&&e.target.closest('.link-card-input'))applyLinkCard(true); });
     document.body.appendChild(_linkCardEl);
   }
   const href=link.getAttribute('data-a')||link.getAttribute('href')||'';
-  const shown=href.replace(/^https?:\/\//,'').replace(/^mailto:/,'').replace(/\/$/,'');
   const items=linkMenuItems({href,openHref:link.href,onEdit:()=>{},onRemove:()=>{}});
   const btn=(it,i)=>`<button type="button" class="link-card-btn${i===3?' danger':''}" data-i="${i}" data-tip="${esc(it.label.replace('…',''))}" aria-label="${esc(it.label.replace('…',''))}">${it.icon}</button>`;
-  _linkCardEl.innerHTML=`<a class="link-card-url" href="${esc(link.href)}" target="_blank" rel="noopener noreferrer" data-tip="Open link">${esc(shown)}</a><span class="link-card-sep"></span>${[1,2,3].map(i=>btn(items[i],i)).join('')}`;
-  _linkCardEl.querySelector('.link-card-url').addEventListener('click',e=>{ e.preventDefault(); hideLinkCard(); items[0].onClick(); });
+  // Text and Address are edited right here (owner, 2026-10-23: "why are we making it two step?").
+  _linkCardEl.innerHTML=`<span class="link-card-fields">`
+    +`<label class="link-card-lbl" for="link-card-text">Text</label><input type="text" class="link-card-input" id="link-card-text" spellcheck="false" autocomplete="off">`
+    +`<label class="link-card-lbl" for="link-card-addr">Address</label><input type="text" class="link-card-input" id="link-card-addr" spellcheck="false" autocomplete="off">`
+    +`</span><span class="link-card-sep"></span>${[0,1,3].map(i=>btn(items[i],i)).join('')}`;
+  el('link-card-text').value=link.textContent||''; el('link-card-addr').value=href;
   _linkCardEl.querySelectorAll('.link-card-btn').forEach(b=>b.addEventListener('click',e=>{
-    e.preventDefault(); const i=Number(b.dataset.i); const l=_linkCardLink; hideLinkCard();
-    if(i===1){ items[1].onClick(); return; }
-    const real=l&&linkCardMenuItems(l); if(real)real[i].onClick();
+    e.preventDefault(); const i=Number(b.dataset.i);
+    if(i<=1){ hideLinkCard(); items[i].onClick(); return; }
+    const t=linkCardTarget(); hideLinkCard(); t?.remove?.();
   }));
-  _linkCardLink=link; _linkCardEl.classList.add('open'); placeLinkCard();
+  _linkCardLink=link; _linkCardTarget=null; _linkCardEl.classList.add('open'); placeLinkCard();
 }
 function placeLinkCard(){
-  if(!_linkCardEl||!_linkCardLink)return;
+  if(!_linkCardEl||!_linkCardLink||!_linkCardLink.isConnected)return;
   const r=_linkCardLink.getBoundingClientRect(); const w=_linkCardEl.offsetWidth, h=_linkCardEl.offsetHeight;
   let top=r.bottom+6; if(top+h>window.innerHeight-8)top=r.top-h-6;
   _linkCardEl.style.left=Math.max(8,Math.min(r.left,window.innerWidth-w-8))+'px'; _linkCardEl.style.top=Math.max(8,top)+'px';
 }
 document.addEventListener('selectionchange',()=>{
+  // Typing in the card's own fields: it stays where it is.
+  if(_linkCardEl&&_linkCardEl.contains(document.activeElement))return;
   const sel=window.getSelection(); const n=sel&&sel.rangeCount?sel.focusNode:null;
   const host=n&&(n.nodeType===1?n:n.parentElement);
   const field=host&&host.closest(LINK_CARD_FIELDS);
@@ -11208,7 +11254,7 @@ document.addEventListener('selectionchange',()=>{
   // Not under an open menu: a right-click on a link also puts the caret in it.
   if(link&&field.contains(link)&&!_sbContextEl)showLinkCard(link); else if(_linkCardLink)hideLinkCard();
 });
-window.addEventListener('scroll',()=>{ if(_linkCardLink){ if(_linkCardLink.isConnected)placeLinkCard(); else hideLinkCard(); } },true);
+window.addEventListener('scroll',()=>{ if(_linkCardLink&&!_linkCardEl?.contains(document.activeElement)){ if(_linkCardLink.isConnected)placeLinkCard(); else hideLinkCard(); } },true);
 // Characters of `root`'s text before `child` starts.
 function textOffsetWithin(root,child){ const r=document.createRange(); r.selectNodeContents(root); r.setEndBefore(child); return r.toString().length; }
 // The linked words of a row under a right-clicked web link, or null.
