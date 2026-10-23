@@ -47,7 +47,6 @@ test('right-click a link in an entry: edit it, undo, remove it', async ({ page }
   await menu.getByText('Edit link…').click();
   // The same Link box as the selection bar, over the link.
   await expect(page.locator('#selection-fmt-popover')).toHaveAttribute('data-pick', 'url');
-  await expect(page.locator('#sfmt-link-text')).toHaveValue('the plan');
   await expect(page.locator('#sfmt-url')).toBeFocused();
   await page.locator('#sfmt-url').fill('https://example.com/b');
   await page.keyboard.press('Enter');
@@ -79,4 +78,13 @@ test('a www. address pasted into the reply line becomes a link, like in rows', a
   await page.keyboard.press('ControlOrMeta+V');
   await page.keyboard.press('Enter');
   expect(await page.evaluate('remarks[remarks.length - 1].text')).toContain('<a href="https://www.example.com/d"');
+});
+
+test('typing over a link in an entry renames it and keeps the link', async ({ page }) => {
+  await seed(page);
+  await page.locator('#inline-remark-text-c1 a').click();
+  await page.evaluate(() => { const a = document.querySelector('#inline-remark-text-c1 a')!; const r = document.createRange(); r.selectNodeContents(a); const s = getSelection()!; s.removeAllRanges(); s.addRange(r); });
+  await page.keyboard.type('our plan');
+  await page.mouse.click(5, 400);
+  await expect.poll(() => stored(page)).toMatch(/<a href="https:\/\/example.com\/a"[^>]*>our plan<\/a> first/);
 });

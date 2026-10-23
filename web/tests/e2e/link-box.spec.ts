@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url';
 
 // One link experience everywhere (owner, 2026-10-23): a web address pasted with nothing selected
 // goes in as a link (rows and To-Do titles now, as notes and threads already did), and the bar's
-// Link box has Text and Address. Selected words that are an address fill in Address, so only the
-// words to show are left to type.
+// Link box has just the address; selected words that are an address fill it in. A link's words are
+// renamed by typing over them, and the link stays on the new words (owner: one-line link card).
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
@@ -52,7 +52,7 @@ async function selectChars(page: Page, from: number, count: number) {
   await page.evaluate(() => (window as any).updateSelectionFmtPopover());
 }
 
-test('a web address pasted into a row goes in as a link; Link on it fills Address and asks for the words', async ({ page }) => {
+test('a web address pasted into a row goes in as a link; typing over its words renames it and keeps the link', async ({ page }) => {
   await open(page);
   await seedRow(page, 'See ');
   await page.locator('.node-row[data-id="1"] .node-label').click();
@@ -63,15 +63,13 @@ test('a web address pasted into a row goes in as a link; Link on it fills Addres
   await expect.poll(() => row(page)).toEqual({ text: `See ${URL} now`, marks: [{ s: 4, e: 4 + URL.length, k: 'a', v: URL }] });
 
   await selectChars(page, 4, URL.length);
-  await bar(page).locator('[data-cmd="link"]').click();
-  await expect(page.locator('#sfmt-url')).toHaveValue(URL);
-  await expect(page.locator('#sfmt-link-text')).toBeFocused();
   await page.keyboard.type('the guide');
-  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
   await expect.poll(() => row(page)).toEqual({ text: 'See the guide now', marks: [{ s: 4, e: 13, k: 'a', v: URL }] });
   await expect(page.locator('.node-row[data-id="1"] a.row-weblink')).toHaveText('the guide');
+  // One undo step per editing session, like any typing in a row (this one began before the paste).
   await page.keyboard.press(`${mod}+z`);
-  await expect.poll(async () => (await row(page)).text).toBe(`See ${URL} now`);
+  await expect.poll(async () => (await row(page)).text).toBe('See ');
 });
 
 test('a plain selected URL that is not linked yet also fills Address', async ({ page }) => {
@@ -81,12 +79,11 @@ test('a plain selected URL that is not linked yet also fills Address', async ({ 
   await selectChars(page, 5, URL.length);
   await bar(page).locator('[data-cmd="link"]').click();
   await expect(page.locator('#sfmt-url')).toHaveValue(URL);
-  await page.keyboard.type('Guide');
   await page.keyboard.press('Enter');
-  await expect.poll(() => row(page)).toEqual({ text: 'Spec Guide', marks: [{ s: 5, e: 10, k: 'a', v: URL }] });
+  await expect.poll(() => row(page)).toEqual({ text: `Spec ${URL}`, marks: [{ s: 5, e: 5 + URL.length, k: 'a', v: URL }] });
 });
 
-test('To-Do titles: a pasted address goes in as a link, and Link renames it the same way', async ({ page }) => {
+test('To-Do titles: a pasted address goes in as a link, and typing over it renames it the same way', async ({ page }) => {
   await open(page, [{ id: 'a', text: 'Read' }]);
   await page.keyboard.press('Control+Shift+T');
   const title = page.locator('.todo-text[data-id="a"]');
@@ -97,8 +94,6 @@ test('To-Do titles: a pasted address goes in as a link, and Link renames it the 
   await page.keyboard.press(`${mod}+v`);
   await expect(title.locator('a.row-weblink')).toHaveText(URL);
   await selectText(page, '.todo-text[data-id="a"] a.row-weblink');
-  await bar(page).locator('[data-cmd="link"]').click();
-  await expect(page.locator('#sfmt-link-text')).toBeFocused();
   await page.keyboard.type('the docs');
   await page.keyboard.press('Enter');
   await expect(title.locator('a.row-weblink')).toHaveText('the docs');
@@ -107,7 +102,7 @@ test('To-Do titles: a pasted address goes in as a link, and Link renames it the 
   expect(t.marks).toEqual([{ s: 5, e: 13, k: 'a', v: URL }]);
 });
 
-test('notes use the same Link box: Text and Address, in the bar', async ({ page }) => {
+test('notes use the same Link box: the address, in the bar', async ({ page }) => {
   await open(page);
   await seedRow(page, 'Row', `Spec ${URL}`);
   const note = page.locator('.node-note-line').first();
@@ -122,9 +117,8 @@ test('notes use the same Link box: Text and Address, in the bar', async ({ page 
   await page.evaluate(() => (window as any).updateSelectionFmtPopover());
   await bar(page).locator('[data-cmd="link"]').click();
   await expect(page.locator('#sfmt-url')).toHaveValue(URL);
-  await page.keyboard.type('Guide');
   await page.keyboard.press('Enter');
-  await expect.poll(() => page.evaluate('nodes[0].note')).toMatch(/^Spec(&nbsp;| )<a href="https:\/\/example\.com\/guide" target="_blank" rel="noopener noreferrer">Guide<\/a>$/);
+  await expect.poll(() => page.evaluate('nodes[0].note')).toMatch(/^Spec(&nbsp;| )<a href="https:\/\/example\.com\/guide" target="_blank" rel="noopener noreferrer">https:\/\/example\.com\/guide<\/a>$/);
 });
 
 test('right-click a web link in a row: the same Open / Copy / Edit / Remove items as in notes, above the row menu', async ({ page }) => {
@@ -141,12 +135,13 @@ test('right-click a web link in a row: the same Open / Copy / Edit / Remove item
 
   await link.click({ button: 'right' });
   await menu.getByText('Edit link…').click();
-  await expect(page.locator('#sfmt-link-text')).toHaveValue('docs');
-  await page.locator('#sfmt-link-text').fill('guide');
+  await expect(page.locator('#sfmt-url')).toBeFocused();
+  await expect(page.locator('#sfmt-url')).toHaveValue(URL);
+  await page.locator('#sfmt-url').fill('example.com/v2');
   await page.keyboard.press('Enter');
-  await expect.poll(() => row(page)).toEqual({ text: 'Read the guide first', marks: [{ s: 9, e: 14, k: 'a', v: URL }] });
+  await expect.poll(() => row(page)).toEqual({ text: 'Read the docs first', marks: [{ s: 9, e: 13, k: 'a', v: 'https://example.com/v2' }] });
   await page.keyboard.press(`${mod}+z`);
-  await expect.poll(async () => (await row(page)).text).toBe('Read the docs first');
+  await expect.poll(async () => (await row(page)).marks).toEqual([{ s: 9, e: 13, k: 'a', v: URL }]);
 
   await page.locator('.node-row[data-id="1"] a.row-weblink').click({ button: 'right' });
   await menu.getByText('Remove link').click();

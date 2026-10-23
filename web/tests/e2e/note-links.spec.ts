@@ -77,7 +77,6 @@ test('right-click a link: copy, edit and remove, each undoable', async ({ page }
   await menu.getByText('Edit link…').click();
   // The same Link box as the selection bar, over the link.
   await expect(page.locator('#selection-fmt-popover')).toHaveAttribute('data-pick', 'url');
-  await expect(page.locator('#sfmt-link-text')).toHaveValue('Project folder');
   await expect(page.locator('#sfmt-url')).toBeFocused();
   await page.locator('#sfmt-url').fill('https://example.com/b');
   await page.keyboard.press('Enter');

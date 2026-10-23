@@ -164,19 +164,24 @@ test('Link opens an address box in the bar that turns the selected words into a 
 });
 
 // Owner, 2026-10-23: in a scrolled document the Link box closed at once, and editing took two steps;
-// the card's own Text field renames the link, and a scroll doesn't close it while you type.
-test("the link card's Text field gives a pasted address display text, even when the page scrolls", async ({ page }) => {
+// the card's address changes in place, a scroll doesn't close it, and typing over the words renames it.
+test("the link card's address changes in place even when the page scrolls; typing over the words renames the link", async ({ page }) => {
   await seed(page, [{ text: 'Read the docs first' }]);
   const id = await selectWord(page, 'Read the docs first', 'docs');
   await popBtn(page, 'link').click();
   await page.keyboard.type('example.com/guide');
   await page.keyboard.press('Enter');
   await page.locator(`.node-row[data-id="${id}"] .node-label a.row-weblink`).click();
-  await page.locator('#link-card-text').click();
+  await page.locator('#link-card-addr').click();
   await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
-  await page.keyboard.type('guide');
+  await page.locator('#link-card-addr').fill('example.com/v2');
   await page.keyboard.press('Enter');
-  await expect.poll(() => rows(page)).toEqual([{ text: 'Read the guide first', marks: [{ s: 9, e: 14, k: 'a', v: 'https://example.com/guide' }] }]);
+  await expect.poll(() => rows(page)).toEqual([{ text: 'Read the docs first', marks: [{ s: 9, e: 13, k: 'a', v: 'https://example.com/v2' }] }]);
+  // Double-click the linked word and type: the link stays on the new word.
+  await page.locator(`.node-row[data-id="${id}"] .node-label a.row-weblink`).dblclick();
+  await page.keyboard.type('guide');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => rows(page)).toEqual([{ text: 'Read the guide first', marks: [{ s: 9, e: 14, k: 'a', v: 'https://example.com/v2' }] }]);
 });
 
 test('Escape in the address box closes it without linking', async ({ page }) => {
