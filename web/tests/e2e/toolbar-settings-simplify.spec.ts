@@ -164,27 +164,17 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
     await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
   });
 
-  test('Clear all nodes asks first: Cancel keeps everything, Clear all empties the document and Undo restores it', async ({ page }) => {
+  test('Clear all nodes empties the document at once, with Undo in the toast (no dialog when Undo can bring it all back)', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
-    const clear = async () => {
-      await page.locator('.doc-tab.active').click({ button: 'right' });
-      await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Clear all nodes…' }).click();
-      await expect(page.locator('#sakura-modal-overlay')).toHaveClass(/open/);
-    };
-    await clear();
-    await page.locator('#sakura-modal-actions button', { hasText: 'Cancel' }).click();
-    // Let the dialog finish its close animation before opening it again.
+    await page.locator('.doc-tab.active').click({ button: 'right' });
+    await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Clear all nodes' }).click();
     await expect(page.locator('#sakura-modal-overlay')).not.toHaveClass(/open/);
     // @ts-expect-error -- bare globals from index.html
-    expect(await page.evaluate(() => nodes.length)).toBe(4);
-    await clear();
-    await page.locator('#sakura-modal-actions button', { hasText: 'Clear all' }).click();
-    // @ts-expect-error
     await expect.poll(() => page.evaluate(() => nodes.length)).toBe(0);
-    // @ts-expect-error
-    await page.evaluate(() => contextualUndo());
+    await expect(page.locator('#toast')).toContainText('Cleared all rows');
+    await page.locator('#toast button', { hasText: 'Undo' }).click();
     // @ts-expect-error
     expect(await page.evaluate(() => nodes.length)).toBe(4);
     expect(errors).toEqual([]);
@@ -201,7 +191,7 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
     const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
     expect(labels).toContain('Version history…');
     expect(labels.some((l) => l.startsWith('Sort'))).toBe(false);
-    expect(labels).not.toContain('Clear all nodes…');
+    expect(labels).not.toContain('Clear all nodes');
   });
 });
 
