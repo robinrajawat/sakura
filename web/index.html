@@ -447,10 +447,10 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
    renders using that explicit axis value over font-weight's own "bolder" computation, so
    without this the <strong> tag was structurally correct but visually indistinguishable from
    surrounding text. Same fix .style-bold already gets, just scoped to the inline marker. */
-.node-label strong,.node-label b,.node-input b,.node-input strong{font-weight:700;font-variation-settings:'wght' 700}
+.node-label strong,.node-label b,.node-input b,.node-input strong,.todo-text b,.todo-text strong{font-weight:700;font-variation-settings:'wght' 700}
 .hl-mark{border-radius:3px;padding:1px 4px;margin:0 -2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .row-weblink{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 45%,transparent);text-underline-offset:2px;cursor:pointer}
-.node-input .row-weblink{cursor:text}
+.node-input .row-weblink,.todo-text:focus .row-weblink{cursor:text}
 mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .hl-mark-yellow{background:color-mix(in srgb,#eab308 45%,transparent)}
 .hl-mark-green{background:color-mix(in srgb,#22c55e 42%,transparent)}
@@ -1498,6 +1498,10 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .selection-fmt-btn.sfmt-ai.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .selection-fmt-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
 .sfmt-main{display:flex;align-items:center;gap:2px}
+/* Faint dividers group the bar (owner, 2026-10-23): text style | colour, clear | link | AI. */
+.sfmt-sep{width:1px;height:16px;background:var(--border);margin:0 3px;flex:none}
+/* Whole rows selected: the same bar for all their words; a link needs chosen words, so no Link. */
+.selection-fmt-popover[data-mode="rows"] #sfmt-link,.selection-fmt-popover[data-mode="rows"] .sfmt-sep-link{display:none}
 .sfmt-palette{display:flex;flex-direction:column;gap:5px;padding:2px 0}
 .sfmt-palette-row{display:flex;align-items:center;gap:5px}
 .sfmt-a{font:700 13px/1 'Inter',sans-serif}
@@ -1982,6 +1986,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
+.thread-kind.is-clickable{cursor:pointer}.thread-kind.is-clickable:hover{background:color-mix(in srgb,currentColor 28%,var(--bg))}
 .thread-kind svg{width:11px;height:11px;stroke-width:2.6}
 .thread-entry .node-remark-person-inline,.thread-composer .thread-author-btn{color:var(--pc,var(--fg))}
 body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread-composer .thread-author-btn{color:color-mix(in srgb,var(--pc,var(--fg)) 55%,#fff)}
@@ -4890,9 +4895,12 @@ body.printing-generic #gpe-overlay{
   <button type="button" class="selection-fmt-btn" data-cmd="italic" data-tip="Italic (Ctrl/Cmd+I)"><em>I</em></button>
   <button type="button" class="selection-fmt-btn" data-cmd="underline" data-tip="Underline (Ctrl/Cmd+U)"><u>U</u></button>
   <button type="button" class="selection-fmt-btn" data-cmd="strikeThrough" data-tip="Strikethrough"><s>S</s></button>
+  <span class="sfmt-sep" aria-hidden="true"></span>
   <button type="button" class="selection-fmt-btn" id="sfmt-colors" data-cmd="colors" data-tip="Colour and highlight" aria-label="Colour and highlight"><span class="sfmt-a">A</span></button>
   <button type="button" class="selection-fmt-btn" id="sfmt-clear" data-cmd="clear" data-tip="Clear formatting" aria-label="Clear formatting"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h12v3"/><path d="M10 4 7.5 20"/><path d="M5 20h5"/><path d="m15 14 6 6"/><path d="m21 14-6 6"/></svg></button>
+  <span class="sfmt-sep" aria-hidden="true"></span>
   <button type="button" class="selection-fmt-btn" id="sfmt-link" data-cmd="link" data-tip="Link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+  <span class="sfmt-sep sfmt-sep-link" aria-hidden="true"></span>
   <button type="button" class="selection-fmt-btn sfmt-ai" id="sfmt-rewrite" data-cmd="rewrite" data-tip="Rewrite selection (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
   </div>
   <div class="sfmt-swatches" id="sfmt-swatches" role="group" aria-label="Colours"></div>
@@ -19660,6 +19668,21 @@ function convertLegacyRowLinks(text, marks, resolve) {
     }
     return { text: out, marks: fromCharFormats(outFormats), changed };
 }
+/** Drops every `ch` from the text, moving the formatting of the characters around it along
+ * (a To-Do title's chips put zero-width spaces in its editor that aren't part of the words). */
+function stripRowMarkChars(text, marks, ch) {
+    const src = String(text || '');
+    const formats = toCharFormats(marks, src.length);
+    let out = '';
+    const kept = [];
+    for (let i = 0; i < src.length; i++) {
+        if (src[i] === ch)
+            continue;
+        out += src[i];
+        kept.push(formats[i]);
+    }
+    return { text: out, marks: fromCharFormats(kept) };
+}
 
 /* GENERATED:rowMarks:END */
 // A node counts as a section if its text uses [Bracket] syntax (any depth, always has),
@@ -20970,7 +20993,7 @@ function updateRowSelectionPill(){
   pill.querySelector('.rsp-hint').innerHTML='<kbd>'+mod+'+C</kbd>copy · <kbd>Del</kbd>delete · <kbd>Tab</kbd>indent';
   pill.classList.add('show');
 }
-function render(){ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill();
+function render(){ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill(); if(typeof updateRowsFmtBar==='function')updateRowsFmtBar();
   // Runs over EVERY node, not just the ones the per-row loop below actually builds DOM for --
   // a node inside a collapsed branch never reaches that loop at all, and renderPreviewBody() reads
   // node.tables directly rather than re-deriving it from node.note, so a table living inside a
@@ -31125,15 +31148,16 @@ function remarkAuthorColor(name){
 // gets a faint comment icon; the name, in its per-person colour, says who. Not a dot: the outline
 // uses dots for rows.
 function threadKindIcon(r,thread){
-  if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--fc-green)',tip:'Decision'};
+  // Colour only where something is still open (owner, 2026-10-23): an open question (accent) and an
+  // open follow-up (orange); every other kind is grey -- its shape already says what it is.
+  if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--hint)',tip:'Decision'};
   if(r.status){ const m=markerForThreadStatus(r.status);
-    // Like a question, a follow-up keeps its colour only while open (done or settled: grey).
     if(m==='followup'&&followupState(r,thread||[r])!=='open')return {kind:'status',marker:m,svg:markIconSvg(m,14),color:'var(--hint)',tip:r.done?'Follow-up, done':'Follow-up, settled'};
-    return {kind:'status',marker:m,svg:markIconSvg(m,14),color:'var(--fc-'+(nodeMarkerColor(m)||'gray')+')',tip:THREAD_STATUS_LABEL[r.status]}; }
+    return {kind:'status',marker:m,svg:markIconSvg(m,14),color:m==='followup'?'var(--fc-orange)':'var(--hint)',tip:THREAD_STATUS_LABEL[r.status]}; }
   // An answer: ✓ / ✗ for a Yes / No, otherwise a reply arrow (its own kind, not a ✓ it didn't say).
   if(r.answerTo){
-    if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--fc-green)',tip:'Answer'};
-    const no=r.verdict==='no'; return {kind:'answer',svg:markIconSvg(no?'close':'confirmed',14),color:no?'var(--fc-red)':'var(--fc-green)',tip:no?'Answer: No':'Answer: Yes'};
+    if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--hint)',tip:'Answer'};
+    const no=r.verdict==='no'; return {kind:'answer',svg:markIconSvg(no?'close':'confirmed',14),color:'var(--hint)',tip:no?'Answer: No':'Answer: Yes'};
   }
   if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — answer it with Yes / No, or add an entry and mark it as the answer':'Question'}; }
   return {kind:'comment',svg:markIconSvg('comment',13),color:'var(--hint)',tip:'Comment'};
@@ -31274,6 +31298,9 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   const meta=document.createElement('div'); meta.className='thread-meta';
   const c=remarkAuthorColor(r.person);
   const kindEl=threadKindEl(r,thread,'thread-kind');
+  kindEl.classList.add('is-clickable'); kindEl.dataset.tip=kindEl.dataset.tip+' \u2014 click to change';
+  kindEl.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+  kindEl.addEventListener('click',e=>{ e.stopPropagation(); hideNodeTooltip(); const rr=kindEl.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadKindMenuItems(node,r,thread,commit)); });
   // An entry emptied and left (with no Yes/No or status chip to keep) is removed, so blank
   // entries never pile up or print. Moving between its own fields keeps it.
   const dropIfBlank=e=>{
@@ -31517,6 +31544,35 @@ function addFollowupToTodos(node,r){
   if(!id){ showToast('Nothing to add — the follow-up and its row are empty'); return; }
   showToast('Added to To-Dos','success');
   render();
+}
+// Clicking an entry's kind icon changes what the entry is (owner, 2026-10-23). The kinds are one
+// choice: picking one clears the others (undo brings them back). Answer links to a question before
+// it -- straight away when there is one, from a list when there are several.
+function threadKindMenuItems(node,r,thread,commit){
+  const ANSWER_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>';
+  const k=threadKindIcon(r,thread);
+  const cur=k.kind==='status'?k.marker:k.kind;
+  const tick=on=>on?'\u2713':'';
+  const clear=()=>{
+    delete r.decision; delete r.status; delete r.done; delete r.doneAt; delete r.owner; delete r.answerTo; delete r.verdict;
+    if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); }
+  };
+  const to=(kind,fn)=>()=>{ if(cur===kind)return; pushUndo(); clear(); if(fn)fn(); commit(); };
+  const earlierQs=threadQuestions(thread.slice(0,Math.max(0,thread.indexOf(r)))).filter(q=>q.id!==r.id);
+  const answerTo=q=>()=>{ if(r.answerTo===q.id)return; pushUndo(); clear(); r.answerTo=q.id; commit(); };
+  const items=[{heading:'Kind'},
+    {label:'Comment', icon:markIconSvg('comment'), meta:tick(cur==='comment'), onClick:to('comment')},
+    {label:'Question', icon:qaDotIconSvg(14), meta:tick(cur==='question'), onClick:to('question',()=>{ r.type='question'; })}];
+  if(!earlierQs.length)items.push({label:'Answer', icon:ANSWER_ICON, disabled:true, sub:'No question before it'});
+  else if(earlierQs.length===1)items.push({label:'Answer', icon:ANSWER_ICON, meta:tick(cur==='answer'), onClick:answerTo(earlierQs[0])});
+  else items.push({label:'Answer to', icon:ANSWER_ICON, submenu:earlierQs.slice().reverse().map(q=>({label:threadQuestionLabel(q), sub:(q.person?q.person+' \u00b7 ':'')+(questionState(q,thread)==='open'?'open':'answered'), meta:tick(r.answerTo===q.id), onClick:answerTo(q)}))});
+  items.push({label:'Decision', icon:markIconSvg('decision'), meta:tick(cur==='decision'), onClick:to('decision',()=>{ r.decision=true; })});
+  NODE_MARKERS.forEach(st=>items.push({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), meta:tick(cur===st), onClick:to(st,()=>{ r.status=st; })}));
+  // An answer can also say Yes or No.
+  if(cur==='answer')items.push({divider:true},
+    {label:'Yes', icon:markIconSvg('confirmed'), meta:tick(r.verdict==='yes'), onClick:()=>{ pushUndo(); if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; commit(); }},
+    {label:'No', icon:markIconSvg('close'), meta:tick(r.verdict==='no'), onClick:()=>{ pushUndo(); if(r.verdict==='no')delete r.verdict; else r.verdict='no'; commit(); }});
+  return items;
 }
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -32813,6 +32869,13 @@ function normalizeTodo(raw, now) {
         out.waitingSince = t.waitingSince;
     if (typeof t.remarkId === 'string' && t.remarkId)
         out.remarkId = t.remarkId;
+    if (typeof t.marksText === 'string') {
+        const marks = normalizeRowMarks(t.marks, t.marksText.length);
+        if (marks.length) {
+            out.marks = marks;
+            out.marksText = t.marksText;
+        }
+    }
     return out;
 }
 function isWaiting(t) {
@@ -33270,13 +33333,28 @@ function waitingCandidates(todos) {
       renderTodos();
     });
   }
-  function editTodoText(id, text){
+  // marks: the title's formatting for exactly `text` (readTodoTitle); left out, the stored
+  // formatting follows the words on its own (rowMarksOf).
+  function editTodoText(id, text, marks){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
     const trimmed=String(text||'').replace(/\u200B/g,'').trim();
     if(!trimmed){ deleteTodo(id); return; }
     t.text=trimmed;
+    if(Array.isArray(marks)) setRowMarksOn(t, marks);
     saveTodos();
+  }
+  // A title's words and formatting as its editor shows them, without the zero-width spaces the
+  // chips add and without leading/trailing spaces (what editTodoText stores).
+  function readTodoTitle(elx){
+    const r=readRowMarksFromDom(elx); const clean=stripRowMarkChars(r.text, r.marks, '\u200B');
+    const lead=clean.text.length-clean.text.trimStart().length; const text=clean.text.trim();
+    return {text, marks:sliceRowMarks(clean.marks, clean.text.length, lead, lead+text.length), lead};
+  }
+  // The title with its formatting (owner, 2026-10-23: the same selection bar as rows); chips,
+  // remarks and SAP Note links are drawn inside each run as before.
+  function renderTodoTitleHtml(t, query){
+    return rowMarksToHtml(t.text, rowMarksOf(t), s=>renderTodoTextHtml(s, query));
   }
   // Todos text-edit undo/redo — scoped to text edits only (not add/delete/reorder/
   // priority/etc, which keep their existing toast-based undo). Uses the global
@@ -33286,27 +33364,27 @@ function waitingCandidates(todos) {
   // Patches the single .todo-text element directly via renderTodoTextHtml rather than
   // calling renderTodos() (which rebuilds the whole list's innerHTML and would steal
   // focus right after the Ctrl+Z that was just pressed from that same field).
-  function pushTodosTextUndo(id, text){
-    todosTextUndoStack.push({id, text});
+  function pushTodosTextUndo(id, text, marks){
+    todosTextUndoStack.push({id, text, marks:marks||[]});
     if(todosTextUndoStack.length>100) todosTextUndoStack.shift();
     todosTextRedoStack=[];
   }
   function _applyTodosTextEntry(entry){
     const t=todos.find(x=>x.id===entry.id);
     if(!t) return null; // todo was deleted by some other action — nothing to restore, caller skips to the next entry
-    const prevText=t.text;
-    t.text=entry.text;
+    const prev={text:t.text, marks:rowMarksOf(t)};
+    t.text=entry.text; setRowMarksOn(t, entry.marks||[]);
     saveTodos();
     const elx=document.querySelector(`.todo-text[data-id="${entry.id}"]`);
-    if(elx) elx.innerHTML=renderTodoTextHtml(entry.text, searchQuery);
-    return prevText;
+    if(elx) elx.innerHTML=renderTodoTitleHtml(t, searchQuery);
+    return prev;
   }
   function todosTextUndo(){
     while(todosTextUndoStack.length){
       const entry=todosTextUndoStack.pop();
       const prevText=_applyTodosTextEntry(entry);
       if(prevText===null) continue;
-      todosTextRedoStack.push({id:entry.id, text:prevText});
+      todosTextRedoStack.push({id:entry.id, text:prevText.text, marks:prevText.marks});
       clearTimeout(_todosTextIdleTimer); _todosTextCheckpointPending=true;
       return;
     }
@@ -33316,7 +33394,7 @@ function waitingCandidates(todos) {
       const entry=todosTextRedoStack.pop();
       const prevText=_applyTodosTextEntry(entry);
       if(prevText===null) continue;
-      todosTextUndoStack.push({id:entry.id, text:prevText});
+      todosTextUndoStack.push({id:entry.id, text:prevText.text, marks:prevText.marks});
       clearTimeout(_todosTextIdleTimer); _todosTextCheckpointPending=true;
       return;
     }
@@ -33972,12 +34050,13 @@ function waitingCandidates(todos) {
         // so if this exact element was just committed, skip saving its stale content —
         // regardless of whether it's still connected when blur actually fires.
         if(elx.dataset.committed==='1') return;
-        editTodoText(elx.getAttribute('data-id'), elx.textContent);
+        const title=readTodoTitle(elx);
+        editTodoText(elx.getAttribute('data-id'), title.text, title.marks);
       });
       elx.addEventListener('input',()=>handleTodoAtInput(elx, elx.getAttribute('data-id')));
       elx.addEventListener('focus',()=>{ clearTimeout(_todosTextIdleTimer); _todosTextCheckpointPending=true; });
       elx.addEventListener('beforeinput',()=>{
-        if(_todosTextCheckpointPending){ pushTodosTextUndo(elx.getAttribute('data-id'), elx.textContent); _todosTextCheckpointPending=false; }
+        if(_todosTextCheckpointPending){ const cur=readTodoTitle(elx); pushTodosTextUndo(elx.getAttribute('data-id'), cur.text, cur.marks); _todosTextCheckpointPending=false; }
         clearTimeout(_todosTextIdleTimer);
         _todosTextIdleTimer=setTimeout(()=>{ _todosTextCheckpointPending=true; }, 800);
       });
@@ -34000,7 +34079,7 @@ function waitingCandidates(todos) {
           const sel=window.getSelection();
           if(sel&&sel.rangeCount){
             // Raw DOM insert, not execCommand — bypasses beforeinput, needs its own checkpoint.
-            pushTodosTextUndo(elx.getAttribute('data-id'), elx.textContent);
+            { const cur=readTodoTitle(elx); pushTodosTextUndo(elx.getAttribute('data-id'), cur.text, cur.marks); }
             const range=sel.getRangeAt(0);
             range.deleteContents();
             const nl=document.createTextNode('\n');
@@ -34169,6 +34248,8 @@ function waitingCandidates(todos) {
     const newText=before+trigger+word+' '+after;
     closeTodoAtSuggest();
     elx.dataset.committed='1';
+    // Store the title's formatting for its current words first, so it moves exactly with them.
+    const cur=readTodoTitle(elx); editTodoText(id, cur.text, cur.marks);
     editTodoText(id, newText);
     renderTodos();
   }
@@ -34346,7 +34427,7 @@ function waitingCandidates(todos) {
       +`<input type="checkbox" class="todo-check" data-id="${t.id}" ${t.done?'checked':''} ${(t.subtasks&&t.subtasks.length)?'disabled':''} data-tip="${(t.subtasks&&t.subtasks.length)?'Completes when all subtasks are done':''}" aria-label="Mark task done" />`
       +`<div class="todo-main">`
       +`<div class="todo-line">`
-      +`<div class="todo-textwrap"><div class="todo-text" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTextHtml(t.text, searchQuery)}</div></div>`
+      +`<div class="todo-textwrap"><div class="todo-text" id="todo-text-${esc(t.id)}" contenteditable="true" spellcheck="false" data-id="${t.id}">${renderTodoTitleHtml(t, searchQuery)}</div></div>`
       +`<div class="todo-side">`+(t.done?'':subtaskMetaHtml(t))+repeatIcon+jumpHtml+linkBtn+`<span class="todo-end">`+dueBtn+moreBtn+`</span></div>`
       +`</div>`
       +waitingHtml
@@ -35238,7 +35319,10 @@ function waitingCandidates(todos) {
   // rather than following the link — mousedown+preventDefault, before that focus/placement
   // behavior gets a chance to run, is what makes it actually navigate reliably.
   document.getElementById('todos-body')?.addEventListener('mousedown',e=>{
-    const link=e.target.closest('.sem-sap-note');
+    // A web link on a title's words opens like one in a row; while you edit that title, a click
+    // just places the caret.
+    const web=e.target.closest('.todo-text a.row-weblink');
+    const link=e.target.closest('.sem-sap-note')||(web&&document.activeElement!==web.closest('.todo-text')?web:null);
     if(!link)return;
     e.preventDefault(); e.stopPropagation();
     window.open(link.href,'_blank','noopener,noreferrer');
@@ -35397,6 +35481,50 @@ function waitingCandidates(todos) {
   initTodosDrag();
   initTodosResize();
   window.toggleTodosPanel=toggleTodosPanel;
+  // The selection bar on a To-Do title (owner, 2026-10-23: the same bar everywhere). Offsets are
+  // in the stored title's characters: the editor's chips add zero-width spaces and typing can add
+  // leading spaces, so DOM offsets are mapped both ways.
+  function todoTitleRangeFromDom(elx){
+    const r=getEditableSelectionRange(elx); if(!r||r.start===r.end) return null;
+    const dom=elx.textContent||''; const title=readTodoTitle(elx);
+    const map=off=>Math.max(0, Math.min(title.text.length, off-(dom.slice(0,off).match(/\u200B/g)||[]).length-title.lead));
+    const start=map(r.start), end=map(r.end);
+    return start<end?{start,end,title}:null;
+  }
+  function selectTodoTitleRange(elx, start, end){
+    const dom=elx.textContent||''; const toDom=x=>{ let seen=0; for(let i=0;i<dom.length;i++){ if(dom[i]==='\u200B') continue; if(seen===x) return i; seen++; } return dom.length; };
+    setEditableSelectionRange(elx, toDom(start), toDom(end));
+  }
+  function todoIdOfTitleEl(elx){ return elx&&elx.classList&&elx.classList.contains('todo-text')?elx.getAttribute('data-id'):null; }
+  // Formats [start,end) of a stored title (the address box has taken focus by then) and redraws it.
+  function applyTodoTitleMarkRange(id, start, end, kind, value){
+    const t=todos.find(x=>x.id===id); if(!t||start>=end) return false;
+    const cur=rowMarksOf(t); const len=t.text.length;
+    pushTodosTextUndo(id, t.text, cur);
+    let v=value;
+    if(v===undefined) v=rowMarkCovers(cur,len,start,end,kind)?false:(kind==='hl'?lastHighlightColor:kind==='c'?lastFontColor:true);
+    if(kind==='clear'){ let m=cur; ['b','i','u','s','hl','c'].forEach(k=>{ m=setRowMark(m,len,start,end,k,false); }); setRowMarksOn(t,m); }
+    else setRowMarksOn(t, setRowMark(cur,len,start,end,kind,v));
+    saveTodos();
+    const elx=document.getElementById('todo-text-'+id);
+    if(elx){ const focused=document.activeElement===elx; elx.innerHTML=renderTodoTitleHtml(t, searchQuery); if(focused) selectTodoTitleRange(elx,start,end); }
+    return true;
+  }
+  window.sakuraTodoTitleFmt={
+    isTitle:elx=>!!todoIdOfTitleEl(elx),
+    // Saves what the editor shows (words and formatting), so a later step starts from it.
+    sync(elx){ const id=todoIdOfTitleEl(elx); if(!id) return; const title=readTodoTitle(elx); editTodoText(id, title.text, title.marks); elx.innerHTML=renderTodoTitleHtml(todos.find(x=>x.id===id)||{text:title.text}, searchQuery); },
+    apply(elx, kind, value){
+      const id=todoIdOfTitleEl(elx); const r=id?todoTitleRangeFromDom(elx):null; if(!r) return false;
+      const t=todos.find(x=>x.id===id); if(!t) return false;
+      if(t.text!==r.title.text||JSON.stringify(rowMarksOf(t))!==JSON.stringify(r.title.marks)){ t.text=r.title.text; setRowMarksOn(t, r.title.marks); }
+      return applyTodoTitleMarkRange(id, r.start, r.end, kind, value);
+    },
+    applyRange:applyTodoTitleMarkRange,
+    has(elx, kind){ const r=todoTitleRangeFromDom(elx); return !!r&&rowMarkCovers(r.title.marks, r.title.text.length, r.start, r.end, kind); },
+    colors(elx){ const r=todoTitleRangeFromDom(elx); if(!r) return {c:null,hl:null}; const shared=k=>{ const m=r.title.marks.find(x=>x.k===k&&x.s<=r.start&&x.e>=r.end); return m?m.v:null; }; return {c:shared('c'),hl:shared('hl')}; },
+    linkTarget(elx){ const id=todoIdOfTitleEl(elx); const r=id?todoTitleRangeFromDom(elx):null; if(!r) return null; const linked=r.title.marks.find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start); return {todoId:id,start:r.start,end:r.end,url:linked?linked.v:''}; }
+  };
   window.todosTextUndo=todosTextUndo;
   window.todosTextRedo=todosTextRedo;
 })();
@@ -35669,6 +35797,8 @@ function selectionFmtEditorFor(node){
       // The row being edited: its words carry formatting ranges (src/utils/rowMarks.ts), so the
       // popover's buttons go through applyRowMarkToSelection instead of execCommand.
       if(n.classList&&n.classList.contains('node-input'))return editingId!==null&&n.id==='in-'+editingId?n.id:null;
+      // A To-Do title: stored like a row (words plus formatting ranges), same bar.
+      if(n.classList&&n.classList.contains('todo-text')&&n.id&&n.isContentEditable)return n.id;
       if(n.classList&&n.classList.contains('pv-diagram-figure'))return null;
       // Notes aren't a singleton editor like Pad — there's one of these per node, each with its
       // own id (note-line-<nodeId>, see the inline note-line's creation in render()) — so this
@@ -35727,8 +35857,36 @@ function selectionIsHighlighted(){
 }
 const SELECTION_FMT_ROW_KIND={bold:'b',italic:'i',underline:'u',strikeThrough:'s'};
 function selectionFmtIsRow(){ return !!_selectionFmtEditorId&&editingId!==null&&_selectionFmtEditorId==='in-'+editingId; }
+// Whole rows selected (two or more, or all): the bar applies to every word of those rows.
+function selectionFmtIsRows(){ return _selectionFmtEditorId==='rows'; }
+function rowsFmtSelection(){ if(editingId!==null)return []; if(!selectAllMode&&multiSelectedIds.length<2)return []; const ids=new Set(multiSelectedIds); return nodes.filter(n=>(selectAllMode||ids.has(n.id))&&(n.text||'').length); }
+function updateRowsFmtBar(){
+  const pop=el('selection-fmt-popover'); if(!pop)return;
+  const list=rowsFmtSelection();
+  if(!list.length){ if(selectionFmtIsRows())hideSelectionFmtPopover(); return; }
+  if(_sfmtPointerDown)return; // still dragging over rows: show once let go
+  const sel=window.getSelection(); if(sel&&!sel.isCollapsed&&sel.toString().trim())return;
+  const first=document.querySelector(`.node-row[data-id="${list.find(n=>document.querySelector(`.node-row[data-id="${n.id}"]`))?.id}"] .node-label`);
+  if(!first){ if(selectionFmtIsRows())hideSelectionFmtPopover(); return; }
+  if(!selectionFmtIsRows())delete pop.dataset.pick;
+  _selectionFmtEditorId='rows'; pop.dataset.mode='rows'; pop.classList.add('open');
+  updateSelectionFmtButtonStates();
+  const rect=first.getBoundingClientRect(); const popRect=pop.getBoundingClientRect();
+  let top=rect.top-popRect.height-8; if(top<6)top=rect.bottom+8;
+  const left=Math.max(6,Math.min(rect.left,window.innerWidth-popRect.width-6));
+  pop.style.left=left+'px'; pop.style.top=top+'px';
+}
+function rowsFmtCovers(kind){ const list=rowsFmtSelection(); return !!list.length&&list.every(n=>rowMarkCovers(rowMarksOf(n),n.text.length,0,n.text.length,kind)); }
+function rowsFmtClear(){ const list=rowsFmtSelection(); if(!list.length)return; pushUndo(); list.forEach(n=>{ setRowMarksOn(n,rowMarksOf(n).filter(m=>m.k==='a'||m.k==='r')); n.modifiedAt=Date.now(); }); markDirty(); render(); }
+function selectionFmtIsTodo(){ return !!_selectionFmtEditorId&&_selectionFmtEditorId.startsWith('todo-text-')&&!!window.sakuraTodoTitleFmt; }
+// Rows and To-Do titles both keep formatting as ranges beside plain words.
+function selectionFmtIsMarks(){ return selectionFmtIsRow()||selectionFmtIsTodo(); }
+function selectionFmtTodoEl(){ return selectionFmtIsTodo()?el(_selectionFmtEditorId):null; }
+function selectionFmtApplyMark(kind,value){ const te=selectionFmtTodoEl(); return te?window.sakuraTodoTitleFmt.apply(te,kind,value):applyRowMarkToSelection(kind,value); }
 // Whether every selected character of the row being edited has this format.
 function rowSelectionHasMark(kind){
+  if(selectionFmtIsRows())return rowsFmtCovers(kind);
+  const te=selectionFmtTodoEl(); if(te)return window.sakuraTodoTitleFmt.has(te,kind);
   const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null;
   const i=editingId!==null?getIndex(nodes,editingId):-1;
   if(!r||r.start===r.end||i<0)return false;
@@ -35736,7 +35894,7 @@ function rowSelectionHasMark(kind){
 }
 function updateSelectionFmtButtonStates(){
   const pop=el('selection-fmt-popover'); if(!pop)return;
-  const isRow=selectionFmtIsRow();
+  const isRow=selectionFmtIsMarks()||selectionFmtIsRows();
   ['bold','italic','underline','strikeThrough'].forEach(cmd=>{
     const btn=pop.querySelector(`[data-cmd="${cmd}"]`); if(!btn)return;
     let on=false;
@@ -35751,6 +35909,8 @@ function updateSelectionFmtButtonStates(){
 }
 // The text colour and highlight every selected character of the row shares (null when mixed or none).
 function rowSelectionColors(){
+  if(selectionFmtIsRows()){ const list=rowsFmtSelection(); const one=k=>{ const vals=list.map(n=>{ const m=rowMarksOf(n).find(x=>x.k===k&&x.s===0&&x.e>=n.text.length); return m?m.v:null; }); return vals.length&&vals.every(v=>v&&v===vals[0])?vals[0]:null; }; return {c:one('c'),hl:one('hl')}; }
+  const te=selectionFmtTodoEl(); if(te)return window.sakuraTodoTitleFmt.colors(te);
   const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null;
   const i=editingId!==null?getIndex(nodes,editingId):-1;
   if(!r||r.start===r.end||i<0)return {c:null,hl:null};
@@ -35768,7 +35928,7 @@ function selectionHighlightRgba(name){
 // row; notes and thread entries store real colours, so they get the highlights only. ‹ goes back.
 function openSelectionFmtPalette(){
   const pop=el('selection-fmt-popover'); const box=el('sfmt-swatches'); if(!pop||!box)return;
-  const isRow=selectionFmtIsRow(); const cur=isRow?rowSelectionColors():{c:null,hl:null};
+  const isRow=selectionFmtIsMarks()||selectionFmtIsRows(); const cur=isRow?rowSelectionColors():{c:null,hl:null};
   const cap=c=>c.charAt(0).toUpperCase()+c.slice(1);
   const none=(kind,tip)=>`<button type="button" class="hl-swatch-none" data-kind="${kind}" data-sw="none" data-tip="${tip}" aria-label="${tip}">✕</button>`;
   const textRow=`<div class="sfmt-palette-row" role="group" aria-label="Text colour">`
@@ -35787,6 +35947,7 @@ function closeSelectionFmtSwatches(){ const pop=el('selection-fmt-popover'); if(
 // because typing the address moves focus out of the row.
 let _sfmtLinkTarget=null;
 function prepareSelectionFmtLinkTarget(){
+  const te=selectionFmtTodoEl(); if(te){ _sfmtLinkTarget=window.sakuraTodoTitleFmt.linkTarget(te); return !!_sfmtLinkTarget; }
   const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null; const idx=editingId!==null?getIndex(nodes,editingId):-1;
   if(!r||r.start===r.end||idx<0)return false;
   const node=nodes[idx]; const linked=rowMarksOf(node).find(m=>m.k==='a'&&m.s<r.end&&m.e>r.start);
@@ -35824,7 +35985,11 @@ function applySelectionFmtUrl(){
   hideSelectionFmtPopover();
   if(!url)return;
   if(!isRowLinkUrl(url)){ showToast('That address can\'t be used as a link'); return; }
-  applyRowMarkToRange(t.nodeId,t.start,t.end,'a',url);
+  applySelectionFmtLinkRange(t,url);
+}
+function applySelectionFmtLinkRange(t,url){
+  if(t.todoId)window.sakuraTodoTitleFmt.applyRange(t.todoId,t.start,t.end,'a',url);
+  else applyRowMarkToRange(t.nodeId,t.start,t.end,'a',url);
 }
 function showSelectionFmtPopoverForRange(range,editorId){
   const pop=el('selection-fmt-popover'); if(!pop)return;
@@ -35832,7 +35997,7 @@ function showSelectionFmtPopoverForRange(range,editorId){
   _selectionFmtEditorId=editorId;
   const rect=range.getBoundingClientRect();
   if(!rect||(!rect.width&&!rect.height)){ hideSelectionFmtPopover(); return; }
-  pop.dataset.mode=selectionFmtIsRow()?'row':'rich';
+  pop.dataset.mode=selectionFmtIsMarks()?'row':'rich';
   pop.classList.add('open');
   updateSelectionFmtButtonStates();
   // Measure after making it visible (offsetWidth is 0 while display:none), then clamp to the
@@ -35857,7 +36022,7 @@ function updateSelectionFmtPopover(){
   const pop=el('selection-fmt-popover');
   if(pop&&pop.classList.contains('open')&&pop.contains(document.activeElement))return; // typing a web address
   const sel=window.getSelection();
-  if(!sel||sel.rangeCount===0||sel.isCollapsed||!sel.toString().trim()){ hideSelectionFmtPopover(); return; }
+  if(!sel||sel.rangeCount===0||sel.isCollapsed||!sel.toString().trim()){ if(rowsFmtSelection().length)updateRowsFmtBar(); else hideSelectionFmtPopover(); return; }
   const editorId=selectionFmtEditorFor(sel.anchorNode);
   if(!editorId){ hideSelectionFmtPopover(); return; }
   showSelectionFmtPopoverForRange(sel.getRangeAt(0),editorId);
@@ -35866,7 +36031,7 @@ document.addEventListener('selectionchange',()=>{
   clearTimeout(updateSelectionFmtPopover._tm);
   updateSelectionFmtPopover._tm=setTimeout(updateSelectionFmtPopover,0);
 });
-document.addEventListener('scroll',()=>{ if(el('selection-fmt-popover')?.classList.contains('open'))hideSelectionFmtPopover(); },true);
+document.addEventListener('scroll',()=>{ if(!el('selection-fmt-popover')?.classList.contains('open'))return; if(selectionFmtIsRows())updateRowsFmtBar(); else hideSelectionFmtPopover(); },true);
 document.addEventListener('focusin',e=>{
   if(!_pendingInlineFocus)return;
   const t=e.target;
@@ -35942,18 +36107,30 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
     const a=sw.dataset.sw;
     if(a==='back')hideSelectionFmtPopover();
     else if(a==='url-ok')applySelectionFmtUrl();
-    else if(a==='unlink'){ const t=_sfmtLinkTarget; hideSelectionFmtPopover(); if(t)applyRowMarkToRange(t.nodeId,t.start,t.end,'a',false); }
+    else if(a==='unlink'){ const t=_sfmtLinkTarget; hideSelectionFmtPopover(); if(t)applySelectionFmtLinkRange(t,false); }
+    return;
+  }
+  if(selectionFmtIsRows()){
+    if(sw){ const kind=sw.dataset.kind; const c=sw.dataset.sw;
+      if(c!=='back'){ if(kind==='hl'&&c!=='none')setLastHighlightColor(c); if(kind==='c'&&c!=='none')setLastFontColor(c); setWholeRowMarks(kind,c==='none'?false:c); }
+      closeSelectionFmtSwatches(); updateRowsFmtBar(); return; }
+    const cmd=btn.dataset.cmd;
+    if(cmd==='colors'){ openSelectionFmtPalette(); return; }
+    if(cmd==='rewrite'){ hideSelectionFmtPopover(); rewriteMultipleNodes(rowsFmtSelection().map(n=>n.id)); return; }
+    if(cmd==='clear')rowsFmtClear();
+    else if(SELECTION_FMT_ROW_KIND[cmd])setWholeRowMarks(SELECTION_FMT_ROW_KIND[cmd]);
+    updateRowsFmtBar();
     return;
   }
   const editorId=_selectionFmtEditorId; const editor=editorId?el(editorId):null;
   if(!editor)return;
-  const isRow=selectionFmtIsRow();
+  const isRow=selectionFmtIsMarks();
   if(sw){
     const kind=sw.dataset.kind; const c=sw.dataset.sw;
     if(c!=='back'){
       if(kind==='hl'&&c!=='none')setLastHighlightColor(c);
       if(kind==='c'&&c!=='none')setLastFontColor(c);
-      if(isRow)applyRowMarkToSelection(kind,c==='none'?false:c);
+      if(isRow)selectionFmtApplyMark(kind,c==='none'?false:c);
       else if(kind==='hl'){
         editor.focus();
         document.execCommand('hiliteColor',false,c==='none'?'transparent':selectionHighlightRgba(c));
@@ -35966,10 +36143,11 @@ el('selection-fmt-popover')?.addEventListener('mousedown',e=>{
   const cmd=btn.dataset.cmd;
   if(cmd==='colors'){ openSelectionFmtPalette(); return; }
   if(isRow){
-    if(cmd==='rewrite'){ rewriteSubTextSelection(btn).finally(hideSelectionFmtPopover); return; }
+    const te=selectionFmtTodoEl();
+    if(cmd==='rewrite'){ if(te){ runSelectionFmtRewrite(editorId,btn).then(()=>window.sakuraTodoTitleFmt.sync(te)); return; } rewriteSubTextSelection(btn).finally(hideSelectionFmtPopover); return; }
     if(cmd==='link'){ if(prepareSelectionFmtLinkTarget())openSelectionFmtUrlBox(); return; }
-    if(cmd==='clear')clearRowFormattingInSelection();
-    else if(SELECTION_FMT_ROW_KIND[cmd])applyRowMarkToSelection(SELECTION_FMT_ROW_KIND[cmd]);
+    if(cmd==='clear'){ if(te)window.sakuraTodoTitleFmt.apply(te,'clear'); else clearRowFormattingInSelection(); }
+    else if(SELECTION_FMT_ROW_KIND[cmd])selectionFmtApplyMark(SELECTION_FMT_ROW_KIND[cmd]);
     updateSelectionFmtButtonStates();
     return;
   }

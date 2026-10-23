@@ -70,3 +70,12 @@ describe('names', () => {
     expect(waitingCandidates([norm({ text: 'z', waitingFor: 'vendor quote for the licences' })])).toEqual([]);
   });
 });
+
+describe('normalizeTodo keeps title formatting', () => {
+  it('keeps valid marks with the text they were made for, drops bad ones', () => {
+    const t = normalizeTodo({ id: 'a', text: 'Call the vendor', marks: [{ s: 9, e: 15, k: 'b' }, { s: 0, e: 2, k: 'zz' }], marksText: 'Call the vendor' }, 0)!;
+    expect(t.marks).toEqual([{ s: 9, e: 15, k: 'b' }]);
+    expect(t.marksText).toBe('Call the vendor');
+    expect('marks' in normalizeTodo({ id: 'b', text: 'Plain', marks: [{ s: 0, e: 2, k: 'b' }] }, 0)!).toBe(false);
+  });
+});

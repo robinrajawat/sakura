@@ -14,6 +14,7 @@ import {
   rowMarksToHtml,
   setRowMark,
   sliceRowMarks,
+  stripRowMarkChars,
   type RowMarkDomNode,
   type RowMarksHolder
 } from '../../src/utils/rowMarks';
@@ -327,6 +328,15 @@ describe('convertLegacyRowLinks', () => {
       text: 'plain [x]',
       marks: [{ s: 0, e: 5, k: 'i' }],
       changed: false
+    });
+  });
+});
+
+describe('stripRowMarkChars', () => {
+  it('drops the character and moves formatting with the words around it', () => {
+    expect(stripRowMarkChars('@Ana\u200B rollout', [{ s: 6, e: 13, k: 'b' }], '\u200B')).toEqual({
+      text: '@Ana rollout',
+      marks: [{ s: 5, e: 12, k: 'b' }]
     });
   });
 });

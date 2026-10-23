@@ -251,3 +251,35 @@ test('Clear formatting in a note removes bold and highlight', async ({ page }) =
   await expect(line.locator('b')).toHaveCount(0);
   await expect.poll(() => line.evaluate((l) => l.innerHTML)).not.toContain('background');
 });
+
+// Owner, 2026-10-23: faint dividers group the bar, and the same bar formats whole rows when rows
+// (not words) are selected, instead of formatting buttons back in the toolbar.
+test('the bar is grouped by three faint dividers', async ({ page }) => {
+  await seed(page, [{ text: 'Call the vendor today' }]);
+  await selectWord(page, 'Call the vendor today', 'vendor');
+  const pop = page.locator('#selection-fmt-popover');
+  await expect(pop).toHaveClass(/open/);
+  await expect(pop.locator('.sfmt-sep:visible')).toHaveCount(3);
+});
+
+test('selecting whole rows shows the same bar; it formats every word of them, without Link', async ({ page }) => {
+  await seed(page, [{ text: 'Alpha one' }, { text: 'Beta two' }, { text: 'Gamma' }]);
+  await page.locator('.node-row[data-id="1"] .node-label').click();
+  await page.keyboard.press('Escape');
+  await page.locator('.node-row[data-id="2"] .node-label').click({ modifiers: ['Shift'] });
+  await expect.poll(() => page.evaluate(() => (window as any).eval('multiSelectedIds.length'))).toBe(2);
+  const pop = page.locator('#selection-fmt-popover');
+  await expect(pop).toHaveClass(/open/);
+  await expect(pop).toHaveAttribute('data-mode', 'rows');
+  await expect(pop.locator('#sfmt-link')).toBeHidden();
+  await pop.locator('[data-cmd="bold"]').click();
+  expect((await rows(page)).map((r) => r.marks)).toEqual([[{ s: 0, e: 9, k: 'b' }], [{ s: 0, e: 8, k: 'b' }], []]);
+  await expect(pop.locator('[data-cmd="bold"]')).toHaveClass(/active/);
+  await pop.locator('[data-cmd="colors"]').click();
+  await pop.locator('[data-kind="hl"][data-sw="yellow"]').click();
+  expect((await rows(page))[1].marks).toEqual([{ s: 0, e: 8, k: 'b' }, { s: 0, e: 8, k: 'hl', v: 'yellow' }]);
+  await pop.locator('[data-cmd="clear"]').click();
+  expect((await rows(page)).map((r) => r.marks)).toEqual([[], [], []]);
+  await page.keyboard.press(`${mod}+z`);
+  expect((await rows(page))[0].marks).toEqual([{ s: 0, e: 9, k: 'b' }, { s: 0, e: 9, k: 'hl', v: 'yellow' }]);
+});

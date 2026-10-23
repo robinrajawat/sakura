@@ -159,6 +159,31 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Thread kind icon is a menu; icons grey.** Owner asked to change an entry's kind by clicking its icon,
+and agreed icons go grey except where something is open. `threadKindIcon`: Decision, Agreed, Out of scope, answers and
+comments are `--hint`; open question `--accent`, open follow-up `--fc-orange` (editor, PDF and Copy thread all read
+it). `threadKindMenuItems(node,r,thread,commit)` (icon click in `renderThreadEntry`, `.thread-kind.is-clickable`):
+Comment, Question, Answer (one earlier question → links it; several → "Answer to ›"; none → disabled "No question
+before it"), Decision, Agreed, Follow-up, Out of scope; current one ticked (meta ✓). One choice: picking clears the
+other kind fields (decision, status/done/owner, answerTo/verdict, question type + its answers' links). An answer
+also gets Yes / No. Same PR as the To-Do bar. Tests: `thread-kind-menu.spec.ts`.
+
+**2026-10-23: The same selection bar on To-Do titles.** Owner: "keep the same floating bar everywhere". A title is
+stored like a row: `t.text` plain, `t.marks`/`t.marksText` (rowMarks.ts), kept by `normalizeTodo` (value import of
+`normalizeRowMarks`; the generator strips the import line). Panel: `renderTodoTitleHtml` = `rowMarksToHtml` over
+`renderTodoTextHtml` (chips, `>` remarks, SAP Notes per run); `.todo-text` has `id="todo-text-<id>"`; blur saves
+`readTodoTitle` (DOM read, `stripRowMarkChars` drops the chips' zero-width spaces, trimmed); undo entries carry marks.
+Bar: `selectionFmtEditorFor` accepts `.todo-text`; `selectionFmtIsTodo`/`selectionFmtIsMarks` route the bar to
+`window.sakuraTodoTitleFmt` (apply/has/colors/linkTarget/applyRange/sync; DOM offsets mapped around the zero-width
+spaces). Rewrite uses the rich path then `sync`. A web link in a title opens on click unless you're editing it. Hub:
+`hubRowMarks` block; list rows draw formatting (`todoTitleHtml`, links as plain words); its text box changes the text
+and the marks follow on read (`rowMarksOf`). Tests: `todo-title-format.spec.ts`.
+Same PR (owner asked if the bar was elegant without separators, and if whole-row formatting was cut too far): bar has
+three `.sfmt-sep` dividers (B I U S | A Tx | Link | ✦); with 2+ rows (or all) selected and nothing being edited the
+bar shows over the first one (`updateRowsFmtBar`, called from `render`, mouseup and scroll; `_selectionFmtEditorId`
+= `'rows'`, `data-mode="rows"` hides Link): buttons → `setWholeRowMarks`, Clear → `rowsFmtClear`, ✦ →
+`rewriteMultipleNodes`. Tests in `selection-popover-rows.spec.ts`.
+
 **2026-10-22: Row links are real links.** Owner: "make the editor as standard as possible"; no syntax left in row
 text. A row link is mark kind `r` (v = the linked row's id, `ROW_LINK_ID_RE`), drawn as `span.bl-link[data-r]`
 (`rowMarkTags`, read back by `readRowMarksFromDom`); words link to a web address or a row, never both (`setRowMark`).
@@ -170,35 +195,6 @@ exactly the old name. Delete → `cleanupRowLinksTo(ids)`: links become plain wo
 became real links". Typed `[[ ]]` is now plain text everywhere (`parseStyledText`/`previewParseStyledText` just
 escape; `getNodePlainText` returns the text as typed). Escape in a row now goes through `commitEdit` (`cancelEdit`),
 so it gets an undo step like clicking away. Tests: `row-links.spec.ts`, `rowMarks.test.ts`.
-
-**2026-10-22: One formatting system; paste a link; Link is web-only.** Owner agreed ("just do it"). Whole-row
-bold/italic/underline/strike/highlight/colour are no longer row styles: `ROW_FORMAT`=3, and `convertLegacyRows`
-folds them into marks over all the words once (`foldRowStylesIntoMarks`; empty rows just drop them; heading stays a
-row style), keeping version "Before whole-row styles became word formatting" (`keepLegacyRowsVersion` picks the
-label from the saved rowFormat). Writers: `toggleNodeStyle` → `setWholeRowMarks(kind)` (shortcut with nothing
-selected toggles the format on every word of the selected rows). Readers of `styles.bold` etc. stay for unconverted
-data (old clipboard); `applyRowMarkToRange` still folds a style it meets. Removed: right-click More › Format row
-(`fmt-*`), the old toolbar colour functions/listeners. Paste: a lone web address (`pastedLinkUrl`: http(s), mailto,
-`www.` → https) pasted over selected words links them, in rows (`applyRowMarkToSelection('a')`) and in notes/thread
-entries (capture-phase listener, `insertHTML` anchor). Link (owner: "another row… not making sense; for backlinks @
-is much easier"): the bar's Link opens the address box directly (`prepareSelectionFmtLinkTarget`), with Remove when
-already linked; the Another row option is gone. The address box's clicks are handled before the editor check (the
-row edit has ended by then). Owner: "no way to remove formatting": the bar gained Clear formatting (`data-cmd="clear"`,
-`clearRowFormattingInSelection` drops every mark but links; notes/threads use removeFormat + clear the highlight).
-Typing shortcuts `[ ] `/`[x] ` (checkbox) and `# ` (heading) on Enter are gone (owner agreed: typed text stays as
-typed); OPML import still reads `[ ]`/`[x]` checkbox prefixes.
-
-**2026-10-22: Calmer selection bar; toolbar formatting removed.** Owner asked whether the popover was the most
-elegant design and what else it could simplify, then "do it". Bar is now B · I · U · S · A · Link · ✦ with no dividers.
-A (`data-cmd="colors"`) swaps the bar for one palette in place (`openSelectionFmtPalette`, `data-pick="colors"`):
-text colours over highlights in rows, highlights only in notes/threads; swatches carry `data-kind` c/hl. The A
-previews the selection's own colour and highlight (`rowSelectionColors`, `--sfmt-a-fg/-bg`). The bar shows on mouse
-release, not mid-drag (`_sfmtPointerDown`). Bug "bar sometimes doesn't appear": dragging over a row that isn't
-being edited left a plain page selection; the row click now starts editing with those words selected
-(`selectLabelWordsForEditing`). A whole-row style of the same kind becomes word formatting when the bar changes part
-of it (`applyRowMarkToRange`, `ROW_MARK_TO_STYLE`). Toolbar lost Bold, Italic, Highlight ▾, Text colour ▾ (it keeps
-Heading style); whole rows: right-click › More › Format icon row (`fmt-*` actions → `toggleNodeStyle`) or the
-shortcuts. AI ▾ Rewrite node = whole rows only; selected words = ✦. Ctrl/Cmd+K stays Quick Assist.
 
 ### In progress / not built
 
