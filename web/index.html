@@ -32249,28 +32249,49 @@ function remarksParseISODate(s){
   const[y,m,d]=s.split('-').map(Number);
   return new Date(y,m-1,d);
 }
+// One calendar for every date picker (thread entry dates, To-Do due dates): the month title, the
+// weekday letters and the day grid inside `pop`, with today and the chosen day marked.
+function renderMonthCalendar(pop,viewMonth,selectedIso,onPick){
+  const pad=n=>String(n).padStart(2,'0');
+  const isoOf=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+  const now=new Date(), todayIso=isoOf(now.getFullYear(),now.getMonth(),now.getDate());
+  const titleEl=pop.querySelector('.due-pop-cal-title');
+  if(titleEl)titleEl.textContent=viewMonth.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const [dowEl,daysEl]=pop.querySelectorAll('.due-pop-cal-grid');
+  if(dowEl&&!dowEl.childElementCount)dowEl.innerHTML=['S','M','T','W','T','F','S'].map(d=>`<span class="due-pop-cal-dow">${d}</span>`).join('');
+  if(!daysEl)return;
+  const y=viewMonth.getFullYear(), m=viewMonth.getMonth();
+  const firstDow=new Date(y,m,1).getDay(), daysInMonth=new Date(y,m+1,0).getDate(), daysInPrevMonth=new Date(y,m,0).getDate();
+  let html='';
+  for(let i=0;i<firstDow;i++)html+=`<button type="button" class="due-pop-cal-day muted" disabled>${daysInPrevMonth-firstDow+1+i}</button>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const iso=isoOf(y,m,d);
+    html+=`<button type="button" class="due-pop-cal-day${iso===todayIso?' today':''}${iso===selectedIso?' selected':''}" data-date="${iso}">${d}</button>`;
+  }
+  const trailing=(7-((firstDow+daysInMonth)%7))%7;
+  for(let i=1;i<=trailing;i++)html+=`<button type="button" class="due-pop-cal-day muted" disabled>${i}</button>`;
+  daysEl.innerHTML=html;
+  daysEl.querySelectorAll('.due-pop-cal-day[data-date]').forEach(b=>b.addEventListener('click',()=>onPick(b.dataset.date)));
+}
+// Opens a date picker under `btn` (above it when there's no room below), kept inside the window.
+function openDatePopoverUnder(pop,btn){
+  const rect=btn.getBoundingClientRect();
+  const left=Math.max(8,Math.min(rect.left,window.innerWidth-216-8));
+  pop.style.left=left+'px'; pop.style.top=(rect.bottom+4)+'px';
+  pop.classList.add('open');
+  const pr=pop.getBoundingClientRect();
+  if(pr.bottom>window.innerHeight-8){ const flippedTop=rect.top-pr.height-4; pop.style.top=((flippedTop>=8)?flippedTop:Math.max(8,window.innerHeight-8-pr.height))+'px'; }
+}
 function openRemarksDateEditor(btn,r){
   _remarksDateTarget=r;
   const current=remarksParseISODate(r.date)||new Date();
   _remarksDateViewMonth=new Date(current.getFullYear(),current.getMonth(),1);
   const pop=el('remarks-date-popover'); if(!pop)return;
-  const rect=btn.getBoundingClientRect();
-  const pw=216;
-  let left=rect.left;
-  if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;
-  if(left<8)left=8;
-  pop.style.left=left+'px';
-  pop.style.top=(rect.bottom+4)+'px';
   // The time is part of the entry too (createdAt): it orders the thread and shows next to the date.
   const timeInput=el('remarks-date-pop-time');
   if(timeInput){ const t=r.createdAt?new Date(r.createdAt):null; timeInput.value=t?String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'):''; }
   renderRemarksDatePopover();
-  pop.classList.add('open');
-  const pr=pop.getBoundingClientRect();
-  if(pr.bottom>window.innerHeight-8){
-    const flippedTop=rect.top-pr.height-4;
-    pop.style.top=((flippedTop>=8)?flippedTop:Math.max(8,window.innerHeight-8-pr.height))+'px';
-  }
+  openDatePopoverUnder(pop,btn);
 }
 function closeRemarksDateEditor(){
   const pop=el('remarks-date-popover'); if(pop)pop.classList.remove('open');
@@ -32299,40 +32320,8 @@ function commitRemarksDate(val){
 el('remarks-date-pop-time')?.addEventListener('change',e=>{ const r=_remarksDateTarget; if(!r)return; if(setRemarkDateTime(r,r.date||todayDateStr(),e.target.value))render(); });
 el('remarks-date-pop-time')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); closeRemarksDateEditor(); render(); } else if(e.key==='Escape'){ e.preventDefault(); closeRemarksDateEditor(); } });
 function renderRemarksDatePopover(){
-  const r=_remarksDateTarget; if(!r||!_remarksDateViewMonth)return;
-  const today=new Date(); today.setHours(0,0,0,0);
-  const todayIso=todayDateStr();
-  const titleEl=el('remarks-date-pop-cal-title');
-  if(titleEl)titleEl.textContent=_remarksDateViewMonth.toLocaleDateString(undefined,{month:'long',year:'numeric'});
-  const dowEl=el('remarks-date-pop-cal-dow');
-  if(dowEl&&!dowEl.childElementCount){
-    dowEl.innerHTML=['S','M','T','W','T','F','S'].map(d=>`<span class="due-pop-cal-dow">${d}</span>`).join('');
-  }
-  const daysEl=el('remarks-date-pop-cal-days');
-  if(daysEl){
-    const y=_remarksDateViewMonth.getFullYear(), m=_remarksDateViewMonth.getMonth();
-    const firstDow=new Date(y,m,1).getDay();
-    const daysInMonth=new Date(y,m+1,0).getDate();
-    const daysInPrevMonth=new Date(y,m,0).getDate();
-    let html='';
-    for(let i=0;i<firstDow;i++){
-      html+=`<button type="button" class="due-pop-cal-day muted" disabled>${daysInPrevMonth-firstDow+1+i}</button>`;
-    }
-    for(let d=1; d<=daysInMonth; d++){
-      const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const isToday=iso===todayIso;
-      const isSelected=(r.date||todayIso)===iso;
-      html+=`<button type="button" class="due-pop-cal-day${isToday?' today':''}${isSelected?' selected':''}" data-remarks-date="${iso}">${d}</button>`;
-    }
-    const trailing=(7-((firstDow+daysInMonth)%7))%7;
-    for(let i=1;i<=trailing;i++){
-      html+=`<button type="button" class="due-pop-cal-day muted" disabled>${i}</button>`;
-    }
-    daysEl.innerHTML=html;
-    daysEl.querySelectorAll('.due-pop-cal-day[data-remarks-date]').forEach(dBtn=>{
-      dBtn.addEventListener('click',()=>commitRemarksDate(dBtn.getAttribute('data-remarks-date')));
-    });
-  }
+  const r=_remarksDateTarget, pop=el('remarks-date-popover'); if(!r||!_remarksDateViewMonth||!pop)return;
+  renderMonthCalendar(pop,_remarksDateViewMonth,r.date||todayDateStr(),commitRemarksDate);
 }
 (function initRemarksDatePopover(){
   const pop=el('remarks-date-popover'); if(!pop)return;
@@ -34799,21 +34788,8 @@ function waitingCandidates(todos) {
 
     const pop=document.getElementById('todo-due-popover');
     if(!pop) return;
-    const rect=btn.getBoundingClientRect();
-    const pw=216;
-    let left=rect.left;
-    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
-    if(left<8) left=8;
-    pop.style.left=left+'px';
-    pop.style.top=(rect.bottom+4)+'px';
     renderDueDatePopover();
-    pop.classList.add('open');
-    // flip above the button if the popover would overflow the bottom of the viewport
-    const pr=pop.getBoundingClientRect();
-    if(pr.bottom>window.innerHeight-8){
-      const flippedTop=rect.top-pr.height-4;
-      pop.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-pr.height))+'px';
-    }
+    openDatePopoverUnder(pop,btn);
   }
 
   function closeDueDateEditor(){
@@ -34832,20 +34808,8 @@ function waitingCandidates(todos) {
     _dueDateViewMonth=new Date(today.getFullYear(), today.getMonth(), 1);
     const pop=document.getElementById('todo-due-popover');
     if(!pop) return;
-    const rect=btn.getBoundingClientRect();
-    const pw=216;
-    let left=rect.left;
-    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
-    if(left<8) left=8;
-    pop.style.left=left+'px';
-    pop.style.top=(rect.bottom+4)+'px';
     renderDueDatePopover();
-    pop.classList.add('open');
-    const pr=pop.getBoundingClientRect();
-    if(pr.bottom>window.innerHeight-8){
-      const flippedTop=rect.top-pr.height-4;
-      pop.style.top=((flippedTop>=8) ? flippedTop : Math.max(8,window.innerHeight-8-pr.height))+'px';
-    }
+    openDatePopoverUnder(pop,btn);
   }
 
   function commitDueDate(val){
@@ -34871,42 +34835,8 @@ function waitingCandidates(todos) {
     if((_dueDateId===null && !_dueDateBulkIds) || !_dueDateViewMonth) return;
     const t=_dueDateBulkIds?null:todos.find(x=>x.id===_dueDateId);
     const current=_dueDateBulkIds?null:(t?t.dueDate:null);
-    const today=new Date(); today.setHours(0,0,0,0);
-    const todayIso=toISODate(today);
-
-    const titleEl=document.getElementById('due-pop-cal-title');
-    if(titleEl) titleEl.textContent=_dueDateViewMonth.toLocaleDateString(undefined,{month:'long',year:'numeric'});
-
-    const dowEl=document.getElementById('due-pop-cal-dow');
-    if(dowEl && !dowEl.childElementCount){
-      dowEl.innerHTML=['S','M','T','W','T','F','S'].map(d=>`<span class="due-pop-cal-dow">${d}</span>`).join('');
-    }
-
-    const daysEl=document.getElementById('due-pop-cal-days');
-    if(daysEl){
-      const y=_dueDateViewMonth.getFullYear(), m=_dueDateViewMonth.getMonth();
-      const firstDow=new Date(y,m,1).getDay();
-      const daysInMonth=new Date(y,m+1,0).getDate();
-      const daysInPrevMonth=new Date(y,m,0).getDate();
-      let html='';
-      for(let i=0;i<firstDow;i++){
-        html+=`<button type="button" class="due-pop-cal-day muted" disabled>${daysInPrevMonth-firstDow+1+i}</button>`;
-      }
-      for(let d=1; d<=daysInMonth; d++){
-        const iso=toISODate(new Date(y,m,d));
-        const isToday=iso===todayIso;
-        const isSelected=current===iso;
-        html+=`<button type="button" class="due-pop-cal-day${isToday?' today':''}${isSelected?' selected':''}" data-date="${iso}">${d}</button>`;
-      }
-      const trailing=(7-((firstDow+daysInMonth)%7))%7;
-      for(let i=1;i<=trailing;i++){
-        html+=`<button type="button" class="due-pop-cal-day muted" disabled>${i}</button>`;
-      }
-      daysEl.innerHTML=html;
-      daysEl.querySelectorAll('.due-pop-cal-day[data-date]').forEach(dBtn=>{
-        dBtn.addEventListener('click',()=>commitDueDate(dBtn.getAttribute('data-date')));
-      });
-    }
+    const pop=document.getElementById('todo-due-popover');
+    if(pop) renderMonthCalendar(pop,_dueDateViewMonth,current,commitDueDate);
 
     const clearBtn=document.getElementById('due-pop-clear-btn');
     if(clearBtn) clearBtn.disabled=_dueDateBulkIds?false:!current;

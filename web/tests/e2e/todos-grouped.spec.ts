@@ -210,3 +210,17 @@ test('the ⋯ button takes the date\'s place while the row is hovered', async ({
   await more.click();
   await expect(menuItem(page, /^Pin$/)).toBeVisible();
 });
+
+test('the due date picker is the shared calendar: the due day is marked and a click moves it', async ({ page }) => {
+  await openWith(page, [{ id: 'a', text: 'Report', dueDate: iso(0) }]);
+  await openMenu(page, 'a');
+  await menuItem(page, 'Due date…').click();
+  const pop = page.locator('#todo-due-popover');
+  await expect(pop).toHaveClass(/open/);
+  const today = await page.evaluate(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+  await expect(pop.locator('.due-pop-cal-day.selected')).toHaveAttribute('data-date', today);
+  await pop.locator('#due-pop-cal-next').click();
+  await pop.locator('.due-pop-cal-day[data-date]').first().click();
+  await expect(pop).not.toHaveClass(/open/);
+  expect((await stored(page))[0].dueDate).toMatch(/^\d{4}-\d{2}-01$/);
+});
