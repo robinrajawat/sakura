@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: draw.io files pasted or dropped on a row.** Owner asked. `.drawio`/`.dio` and the `.drawio.svg`
+(`content` attribute) / `.drawio.png` (`mxfile` tEXt or zTXt chunk) exports become diagrams on that row
+(`drawioXmlFromFile`, `addDrawioFilesToNode`, `addDroppedFilesToNode` routes images vs diagrams); pasted draw.io XML
+text too. Title = file name. Diagrams aren't in the undo snapshot, so the toast's Undo removes them.
+`addDiagramFromXml(xml,{anchorNodeId,silent})`. Test: `drawio-file-paste.spec.ts`.
+
 **2026-10-23: ⋯ More in the quick row (unified UI part 7).** Owner asked for More as three dots at the end of the
 quick row instead of its own line, so the node menu is one strip. Shared menu: an `iconRow` button with `fold:[...]`
 unfolds its items under the row (`_sbFoldToggle`, shared with fold rows); the ⋯ keeps ids `#context-more-toggle` /
@@ -168,11 +174,6 @@ unfolds its items under the row (`_sbFoldToggle`, shared with fold rows); the �
 (not grey: the time beside them is grey). Removed per-person colours everywhere: editor entry and composer author
 (`--pc`), PDF `.pv-remark-meta b`, Copy thread `<b>`; `remarkAuthorColor` and `REMARK_AVATAR_PALETTE` are gone. Tests
 updated: discussion-items, preview-pdf-inline-qa-remarks, thread-copy.
-
-**2026-10-23: One tooltip style (unified UI part 5).** The last native `title` hover hints (progress rows, timeline
-dots, board due, table check marks, diagram anchor button, diagram-gen review checkboxes/labels, SAP Note links) are
-`data-tip` now, and a shared-menu item's `title` hint shows as `data-tip` (it was set on nothing before). Only a
-disabled menu item still carries `title` (pointer-events are off there). Guard test: `one-tooltip.spec.ts`.
 
 ### In progress / not built
 

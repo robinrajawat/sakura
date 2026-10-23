@@ -10232,6 +10232,67 @@ async function addImageFilesToNode(nodeId,files){
   showToast(encoded.length===1?'Image added':encoded.length+' images added');
   return encoded.length;
 }
+// draw.io files (.drawio, .dio, and the .drawio.svg / .drawio.png exports, which carry the
+// editable diagram inside) pasted or dropped on a row become diagrams on that row (owner,
+// 2026-10-23). A row can hold several.
+function _drawioFilesFrom(list){ return [...(list||[])].filter(f=>f&&/\.(drawio|dio)(\.(svg|png|xml))?$/i.test(String(f.name||''))); }
+function _isDrawioXml(xml){ return /<mxfile[\s>]|<mxGraphModel[\s>]/.test(String(xml||'')); }
+// The diagram XML inside a draw.io file, or '' when there is none.
+async function drawioXmlFromFile(f){
+  const name=String(f.name||'').toLowerCase();
+  if(name.endsWith('.png')){
+    // draw.io keeps the diagram in a PNG text chunk keyed "mxfile": tEXt (URL-encoded) or zTXt (deflated).
+    const buf=new Uint8Array(await f.arrayBuffer()); const dv=new DataView(buf.buffer);
+    for(let p=8;p+8<=buf.length;){
+      const len=dv.getUint32(p); const type=String.fromCharCode(...buf.subarray(p+4,p+8)); const data=buf.subarray(p+8,p+8+len);
+      if(type==='tEXt'||type==='zTXt'){
+        const z=data.indexOf(0); const key=new TextDecoder('latin1').decode(data.subarray(0,z));
+        if(key==='mxfile'){
+          let raw;
+          if(type==='tEXt')raw=new TextDecoder('latin1').decode(data.subarray(z+1));
+          else raw=await new Response(new Blob([data.subarray(z+2)]).stream().pipeThrough(new DecompressionStream('deflate'))).text();
+          try{ raw=decodeURIComponent(raw); }catch(e){}
+          return _isDrawioXml(raw)?raw:'';
+        }
+      }
+      if(type==='IEND')break; p+=12+len;
+    }
+    return '';
+  }
+  const text=await f.text();
+  if(name.endsWith('.svg')){
+    const svg=new DOMParser().parseFromString(text,'image/svg+xml').documentElement;
+    const content=svg&&svg.getAttribute('content')||'';
+    return _isDrawioXml(content)?content:'';
+  }
+  return _isDrawioXml(text)?text.trim():'';
+}
+// Adds a diagram to node `nodeId` for each XML string, unfolds the row's diagrams, and offers Undo
+// (diagrams aren't in the undo snapshot).
+function addDiagramXmlsToNode(nodeId,xmls,titles=[]){
+  if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast('This document is view-only'); return 0; }
+  if(getIndex(nodes,nodeId)<0||!xmls.length)return 0;
+  const added=xmls.map((xml,i)=>{ const d=addDiagramFromXml(xml,{anchorNodeId:nodeId,silent:true}); d.title=titles[i]||''; return d.id; });
+  inlineExpandDiagramNodeIds.add(nodeId); render();
+  showActionToast(added.length===1?'Diagram added':added.length+' diagrams added','Undo',()=>{
+    const gone=new Set(added); diagrams=diagrams.filter(d=>!gone.has(d.id)); markDirty(); scheduleAutoSave(); render();
+  });
+  return added.length;
+}
+async function addDrawioFilesToNode(nodeId,files){
+  const docAtStart=currentDocId; const xmls=[], titles=[];
+  for(const f of _drawioFilesFrom(files)){ try{ const xml=await drawioXmlFromFile(f); if(xml){ xmls.push(xml); titles.push(String(f.name).replace(/\.(drawio|dio)(\.(svg|png|xml))?$/i,'')); } }catch(e){} }
+  if(!xmls.length){ showToast('No draw.io diagram found in that file'); return 0; }
+  if(currentDocId!==docAtStart)return 0;
+  return addDiagramXmlsToNode(nodeId,xmls,titles);
+}
+// Paste or drop: draw.io files go to the row's diagrams, other pictures to its images.
+function addDroppedFilesToNode(nodeId,files){
+  const dio=_drawioFilesFrom(files); const imgs=_imageFilesFrom(files).filter(f=>!dio.includes(f));
+  if(dio.length)addDrawioFilesToNode(nodeId,dio);
+  if(imgs.length)addImageFilesToNode(nodeId,imgs);
+  return dio.length+imgs.length;
+}
 // Hidden <input type=file multiple> for right-click → "Add image…".
 function openNodeImagePicker(nodeId){
   let input=el('node-image-file-input');
@@ -10920,12 +10981,12 @@ document.addEventListener('drop',e=>{
   const pane=el('editor-pane'); if(!pane||!pane.contains(e.target))return;
   e.preventDefault();
   document.querySelectorAll('.node-row.image-drop-target').forEach(r=>r.classList.remove('image-drop-target'));
-  const files=_imageFilesFrom(e.dataTransfer.files);
+  const files=[...e.dataTransfer.files].filter(f=>_imageFilesFrom([f]).length||_drawioFilesFrom([f]).length);
   if(!files.length)return;
   const id=_nodeIdFromDropTarget(e.target);
-  if(id==null){ showToast('Drop the image onto a node to attach it'); return; }
+  if(id==null){ showToast('Drop the file onto a row to attach it'); return; }
   e.stopPropagation();
-  addImageFilesToNode(id,files);
+  addDroppedFilesToNode(id,files);
 });
 // Right-click on a link in an inline note: open, copy, edit or remove it. Edit and Remove change
 // the stored node.note, not the live element: the Edit dialog takes focus, and the note's blur
@@ -21200,8 +21261,8 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         return;
       }
       if(hasRichContent){ setTimeout(()=>{ noteLine.querySelectorAll('table').forEach(t=>_attachTableResizeHandles(t)); commitNoteLine(); const i=getIndex(nodes,node.id); if(i>=0&&migrateNoteImagesToNode(nodes[i])){ _pendingInlineFocus={kind:'note',nodeId:node.id}; render(); } },0); return; }
-      const files=clipboardImageFiles(e.clipboardData);
-      if(files.length){ e.preventDefault(); addImageFilesToNode(node.id,files); }
+      const files=[..._drawioFilesFrom(e.clipboardData?.files),...clipboardImageFiles(e.clipboardData)];
+      if(files.length){ e.preventDefault(); addDroppedFilesToNode(node.id,[...new Set(files)]); }
     });
     noteLine.addEventListener('input',()=>{ const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=cleanEditorHtml(noteLine); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave()} if(forceInlineNoteId===node.id&&htmlHasVisibleContent(noteLine.innerHTML))forceInlineNoteId=null; });
     noteLine.addEventListener('blur',()=>{
@@ -22453,14 +22514,14 @@ function exportOpml(){const title=(getMeta().title||'tree').replace(/[\\/:*?"<>|
 // uses \u2014 and regenerates its thumbnail immediately via the same headless
 // draw.io frame the row's own refresh icon uses, so it shows up in the list looking finished
 // rather than as a placeholder icon until manually opened and saved once.
-function addDiagramFromXml(xml){
+function addDiagramFromXml(xml,{anchorNodeId,silent=false}={}){
   ensureDocumentForEditing();
-  const preferredNodeId=(selectedId!=null&&!diagrams.some(dg=>dg.anchorNodeId===selectedId))?selectedId:null;
+  const preferredNodeId=anchorNodeId!==undefined?anchorNodeId:(selectedId!=null&&!diagrams.some(dg=>dg.anchorNodeId===selectedId))?selectedId:null;
   const ts=Date.now();
   const d={id:newDiagramId(),title:'',xml,previewSvg:'',pageSvgs:[],pageCount:splitMxfilePages(xml).length,status:'draft',note:'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts,_hydrated:true};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
-  showToast('Diagram added');
+  if(!silent)showToast('Diagram added');
   regenerateDiagramThumbnail(d.id);
   return d;
 }
@@ -25195,8 +25256,12 @@ let hideNodeTooltip=function(){};
 // through the tree/text paste paths below unchanged.
 function pasteImagesIntoNodeIfImageOnly(e,nodeId){
   if(nodeId===null||nodeId===undefined)return false;
-  const files=clipboardImageFiles(e.clipboardData); if(!files.length)return false;
   const text=e.clipboardData?.getData('text/plain')||'';
+  // A copied .drawio file, or draw.io XML itself, becomes a diagram on the row.
+  const dio=_drawioFilesFrom(e.clipboardData?.files);
+  if(dio.length){ e.preventDefault(); addDroppedFilesToNode(nodeId,dio); return true; }
+  if(/^\s*(<\?xml[^>]*>\s*)?<(mxfile|mxGraphModel)[\s>]/.test(text)){ e.preventDefault(); addDiagramXmlsToNode(nodeId,[text.trim()]); return true; }
+  const files=clipboardImageFiles(e.clipboardData); if(!files.length)return false;
   if(text.trim())return false;
   e.preventDefault();
   addImageFilesToNode(nodeId,files);
