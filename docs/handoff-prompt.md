@@ -159,6 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Undo instead of "are you sure" (unified UI part 3).** Rule: undoable → act + `showActionToast(...,'Undo')`;
+`sakuraConfirm` only where nothing brings it back. Converted: `clearAllNodes` (asks only when `impactText.permanent`,
+i.e. diagrams; menu label lost its "…"), `deleteFolderById` (already had Undo), `restoreNodeTextFromRevision`,
+Reset all shortcuts (`resetAllShortcuts`; was never wired: its button's markup is after the main script, so it's now
+a delegated document click). Kept: Delete forever / Empty Trash / feedback / AI provider / encryption / import /
+undo-restore / reset settings (reload) / sign out / switch doc with pending rewrites / unsaved diagram editor / row
+delete when diagrams go. Tests: `undo-not-confirm.spec.ts`, toolbar-settings-simplify Clear all.
+
 **2026-10-23: Short values edited in place (unified UI part 2).** `editTextInPlace(target,opts)` lays a text box
 (fixed, in the target's font, `.inline-edit-input`) over the shown text, or at `opts.rect`; Enter keeps, Esc cancels,
 blur keeps unless `blurCancels`. Uses: `renameDoc(id,anchor)` (tab title on dblclick, sidebar `.sdoc-name-btn
@@ -179,15 +187,6 @@ items, `action`/`data` on any item, `trail` (pin button, `.sb-context-keep` does
 DOM, delegated click handler, `renderContextTopRow`/`renderContextMorePanel`/`updateContextMenuState` and the old
 `.context-*` CSS are gone. Submenu items now live in `.sb-context-submenu` (only while hovered), not in the panel.
 Tests: `context-menu-shared.spec.ts`; context-menu specs updated.
-
-**2026-10-23: Thread kind icon is a menu; icons grey.** Owner asked to change an entry's kind by clicking its icon,
-and agreed icons go grey except where something is open. `threadKindIcon`: Decision, Agreed, Out of scope, answers and
-comments are `--hint`; open question `--accent`, open follow-up `--fc-orange` (editor, PDF and Copy thread all read
-it). `threadKindMenuItems(node,r,thread,commit)` (icon click in `renderThreadEntry`, `.thread-kind.is-clickable`):
-Comment, Question, Answer (one earlier question → links it; several → "Answer to ›"; none → disabled "No question
-before it"), Decision, Agreed, Follow-up, Out of scope; current one ticked (meta ✓). One choice: picking clears the
-other kind fields (decision, status/done/owner, answerTo/verdict, question type + its answers' links). An answer
-also gets Yes / No. Same PR as the To-Do bar. Tests: `thread-kind-menu.spec.ts`.
 
 ### In progress / not built
 

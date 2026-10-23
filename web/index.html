@@ -12595,7 +12595,7 @@ function docTabContextItems(tab){
     items.push({label:'Sort top-level nodes Z → A', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'za'); }});
     items.push({label:'Sort top-level nodes by depth', icon:DOC_MENU_ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'depth'); }});
     items.push({divider:true});
-    items.push({label:'Clear all nodes…', danger:true, icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>'), onClick: async()=>{ await clearAllNodes(); }});
+    items.push({label:'Clear all nodes', danger:true, icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>'), onClick: async()=>{ await clearAllNodes(); }});
   }
   return items;
 }
@@ -13074,14 +13074,12 @@ async function restoreDocRevision(docId,ts){
 async function restoreNodeTextFromRevision(nodeId,text){
   const idx=getIndex(nodes,nodeId);
   if(idx<0){ showToast('That node no longer exists'); return; }
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>',title:'Restore This Text',body:'Replace this node\'s current text with the version shown?\n\nThis becomes undoable with Ctrl+Z, same as any other edit — nothing else about the node (note, code, tags) is touched.',confirmLabel:'Restore',confirmCls:'primary',cancelLabel:'Cancel'});
-  if(!ok)return;
   if(editingId===nodeId)commitEdit();
   pushUndo();
   nodes[idx].text=text;
   nodes[idx].modifiedAt=Date.now();
   markDirty(); render(); scheduleAutoSave();
-  showToast('Text restored — Ctrl+Z to undo');
+  showActionToast('Text restored','Undo',()=>undo());
   renderVersionHistoryList();
 }
 // docId defaults to the document open in the Version history window; the History chip's menu
@@ -24898,7 +24896,7 @@ document.querySelectorAll('#accent-swatch-row .accent-swatch').forEach(btn=>{if(
 
 // Clear all nodes — reached from the open document's tab menu (right-click the active tab).
 // Undoable like any other edit, but asks first since it empties the whole document at once.
-async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const allIds=nodes.map(n=>n.id); const impactText=deleteImpactText(collectDeleteImpact(allIds)); const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all nodes',body:'Remove every node from this document?'+[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('')+'\n\nYou can undo this with Ctrl/Cmd+Z.',warning:impactText.permanent,confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; pushUndo(); markDirty(); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane()}
+async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const allIds=nodes.map(n=>n.id); const impactText=deleteImpactText(collectDeleteImpact(allIds)); if(impactText.permanent){ const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all nodes',body:'Remove every node from this document?'+[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('')+'\n\nYou can undo this with Ctrl/Cmd+Z.',warning:impactText.permanent,confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; } pushUndo(); markDirty(); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane(); showActionToast('Cleared all rows','Undo',()=>undo())}
 el('doc-tab-add-btn')?.addEventListener('click',()=>createDoc());
 el('doc-tab-overview-btn')?.addEventListener('click',e=>{ e.stopPropagation(); const menu=el('doc-tab-overview-menu'); if(menu&&menu.classList.contains('open'))closeTabOverviewMenu(); else openTabOverviewMenu() });
 el('doc-tab-overview-search')?.addEventListener('click',e=>e.stopPropagation());
@@ -25715,13 +25713,16 @@ function renderShortcutsSettings(){
   filterShortcutsModal(el('shortcuts-search')?.value || '');
 }
 renderShortcutsSettings();
-el('shortcuts-reset-all-btn')?.addEventListener('click', async()=>{
-  const ok = await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="10"/><line x1="10" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="14" y2="10"/><line x1="18" y1="10" x2="18" y2="10"/><line x1="6" y1="14" x2="18" y2="14"/></svg>',title:'Reset all shortcuts',body:'Restore every keyboard shortcut to its default? Any customizations you have made will be lost.\nYou can also reset shortcuts one at a time with the ↺ button next to each.',confirmLabel:'Reset all',confirmCls:'danger',cancelLabel:'Cancel'});
-  if (!ok) return;
+// The shortcuts dialog's markup comes after this script, so the button is wired by delegation (a
+// direct listener here found no button, and Reset all did nothing).
+document.addEventListener('click', e=>{ if(e.target.closest?.('#shortcuts-reset-all-btn'))resetAllShortcuts(); });
+function resetAllShortcuts(){
+  const before = shortcutOverrides;
   shortcutOverrides = {};
   saveShortcutOverrides();
   renderShortcutsSettings();
-});
+  showActionToast('Shortcuts reset to defaults', 'Undo', ()=>{ shortcutOverrides = before; saveShortcutOverrides(); renderShortcutsSettings(); });
+}
 
 /* ---- Keep --statusbar-h in sync with the status bar's real height ----
    The docked To-Dos panel is position:fixed with
@@ -28062,11 +28063,8 @@ function cancelFolderInlineEdit(){
   renderSidebar();
 }
 
+// No "are you sure": the toast's Undo puts the folder, its subfolders and its documents back.
 async function deleteFolderById(id){
-  const folders0=loadFolders();
-  const hasChildren = folders0.some(f=>(f.parentId||null)===id);
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>',title:'Delete Folder',body:'Delete this folder? Documents inside will move to Unfiled.'+(hasChildren?' Subfolders will move up a level.':''),confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-  if(!ok)return;
   const folders=loadFolders();
   const idx=folders.findIndex(f=>f.id===id); if(idx<0)return;
   const removedFolder=folders[idx];
