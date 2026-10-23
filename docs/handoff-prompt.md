@@ -159,8 +159,8 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-23: Link box stays open over notes and threads.** Owner: no way to set the display text of a pasted address.
-The card's pencil opened the Link box, but focusing it scrolled the page and the bar's scroll handler hid it at once.
+**2026-10-23: Link box stays open when the page scrolls.** Owner: no way to set the display text of a pasted address.
+The card's pencil (rows, notes, threads) opened the Link box, but in a scrolled document focusing it scrolled the page and the bar's scroll handler hid it at once.
 The scroll handler now keeps the bar open while focus is inside it (the Link box).
 
 **2026-10-23: Click a link to edit it.** Owner: "row text edit link still doesn't work". Cause: a plain click on a row link
