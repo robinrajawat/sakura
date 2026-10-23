@@ -515,3 +515,14 @@ test('an entry\'s time can be corrected from its date popover, and the thread re
   const order = await page.evaluate("nodeThread(2).map(r => r.id)") as string[];
   expect(order.indexOf('t2')).toBeLessThan(order.indexOf('c1'));
 });
+
+test('the entry date picker is the shared calendar: the chosen day is marked and a click sets it', async ({ page }) => {
+  await seed(page, `remarks[0].date = '2026-10-14'; remarks[0].createdAt = new Date(2026, 9, 14, 10, 0).getTime();`);
+  await page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-time').click();
+  const pop = page.locator('#remarks-date-popover');
+  await expect(pop).toHaveClass(/open/);
+  await expect(pop.locator('.due-pop-cal-day.selected')).toHaveAttribute('data-date', '2026-10-14');
+  await pop.locator('.due-pop-cal-day[data-date="2026-10-20"]').click();
+  expect(await page.evaluate("remarks.find(r => r.id === 'c1').date")).toBe('2026-10-20');
+  await expect(pop).not.toHaveClass(/open/);
+});
