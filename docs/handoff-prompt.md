@@ -159,6 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Link box and preview header polish.** Owner: row links "still not working optimally"; image preview header
+squeezed. An address with spaces (words typed into Address) is refused: the field turns red (`.is-invalid`) and the box
+stays open (`applySelectionFmtUrl`). The Link box starts at the words and stays over the editor (`placeSelectionFmtPopover`
+when `pick==='url'`); opened from Edit link… it has no Back button (`noBack`). Preview headers: buttons never shrink, the
+row name/title ellipsize (max 40% / 34%); under 900px the name line sits above the buttons (`.pv-break`).
+
 **2026-10-23: Diagram stamp.** Owner: the diagram status was only visible in the draw.io editor; make it a stamp. New
 field `d.stamp` ('' or the document set draft/review/approved/rejected, `DIAGRAM_STAMPS`); `diagramStampOf` reads old
 `status` (final → approved, review → review, in-progress → draft, the old default draft → no stamp). `stampedDiagramSrc`
@@ -166,13 +172,6 @@ adds a band above the SVG (viewBox grows upwards, draw.io's `content` kept) with
 thumbnail, preview, PDF (`diagramDisplayPages`), Copy and Download. Picked from a 2×2 choices menu (`diagramStampItems`) in
 the preview header (`.dv-stamp`), the thumbnail menu (Stamp ›) and the draw.io editor chip. Menus opened inside a preview now
 sit above it. Not in the outline's undo. Tests: `diagram-stamp.spec.ts`.
-
-**2026-10-23: One preview for pictures and diagrams.** Owner: unify the previews. Both share one header (`.pv-head`,
-`.pv-where`, `.pv-zoom`, `.pv-fit`, `.niv-btn` icons): place and counter, the item's own action (Mark up / Edit), zoom
-(level click or `0` = actual size, `F` = Fit, half of Fit at least), Copy, Download, Delete, Close. The picture preview is a
-fixed window like the diagram's (stepping never moves the buttons); diagrams get ← / → (`stepDiagramViewer`,
-`_dvSiblings`) and Delete. Hint line in both (`PREVIEW_HINT`, `replayPreviewHint`).
-Also: pasted www./mailto: addresses link in notes and threads (`pastedLinkUrl`); Help's Declutter text fixed.
 
 ### In progress / not built
 
