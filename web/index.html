@@ -11197,21 +11197,46 @@ function richLinkMenuItems(field,link,store){
     render();
   };
   const unwrap=a=>a.replaceWith(...a.childNodes);
+  return linkMenuItems({href,openHref,
+    onEdit:()=>openLinkBoxAt(link,field.id,{text:label,url:href,
+      apply:(text,url)=>changeStoredLink(a=>{
+        a.setAttribute('href',sanitizeHrefUrl(url)); a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
+        // Only replace the label when it changed, so formatting inside it survives an address-only edit.
+        if(text!==label)a.textContent=text;
+      }),
+      remove:()=>changeStoredLink(unwrap)}),
+    onRemove:()=>changeStoredLink(unwrap)});
+}
+// Open / Copy / Edit / Remove: the one menu for a link anywhere (notes, thread entries, rows, To-Do titles).
+function linkMenuItems({href,openHref,onEdit,onRemove}){
+  const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   return [
     {label:'Open link', icon:ico('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'), onClick:()=>{ window.open(openHref,'_blank','noopener,noreferrer'); }},
     {label:'Copy link', icon:ico('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'), onClick:()=>{
       const done=()=>showToast('Link copied','success');
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(href).then(done,()=>showToast('Could not copy the link'));
     }},
-    {label:'Edit link…', icon:markIconSvg('edit'), onClick:()=>openLinkBoxAt(link,field.id,{text:label,url:href,
-      apply:(text,url)=>changeStoredLink(a=>{
-        a.setAttribute('href',sanitizeHrefUrl(url)); a.setAttribute('target','_blank'); a.setAttribute('rel','noopener noreferrer');
-        // Only replace the label when it changed, so formatting inside it survives an address-only edit.
-        if(text!==label)a.textContent=text;
-      }),
-      remove:()=>changeStoredLink(unwrap)})},
-    {label:'Remove link', icon:ico('<path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/>'), onClick:()=>changeStoredLink(unwrap)},
+    {label:'Edit link…', icon:markIconSvg('edit'), onClick:onEdit},
+    {label:'Remove link', icon:ico('<path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/>'), onClick:onRemove},
   ];
+}
+// The same for a web link on a row's or To-Do title's words: `at` is {s, e, text, url} for the
+// linked words, worked out when the menu opens (the row can be redrawn before a choice is made).
+function markLinkMenuItems(link,at,setLink,unlink){
+  const rect=link.getBoundingClientRect();
+  const anchor={getBoundingClientRect:()=>rect};
+  return linkMenuItems({href:at.url,openHref:link.href||at.url,
+    onEdit:()=>openLinkBoxAt(anchor,'link-box',{text:at.text,url:at.url,apply:(text,url)=>setLink(at.s,at.e,text,url),remove:()=>unlink(at.s,at.e)}),
+    onRemove:()=>unlink(at.s,at.e)});
+}
+// Characters of `root`'s text before `child` starts.
+function textOffsetWithin(root,child){ const r=document.createRange(); r.selectNodeContents(root); r.setEndBefore(child); return r.toString().length; }
+// The linked words of a row under a right-clicked web link, or null.
+function rowWebLinkAt(node,link){
+  const root=link.closest('.node-label,.node-input'); if(!root)return null;
+  const off=textOffsetWithin(root,link); const url=link.getAttribute('data-a')||'';
+  const m=rowMarksOf(node).find(x=>x.k==='a'&&x.s<=off&&off<x.e)||rowMarksOf(node).find(x=>x.k==='a'&&x.v===url);
+  return m?{s:m.s,e:m.e,text:(node.text||'').slice(m.s,m.e),url:m.v}:null;
 }
 function renderNoteDisplayHtml(html){
   if(!html||!/<table/i.test(html))return html||'';
@@ -20950,7 +20975,9 @@ let _ctxLastX=0,_ctxLastY=0;
 function showContextMenu(x,y,id,opts){
   if(id!==null&&id!==undefined){contextMenuNodeId=id; setSingleSelection(id); render()}
   _ctxLastX=x; _ctxLastY=y;
-  showSbContextMenu(x,y,ctxMenuItems(contextMenuNodeId??selectedId,opts&&opts.more),{id:'context-menu',label:'Node actions'});
+  // A right-clicked web link puts its own items first, as in notes and thread entries.
+  const linkItems=opts&&opts.linkItems?[...opts.linkItems,{divider:true}]:[];
+  showSbContextMenu(x,y,[...linkItems,...ctxMenuItems(contextMenuNodeId??selectedId,opts&&opts.more)],{id:'context-menu',label:'Node actions'});
 }
 // After customising the quick row the node menu opens again where it was, showing the change.
 function reopenContextMenu(more){ if(contextMenuNodeId!==null)showContextMenu(_ctxLastX,_ctxLastY,null,{more}); }
@@ -21308,7 +21335,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // Dynalist-style note preview is now rendered as a sub-line directly under this row (see just
         // below, right before frag.appendChild(row)), not truncated inline within the row itself.
        }
-  row.addEventListener('click',e=>{if(e.target.closest('.node-label a.row-weblink')){e.stopPropagation(); return} const rowLink=e.target.closest('.node-label .bl-link[data-r]'); if(rowLink){e.stopPropagation(); openRowLink(rowLink); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode)){selectLabelWordsForEditing(node,row,_sel); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{if(e.target.closest('.node-input'))return; e.preventDefault(); commitEdit(); showContextMenu(e.clientX,e.clientY,node.id)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
+  row.addEventListener('click',e=>{if(e.target.closest('.node-label a.row-weblink')){e.stopPropagation(); return} const rowLink=e.target.closest('.node-label .bl-link[data-r]'); if(rowLink){e.stopPropagation(); openRowLink(rowLink); return} if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot')||e.target.closest('.fold-badge')||e.target.closest('.node-tag-chip'))return; if(e.target!==row&&!e.target.closest('.node-label'))return; commitEdit(); if(e.shiftKey||e.ctrlKey||e.metaKey){selectRowFromPointer(node.id,e); return} const _sel=window.getSelection(); if(_sel&&!_sel.isCollapsed&&_sel.toString().length>0&&row.contains(_sel.anchorNode)){selectLabelWordsForEditing(node,row,_sel); return} const lbl=row.querySelector('.node-label'); const rawLen=(node.text||'').length; const caretPos=lbl?Math.min(caretOffsetFromPoint(lbl,e.clientX,e.clientY,rawLen),rawLen):rawLen; beginEditAt(node.id,caretPos)}); row.addEventListener('mousedown',e=>{if(e.target.closest('.node-input,.fold-toggle,.fold-dot,.node-dot,.fold-badge,.node-tag-chip,.node-note-line,.node-remark-text-inline'))return; armNodeDrag(e,row,node,null,false)},true); row.addEventListener('contextmenu',e=>{const wl=e.target.closest('a.row-weblink'); if(e.target.closest('.node-input')&&!wl)return; e.preventDefault(); commitEdit(); const at=wl?rowWebLinkAt(node,wl):null; showContextMenu(e.clientX,e.clientY,node.id,at?{linkItems:markLinkMenuItems(wl,at,(st,en,text,url)=>setRowLinkRange(node.id,st,en,text,url),(st,en)=>applyRowMarkToRange(node.id,st,en,'a',false))}:undefined)}); row.addEventListener('dblclick',e=>{if(e.target.closest('.node-input')||e.target.closest('.fold-toggle')||e.target.closest('.fold-dot'))return; e.preventDefault(); commitEdit(); beginEdit(node.id,true)}); moveRowIconsInline(row); frag.appendChild(row);
   if((forceInlineNoteId===node.id||inlineExpandNoteNodeIds.has(node.id))&&((node.note&&node.note.trim())||forceInlineNoteId===node.id)){
     const noteDepth=focusActive?((node.depth||0)-focusBaseDepth):(node.depth||0);
     const noteWrap=document.createElement('div'); noteWrap.className='node-note-line-wrap'; noteWrap.style.position='relative';
@@ -34283,12 +34310,16 @@ function waitingCandidates(todos) {
         toggleTodoExpanded(row.getAttribute('data-id'));
       });
       row.addEventListener('contextmenu', e=>{
-        if(e.target.closest('.todo-text') || e.target.closest('.todo-subtask-row') || e.target.closest('.todo-subtask-input-row')) return;
+        const web=e.target.closest('.todo-text a.row-weblink');
+        if(!web && (e.target.closest('.todo-text') || e.target.closest('.todo-subtask-row') || e.target.closest('.todo-subtask-input-row'))) return;
         const id=row.getAttribute('data-id');
         const t=todos.find(x=>x.id===id);
         if(!t) return;
         e.preventDefault();
-        showSbContextMenu(e.clientX, e.clientY, todoContextItems(t));
+        // A web link in the title: its own items first, as in notes, threads and rows.
+        const at=web?todoWebLinkAt(t, web):null;
+        const linkItems=at?[...markLinkMenuItems(web, at, (st,en,text,url)=>window.sakuraTodoTitleFmt.setLink(id,st,en,text,url), (st,en)=>applyTodoTitleMarkRange(id,st,en,'a',false)),{divider:true}]:[];
+        showSbContextMenu(e.clientX, e.clientY, [...linkItems, ...todoContextItems(t)]);
       });
     });
     body.querySelectorAll('.todo-text').forEach(elx=>{
@@ -35747,6 +35778,15 @@ function waitingCandidates(todos) {
   function selectTodoTitleRange(elx, start, end){
     const dom=elx.textContent||''; const toDom=x=>{ let seen=0; for(let i=0;i<dom.length;i++){ if(dom[i]==='\u200B') continue; if(seen===x) return i; seen++; } return dom.length; };
     setEditableSelectionRange(elx, toDom(start), toDom(end));
+  }
+  // The linked words under a right-clicked web link in a title (offsets in the stored title).
+  function todoWebLinkAt(t, link){
+    const elx=link.closest('.todo-text'); if(!elx) return null;
+    const title=readTodoTitle(elx); const dom=elx.textContent||''; const domOff=textOffsetWithin(elx, link);
+    const off=domOff-(dom.slice(0,domOff).match(/\u200B/g)||[]).length-title.lead;
+    const marks=rowMarksOf(t); const url=link.getAttribute('data-a')||'';
+    const m=marks.find(x=>x.k==='a'&&x.s<=off&&off<x.e)||marks.find(x=>x.k==='a'&&x.v===url);
+    return m?{s:m.s,e:m.e,text:t.text.slice(m.s,m.e),url:m.v}:null;
   }
   function todoIdOfTitleEl(elx){ return elx&&elx.classList&&elx.classList.contains('todo-text')?elx.getAttribute('data-id'):null; }
   // Formats [start,end) of a stored title (the address box has taken focus by then) and redraws it.
