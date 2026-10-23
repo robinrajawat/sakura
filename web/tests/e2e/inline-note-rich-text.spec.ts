@@ -1058,6 +1058,25 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
       await expect(page.locator('#link-card')).toBeVisible();
     });
 
+    // Owner, 2026-10-23: the card's pencil opened the Link box and it closed at once (focusing the
+    // box scrolled the page, and a scroll hid the bar), so a pasted address could not be renamed.
+    test("the card's Edit opens the Link box and renames the link", async ({ page }) => {
+      await page.goto('file://' + indexPath);
+      await dismissOverlays(page);
+      await stubWindowOpen(page);
+      await seedNodeWithNote(page, linkNote);
+
+      await page.locator('#note-line-1 a').click();
+      await page.locator('#link-card .link-card-btn[data-i="2"]').click();
+      await expect(page.locator('#selection-fmt-popover')).toHaveAttribute('data-pick', 'url');
+      await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
+      await page.locator('#sfmt-link-text').fill('The new name');
+      await page.keyboard.press('Enter');
+      await expect.poll(() => page.evaluate(() =>
+        // @ts-expect-error
+        nodes[0].note)).toContain('>The new name</a>');
+    });
+
     test('ctrl/cmd-click opens the link while the note is being edited', async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
