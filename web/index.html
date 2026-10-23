@@ -20727,13 +20727,17 @@ function ctxQuickButtonInit(btn,actionId){
   btn.addEventListener('contextmenu',e=>{
     e.preventDefault(); e.stopPropagation();
     const cur=ctxQuickRowVisible(); const i=cur.indexOf(actionId);
-    showSbContextMenu(e.clientX,e.clientY,[
+    // Opens as a small flyout under the icon, so the node menu stays open.
+    btn._sbSubmenu=[
       {label:'Move left', disabled:i<=0, onClick:()=>ctxQuickRowMove(actionId,-1)},
       {label:'Move right', disabled:i>=cur.length-1, onClick:()=>ctxQuickRowMove(actionId,1)},
       {label:'Remove from quick row', onClick:()=>ctxQuickRowRemove(actionId)},
       {divider:true},
       {label:'Reset quick row', disabled:!ctxQuickRowCustom, onClick:()=>ctxQuickRowReset()}
-    ]);
+    ];
+    _sbOpenSubmenu(btn,false);
+    const sub=_sbSubEl, r=btn.getBoundingClientRect();
+    if(sub&&sub._trigger===btn){ sub.style.left=Math.max(8,Math.min(r.left, window.innerWidth-sub.offsetWidth-8))+'px'; sub.style.top=Math.min(r.bottom+4, window.innerHeight-sub.offsetHeight-8)+'px'; }
   });
 }
 function hideContextMenu(){ if(_sbContextEl&&_sbContextEl.id==='context-menu')closeSbContextMenu(); contextMenuNodeId=null; }
@@ -27214,6 +27218,8 @@ function closeSbContextMenu(e){
   // A click on a submenu's own parent item opens that submenu, and a fold row unfolds in place,
   // instead of closing everything.
   if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger, .sb-context-fold, .sb-context-keep'))return;
+  // A right-click inside the menu (e.g. on a quick-row icon) is handled there and keeps it open.
+  if(e&&e.type==='contextmenu'&&_sbContextEl&&_sbContextEl.contains(e.target))return;
   if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
 // One level of submenu for showSbContextMenu: an item with `submenu:[...items]` renders as a parent
 // row with a chevron and opens a flyout beside it on hover, click, or →. The flyout is a child of
@@ -27342,7 +27348,7 @@ function _sbFoldToggle(trigger, after, it, list){
   };
   const toggle=()=>{
     if(box){ box.remove(); box=null; kids.forEach(k=>{ const i=list.indexOf(k); if(i>=0)list.splice(i,1); }); kids=[]; trigger.setAttribute('aria-expanded','false'); return; }
-    unfold(); box.scrollIntoView({block:'nearest'});
+    unfold(); const m=trigger.closest('.sb-context-menu'); if(m)_sbRefitMenu(m); box.scrollIntoView({block:'nearest'});
   };
   trigger.setAttribute('aria-expanded','false');
   return {unfold, toggle};
@@ -27375,6 +27381,14 @@ function _sbCloseSubmenu(restoreFocus=true){
   trigger?.classList.remove('sb-context-submenu-open'); trigger?.setAttribute('aria-expanded','false');
   if(_sbSubParent){ _sbContextButtons=_sbSubParent.buttons; _sbContextActiveIndex=_sbSubParent.index; _sbSubParent=null; if(restoreFocus)_sbContextUpdateHighlight(); }
 }
+// A menu that grew (a fold unfolding) moves up to fit in the window; it only scrolls when it is
+// taller than the window itself.
+function _sbRefitMenu(menu){
+  menu.style.maxHeight='none';
+  const top=parseFloat(menu.style.top)||menu.getBoundingClientRect().top;
+  menu.style.top=Math.max(8,Math.min(top, window.innerHeight-menu.offsetHeight-8))+'px';
+  _sbFitMenuHeight(menu);
+}
 function _sbFitMenuHeight(menu){
   const top=parseFloat(menu.style.top)||menu.getBoundingClientRect().top;
   menu.style.maxHeight=Math.max(120,window.innerHeight-top-8)+'px';
@@ -27398,9 +27412,8 @@ function showSbContextMenu(x,y,items,opts){
   const mw=rect.width||estW, mh=rect.height||estH;
   menu.style.left=Math.max(8,Math.min(x, window.innerWidth-mw-8))+'px';
   menu.style.top=Math.max(8,Math.min(y, window.innerHeight-mh-8))+'px';
-  // Cap the height to the space below the menu's top edge (not the whole window), so a menu that
-  // grows after opening — a fold row unfolding — scrolls inside itself instead of running off the
-  // bottom of the screen.
+  // Cap the height to the space below the menu's top edge (not the whole window); a menu that grows
+  // after opening (a fold unfolding) first moves up (_sbRefitMenu) and only scrolls past that.
   _sbFitMenuHeight(menu);
   // Click/contextmenu closers wait a tick so the event that opened the menu doesn't close it; the
   // key handler doesn't need to (no keydown opened it), and registering it at once means an Esc
