@@ -167,13 +167,10 @@ row text ellipsizes; under 900px the name line sits above the buttons (`.pv-brea
 the caption? unified design": both headers lead with the item's own name, edited in place (`.pv-name`: the picture's
 `.niv-caption` moved up from the bottom bar, which is gone; the diagram's `.dv-title` is an input that renames it).
 
-**2026-10-23: Diagram stamp.** Owner: the diagram status was only visible in the draw.io editor; make it a stamp. New
-field `d.stamp` ('' or the document set draft/review/approved/rejected, `DIAGRAM_STAMPS`); `diagramStampOf` reads old
-`status` (final → approved, review → review, in-progress → draft, the old default draft → no stamp). `stampedDiagramSrc`
-adds a band above the SVG (viewBox grows upwards, draw.io's `content` kept) with the tilted stamp at its right; used for the
-thumbnail, preview, PDF (`diagramDisplayPages`), Copy and Download. Picked from a 2×2 choices menu (`diagramStampItems`) in
-the preview header (`.dv-stamp`), the thumbnail menu (Stamp ›) and the draw.io editor chip. Menus opened inside a preview now
-sit above it. Not in the outline's undo. Tests: `diagram-stamp.spec.ts`.
+**2026-10-23: Diagram stamp removed.** Owner: "remove the stamp or status from the diagram. Margin disturbance is
+annoying." The stamp (#629) and the old hidden diagram status (and its draw.io editor chip) are gone; diagrams show
+exactly the draw.io export everywhere (thumbnail, preview, PDF, Copy, Download). Old `stamp`/`status` fields in saved
+documents are ignored. Menus opened inside a preview still sit above it.
 
 ### In progress / not built
 

@@ -1783,13 +1783,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .dv-spacer{flex:1 1 auto}
 /* The header both previews share (image and diagram): .pv-head, .pv-where, .pv-zoom, .pv-fit, plus
    .niv-btn icon buttons, .niv-markup-toggle for the item's own action and .niv-counter. */
-.pv-stamp{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:7px;font:600 12px 'Inter',sans-serif;cursor:pointer;color:var(--stamp-ink);background:color-mix(in srgb,var(--stamp-ink) 12%,transparent)}
-.pv-stamp:hover{background:color-mix(in srgb,var(--stamp-ink) 20%,transparent)}
-.pv-stamp.unset{color:var(--muted);background:transparent;box-shadow:inset 0 0 0 1px var(--border);font-weight:500}
-.pv-stamp.unset .stamp-choice-dot{display:none}
-.pv-stamp.unset:hover{color:var(--fg);background:var(--hover)}
-.pv-stamp:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.stamp-choice-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--choice-color,var(--stamp-ink,currentColor))}
 .pv-where{font:400 12.5px 'Inter',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 /* A long row name or title gives way first (ellipsis); buttons never shrink or wrap their labels.
    On a narrow window the name and count take their own line above the buttons. */
@@ -2836,13 +2829,6 @@ body.printing-generic #gpe-overlay{
 #diagram-editor-dup,#diagram-editor-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
 #diagram-editor-dup:hover{color:var(--accent);background:var(--hover)}
 #diagram-editor-delete:hover{color:var(--fc-red);background:var(--hover)}
-.diagram-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:2px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
-.diagram-status-chip[data-color="blue"]{background:color-mix(in srgb,var(--fc-blue) 16%,transparent);color:var(--fc-blue)}
-.diagram-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
-.diagram-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
-.diagram-status-chip[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
-.diagram-status-chip.unset{background:transparent;color:var(--hint);box-shadow:inset 0 0 0 1px var(--border)}
-.diagram-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
 #doc-status-wrap{position:relative;flex:0 0 auto}
 .doc-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;white-space:nowrap;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);transition:background .12s,color .12s}
 .doc-presence-chip{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;padding:3px 9px 3px 8px;border-radius:999px;flex-shrink:0;white-space:nowrap;background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
@@ -4775,7 +4761,6 @@ body.printing-generic #gpe-overlay{
       <span id="diagram-editor-anchor-label">Not linked to a node</span>
     </button>
     <span id="diagram-editor-pages-badge" class="diagram-row-pages" style="display:none"></span>
-    <button type="button" id="diagram-editor-status-chip" class="diagram-status-chip" data-tip="Stamp" aria-haspopup="true"></button>
     <span class="diagram-editor-header-sep"></span>
     <input type="text" id="diagram-editor-note-input" placeholder="+ Note to yourself" maxlength="200" autocomplete="off" spellcheck="false" data-tip="Private reminder — never shown in Preview or exports" />
     <span id="diagram-editor-status"></span>
@@ -12304,7 +12289,7 @@ async function deleteDocRevisions(id){ try{ await idbDelete('docrev:'+id); local
 // as it always has.
 function trimDiagramsForRevision(arr){
   if(!Array.isArray(arr))return [];
-  return arr.map(d=>({id:d.id,title:d.title||'',xml:d.xml||'',stamp:diagramStampOf(d),note:d.note||'',anchorNodeId:d.anchorNodeId??null,pageCount:d.pageCount||1,createdAt:d.createdAt||Date.now(),modifiedAt:d.modifiedAt||Date.now()}));
+  return arr.map(d=>({id:d.id,title:d.title||'',xml:d.xml||'',note:d.note||'',anchorNodeId:d.anchorNodeId??null,pageCount:d.pageCount||1,createdAt:d.createdAt||Date.now(),modifiedAt:d.modifiedAt||Date.now()}));
 }
 async function recordDocRevision(id,contentObj,reason){
   if(!id||!Array.isArray(contentObj?.nodes))return;
@@ -13410,90 +13395,12 @@ el('history-modal-close-x')?.addEventListener('click',()=>closeVersionHistory())
 // be a browsable list in the Pad's Diagrams tab; it was removed along with the Pad.)
 function newDiagramId(){ return 'dg'+Date.now()+'-'+Math.floor(Math.random()*100000); }
 function findDiagram(id){ return diagrams.find(d=>d.id===id); }
-// A diagram's stamp: the same set as the document's status (owner, 2026-10-23: the old diagram
-// status was only visible inside the draw.io editor). '' = no stamp. Older diagrams kept a
-// `status` that defaulted to Draft, so that one means no stamp; the rest carry over.
-const DIAGRAM_STAMPS=['','draft','review','approved','rejected'];
-function diagramStampOf(d){
-  if(!d)return '';
-  if(typeof d.stamp==='string')return DIAGRAM_STAMPS.includes(d.stamp)?d.stamp:'';
-  return ({'in-progress':'draft',review:'review',final:'approved'})[String(d.status||'').toLowerCase()]||'';
-}
-const DIAGRAM_STAMP_INK={draft:'#6b7280',review:'#d97706',approved:'#16a34a',rejected:'#dc2626'};
-function setDiagramStamp(id,stamp){
-  const d=findDiagram(id); if(!d||diagramStampOf(d)===stamp)return;
-  // Not in the outline's undo (diagrams aren't); picking again is one click.
-  d.stamp=stamp; delete d.status; d.modifiedAt=Date.now();
-  markDirty(); scheduleAutoSave(); render();
-  const ov=el('diagram-viewer');
-  if(ov&&_dvState&&_dvState.id===id){ ov.querySelector('.dv-canvas img').src=diagramPictureSrc(d); _dvRefreshStamp(); }
-  if(_diagramEditorState&&_diagramEditorState.diagramId===id)updateDiagramEditorStatusChip(d);
-}
-// The menu used everywhere a stamp is picked: preview header, thumbnail menu, draw.io editor.
-function diagramStampItems(id){
-  const cur=diagramStampOf(findDiagram(id));
-  // A 2×2 grid of choices, as a thread entry's status grid; picking the current one again clears it.
-  return [
-    {choices:DIAGRAM_STAMPS.filter(Boolean).map(v=>({label:docStatusLabel(v), current:v===cur, color:DIAGRAM_STAMP_INK[v], icon:'<span class="stamp-choice-dot" aria-hidden="true"></span>', onClick:()=>setDiagramStamp(id,cur===v?'':v)})), cols:2},
-    {divider:true},
-    {label:'No stamp', disabled:!cur, onClick:()=>setDiagramStamp(id,'')}
-  ];
-}
-function showDiagramStampMenu(btn,id){
-  const r=btn.getBoundingClientRect();
-  showSbContextMenu(r.left,r.bottom+4,diagramStampItems(id),{label:'Stamp'});
-}
-// The picture with its stamp drawn in: a band is added above the diagram (so the stamp never covers
-// a shape, however the content changes) and the stamp sits at its right. Used for the thumbnail,
-// preview, PDF, Copy and Download, so it looks the same everywhere. draw.io's own data in the SVG is
-// kept, so a downloaded SVG still opens in draw.io.
-const _stampedSvgCache=new Map();
+// Decodes a picture's data: URL (the page's CSP doesn't allow fetch() on data: URLs).
 function svgDataUrlToText(src){
   const comma=src.indexOf(','), head=src.slice(0,comma);
   return /;base64/i.test(head)?new TextDecoder().decode(Uint8Array.from(atob(src.slice(comma+1)),ch=>ch.charCodeAt(0))):decodeURIComponent(src.slice(comma+1));
 }
-function stampedDiagramSvgText(svgText,stamp){
-  const ink=DIAGRAM_STAMP_INK[stamp]; if(!ink)return svgText;
-  const doc=new DOMParser().parseFromString(svgText,'image/svg+xml'); const svg=doc.documentElement;
-  if(!svg||svg.nodeName!=='svg'||doc.querySelector('parsererror'))return svgText;
-  const num=v=>parseFloat(String(v||'').replace(/px$/,''));
-  let vb=(svg.getAttribute('viewBox')||'').trim().split(/[\s,]+/).map(Number);
-  const w=num(svg.getAttribute('width'))||vb[2]||800, h=num(svg.getAttribute('height'))||vb[3]||600;
-  if(vb.length!==4||vb.some(n=>!Number.isFinite(n)))vb=[0,0,w,h];
-  const k=vb[2]/w; // viewBox units per pixel
-  const fontPx=Math.max(12,Math.min(30,w*0.022));
-  const label=docStatusLabel(stamp).toUpperCase(), padX=fontPx*0.8, boxH=fontPx*1.75;
-  const boxW=label.length*fontPx*0.86+fontPx*0.14*(label.length-1)+padX*2;
-  // Tall enough for the tilted stamp (sin 8° of its width plus its height) and a little air.
-  const band=Math.round(boxW*0.14+boxH+fontPx*0.8);
-  const NS='http://www.w3.org/2000/svg';
-  svg.setAttribute('viewBox',[vb[0],vb[1]-band*k,vb[2],vb[3]+band*k].join(' '));
-  svg.setAttribute('width',w+'px'); svg.setAttribute('height',(h+band)+'px');
-  const g=doc.createElementNS(NS,'g'); g.setAttribute('class','sakura-stamp');
-  const cx=vb[0]+vb[2]-(boxW/2+fontPx*0.9)*k, cy=vb[1]-band*k/2;
-  g.setAttribute('transform','translate('+cx+' '+cy+') scale('+k+') rotate(-8)'); g.setAttribute('opacity','0.85');
-  const rect=doc.createElementNS(NS,'rect'); Object.entries({x:-boxW/2,y:-boxH/2,width:boxW,height:boxH,rx:fontPx*0.4,fill:'none',stroke:ink,'stroke-width':Math.max(2,fontPx*0.17)}).forEach(([a,v])=>rect.setAttribute(a,String(v)));
-  const text=doc.createElementNS(NS,'text'); Object.entries({x:0,y:0,fill:ink,'font-family':'Inter, Helvetica, Arial, sans-serif','font-weight':'800','font-size':fontPx,'letter-spacing':fontPx*0.14,'text-anchor':'middle','dominant-baseline':'central'}).forEach(([a,v])=>text.setAttribute(a,String(v)));
-  text.textContent=label; g.appendChild(rect); g.appendChild(text); svg.appendChild(g);
-  return new XMLSerializer().serializeToString(doc);
-}
-function stampedDiagramSrc(src,stamp){
-  if(!src||!DIAGRAM_STAMP_INK[stamp])return src;
-  const key=stamp+'|'+src; let out=_stampedSvgCache.get(key);
-  if(out===undefined){
-    try{ out='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(stampedDiagramSvgText(svgDataUrlToText(src),stamp)); }catch(e){ out=src; }
-    if(_stampedSvgCache.size>60)_stampedSvgCache.clear(); _stampedSvgCache.set(key,out);
-  }
-  return out;
-}
-function diagramPictureSrc(d){ return d&&d.previewSvg?stampedDiagramSrc(d.previewSvg,diagramStampOf(d)):''; }
-function updateDiagramEditorStatusChip(d){
-  const btn=el('diagram-editor-status-chip'); if(!btn)return;
-  const s=diagramStampOf(d);
-  btn.dataset.color=s?docStatusColor(s):'gray'; btn.textContent=s?docStatusLabel(s):'No stamp';
-  btn.classList.toggle('unset',!s);
-}
-// Document-level status, a menu (the diagram stamp above uses the same set): 6 named states plus "No status" is too many to cycle through one
+// Document-level status, a menu: 6 named states plus "No status" is too many to cycle through one
 // click at a time and still feel fast, unlike the 3-4 states those two use. '' (empty string)
 // means unset — deliberately NOT defaulted to 'draft' on existing or newly-created documents,
 // since assuming every document in a large existing library is a fresh draft would just be
@@ -13593,8 +13500,7 @@ function splitMxfilePages(xml){
 function diagramDisplayPages(d){
   const pages=(Array.isArray(d.pageSvgs)&&d.pageSvgs.length)?d.pageSvgs:(d.previewSvg?[{name:'',svg:d.previewSvg}]:[]);
   const multi=pages.length>1;
-  const stamp=diagramStampOf(d);
-  return pages.map(p=>({svg:stampedDiagramSrc(p.svg,stamp), caption:multi?(d.title?(d.title+' — '+(p.name||'')):(p.name||'')):(d.title||'')}));
+  return pages.map(p=>({svg:p.svg, caption:multi?(d.title?(d.title+' — '+(p.name||'')):(p.name||'')):(d.title||'')}));
 }
 
 /* GENERATED:diagramAnchor:START — DO NOT EDIT BY HAND. Source of truth: src/state/diagramAnchor.ts (tests: tests/unit/diagramAnchor.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -13696,7 +13602,7 @@ function regenerateMissingDiagramPreviews(){
 
 function createDiagram(){
   ensureDocumentForEditing();
-  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,stamp:'',note:'',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now(),_hydrated:true};
+  const d={id:newDiagramId(),title:'',xml:'',previewSvg:'',pageSvgs:[],pageCount:1,note:'',anchorNodeId:selectedId??null,createdAt:Date.now(),modifiedAt:Date.now(),_hydrated:true};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
   openDiagramEditor(d.id);
@@ -13713,7 +13619,6 @@ function cloneDiagramRecord(src){
     previewBorder:src.previewBorder||0,
     pageSvgs:Array.isArray(src.pageSvgs)?src.pageSvgs.map(p=>({...p})):[],
     pageCount:src.pageCount||1,
-    stamp:diagramStampOf(src),
     note:src.note||'',
     anchorNodeId:src.anchorNodeId??null,
     createdAt:Date.now(),
@@ -13780,7 +13685,7 @@ async function downloadDiagram(id,format){
   if(!d.previewBorder&&d.xml){ showToast('Preparing the diagram…'); await regenerateDiagramThumbnail(id,{silent:true}); }
   try{
     // Decoded by hand: the page's CSP doesn't allow fetch() on data: URLs.
-    const cur=findDiagram(id)||d, src=diagramPictureSrc(cur);
+    const src=(findDiagram(id)||d).previewSvg;
     const svgText=svgDataUrlToText(src);
     if(format==='svg'){ downloadFileBlob(base+'.svg',new Blob([svgText],{type:'image/svg+xml'})); return; }
     downloadFileBlob(base+'.png',await diagramPngBlob(src));
@@ -13802,7 +13707,7 @@ async function copyDiagramImage(id,feedback){
   if(!d.previewSvg){ showToast('No preview yet — open the diagram in the editor once to create one'); return; }
   try{
     if(!navigator.clipboard||!window.ClipboardItem)throw new Error('no clipboard');
-    await navigator.clipboard.write([new ClipboardItem({'image/png':diagramPngBlob(diagramPictureSrc(d))})]);
+    await navigator.clipboard.write([new ClipboardItem({'image/png':diagramPngBlob(d.previewSvg)})]);
     showCopiedOn(feedback);
   }catch(err){ showToast('Could not copy the diagram — try Download'); }
 }
@@ -13819,7 +13724,6 @@ function showDiagramThumbMenu(e,d,titleEl){
     {label:'Download', submenu:diagramDownloadItems(d.id)},
     {divider:true},
     {label:'Rename', onClick:()=>{ if(!titleEl||!titleEl.isConnected)return; titleEl.focus(); const r=document.createRange(); r.selectNodeContents(titleEl); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }},
-    {label:'Stamp', submenu:diagramStampItems(d.id)},
     {label:'Edit in draw.io', onClick:()=>openDiagramEditor(d.id)},
     {divider:true},
     {label:'Delete diagram', danger:true, onClick:async()=>{ await deleteDiagram(d.id); render(); }}
@@ -13835,7 +13739,7 @@ function _dvEnsure(){
   // The same header as the image preview (owner, 2026-10-23: one preview): name, place and count on
   // the left with the item's own action, then zoom, Fit, Copy, Download, Delete and Close.
   ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><input type="text" class="pv-name dv-title" placeholder="Untitled diagram" maxlength="200" spellcheck="false" aria-label="Diagram name" data-tip="Name · click to rename"><span class="pv-where dv-where"></span><span class="niv-counter dv-counter"></span><span class="pv-break"></span>'
-    +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button><button type="button" class="pv-stamp dv-stamp" aria-haspopup="true" data-tip="Stamp"></button><span class="dv-spacer"></span>'
+    +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button><span class="dv-spacer"></span>'
     +'<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level dv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'
     +'<button type="button" class="pv-fit dv-fit" data-tip="Fit to window (F)">Fit</button>'
     +'<button type="button" class="niv-btn dv-copy" aria-label="Copy image" data-tip="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
@@ -13868,7 +13772,6 @@ function _dvEnsure(){
     d.title=val; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render();
     if(_diagramEditorState&&_diagramEditorState.diagramId===d.id){ const ti=el('diagram-editor-title-input'); if(ti)ti.value=val; }
   });
-  ov.querySelector('.dv-stamp').addEventListener('click',e=>{ if(_dvState)showDiagramStampMenu(e.currentTarget,_dvState.id); });
   ov.querySelector('.dv-prev').addEventListener('click',()=>stepDiagramViewer(-1));
   ov.querySelector('.dv-next').addEventListener('click',()=>stepDiagramViewer(1));
   ov.querySelectorAll('.dv-nav').forEach(b=>b.addEventListener('pointerdown',e=>e.stopPropagation()));
@@ -13976,8 +13879,7 @@ function openDiagramViewer(diagramId){
   // of our own); an older picture without draw.io's margin gets the same 12px from us instead.
   ov.style.setProperty('--dv-pad',(d.previewBorder?0:DIAGRAM_EXPORT_BORDER)+'px');
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
-  img.src=diagramPictureSrc(d);
-  _dvRefreshStamp();
+  img.src=d.previewSvg;
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
   _dvRefreshCounter(); replayPreviewHint(ov);
 }
@@ -13989,13 +13891,6 @@ function _dvRefreshCounter(){
   ov.querySelector('.dv-counter').textContent=list.length>1?(i+1)+' / '+list.length:'';
   ov.querySelector('.dv-prev').disabled=i<=0; ov.querySelector('.dv-next').disabled=i<0||i>=list.length-1;
   ov.classList.toggle('dv-single',list.length<2);
-}
-// The preview's Stamp button shows the current stamp in its colour, or "No stamp".
-function _dvRefreshStamp(){
-  const ov=el('diagram-viewer'), b=ov&&ov.querySelector('.dv-stamp'); if(!b||!_dvState)return;
-  const v=diagramStampOf(findDiagram(_dvState.id));
-  b.classList.toggle('unset',!v); b.style.setProperty('--stamp-ink',DIAGRAM_STAMP_INK[v]||'');
-  b.innerHTML='<span class="stamp-choice-dot" aria-hidden="true"></span><span></span>'; b.lastChild.textContent=v?docStatusLabel(v):'No stamp';
 }
 function stepDiagramViewer(delta){
   if(!_dvState)return; const list=_dvSiblings(_dvState.id); const i=list.findIndex(x=>x.id===_dvState.id);
@@ -14026,7 +13921,6 @@ function openDiagramEditor(diagramId){
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
   updateDiagramEditorPagesBadge(d);
-  updateDiagramEditorStatusChip(d);
   updateDiagramEditorNoteInput(d);
   const status=el('diagram-editor-status'); if(status){ status.textContent='Loading draw.io…'; status.classList.remove('diagram-editor-status-saved'); }
   const handler=e=>{
@@ -14161,10 +14055,6 @@ el('diagram-editor-title-input')?.addEventListener('input',()=>{
   const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
   d.title=el('diagram-editor-title-input').value;
   markDirty(); scheduleAutoSave();
-});
-el('diagram-editor-status-chip')?.addEventListener('click',e=>{
-  if(!_diagramEditorState)return;
-  showDiagramStampMenu(e.currentTarget,_diagramEditorState.diagramId);
 });
 el('diagram-editor-note-input')?.addEventListener('keydown',e=>{
   if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
@@ -21789,7 +21679,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const card=document.createElement('div'); card.className='node-diagram-preview-card';
       const thumb=document.createElement('div'); thumb.className='node-diagram-preview-thumb'+(d.previewSvg&&d.previewBorder?' has-export-border':''); thumb.dataset.tip='Click to preview · right-click for more';
       if(d.previewSvg){
-        const img=document.createElement('img'); img.src=diagramPictureSrc(d); img.alt='';
+        const img=document.createElement('img'); img.src=d.previewSvg; img.alt='';
         img.addEventListener('error',()=>{ thumb.classList.add('node-diagram-preview-empty'); thumb.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/></svg>'; thumb.dataset.tip='Preview failed to load — click to open and regenerate it'; },{once:true});
         thumb.appendChild(img);
       } else {
@@ -22414,7 +22304,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
       if(Array.isArray(ex.dgs)&&ex.dgs.length){
         ex.dgs.forEach(dg=>{
           const ts=Date.now();
-          diagrams.push({id:newDiagramId(),title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',previewBorder:dg.previewBorder||0,pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,stamp:diagramStampOf(dg),note:dg.note||'',anchorNodeId:targetNode.id,createdAt:ts,modifiedAt:ts,_hydrated:true});
+          diagrams.push({id:newDiagramId(),title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',previewBorder:dg.previewBorder||0,pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,note:dg.note||'',anchorNodeId:targetNode.id,createdAt:ts,modifiedAt:ts,_hydrated:true});
           dgAdded++;
         });
       }
@@ -22829,7 +22719,7 @@ function buildNodeClipboardPayload(scopeNodes){
       ...(imgs.length?{imgs:JSON.parse(JSON.stringify(imgs))}:{}),
       ...(qas.length?{qas}:{}),
       ...(rms.length?{rms}:{}),
-      dgs:dgs.map(dg=>({title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',previewBorder:dg.previewBorder||0,pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,stamp:diagramStampOf(dg),note:dg.note||''}))
+      dgs:dgs.map(dg=>({title:dg.title||'',xml:dg.xml||'',previewSvg:dg.previewSvg||'',previewBorder:dg.previewBorder||0,pageSvgs:Array.isArray(dg.pageSvgs)?dg.pageSvgs.map(p=>({...p})):[],pageCount:dg.pageCount||1,note:dg.note||''}))
     });
   });
   return extras.length?{v:1,extras}:null;
@@ -22928,7 +22818,7 @@ function addDiagramFromXml(xml,{anchorNodeId,silent=false}={}){
   ensureDocumentForEditing();
   const preferredNodeId=anchorNodeId!==undefined?anchorNodeId:(selectedId!=null&&!diagrams.some(dg=>dg.anchorNodeId===selectedId))?selectedId:null;
   const ts=Date.now();
-  const d={id:newDiagramId(),title:'',xml,previewSvg:'',pageSvgs:[],pageCount:splitMxfilePages(xml).length,stamp:'',note:'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts,_hydrated:true};
+  const d={id:newDiagramId(),title:'',xml,previewSvg:'',pageSvgs:[],pageCount:splitMxfilePages(xml).length,note:'',anchorNodeId:preferredNodeId,createdAt:ts,modifiedAt:ts,_hydrated:true};
   diagrams.push(d);
   markDirty(); scheduleAutoSave();
   if(!silent)showToast('Diagram added');
