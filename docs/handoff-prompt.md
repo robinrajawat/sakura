@@ -159,18 +159,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Right-click a link in a row or To-Do title.** Same menu as notes and threads (Open link, Copy link, Edit
+link…, Remove link) from one helper, `linkMenuItems`; rows/To-Dos use `markLinkMenuItems` on the link's mark range
+(`rowWebLinkAt`, `todoWebLinkAt`), shown above the row's usual menu (`opts.linkItems`). Tests in `link-box.spec.ts`.
+
 **2026-10-23: Copy shows "Copied" where you clicked.** Owner: Copy in the image preview felt unresponsive (the toast is
 drawn behind the preview overlays). `showCopiedOn(target)`: a header button (`.niv-copy`, `.dv-copy`) turns into a green
 check for 1.4s; a thumbnail (right-click › Copy image, pictures and diagrams) shows a small "✓ Copied" badge. No toast
 when there's a place to show it. Tests in `image-preview-export.spec.ts` and `node-diagram-inline-preview.spec.ts`.
-
-**2026-10-23: Image preview gets Download, Copy image and zoom.** Owner: the image preview lacked what the diagram
-preview has. Header buttons and thumbnail menu items Copy image / Download (`nodeImageExportItems`); the picture is drawn
-at its own size with markings on top (`nodeImagePngBlob`), a marked picture's Download also offers Original (the stored
-file, `dataUrlToBlob`). Zoom like the diagram preview, "smooth and not aggressive" (`_nivZoom*`: Ctrl+scroll/pinch capped
-steps, drag/scroll pans, dblclick, +/−/0, level button = Fit); Mark up works zoomed. Diagram thumbnail menu now matches the
-picture's (Open, Copy image, Download ›, Rename, Edit in draw.io, Delete diagram); diagram preview gets Copy too
-(`copyDiagramImage`, `diagramPngBlob`). Tests: `image-preview-export.spec.ts`, `node-diagram-inline-preview.spec.ts`.
 
 ### In progress / not built
 
