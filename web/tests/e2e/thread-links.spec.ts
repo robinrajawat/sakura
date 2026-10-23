@@ -73,3 +73,13 @@ test('a bare web address pasted into the reply line becomes a link', async ({ pa
   expect(last).toContain('<a href="https://example.com/c"');
   await expect(page.locator('.node-remark-text-inline a', { hasText: 'https://example.com/c' })).toHaveCount(1);
 });
+
+test('a www. address pasted into the reply line becomes a link, like in rows', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('openThreadComposer(1, false)');
+  await page.evaluate(async () => { await navigator.clipboard.writeText('www.example.com/d'); });
+  await page.locator('.thread-composer .thread-composer-input').click();
+  await page.keyboard.press('ControlOrMeta+V');
+  await page.keyboard.press('Enter');
+  expect(await page.evaluate('remarks[remarks.length - 1].text')).toContain('<a href="https://www.example.com/d"');
+});

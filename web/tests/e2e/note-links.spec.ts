@@ -117,3 +117,17 @@ test('a pasted bare URL becomes a link; over selected text it links that text', 
   await page.keyboard.press('ControlOrMeta+V');
   await expect.poll(() => storedNote(page)).toMatch(/^<a href="[^"]+"[^>]*>Project folder<\/a>(&nbsp;| )here$/);
 });
+
+// Same address rules as rows and To-Dos: www. and mailto: become links too.
+test('a pasted www. or mailto: address becomes a link, like in rows', async ({ page }) => {
+  await seed(page, '');
+  await setClipboard(page, 'www.example.com/plan');
+  await page.locator('.node-note-line').first().click();
+  await page.keyboard.press('ControlOrMeta+V');
+  await expect.poll(() => storedNote(page)).toMatch(/^<a href="https:\/\/www\.example\.com\/plan"[^>]*>www\.example\.com\/plan<\/a>/);
+  await seed(page, '');
+  await setClipboard(page, 'mailto:team@example.com');
+  await page.locator('.node-note-line').first().click();
+  await page.keyboard.press('ControlOrMeta+V');
+  await expect.poll(() => storedNote(page)).toMatch(/^<a href="mailto:team@example\.com"/);
+});

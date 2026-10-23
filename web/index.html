@@ -21539,11 +21539,12 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       const hasRichContent=text.trim().length>0||html.replace(/<[^>]*>/g,'').trim().length>0;
       // A bare web address (no link of its own in the clipboard) becomes a link: over selected
       // text it links that text, otherwise the address is its own label.
-      const bareUrl=text.trim();
-      if(/^https?:\/\/\S+$/i.test(bareUrl)&&!/<a[\s>]/i.test(html)){
+      // Same rules as rows and To-Dos (pastedLinkUrl): http(s), www. and mailto: addresses.
+      const bareUrl=text.trim(); const pastedUrl=/<a[\s>]/i.test(html)?'':sanitizeHrefUrl(pastedLinkUrl(bareUrl));
+      if(pastedUrl){
         e.preventDefault();
         const sel=window.getSelection(); const selected=sel&&!sel.isCollapsed?sel.toString().trim():'';
-        document.execCommand('insertHTML',false,`<a href="${escAttr(sanitizeHrefUrl(bareUrl))}" target="_blank" rel="noopener noreferrer">${esc(selected||bareUrl)}</a>`);
+        document.execCommand('insertHTML',false,`<a href="${escAttr(pastedUrl)}" target="_blank" rel="noopener noreferrer">${esc(selected||bareUrl)}</a>`);
         commitNoteLine();
         return;
       }
@@ -31800,7 +31801,7 @@ function attachThreadPaste(el){
     const html=e.clipboardData?.getData('text/html')||'';
     const plain=(e.clipboardData?.getData('text/plain')||'').trim();
     // A bare web address pasted on its own becomes a link (a selection becomes its label).
-    const url=!html&&/^https?:\/\/\S+$/i.test(plain)?sanitizeHrefUrl(plain):'';
+    const url=/<a[\s>]/i.test(html)?'':sanitizeHrefUrl(pastedLinkUrl(plain));
     if(url){ e.preventDefault(); const label=(window.getSelection()||'').toString().trim()||plain;
       document.execCommand('insertHTML',false,'<a href="'+escAttr(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+'</a>&nbsp;'); return; }
     if(!html)return; // plain text: the browser's own paste is already clean
