@@ -159,6 +159,10 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Link box stays open when the page scrolls.** Owner: no way to set the display text of a pasted address.
+The card's pencil (rows, notes, threads) opened the Link box, but in a scrolled document focusing it scrolled the page and the bar's scroll handler hid it at once.
+The scroll handler now keeps the bar open while focus is inside it (the Link box).
+
 **2026-10-23: Click a link to edit it.** Owner: "row text edit link still doesn't work". Cause: a plain click on a row link
 opened it, so the caret could never land in it and the link card (#632) never showed. Now one rule in rows, To-Do titles,
 notes and thread entries: a plain click puts the caret in the link (row: `beginEditAt` from the click point) and the card
@@ -169,12 +173,6 @@ same rule. Hover tip: "Ctrl/Cmd+click to open · click to edit".
 just the item's own name, and line the buttons up. `.pv-where` is gone; both headers are name + count, `.pv-spacer`,
 then the same right-aligned row (item action, zoom, Fit, Copy, Download, Delete, Close). Under 900px the buttons wrap
 to their own right-aligned line (`.pv-break` before the spacer).
-
-**2026-10-23: Picture size in the menu; menus that fit are not capped.** Owner: picture Size moves from the preview header
-to the thumbnail's right-click menu (`Size ›`, current one `checked`); the header's `.niv-size` buttons are gone.
-Owner saw the diagram thumbnail menu scroll: `_sbFitMenuHeight` now leaves a menu that fits uncapped (a cap equal to
-its own height could round a pixel short and show a scrollbar). Not reproduced here at 1x/1.25x/1.5x; ask for a
-screenshot if it persists.
 
 ### In progress / not built
 

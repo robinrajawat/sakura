@@ -163,6 +163,23 @@ test('Link opens an address box in the bar that turns the selected words into a 
   await expect.poll(async () => (await rows(page))[0].marks).toEqual([]);
 });
 
+// Owner, 2026-10-23: in a scrolled document the card's Edit opened the Link box and a scroll closed it at
+// once, so a pasted address in a row could not be given display text.
+test("the link card's Edit gives a pasted address display text, even when the page scrolls", async ({ page }) => {
+  await seed(page, [{ text: 'Read the docs first' }]);
+  const id = await selectWord(page, 'Read the docs first', 'docs');
+  await popBtn(page, 'link').click();
+  await page.keyboard.type('example.com/guide');
+  await page.keyboard.press('Enter');
+  await page.locator(`.node-row[data-id="${id}"] .node-label a.row-weblink`).click();
+  await page.locator('#link-card .link-card-btn[data-i="2"]').click();
+  await expect(pop(page)).toHaveAttribute('data-pick', 'url');
+  await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
+  await page.locator('#sfmt-link-text').fill('guide');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => rows(page)).toEqual([{ text: 'Read the guide first', marks: [{ s: 9, e: 14, k: 'a', v: 'https://example.com/guide' }] }]);
+});
+
 test('Escape in the address box closes it without linking', async ({ page }) => {
   await seed(page, [{ text: 'Read the docs first' }]);
   await selectWord(page, 'Read the docs first', 'docs');
