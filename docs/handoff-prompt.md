@@ -159,6 +159,10 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: One date picker.** Unification item 2. Thread entry dates and To-Do due dates already looked the same
+(`due-pop-*` CSS); now they share the code too: `renderMonthCalendar(pop, viewMonth, selectedIso, onPick)` draws the month,
+weekday letters and days, `openDatePopoverUnder(pop, btn)` places it (flips above when there's no room).
+
 **2026-10-23: One dialog frame.** Unification item 3. Version history, Section icon library, diagram "Review before
 generating", Keyboard shortcuts and the Cheatsheet use the same head as the other app dialogs (`.app-modal-head`: title,
 grey line under it, `.app-modal-close-btn` ×). Version history shows the document name under its title; the icon
@@ -168,13 +172,6 @@ library lost its big Close button; the review got a ×. Welcome and "Why Sakura"
 ("Delete forever?", "Empty Trash?", "Turn off encryption?", "Delete this row?"), buttons sentence case ("Delete forever",
 "Undo restore", "Switch anyway"). "Clear all nodes" is "Clear all rows". Reset settings no longer asks: it keeps the old
 prefs in sessionStorage (`PREFS_UNDO_KEY`) through the reload, and the toast after the reload offers Undo.
-
-**2026-10-23: One menu for dropdowns.** Owner: "what's left to make it more elegant, standard and unified?" → item 1.
-Insert ▾, AI ▾, Export ▾ / Import ▾, the app bar's Import & Export (Export › / Import › flyouts), the document status chip
-(current one ticked: item `checked`) and the To-Dos ⋯ (Version history › flyout, `submenuId`) are `showSbContextMenu`
-opened by `openSbMenuUnder(btn, items, {alignRight, keyboard})`; a second click on the button closes it
-(`_sbAnchorJustClosed`). Items may carry `id`. Old `.export-menu`/`.tb-menu`/`.todo-dd-menu` markup for these is gone;
-the account, notifications, Share, document Link and Feedback filter stay panels (forms, not menus).
 
 ### In progress / not built
 
