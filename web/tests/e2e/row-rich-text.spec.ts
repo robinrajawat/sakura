@@ -176,12 +176,12 @@ test('formatting follows the words when the text is changed elsewhere (find and 
   await expect(page.locator('.node-label b')).toHaveText('bug');
 });
 
-test('a [[link]] inside formatted words still renders as one link', async ({ page }) => {
+test('typed [[ ]] in a row is plain text', async ({ page }) => {
   await seed(page, [{ text: 'Target' }, { text: 'see [[Target]] here', marks: [{ s: 0, e: 19, k: 'b' }] }]);
   const id = await rowId(page, 'see [[Target]] here');
   const label = page.locator(`.node-row[data-id="${id}"] .node-label`);
-  await expect(label).toContainText('see Target here');
-  await expect(label).not.toContainText('[[');
+  await expect(label).toHaveText('see [[Target]] here');
+  await expect(label.locator('.bl-link')).toHaveCount(0);
 });
 
 test('duplicate and save/reload keep formatting; rows without formatting store nothing extra', async ({ page }) => {
@@ -270,7 +270,7 @@ test('an old document converts once: **bold**/__italic__ to formatting, a [Label
   await expect(page.locator('.node-row[data-id="3"]')).toHaveClass(/is-section/);
   await expect.poll(() => page.evaluate(() => (window as any).eval(`(async () => (await loadDocRevisions('legacydoc')).map(r => r.reason + ':' + r.nodes[1].text))()`))).toContain('Before rich text rows:Ship **today** or __never__');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_doc_v1_legacydoc') || '{}'));
-  expect(stored.rowFormat).toBe(3);
+  expect(stored.rowFormat).toBe(4);
   expect(stored.nodes[1].text).toBe('Ship today or never');
 });
 
@@ -335,7 +335,7 @@ test('a document saved with whole-row styles converts once to word formatting, o
   await expect(page.locator('.node-row[data-id="1"] .node-label b')).toHaveText('Bold row');
   await expect.poll(() => page.evaluate(() => (window as any).eval(`(async () => (await loadDocRevisions('styleddoc')).map(r => r.reason))()`))).toContain('Before whole-row styles became word formatting');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_doc_v1_styleddoc') || '{}'));
-  expect(stored.rowFormat).toBe(3);
+  expect(stored.rowFormat).toBe(4);
   expect(stored.nodes[0].styles.bold).toBe(false);
 });
 

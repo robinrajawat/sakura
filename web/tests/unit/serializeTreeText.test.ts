@@ -47,9 +47,9 @@ describe('serializeTreeTextCore', () => {
     expect(lines[2]).toContain('└──');
   });
 
-  it('writes the row\'s words via getNodePlainText ([[link]] brackets removed, typed [ ] kept)', () => {
+  it('writes the row\'s words via getNodePlainText (typed [ ] and [[ ]] kept)', () => {
     const result = serializeTreeTextCore([node(0, '[Section] see [[Other]]')], false, false, 4, false);
-    expect(result).toBe('[Section] see Other');
+    expect(result).toBe('[Section] see [[Other]]');
   });
 
   it('prepends dotted outline numbers when outlineNumbering is true', () => {

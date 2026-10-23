@@ -79,8 +79,7 @@ export type NodeMetaMap = Map<number, NodeMetaEntry> | null | undefined;
 /** Pure: matches index.html's own `getNodePlainText` exactly — duplicated here rather than
  * referenced via `declare function`, see this file's header for why. */
 function nodePlainText(node: TopologyNode): string {
-  return String(node.text || '')
-    .replace(/\[\[([\s\S]*?)\]\](?!\])/g, '$1');
+  return String(node.text || '');
 }
 
 function metaFor(nodeMeta: NodeMetaMap, node: TopologyNode): NodeMetaEntry | undefined {

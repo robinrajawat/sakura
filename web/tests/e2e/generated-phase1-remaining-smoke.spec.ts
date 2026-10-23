@@ -80,12 +80,12 @@ test.describe('generated Phase 1 batches (escapeHtml/generateId/formatRelativeTi
     });
     expect(relTime).toBe('1m ago');
 
-    // 4. getNodePlainText — removes only [[link]] brackets; typed markup is plain text (rows are rich text).
+    // 4. getNodePlainText — the words exactly as typed; formatting and row links are marks (rows are rich text).
     const stripped = await page.evaluate(() => {
       // @ts-expect-error
       return getNodePlainText({ text: '[Section] `code` (aside) **bold** [[link]]' });
     });
-    expect(stripped).toBe('[Section] `code` (aside) **bold** link');
+    expect(stripped).toBe('[Section] `code` (aside) **bold** [[link]]');
 
     // 5. computeOutlineNumbers, with outlineNumbering both on and off — the exact parameter
     // that had to become explicit at every real call site in this cutover. (serializeMarkdown,
