@@ -126,3 +126,44 @@ test('notes use the same Link box: Text and Address, in the bar', async ({ page 
   await page.keyboard.press('Enter');
   await expect.poll(() => page.evaluate('nodes[0].note')).toMatch(/^Spec(&nbsp;| )<a href="https:\/\/example\.com\/guide" target="_blank" rel="noopener noreferrer">Guide<\/a>$/);
 });
+
+test('right-click a web link in a row: the same Open / Copy / Edit / Remove items as in notes, above the row menu', async ({ page }) => {
+  await open(page);
+  await seedRow(page, 'Read the docs first');
+  await page.evaluate((u) => (window as any).eval(`setRowMarksOn(nodes[0], [{ s: 9, e: 13, k: 'a', v: ${JSON.stringify(u)} }]); render();`), URL);
+  const link = page.locator('.node-row[data-id="1"] a.row-weblink');
+  const menu = page.locator('.sb-context-menu');
+  await link.click({ button: 'right' });
+  const labels = await menu.locator('.sb-context-item').allInnerTexts();
+  expect(labels.slice(0, 4).map((l) => l.trim())).toEqual(['Open link', 'Copy link', 'Edit link…', 'Remove link']);
+  await menu.getByText('Copy link').click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(URL);
+
+  await link.click({ button: 'right' });
+  await menu.getByText('Edit link…').click();
+  await expect(page.locator('#sfmt-link-text')).toHaveValue('docs');
+  await page.locator('#sfmt-link-text').fill('guide');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => row(page)).toEqual({ text: 'Read the guide first', marks: [{ s: 9, e: 14, k: 'a', v: URL }] });
+  await page.keyboard.press(`${mod}+z`);
+  await expect.poll(async () => (await row(page)).text).toBe('Read the docs first');
+
+  await page.locator('.node-row[data-id="1"] a.row-weblink').click({ button: 'right' });
+  await menu.getByText('Remove link').click();
+  await expect.poll(() => row(page)).toEqual({ text: 'Read the docs first', marks: [] });
+});
+
+test('right-click a web link in a To-Do title: the same link items, then the task menu', async ({ page }) => {
+  await open(page, [{ id: 'a', text: 'Read the docs', marks: [{ s: 9, e: 13, k: 'a', v: URL }], marksText: 'Read the docs' }]);
+  await page.keyboard.press('Control+Shift+T');
+  const link = page.locator('.todo-text[data-id="a"] a.row-weblink');
+  await link.click({ button: 'right' });
+  const menu = page.locator('.sb-context-menu');
+  const labels = (await menu.locator('.sb-context-item').allInnerTexts()).map((l) => l.trim());
+  expect(labels.slice(0, 4)).toEqual(['Open link', 'Copy link', 'Edit link…', 'Remove link']);
+  expect(labels.length).toBeGreaterThan(4);
+  await menu.getByText('Remove link').click();
+  await expect(page.locator('.todo-text[data-id="a"] a.row-weblink')).toHaveCount(0);
+  const t = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0]);
+  expect(t.marks || []).toEqual([]);
+});
