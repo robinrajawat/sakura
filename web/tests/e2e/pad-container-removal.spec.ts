@@ -160,8 +160,8 @@ test.describe('Pad container removal', () => {
 
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
-    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
-    await expect(page.locator('#context-more-panel [data-action="diagram-gen"]')).toBeVisible();
+    await page.locator('#context-more-panel [data-flyout="insert"]').hover();
+    await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="diagram-gen"]')).toBeVisible();
     await page.keyboard.press('Escape');
 
     // The review screen always opens first (its skip setting was removed in item 14).

@@ -64,20 +64,20 @@ test.describe('Right-click menu is fixed: quick row + "More" with everything els
     const row = page.locator('.node-row[data-id="1"]');
     await row.click({ button: 'right' });
     const quick = await page.evaluate(() =>
-      [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map((b) => (b as HTMLElement).dataset.action));
+      [...document.querySelectorAll('#context-quickbar [data-action]')].map((b) => (b as HTMLElement).dataset.action));
     expect(quick).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'image']);
 
     await page.locator('#context-more-toggle').click();
     // Add-to-node leftovers (diagram-gen, date-time) live behind the Insert › flyout.
-    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
+    await page.locator('#context-more-panel [data-flyout="insert"]').hover();
     for (const action of ['child', 'above', 'below', 'duplicate', 'up', 'down', 'diagram-gen', 'date-time', 'delete']) {
-      await expect(page.locator(`#context-more-panel [data-action="${action}"]`), action).toBeVisible();
+      await expect(page.locator(`#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="${action}"]`), action).toBeVisible();
     }
     // Row settings live behind the Row › flyout.
-    await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="row"]').hover();
-    await expect(page.locator('#context-more-panel [data-action="tags"]')).toBeVisible();
+    await page.locator('#context-more-panel [data-flyout="row"]').hover();
+    await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="tags"]')).toBeVisible();
     for (const visibleAction of quick) {
-      await expect(page.locator(`#context-more-panel [data-action="${visibleAction}"]`)).toHaveCount(0);
+      await expect(page.locator(`#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="${visibleAction}"]`)).toHaveCount(0);
     }
   });
 
@@ -90,10 +90,10 @@ test.describe('Right-click menu is fixed: quick row + "More" with everything els
 
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     const quick = await page.evaluate(() =>
-      [...document.querySelectorAll('#context-quickbar .pv-qm-btn')].map((b) => (b as HTMLElement).dataset.action));
+      [...document.querySelectorAll('#context-quickbar [data-action]')].map((b) => (b as HTMLElement).dataset.action));
     expect(quick).toEqual(['note', 'remark', 'diagram', 'table', 'image', 'tags']);
     await page.locator('#context-more-toggle').click();
-    await expect(page.locator('#context-more-panel [data-action="ai-rewrite"]')).toHaveCount(0);
+    await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="ai-rewrite"]')).toHaveCount(0);
   });
 
   async function seedParentWithChild(page: import('@playwright/test').Page) {
@@ -123,6 +123,6 @@ test.describe('Right-click menu is fixed: quick row + "More" with everything els
     await row.click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
     await expect(page.locator('#context-sort-label')).toBeVisible();
-    await expect(page.locator('#context-more-panel [data-action="sort-az"]')).toBeVisible();
+    await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="sort-az"]')).toBeVisible();
   });
 });

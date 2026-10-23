@@ -1067,47 +1067,26 @@ body.zen-mode #quick-bar{display:none}
 .node-row.drag-over-child{background:color-mix(in srgb,var(--accent) 10%, transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 26%, transparent)}
 #editor-pane.drag-over-end{box-shadow:inset 0 -2px 0 0 var(--accent)}
 /* === Context Menu === */
-.context-menu{position:fixed;z-index:160;min-width:220px;display:none;flex-direction:column;overflow:hidden;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px}
-.context-menu.open{display:flex}
-.context-item{display:flex;align-items:center;gap:10px;width:auto;text-align:left;border:none;background:transparent;color:var(--fg);padding:8px 10px;font:inherit;cursor:pointer;border-radius:8px;margin:0 2px}
-.context-item:hover{background:var(--hover)}
-.context-item:active{background:var(--sel)}
-.context-item:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
-.context-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;color:var(--fg);font:600 14px 'Fira Code',monospace;letter-spacing:0;flex:0 0 auto}
-.context-icon.danger{color:#dc2626}
-.context-item.danger:hover{background:color-mix(in srgb,#dc2626 8%,transparent)}
-.context-label{font:400 13px 'Inter',sans-serif}
-.context-divider{height:1px;background:var(--border);margin:6px 6px}
-.ctx-pin{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;color:var(--hint);opacity:0;transition:opacity .12s}
-.context-item:hover .ctx-pin,.context-item:focus-visible .ctx-pin{opacity:1}
-.ctx-pin:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 #context-quickbar .pv-qm-btn.dragging{opacity:.4}
 #context-quickbar .pv-qm-btn.drop-target{box-shadow:inset 2px 0 0 var(--accent)}
 .context-icon-glyph{font-size:14px;line-height:1}
-.context-submenu-wrap{position:relative}
-.context-item.context-submenu-trigger{width:calc(100% - 4px)}
-.context-submenu-chevron{margin-left:auto;opacity:.55}
-.context-submenu{display:none;position:fixed;z-index:165;min-width:200px;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px}
-.context-submenu-wrap.open .context-submenu{display:flex}
-.context-submenu-wrap.open .context-submenu-trigger{background:var(--hover)}
-.context-sort-row{display:flex;align-items:center;gap:2px;padding:2px 6px 2px 12px}.context-sort-row-label{flex:1 1 auto;font:400 13px 'Inter',sans-serif;color:var(--fg)}.context-sort-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}.context-sort-btn:hover{background:var(--hover);color:var(--fg)}.context-sort-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
-.context-group-label{font:600 10px 'Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--hint);padding:4px 12px 2px;user-select:none}
 /* Quick-action row at the top of the node context menu — markers plus the
    most-used actions as icon buttons, so most right-clicks never need the
    full list. Deliberately reuses the node-marker popover's pv-qm-row/pv-qm-btn/pv-qm-mark/
    pv-qm-sep classes (see openNodeMarkerPopover) instead of a parallel set of
    near-identical rules, so the two surfaces are pixel-identical by
    construction rather than by two numbers happening to match. */
-.context-top-row{padding:0 0 8px}
+.context-top-row{padding:2px 2px 3px}
 .context-top-row .pv-qm-btn{font-size:16px;line-height:1}
 .context-top-row .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
 .context-top-row .pv-qm-btn:active{background:var(--sel)}
-.context-more-toggle{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;border:none;background:transparent;color:var(--hint);font:500 11px 'Inter',sans-serif;padding:6px 8px;border-radius:8px;cursor:pointer}
-.context-more-toggle:hover{background:var(--hover);color:var(--fg)}
-.context-more-toggle svg{transition:transform .15s}
-.context-more-toggle.expanded svg{transform:rotate(180deg)}
-.context-more-panel{display:none;flex-direction:column;overflow:hidden}
-.context-more-panel.open{display:flex}
+.sb-context-iconrow{display:flex;align-items:center;gap:3px;padding:1px 4px}
+.sb-context-iconrow-label{flex:1 1 auto;font:400 12px 'Inter',sans-serif;color:var(--fg);padding:0 8px 0 6px;white-space:nowrap}
+.sb-context-iconrow .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
+.sb-context-iconrow .pv-qm-btn.sb-context-active{background:var(--hover);color:var(--fg)}
+.sb-context-trail{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;color:var(--hint);opacity:0;transition:opacity .12s}
+.sb-context-item:hover .sb-context-trail,.sb-context-item.sb-context-active .sb-context-trail{opacity:1}
+.sb-context-trail:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 
 
 
@@ -4908,18 +4887,6 @@ body.printing-generic #gpe-overlay{
 
 </div><!-- /main content column -->
   </div><!-- /app-layout -->
-  <div id="context-menu" class="context-menu" role="menu" aria-label="Node actions">
-    <div class="pv-qm-row context-top-row" id="context-top-row" role="group" aria-label="Mark node and quick actions">
-      <span id="context-marker-row" role="group" aria-label="Mark node" style="display:contents"></span>
-      <span class="pv-qm-sep"></span>
-      <span id="context-quickbar" role="group" aria-label="Quick actions" style="display:contents"></span>
-    </div>
-    <button class="context-more-toggle" id="context-more-toggle" type="button" aria-expanded="false" aria-controls="context-more-panel">
-      <span>More</span>
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </button>
-    <div class="context-more-panel" id="context-more-panel"></div>
-  </div>
   <div id="node-timestamp-tip" role="tooltip"></div>
   <div id="img-resize-handle" data-tip="Drag to resize · double-click image to reset"></div>
   <div id="img-resize-label"></div>
@@ -20576,15 +20543,15 @@ function ctxQuickRowVisible(){
 }
 // Quick-row customisation. Every change works from what's actually shown, so the stored list is
 // always the visible order (at most CTX_QUICK_ROW_MAX entries).
-function setCtxQuickRow(list){
+function setCtxQuickRow(list,more){
   const clean=[...new Set(list)].filter(a=>CTX_ACTION_META[a]).slice(0,CTX_QUICK_ROW_MAX);
-  ctxQuickRowCustom=clean; savePrefs(); renderContextTopRow(); renderContextMorePanel(); updateContextMenuState?.();
+  ctxQuickRowCustom=clean; savePrefs(); reopenContextMenu(more);
 }
 function ctxQuickRowPin(actionId){
   const cur=ctxQuickRowVisible();
   if(cur.includes(actionId))return;
   if(cur.length>=CTX_QUICK_ROW_MAX){ showToast(`The quick row holds ${CTX_QUICK_ROW_MAX} — remove one first (right-click an icon)`); return; }
-  setCtxQuickRow([...cur,actionId]);
+  setCtxQuickRow([...cur,actionId],true);
 }
 function ctxQuickRowMove(actionId,delta){
   const cur=ctxQuickRowVisible(); const i=cur.indexOf(actionId); const j=i+delta;
@@ -20596,153 +20563,102 @@ function ctxQuickRowRemove(actionId){
   if(cur.length<=1){ showToast('Keep at least one quick action'); return; }
   setCtxQuickRow(cur.filter(a=>a!==actionId));
 }
-function ctxQuickRowReset(){ ctxQuickRowCustom=null; savePrefs(); renderContextTopRow(); renderContextMorePanel(); updateContextMenuState?.(); showToast('Quick row reset'); }
+function ctxQuickRowReset(){ ctxQuickRowCustom=null; savePrefs(); reopenContextMenu(false); showToast('Quick row reset'); }
 let _ctxQuickDragId=null;
-function renderContextTopRow(){
-  const markerRow=el('context-marker-row');
-  if(markerRow){
-    const curNode=contextMenuNodeId!==null?nodes.find(n=>n.id===contextMenuNodeId):null;
-    const curMarker=curNode?(curNode.marker||''):'';
-    markerRow.innerHTML=NODE_MARKERS.map(m=>`<button type="button" class="pv-qm-btn pv-qm-mark${curMarker===m?' active':''}" data-marker="${m}" data-color="${nodeMarkerColor(m)}" data-tip="${nodeMarkerLabel(m)}">${markIconSvg(m)}</button>`).join('');
-  }
-  const bar=el('context-quickbar'); if(!bar)return;
-  bar.innerHTML='';
+// The node right-click menu is the shared menu (showSbContextMenu, owner 2026-10-23: one menu
+// everywhere): on top one icon row -- the Agreed / Follow-up / Out of scope markers, then the quick
+// actions (CTX_QUICK_ROW, customisable: drag to reorder, right-click an icon, or pin from More) --
+// and under it a "More" fold with every other node action: Add / Move / Sort children icon rows,
+// AI, Insert › and Row › submenus, Delete.
+function ctxActionIcon(meta,size){
+  return meta.glyph?`<span class="context-icon-glyph">${esc(meta.glyph)}</span>`:`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`;
+}
+const CTX_PIN_ICON='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>';
+const CTX_SORT_ACTIONS=[['sort-az','Sort A → Z','<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'],
+  ['sort-za','Sort Z → A','<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'],
+  ['sort-depth','Sort by depth','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>']];
+// Which node actions apply to the current selection (the rest show disabled).
+function ctxActionEnabled(){
+  const roots=selectAllMode?[]:getSelectionRootIndexes(); const hasSelection=!selectAllMode&&roots.length>0;
+  const single=roots.length===1?roots[0]:null; const one=selectedId!==null&&!selectAllMode;
+  return {child:one, above:one, below:one, duplicate:hasSelection, focus:one&&multiSelectedIds.length<=1, tags:one,
+    up:roots.length===1&&single!==0, down:single!==null&&getSubtreeEnd(nodes,single)<nodes.length,
+    delete:hasSelection||selectAllMode, sort:single!==null&&nodeHasChildren(nodes,single)};
+}
+function ctxMenuItems(nodeId,moreOpen){
+  const on=ctxActionEnabled(); const enabled=a=>on[a]!==false;
+  const run=a=>async()=>{
+    const anchor=(a==='note'||a==='tags')?{left:_ctxLastX,right:_ctxLastX,top:_ctxLastY,bottom:_ctxLastY,height:0,width:0}:undefined;
+    contextMenuNodeId=null; await runQuickAction(a,nodeId,anchor);
+  };
+  const labelOf=a=>CTX_ACTION_META[a].dynamicLabel?ctxDynamicLabel(a):CTX_ACTION_META[a].label;
+  const curNode=nodes.find(n=>n.id===nodeId); const curMarker=curNode?(curNode.marker||''):'';
+  const top=NODE_MARKERS.map(m=>({icon:markIconSvg(m), label:nodeMarkerLabel(m), cls:'pv-qm-mark', current:curMarker===m, data:{marker:m,color:nodeMarkerColor(m)},
+    onClick:()=>{ contextMenuNodeId=null; if(nodeId!==null&&nodeId!==undefined){ setNodeMarker(nodeId,m); render(); } }}));
+  top.push({sep:true});
   let lastGroup=null;
-  ctxQuickRowVisible().forEach(actionId=>{
-    const meta=CTX_ACTION_META[actionId];
-    if(lastGroup!==null&&meta.group!==lastGroup){const sep=document.createElement('span'); sep.className='pv-qm-sep'; bar.appendChild(sep)}
+  ctxQuickRowVisible().forEach(a=>{
+    const meta=CTX_ACTION_META[a];
+    if(lastGroup!==null&&meta.group!==lastGroup)top.push({sep:true});
     lastGroup=meta.group;
-    const btn=document.createElement('button');
-    btn.type='button'; btn.className='pv-qm-btn'+(meta.danger?' pv-qm-danger':''); btn.dataset.action=actionId; btn.setAttribute('role','menuitem');
-    const label=meta.dynamicLabel?ctxDynamicLabel(actionId):meta.label;
-    btn.dataset.tip=label; btn.setAttribute('aria-label',label);
-    btn.innerHTML=meta.glyph?esc(meta.glyph):`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`;
-    // Drag an icon onto another to reorder; right-click one to move, remove, or reset the row.
-    btn.draggable=true;
-    btn.addEventListener('dragstart',e=>{ _ctxQuickDragId=actionId; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',actionId)}catch(_){} btn.classList.add('dragging'); });
-    btn.addEventListener('dragend',()=>{ _ctxQuickDragId=null; btn.classList.remove('dragging'); bar.querySelectorAll('.drop-target').forEach(b=>b.classList.remove('drop-target')); });
-    btn.addEventListener('dragover',e=>{ if(!_ctxQuickDragId||_ctxQuickDragId===actionId)return; e.preventDefault(); btn.classList.add('drop-target'); });
-    btn.addEventListener('dragleave',()=>btn.classList.remove('drop-target'));
-    btn.addEventListener('drop',e=>{ e.preventDefault(); btn.classList.remove('drop-target'); const from=_ctxQuickDragId; _ctxQuickDragId=null; if(!from||from===actionId)return; const cur=ctxQuickRowVisible().filter(a=>a!==from); cur.splice(cur.indexOf(actionId),0,from); setCtxQuickRow(cur); });
-    btn.addEventListener('contextmenu',e=>{
-      e.preventDefault(); e.stopPropagation();
-      const cur=ctxQuickRowVisible(); const i=cur.indexOf(actionId);
-      showSbContextMenu(e.clientX,e.clientY,[
-        {label:'Move left', disabled:i<=0, onClick:()=>ctxQuickRowMove(actionId,-1)},
-        {label:'Move right', disabled:i>=cur.length-1, onClick:()=>ctxQuickRowMove(actionId,1)},
-        {label:'Remove from quick row', onClick:()=>ctxQuickRowRemove(actionId)},
-        {divider:true},
-        {label:'Reset quick row', disabled:!ctxQuickRowCustom, onClick:()=>ctxQuickRowReset()}
-      ]);
-      document.querySelector('.sb-context-menu')?.addEventListener('mousedown',ev=>ev.stopPropagation());
-    });
-    bar.appendChild(btn);
+    top.push({icon:ctxActionIcon(meta,15), label:labelOf(a), action:a, danger:meta.danger, disabled:!enabled(a), onClick:run(a), init:btn=>ctxQuickButtonInit(btn,a)});
+  });
+  const quickSet=new Set(ctxQuickRowVisible());
+  const rest=ids=>ids.filter(a=>CTX_ACTION_META[a]&&!quickSet.has(a)&&ctxActionAllowed(a));
+  const inGroup=g=>rest(CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g));
+  // Any More action except Delete can be pinned to the quick row.
+  const item=a=>({label:labelOf(a), icon:ctxActionIcon(CTX_ACTION_META[a],14), action:a, danger:CTX_ACTION_META[a].danger, disabled:!enabled(a), onClick:run(a),
+    trail:a==='delete'?null:{cls:'ctx-pin', data:{pin:a}, icon:CTX_PIN_ICON, label:'Add to quick row', onClick:()=>ctxQuickRowPin(a)}});
+  const iconRow=(label,ids,extra)=>{ const list=rest(ids); return list.length?[{iconRow:list.map(a=>({icon:ctxActionIcon(CTX_ACTION_META[a],14), label:CTX_ACTION_META[a].label, action:a, disabled:!enabled(a), onClick:run(a)})), label, ...extra}]:[]; };
+  const more=[];
+  const group=list=>{ if(!list.length)return; if(more.length)more.push({divider:true}); more.push(...list); };
+  // Owner, 2026-10-20: Duplicate joins the Add row; Zoom in and Collapse/expand sit in Row ›.
+  group([...iconRow('Add',['child','above','below','duplicate']), ...iconRow('Move',['up','down']),
+    ...(on.sort?[{iconRow:CTX_SORT_ACTIONS.map(([a,label,svg])=>({icon:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`, label, action:a, onClick:run(a)})), label:'Sort children', id:'context-sort-label'}]:[])]);
+  group(inGroup('ai').map(item));
+  // Insert › holds what you can add to a node that isn't in the quick row; Row › what acts on this
+  // row and its branch.
+  const sub=(name,svg,groups)=>{ groups=groups.filter(([,l])=>l.length); if(!groups.length)return [];
+    const items=[]; groups.forEach(([heading,l],gi)=>{ if(heading)items.push({heading}); else if(gi)items.push({divider:true}); items.push(...l.map(item)); });
+    return [{label:name, icon:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`, data:{flyout:name.toLowerCase()}, submenu:items}]; };
+  group([...sub('Insert','<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',[['Basics',inGroup('node')],['Discuss',inGroup('discuss')],['Visuals',inGroup('visual')]]),
+    ...sub('Row','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/>',[[null,rest(['focus','fold'])],[null,inGroup('info')]])]);
+  group(inGroup('delete').map(item));
+  const items=[{iconRow:top, id:'context-quickbar', cls:'context-top-row', label:null}];
+  if(more.length)items.push({divider:true},{label:'More', id:'context-more-toggle', bodyId:'context-more-panel', open:!!moreOpen,
+    icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>', fold:more});
+  return items;
+}
+// Quick-row icons: drag one onto another to reorder; right-click one to move, remove, or reset.
+function ctxQuickButtonInit(btn,actionId){
+  btn.draggable=true;
+  const row=()=>btn.parentElement;
+  btn.addEventListener('dragstart',e=>{ _ctxQuickDragId=actionId; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',actionId)}catch(_){} btn.classList.add('dragging'); });
+  btn.addEventListener('dragend',()=>{ _ctxQuickDragId=null; btn.classList.remove('dragging'); row()?.querySelectorAll('.drop-target').forEach(b=>b.classList.remove('drop-target')); });
+  btn.addEventListener('dragover',e=>{ if(!_ctxQuickDragId||_ctxQuickDragId===actionId)return; e.preventDefault(); btn.classList.add('drop-target'); });
+  btn.addEventListener('dragleave',()=>btn.classList.remove('drop-target'));
+  btn.addEventListener('drop',e=>{ e.preventDefault(); btn.classList.remove('drop-target'); const from=_ctxQuickDragId; _ctxQuickDragId=null; if(!from||from===actionId)return; const cur=ctxQuickRowVisible().filter(a=>a!==from); cur.splice(cur.indexOf(actionId),0,from); setCtxQuickRow(cur); });
+  btn.addEventListener('contextmenu',e=>{
+    e.preventDefault(); e.stopPropagation();
+    const cur=ctxQuickRowVisible(); const i=cur.indexOf(actionId);
+    showSbContextMenu(e.clientX,e.clientY,[
+      {label:'Move left', disabled:i<=0, onClick:()=>ctxQuickRowMove(actionId,-1)},
+      {label:'Move right', disabled:i>=cur.length-1, onClick:()=>ctxQuickRowMove(actionId,1)},
+      {label:'Remove from quick row', onClick:()=>ctxQuickRowRemove(actionId)},
+      {divider:true},
+      {label:'Reset quick row', disabled:!ctxQuickRowCustom, onClick:()=>ctxQuickRowReset()}
+    ]);
   });
 }
-
-function renderContextMorePanel(){
-  const panel=el('context-more-panel'); if(!panel)return;
-  panel.innerHTML='';
-  const quickSet=new Set(ctxQuickRowVisible());
-  let any=false;
-  const addDivider=()=>{if(any){const d=document.createElement('div'); d.className='context-divider'; panel.appendChild(d)}};
-  const addItem=(actionId,container=panel)=>{
-    const meta=CTX_ACTION_META[actionId];
-    const btn=document.createElement('button');
-    btn.type='button'; btn.className='context-item'+(meta.danger?' danger':''); btn.dataset.action=actionId; btn.setAttribute('role','menuitem');
-    const icon=document.createElement('span'); icon.className='context-icon'+(meta.danger?' danger':'');
-    icon.innerHTML=meta.glyph?esc(meta.glyph):`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`;
-    const label=document.createElement('span'); label.className='context-label';
-    if(actionId==='note'){label.id='ctx-note-label'; label.textContent=_ctxNoteLabelText()} else if(meta.dynamicLabel){label.textContent=ctxDynamicLabel(actionId)} else label.textContent=meta.label;
-    btn.appendChild(icon); btn.appendChild(label);
-    // Any More action except Delete can be pinned to the quick row.
-    if(actionId!=='delete'){
-      const pin=document.createElement('span'); pin.className='ctx-pin'; pin.dataset.pin=actionId; pin.setAttribute('role','button'); pin.setAttribute('aria-label','Add to quick row'); pin.dataset.tip='Add to quick row';
-      pin.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>';
-      btn.appendChild(pin);
-    }
-    container.appendChild(btn);
-  };
-  // "More" lists every node action that isn't already an icon in the quick row, grouped
-  // (insert, structure, sort children, AI, content, info, delete) — so structural actions with no
-  // toolbar button any more (Insert above/below, Add child, Duplicate, Move up/down, Delete…)
-  // stay one right-click away.
-  const addGroupRemaining=(g,heading)=>{const remaining=CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a)); if(remaining.length){addDivider(); if(heading){const h=document.createElement('div'); h.className='context-group-label'; h.textContent=heading; panel.appendChild(h);} remaining.forEach(a=>addItem(a)); any=true}};
-  const allowedRemaining=ids=>ids.filter(a=>CTX_ACTION_META[a]&&!quickSet.has(a)&&ctxActionAllowed(a));
-  // Labelled rows of small icon buttons (the Sort children pattern): Add child/above/below and
-  // Move up/down each take one row instead of three and two.
-  const iconRow=(label,ids)=>{
-    const list=allowedRemaining(ids); if(!list.length)return;
-    const row=document.createElement('div'); row.className='context-sort-row context-icon-row';
-    const l=document.createElement('span'); l.className='context-sort-row-label'; l.textContent=label; row.appendChild(l);
-    list.forEach(a=>{ const meta=CTX_ACTION_META[a]; const b=document.createElement('button'); b.type='button'; b.className='context-sort-btn'; b.dataset.action=a; b.setAttribute('role','menuitem'); b.dataset.tip=meta.label; b.setAttribute('aria-label',meta.label); b.innerHTML=meta.glyph?`<span class="context-icon-glyph">${esc(meta.glyph)}</span>`:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`; row.appendChild(b); });
-    panel.appendChild(row); any=true;
-  };
-  // Owner, 2026-10-20: shorter More — Duplicate joins the Add row; Zoom in and Collapse/expand
-  // sit in the Row › flyout.
-  iconRow('Add',['child','above','below','duplicate']);
-  iconRow('Move',['up','down']);
-  // Sort children — three actions on one compact row (label + icon buttons) rather than three
-  // full-height rows; the whole row is hidden when the node has no children to sort (see
-  // updateContextMenuState).
-  {
-    // The row carries its own divider so hiding it doesn't leave two dividers stacked.
-    const sortWrap=document.createElement('div'); sortWrap.id='context-sort-label';
-    if(any){const d=document.createElement('div'); d.className='context-divider'; sortWrap.appendChild(d)}
-    const sortRow=document.createElement('div'); sortRow.className='context-sort-row'; sortWrap.appendChild(sortRow);
-    const sortLabel=document.createElement('span'); sortLabel.className='context-sort-row-label'; sortLabel.textContent='Sort children'; sortRow.appendChild(sortLabel);
-    [['sort-az','Sort A → Z','<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'],
-     ['sort-za','Sort Z → A','<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'],
-     ['sort-depth','Sort by depth','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>']
-    ].forEach(([actionId,label,svg])=>{
-      const btn=document.createElement('button'); btn.type='button'; btn.className='context-sort-btn'; btn.dataset.action=actionId; btn.setAttribute('role','menuitem'); btn.title=label; btn.setAttribute('aria-label',label);
-      btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg>`;
-      sortRow.appendChild(btn);
-    });
-    panel.appendChild(sortWrap);
-    any=true;
-  }
-  addGroupRemaining('ai');
-  // A "Label ›" flyout of grouped actions (heading null = no heading). Insert holds everything you
-  // can add to a node that isn't already in the quick row, grouped like the toolbar's Insert ▾;
-  // Row holds what acts on this row and its branch (Zoom in, Collapse/expand, Tags, Version
-  // history, Leave out of export).
-  const flyout=(name,iconSvg,groups,divider)=>{
-    groups=groups.filter(([,list])=>list.length); if(!groups.length)return false;
-    if(divider)addDivider();
-    const wrap=document.createElement('div'); wrap.className='context-submenu-wrap';
-    const trig=document.createElement('button'); trig.type='button'; trig.className='context-item context-submenu-trigger'; trig.dataset.flyout=name.toLowerCase(); trig.setAttribute('aria-haspopup','menu'); trig.setAttribute('aria-expanded','false');
-    trig.innerHTML='<span class="context-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+iconSvg+'</svg></span><span class="context-label">'+name+'</span><svg class="context-submenu-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
-    const sub=document.createElement('div'); sub.className='context-submenu'; sub.setAttribute('role','menu');
-    groups.forEach(([heading,list],gi)=>{ if(!heading&&gi){ const d=document.createElement('div'); d.className='context-divider'; sub.appendChild(d); } if(heading){ const h=document.createElement('div'); h.className='context-group-label'; h.textContent=heading; sub.appendChild(h); } list.forEach(a=>addItem(a,sub)); });
-    wrap.appendChild(trig); wrap.appendChild(sub); panel.appendChild(wrap);
-    // position:fixed so the menu's own overflow:hidden can't clip it; opens to the left near
-    // the screen edge.
-    const openSub=()=>{ if(wrap.classList.contains('open'))return; wrap.classList.add('open'); trig.setAttribute('aria-expanded','true'); const r=trig.getBoundingClientRect(); const m=(el('context-menu')||trig).getBoundingClientRect(); const w=sub.offsetWidth, h=sub.offsetHeight; let left=m.right+4; if(left+w>window.innerWidth-8)left=Math.max(8,m.left-w-4); sub.style.left=left+'px'; sub.style.top=Math.max(8,Math.min(r.top-6,window.innerHeight-h-8))+'px'; };
-    const closeSub=()=>{ wrap.classList.remove('open'); trig.setAttribute('aria-expanded','false'); };
-    trig.addEventListener('mouseenter',openSub);
-    trig.addEventListener('click',e=>{ e.stopPropagation(); if(wrap.classList.contains('open'))closeSub(); else openSub(); });
-    panel.addEventListener('mouseover',e=>{ if(!wrap.contains(e.target))closeSub(); });
-    any=true; return true;
-  };
-  const remainingIn=g=>CTX_ACTION_ORDER.filter(a=>CTX_ACTION_META[a].group===g&&!quickSet.has(a)&&ctxActionAllowed(a));
-  const hadInsert=flyout('Insert','<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',[['Basics',remainingIn('node')],['Discuss',remainingIn('discuss')],['Visuals',remainingIn('visual')]],true);
-  flyout('Row','<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/>',[[null,allowedRemaining(['focus','fold'])],[null,remainingIn('info')]],!hadInsert);
-  addGroupRemaining('delete');
-  // Nothing landed in the panel — don't show a "More" button that opens onto an empty panel.
-  const toggle=el('context-more-toggle');
-  if(toggle) toggle.style.display=any?'':'none';
-}
-
-function hideContextMenu(){const menu=el('context-menu'); if(!menu)return; menu.classList.remove('open'); menu.style.left=''; menu.style.top=''; contextMenuNodeId=null}
-function updateContextMenuState(){const menu=el('context-menu'); if(!menu)return; const roots=selectAllMode?[]:getSelectionRootIndexes(); const hasSelection=selectAllMode?false:(roots.length>0); const singleRootIdx=roots.length===1?roots[0]:null; const atTreeTop=singleRootIdx===0; const atTreeBottom=singleRootIdx!==null&&getSubtreeEnd(nodes,singleRootIdx)>=nodes.length; const set=(action,enabled)=>{const btn=menu.querySelector(`[data-action="${action}"]`); if(btn){btn.disabled=!enabled; btn.style.opacity=enabled?'1':'.45'; btn.style.pointerEvents=enabled?'auto':'none'}}; set('child',selectedId!==null&&!selectAllMode); set('above',selectedId!==null&&!selectAllMode); set('below',selectedId!==null&&!selectAllMode); set('duplicate',hasSelection); set('focus',selectedId!==null&&!selectAllMode&&multiSelectedIds.length<=1); set('tags',selectedId!==null&&!selectAllMode); set('up',roots.length===1&&!atTreeTop); set('down',roots.length===1&&!atTreeBottom); set('delete',hasSelection||selectAllMode); const canSort=singleRootIdx!==null&&nodeHasChildren(nodes,singleRootIdx); set('sort-az',canSort); set('sort-za',canSort); set('sort-depth',canSort); const sortLabel=el('context-sort-label'); if(sortLabel)sortLabel.style.display=canSort?'':'none';
-  // Marker active-state is set by renderContextTopRow when it builds the buttons (every
-  // call site here calls that first) — nothing marker-related left to do in this function.
-}
+function hideContextMenu(){ if(_sbContextEl&&_sbContextEl.id==='context-menu')closeSbContextMenu(); contextMenuNodeId=null; }
 let _ctxLastX=0,_ctxLastY=0;
-function _clampContextMenuPosition(x,y){const menu=el('context-menu'); if(!menu)return; const rect=menu.getBoundingClientRect(); const maxX=window.innerWidth-rect.width-8; const maxY=window.innerHeight-rect.height-8; menu.style.left=Math.max(8,Math.min(x,maxX))+'px'; menu.style.top=Math.max(8,Math.min(y,maxY))+'px'}
-function showContextMenu(x,y,id){if(id!==null&&id!==undefined){contextMenuNodeId=id; setSingleSelection(id); render()} const menu=el('context-menu'); if(!menu)return; renderContextTopRow(); renderContextMorePanel(); updateContextMenuState(); _ctxLastX=x; _ctxLastY=y; const moreToggle=el('context-more-toggle'); const morePanel=el('context-more-panel'); if(moreToggle){moreToggle.classList.remove('expanded'); moreToggle.setAttribute('aria-expanded','false')} if(morePanel)morePanel.classList.remove('open'); menu.style.left='-9999px'; menu.style.top='-9999px'; menu.classList.add('open'); _clampContextMenuPosition(x,y)}
-el('context-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); const toggle=el('context-more-toggle'); const panel=el('context-more-panel'); if(!toggle||!panel)return; const open=!panel.classList.contains('open'); panel.classList.toggle('open',open); toggle.classList.toggle('expanded',open); toggle.setAttribute('aria-expanded',String(open)); _clampContextMenuPosition(_ctxLastX,_ctxLastY)});
+function showContextMenu(x,y,id,opts){
+  if(id!==null&&id!==undefined){contextMenuNodeId=id; setSingleSelection(id); render()}
+  _ctxLastX=x; _ctxLastY=y;
+  showSbContextMenu(x,y,ctxMenuItems(contextMenuNodeId??selectedId,opts&&opts.more),{id:'context-menu',label:'Node actions'});
+}
+// After customising the quick row the node menu opens again where it was, showing the change.
+function reopenContextMenu(more){ if(contextMenuNodeId!==null)showContextMenu(_ctxLastX,_ctxLastY,null,{more}); }
 
 
 // === Checkbox feature ===
@@ -25082,13 +24998,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   if(action==='toggle-checked'){if(multiSelectedIds.length>1)toggleCheckboxMulti(); else{const _ri2=getIndex(nodes,_ctxNodeId); if(_ri2>=0&&isCheckboxNode(nodes[_ri2]))toggleCheckbox(_ctxNodeId);} return}
   if(action==='delete'){const ok=await confirmDeleteIfNeeded(); if(!ok)return; deleteSelected(); focusPane(); return}
 }
-el('context-menu').addEventListener('click',async e=>{
-  const pinBtn=e.target.closest('.ctx-pin');
-  if(pinBtn){ e.stopPropagation(); ctxQuickRowPin(pinBtn.dataset.pin); return; }
-  const markBtn=e.target.closest('.pv-qm-mark');
-  if(markBtn){ e.stopPropagation(); if(contextMenuNodeId!==null){setNodeMarker(contextMenuNodeId,markBtn.dataset.marker); hideContextMenu(); render();} return; }
-  const btn=e.target.closest('[data-action]'); if(!btn)return; const action=btn.dataset.action; const _ctxNodeId=contextMenuNodeId??selectedId; const _ctxAnchor=(action==='note'||action==='tags')?{left:_ctxLastX,right:_ctxLastX,top:_ctxLastY,bottom:_ctxLastY,height:0,width:0}:undefined; hideContextMenu(); await runQuickAction(action,_ctxNodeId,_ctxAnchor);
-});
 el('search-close').addEventListener('click',closeSearch);
 el('search-prev').addEventListener('click',()=>jumpSearch(-1));
 el('search-next').addEventListener('click',()=>jumpSearch(1));
@@ -27195,7 +27104,7 @@ function _sbContextKeyHandler(e){
 function closeSbContextMenu(e){
   // A click on a submenu's own parent item opens that submenu, and a fold row unfolds in place,
   // instead of closing everything.
-  if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger, .sb-context-fold'))return;
+  if(e&&e.type==='click'&&e.target?.closest?.('.sb-context-submenu-trigger, .sb-context-fold, .sb-context-keep'))return;
   if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
 // One level of submenu for showSbContextMenu: an item with `submenu:[...items]` renders as a parent
 // row with a chevron and opens a flyout beside it on hover, click, or →. The flyout is a child of
@@ -27233,6 +27142,26 @@ function _sbBuildItemButton(it, container, list){
     });
     return null;
   }
+  // A row of small icon buttons, optionally labelled ("Move  ↑ ↓"); {sep:true} draws a divider.
+  // The node menu's quick row and its Add / Move / Sort rows use it.
+  if(it.iconRow){
+    const row=document.createElement('div'); row.className='sb-context-iconrow'+(it.cls?' '+it.cls:''); if(it.id)row.id=it.id; row.setAttribute('role','group');
+    if(it.label){ const l=document.createElement('span'); l.className='sb-context-iconrow-label'; l.textContent=it.label; row.appendChild(l); row.setAttribute('aria-label',it.label); }
+    it.iconRow.forEach(t=>{
+      if(t.sep){ const sp=document.createElement('span'); sp.className='pv-qm-sep'; row.appendChild(sp); return; }
+      const b=document.createElement('button'); b.type='button'; b.className='pv-qm-btn sb-context-iconbtn'+(t.cls?' '+t.cls:'')+(t.current?' active':'')+(t.danger?' pv-qm-danger':'');
+      b.innerHTML=t.icon||''; b.dataset.tip=t.label; b.setAttribute('aria-label',t.label); b.setAttribute('role','menuitem');
+      if(t.action)b.dataset.action=t.action; if(t.data)Object.assign(b.dataset,t.data);
+      row.appendChild(b);
+      if(t.disabled){ b.disabled=true; return; }
+      b.addEventListener('click',async e=>{ e.stopPropagation(); closeSbContextMenu(); await t.onClick(); });
+      b.addEventListener('mouseenter',()=>{ if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false); _sbContextActiveIndex=list.indexOf(b); _sbContextUpdateHighlight(); });
+      if(t.init)t.init(b);
+      list.push(b);
+    });
+    container.appendChild(row);
+    return null;
+  }
   if(it.tiles){
     const grid=document.createElement('div'); grid.className='sb-context-tiles'; container.appendChild(grid);
     it.tiles.forEach(t=>{
@@ -27246,24 +27175,35 @@ function _sbBuildItemButton(it, container, list){
   // A row that unfolds its items in place, below it (folded by default) — for a list that is
   // useful but shouldn't lengthen the menu until asked for. Its items join the arrow-key order.
   if(it.fold){
-    const t=document.createElement('button'); t.type='button'; t.className='sb-context-item sb-context-fold'; t.setAttribute('aria-expanded','false');
+    const t=document.createElement('button'); t.type='button'; t.className='sb-context-item sb-context-fold'; t.setAttribute('aria-expanded','false'); if(it.id)t.id=it.id;
     t.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+'</span><svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
     let box=null, kids=[];
     t.addEventListener('click',e=>{
       e.stopPropagation();
       if(box){ box.remove(); box=null; kids.forEach(k=>{ const i=list.indexOf(k); if(i>=0)list.splice(i,1); }); kids=[]; t.setAttribute('aria-expanded','false'); return; }
-      box=document.createElement('div'); box.className='sb-context-fold-body';
+      unfold(); box.scrollIntoView({block:'nearest'});
+    });
+    const unfold=()=>{
+      box=document.createElement('div'); box.className='sb-context-fold-body'; if(it.bodyId)box.id=it.bodyId;
       kids=[]; it.fold.forEach(f=>_sbBuildItemButton(f, box, kids));
       t.after(box); list.splice(list.indexOf(t)+1,0,...kids); t.setAttribute('aria-expanded','true');
-      box.scrollIntoView({block:'nearest'});
-    });
+    };
     t.addEventListener('mouseenter',()=>{ if(container===_sbContextEl&&_sbSubEl)_sbCloseSubmenu(false); _sbContextActiveIndex=list.indexOf(t); _sbContextUpdateHighlight(); });
     container.appendChild(t); list.push(t);
+    if(it.open)unfold();
     return t;
   }
   const btn=document.createElement('button'); btn.className='sb-context-item'+(it.danger?' danger':'')+(it.disabled?' disabled':'')+(it.submenu?' sb-context-submenu-trigger':'');
   btn.innerHTML='<span class="sb-context-icon">'+(it.icon||'')+'</span><span class="sb-context-label">'+esc(it.label)+(it.sub?'<span class="sb-context-sub">'+esc(it.sub)+'</span>':'')+'</span>'+(it.meta?'<span class="sb-context-meta">'+esc(it.meta)+'</span>':'')+(it.submenu?'<svg class="sb-context-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>':'');
+  if(it.action)btn.dataset.action=it.action; if(it.data)Object.assign(btn.dataset,it.data);
   if(it.disabled){ if(it.title)btn.title=it.title; btn.disabled=true; container.appendChild(btn); return null; }
+  // A small button at the item's right end that acts without closing the menu (e.g. "Add to quick row").
+  if(it.trail){
+    const tr=document.createElement('span'); tr.className='sb-context-trail sb-context-keep'+(it.trail.cls?' '+it.trail.cls:''); tr.setAttribute('role','button');
+    tr.innerHTML=it.trail.icon||''; tr.dataset.tip=it.trail.label; tr.setAttribute('aria-label',it.trail.label); if(it.trail.data)Object.assign(tr.dataset,it.trail.data);
+    tr.addEventListener('click',e=>{ e.stopPropagation(); it.trail.onClick(); });
+    btn.appendChild(tr);
+  }
   if(it.submenu){
     btn._sbSubmenu=it.submenu; btn.setAttribute('aria-haspopup','menu');
     btn.addEventListener('click',e=>{ e.stopPropagation(); _sbOpenSubmenu(btn,false); });
@@ -27311,9 +27251,10 @@ function _sbFitMenuHeight(menu){
   const top=parseFloat(menu.style.top)||menu.getBoundingClientRect().top;
   menu.style.maxHeight=Math.max(120,window.innerHeight-top-8)+'px';
 }
-function showSbContextMenu(x,y,items){
+function showSbContextMenu(x,y,items,opts){
   closeSbContextMenu(); closeMoveMenu();
-  const menu=document.createElement('div'); menu.className='sb-context-menu'; _sbContextEl=menu;
+  const menu=document.createElement('div'); menu.className='sb-context-menu'; _sbContextEl=menu; menu.setAttribute('role','menu');
+  if(opts&&opts.id)menu.id=opts.id; if(opts&&opts.label)menu.setAttribute('aria-label',opts.label);
   _sbContextButtons=[];
   items.forEach(it=>_sbBuildItemButton(it, menu, _sbContextButtons));
   document.body.appendChild(menu);

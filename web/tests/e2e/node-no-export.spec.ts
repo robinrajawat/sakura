@@ -26,8 +26,8 @@ test.beforeEach(async ({ page }) => {
 async function toggleFromMenu(page: import('@playwright/test').Page, id: number, label: string) {
   await page.locator(`.node-row[data-id="${id}"]`).click({ button: 'right' });
   await page.locator('#context-more-toggle').click();
-  await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="row"]').hover();
-  const item = page.locator('#context-more-panel [data-action="no-export"]');
+  await page.locator('#context-more-panel [data-flyout="row"]').hover();
+  const item = page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="no-export"]');
   await expect(item).toContainText(label);
   await item.click();
 }

@@ -159,6 +159,19 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Node right-click menu is the shared menu.** Owner asked for a unified UI ("let's just make the
+changes" after an audit list: 1 node menu, 2 leftover sakuraPrompt popups, 3 confirm dialogs → Undo, 4 one toast,
+5 native title tooltips → data-tip; one PR each). `showContextMenu(x,y,id,{more})` now calls
+`showSbContextMenu(...,{id:'context-menu'})` with `ctxMenuItems(nodeId,moreOpen)`: one `iconRow` (markers +
+`ctxQuickRowVisible()`, id `context-quickbar`, drag/right-click via `ctxQuickButtonInit`), then a `fold` "More"
+(ids `context-more-toggle` / `context-more-panel`) holding Add/Move/Sort children icon rows, AI items, Insert › /
+Row › shared submenus (`data-flyout`), Delete. Enabled states: `ctxActionEnabled()`. Shared menu gained: `iconRow`
+items, `action`/`data` on any item, `trail` (pin button, `.sb-context-keep` doesn't close the menu), fold
+`id`/`bodyId`/`open`, menu `opts.id`/`label`. Quick-row changes call `reopenContextMenu(more)`. Old `#context-menu`
+DOM, delegated click handler, `renderContextTopRow`/`renderContextMorePanel`/`updateContextMenuState` and the old
+`.context-*` CSS are gone. Submenu items now live in `.sb-context-submenu` (only while hovered), not in the panel.
+Tests: `context-menu-shared.spec.ts`; context-menu specs updated.
+
 **2026-10-23: Thread kind icon is a menu; icons grey.** Owner asked to change an entry's kind by clicking its icon,
 and agreed icons go grey except where something is open. `threadKindIcon`: Decision, Agreed, Out of scope, answers and
 comments are `--hint`; open question `--accent`, open follow-up `--fc-orange` (editor, PDF and Copy thread all read
@@ -183,18 +196,6 @@ three `.sfmt-sep` dividers (B I U S | A Tx | Link | ✦); with 2+ rows (or all) 
 bar shows over the first one (`updateRowsFmtBar`, called from `render`, mouseup and scroll; `_selectionFmtEditorId`
 = `'rows'`, `data-mode="rows"` hides Link): buttons → `setWholeRowMarks`, Clear → `rowsFmtClear`, ✦ →
 `rewriteMultipleNodes`. Tests in `selection-popover-rows.spec.ts`.
-
-**2026-10-22: Row links are real links.** Owner: "make the editor as standard as possible"; no syntax left in row
-text. A row link is mark kind `r` (v = the linked row's id, `ROW_LINK_ID_RE`), drawn as `span.bl-link[data-r]`
-(`rowMarkTags`, read back by `readRowMarksFromDom`); words link to a web address or a row, never both (`setRowMark`).
-`@` (`commitAtSuggest`) puts the row's name in as linked words plus a space and keeps you editing. Click →
-`openRowLink`. Rename-safe by id; `renameBacklinksFor(id,old,new)` (commitEdit only) updates link words that were
-exactly the old name. Delete → `cleanupRowLinksTo(ids)`: links become plain words (words stay). Merge →
-`repointNodeLinks` repoints `r` marks. `getBacklinksTo`/`getBacklinkReferrers` read marks. `ROW_FORMAT`=4:
-`convertLegacyRowLinks` turns `[[Name]]` into linked words (unknown name → plain words), version "Before row links
-became real links". Typed `[[ ]]` is now plain text everywhere (`parseStyledText`/`previewParseStyledText` just
-escape; `getNodePlainText` returns the text as typed). Escape in a row now goes through `commitEdit` (`cancelEdit`),
-so it gets an undo step like clicking away. Tests: `row-links.spec.ts`, `rowMarks.test.ts`.
 
 ### In progress / not built
 

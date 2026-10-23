@@ -33,12 +33,12 @@ test('quick row: remove via right-click, pin from More, drag to reorder, persist
 
   // Pin "Insert date/time" from More.
   await page.locator('#context-more-toggle').click();
-  await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="insert"]').hover();
-  await page.locator('#context-more-panel .ctx-pin[data-pin="date-time"]').click({ force: true });
+  await page.locator('#context-more-panel [data-flyout="insert"]').hover();
+  await page.locator('#context-menu .ctx-pin[data-pin="date-time"]').click({ force: true });
   expect(await quick(page)).toEqual(['ai-rewrite', 'note', 'remark', 'diagram', 'table', 'date-time']);
   // The row is now full: pinning another is refused.
-  await page.locator('#context-more-panel .context-submenu-trigger[data-flyout="row"]').hover();
-  await page.locator('#context-more-panel .ctx-pin[data-pin="tags"]').click({ force: true });
+  await page.locator('#context-more-panel [data-flyout="row"]').hover();
+  await page.locator('#context-menu .ctx-pin[data-pin="tags"]').click({ force: true });
   expect(await quick(page)).toHaveLength(6);
 
   // Drag Table to the front.

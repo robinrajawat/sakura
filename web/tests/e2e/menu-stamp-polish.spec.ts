@@ -36,8 +36,8 @@ test.describe('Right-click sort row', () => {
     await page.locator('#context-more-toggle').click();
     const row = page.locator('#context-sort-label');
     await expect(row).toBeVisible();
-    await expect(row.locator('.context-sort-btn')).toHaveCount(3);
-    const boxes = await row.locator('.context-sort-btn').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    await expect(row.locator('[data-action^="sort-"]')).toHaveCount(3);
+    const boxes = await row.locator('[data-action^="sort-"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
     expect(new Set(boxes).size).toBe(1);
     await page.keyboard.press('Escape');
     await page.locator('.node-row[data-id="4"]').click({ button: 'right' });
