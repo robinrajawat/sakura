@@ -159,14 +159,16 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: One preview for pictures and diagrams.** Owner: unify the previews. Both share one header (`.pv-head`,
+`.pv-where`, `.pv-zoom`, `.pv-fit`, `.niv-btn` icons): place and counter, the item's own action (Mark up / Edit), zoom
+(level click or `0` = actual size, `F` = Fit, half of Fit at least), Copy, Download, Delete, Close. The picture preview is a
+fixed window like the diagram's (stepping never moves the buttons); diagrams get ← / → (`stepDiagramViewer`,
+`_dvSiblings`) and Delete. Hint line in both (`PREVIEW_HINT`, `replayPreviewHint`).
+Also: pasted www./mailto: addresses link in notes and threads (`pastedLinkUrl`); Help's Declutter text fixed.
+
 **2026-10-23: Right-click a link in a row or To-Do title.** Same menu as notes and threads (Open link, Copy link, Edit
 link…, Remove link) from one helper, `linkMenuItems`; rows/To-Dos use `markLinkMenuItems` on the link's mark range
 (`rowWebLinkAt`, `todoWebLinkAt`), shown above the row's usual menu (`opts.linkItems`). Tests in `link-box.spec.ts`.
-
-**2026-10-23: Copy shows "Copied" where you clicked.** Owner: Copy in the image preview felt unresponsive (the toast is
-drawn behind the preview overlays). `showCopiedOn(target)`: a header button (`.niv-copy`, `.dv-copy`) turns into a green
-check for 1.4s; a thumbnail (right-click › Copy image, pictures and diagrams) shows a small "✓ Copied" badge. No toast
-when there's a place to show it. Tests in `image-preview-export.spec.ts` and `node-diagram-inline-preview.spec.ts`.
 
 ### In progress / not built
 
@@ -180,7 +182,6 @@ when there's a place to show it. Tests in `image-preview-export.spec.ts` and `no
   saved field such as `docStatusAt`; undecided whether in the stamp or the cover's meta line).
 - Google sign-in CSP origins (`accounts.google.com`, `oauth2.googleapis.com`) stay in index.html's
   CSP until someone verifies live sign-in works without them; then remove them.
-- One Help paragraph (right-clicking empty space) still mentions "Documents/Templates buttons".
 
 ### Standing lessons
 
