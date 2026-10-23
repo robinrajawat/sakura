@@ -34,3 +34,29 @@ test('⋯ is the last icon of the quick row and unfolds More below it', async ({
   await expect(page.locator('#context-more-panel')).toHaveCount(0);
   await expect(menu).toBeVisible();
 });
+
+test('unfolding ⋯ near the bottom of the window moves the menu up instead of scrolling it', async ({ page }) => {
+  await page.evaluate(() => (window as any).eval(`
+    nodes = Array.from({ length: 40 }, (_, i) => normalizeNode({ id: i + 1, depth: 0, text: 'Row ' + (i + 1), parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} }));
+    rebuildParentIds(); nextId = 41; render();`));
+  // Right-click the last row that is fully on screen.
+  const id = await page.evaluate(() => [...document.querySelectorAll('.node-row')].filter((r) => r.getBoundingClientRect().bottom < window.innerHeight - 40).pop()!.getAttribute('data-id'));
+  await page.locator(`.node-row[data-id="${id}"]`).click({ button: 'right' });
+  await page.locator('#context-more-toggle').click();
+  const m = await page.locator('#context-menu').evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, bottom: el.getBoundingClientRect().bottom, vh: window.innerHeight }));
+  expect(m.scroll).toBeLessThanOrEqual(m.client);
+  expect(m.bottom).toBeLessThanOrEqual(m.vh);
+});
+
+test('right-clicking a quick-row icon keeps the node menu open, with its options under the icon', async ({ page }) => {
+  await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
+  const icon = page.locator('#context-quickbar [data-action="note"]');
+  await icon.click({ button: 'right' });
+  await expect(page.locator('#context-menu')).toBeVisible();
+  const flyout = page.locator('#context-menu .sb-context-submenu');
+  await expect(flyout).toContainText('Remove from quick row');
+  const [ib, fb] = [(await icon.boundingBox())!, (await flyout.boundingBox())!];
+  expect(fb.y).toBeGreaterThan(ib.y + ib.height - 1);
+  await flyout.getByText('Move right').click();
+  await expect(page.locator('#context-menu')).toBeVisible();
+});

@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Node menu fixes.** Owner saw a scrollbar when unfolding ⋯ near the window bottom: a grown menu now
+moves up first (`_sbRefitMenu`) and only scrolls when taller than the window. Right-clicking a quick-row icon closed
+the node menu: its Move left/right / Remove / Reset options now open as a flyout under the icon (`_sbOpenSubmenu`,
+repositioned), and a right-click inside a shared menu no longer closes it. Tests in `context-more-dots.spec.ts`.
+
 **2026-10-23: draw.io files pasted or dropped on a row.** Owner asked. `.drawio`/`.dio` and the `.drawio.svg`
 (`content` attribute) / `.drawio.png` (`mxfile` tEXt or zTXt chunk) exports become diagrams on that row
 (`drawioXmlFromFile`, `addDrawioFilesToNode`, `addDroppedFilesToNode` routes images vs diagrams); pasted draw.io XML
@@ -169,11 +174,6 @@ text too. Title = file name. Diagrams aren't in the undo snapshot, so the toast'
 quick row instead of its own line, so the node menu is one strip. Shared menu: an `iconRow` button with `fold:[...]`
 unfolds its items under the row (`_sbFoldToggle`, shared with fold rows); the ⋯ keeps ids `#context-more-toggle` /
 `#context-more-panel`. Test: `context-more-dots.spec.ts`.
-
-**2026-10-23: Thread names plain (unified UI part 6).** Owner agreed names go the normal text colour, semi-bold
-(not grey: the time beside them is grey). Removed per-person colours everywhere: editor entry and composer author
-(`--pc`), PDF `.pv-remark-meta b`, Copy thread `<b>`; `remarkAuthorColor` and `REMARK_AVATAR_PALETTE` are gone. Tests
-updated: discussion-items, preview-pdf-inline-qa-remarks, thread-copy.
 
 ### In progress / not built
 
