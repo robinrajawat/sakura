@@ -159,6 +159,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Confirm wording and Reset settings.** Unification item 4. Dialog titles are sentence case questions
+("Delete forever?", "Empty Trash?", "Turn off encryption?", "Delete this row?"), buttons sentence case ("Delete forever",
+"Undo restore", "Switch anyway"). "Clear all nodes" is "Clear all rows". Reset settings no longer asks: it keeps the old
+prefs in sessionStorage (`PREFS_UNDO_KEY`) through the reload, and the toast after the reload offers Undo.
+
 **2026-10-23: One menu for dropdowns.** Owner: "what's left to make it more elegant, standard and unified?" → item 1.
 Insert ▾, AI ▾, Export ▾ / Import ▾, the app bar's Import & Export (Export › / Import › flyouts), the document status chip
 (current one ticked: item `checked`) and the To-Dos ⋯ (Version history › flyout, `submenuId`) are `showSbContextMenu`
@@ -172,11 +177,6 @@ then Copy, Edit, Remove; `showLinkCard`, driven by `selectionchange` over `LINK_
 threads). Edit/Remove reuse each field's right-click items (`linkCardMenuItems`; To-Dos via
 `sakuraTodoTitleFmt.linkItems`). The Link box now opens under the words and labels its fields Text / Address. Fixed:
 right-click › Edit link… while editing a row placed the box from a detached link (rect captured before `commitEdit`).
-
-**2026-10-23: Thumbnail names match.** Owner asked for polish on the day's changes. A diagram's name under its
-thumbnail uses the picture caption's type (500 11px, muted) and, like an uncaptioned picture, shows nothing when untitled
-(`.node-diagram-preview-meta.is-empty`; Rename in the thumbnail menu adds `.renaming` to show the field). The stray
-"open in editor" icon at the far end of the diagram line is gone (`.node-inline-open-panel-btn`, its last user).
 
 ### In progress / not built
 

@@ -205,7 +205,7 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     await openDataSettings(page);
     await expect(page.locator('#sb-undo-restore-row')).toBeVisible();
     await page.locator('#sb-undo-restore-btn').click();
-    const undo = page.locator('#sakura-modal-actions .smodal-btn', { hasText: 'Undo Restore' });
+    const undo = page.locator('#sakura-modal-actions .smodal-btn', { hasText: 'Undo restore' });
     await expect(undo).toBeVisible();
     await Promise.all([page.waitForEvent('load'), undo.click()]);
     await dismissOverlays(page);

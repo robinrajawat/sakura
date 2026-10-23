@@ -118,7 +118,7 @@ test('Backspace on an empty row takes its remark along undoably, but asks first 
   expect(await page.evaluate("diagrams.some(d => d.id === 'd7')")).toBe(true);
 });
 
-test('Clear all nodes says what goes with them and removes it', async ({ page }) => {
+test('Clear all rows says what goes with them and removes it', async ({ page }) => {
   await seed(page);
   await page.evaluate('window.__clear = clearAllNodes(); 0;');
   await expect(page.locator('#sakura-modal-body')).toContainText('This also deletes 1 note, 1 question and 3 comments.');
