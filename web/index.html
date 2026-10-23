@@ -1986,6 +1986,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
+.thread-kind.is-clickable{cursor:pointer}.thread-kind.is-clickable:hover{background:color-mix(in srgb,currentColor 28%,var(--bg))}
 .thread-kind svg{width:11px;height:11px;stroke-width:2.6}
 .thread-entry .node-remark-person-inline,.thread-composer .thread-author-btn{color:var(--pc,var(--fg))}
 body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread-composer .thread-author-btn{color:color-mix(in srgb,var(--pc,var(--fg)) 55%,#fff)}
@@ -31147,15 +31148,16 @@ function remarkAuthorColor(name){
 // gets a faint comment icon; the name, in its per-person colour, says who. Not a dot: the outline
 // uses dots for rows.
 function threadKindIcon(r,thread){
-  if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--fc-green)',tip:'Decision'};
+  // Colour only where something is still open (owner, 2026-10-23): an open question (accent) and an
+  // open follow-up (orange); every other kind is grey -- its shape already says what it is.
+  if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--hint)',tip:'Decision'};
   if(r.status){ const m=markerForThreadStatus(r.status);
-    // Like a question, a follow-up keeps its colour only while open (done or settled: grey).
     if(m==='followup'&&followupState(r,thread||[r])!=='open')return {kind:'status',marker:m,svg:markIconSvg(m,14),color:'var(--hint)',tip:r.done?'Follow-up, done':'Follow-up, settled'};
-    return {kind:'status',marker:m,svg:markIconSvg(m,14),color:'var(--fc-'+(nodeMarkerColor(m)||'gray')+')',tip:THREAD_STATUS_LABEL[r.status]}; }
+    return {kind:'status',marker:m,svg:markIconSvg(m,14),color:m==='followup'?'var(--fc-orange)':'var(--hint)',tip:THREAD_STATUS_LABEL[r.status]}; }
   // An answer: ✓ / ✗ for a Yes / No, otherwise a reply arrow (its own kind, not a ✓ it didn't say).
   if(r.answerTo){
-    if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--fc-green)',tip:'Answer'};
-    const no=r.verdict==='no'; return {kind:'answer',svg:markIconSvg(no?'close':'confirmed',14),color:no?'var(--fc-red)':'var(--fc-green)',tip:no?'Answer: No':'Answer: Yes'};
+    if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--hint)',tip:'Answer'};
+    const no=r.verdict==='no'; return {kind:'answer',svg:markIconSvg(no?'close':'confirmed',14),color:'var(--hint)',tip:no?'Answer: No':'Answer: Yes'};
   }
   if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — answer it with Yes / No, or add an entry and mark it as the answer':'Question'}; }
   return {kind:'comment',svg:markIconSvg('comment',13),color:'var(--hint)',tip:'Comment'};
@@ -31296,6 +31298,9 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   const meta=document.createElement('div'); meta.className='thread-meta';
   const c=remarkAuthorColor(r.person);
   const kindEl=threadKindEl(r,thread,'thread-kind');
+  kindEl.classList.add('is-clickable'); kindEl.dataset.tip=kindEl.dataset.tip+' \u2014 click to change';
+  kindEl.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+  kindEl.addEventListener('click',e=>{ e.stopPropagation(); hideNodeTooltip(); const rr=kindEl.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadKindMenuItems(node,r,thread,commit)); });
   // An entry emptied and left (with no Yes/No or status chip to keep) is removed, so blank
   // entries never pile up or print. Moving between its own fields keeps it.
   const dropIfBlank=e=>{
@@ -31539,6 +31544,35 @@ function addFollowupToTodos(node,r){
   if(!id){ showToast('Nothing to add — the follow-up and its row are empty'); return; }
   showToast('Added to To-Dos','success');
   render();
+}
+// Clicking an entry's kind icon changes what the entry is (owner, 2026-10-23). The kinds are one
+// choice: picking one clears the others (undo brings them back). Answer links to a question before
+// it -- straight away when there is one, from a list when there are several.
+function threadKindMenuItems(node,r,thread,commit){
+  const ANSWER_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>';
+  const k=threadKindIcon(r,thread);
+  const cur=k.kind==='status'?k.marker:k.kind;
+  const tick=on=>on?'\u2713':'';
+  const clear=()=>{
+    delete r.decision; delete r.status; delete r.done; delete r.doneAt; delete r.owner; delete r.answerTo; delete r.verdict;
+    if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); }
+  };
+  const to=(kind,fn)=>()=>{ if(cur===kind)return; pushUndo(); clear(); if(fn)fn(); commit(); };
+  const earlierQs=threadQuestions(thread.slice(0,Math.max(0,thread.indexOf(r)))).filter(q=>q.id!==r.id);
+  const answerTo=q=>()=>{ if(r.answerTo===q.id)return; pushUndo(); clear(); r.answerTo=q.id; commit(); };
+  const items=[{heading:'Kind'},
+    {label:'Comment', icon:markIconSvg('comment'), meta:tick(cur==='comment'), onClick:to('comment')},
+    {label:'Question', icon:qaDotIconSvg(14), meta:tick(cur==='question'), onClick:to('question',()=>{ r.type='question'; })}];
+  if(!earlierQs.length)items.push({label:'Answer', icon:ANSWER_ICON, disabled:true, sub:'No question before it'});
+  else if(earlierQs.length===1)items.push({label:'Answer', icon:ANSWER_ICON, meta:tick(cur==='answer'), onClick:answerTo(earlierQs[0])});
+  else items.push({label:'Answer to', icon:ANSWER_ICON, submenu:earlierQs.slice().reverse().map(q=>({label:threadQuestionLabel(q), sub:(q.person?q.person+' \u00b7 ':'')+(questionState(q,thread)==='open'?'open':'answered'), meta:tick(r.answerTo===q.id), onClick:answerTo(q)}))});
+  items.push({label:'Decision', icon:markIconSvg('decision'), meta:tick(cur==='decision'), onClick:to('decision',()=>{ r.decision=true; })});
+  NODE_MARKERS.forEach(st=>items.push({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), meta:tick(cur===st), onClick:to(st,()=>{ r.status=st; })}));
+  // An answer can also say Yes or No.
+  if(cur==='answer')items.push({divider:true},
+    {label:'Yes', icon:markIconSvg('confirmed'), meta:tick(r.verdict==='yes'), onClick:()=>{ pushUndo(); if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; commit(); }},
+    {label:'No', icon:markIconSvg('close'), meta:tick(r.verdict==='no'), onClick:()=>{ pushUndo(); if(r.verdict==='no')delete r.verdict; else r.verdict='no'; commit(); }});
+  return items;
 }
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
