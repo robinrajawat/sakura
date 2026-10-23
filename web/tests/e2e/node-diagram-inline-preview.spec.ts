@@ -496,11 +496,12 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await seedOne(page);
     await page.locator('.node-diagram-preview-thumb').click({ button: 'right' });
     await page.locator('.sb-context-menu').getByText('Copy image').click();
-    await expect(page.locator('#toast')).toContainText('Image copied');
+    await expect(page.locator('.node-diagram-preview-thumb .copied-badge')).toHaveText('Copied');
     expect(await page.evaluate(async () => (await navigator.clipboard.read())[0].types)).toContain('image/png');
     await page.evaluate(() => navigator.clipboard.writeText(''));
     await page.locator('.node-diagram-preview-thumb').click();
     await page.locator('#diagram-viewer .dv-copy').click();
+    await expect(page.locator('#diagram-viewer .dv-copy')).toHaveClass(/is-copied/);
     await expect.poll(async () => page.evaluate(async () => (await navigator.clipboard.read())[0].types)).toContain('image/png');
   });
   // Owner, 2026-10-22: the margin comes from draw.io's export (its `border`), not from padding the file ourselves.
