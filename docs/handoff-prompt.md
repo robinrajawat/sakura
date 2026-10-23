@@ -159,22 +159,22 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: To-Do link on the same one-line card.** The task menu's "Link…" / "Change link…" (was "Link to row…")
+opens `#todo-link-popover` as the one-line card: one field takes a web address (`typedLinkAddress`: http(s)/www/mailto
+or host/path) or words to find a document or row (results listed under it, Enter picks the first); Open and Remove
+show once a link is set. The Web link / Link to a node tabs, the Display text box and Save are gone; a saved name is kept
+while its address is unchanged.
+
 **2026-10-23: One link editor: a one-line card; rename by typing over the words.** Owner chose this over a Text field.
 `#link-card` is one line: the address (`#link-card-addr`, edited in place) then Open, Copy, Remove. A link's words are
 renamed by selecting them and typing: a capture `beforeinput` handler (`_linkRetype`) keeps the typing inside the `<a>`
 (browsers keep only the first letter), in rows, To-Do titles, notes and threads. The bar's Link box is address-only.
 The header link (`#doc-link-menu`) uses the same card; its name is renamed on the chip (`#doc-link-label-input`,
-`#doc-link-wrap.renaming`), saved by `closeDocLinkMenu(keep)` on Enter or a click outside. Next: To-Do "Link to row…".
+`#doc-link-wrap.renaming`), saved by `closeDocLinkMenu(keep)` on Enter or a click outside.
 
 **2026-10-23: Link box stays open when the page scrolls.** Owner: no way to set the display text of a pasted address.
 The card's pencil (rows, notes, threads) opened the Link box, but in a scrolled document focusing it scrolled the page and the bar's scroll handler hid it at once.
 The scroll handler now keeps the bar open while focus is inside it (the Link box).
-
-**2026-10-23: Click a link to edit it.** Owner: "row text edit link still doesn't work". Cause: a plain click on a row link
-opened it, so the caret could never land in it and the link card (#632) never showed. Now one rule in rows, To-Do titles,
-notes and thread entries: a plain click puts the caret in the link (row: `beginEditAt` from the click point) and the card
-offers Open, Copy, Edit, Remove; Ctrl/Cmd+click opens it. Notes/threads used to open on the first click; changed for the
-same rule. Hover tip: "Ctrl/Cmd+click to open · click to edit".
 
 ### In progress / not built
 

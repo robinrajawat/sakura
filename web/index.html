@@ -3115,16 +3115,13 @@ body.printing-generic #gpe-overlay{
 .due-pop-clear-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:3px 6px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s}
 .due-pop-clear-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
 .due-pop-clear-btn:disabled{opacity:.35;cursor:default;pointer-events:none}
-#todo-link-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:280px;max-height:min(400px,calc(100vh - 16px));overflow-y:auto;font-family:'Inter',sans-serif}
+#todo-link-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.12);padding:4px;width:360px;max-width:calc(100vw - 16px);box-sizing:border-box}
 #todo-link-popover.open{display:block}
-.link-pop-tabs{display:flex;gap:2px;margin-bottom:9px;background:var(--hover);border-radius:7px;padding:2px}
-.link-pop-tab{flex:1;appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:5px 4px;border-radius:5px;cursor:pointer;transition:background .12s,color .12s}
-.link-pop-tab.active{background:var(--bg);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-#link-pop-node-search-row{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--edit-bg);border-radius:6px;padding:5px 8px;margin-bottom:6px;transition:border-color .12s,box-shadow .12s}
-#link-pop-node-search-row:focus-within{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
-#link-pop-node-search-row svg{flex:0 0 auto;color:var(--hint)}
-#link-pop-node-search-input{flex:1;min-width:0;appearance:none;border:none;background:none;color:var(--fg);font:400 12px 'Inter',sans-serif;outline:none}
-#link-pop-node-search-input::placeholder{color:var(--hint)}
+/* The same one-line card as a link in the text: one field for a web address or a row to find. */
+.todo-link-line{display:flex;align-items:center;gap:2px}
+.todo-link-line .link-card-input{flex:1 1 auto;width:auto}
+#todo-link-popover:not(.has-link) .tl-has{display:none}
+#link-pop-node-results:not(:empty){margin-top:4px;border-top:1px solid var(--border);padding-top:4px}
 #link-pop-node-results{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
 .link-pop-node-item{display:flex;flex-direction:column;gap:1px;padding:5px 7px;border-radius:6px;cursor:pointer;text-align:left;border:none;background:none;font-family:'Inter',sans-serif;width:100%}
 .link-pop-node-item:hover{background:var(--hover)}
@@ -3135,14 +3132,6 @@ body.printing-generic #gpe-overlay{
 .link-pop-node-empty{font:400 11px 'Inter',sans-serif;color:var(--hint);padding:8px 4px;text-align:center}
 .link-pop-node-group-label{font:600 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:6px 7px 3px;user-select:none}
 .link-pop-node-group-label:first-child{padding-top:2px}
-#todo-link-popover.node-tab #link-pop-save-btn{display:none}
-#link-pop-input-row{margin-bottom:9px;display:flex;flex-direction:column;gap:7px}
-#link-pop-input,#link-pop-label-input{width:100%;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:5px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
-#link-pop-input:focus,#link-pop-label-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
-#link-pop-input::placeholder,#link-pop-label-input::placeholder{color:var(--hint)}
-.link-pop-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:7px;border-top:1px solid var(--border)}
-#link-pop-save-btn{appearance:none;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 82%,var(--tb-bg) 18%);color:#fff;font:500 11px 'Inter',sans-serif;padding:4px 11px;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0}
-#link-pop-save-btn:hover{background:color-mix(in srgb,var(--accent) 92%,var(--tb-bg) 8%)}
 /* Drag handle: absolutely positioned so it overlays on hover rather than
    reserving flex space at rest (single-line element, left side). */
 .todo-drag-handle{position:absolute;left:2px;top:9px;width:14px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;transition:opacity .12s,color .12s}
@@ -4316,7 +4305,7 @@ body.printing-generic #gpe-overlay{
 <li><strong>Waiting for…</strong> (task menu) moves a task to Waiting: type who or what it waits for right on the row (names are suggested), Enter to keep. The row then says "Waiting for Karsten · since Oct 14"; click it to edit, empty it or pick Not waiting to stop</li>
 <li>A task can either <strong>repeat</strong> or hold <strong>sub-tasks</strong> — never both at once. Click the <strong>Repeat</strong> chip to cycle None → Daily → Weekdays → Weekly; checking off a recurring task doesn't complete it, it just advances the due date to the next occurrence (a toast confirms the new date), so recurring tasks never pile up in Completed. Once a repeat is set, a small repeat glyph also shows on the due-date chip, even before you've set a due date, so it's clear at a glance that a task recurs</li>
 <li>Click a task to expand it, then click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
-<li>Right-click a task, or hover it and click ⋯, for its menu: Pin, Waiting for…, Due date…, Repeat, Link to row…, Rewrite with AI (when AI is on), Copy, Delete</li>
+<li>Right-click a task, or hover it and click ⋯, for its menu: Pin, Waiting for…, Due date…, Repeat, Link…, Rewrite with AI (when AI is on), Copy, Delete</li>
 <li>Settings → To-Dos: auto-expire completed tasks after a set number of days, and cap how many completed tasks are kept (oldest drop first). The Completed section starts collapsed each time the panel opens — click its header to expand it</li>
 <li>Typing <strong>@</strong> directly in a task's text renders an inline chip: <span class="todo-at todo-at-person">@name</span> for an assignee, <span class="todo-at todo-at-date">@date</span> (ISO date, <span class="todo-at todo-at-date">@today</span>/<span class="todo-at todo-at-date">@tomorrow</span>, or a weekday like <span class="todo-at todo-at-date">@fri</span>) for a date reference, and <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) for status. A suggestion popup appears as you type, offering the date/status keywords plus any names you've already used as <span class="todo-at todo-at-person">@name</span> elsewhere — Arrow keys to navigate, Enter/Tab to accept, Escape to dismiss. These are colored text only — display convenience within the task text, not linked to the due date or link fields</li>
 <li><span class="todo-tag-chip">#tag</span> renders as a colored tag chip — same autocomplete popup, suggesting tags you've already used. <span class="todo-remark">&gt;remark</span> renders everything from the &gt; to the end of the line as a muted italic aside. Both are display only, same as @ tokens</li>
@@ -4772,28 +4761,14 @@ body.printing-generic #gpe-overlay{
   </div>
 </div>
 
-<div id="todo-link-popover" role="dialog" aria-label="Attach a link">
-  <div class="link-pop-tabs" role="tablist" aria-label="Link type">
-    <button type="button" class="link-pop-tab" id="link-pop-tab-web" role="tab" aria-selected="true">Web link</button>
-    <button type="button" class="link-pop-tab" id="link-pop-tab-node" role="tab" aria-selected="false">Link to a node</button>
+<div id="todo-link-popover" role="dialog" aria-label="Link">
+  <div class="todo-link-line">
+    <input id="link-pop-input" class="link-card-input" type="text" placeholder="Paste a web address, or type to find a row" autocomplete="off" spellcheck="false" maxlength="2000" aria-label="Web address or row to link" />
+    <span class="link-card-sep tl-has"></span>
+    <button type="button" class="link-card-btn tl-has" id="link-pop-open-btn" data-tip="Open link" aria-label="Open link"></button>
+    <button type="button" class="link-card-btn danger tl-has" id="link-pop-remove-btn" data-tip="Remove link" aria-label="Remove link"></button>
   </div>
-  <div id="link-pop-web-panel">
-    <div id="link-pop-input-row">
-      <input id="link-pop-label-input" type="text" placeholder="Display text (optional)" autocomplete="off" spellcheck="false" maxlength="80" />
-      <input id="link-pop-input" type="text" placeholder="https://…" autocomplete="off" spellcheck="false" maxlength="2000" />
-    </div>
-  </div>
-  <div id="link-pop-node-panel" style="display:none">
-    <div id="link-pop-node-search-row">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="link-pop-node-search-input" type="text" placeholder="Search documents &amp; nodes…" autocomplete="off" spellcheck="false" maxlength="200" />
-    </div>
-    <div id="link-pop-node-results"></div>
-  </div>
-  <div class="link-pop-footer">
-    <button type="button" class="due-pop-clear-btn" id="link-pop-remove-btn">Remove link</button>
-    <button type="button" id="link-pop-save-btn">Save</button>
-  </div>
+  <div id="link-pop-node-results"></div>
 </div>
 
 <div id="at-suggest"></div>
@@ -34715,7 +34690,7 @@ function waitingCandidates(todos) {
     const src=row&&row.querySelector(sel);
     const at=row&&(row.querySelector('.todo-more-btn')||row);
     if(!src||!at) return null;
-    return {getAttribute:k=>src.getAttribute(k), getBoundingClientRect:()=>at.getBoundingClientRect()};
+    return {getAttribute:k=>src.getAttribute(k), getBoundingClientRect:()=>at.getBoundingClientRect(), closest:q=>src.closest(q)};
   }
   // The task menu (⋯ on hover, or right-click) holds every setting; there is no edit card. Seven
   // plain items (owner, 2026-10-21, mockup todos-final-model-mockup.png): Pin, Waiting for…, Due
@@ -34737,7 +34712,7 @@ function waitingCandidates(todos) {
         items.push({label:'Repeat', meta:t.repeat?repeatLabel(t.repeat):'', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>', submenu:reps.map(([v,label])=>({label, icon:(t.repeat||null)===v?CHECK:'', onClick:()=>setTodoRepeat(t.id,v)}))});
       }
       const linked=!!(t.link||t.nodeRef);
-      items.push({label: linked?'Change link…':'Link to row…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-link'); if(a) openLinkEditor(a); }});
+      items.push({label: linked?'Change link…':'Link…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', onClick:()=>{ const a=todoMenuAnchor(t.id,'.todo-link'); if(a) openLinkEditor(a); }});
       items.push({divider:true});
     }
     // Rewrite with AI stays (an earlier AI cut-down kept it on tasks); only shown with AI on.
@@ -34938,19 +34913,6 @@ function waitingCandidates(todos) {
 
   // ── Link popover ──────────────────────────────────────────────────────
   let _linkId=null;
-  let _linkPopMode='web'; // 'web' | 'node'
-
-  function setLinkPopMode(mode){
-    _linkPopMode = mode==='node' ? 'node' : 'web';
-    const pop=document.getElementById('todo-link-popover');
-    if(pop) pop.classList.toggle('node-tab', _linkPopMode==='node');
-    const webTab=document.getElementById('link-pop-tab-web'), nodeTab=document.getElementById('link-pop-tab-node');
-    webTab?.classList.toggle('active', _linkPopMode==='web'); webTab?.setAttribute('aria-selected', String(_linkPopMode==='web'));
-    nodeTab?.classList.toggle('active', _linkPopMode==='node'); nodeTab?.setAttribute('aria-selected', String(_linkPopMode==='node'));
-    const webPanel=document.getElementById('link-pop-web-panel'); if(webPanel) webPanel.style.display=_linkPopMode==='web'?'':'none';
-    const nodePanel=document.getElementById('link-pop-node-panel'); if(nodePanel) nodePanel.style.display=_linkPopMode==='node'?'':'none';
-  }
-
   function renderNodeSearchResults(q){
     const box=document.getElementById('link-pop-node-results');
     if(!box) return;
@@ -34983,13 +34945,13 @@ function waitingCandidates(todos) {
         item.addEventListener('click', ()=>commitNodeRef(d.id, null));
         box.appendChild(item);
       });
-      const hint=document.createElement('div'); hint.className='link-pop-node-empty'; hint.textContent='Type to also search node text';
+      const hint=document.createElement('div'); hint.className='link-pop-node-empty'; hint.textContent='Type to find a row';
       box.appendChild(hint);
       return;
     }
     const docResults=searchDocsForTodoLink(query);
     const nodeResults=searchNodesForTodoLink(query);
-    if(!docResults.length && !nodeResults.length){ box.innerHTML='<div class="link-pop-node-empty">No matching documents or nodes</div>'; return; }
+    if(!docResults.length && !nodeResults.length){ box.innerHTML='<div class="link-pop-node-empty">No matching documents or rows</div>'; return; }
     box.innerHTML='';
     if(docResults.length){
       const label=document.createElement('div'); label.className='link-pop-node-group-label'; label.textContent='Documents';
@@ -35009,7 +34971,7 @@ function waitingCandidates(todos) {
       });
     }
     if(nodeResults.length){
-      const label=document.createElement('div'); label.className='link-pop-node-group-label'; label.textContent='Nodes';
+      const label=document.createElement('div'); label.className='link-pop-node-group-label'; label.textContent='Rows';
       box.appendChild(label);
       nodeResults.forEach(r=>{
         const item=document.createElement('button');
@@ -35024,37 +34986,40 @@ function waitingCandidates(todos) {
     }
   }
 
+  // The task's link uses the same one-line card as a link in the text (owner, 2026-10-23): one
+  // field takes a web address, or words to find a document or row (listed under it).
+  let _linkPopLabel=null, _linkPopUrl='';
+  function typedLinkAddress(v){
+    const t=String(v||'').trim(); if(!t||/\s/.test(t)) return '';
+    const pasted=pastedLinkUrl(t); if(pasted) return pasted;
+    // "example.com/path": a host with a path is an address, not words to search for.
+    return /^[a-z0-9-]+(\.[a-z0-9-]+)+\/\S*$/i.test(t)&&isRowLinkUrl('https://'+t) ? 'https://'+t : '';
+  }
+  function refreshLinkPopResults(){
+    const v=document.getElementById('link-pop-input')?.value||'';
+    const box=document.getElementById('link-pop-node-results'); if(!box) return;
+    if(typedLinkAddress(v)||(_linkPopUrl&&v.trim()===_linkPopUrl)){ box.innerHTML=''; return; }
+    renderNodeSearchResults(v);
+  }
   function openLinkEditor(btn){
     const id=btn.getAttribute('data-id');
     const current=btn.getAttribute('data-link')||'';
-    const currentLabel=btn.getAttribute('data-linklabel')||'';
     const refDoc=btn.getAttribute('data-noderef-doc')||'';
-    _linkId=id;
+    _linkId=id; _linkPopUrl=current; _linkPopLabel=btn.getAttribute('data-linklabel')||null;
 
     const pop=document.getElementById('todo-link-popover');
     if(!pop) return;
-    const rect=btn.getBoundingClientRect();
-    const pw=280;
-    let left=rect.left;
-    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
-    if(left<8) left=8;
+    // Under the task's line, where its words are.
+    const row=btn.closest('.todo-row'); const rect=(row?.querySelector('.todo-line')||btn).getBoundingClientRect();
+    const pw=Math.min(360,window.innerWidth-16);
+    let left=Math.max(8,Math.min(rect.left,window.innerWidth-pw-8));
     pop.style.left=left+'px';
     pop.style.top=(rect.bottom+4)+'px';
 
     const input=document.getElementById('link-pop-input');
     if(input) input.value=current;
-    const labelInput=document.getElementById('link-pop-label-input');
-    if(labelInput) labelInput.value=currentLabel;
-    const removeBtn=document.getElementById('link-pop-remove-btn');
-    if(removeBtn) removeBtn.disabled=!(current||refDoc);
-
-    // refDoc alone is the reliable "has a nodeRef" signal — a whole-document link legitimately
-    // has an empty data-noderef-node, so checking that instead would wrongly default to the
-    // Web link tab for those.
-    setLinkPopMode(refDoc ? 'node' : 'web');
-    const nodeSearchInput=document.getElementById('link-pop-node-search-input');
-    if(nodeSearchInput) nodeSearchInput.value='';
-    renderNodeSearchResults('');
+    pop.classList.toggle('has-link',!!(current||refDoc));
+    refreshLinkPopResults();
 
     pop.classList.add('open');
     const pr=pop.getBoundingClientRect();
@@ -35068,22 +35033,13 @@ function waitingCandidates(todos) {
       const top=(flippedTop>=8) ? flippedTop : Math.max(8, window.innerHeight-8-pr.height);
       pop.style.top=top+'px';
     }
-    setTimeout(()=>{
-      if(_linkPopMode==='web'){ input?.focus(); input?.select(); }
-      else { nodeSearchInput?.focus(); }
-    },30);
+    setTimeout(()=>{ input?.focus(); input?.select(); },30);
   }
 
   function closeLinkEditor(){
     const pop=document.getElementById('todo-link-popover');
     if(pop) pop.classList.remove('open');
     _linkId=null;
-  }
-
-  function commitLink(rawUrl, rawLabel){
-    if(_linkId===null) return;
-    setLink(_linkId, rawUrl, rawLabel);
-    closeLinkEditor();
   }
 
   function commitNodeRef(docId, nodeId){
@@ -35096,37 +35052,34 @@ function waitingCandidates(todos) {
     const pop=document.getElementById('todo-link-popover');
     if(!pop) return;
     const input=document.getElementById('link-pop-input');
-    const labelInput=document.getElementById('link-pop-label-input');
-    const nodeSearchInput=document.getElementById('link-pop-node-search-input');
-    document.getElementById('link-pop-tab-web')?.addEventListener('click', ()=>{
-      setLinkPopMode('web');
-      setTimeout(()=>{ input?.focus(); input?.select(); },10);
+    const icons=linkMenuItems({href:'',openHref:'',onEdit:()=>{},onRemove:()=>{}});
+    const openBtn=document.getElementById('link-pop-open-btn'), removeBtn=document.getElementById('link-pop-remove-btn');
+    if(openBtn) openBtn.innerHTML=icons[0].icon;
+    if(removeBtn) removeBtn.innerHTML=icons[3].icon;
+    openBtn?.addEventListener('click', ()=>{
+      const id=_linkId; if(id===null) return;
+      closeLinkEditor();
+      if(_linkPopUrl) window.open(sanitizeHrefUrl(_linkPopUrl),'_blank','noopener,noreferrer');
+      else document.querySelector(`#todos-body .todo-jump.todo-nodejump-open[data-id="${id}"]`)?.click();
     });
-    document.getElementById('link-pop-tab-node')?.addEventListener('click', ()=>{
-      setLinkPopMode('node');
-      setTimeout(()=>{ nodeSearchInput?.focus(); },10);
-    });
-    document.getElementById('link-pop-save-btn')?.addEventListener('click', ()=>commitLink(input?.value, labelInput?.value));
-    document.getElementById('link-pop-remove-btn')?.addEventListener('click', ()=>{
+    removeBtn?.addEventListener('click', ()=>{
       if(_linkId===null) return;
       clearTodoAttachment(_linkId);
       closeLinkEditor();
     });
+    input?.addEventListener('input', ()=>{ input.classList.remove('is-invalid'); refreshLinkPopResults(); });
     input?.addEventListener('keydown', e=>{
-      if(e.key==='Enter'){ e.preventDefault(); commitLink(input.value, labelInput?.value); }
-      else if(e.key==='Escape'){ e.preventDefault(); closeLinkEditor(); }
-    });
-    labelInput?.addEventListener('keydown', e=>{
-      if(e.key==='Enter'){ e.preventDefault(); commitLink(input?.value, labelInput.value); }
-      else if(e.key==='Escape'){ e.preventDefault(); closeLinkEditor(); }
-    });
-    nodeSearchInput?.addEventListener('input', e=>renderNodeSearchResults(e.target.value));
-    nodeSearchInput?.addEventListener('keydown', e=>{
-      if(e.key==='Escape'){ e.preventDefault(); closeLinkEditor(); }
-      else if(e.key==='Enter'){
-        e.preventDefault();
-        document.querySelector('#link-pop-node-results .link-pop-node-item')?.click();
-      }
+      if(e.key==='Escape'){ e.preventDefault(); closeLinkEditor(); return; }
+      if(e.key!=='Enter') return;
+      e.preventDefault();
+      const v=input.value.trim();
+      if(_linkId===null) return;
+      if(!v){ if(pop.classList.contains('has-link')) clearTodoAttachment(_linkId); closeLinkEditor(); return; }
+      const url=v===_linkPopUrl?v:typedLinkAddress(v);
+      // The name stays with the address it was given for.
+      if(url){ setLink(_linkId, url, url===_linkPopUrl?_linkPopLabel:null); closeLinkEditor(); return; }
+      const first=document.querySelector('#link-pop-node-results .link-pop-node-item');
+      if(first) first.click(); else { input.classList.add('is-invalid'); input.dataset.tip='No web address or matching row'; }
     });
     document.addEventListener('keydown', e=>{
       if(e.key==='Escape' && pop.classList.contains('open')){ e.stopPropagation(); closeLinkEditor(); }
@@ -36005,7 +35958,7 @@ function waitingCandidates(todos) {
           <li><span class="cs-desc">Sections: Pinned, Today, Upcoming, Anytime, Waiting; checked-off tasks fold into <strong>Done</strong></span></li>
           <li><span class="cs-desc">Long titles show two lines; click to edit the full text, click the background to open the task</span></li>
           <li><span class="cs-desc">A task can <strong>repeat</strong> (Daily/Weekdays/Weekly — completing it just advances the due date) or hold <strong>sub-tasks</strong> (nested checklist, parent auto-completes when all are checked) — not both at once</span></li>
-          <li><span class="cs-desc">Right-click or ⋯: Pin, Waiting for…, Due date…, Repeat, Link to row…, Copy, Delete</span></li>
+          <li><span class="cs-desc">Right-click or ⋯: Pin, Waiting for…, Due date…, Repeat, Link…, Copy, Delete</span></li>
           <li><span class="cs-desc">Type <span class="help-kbd">@</span> in task text for inline chips, with autocomplete — <span class="todo-at todo-at-person">@name</span> assignee, <span class="todo-at todo-at-date">@date</span> (e.g. <span class="todo-at todo-at-date">@tomorrow</span>, <span class="todo-at todo-at-date">@fri</span>), <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) — display only</span></li>
           <li><span class="cs-desc"><span class="help-kbd">#</span> for a <span class="todo-tag-chip">#tag</span> (autocompletes from prior tags), <span class="help-kbd">&gt;</span> for a <span class="todo-remark">muted remark</span> to end of line — both display only</span></li>
           <li><span class="cs-desc">Quick-find matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text too — it's a plain substring search over the task text</span></li>
