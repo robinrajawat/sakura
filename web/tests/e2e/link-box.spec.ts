@@ -167,3 +167,29 @@ test('right-click a web link in a To-Do title: the same link items, then the tas
   const t = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]')[0]);
   expect(t.marks || []).toEqual([]);
 });
+
+// Owner, 2026-10-23: editing a row's link "still not working optimally".
+test('Edit link… opens the box at the words, with no Back button; an address with spaces is refused, not saved', async ({ page }) => {
+  await open(page);
+  await seedRow(page, 'Read the docs first');
+  await page.evaluate((u) => (window as any).eval(`setRowMarksOn(nodes[0], [{ s: 9, e: 13, k: 'a', v: ${JSON.stringify(u)} }]); render();`), URL);
+  const link = page.locator('.node-row[data-id="1"] a.row-weblink');
+  const lb = (await link.boundingBox())!;
+  await link.click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Edit link…').click();
+  await expect(page.locator('#sfmt-url')).toBeFocused();
+  await expect(bar(page).locator('.sfmt-back')).toHaveCount(0);
+  // Starts at the words and stays over the editor (not spread over the file explorer).
+  const pb = (await bar(page).boundingBox())!;
+  const pane = (await page.locator('#editor-pane').boundingBox())!;
+  expect(Math.abs(pb.x - (lb.x - 14))).toBeLessThan(2);
+  expect(pb.x).toBeGreaterThanOrEqual(pane.x);
+  await page.keyboard.type('the new guide');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#sfmt-url')).toHaveClass(/is-invalid/);
+  await expect(bar(page)).toBeVisible();
+  expect((await row(page)).marks).toEqual([{ s: 9, e: 13, k: 'a', v: URL }]);
+  await page.keyboard.type('example.com/new');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => row(page)).toEqual({ text: 'Read the docs first', marks: [{ s: 9, e: 13, k: 'a', v: 'https://example.com/new' }] });
+});

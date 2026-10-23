@@ -1504,6 +1504,7 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .sfmt-menu-item.sfmt-danger{color:var(--muted)}
 .sfmt-menu-item.sfmt-danger:hover{color:var(--sem-alert)}
 .sfmt-url-fields{display:flex;flex-direction:column;gap:4px}
+.sfmt-url.is-invalid{border-color:var(--fc-red);box-shadow:0 0 0 2px color-mix(in srgb,var(--fc-red) 18%,transparent)}
 .sfmt-url{width:min(260px,62vw);border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--fg);font:13px 'Inter',sans-serif;padding:5px 8px;outline:none}
 .sfmt-url:focus{border-color:var(--accent)}
 .sfmt-menu-item.sfmt-url-ok{color:var(--accent);font-weight:600}
@@ -36479,7 +36480,8 @@ function openLinkBoxAt(anchorEl,editorId,target){
   if(!anchorEl||!target)return;
   const rect=anchorEl.getBoundingClientRect();
   showSelectionFmtPopoverForRange({getBoundingClientRect:()=>rect},editorId);
-  _sfmtLinkTarget=target; openSelectionFmtUrlBox();
+  // Opened on its own (a link's Edit link…), so there's no bar to go back to.
+  _sfmtLinkTarget={...target,noBack:true}; openSelectionFmtUrlBox();
 }
 // Enter applies (from either field), Escape closes, Remove (when the words are linked) unlinks.
 function openSelectionFmtUrlBox(){
@@ -36488,7 +36490,7 @@ function openSelectionFmtUrlBox(){
   // happens now and can't pull focus back from the box.
   if(editingId!==null){ commitEdit(); render(); }
   const selectedUrl=pastedLinkUrl(t.text);
-  box.innerHTML=`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`
+  box.innerHTML=(t.noBack?'':`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`)
     +`<span class="sfmt-url-fields">`
     +`<input type="text" class="sfmt-url" id="sfmt-link-text" placeholder="Text to show" spellcheck="false" autocomplete="off" aria-label="Text to show">`
     +`<input type="text" class="sfmt-url" id="sfmt-url" placeholder="Paste or type a web address" spellcheck="false" autocomplete="off" aria-label="Web address">`
@@ -36503,6 +36505,7 @@ function openSelectionFmtUrlBox(){
   // The words are an address themselves: what's left to type is the words to show instead.
   const first=selectedUrl?textField:field; first.focus(); first.select();
   [textField,field].forEach(f=>f.addEventListener('keydown',e=>{
+    if(f===field&&e.key!=='Enter')field.classList.remove('is-invalid');
     if(e.key==='Enter'){ e.preventDefault(); applySelectionFmtUrl(); }
     else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); hideSelectionFmtPopover(); }
   }));
@@ -36517,12 +36520,16 @@ function normalizeTypedLinkUrl(raw){
 function applySelectionFmtUrl(){
   const t=_sfmtLinkTarget; const field=el('sfmt-url'); const textField=el('sfmt-link-text'); if(!t||!field)return;
   const url=normalizeTypedLinkUrl(field.value);
+  // An address with spaces in it (often the words typed into the wrong box) isn't a link:
+  // say so on the field and keep the box open, rather than saving a broken address.
+  if(url&&(/\s/.test(field.value.trim())||!isRowLinkUrl(url))){
+    field.classList.add('is-invalid'); field.dataset.tip='Not a web address. Addresses have no spaces'; field.focus(); field.select(); return;
+  }
   // Text left as it was (or emptied) keeps the words; typed text replaces them.
   const typed=textField?textField.value.trim():'';
   const text=textField&&textField.value!==t.shown&&typed?typed:t.text;
   hideSelectionFmtPopover();
   if(!url)return;
-  if(!isRowLinkUrl(url)){ showToast('That address can\'t be used as a link'); return; }
   t.apply(text,url);
 }
 function showSelectionFmtPopoverForRange(range,editorId){
@@ -36546,6 +36553,13 @@ function placeSelectionFmtPopover(rect){
   // viewport so a selection near an edge doesn't push the popover off-screen.
   const popRect=pop.getBoundingClientRect();
   let left=rect.left+rect.width/2-popRect.width/2;
+  // The Link box starts at the words (as in a document editor) and stays over the editor, so it
+  // doesn't spread over the file explorer.
+  if(pop.dataset.pick==='url'){
+    left=rect.left-14;
+    const pane=el('editor-pane')?.getBoundingClientRect();
+    if(pane&&rect.left>=pane.left&&rect.left<=pane.right)left=Math.max(pane.left+6,Math.min(left,pane.right-popRect.width-6));
+  }
   let top=rect.top-popRect.height-8;
   // On a touch screen the phone's own copy/paste bar sits above the selection, so go below it.
   const touch=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
