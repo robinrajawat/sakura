@@ -159,16 +159,20 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-23: Diagram stamp.** Owner: the diagram status was only visible in the draw.io editor; make it a stamp. New
+field `d.stamp` ('' or the document set draft/review/approved/rejected, `DIAGRAM_STAMPS`); `diagramStampOf` reads old
+`status` (final → approved, review → review, in-progress → draft, the old default draft → no stamp). `stampedDiagramSrc`
+adds a band above the SVG (viewBox grows upwards, draw.io's `content` kept) with the tilted stamp at its right; used for the
+thumbnail, preview, PDF (`diagramDisplayPages`), Copy and Download. Picked from a 2×2 choices menu (`diagramStampItems`) in
+the preview header (`.dv-stamp`), the thumbnail menu (Stamp ›) and the draw.io editor chip. Menus opened inside a preview now
+sit above it. Not in the outline's undo. Tests: `diagram-stamp.spec.ts`.
+
 **2026-10-23: One preview for pictures and diagrams.** Owner: unify the previews. Both share one header (`.pv-head`,
 `.pv-where`, `.pv-zoom`, `.pv-fit`, `.niv-btn` icons): place and counter, the item's own action (Mark up / Edit), zoom
 (level click or `0` = actual size, `F` = Fit, half of Fit at least), Copy, Download, Delete, Close. The picture preview is a
 fixed window like the diagram's (stepping never moves the buttons); diagrams get ← / → (`stepDiagramViewer`,
 `_dvSiblings`) and Delete. Hint line in both (`PREVIEW_HINT`, `replayPreviewHint`).
 Also: pasted www./mailto: addresses link in notes and threads (`pastedLinkUrl`); Help's Declutter text fixed.
-
-**2026-10-23: Right-click a link in a row or To-Do title.** Same menu as notes and threads (Open link, Copy link, Edit
-link…, Remove link) from one helper, `linkMenuItems`; rows/To-Dos use `markLinkMenuItems` on the link's mark range
-(`rowWebLinkAt`, `todoWebLinkAt`), shown above the row's usual menu (`opts.linkItems`). Tests in `link-box.spec.ts`.
 
 ### In progress / not built
 
