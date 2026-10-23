@@ -1970,8 +1970,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
 .thread-kind.is-clickable{cursor:pointer}.thread-kind.is-clickable:hover{background:color-mix(in srgb,currentColor 28%,var(--bg))}
 .thread-kind svg{width:11px;height:11px;stroke-width:2.6}
-.thread-entry .node-remark-person-inline,.thread-composer .thread-author-btn{color:var(--pc,var(--fg))}
-body.theme-dark .thread-entry .node-remark-person-inline,body.theme-dark .thread-composer .thread-author-btn{color:color-mix(in srgb,var(--pc,var(--fg)) 55%,#fff)}
 .pv-remark-kind{grid-row:1 / span 2;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:0;border-radius:50%;background:color-mix(in srgb,currentColor 15%,#fff);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-remark-kind svg{width:11px;height:11px;stroke-width:2.6}
 
@@ -2509,7 +2507,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-thread-verdict{color:var(--muted)}
 .pv-thread-status-note{color:var(--muted)}.pv-thread-status-note.is-open{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-remark-meta+.pv-remark-text{margin-top:3px}
-.pv-remark-meta b{font-weight:600;color:var(--pc,var(--fg));-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-remark-meta b{font-weight:600;color:var(--fg)}
 .pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
 .pv-remarks-section-item{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 .pv-remarks-section-item:last-child{border-bottom:none}
@@ -5158,18 +5156,7 @@ body.printing-generic #gpe-overlay{
 </div>
 <script>
 const STORAGE_KEY='sakura_v001'; const META_KEY='sakura_v001_meta';
-const REMARK_AVATAR_PALETTE=[
-  {bg:'#dae8fc',fg:'#6c8ebf',avatarBg:'#567299'}, // blue
-  {bg:'#d5e8d4',fg:'#82b366',avatarBg:'#5b7d47'}, // green
-  {bg:'#e1d5e7',fg:'#9673a6',avatarBg:'#876795'}, // purple
-  {bg:'#f8cecc',fg:'#b85450',avatarBg:'#b85450'}, // red-pink
-  {bg:'#ffe6cc',fg:'#d79b00',avatarBg:'#966c00'}, // amber
-  {bg:'#d4f0f0',fg:'#3a9e9e',avatarBg:'#2e7e7e'}, // teal
-  {bg:'#fde2ec',fg:'#c2557d',avatarBg:'#a8466c'}, // rose
-  {bg:'#e4e6f8',fg:'#5a62b8',avatarBg:'#4b52a0'}, // indigo
-  {bg:'#e9f1d6',fg:'#6f8f2a',avatarBg:'#5d7a22'}, // olive
-  {bg:'#f3e3d6',fg:'#a0623a',avatarBg:'#8a5330'}, // brown
-]; const PREFS_KEY='sakura_v001_prefs';
+const PREFS_KEY='sakura_v001_prefs';
 const DOCS_INDEX_KEY='sakura_docs_index_v1'; const DOC_KEY_PREFIX='sakura_doc_v1_'; const CURRENT_DOC_KEY='sakura_current_doc_v1';
 let activeTagFilter=null; // null = no filter, string = filter by this tag
 let activeMarkerFilter=null; // null = no filter, one of NODE_MARKERS otherwise
@@ -29777,10 +29764,9 @@ function formatThreadTimeAbsolute(r,prev){
 function previewRenderRemarkEntry(r,thread,prev){
   const entry=document.createElement('div'); entry.className='pv-remark-entry';
   const meta=document.createElement('div'); meta.className='pv-remark-meta';
-  const authorColor=remarkAuthorColor(r.person);
   // Same kind icon as the editor, and the name in its colour.
   entry.appendChild(threadKindEl(r,thread,'pv-remark-kind'));
-  if(r.person){ const bEl=document.createElement('b'); bEl.textContent=r.person; bEl.style.setProperty('--pc',authorColor.avatarBg); meta.appendChild(bEl); }
+  if(r.person){ const bEl=document.createElement('b'); bEl.textContent=r.person; meta.appendChild(bEl); }
   else { const q=document.createElement('span'); q.className='pv-remark-anon'; q.textContent=r.answerTo?'Answer':'Unnamed'; meta.appendChild(q); }
   const when=formatThreadTimeAbsolute(r,prev); if(when)meta.appendChild(document.createTextNode(' · '+when));
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
@@ -31127,20 +31113,9 @@ function remarkAuthorInitials(name){
   if(words.length===1)return words[0].slice(0,2).toUpperCase();
   return (words[0][0]+words[words.length-1][0]).toUpperCase();
 }
-// Each person in the document gets their own colour, in the order they first spoke in it, so up
-// to REMARK_AVATAR_PALETTE.length people never share one (a name hash put Karsten, Robin and Gro
-// on the same amber). Someone not in the document yet takes the next free colour.
-function remarkAuthorColor(name){
-  const s=String(name||'').trim().toLowerCase();
-  if(!s)return {bg:'#e8e6e0',fg:'#8a8780',avatarBg:'#75736d'};
-  const order=[];
-  (Array.isArray(remarks)?remarks.slice():[]).sort((a,b)=>((a&&a.createdAt)||0)-((b&&b.createdAt)||0)).forEach(r=>{ const n=String(r&&r.person||'').trim().toLowerCase(); if(n&&!order.includes(n))order.push(n); });
-  let i=order.indexOf(s); if(i<0)i=order.length;
-  return REMARK_AVATAR_PALETTE[i%REMARK_AVATAR_PALETTE.length];
-}
 // A thread entry's kind icon (owner design 2026-10-15, replacing the initials avatar): the column
 // left of each entry says WHAT it is -- decision, status, answer, question -- and a plain comment
-// gets a faint comment icon; the name, in its per-person colour, says who. Not a dot: the outline
+// gets a faint comment icon; the name says who. Not a dot: the outline
 // uses dots for rows.
 function threadKindIcon(r,thread){
   // Colour only where something is still open (owner, 2026-10-23): an open question (accent) and an
@@ -31291,7 +31266,6 @@ function renderNodeThread(node,placeLine){
 function renderThreadEntry(node,r,thread,place,commit,prev){
   const line=document.createElement('div'); line.className='node-remark-line thread-entry'; line.dataset.remarkId=r.id;
   const meta=document.createElement('div'); meta.className='thread-meta';
-  const c=remarkAuthorColor(r.person);
   const kindEl=threadKindEl(r,thread,'thread-kind');
   kindEl.classList.add('is-clickable'); kindEl.dataset.tip=kindEl.dataset.tip+' \u2014 click to change';
   kindEl.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
@@ -31305,7 +31279,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   };
   // The author is picked like on the reply line (owner request): click → the names in this document,
   // or "Someone else…" to type one. Focusable, so moving here from an emptied entry keeps it.
-  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another'; person.style.setProperty('--pc',c.avatarBg);
+  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another';
   const typing=()=>person.contentEditable==='true';
   const openAuthorMenu=()=>{
     const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -31325,7 +31299,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     if(!typing()){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openAuthorMenu(); } return; }
     if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); }
   });
-  person.addEventListener('blur',e=>{ if(person._menuOpen){ person._menuOpen=false; return; } const was=typing(); person.contentEditable='false'; const val=(person.textContent||'').trim(); person.textContent=val; const changed=was&&val!==(r.person||''); if(was)r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); person.style.setProperty('--pc',remarkAuthorColor(val).avatarBg); });
+  person.addEventListener('blur',e=>{ if(person._menuOpen){ person._menuOpen=false; return; } const was=typing(); person.contentEditable='false'; const val=(person.textContent||'').trim(); person.textContent=val; const changed=was&&val!==(r.person||''); if(was)r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); });
   const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date or time';
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
@@ -31475,8 +31449,8 @@ function threadHtmlToPlain(html){
   return (d.body.textContent||'').split('\n').map(l=>l.replace(/\s+/g,' ').trim()).filter(Boolean).join('\n');
 }
 // A pasted email or chat drops SVG and CSS variables, so the rich copy carries each entry's kind as a
-// text symbol in its colour (the kind icon's meaning and colour, resolved to rgb), and the name in
-// its per-person colour (owner, 2026-10-16).
+// text symbol in its colour (the kind icon's meaning and colour, resolved to rgb); names are plain
+// bold, like in the editor (owner, 2026-10-23).
 const THREAD_COPY_GLYPH={decision:'\u{1F91D}',followup:'\u2691',confirmed:'\u2713',parked:'\u2298',yes:'\u2713',no:'\u2717',answer:'\u21b3',question:'?',comment:'\u2022'};
 function threadCopyGlyph(r,thread){
   const k=threadKindIcon(r,thread);
@@ -31500,8 +31474,7 @@ function threadCopyContent(nodeId){
     const quoted=threadQuotedQuestion(r,thread);
     const body=htmlHasVisibleText(r.text)?sakuraSanitizeRichHtml(r.text||''):'';
     const g=threadCopyGlyph(r,thread);
-    const nameColor=r.person?remarkAuthorColor(r.person).avatarBg:'';
-    html.push('<div style="margin-top:8px"><div><span style="color:'+g.color+';font-weight:600">'+g.glyph+'</span>&nbsp; <b'+(nameColor?' style="color:'+nameColor+'"':'')+'>'+esc(name)+'</b>'+(meta?' <span style="'+grey+'">\u00b7 '+esc(meta)+'</span>':'')+'</div>'
+    html.push('<div style="margin-top:8px"><div><span style="color:'+g.color+';font-weight:600">'+g.glyph+'</span>&nbsp; <b>'+esc(name)+'</b>'+(meta?' <span style="'+grey+'">\u00b7 '+esc(meta)+'</span>':'')+'</div>'
       +(quoted?'<div style="'+grey+'">\u21b3 '+esc(quoted)+'</div>':'')+(body?'<div>'+body+'</div>':'')+'</div>');
     text.push('', name+(meta?' \u00b7 '+meta:''), ...(quoted?['\u21b3 '+quoted]:[]), ...(body?[threadHtmlToPlain(body)]:[]));
   });
@@ -31638,9 +31611,8 @@ function renderThreadComposer(node,thread,place,commit){
   const line=document.createElement('div'); line.className='node-remark-line thread-composer';
   const ask=_threadAskNodeIds.has(node.id);
   const author=threadDefaultAuthor();
-  const c=remarkAuthorColor(author);
   const avatar=threadKindEl(ask?{type:'question'}:{},null,'thread-kind');
-  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.style.setProperty('--pc',c.avatarBg); who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
+  const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
   who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
   const input=document.createElement('div'); input.className='thread-composer-input remark-text-input'; input.contentEditable='true'; input.spellcheck=spellcheckEnabled; input.dataset.nodeId=node.id;
