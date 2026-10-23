@@ -163,7 +163,9 @@ contradicts README.md, trust README.md.)*
 preview has. Header buttons and thumbnail menu items Copy image / Download (`nodeImageExportItems`); the picture is drawn
 at its own size with markings on top (`nodeImagePngBlob`), a marked picture's Download also offers Original (the stored
 file, `dataUrlToBlob`). Zoom like the diagram preview, "smooth and not aggressive" (`_nivZoom*`: Ctrl+scroll/pinch capped
-steps, drag/scroll pans, dblclick, +/−/0, level button = Fit); Mark up works zoomed. Test: `image-preview-export.spec.ts`.
+steps, drag/scroll pans, dblclick, +/−/0, level button = Fit); Mark up works zoomed. Diagram thumbnail menu now matches the
+picture's (Open, Copy image, Download ›, Rename, Edit in draw.io, Delete diagram); diagram preview gets Copy too
+(`copyDiagramImage`, `diagramPngBlob`). Tests: `image-preview-export.spec.ts`, `node-diagram-inline-preview.spec.ts`.
 
 **2026-10-23: One Link box everywhere.** Owner pasted a URL in a row, selected it and pressed Link, and expected to
 give it words. The bar's Link box now has Text and Address (`openSelectionFmtUrlBox`, target `{text,url,apply,remove}`
