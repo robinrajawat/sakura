@@ -159,11 +159,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-23: Edit a link in the card itself.** Owner: "why are we making it two step?" (click the link, then the pencil).
-The link card now holds the Text and Address fields (`#link-card-text`, `#link-card-addr`) plus Open, Copy, Remove; the pencil
-is gone. The words' target is taken on the first press in a field (`linkCardTarget`, from the Edit item's `linkTarget`);
-Enter or clicking away keeps, Escape cancels, an emptied Address removes, an address with spaces turns red. First press in
-Text selects it all, so a name replaces a pasted address. Right-click › Edit link… still opens the bar's Link box.
+**2026-10-23: One link editor: a one-line card; rename by typing over the words.** Owner chose this over a Text field.
+`#link-card` is one line: the address (`#link-card-addr`, edited in place) then Open, Copy, Remove. A link's words are
+renamed by selecting them and typing: a capture `beforeinput` handler (`_linkRetype`) keeps the typing inside the `<a>`
+(browsers keep only the first letter), in rows, To-Do titles, notes and threads. The bar's Link box is address-only.
+The header link (`#doc-link-menu`) uses the same card; its name is renamed on the chip (`#doc-link-label-input`,
+`#doc-link-wrap.renaming`), saved by `closeDocLinkMenu(keep)` on Enter or a click outside. Next: To-Do "Link to row…".
 
 **2026-10-23: Link box stays open when the page scrolls.** Owner: no way to set the display text of a pasted address.
 The card's pencil (rows, notes, threads) opened the Link box, but in a scrolled document focusing it scrolled the page and the bar's scroll handler hid it at once.

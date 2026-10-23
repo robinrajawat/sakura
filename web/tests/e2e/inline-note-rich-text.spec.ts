@@ -1059,21 +1059,21 @@ test.describe('Inline node notes are rich text (contenteditable)', () => {
     });
 
     // Owner, 2026-10-23: the Link box closed on a page scroll, and editing took two steps; the
-    // card's own Text field renames the link, and a scroll doesn't close it while you type.
-    test("the card's Text field renames the link, even when the page scrolls", async ({ page }) => {
+    // card's own address field changes the link, and a scroll doesn't close it while you type.
+    test("the card's address field changes the link, even when the page scrolls", async ({ page }) => {
       await page.goto('file://' + indexPath);
       await dismissOverlays(page);
       await stubWindowOpen(page);
       await seedNodeWithNote(page, linkNote);
 
       await page.locator('#note-line-1 a').click();
-      await page.locator('#link-card-text').click();
+      await page.locator('#link-card-addr').click();
       await page.evaluate(() => document.dispatchEvent(new Event('scroll')));
-      await page.keyboard.type('The new name');
+      await page.locator('#link-card-addr').fill('example.com/new');
       await page.keyboard.press('Enter');
       await expect.poll(() => page.evaluate(() =>
         // @ts-expect-error
-        nodes[0].note)).toContain('>The new name</a>');
+        nodes[0].note)).toContain('href="https://example.com/new"');
     });
 
     test('ctrl/cmd-click opens the link while the note is being edited', async ({ page }) => {

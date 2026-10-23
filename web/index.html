@@ -1395,11 +1395,9 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sb-context-chevron{flex:0 0 auto;margin-left:10px;opacity:.55}
 #link-card{position:fixed;z-index:165;display:none;align-items:center;gap:2px;max-width:min(420px,calc(100vw - 16px));padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.12);font:400 12px 'Inter',sans-serif}
 #link-card.open{display:flex}
-.link-card-fields{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 6px;min-width:0;padding-left:4px}
-.link-card-lbl{font:500 11px 'Inter',sans-serif;color:var(--muted)}
 /* Read like text until pointed at or typed in, so the card stays light. */
 .link-card-input{width:min(250px,58vw);min-width:0;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--fg);font:13px 'Inter',sans-serif;padding:3px 6px;outline:none;text-overflow:ellipsis}
-#link-card-addr{color:var(--accent)}
+#link-card-addr,#doc-link-input{color:var(--accent)}
 .link-card-input:hover{border-color:var(--border)}
 .link-card-input:focus{border-color:var(--accent);background:var(--edit-bg);text-overflow:clip}
 .link-card-input.is-invalid{border-color:var(--fc-red);box-shadow:0 0 0 2px color-mix(in srgb,var(--fc-red) 18%,transparent)}
@@ -1495,9 +1493,6 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .sfmt-menu-item svg{color:var(--muted)}
 .sfmt-menu-item.sfmt-danger{color:var(--muted)}
 .sfmt-menu-item.sfmt-danger:hover{color:var(--sem-alert)}
-.sfmt-url-fields{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 8px}
-/* Which box is which, even when both show the address (a pasted link's words are its address). */
-.sfmt-url-label{font:500 11px 'Inter',sans-serif;color:var(--muted);padding-left:2px}
 .sfmt-url.is-invalid{border-color:var(--fc-red);box-shadow:0 0 0 2px color-mix(in srgb,var(--fc-red) 18%,transparent)}
 .sfmt-url{width:min(260px,62vw);border:1px solid var(--border);border-radius:6px;background:var(--edit-bg);color:var(--fg);font:13px 'Inter',sans-serif;padding:5px 8px;outline:none}
 .sfmt-url:focus{border-color:var(--accent)}
@@ -2924,14 +2919,14 @@ body.printing-generic #gpe-overlay{
 .todo-at{font-weight:400}.todo-at-person{color:var(--sem-section)}.todo-at-date{color:var(--muted)}.todo-at-status{color:var(--sem-alert)}
 .todo-tag-chip{color:var(--sem-code)}.todo-remark{color:var(--sem-quote);font-style:italic}
 .todo-dd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;min-width:170px;max-height:min(360px,60vh);overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px;display:none;flex-direction:column}
-.doc-link-menu{min-width:280px;overflow:visible}
-.doc-link-menu-inner{display:flex;flex-direction:column;gap:8px;padding:4px}
-.doc-link-menu-inner .meta-input{width:100%;box-sizing:border-box;font:400 12.5px 'Inter',sans-serif;padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg)}
-.doc-link-menu-actions{display:flex;justify-content:flex-end;gap:6px}
-.doc-link-menu-btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--fg);font:600 11.5px 'Inter',sans-serif;padding:6px 10px;border-radius:7px;cursor:pointer;transition:background .12s,border-color .12s}
-.doc-link-menu-btn:hover{background:var(--hover)}
-.doc-link-menu-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.doc-link-menu-btn.primary:hover{filter:brightness(1.06)}
+.doc-link-menu{overflow:visible;padding:4px}
+/* The same card as a link in the text (owner, 2026-10-23): Text and Address in place, then Open, Copy, Remove. */
+.doc-link-menu-inner{display:flex;align-items:center;gap:2px}
+.doc-link-menu:not(.has-link) .doc-link-has{display:none}
+/* The link's name is renamed on the chip itself, where it is shown; the card under it has the address. */
+.doc-link-name-input{display:none;box-sizing:content-box;font:500 12.5px 'Inter',sans-serif;min-width:6ch;max-width:40ch;border:1px solid var(--accent);border-radius:6px;background:var(--edit-bg);color:var(--fg);padding:2px 6px;outline:none}
+#doc-link-wrap.renaming #doc-link-chip{display:none}
+#doc-link-wrap.renaming .doc-link-name-input{display:inline-block}
 .todo-dd-menu.open{display:flex}
 .todo-dd-label{font:600 10px 'Inter',sans-serif;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px 3px}
 .todo-dd-divider{height:1px;background:var(--border);margin:5px 2px}
@@ -4501,15 +4496,14 @@ body.printing-generic #gpe-overlay{
         <input id="sb-author" type="text" class="doc-status-chip unset doc-author-chip" placeholder="+ Add author" data-tip="Document author" autocomplete="off" spellcheck="false" />
         <div class="todo-dd-wrap" id="doc-link-wrap">
           <button type="button" class="doc-status-chip unset" id="doc-link-chip" data-tip="Link this document to a URL — e.g. a JIRA story or Epic" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Add link</button>
+          <input type="text" id="doc-link-label-input" class="doc-link-name-input" spellcheck="false" autocomplete="off" aria-label="Link name" placeholder="Name" />
           <div class="todo-dd-menu doc-link-menu" id="doc-link-menu" role="menu">
             <div class="doc-link-menu-inner">
-              <input type="text" id="doc-link-label-input" class="meta-input" placeholder="Display text (optional) — e.g. PROJ-1234" aria-label="Link display text" />
-              <input type="url" id="doc-link-input" class="meta-input" placeholder="https://yourteam.atlassian.net/browse/PROJ-123" aria-label="Document URL" />
-              <div class="doc-link-menu-actions">
-                <button type="button" id="doc-link-remove-btn" class="doc-link-menu-btn">Remove</button>
-                <button type="button" id="doc-link-open-btn" class="doc-link-menu-btn">Open</button>
-                <button type="button" id="doc-link-save-btn" class="doc-link-menu-btn primary">Save</button>
-              </div>
+              <input type="text" id="doc-link-input" class="link-card-input" placeholder="Paste or type a web address" spellcheck="false" autocomplete="off" aria-label="Web address" />
+              <span class="link-card-sep doc-link-has"></span>
+              <button type="button" id="doc-link-open-btn" class="link-card-btn doc-link-has" data-i="0" data-tip="Open link" aria-label="Open link"></button>
+              <button type="button" id="doc-link-copy-btn" class="link-card-btn doc-link-has" data-i="1" data-tip="Copy link" aria-label="Copy link"></button>
+              <button type="button" id="doc-link-remove-btn" class="link-card-btn danger doc-link-has" data-i="3" data-tip="Remove link" aria-label="Remove link"></button>
             </div>
           </div>
         </div>
@@ -11156,8 +11150,8 @@ function markLinkMenuItems(link,at,setLink,unlink){
   return linkMenuItems({href:at.url,openHref:link.href||at.url,target,onEdit:()=>openLinkBoxAt(anchor,'link-box',target),onRemove:target.remove});
 }
 // The link card (owner, 2026-10-23: "unable to get the link popover"): while you edit words and
-// the caret is in a link, a small card under it has the link's Text and Address to edit in place,
-// with Open, Copy and Remove. Same card in
+// the caret is in a link, a one-line card under it has the link's address to edit in place, with
+// Open, Copy and Remove (the words are renamed by typing over them). Same card in
 // rows, To-Do titles, notes and thread entries.
 const LINK_CARD_FIELDS='.node-input,.todo-text,.node-note-line,.node-remark-text-inline';
 // The right-click link menu's items for `link` in the field being edited, worked out on use (Edit
@@ -11188,19 +11182,18 @@ function linkCardTarget(){
   if(!_linkCardTarget&&_linkCardLink)_linkCardTarget=linkCardMenuItems(_linkCardLink)?.[2]?.linkTarget||null;
   return _linkCardTarget;
 }
-// Enter (or clicking away) keeps the change; an emptied Address removes the link; an address with
+// Enter (or clicking away) keeps the change; an emptied address removes the link; an address with
 // spaces turns the field red and keeps the card open.
 function applyLinkCard(fromBlur){
-  const t=linkCardTarget(); const tf=el('link-card-text'), uf=el('link-card-addr'); if(!t||!tf||!uf){ hideLinkCard(); return; }
+  const t=linkCardTarget(); const uf=el('link-card-addr'); if(!t||!uf){ hideLinkCard(); return; }
   const raw=uf.value.trim(); const url=normalizeTypedLinkUrl(raw);
   if(url&&(/\s/.test(raw)||!isRowLinkUrl(url))){
     if(fromBlur){ hideLinkCard(); return; }
     uf.classList.add('is-invalid'); uf.dataset.tip='Not a web address. Addresses have no spaces'; uf.focus(); uf.select(); return;
   }
-  const typed=tf.value.trim(); const text=typed||t.text;
   hideLinkCard();
   if(!url){ t.remove?.(); return; }
-  if(text!==t.text||url!==t.url)t.apply(text,url);
+  if(url!==t.url)t.apply(t.text,url);
 }
 function showLinkCard(link){
   if(_linkCardLink===link&&_linkCardEl?.classList.contains('open')){ placeLinkCard(); return; }
@@ -11210,8 +11203,6 @@ function showLinkCard(link){
     _linkCardEl.addEventListener('mousedown',e=>{
       const f=e.target.closest('.link-card-input'); if(!f){ e.preventDefault(); return; }
       linkCardTarget();
-      // The first press on Text selects it all, so typing a name replaces a pasted address.
-      if(f.id==='link-card-text'&&document.activeElement!==f){ e.preventDefault(); f.focus(); f.select(); }
     });
     _linkCardEl.addEventListener('keydown',e=>{
       if(!e.target.closest('.link-card-input'))return;
@@ -11225,12 +11216,11 @@ function showLinkCard(link){
   const href=link.getAttribute('data-a')||link.getAttribute('href')||'';
   const items=linkMenuItems({href,openHref:link.href,onEdit:()=>{},onRemove:()=>{}});
   const btn=(it,i)=>`<button type="button" class="link-card-btn${i===3?' danger':''}" data-i="${i}" data-tip="${esc(it.label.replace('…',''))}" aria-label="${esc(it.label.replace('…',''))}">${it.icon}</button>`;
-  // Text and Address are edited right here (owner, 2026-10-23: "why are we making it two step?").
-  _linkCardEl.innerHTML=`<span class="link-card-fields">`
-    +`<label class="link-card-lbl" for="link-card-text">Text</label><input type="text" class="link-card-input" id="link-card-text" spellcheck="false" autocomplete="off">`
-    +`<label class="link-card-lbl" for="link-card-addr">Address</label><input type="text" class="link-card-input" id="link-card-addr" spellcheck="false" autocomplete="off">`
-    +`</span><span class="link-card-sep"></span>${[0,1,3].map(i=>btn(items[i],i)).join('')}`;
-  el('link-card-text').value=link.textContent||''; el('link-card-addr').value=href;
+  // One line: the address, edited right here; the words are renamed where they are, by typing
+  // over them (owner, 2026-10-23: "why are we making it two step?", then one-line card).
+  _linkCardEl.innerHTML=`<input type="text" class="link-card-input" id="link-card-addr" spellcheck="false" autocomplete="off" aria-label="Web address" data-tip="Web address: click to change">`
+    +`<span class="link-card-sep"></span>${[0,1,3].map(i=>btn(items[i],i)).join('')}`;
+  el('link-card-addr').value=href;
   _linkCardEl.querySelectorAll('.link-card-btn').forEach(b=>b.addEventListener('click',e=>{
     e.preventDefault(); const i=Number(b.dataset.i);
     if(i<=1){ hideLinkCard(); items[i].onClick(); return; }
@@ -11255,6 +11245,42 @@ document.addEventListener('selectionchange',()=>{
   if(link&&field.contains(link)&&!_sbContextEl)showLinkCard(link); else if(_linkCardLink)hideLinkCard();
 });
 window.addEventListener('scroll',()=>{ if(_linkCardLink&&!_linkCardEl?.contains(document.activeElement)){ if(_linkCardLink.isConnected)placeLinkCard(); else hideLinkCard(); } },true);
+// Typing over a link's words keeps the link, so a link is renamed where its words are (owner,
+// 2026-10-23: one-line link card, no Text field). Browsers keep only the first letter in the link
+// and type the rest after it, so the words are put in place here, and the typing that follows
+// goes on inside the same link until the caret moves.
+let _linkRetype=null;
+function linkCaretAtEnd(a,r){
+  if(!r.collapsed||!a.contains(r.endContainer))return false;
+  const tail=document.createRange(); tail.selectNodeContents(a); tail.setStart(r.endContainer,r.endOffset);
+  return tail.toString()==='';
+}
+document.addEventListener('beforeinput',e=>{
+  if(e.inputType!=='insertText'&&e.inputType!=='insertReplacementText')return;
+  const field=e.target&&e.target.closest?e.target.closest(LINK_CARD_FIELDS):null; if(!field||!field.isContentEditable)return;
+  const data=e.data!=null?e.data:(e.dataTransfer?e.dataTransfer.getData('text/plain'):''); if(!data||/[\r\n]/.test(data))return;
+  const sel=window.getSelection(); if(!sel||!sel.rangeCount)return; const r=sel.getRangeAt(0);
+  let a=null;
+  if(r.collapsed){ if(_linkRetype&&_linkRetype.isConnected&&field.contains(_linkRetype)&&linkCaretAtEnd(_linkRetype,r))a=_linkRetype; }
+  else{
+    const hit=[...field.querySelectorAll('a[href]')].filter(x=>r.intersectsNode(x));
+    // The words picked are inside one link, or are that whole link (a double-click can add a space).
+    if(hit.length===1&&(hit[0].contains(r.commonAncestorContainer)||r.toString().trim()===hit[0].textContent.trim()))a=hit[0];
+  }
+  _linkRetype=null;
+  if(!a)return;
+  e.preventDefault();
+  const words=document.createTextNode(data);
+  if(r.collapsed){ r.insertNode(words); }
+  else if(a.contains(r.commonAncestorContainer)){ r.deleteContents(); r.insertNode(words); }
+  else{ const fresh=a.cloneNode(false); fresh.appendChild(words); r.deleteContents(); r.insertNode(fresh); a=fresh; }
+  a.normalize();
+  const end=document.createRange(); end.selectNodeContents(a); end.collapse(false); sel.removeAllRanges(); sel.addRange(end);
+  _linkRetype=a;
+  field.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:e.inputType,data}));
+},true);
+document.addEventListener('keydown',e=>{ if(_linkRetype&&e.key.length>1&&e.key!=='Shift'&&e.key!=='Backspace')_linkRetype=null; },true);
+document.addEventListener('mousedown',()=>{ _linkRetype=null; },true);
 // Characters of `root`'s text before `child` starts.
 function textOffsetWithin(root,child){ const r=document.createRange(); r.selectNodeContents(root); r.setEndBefore(child); return r.toString().length; }
 // The linked words of a row under a right-clicked web link, or null.
@@ -14273,6 +14299,28 @@ async function openHistoryMenu(chip){
   chip.addEventListener('pointerdown',()=>{ wasOpen=!!(_sbContextEl&&_sbContextEl.classList.contains('history-menu')); });
   chip.addEventListener('click',e=>{ e.stopPropagation(); if(wasOpen){ wasOpen=false; return; } openHistoryMenu(chip); });
 })();
+// The document's own link: the same card as a link in the text (owner, 2026-10-23: "can't we use
+// the same way for document header link?"). Enter or clicking away keeps, Escape cancels, an
+// emptied Address removes it.
+function closeDocLinkMenu(keep){
+  const menu=el('doc-link-menu'); if(!menu||!menu.classList.contains('open'))return;
+  const input=el('doc-link-input'), labelInput=el('doc-link-label-input');
+  if(keep&&input){
+    const raw=input.value.trim();
+    // A name left as the address's own short form isn't a name: the chip keeps following the address.
+    const typed=labelInput.value.trim(); const label=raw&&typed&&typed!==docLinkUrlLabel(docLinkedUrl)?typed:'';
+    if(/\s/.test(raw)){
+      if(keep==='enter'){ input.classList.add('is-invalid'); input.dataset.tip='Not a web address. Addresses have no spaces'; input.focus(); input.select(); return; }
+    } else if(normalizeDocLinkedUrl(raw)!==(docLinkedUrl||'')||label!==(docLinkedUrlLabel||''))setDocLinkedUrl(raw,label);
+  }
+  menu.classList.remove('open'); el('doc-link-wrap')?.classList.remove('renaming');
+  const chip=el('doc-link-chip'); chip?.setAttribute('aria-expanded','false');
+  if(menu.contains(document.activeElement)||document.activeElement===labelInput)chip?.focus();
+}
+(function(){
+  const icons=linkMenuItems({href:'',openHref:'',onEdit:()=>{},onRemove:()=>{}});
+  [['doc-link-open-btn',0],['doc-link-copy-btn',1],['doc-link-remove-btn',3]].forEach(([id,i])=>{ const b=el(id); if(b)b.innerHTML=icons[i].icon; });
+})();
 el('doc-link-chip')?.addEventListener('click',e=>{
   e.stopPropagation();
   // Ctrl/Cmd-click is a shortcut straight to the linked ticket — skips the edit popover
@@ -14281,44 +14329,42 @@ el('doc-link-chip')?.addEventListener('click',e=>{
   // it falls through to the normal open-the-popover click.
   if((e.ctrlKey||e.metaKey)&&docLinkedUrl){ window.open(docLinkedUrl,'_blank','noopener,noreferrer'); return; }
   const menu=el('doc-link-menu'); if(!menu)return;
-  const isOpen=menu.classList.contains('open');
+  if(menu.classList.contains('open')){ closeDocLinkMenu(true); return; }
   document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
-  menu.classList.toggle('open',!isOpen);
-  e.currentTarget.setAttribute('aria-expanded',String(!isOpen));
-  if(!isOpen){
-    const input=el('doc-link-input'); if(input)input.value=docLinkedUrl||'';
-    const labelInput=el('doc-link-label-input'); if(labelInput)labelInput.value=docLinkedUrlLabel||'';
-    setTimeout(()=>{ input?.focus(); input?.select(); },0);
-  }
+  const input=el('doc-link-input'), labelInput=el('doc-link-label-input');
+  input.value=docLinkedUrl||''; input.classList.remove('is-invalid');
+  const shown=docLinkedUrlLabel||docLinkUrlLabel(docLinkedUrl);
+  labelInput.value=shown; labelInput.size=Math.max(6,shown.length+1);
+  menu.classList.toggle('has-link',!!docLinkedUrl);
+  // With a link set, its name opens for renaming right on the chip; with none, the address comes first.
+  el('doc-link-wrap')?.classList.toggle('renaming',!!docLinkedUrl);
+  menu.classList.add('open'); e.currentTarget.setAttribute('aria-expanded','true');
+  const first=docLinkedUrl?labelInput:input;
+  setTimeout(()=>{ first.focus(); first.select(); },0);
 });
-el('doc-link-save-btn')?.addEventListener('click',e=>{
-  e.stopPropagation();
-  const input=el('doc-link-input'); if(!input)return;
-  const labelInput=el('doc-link-label-input');
-  setDocLinkedUrl(input.value,labelInput?labelInput.value:'');
-  el('doc-link-menu')?.classList.remove('open');
-});
-el('doc-link-input')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){ e.preventDefault(); el('doc-link-save-btn')?.click(); }
-  else if(e.key==='Escape'){ e.preventDefault(); el('doc-link-menu')?.classList.remove('open'); }
-});
-el('doc-link-label-input')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){ e.preventDefault(); el('doc-link-save-btn')?.click(); }
-  else if(e.key==='Escape'){ e.preventDefault(); el('doc-link-menu')?.classList.remove('open'); }
-});
+el('doc-link-label-input')?.addEventListener('input',e=>{ e.currentTarget.size=Math.max(6,e.currentTarget.value.length+1); });
+['doc-link-input','doc-link-label-input'].forEach(id=>el(id)?.addEventListener('keydown',e=>{
+  if(id==='doc-link-input'&&e.key!=='Enter')e.currentTarget.classList.remove('is-invalid');
+  if(e.key==='Enter'){ e.preventDefault(); closeDocLinkMenu('enter'); }
+  else if(e.key==='Escape'){ e.preventDefault(); closeDocLinkMenu(false); }
+}));
 el('doc-link-remove-btn')?.addEventListener('click',e=>{
   e.stopPropagation();
-  setDocLinkedUrl('','');
-  el('doc-link-menu')?.classList.remove('open');
+  closeDocLinkMenu(false); setDocLinkedUrl('','');
 });
 el('doc-link-open-btn')?.addEventListener('click',e=>{
   e.stopPropagation();
-  const url=el('doc-link-input')?.value?normalizeDocLinkedUrl(el('doc-link-input').value):docLinkedUrl;
-  if(url)window.open(url,'_blank','noopener,noreferrer');
+  if(docLinkedUrl)window.open(docLinkedUrl,'_blank','noopener,noreferrer');
+});
+el('doc-link-copy-btn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  if(docLinkedUrl&&navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(docLinkedUrl).then(()=>showToast('Link copied','success'),()=>showToast('Could not copy the link'));
 });
 document.addEventListener('mousedown',e=>{
-  if(!e.target.closest('#doc-link-wrap'))el('doc-link-menu')?.classList.remove('open');
+  if(!e.target.closest('#doc-link-wrap'))closeDocLinkMenu(true);
 });
+// Escape closes it from anywhere (the chip itself is hidden while its name is being renamed).
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&el('doc-link-menu')?.classList.contains('open')){ e.preventDefault(); closeDocLinkMenu(false); } });
 
 onOverlayBackdropClick(el('history-modal-overlay'),closeVersionHistory);
 el('history-save-now-btn')?.addEventListener('click',()=>saveManualDocVersion());
@@ -36308,24 +36354,20 @@ function openSelectionFmtUrlBox(){
   if(editingId!==null){ commitEdit(); render(); }
   const selectedUrl=pastedLinkUrl(t.text);
   box.innerHTML=(t.noBack?'':`<button type="button" class="sfmt-back" data-sw="back" data-tip="Back" aria-label="Back">‹</button>`)
-    +`<span class="sfmt-url-fields">`
-    +`<label class="sfmt-url-label" for="sfmt-link-text">Text</label><input type="text" class="sfmt-url" id="sfmt-link-text" placeholder="Text to show" spellcheck="false" autocomplete="off" aria-label="Text to show">`
-    +`<label class="sfmt-url-label" for="sfmt-url">Address</label><input type="text" class="sfmt-url" id="sfmt-url" placeholder="Paste or type a web address" spellcheck="false" autocomplete="off" aria-label="Web address">`
-    +`</span>`
+    // Just the address: the selected words are the link's text (rename them by typing over them).
+    +`<input type="text" class="sfmt-url" id="sfmt-url" placeholder="Paste or type a web address" spellcheck="false" autocomplete="off" aria-label="Web address">`
     +`<button type="button" class="sfmt-menu-item sfmt-url-ok" data-sw="url-ok" data-tip="Link (Enter)">Link</button>`
     +(t.remove?`<button type="button" class="sfmt-menu-item sfmt-danger" data-sw="unlink" data-tip="Remove link">Remove</button>`:'');
   pop.dataset.pick='url';
   placeSelectionFmtPopover(_sfmtAnchorRect);
-  const textField=el('sfmt-link-text'); const field=el('sfmt-url');
-  textField.value=t.text; t.shown=textField.value;
+  const field=el('sfmt-url');
   field.value=t.url||selectedUrl||'';
-  // The words are an address themselves: what's left to type is the words to show instead.
-  const first=selectedUrl?textField:field; first.focus(); first.select();
-  [textField,field].forEach(f=>f.addEventListener('keydown',e=>{
-    if(f===field&&e.key!=='Enter')field.classList.remove('is-invalid');
+  field.focus(); field.select();
+  field.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')field.classList.remove('is-invalid');
     if(e.key==='Enter'){ e.preventDefault(); applySelectionFmtUrl(); }
     else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); hideSelectionFmtPopover(); }
-  }));
+  });
 }
 // What people type: "example.com" means https://, "name@host" means mailto:.
 function normalizeTypedLinkUrl(raw){
@@ -36335,19 +36377,16 @@ function normalizeTypedLinkUrl(raw){
   return 'https://'+v;
 }
 function applySelectionFmtUrl(){
-  const t=_sfmtLinkTarget; const field=el('sfmt-url'); const textField=el('sfmt-link-text'); if(!t||!field)return;
+  const t=_sfmtLinkTarget; const field=el('sfmt-url'); if(!t||!field)return;
   const url=normalizeTypedLinkUrl(field.value);
   // An address with spaces in it (often the words typed into the wrong box) isn't a link:
   // say so on the field and keep the box open, rather than saving a broken address.
   if(url&&(/\s/.test(field.value.trim())||!isRowLinkUrl(url))){
     field.classList.add('is-invalid'); field.dataset.tip='Not a web address. Addresses have no spaces'; field.focus(); field.select(); return;
   }
-  // Text left as it was (or emptied) keeps the words; typed text replaces them.
-  const typed=textField?textField.value.trim():'';
-  const text=textField&&textField.value!==t.shown&&typed?typed:t.text;
   hideSelectionFmtPopover();
   if(!url)return;
-  t.apply(text,url);
+  t.apply(t.text,url);
 }
 function showSelectionFmtPopoverForRange(range,editorId){
   const pop=el('selection-fmt-popover'); if(!pop)return;

@@ -6,8 +6,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // Owner, 2026-10-23: "unable to get the link popover at all ... unable to add the display text".
-// While words are being edited and the caret is in a link, a card under it has the link's Text and
-// Address to edit in place (owner: "why are we making it two step?"), with Open, Copy and Remove.
+// While words are being edited and the caret is in a link, a one-line card under it has the link's
+// address to edit in place, with Open, Copy and Remove; the words are renamed by typing over them
+// (owner: "why are we making it two step?", then chose the one-line card).
 async function seed(page: import('@playwright/test').Page, note = '') {
   await page.addInitScript(() => { localStorage.setItem('sakura_welcome_seen', '1'); sessionStorage.setItem('sakura_landing_dismissed', 'true'); });
   await page.goto('file://' + indexPath);
@@ -18,7 +19,7 @@ async function seed(page: import('@playwright/test').Page, note = '') {
   }, note);
 }
 
-test('a pasted address in a row: the caret in it shows the link card; its Text field sets the words to show', async ({ page, context }) => {
+test('a pasted address in a row: the caret in it shows the one-line link card; typing over the words renames it', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await seed(page);
   await page.locator('.node-row[data-id="1"] .node-label').click();
@@ -29,14 +30,12 @@ test('a pasted address in a row: the caret in it shows the link card; its Text f
   await expect(card).toBeHidden();
   await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowLeft');
   await expect(card).toBeVisible();
-  await expect(card.locator('.link-card-lbl')).toHaveText(['Text', 'Address']);
   await expect(page.locator('#link-card-addr')).toHaveValue('https://example.com/plan');
-  await expect(page.locator('#link-card-text')).toHaveValue('https://example.com/plan');
-  // One press selects the pasted address, so typing replaces it.
-  await page.locator('#link-card-text').click();
+  await expect(card.locator('input')).toHaveCount(1);
+  // Select the link's words and type: the link stays on the new words.
+  await page.evaluate(() => { const a = document.querySelector('.node-input a')!; const r = document.createRange(); r.selectNodeContents(a); const s = getSelection()!; s.removeAllRanges(); s.addRange(r); });
   await page.keyboard.type('the new plan');
-  await page.keyboard.press('Enter');
-  await expect(card).toBeHidden();
+  await page.keyboard.press('Escape');
   const link = page.locator('.node-row[data-id="1"] a.row-weblink');
   await expect(link).toHaveText('the new plan');
   await expect(link).toHaveAttribute('href', 'https://example.com/plan');
@@ -85,4 +84,15 @@ test('the card in a note: change the address in place; an address with spaces is
   await page.keyboard.press('Enter');
   // @ts-expect-error
   await expect.poll(() => page.evaluate(() => nodes[0].note)).toMatch(/href="https:\/\/example.com\/v2"[^>]*>the spec<\/a>/);
+});
+
+test('typing over a link in a note renames it and keeps the link; typing on keeps going inside it', async ({ page }) => {
+  await seed(page, 'Read <a href="https://example.com/spec" target="_blank" rel="noopener noreferrer">https://example.com/spec</a> first');
+  await page.locator('.node-note-line').click({ position: { x: 4, y: 6 } });
+  await page.locator('.node-note-line a').click();
+  await page.evaluate(() => { const a = document.querySelector('.node-note-line a')!; const r = document.createRange(); r.selectNodeContents(a); const s = getSelection()!; s.removeAllRanges(); s.addRange(r); });
+  await page.keyboard.type('The spec');
+  await page.mouse.click(5, 400);
+  // @ts-expect-error -- bare globals from index.html
+  await expect.poll(() => page.evaluate(() => nodes[0].note)).toMatch(/<a href="https:\/\/example.com\/spec"[^>]*>The spec<\/a> first/);
 });

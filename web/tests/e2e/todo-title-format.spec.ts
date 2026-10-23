@@ -98,14 +98,18 @@ test('the Hub keeps and shows a title\'s formatting', async ({ page }) => {
   expect((await stored(page))[0].marks).toEqual([{ s: 0, e: 4, k: 'hl', v: 'yellow' }, { s: 9, e: 14, k: 'b' }]);
 });
 
-test('the link card in a title renames its link in place', async ({ page }) => {
+test('typing over a link in a title renames it and keeps the link; the card changes its address', async ({ page }) => {
   await openWith(page, [{ id: 'a', text: 'Read the docs first', marks: [{ s: 9, e: 13, k: 'a', v: 'https://example.com/guide' }], marksText: 'Read the docs first' }]);
   await title(page, 'a').click();
   await page.keyboard.press('Home');
   for (let i = 0; i < 11; i++) await page.keyboard.press('ArrowRight');
   await expect(page.locator('#link-card')).toBeVisible();
-  await expect(page.locator('#link-card-text')).toHaveValue('docs');
-  await page.locator('#link-card-text').click();
+  await expect(page.locator('#link-card-addr')).toHaveValue('https://example.com/guide');
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Shift+ArrowLeft');
+  await page.keyboard.press('Shift+ArrowRight'); await page.keyboard.press('Shift+ArrowRight');
+  await page.keyboard.press('Home');
+  for (let i = 0; i < 9; i++) await page.keyboard.press('ArrowRight');
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Shift+ArrowRight');
   await page.keyboard.type('guide');
   await page.keyboard.press('Enter');
   await expect.poll(async () => (await stored(page))[0].text).toBe('Read the guide first');
