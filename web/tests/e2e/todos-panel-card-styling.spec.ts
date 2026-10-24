@@ -63,7 +63,7 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     await page.waitForTimeout(150);
     expect(await row.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(before);
     await page.click(`.todo-more-btn[data-id="${id}"]`);
-    for (const label of ['Pin', 'Waiting for…', 'Due date…', 'Link to row…', 'Delete']) {
+    for (const label of ['Pin', 'Waiting for…', 'Due date…', 'Link…', 'Delete']) {
       await expect(page.locator('.sb-context-menu .sb-context-item .sb-context-label', { hasText: label }).first()).toBeVisible();
     }
     await page.keyboard.press('Escape');

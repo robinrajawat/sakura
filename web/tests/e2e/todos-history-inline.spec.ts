@@ -107,7 +107,7 @@ test('the task menu is short; Repeat and Waiting for are flyouts', async ({ page
   await open(page, [task('a', 'Only task')]);
   await page.locator('#todos-body .todo-row[data-id="a"]').click({ button: 'right', position: { x: 4, y: 10 } });
   const menu = page.locator('.sb-context-menu').first();
-  await expect(menu.locator(':scope > .sb-context-item')).toHaveText(['Pin', 'Waiting for…', 'Due date…', 'Repeat', 'Link to row…', 'Rewrite with AI', 'Copy', 'Delete']);
+  await expect(menu.locator(':scope > .sb-context-item')).toHaveText(['Pin', 'Waiting for…', 'Due date…', 'Repeat', 'Link…', 'Rewrite with AI', 'Copy', 'Delete']);
   await menu.locator('.sb-context-item', { hasText: 'Repeat' }).hover();
   await page.locator('.sb-context-submenu .sb-context-item', { hasText: 'Weekdays' }).click();
   // @ts-expect-error -- read back through storage
