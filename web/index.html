@@ -5748,6 +5748,29 @@ function placePopover(anchor, width, height, viewportWidth, viewportHeight, gap 
 }
 
 /* GENERATED:placePopover:END */
+/* GENERATED:popoverDismiss:START — DO NOT EDIT BY HAND. Source of truth: src/ui/popoverDismiss.ts (tests: tests/unit/popoverDismiss.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+function popoverDismiss(doc, opts) {
+    let returnTo = null;
+    doc.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || !opts.isOpen())
+            return;
+        e.stopPropagation();
+        const to = returnTo;
+        returnTo = null;
+        opts.close();
+        if (to && to.isConnected !== false)
+            to.focus();
+    }, true);
+    doc.addEventListener('mousedown', (e) => {
+        if (!opts.isOpen() || opts.isInside(e.target))
+            return;
+        returnTo = null;
+        opts.close();
+    }, true);
+    return { opened: (trigger) => { returnTo = trigger; } };
+}
+
+/* GENERATED:popoverDismiss:END */
 // Sanitizes rich HTML (Pad content, Note content) before it's ever assigned via innerHTML.
 // These fields are stored as raw HTML (needed for the WYSIWYG editors) and can arrive from
 // three places: this browser's own editing (already trusted), a local file import, or account
@@ -32355,6 +32378,7 @@ function openDatePopoverUnder(pop,btn){
   pop.style.left=p.left+'px'; pop.style.top=p.top+'px';
 }
 function openRemarksDateEditor(btn,r){
+  _remarksDateDismiss.opened(btn);
   _remarksDateTarget=r;
   const current=remarksParseISODate(r.date)||new Date();
   _remarksDateViewMonth=new Date(current.getFullYear(),current.getMonth(),1);
@@ -32414,9 +32438,7 @@ function renderRemarksDatePopover(){
   });
   pop.addEventListener('mousedown',e=>e.stopPropagation());
 })();
-document.addEventListener('mousedown',e=>{
-  if(_remarksDateTarget&&!e.target.closest('#remarks-date-popover')&&!e.target.closest('.node-remark-date-inline'))closeRemarksDateEditor();
-},true);
+const _remarksDateDismiss=popoverDismiss(document,{ isOpen:()=>!!_remarksDateTarget, isInside:t=>t instanceof Element&&!!t.closest('#remarks-date-popover, .node-remark-date-inline'), close:closeRemarksDateEditor });
 function subtreeHasRemark(idx){if(!Array.isArray(remarks)||!remarks.length)return false; const end=getSubtreeEnd(nodes,idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return remarks.some(r=>ids.has(r.anchorNodeId))}
 
 
@@ -33090,7 +33112,10 @@ function setMarkerFilter(marker){
 let _tagManagerNodeId=null;
 let _tagManagerTags=[];
 
+let _tagDismiss=null;
 function openTagManager(nodeId, anchorRect){
+  // Escape goes back to where the user was (the row being edited, usually).
+  _tagDismiss?.opened(document.activeElement);
   const resolvedId = nodeId ?? selectedId;
   if(resolvedId === null || resolvedId === undefined) return;
   const idx=getIndex(nodes,resolvedId); if(idx<0)return;
@@ -33185,14 +33210,8 @@ function _addTagPopoverFromInput(){
     if(e.key==='Enter'){e.preventDefault();_addTagPopoverFromInput();}
     else if(e.key==='Escape'){e.preventDefault();closeTagManager();}
   });
-  document.addEventListener('keydown',e=>{
-    const pop=document.getElementById('tag-popover');
-    if(e.key==='Escape'&&pop&&pop.classList.contains('open')){e.stopPropagation();closeTagManager();}
-  },true);
-  document.addEventListener('mousedown',e=>{
-    const pop=document.getElementById('tag-popover');
-    if(pop&&pop.classList.contains('open')&&!pop.contains(e.target))closeTagManager();
-  },true);
+  const tagPop=()=>document.getElementById('tag-popover');
+  _tagDismiss=popoverDismiss(document,{ isOpen:()=>!!tagPop()?.classList.contains('open'), isInside:t=>!!tagPop()?.contains(t), close:closeTagManager });
 })();
 
 // Hoisted ahead of the To-Dos module below: its own top-level boot code (applyTodosLocation())
@@ -34835,7 +34854,9 @@ function waitingCandidates(todos) {
     return new Date(y,m-1,d);
   }
 
+  let _dueDismiss=null;
   function openDueDateEditor(btn){
+    _dueDismiss?.opened(btn);
     const id=btn.getAttribute('data-id');
     const current=btn.getAttribute('data-due')||'';
     _dueDateId=id;
@@ -34860,6 +34881,7 @@ function waitingCandidates(todos) {
   }
 
   function openBulkDueDateEditor(btn){
+    _dueDismiss?.opened(btn);
     const ids=[...todosSelectedIds];
     if(!ids.length) return;
     _dueDateId=null;
@@ -34917,12 +34939,7 @@ function waitingCandidates(todos) {
       renderDueDatePopover();
     });
     document.getElementById('due-pop-clear-btn')?.addEventListener('click', ()=>commitDueDate(null));
-    document.addEventListener('keydown', e=>{
-      if(e.key==='Escape' && pop.classList.contains('open')){ e.stopPropagation(); closeDueDateEditor(); }
-    }, true);
-    document.addEventListener('mousedown', e=>{
-      if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.todo-due') && !e.target.closest('#todos-bulk-due-btn')) closeDueDateEditor();
-    }, true);
+    _dueDismiss=popoverDismiss(document,{ isOpen:()=>pop.classList.contains('open'), isInside:t=>pop.contains(t)||(t instanceof Element&&!!t.closest('.todo-due, #todos-bulk-due-btn')), close:closeDueDateEditor });
   })();
 
   // ── Link popover ──────────────────────────────────────────────────────
@@ -35015,7 +35032,10 @@ function waitingCandidates(todos) {
     if(typedLinkAddress(v)||(_linkPopUrl&&v.trim()===_linkPopUrl)){ box.innerHTML=''; return; }
     renderNodeSearchResults(v);
   }
+  let _linkDismiss=null;
   function openLinkEditor(btn){
+    // Its trigger is a hidden button; Escape goes back to what had focus (the task's menu came from it).
+    _linkDismiss?.opened(document.activeElement);
     const id=btn.getAttribute('data-id');
     const current=btn.getAttribute('data-link')||'';
     const refDoc=btn.getAttribute('data-noderef-doc')||'';
@@ -35093,12 +35113,7 @@ function waitingCandidates(todos) {
       const first=document.querySelector('#link-pop-node-results .link-pop-node-item');
       if(first) first.click(); else { input.classList.add('is-invalid'); input.dataset.tip='No web address or matching row'; }
     });
-    document.addEventListener('keydown', e=>{
-      if(e.key==='Escape' && pop.classList.contains('open')){ e.stopPropagation(); closeLinkEditor(); }
-    }, true);
-    document.addEventListener('mousedown', e=>{
-      if(pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.todo-link')) closeLinkEditor();
-    }, true);
+    _linkDismiss=popoverDismiss(document,{ isOpen:()=>pop.classList.contains('open'), isInside:t=>pop.contains(t)||(t instanceof Element&&!!t.closest('.todo-link')), close:closeLinkEditor });
   })();
 
 

@@ -165,6 +165,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-24: Popovers close one way (`popoverDismiss`).** Step 3, second piece. New tested `src/ui/popoverDismiss.ts`
+(block `popoverDismiss`): capture-phase Escape closes and returns focus to the opener; a press outside closes (a press on a
+trigger counts as inside). Used by the To-Do due date (and bulk due) popover, the thread entry date popover, the tag
+popover and the To-Do link popover, replacing four copies. Fixed: the thread date popover ignored Escape unless focus was
+in its time field. Caveat: focus return does nothing yet, because today's openers can't take focus (the thread date is a
+`<span>`, the To-Do link/due openers are menu items that are gone by then, and opening the tag popover ends row editing).
+Making those openers real buttons is an accessibility follow-up. Tests: `popoverDismiss.test.ts`,
+`popover-dismiss.spec.ts`. Next in step 3: one popover shell (markup + open/close/place in one call) for these four.
+
 **2026-10-24: One placement rule for popovers (`placePopover`).** Step 3 of the plan (shared popover), first piece. New
 tested module `src/ui/placePopover.ts` (spliced as block `placePopover`): below the anchor at its left edge, else above it,
 else pinned to the window's bottom; always 8px inside the window. Used by the date popovers (`openDatePopoverUnder`: To-Do
@@ -180,20 +189,12 @@ it as a low-priority task. Users could see the same multi-second delay. New `can
 (`toDataURL`) and is used by both diagram and picture copy (`diagramPngBlob`, `nodeImagePngBlob`); no `toBlob` left. New
 test stubs `toBlob` to never answer and still expects "Copied"; the old test passed 180/180 under load after the fix.
 
-**2026-10-24: Status colours follow the theme (--danger / --success / --warning).** Step 2, colours (owner's pick). The
-earlier "161 raw colours" counted theme definitions, JS and hub.html; the CSS files had 135 uses / 34 values, mostly
-fine on purpose (PDF and print pages are always light, white checkmarks, `var(--x,#fallback)`, the highlighter palette).
-The real issue was status colours: three reds, three greens and three ambers, none switching in dark mode. `base.css`
-now defines `--danger` #dc2626/#f87171, `--success` #15803d/#4ade80, `--warning` #b45309/#fbbf24 (light/dark; the light
-green/amber are darker than before so small labels pass 4.5:1); 34 uses switched, plus the Draft stamp (`--muted`) and
-the feedback inbox's high/open/low labels. The account menu's gold support icon stays `#c08a1e` (decoration). `tests/unit/colourTokens.test.ts` fails on any other hard-coded colour in
-src/styles/index/. Not covered: hub.html and colours set from JS. `--sem-alert` (the To-Do overdue red) is a separate
-themed red and was left as is. Next (step 3): one shared popover component.
-
 ### In progress / not built
 
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
+- Accessibility: popover openers (thread date `<span class="thread-time">`, To-Do menu items) can't take keyboard
+  focus, so `popoverDismiss`'s focus return has no target yet.
 
 ### Parked / open questions for the owner
 
