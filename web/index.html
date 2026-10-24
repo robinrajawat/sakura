@@ -10237,6 +10237,14 @@ function dataUrlToBlob(src){
   const bytes=/;base64/i.test(head)?Uint8Array.from(atob(body),ch=>ch.charCodeAt(0)):new TextEncoder().encode(decodeURIComponent(body));
   return new Blob([bytes],{type:mime});
 }
+// A canvas as a PNG Blob, encoded right away. canvas.toBlob is queued as a low-priority task in
+// Chromium and on a busy page took ~7s instead of ~20ms, so Copy image looked broken (2026-10-24).
+function canvasPngBlob(c){
+  const b64=c.toDataURL('image/png').split(',')[1]||'';
+  const bin=atob(b64), bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return new Blob([bytes],{type:'image/png'});
+}
 async function nodeImagePngBlob(img){
   const pic=new Image(); pic.src=img.src; await pic.decode();
   const w=pic.naturalWidth, h=pic.naturalHeight;
@@ -10248,8 +10256,8 @@ async function nodeImagePngBlob(img){
     const over=new Image(); over.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); await over.decode();
     ctx.drawImage(over,0,0,w,h);
   }
-  const blob=await new Promise(res=>c.toBlob(res,'image/png'));
-  if(!blob)throw new Error('empty');
+  const blob=canvasPngBlob(c);
+  if(!blob.size)throw new Error('empty');
   return blob;
 }
 const _IMAGE_EXT={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif','image/svg+xml':'svg','image/avif':'avif'};
@@ -13700,8 +13708,8 @@ async function diagramPngBlob(src){
   const k=2, w=img.naturalWidth||800, h=img.naturalHeight||600;
   const c=document.createElement('canvas'); c.width=w*k; c.height=h*k;
   const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
-  const png=await new Promise(res=>c.toBlob(res,'image/png'));
-  if(!png)throw new Error('empty');
+  const png=canvasPngBlob(c);
+  if(!png.size)throw new Error('empty');
   return png;
 }
 // Copy image, as for pictures: paste it into mail, chat or a document.

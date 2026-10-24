@@ -532,6 +532,17 @@ test.describe('Diagrams preview inline on the node, like notes/remarks/Q&A', () 
     await expect(page.locator('#diagram-viewer .dv-copy')).toHaveClass(/is-copied/);
     await expect.poll(async () => page.evaluate(async () => (await navigator.clipboard.read())[0].types)).toContain('image/png');
   });
+  // canvas.toBlob is a low-priority task in Chromium and took ~7s on a busy page, which made this copy
+  // look broken (and the test above flaky). Copy must not depend on it: here toBlob never answers.
+  test('Copy image does not wait on canvas.toBlob', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.addInitScript(() => { HTMLCanvasElement.prototype.toBlob = function () { /* never calls back */ }; });
+    await seedOne(page);
+    await page.locator('.node-diagram-preview-thumb').click({ button: 'right' });
+    await page.locator('.sb-context-menu').getByText('Copy image').click();
+    await expect(page.locator('.node-diagram-preview-thumb .copied-badge')).toHaveText('Copied', { timeout: 2000 });
+    expect(await page.evaluate(async () => (await navigator.clipboard.read())[0].types)).toContain('image/png');
+  });
   // Owner, 2026-10-22: the margin comes from draw.io's export (its `border`), not from padding the file ourselves.
   test('a picture with draw.io\'s margin drops the thumbnail padding; an older tight one is re-exported before download', async ({ page }) => {
     await seedOne(page);
