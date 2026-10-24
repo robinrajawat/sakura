@@ -142,6 +142,13 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'popoverDismiss',
+    sourceFile: 'src/ui/popoverDismiss.ts',
+    testFile: 'tests/unit/popoverDismiss.test.ts',
+    // Each anchored popover calls it once at start-up, then .opened(trigger) when it opens.
+    footer: ''
+  },
+  {
     name: 'escapeHtml',
     sourceFile: 'src/utils/escapeHtml.ts',
     testFile: 'tests/unit/escapeHtml.test.ts',
