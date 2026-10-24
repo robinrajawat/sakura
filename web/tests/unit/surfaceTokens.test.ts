@@ -48,6 +48,16 @@ describe('floating surfaces use the shared tier tokens', () => {
     expect(mismatched).toEqual([]);
   });
 
+  it('a menu or dialog that sets its own padding uses a --pad-* token', () => {
+    // The welcome screens keep their larger onboarding layout.
+    const HERO = ['#welcome-modal', '#why-sakura-modal'];
+    const offenders = rules()
+      .filter((r) => /box-shadow\s*:\s*var\(--shadow-(menu|dialog)\)/.test(r.body) && !HERO.includes(r.sel))
+      .filter((r) => /(?<![-\w])padding\s*:/.test(r.body) && !/(?<![-\w])padding\s*:\s*(0|var\(--pad-[a-z-]+\))\s*(;|$)/.test(r.body))
+      .map((r) => `${r.file}: ${r.sel}`);
+    expect(offenders).toEqual([]);
+  });
+
   it('the tokens are defined in base.css', () => {
     expect(Object.keys(SHEETS).length).toBeGreaterThan(10);
     const base = sheet('base.css');
@@ -55,5 +65,6 @@ describe('floating surfaces use the shared tier tokens', () => {
       expect(base).toMatch(new RegExp(`--radius-${t}:`));
       expect(base).toMatch(new RegExp(`--shadow-${t}:`));
     }
+    for (const t of ['menu', 'menu-item', 'card', 'card-item', 'pop', 'dialog']) expect(base).toMatch(new RegExp(`--pad-${t}:`));
   });
 });

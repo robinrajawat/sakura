@@ -165,6 +165,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-24: Menus, popovers and dialogs share padding.** Step 2, spacing (owner's pick). Scoped on purpose: of ~1,580 px
+spacing values app-wide, 65% already sit on a 2/4px grid and most of the rest are 1–3px optical nudges, so a global snap
+would shift layouts the tests cannot see. Instead `base.css` defines `--pad-menu` 6px, `--pad-menu-item` 7px 10px,
+`--gap-menu-item` 8px, `--pad-card` 4px / `--pad-card-item` 5px 8px (one-line cards: link card, format bar, jump
+popover), `--pad-pop` 10px (tag/date/picker popovers) and `--pad-dialog` 20px; 31 rules use them (changes of 1–2px).
+Left as is: the Quick Assist palette (taller rows on purpose) and the welcome screens' 28px. `surfaceTokens.test.ts`
+now also fails on a menu/dialog with its own padding. Next: colours.
+
 **2026-10-24: Interface text uses six sizes.** Step 2 continued (owner's pick: text sizes). `base.css` `:root` defines
 `--fs-2xs/xs/sm/md/lg/xl` = 10/11/12/13/14/16px; 73 rules use them. Half-pixel sizes rounded up (12.5→13, 11.5→12,
 10.5→11: 13 rules, barely visible; one, `.todo-text` 12.5, was already overridden to 13). Not interface text, left as is:
@@ -179,16 +187,6 @@ now use them (they had 6 radii and 20 shadows). Excluded on purpose: `.pv-popove
 `#todos-panel` side shadow. `tests/unit/surfaceTokens.test.ts` fails on a menu/popover/panel/dialog rule with its own
 shadow, or a tier shadow with other corners. Not covered yet: hub.html's surfaces, and surfaces styled inline from JS.
 Next: text sizes, then spacing and colours, then one shared popover component.
-
-**2026-10-24: CSS moved out of the HTML into `web/src/styles/` (no visible change).** First step of the owner's
-"standard, unified, elegant" plan: index.html's three `<style>` blocks became 22 files split at their existing
-`/* === Section === */` headings (no rule moved or reordered), hub.html's one block became `hub.css`; the generator
-splices them back (`STYLE_BLOCKS`). Built pages are byte-identical apart from the marker comments. Plan agreed with the
-owner, in order: (1) this move; (2) design tokens: ~6 font sizes, 3 radii, 3 shadows, a spacing scale and named
-colours (today: 36 font sizes, 15 radii, 99 shadows, 161 raw hex colours), adopted area by area with screenshot checks;
-(3) unify the ~39 popovers/menus/dialogs and ~37 button classes, each becoming a tested module as it is rebuilt.
-Rule: a PR either moves code or changes it, never both. `sidebar.css` (840 lines) mixes many areas; split it when
-touching them.
 
 ### In progress / not built
 
