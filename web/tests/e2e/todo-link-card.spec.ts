@@ -60,6 +60,12 @@ test('typing words finds a row; Enter links the first match', async ({ page }) =
   const t = await stored(page);
   expect(t.nodeRef).toBeTruthy();
   expect(t.link).toBeFalsy();
+  // Change link… names the linked row in the empty field.
+  await page.mouse.click(600, 600);
+  await menu(page, 'Change link…');
+  await expect(page.locator('#link-pop-input')).toHaveValue('');
+  await expect(page.locator('#link-pop-input')).toHaveAttribute('placeholder', /“Pallet labels” in .* · type to change/);
+  await expect(page.locator('#link-pop-open-btn')).toBeVisible();
 });
 
 test('a name given to an address stays while the address is unchanged', async ({ page }) => {

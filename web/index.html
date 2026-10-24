@@ -35017,7 +35017,17 @@ function waitingCandidates(todos) {
     pop.style.top=(rect.bottom+4)+'px';
 
     const input=document.getElementById('link-pop-input');
-    if(input) input.value=current;
+    if(input){
+      input.value=current;
+      // A row or document link has no address to show, so the empty field names where it goes.
+      let ph='Paste a web address, or type to find a row';
+      const ref=!current&&refDoc&&todos.find(x=>String(x.id)===String(id))?.nodeRef;
+      if(ref){
+        const info=resolveNodeRef(ref);
+        if(!info.missing) ph=(info.isDoc?(info.docTitle||'Untitled'):'“'+(info.text||'(untitled row)').slice(0,40)+'” in '+(info.docTitle||'Untitled'))+' · type to change';
+      }
+      input.placeholder=ph;
+    }
     pop.classList.toggle('has-link',!!(current||refDoc));
     refreshLinkPopResults();
 
