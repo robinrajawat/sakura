@@ -165,6 +165,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-24: Menus, popovers, panels and dialogs share three tiers.** Step 2 of the plan, started with surfaces (owner's
+pick). `base.css` `:root` defines `--radius-menu/panel/dialog` (10/12/14px) and `--shadow-menu/panel/dialog`; 32 rules
+now use them (they had 6 radii and 20 shadows). Excluded on purpose: `.pv-popover`, `#tour-tooltip`, the docked
+`#todos-panel` side shadow. `tests/unit/surfaceTokens.test.ts` fails on a menu/popover/panel/dialog rule with its own
+shadow, or a tier shadow with other corners. Not covered yet: hub.html's surfaces, and surfaces styled inline from JS.
+Next: text sizes, then spacing and colours, then one shared popover component.
+
 **2026-10-24: CSS moved out of the HTML into `web/src/styles/` (no visible change).** First step of the owner's
 "standard, unified, elegant" plan: index.html's three `<style>` blocks became 22 files split at their existing
 `/* === Section === */` headings (no rule moved or reordered), hub.html's one block became `hub.css`; the generator
@@ -181,13 +188,6 @@ or host/path) or words to find a document or row (results listed under it, Enter
 show once a link is set. The Web link / Link to a node tabs, the Display text box and Save are gone; a saved name is kept
 while its address is unchanged. A row/document link has no address, so the empty field's placeholder names it
 (“row” in Doc · type to change).
-
-**2026-10-23: One link editor: a one-line card; rename by typing over the words.** Owner chose this over a Text field.
-`#link-card` is one line: the address (`#link-card-addr`, edited in place) then Open, Copy, Remove. A link's words are
-renamed by selecting them and typing: a capture `beforeinput` handler (`_linkRetype`) keeps the typing inside the `<a>`
-(browsers keep only the first letter), in rows, To-Do titles, notes and threads. The bar's Link box is address-only.
-The header link (`#doc-link-menu`) uses the same card; its name is renamed on the chip (`#doc-link-label-input`,
-`#doc-link-wrap.renaming`), saved by `closeDocLinkMenu(keep)` on Enter or a click outside.
 
 ### In progress / not built
 
