@@ -56,3 +56,13 @@ test('Escape cancels, an address with spaces is refused, Remove takes the link o
   expect(await link(page)).toEqual(['', '']);
   await expect(chip).toContainText('Add link');
 });
+
+// The chip focuses the name field a moment after opening; that must not steal focus (and typing) from
+// a field the user already moved to. Failed intermittently in CI before the fix (2026-10-24).
+test('opening the card does not pull focus away from the address field', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => (window as any).eval("setDocLinkedUrl('https://example.com/a', 'A')"));
+  await page.evaluate(() => { document.getElementById('doc-link-chip')!.click(); (document.getElementById('doc-link-input') as HTMLInputElement).focus(); });
+  await page.waitForTimeout(50);
+  await expect(page.locator('#doc-link-input')).toBeFocused();
+});
