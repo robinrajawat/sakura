@@ -14321,7 +14321,8 @@ el('doc-link-chip')?.addEventListener('click',e=>{
   el('doc-link-wrap')?.classList.toggle('renaming',!!docLinkedUrl);
   menu.classList.add('open'); e.currentTarget.setAttribute('aria-expanded','true');
   const first=docLinkedUrl?labelInput:input;
-  setTimeout(()=>{ first.focus(); first.select(); },0);
+  // Skip it if focus already moved into the card (a fast click or typing in the address), or it would steal the typing.
+  setTimeout(()=>{ if(menu.classList.contains('open')&&!menu.contains(document.activeElement)){ first.focus(); first.select(); } },0);
 });
 el('doc-link-label-input')?.addEventListener('input',e=>{ e.currentTarget.size=Math.max(6,e.currentTarget.value.length+1); });
 ['doc-link-input','doc-link-label-input'].forEach(id=>el(id)?.addEventListener('keydown',e=>{
