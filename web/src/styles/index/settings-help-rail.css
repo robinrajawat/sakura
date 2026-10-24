@@ -1,0 +1,49 @@
+/* === Settings & Help panels: shared category-rail layout ===
+   Both panels use the same two-column shape — a left icon rail plus an
+   independently-scrolling content column, same width, same header/search
+   treatment — so they read as one product instead of two different UIs. */
+.settings-panel,.help-panel{width:600px;max-width:min(94vw,600px);max-height:min(78vh,640px);padding:14px 0 0;flex-direction:column;overflow:hidden}
+.settings-panel.open,.help-panel.open{display:flex}
+.settings-panel .settings-header,.help-panel .settings-header{padding:0 16px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between}
+.settings-panel .settings-header h3,.help-panel .settings-header h3{flex:0 0 auto}
+.settings-panel .panel-search-wrap,.help-panel .panel-search-wrap{flex:0 1 220px;min-width:120px;margin:0 10px 0 auto}
+.settings-body{display:flex;flex:1 1 auto;min-height:0;border-top:1px solid var(--border)}
+.settings-rail{flex:0 0 176px;display:flex;flex-direction:column;gap:1px;padding:8px;border-right:1px solid var(--border);overflow-y:auto}
+.settings-rail-btn{appearance:none;border:none;background:transparent;color:var(--muted);display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;font:500 12px 'Inter',sans-serif;text-align:left;cursor:pointer;transition:background .12s,color .12s}
+.settings-rail-btn svg{flex:0 0 auto}
+.settings-rail-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.settings-rail-btn:hover{background:var(--hover);color:var(--fg)}
+.settings-rail-btn.active{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.settings-content{flex:1 1 auto;min-width:0;overflow-y:auto;overflow-x:hidden;padding:14px 16px 16px;scrollbar-gutter:stable;display:grid;align-content:start;gap:14px}
+.help-section.is-first-visible{border-top:none;margin-top:0;padding-top:0}
+@media (max-width:700px){.settings-panel,.help-panel{width:min(94vw,420px)}.settings-rail{flex:0 0 40px;padding:6px 4px}.settings-rail-btn span{display:none}.settings-rail-btn{justify-content:center;padding:8px 4px}.settings-content{padding:12px 12px 14px;gap:12px}.settings-section{padding:11px 12px 12px}}
+/* Elegant inset-thumb scrollbar (matches #editor-pane) applied everywhere else in the app.
+   The border color must equal each surface's own background exactly, or the "floating" trick
+   doesn't read correctly - so this is grouped by background rather than one blanket rule. */
+.settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
+#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,.qa-dropdown,
+.history-modal-body,#at-suggest,#node-qa-suggest,#demo-chapters-menu,
+#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#link-pop-node-results,#diagram-gen-review-list
+{scrollbar-gutter:stable}
+.settings-content::-webkit-scrollbar,.settings-rail::-webkit-scrollbar,#shortcuts-modal-body::-webkit-scrollbar,.cs-rail::-webkit-scrollbar,#shortcuts-rail::-webkit-scrollbar,
+#cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,#diagram-gen-review-modal::-webkit-scrollbar,#diagram-gen-review-list::-webkit-scrollbar,
+.app-modal-body::-webkit-scrollbar,.doc-tab-overview-menu::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
+.history-modal-body::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
+#demo-chapters-menu::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
+#preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
+.anchor-suggest-results::-webkit-scrollbar,#link-pop-node-results::-webkit-scrollbar,#todo-link-popover::-webkit-scrollbar,
+#account-menu::-webkit-scrollbar,#notif-menu::-webkit-scrollbar,.sb-context-menu::-webkit-scrollbar{width:8px;height:8px}
+.settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
+#cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
+.app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
+.history-modal-body::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
+#demo-chapters-menu::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
+#preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
+.anchor-suggest-results::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
+#account-menu::-webkit-scrollbar-thumb,#notif-menu::-webkit-scrollbar-thumb,.sb-context-menu::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
+/* --tb-bg surfaces */
+#doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
+#doc-tab-strip::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
+#sidebar-scroll::-webkit-scrollbar{width:8px}
+#sidebar-scroll::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
+/* --edit-bg surfaces */

@@ -1,0 +1,109 @@
+*{box-sizing:border-box;margin:0;padding:0} :root{--editor-scale:1;--row-density:1;--accent-text-blend:45%;--accent-border-blend:30%;--accent-hint-blend:25%} html,body{height:100%;overflow:hidden}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+/* Same category as the scrollbar-button reset above and the number-input spinner fix below:
+   native browser chrome that ignores theme variables and renders its own light/white default
+   regardless of dark mode. The scrollbar corner (where vertical and horizontal scrollbars would
+   meet) is easy to miss since it only shows up inside a scrollable, rounded-corner container —
+   but unstyled, it's a stray white square peeking through the rounding in dark mode. */
+::-webkit-scrollbar-corner{background:transparent}
+/* Native number-input spin buttons are OS-chrome, same category as native scrollbars — no
+   theme variable reaches them, so on a dark theme they render as a mismatched light-grey
+   box. Suppressing them
+   outright keeps every number input flush with .meta-input's own bordered-box styling;
+   the up/down arrow keys and scroll-wheel-while-focused increment/decrement still work
+   without the visible buttons. */
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+/* Firefox has no ::-webkit-scrollbar-*, so it needs the standard scrollbar-width/scrollbar-color
+   properties instead. Chromium (incl. Edge) now also reads those same standard properties - and
+   on Windows 11 doing so switches it to the OS's new "Fluent" scrollbar renderer, which draws its
+   own small arrow affordances that no CSS can suppress, overriding our custom ::-webkit-scrollbar-
+   button:none. Scoping scrollbar-width/color to only fire where ::-webkit-scrollbar isn't
+   supported keeps Chromium on the fully custom (arrow-free) rendering path, while Firefox still
+   gets its thin scrollbar via the standard properties. */
+@supports not selector(::-webkit-scrollbar){
+.settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,#doc-tab-strip,.cs-rail,#shortcuts-rail,
+#sakura-modal-body,#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,
+.qa-dropdown,.history-modal-body,#sidebar-scroll,
+#at-suggest,#node-qa-suggest,#demo-chapters-menu,
+#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
+#diagram-anchor-suggest,#account-menu,.sb-context-menu{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+}
+body{display:flex;flex-direction:column;overflow:hidden;font-size:14px;transition:background .15s,color .15s;font-family:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+/* --content-font is the single source of truth for "what font is the text I actually write
+   in" — every content surface (outline, To-Dos text, Pad, Note) references this variable
+   explicitly rather than relying on inheriting body's font-family, which breaks the moment any
+   of those has its own container-level font-family (To-Dos panel did). body's own font-family
+   (chrome: buttons, chips, labels, dialogs) leads with the same family so the whole app reads as
+   one font, not two switching between UI and content. Only .node-prefix (tree lines) is exempt on
+   purpose — it's code/structure, not prose, and must stay monospace regardless. Fixed, not a
+   setting. */
+:root{--content-font:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body.theme-light{color-scheme:light;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--scroll:#ccc9bf;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
+body.theme-dark{color-scheme:dark;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#161614;--canvas-bg:#161614;--scroll:#34322e;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
+body{background:var(--bg);color:var(--fg)}
+body{--heading-c1:var(--pv-heading);--heading-c2:color-mix(in srgb,var(--pv-heading) 78%,var(--pv-heading-2) 22%);--heading-c3:color-mix(in srgb,var(--pv-heading) 52%,var(--pv-heading-2) 48%);--heading-c4:var(--pv-heading-2);--heading-c5:color-mix(in srgb,var(--pv-heading) 78%,var(--pv-heading-2) 22%);--heading-c6:var(--pv-heading-2);--heading-c7:var(--sem-section)}
+#appbar,#statusbar{flex-shrink:0;background:var(--tb-bg);border:none}#appbar{border-bottom:1px solid var(--border)}
+@media (display-mode: window-controls-overlay){
+#appbar{position:fixed;top:env(titlebar-area-y,0);left:env(titlebar-area-x,0);width:env(titlebar-area-width,100%);height:env(titlebar-area-height,40px);min-height:0;z-index:10000;background:var(--tb-bg,#f5f5f5)}
+body{padding-top:env(titlebar-area-height,40px)}
+}
+#appbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;flex-wrap:nowrap;min-height:env(titlebar-area-height,40px);-webkit-app-region:drag;app-region:drag}
+#appbar button,#appbar input,#appbar a,#appbar select{-webkit-app-region:no-drag;app-region:no-drag}
+#app-brand{display:flex;align-items:center;gap:0;min-width:0;flex:1 1 auto;overflow:visible}
+#app-icon{width:auto;height:auto;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;border-radius:0;font-size:20px;line-height:1}
+#app-name{display:inline;font:700 12px 'Inter',sans-serif;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;margin-left:0;user-select:none}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.toolbar-group{display:inline-flex;align-items:center;gap:6px;padding-right:10px;margin-right:2px;border-right:1px solid var(--border)} .toolbar-group:last-of-type{border-right:none;padding-right:0;margin-right:0}
+.spacer{flex:1}
+.btn,.select,.meta-input{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:transparent;border:1px solid color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));color:color-mix(in srgb,var(--accent) var(--accent-text-blend), var(--muted));padding:4px 8px;border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;line-height:1.2;transition:border-color .12s,color .12s,background .12s,box-shadow .12s}
+/* Masks API-key/token fields visually without ever using type="password" — Chrome's
+   password-manager save-prompt heuristic (and its "keep the last text field as username"
+   guess) is keyed specifically on input[type=password] existing anywhere on the page, with
+   no <form> required to trigger it. Chromium/WebKit support -webkit-text-security for this;
+   Firefox doesn't have an equivalent, so the field falls back to plain text there — a real
+   trade-off, but the field was never actually more secure than that (it's stored the same
+   way either way, this only affects the on-screen glyphs), and it's strictly better than a
+   browser occasionally offering to save random outline text as your AI provider's password. */
+.key-masked{-webkit-text-security:disc;text-security:disc}
+.select option{background-color:var(--edit-bg);color:var(--fg)}
+.btn{cursor:pointer}.btn:disabled{opacity:.45;cursor:default;box-shadow:none;pointer-events:none}.btn:hover,.select:hover,.meta-input:hover{border-color:var(--accent);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)} .btn.primary{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 82%, var(--tb-bg) 18%);box-shadow:0 1px 2px rgba(0,0,0,.08), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)}.btn.primary:hover{background:color-mix(in srgb,var(--accent) 88%, var(--tb-bg) 12%);box-shadow:0 2px 6px rgba(0,0,0,.12), inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%, transparent)} .btn.toggle-on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+#import-toggle,#export-toggle{display:inline-flex;align-items:center;gap:5px}
+#import-toggle .btn-icon,#export-toggle .btn-icon{display:none;flex:0 0 auto}
+#appbar.appbar-io-icononly #import-toggle .btn-label,#appbar.appbar-io-icononly #export-toggle .btn-label{display:none}
+#appbar.appbar-io-icononly #import-toggle .btn-icon,#appbar.appbar-io-icononly #export-toggle .btn-icon{display:inline-flex}
+#appbar.appbar-io-icononly #import-toggle,#appbar.appbar-io-icononly #export-toggle{padding:4px 7px}
+.select:focus,.btn:focus,.meta-input:focus,.node-input:focus{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+#editor-pane:focus{outline:none;box-shadow:none}
+.icon-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0;font-size:16px}
+.help-wrap,.export-wrap,.settings-wrap{position:relative}.help-panel,.export-menu,.settings-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:120;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 28px rgba(0,0,0,.12)}
+.help-panel,.settings-panel{display:none;font-family:'Inter',sans-serif;overflow:auto;max-height:min(72vh,720px)}.help-panel.open,.settings-panel.open{display:block}.export-menu.open{display:flex}
+.help-panel{width:min(460px,92vw);max-height:min(76vh,620px);overflow-y:auto;overflow-x:hidden;padding:12px 14px;line-height:1.55;scrollbar-gutter:stable}.settings-panel{width:398px;max-width:min(92vw,398px);max-height:min(76vh,620px);overflow-y:auto;overflow-x:hidden;padding:14px 16px 14px;scrollbar-gutter:stable}
+.help-panel h3,.settings-panel h3{font-size:13px;margin-bottom:10px}.help-panel h4,.settings-panel h4{font-size:12px;margin:14px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.help-panel ul{margin:0;padding-left:18px;padding-right:0;display:grid;gap:6px}.help-panel li{font-size:12px;line-height:1.45}.help-panel .muted-help,.settings-panel .muted-help{color:var(--muted);font-size:11px;margin-top:12px;line-height:1.5}
+#settings-section-about a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.settings-panel .settings-header,.help-panel .settings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.settings-panel .settings-header h3,.help-panel .settings-header h3{margin-bottom:0}
+.panel-search-toggle-btn{width:24px;height:24px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:none;background:none;border-radius:6px;cursor:pointer;color:var(--hint);transition:color .12s,background .12s}
+.panel-search-toggle-btn:hover{color:var(--fg);background:var(--hover)}
+.panel-search-toggle-btn.active{color:var(--accent);background:var(--hover)}
+.panel-search-wrap{position:relative;height:26px;display:flex;align-items:center}
+.panel-search-wrap input{width:100%;height:26px;box-sizing:border-box;appearance:none;border:1px solid transparent;background:var(--hover);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:0 28px 0 30px;border-radius:999px;outline:none;transition:border-color .15s,box-shadow .15s,background .15s}
+.panel-search-wrap input::placeholder{color:var(--hint)}
+.panel-search-wrap input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 45%,var(--border));box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+.panel-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--hint);pointer-events:none;display:flex}
+.panel-search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:18px;height:18px;appearance:none;border:none;background:transparent;border-radius:50%;color:var(--hint);cursor:pointer;font-size:13px;padding:0;line-height:1;display:none;align-items:center;justify-content:center;transition:background .12s,color .12s}
+.panel-search-clear.visible{display:flex}
+.panel-search-clear:hover{color:var(--fg);background:var(--sel)}
+.help-panel .help-section + .help-section{margin-top:12px}.help-panel p,.help-panel div{overflow-wrap:anywhere}
+.help-panel h3,.help-panel h4,.help-panel li,.help-panel .muted-help{white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.help-panel *{max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}.settings-grid.one-col{grid-template-columns:1fr}.settings-field{display:grid;gap:6px;min-width:0}.settings-field.controls-only{gap:2px}.settings-field label{font:500 12px 'Inter',sans-serif;color:var(--fg)}.settings-field-pair{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:18px;min-width:0}
+.settings-color-box{border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:color-mix(in srgb,var(--bg) 88%,transparent);margin-bottom:12px}
+.settings-color-box:last-child{margin-bottom:0}
+.settings-checkbox-row{display:flex;align-items:center;gap:8px;min-height:32px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:color-mix(in srgb,var(--tb-bg) 78%,transparent);font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer;transition:border-color .12s,background .12s}
+.settings-checkbox-row:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+.settings-checkbox-row input{margin:0;accent-color:var(--accent);cursor:pointer}.settings-checkbox-row:has(input:checked){border-color:color-mix(in srgb,var(--accent) 30%,var(--border))}.select-wrap{position:relative;display:inline-flex}
+.select-wrap .select{padding-right:24px}
+.select-wrap .select-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}.settings-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--border);border-radius:999px;margin:0;cursor:pointer;--fill-percent:0%}.settings-slider::-webkit-slider-runnable-track{height:4px;border-radius:999px;background:linear-gradient(to right, var(--accent) var(--fill-percent), var(--border) var(--fill-percent))}.settings-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:none;margin-top:-6px;cursor:pointer}.settings-slider::-moz-range-track{height:4px;border-radius:999px;background:linear-gradient(to right, var(--accent) var(--fill-percent), var(--border) var(--fill-percent))}.settings-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);border:none;cursor:pointer}.settings-slider-value{font:600 11px 'Inter',sans-serif;color:var(--muted);min-width:36px;text-align:right;flex:0 0 auto}.settings-switch-text{font:500 12px 'Inter',sans-serif;color:var(--fg)}
+.settings-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--bg) 88%,transparent)}
+.settings-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;min-height:36px}

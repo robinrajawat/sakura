@@ -1,0 +1,41 @@
+/* ── Generic PDF export overlay (To-Dos standalone export) ──────────────────────────────────
+   Off-screen at all times except while body.printing-generic is active (set by
+   printHtmlAsPdf), same pattern as #preview-overlay's own printing-preview treatment —
+   built once here as static CSS rather than injected per-export since, unlike the main
+   document PDF, none of this needs runtime-configurable margins/branding/footer. Accent
+   color uses var(--accent) — inherited from document.body, which always carries the live
+   value via applyAccentColor() regardless of print mode — with #a8442e as a fallback only
+   if that's somehow unset, and the same priority colors (#6c9bd1/#d1a23a/#c2553d) the live To-Dos panel uses (.todo-priority),
+   so these read as the same app rather than a generic export bolted on. */
+#gpe-overlay{display:none}
+body.printing-generic > *:not(#gpe-overlay){display:none!important}
+body.printing-generic{background:#fff!important}
+body.printing-generic #gpe-overlay{
+  display:block!important; position:static!important; background:#fff; color:#1f1c14;
+  font-family:'Inter',Helvetica,Arial,sans-serif;
+}
+@media print{
+  @page{margin:20mm}
+  #gpe-doc{max-width:100%;padding:0}
+  #gpe-title{font:700 25px 'Inter',sans-serif;color:#1f1c14;margin-bottom:10px;letter-spacing:-.01em}
+  #gpe-title-rule{width:44px;height:3px;border-radius:2px;background:var(--accent,#a8442e);margin-bottom:16px}
+  .gpe-exported-date{font:400 10.5px 'Inter',sans-serif;color:#a3a099;margin:-10px 0 20px;text-transform:uppercase;letter-spacing:.06em}
+  .gpe-chip{display:inline-flex;align-items:center;font:600 10.5px 'Inter',sans-serif;padding:3px 9px;border-radius:999px;background:#f3f1eb;color:#5c584f;border:1px solid #e3e0d8}
+  .gpe-chip-high{background:color-mix(in srgb,#c2553d 12%,#fff);color:#c2553d;border-color:color-mix(in srgb,#c2553d 32%,#e3e0d8)}
+  .gpe-chip-med{background:color-mix(in srgb,#d1a23a 14%,#fff);color:#a17422;border-color:color-mix(in srgb,#d1a23a 34%,#e3e0d8)}
+  .gpe-chip-low{background:color-mix(in srgb,#6c9bd1 12%,#fff);color:#4a76ad;border-color:color-mix(in srgb,#6c9bd1 32%,#e3e0d8)}
+  .gpe-section-heading{display:flex;align-items:center;gap:8px;font:700 12px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#5c584f;margin:26px 0 12px}
+  .gpe-section-heading::before{content:'';width:4px;height:14px;border-radius:2px;background:var(--accent,#a8442e)}
+  .gpe-section-heading:first-of-type{margin-top:0}
+  .gpe-empty{font:400 12.5px 'Inter',sans-serif;font-style:italic;color:#a3a099;padding:2px 0 2px 12px}
+  /* Task rows (To-Dos) */
+  .gpe-task{display:flex;align-items:flex-start;gap:10px;padding:7px 0;font:400 13px 'Inter',sans-serif;color:#1f1c14;break-inside:avoid}
+  .gpe-task-box{flex:0 0 auto;width:15px;height:15px;margin-top:1px;border:1.5px solid #c9c6bc;border-radius:4px;position:relative}
+  .gpe-task.done .gpe-task-box{background:var(--accent,#a8442e);border-color:var(--accent,#a8442e)}
+  .gpe-task.done .gpe-task-box::after{content:'';position:absolute;left:3px;top:0px;width:5px;height:9px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+  .gpe-task-text{flex:1 1 auto;min-width:0}
+  .gpe-task.done .gpe-task-text{color:#a3a099;text-decoration:line-through}
+  .gpe-task-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .gpe-subtask{margin-left:25px}
+  .gpe-subtask .gpe-task-box{width:12px;height:12px}
+}

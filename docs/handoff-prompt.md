@@ -144,6 +144,12 @@ docs/history/architecture-plan.md for the full mechanism. Tests live in
 `tests/e2e/*` via Playwright for the built app). `web/scripts/` holds
 build-time codegen and the HTML structure validator.
 
+CSS works the same way: each `<style>` block's text lives in `web/src/styles/index/*.css` /
+`web/src/styles/hub/hub.css` and `npm run generate` copies it in, in the order listed in
+`STYLE_BLOCKS` (scripts/generate-index-blocks.mjs), between `GENERATED:css-*` comments. Edit the
+.css files, never the copy in the HTML (`generate:verify` fails on drift). A new .css file must
+be added to `STYLE_BLOCKS` where its rules belong in the cascade, or generate fails.
+
 `.github/workflows/deploy.yml` builds and publishes `web/dist/` at the
 site root on every push to `main` — that's the only thing it publishes.
 
@@ -159,6 +165,16 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-24: CSS moved out of the HTML into `web/src/styles/` (no visible change).** First step of the owner's
+"standard, unified, elegant" plan: index.html's three `<style>` blocks became 22 files split at their existing
+`/* === Section === */` headings (no rule moved or reordered), hub.html's one block became `hub.css`; the generator
+splices them back (`STYLE_BLOCKS`). Built pages are byte-identical apart from the marker comments. Plan agreed with the
+owner, in order: (1) this move; (2) design tokens: ~6 font sizes, 3 radii, 3 shadows, a spacing scale and named
+colours (today: 36 font sizes, 15 radii, 99 shadows, 161 raw hex colours), adopted area by area with screenshot checks;
+(3) unify the ~39 popovers/menus/dialogs and ~37 button classes, each becoming a tested module as it is rebuilt.
+Rule: a PR either moves code or changes it, never both. `sidebar.css` (840 lines) mixes many areas; split it when
+touching them.
+
 **2026-10-23: To-Do link on the same one-line card.** The task menu's "Link…" / "Change link…" (was "Link to row…")
 opens `#todo-link-popover` as the one-line card: one field takes a web address (`typedLinkAddress`: http(s)/www/mailto
 or host/path) or words to find a document or row (results listed under it, Enter picks the first); Open and Remove
@@ -172,10 +188,6 @@ renamed by selecting them and typing: a capture `beforeinput` handler (`_linkRet
 (browsers keep only the first letter), in rows, To-Do titles, notes and threads. The bar's Link box is address-only.
 The header link (`#doc-link-menu`) uses the same card; its name is renamed on the chip (`#doc-link-label-input`,
 `#doc-link-wrap.renaming`), saved by `closeDocLinkMenu(keep)` on Enter or a click outside.
-
-**2026-10-23: Link box stays open when the page scrolls.** Owner: no way to set the display text of a pasted address.
-The card's pencil (rows, notes, threads) opened the Link box, but in a scrolled document focusing it scrolled the page and the bar's scroll handler hid it at once.
-The scroll handler now keeps the bar open while focus is inside it (the Link box).
 
 ### In progress / not built
 

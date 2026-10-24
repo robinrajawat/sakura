@@ -1,0 +1,28 @@
+/* === Sakura Modal === */
+#sakura-modal-overlay{position:fixed;inset:0;z-index:1150;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s}
+#sakura-modal-overlay.open{opacity:1;pointer-events:all}
+#sakura-modal-overlay.closing{opacity:0;pointer-events:none}
+#sakura-modal-overlay.closing #sakura-modal{transform:translateY(6px) scale(.97)}
+#sakura-modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 48px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);padding:22px 24px 20px;width:min(380px,calc(100vw - 32px));font-family:'Inter',sans-serif;transform:translateY(6px) scale(.97);transition:transform .18s cubic-bezier(.22,.8,.34,1)}
+#sakura-modal-overlay.open #sakura-modal{transform:translateY(0) scale(1)}
+#sakura-modal-icon{font-size:24px;margin-bottom:10px;line-height:1}
+#sakura-modal-title{font:600 14px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px}
+#sakura-modal-body{font:400 13px 'Inter',sans-serif;color:var(--muted);line-height:1.55;margin-bottom:16px;white-space:pre-line;max-height:240px;overflow-y:auto;word-break:break-word}
+/* A warning about something that can't be undone -- set by sakuraConfirm({warning}). */
+#sakura-modal-warning{display:flex;gap:8px;align-items:flex-start;margin:-6px 0 16px;padding:9px 11px;border-radius:8px;border:1px solid color-mix(in srgb,var(--sem-alert) 40%,transparent);background:color-mix(in srgb,var(--sem-alert) 10%,transparent);color:var(--sem-alert);font:600 12.5px 'Inter',sans-serif;line-height:1.45}
+#sakura-modal-warning[hidden]{display:none}
+
+#sakura-modal-input-wrap{margin-bottom:16px;display:none}
+#sakura-modal-input2-wrap{margin-bottom:16px}
+#sakura-modal-input,#sakura-modal-input2{width:100%;background:var(--edit-bg);border:1px solid var(--border);border-radius:8px;color:var(--fg);font:400 13px 'Inter',sans-serif;padding:8px 10px;outline:none;transition:border-color .12s,box-shadow .12s}
+#sakura-modal-input:focus,#sakura-modal-input2:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+#sakura-modal-input-label,#sakura-modal-input2-label{font:500 11px 'Inter',sans-serif;color:var(--muted);margin-bottom:5px;display:block}
+#sakura-modal-actions{display:flex;gap:8px;justify-content:flex-end}
+#sakura-modal-icon.warn{color:var(--sem-alert)}
+.smodal-btn{appearance:none;border:1px solid var(--border);background:transparent;color:var(--muted);padding:6px 14px;border-radius:8px;font:500 12px 'Inter',sans-serif;cursor:pointer;transition:border-color .12s,color .12s,background .12s}
+.smodal-btn:hover{border-color:var(--accent);color:var(--fg)}
+.smodal-btn.primary{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 86%,var(--tb-bg) 14%)}
+.smodal-btn.primary:hover{background:color-mix(in srgb,var(--accent) 94%,var(--tb-bg) 6%)}
+.smodal-btn.danger{border-color:color-mix(in srgb,#dc2626 55%,var(--border));color:#dc2626}
+.smodal-btn.danger:hover{background:color-mix(in srgb,#dc2626 10%,transparent);border-color:#dc2626}
+

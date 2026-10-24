@@ -1,0 +1,172 @@
+/* === Welcome / onboarding choice modal === */
+#welcome-overlay{position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
+#welcome-overlay.open{opacity:1;pointer-events:all}
+#welcome-overlay.closing{opacity:0;pointer-events:none}
+#welcome-modal{background:var(--bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:28px 28px 22px;width:min(480px,calc(100vw - 32px));font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
+#welcome-overlay.open #welcome-modal{transform:translateY(0) scale(1)}
+#welcome-overlay.closing #welcome-modal{transform:translateY(8px) scale(.97)}
+#welcome-modal-brand{display:flex;align-items:center;gap:7px;margin-bottom:18px}
+#welcome-modal-brand-icon{font-size:22px;line-height:1}
+#welcome-modal-brand-name{font:600 13px 'Inter',sans-serif;color:var(--muted);letter-spacing:.04em}
+#welcome-modal h2{font:700 18px 'Inter',sans-serif;color:var(--fg);margin:0 0 6px}
+#welcome-modal-sub{font:400 13px 'Inter',sans-serif;color:var(--muted);margin:0 0 22px;line-height:1.5}
+#welcome-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.welcome-choice{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;background:transparent;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;transition:border-color .14s,background .14s,box-shadow .14s;color:var(--fg)}
+.welcome-choice:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent);box-shadow:0 2px 8px rgba(0,0,0,.07)}
+.welcome-choice:hover .welcome-choice-icon{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.welcome-choice:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.welcome-choice-icon{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);flex-shrink:0}
+.welcome-choice-text{display:flex;flex-direction:column;gap:4px}
+.welcome-choice-label{font:600 13px 'Inter',sans-serif;color:var(--fg)}
+.welcome-choice-desc{font:400 11.5px 'Inter',sans-serif;color:var(--muted);line-height:1.45}
+#welcome-skip{display:block;text-align:center;font:400 12px 'Inter',sans-serif;color:var(--hint);background:none;border:none;cursor:pointer;padding:4px;width:100%;transition:color .12s}
+#welcome-skip:hover{color:var(--muted)}
+#welcome-why-link{display:block;text-align:center;font:500 12px 'Inter',sans-serif;color:var(--accent);background:none;border:none;cursor:pointer;padding:4px;width:100%;margin-bottom:4px;transition:opacity .12s}
+#welcome-why-link:hover{opacity:.8}
+#why-sakura-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
+#why-sakura-overlay.open{opacity:1;pointer-events:all}
+#why-sakura-overlay.closing{opacity:0;pointer-events:none}
+#why-sakura-modal{background:var(--bg);border:1px solid var(--border);border-radius:16px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:28px 28px 22px;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
+
+#why-sakura-overlay.open #why-sakura-modal{transform:translateY(0) scale(1)}
+#why-sakura-overlay.closing #why-sakura-modal{transform:translateY(8px) scale(.97)}
+#sakura-landing-overlay{position:fixed;inset:0;z-index:3000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+#sakura-landing-card{width:min(380px,calc(100vw - 32px));text-align:center;font-family:'Inter',sans-serif}
+#sakura-landing-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;margin-bottom:22px}
+#sakura-landing-brand-icon{font-size:56px;line-height:1;display:inline-flex}
+#sakura-landing-brand-name{font:700 18px 'Inter',sans-serif;letter-spacing:.02em;color:var(--fg)}
+#sakura-landing-heading{font:700 21px 'Inter',sans-serif;color:var(--fg);margin:0 0 8px}
+#sakura-landing-sub{font:400 13.5px 'Inter',sans-serif;color:var(--muted);line-height:1.5;margin:0 0 24px}
+#sakura-landing-google-signin-btn:hover{background:var(--hover)}
+.signin-privacy{margin-top:18px;font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.5}
+.signin-privacy summary{cursor:pointer;color:var(--hint);list-style:none;display:inline-flex;align-items:center;gap:4px}
+.signin-privacy summary::-webkit-details-marker{display:none}
+.signin-privacy summary svg{transition:transform .15s}
+.signin-privacy[open] summary svg{transform:rotate(180deg)}
+.signin-privacy summary:hover{color:var(--fg)}
+.signin-privacy ul{text-align:left;margin:10px 0 8px;padding-left:18px}
+.signin-privacy li{margin:3px 0}
+.signin-privacy a{color:var(--accent);text-decoration:none}
+.signin-privacy a:hover{text-decoration:underline}
+#icon-library-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
+#icon-library-overlay.open{opacity:1;pointer-events:all}
+#icon-library-overlay.closing{opacity:0;pointer-events:none}
+#icon-library-modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:0;width:min(640px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:hidden;display:flex;flex-direction:column;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
+#icon-library-overlay.open #icon-library-modal{transform:translateY(0) scale(1)}
+#icon-library-overlay.closing #icon-library-modal{transform:translateY(8px) scale(.97)}
+#icon-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.icon-lib-cell{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:1px solid var(--border);border-radius:10px;background:var(--hover)}
+.icon-lib-cell svg{width:22px;height:22px;stroke:var(--fg);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.icon-lib-emojis{font-size:14px;letter-spacing:2px;text-align:center}
+.settings-row-desc a{color:var(--accent)}
+/* Diagram generation review screen — classification is stored on the diagram record
+   (diagram.nodeMeta), never on the node/tags, so nothing here ever touches node.tags or
+   renders anywhere outside this modal. */
+#diagram-gen-review-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
+#diagram-gen-review-overlay.open{opacity:1;pointer-events:all}
+#diagram-gen-review-overlay.closing{opacity:0;pointer-events:none}
+#diagram-gen-review-modal{background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 28px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);padding:0;width:min(620px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow:hidden;display:flex;flex-direction:column;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1)}
+#diagram-gen-review-overlay.open #diagram-gen-review-modal{transform:translateY(0) scale(1)}
+#diagram-gen-review-overlay.closing #diagram-gen-review-modal{transform:translateY(8px) scale(.97)}
+#diagram-gen-review-list{display:flex;flex-direction:column;gap:1px;max-height:min(50vh,440px);overflow-y:auto;margin:0 20px 14px;border:1px solid var(--border);border-radius:9px;padding:4px}
+.dgr-row{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:12.5px}
+.dgr-row:hover{background:var(--hover)}
+.dgr-row-text{flex:1;min-width:0;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dgr-row-controls{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.dgr-shape-select{appearance:none;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:500 11px 'Inter',sans-serif;padding:3px 6px;border-radius:6px;outline:none;max-width:110px}
+.dgr-shape-select:disabled,.dgr-toggle:disabled,.dgr-toggle:disabled+span{opacity:.4}
+.dgr-toggle-label{display:flex;align-items:center;gap:3px;font:500 10.5px 'Inter',sans-serif;color:var(--muted);cursor:pointer;white-space:nowrap}
+.dgr-toggle{margin:0;cursor:pointer}
+.dgr-select-cb{margin:0 6px 0 0;cursor:pointer;flex-shrink:0}
+#diagram-gen-review-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px 8px;margin:12px 20px 8px;border:1px solid var(--border);border-radius:8px;background:var(--tb-bg)}
+#diagram-gen-review-toolbar .dgr-toggle-label{color:var(--fg)}
+.dgr-toolbar-sep{width:1px;align-self:stretch;background:var(--border);margin:0 2px}
+.dgr-toolbar-label{font:600 10.5px 'Inter',sans-serif;color:var(--muted)}
+.dgr-bulk-btn{padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font:600 10.5px 'Inter',sans-serif;cursor:pointer}
+.dgr-bulk-btn:hover{background:var(--hover)}
+#diagram-gen-review-toolbar .dgr-shape-select{max-width:120px}
+.dgr-dir-select{appearance:none;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:500 11px 'Inter',sans-serif;padding:3px 6px;border-radius:6px;outline:none}
+#diagram-gen-review-actions{padding:0 20px 16px;display:flex;justify-content:flex-end;gap:8px}
+#diagram-gen-review-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
+#why-sakura-brand{display:flex;align-items:center;gap:7px;margin-bottom:16px}
+#why-sakura-brand-icon{font-size:22px;line-height:1}
+#why-sakura-brand-name{font:600 13px 'Inter',sans-serif;color:var(--muted);letter-spacing:.04em}
+#why-sakura-modal h2{font:700 18px 'Inter',sans-serif;color:var(--fg);margin:0 0 6px}
+#why-sakura-sub{font:400 13px 'Inter',sans-serif;color:var(--muted);margin:0 0 18px;line-height:1.55}
+#why-sakura-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.why-row{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:transparent}
+.why-row-icon{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);flex-shrink:0}
+.why-row-text{display:flex;flex-direction:column;gap:4px}
+.why-row-label{font:600 13px 'Inter',sans-serif;color:var(--fg);line-height:1.3}
+.why-row-desc{font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.5}
+#why-sakura-caveat{font:400 11.5px 'Inter',sans-serif;color:var(--hint);line-height:1.5;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%);border:1px solid var(--border);margin-bottom:16px}
+#why-sakura-close{display:block;width:100%;padding:10px;border-radius:9px;border:none;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;cursor:pointer;transition:opacity .12s}
+#why-sakura-close:hover{opacity:.9}
+
+/* Header layout: brand + inline title + actions, single row, no wrap */
+#editor-meta-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 2px 16px}
+#sb-author.doc-author-chip{text-transform:none;letter-spacing:0;font-weight:600;cursor:text;width:132px;text-align:left;outline:none}
+/* Hug the name instead of a fixed 132px box (which left trailing grey on short names); browsers without field-sizing keep the fixed width. */
+@supports (field-sizing:content){#sb-author.doc-author-chip{field-sizing:content;width:auto;min-width:64px;max-width:220px}}
+/* Every byline dropdown opens from its chip's left edge (Share used to align its right edge to
+   the chip, so it opened leftwards over the title). */
+#doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu,#doc-share-wrap .todo-dd-menu{right:auto;left:0}
+.meta-inline{appearance:none;-webkit-appearance:none;-moz-appearance:none;border:none;background:transparent;color:var(--fg);padding:0 2px;min-width:0;font-family:'Inter',sans-serif;line-height:1.2;border-radius:4px}
+.meta-inline::placeholder{color:var(--hint)}
+.meta-inline:hover{background:color-mix(in srgb,var(--hover) 45%, transparent)}
+.meta-inline:focus{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%, transparent)}
+#editor-title-row{flex:0 0 auto;padding:34px 24px 2px 40px;background:var(--canvas-bg)}
+#editor-title-inner{max-width:var(--editor-reading-width,none);margin:0 auto}
+#header-title{appearance:none;-webkit-appearance:none;-moz-appearance:none;display:block;width:100%;border:none;outline:none;background:transparent;padding:2px 2px 4px;font:800 28px/34px 'Inter',sans-serif;min-height:20px;color:var(--fg);min-width:0;max-width:100%;border-radius:4px;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+#header-title::placeholder{color:var(--hint);opacity:1}
+#header-title:focus{box-shadow:none}
+#header-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto;flex-wrap:nowrap;white-space:nowrap;width:auto;overflow:visible}
+/* Consolidated into the '...' (appbar-more) menu — these triggers still exist and still work
+   exactly as before (their panels still anchor to these same wrappers), they just no longer
+   take up space or a visible slot in the row. Real accessibility trade-off worth stating: these
+   remain in the tab order as legitimate, if invisible, buttons — a screen reader user tabbing
+   through would still reach them directly, which is fine; nothing here is display:none. */
+#settings-toggle,#help-toggle,#import-toggle,#export-toggle{position:absolute;opacity:0;pointer-events:none;top:0;right:0;width:1px;height:1px;overflow:hidden;padding:0;border:none}
+/* Notion-style visual pass: appbar buttons read as plain text by default, chrome only
+   appears on hover, instead of every action sitting inside its own bordered pill all the
+   time. Scoped to #appbar specifically so toolbars/modals elsewhere keep their existing
+   .btn look — this is a styling-only pass, not a global button redesign. */
+#appbar .btn{border-color:transparent;background:transparent;color:var(--muted);font-weight:500;box-shadow:none;height:25px;padding:0 7px;display:inline-flex;align-items:center;box-sizing:border-box}
+#appbar #header-actions{height:28px}
+#appbar .export-wrap,#appbar .settings-wrap,#appbar .help-wrap{height:28px;display:flex;align-items:center}
+#appbar .btn:hover{border-color:transparent;background:var(--hover);color:var(--fg);box-shadow:none}
+#appbar .btn.primary{background:color-mix(in srgb,var(--accent) 82%, var(--tb-bg) 18%);color:#fff}
+#appbar .btn.primary:hover{background:color-mix(in srgb,var(--accent) 88%, var(--tb-bg) 12%);color:#fff}
+#header-actions > .settings-wrap,#header-actions > .help-wrap,#header-actions > .export-wrap{flex:0 0 auto}
+#header-actions .btn{padding:4px 10px;white-space:nowrap;flex:0 0 auto}
+@media (max-width:980px){
+  #appbar{gap:8px}
+  #header-actions{gap:6px}
+  #header-actions .btn{padding:4px 8px}
+  #statusbar{gap:8px;flex-wrap:wrap}
+  #status-left,#status-right{width:100%;justify-content:flex-start}
+}
+@media (max-width:700px){
+  #statusbar{flex-wrap:nowrap;overflow:hidden}
+  #status-left,#status-right{width:auto}
+  #status-right .status-chip:not(:last-child){display:none}
+  #status-right .status-passive:not(:last-child){display:none}
+}
+/* Progressive toolbar group hiding to prevent appbar overflow */
+@media (max-width:860px){
+  #appbar{overflow:hidden}
+  .toolbar-group:last-of-type{display:none}
+}
+@media (max-width:720px){
+  .toolbar-group:nth-last-of-type(2){display:none}
+  #header-actions .btn:not(.primary){display:none}
+}
+@media (max-width:560px){
+  #app-name{display:none}
+  .toolbar{display:none}
+  #header-actions{gap:4px}
+}
+
+/* Zen mode always hides the toolbar (the toolbar itself is otherwise always shown). */
+body.zen-mode #quick-bar{display:none}
+
