@@ -1,0 +1,99 @@
+/* ===== Hub dock-panel pieces ===== */
+/* Small fixed-position dropdown menus (To-Dos Export) */
+.dock-menu-item{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;appearance:none;border:none;background:none;text-align:left;padding:7px 8px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
+.dock-menu-item:hover{background:var(--hover);color:var(--accent)}
+.dock-menu-icon{flex:0 0 auto;display:inline-flex;color:var(--hint)}
+.dock-menu-item:hover .dock-menu-icon{color:inherit}
+
+/* Docked to the right edge, full height below the app bar, rounded only on the left and
+   shadowed only on the left edge (no screen edge to round/shadow against on the other
+   three sides). Inspired by Outlook's Calendar/To Do panel: one launcher in the app bar,
+   panel docks to the side rather than floating over the middle of the document.
+   This block has to come after the panel's own base rules above (not just have higher
+   specificity) to reliably win the cascade — same ID-selector specificity either way, so
+   whichever comes later in the file wins. */
+/* bottom stops above the status bar (--statusbar-h, kept in sync with its real, possibly-
+   wrapped height by syncStatusbarHeight below) instead of the raw viewport edge, so the
+   panel doesn't extend behind/under it. */
+#todos-panel{top:48px;right:0;bottom:var(--statusbar-h,34px);max-height:none;width:min(440px,calc(100vw - 32px));border-radius:12px 0 0 12px;box-shadow:-10px 0 28px rgba(0,0,0,.10);border-right:none}
+
+/* Floating dock rail (To-Dos) — fixed to the right edge,
+   independent of the status bar and of #sidebar's layout flow, so relocating it
+   never touches the app's main flex layout. Vertically centered: stacking it in the
+   bottom-right corner (an earlier version of this) put it directly above
+   #editor-floating-controls's own row of icons, which read as two crowded, differently-
+   sized clusters piled on top of each other in the same corner. Centering it avoids
+   that; the collapse handle (see below) is there for when it sits over content someone
+   wants to see. These panels anchor themselves directly above this rail's chips (see
+   sakuraAnchorPanelAboveChip), which clamps to the viewport itself now rather than
+   assuming there's always a full panel-height of empty space above the chip, so a
+   centered rail no longer risks pushing a panel off the top of the
+   screen the way it did before that helper was hardened.
+   Outer layout is a row (buttons column + handle side by side), even though the four
+   icons themselves stay stacked vertically — collapsing shrinks the buttons column's
+   *width* down to nothing rather than hiding it outright, so the rail visibly narrows
+   toward the handle at the edge (a horizontal collapse) instead of just vanishing
+   vertically while still holding its full width. */
+/* Replaced by the single #dock-panel-appbar-toggle button in the app bar (Outlook-style:
+   one launcher, panel docks to the side) — the whole rationale for this floating rail
+   (where to put 4 separate buttons, how to collapse it, whether it overlaps content) goes
+   away once there's only one button and it lives in a toolbar that's already always
+   there. Force-hidden rather than removed: badge/is-active tracking on the individual
+   chips underneath still runs (harmlessly, on invisible elements) so nothing else needs
+   to change. */
+#status-util-group{display:none!important}
+#dock-panel-appbar-toggle{position:relative}
+/* (see .notif-badge above — this is the same badge design, applied to the Hub button's overdue
+   count instead of the bell's unread count; kept as its own selector since updateOverdueBadge()
+   creates this element generically for three different buttons, only one of which is this
+   floating app-bar context, but the declared visual values are intentionally identical.) */
+#dock-panel-appbar-toggle .todo-overdue-badge{position:absolute;top:-4px;right:-4px;display:flex;align-items:center;justify-content:center;min-width:13px;height:13px;padding:0 3px;margin-left:0;border-radius:999px;background:var(--fc-red);color:#fff;font:700 8.5px/1 'Inter',sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.01em;border:1.5px solid var(--tb-bg);box-sizing:content-box;background-clip:padding-box;box-shadow:0 1px 2px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.06)}
+#status-util-group .dock-rail-buttons{display:flex;flex-direction:column;gap:2px;width:34px;opacity:1;overflow:hidden;transition:width .18s cubic-bezier(.22,.8,.34,1),opacity .14s ease}
+/* Collapsed: shrink the buttons column's width to 0 (clipped by the overflow:hidden
+   above) rather than display:none-ing it — a widthless, still-flexbox-participating
+   element transitions smoothly, where display:none can only jump. Also pull the whole
+   rail in flush against the edge and drop the padding/gap down to just what the handle
+   itself needs — there's no reason to still hold the full expanded inset once the
+   buttons are gone, and the previous version still looked like a thick pill rather than
+   a slim edge tab. Translucent and borderless at rest so it reads as a quiet edge tab
+   rather than a solid floating chip; hovering brings back full contrast so it's still
+   easy to find and read. */
+#status-util-group.collapsed .dock-rail-buttons{width:0;opacity:0}
+#status-util-group.collapsed{right:1px;padding:2px 1px;gap:0;background:color-mix(in srgb,var(--tb-bg) 45%,transparent);border-color:transparent;box-shadow:none;opacity:.6}
+#status-util-group.collapsed:hover{opacity:1;background:var(--tb-bg);border-color:color-mix(in srgb,var(--accent) var(--accent-border-blend), var(--border));box-shadow:0 6px 20px rgba(0,0,0,.14)}
+/* Hidden (not just faded) while a dock panel is open — redundant once open, since the
+   panel's own tab strip already covers switching, and this is what actually stops a tall
+   panel from visually covering the rail sitting underneath it rather than just reducing
+   how often that happens. */
+#status-util-group.panel-open{opacity:0;pointer-events:none}
+#status-util-group .dock-rail-handle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:16px;padding:0;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-hint-blend), var(--hint));cursor:pointer;border-radius:6px;flex-shrink:0;transition:width .18s cubic-bezier(.22,.8,.34,1)}
+#status-util-group.collapsed .dock-rail-handle{width:12px}
+#status-util-group .dock-rail-handle:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+/* Base chevron SVG points down; rotated to point right (the direction the buttons
+   column shrinks toward) when expanded, and left (back toward where they'll reappear)
+   once collapsed. */
+#status-util-group .dock-rail-handle svg{transition:transform .15s}
+#status-util-group .dock-rail-handle svg{transform:rotate(-90deg)}
+#status-util-group.collapsed .dock-rail-handle svg{transform:rotate(90deg)}
+#status-util-group .dock-btn{appearance:none;-webkit-appearance:none;position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border-radius:8px;border:none;background:transparent;color:color-mix(in srgb,var(--accent) var(--accent-text-blend), var(--muted));font:inherit;cursor:pointer;transition:color .12s,background .12s}
+#status-util-group .dock-btn:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+#status-util-group .dock-btn.is-active{color:var(--accent);font-weight:600;background:color-mix(in srgb,var(--accent) 15%,transparent)}
+#status-util-group .dock-btn svg{flex-shrink:0}
+/* Icon-only: label text stays in the DOM (accessible name, and still readable by the
+   data-tip tooltip system) but is visually clipped rather than removed. */
+#status-util-group .dock-btn-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* top-left, not top-right: top-right sits right next to the collapse handle (immediately
+   adjacent, on the outside of the button column), which read as crowded even without any
+   literal overlap. Top-left keeps it clear of that neighbor entirely. */
+#status-util-group .todo-overdue-badge{position:absolute;top:1px;left:1px;margin-left:0;min-width:14px;height:14px;font-size:8.5px}
+@media (max-width:760px){
+  /* Narrow viewports (this app's own mobile/narrow breakpoint) — drop to a bottom-center
+     bar instead of a right-edge rail, and lay the four icons out in a row instead of a
+     column, since a vertical stack eats too much of a short viewport's height. The
+     collapse itself still works the same way (the buttons column's width shrinks to 0). */
+  #status-util-group{right:auto;left:50%;top:auto;bottom:14px;transform:translateX(-50%)}
+  #status-util-group.collapsed{right:auto;padding:1px 2px}
+  #status-util-group .dock-rail-buttons{flex-direction:row;width:auto;height:34px}
+  #status-util-group.collapsed .dock-rail-buttons{width:0}
+}
+

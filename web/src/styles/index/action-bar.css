@@ -1,0 +1,96 @@
+/* === Action bar (single, always-visible toolbar) === */
+#doc-tab-strip-row{display:flex;align-items:stretch;background:var(--tb-bg);border-bottom:1px solid var(--border)}
+#doc-tab-strip{display:flex;align-items:stretch;gap:2px;padding:6px 4px 0 8px;overflow-x:auto;overflow-y:hidden;flex:1 1 auto;min-width:0}
+
+.doc-tab{display:flex;align-items:center;gap:6px;max-width:180px;min-width:90px;padding:6px 8px 7px 12px;border-radius:8px 8px 0 0;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;flex:0 0 auto;border:1px solid transparent;border-bottom:none;position:relative;top:1px}
+.doc-tab.dragging{opacity:.48}
+.doc-tab.drag-over-left::before,.doc-tab.drag-over-right::after{content:'';position:absolute;top:4px;bottom:4px;width:2px;border-radius:999px;background:color-mix(in srgb,var(--accent) 70%, transparent);pointer-events:none}
+.doc-tab.drag-over-left::before{left:0}
+.doc-tab.drag-over-right::after{right:0}
+.doc-tab:hover{background:var(--hover);color:var(--fg)}
+.doc-tab.active{background:var(--edit-bg);color:var(--fg);border-color:var(--border)}
+.doc-tab .doc-tab-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
+.doc-tab .doc-tab-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto;opacity:0;transition:opacity .15s}
+.doc-tab.is-dirty .doc-tab-dirty{opacity:1}
+.doc-tab .doc-tab-close{flex:0 0 auto;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--muted);font-size:13px;line-height:1}
+.doc-tab .doc-tab-close:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.doc-tab.pinned{max-width:34px;min-width:34px;padding:6px 0 7px;justify-content:center;gap:0}
+.doc-tab.pinned .doc-tab-title,.doc-tab.pinned .doc-tab-close{display:none}
+.doc-tab.pinned .doc-tab-pin-icon{display:flex;color:var(--muted)}
+.doc-tab.pinned.active .doc-tab-pin-icon{color:var(--accent)}
+.doc-tab.pinned .doc-tab-dirty{position:absolute;top:4px;right:4px}
+.doc-tab-pin-icon{display:none;align-items:center;justify-content:center;flex:0 0 auto}
+.doc-tab-add{flex:0 0 auto;align-self:center;width:24px;height:24px;margin:6px 2px 0;border:none;background:transparent;color:var(--muted);font:600 15px 'Inter',sans-serif;border-radius:6px;cursor:pointer;line-height:1}
+.doc-tab-add:hover{background:var(--hover);color:var(--accent)}
+.doc-tab-overview-wrap{position:relative;flex:0 0 auto;display:flex;align-items:center;padding-right:6px}
+.doc-tab-overview-btn{width:22px;height:22px;margin-top:4px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer}
+.doc-tab-overview-btn:hover{background:var(--hover);color:var(--fg)}
+.doc-tab-overview-menu{position:absolute;top:calc(100% + 4px);right:0;min-width:260px;max-width:320px;max-height:360px;overflow:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);z-index:65;display:none;padding:6px}
+
+.doc-tab-overview-menu.open{display:block}
+.doc-tab-overview-menu input{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;outline:none;margin-bottom:6px}
+.doc-tab-overview-menu input:focus{border-color:var(--accent)}
+.doc-tab-overview-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:7px 8px;border:none;background:transparent;border-radius:7px;cursor:pointer;color:var(--fg);font:400 12px 'Inter',sans-serif}
+.doc-tab-overview-item .doc-tab-overview-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
+.doc-tab-overview-item:hover,.doc-tab-overview-item.kbd-active{background:var(--hover)}
+.doc-tab-overview-item.active{color:var(--accent);font-weight:600}
+.doc-tab-overview-item .doc-tab-overview-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+.doc-tab-overview-empty{padding:10px 8px;font:400 12px 'Inter',sans-serif;color:var(--hint);text-align:center}
+#quick-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-wrap:wrap}
+.action-group{display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;max-width:100%}
+.action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px}
+/* Collapse all + Zoom sit as a small pair at the right end of the toolbar. */
+#ag-fold{margin-left:auto}
+/* Marker summary: whole-document counts per marker (folded branches included), left of the fold group. */
+#ag-markers{margin-left:auto}#ag-markers[hidden]{display:none}
+#ag-markers:not([hidden])+#ag-fold{position:relative;margin-left:13px}
+#ag-markers:not([hidden])+#ag-fold::before{content:'';position:absolute;left:-7px;top:50%;width:1px;height:18px;transform:translateY(-50%);background:color-mix(in srgb,var(--border) 70%,transparent)}
+/* Open-items summary: words in the text colour, only each icon tinted (--mc), so it doesn't
+   outshout the document. One button; its list opens below (.open-items-menu). */
+.open-items-btn,.decisions-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px;border:none;border-radius:8px;background:transparent;color:var(--fg);font:500 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums;white-space:nowrap}
+.open-items-btn:hover,.decisions-btn:hover{background:var(--hover)}
+.open-items-btn.active{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 45%,transparent)}
+.open-items-btn:focus-visible,.decisions-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.oi-part{display:inline-flex;align-items:center;gap:4px}
+.oi-part svg{color:var(--mc);flex:0 0 auto}
+.oi-sep{color:var(--hint)}
+.oi-divider{flex:0 0 1px;width:1px;height:16px;align-self:center;background:var(--border);margin:0 3px}
+.open-items-menu{width:340px;max-width:calc(100vw - 16px)}
+.open-items-menu .sb-context-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A second, quieter line under an item: e.g. why a follow-up is open (the thread line that set it). */
+.sb-context-meta{flex:none;margin-left:auto;padding-left:12px;align-self:flex-start;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sb-context-sub{display:block;margin-top:1px;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-context-item:has(.sb-context-sub) .sb-context-icon{align-self:flex-start;margin-top:1px}
+.sb-context-fold .sb-context-chevron{transition:transform .15s}
+.sb-context-fold[aria-expanded="true"] .sb-context-chevron{transform:rotate(90deg)}
+.sb-context-fold-body{display:flex;flex-direction:column;gap:1px;padding-left:8px}
+@media (prefers-reduced-motion:reduce){.sb-context-fold .sb-context-chevron{transition:none}}
+.oi-menu-icon{display:inline-flex}
+.oi-head{display:flex;flex-direction:column;gap:6px;padding:6px 8px 8px;margin-bottom:2px;border-bottom:1px solid var(--border)}
+.oi-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.decisions-menu .sb-context-heading{padding-top:6px}
+.oi-head-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg)}
+.oi-head-actions{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
+.oi-copy{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:none;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+.oi-copy:hover{background:var(--hover,color-mix(in srgb,var(--fg) 8%,transparent));color:var(--fg)}
+.oi-copy:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.oi-copy svg{width:13px;height:13px}
+.oi-switch{display:inline-flex;align-items:center;gap:8px;flex:0 0 auto;margin:-2px -2px -2px 0;padding:2px;border:none;background:none;cursor:pointer;font:500 11.5px 'Inter',sans-serif;color:var(--muted);text-align:left;border-radius:6px}
+.oi-switch:hover .oi-switch-label{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--border)}
+.oi-switch:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.oi-switch-track{position:relative;flex:0 0 auto;width:28px;height:16px;border-radius:999px;background:color-mix(in srgb,var(--fg) 18%,transparent);transition:background .15s}
+.oi-switch-track span{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--bg);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.oi-switch.on .oi-switch-track{background:var(--accent)}
+.oi-switch.on .oi-switch-track span{transform:translateX(12px)}
+@media (prefers-reduced-motion:reduce){.oi-switch-track,.oi-switch-track span{transition:none}}
+.sb-context-heading.has-action{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:2px}
+.sb-context-item.sb-context-heading-action{width:24px;height:22px;padding:0;justify-content:center;gap:0;color:var(--hint);border-radius:5px;flex:0 0 auto}
+.sb-context-item.sb-context-heading-action:hover{color:var(--fg)}
+.sb-context-item.sb-context-heading-action.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.quick-btn{width:34px;height:34px;font-size:16px;border-radius:7px;border-color:transparent;background:transparent;transition:background .12s,color .12s,transform .08s,box-shadow .12s}
+.quick-btn:hover{background:var(--hover);border-color:transparent;transform:translateY(-1px);box-shadow:0 2px 5px rgba(0,0,0,.08)}
+.quick-btn:active{transform:translateY(0) scale(.94);box-shadow:none}
+.quick-btn:disabled{opacity:.35;cursor:default;pointer-events:none;transform:none;box-shadow:none}
+.quick-sep{width:1px;height:18px;background:color-mix(in srgb,var(--border) 70%,transparent);margin:0 3px;flex:0 0 auto}
+@media (max-width:560px){#quick-bar{padding:6px 8px;gap:3px}.quick-btn{width:36px;height:36px}.quick-sep{margin-left:2px;margin-right:2px}}
+

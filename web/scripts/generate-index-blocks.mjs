@@ -626,6 +626,62 @@ initHubTodosState({
   }
 ];
 
+/**
+ * Stylesheets: each <style> block's text lives in src/styles/<page>/*.css and is copied in, in
+ * the order listed, between `GENERATED:<name>:START`/`END` comments inside that <style> tag.
+ * Plain concatenation, nothing compiled, so the page gets exactly the CSS the files hold. Order
+ * matters (later rules win), so a new file goes in the list where its rules belong. Every .css
+ * file under src/styles/ must be listed exactly once (checked below).
+ */
+const STYLE_BLOCKS = [
+  {
+    name: 'css-presetup',
+    targetFile: 'index.html',
+    styleFiles: ['src/styles/index/presetup.css']
+  },
+  {
+    name: 'css-app',
+    targetFile: 'index.html',
+    styleFiles: [
+      'base', 'feature-activation', 'modal', 'welcome', 'settings-help-layout', 'fold',
+      'outline-numbering', 'search-bar', 'action-bar', 'documents-menu', 'drag-drop',
+      'context-menu', 'sidebar', 'tags', 'guided-tour', 'preview', 'pasted-image',
+      'settings-help-rail', 'pdf-export-overlay'
+    ].map((n) => `src/styles/index/${n}.css`)
+  },
+  {
+    name: 'css-todos',
+    targetFile: 'index.html',
+    styleFiles: ['src/styles/index/todos-panel.css', 'src/styles/index/hub-dock.css']
+  },
+  {
+    name: 'css-hub',
+    targetFile: 'hub.html',
+    styleFiles: ['src/styles/hub/hub.css']
+  }
+];
+
+function readStyleBlock(block) {
+  return block.styleFiles.map((f) => readFileSync(path.join(repoRoot, f), 'utf8')).join('');
+}
+
+function checkStyleFilesListed() {
+  const listed = STYLE_BLOCKS.flatMap((b) => b.styleFiles);
+  const dupes = listed.filter((f, i) => listed.indexOf(f) !== i);
+  if (dupes.length) throw new Error(`Stylesheet listed twice in STYLE_BLOCKS: ${dupes.join(', ')}`);
+  const onDisk = [];
+  const walk = (dir) => {
+    for (const e of readdirSync(dir)) {
+      const full = path.join(dir, e);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (e.endsWith('.css')) onDisk.push(path.relative(repoRoot, full).split(path.sep).join('/'));
+    }
+  };
+  walk(path.join(repoRoot, 'src/styles'));
+  const missing = onDisk.filter((f) => !listed.includes(f));
+  if (missing.length) throw new Error(`Stylesheet not listed in STYLE_BLOCKS (so never reaches the page): ${missing.join(', ')}`);
+}
+
 function findFileRecursive(dir, targetName) {
   for (const entry of readdirSync(dir)) {
     const full = path.join(dir, entry);
@@ -699,6 +755,11 @@ function compileToPlainJs(sourceFile) {
 }
 
 function buildGeneratedBlock(block, compiled) {
+  if (block.styleFiles) {
+    // The CSS files end with their own newline, so the end marker starts a line.
+    const start = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Source of truth: ${block.styleFiles.join(', ')}. Regenerate with \`npm run generate\` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */`;
+    return `${start}\n${compiled}/* GENERATED:${block.name}:END */`;
+  }
   const startMarker = `/* GENERATED:${block.name}:START — DO NOT EDIT BY HAND. Source of truth: ${block.sourceFile} (tests: ${block.testFile}). Regenerate with \`npm run generate\` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */`;
   const endMarker = `/* GENERATED:${block.name}:END */`;
   const footerPart = block.footer ? `\n${block.footer}` : '';
@@ -783,7 +844,8 @@ function generate() {
   // collision with index.html's own `generateId` block, since they're never in the same
   // runtime scope together).
   const byFile = new Map(); // targetFile -> block[]
-  for (const block of BLOCKS) {
+  checkStyleFilesListed();
+  for (const block of [...BLOCKS, ...STYLE_BLOCKS]) {
     const targetFile = block.targetFile || 'index.html';
     if (!byFile.has(targetFile)) byFile.set(targetFile, []);
     byFile.get(targetFile).push(block);
@@ -798,9 +860,9 @@ function generate() {
     let html = readFileSync(filePath, 'utf8');
     const compiledByBlock = blocks.map((block) => ({
       name: block.name,
-      compiled: compileToPlainJs(block.sourceFile)
+      compiled: block.styleFiles ? readStyleBlock(block) : compileToPlainJs(block.sourceFile)
     }));
-    checkForCrossBlockNameCollisions(compiledByBlock);
+    checkForCrossBlockNameCollisions(compiledByBlock.filter((_, i) => !blocks[i].styleFiles));
     for (let i = 0; i < blocks.length; i++) {
       html = spliceBlock(html, blocks[i], compiledByBlock[i].compiled);
     }

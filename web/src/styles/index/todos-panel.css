@@ -1,0 +1,485 @@
+/* === Todos panel === */
+#todos-panel{position:fixed;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.14);display:none;flex-direction:column;width:min(380px,calc(100vw - 32px));font-family:'Inter',sans-serif;overflow:hidden}
+
+/* Remarks' rich-text field — the inline remark line's text (.node-remark-text-inline) also
+   carries this class, which the paste/list-toggle helpers key off. */
+.remark-text-input{width:100%;outline:none;color:var(--muted);font:400 13px/1.55 'Inter',sans-serif;font-family:var(--content-font);padding:1px 2px 1px 16px;border-radius:4px;border-left:2px solid var(--border);min-height:1.55em;margin-bottom:3px}
+.remark-text-input:hover,.remark-text-input:focus{background:var(--hover)}
+.remark-text-input:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
+.remark-text-input ul{margin:2px 0 2px 1.3em;padding:0}
+.remark-text-input li{margin:1px 0}
+.remark-date-input:focus{outline:none}
+.diagram-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diagram-row-pages{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--hint);background:var(--hover);border-radius:4px;padding:1px 6px;cursor:help}
+
+/* Full-screen diagram editor — deliberately never a small/normal state (see the Note/Code
+   panel discussion this was split off from): draw.io's own UI needs real room to be usable at
+   all, and diagram editing is never a quick aside the way a short note is. */
+#diagram-editor-overlay{display:none;position:fixed;inset:0;z-index:1060;background:var(--bg);flex-direction:column}
+#diagram-editor-overlay.open{display:flex}
+#diagram-editor-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--tb-bg)}
+#diagram-editor-title-input{flex:0 1 320px;min-width:120px;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
+#diagram-editor-title-input:hover{background:var(--hover)}
+#diagram-editor-title-input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-anchor-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:260px;transition:border-color .12s,color .12s,background .12s}
+#diagram-editor-anchor-btn:hover{color:var(--fg);background:var(--hover)}
+#diagram-editor-anchor-btn.diagram-editor-anchor-unlinked{color:var(--fc-orange)}
+#diagram-editor-anchor-btn.diagram-editor-anchor-unlinked:hover{background:color-mix(in srgb,var(--fc-orange) 10%,transparent)}
+#diagram-editor-anchor-btn svg{flex-shrink:0}
+#diagram-editor-anchor-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#diagram-editor-pages-badge{cursor:help}
+.diagram-editor-header-sep{width:1px;align-self:stretch;background:var(--border);flex-shrink:0}
+#diagram-editor-status{flex:1;font:500 11.5px 'Inter',sans-serif;color:var(--hint);text-align:right;white-space:nowrap;transition:color .15s}
+#diagram-editor-status.diagram-editor-status-saved{color:var(--fc-green)}
+#diagram-editor-status.diagram-editor-status-unsaved{color:var(--fc-orange)}
+#diagram-editor-dup,#diagram-editor-delete{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s;flex-shrink:0}
+#diagram-editor-dup:hover{color:var(--accent);background:var(--hover)}
+#diagram-editor-delete:hover{color:var(--fc-red);background:var(--hover)}
+#doc-status-wrap{position:relative;flex:0 0 auto}
+.doc-status-chip{appearance:none;border:none;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px;flex-shrink:0;cursor:pointer;white-space:nowrap;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);transition:background .12s,color .12s}
+.doc-presence-chip{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;padding:3px 9px 3px 8px;border-radius:999px;flex-shrink:0;white-space:nowrap;background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
+.doc-presence-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fc-green);box-shadow:0 0 0 2px color-mix(in srgb,var(--fc-green) 30%,transparent);animation:sakuraPresencePulse 1.8s ease-in-out infinite}
+@keyframes sakuraPresencePulse{0%,100%{opacity:1}50%{opacity:.4}}
+.doc-status-chip:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.doc-status-chip.unset{background:transparent;color:var(--hint);border:1px dashed var(--border);opacity:.7}
+.doc-status-chip.unset:hover{opacity:1;border-color:var(--muted)}
+.doc-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
+.doc-status-chip[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
+.doc-status-chip[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
+.doc-status-chip[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray)}
+#doc-ref-chip{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);display:inline-flex;align-items:center}
+#doc-ref-chip:hover{background:color-mix(in srgb,var(--accent) 26%,transparent)}
+/* Byline under the title: one quiet line (status with a coloured dot · author · Link, History,
+   Share as small links) instead of a row of uppercase pills. Scoped to the title area, so other
+   .doc-status-chip users keep the pill look. */
+#editor-meta-row{gap:2px 4px}
+#doc-status-wrap,#doc-link-wrap{display:inline-flex;align-items:center}
+#editor-meta-row .doc-status-chip{display:inline-flex;align-items:center;gap:5px;font:500 12.5px 'Inter',sans-serif;text-transform:none;letter-spacing:0;padding:3px 7px;border:none;border-radius:6px;background:transparent;color:var(--muted);opacity:1}
+#editor-meta-row .doc-status-chip:hover{background:var(--hover);color:var(--fg)}
+#editor-meta-row .doc-status-chip svg{width:12px;height:12px;margin-right:0!important;vertical-align:0!important;flex:0 0 auto}
+/* Status is the byline's one state, so it is the one soft tag (sentence case, light tint of its
+   colour) — a dot read like a stray outline bullet. "No status" is a faint outlined tag. */
+#editor-meta-row #doc-status-chip{font-weight:600;color:var(--status-c,var(--fc-gray));background:color-mix(in srgb,var(--status-c,var(--fc-gray)) 14%,transparent);padding:2px 8px;border-radius:999px}
+#editor-meta-row #doc-status-chip:hover{background:color-mix(in srgb,var(--status-c,var(--fc-gray)) 22%,transparent);color:var(--status-c,var(--fc-gray))}
+#doc-status-chip[data-color="orange"]{--status-c:var(--fc-orange)}#doc-status-chip[data-color="green"]{--status-c:var(--fc-green)}#doc-status-chip[data-color="red"]{--status-c:var(--fc-red)}
+#editor-meta-row #doc-status-chip.unset{font-weight:500;color:var(--hint);background:transparent;box-shadow:inset 0 0 0 1px var(--border)}
+#editor-meta-row #doc-status-chip.unset:hover{color:var(--fg);background:var(--hover)}
+#editor-meta-row #sb-author.doc-author-chip{font-weight:500;cursor:text}
+#editor-meta-row #sb-author.doc-author-chip::placeholder{color:var(--hint)}
+#doc-status-wrap::after{content:'\00B7';color:var(--hint);padding:0 2px}
+/* Facts (status · author) | actions (Link, History, Share): a thin rule marks where the actions start. */
+#doc-link-wrap::before{content:'';width:1px;height:14px;margin:0 8px 0 6px;background:var(--border)}
+#diagram-editor-note-input{appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;outline:none;width:150px;transition:width .15s,border-color .12s,background .12s}
+#diagram-editor-note-input:hover{background:var(--hover)}
+#diagram-editor-note-input:focus{width:260px;background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-note-input::placeholder{color:var(--hint)}
+#diagram-editor-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
+#diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
+#diagram-editor-iframe-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+#diagram-anchor-suggest{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:220px;max-width:320px;max-height:320px;overflow:hidden;display:none;flex-direction:column;font-family:'Inter',sans-serif}
+#diagram-anchor-suggest.open{display:flex}
+.anchor-suggest-search{flex:0 0 auto;width:100%;box-sizing:border-box;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);border-radius:6px;padding:5px 8px;font:400 12px 'Inter',sans-serif;margin-bottom:4px}
+.anchor-suggest-search:focus{outline:none;border-color:var(--accent)}
+.anchor-suggest-results{flex:1 1 auto;overflow-y:auto;min-height:0}
+.diagram-anchor-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diagram-anchor-item:hover,.diagram-anchor-item.as-active{background:var(--hover);color:var(--accent)}
+.diagram-anchor-item-none{color:var(--hint);font-style:italic}
+.diagram-anchor-item-disabled{color:var(--hint);cursor:not-allowed;font-style:italic}
+.diagram-anchor-item-disabled:hover{background:none;color:var(--hint)}
+.diagram-anchor-item-empty{padding:10px 9px;color:var(--hint);font-style:italic;font:400 12px 'Inter',sans-serif;text-align:center}
+.remark-anchor-tree-item{display:flex;align-items:center;gap:4px}
+.remark-anchor-tree-fold{flex:0 0 auto;width:12px;text-align:center;color:var(--hint);cursor:pointer;font-size:10px;line-height:1;border-radius:3px}
+.remark-anchor-tree-fold:hover{color:var(--fg);background:var(--border)}
+.remark-anchor-tree-fold-spacer{cursor:default}
+.remark-anchor-tree-fold-spacer:hover{background:none}
+#ref-jump-popover{position:fixed;z-index:1110;background:var(--bg);border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:4px;min-width:200px;max-width:320px;max-height:260px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
+#ref-jump-popover.open{display:block}
+#ref-jump-popover-title{padding:5px 9px 6px;font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint)}
+.ref-jump-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
+.ref-jump-empty{padding:10px 9px;font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.5;max-width:280px}
+.ref-jump-item:hover{background:var(--hover);color:var(--accent)}
+.ref-jump-item span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref-jump-item svg{flex-shrink:0;color:var(--accent)}
+.node-todo-dot,.node-qa-dot{color:var(--accent)}
+
+#todos-panel.open{display:flex}
+#todos-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important;transform:none!important}
+/* The To-Dos panel's single top bar: the add-task input (flexible, shrinks first) and its add
+   button, then History / Export / Maximize / Close. No title — it's the only dock panel and the
+   app-bar launcher already says To-Dos. Bottom-aligned so the icon buttons stay on the input's
+   last line while it auto-grows to several lines. */
+#todos-panel-header{display:flex;align-items:center;gap:2px;padding:10px 8px 8px 16px;flex-shrink:0;cursor:move;position:relative;z-index:2}
+#todos-title{font:700 14.5px 'Inter',sans-serif;color:var(--fg);user-select:none;white-space:nowrap}
+#todos-open-label{flex:1 1 auto;min-width:0;margin-left:8px;font:500 12px 'Inter',sans-serif;color:var(--muted);user-select:none;white-space:nowrap}
+#todos-panel-header .todo-dd-trigger{width:28px;height:28px;border-radius:8px}
+#todos-panel.anchored #todos-panel-header{cursor:default}
+#todos-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
+#todos-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
+#todos-resize-handle:hover::after,#todos-resize-handle.dragging::after{opacity:1}
+#todos-panel.maximized #todos-resize-handle{display:none}
+#todos-panel-header.dragging{cursor:grabbing}
+#todos-panel.dragging{user-select:none}
+#todos-panel-maximize,#todos-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;width:28px;height:28px;flex:0 0 auto;padding:0;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#todos-panel-maximize:hover,#todos-panel-close:hover{color:var(--fg);background:var(--hover)}
+/* "Add a task" — a quiet first row under the header: dashed outline at rest, a normal input once
+   focused. The add button only appears while the row is in use (Enter adds too). N still focuses it
+   from anywhere in the panel; the hint badge was dropped as clutter. */
+#todos-add-row{display:flex;align-items:flex-start;gap:8px;margin:0 10px 8px;padding:5px 6px 5px 10px;border:1px dashed var(--border);border-radius:9px;flex-shrink:0;transition:border-color .12s,background .12s,box-shadow .12s}
+#todos-add-row:hover{background:var(--hover)}
+#todos-add-row:focus-within{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:var(--edit-bg);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+.todos-add-plus{flex:0 0 auto;width:18px;height:18px;margin-top:5px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+#todos-input{flex:1 1 auto;min-width:0;box-sizing:border-box;appearance:none;resize:none;overflow:hidden;min-height:28px;max-height:120px;border:none;background:transparent;color:var(--fg);font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.4;padding:5px 0;outline:none}
+#todos-input::placeholder{color:var(--hint)}
+#todos-add-btn{appearance:none;border:none;background:var(--accent);color:#fff;width:28px;height:28px;flex:0 0 auto;border-radius:7px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:opacity .12s}
+#todos-add-row:focus-within #todos-add-btn{display:inline-flex}
+#todos-add-btn:hover{opacity:.88}
+.todo-dd-wrap{position:relative;flex:0 0 auto}
+.todo-dd-trigger{appearance:none;border:none;background:none;width:22px;height:22px;border-radius:6px;color:var(--hint);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+.todo-dd-trigger:hover{color:var(--fg);background:var(--hover)}
+.todo-dd-wrap.active .todo-dd-trigger{color:var(--accent)}
+#todos-search-row{display:none;align-items:center;gap:6px;padding:0 14px 8px;flex-shrink:0}
+#todos-search-row.open{display:flex}
+#todos-search-row svg{flex:0 0 auto;color:var(--hint)}
+#todos-search-input{flex:1;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:5px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
+#todos-search-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+#todos-search-input::placeholder{color:var(--hint)}
+#todos-search-clear-btn{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:3px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+#todos-search-clear-btn:hover{color:var(--fg);background:var(--hover)}
+.todo-search-highlight{background:color-mix(in srgb,var(--accent) 38%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+.todo-at{font-weight:400}.todo-at-person{color:var(--sem-section)}.todo-at-date{color:var(--muted)}.todo-at-status{color:var(--sem-alert)}
+.todo-tag-chip{color:var(--sem-code)}.todo-remark{color:var(--sem-quote);font-style:italic}
+.todo-dd-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:60;min-width:170px;max-height:min(360px,60vh);overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:6px;display:none;flex-direction:column}
+.doc-link-menu{overflow:visible;padding:4px}
+/* The same card as a link in the text (owner, 2026-10-23): Text and Address in place, then Open, Copy, Remove. */
+.doc-link-menu-inner{display:flex;align-items:center;gap:2px}
+.doc-link-menu:not(.has-link) .doc-link-has{display:none}
+/* The link's name is renamed on the chip itself, where it is shown; the card under it has the address. */
+.doc-link-name-input{display:none;box-sizing:content-box;font:500 12.5px 'Inter',sans-serif;min-width:6ch;max-width:40ch;border:1px solid var(--accent);border-radius:6px;background:var(--edit-bg);color:var(--fg);padding:2px 6px;outline:none}
+#doc-link-wrap.renaming #doc-link-chip{display:none}
+#doc-link-wrap.renaming .doc-link-name-input{display:inline-block}
+.todo-dd-menu.open{display:flex}
+.todo-dd-label{font:600 10px 'Inter',sans-serif;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;padding:7px 10px 3px}
+.todo-dd-divider{height:1px;background:var(--border);margin:5px 2px}
+.todo-dd-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:8px 10px;border-radius:8px;font:400 12.5px 'Inter',sans-serif;cursor:pointer;transition:background .12s}
+.todo-dd-item svg{flex-shrink:0;color:var(--hint)}
+.todo-dd-item:hover{background:var(--hover)}
+.todo-dd-item:active{background:var(--sel)}
+.todo-dd-item:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.todo-dd-item.selected{color:var(--accent)}
+.todo-dd-item .dd-check{width:13px;height:13px;flex:0 0 auto;color:var(--accent);opacity:0;display:inline-flex}
+.todo-dd-item.selected .dd-check{opacity:1}
+#todos-body{overflow-y:auto;overflow-x:hidden;padding:0 6px 12px;flex:1}
+.todos-section-label{display:flex;align-items:center;justify-content:space-between;gap:8px;font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:10px 10px 6px;user-select:none}
+.todos-section-collapse-btn{appearance:none;border:none;background:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.todos-section-collapse-btn:hover{color:var(--fg)}
+.todos-section-chevron{transition:transform .15s;flex:0 0 auto}
+.todos-section-chevron.open{transform:rotate(90deg)}
+.todos-clear-completed-btn{appearance:none;border:none;background:none;color:var(--hint);font:600 9.5px 'Inter',sans-serif;letter-spacing:.02em;text-transform:none;padding:2px 6px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s}
+.todos-clear-completed-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
+.todos-empty{font-size:12px;color:var(--hint);padding:6px 12px 10px}
+/* Row: minimal padding at rest so text uses full width. The drag handle needs
+   a little left padding on hover, but the action icons no longer reserve
+   row-wide padding — they're a float inside .todo-textwrap (see below) that
+   only narrows the first line. */
+.todo-row{position:relative;display:flex;align-items:flex-start;gap:6px;padding:5px 8px;border-radius:8px;cursor:pointer;transition:background .12s,padding .16s ease}
+.todo-row:hover{background:var(--hover)}
+#todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
+.todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-check:hover{border-color:var(--accent)}
+.todo-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
+.todo-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--accent);border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
+@keyframes todo-check-pop{to{transform:rotate(40deg) scale(1)}}
+/* Feedback Inbox priority/status pills -- same ghost-button recipe as .todo-priority/.todo-status
+   just above (transparent until hover, color-only, small dot icon + label), with their own
+   attribute values and colors since feedback's states (open/planned/fixed/wontfix,
+   low/medium/high) don't map onto Todos' (waiting/progress/blocked/review, none/low/med/high).
+   Always visible rather than hover-revealed like Todos' compact rows -- the Feedback Inbox row
+   is already fully expanded (message, URL, note), so there's no density reason to hide them. */
+.fi-priority,.fi-status{appearance:none;border:1px solid transparent;background:none;font:400 10.5px 'Inter',sans-serif;padding:1px 6px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
+.fi-priority:hover,.fi-status:hover{background:var(--hover);border-color:var(--border)}
+.fi-priority svg,.fi-status svg{fill:currentColor}
+.fi-priority[data-priority="low"]{color:#6c9bd1}
+.fi-priority[data-priority="medium"]{color:#d1a23a}
+.fi-priority[data-priority="high"]{color:#c2553d}
+.fi-status[data-status="open"]{color:#c2553d}
+.fi-status[data-status="planned"]{color:#d1a23a}
+.fi-status[data-status="fixed"]{color:#5aa970}
+.fi-status[data-status="wontfix"]{color:var(--hint)}
+.fi-status-badge[data-status="open"]{color:#c2553d}
+.fi-status-badge[data-status="planned"]{color:#d1a23a}
+.fi-status-badge[data-status="fixed"]{color:#5aa970}
+.fi-status-badge[data-status="wontfix"]{color:var(--hint)}
+/* Feedback Inbox filter dropdown: the trigger sits near the modal's LEFT edge (unlike every
+   other todo-dd-wrap usage, which sits at the right end of a toolbar), so the shared
+   .todo-dd-menu{right:0} default would push the menu off-canvas to the left -- same fix already
+   applied to doc-status-wrap/doc-link-wrap above for the same reason. */
+#feedback-inbox-filter-wrap .todo-dd-menu{right:auto;left:0}
+/* .app-modal has overflow:hidden (needed for its own rounded corners), which clips any
+   absolutely-positioned descendant that extends past the modal's actual rendered edge -- normally
+   fine, but this modal's height is otherwise unconstrained (flex column, no min-height), so with
+   only a couple of feedback rows it shrinks to content height and leaves no room below the filter
+   trigger for the ~250px-tall dropdown menu to render into, clipping it instead of letting it
+   float. Forcing a consistent minimum height, rather than fighting the clip, means there's always
+   room regardless of how many rows are currently loaded -- the same fix the person who reported
+   this suggested themselves. */
+#feedback-inbox-modal-overlay .app-modal{min-height:min(80vh,640px)}
+/* .app-modal-body has no flex-grow by default, so the min-height above would otherwise just add
+   blank space below the body rather than actually growing it -- and it's growing the BODY's own
+   scrollport (not just the outer modal) that the dropdown menu's clipping bounds actually depend
+   on, since .todo-dd-wrap lives inside .app-modal-body, which has its own overflow-y:auto. */
+#feedback-inbox-modal-overlay .app-modal-body{flex:1}
+.todo-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+/* A row with no priority/due/status/etc. actually set still renders a meta-row purely to hold the
+   (always-present, hover-only) action buttons — reserving that same-height row unconditionally
+   made every plain checklist-style task look like it had a same-sized but visually-empty gap
+   under it, next to rows that DO show real chips there. Collapsed down to ~0 by default and only
+   expanded on hover/focus (revealing the actions, same as any other row) or in "always visible"
+   actions mode, where every row's chip placeholders are shown regardless. max-height (not
+   display:none) so the reveal animates instead of popping, and doesn't affect chip-bearing rows
+   at all — this only ever applies to rows with truly nothing else on that line. */
+.todo-row-nochips .todo-meta-row{max-height:0;overflow:hidden;margin-top:-2px;transition:max-height .15s ease,margin-top .15s ease}
+.todo-row-nochips.expanded .todo-meta-row,.todo-row-nochips:focus-within .todo-meta-row{max-height:28px;margin-top:0}
+.todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.todo-textwrap{display:block}
+.todo-text{display:inline-block;max-width:100%;font-family:var(--content-font);font-size:12.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none;cursor:text}
+.todo-row.completed .todo-text{color:var(--muted);text-decoration:line-through}
+.todo-due{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
+.todo-due.set{display:inline-flex}
+.todo-row.expanded .todo-due{display:inline-flex}
+.todo-due:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+.todo-due.overdue{color:var(--sem-alert,#b85450)}
+.todo-link{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;max-width:130px;transition:color .12s,background .12s,border-color .12s}
+.todo-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.todo-link.set{display:inline-flex}
+.todo-row.expanded .todo-link{display:inline-flex}
+.todo-link:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+.todo-link.link-missing{color:var(--sem-alert,#b85450);border-style:dashed;border-color:color-mix(in srgb,var(--sem-alert,#b85450) 40%,transparent)}
+.todo-due.recurring{display:inline-flex}
+.todo-due-repeat-icon{opacity:.75;margin-left:1px}
+.todo-repeat{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
+.todo-repeat.set{display:inline-flex;color:var(--accent)}
+.todo-row.expanded .todo-repeat{display:inline-flex}
+.todo-repeat:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
+.todo-check:disabled{cursor:default;opacity:.75}
+.todo-select-check{appearance:none;-webkit-appearance:none;display:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:4px;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-select-check:hover{border-color:var(--accent)}
+.todo-select-check:checked{background:var(--accent);border-color:var(--accent)}
+.todo-select-check:checked::after{content:'';position:absolute;left:5px;top:2px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg)}
+#todos-panel.select-mode .todo-row:not(.completed) .todo-check{display:none}
+#todos-panel.select-mode .todo-row:not(.completed) .todo-select-check{display:inline-flex}
+#todos-bulk-bar{display:none;align-items:center;gap:4px;padding:7px 10px;flex-shrink:0;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+#todos-bulk-count{font:500 11.5px 'Inter',sans-serif;color:var(--fg);margin-right:auto;white-space:nowrap}
+.todo-bulk-btn{appearance:none;border:none;background:none;color:var(--hint);font-size:11px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
+.todo-bulk-btn:hover{color:var(--fg);background:var(--hover)}
+.todo-bulk-btn.danger:hover{color:var(--sem-alert);background:color-mix(in srgb,var(--sem-alert) 12%,transparent)}
+.todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
+.todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
+.todo-subtasks-progress-track{width:26px;height:4px;flex:0 0 auto;border-radius:999px;background:var(--border);overflow:hidden;display:inline-block}
+.todo-subtasks-progress-fill{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease}
+.todo-subtasks-chevron{transition:transform .15s}
+.todo-subtasks-chevron.open{transform:rotate(90deg)}
+/* The one reliable, always-visible expand/collapse target — added after verifying the
+   whole-row-background click (still the primary trigger, unchanged) becomes hard to hit
+   reliably once a row is expanded and mostly full of chip/action buttons. This sits in its own
+   reserved flex column at the row's end, so it's never covered regardless of how many chips or
+   actions are showing, and never competes with .todo-text for click space the way the
+   background alone could. */
+.todo-expand-toggle{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;flex:0 0 auto;align-self:flex-start;margin-top:2px;padding:3px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
+.todo-expand-toggle:hover{color:var(--fg);background:var(--hover)}
+.todo-expand-chevron{transition:transform .15s}
+.todo-expand-chevron.open{transform:rotate(90deg)}
+.todo-subtask-add-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s}
+.todo-row.expanded .todo-subtask-add-btn{display:inline-flex}
+.todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
+.todo-subtasks-list{display:flex;flex-direction:column;gap:1px;margin-top:6px}
+.todo-subtasks-done-toggle{appearance:none;border:none;background:none;display:flex;align-items:center;gap:6px;width:100%;padding:3px 4px;margin-top:1px;border-radius:6px;font:500 11px 'Inter',sans-serif;color:var(--muted);cursor:pointer;text-align:left}
+.todo-subtasks-done-toggle:hover{background:var(--hover);color:var(--fg)}
+.todo-subtasks-done-icon{flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--hint);position:relative}
+.todo-subtasks-done-icon::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--hint);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
+.todo-subtasks-done-chevron{margin-left:auto;transition:transform .15s}
+.todo-subtasks-done-toggle.open .todo-subtasks-done-chevron{transform:rotate(90deg)}
+/* Subtask progress as a pill in the meta row. */
+.todo-meta-row .todo-subtasks-toggle{height:20px;padding:0 7px;border-radius:999px;background:var(--hover)}
+.todo-subtask-row{display:flex;align-items:flex-start;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
+.todo-subtask-row:hover{background:var(--hover)}
+.todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;margin-top:1.5px;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
+.todo-subtask-check:hover{border-color:var(--accent)}
+.todo-subtask-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
+.todo-subtask-check:checked::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--accent);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
+.todo-subtask-text{flex:1;font-family:var(--content-font);font-size:11.5px;line-height:1.4;color:var(--fg);overflow-wrap:anywhere;outline:none;cursor:text}
+.todo-subtask-text.completed{color:var(--hint)}
+.todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.todo-subtask-row:hover .todo-subtask-delete{opacity:1}
+.todo-subtask-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
+.todo-subtask-rewrite{appearance:none;border:none;background:none;color:var(--accent);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.todo-subtask-row:hover .todo-subtask-rewrite{opacity:.7}
+.todo-subtask-rewrite:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.todo-subtask-rewrite.ai-busy{opacity:.45!important;pointer-events:none;animation:ai-spin 1.1s linear infinite}
+.todo-subtask-input-row{margin-top:3px;display:flex;align-items:center;gap:6px}
+.todo-subtask-input{flex:1;min-width:0;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;font-family:var(--content-font);padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
+.todo-subtask-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+.todo-subtask-charcount{flex:0 0 auto;font:400 9.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
+.todo-subtask-charcount.warn{color:var(--sem-alert,#b85450)}
+.todo-subtask-charcount.max{color:var(--sem-alert,#b85450);font-weight:600}
+#todo-due-popover,#remarks-date-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:10px;width:216px;font-family:'Inter',sans-serif}
+#todo-due-popover.open,#remarks-date-popover.open{display:block}
+.remarks-date-pop-time{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 8px;font:500 12px 'Inter',sans-serif;color:var(--muted)}
+.remarks-date-pop-time input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 6px}
+.due-pop-cal-day{position:relative}
+.due-pop-presets{display:flex;gap:4px;margin-bottom:9px}
+.due-pop-preset-btn{flex:1;appearance:none;border:1px solid var(--border);background:var(--hover);color:var(--fg);font:500 10.5px 'Inter',sans-serif;padding:5px 2px;border-radius:6px;cursor:pointer;text-align:center;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
+.due-pop-preset-btn:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent)}
+.due-pop-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.due-pop-cal-nav{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:3px 6px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s}
+.due-pop-cal-nav:hover{background:var(--hover);color:var(--fg)}
+.due-pop-cal-title{font:600 11.5px 'Inter',sans-serif;color:var(--fg)}
+.due-pop-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.due-pop-cal-dow{font:500 9px 'Inter',sans-serif;color:var(--hint);text-align:center;padding:2px 0 4px}
+.due-pop-cal-day{appearance:none;border:none;background:none;font:400 11px 'Inter',sans-serif;color:var(--fg);padding:5px 0;border-radius:6px;cursor:pointer;text-align:center;transition:background .12s,color .12s}
+.due-pop-cal-day:hover{background:var(--hover)}
+.due-pop-cal-day.muted{color:var(--hint);opacity:.4}
+.due-pop-cal-day.today:not(.selected){box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+.due-pop-cal-day.selected{background:var(--accent);color:#fff}
+.due-pop-cal-day:disabled{cursor:default;opacity:.25;pointer-events:none}
+.due-pop-footer{display:flex;justify-content:flex-end;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)}
+.due-pop-clear-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:3px 6px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s}
+.due-pop-clear-btn:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
+.due-pop-clear-btn:disabled{opacity:.35;cursor:default;pointer-events:none}
+#todo-link-popover{display:none;position:fixed;z-index:600;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.12);padding:4px;width:360px;max-width:calc(100vw - 16px);box-sizing:border-box}
+#todo-link-popover.open{display:block}
+/* The same one-line card as a link in the text: one field for a web address or a row to find. */
+.todo-link-line{display:flex;align-items:center;gap:2px}
+.todo-link-line .link-card-input{flex:1 1 auto;width:auto}
+#todo-link-popover:not(.has-link) .tl-has{display:none}
+#link-pop-node-results:not(:empty){margin-top:4px;border-top:1px solid var(--border);padding-top:4px}
+#link-pop-node-results{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+.link-pop-node-item{display:flex;flex-direction:column;gap:1px;padding:5px 7px;border-radius:6px;cursor:pointer;text-align:left;border:none;background:none;font-family:'Inter',sans-serif;width:100%}
+.link-pop-node-item:hover{background:var(--hover)}
+.link-pop-node-item-row{display:flex;align-items:center;gap:5px;min-width:0}
+.link-pop-node-item-row svg{flex:0 0 auto;color:var(--hint)}
+.link-pop-node-item-text{font:400 11.5px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-pop-node-item-meta{font:400 10px 'Inter',sans-serif;color:var(--hint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-pop-node-empty{font:400 11px 'Inter',sans-serif;color:var(--hint);padding:8px 4px;text-align:center}
+.link-pop-node-group-label{font:600 9.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:6px 7px 3px;user-select:none}
+.link-pop-node-group-label:first-child{padding-top:2px}
+/* Drag handle: absolutely positioned so it overlays on hover rather than
+   reserving flex space at rest (single-line element, left side). */
+.todo-drag-handle{position:absolute;left:2px;top:9px;width:14px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:var(--hint);cursor:grab;opacity:0;transition:opacity .12s,color .12s}
+#todos-panel.select-mode .todo-drag-handle{opacity:.7}
+.todo-drag-handle:hover{opacity:1!important;color:var(--fg)}
+.todo-row.dragging{opacity:.4}
+.todo-row.drag-over-top{box-shadow:inset 0 2px 0 0 var(--accent)}
+.todo-row.drag-over-bottom{box-shadow:inset 0 -2px 0 0 var(--accent)}
+/* Actions now live on .todo-meta-row (the chip row) instead of floating over the task text —
+   moved there so the text gets the row's full width unconditionally, rather than always having
+   ~74px reserved on its first line whether or not the actions are actually visible. margin-left:
+   auto pushes the group to the end of whichever flex line it lands on; opacity+pointer-events
+   (not display) still gates hover/fixed visibility, same as before, so toggling them doesn't
+   shift anything else in the row — the space is already accounted for in the flex layout either
+   way, it just isn't painted until revealed. */
+.todo-actions{margin-left:auto;flex:0 0 auto;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .12s}
+.todo-row.expanded .todo-actions{opacity:1;pointer-events:auto}
+.todo-rewrite,.todo-delete{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s,color .12s,background .12s}
+.todo-rewrite{color:var(--accent)}
+.todo-rewrite:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.todo-rewrite.ai-busy{opacity:.45!important;pointer-events:none;animation:ai-spin 1.1s linear infinite}
+.todo-delete:hover{color:var(--sem-alert,#b85450);background:var(--hover)}
+.todo-link-open{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:opacity .12s,color .12s,background .12s}
+.todo-link-open:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.todo-row.qa-flash{animation:todo-flash 1.1s ease}
+/* To-Dos (owner, 2026-10-21, mockup todos-final-model-mockup.png): sections Pinned, Today, Upcoming,
+   Anytime, Waiting, then Done folded. A task is one line: checkbox, title (two lines at most at rest;
+   the full text while editing or open), and on the right small icons and the date. Titles are often
+   long work items (owner, 2026-10-22), so the right side stays narrow and nothing else sits beside it. */
+#todos-add-row{border-color:transparent;padding-left:6px}
+#todos-add-row:hover{background:var(--hover)}
+/* Flat while typing too: the caret and the accent + say it's active, no box (owner, 2026-10-22). */
+#todos-add-row:focus-within{border-color:transparent;background:transparent;box-shadow:none}
+.todos-add-plus{background:none;color:var(--hint)}
+#todos-add-btn{background:none;color:var(--accent);width:24px;height:24px;margin-top:2px}
+#todos-add-btn:hover{background:var(--hover);opacity:1}
+#todos-add-row:focus-within #todos-input:placeholder-shown~#todos-add-btn{display:none}
+#todos-add-row:focus-within .todos-add-plus{color:var(--accent)}
+.todos-group-label,.todos-section-label{display:flex;align-items:center;gap:6px;font:600 12px 'Inter',sans-serif;color:var(--fg);padding:14px 10px 3px;letter-spacing:0;text-transform:none}
+.todos-group-count{font-weight:500;font-size:11.5px;color:var(--hint)}
+#todos-body .todos-group-waiting .todos-group-label{color:var(--muted)}
+/* Done reads like the other section labels; only its count (it is folded) and arrow differ. */
+#todos-body .todos-section-label{color:var(--fg);font:600 12px 'Inter',sans-serif;letter-spacing:0;text-transform:none;padding-top:14px}
+#todos-body .todos-section-label .todos-section-chevron{color:var(--hint)}
+/* Section icons: one per section, same size, grey, in one column with the task checkboxes. */
+#todos-body .todos-section-icon{flex:0 0 auto;color:var(--hint)}
+#todos-body .todos-section-collapse-btn{gap:5px}
+#todos-body .todo-row{padding:6px 10px;margin-bottom:0;gap:10px;border-radius:8px}
+#todos-body .todo-main{gap:2px}
+#todos-body .todo-check{border-radius:5px;border-color:color-mix(in srgb,var(--hint) 70%,transparent);background:transparent;margin-top:1.5px}
+#todos-body .todo-check:hover{border-color:var(--accent)}
+#todos-body .todo-check:checked::after{left:4.5px;top:1.5px}
+#todos-body .todo-check:disabled{opacity:1;cursor:default}
+#todos-body .todo-line{display:flex;align-items:flex-start;gap:10px;min-width:0}
+#todos-body .todo-textwrap{flex:1 1 auto;min-width:0}
+#todos-body .todo-text{display:block;font-size:13px;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}
+#todos-body .todo-row:not(.expanded) .todo-text:not(:focus){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+#todos-body .todo-text:focus,#todos-body .todo-subtask-text:focus{background:var(--edit-bg);box-shadow:0 0 0 1px var(--border);border-radius:5px;padding:1px 5px;margin:-1px -5px;cursor:text;color:var(--fg)}
+/* Right side: subtask count, repeat, link arrow, date. The ⋯ covers it while the row is hovered. */
+#todos-body .todo-side{position:relative;flex:0 0 auto;display:flex;align-items:center;gap:7px;min-height:19px;margin-top:1px;color:var(--hint);font:400 11.5px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
+#todos-body .todo-subtasks-toggle{appearance:none;border:none;background:none;padding:0;margin:0;display:inline-flex;align-items:center;gap:3px;color:inherit;font:inherit;cursor:pointer;border-radius:4px}
+#todos-body .todo-subtasks-toggle:hover,#todos-body .todo-subtasks-toggle.open{color:var(--fg)}
+#todos-body .todo-repeat-icon{display:inline-flex}
+#todos-body .todo-jump{appearance:none;border:none;background:none;padding:1px;margin:0;display:inline-flex;color:inherit;border-radius:4px;cursor:pointer;text-decoration:none}
+#todos-body .todo-jump:hover{color:var(--accent);background:var(--hover)}
+#todos-body .todo-due{display:inline-flex;appearance:none;border:none;background:none;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;height:auto;border-radius:4px}
+#todos-body .todo-due:hover{color:var(--fg);background:none}
+#todos-body .todo-due.overdue{color:var(--fc-red);font-weight:500}
+#todos-body .todo-due.rest-hidden,#todos-body .todo-link.rest-hidden{display:none}
+.todo-more-btn{appearance:none;border:none;background:none;color:var(--muted);width:22px;height:20px;padding:0;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .12s,background .12s}
+#todos-body .todo-more-btn{position:absolute;right:-4px;top:50%;transform:translateY(-50%);opacity:0;pointer-events:none;background:var(--hover)}
+#todos-body .todo-row:hover .todo-more-btn,#todos-body .todo-more-btn:focus-visible{opacity:1;pointer-events:auto}
+#todos-body .todo-more-btn:hover{color:var(--fg);background:color-mix(in srgb,var(--fg) 8%,var(--hover))}
+#todos-body .todo-row:hover .todo-end .todo-due{visibility:hidden}
+/* The date and the ⋯ share one slot at the end, so the ⋯ never covers the icons before it. */
+#todos-body .todo-end{position:relative;display:inline-flex;justify-content:flex-end;min-width:18px}
+/* Waiting: one grey line under the title, click to change who. */
+#todos-body .todo-waiting-line{align-self:flex-start;font:400 11.5px 'Inter',sans-serif;color:var(--hint);cursor:text}
+/* The name is edited in place: no box, just the caret; a faint underline while editing. */
+#todos-body .todo-waiting-name{outline:none;color:var(--muted);border-bottom:1px solid transparent;padding:0 1px;overflow-wrap:anywhere}
+#todos-body .todo-waiting-line:hover .todo-waiting-name{color:var(--fg)}
+#todos-body .todo-waiting-name:focus{color:var(--fg);border-bottom-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+#todos-body .todo-waiting-name:focus:empty::before{content:attr(data-placeholder);color:var(--hint);opacity:.7}
+/* Waiting with nothing said reads just "Waiting" until you click in. */
+#todos-body .todo-waiting-line:not(:focus-within):has(.todo-waiting-name:empty) .todo-waiting-for{display:none}
+#todos-body .todo-waiting-line:not(:focus-within) .todo-waiting-name:empty{min-width:6px}
+#todos-body .todo-row.is-waiting .todo-text{color:var(--muted)}
+/* An open task: full title, its open subtasks, a quiet foot ("6 done", "+ Add subtask") and where it
+   links to. No fill (owner, 2026-10-20: "why are we highlighting a task?"). */
+#todos-body .todo-row.expanded .todo-subtasks-list{margin-top:4px;gap:2px}
+#todos-body .todo-subtask-text{font-size:12.5px;color:var(--fg)}
+#todos-body .todo-subtask-row:hover{background:none}
+#todos-body .todo-subtask-check{border-radius:4px;border-color:color-mix(in srgb,var(--hint) 60%,transparent);background:transparent}
+#todos-body .todo-subtask-check:checked,#todos-body .todo-row.completed .todo-check:checked{background:transparent;border-color:color-mix(in srgb,var(--hint) 60%,transparent)}
+#todos-body .todo-subtask-check:checked::after,#todos-body .todo-row.completed .todo-check:checked::after{border-color:var(--hint)}
+.todo-subtasks-foot{display:flex;align-items:center;gap:12px;min-height:20px;padding-left:1px}
+#todos-body .todo-subtasks-done-toggle{appearance:none;border:none;background:none;padding:1px 0;margin:0;font:500 11px 'Inter',sans-serif;color:var(--hint);cursor:pointer;width:auto}
+#todos-body .todo-subtasks-done-toggle:hover{color:var(--fg);background:none}
+#todos-body .todo-subtasks-foot .todo-subtask-add-btn{display:inline-flex;padding:1px 0;font:500 11px 'Inter',sans-serif;color:var(--hint);opacity:0;transition:opacity .12s}
+#todos-body .todo-row:hover .todo-subtasks-foot .todo-subtask-add-btn,#todos-body .todo-subtasks-foot.bare .todo-subtask-add-btn,#todos-body .todo-subtasks-foot .todo-subtask-add-btn:focus-visible{opacity:1}
+#todos-body .todo-subtasks-foot .todo-subtask-add-btn:hover{color:var(--accent);background:none}
+#todos-body .todo-row .todo-actions{display:none}
+/* Done: one quiet line each. */
+#todos-body .todo-row.completed .todo-text{color:var(--hint);text-decoration:none}
+/* Where a task links to (open task only): one quiet line that navigates. */
+.todo-source-row{display:flex;min-width:0;margin-top:3px;cursor:pointer}
+.todo-source{appearance:none;border:none;background:none;padding:2px 4px;margin-left:-4px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;font:400 11.5px 'Inter',sans-serif;color:var(--muted);cursor:pointer;text-decoration:none;text-align:left}
+.todo-source:hover{color:var(--fg);background:var(--hover)}
+.todo-source-doc{flex-shrink:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px}
+.todo-source-row-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px}
+.todo-source-sep{color:var(--hint);flex-shrink:0}
+.todo-source-from{flex-shrink:0;color:var(--hint)}
+.todo-source.missing{color:var(--fc-red);cursor:default}
+/* Editing: an open row becomes a small card with labelled properties. */
+.node-table-line.qa-flash{animation:todo-flash 1.1s ease}
+@keyframes todo-flash{0%{background:color-mix(in srgb,var(--accent) 28%,transparent)}100%{background:transparent}}
+/* Fixed mode: same reveal state as :hover, but permanent — no layout shift, no hidden controls. */
+#editor-todos-toggle.is-active{opacity:1;color:var(--accent);border-color:var(--accent)}
+.todo-overdue-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;padding:0 4px;margin-left:5px;border-radius:999px;background:var(--sem-alert,#b85450);color:#fff;font:700 9.5px 'Inter',sans-serif;line-height:1;vertical-align:middle}
+

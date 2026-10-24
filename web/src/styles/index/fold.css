@@ -1,0 +1,53 @@
+/* === Fold / collapse === */
+.fold-toggle{display:inline-flex;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((var(--row-line) - 18px) / 2);cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;margin-right:1px;user-select:none;border-radius:4px;line-height:1}
+.node-dot{display:inline-flex;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((var(--row-line) - 18px) / 2);color:var(--muted);font-size:9px;margin-right:6px;user-select:none;line-height:1}
+.node-dot::before{content:'';width:calc(6px * var(--editor-scale));height:calc(6px * var(--editor-scale));border-radius:50%;background:currentColor;opacity:.85}
+.fold-toggle:hover{background:var(--hover);color:var(--accent)}
+/* Dynalist-style dot fold marker — used instead of .fold-toggle's triangle when hideTreeLines is on.
+   Rest state: plain dot (parent-expanded and leaf look the same — children being visible right below
+   already signals "expanded"). Folded state: ring-with-dot (bullseye), so a collapsed branch is
+   distinguishable at a glance without hovering. Either state swaps to a −/+ glyph on hover, matching
+   .fold-toggle's existing triangle→+/− hover behavior. */
+.fold-dot{display:inline-flex;position:relative;width:18px;height:18px;flex:0 0 auto;align-items:center;justify-content:center;align-self:flex-start;margin-top:calc((var(--row-line) - 18px) / 2);cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;margin-right:6px;user-select:none;border-radius:4px;line-height:1}
+.fold-dot::before{content:'';width:calc(6px * var(--editor-scale));height:calc(6px * var(--editor-scale));border-radius:50%;background:currentColor;opacity:.85}
+.fold-dot.is-folded::before{width:6px;height:6px}
+.fold-dot.is-folded::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;border:1.2px solid currentColor;opacity:.85}
+.fold-dot.is-hover::before,.fold-dot.is-hover::after{content:none}
+.fold-dot.is-hover,.fold-toggle.is-hover{font-size:17px}
+.node-vguide{position:absolute;top:0;bottom:calc(-2px * var(--editor-scale) * var(--row-density));width:1px;background:var(--vert);opacity:.16;pointer-events:none}
+/* Table and image blocks sit on an 8px bottom margin (rows use 2px), so their depth guides reach
+   through it too — otherwise every chips/cards/table/image block left a gap in the line below it. */
+.node-table-line-wrap .node-vguide,.node-image-line-wrap .node-vguide{bottom:-8px}
+.fold-dot:hover{background:var(--hover);color:var(--accent)}
+.fold-spacer{display:inline-flex;width:18px;height:18px;flex:0 0 auto;margin-right:1px}
+
+.fold-badge{display:inline-block;margin-left:10px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--muted) 14%,transparent);color:var(--muted);font:500 10px 'Inter',sans-serif;letter-spacing:.02em;vertical-align:middle;cursor:pointer}
+.fold-badge:hover{background:color-mix(in srgb,var(--accent) 24%,transparent)}
+/* A folded branch used to pair the +N badge with a separate small dot before it, signaling
+   "this collapsed branch has note/diagram/marker/etc. content" -- two floating elements with a
+   gap between them for one signal. Folded into the badge itself: a tiny dot prefix, inheriting
+   the badge's own color via currentColor, so there's exactly one element per folded row instead
+   of a sometimes-there second one. The tooltip (see the folded&&hasChildren block in render())
+   names what's actually inside. */
+/* Follow-ups inside a folded branch show on its badge (owner, 2026-10-16): open work stays visible. */
+.fold-badge.fold-badge-open{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+/* Scoped to .node-row -- .fold-badge is reused inside Preview mode's inline text flow too,
+   where this offset isn't wanted (see .node-row .node-note-dot above). */
+.node-row .fold-badge{align-self:flex-start;margin-top:calc((var(--row-line) - 11px) / 2)}
+
+.focus-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px;padding:7px 10px;border-radius:9px;background:color-mix(in srgb,var(--accent) 7%,var(--bg) 93%);border:1px solid color-mix(in srgb,var(--accent) 18%,var(--border) 82%);font-size:.86em}
+.focus-bar-trail{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0;overflow:hidden}
+.focus-crumb{display:inline-flex;align-items:center;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none;border:none;color:var(--muted);font:inherit;cursor:pointer;padding:2px 4px;border-radius:5px}
+.focus-crumb:hover{background:var(--hover);color:var(--accent)}
+.focus-crumb-home{flex:0 0 auto;color:var(--muted)}
+.focus-crumb-current{color:var(--fg);font-weight:600;cursor:default}
+.focus-crumb-current:hover{background:none;color:var(--fg)}
+.focus-crumb-sep{color:var(--muted);opacity:.5;flex:0 0 auto}
+.focus-bar-up{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);color:var(--muted);font:500 .85em 'Inter',sans-serif;padding:4px 9px;border-radius:7px;cursor:pointer}
+.focus-bar-up:hover{background:var(--hover);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border) 60%)}
+.focus-empty-state{padding:24px 4px}
+.accent-swatch-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.accent-swatch{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.accent-swatch.active{border-color:var(--fg)}
+.accent-swatch:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent),inset 0 0 0 1px rgba(0,0,0,.12)}
+

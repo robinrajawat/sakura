@@ -1,0 +1,165 @@
+/* === Context Menu === */
+#context-quickbar .pv-qm-btn.dragging{opacity:.4}
+#context-quickbar .pv-qm-btn.drop-target{box-shadow:inset 2px 0 0 var(--accent)}
+.context-icon-glyph{font-size:14px;line-height:1}
+/* Quick-action row at the top of the node context menu — markers plus the
+   most-used actions as icon buttons, so most right-clicks never need the
+   full list. Deliberately reuses the node-marker popover's pv-qm-row/pv-qm-btn/pv-qm-mark/
+   pv-qm-sep classes (see openNodeMarkerPopover) instead of a parallel set of
+   near-identical rules, so the two surfaces are pixel-identical by
+   construction rather than by two numbers happening to match. */
+.context-top-row{padding:2px 2px 3px}
+.context-top-row .pv-qm-btn{font-size:16px;line-height:1}
+.context-top-row .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
+.context-top-row .pv-qm-btn:active{background:var(--sel)}
+.context-top-row .ctx-more[aria-expanded="true"]{background:var(--hover);color:var(--fg)}
+#context-more-panel{padding-left:0;margin-top:3px;padding-top:4px;border-top:1px solid var(--border)}
+.inline-edit-input{position:fixed;z-index:400;box-sizing:border-box;margin:0;padding:0 4px;border:1px solid color-mix(in srgb,var(--accent) 55%,var(--border));border-radius:6px;background:var(--edit-bg);color:var(--fg);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+.inline-edit-input::placeholder{color:var(--hint)}
+.inline-edit-input.inline-edit-ask{padding:0 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.10),0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+.sb-context-iconrow{display:flex;align-items:center;gap:3px;padding:1px 4px}
+.sb-context-iconrow-label{flex:1 1 auto;font:400 12px 'Inter',sans-serif;color:var(--fg);padding:0 8px 0 6px;white-space:nowrap}
+.sb-context-iconrow .pv-qm-btn:disabled{opacity:.4;pointer-events:none}
+.sb-context-iconrow .pv-qm-btn.sb-context-active{background:var(--hover);color:var(--fg)}
+.sb-context-trail{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;color:var(--hint);opacity:0;transition:opacity .12s}
+.sb-context-item:hover .sb-context-trail,.sb-context-item.sb-context-active .sb-context-trail{opacity:1}
+.sb-context-trail:hover{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+
+
+
+.theme-segmented{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
+.theme-seg,.theme-mode-seg,.profile-visibility-seg,.share-role-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;white-space:nowrap;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+body.appbar-decluttered #app-brand{display:none}
+.theme-seg:hover,.theme-mode-seg:hover,.profile-visibility-seg:hover,.share-role-seg:hover{color:var(--fg)}
+.theme-seg:focus-visible,.theme-mode-seg:focus-visible,.profile-visibility-seg:focus-visible,.share-role-seg:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.theme-seg.active,.theme-mode-seg.active,.profile-visibility-seg.active,.share-role-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
+body.theme-dark .theme-seg.active,body.theme-dark .theme-mode-seg.active,body.theme-dark .profile-visibility-seg.active,body.theme-dark .share-role-seg.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
+body.theme-light .theme-seg.active,body.theme-light .theme-mode-seg.active,body.theme-light .profile-visibility-seg.active,body.theme-light .share-role-seg.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
+.segmented-control{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
+.segmented-btn{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;cursor:pointer;flex:1 1 0;white-space:nowrap;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.segmented-btn:hover{color:var(--fg)}
+.segmented-btn.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
+body.theme-dark .segmented-btn.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
+body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
+
+@page{margin:0.75in}
+@media print {
+  * {
+    /* Browsers strip background colors from print/PDF output by default
+       unless explicitly told to keep them — without this, the highlight
+       mark (and other chip/badge backgrounds) would silently vanish
+       on the printed page even though the markup and color are correct. */
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  /* html's screen-mode height:100%/overflow:hidden (set globally, not inside
+     any media query) was never being overridden for print — that's what was
+     clipping everything past the first page's worth of content. */
+  html {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  body {
+    margin: 0;
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    /* Printed output always uses the light-theme palette, regardless of
+       which theme is active on screen, so text and semantic colors
+       (sections/alerts/code) stay legible on white paper instead of
+       washing out when printing from the dark theme. */
+    --bg:#ffffff !important; --tb-bg:#ffffff !important; --border:#d6d2c7 !important;
+    --fg:#1f1c14 !important; --muted:#5c584f !important; --hint:#79756b !important;
+    --hover:transparent !important; --sel:transparent !important;
+    --sel-fg:#1f1c14 !important; --edit-bg:#ffffff !important; --scroll:transparent !important;
+    --vert:#999999 !important; --conn:#999999 !important; --chip:#f0eee5 !important;
+    --sem-section:#2e429e !important; --sem-alert:#9b2f28 !important; --sem-code:#4a3a6a !important; --sem-quote:#5a5030 !important;
+    --fc-red:#a8362a !important; --fc-orange:#a85f1a !important; --fc-green:#226b41 !important; --fc-blue:#22529e !important; --fc-purple:#69359a !important; --fc-gray:#5c584f !important;
+  }
+
+  /* Hide everything except the document content */
+  body > *:not(#app-layout) {
+    display: none !important;
+  }
+
+  /* Hide sidebar, quick-bar, search, resize handle, status bar, tab strip, appbar */
+  #sidebar, #sidebar-resize-handle, #quick-bar, .search-bar, #statusbar, #doc-tab-strip-row, #appbar{
+    display: none !important;
+  }
+
+  /* Make app-layout, editor-row and editor-wrap render flat */
+  #app-layout {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  #editor-row {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  /* Keep editor container */
+  #editor-wrap {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    padding: 20px !important;
+    background: white !important;
+  }
+
+  /* Clean tree */
+  #editor-pane {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+
+  /* Remove on-screen-only UI state: selection, search highlight, drag state */
+  .node-row {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .node-row:hover,
+  .node-row.selected,
+  .node-row.primary-selection,
+  .node-row.search-match,
+  .node-row.search-current,
+  .node-row.dragging {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .node-row.selected::before,
+  .node-row.primary-selection::before {
+    display: none !important;
+  }
+
+  /* Fold arrows and "+N hidden" badges are screen affordances, not content */
+  .fold-toggle, .fold-badge {
+    display: none !important;
+  }
+  .node-note-dot:not(.node-note-dot-plain) {
+    display: none !important;
+  }
+
+  /* Floating editor chrome: maximize (zen) toggle — an on-screen control only, not part of
+     the document */
+  #editor-zen-toggle {
+    display: none !important;
+  }
+  .node-cb{border:1.5px solid #888 !important;background:transparent !important}
+  .node-cb.cb-checked{background:var(--accent) !important;border-color:var(--accent) !important}
+  .node-cb.cb-checked::after{border-color:#fff !important}
+  .cb-progress{background:transparent !important;border:1px solid var(--accent) !important;color:var(--accent) !important}
+  .node-tag-chip{background:transparent !important;border:1px solid #888 !important;color:#444 !important}
+  .bl-link{background:transparent !important;color:var(--accent) !important;font-weight:500 !important}
+  .bl-link.bl-unresolved{color:#888 !important}
+  .node-row.cb-done .node-label{opacity:.55 !important;text-decoration:line-through !important}
+  .node-row{break-inside:avoid;page-break-inside:avoid}
+}
+
