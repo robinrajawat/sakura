@@ -165,6 +165,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-24: One placement rule for popovers (`placePopover`).** Step 3 of the plan (shared popover), first piece. New
+tested module `src/ui/placePopover.ts` (spliced as block `placePopover`): below the anchor at its left edge, else above it,
+else pinned to the window's bottom; always 8px inside the window. Used by the date popovers (`openDatePopoverUnder`: To-Do
+due date and thread entry date), the link card (`placeLinkCard`), the To-Do link popover (`openLinkEditor`) and the tag
+popover (`openTagManager`). Each opens the popover at 0,0, measures it, then places it. Fixed on the way: the tag popover
+"flipped" to `anchor.top - 4` (over the row, off the bottom; its "adjusted after render" never happened) and the link
+card could leave the top of a short window. Tests: `placePopover.test.ts`, `popover-placement.spec.ts`. Next in step 3:
+one open/close controller (outside click, Esc, focus return) for these popovers, then the right-click menu's own placement.
+
 **2026-10-24: Copy image no longer waits on canvas.toBlob.** The diagram "Copy image" e2e failed ~1 in 10 under load.
 Traced: the click and handler were fine; `canvas.toBlob` (PNG encode) took ~6.7s instead of ~20ms, because Chromium runs
 it as a low-priority task. Users could see the same multi-second delay. New `canvasPngBlob(c)` encodes at once
@@ -180,11 +189,6 @@ green/amber are darker than before so small labels pass 4.5:1); 34 uses switched
 the feedback inbox's high/open/low labels. The account menu's gold support icon stays `#c08a1e` (decoration). `tests/unit/colourTokens.test.ts` fails on any other hard-coded colour in
 src/styles/index/. Not covered: hub.html and colours set from JS. `--sem-alert` (the To-Do overdue red) is a separate
 themed red and was left as is. Next (step 3): one shared popover component.
-
-**2026-10-24: Header link card no longer steals focus.** `doc-link-card.spec.ts` ("Escape cancels…") failed in CI and
-then locally under load: the chip focuses the name field via `setTimeout(…,0)`, and when that landed mid-typing in the
-address field the text went into the name. The deferred focus now skips when focus is already inside the card. New
-test opens the card and focuses the address at once; it fails without the fix.
 
 ### In progress / not built
 

@@ -5735,6 +5735,19 @@ function escapeHtml(value) {
 
 function esc(value){return escapeHtml(value);}
 /* GENERATED:escapeHtml:END */
+/* GENERATED:placePopover:START — DO NOT EDIT BY HAND. Source of truth: src/ui/placePopover.ts (tests: tests/unit/placePopover.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+function placePopover(anchor, width, height, viewportWidth, viewportHeight, gap = 4, margin = 8) {
+    const left = Math.max(margin, Math.min(anchor.left, viewportWidth - width - margin));
+    const below = anchor.bottom + gap;
+    if (below + height <= viewportHeight - margin)
+        return { left, top: below, above: false };
+    const above = anchor.top - gap - height;
+    if (above >= margin)
+        return { left, top: above, above: true };
+    return { left, top: Math.max(margin, viewportHeight - margin - height), above: true };
+}
+
+/* GENERATED:placePopover:END */
 // Sanitizes rich HTML (Pad content, Note content) before it's ever assigned via innerHTML.
 // These fields are stored as raw HTML (needed for the WYSIWYG editors) and can arrive from
 // three places: this browser's own editing (already trusted), a local file import, or account
@@ -11219,9 +11232,9 @@ function showLinkCard(link){
 }
 function placeLinkCard(){
   if(!_linkCardEl||!_linkCardLink||!_linkCardLink.isConnected)return;
-  const r=_linkCardLink.getBoundingClientRect(); const w=_linkCardEl.offsetWidth, h=_linkCardEl.offsetHeight;
-  let top=r.bottom+6; if(top+h>window.innerHeight-8)top=r.top-h-6;
-  _linkCardEl.style.left=Math.max(8,Math.min(r.left,window.innerWidth-w-8))+'px'; _linkCardEl.style.top=Math.max(8,top)+'px';
+  _linkCardEl.style.left='0px'; _linkCardEl.style.top='0px';
+  const p=placePopover(_linkCardLink.getBoundingClientRect(),_linkCardEl.offsetWidth,_linkCardEl.offsetHeight,window.innerWidth,window.innerHeight,6);
+  _linkCardEl.style.left=p.left+'px'; _linkCardEl.style.top=p.top+'px';
 }
 document.addEventListener('selectionchange',()=>{
   // Typing in the card's own fields: it stays where it is.
@@ -32336,12 +32349,10 @@ function renderMonthCalendar(pop,viewMonth,selectedIso,onPick){
 }
 // Opens a date picker under `btn` (above it when there's no room below), kept inside the window.
 function openDatePopoverUnder(pop,btn){
-  const rect=btn.getBoundingClientRect();
-  const left=Math.max(8,Math.min(rect.left,window.innerWidth-216-8));
-  pop.style.left=left+'px'; pop.style.top=(rect.bottom+4)+'px';
+  pop.style.left='0px'; pop.style.top='0px';
   pop.classList.add('open');
-  const pr=pop.getBoundingClientRect();
-  if(pr.bottom>window.innerHeight-8){ const flippedTop=rect.top-pr.height-4; pop.style.top=((flippedTop>=8)?flippedTop:Math.max(8,window.innerHeight-8-pr.height))+'px'; }
+  const p=placePopover(btn.getBoundingClientRect(),pop.offsetWidth,pop.offsetHeight,window.innerWidth,window.innerHeight);
+  pop.style.left=p.left+'px'; pop.style.top=p.top+'px';
 }
 function openRemarksDateEditor(btn,r){
   _remarksDateTarget=r;
@@ -33090,33 +33101,21 @@ function openTagManager(nodeId, anchorRect){
   // toolbar — neither has a caret position to anchor to)
   const pop=document.getElementById('tag-popover');
   if(!pop)return;
-  if(anchorRect){
-    const pw=240;
-    let left=anchorRect.left;
-    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
-    if(left<8) left=8;
-    let top=anchorRect.top+(anchorRect.height||18)+4;
-    if(top+200>window.innerHeight) top=anchorRect.top-4;
-    pop.style.left=left+'px';
-    pop.style.top=top+'px';
-  } else {
-  const rowEl=document.querySelector(`.node-row[data-id="${resolvedId}"]`);
-  if(rowEl){
-    const rr=rowEl.getBoundingClientRect();
-    const pw=240;
-    const anchor=rowEl.querySelector('.node-tag-chip')||rowEl.querySelector('.node-label')||rowEl.querySelector('.node-input');
-    const ar=anchor?anchor.getBoundingClientRect():rr;
-    let left=ar.left;
-    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
-    if(left<8) left=8;
-    let top=rr.bottom+4;
-    if(top+200>window.innerHeight) top=rr.top-4; // will be adjusted after render
-    pop.style.left=left+'px';
-    pop.style.top=top+'px';
-  }
+  // Under the caret when one is passed in, else under the row (its tags or label set the left edge).
+  let at=null;
+  if(anchorRect) at={left:anchorRect.left, top:anchorRect.top, bottom:anchorRect.top+(anchorRect.height||18)};
+  else {
+    const rowEl=document.querySelector(`.node-row[data-id="${resolvedId}"]`);
+    if(rowEl){
+      const rr=rowEl.getBoundingClientRect();
+      const anchor=rowEl.querySelector('.node-tag-chip')||rowEl.querySelector('.node-label')||rowEl.querySelector('.node-input');
+      at={left:(anchor?anchor.getBoundingClientRect():rr).left, top:rr.top, bottom:rr.bottom};
+    }
   }
   renderTagPopover();
+  pop.style.left='0px'; pop.style.top='0px';
   pop.classList.add('open');
+  if(at){ const p=placePopover(at,pop.offsetWidth,pop.offsetHeight,window.innerWidth,window.innerHeight); pop.style.left=p.left+'px'; pop.style.top=p.top+'px'; }
   setTimeout(()=>document.getElementById('tag-popover-input')?.focus(),60);
 }
 
@@ -35026,10 +35025,6 @@ function waitingCandidates(todos) {
     if(!pop) return;
     // Under the task's line, where its words are.
     const row=btn.closest('.todo-row'); const rect=(row?.querySelector('.todo-line')||btn).getBoundingClientRect();
-    const pw=Math.min(360,window.innerWidth-16);
-    let left=Math.max(8,Math.min(rect.left,window.innerWidth-pw-8));
-    pop.style.left=left+'px';
-    pop.style.top=(rect.bottom+4)+'px';
 
     const input=document.getElementById('link-pop-input');
     if(input){
@@ -35046,18 +35041,10 @@ function waitingCandidates(todos) {
     pop.classList.toggle('has-link',!!(current||refDoc));
     refreshLinkPopResults();
 
+    pop.style.left='0px'; pop.style.top='0px';
     pop.classList.add('open');
-    const pr=pop.getBoundingClientRect();
-    if(pr.bottom>window.innerHeight-8){
-      const flippedTop=rect.top-pr.height-4;
-      // Flipping above only helps if it actually lands on-screen; if the trigger button is
-      // itself near the top of the viewport, a naive Math.max(8, flippedTop) clamp would keep
-      // the popover pinned at the top edge while its (unrelocated) height still ran off the
-      // bottom — same overflow, just from the other direction. Fall back to pinning the
-      // bottom against the viewport instead whenever the flip itself doesn't fit above.
-      const top=(flippedTop>=8) ? flippedTop : Math.max(8, window.innerHeight-8-pr.height);
-      pop.style.top=top+'px';
-    }
+    const p=placePopover(rect,pop.offsetWidth,pop.offsetHeight,window.innerWidth,window.innerHeight);
+    pop.style.left=p.left+'px'; pop.style.top=p.top+'px';
     setTimeout(()=>{ input?.focus(); input?.select(); },30);
   }
 

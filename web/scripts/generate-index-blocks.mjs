@@ -135,6 +135,13 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'placePopover',
+    sourceFile: 'src/ui/placePopover.ts',
+    testFile: 'tests/unit/placePopover.test.ts',
+    // Pure function; every popover calls it with its anchor's and its own measured size.
+    footer: ''
+  },
+  {
     name: 'escapeHtml',
     sourceFile: 'src/utils/escapeHtml.ts',
     testFile: 'tests/unit/escapeHtml.test.ts',
