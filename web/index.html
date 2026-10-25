@@ -1902,7 +1902,8 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-remark-person-inline{color:var(--fg);font:600 1em 'Inter','Public Sans',sans-serif;font-family:var(--content-font);padding:0 2px;border-radius:4px;flex:0 0 auto;min-width:8px;outline:none;cursor:text}
 .node-remark-person-inline:empty::before{content:attr(data-placeholder);color:var(--hint);font-weight:400}
 .node-remark-person-inline:hover,.node-remark-person-inline:focus{background:var(--hover)}
-.node-remark-date-inline{flex:0 0 auto;color:var(--hint);cursor:pointer;padding:0 2px;border-radius:4px;white-space:nowrap}
+.node-remark-date-inline{flex:0 0 auto;color:var(--hint);cursor:pointer;padding:0 2px;border-radius:4px;white-space:nowrap;font:inherit;line-height:inherit;border:0;background:none;margin:0}
+.node-remark-date-inline:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .node-remark-date-inline:hover{background:var(--hover);color:var(--fg)}
 .node-remark-text-inline{flex:1;min-width:0;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
 .node-remark-text-inline.remark-text-input{width:auto;font:inherit;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);padding:0;border-left:none;border-radius:4px;min-height:0;margin-bottom:0}
@@ -25266,7 +25267,7 @@ function handleToolbarStyle(styleName){if(ROW_STYLE_TO_MARK[styleName]&&applyRow
 // resting on a button (e.g. after clicking a fold-arrow or toolbar icon) — a button has no
 // competing native undo behavior of its own to protect, unlike an actual text field.
 function isTextEntryTarget(target){if(!target)return false; const tag=(target.tagName||'').toLowerCase(); if(tag==='input'||tag==='textarea')return true; if(target.isContentEditable)return true; if(target.closest&&target.closest('#note-editor'))return true; return false;}
-function isControlTarget(target){if(!target)return false; const tag=(target.tagName||'').toLowerCase(); if(tag==='input'||tag==='textarea'||tag==='button'||tag==='select')return true; if(target.isContentEditable)return true; if(target.closest&&target.closest('#note-editor'))return true; return false;}
+function isControlTarget(target){if(!target)return false; const tag=(target.tagName||'').toLowerCase(); if(tag==='input'||tag==='textarea'||tag==='button'||tag==='select')return true; if(target.isContentEditable)return true; if(target.getAttribute&&target.getAttribute('role')==='button')return true; if(target.closest&&target.closest('#note-editor'))return true; return false;}
 // Returns true when the browser has a non-empty text selection that lives
 // outside the tree editor — e.g. text highlighted in the help panel, settings
 // panel, or any other overlay. When this is true the global Ctrl+C / Ctrl+A
@@ -27578,7 +27579,7 @@ function closeSbContextMenu(e){
   if(e&&e.type==='contextmenu'&&_sbContextEl&&_sbContextEl.contains(e.target))return;
   // Closing a dropdown by clicking its own button again: note it, so that click doesn't reopen it.
   if(_sbAnchorBtn){ if(e&&e.type==='click'&&_sbAnchorBtn.contains(e.target)){ _sbAnchorJustClosed=_sbAnchorBtn; setTimeout(()=>{ _sbAnchorJustClosed=null; },0); } _sbAnchorBtn.setAttribute('aria-expanded','false'); _sbAnchorBtn.classList.remove('menu-open'); _sbAnchorBtn=null; }
-  if(_sbContextEl){_sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
+  if(_sbContextEl){ _sbClosedFrom=_sbMenuOpener; _sbMenuOpener=null; setTimeout(()=>{ _sbClosedFrom=null; },0); _sbContextEl.remove(); _sbContextEl=null;} _sbContextButtons=[]; _sbContextActiveIndex=-1; _sbSubParent=null; _sbSubEl=null; document.removeEventListener('click', closeSbContextMenu, true); document.removeEventListener('contextmenu', closeSbContextMenu, true); document.removeEventListener('keydown', _sbContextKeyHandler, true); }
 // One level of submenu for showSbContextMenu: an item with `submenu:[...items]` renders as a parent
 // row with a chevron and opens a flyout beside it on hover, click, or →. The flyout is a child of
 // the menu element, so closing the menu always closes it too.
@@ -27776,8 +27777,14 @@ function openSbMenuUnder(btn,items,opts={}){
   // Opened from the keyboard, the first item is highlighted so arrows and Enter work at once.
   if(opts.keyboard&&_sbContextButtons.length){ _sbContextActiveIndex=0; _sbContextUpdateHighlight(); }
 }
+// What had focus when the menu opened (the ⋯ button, a row). A popover opened from one of the menu's
+// items gets it back on Escape: sbMenuOpener() returns it only while that item's click runs.
+let _sbMenuOpener=null, _sbClosedFrom=null;
+function sbMenuOpener(){ const o=_sbClosedFrom; return o&&o.isConnected&&o!==document.body?o:null; }
 function showSbContextMenu(x,y,items,opts){
+  const opener=_sbContextEl&&_sbContextEl.contains(document.activeElement)?_sbMenuOpener:document.activeElement;
   closeSbContextMenu(); closeMoveMenu(); hideLinkCard();
+  _sbMenuOpener=opener;
   const menu=document.createElement('div'); menu.className='sb-context-menu'; _sbContextEl=menu; menu.setAttribute('role','menu');
   if(opts&&opts.id)menu.id=opts.id; if(opts&&opts.label)menu.setAttribute('aria-label',opts.label);
   _sbContextButtons=[];
@@ -31772,7 +31779,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   };
   // The author is picked like on the reply line (owner request): click → the names in this document,
   // or "Someone else…" to type one. Focusable, so moving here from an emptied entry keeps it.
-  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another';
+  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.setAttribute('role','button'); person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another';
   const typing=()=>person.contentEditable==='true';
   const openAuthorMenu=()=>{
     const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -31793,7 +31800,8 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     if(e.key==='Enter'){ e.preventDefault(); person.blur(); } else if(e.key==='Escape'){ e.preventDefault(); person.textContent=r.person||''; person.blur(); }
   });
   person.addEventListener('blur',e=>{ if(person._menuOpen){ person._menuOpen=false; return; } const was=typing(); person.contentEditable='false'; const val=(person.textContent||'').trim(); person.textContent=val; const changed=was&&val!==(r.person||''); if(was)r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); });
-  const time=document.createElement('span'); time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date or time';
+  // A real button, so the keyboard reaches it and Escape on its date picker comes back to it.
+  const time=document.createElement('button'); time.type='button'; time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date or time'; time.setAttribute('aria-label','Date and time: '+time.textContent+'. Change');
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
   meta.appendChild(kindEl); meta.appendChild(person); meta.appendChild(time);
@@ -34856,7 +34864,7 @@ function waitingCandidates(todos) {
 
   let _dueDismiss=null;
   function openDueDateEditor(btn){
-    _dueDismiss?.opened(btn);
+    _dueDismiss?.opened(sbMenuOpener()||btn);
     const id=btn.getAttribute('data-id');
     const current=btn.getAttribute('data-due')||'';
     _dueDateId=id;
@@ -35034,8 +35042,8 @@ function waitingCandidates(todos) {
   }
   let _linkDismiss=null;
   function openLinkEditor(btn){
-    // Its trigger is a hidden button; Escape goes back to what had focus (the task's menu came from it).
-    _linkDismiss?.opened(document.activeElement);
+    // Opened from the task's menu (its trigger is a hidden button): Escape goes back to what opened the menu.
+    _linkDismiss?.opened(sbMenuOpener());
     const id=btn.getAttribute('data-id');
     const current=btn.getAttribute('data-link')||'';
     const refDoc=btn.getAttribute('data-noderef-doc')||'';
