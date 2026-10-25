@@ -8,11 +8,13 @@ import { describe, it, expect } from 'vitest';
 // var(--x, #fallback), and places that are always light on purpose (print rules, PDF pages,
 // the highlighter palette).
 const PAGE = import.meta.glob('../../index.html', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
-const SHEETS = import.meta.glob('../../src/styles/index/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const SHEETS = import.meta.glob(['../../src/styles/index/*.css', '../../src/styles/hub/*.css'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 const ALWAYS_LIGHT_FILES = ['pdf-export-overlay.css'];
 // The support item's gold is decoration, not a status (pinned by account-menu-layout.spec.ts).
-const ALLOWED_SELECTOR = /(hl-mark|#pv-open-items|\.thread-chip\.is-yes|\.account-support-icon)/;
+// hub.css: the gold coffee button is decoration; the swipe backgrounds stay saturated in both themes because
+// white text sits on them (the dark --success/--danger are too light for it).
+const ALLOWED_SELECTOR = /(hl-mark|#pv-open-items|\.thread-chip\.is-yes|\.account-support-icon|#account-coffee-btn|\.swipe-bg-(start|end))/;
 
 function withoutPrintBlocks(css: string): string {
   let out = '';
@@ -67,8 +69,7 @@ describe('interface colours come from the theme', () => {
   });
 
   it('the status colours are defined for both themes', () => {
-    const base = SHEETS['../../src/styles/index/base.css'];
-    for (const theme of ['light', 'dark']) {
+    for (const base of [SHEETS['../../src/styles/index/base.css'], SHEETS['../../src/styles/hub/hub.css']]) for (const theme of ['light', 'dark']) {
       const block = base.match(new RegExp(`body\\.theme-${theme}\\{([^}]*)\\}`))?.[1] || '';
       for (const t of ['danger', 'success', 'warning']) expect(block, `${theme} --${t}`).toMatch(new RegExp(`--${t}:#`));
     }
