@@ -143,6 +143,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'dialogs',
+    sourceFile: 'src/ui/dialogs.ts',
+    testFile: 'tests/unit/dialogs.test.ts',
+    // The dialog engine (sakuraConfirm/sakuraPrompt and the shared modal box), moved unchanged.
+    // Spliced where it used to be: its backdrop listeners run at start-up, after #sakura-modal-overlay exists.
+    footer: ''
+  },
+  {
     name: 'placePopover',
     sourceFile: 'src/ui/placePopover.ts',
     testFile: 'tests/unit/placePopover.test.ts',
