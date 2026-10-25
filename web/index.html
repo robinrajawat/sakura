@@ -33677,6 +33677,138 @@ function waitingCandidates(todos) {
 }
 
 /* GENERATED:todoModel:END */
+/* GENERATED:todoFormat:START — DO NOT EDIT BY HAND. Source of truth: src/core/todoFormat.ts (tests: tests/unit/todoFormat.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+function nextRepeatDate(fromDateStr, repeat) {
+    const parsed = parseISODate(fromDateStr);
+    let d;
+    if (parsed) {
+        d = new Date(parsed.getTime());
+    }
+    else {
+        d = new Date();
+        d.setHours(0, 0, 0, 0);
+    }
+    if (repeat === 'daily') {
+        d.setDate(d.getDate() + 1);
+    }
+    else if (repeat === 'weekly') {
+        d.setDate(d.getDate() + 7);
+    }
+    else if (repeat === 'weekdays') {
+        do {
+            d.setDate(d.getDate() + 1);
+        } while (d.getDay() === 0 || d.getDay() === 6);
+    }
+    return toISODate(d);
+}
+function repeatLabel(r) { return r === 'daily' ? 'Daily' : r === 'weekdays' ? 'Weekdays' : r === 'weekly' ? 'Weekly' : 'Repeat'; }
+function repeatTitle(r) { return r ? ('Repeats ' + repeatLabel(r).toLowerCase()) : 'Set repeat'; }
+// Bare domains/paths ("example.com/x") are treated as https:// links so the chip
+// can always open them; anything already carrying its own scheme (mailto:, http:,
+// a custom app scheme, etc.) is left untouched.
+function normalizeLinkUrl(raw) {
+    const trimmed = String(raw || '').trim();
+    if (!trimmed)
+        return null;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed))
+        return trimmed.slice(0, 2000);
+    return ('https://' + trimmed).slice(0, 2000);
+}
+function taskMatchesSearch(t, query) {
+    const q = String(query || '').trim().toLowerCase();
+    if (!q)
+        return true;
+    if (String(t.text || '').toLowerCase().includes(q))
+        return true;
+    if (isWaiting(t) && waitingLabel(t).toLowerCase().includes(q))
+        return true;
+    if (t.dueDate) {
+        if (t.dueDate.toLowerCase().includes(q))
+            return true;
+        const fmted = fmtDue(t.dueDate);
+        if (fmted && fmted.toLowerCase().includes(q))
+            return true;
+    }
+    if (t.repeat && repeatLabel(t.repeat).toLowerCase().includes(q))
+        return true;
+    if (t.link && t.link.toLowerCase().includes(q))
+        return true;
+    if (t.linkLabel && t.linkLabel.toLowerCase().includes(q))
+        return true;
+    return false;
+}
+function fmtDue(dateStr) {
+    if (!dateStr)
+        return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((d - today) / 86400000);
+    if (diffDays === 0)
+        return 'Today';
+    if (diffDays === 1)
+        return 'Tomorrow';
+    if (diffDays === -1)
+        return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function isOverdue(dateStr, done) {
+    if (!dateStr || done)
+        return false;
+    const d = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+}
+function fmtLink(url) {
+    if (!url)
+        return '';
+    try {
+        const u = new URL(url);
+        return u.hostname.replace(/^www\./, '') || url;
+    }
+    catch (e) {
+        return String(url).replace(/^https?:\/\//, '').slice(0, 30);
+    }
+}
+// The date in a few characters: Today / Tomorrow / Yesterday, a weekday within the coming week,
+// otherwise "Oct 2".
+function dueShort(dateStr) {
+    const d = parseISODate(dateStr);
+    if (!d)
+        return '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.round((d - today) / 86400000);
+    if (diff >= 2 && diff <= 6)
+        return d.toLocaleDateString(undefined, { weekday: 'short' });
+    return fmtDue(dateStr);
+}
+function toISODate(d) {
+    const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+function dueDatePreset(daysFromToday) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + daysFromToday);
+    return toISODate(d);
+}
+function parseISODate(s) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s || ''))
+        return null;
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+function todosHistorySummary(list) {
+    if (!Array.isArray(list) || !list.length)
+        return 'empty';
+    const open = list.filter(t => !t.done).length;
+    const done = list.length - open;
+    return open + ' open, ' + done + ' done';
+}
+
+/* GENERATED:todoFormat:END */
 // =====================================================================
 // === Todos panel (app-level, no document association) ================
 // =====================================================================
@@ -33884,18 +34016,6 @@ function waitingCandidates(todos) {
     renderTodos();
   }
   // ── Recurring todos ─────────────────────────────────────────────────────
-  function nextRepeatDate(fromDateStr, repeat){
-    const parsed=parseISODate(fromDateStr);
-    let d;
-    if(parsed){ d=new Date(parsed.getTime()); }
-    else { d=new Date(); d.setHours(0,0,0,0); }
-    if(repeat==='daily'){ d.setDate(d.getDate()+1); }
-    else if(repeat==='weekly'){ d.setDate(d.getDate()+7); }
-    else if(repeat==='weekdays'){ do{ d.setDate(d.getDate()+1); } while(d.getDay()===0||d.getDay()===6); }
-    return toISODate(d);
-  }
-  function repeatLabel(r){ return r==='daily'?'Daily':r==='weekdays'?'Weekdays':r==='weekly'?'Weekly':'Repeat'; }
-  function repeatTitle(r){ return r?('Repeats '+repeatLabel(r).toLowerCase()):'Set repeat'; }
   // "+ Add subtask" (the unfolded task's foot, or the menu): unfold the task if needed, then focus
   // its subtask input.
   function openSubtaskInput(id){
@@ -34213,15 +34333,6 @@ function waitingCandidates(todos) {
     saveTodos();
     renderTodos();
   }
-  // Bare domains/paths ("example.com/x") are treated as https:// links so the chip
-  // can always open them; anything already carrying its own scheme (mailto:, http:,
-  // a custom app scheme, etc.) is left untouched.
-  function normalizeLinkUrl(raw){
-    const trimmed=String(raw||'').trim();
-    if(!trimmed) return null;
-    if(/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed.slice(0,2000);
-    return ('https://'+trimmed).slice(0,2000);
-  }
   function setLink(id, rawUrl, rawLabel){
     const t=todos.find(x=>x.id===id);
     if(!t) return;
@@ -34405,21 +34516,6 @@ function waitingCandidates(todos) {
     }
     return out;
   }
-  function taskMatchesSearch(t, query){
-    const q=String(query||'').trim().toLowerCase();
-    if(!q) return true;
-    if(String(t.text||'').toLowerCase().includes(q)) return true;
-    if(isWaiting(t)&&waitingLabel(t).toLowerCase().includes(q)) return true;
-    if(t.dueDate){
-      if(t.dueDate.toLowerCase().includes(q)) return true;
-      const fmted=fmtDue(t.dueDate);
-      if(fmted&&fmted.toLowerCase().includes(q)) return true;
-    }
-    if(t.repeat&&repeatLabel(t.repeat).toLowerCase().includes(q)) return true;
-    if(t.link&&t.link.toLowerCase().includes(q)) return true;
-    if(t.linkLabel&&t.linkLabel.toLowerCase().includes(q)) return true;
-    return false;
-  }
 
   // To-Dos messages use the app's one toast (owner, 2026-10-23: unified UI). The panel used to
   // have its own in-panel toast so Undo didn't count as an outside click; the docked panel no
@@ -34443,30 +34539,6 @@ function waitingCandidates(todos) {
     });
   }
 
-  function fmtDue(dateStr){
-    if(!dateStr) return '';
-    const d=new Date(dateStr+'T00:00:00');
-    const today=new Date(); today.setHours(0,0,0,0);
-    const diffDays=Math.round((d-today)/86400000);
-    if(diffDays===0) return 'Today';
-    if(diffDays===1) return 'Tomorrow';
-    if(diffDays===-1) return 'Yesterday';
-    return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
-  }
-  function isOverdue(dateStr, done){
-    if(!dateStr||done) return false;
-    const d=new Date(dateStr+'T00:00:00'); const today=new Date(); today.setHours(0,0,0,0);
-    return d<today;
-  }
-  function fmtLink(url){
-    if(!url) return '';
-    try{
-      const u=new URL(url);
-      return u.hostname.replace(/^www\./,'') || url;
-    }catch(e){
-      return String(url).replace(/^https?:\/\//,'').slice(0,30);
-    }
-  }
 
   // Done tasks, most recently finished first; open tasks keep list order.
   function getVisibleTodos(){
@@ -35085,15 +35157,6 @@ function waitingCandidates(todos) {
   function docRefIconSvg(size){
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
   }
-  // The date in a few characters: Today / Tomorrow / Yesterday, a weekday within the coming week,
-  // otherwise "Oct 2".
-  function dueShort(dateStr){
-    const d=parseISODate(dateStr); if(!d) return '';
-    const today=new Date(); today.setHours(0,0,0,0);
-    const diff=Math.round((d-today)/86400000);
-    if(diff>=2&&diff<=6) return d.toLocaleDateString(undefined,{weekday:'short'});
-    return fmtDue(dateStr);
-  }
 
   // A task is one line (owner, 2026-10-21, mockup todos-final-model-mockup.png): checkbox, title, and
   // on the right small icons (subtasks n/m, repeat, link) and the date, red when overdue. Titles are
@@ -35160,19 +35223,6 @@ function waitingCandidates(todos) {
   let _dueDateBulkIds=null; // when set (array of ids), the popover is setting a due date on all of them at once instead of on _dueDateId
   let _dueDateViewMonth=null; // Date set to the 1st of the month currently shown
 
-  function toISODate(d){
-    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  }
-  function dueDatePreset(daysFromToday){
-    const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+daysFromToday);
-    return toISODate(d);
-  }
-  function parseISODate(s){
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(s||'')) return null;
-    const [y,m,d]=s.split('-').map(Number);
-    return new Date(y,m-1,d);
-  }
 
   let _dueDismiss=null;
   function openDueDateEditor(btn){
@@ -35545,11 +35595,6 @@ function waitingCandidates(todos) {
     const panel=document.getElementById('todos-panel');
     if(!panel) return;
     if(panel.classList.contains('open')) closeTodosPanel(); else openTodosPanel();
-  }
-  function todosHistorySummary(list){
-    if(!Array.isArray(list)||!list.length)return 'empty';
-    const open=list.filter(t=>!t.done).length; const done=list.length-open;
-    return open+' open, '+done+' done';
   }
   // Version history lives inline in the ⋯ menu (owner, 2026-10-20: "keep them inline rather than a
   // popup"): the last 5 versions, newest first, each one click to restore.
