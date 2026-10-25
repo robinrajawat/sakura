@@ -165,6 +165,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: Dialog buttons share one style.** Step 3, buttons. The confirm dialog's `.smodal-btn` (6px 14px, 8px corners,
+`primary`/`danger`) is now the action button in every dialog: the feedback, delete-account and diagram review dialogs used
+the toolbar's smaller `.btn` (and review its own override). Visible: their buttons match the confirm dialog's; "Permanently
+delete my account" is the red outline `danger` button (was solid red). New `.smodal-btn:disabled`. The delete-account
+section's inline `#e5484d` reds (9, plus the sync-error status set from JS) now use `--danger`. `colourTokens.test.ts`
+also checks inline `style=""` in the markup (allowed: accent swatches, About support button). Not done: the other ~70
+button rules (mostly icon buttons sized to their place).
+
 **2026-10-25: One call opens a popover (`showPopoverAt`); sidebar menus join.** Step 3, third piece. `showPopoverAt(pop,
 anchorRect, vw, vh, gap)` (in `src/ui/placePopover.ts`) moves the popover to 0,0, adds `open`, measures and places it;
 the date, link card, To-Do link and tag popovers use it instead of four copies of those lines. The sidebar's document
@@ -182,14 +190,6 @@ remembers what had focus when it opened (`sbMenuOpener()`, valid only during the
 and link popovers return there on Escape. Fixed on the way: Tab on a focused author chip (a `span role=button`) was
 caught by the outliner's Tab shortcut instead of moving focus; `isControlTarget` now counts `role="button"` as a control
 (the 6 other `role=button` elements are all UI controls). Tests in `popover-dismiss.spec.ts` fail on the old code.
-
-**2026-10-24: Popovers close one way (`popoverDismiss`).** Step 3, second piece. New tested `src/ui/popoverDismiss.ts`
-(block `popoverDismiss`): capture-phase Escape closes and returns focus to the opener; a press outside closes (a press on a
-trigger counts as inside). Used by the To-Do due date (and bulk due) popover, the thread entry date popover, the tag
-popover and the To-Do link popover, replacing four copies. Fixed: the thread date popover ignored Escape unless focus was
-in its time field. Focus return now works for the thread date and the To-Do due/link popovers (see 2026-10-25); the tag popover
-ends row editing when it opens, so it has nothing to return to. Tests: `popoverDismiss.test.ts`,
-`popover-dismiss.spec.ts`. Next in step 3: one popover shell (markup + open/close/place in one call) for these four.
 
 ### In progress / not built
 

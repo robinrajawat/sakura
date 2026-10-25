@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 // use --danger / --success / --warning. Allowed: white and black (checkmarks, knobs),
 // var(--x, #fallback), and places that are always light on purpose (print rules, PDF pages,
 // the highlighter palette).
+const PAGE = import.meta.glob('../../index.html', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const SHEETS = import.meta.glob('../../src/styles/index/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 const ALWAYS_LIGHT_FILES = ['pdf-export-overlay.css'];
@@ -45,6 +46,22 @@ describe('interface colours come from the theme', () => {
           }
         }
       }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  // Inline style="" in the page's markup can't be seen by the stylesheet check above (the delete-account
+  // section kept a hard-coded red there until 2026-10-25). Only the accent swatches (they show their own
+  // colour) and the About support button keep fixed colours.
+  it('no inline style in the markup hard-codes a colour', () => {
+    const html = Object.values(PAGE)[0];
+    expect(html.length).toBeGreaterThan(100000);
+    const markup = html.replace(/<script\b[\s\S]*?<\/script>/g, '').replace(/<style\b[\s\S]*?<\/style>/g, '');
+    const offenders: string[] = [];
+    for (const m of markup.matchAll(/<([a-z]+)\b([^>]*?style="([^"]*)"[^>]*)>/g)) {
+      if (!/#[0-9a-fA-F]{3,8}\b/.test(m[3])) continue;
+      if (/class="[^"]*\baccent-swatch\b/.test(m[2]) || /id="about-support-btn"/.test(m[2])) continue;
+      offenders.push(`<${m[1]}${m[2].slice(0, 80)}>`);
     }
     expect(offenders).toEqual([]);
   });
