@@ -58,6 +58,22 @@ describe('floating surfaces use the shared tier tokens', () => {
     expect(offenders).toEqual([]);
   });
 
+  // In dark mode raised surfaces are a little lighter than the page (menus and dialogs most), so they
+  // don't sit on the same colour as the page with only a border between (2026-10-25). Light mode: same
+  // as --bg. A menu or dialog also gets --hover-raised so its hover still shows on the lighter colour.
+  it('a tier surface on the page colour uses --surface-raised / --surface-panel instead', () => {
+    const offenders = rules()
+      .filter((r) => /box-shadow\s*:\s*var\(--shadow-(menu|panel|dialog)\)/.test(r.body) && r.sel !== '#demo-todos-panel')
+      .filter((r) => /(?<![-\w])background\s*:\s*var\(--bg\)/.test(r.body)
+        || (/var\(--surface-raised\)/.test(r.body) && !/--hover\s*:\s*var\(--hover-raised\)/.test(r.body)))
+      .map((r) => `${r.file}: ${r.sel}`);
+    expect(offenders).toEqual([]);
+    for (const theme of ['light', 'dark']) {
+      const block = sheet('base.css').match(new RegExp(`body\\.theme-${theme}\\{([^}]*)\\}`))?.[1] || '';
+      for (const t of ['surface-raised', 'surface-panel', 'hover-raised']) expect(block, `${theme} --${t}`).toContain(`--${t}:`);
+    }
+  });
+
   it('the tokens are defined in base.css', () => {
     expect(Object.keys(SHEETS).length).toBeGreaterThan(10);
     const base = sheet('base.css');
