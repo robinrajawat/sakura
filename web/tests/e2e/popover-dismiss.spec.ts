@@ -3,8 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Anchored popovers close one way (src/ui/popoverDismiss.ts, owner 2026-10-24 "standard, unified and
-// elegant"): Escape closes, a press outside closes. (Escape also returns focus to the opener; today's
-// openers are spans or hidden buttons that can't take focus, so that part is covered by the unit test.)
+// elegant"): Escape closes and returns focus to the opener; a press outside closes. The openers are real
+// buttons, so the keyboard reaches them (2026-10-25).
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
@@ -53,4 +53,45 @@ test('Escape closes the To-Do due date picker', async ({ page }) => {
   await expect(pop).toHaveClass(/open/);
   await page.keyboard.press('Escape');
   await expect(pop).not.toHaveClass(/open/);
+});
+
+test('the thread entry date is a button: Enter opens its picker, Escape comes back to it', async ({ page }) => {
+  await seedThread(page);
+  const chip = page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-time');
+  await expect(chip).toHaveJSProperty('tagName', 'BUTTON');
+  await chip.focus();
+  await page.keyboard.press('Enter');
+  const pop = page.locator('#remarks-date-popover');
+  await expect(pop).toHaveClass(/open/);
+  await page.keyboard.press('Escape');
+  await expect(pop).not.toHaveClass(/open/);
+  await expect(chip).toBeFocused();
+});
+
+for (const [item, popId] of [['Due date', '#todo-due-popover'], ['Link', '#todo-link-popover']] as const) {
+  test(`From the task's ⋯ menu by keyboard, Escape on ${item} goes back to the ⋯ button`, async ({ page }) => {
+    await page.evaluate(() => document.getElementById('sakura-landing-overlay')?.remove());
+    await page.keyboard.press('Control+Shift+T');
+    const more = page.locator('.todo-row[data-id="a"] .todo-more-btn');
+    await more.focus();
+    await page.keyboard.press('Enter');
+    await page.locator('.sb-context-menu .sb-context-item', { hasText: item }).first().click();
+    const pop = page.locator(popId);
+    await expect(pop).toHaveClass(/open/);
+    await page.keyboard.press('Escape');
+    await expect(pop).not.toHaveClass(/open/);
+    await expect(more).toBeFocused();
+  });
+}
+
+// The outliner's own Tab (indent the selected row) must not run while a control has focus: Tab on the
+// author chip moved nothing and indented the row instead (2026-10-25).
+test('Tab on a thread entry\'s author moves on to its date and indents nothing', async ({ page }) => {
+  await seedThread(page);
+  const depths = () => page.evaluate(() => (window as any).eval('nodes.map(n => n.depth).join()'));
+  const before = await depths();
+  await page.locator('.thread-entry:has(#inline-remark-text-c1) .node-remark-person-inline').focus();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-time')).toBeFocused();
+  expect(await depths()).toBe(before);
 });

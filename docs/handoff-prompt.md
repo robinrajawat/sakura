@@ -165,13 +165,19 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: Popover openers work from the keyboard.** The thread entry date is now a `<button>` (was a `<span>`; looks
+the same, pixel-checked), so it gets focus, Enter opens its picker and Escape returns to it. The right-click/⋯ menu now
+remembers what had focus when it opened (`sbMenuOpener()`, valid only during the item's click), and the To-Do due date
+and link popovers return there on Escape. Fixed on the way: Tab on a focused author chip (a `span role=button`) was
+caught by the outliner's Tab shortcut instead of moving focus; `isControlTarget` now counts `role="button"` as a control
+(the 6 other `role=button` elements are all UI controls). Tests in `popover-dismiss.spec.ts` fail on the old code.
+
 **2026-10-24: Popovers close one way (`popoverDismiss`).** Step 3, second piece. New tested `src/ui/popoverDismiss.ts`
 (block `popoverDismiss`): capture-phase Escape closes and returns focus to the opener; a press outside closes (a press on a
 trigger counts as inside). Used by the To-Do due date (and bulk due) popover, the thread entry date popover, the tag
 popover and the To-Do link popover, replacing four copies. Fixed: the thread date popover ignored Escape unless focus was
-in its time field. Caveat: focus return does nothing yet, because today's openers can't take focus (the thread date is a
-`<span>`, the To-Do link/due openers are menu items that are gone by then, and opening the tag popover ends row editing).
-Making those openers real buttons is an accessibility follow-up. Tests: `popoverDismiss.test.ts`,
+in its time field. Focus return now works for the thread date and the To-Do due/link popovers (see 2026-10-25); the tag popover
+ends row editing when it opens, so it has nothing to return to. Tests: `popoverDismiss.test.ts`,
 `popover-dismiss.spec.ts`. Next in step 3: one popover shell (markup + open/close/place in one call) for these four.
 
 **2026-10-24: One placement rule for popovers (`placePopover`).** Step 3 of the plan (shared popover), first piece. New
@@ -183,18 +189,10 @@ popover (`openTagManager`). Each opens the popover at 0,0, measures it, then pla
 card could leave the top of a short window. Tests: `placePopover.test.ts`, `popover-placement.spec.ts`. Next in step 3:
 one open/close controller (outside click, Esc, focus return) for these popovers, then the right-click menu's own placement.
 
-**2026-10-24: Copy image no longer waits on canvas.toBlob.** The diagram "Copy image" e2e failed ~1 in 10 under load.
-Traced: the click and handler were fine; `canvas.toBlob` (PNG encode) took ~6.7s instead of ~20ms, because Chromium runs
-it as a low-priority task. Users could see the same multi-second delay. New `canvasPngBlob(c)` encodes at once
-(`toDataURL`) and is used by both diagram and picture copy (`diagramPngBlob`, `nodeImagePngBlob`); no `toBlob` left. New
-test stubs `toBlob` to never answer and still expects "Copied"; the old test passed 180/180 under load after the fix.
-
 ### In progress / not built
 
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
-- Accessibility: popover openers (thread date `<span class="thread-time">`, To-Do menu items) can't take keyboard
-  focus, so `popoverDismiss`'s focus return has no target yet.
 
 ### Parked / open questions for the owner
 
