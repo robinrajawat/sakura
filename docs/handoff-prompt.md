@@ -165,11 +165,20 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: The To-Dos panel's pure helpers are a tested module (`src/core/todoFormat.ts`).** Modularization, fourth
+piece. 13 functions that read none of the panel's state (`toISODate`, `parseISODate`, `dueDatePreset`, `nextRepeatDate`,
+`fmtDue`, `dueShort`, `isOverdue`, `repeatLabel`, `repeatTitle`, `normalizeLinkUrl`, `fmtLink`, `taskMatchesSearch`,
+`todosHistorySummary`) left the panel's closure unchanged for block `todoFormat`, spliced just above the panel; no other
+code in index.html uses these names. The data model itself was already a module (`todoModel`). Pure move, checked with the
+TypeScript printer. Unit tests: `tests/unit/todoFormat.test.ts` (11, fixed clock). What's left in the panel closure
+(~2,400 lines) is mostly mutations over its `todos` array plus rendering; moving those means passing state explicitly, a
+change rather than a move, so it needs its own decision. Earlier modules this session: menus (`contextMenu`), dialogs
+(`dialogs`, plus a focus-trap fix), toasts (`toasts`).
+
 **2026-10-25: Toasts are a tested module (`src/ui/toasts.ts`).** Modularization, third piece. `showToast`,
 `showActionToast`, `QA_TOAST_ICON_SVG`, `TOAST_UNDO_MS` and the capture-phase Ctrl/Cmd+Z listener for an Undo toast moved
 unchanged into block `toasts`, spliced where they were (`showAiErrorModal`, which sat between them, stays in index.html).
 Pure move, checked with the TypeScript printer. Unit tests: `tests/unit/toasts.test.ts` (7, happy-dom, fake timers).
-Next: the To-Dos panel's data logic.
 
 **2026-10-25: The dialog engine is a tested module (`src/ui/dialogs.ts`).** Modularization, second piece. `_openModal`,
 `_closeModal`, the Enter/Esc/Tab handlers, the backdrop-click guard, `onOverlayBackdropClick`, `sakuraConfirm`,
@@ -179,18 +188,10 @@ the TypeScript printer as before. Unit tests: `tests/unit/dialogs.test.ts` (8, h
 focus trap counted the hidden input boxes, so Tab from a confirm's last button went to an invisible input; it now skips
 anything inside a `display:none` wrapper (2 more unit tests).
 
-**2026-10-25: The menu system is a tested module (`src/ui/contextMenu.ts`).** Modularization, first of the shared UI pieces
-(owner: menus first, then toasts/confirm dialogs, then the To-Dos panel's data logic). `showSbContextMenu`,
-`openSbMenuUnder`, `closeSbContextMenu`, `sbMenuOpener` and their helpers (items, submenus, folds, icon rows, tiles,
-choices, keys, height fitting) moved unchanged into the module, spliced back as block `contextMenu`; its six state lets now
-sit at the top of the block (lint's no-use-before-define). Proof of a pure move: both versions parsed and printed with the
-TypeScript printer are identical apart from formatting. Outside dependencies are `declare`d: `closeMoveMenu`,
-`hideLinkCard`, `esc`, `closeAllPanelsExceptGlobalSearch`. Unit tests (`tests/unit/contextMenu.test.ts`, 8) run in
-happy-dom (new dev dependency, opted into per file with `// @vitest-environment happy-dom`). JS from tested modules is now
-~16% of index.html's script.
-
 ### In progress / not built
 
+- Modularizing the rest of the To-Dos panel (its mutations and rendering close over the panel's `todos` array): needs
+  the owner's call, since it means passing state explicitly (a change, not a move).
 - hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
