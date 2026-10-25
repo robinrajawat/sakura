@@ -165,13 +165,19 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: Toasts are a tested module (`src/ui/toasts.ts`).** Modularization, third piece. `showToast`,
+`showActionToast`, `QA_TOAST_ICON_SVG`, `TOAST_UNDO_MS` and the capture-phase Ctrl/Cmd+Z listener for an Undo toast moved
+unchanged into block `toasts`, spliced where they were (`showAiErrorModal`, which sat between them, stays in index.html).
+Pure move, checked with the TypeScript printer. Unit tests: `tests/unit/toasts.test.ts` (7, happy-dom, fake timers).
+Next: the To-Dos panel's data logic.
+
 **2026-10-25: The dialog engine is a tested module (`src/ui/dialogs.ts`).** Modularization, second piece. `_openModal`,
 `_closeModal`, the Enter/Esc/Tab handlers, the backdrop-click guard, `onOverlayBackdropClick`, `sakuraConfirm`,
 `sakuraPrompt` and `sakuraPasswordPrompt` moved unchanged into block `dialogs`, spliced where they were (its two backdrop
 listeners run at start-up). `editTextInPlace` stayed in index.html (inline editing, not a dialog). Pure move, checked with
 the TypeScript printer as before. Unit tests: `tests/unit/dialogs.test.ts` (8, happy-dom). Follow-up fix (own PR): the Tab
 focus trap counted the hidden input boxes, so Tab from a confirm's last button went to an invisible input; it now skips
-anything inside a `display:none` wrapper (2 more unit tests). Toasts (`showToast`) are the next move.
+anything inside a `display:none` wrapper (2 more unit tests).
 
 **2026-10-25: The menu system is a tested module (`src/ui/contextMenu.ts`).** Modularization, first of the shared UI pieces
 (owner: menus first, then toasts/confirm dialogs, then the To-Dos panel's data logic). `showSbContextMenu`,
@@ -183,14 +189,9 @@ TypeScript printer are identical apart from formatting. Outside dependencies are
 happy-dom (new dev dependency, opted into per file with `// @vitest-environment happy-dom`). JS from tested modules is now
 ~16% of index.html's script.
 
-**2026-10-25: Raised surfaces are lighter in dark mode.** Menus, popovers and dialogs sat on the page's own colour
-(`#121212`) with only a border between. Theme tokens: `--surface-raised` (dark `#1c1c1a`) for menus/popovers/dialogs,
-`--surface-panel` (dark `#171715`) for Settings/Help/Export and the To-Dos panel, and `--hover-raised` (dark `#262623`) set
-as `--hover` on raised surfaces so hover still shows; in light mode all three equal `--bg`/`--hover` (screenshots
-unchanged). 31 tier rules use them; `surfaceTokens.test.ts` checks it. Not done: hub.html's surfaces.
-
 ### In progress / not built
 
+- hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
 
