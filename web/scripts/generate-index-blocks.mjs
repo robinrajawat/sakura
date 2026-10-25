@@ -151,6 +151,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'toasts',
+    sourceFile: 'src/ui/toasts.ts',
+    testFile: 'tests/unit/toasts.test.ts',
+    // showToast/showActionToast, moved unchanged. Spliced where they were: the Ctrl/Cmd+Z listener for
+    // an Undo toast is registered at start-up in the same order as before.
+    footer: ''
+  },
+  {
     name: 'placePopover',
     sourceFile: 'src/ui/placePopover.ts',
     testFile: 'tests/unit/placePopover.test.ts',

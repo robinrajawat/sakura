@@ -20417,12 +20417,75 @@ function setEditorReadingWidth(val,persist=true){
 }
 el('editor-reading-width-slider')?.addEventListener('input',e=>setEditorReadingWidth(e.target.value));
 function setTreeIndentWidth(width,persist=true){const normalized=Math.min(6,Math.max(2,Math.round(Number(width)||3))); treeIndentWidth=normalized; document.querySelectorAll('#branch-spacing-segmented .segmented-btn').forEach(btn=>{const active=Number(btn.dataset.value)===normalized; btn.classList.toggle('active',active); btn.setAttribute('aria-checked',String(active))}); if(persist){savePrefs(); scheduleAutoSave()} render()}
+/* GENERATED:toasts:START — DO NOT EDIT BY HAND. Source of truth: src/ui/toasts.ts (tests: tests/unit/toasts.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 // Reuses the exact glyph from the header Quick Assist box (qa-input-row) so a toast
 // badge and the feature it names always look like the same thing.
-const QA_TOAST_ICON_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg>';
+const QA_TOAST_ICON_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2M6.1 6.1l2.3 2.3M15.6 15.6l2.3 2.3M17.9 6.1l-2.3 2.3M8.4 15.6l-2.3 2.3"/></svg>';
 // A toast that offers Undo stays long enough to read and act on (owner, 2026-10-20: 1.6s was too fast).
-const TOAST_UNDO_MS=4000;
-function showToast(msg,type,fromQa,durationMs){const t=el('toast'); t.classList.remove('with-action','toast-success'); t.innerHTML=''; if(fromQa){const icon=document.createElement('span'); icon.className='toast-qa-icon'; icon.innerHTML=QA_TOAST_ICON_SVG; icon.dataset.tip='From Quick Assist'; t.appendChild(icon)} const span=document.createElement('span'); span.textContent=msg; t.appendChild(span); if(type==='success')t.classList.add('toast-success'); t.classList.add('show'); clearTimeout(showToast._tm); showToast._tm=setTimeout(()=>t.classList.remove('show'),durationMs||(/undo/i.test(msg)?TOAST_UNDO_MS:1600))}
+const TOAST_UNDO_MS = 4000;
+function showToast(msg, type, fromQa, durationMs) { const t = el('toast'); t.classList.remove('with-action', 'toast-success'); t.innerHTML = ''; if (fromQa) {
+    const icon = document.createElement('span');
+    icon.className = 'toast-qa-icon';
+    icon.innerHTML = QA_TOAST_ICON_SVG;
+    icon.dataset.tip = 'From Quick Assist';
+    t.appendChild(icon);
+} const span = document.createElement('span'); span.textContent = msg; t.appendChild(span); if (type === 'success')
+    t.classList.add('toast-success'); t.classList.add('show'); clearTimeout(showToast._tm); showToast._tm = setTimeout(() => t.classList.remove('show'), durationMs || (/undo/i.test(msg) ? TOAST_UNDO_MS : 1600)); }
+// Tracks the undo callback for whichever action-toast (see showActionToast) is currently
+// visible, so Ctrl/Cmd+Z can trigger it — see the capture-phase listener just below.
+let _actionToastUndo = null;
+function showActionToast(msg, actionLabel, onAction, duration = 5000, fromQa = false) {
+    const t = el('toast');
+    if (!t)
+        return;
+    clearTimeout(showToast._tm);
+    t.innerHTML = '';
+    t.classList.add('with-action');
+    if (fromQa) {
+        const icon = document.createElement('span');
+        icon.className = 'toast-qa-icon';
+        icon.innerHTML = QA_TOAST_ICON_SVG;
+        icon.dataset.tip = 'From Quick Assist';
+        t.appendChild(icon);
+    }
+    const span = document.createElement('span');
+    span.textContent = msg;
+    t.appendChild(span);
+    const btn = document.createElement('button');
+    btn.className = 'toast-action-btn';
+    btn.textContent = actionLabel;
+    btn.addEventListener('click', () => { t.classList.remove('show', 'with-action'); _actionToastUndo = null; onAction(); });
+    t.appendChild(btn);
+    t.classList.add('show');
+    _actionToastUndo = onAction;
+    showToast._tm = setTimeout(() => { t.classList.remove('show'); _actionToastUndo = null; setTimeout(() => { if (!t.classList.contains('show'))
+        t.classList.remove('with-action'); }, 200); }, duration);
+}
+// Every "X deleted, Undo" toast in the app (diagrams, Q&A rows, folders,
+// documents moved to Trash, etc.) previously only offered its Undo via clicking the toast
+// itself — Ctrl/Cmd+Z did nothing for these, or worse, silently undid something unrelated on
+// the outline's own undo stack, since none of these are recorded there. Capture-phase so this
+// runs before any of the other, more narrowly-scoped Ctrl+Z listeners (outline, Pad, Note, Code,
+// decision fields, To-Dos) get a chance — while a toast with an undo action is visible, it's
+// almost always what the very next Ctrl/Cmd+Z is meant for, regardless of where focus happens
+// to be. Self-clears once used, clicked, or the toast's own timeout elapses.
+document.addEventListener('keydown', e => {
+    if (!_actionToastUndo)
+        return;
+    if (!matchesShortcut(e, 'undo'))
+        return;
+    const t = el('toast');
+    if (!t || !t.classList.contains('show'))
+        return;
+    e.preventDefault();
+    e.stopPropagation();
+    const fn = _actionToastUndo;
+    _actionToastUndo = null;
+    t.classList.remove('show', 'with-action');
+    fn();
+}, true);
+
+/* GENERATED:toasts:END */
 function showAiErrorModal(provider, err){
   const msg = (err&&err.message)||String(err||'Unknown error');
   const overlay = el('sakura-modal-overlay');
@@ -20446,39 +20509,6 @@ function showAiErrorModal(provider, err){
   overlay.classList.add('open');
   setTimeout(()=>closeBtn.focus(), 80);
 }
-// Tracks the undo callback for whichever action-toast (see showActionToast) is currently
-// visible, so Ctrl/Cmd+Z can trigger it — see the capture-phase listener just below.
-let _actionToastUndo=null;
-function showActionToast(msg, actionLabel, onAction, duration=5000, fromQa=false){
-  const t=el('toast'); if(!t) return;
-  clearTimeout(showToast._tm);
-  t.innerHTML=''; t.classList.add('with-action');
-  if(fromQa){const icon=document.createElement('span'); icon.className='toast-qa-icon'; icon.innerHTML=QA_TOAST_ICON_SVG; icon.dataset.tip='From Quick Assist'; t.appendChild(icon)}
-  const span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
-  const btn=document.createElement('button'); btn.className='toast-action-btn'; btn.textContent=actionLabel;
-  btn.addEventListener('click',()=>{ t.classList.remove('show','with-action'); _actionToastUndo=null; onAction(); });
-  t.appendChild(btn);
-  t.classList.add('show');
-  _actionToastUndo=onAction;
-  showToast._tm=setTimeout(()=>{ t.classList.remove('show'); _actionToastUndo=null; setTimeout(()=>{ if(!t.classList.contains('show')) t.classList.remove('with-action'); },200); },duration);
-}
-// Every "X deleted, Undo" toast in the app (diagrams, Q&A rows, folders,
-// documents moved to Trash, etc.) previously only offered its Undo via clicking the toast
-// itself — Ctrl/Cmd+Z did nothing for these, or worse, silently undid something unrelated on
-// the outline's own undo stack, since none of these are recorded there. Capture-phase so this
-// runs before any of the other, more narrowly-scoped Ctrl+Z listeners (outline, Pad, Note, Code,
-// decision fields, To-Dos) get a chance — while a toast with an undo action is visible, it's
-// almost always what the very next Ctrl/Cmd+Z is meant for, regardless of where focus happens
-// to be. Self-clears once used, clicked, or the toast's own timeout elapses.
-document.addEventListener('keydown',e=>{
-  if(!_actionToastUndo)return;
-  if(!matchesShortcut(e,'undo'))return;
-  const t=el('toast'); if(!t||!t.classList.contains('show'))return;
-  e.preventDefault(); e.stopPropagation();
-  const fn=_actionToastUndo; _actionToastUndo=null;
-  t.classList.remove('show','with-action');
-  fn();
-},true);
 function openSearch(){searchOpen=true; const bar=el('search-bar'); if(bar)bar.hidden=false; const inp=el('search-input'); if(inp){inp.value=searchQuery; inp.focus(); inp.select()} computeSearchMatches(); render()}
 function closeSearch(){searchOpen=false; const bar=el('search-bar'); if(bar)bar.hidden=true; const rbar=el('replace-bar'); if(rbar){rbar.hidden=true; rbar.classList.remove('open')} const rbtn=el('search-toggle-replace'); if(rbtn)rbtn.setAttribute('aria-expanded','false'); searchMatches=[]; searchIndex=-1; render(); focusPane()}
 // Whole-word matching needs word-boundary detection, which only RegExp can do — but the
