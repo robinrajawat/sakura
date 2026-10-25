@@ -5747,6 +5747,22 @@ function placePopover(anchor, width, height, viewportWidth, viewportHeight, gap 
         return { left, top: above, above: true };
     return { left, top: Math.max(margin, viewportHeight - margin - height), above: true };
 }
+/**
+ * Opens a popover next to its anchor in one call: moves it to 0,0 (so one near the right edge isn't
+ * measured while squeezed), adds `open`, measures it and places it with placePopover. With no
+ * anchor it only opens. Returns the placement, or null without an anchor.
+ */
+function showPopoverAt(pop, anchor, viewportWidth, viewportHeight, gap = 4) {
+    pop.style.left = '0px';
+    pop.style.top = '0px';
+    pop.classList.add('open');
+    if (!anchor)
+        return null;
+    const p = placePopover(anchor, pop.offsetWidth, pop.offsetHeight, viewportWidth, viewportHeight, gap);
+    pop.style.left = p.left + 'px';
+    pop.style.top = p.top + 'px';
+    return p;
+}
 
 /* GENERATED:placePopover:END */
 /* GENERATED:popoverDismiss:START — DO NOT EDIT BY HAND. Source of truth: src/ui/popoverDismiss.ts (tests: tests/unit/popoverDismiss.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -11256,9 +11272,7 @@ function showLinkCard(link){
 }
 function placeLinkCard(){
   if(!_linkCardEl||!_linkCardLink||!_linkCardLink.isConnected)return;
-  _linkCardEl.style.left='0px'; _linkCardEl.style.top='0px';
-  const p=placePopover(_linkCardLink.getBoundingClientRect(),_linkCardEl.offsetWidth,_linkCardEl.offsetHeight,window.innerWidth,window.innerHeight,6);
-  _linkCardEl.style.left=p.left+'px'; _linkCardEl.style.top=p.top+'px';
+  showPopoverAt(_linkCardEl,_linkCardLink.getBoundingClientRect(),window.innerWidth,window.innerHeight,6);
 }
 document.addEventListener('selectionchange',()=>{
   // Typing in the card's own fields: it stays where it is.
@@ -14170,19 +14184,7 @@ function getDiagramAnchorCandidates(query){
 // measures the popover's real rendered size (after content is populated) and clamps both axes,
 // flipping to open upward when there isn't room below.
 function positionAnchorSuggestPopover(pop,btn){
-  const margin=8;
-  const r=btn.getBoundingClientRect();
-  pop.classList.add('open');
-  const pr=pop.getBoundingClientRect();
-  let left=Math.min(r.left,window.innerWidth-pr.width-margin);
-  left=Math.max(margin,left);
-  let top=r.bottom+4;
-  if(top+pr.height>window.innerHeight-margin){
-    const aboveTop=r.top-4-pr.height;
-    top=aboveTop>=margin?aboveTop:Math.max(margin,window.innerHeight-pr.height-margin);
-  }
-  pop.style.left=left+'px';
-  pop.style.top=top+'px';
+  showPopoverAt(pop,btn.getBoundingClientRect(),window.innerWidth,window.innerHeight);
 }
 // `isFilterUpdate` distinguishes a fresh open (repositions the popover under `btn`, resets and
 // focuses the search box) from a re-render triggered by typing in that search box (which has no
@@ -19216,15 +19218,12 @@ function openRefJumpPopover(anchorEl, todoRefs, title){
     item.addEventListener('mousedown',e=>{ e.preventDefault(); closeRefJumpPopover(); if(typeof window.sakuraFlashTodo==='function')window.sakuraFlashTodo(t.id); });
     list.appendChild(item);
   });
-  const r=anchorEl.getBoundingClientRect();
-  pop.style.left=Math.min(r.left,window.innerWidth-330)+'px';
-  pop.style.top=(r.bottom+4)+'px';
-  pop.classList.add('open');
+  showPopoverAt(pop,anchorEl.getBoundingClientRect(),window.innerWidth,window.innerHeight);
   _refJumpOpen=true;
+  _refJumpDismiss.opened(anchorEl);
 }
-document.addEventListener('mousedown',e=>{
-  if(_refJumpOpen&&!e.target.closest('#ref-jump-popover')&&!e.target.closest('.node-todo-dot')&&!e.target.closest('#doc-ref-chip'))closeRefJumpPopover();
-},true);
+// Used to open only downward and assume a 330px width; now placed and closed like every popover.
+const _refJumpDismiss=popoverDismiss(document,{ isOpen:()=>_refJumpOpen, isInside:t=>t instanceof Element&&!!t.closest('#ref-jump-popover, .node-todo-dot, #doc-ref-chip'), close:closeRefJumpPopover });
 // A single match jumps straight there (no extra click through a one-item popover); more than
 // one opens the popover, since there's no longer a single unambiguous target to jump to.
 function jumpToNodeTodoRefs(anchorEl, refs){
@@ -27997,15 +27996,18 @@ function showDocIconMenu(e, itemId, kind){
   resetBtn.addEventListener('click',()=>{ setIcon(itemId,null); renderSidebar(); closeDocIconMenu(); });
   menu.appendChild(resetBtn);
   document.body.appendChild(menu);
-  const rect = e.target.getBoundingClientRect();
+  const opener=e.currentTarget||e.target;
   menu.style.position='fixed';
-  menu.style.top=(rect.bottom+4)+'px';
-  menu.style.left=Math.min(rect.left, window.innerWidth-200)+'px';
+  showPopoverAt(menu,opener.getBoundingClientRect(),window.innerWidth,window.innerHeight);
+  _docIconDismiss.opened(opener);
   setTimeout(()=>document.addEventListener('click', closeDocIconMenu, true), 0);
 }
 // --- Move-to-folder popup ---
 let _moveMenuEl = null;
 function closeMoveMenu(){ if(_moveMenuEl){_moveMenuEl.remove(); _moveMenuEl=null;} document.removeEventListener('click', closeMoveMenu, true);}
+// Both sidebar menus place and close like every other popover (Escape returns to the icon or button).
+const _docIconDismiss=popoverDismiss(document,{ isOpen:()=>!!_docIconMenuEl, isInside:t=>!!_docIconMenuEl?.contains(t), close:closeDocIconMenu });
+const _moveMenuDismiss=popoverDismiss(document,{ isOpen:()=>!!_moveMenuEl, isInside:t=>!!_moveMenuEl?.contains(t), close:closeMoveMenu });
 function showMoveMenu(e, docId, folders){
   e.stopPropagation(); closeMoveMenu();
   const menu = document.createElement('div'); menu.className='move-folder-menu'; _moveMenuEl=menu;
@@ -28024,10 +28026,10 @@ function showMoveMenu(e, docId, folders){
   });
   // Position near click
   document.body.appendChild(menu);
-  const rect = e.target.getBoundingClientRect();
+  const opener=e.currentTarget||e.target;
   menu.style.position='fixed';
-  menu.style.top=(rect.bottom+4)+'px';
-  menu.style.left=Math.min(rect.left, window.innerWidth-160)+'px';
+  showPopoverAt(menu,opener.getBoundingClientRect(),window.innerWidth,window.innerHeight);
+  _moveMenuDismiss.opened(opener);
   setTimeout(()=>document.addEventListener('click', closeMoveMenu, true), 0);
 }
 
@@ -32380,10 +32382,7 @@ function renderMonthCalendar(pop,viewMonth,selectedIso,onPick){
 }
 // Opens a date picker under `btn` (above it when there's no room below), kept inside the window.
 function openDatePopoverUnder(pop,btn){
-  pop.style.left='0px'; pop.style.top='0px';
-  pop.classList.add('open');
-  const p=placePopover(btn.getBoundingClientRect(),pop.offsetWidth,pop.offsetHeight,window.innerWidth,window.innerHeight);
-  pop.style.left=p.left+'px'; pop.style.top=p.top+'px';
+  showPopoverAt(pop,btn.getBoundingClientRect(),window.innerWidth,window.innerHeight);
 }
 function openRemarksDateEditor(btn,r){
   _remarksDateDismiss.opened(btn);
@@ -33146,9 +33145,7 @@ function openTagManager(nodeId, anchorRect){
     }
   }
   renderTagPopover();
-  pop.style.left='0px'; pop.style.top='0px';
-  pop.classList.add('open');
-  if(at){ const p=placePopover(at,pop.offsetWidth,pop.offsetHeight,window.innerWidth,window.innerHeight); pop.style.left=p.left+'px'; pop.style.top=p.top+'px'; }
+  showPopoverAt(pop,at,window.innerWidth,window.innerHeight);
   setTimeout(()=>document.getElementById('tag-popover-input')?.focus(),60);
 }
 
@@ -35069,10 +35066,7 @@ function waitingCandidates(todos) {
     pop.classList.toggle('has-link',!!(current||refDoc));
     refreshLinkPopResults();
 
-    pop.style.left='0px'; pop.style.top='0px';
-    pop.classList.add('open');
-    const p=placePopover(rect,pop.offsetWidth,pop.offsetHeight,window.innerWidth,window.innerHeight);
-    pop.style.left=p.left+'px'; pop.style.top=p.top+'px';
+    showPopoverAt(pop,rect,window.innerWidth,window.innerHeight);
     setTimeout(()=>{ input?.focus(); input?.select(); },30);
   }
 
