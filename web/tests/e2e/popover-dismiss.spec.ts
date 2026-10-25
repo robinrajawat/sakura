@@ -72,8 +72,12 @@ for (const [item, popId] of [['Due date', '#todo-due-popover'], ['Link', '#todo-
   test(`From the task's ⋯ menu by keyboard, Escape on ${item} goes back to the ⋯ button`, async ({ page }) => {
     await page.evaluate(() => document.getElementById('sakura-landing-overlay')?.remove());
     await page.keyboard.press('Control+Shift+T');
+    // Opening the panel focuses its input 40ms later; wait for that, or it can take the focus (and the
+    // Enter) away from the ⋯ button. Failed once in CI that way.
+    await expect(page.locator('#todos-input')).toBeFocused();
     const more = page.locator('.todo-row[data-id="a"] .todo-more-btn');
     await more.focus();
+    await expect(more).toBeFocused();
     await page.keyboard.press('Enter');
     await page.locator('.sb-context-menu .sb-context-item', { hasText: item }).first().click();
     const pop = page.locator(popId);

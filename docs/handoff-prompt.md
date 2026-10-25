@@ -204,6 +204,8 @@ one open/close controller (outside click, Esc, focus return) for these popovers,
 
 ### Standing lessons
 
+- e2e: opening the To-Dos panel focuses `#todos-input` 40ms later; wait for it before focusing anything else in the
+  panel, or it takes the focus back (flaked once in CI, 2026-10-25).
 - e2e: seed `localStorage.sakura_welcome_seen` in an `addInitScript` before load (the welcome
   dialog opens on a delay and races clicks). `page.reload()` of a `file://` page can lose
   localStorage under Playwright; re-run `loadPrefs()` instead. Some thread/note tests are flaky
