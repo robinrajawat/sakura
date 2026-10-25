@@ -533,6 +533,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .smodal-btn.primary{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 86%,var(--tb-bg) 14%)}
 .smodal-btn.primary:hover{background:color-mix(in srgb,var(--accent) 94%,var(--tb-bg) 6%)}
 .smodal-btn.danger{border-color:color-mix(in srgb,var(--danger) 55%,var(--border));color:var(--danger)}
+.smodal-btn:disabled{opacity:.45;cursor:default;pointer-events:none}
 .smodal-btn.danger:hover{background:color-mix(in srgb,var(--danger) 10%,transparent);border-color:var(--danger)}
 
 /* === Welcome / onboarding choice modal === */
@@ -624,7 +625,6 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 #diagram-gen-review-toolbar .dgr-shape-select{max-width:120px}
 .dgr-dir-select{appearance:none;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:500 11px 'Inter',sans-serif;padding:3px 6px;border-radius:6px;outline:none}
 #diagram-gen-review-actions{padding:0 20px 16px;display:flex;justify-content:flex-end;gap:8px}
-#diagram-gen-review-actions .btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--tb-bg);color:var(--fg);font:600 12.5px 'Inter',sans-serif}
 #why-sakura-brand{display:flex;align-items:center;gap:7px;margin-bottom:16px}
 #why-sakura-brand-icon{font-size:22px;line-height:1}
 #why-sakura-brand-name{font:600 13px 'Inter',sans-serif;color:var(--muted);letter-spacing:.04em}
@@ -3749,11 +3749,11 @@ body.printing-generic #gpe-overlay{
             </div>
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-danger" data-feature-hidden="1" style="display:none">
-            <div style="background:color-mix(in srgb,#e5484d 9%,transparent);border:1.5px solid color-mix(in srgb,#e5484d 45%,transparent);border-radius:12px;padding:14px 16px">
-              <div style="font:700 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e5484d;margin-bottom:10px">Danger zone</div>
+            <div style="background:color-mix(in srgb,var(--danger) 9%,transparent);border:1.5px solid color-mix(in srgb,var(--danger) 45%,transparent);border-radius:12px;padding:14px 16px">
+              <div style="font:700 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--danger);margin-bottom:10px">Danger zone</div>
               <div style="font:700 12.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px">Delete account</div>
               <div style="font:400 11.5px/1.5 'Inter',sans-serif;color:var(--muted);margin-bottom:12px">Permanently deletes your synced documents and settings stored in the cloud for this account, and signs you out. This device's local documents are untouched and keep working exactly as they do now — sign in again anytime to start fresh. Can't be undone.</div>
-              <button type="button" class="btn" id="account-delete-open-btn" style="width:100%;box-sizing:border-box;border:1.5px solid #e5484d;color:#e5484d;background:color-mix(in srgb,#e5484d 5%,transparent);font-weight:600">Delete my account</button>
+              <button type="button" class="btn" id="account-delete-open-btn" style="width:100%;box-sizing:border-box;border:1.5px solid var(--danger);color:var(--danger);background:color-mix(in srgb,var(--danger) 5%,transparent);font-weight:600">Delete my account</button>
             </div>
           </div>
           <div class="settings-section" data-cat="ai" id="settings-section-ai-capabilities">
@@ -4687,8 +4687,8 @@ body.printing-generic #gpe-overlay{
       <input id="feedback-email-input" type="email" placeholder="Email (optional — only if you want a reply)" autocomplete="email" style="width:100%;box-sizing:border-box;margin-top:8px;padding:8px 11px;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);color:var(--fg);font-size:12.5px;font-family:'Inter',sans-serif" />
       <div id="feedback-modal-status" class="muted-help" style="margin:8px 0 0;min-height:15px"></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
-        <button type="button" class="btn" id="feedback-modal-cancel-btn">Cancel</button>
-        <button type="button" class="btn primary" id="feedback-modal-send-btn">Send</button>
+        <button type="button" class="smodal-btn" id="feedback-modal-cancel-btn">Cancel</button>
+        <button type="button" class="smodal-btn primary" id="feedback-modal-send-btn">Send</button>
       </div>
     </div>
   </div>
@@ -4698,17 +4698,17 @@ body.printing-generic #gpe-overlay{
 <div id="account-delete-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Delete account">
   <div class="app-modal" style="width:min(440px,94vw)">
     <div class="app-modal-head">
-      <div><h2 style="display:flex;align-items:center;gap:7px;color:#e5484d"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e5484d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Delete your account?</h2></div>
+      <div><h2 style="display:flex;align-items:center;gap:7px;color:var(--danger)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>Delete your account?</h2></div>
       <button class="app-modal-close-btn" id="account-delete-modal-close-btn" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div class="app-modal-body">
       <div style="font:400 13px/1.6 'Inter',sans-serif;color:var(--fg);margin-bottom:14px">This permanently deletes your synced documents and settings stored in the cloud for this account, and signs you out everywhere. It does not touch this device's local documents — they keep working exactly as they do now, just without anywhere to sync to. If you've used this account on another device, that device's local copies are unaffected too, but they'll stop syncing as well. This cannot be undone.</div>
       <div style="font:600 12px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px">Type DELETE to confirm</div>
       <input id="account-delete-confirm-input" type="text" class="meta-input" placeholder="DELETE" autocapitalize="characters" autocorrect="off" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;margin-bottom:10px" />
-      <div id="account-delete-modal-status" style="font:400 12px/1.5 'Inter',sans-serif;color:#e5484d;min-height:15px;margin-bottom:8px"></div>
+      <div id="account-delete-modal-status" style="font:400 12px/1.5 'Inter',sans-serif;color:var(--danger);min-height:15px;margin-bottom:8px"></div>
       <div style="display:flex;justify-content:flex-end;gap:8px">
-        <button type="button" class="btn" id="account-delete-modal-cancel-btn">Cancel</button>
-        <button type="button" class="btn" id="account-delete-confirm-btn" disabled style="background:#e5484d;color:#fff;border:none">Permanently delete my account</button>
+        <button type="button" class="smodal-btn" id="account-delete-modal-cancel-btn">Cancel</button>
+        <button type="button" class="smodal-btn danger" id="account-delete-confirm-btn" disabled>Permanently delete my account</button>
       </div>
     </div>
   </div>
@@ -5034,8 +5034,8 @@ body.printing-generic #gpe-overlay{
       </div>
       <div id="diagram-gen-review-list"></div>
       <div id="diagram-gen-review-actions">
-        <button id="diagram-gen-review-cancel" class="btn">Cancel</button>
-        <button id="diagram-gen-review-confirm" class="btn primary">Generate</button>
+        <button id="diagram-gen-review-cancel" class="smodal-btn">Cancel</button>
+        <button id="diagram-gen-review-confirm" class="smodal-btn primary">Generate</button>
       </div>
     </div>
   </div>
@@ -16918,7 +16918,7 @@ function updateSyncStatusUI(status){
       if(status==='syncing'||status==='synced'||status==='error')head.classList.add('sync-'+status);
       head.dataset.tip='Manage account'+(status==='syncing'?' · Syncing…':status==='synced'?' · Synced':status==='error'?' · Sync error':'');
     }
-    if(status==='error'){el2.style.display='inline-flex'; el2.style.color='#e5484d'; el2.innerHTML=ICONS.error+'Sync error'; el2.dataset.tip='Sync failed — will retry on your next change';}
+    if(status==='error'){el2.style.display='inline-flex'; el2.style.color='var(--danger)'; el2.innerHTML=ICONS.error+'Sync error'; el2.dataset.tip='Sync failed — will retry on your next change';}
     else{el2.style.display='none'; el2.innerHTML='';}
     if(status!=='error')el2.style.color='';
     const sep=el('account-meta-sep'); if(sep)sep.style.display=el2.style.display==='none'?'none':'';
