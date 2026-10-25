@@ -165,6 +165,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: Raised surfaces are lighter in dark mode.** Menus, popovers and dialogs sat on the page's own colour
+(`#121212`) with only a border between. Theme tokens: `--surface-raised` (dark `#1c1c1a`) for menus/popovers/dialogs,
+`--surface-panel` (dark `#171715`) for Settings/Help/Export and the To-Dos panel, and `--hover-raised` (dark `#262623`) set
+as `--hover` on raised surfaces so hover still shows; in light mode all three equal `--bg`/`--hover` (screenshots
+unchanged). 31 tier rules use them; `surfaceTokens.test.ts` checks it. Not done: hub.html's surfaces.
+
 **2026-10-25: Table currency picker flips above its cell.** `openCurrencyPicker` ("More currencies…") is `position:fixed`
 (so window coordinates were right) but was pushed up to `innerHeight-340` when there was no room below, covering the cell
 being edited; it now uses `showPopoverAt`. Test in `table-column-types.spec.ts` (fails on the old code). Looked at and
@@ -177,14 +183,6 @@ the scale (half-pixels round up: 10.5→11, 11.5→12, 12.5→13, 13.5→14) and
 the saturated swipe backgrounds (white text on them; the dark tokens are too light), the gold coffee button, the
 highlighter palette. `textSizeTokens` and `colourTokens` tests now cover `src/styles/hub/` too. Not done in hub: corner,
 shadow and spacing tokens (14 radii, 13 shadows).
-
-**2026-10-25: Dialog buttons share one style.** Step 3, buttons. The confirm dialog's `.smodal-btn` (6px 14px, 8px corners,
-`primary`/`danger`) is now the action button in every dialog: the feedback, delete-account and diagram review dialogs used
-the toolbar's smaller `.btn` (and review its own override). Visible: their buttons match the confirm dialog's; "Permanently
-delete my account" is the red outline `danger` button (was solid red). New `.smodal-btn:disabled`. The delete-account
-section's inline `#e5484d` reds (9, plus the sync-error status set from JS) now use `--danger`. `colourTokens.test.ts`
-also checks inline `style=""` in the markup (allowed: accent swatches, About support button). Not done: the other ~70
-button rules (mostly icon buttons sized to their place).
 
 ### In progress / not built
 
