@@ -165,6 +165,16 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: The menu system is a tested module (`src/ui/contextMenu.ts`).** Modularization, first of the shared UI pieces
+(owner: menus first, then toasts/confirm dialogs, then the To-Dos panel's data logic). `showSbContextMenu`,
+`openSbMenuUnder`, `closeSbContextMenu`, `sbMenuOpener` and their helpers (items, submenus, folds, icon rows, tiles,
+choices, keys, height fitting) moved unchanged into the module, spliced back as block `contextMenu`; its six state lets now
+sit at the top of the block (lint's no-use-before-define). Proof of a pure move: both versions parsed and printed with the
+TypeScript printer are identical apart from formatting. Outside dependencies are `declare`d: `closeMoveMenu`,
+`hideLinkCard`, `esc`, `closeAllPanelsExceptGlobalSearch`. Unit tests (`tests/unit/contextMenu.test.ts`, 8) run in
+happy-dom (new dev dependency, opted into per file with `// @vitest-environment happy-dom`). JS from tested modules is now
+~16% of index.html's script.
+
 **2026-10-25: Raised surfaces are lighter in dark mode.** Menus, popovers and dialogs sat on the page's own colour
 (`#121212`) with only a border between. Theme tokens: `--surface-raised` (dark `#1c1c1a`) for menus/popovers/dialogs,
 `--surface-panel` (dark `#171715`) for Settings/Help/Export and the To-Dos panel, and `--hover-raised` (dark `#262623`) set
@@ -175,14 +185,6 @@ unchanged). 31 tier rules use them; `surfaceTokens.test.ts` checks it. Not done:
 (so window coordinates were right) but was pushed up to `innerHeight-340` when there was no room below, covering the cell
 being edited; it now uses `showPopoverAt`. Test in `table-column-types.spec.ts` (fails on the old code). Looked at and
 left: hub.html's corners/shadows are role-based (rounder mobile cards/sheet, one shadow per kind of element), not drift.
-
-**2026-10-25: The phone app (hub.html) uses the same text sizes and status colours.** `hub.css` now defines the same
-`--fs-*` scale (`:root`) and `--danger/--success/--warning` (both theme blocks) as index; its 23 interface text sizes use
-the scale (half-pixels round up: 10.5→11, 11.5→12, 12.5→13, 13.5→14) and the priority chips (list and detail sheet) use
-`--danger`/`--warning`/`--fc-blue` instead of the old light-only `#c2553d`/`#d1a23a`/`#6c9bd1`. Kept: the ×/− glyph sizes,
-the saturated swipe backgrounds (white text on them; the dark tokens are too light), the gold coffee button, the
-highlighter palette. `textSizeTokens` and `colourTokens` tests now cover `src/styles/hub/` too. Not done in hub: corner,
-shadow and spacing tokens (14 radii, 13 shadows).
 
 ### In progress / not built
 
