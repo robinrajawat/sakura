@@ -165,6 +165,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: The phone app (hub.html) uses the same text sizes and status colours.** `hub.css` now defines the same
+`--fs-*` scale (`:root`) and `--danger/--success/--warning` (both theme blocks) as index; its 23 interface text sizes use
+the scale (half-pixels round up: 10.5→11, 11.5→12, 12.5→13, 13.5→14) and the priority chips (list and detail sheet) use
+`--danger`/`--warning`/`--fc-blue` instead of the old light-only `#c2553d`/`#d1a23a`/`#6c9bd1`. Kept: the ×/− glyph sizes,
+the saturated swipe backgrounds (white text on them; the dark tokens are too light), the gold coffee button, the
+highlighter palette. `textSizeTokens` and `colourTokens` tests now cover `src/styles/hub/` too. Not done in hub: corner,
+shadow and spacing tokens (14 radii, 13 shadows).
+
 **2026-10-25: Dialog buttons share one style.** Step 3, buttons. The confirm dialog's `.smodal-btn` (6px 14px, 8px corners,
 `primary`/`danger`) is now the action button in every dialog: the feedback, delete-account and diagram review dialogs used
 the toolbar's smaller `.btn` (and review its own override). Visible: their buttons match the confirm dialog's; "Permanently
@@ -183,13 +191,6 @@ exact copy) now call `showPopoverAt`. The doc icon is still a `<span>` inside a 
 return does nothing there. Left on purpose: the table currency picker (absolute inside its table, placed with window
 coordinates; needs its own look) and the caret-following suggestion lists (Quick Assist, @mentions). Tests:
 `placePopover.test.ts` (+3), `popover-placement.spec.ts` (icon menu and jump popover cases fail on the old code).
-
-**2026-10-25: Popover openers work from the keyboard.** The thread entry date is now a `<button>` (was a `<span>`; looks
-the same, pixel-checked), so it gets focus, Enter opens its picker and Escape returns to it. The right-click/⋯ menu now
-remembers what had focus when it opened (`sbMenuOpener()`, valid only during the item's click), and the To-Do due date
-and link popovers return there on Escape. Fixed on the way: Tab on a focused author chip (a `span role=button`) was
-caught by the outliner's Tab shortcut instead of moving focus; `isControlTarget` now counts `role="button"` as a control
-(the 6 other `role=button` elements are all UI controls). Tests in `popover-dismiss.spec.ts` fail on the old code.
 
 ### In progress / not built
 
