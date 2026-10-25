@@ -195,3 +195,20 @@ test('Person chips keep the cell text exactly, separators included', async ({ pa
   const r = await page.evaluate(() => { const d = document.createElement('div'); d.innerHTML = personInlineHtml('Ana, Raj & @Mo'); return { text: d.textContent, chips: [...d.querySelectorAll('.tbl-person')].map((e) => e.textContent) }; });
   expect(r).toEqual({ text: 'Ana, Raj & @Mo', chips: ['Ana', 'Raj', '@Mo'] });
 });
+
+// It used to be pushed up to innerHeight-340 when there was no room below, covering the cell being
+// edited; now it opens above the cell like every popover (2026-10-25).
+test('More currencies… opens above its cell when there is no room below, not over it', async ({ page }) => {
+  await load(page);
+  await page.setViewportSize({ width: 1300, height: 500 });
+  const f = fig(page);
+  await setType(page, f, '1234.5', 'More currencies…');
+  await expect(f.locator('.tbl-currency-picker input')).toBeFocused();
+  const r = await page.evaluate(() => {
+    const p = document.querySelector('.tbl-currency-picker')!.getBoundingClientRect();
+    const c = [...document.querySelectorAll('td')].find((t) => /1[,.]?234/.test(t.textContent || ''))!.getBoundingClientRect();
+    return { pickBottom: p.bottom, pickTop: p.top, cellTop: c.top, cellBottom: c.bottom };
+  });
+  expect(r.pickTop >= r.cellBottom || r.pickBottom <= r.cellTop).toBe(true);
+  expect(r.pickTop).toBeGreaterThanOrEqual(8);
+});

@@ -8970,9 +8970,8 @@ function openCurrencyPicker(table,cell,current,onPick){
   // which clears the wrapper anyway).
   box.addEventListener('focusout',e=>{ if(!box.contains(e.relatedTarget)&&!closed){ closed=true; box.remove(); } });
   host.appendChild(box);
-  const r=cell.getBoundingClientRect();
-  box.style.left=Math.max(8,Math.min(r.left,window.innerWidth-300))+'px';
-  box.style.top=Math.max(8,Math.min(r.bottom+4,window.innerHeight-340))+'px';
+  // position:fixed; placed like every popover (it used to be pushed up over its own cell instead of flipping).
+  showPopoverAt(box,cell.getBoundingClientRect(),window.innerWidth,window.innerHeight);
   draw();
   input.focus();
 }

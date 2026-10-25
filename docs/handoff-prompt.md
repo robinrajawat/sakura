@@ -165,6 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: Table currency picker flips above its cell.** `openCurrencyPicker` ("More currencies…") is `position:fixed`
+(so window coordinates were right) but was pushed up to `innerHeight-340` when there was no room below, covering the cell
+being edited; it now uses `showPopoverAt`. Test in `table-column-types.spec.ts` (fails on the old code). Looked at and
+left: hub.html's corners/shadows are role-based (rounder mobile cards/sheet, one shadow per kind of element), not drift.
+
 **2026-10-25: The phone app (hub.html) uses the same text sizes and status colours.** `hub.css` now defines the same
 `--fs-*` scale (`:root`) and `--danger/--success/--warning` (both theme blocks) as index; its 23 interface text sizes use
 the scale (half-pixels round up: 10.5→11, 11.5→12, 12.5→13, 13.5→14) and the priority chips (list and detail sheet) use
@@ -180,17 +185,6 @@ delete my account" is the red outline `danger` button (was solid red). New `.smo
 section's inline `#e5484d` reds (9, plus the sync-error status set from JS) now use `--danger`. `colourTokens.test.ts`
 also checks inline `style=""` in the markup (allowed: accent swatches, About support button). Not done: the other ~70
 button rules (mostly icon buttons sized to their place).
-
-**2026-10-25: One call opens a popover (`showPopoverAt`); sidebar menus join.** Step 3, third piece. `showPopoverAt(pop,
-anchorRect, vw, vh, gap)` (in `src/ui/placePopover.ts`) moves the popover to 0,0, adds `open`, measures and places it;
-the date, link card, To-Do link and tag popovers use it instead of four copies of those lines. The sidebar's document
-icon menu (`showDocIconMenu`) and move-to-folder menu (`showMoveMenu`) now use it and `popoverDismiss` too: they used to
-open only downward (off the bottom of a short window) and ignored Escape. The jump-to-task popover (`openRefJumpPopover`: opened only
-downward, assumed 330px wide, no Escape) joins too, and the diagram anchor suggestions (`positionAnchorSuggestPopover`, an
-exact copy) now call `showPopoverAt`. The doc icon is still a `<span>` inside a clickable, draggable row, so focus
-return does nothing there. Left on purpose: the table currency picker (absolute inside its table, placed with window
-coordinates; needs its own look) and the caret-following suggestion lists (Quick Assist, @mentions). Tests:
-`placePopover.test.ts` (+3), `popover-placement.spec.ts` (icon menu and jump popover cases fail on the old code).
 
 ### In progress / not built
 
