@@ -135,6 +135,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'contextMenu',
+    sourceFile: 'src/ui/contextMenu.ts',
+    testFile: 'tests/unit/contextMenu.test.ts',
+    // The app's menu system, moved unchanged. Its state lets and functions share index.html's script
+    // scope, so the ~200 existing callers and reads of _sbContextEl keep working.
+    footer: ''
+  },
+  {
     name: 'placePopover',
     sourceFile: 'src/ui/placePopover.ts',
     testFile: 'tests/unit/placePopover.test.ts',
