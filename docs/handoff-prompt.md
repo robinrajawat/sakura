@@ -165,6 +165,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: The dialog engine is a tested module (`src/ui/dialogs.ts`).** Modularization, second piece. `_openModal`,
+`_closeModal`, the Enter/Esc/Tab handlers, the backdrop-click guard, `onOverlayBackdropClick`, `sakuraConfirm`,
+`sakuraPrompt` and `sakuraPasswordPrompt` moved unchanged into block `dialogs`, spliced where they were (its two backdrop
+listeners run at start-up). `editTextInPlace` stayed in index.html (inline editing, not a dialog). Pure move, checked with
+the TypeScript printer as before. Unit tests: `tests/unit/dialogs.test.ts` (8, happy-dom). Found, not fixed (moves only):
+the Tab focus trap counts the hidden input boxes, so Tab from a confirm's last button goes to an invisible input; fix next.
+Toasts (`showToast`) are the next move.
+
 **2026-10-25: The menu system is a tested module (`src/ui/contextMenu.ts`).** Modularization, first of the shared UI pieces
 (owner: menus first, then toasts/confirm dialogs, then the To-Dos panel's data logic). `showSbContextMenu`,
 `openSbMenuUnder`, `closeSbContextMenu`, `sbMenuOpener` and their helpers (items, submenus, folds, icon rows, tiles,
@@ -180,11 +188,6 @@ happy-dom (new dev dependency, opted into per file with `// @vitest-environment 
 `--surface-panel` (dark `#171715`) for Settings/Help/Export and the To-Dos panel, and `--hover-raised` (dark `#262623`) set
 as `--hover` on raised surfaces so hover still shows; in light mode all three equal `--bg`/`--hover` (screenshots
 unchanged). 31 tier rules use them; `surfaceTokens.test.ts` checks it. Not done: hub.html's surfaces.
-
-**2026-10-25: Table currency picker flips above its cell.** `openCurrencyPicker` ("More currencies…") is `position:fixed`
-(so window coordinates were right) but was pushed up to `innerHeight-340` when there was no room below, covering the cell
-being edited; it now uses `showPopoverAt`. Test in `table-column-types.spec.ts` (fails on the old code). Looked at and
-left: hub.html's corners/shadows are role-based (rounder mobile cards/sheet, one shadow per kind of element), not drift.
 
 ### In progress / not built
 
