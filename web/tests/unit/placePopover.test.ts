@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { placePopover } from '../../src/ui/placePopover';
+import { placePopover, showPopoverAt } from '../../src/ui/placePopover';
 
 const anchor = (left: number, top: number, h = 20) => ({ left, top, bottom: top + h });
 
@@ -29,5 +29,29 @@ describe('placePopover', () => {
   it('fits exactly at the bottom margin', () => {
     expect(placePopover(anchor(0, 600), 100, 168, 1200, 800).above).toBe(false); // 624 + 168 = 792
     expect(placePopover(anchor(0, 600), 100, 169, 1200, 800).above).toBe(true);
+  });
+});
+
+describe('showPopoverAt', () => {
+  const el = (w: number, h: number) => {
+    const classes: string[] = [];
+    const seen: string[] = [];
+    const style = { _l: '', get left() { return this._l; }, set left(v: string) { this._l = v; seen.push('left=' + v); }, top: '' };
+    return { style, classList: { add: (c: string) => classes.push(c) }, offsetWidth: w, offsetHeight: h, classes, seen };
+  };
+  it('moves to 0,0, opens, then places', () => {
+    const pop = el(200, 100);
+    expect(showPopoverAt(pop, anchor(100, 100), 1200, 800)).toEqual({ left: 100, top: 124, above: false });
+    expect(pop.seen[0]).toBe('left=0px');
+    expect(pop.classes).toEqual(['open']);
+    expect([pop.style.left, pop.style.top]).toEqual(['100px', '124px']);
+  });
+  it('only opens without an anchor', () => {
+    const pop = el(200, 100);
+    expect(showPopoverAt(pop, null, 1200, 800)).toBeNull();
+    expect(pop.classes).toEqual(['open']);
+  });
+  it('passes the gap through', () => {
+    expect(showPopoverAt(el(200, 100), anchor(100, 100), 1200, 800, 6)?.top).toBe(126);
   });
 });

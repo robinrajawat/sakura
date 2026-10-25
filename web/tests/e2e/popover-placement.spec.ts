@@ -50,3 +50,35 @@ test('a popover stays inside the window on the right', async ({ page }) => {
   const pop = await box(page, '#tag-popover');
   expect(pop.right).toBeLessThanOrEqual(1200 - 8 + 0.5);
 });
+
+// The sidebar's icon menu opened only downward; in a short window it ran off the bottom (2026-10-25).
+test('the document icon menu stays inside a short window and closes on Escape', async ({ page }) => {
+  await open(page, 260);
+  await page.evaluate(() => (window as any).eval('renderSidebar(); 0'));
+  await page.locator('.sdoc-icon').first().click();
+  const menu = page.locator('.doc-icon-menu');
+  await expect(menu).toBeVisible();
+  const b = await box(page, '.doc-icon-menu');
+  expect(b.bottom).toBeLessThanOrEqual(260 - 8 + 0.5);
+  expect(b.top).toBeGreaterThanOrEqual(8);
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+});
+
+// The jump-to-task list opened only downward and assumed a 330px width (2026-10-25).
+test('the jump-to-task popover opens above a low row and closes on Escape', async ({ page }) => {
+  await open(page, 700);
+  const id = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('.node-row')] as HTMLElement[];
+    const low = rows.filter((r) => r.getBoundingClientRect().bottom < window.innerHeight - 30).pop()!;
+    (window as any).eval(`openRefJumpPopover(document.querySelector('.node-row[data-id="${low.dataset.id}"]'), [{id:'t1',text:'Order labels'},{id:'t2',text:'Book courier'},{id:'t3',text:'Check stock'}], '3 to-dos reference this row'); 0`);
+    return low.dataset.id;
+  });
+  const pop = page.locator('#ref-jump-popover');
+  await expect(pop).toHaveClass(/open/);
+  const row = await box(page, `.node-row[data-id="${id}"]`);
+  const b = await box(page, '#ref-jump-popover');
+  expect(b.bottom).toBeLessThanOrEqual(row.top);
+  await page.keyboard.press('Escape');
+  await expect(pop).not.toHaveClass(/open/);
+});

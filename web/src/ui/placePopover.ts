@@ -41,3 +41,33 @@ export function placePopover(
   if (above >= margin) return { left, top: above, above: true };
   return { left, top: Math.max(margin, viewportHeight - margin - height), above: true };
 }
+
+/** The parts of a popover element showPopoverAt touches (a real HTMLElement in index.html). */
+export interface PopoverElement {
+  style: { left: string; top: string };
+  classList: { add: (name: string) => void };
+  offsetWidth: number;
+  offsetHeight: number;
+}
+
+/**
+ * Opens a popover next to its anchor in one call: moves it to 0,0 (so one near the right edge isn't
+ * measured while squeezed), adds `open`, measures it and places it with placePopover. With no
+ * anchor it only opens. Returns the placement, or null without an anchor.
+ */
+export function showPopoverAt(
+  pop: PopoverElement,
+  anchor: PlaceRect | null,
+  viewportWidth: number,
+  viewportHeight: number,
+  gap = 4
+): PlaceResult | null {
+  pop.style.left = '0px';
+  pop.style.top = '0px';
+  pop.classList.add('open');
+  if (!anchor) return null;
+  const p = placePopover(anchor, pop.offsetWidth, pop.offsetHeight, viewportWidth, viewportHeight, gap);
+  pop.style.left = p.left + 'px';
+  pop.style.top = p.top + 'px';
+  return p;
+}

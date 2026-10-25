@@ -165,6 +165,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-25: One call opens a popover (`showPopoverAt`); sidebar menus join.** Step 3, third piece. `showPopoverAt(pop,
+anchorRect, vw, vh, gap)` (in `src/ui/placePopover.ts`) moves the popover to 0,0, adds `open`, measures and places it;
+the date, link card, To-Do link and tag popovers use it instead of four copies of those lines. The sidebar's document
+icon menu (`showDocIconMenu`) and move-to-folder menu (`showMoveMenu`) now use it and `popoverDismiss` too: they used to
+open only downward (off the bottom of a short window) and ignored Escape. The jump-to-task popover (`openRefJumpPopover`: opened only
+downward, assumed 330px wide, no Escape) joins too, and the diagram anchor suggestions (`positionAnchorSuggestPopover`, an
+exact copy) now call `showPopoverAt`. The doc icon is still a `<span>` inside a clickable, draggable row, so focus
+return does nothing there. Left on purpose: the table currency picker (absolute inside its table, placed with window
+coordinates; needs its own look) and the caret-following suggestion lists (Quick Assist, @mentions). Tests:
+`placePopover.test.ts` (+3), `popover-placement.spec.ts` (icon menu and jump popover cases fail on the old code).
+
 **2026-10-25: Popover openers work from the keyboard.** The thread entry date is now a `<button>` (was a `<span>`; looks
 the same, pixel-checked), so it gets focus, Enter opens its picker and Escape returns to it. The right-click/⋯ menu now
 remembers what had focus when it opened (`sbMenuOpener()`, valid only during the item's click), and the To-Do due date
@@ -179,15 +190,6 @@ popover and the To-Do link popover, replacing four copies. Fixed: the thread dat
 in its time field. Focus return now works for the thread date and the To-Do due/link popovers (see 2026-10-25); the tag popover
 ends row editing when it opens, so it has nothing to return to. Tests: `popoverDismiss.test.ts`,
 `popover-dismiss.spec.ts`. Next in step 3: one popover shell (markup + open/close/place in one call) for these four.
-
-**2026-10-24: One placement rule for popovers (`placePopover`).** Step 3 of the plan (shared popover), first piece. New
-tested module `src/ui/placePopover.ts` (spliced as block `placePopover`): below the anchor at its left edge, else above it,
-else pinned to the window's bottom; always 8px inside the window. Used by the date popovers (`openDatePopoverUnder`: To-Do
-due date and thread entry date), the link card (`placeLinkCard`), the To-Do link popover (`openLinkEditor`) and the tag
-popover (`openTagManager`). Each opens the popover at 0,0, measures it, then places it. Fixed on the way: the tag popover
-"flipped" to `anchor.top - 4` (over the row, off the bottom; its "adjusted after render" never happened) and the link
-card could leave the top of a short window. Tests: `placePopover.test.ts`, `popover-placement.spec.ts`. Next in step 3:
-one open/close controller (outside click, Esc, focus return) for these popovers, then the right-click menu's own placement.
 
 ### In progress / not built
 
