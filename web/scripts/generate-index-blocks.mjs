@@ -159,6 +159,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'todoFormat',
+    sourceFile: 'src/core/todoFormat.ts',
+    testFile: 'tests/unit/todoFormat.test.ts',
+    // The To-Dos panel's pure helpers (dates, repeat labels, links, search), moved unchanged out of
+    // the panel's closure; spliced just above it.
+    footer: ''
+  },
+  {
     name: 'placePopover',
     sourceFile: 'src/ui/placePopover.ts',
     testFile: 'tests/unit/placePopover.test.ts',
