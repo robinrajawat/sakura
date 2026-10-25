@@ -60,7 +60,10 @@ export function _modalInputKey(e: any){if(e.key==='Enter'){e.preventDefault(); _
 export function _modalOverlayKey(e: any){
   if(e.key==='Escape'){e.preventDefault(); _closeModal('cancel'); return}
   if(e.key==='Tab'){
-    const focusable=[...el('sakura-modal').querySelectorAll('button,input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter((el: any)=>!el.disabled);
+    // Skip hidden ones too (the input boxes a confirm doesn't show), or Tab would land on nothing.
+    const modal=el('sakura-modal');
+    const shown=(n: any)=>{ for(let x=n;x&&x!==modal;x=x.parentElement){ if(getComputedStyle(x).display==='none')return false; } return true; };
+    const focusable=[...modal.querySelectorAll('button,input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter((el: any)=>!el.disabled&&shown(el));
     if(!focusable.length)return;
     e.preventDefault();
     const idx=focusable.indexOf(document.activeElement);

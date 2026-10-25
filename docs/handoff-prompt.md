@@ -169,9 +169,9 @@ contradicts README.md, trust README.md.)*
 `_closeModal`, the Enter/Esc/Tab handlers, the backdrop-click guard, `onOverlayBackdropClick`, `sakuraConfirm`,
 `sakuraPrompt` and `sakuraPasswordPrompt` moved unchanged into block `dialogs`, spliced where they were (its two backdrop
 listeners run at start-up). `editTextInPlace` stayed in index.html (inline editing, not a dialog). Pure move, checked with
-the TypeScript printer as before. Unit tests: `tests/unit/dialogs.test.ts` (8, happy-dom). Found, not fixed (moves only):
-the Tab focus trap counts the hidden input boxes, so Tab from a confirm's last button goes to an invisible input; fix next.
-Toasts (`showToast`) are the next move.
+the TypeScript printer as before. Unit tests: `tests/unit/dialogs.test.ts` (8, happy-dom). Follow-up fix (own PR): the Tab
+focus trap counted the hidden input boxes, so Tab from a confirm's last button went to an invisible input; it now skips
+anything inside a `display:none` wrapper (2 more unit tests). Toasts (`showToast`) are the next move.
 
 **2026-10-25: The menu system is a tested module (`src/ui/contextMenu.ts`).** Modularization, first of the shared UI pieces
 (owner: menus first, then toasts/confirm dialogs, then the To-Dos panel's data logic). `showSbContextMenu`,
