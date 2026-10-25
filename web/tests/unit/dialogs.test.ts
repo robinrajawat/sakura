@@ -81,6 +81,29 @@ describe('sakuraConfirm', () => {
     buttons()[0].click();
     await p;
   });
+
+  it('Tab wraps from the last button to the first, skipping the hidden input boxes', async () => {
+    const p = d.sakuraConfirm({ title: 'Wrap' });
+    const [cancel, ok] = buttons();
+    ok.focus();
+    key(overlay(), 'Tab');
+    expect(document.activeElement).toBe(cancel);
+    key(overlay(), 'Tab', { shiftKey: true });
+    expect(document.activeElement).toBe(ok);
+    buttons()[0].click();
+    await p;
+  });
+
+  it('in a prompt, Tab includes the shown input', async () => {
+    const p = d.sakuraPrompt({ title: 'Rename', defaultValue: 'x' });
+    const input = $('sakura-modal-input');
+    const ok = buttons()[1];
+    ok.focus();
+    key(overlay(), 'Tab');
+    expect(document.activeElement).toBe(input);
+    key(input, 'Escape');
+    await p;
+  });
 });
 
 describe('sakuraPrompt', () => {
