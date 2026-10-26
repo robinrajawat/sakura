@@ -165,6 +165,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-26: Rewrite without an AI key says what to set up; the AI menu says "row".** Rewrite (and other AI actions) with
+no key used to show a "gemini error" box with Copy/Dismiss. Known setup problems (no key, Hosted AI signed out, Secure
+Storage locked) now show a plain "Set up AI" / "Sign in to use AI" / "Unlock Secure Storage" message with "Not now" and
+one action ("Open settings" opens Settings › AI with the key box focused; "Unlock" unlocks). Real provider failures keep
+Copy/Dismiss, titled with the provider's name ("Gemini error"). `AI_SETUP_PROBLEMS` + `openAiSettings()` near
+`showAiErrorModal`; the Auto-rewrite chip uses `openAiSettings()` too. "Rewrite node" is "Rewrite row" in the AI menu,
+toolbar list, help and README. Test: `tests/e2e/ai-setup-message.spec.ts`.
+
 **2026-10-26: Editor keyboard polish.** Enter on a blank indented row now moves it out a level wherever it ends its
 sub-list (next row shallower), not only on the document's last row; with siblings after it, Enter still adds a blank row
 (outdent there would move it past them). Alt+↑/↓ (`moveUp`/`moveDown`) now also work while typing in a row: commit, move,
@@ -176,11 +184,6 @@ the row's note (the table said "split"), and the stale `[Text]`/`(Text)`/`!Text`
 "Sign in with email" and "Continue without signing in" were inline buttons squeezed onto one line in two styles. Email
 sign-in is now a full-width outlined button with a mail icon, matching Google's (and hub.html's layout); "Continue without
 signing in" is a block link below it. Test: `tests/e2e/landing-signin-layout.spec.ts`.
-
-**2026-10-26: The footer hides "Depth —" and "Saved —" until they mean something.** Polish round, item 3 of 4. Depth
-(and its divider, now `#sb-depth-divider`) shows only while a row is selected; Saved shows from the first save on
-(`updateSavedIndicator` unhides it). The "Auto-rewrite: Off" chip stays, since it is the feature's on/off control. Tests:
-`tests/e2e/statusbar-quiet-until-useful.spec.ts`; two older specs now select a row and save before checking the footer.
 
 ### In progress / not built
 

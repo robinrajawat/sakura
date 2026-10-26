@@ -84,7 +84,7 @@ test.describe('Fixed main toolbar', () => {
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(3);
     await page.locator('#qb-ai').click();
     await expect(page.locator('#insert-menu')).toHaveCount(0);
-    await expect(page.locator('#ai-menu .sb-context-label')).toHaveText(['Rewrite node', 'Generate outline']);
+    await expect(page.locator('#ai-menu .sb-context-label')).toHaveText(['Rewrite row', 'Generate outline']);
     await page.locator('#qb-ai').click();
     // Bold/Italic/Highlight/Text colour moved to the selection popover (words) and right-click ›
     // More › Format (whole rows), owner 2026-10-22.

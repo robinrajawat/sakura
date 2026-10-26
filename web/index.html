@@ -4000,7 +4000,7 @@ body.printing-generic #gpe-overlay{
 <li>Actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time. Which of these appear (and their fixed order) is configured in Settings → Editing → Quick Insert → Menu items</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the text you're editing, which this avoids touching</li>
 <li>Every action splices directly at the cursor and keeps you in edit mode, so you don't lose your place — the fastest way to get these in, and the reason the menu exists</li>
-<li>Node-only actions — Note, Tags, Thread, Rewrite node, Version history — live in a node's right-click menu instead, not here, since Quick Insert is deliberately the same small menu everywhere rather than growing extra items only inside the outline editor</li>
+<li>Node-only actions — Note, Tags, Thread, Rewrite row, Version history — live in a node's right-click menu instead, not here, since Quick Insert is deliberately the same small menu everywhere rather than growing extra items only inside the outline editor</li>
 <li><strong>Version history…</strong> (right-click a node → in the "notes" group of the More panel) — shows earlier text for just this one node, drawn from the document's regular version history (captured automatically roughly every 10 minutes of active changes — see the Version History entry below) — skips straight past versions where this particular node didn't change, so a document with 20 saved versions might show far fewer than 20 rows here. "Restore text" replaces only this node's text, through the normal undo stack (Ctrl/Cmd+Z undoes it like any other edit) — nothing else about the node (note, code, tags) is touched</li>
 </ul>
 </div>
@@ -4010,7 +4010,7 @@ body.printing-generic #gpe-overlay{
 <li><strong>Theme &amp; accent</strong> — Settings → Appearance: Light/Dark theme and six accent colours (Terracotta, the default, plus Teal, Indigo, Violet, Moss, and Amber). <strong>Auto theme</strong> sits below it — Off (the Light/Dark switch only, changed by hand) or System (follows your OS/browser's dark mode setting live). Manually clicking Light/Dark in System mode holds as a temporary override until the system value naturally catches up and agrees with it again</li>
 <li><strong>Status bar</strong> — always shown, including in zen mode: word count and current depth on the left; on the right, saved status, the Secure Storage lock chip (only while locked), the auto-rewrite indicator (while auto-rewrite is on), and Quick Assist when it's docked there</li>
 <li><strong>App bar</strong> — always shown, including in zen mode, so Settings is always one click away. "Declutter app bar" (in the app bar's own right-click menu) hides the Sakura name on the left</li>
-<li><strong>Toolbar</strong> — always shown above the editor (hidden only in zen mode), one fixed set of buttons in unlabeled groups: Undo, Redo · Outdent, Indent · Heading style · Note, Checkbox, Tags · Generate outline, Rewrite node (AI) — and Collapse all + Zoom as a small pair at the right end. It wraps onto a second line on a narrow window rather than scrolling. Everything else — Insert above/below, Add child, Duplicate, Move up/down, Delete — is in a node's right-click menu (and the keyboard shortcuts below). Formatting is in the bar that appears over selected words; a shortcut with nothing selected formats the whole row</li>
+<li><strong>Toolbar</strong> — always shown above the editor (hidden only in zen mode), one fixed set of buttons in unlabeled groups: Undo, Redo · Outdent, Indent · Heading style · Note, Checkbox, Tags · Generate outline, Rewrite row (AI) — and Collapse all + Zoom as a small pair at the right end. It wraps onto a second line on a narrow window rather than scrolling. Everything else — Insert above/below, Add child, Duplicate, Move up/down, Delete — is in a node's right-click menu (and the keyboard shortcuts below). Formatting is in the bar that appears over selected words; a shortcut with nothing selected formats the whole row</li>
 <li>The tree always renders in a clean indented view, closer to Dynalist or Workflowy — no │├└─ connector characters. Every row gets a small dot instead of a triangle fold-arrow — a folded parent shows as a ring with a dot inside, hovering either kind reveals −/+ — plus a faint vertical guide line per indent level so nesting stays easy to trace. This isn't a setting; it's the app's only tree style</li>
 <li><strong>Text size</strong> — Settings → Appearance → Text size: a slider from 85% to 140%</li>
 <li>All of the above are saved automatically and restored next time you open the app. "Reset to default settings" (Settings → Data) reverts appearance and behaviour preferences to their defaults without touching your documents</li>
@@ -4094,7 +4094,7 @@ body.printing-generic #gpe-overlay{
 <h4>AI Rewrite</h4>
 <ul>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg></span> button in the toolbar → rewrites the selected node; with multiple nodes selected, rewrites all of them in one batch; with text highlighted inside an editing node, rewrites just that selection</li>
-<li>Right-click a node → Rewrite node is in the quick icon row (Rewrite selection, if multiple are selected)</li>
+<li>Right-click a node → Rewrite row is in the quick icon row (Rewrite selection, if multiple are selected)</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg></span> button next to Rewrite, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">O</span> → Generate outline (AI): describe a topic and it inserts an AI-generated nested outline into the current document — into a blank doc, or after the current selection; also available as "Generate with AI" on the blank-document screen. Uses the same provider/model/key as Rewrite (Settings → AI → Provider), but its own fixed instructions, not the customizable rewrite prompt</li>
 <li>Batches larger than 30 nodes are sent in sequential chunks automatically, with a status toast showing progress (e.g. "Rewriting nodes 1–30…")</li>
 <li><strong>Sakura Hosted AI</strong> — Settings → AI → the "AI Mode" switch at the top → "Sakura Hosted AI", then sign in. No key to find or paste; Sakura's own credentials handle the request via a small Cloudflare Worker, capped by a daily per-account quota. The request text for that one call goes to Sakura's server and on to a third-party provider Sakura selects, not stored either way — see Settings → About → Privacy &amp; data for the full picture. Selecting it collapses the panel down to just sign-in status — no model or key fields, since there's nothing to configure. Prefer your own key, or want usage with no daily cap? Flip the same switch to "Bring your own key" instead</li>
@@ -20488,16 +20488,50 @@ document.addEventListener('keydown', e => {
 }, true);
 
 /* GENERATED:toasts:END */
+// Opens Settings on its AI section (closing the other panels first), scrolled to the key box.
+function openAiSettings(){
+  el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('docs-menu')?.classList.remove('open');
+  el('settings-panel')?.classList.add('open');
+  applySettingsCategory('ai');
+  setTimeout(()=>{ el('ai-api-key-input')?.scrollIntoView({block:'center',behavior:'smooth'}); el('ai-api-key-input')?.focus(); },50);
+}
+// No key, signed out on Hosted AI, or Secure Storage locked aren't failures of the provider: say
+// what to set up and offer the one step that fixes it, instead of "<provider> error".
+const AI_SETUP_PROBLEMS=[
+  {match:/^No AI key set/,title:'Set up AI',body:'AI features need an AI service. Add your own API key in Settings › AI Rewrite, or switch to Sakura Hosted AI there.',action:'Open settings',run:()=>openAiSettings()},
+  {match:/^Sign in to use Sakura Hosted AI/,title:'Sign in to use AI',body:'Sakura Hosted AI works once you\u2019re signed in. You can also use your own API key in Settings › AI Rewrite.',action:'Open settings',run:()=>openAiSettings()},
+  {match:/^Secure Storage is locked/,title:'Unlock Secure Storage',body:'Your AI key is saved in Secure Storage, which is locked. Unlock it to use AI features.',action:'Unlock',run:()=>unlockVault()},
+];
+function aiProviderName(provider){
+  const p=getAiSelectableProviders().find(x=>x.id===provider);
+  return (p?p.label:String(provider||'AI')).replace(/\s*\(.*\)$/,'');
+}
 function showAiErrorModal(provider, err){
   const msg = (err&&err.message)||String(err||'Unknown error');
   const overlay = el('sakura-modal-overlay');
+  const setup = AI_SETUP_PROBLEMS.find(x=>x.match.test(msg));
   el('sakura-modal-icon').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>';
   el('sakura-modal-icon').style.display = 'block';
-  el('sakura-modal-title').textContent = (provider||'AI') + ' error';
-  el('sakura-modal-body').textContent = msg;
+  el('sakura-modal-title').textContent = setup ? setup.title : aiProviderName(provider) + ' error';
+  el('sakura-modal-body').textContent = setup ? setup.body : msg;
   el('sakura-modal-input-wrap').style.display = 'none';
   const actions = el('sakura-modal-actions');
   actions.innerHTML = '';
+  if(setup){
+    const laterBtn = document.createElement('button');
+    laterBtn.className = 'smodal-btn';
+    laterBtn.textContent = 'Not now';
+    laterBtn.onclick = () => { overlay.classList.remove('open'); };
+    const goBtn = document.createElement('button');
+    goBtn.className = 'smodal-btn primary';
+    goBtn.textContent = setup.action;
+    goBtn.onclick = () => { overlay.classList.remove('open'); setup.run(); };
+    actions.appendChild(laterBtn);
+    actions.appendChild(goBtn);
+    overlay.classList.add('open');
+    setTimeout(()=>goBtn.focus(), 80);
+    return;
+  }
   const copyBtn = document.createElement('button');
   copyBtn.className = 'smodal-btn';
   copyBtn.textContent = 'Copy';
@@ -21011,7 +21045,7 @@ const CTX_ACTION_META={
   up:{label:'Move up',glyph:'↑',group:'structure'},
   down:{label:'Move down',glyph:'↓',group:'structure'},
   fold:{label:'Collapse/expand branch',svg:'<polyline points="6 9 12 15 18 9"/>',group:'structure'},
-  'ai-rewrite':{label:'Rewrite node',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
+  'ai-rewrite':{label:'Rewrite row',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',group:'node'},
   remark:{label:'Thread…',svg:'<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>',group:'discuss'},
   diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'visual'},
@@ -27099,7 +27133,7 @@ function toggleCheckboxOnSelection(){
   markDirty(); render();
 }
 function aiMenuItems(){ return [
-  {id:'qb-ai-rewrite', label:'Rewrite node', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>', title:'Rewrite node (AI)', onClick:aiRewriteSelection},
+  {id:'qb-ai-rewrite', label:'Rewrite row', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>', title:'Rewrite row (AI)', onClick:aiRewriteSelection},
   {id:'qb-ai-outline', label:'Generate outline', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg>', title:'Generate outline (AI)', onClick:()=>generateOutlineWithAi(el('qb-ai'))}
 ]; }
 // Rows the current document can't use (ctxActionAllowed) are left out; Insert's extra rows run
@@ -29128,10 +29162,7 @@ el('sb-auto-rewrite-chip')?.addEventListener('click',()=>{
     if(vaultActive()&&!vaultUnlocked()){ unlockVault(); return; }
     // No key at all (vault not the issue) — jump straight to where one gets saved, rather
     // than just toggling the feature off, which wouldn't actually resolve anything.
-    el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('docs-menu')?.classList.remove('open');
-    el('settings-panel')?.classList.add('open');
-    applySettingsCategory('ai');
-    setTimeout(()=>{ el('ai-api-key-input')?.scrollIntoView({block:'center',behavior:'smooth'}); el('ai-api-key-input')?.focus(); },50);
+    openAiSettings();
     return;
   }
   setAutoRewriteEnabled(!autoRewriteEnabled);

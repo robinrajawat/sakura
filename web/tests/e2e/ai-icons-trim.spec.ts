@@ -79,7 +79,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await dismissOverlays(page);
     await seedDoc(page);
 
-    // Toolbar AI group: exactly Generate outline + Rewrite node.
+    // Toolbar AI group: exactly Generate outline + Rewrite row.
     await page.locator('#qb-ai').click();
     await expect(page.locator('#ai-menu .sb-context-item')).toHaveCount(2);
     await expect(page.locator('#qb-ai-outline')).toHaveCount(1);
@@ -142,7 +142,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     const menu = page.locator('#context-menu');
     await expect(menu).toBeVisible();
     const text = await menu.evaluate((m) => (m as HTMLElement).innerText + ' ' + [...m.querySelectorAll('[data-tip],[aria-label]')].map((e) => (e.getAttribute('data-tip') || '') + ' ' + (e.getAttribute('aria-label') || '')).join(' '));
-    expect(text).toMatch(/Rewrite node/);
+    expect(text).toMatch(/Rewrite row/);
     expect(text).not.toMatch(/Suggest icon/i);
     expect(errors).toEqual([]);
   });
