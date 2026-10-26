@@ -165,6 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-26: Sign-in screen: email sign-in is a button, "Continue" on its own line.** Polish round, item 4 of 4 (done).
+"Sign in with email" and "Continue without signing in" were inline buttons squeezed onto one line in two styles. Email
+sign-in is now a full-width outlined button with a mail icon, matching Google's (and hub.html's layout); "Continue without
+signing in" is a block link below it. Test: `tests/e2e/landing-signin-layout.spec.ts`.
+
 **2026-10-26: The footer hides "Depth —" and "Saved —" until they mean something.** Polish round, item 3 of 4. Depth
 (and its divider, now `#sb-depth-divider`) shows only while a row is selected; Saved shows from the first save on
 (`updateSavedIndicator` unhides it). The "Auto-rewrite: Off" chip stays, since it is the feature's on/off control. Tests:
@@ -174,16 +179,12 @@ contradicts README.md, trust README.md.)*
 Enter or just type" but its main button was "New document", which made a second document. It is now "Add first row"
 (`#es-first-row-btn`, calls `createRootAndEdit()`); "Generate with AI ✦" stays. Test: `tests/e2e/empty-doc-first-row.spec.ts`.
 
-**2026-10-26: The file explorer's filter box is on demand.** Polish round, item 1 of 4 (one search instead of
-three). The sidebar showed a "Filter docs…" box and a search icon right under the header's Quick Assist search. The box now
-starts hidden every time (the saved `sidebarSearchVisible` pref is gone), the sidebar's search icon opens and focuses it,
-and it closes on Esc or when it is empty and loses focus. Quick Assist stays the main search.
-
 ### In progress / not built
 
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
-- Polish round (2026-10-26), last item: sign-in screen gets email sign-in as a button and "Continue" on its own line.
+- Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default; the outliner on phones (read and
+  light edit); faster first load by loading draw.io/AI on demand.
 - hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
