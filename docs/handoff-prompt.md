@@ -165,6 +165,10 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-26: An empty document's button adds its first row.** Polish round, item 2 of 4. The empty state said "Press
+Enter or just type" but its main button was "New document", which made a second document. It is now "Add first row"
+(`#es-first-row-btn`, calls `createRootAndEdit()`); "Generate with AI ✦" stays. Test: `tests/e2e/empty-doc-first-row.spec.ts`.
+
 **2026-10-26: The file explorer's filter box is on demand.** Polish round, item 1 of 4 (one search instead of
 three). The sidebar showed a "Filter docs…" box and a search icon right under the header's Quick Assist search. The box now
 starts hidden every time (the saved `sidebarSearchVisible` pref is gone), the sidebar's search icon opens and focuses it,
@@ -180,16 +184,11 @@ TypeScript printer. Unit tests: `tests/unit/todoFormat.test.ts` (11, fixed clock
 change rather than a move, so it needs its own decision. Earlier modules this session: menus (`contextMenu`), dialogs
 (`dialogs`, plus a focus-trap fix), toasts (`toasts`).
 
-**2026-10-25: Toasts are a tested module (`src/ui/toasts.ts`).** Modularization, third piece. `showToast`,
-`showActionToast`, `QA_TOAST_ICON_SVG`, `TOAST_UNDO_MS` and the capture-phase Ctrl/Cmd+Z listener for an Undo toast moved
-unchanged into block `toasts`, spliced where they were (`showAiErrorModal`, which sat between them, stays in index.html).
-Pure move, checked with the TypeScript printer. Unit tests: `tests/unit/toasts.test.ts` (7, happy-dom, fake timers).
-
 ### In progress / not built
 
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
-- Polish round (2026-10-26), one PR each: empty document's button adds the first row; footer hides "Depth —"/"Saved —"
+- Polish round (2026-10-26), one PR each: footer hides "Depth —"/"Saved —"
   until they mean something; sign-in screen gets email sign-in as a button and "Continue" on its own line.
 - hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
