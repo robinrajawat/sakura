@@ -24,8 +24,9 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 // same as everywhere else. What's special about the last row is only what happens next: since that
 // new row is blank, pressing Enter again on it walks it back out one level at a time (instead of
 // doing nothing) until it reaches depth 0, at which point further Enter presses keep adding new
-// blank rows at depth 0 rather than refusing. A blank Enter that is NOT on the last row is
-// unaffected -- it always just adds another blank row at the same depth, no outdenting.
+// blank rows at depth 0 rather than refusing. The same holds mid-document for a blank row that
+// ends its sub-list (the next row is shallower); a blank row with siblings after it just adds
+// another blank row at the same depth, no outdenting.
 //
 // An earlier version of this feature (mistakenly) made the very first Enter on the last row create
 // a CHILD instead of a sibling -- that was wrong and has been reverted; this file covers the
@@ -164,7 +165,7 @@ test.describe('Enter on the last row adds a sibling; repeated blank Enter there 
     expect(state.depths).toEqual([0, 1, 2, 0, 0, 0]);
   });
 
-  test('a blank Enter that is NOT on the last row of the document just adds a same-depth sibling (unaffected)', async ({ page }) => {
+  test('mid-document, a blank Enter at the end of a sub-list moves it out a level in place', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -206,7 +207,7 @@ test.describe('Enter on the last row adds a sibling; repeated blank Enter there 
     const blankInput = page.locator(`#in-${blankId}`);
     await expect(blankInput).toBeVisible();
     await blankInput.focus();
-    await page.keyboard.press('Enter'); // this blank row is still not the doc's last row (Last follows it)
+    await page.keyboard.press('Enter'); // not the doc's last row, but it ends the sub-list under First
 
     state = await page.evaluate(() => ({
       // @ts-expect-error
@@ -214,9 +215,46 @@ test.describe('Enter on the last row adds a sibling; repeated blank Enter there 
       // @ts-expect-error
       depths: nodes.map((n: any) => n.depth),
     }));
-    // Just another blank row at the same depth -- no outdenting, since this was never the
-    // last row of the document to begin with.
-    expect(state.texts).toEqual(['First', 'Nested', '', '', 'Last']);
-    expect(state.depths).toEqual([0, 1, 1, 1, 0]);
+    // Out one level, staying between Nested and Last.
+    expect(state.texts).toEqual(['First', 'Nested', '', 'Last']);
+    expect(state.depths).toEqual([0, 1, 0, 0]);
+  });
+
+  test('a blank Enter with siblings after it just adds a same-depth sibling (no outdent)', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+
+    await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'First', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 1, text: '', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 3, depth: 1, text: 'Later sibling', parentId: 1, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set();
+      // @ts-expect-error
+      selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null;
+      // @ts-expect-error
+      nextId = 4;
+      // @ts-expect-error
+      render();
+      // @ts-expect-error
+      beginEditAt(2, 0);
+    });
+
+    const input2 = page.locator('#in-2');
+    await expect(input2).toBeVisible();
+    await input2.focus();
+    await page.keyboard.press('Enter');
+
+    const state = await page.evaluate(() => ({
+      // @ts-expect-error
+      texts: nodes.map((n: any) => n.text),
+      // @ts-expect-error
+      depths: nodes.map((n: any) => n.depth),
+    }));
+    expect(state.texts).toEqual(['First', '', '', 'Later sibling']);
+    expect(state.depths).toEqual([0, 1, 1, 1]);
   });
 });

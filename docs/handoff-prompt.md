@@ -165,6 +165,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-26: Editor keyboard polish.** Enter on a blank indented row now moves it out a level wherever it ends its
+sub-list (next row shallower), not only on the document's last row; with siblings after it, Enter still adds a blank row
+(outdent there would move it past them). Alt+↑/↓ (`moveUp`/`moveDown`) now also work while typing in a row: commit, move,
+re-enter at the same caret offset. `moveSelected` no longer shows a "Moved up/down" toast. README: Shift+Enter writes in
+the row's note (the table said "split"), and the stale `[Text]`/`(Text)`/`!Text` markup line is gone. Tests:
+`tests/e2e/move-row-while-typing.spec.ts`; `enter-outdent-cascade.spec.ts` updated for the sub-list rule.
+
 **2026-10-26: Sign-in screen: email sign-in is a button, "Continue" on its own line.** Polish round, item 4 of 4 (done).
 "Sign in with email" and "Continue without signing in" were inline buttons squeezed onto one line in two styles. Email
 sign-in is now a full-width outlined button with a mail icon, matching Google's (and hub.html's layout); "Continue without
@@ -174,10 +181,6 @@ signing in" is a block link below it. Test: `tests/e2e/landing-signin-layout.spe
 (and its divider, now `#sb-depth-divider`) shows only while a row is selected; Saved shows from the first save on
 (`updateSavedIndicator` unhides it). The "Auto-rewrite: Off" chip stays, since it is the feature's on/off control. Tests:
 `tests/e2e/statusbar-quiet-until-useful.spec.ts`; two older specs now select a row and save before checking the footer.
-
-**2026-10-26: An empty document's button adds its first row.** Polish round, item 2 of 4. The empty state said "Press
-Enter or just type" but its main button was "New document", which made a second document. It is now "Add first row"
-(`#es-first-row-btn`, calls `createRootAndEdit()`); "Generate with AI ✦" stays. Test: `tests/e2e/empty-doc-first-row.spec.ts`.
 
 ### In progress / not built
 
