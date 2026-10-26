@@ -76,6 +76,7 @@ Sakura supports multiple open documents at once, shown as tabs above the toolbar
 - Clicking a document in the file explorer, or the **+** at the end of the tab strip, opens it as a tab
 - **Each tab keeps its own undo/redo history, scroll position, and selection independently.** Switching tabs does not reset undo history the way switching documents used to
 - **Double-click a tab** to rename it — the name is edited right there on the tab (Enter keeps, Esc cancels); F2 or Rename in the sidebar does the same on the sidebar entry
+- The file explorer's **search icon** opens a filter box that narrows the document list by name; it closes again on Esc, or when it's empty and you click away. To search inside documents, use Quick Assist (`Ctrl/Cmd+K`)
 - The **X icon** on a tab closes the tab only — the document itself is not deleted and remains in the file explorer
 - The **dropdown arrow** at the right of the tab strip opens a searchable list of all open tabs (arrow keys + Enter to jump, or click a result) — useful once you have more tabs open than fit on screen
 - **"Reopen tabs on launch"** (toggle via Quick Assist — no Settings UI control for this yet) controls whether your previously open tabs come back automatically, or whether each session starts with just one
