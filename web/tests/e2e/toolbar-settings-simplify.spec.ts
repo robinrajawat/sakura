@@ -365,6 +365,11 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     // Tab bar always on; status bar items fixed; app bar items all shown.
     await expect(page.locator('#doc-tab-strip-row')).toBeVisible();
     await expect(page.locator('#sb-wordcount')).toBeVisible();
+    // Depth shows once a row is selected, Saved once something has been saved.
+    await page.evaluate(() => {
+      // @ts-expect-error — globals from index.html
+      selectedId = 1; render(); saveToStorage();
+    });
     await expect(page.locator('#sb-depth')).toBeVisible();
     await expect(page.locator('#sb-saved')).toBeVisible();
     for (const id of ['#help-toggle', '#import-toggle', '#export-toggle']) await expect(page.locator(id), id).toBeVisible();
