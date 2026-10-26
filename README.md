@@ -53,7 +53,8 @@ Key capabilities:
 
 ## Core Editing
 
-- **Enter** — new sibling node below; **Shift+Enter** — split the node at the cursor (text after the cursor becomes a new sibling below); **Ctrl/Cmd+Enter** — new child node
+- **Enter** — new sibling node below (with the cursor mid-text, the text after it moves into the new row); on an empty indented row that ends its sub-list, Enter moves it out one level instead; **Shift+Enter** — write in the row's note, a line under the row; **Ctrl/Cmd+Enter** — new child node
+- **Alt+↑ / Alt+↓** — move the row (with its children) up or down past its sibling, also while typing in it
 - **Tab / Shift+Tab** — indent / outdent the selected node
 - **Backspace** at the start of a row merges it into the row above; **Delete** at the end of a row pulls the next row up into it. The merged-away row's note, tables, images and tags move onto the row that stays, and any Q&A, remarks, diagrams or to-dos linked to it follow along (one **Undo** splits them apart again)
 - **Drag a row** — drop above/below to reorder, or onto the middle of another row to nest it as a child
@@ -63,7 +64,6 @@ Key capabilities:
 - **Right-click a node** — the same menu as every other right-click in Sakura (same look, arrow keys, Enter, Esc, › flyouts): marker icons, a quick row (by default Rewrite, Note, Thread, Add diagram, Add table, Add image), and at its end **⋯ More**, which unfolds everything else below the row. Customising the quick row reopens the menu so you see the change. **More** is kept short: **Add** (child / above / below / duplicate) and **Move** (up / down) are one row of icons each, like **Sort children**; anything you can add to a node that isn't already in the quick row sits behind one **Insert ›** flyout (with the toolbar's Basics / Discuss / Visuals headings); what acts on the row and its branch (Zoom in, Collapse/expand, Tags, Version history, Leave out of export) sits behind **Row ›**; then Delete. The quick row is yours to arrange: drag an icon onto another to reorder, right-click an icon to move it, remove it or **Reset quick row**, and hover any More item for its pin button to add it (up to six icons). Your order is saved with your preferences — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children (one compact row of three icons, shown only when the node has children), then things you add (Generate diagram, Insert date/time), then things you look up (Tags, Version history), Leave out of export, Delete
 - **Open items summary** — the editor toolbar's right side says what still needs attention in the document, in words: "6 follow-ups · 2 questions · 1 remark" (open follow-ups, each Follow-up entry counted on its own, open questions, open follow-up remarks; folded branches included); it hides when nothing is open. Click it for the list: each open item grouped by kind — open items only: Agreed and Out of scope rows aren't listed (their markers show in the outline); under each follow-up, the thread line that set it says why it's open (not a later reply); under each open question, the row it's on and who asked. Each item shows how long it has been open on the right ("today", "3d", "2w", "4mo"; a follow-up counts from the entry that set it). Click an item to jump to it (its branch unfolds). To filter the outline: the **Filter outline** switch beside the title shows only rows with something open (click it again to clear); it is the one filter. The **copy** button before it copies every open item as a numbered agenda, dated ("As of 21 Oct 2026"; follow-ups with their section, owner, "since" date and the line that set it, plus "waiting on open question N" when a later line is one of the questions; open questions with their row, who asked and when), as rich text for email and docs with a plain list fallback. For the PDF, Settings › Export & copy › **Open items page** (off by default) adds the same list after the Contents, each item with the page it's on; rows left out of the export stay off it, and with nothing open there is no page. Any filter (open items, a marker, a tag) unfolds the branches hiding its rows and folds them back when cleared, so the outline returns to how it was. Opening another document clears any filter. Rows that share a name say where they are on the grey line ("in Exclusion Scenarios · …"); the same name under the same parent is numbered ("Export (2)"). Shortcut: **right-click** (or **Shift+click**) the summary to turn "Show only open items" on or off without opening the list. **Decisions** have their own chip beside it ("2 decisions", shown only when there are some): click it for what was decided in threads, on which row and by whom; click one to jump to it.
 - Click the fold arrow to collapse or expand a subtree; when collapsed, the "+N" badge is itself clickable to expand, and turns your accent colour when open questions or follow-ups are hidden inside (clicking an accent count also opens the first of them); its tooltip says what is inside, with counts ("2 diagrams, 1 table, 1 open question, 1 follow-up; also a note…"). It shows no icons, so it never competes with the row's own dots. Messages that offer Ctrl/Cmd+Z to undo stay up for 4 seconds
-- Use `[Text]`, `(Text)`, `!Text`, and `` `Text` `` inline for section labels, muted notes, alerts, and inline code
 - `SAP Note 12345` or `OSS Note 12345` (a 5–10 digit number) auto-links to that note on me.sap.com
 - Hover a row's tree connector or dot to see when the node was created and last modified
 - **Checkboxes** — toolbar Insert ▾ → Checkbox, or right-click → Insert › Checkbox (typing `[ ] ` stays plain text). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
@@ -279,11 +279,11 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Action | Shortcut |
 |---|---|
 | Edit node | Enter / F2 |
-| New sibling below | Enter |
-| Split node at cursor | Shift+Enter |
+| New sibling below (splits the row when the cursor is mid-text) | Enter |
+| Write in the row's note (a line under the row) | Shift+Enter |
 | New child | Ctrl/Cmd+Enter |
 | Indent / Outdent | Tab / Shift+Tab |
-| Move node up/down | Alt+↑ / Alt+↓ |
+| Move node up/down (also while typing in it) | Alt+↑ / Alt+↓ |
 | Bold / Italic / Underline | Ctrl/Cmd+B / I / U |
 | Strike | Ctrl/Cmd+Shift+S |
 | Highlight | Ctrl/Cmd+Shift+H |
