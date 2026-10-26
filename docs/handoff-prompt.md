@@ -165,6 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-26: The file explorer's filter box is on demand.** Polish round, item 1 of 4 (one search instead of
+three). The sidebar showed a "Filter docs…" box and a search icon right under the header's Quick Assist search. The box now
+starts hidden every time (the saved `sidebarSearchVisible` pref is gone), the sidebar's search icon opens and focuses it,
+and it closes on Esc or when it is empty and loses focus. Quick Assist stays the main search.
+
 **2026-10-25: The To-Dos panel's pure helpers are a tested module (`src/core/todoFormat.ts`).** Modularization, fourth
 piece. 13 functions that read none of the panel's state (`toISODate`, `parseISODate`, `dueDatePreset`, `nextRepeatDate`,
 `fmtDue`, `dueShort`, `isOverdue`, `repeatLabel`, `repeatTitle`, `normalizeLinkUrl`, `fmtLink`, `taskMatchesSearch`,
@@ -180,18 +185,12 @@ change rather than a move, so it needs its own decision. Earlier modules this se
 unchanged into block `toasts`, spliced where they were (`showAiErrorModal`, which sat between them, stays in index.html).
 Pure move, checked with the TypeScript printer. Unit tests: `tests/unit/toasts.test.ts` (7, happy-dom, fake timers).
 
-**2026-10-25: The dialog engine is a tested module (`src/ui/dialogs.ts`).** Modularization, second piece. `_openModal`,
-`_closeModal`, the Enter/Esc/Tab handlers, the backdrop-click guard, `onOverlayBackdropClick`, `sakuraConfirm`,
-`sakuraPrompt` and `sakuraPasswordPrompt` moved unchanged into block `dialogs`, spliced where they were (its two backdrop
-listeners run at start-up). `editTextInPlace` stayed in index.html (inline editing, not a dialog). Pure move, checked with
-the TypeScript printer as before. Unit tests: `tests/unit/dialogs.test.ts` (8, happy-dom). Follow-up fix (own PR): the Tab
-focus trap counted the hidden input boxes, so Tab from a confirm's last button went to an invisible input; it now skips
-anything inside a `display:none` wrapper (2 more unit tests).
-
 ### In progress / not built
 
-- Modularizing the rest of the To-Dos panel (its mutations and rendering close over the panel's `todos` array): needs
-  the owner's call, since it means passing state explicitly (a change, not a move).
+- Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
+  changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
+- Polish round (2026-10-26), one PR each: empty document's button adds the first row; footer hides "Depth —"/"Saved —"
+  until they mean something; sign-in screen gets email sign-in as a button and "Continue" on its own line.
 - hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
