@@ -165,6 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-26: The footer hides "Depth —" and "Saved —" until they mean something.** Polish round, item 3 of 4. Depth
+(and its divider, now `#sb-depth-divider`) shows only while a row is selected; Saved shows from the first save on
+(`updateSavedIndicator` unhides it). The "Auto-rewrite: Off" chip stays, since it is the feature's on/off control. Tests:
+`tests/e2e/statusbar-quiet-until-useful.spec.ts`; two older specs now select a row and save before checking the footer.
+
 **2026-10-26: An empty document's button adds its first row.** Polish round, item 2 of 4. The empty state said "Press
 Enter or just type" but its main button was "New document", which made a second document. It is now "Add first row"
 (`#es-first-row-btn`, calls `createRootAndEdit()`); "Generate with AI ✦" stays. Test: `tests/e2e/empty-doc-first-row.spec.ts`.
@@ -174,22 +179,11 @@ three). The sidebar showed a "Filter docs…" box and a search icon right under 
 starts hidden every time (the saved `sidebarSearchVisible` pref is gone), the sidebar's search icon opens and focuses it,
 and it closes on Esc or when it is empty and loses focus. Quick Assist stays the main search.
 
-**2026-10-25: The To-Dos panel's pure helpers are a tested module (`src/core/todoFormat.ts`).** Modularization, fourth
-piece. 13 functions that read none of the panel's state (`toISODate`, `parseISODate`, `dueDatePreset`, `nextRepeatDate`,
-`fmtDue`, `dueShort`, `isOverdue`, `repeatLabel`, `repeatTitle`, `normalizeLinkUrl`, `fmtLink`, `taskMatchesSearch`,
-`todosHistorySummary`) left the panel's closure unchanged for block `todoFormat`, spliced just above the panel; no other
-code in index.html uses these names. The data model itself was already a module (`todoModel`). Pure move, checked with the
-TypeScript printer. Unit tests: `tests/unit/todoFormat.test.ts` (11, fixed clock). What's left in the panel closure
-(~2,400 lines) is mostly mutations over its `todos` array plus rendering; moving those means passing state explicitly, a
-change rather than a move, so it needs its own decision. Earlier modules this session: menus (`contextMenu`), dialogs
-(`dialogs`, plus a focus-trap fix), toasts (`toasts`).
-
 ### In progress / not built
 
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
-- Polish round (2026-10-26), one PR each: footer hides "Depth —"/"Saved —"
-  until they mean something; sign-in screen gets email sign-in as a button and "Continue" on its own line.
+- Polish round (2026-10-26), last item: sign-in screen gets email sign-in as a button and "Continue" on its own line.
 - hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
 - Suggested, not chosen: a "down is good" option so a falling change shows green.

@@ -186,6 +186,9 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedRichDoc(page);
+    // Saved shows once something has been saved.
+    // @ts-expect-error — global from index.html
+    await page.evaluate(() => saveToStorage());
     const statusItemsBefore = await page.locator('#statusbar [id^="sb-"]:visible').evaluateAll((els) => els.map((e) => e.id));
     expect(statusItemsBefore).toContain('sb-wordcount');
     expect(statusItemsBefore).toContain('sb-saved');
