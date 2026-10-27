@@ -12,7 +12,7 @@ Sakura is a single-file, browser-based outliner that's grown into a full persona
 - [Hub — To-Dos](#hub--to-dos)
 - [Tags, Focus & Backlinks](#tags-focus--backlinks)
 - [AI Features](#ai-features)
-- [Quick Assist & Quick Insert](#quick-assist--quick-insert)
+- [Quick Assist & the Insert list](#quick-assist--the-insert-list)
 - [Export & Import (PDF, OPML)](#export--import-pdf-opml)
 - [Theming & Appearance](#theming--appearance)
 - [Installing as an App (PWA)](#installing-as-an-app-pwa)
@@ -67,7 +67,7 @@ Key capabilities:
 - `SAP Note 12345` or `OSS Note 12345` (a 5–10 digit number) auto-links to that note on me.sap.com
 - Hover a row's tree connector or dot to see when the node was created and last modified
 - **Checkboxes** — toolbar Insert ▾ → Checkbox, or right-click → Insert › Checkbox (typing `[ ] ` stays plain text). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
-- `Ctrl/Cmd+Space` opens the **Insert list** at the caret, on the same menu as Insert ▾: in a row the whole list plus a **Characters** row (em dash, en dash, arrow, check mark, cross mark, middle dot); in notes, threads, To-Dos and the title field the characters and date/time. Same list, same shortcut, everywhere text is typed
+- Typing `/` at the start of a word opens the **Insert list** at the caret, on the same menu as Insert ▾: in a row the whole list plus a **Characters** row (em dash, en dash, arrow, check mark, cross mark, middle dot); in notes, threads, To-Dos and the title field the characters and date/time. One way, everywhere text is typed; letters after the `/` narrow it (`/tab` → Table), and a `/` inside a word (and/or, 10/27) stays a slash
 
 ## Documents & Tabs
 
@@ -186,10 +186,10 @@ Both modes are available side by side in the same dropdown, and every AI feature
 - **Provider fallback** — an optional toggle that automatically retries with the next configured provider (in your chosen order) if the active one fails for any reason other than a bad key, which always surfaces directly instead of silently falling back.
 - **Usage today** — a local, best-effort request counter per provider, shown in Settings; it's a rough gauge only, not fetched from the provider, and can drift slightly from that provider's own reset clock.
 
-## Quick Assist & Quick Insert
+## Quick Assist & the Insert list
 
 - **Quick Assist** (`Ctrl/Cmd+/` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide file explorer," "toggle dark mode," "toggle zen mode" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark," "todo: milk") narrows a search to one area — including Discussion, Diagrams, Tables and Images individually (`discussion:` — or `remark:`, `question:`, `qa:` — `diagram:`, `table:`, `image:`). Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, and the AI actions above: rewrite this node, generate outline) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, Discussion items (text, answer, Yes/No), Diagrams, table cells (the matching row), image captions, to-dos, and settings/help topics show up as **Go to** results.
-- **Quick Insert** (`Ctrl/Cmd+Space` while actively editing text — anywhere: a node, the title field, a note, a thread entry or reply, a To-Do) opens the Insert list at the caret: in a row it's Insert ▾ plus Characters (em dash, en dash, arrow, check mark, cross mark, middle dot), elsewhere just the characters and date/time. Which characters appear is configurable in Settings → Editing. Typing `/` in an empty row opens the same list and narrows it as you type (`/tab` → Table).
+- **Insert list** (`/` at the start of a word, anywhere you type: a row, the title field, a note, a thread entry or reply, a To-Do) opens at the caret: in a row it's Insert ▾ plus Characters (em dash, en dash, arrow, check mark, cross mark, middle dot), elsewhere just the characters and date/time. Letters after the `/` narrow it (`/tab` → Table); picking takes the `/…` back out; a space, Esc or no match keeps what you typed. Which characters appear is configurable in Settings → Editing → Insert list.
 
 ## Export & Import (PDF, OPML)
 
@@ -297,7 +297,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Next / previous open item (follow-up or open question, in outline order; unfolds its branch) | F8 / Shift+F8 |
 | Search this document / Search & replace | Ctrl/Cmd+F / Ctrl/Cmd+H |
 | Quick Assist (command + search) | Ctrl/Cmd+/ |
-| Insert list (Insert ▾ plus characters, while editing text; `/` in an empty row too) | Ctrl/Cmd+Space |
+| Insert list (Insert ▾ plus characters, at the start of a word while typing) | / |
 | Add/edit note | Ctrl/Cmd+Shift+N |
 | Insert date/time | Ctrl/Cmd+Shift+D |
 | Open/close To-Dos | Ctrl/Cmd+Shift+T |
@@ -309,7 +309,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Select all | Ctrl/Cmd+A |
 | Undo / Redo (while typing in a row, a word at a time; once you leave the row, the whole edit is one step) | Ctrl/Cmd+Z / Ctrl/Cmd+Y |
 
-If a shortcut is intercepted by the OS or browser before it reaches the page (notably `Ctrl/Cmd+Space` for Quick Insert, which can conflict with macOS Spotlight), the equivalent toolbar button or menu item works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
+If a shortcut is intercepted by the OS or browser before it reaches the page (for example a browser or OS shortcut on the same keys), the equivalent toolbar button or menu item works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
 
 ## Browser Support
 

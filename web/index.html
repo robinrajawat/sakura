@@ -2106,7 +2106,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .at-suggest-item:hover,.at-suggest-item.at-active{background:var(--hover);color:var(--accent)}
 .at-suggest-item mark{background:none;color:var(--accent);font-weight:600}
 .at-suggest-empty{padding:8px 10px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
-/* Characters row in the Insert list (Ctrl/Cmd+Space, "/") */
+/* Characters row in the "/" Insert list */
 .insert-char-glyph{display:inline-block;width:14px;text-align:center;font:600 13px 'Inter',sans-serif;line-height:1}
 .node-cb{display:inline-flex;align-items:center;justify-content:center;width:calc(14px * var(--editor-scale));height:calc(14px * var(--editor-scale));flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative;align-self:flex-start;margin-top:calc((var(--row-line) - 14px * var(--editor-scale)) / 2)}
 .node-cb:hover{border-color:var(--accent)}
@@ -3616,8 +3616,8 @@ body.printing-generic #gpe-overlay{
             </div>
           </div>
           <div class="settings-section" data-cat="editing" id="settings-section-nodeqa">
-            <div class="settings-section-title">Quick Insert menu</div>
-            <div class="muted-help">Which characters the Insert list (Ctrl/Cmd+Space, or / in an empty row) offers while you edit a row, note, thread or To-Do.</div>
+            <div class="settings-section-title">Insert list</div>
+            <div class="muted-help">Which characters the Insert list offers when you type / at the start of a word in a row, note, thread or To-Do.</div>
             <div class="settings-grid" id="nqa-actions-grid" style="margin-top:6px">
               <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-emdash" /> Insert em dash</label>
               <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-endash" checked /> Insert en dash</label>
@@ -3957,7 +3957,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="general" id="help-section-quick-assist">  
 <h4>Quick Assist</h4>  
 <ul>  
-<li>Lives in the header, where a plain search box used to sit. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> focuses it and opens the results dropdown from anywhere in the app; clicking directly into the box does the same. Type a plain-English instruction and it's carried out immediately: "get me toolbar," "I don't want file explorer," "toggle dark mode" — or just type anything else to search documents, notes, tags, settings, and help. Not to be confused with Quick Insert (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span>) — a much smaller character-insert menu that opens instead whenever you're actively editing text, described below</li>
+<li>Lives in the header, where a plain search box used to sit. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> focuses it and opens the results dropdown from anywhere in the app; clicking directly into the box does the same. Type a plain-English instruction and it's carried out immediately: "get me toolbar," "I don't want file explorer," "toggle dark mode" — or just type anything else to search documents, notes, tags, settings, and help. Not to be confused with the Insert list (<span class="help-kbd">/</span> while typing), described below</li>
 <li>An empty box shows a "Try things like…" tip with a handful of example phrases — click any of them to run it as a search immediately, same as typing it yourself; nothing executes without a second click on the actual result.</li>
 <li>To search just one category instead of all of them at once, type a category prefix before your query — "notes: budget" only searches Notes, "settings: dark" only searches Settings. Short aliases work too (doc/docs, note/notes, tag/tags, and so on). Threads and Diagrams each have their own prefix too — "thread: EDI" (or "comment:", "question:", "discussion:", "qa:") searches only thread entries (text, Yes/No, author and context), "diagram: flow" only Diagrams (title + note). "table: Berlin" searches only table cells and table titles (the result shows the matching row), "image: login" only image captions. Don't want to remember the exact word? Click the icon at the left of the box, or press Space while it's completely empty — either shows a picker inline in the dropdown, navigable the same way search results are (<span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> to move, <span class="help-kbd">Enter</span> to pick). Above the categories, the same picker also lists <strong>Show</strong>, <strong>Hide</strong>, <strong>Toggle</strong>, and <strong>Run</strong> — picking one inserts that bare word instead of a category prefix, which does something different: rather than scoping a search, it browses everything of that kind (see the bare-verb bullet below). Either way, choosing an entry leaves the dropdown open, cursor ready for you to keep typing and narrow further. A category prefix with nothing typed after it (just "notes: " on its own) shows no results rather than browsing the whole category — the box doesn't have a "show me everything in here" mode for categories, only "search within here," so you still need something to search for after a category prefix specifically; the four verb words above are the exception; each of those does browse everything on its own with nothing else typed</li>
 <li>Typing just a bare word — "show," "hide," "toggle," or "run," nothing else — lists everything of that kind instead of requiring you to already know a specific setting's name: "show" lists everything currently hidden that could be shown, "hide" lists everything currently shown that could be hidden, "toggle" lists everything either way regardless of its current state, and "run" lists every available Run action ("new document," "duplicate node," and the AI actions covered below). Keep typing after the bare word to narrow the list further by name — "show file" narrows to just File Explorer-related results, the same as typing "show file explorer" would, just built up in two steps instead of one</li>
@@ -3980,13 +3980,12 @@ body.printing-generic #gpe-overlay{
 </ul>  
 </div>
           <div class="help-section" data-cat="general" id="help-section-nodeqa">
-<h4>Quick Insert</h4>
+<h4>Insert list ( / )</h4>
 <ul>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing any text — a node, a Note, a To-Do, anywhere — opens the Insert list at the caret: in a row the whole list (Note, Checkbox, Table… plus Characters), in a note, thread or To-Do the characters and date/time. Same shortcut, same list, everywhere you're editing text; the full Quick Assist is a separate shortcut (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span>) and stays free even mid-edit, so the two are never in competition for the same key</li>
-<li>Actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time. Which of these appear (and their fixed order) is configured in Settings → Editing → Quick Insert → Menu items</li>
-<li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the text you're editing, which this avoids touching</li>
-<li>Every action splices directly at the cursor and keeps you in edit mode, so you don't lose your place — the fastest way to get these in, and the reason the menu exists</li>
-<li>Node-only actions — Note, Tags, Thread, Rewrite row, Version history — live in a node's right-click menu instead, not here, since Quick Insert is deliberately the same small menu everywhere rather than growing extra items only inside the outline editor</li>
+<li>Type <span class="help-kbd">/</span> at the start of a word, anywhere you type text (a row, a note, a thread entry or reply, a To-Do), and the Insert list opens at the caret. In a row it holds everything Insert ▾ does (Note, Checkbox, Tags, Date/time, markers, Thread, Table, Image, Diagram) plus Characters; in other text, the characters and date/time</li>
+<li>Keep typing to narrow it: <span class="help-kbd">/tab</span> finds Table, <span class="help-kbd">/che</span> Checkbox and Check mark. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span> pick; picking takes the "/…" back out</li>
+<li>A <span class="help-kbd">/</span> inside a word (and/or, 10/27) is just a slash. A space, <span class="help-kbd">Esc</span> or a search with no match closes the list and keeps what you typed</li>
+<li>Which characters appear (em dash, en dash, arrow, check mark, cross mark, middle dot) and whether Date/time does is set in Settings → Editing → Insert list</li>
 <li><strong>Version history…</strong> (right-click a node → in the "notes" group of the More panel) — shows earlier text for just this one node, drawn from the document's regular version history (captured automatically roughly every 10 minutes of active changes — see the Version History entry below) — skips straight past versions where this particular node didn't change, so a document with 20 saved versions might show far fewer than 20 rows here. "Restore text" replaces only this node's text, through the normal undo stack (Ctrl/Cmd+Z undoes it like any other edit) — nothing else about the node (note, code, tags) is touched</li>
 </ul>
 </div>
@@ -4099,7 +4098,7 @@ body.printing-generic #gpe-overlay{
   
 <li>Export ▾ has two items: PDF and OPML. Both always include folded sections, whatever is collapsed in the outline editor; PDF also includes every note, code block, Q&amp;A item, and remark, and OPML writes each node's note as its <code>_note</code> attribute. Copying nodes with <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">C</span> likewise always includes folded children</li>
 <li>Import ▾ (next to Export ▾) → OPML imports an <span class="help-kbd">.opml</span> outline file as a new document</li>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">D</span> → insert the date/time (also in Quick Insert, <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span>, and right-click → <span class="help-kbd">More</span> → Insert date/time)</li>
+<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">D</span> → insert the date/time (also in the Insert list, <span class="help-kbd">/</span>, and right-click → <span class="help-kbd">More</span> → Insert date/time)</li>
 <li>Shortcuts that double as OS/browser bindings can occasionally be intercepted before they reach the page — if one doesn't fire, the matching button or menu item always works</li>  
 </ul>  
 </div>
@@ -14512,7 +14511,7 @@ function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlin
 // hides every entry point for it (toolbar buttons, right-click menu items, Settings
 // sub-sections, Help sub-sections) via the feature-off-* body classes below, plus a defensive
 // guard inside the underlying functions themselves (enterFocus, generateOutlineWithAi) so a
-// keyboard shortcut can't slip past a hidden button. Tagging, To-Dos, Quick Insert and Quick
+// keyboard shortcut can't slip past a hidden button. Tagging, To-Dos, the Insert list and Quick
 // Assist used to have switches here too; they're always on now.
 const FEATURE_FLAGS={
   ai:{get:()=>featureAiEnabled,set:v=>{featureAiEnabled=v; if(!v)clearAutoRewriteQueue();}},
@@ -20669,7 +20668,7 @@ function typewriterRecenter(){
   const input=getEditingInput();
   let targetTop;
   if(input){
-    // getCaretClientRect (defined above, near Quick Insert) is caret-precise —
+    // getCaretClientRect (defined above, near the Insert list characters) is caret-precise —
     // needed since node inputs auto-grow and wrap onto several lines (see
     // autosizeNodeInput), so the row's own bounding rect alone isn't enough.
     targetTop=getCaretClientRectGeneric(input).top;
@@ -21072,12 +21071,8 @@ const CTX_ACTION_META={
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
 const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
-// Quick Insert — the small character-insert menu that Ctrl/Cmd+Space opens while actively
-// editing a node, instead of the full Quick Assist overlay. Deliberately a fixed list with
-// no typeahead filtering (unlike @mentions or the full Quick Assist): the query would
-// otherwise have nowhere to live except the node's own text, which we don't want to type
-// into. Reuses CTX_ACTION_META icons where a matching right-click action already exists,
-// so the same action looks the same everywhere it appears.
+// The characters (and Date/time) the "/" Insert list can offer; Settings → Editing → Insert list
+// turns each on or off. The ids are kept as saved in prefs (nodeQuickAssistActions).
 const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time'];
 const NODE_QA_ACTION_META={
   emdash:{label:'Insert em dash',glyph:'—'},
@@ -21532,7 +21527,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     const i=getIndex(nodes,node.id); const read=readRowMarksFromDom(input); const plain=read.text;
     if(i>=0){nodes[i].text=plain; setRowMarksOn(nodes[i],read.marks); nodes[i].modifiedAt=Date.now();}
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
-    autosizeNodeInput(input); handleAtInput(input,node.id); if(_slashMenu&&_slashMenu.id===node.id)slashInsertInput(input,node.id);
+    autosizeNodeInput(input); handleAtInput(input,node.id);
   });
   input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to open its thread entry, Shift+click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } revealMarkerEntry(node.id);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; const tStatus=threadStatus(tThread); const allResolved=!openR&&(tStatus==='resolved'||tStatus==='decision'); const tHolder=threadStatusEntry(tThread); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+(tStatus?' \u00b7 '+THREAD_STATUS_LABEL[tStatus]+(tStatus==='decision'&&tHolder&&htmlHasVisibleText(tHolder.text)?': '+stripHtmlToText(tHolder.text).slice(0,80):''):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
@@ -21698,8 +21693,8 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       _imgResizePersist();
     });
     noteLine.addEventListener('keydown',e=>{
-      // Quick Insert (Ctrl/Cmd+Space) works in the inline note like in other text.
-      if(handleGenericQaKeydown(e,noteLine))return;
+      // "/" opens the Insert list in the inline note like in other text.
+      if(handleSlashInsertKeydown(e,noteLine))return;
       if(e.key==='Tab'){
         // Not e.target -- a keydown's target is always the focused contenteditable HOST (noteLine
         // itself), never whichever descendant the caret happens to sit in, unless that descendant
@@ -24965,10 +24960,7 @@ function getCaretClientRect(textarea){
   document.body.removeChild(div);
   return {left,top,height};
 }
-// === Quick Insert (Ctrl/Cmd+Space while editing) ===
-// One Insert list everywhere text is typed. In a row it's the whole list (insertMenuItems plus
-// Characters); in notes, threads, To-Dos and other text it's the characters and Date/time, the
-// part that makes sense there. Settings → Editing → Quick Insert picks which characters show.
+// === Insert list characters (see the "/" Insert list further down) ===
 const INSERT_CHAR_GLYPH={emdash:'—',endash:'–',arrow:'➜',checkmark:'✓',crossmark:'✗',middot:'·'};
 function insertCharItems(insertText){
   const ids=Object.keys(INSERT_CHAR_GLYPH).filter(id=>nodeQuickAssistActions.includes(id)); if(!ids.length)return [];
@@ -25005,28 +24997,13 @@ function getCaretClientRectGeneric(target){
   const r=target.getBoundingClientRect();
   return {left:r.left+8, top:r.top+8, height:18};
 }
-function genericInsertListItems(target){
-  const ins=t=>insertTextAtGenericTarget(target,t);
-  return [...insertCharItems(ins),...(nodeQuickAssistActions.includes('date-time')?[{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}]:[])];
-}
 // The list opens under the caret and leaves focus in the text, so what's picked goes in there.
 function showInsertListAt(rect,items){
-  if(!items.length){ showToast('No characters turned on. Settings › Editing › Quick Insert'); return; }
   showSbContextMenu(rect.left,rect.top+rect.height+4,items,{id:'insert-menu',label:'Insert'});
   _sbContextEl?.addEventListener('mousedown',e=>e.preventDefault());
   if(_sbContextButtons.length){ _sbContextActiveIndex=0; _sbContextUpdateHighlight(); }
 }
 function insertListOpen(){ return _sbContextEl?.id==='insert-menu'; }
-function closeGenericQuickAssist(){ if(insertListOpen())closeSbContextMenu(); }
-// Call at the top of a keydown handler on any generic editable area. Returns true if it
-// handled the event (so the caller can bail out early), matching the pattern already used
-// for the node version inside onEditorKeyDown.
-function handleGenericQaKeydown(e,target){
-  if(!matchesShortcut(e,'quickInsert'))return false;
-  e.preventDefault(); e.stopPropagation();
-  if(insertListOpen())closeSbContextMenu(); else showInsertListAt(getCaretClientRectGeneric(target),genericInsertListItems(target));
-  return true;
-}
 function insertGlyphAtCurrentEdit(glyph){
   const input=getEditingInput(); if(!input)return;
   const range=getEditableSelectionRange(input);
@@ -25073,10 +25050,7 @@ function rowTypingStep(input,id,back){
 function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
   if(matchesShortcut(e,'undo')){e.preventDefault(); if(!rowTypingStep(e.target,id,true))contextualUndo(); return}
   if(matchesShortcut(e,'redo')){e.preventDefault(); if(!rowTypingStep(e.target,id,false))contextualRedo(); return}
-  if(matchesShortcut(e,'quickInsert')){e.preventDefault(); e.stopPropagation(); if(insertListOpen())closeSlashInsertMenu(); else openRowInsertList(e.target,id); return}
-  // The open Insert list owns arrows, Enter and Escape; a space ends a "/" search and stays typed.
-  if(_slashMenu&&e.key===' ')closeSlashInsertMenu();
-  if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!(e.target.textContent||'').length)setTimeout(()=>openSlashInsertMenu(e.target,id),0);
+  handleSlashInsertKeydown(e,e.target,id);
   if(_atState){
     const cands=getAtCandidates(_atState.query);
     if(e.key==='ArrowDown'){e.preventDefault(); _atActiveIdx=Math.min(_atActiveIdx+1,cands.length-1); renderAtSuggest(); return}
@@ -25362,7 +25336,7 @@ el('undo-btn').addEventListener('click',contextualUndo); el('redo-btn').addEvent
 el('qb-outdent').addEventListener('click',()=>{commitEdit(); outdentSelected(); focusPane()});
 el('qb-indent').addEventListener('click',()=>{commitEdit(); indentSelected(); focusPane()});
 el('qb-collapse').addEventListener('click',()=>{commitEdit(); toggleFoldAll(); focusPane()});
-['doc-author','header-title'].forEach(id=>{const node=el(id); if(!node)return; ['mousedown','click','dblclick','keyup','focus'].forEach(evt=>node.addEventListener(evt,ev=>ev.stopPropagation())); node.addEventListener('keydown',ev=>{if(handleGenericQaKeydown(ev,node))return; if(matchesShortcut(ev,'save')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('save'); return} if(matchesShortcut(ev,'quickAssist')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('quickAssist'); return} if(matchesShortcut(ev,'newDoc')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('newDoc'); return} if(id==='header-title'&&ev.key==='Enter'){ev.preventDefault(); ev.stopPropagation(); if(!nodes.length){createRootAndEdit('')}else{selectedId=nodes[0].id; selectionAnchorId=selectedId; clearMultiSelection(); beginEdit(selectedId,false)} return}
+['doc-author','header-title'].forEach(id=>{const node=el(id); if(!node)return; ['mousedown','click','dblclick','keyup','focus'].forEach(evt=>node.addEventListener(evt,ev=>ev.stopPropagation())); node.addEventListener('keydown',ev=>{if(handleSlashInsertKeydown(ev,node))return; if(matchesShortcut(ev,'save')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('save'); return} if(matchesShortcut(ev,'quickAssist')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('quickAssist'); return} if(matchesShortcut(ev,'newDoc')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('newDoc'); return} if(id==='header-title'&&ev.key==='Enter'){ev.preventDefault(); ev.stopPropagation(); if(!nodes.length){createRootAndEdit('')}else{selectedId=nodes[0].id; selectionAnchorId=selectedId; clearMultiSelection(); beginEdit(selectedId,false)} return}
     // Continuous flow, mirrored from the node side (ArrowUp/ArrowLeft at the first row jump here):
     // ArrowDown/ArrowRight from the title cross into the first row instead of dead-ending.
     if(id==='header-title'&&ev.key==='ArrowDown'&&!ev.shiftKey&&!ev.altKey&&!ev.ctrlKey&&!ev.metaKey){
@@ -25380,7 +25354,7 @@ el('qb-collapse').addEventListener('click',()=>{commitEdit(); toggleFoldAll(); f
       beginEditAt(nodes[vis[0]].id,0); return
     }
     if(id==='header-title'&&ev.key!=='ArrowUp'&&ev.key!=='ArrowDown'){_lastArrowCol=null}
-    ev.stopPropagation()}); node.addEventListener('blur',()=>closeGenericQuickAssist()); node.addEventListener('input',()=>{ensureDocumentForEditing(); scheduleAutoSave()})});
+    ev.stopPropagation()}); node.addEventListener('blur',()=>closeSlashInsertMenu()); node.addEventListener('input',()=>{ensureDocumentForEditing(); scheduleAutoSave()})});
 
 el('svg-section-icons-toggle')?.addEventListener('click',()=>setSvgSectionIconsEnabled(!svgSectionIconsEnabled)); el('svg-section-icons-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setSvgSectionIconsEnabled(!svgSectionIconsEnabled);}});
 el('open-items-page-toggle')?.addEventListener('click',()=>setOpenItemsPageEnabled(!openItemsPageEnabled)); el('open-items-page-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setOpenItemsPageEnabled(!openItemsPageEnabled);}});
@@ -25797,7 +25771,6 @@ const SHORTCUTS = {
   newDoc:         {combo:'mod+alt+n',     label:'New document',             category:'Docs, Tabs & Zen', guarded:false, action:()=>{commitEdit(); createDoc();}},
   closeTab:       {combo:'mod+alt+w',     label:'Close tab',                category:'Docs, Tabs & Zen', guarded:false, action:()=>{if(activeTabDocId!==null)closeTab(activeTabDocId);}},
   toggleZen:      {combo:'mod+shift+e',   label:'Toggle zen mode',          category:'Docs, Tabs & Zen', guarded:false, action:()=>setZenMode(!zenMode)},
-  quickInsert:    {combo:'mod+space',     label:'Insert list (while typing)', category:'Global Search', guarded:false, action:()=>{}},
   quickAssist:    {combo:'mod+/',         label:'Open Quick Assist',        category:'Global Search',    guarded:false, action:()=>toggleQa()},
   findInTree:     {combo:'mod+f',         label:'Search this tree',         category:'Global Search',    guarded:false, action:()=>openSearch()},
   findReplace:    {combo:'mod+h',         label:'Search & replace',         category:'Global Search',    guarded:false, action:()=>{openSearch(); if(!el('replace-bar')?.classList.contains('open'))toggleReplaceBar();}},
@@ -27112,57 +27085,87 @@ function insertMenuItems(){
     ...act('diagram-gen','Generate diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg>')
   ];
 }
-// A row's Insert list: the toolbar's Insert ▾ with Characters after Basics. Ctrl/Cmd+Space opens it
-// at the caret; "/" typed into an empty row does too, and the words typed after the "/" narrow it
-// ("/tab" → Table). Picking an item takes the "/…" back out; Escape or a space keeps what was typed
-// (a row can start with a path like /usr).
-let _slashMenu=null; // {id, at} while the list opened from "/" is showing
-function rowInsertListItems(){
-  const base=insertMenuItems(); const chars=insertCharItems(t=>insertGlyphAtCurrentEdit(t));
+// === Insert list ("/") ===
+// One way to insert, everywhere text is typed: "/" at the start of a word (start of the text or
+// after a space) opens the Insert list under the caret, and the letters typed after it narrow it
+// ("/tab" → Table). Picking an item takes the "/…" back out; Escape, a space or no match closes
+// it and keeps what was typed (so "and/or", "10/27" and paths stay plain text). In a row the list
+// is Insert ▾ with Characters after Basics; in notes, threads, To-Dos and other text it's the
+// characters and Date/time. Settings → Editing picks which characters show.
+let _slash=null; // {target, rowId, start, at}: start is the "/" (a collapsed Range, or an index in an input)
+const isPlainField=t=>t.tagName==='TEXTAREA'||t.tagName==='INPUT';
+function slashCaret(){ const sel=window.getSelection(); return sel&&sel.rangeCount?sel.getRangeAt(0):null; }
+// From each editable's keydown. Never handles the key itself: the "/" is typed as usual.
+function handleSlashInsertKeydown(e,target,rowId=null){
+  if(_slash&&_slash.target===target&&e.key===' ')closeSlashInsertMenu();
+  if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.isComposing&&slashStartsWord(target))setTimeout(()=>openSlashInsertMenu(target,rowId),0);
+  return false;
+}
+function slashStartsWord(t){
+  if(isPlainField(t)){ const i=t.selectionStart??0; return t.selectionStart===t.selectionEnd&&(i===0||/\s/.test(t.value[i-1])); }
+  const r=slashCaret(); if(!r||!r.collapsed||!t.contains(r.startContainer))return false;
+  // Start of a text node counts as a word start (a new line in a note, or the start of a row).
+  const n=r.startContainer; return n.nodeType!==3||r.startOffset===0||/\s/.test(n.data[r.startOffset-1]);
+}
+function openSlashInsertMenu(target,rowId){
+  if(!target.isConnected||!target.contains(document.activeElement)&&document.activeElement!==target)return;
+  // Typed fast, the search may already have begun by the time this runs.
+  let start;
+  if(isPlainField(target)){
+    const m=target.value.slice(0,target.selectionEnd??0).match(/\/(\S*)$/); if(!m)return;
+    start=(target.selectionEnd??0)-m[0].length;
+  } else {
+    const r=slashCaret(); const n=r&&r.startContainer; if(!n||n.nodeType!==3||!r.collapsed)return;
+    const m=n.data.slice(0,r.startOffset).match(/\/(\S*)$/); if(!m)return;
+    start=document.createRange(); start.setStart(n,r.startOffset-m[0].length); start.collapse(true);
+  }
+  if(rowId!==null)setSingleSelection(rowId);
+  _slash={target,rowId,start,at:getCaretClientRectGeneric(target)};
+  slashInsertInput();
+}
+function slashTyped(){
+  const s=_slash; const t=s.target;
+  if(isPlainField(t))return t.value.slice(s.start,Math.max(s.start,t.selectionEnd??0));
+  const r=slashCaret(); if(!r||!s.start.startContainer.isConnected)return '';
+  try{ const q=document.createRange(); q.setStart(s.start.startContainer,s.start.startOffset); q.setEnd(r.endContainer,r.endOffset); return q.toString(); }catch(err){ return ''; }
+}
+function slashListItems(){
+  const s=_slash; const ins=t=>insertTextAtGenericTarget(s.target,t);
+  const chars=insertCharItems(ins);
+  if(s.rowId===null)return [...chars,...(nodeQuickAssistActions.includes('date-time')?[{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}]:[])];
+  // Date/time goes in at the caret, keeping the row's formatting.
+  const base=insertMenuItems().map(it=>it.data&&it.data.insertAction==='date-time'?{...it,onClick:()=>ins(formatNow())}:it);
   const at=base.findIndex((it,i)=>i>0&&it.heading);
   return chars.length&&at>0?[...base.slice(0,at),...chars,...base.slice(at)]:[...base,...chars];
 }
-function rowCaretRect(input){
-  const sel=window.getSelection(); const cr=sel&&sel.rangeCount&&input.contains(sel.anchorNode)?sel.getRangeAt(0).getBoundingClientRect():null;
-  const r=cr&&(cr.width||cr.height)?cr:input.getBoundingClientRect();
-  return {left:r.left,top:r.top,height:r.height};
-}
-function openRowInsertList(input,id){
-  _slashMenu=null; setSingleSelection(id);
-  showInsertListAt(rowCaretRect(input),rowInsertListItems());
-}
-function openSlashInsertMenu(input,id){
-  // Typed fast, the search may already have begun by the time this runs.
-  const t=input.textContent||''; if(editingId!==id||!/^\/\S*$/.test(t))return;
-  setSingleSelection(id);
-  _slashMenu={id,at:rowCaretRect(input)};
-  showSlashInsertMenu(id,t.slice(1).toLowerCase());
-}
 // Search by the start of any word in an item's name.
 function insertItemMatches(label,q){ return String(label||'').toLowerCase().split(/[^a-z0-9]+/).some(w=>w.startsWith(q)); }
-function showSlashInsertMenu(id,q){
-  const dropFirst=fn=>(...args)=>{ dropSlashFromRow(id); return fn(...args); };
+function slashInsertInput(){
+  if(!_slash)return;
+  if(!_slash.target.isConnected){ _slash=null; return; }
+  const typed=slashTyped(); if(!/^\/\S*$/.test(typed)){ closeSlashInsertMenu(); return; }
+  const q=typed.slice(1).toLowerCase();
+  const dropFirst=fn=>(...args)=>{ dropSlashText(); return fn(...args); };
   const wrap=it=>it.iconRow?{...it,iconRow:it.iconRow.map(wrap)}:it.onClick?{...it,onClick:dropFirst(it.onClick)}:it;
-  let items=rowInsertListItems();
-  if(q){
-    items=items.flatMap(it=>it.heading?[]:it.iconRow?it.iconRow.map(b=>({label:b.label,icon:b.icon,onClick:b.onClick})):[it]).filter(it=>insertItemMatches(it.label,q));
-    if(!items.length){ closeSlashInsertMenu(); return; }
-  }
-  const at=_slashMenu.at; showInsertListAt(at,items.map(wrap)); _slashMenu={id,at};
+  let items=slashListItems();
+  if(q)items=items.flatMap(it=>it.heading?[]:it.iconRow?it.iconRow.map(b=>({label:b.label,icon:b.icon,onClick:b.onClick})):[it]).filter(it=>insertItemMatches(it.label,q));
+  if(!items.length){ closeSlashInsertMenu(); return; }
+  const s=_slash; showInsertListAt(s.at,items.map(wrap)); _slash=s;
 }
-function slashInsertInput(input,id){
-  if(!insertListOpen()){ _slashMenu=null; return; }
-  const t=input.textContent||'';
-  if(!/^\/\S*$/.test(t)){ closeSlashInsertMenu(); return; }
-  showSlashInsertMenu(id,t.slice(1).toLowerCase());
-}
-function closeSlashInsertMenu(){ _slashMenu=null; if(insertListOpen())closeSbContextMenu(); }
-function dropSlashFromRow(id){
-  _slashMenu=null;
-  const input=editingId===id?el('in-'+id):null;
-  if(input&&/^\/\S*$/.test(input.textContent||'')){ input.focus(); const r=document.createRange(); r.selectNodeContents(input); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('delete'); return; }
-  const node=nodes.find(n=>n.id===id);
-  if(node&&/^\/\S*$/.test(node.text||'')){ node.text=''; setRowMarksOn(node,[]); render(); markDirty(); scheduleAutoSave(); }
+document.addEventListener('input',e=>{
+  if(!_slash||!(e.target===_slash.target||_slash.target.contains(e.target)))return;
+  if(!insertListOpen()){ _slash=null; return; }
+  slashInsertInput();
+},true);
+function closeSlashInsertMenu(){ _slash=null; if(insertListOpen())closeSbContextMenu(); }
+// Takes the "/…" back out, leaving the caret where it was.
+function dropSlashText(){
+  const s=_slash; _slash=null; if(!s||!s.target.isConnected)return; const t=s.target;
+  t.focus();
+  if(isPlainField(t)){ t.setSelectionRange(s.start,Math.max(s.start,t.selectionEnd??s.start)); document.execCommand('delete'); return; }
+  const r=slashCaret(); if(!r||!s.start.startContainer.isConnected)return;
+  const d=document.createRange(); d.setStart(s.start.startContainer,s.start.startOffset); d.setEnd(r.endContainer,r.endOffset);
+  const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(d); document.execCommand('delete');
 }
 function closeToolbarMenus(){ if(_sbAnchorBtn&&(_sbAnchorBtn.id==='qb-insert'||_sbAnchorBtn.id==='qb-ai'))closeSbContextMenu(); }
 el('qb-insert')?.addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,insertMenuItems(),{id:'insert-menu',label:'Insert',keyboard:e.detail===0}); });
@@ -32241,8 +32244,8 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   // Backspace in an empty entry removes it (a Yes/No or status-only entry keeps its chip until
   // removed from the menu).
   textEl.addEventListener('keydown',e=>{
-    // Quick Insert (Ctrl/Cmd+Space) works in thread entries like everywhere else.
-    if(handleGenericQaKeydown(e,textEl))return;
+    // "/" opens the Insert list in thread entries like everywhere else.
+    if(handleSlashInsertKeydown(e,textEl))return;
     if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
     if((textEl.textContent||'').trim()||r.verdict||r.status)return;
     e.preventDefault();
@@ -32543,7 +32546,7 @@ function renderThreadComposer(node,thread,place,commit){
   // Right-click while adding: add it, ask it, rewrite it with AI, or close the line.
   input.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadComposerMenuItems(node,input,ask,submit)); });
   input.addEventListener('keydown',e=>{
-    if(handleGenericQaKeydown(e,input))return;
+    if(handleSlashInsertKeydown(e,input))return;
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
     // Backspace on an empty input line closes it and puts the caret at the end of the row's text,
     // like an emptied entry (a held-down Backspace that just erased the text doesn't).
@@ -34919,7 +34922,7 @@ function todosHistorySummary(list) {
         _todosTextIdleTimer=setTimeout(()=>{ _todosTextCheckpointPending=true; }, 800);
       });
       elx.addEventListener('keydown',e=>{
-        if(typeof handleGenericQaKeydown==='function'&&handleGenericQaKeydown(e,elx)) return;
+        if(typeof handleSlashInsertKeydown==='function'&&handleSlashInsertKeydown(e,elx)) return;
         // Contextual undo/redo, text edits only — routes to the global Todos text
         // stack (see module comment near pushTodosTextUndo). Checked before the @-suggest
         // handling below since it isn't specific to that state.
@@ -36140,7 +36143,7 @@ function todosHistorySummary(list) {
     }
   });
   document.getElementById('todos-input')?.addEventListener('keydown',e=>{
-    if(typeof handleGenericQaKeydown==='function'&&handleGenericQaKeydown(e,e.target)) return;
+    if(typeof handleSlashInsertKeydown==='function'&&handleSlashInsertKeydown(e,e.target)) return;
     if(_todoAtState && _todoAtState.elx===e.target){
       const cands=getTodoAtCandidates(_todoAtState.query);
       if(e.key==='ArrowDown'){e.preventDefault(); _todoAtActiveIdx=Math.min(_todoAtActiveIdx+1,cands.length-1); renderTodoAtSuggest(); return}
@@ -36384,7 +36387,6 @@ function todosHistorySummary(list) {
         <h3>Search &amp; Quick Assist</h3>
         <ul>
           <li><span class="cs-combo" data-cs-shortcut="quickAssist"></span> <span class="cs-desc">Quick Assist — plain-English commands, or search anything</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="quickInsert"></span> <span class="cs-desc">Quick Insert — a small character-insert menu (em dash, en dash, arrow, check mark, cross mark, middle dot, date/time), the same everywhere you're editing text — see Quick Insert below</span></li>
           <li><span class="cs-desc">Covers settings, help, doc names, node text, notes, tags, discussion items (remarks and questions), diagrams, tables and image captions — across all documents</span></li>
           <li><span class="cs-desc">Results group by type ("In documents", "Notes", "Tags", "Discussion") with a snippet — click to jump straight there</span></li>
           <li><span class="cs-combo" data-cs-shortcut="findInTree"></span> <span class="cs-desc">search this tree</span></li>

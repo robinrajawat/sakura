@@ -165,14 +165,16 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-**2026-10-27: One Insert list: "/" search, Ctrl/Cmd+Space opens it too, Characters folded in.** The separate Quick
-Insert popup (`#node-qa-suggest`, `_nqaState`/`_gqaState`) is gone. In a row, Ctrl/Cmd+Space (`openRowInsertList`)
-and "/" in an empty row (`openSlashInsertMenu`) open `rowInsertListItems()` = `insertMenuItems()` with a Characters
-iconRow after Basics (`insertCharItems`, still filtered by Settings › Editing › Quick Insert). Letters typed after
-"/" narrow it (`slashInsertInput` → `showSlashInsertMenu`, word-start match, flattened); no match or a space closes
-it and keeps the text. In notes, threads, To-Dos and other text, `handleGenericQaKeydown` opens the same shared
-menu with the characters and Date/time (`genericInsertListItems`). `showInsertListAt` keeps focus in the text.
-Test: `tests/e2e/slash-insert.spec.ts`.
+**2026-10-27: One way to insert: "/" at the start of a word, everywhere; Ctrl/Cmd+Space removed.** The old Quick
+Insert popup (`#node-qa-suggest`) and the `quickInsert` shortcut are gone. `handleSlashInsertKeydown(e,target,rowId)`
+(rows via `onEditorKeyDown`, plus notes, threads, To-Dos, title/author fields) arms the list when "/" starts a word
+(`slashStartsWord`: start of the field/text node or after whitespace, so "and/or" stays plain); `openSlashInsertMenu`
+records where the "/" is (`_slash.start`: collapsed Range, or index in an input). A capture-phase document `input`
+listener re-filters (`slashInsertInput`, word-start match, flattened); a space, Escape or no match closes it and
+keeps the text. Items (`slashListItems`): rows get `insertMenuItems()` + Characters after Basics (Date/time inserted
+at the caret); other text gets Characters + Date/time. Every pick runs `dropSlashText()` first (deletes "/…" via
+execCommand). `showInsertListAt` keeps focus in the text. Settings section renamed "Insert list". Tests:
+`slash-insert.spec.ts`, two in `discussion-items.spec.ts`.
 
 **2026-10-27: Undo while typing in a row goes back a word at a time.** Before, Ctrl/Cmd+Z mid-edit skipped the
 typing and undid the previous app step. `rowTypingBeforeInput` (row input `beforeinput`) keeps per-edit checkpoints
