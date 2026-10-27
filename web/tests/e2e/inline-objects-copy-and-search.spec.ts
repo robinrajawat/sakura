@@ -55,7 +55,7 @@ test('Duplicate copies thread entries (questions included) and diagrams of every
     const childCopy = nodes.find(n => n.text === 'Pilot site' && n.id !== 2);
     return {
       items: remarks.filter(x => x.anchorNodeId === copy.id).map(${kindOf}).sort(),
-      followUp: remarks.some(x => x.anchorNodeId === copy.id && x.status === 'followup' && x.person === 'Ana'),
+      followUp: copy.marker === 'followup',
       childItems: remarks.filter(x => x.anchorNodeId === childCopy.id).map(${kindOf}),
       dg: diagrams.filter(d => d.anchorNodeId === copy.id).map(d => [d.title, d.xml]),
       ids: new Set(remarks.map(x => x.id)).size === remarks.length,

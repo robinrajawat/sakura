@@ -165,6 +165,8 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **One status, on the row (2026-10-27).** Owner decision: rows say what, threads say why. A row is Agreed / Follow-up / Out of scope, stored on the node as `marker` with `markerBy`, `markerAt` (the follow-up's age) and `markerOwner`; setting it (`setRowStatus` / `setNodeMarker`) adds nothing to the thread. Thread entries are Comment / Question (answers linked, Yes/No) / Decision only; the entry status fields, per-entry follow-ups, Mark follow-up done and the entry owner are gone. Click a row's badge for `rowStatusMenuItems` (statuses, Assign follow-up with inline "Someone else…", Add/Open in To-Dos, Show thread). The reply line's Follow-up / Agree / Out of scope set the row and add what you typed as a comment. Open items, F8, the fold badge and the agenda read Follow-up rows; the why-line is `followupWhyLine` (the line nearest `markerAt`). Older documents convert on render via `migrateStatusToRows` (src/utils/discussionStatus.ts). Tests: `tests/e2e/row-status.spec.ts` plus the thread specs.
+
 - **Spelling on right-click while typing (2026-10-27).** A page can't add the browser's spelling suggestions to its own menu, so while you're typing in a note, thread entry or the reply line, right-clicking a word in it now leaves the browser's menu alone (rows and To-Do titles already did). Blank space beside the words, links, tables, pictures and text you weren't typing in keep Sakura's menu. `browserMenuWhileTyping(e, editable)` in `web/index.html` reads focus at the right mousedown (that mousedown focuses the text itself; focus a right-click gave doesn't count) and checks for a word under the pointer (`wordAtPoint`). Test: `tests/e2e/spelling-menu.spec.ts`.
 
 **2026-10-27: One way to insert: "/" at the start of a word, everywhere; Ctrl/Cmd+Space removed.** The old Quick
@@ -177,14 +179,6 @@ keeps the text. Items (`slashListItems`): rows get `insertMenuItems()` + Charact
 at the caret); other text gets Characters + Date/time. Every pick runs `dropSlashText()` first (deletes "/…" via
 execCommand). `showInsertListAt` keeps focus in the text. Settings section renamed "Insert list". Tests:
 `slash-insert.spec.ts`, two in `discussion-items.spec.ts`.
-
-**2026-10-27: Undo while typing in a row goes back a word at a time.** Before, Ctrl/Cmd+Z mid-edit skipped the
-typing and undid the previous app step. `rowTypingBeforeInput` (row input `beforeinput`) keeps per-edit checkpoints
-in `_rowTyping`: a new step per word (a space joins the word before it, or the next one when typing starts with
-it), per run of deletes, and per other input (paste, etc.). `rowTypingStep` (Ctrl/Cmd+Z / Y in `onEditorKeyDown`)
-walks them and re-renders with the caret where it was; when they run out (or something pushed its own app undo
-step meanwhile: `appDepth` check) it falls through to `contextualUndo/Redo`. Leaving the row still makes the whole
-edit one app step. Test: `tests/e2e/row-typing-undo.spec.ts`.
 
 ### In progress / not built
 

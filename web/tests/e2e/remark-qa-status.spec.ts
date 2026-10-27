@@ -73,13 +73,13 @@ async function clickOpenItemsSwitch(page: Page) {
 }
 const statusNote = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-status-note`);
 
-test('old follow-ups migrate to thread status, and the row marker follows the thread', async ({ page }) => {
+test('old follow-ups become the row\'s status; the entries keep their words', async ({ page }) => {
   const errors = await open(page);
-  await expect(statusNote(page, 'rDone')).toHaveText('· agreed');
-  await expect(statusNote(page, 'rOld')).toHaveText('· follow-up');
-  // The latest chip is the thread's status, so the row is a Follow-up.
-  expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('followup');
-  expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toContain('followUp');
+  // No status in the thread any more: the open follow-up is the row's.
+  await expect(statusNote(page, 'rDone')).toHaveCount(0);
+  await expect(statusNote(page, 'rOld')).toHaveCount(0);
+  expect(await page.evaluate('[nodes.find(n => n.id === 2).marker, nodes.find(n => n.id === 2).markerBy]')).toEqual(['followup', 'Maria']);
+  expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toMatch(/followUp|status/);
   expect(await sumButtons(page)).toEqual(['1 follow-up', '1 question']);
 
   // Agree on the reply line settles the row.
@@ -171,12 +171,13 @@ async function exportPdf(page: Page) {
   });
 }
 
-test('PDF shows each entry\'s question state and status, and no Open items summary page', async ({ page }) => {
+test('PDF shows each entry\'s question state, and no Open items summary page', async ({ page }) => {
   const errors = await open(page);
   const r = await exportPdf(page);
-  // No pills: question state and statuses are quiet text (an open question says so in words, for readers who don't know the icons).
+  // No pills: question state is quiet text (an open question says so in words, for readers who don't know the icons).
   expect(r.pills).toEqual([]);
-  expect(r.notes).toEqual(expect.arrayContaining(['· open question', '· follow-up', '· agreed', '· question, answered', '· question, won’t answer']));
+  expect(r.notes).toEqual(expect.arrayContaining(['· open question', '· question, answered', '· question, won’t answer']));
+  expect(r.notes).not.toContain('· follow-up');
   expect(r.pills).not.toContain('Follow-up');
   // Owner decision: the closing "Open items" summary page was removed.
   expect(r.section).toBe(false);
@@ -184,21 +185,18 @@ test('PDF shows each entry\'s question state and status, and no Open items summa
   expect(errors).toEqual([]);
 });
 
-test('a status set from an entry\'s menu moves the row marker', async ({ page }) => {
+test('an entry\'s menu has no status: the row\'s badge and the reply line set it', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds.add(4); render();');
   const line = page.locator('.thread-entry', { hasText: 'Just a comment.' });
-  await expect(line.locator('.thread-status-note')).toHaveCount(0);
   await line.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Follow-up', { exact: true }).click();
-  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-status-note.is-followup')).toHaveText('· follow-up');
+  await expect(page.locator('.sb-context-menu .sb-context-choice')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.evaluate('openThreadComposer(4, false)');
+  await page.locator('.thread-composer:has([data-node-id="4"]) .thread-btn[data-act="followup"]').click();
   expect(await page.evaluate('nodes.find(n => n.id === 4).marker')).toBe('followup');
   expect(await sumButtons(page)).toEqual(['2 follow-ups', '1 question']);
-
-  await page.locator('.thread-entry', { hasText: 'Just a comment.' }).click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Follow-up', { exact: true }).click();
-  await expect(page.locator('.thread-entry', { hasText: 'Just a comment.' }).locator('.thread-status-note')).toHaveCount(0);
-  expect(await page.evaluate("nodes.find(n => n.id === 4).marker || ''")).toBe('');
+  await expect(line.locator('.thread-status-note')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

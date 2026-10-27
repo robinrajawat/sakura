@@ -3,8 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // A thread entry's kind icon (owner, 2026-10-23): clicking it changes what the entry is -- Comment,
-// Question, Answer, Decision, Follow-up, Agreed, Out of scope -- one choice, undoable. Icons are grey
-// except an open question (accent) and an open follow-up (orange).
+// Question, Answer or Decision -- one choice, undoable. A status is the row's, not an entry's (owner
+// decision 2026-10-27). Icons are grey except an open question (accent).
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
@@ -36,12 +36,12 @@ const kind = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline
 const menu = (page: Page) => page.locator('.sb-context-menu');
 const remark = (page: Page, id: string) => page.evaluate(`JSON.parse(JSON.stringify(remarks.find(r => r.id === '${id}')))`) as Promise<Record<string, unknown>>;
 
-test('the menu lists the seven kinds with the current one ticked', async ({ page }) => {
+test('the menu lists the four kinds with the current one ticked', async ({ page }) => {
   await seed(page, THREAD);
-  await kind(page, 'c2').click();
+  await kind(page, 'c3').click();
   const labels = await menu(page).locator('.sb-context-item .sb-context-label').evaluateAll((els) => els.map((e) => e.childNodes[0].textContent));
-  expect(labels).toEqual(['Comment', 'Question', 'Answer', 'Decision', 'Agreed', 'Follow-up', 'Out of scope']);
-  await expect(menu(page).locator('.sb-context-item', { hasText: 'Follow-up' }).locator('.sb-context-meta')).toHaveText('✓');
+  expect(labels).toEqual(['Comment', 'Question', 'Answer', 'Decision']);
+  await expect(menu(page).locator('.sb-context-item', { hasText: 'Decision' }).locator('.sb-context-meta')).toHaveText('✓');
 });
 
 test('Comment → Answer links to the question before it, then Yes; undo takes it back', async ({ page }) => {
@@ -57,7 +57,7 @@ test('Comment → Answer links to the question before it, then Yes; undo takes i
   expect([c1.answerTo, c1.verdict]).toEqual([undefined, undefined]);
 });
 
-test('picking a kind replaces the old one: Follow-up → Decision, Question → Comment unlinks its answers', async ({ page }) => {
+test('picking a kind replaces the old one: Comment → Decision, Question → Comment unlinks its answers', async ({ page }) => {
   await seed(page, THREAD.replace("text: 'Friday evening run.',", "text: 'Friday evening run.', answerTo: 'q1',"));
   await kind(page, 'c2').click();
   await menu(page).getByText('Decision', { exact: true }).click();
@@ -75,11 +75,11 @@ test('the first entry cannot be an answer (no question before it)', async ({ pag
   await expect(menu(page).locator('.sb-context-item.disabled', { hasText: 'Answer' })).toContainText('No question before it');
 });
 
-test('icons are grey except an open question and an open follow-up', async ({ page }) => {
+test('icons are grey except an open question', async ({ page }) => {
   await seed(page, THREAD);
   const color = (id: string) => kind(page, id).evaluate((e) => (e as HTMLElement).style.color);
   expect(await color('q1')).toBe('var(--accent)');
   expect(await color('c1')).toBe('var(--hint)');
-  expect(await color('c2')).toBe('var(--fc-orange)');
+  expect(await color('c2')).toBe('var(--hint)');
   expect(await color('c3')).toBe('var(--hint)');
 });

@@ -697,9 +697,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Status pills (PDF) and the row thread's chips: Question, Yes / No, Answer, Follow-up, Resolved, Decision. */
 .node-qa-status{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:4px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
 .pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"],.thread-chip.is-followup{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
-.thread-todo-note{font-size:var(--fs-sm);color:var(--muted);cursor:pointer}
-.thread-todo-note:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-.thread-todo-note.is-done{color:var(--fc-green)}
 .pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"],.pv-status-pill[data-state="decision"],.pv-status-pill[data-state="yes"],.pv-status-pill[data-state="answer"],.thread-chip.is-resolved,.thread-chip.is-decision,.thread-chip.is-answer,.thread-chip.is-question[data-state="answered"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
 .pv-status-pill[data-state="wont"],.thread-chip.is-question[data-state="wont"]{background:var(--chip);color:var(--muted)}
 .pv-status-pill[data-state="question"],.thread-chip.is-question{background:color-mix(in srgb,var(--accent) 14%,transparent);color:color-mix(in srgb,var(--accent) 80%,var(--fg))}
@@ -761,8 +758,9 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 .thread-verdict{font-size:var(--fs-sm);color:var(--muted)}
 .thread-status-note,.thread-q-note{font-size:var(--fs-sm);color:var(--muted)}
-.thread-owner-edit{outline:none;color:var(--fg);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;display:inline-block;min-width:4ch}
-.thread-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
+/* A Follow-up's owner typed in place, right after the row's status badge. */
+.row-owner-edit{outline:none;color:var(--fg);font-size:var(--fs-sm);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;margin-left:4px;display:inline-block;min-width:8ch}
+.row-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
