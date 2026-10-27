@@ -54,6 +54,8 @@ test('Reply on a question opens a line under it; the answer reads there, even wi
   await expect(entry(page, 'q1').locator('.thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
   expect(await order(page)).toEqual(['q1', '  ' + a.id, 'c1', 'q2']);
   await expect(page.locator('.thread-quote')).toHaveCount(0);
+  // Sending a reply closes its line; nothing jumps to the end of the thread (owner, 2026-10-27).
+  await expect(page.locator('.thread-composer')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
