@@ -90,20 +90,10 @@ test('the badge menu changes the status, names the owner (typed in place) and ad
   expect(errors).toEqual([]);
 });
 
-test('the reply line sets the row: what you typed is a plain comment', async ({ page }) => {
-  await seed(page, `[{ id: 'c1', anchorNodeId: 1, person: 'Ana', date: '2026-10-20', text: 'Ask SAP', createdAt: 1 }]`, `{ marker: 'followup' }`);
-  await page.evaluate(`_threadAuthor = 'Robin'; openThreadComposer(1, false)`);
-  const bar = page.locator('.thread-composer');
-  // Already Follow-up: Agree and Out of scope are offered, not Follow-up again.
-  await expect(bar.locator('.thread-btn[data-act="followup"]')).toHaveCount(0);
-  await page.keyboard.type('SAP confirmed it.');
-  await bar.locator('.thread-btn[data-act="confirm"]').click();
-  expect(await row(page)).toMatchObject({ marker: 'confirmed', by: 'Robin' });
-  expect(await page.evaluate('remarks.map(r => [r.text, r.status || null])')).toEqual([['Ask SAP', null], ['SAP confirmed it.', null]]);
-  // With nothing typed, a status button just sets the row.
-  await bar.locator('.thread-btn[data-act="parked"]').click();
-  expect((await row(page)).marker).toBe('parked');
-  expect(await page.evaluate('remarks.length')).toBe(2);
+test('the reply line has no status buttons: the status is set on the row', async ({ page }) => {
+  await seed(page, '[]', `{ marker: 'followup' }`);
+  await page.evaluate('openThreadComposer(1, false)');
+  for (const act of ['followup', 'confirm', 'parked']) await expect(page.locator(`.thread-composer .thread-btn[data-act="${act}"]`)).toHaveCount(0);
 });
 
 test('F8 and the agenda list each Follow-up row once; the PDF prints its owner and date', async ({ page }) => {
@@ -122,4 +112,14 @@ test('F8 and the agenda list each Follow-up row once; the PDF prints its owner a
     return document.querySelector('#preview-doc .pv-marker-label')?.textContent;
   });
   expect(label).toBe('Follow-up for Kim · since 13 Oct');
+});
+
+test('Follow-up from the row menu sets the status and opens no thread', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('inlineExpandRemarksNodeIds = new Set(); showAllRemarksNodeIds = new Set(); render()');
+  await page.locator('.node-row[data-id="2"] .node-label').click({ button: 'right' });
+  await page.locator('#context-quickbar [data-marker="followup"]').click();
+  expect(await page.evaluate('nodes[1].marker')).toBe('followup');
+  await expect(page.locator('.thread-composer')).toHaveCount(0);
+  expect(await page.evaluate('remarks.length')).toBe(0);
 });

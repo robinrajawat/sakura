@@ -102,3 +102,50 @@ test('Move to row… moves a question and its answers to the row picked by typin
   expect(await page.evaluate(`remarks.map(r => r.anchorNodeId)`)).toEqual([1, 1, 1]);
   expect(errors).toEqual([]);
 });
+
+async function seedBranch(page: Page, extra = '') {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => { if (!KNOWN_NOISE.test(err.message)) errors.push(err.message); });
+  await page.addInitScript(() => { try { localStorage.setItem('sakura_welcome_seen', '1'); sessionStorage.setItem('sakura_landing_dismissed', 'true'); } catch { /* storage unavailable */ } });
+  await page.setViewportSize({ width: 1300, height: 900 });
+  await page.goto('file://' + indexPath);
+  await page.waitForFunction('typeof render === "function"');
+  await page.evaluate(`
+    const n = (id, depth, text, x) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {}, ...(x || {}) });
+    nodes = [n(1, 0, 'Open questions'), n(2, 1, 'Kristoffer'), n(3, 2, 'Do we show the option for excluded postal codes?'), n(4, 3, 'No, handle it as a standard order'),
+      n(5, 2, 'Should the webshop do a final ATP validation?'), n(6, 1, 'Chandana'), n(7, 2, 'Are all products eligible?'), n(8, 0, 'Next topic')];
+    ${extra}
+    rebuildParentIds(); nextId = 9; remarks = []; _threadAuthor = 'Robin';
+    collapsedIds = new Set(); editingId = null; undoStack = []; render();
+  `);
+  return errors;
+}
+
+test('Make thread questions turns the rows under a row into its thread questions', async ({ page }) => {
+  const errors = await seedBranch(page);
+  await page.locator('.node-row[data-id="1"] .node-label').click({ button: 'right' });
+  await page.locator('#context-more-toggle').click();
+  await page.locator('#context-menu [data-flyout="insert"]').hover();
+  await page.locator('.sb-context-menu').getByText('Make thread questions').click();
+  expect(await page.evaluate('nodes.map(n => n.text)')).toEqual(['Open questions', 'Next topic']);
+  expect(await page.evaluate(`nodeThread(1).map(e => [e.person, stripHtmlToText(e.text), e.type === 'question', !!e.answerTo])`)).toEqual([
+    ['Kristoffer', 'Do we show the option for excluded postal codes?', true, false],
+    ['Robin', 'No, handle it as a standard order', false, true],
+    ['Kristoffer', 'Should the webshop do a final ATP validation?', true, false],
+    ['Chandana', 'Are all products eligible?', true, false]
+  ]);
+  await expect(page.locator('#toast')).toContainText('Added 3 questions from Kristoffer, Chandana (1 answered)');
+  await page.locator('#toast button').click();
+  expect(await page.evaluate('nodes.length')).toBe(8);
+  expect(await page.evaluate('remarks.length')).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('Make thread questions leaves rows that hold a note alone, and is not offered on a leaf', async ({ page }) => {
+  await seedBranch(page, `nodes[3].note = 'Details';`);
+  await page.evaluate('makeThreadQuestionsFromBranch(1)');
+  await expect(page.locator('#toast')).toContainText('Rows under it hold 1 note');
+  expect(await page.evaluate('nodes.length')).toBe(8);
+  await page.evaluate('contextMenuNodeId = 8');
+  expect(await page.evaluate(`ctxActionAllowed('make-questions')`)).toBe(false);
+});

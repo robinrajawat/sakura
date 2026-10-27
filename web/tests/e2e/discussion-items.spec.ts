@@ -104,7 +104,7 @@ test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a qu
   expect(errors).toEqual([]);
 });
 
-test('the status is the row\'s: setting it adds no entry; Follow-up opens the reply line for a plain comment', async ({ page }) => {
+test('the status is the row\'s: setting it adds no entry and opens nothing', async ({ page }) => {
   const errors = await seed(page);
   const count = 'remarks.length';
   const before = await page.evaluate(count) as number;
@@ -114,17 +114,10 @@ test('the status is the row\'s: setting it adds no entry; Follow-up opens the re
   // A marker on a row with no thread doesn't start one.
   await page.evaluate("setNodeMarker(1, 'confirmed'); render()");
   expect(await page.evaluate('nodeThread(1).length')).toBe(0);
-  // Follow-up opens the row's reply line to say what's left; it's a plain comment.
+  // Follow-up opens no reply line (owner, 2026-10-27).
   await page.evaluate("setNodeMarker(3, 'followup'); render()");
-  const box3 = page.locator('.thread-composer-input[data-node-id="3"]');
-  await expect(box3).toBeFocused();
-  await page.keyboard.type('Load script fails on the EU file');
-  await page.keyboard.press('Enter');
-  await expect(page.locator('.thread-entry', { hasText: 'Load script fails' }).locator('.thread-kind.is-comment')).toHaveCount(1);
   expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('followup');
-  // Agree on the reply line settles the row.
-  await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="confirm"]').click();
-  expect(await page.evaluate("nodes.find(n => n.id === 3).marker")).toBe('confirmed');
+  await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toHaveCount(0);
   expect(await page.evaluate('remarks.some(r => r.status)')).toBe(false);
   expect(errors).toEqual([]);
 });
@@ -289,19 +282,6 @@ test('Ctrl/Cmd+Alt+M opens a reply line in the selected row\'s thread', async ({
   await page.evaluate('editingId = null; selectedId = 3; render();');
   await page.keyboard.press('Control+Alt+KeyM');
   await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toBeFocused();
-});
-
-test('the reply line offers all three statuses: Out of scope sets the row aside with what you typed', async ({ page }) => {
-  const errors = await seed(page);
-  await page.evaluate('openThreadComposer(2, false)');
-  const composer = page.locator('.thread-composer:has([data-node-id="2"])');
-  await page.locator('.thread-composer-input[data-node-id="2"]').click();
-  await page.keyboard.type('Not part of phase one');
-  await composer.locator('.thread-btn[data-act="parked"]').click();
-  expect(await page.evaluate("nodes.find(n => n.id === 2).marker")).toBe('parked');
-  // What you typed is a plain comment: the status is on the row.
-  await expect(page.locator('.thread-entry', { hasText: 'Not part of phase one' }).locator('.thread-kind.is-comment')).toHaveCount(1);
-  expect(errors).toEqual([]);
 });
 
 test('a follow-up names its owner (from its badge) in the open-items list', async ({ page }) => {

@@ -82,9 +82,8 @@ test('old follow-ups become the row\'s status; the entries keep their words', as
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toMatch(/followUp|status/);
   expect(await sumButtons(page)).toEqual(['1 follow-up', '1 question']);
 
-  // Agree on the reply line settles the row.
-  await page.evaluate('openThreadComposer(2, false)');
-  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="confirm"]').click();
+  // Agreed on the row settles it.
+  await page.evaluate("setNodeMarker(2, 'confirmed'); render()");
   expect(await page.evaluate('nodes.find(n => n.id === 2).marker')).toBe('confirmed');
   expect(await sumButtons(page)).toEqual(['1 question']);
   // One undo brings the follow-up back.
@@ -185,15 +184,14 @@ test('PDF shows each entry\'s question state, and no Open items summary page', a
   expect(errors).toEqual([]);
 });
 
-test('an entry\'s menu has no status: the row\'s badge and the reply line set it', async ({ page }) => {
+test('an entry\'s menu has no status: the row sets it', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds.add(4); render();');
   const line = page.locator('.thread-entry', { hasText: 'Just a comment.' });
   await line.click({ button: 'right' });
   await expect(page.locator('.sb-context-menu .sb-context-choice')).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await page.evaluate('openThreadComposer(4, false)');
-  await page.locator('.thread-composer:has([data-node-id="4"]) .thread-btn[data-act="followup"]').click();
+  await page.evaluate("setNodeMarker(4, 'followup'); render()");
   expect(await page.evaluate('nodes.find(n => n.id === 4).marker')).toBe('followup');
   expect(await sumButtons(page)).toEqual(['2 follow-ups', '1 question']);
   await expect(line.locator('.thread-status-note')).toHaveCount(0);
