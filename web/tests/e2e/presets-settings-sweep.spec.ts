@@ -164,7 +164,7 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     expect(errors).toEqual([]);
   });
 
-  test('right-click node menu + More: no Laser pointer, Rewrite document or Slide divider; Rewrite node stays', async ({ page }) => {
+  test('right-click node menu + More: no Laser pointer, Rewrite document or Slide divider; Rewrite row stays', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -175,7 +175,7 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     await page.locator('#context-more-toggle').click();
     await expect(page.locator('#context-more-panel')).toBeVisible();
     const menuText = await page.locator('#context-menu').evaluate((m) => (m as HTMLElement).innerText + ' ' + [...m.querySelectorAll('[data-tip],[aria-label]')].map((e) => (e.getAttribute('data-tip') || '') + ' ' + (e.getAttribute('aria-label') || '')).join(' '));
-    expect(menuText).toMatch(/Rewrite node/);
+    expect(menuText).toMatch(/Rewrite row/);
     expect(menuText).not.toMatch(/Laser pointer|Rewrite document|Slide divider/i);
     await expect(page.locator('#context-menu [data-action="laser"], #context-menu [data-action="ai-rewrite-all"], #context-menu [data-action="slide-divider"]')).toHaveCount(0);
     expect(errors).toEqual([]);
