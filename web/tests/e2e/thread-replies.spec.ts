@@ -51,7 +51,7 @@ test('Reply on a question opens a line under it; the answer reads there, even wi
   await page.keyboard.press('Enter');
   const a = await last(page);
   expect([a.answerTo, a.verdict, a.type]).toEqual(['q1', undefined, undefined]);
-  await expect(entry(page, 'q1').locator('.thread-q-note')).toHaveText('· question, answered');
+  await expect(entry(page, 'q1').locator('.thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
   expect(await order(page)).toEqual(['q1', '  ' + a.id, 'c1', 'q2']);
   await expect(page.locator('.thread-quote')).toHaveCount(0);
   expect(errors).toEqual([]);

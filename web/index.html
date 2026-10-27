@@ -1954,7 +1954,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Actions start right under the text, and the keyboard hint right under them, all in one left column (owner: not across the page). */
 .thread-composer-foot{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:2px 0 0 22px;font-size:var(--fs-sm);color:var(--hint)}
 .thread-composer-foot .thread-actions{margin-left:-6px}
-.thread-composer-hint{flex:1 0 100%;min-width:0}
 .thread-actions{flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px}
 .thread-btn-kind{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-right:5px;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 .thread-btn-kind svg{stroke-width:2.6}
@@ -1974,8 +1973,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Touch screens have no hover: "+ Add to thread" is always there. */
 @media (hover: none){.thread-reply-label{opacity:1}}
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
-.thread-verdict{font-size:var(--fs-sm);color:var(--muted)}
-.thread-status-note,.thread-q-note{font-size:var(--fs-sm);color:var(--muted)}
 /* A Follow-up's owner typed in place, right after the row's status badge. */
 .row-owner-edit{outline:none;color:var(--fg);font-size:var(--fs-sm);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;margin-left:4px;display:inline-block;min-width:8ch}
 .row-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
@@ -32191,7 +32188,7 @@ function threadKindIcon(r,thread){
     if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--hint)',tip:'Answer'};
     const no=r.verdict==='no'; return {kind:'answer',svg:markIconSvg(no?'close':'confirmed',14),color:'var(--hint)',tip:no?'Answer: No':'Answer: Yes'};
   }
-  if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — answer it with Yes / No, or add an entry and mark it as the answer':'Question'}; }
+  if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — Reply to answer it':(questionState(r,thread||[r])==='wont'?'Question, won\u2019t answer':'Question, answered')}; }
   return {kind:'comment',svg:markIconSvg('comment',13),color:'var(--hint)',tip:'Comment'};
 }
 // Optical centring inside the tinted circle (measured): a bare "?" (the ringed one doubled the circle), and
@@ -32251,12 +32248,9 @@ function threadRecentAuthors(){
 }
 // "10:02" today, "Yesterday · 10:02", "13 Oct · 10:02" -- the date part follows the editable date.
 // The day shows once per day, like the PDF: an entry on the same day as the one shown above it shows only its time.
-function formatThreadTime(r,prev){
-  const day=formatRemarkDateDisplay(r.date);
-  const t=r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
-  if(day==='Today'||(t&&prev&&(prev.date||'')===(r.date||'')))return t||day;
-  return t?day+' · '+t:day;
-}
+// Owner (2026-10-27, "more simple"): the day only; the time is in the tooltip.
+function formatThreadTime(r){ return formatRemarkDateDisplay(r.date); }
+function formatThreadTimeTip(r){ return r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''; }
 // Opens a node's thread with its reply line focused (right-click / Insert "Thread…", "+ Add to thread").
 // answerTo: a question's id when opened from that question's "Answer" (the next entry answers it).
 function openThreadComposer(nodeId,ask,answerTo){
@@ -32377,17 +32371,14 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   });
   person.addEventListener('blur',e=>{ if(person._menuOpen){ person._menuOpen=false; return; } const was=typing(); person.contentEditable='false'; const val=(person.textContent||'').trim(); person.textContent=val; const changed=was&&val!==(r.person||''); if(was)r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); });
   // A real button, so the keyboard reaches it and Escape on its date picker comes back to it.
-  const time=document.createElement('button'); time.type='button'; time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r,prev); time.dataset.tip='Click to change the date or time'; time.setAttribute('aria-label','Date and time: '+time.textContent+'. Change');
+  const time=document.createElement('button'); time.type='button'; time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r); {const at=formatThreadTimeTip(r); time.dataset.tip=(at?at+' \u2014 ':'')+'click to change the date or time';} time.setAttribute('aria-label','Date and time: '+time.textContent+'. Change');
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
   meta.appendChild(kindEl); meta.appendChild(person); meta.appendChild(time);
   const isQ=isQuestion(r);
   const qState=isQ?questionState(r,thread):null;
-  const note=(cls,text,tip)=>{ const n=document.createElement('span'); n.className=cls; n.textContent=text; if(tip)n.dataset.tip=tip; meta.appendChild(n); return n; };
-  // An open question is its kind icon in the accent color (the one thing in a thread that needs you); a settled one adds quiet text.
-  if(isQ){ if(qState!=='open')note('thread-q-note is-'+qState,qState==='answered'?'· question, answered':'· question, won’t answer','Right-click to change'); }
-  // The icon already says ✓ / ✗ (or ↳ answer); the line says it quietly, like "· decision".
-  if(r.answerTo&&r.verdict)note('thread-verdict is-'+r.verdict,r.verdict==='yes'?'· yes':'· no','The answer — right-click to change');
+  // The kind icon says it all (owner, 2026-10-27: "more simple"): an open question in the accent
+  // color, a settled one grey, a Yes / No answer ✓ / ✗. No words repeat it on the line.
   // Reply (owner decision 2026-10-27: any entry takes replies, one level): on hover, always on an
   // open question; it opens a reply line under the entry's replies.
   if(!nested){ const ab=document.createElement('button'); ab.type='button'; ab.className='thread-reply-btn'+(qState==='open'?' is-open':''); ab.textContent='Reply'; ab.dataset.tip=isQ?'Answer this question':'Reply to this';
@@ -32395,7 +32386,6 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
     ab.addEventListener('click',e=>{ e.stopPropagation(); openThreadComposer(node.id,false,r.id); });
     meta.appendChild(ab); }
   // A decision is marked on the entry where it was made (its kind icon, and quiet text); it doesn't change the row (owner decision 2026-10-15).
-  if(r.decision)note('thread-status-note is-decision','· decision','Decided here — right-click to change');
   line.appendChild(meta);
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
   textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
@@ -32797,11 +32787,9 @@ function renderThreadComposer(node,thread,place,commit){
   const sep=()=>{ const d=document.createElement('span'); d.className='thread-btn-sep'; return d; };
   if(ansGrp.childElementCount)actions.append(sep(),ansGrp);
   const meta=document.createElement('div'); meta.className='thread-meta';
-  const now=document.createElement('span'); now.className='thread-time'; now.textContent='now';
-  meta.appendChild(avatar); meta.appendChild(who); meta.appendChild(now);
+  meta.appendChild(avatar); meta.appendChild(who);
   const foot=document.createElement('div'); foot.className='thread-composer-foot';
-  const hint=document.createElement('span'); hint.className='thread-composer-hint'; hint.textContent='Enter to add · Shift+Enter new line · Esc to close';
-  foot.appendChild(actions); foot.appendChild(hint);
+  foot.appendChild(actions);
   line.appendChild(meta); line.appendChild(input); line.appendChild(foot);
   // Leaving an empty reply line closes it again.
   input.addEventListener('blur',()=>{ setTimeout(()=>{ if(_threadComposerNodeId!==node.id||_threadDrafts.has(node.id)||line.contains(document.activeElement)||!document.body.contains(line))return; if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.sb-context-menu,.thread-author-edit'))return; _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id);
