@@ -1923,6 +1923,12 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-chip.is-decision{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fc-green) 35%,transparent)}
 /* The row thread: one flat list, each entry a meta line (avatar, author, time, chips) over its text. */
 .node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
+/* A question and its replies read as one block (owner, 2026-10-27): more room before each top-level
+   entry, less inside the block. The day shows only where it changes; hover shows it again. */
+.node-remark-line.thread-entry:not(.is-nested){padding-top:8px}
+.node-remark-line.thread-entry.is-nested{padding-top:1px}
+.thread-time.is-same-day{opacity:0;transition:opacity .12s}
+.thread-entry:hover .thread-time.is-same-day,.thread-time.is-same-day:focus-visible{opacity:1}
 .node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--hint);font:500 12px 'Inter',sans-serif;cursor:pointer;user-select:none}
 .thread-head svg{flex:0 0 auto}
 .thread-head-more{border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
@@ -32216,7 +32222,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   });
   person.addEventListener('blur',e=>{ if(person._menuOpen){ person._menuOpen=false; return; } const was=typing(); person.contentEditable='false'; const val=(person.textContent||'').trim(); person.textContent=val; const changed=was&&val!==(r.person||''); if(was)r.person=val; if(dropIfBlank(e)||!changed)return; markDirty(); scheduleAutoSave(); });
   // A real button, so the keyboard reaches it and Escape on its date picker comes back to it.
-  const time=document.createElement('button'); time.type='button'; time.className='node-remark-date-inline thread-time'; time.textContent=formatThreadTime(r); {const at=formatThreadTimeTip(r); time.dataset.tip=(at?at+' \u2014 ':'')+'click to change the date or time';} time.setAttribute('aria-label','Date and time: '+time.textContent+'. Change');
+  const time=document.createElement('button'); time.type='button'; time.className='node-remark-date-inline thread-time'+(prev&&entryDay(prev)===entryDay(r)?' is-same-day':''); time.textContent=formatThreadTime(r); {const at=formatThreadTimeTip(r); time.dataset.tip=(at?at+' \u2014 ':'')+'click to change the date or time';} time.setAttribute('aria-label','Date and time: '+time.textContent+'. Change');
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
   meta.appendChild(kindEl); meta.appendChild(person); meta.appendChild(time);

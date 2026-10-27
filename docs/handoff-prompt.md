@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Calmer thread reading (2026-10-27).** Owner asked for better readability. An entry's day shows only where it changes from the entry above (`.thread-time.is-same-day`, shown again on hover, still clickable); top-level entries get more room above them (8px) and replies less (1px), so a question and its replies read as one block.
+
 - **Reply keeps your place (2026-10-27).** Owner: replying in the middle of a long thread jumped the reply line to the end. Sending a reply now closes its line and the view stays put (`renderThreadComposer` submit: `chosen` → `_threadComposerNodeId=null`); a new end-of-thread entry keeps the line open as before.
 
 - **No thread line, no diagram notes, shorter menus (2026-10-27).** Owner: cleaner. The faint line joining a thread's icons is gone in the editor and the PDF (spine classes and `--thread-rule-x` removed); the "Thread · N" header and the indent hold it together. The diagram preview's Notes pane (#685: button, `N`, `_dvRefreshNotes`, `toggleDiagramViewerNotes`) is removed; `d.note` stays in the data, unshown and no longer searched. Settings → Theme: "System follows your device…" is now the System button's tooltip. Entry right-click is Reply, Rewrite, Delete (Copy thread only on the header: a copy icon on hover, `.thread-head-copy`, plus its right-click). Menus say "Rewrite", not "Rewrite with AI" (threads, notes, To-Dos).
-
-- **Minimal thread menus, row status without names (2026-10-27).** Owner: "keep things minimal". Kind icon click = kind only (`threadKindMenuItems` / `threadKindChoices`; reply: Reply / Decision), also on the reply line (`setThreadComposerKind`, a reply line can be a decision). Right-click = Reply, Copy thread, Rewrite, Delete. Removed Reply to › / Not a reply (`threadReplyToItems`, `setThreadReplyTo`), "Answer" wording (tips, placeholder is "Reply…"), Reply always shown on open questions (hover only). Owner: a status recording who set it made no sense (it took the thread's current author), and a follow-up is always your own. Removed `markerBy` and `markerOwner` (Assign follow-up, Someone else… inline field, owner in hover/menu/PDF/open items/agenda, @owner in the To-Do text); `normalizeRowStatusMeta` drops them on open; `migrateStatusToRows` keeps only marker + `markerAt`. Who to chase goes in the thread or the To-Do. Hover reads "Follow-up · 13 Oct (2w)".
 
 ### In progress / not built
 
