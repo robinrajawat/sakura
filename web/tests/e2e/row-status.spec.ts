@@ -37,7 +37,9 @@ test('an older thread with two follow-ups becomes one Follow-up row; the entries
     { id: 'f2', anchorNodeId: 1, person: 'Robin', date: '2026-10-20', text: 'Check the extra freight price.', status: 'followup', owner: 'Ana', createdAt: 3 },
     { id: 's1', anchorNodeId: 1, person: 'Robin', date: '2026-10-20', text: '', status: 'followup', done: true, createdAt: 0 }
   ]`, `{ marker: 'followup' }`);
-  expect(await row(page)).toEqual({ marker: 'followup', by: 'Robin', at: 3, owner: 'Ana' });
+  expect(await row(page)).toMatchObject({ marker: 'followup', by: 'Robin', owner: 'Ana' });
+  // Its time is the entry's (its day folded in: one stored time).
+  expect(await page.evaluate('entryDay({ createdAt: nodes[0].markerAt })')).toBe('2026-10-20');
   // Status-only entries go; nothing in the thread holds a status any more.
   expect(await page.evaluate('remarks.map(r => r.id)')).toEqual(['f1', 'c1', 'f2']);
   expect(await page.evaluate('remarks.some(r => r.status || r.owner || r.done)')).toBe(false);

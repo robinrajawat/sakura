@@ -2,9 +2,14 @@
  * A row's thread, the conversation about one node, and the row's own status.
  *
  * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
- * order. An entry has an author, a time and text; it is a comment, a question (`type: 'question'`)
- * or a decision (`decision: true`). An answer is an entry that answers a question (`answerTo`),
- * with a Yes/No (`verdict`) and/or text.
+ * order. An entry has an author, a time (`createdAt`) and text; it is a comment, a question
+ * (`type: 'question'`) or a decision (`decision: true`). Any entry takes replies (`answerTo`), one
+ * level deep; a reply to a question is its answer.
+ *
+ * Owner decision (2026-10-27, "simpler"): a question is open or answered, nothing else. No Yes/No
+ * on answers (the answer's text says it), no "won't answer" (a reply saying so answers it), and the
+ * time is stored once (`createdAt`; the older `date` string is folded into it).
+ * `migrateThreadSimplify` converts older entries.
  *
  * Owner decision (2026-10-27): rows say what, threads say why. A row has at most one status,
  * stored on the row: Agreed ('confirmed'), Follow-up ('followup') or Out of scope ('parked'), with
@@ -39,21 +44,20 @@ export interface ThreadEntry {
   /** The author: who said it (the document owner often types on someone's behalf). */
   person?: string;
   text?: string;
-  /** yyyy-mm-dd, editable to log something after the fact. */
-  date?: string;
-  /** Epoch ms when the entry was added: its time, and the thread's order. */
+  /** Epoch ms: the entry's day and time (editable to log something after the fact), and the thread's order. */
   createdAt?: number;
   type?: 'question';
-  /** For an answer: the id of the question it answers. */
+  /** For a reply: the id of the entry it replies to (for a question, the one it answers). */
   answerTo?: string;
-  verdict?: 'yes' | 'no';
   /** The entry where something was decided (a chip on the entry; it doesn't change the row). */
   decision?: boolean;
-  /** A question closed without an answer. */
-  wontAnswer?: boolean;
   context?: string;
-  // Older shapes, read only by the migrations: a status on the entry that set it (with a follow-up's
-  // owner and done mark), and the remark / discussion-item fields before that.
+  // Older shapes, read only by the migrations: the day as yyyy-mm-dd, a Yes/No answer, a question
+  // closed without an answer, a status on the entry that set it (with a follow-up's owner and done
+  // mark), and the remark / discussion-item fields before that.
+  date?: string;
+  verdict?: 'yes' | 'no';
+  wontAnswer?: boolean;
   status?: ThreadStatus | 'resolved' | 'decision' | 'issue' | 'na';
   owner?: string;
   done?: boolean;
@@ -109,16 +113,9 @@ export function isQuestion(e: ThreadEntry): boolean {
   return e.type === 'question';
 }
 
-/** An entry that counts as an answer: it says Yes/No or has text. */
-function isRealAnswer(e: ThreadEntry): boolean {
-  return e.verdict === 'yes' || e.verdict === 'no' || htmlHasVisibleText(e.text);
-}
-
-/** A question's state in its thread: answered once an answer to it exists, else won't answer if
- * closed that way, else open. */
-export function questionState(q: ThreadEntry, thread: ThreadEntry[]): QaState {
-  if ((thread || []).some((e) => e.answerTo != null && e.answerTo === q.id && isRealAnswer(e))) return 'answered';
-  return q.wontAnswer ? 'wont' : 'open';
+/** A question's state in its thread: answered once a reply with text exists, else open. */
+export function questionState(q: ThreadEntry, thread: ThreadEntry[]): 'open' | 'answered' {
+  return (thread || []).some((e) => e.answerTo != null && e.answerTo === q.id && htmlHasVisibleText(e.text)) ? 'answered' : 'open';
 }
 
 /** Open questions (with question text) in a thread, oldest first. */
@@ -166,6 +163,63 @@ export function questionToAnswer<T extends ThreadEntry>(thread: T[], before?: T)
 }
 
 // ── Migration ────────────────────────────────────────────────────────────────────────────────
+
+/** True when any entry still has a field the simpler model dropped (`date`, `verdict`, `wontAnswer`). */
+export function needsThreadSimplify(entries: ThreadEntry[]): boolean {
+  return (entries || []).some((e) => e && (e.date != null || e.verdict != null || e.wontAnswer != null || (e.type === 'question' && !!e.decision)));
+}
+
+function localMidnight(day: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || '');
+  if (!m) return null;
+  const t = new Date(+m[1], +m[2] - 1, +m[3]).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+/**
+ * The simpler thread (owner decision 2026-10-27). The day (`date`) folds into `createdAt` (same
+ * time of day on that day). A Yes / No answer says it in its text: "Yes" alone, or "Yes. " before
+ * text that doesn't already start with it. A question closed without an answer gets a reply
+ * "Won't answer" by its author, so it reads as answered. An entry is one kind: one that was both a
+ * question and a decision stays a decision. Idempotent.
+ */
+export function migrateThreadSimplify<R extends ThreadEntry>(entries: R[]): { entries: R[]; changed: boolean } {
+  if (!needsThreadSimplify(entries)) return { entries, changed: false };
+  const ids = new Set((entries || []).map((e) => e && e.id));
+  const out: R[] = [];
+  for (const src of entries || []) {
+    if (!src) continue;
+    const e = { ...src };
+    if (e.date != null) {
+      const mid = localMidnight(e.date);
+      if (mid != null) {
+        const ofDay = e.createdAt ? e.createdAt - localMidnight(localDateStr(e.createdAt))! : 12 * 3600000;
+        if (!e.createdAt || localDateStr(e.createdAt) !== e.date) e.createdAt = mid + ofDay;
+      }
+      delete e.date;
+    }
+    if (e.verdict === 'yes' || e.verdict === 'no') {
+      const word = e.verdict === 'yes' ? 'Yes' : 'No';
+      const text = String(e.text || '');
+      const plain = text.replace(/<[^>]*>/g, '').trim();
+      if (!htmlHasVisibleText(text)) e.text = word;
+      else if (!new RegExp('^' + word + '\\b', 'i').test(plain)) e.text = word + '. ' + text;
+    }
+    delete e.verdict;
+    // One kind per entry: an entry that was both a question and a decision reads as the decision.
+    if (e.type === 'question' && e.decision) delete e.type;
+    const wont = e.wontAnswer;
+    delete e.wontAnswer;
+    out.push(e);
+    if (wont && isQuestion(e) && !(entries || []).some((x) => x && x.answerTo === e.id && htmlHasVisibleText(x.text))) {
+      let id = (e.id || 'r') + '-w';
+      while (ids.has(id)) id += 'w';
+      ids.add(id);
+      out.push({ id, anchorNodeId: e.anchorNodeId, person: e.person || '', text: 'Won\u2019t answer', context: '', createdAt: (e.createdAt || 0) + 1, answerTo: e.id } as R);
+    }
+  }
+  return { entries: out, changed: true };
+}
 
 function localDateStr(ms: number): string {
   const d = new Date(ms);
@@ -340,7 +394,7 @@ export function allOpenQuestions(entries: ThreadEntry[], nodeIds?: Set<number>):
   return out;
 }
 
-/** Every answered or won't-answer question (rows in `nodeIds` only, when given). */
+/** Every answered question (rows in `nodeIds` only, when given). */
 export function allSettledQuestions(entries: ThreadEntry[], nodeIds?: Set<number>): ThreadEntry[] {
   const out: ThreadEntry[] = [];
   groupByNode(entries, nodeIds).forEach((list, id) => {
@@ -388,7 +442,7 @@ export interface DocumentProgress {
   /** Out of scope rows. */
   parked: number;
   questions: number;
-  /** Agreed rows, answered or won't-answer questions. */
+  /** Agreed rows and answered questions. */
   settled: number;
   /** What can be settled: needs attention + settled. Out of scope is set aside, so it stays out of
    *  "N of M settled" -- otherwise one out-of-scope row kept the bar from ever filling. */

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  migrateThreadSimplify,
   threadReadingOrder, threadReplyParent,
   openItemAge, normalizeThreadStatus, htmlHasVisibleText, qaState, isCountableQuestion,
   normalizeDiscussionFilter, nodesWithOpenItems, openCountLabel,
@@ -47,16 +48,15 @@ describe('one thread', () => {
     E({ id: 'c', anchorNodeId: 1, createdAt: 1, text: 'Weekend works.' }),
     E({ id: 'q1', anchorNodeId: 1, createdAt: 2, type: 'question', text: 'Enough?' }),
     E({ id: 'q2', anchorNodeId: 1, createdAt: 3, type: 'question', text: 'EU too?' }),
-    E({ id: 'a2', anchorNodeId: 1, createdAt: 4, answerTo: 'q2', verdict: 'yes', text: '' })
+    E({ id: 'a2', anchorNodeId: 1, createdAt: 4, answerTo: 'q2', text: 'Yes' })
   ];
   it('orders a node\'s entries by time, stably', () => {
     const mixed = [E({ id: 'b', anchorNodeId: 1, createdAt: 5 }), E({ id: 'x', anchorNodeId: 2, createdAt: 1 }), E({ id: 'a', anchorNodeId: 1, createdAt: 1 }), E({ id: 'c', anchorNodeId: 1, createdAt: 5 })];
     expect(threadEntries(mixed, 1).map((e) => e.id)).toEqual(['a', 'b', 'c']);
   });
-  it('a question is answered by an answer to it (Yes/No or text), else open or won\'t answer', () => {
+  it('a question is answered by a reply with text, else open (owner, 2026-10-27: nothing else)', () => {
     expect(questionState(thread[1], thread)).toBe('open');
     expect(questionState(thread[2], thread)).toBe('answered');
-    expect(questionState(E({ id: 'q3', type: 'question', wontAnswer: true }), thread)).toBe('wont');
     // A blank answer doesn't count.
     expect(questionState(thread[1], [...thread, E({ answerTo: 'q1', text: '<br>' })])).toBe('open');
     expect(questionState(thread[1], [...thread, E({ answerTo: 'q1', text: 'Probably' })])).toBe('answered');
@@ -186,8 +186,8 @@ describe('normalizeDiscussionFilter', () => {
 describe('nodesWithOpenItems', () => {
   const entries = [
     E({ id: 'a', anchorNodeId: 1, type: 'question', text: 'A?' }),
-    E({ id: 'b', anchorNodeId: 2, type: 'question', text: 'B?' }), E({ anchorNodeId: 2, answerTo: 'b', verdict: 'no' }),
-    E({ id: 'c', anchorNodeId: 3, type: 'question', text: 'C?', wontAnswer: true })
+    E({ id: 'b', anchorNodeId: 2, type: 'question', text: 'B?' }), E({ anchorNodeId: 2, answerTo: 'b', text: 'No' }),
+    E({ id: 'c', anchorNodeId: 3, type: 'question', text: 'C?' }), E({ anchorNodeId: 3, answerTo: 'c', text: 'Won\u2019t answer' })
   ];
   it('finds nodes with open questions; openItems adds Follow-up rows (older Issue too)', () => {
     expect([...nodesWithOpenItems('openQa', entries)]).toEqual([1]);
@@ -216,7 +216,7 @@ describe('documentProgress / attentionParts / progressSummaryText', () => {
   ];
   const entries = [
     E({ id: 'q', anchorNodeId: 1, type: 'question', text: 'Rates?' }),
-    E({ id: 'p', anchorNodeId: 1, type: 'question', text: 'Budget?', wontAnswer: true }),
+    E({ id: 'p', anchorNodeId: 1, type: 'question', text: 'Budget?' }), E({ anchorNodeId: 1, answerTo: 'p', text: 'Won\u2019t answer' }),
     E({ anchorNodeId: 1, text: 'A comment' }),
     E({ id: 'z', anchorNodeId: 99, type: 'question', text: 'Other doc?' })
   ];
@@ -262,5 +262,35 @@ describe('threadReadingOrder (replies, owner decision 2026-10-27)', () => {
     expect(threadReadingOrder(t).map((o) => (o.nested ? '  ' : '') + o.entry.id)).toEqual(['q', '  a', 'c', '  r', '  rr', 'lost']);
     expect(threadReplyParent(t[4], t)?.id).toBe('c');
     expect(threadReplyParent(t[5], t)).toBeNull();
+  });
+});
+
+describe('migrateThreadSimplify (owner decision 2026-10-27: open or answered, one time)', () => {
+  it('folds Yes / No into the text, closes a won\'t-answer question with a reply, and keeps one time', () => {
+    const noon = new Date(2026, 9, 20, 9, 30).getTime();
+    const { entries, changed } = migrateThreadSimplify([
+      E({ id: 'q', anchorNodeId: 1, type: 'question', text: 'Ready?', date: '2026-10-20', createdAt: noon }),
+      E({ id: 'a', anchorNodeId: 1, answerTo: 'q', verdict: 'yes', text: '', date: '2026-10-21', createdAt: noon + 1 }),
+      E({ id: 'b', anchorNodeId: 1, answerTo: 'q', verdict: 'no', text: 'Not before Friday.', createdAt: noon + 2 }),
+      E({ id: 'c', anchorNodeId: 1, answerTo: 'q', verdict: 'no', text: 'no, never', createdAt: noon + 3 }),
+      E({ id: 'w', anchorNodeId: 1, type: 'question', person: 'Ana', text: 'Later?', wontAnswer: true, createdAt: noon + 4 })
+    ]);
+    expect(changed).toBe(true);
+    expect(entries.map((e) => [e.id, e.text])).toEqual([['q', 'Ready?'], ['a', 'Yes'], ['b', 'No. Not before Friday.'], ['c', 'no, never'], ['w', 'Later?'], ['w-w', 'Won\u2019t answer']]);
+    expect(entries.some((e) => 'verdict' in e || 'wontAnswer' in e || 'date' in e)).toBe(false);
+    // The day moves the time onto it; the time of day stays.
+    expect(entries[0].createdAt).toBe(noon);
+    expect(new Date(entries[1].createdAt!).getDate()).toBe(21);
+    expect(new Date(entries[1].createdAt!).getHours()).toBe(9);
+    expect(entries[5]).toMatchObject({ answerTo: 'w', person: 'Ana' });
+    expect(questionState(entries[4], entries)).toBe('answered');
+    expect(migrateThreadSimplify(entries).changed).toBe(false);
+  });
+});
+
+describe('one kind per entry (owner, 2026-10-27)', () => {
+  it('an entry that was both a question and a decision becomes the decision', () => {
+    const { entries } = migrateThreadSimplify([E({ id: 'x', anchorNodeId: 1, type: 'question', decision: true, createdAt: 1 })]);
+    expect([entries[0].type, entries[0].decision]).toEqual([undefined, true]);
   });
 });

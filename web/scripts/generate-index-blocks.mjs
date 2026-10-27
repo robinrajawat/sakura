@@ -638,16 +638,6 @@ initHubTodosState({
     footer: ''
   },
   {
-    // A question list pasted into a thread's reply line (name > question > indented answer) --
-    // pure parts only: plain text to indented lines and lines to questions with authors, titles
-    // and answers. Reading the clipboard and adding the entries stay in index.html next to
-    // attachThreadPaste.
-    name: 'questionList',
-    sourceFile: 'src/utils/questionList.ts',
-    testFile: 'tests/unit/questionList.test.ts',
-    footer: ''
-  },
-  {
     // The To-Do data model (task fields, migration of older lists, which section a task shows
     // in). Shared with the mobile Hub (hubTodoModel below) so both write the same shape.
     name: 'todoModel',

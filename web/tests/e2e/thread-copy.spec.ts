@@ -23,7 +23,7 @@ test('Copy thread puts the thread on the clipboard as rich text and plain lines'
     nodes = [n(1, 0, 'Cutover weekend')]; rebuildParentIds(); nextId = 2;
     remarks = [
       { id: 'q', anchorNodeId: 1, person: 'Karsten', date: '2026-10-14', text: 'Does it include <b>EDI</b>?', type: 'question', createdAt: Date.UTC(2026, 9, 14, 9) },
-      { id: 'a', anchorNodeId: 1, person: 'Ana', date: '2026-10-14', text: 'All partners.', answerTo: 'q', verdict: 'yes', createdAt: Date.UTC(2026, 9, 14, 10) },
+      { id: 'a', anchorNodeId: 1, person: 'Ana', date: '2026-10-14', text: 'Yes, all partners.', answerTo: 'q', createdAt: Date.UTC(2026, 9, 14, 10) },
       { id: 'd', anchorNodeId: 1, person: 'Robin', date: '2026-10-15', text: 'We go with Nov 2.', decision: true, createdAt: Date.UTC(2026, 9, 15, 9) }
     ];
     qaItems = []; inlineExpandRemarksNodeIds = new Set([1]); collapsedIds = new Set(); editingId = null; render();
@@ -39,14 +39,14 @@ test('Copy thread puts the thread on the clipboard as rich text and plain lines'
   expect(clip.text).toContain('question, answered');
   expect(clip.text).toContain('Does it include EDI?');
   // An answer is indented under its question, as in the outline.
-  expect(clip.text).toMatch(/\n {4}Ana · [^\n]* · yes\n {4}All partners\./);
+  expect(clip.text).toMatch(/\n {4}Ana · [^\n]*\n {4}Yes, all partners\./);
   expect(clip.html).toContain('margin-left:24px');
   expect(clip.text).toMatch(/Robin · [^\n]*2026[^\n]* · decision\nWe go with Nov 2\./);
   expect(clip.html).toContain('<b>EDI</b>');
   // Names plain bold (owner, 2026-10-23) and each entry's kind as a symbol in its colour (SVG doesn't survive a paste).
   expect(clip.html).toContain('<b>Karsten</b>');
   expect(clip.html).toMatch(/<span style="color:rgb\([^"]+\);font-weight:600">\u{1F91D}<\/span>/u);
-  expect(clip.html).toMatch(/<span style="color:rgb\([^"]+\);font-weight:600">\u2713<\/span>/);
+  expect(clip.html).toMatch(/<span style="color:rgb\([^"]+\);font-weight:600">\u21b3<\/span>/);
   // The entry menu offers it too.
   await page.locator('#inline-remark-text-d').click({ button: 'right' });
   await expect(page.locator('.sb-context-menu').getByText('Copy thread', { exact: true })).toBeVisible();

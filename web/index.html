@@ -1933,9 +1933,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-head svg{flex:0 0 auto}
 .thread-head-more{border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
 .thread-head-more:hover{color:var(--fg);background:var(--hover)}
-.thread-head-decision{display:inline-flex;align-items:center;gap:3px;border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
-.thread-head-decision svg{color:var(--fc-green)}
-.thread-head-decision:hover{color:var(--fg);background:var(--hover)}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
 .thread-time{font-size:var(--fs-sm)}
 .thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
@@ -1951,20 +1948,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-composer-input:empty::before{content:attr(data-placeholder);color:var(--hint)}
 .thread-composer-input.remark-text-input,.thread-composer-input.remark-text-input:hover,.thread-composer-input.remark-text-input:focus{width:auto;padding:0;border:0;border-radius:0;background:transparent;color:var(--fg);font:inherit}
 .thread-composer-input.remark-text-input:empty::before{font-style:normal}
-/* Actions start right under the text, and the keyboard hint right under them, all in one left column (owner: not across the page). */
-.thread-composer-foot{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:2px 0 0 22px;font-size:var(--fs-sm);color:var(--hint)}
-.thread-composer-foot .thread-actions{margin-left:-6px}
-.thread-actions{flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px}
-.thread-btn-kind{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-right:5px;background:color-mix(in srgb,currentColor 15%,var(--bg))}
-.thread-btn-kind svg{stroke-width:2.6}
-.thread-btn-group{display:inline-flex;align-items:center;gap:1px;padding:1px;border:1px solid var(--border);border-radius:7px}
-.thread-btn-sep{width:1px;height:14px;background:var(--border);margin:0 5px}
-.thread-btn[data-act="answer-to"]{background:var(--hover);color:var(--fg)}
-.thread-btn{display:inline-flex;align-items:center;height:20px;padding:0 6px;border:0;border-radius:4px;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer}
-.thread-btn:hover{background:var(--hover);color:var(--fg)}
-.thread-btn.is-on{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
-.thread-btn[data-act="yes"]:hover{color:var(--fc-green)}
-.thread-btn[data-act="no"]:hover{color:var(--fc-red)}
 /* "+ Add to thread" at the end of a thread: only while the thread is hovered. */
 .node-remark-line.thread-reply-link{padding-top:1px;padding-bottom:3px;color:var(--hint);font-size:var(--fs-md);cursor:pointer}
 /* Only the label fades: the line also carries the outline's depth guides, which must stay drawn. */
@@ -1992,10 +1975,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-reply-btn:hover{color:var(--fg);background:var(--hover)}
 .thread-entry.is-moved{animation:thread-moved 1.6s ease-out}
 @keyframes thread-moved{0%,30%{background:var(--hover)}100%{background:transparent}}
-/* An answer or status with no text is one line until clicked. */
-.thread-entry.is-event .node-remark-text-inline{display:none}
-.thread-entry.is-event.is-editing .node-remark-text-inline{display:block}
-.thread-entry.is-event{cursor:text}
 /* "N earlier entries" fold line (buildInlineFoldLine). */
 .node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
 .node-remark-resolved-toggle:hover{background:var(--hover)}
@@ -4007,7 +3986,7 @@ body.printing-generic #gpe-overlay{
 <h4>Structure</h4>  
 <ul>  
 <li>Right-click a node → a small row of marker icons (Agreed, Follow-up, Out of scope — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add comment, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
-<li><strong>Markers</strong> — three quick marks (✓ Agreed, ⚑ Follow-up, ⊘ Out of scope) for tracking status on a node, e.g. while reviewing a document. Each one is the row's status, stored on the row with who set it and when; setting it adds nothing to the thread. Older documents' Issue rows read as Follow-up and N/A or Parked rows as Out of scope. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph (or right-clicking it) opens its menu: change or clear the status there. Shift+click filters the tree to that marker — showing every matching node, its full subtree, and its ancestors back to the root (dimmed, so they read as "here's where it lives" rather than more matches); a filter bar appears with a × to clear it. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
+<li><strong>Markers</strong> — three quick marks (✓ Agreed, ⚑ Follow-up, ⊘ Out of scope) for tracking status on a node, e.g. while reviewing a document. Each one is the row's status, stored on the row with who set it and when; setting it adds nothing to the thread. Older documents' Issue rows read as Follow-up and N/A or Parked rows as Out of scope. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph (or right-clicking it) opens its menu: change or clear the status there. The open-items list in the toolbar filters the tree to the rows that need attention. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
 <li>Right-clicking empty space — editor canvas, file explorer, status bar, tab bar, or app bar — opens a separate, smaller menu of chrome-level actions, not the node menu above. Navigate it with <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span>, same as the category picker above, or hover with a mouse — both move the same highlight. Editor canvas: switch theme and Collapse all/Expand all sit in the menu itself; a "More…" item opens a second menu at the same spot for the rest — hide/show file explorer, and Settings. File Explorer: switch theme, hide file explorer, Settings. Status bar: switch theme, Settings. Tab bar: switch theme, new document, close current tab, Settings. App bar: switch theme, hide/show file explorer, and "Declutter app bar" — which hides the Sakura name, but deliberately never hides Settings — hiding it would remove your only way back in. Every hide action here shows an Undo toast, same pattern as Quick Assist's own toggles. The toolbar, tab bar, status bar and app bar can't be hidden (zen mode hides the toolbar and tab bar while it's on)</li>
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Deleting a referenced node removes its links from all other nodes automatically</li>
 <li><strong>Tags</strong> — select a node and click the tag icon in the toolbar or right-click → Tags to open the tag popover. Existing document tags appear as chips to toggle; type a new name and press Enter to add. Tags render as <span class="node-tag-chip" style="display:inline-flex;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%)">#chips</span> on the node. Click a chip in the tree to filter to that tag; click again or × to clear. Multi-select: toolbar button applies to all selected nodes</li>
@@ -4204,20 +4183,18 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="panels" id="help-section-remarks">
 <h4>Thread (comments and questions)</h4>
 <ul>
-<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a question, an answer (✓ Yes / ✗ No, or ↳ for an answer without Yes/No), a decision (handshake), or a plain comment (a faint speech bubble) — then its <strong>author</strong> (each person in a document gets their own name color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
-<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Right-click the line to add it, make it a question, Rewrite with AI (when AI is on) or close it. While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
+<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a comment (a faint speech bubble), a question, a decision (handshake) or a reply (↳) — then its <strong>author</strong>, the <strong>day</strong> (hover it for the time) and the text. Click the icon, or right-click the entry, for its menu. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
+<li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Click the line's icon to make it a <strong>Comment</strong>, <strong>Question</strong> or <strong>Decision</strong>. Right-click the line to add it, Rewrite with AI (when AI is on) or close it. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
-<li><strong>Replies</strong>: any entry can be replied to, one level deep — hover it and click <strong>Reply</strong> (always shown on an open question), or right-click → Reply. Replies read indented under their entry; everything else stays in time order. A <strong>question</strong>'s icon is in your accent colour until it gets a reply; its reply line also offers <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line). Click an entry's icon → <strong>Reply to ›</strong> puts it under an earlier entry, <strong>Not a reply</strong> puts it back. Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
-<li><strong>Paste a list of questions</strong> into the reply line — say a colleague's batch, as name › question › indented answer — and each question becomes its own entry: the name says who asked, the lines indented under a question are its answers, and the rest stay open. Headings are dropped, a short line before a question becomes its title, and questions already in the thread are left out.</li>
-<li>A question list you already have as rows (name › question › answer under one row): right-click that row → More → Insert › <strong>Make thread questions</strong>. The rows under it become questions in its thread, read the same way, and the rows go; Undo puts them back</li>
-<li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text.</li>
-<li><strong>Status</strong> belongs to the row, not the thread: a row is <strong>Agreed</strong>, <strong>Follow-up</strong> or <strong>Out of scope</strong>, with who set it and when (hover its badge: “Follow-up · for Kim · Robin, 13 Oct (2w)”). Setting it adds nothing to the thread. Set it from the row's right-click menu or the toolbar's Insert ▾; it opens nothing (add a comment yourself if you want to say why). Click the badge for its menu: the three statuses (the current one again clears it), <strong>Assign follow-up</strong> (who owns it), <strong>Add to To-Dos</strong> and <strong>Show thread</strong>; Shift+click filters by it, right-click clears it</li>
-<li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, type it and click <strong>Decision</strong> on the reply line (or right-click → Add as decision), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
+<li><strong>Replies</strong>: any entry can be replied to, one level deep — hover it and click <strong>Reply</strong> (always shown on an open question), or right-click → Reply. Replies read indented under their entry; everything else stays in time order. A <strong>question</strong> is open until it gets a reply (its icon is in your accent colour), then answered — write "Yes", "No, …" or "Won't answer" in the reply. <strong>Reply to ›</strong> in an entry's menu puts it under an earlier entry, <strong>Not a reply</strong> puts it back</li>
+<li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text. The header's right-click also has <strong>Delete thread</strong> (Undo in the toast).</li>
+<li><strong>Status</strong> belongs to the row, not the thread: a row is <strong>Agreed</strong>, <strong>Follow-up</strong> or <strong>Out of scope</strong>, with who set it and when (hover its badge: “Follow-up · for Kim · Robin, 13 Oct (2w)”). Setting it adds nothing to the thread. Set it from the row's right-click menu or the toolbar's Insert ▾; it opens nothing (add a comment yourself if you want to say why). Click the badge for its menu: the three statuses (the current one again clears it), <strong>Assign follow-up</strong> (who owns it), <strong>Add to To-Dos</strong>; right-click opens the same menu</li>
+<li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, pick <strong>Decision</strong> with the line's icon first. It doesn't change the row's marker</li>
 <li><strong>Links</strong>: a pasted web address becomes a link. Click a link to put the caret in it: a small card under it opens, copies, edits or removes it (Ctrl/Cmd+click opens it straight away; right-click has the same items)</li>
-<li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, Copy thread, Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>Right-click an entry (or click its icon) for <strong>Reply</strong>, Make it a question / comment, Mark as decision, Reply to ›, Copy thread, Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
-<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day) and Yes/No as text, the entry icons joined by a faint line. The status prints on the row's marker, a Follow-up with its owner and since when. The outline shows the thread the same way; click its header to hide it</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), the entry icons joined by a faint line. The status prints on the row's marker, a Follow-up with its owner and since when. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; decisions become Decision chips, and a status an older thread held on an entry moves onto its row (with that entry's author, time and follow-up owner; entries that said nothing else go). Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
@@ -5076,6 +5053,7 @@ let showAllRemarksNodeIds=new Set(); let showClosedQaNodeIds=new Set();
 // A node's thread: reply box state and chip icons (see renderNodeThread).
 var _threadComposerNodeId=null;   // the node whose reply box is open even with no entries yet
 var _threadAskNodeIds=new Set();  // reply boxes whose next entry is a question
+var _threadDecisionNodeIds=new Set();  // reply boxes whose next entry is a decision
 var _threadAnswerTo=new Map();  // reply boxes answering a chosen question: nodeId -> question entry id
 var _threadDrafts=new Map();      // node id -> what is typed in its reply box, kept across renders
 var _threadAuthor=null;           // who the reply box writes as (null: the last author used)
@@ -7514,9 +7492,14 @@ function cardsTotal(grid, calculated) {
  * A row's thread, the conversation about one node, and the row's own status.
  *
  * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
- * order. An entry has an author, a time and text; it is a comment, a question (`type: 'question'`)
- * or a decision (`decision: true`). An answer is an entry that answers a question (`answerTo`),
- * with a Yes/No (`verdict`) and/or text.
+ * order. An entry has an author, a time (`createdAt`) and text; it is a comment, a question
+ * (`type: 'question'`) or a decision (`decision: true`). Any entry takes replies (`answerTo`), one
+ * level deep; a reply to a question is its answer.
+ *
+ * Owner decision (2026-10-27, "simpler"): a question is open or answered, nothing else. No Yes/No
+ * on answers (the answer's text says it), no "won't answer" (a reply saying so answers it), and the
+ * time is stored once (`createdAt`; the older `date` string is folded into it).
+ * `migrateThreadSimplify` converts older entries.
  *
  * Owner decision (2026-10-27): rows say what, threads say why. A row has at most one status,
  * stored on the row: Agreed ('confirmed'), Follow-up ('followup') or Out of scope ('parked'), with
@@ -7573,16 +7556,9 @@ function threadEntries(entries, nodeId) {
 function isQuestion(e) {
     return e.type === 'question';
 }
-/** An entry that counts as an answer: it says Yes/No or has text. */
-function isRealAnswer(e) {
-    return e.verdict === 'yes' || e.verdict === 'no' || htmlHasVisibleText(e.text);
-}
-/** A question's state in its thread: answered once an answer to it exists, else won't answer if
- * closed that way, else open. */
+/** A question's state in its thread: answered once a reply with text exists, else open. */
 function questionState(q, thread) {
-    if ((thread || []).some((e) => e.answerTo != null && e.answerTo === q.id && isRealAnswer(e)))
-        return 'answered';
-    return q.wontAnswer ? 'wont' : 'open';
+    return (thread || []).some((e) => e.answerTo != null && e.answerTo === q.id && htmlHasVisibleText(e.text)) ? 'answered' : 'open';
 }
 /** Open questions (with question text) in a thread, oldest first. */
 function openQuestions(thread) {
@@ -7633,6 +7609,68 @@ function questionToAnswer(thread, before) {
     return open.length ? open[open.length - 1] : null;
 }
 // ── Migration ────────────────────────────────────────────────────────────────────────────────
+/** True when any entry still has a field the simpler model dropped (`date`, `verdict`, `wontAnswer`). */
+function needsThreadSimplify(entries) {
+    return (entries || []).some((e) => e && (e.date != null || e.verdict != null || e.wontAnswer != null || (e.type === 'question' && !!e.decision)));
+}
+function localMidnight(day) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || '');
+    if (!m)
+        return null;
+    const t = new Date(+m[1], +m[2] - 1, +m[3]).getTime();
+    return Number.isFinite(t) ? t : null;
+}
+/**
+ * The simpler thread (owner decision 2026-10-27). The day (`date`) folds into `createdAt` (same
+ * time of day on that day). A Yes / No answer says it in its text: "Yes" alone, or "Yes. " before
+ * text that doesn't already start with it. A question closed without an answer gets a reply
+ * "Won't answer" by its author, so it reads as answered. An entry is one kind: one that was both a
+ * question and a decision stays a decision. Idempotent.
+ */
+function migrateThreadSimplify(entries) {
+    if (!needsThreadSimplify(entries))
+        return { entries, changed: false };
+    const ids = new Set((entries || []).map((e) => e && e.id));
+    const out = [];
+    for (const src of entries || []) {
+        if (!src)
+            continue;
+        const e = { ...src };
+        if (e.date != null) {
+            const mid = localMidnight(e.date);
+            if (mid != null) {
+                const ofDay = e.createdAt ? e.createdAt - localMidnight(localDateStr(e.createdAt)) : 12 * 3600000;
+                if (!e.createdAt || localDateStr(e.createdAt) !== e.date)
+                    e.createdAt = mid + ofDay;
+            }
+            delete e.date;
+        }
+        if (e.verdict === 'yes' || e.verdict === 'no') {
+            const word = e.verdict === 'yes' ? 'Yes' : 'No';
+            const text = String(e.text || '');
+            const plain = text.replace(/<[^>]*>/g, '').trim();
+            if (!htmlHasVisibleText(text))
+                e.text = word;
+            else if (!new RegExp('^' + word + '\\b', 'i').test(plain))
+                e.text = word + '. ' + text;
+        }
+        delete e.verdict;
+        // One kind per entry: an entry that was both a question and a decision reads as the decision.
+        if (e.type === 'question' && e.decision)
+            delete e.type;
+        const wont = e.wontAnswer;
+        delete e.wontAnswer;
+        out.push(e);
+        if (wont && isQuestion(e) && !(entries || []).some((x) => x && x.answerTo === e.id && htmlHasVisibleText(x.text))) {
+            let id = (e.id || 'r') + '-w';
+            while (ids.has(id))
+                id += 'w';
+            ids.add(id);
+            out.push({ id, anchorNodeId: e.anchorNodeId, person: e.person || '', text: 'Won\u2019t answer', context: '', createdAt: (e.createdAt || 0) + 1, answerTo: e.id });
+        }
+    }
+    return { entries: out, changed: true };
+}
 function localDateStr(ms) {
     const d = new Date(ms);
     const p = (n) => String(n).padStart(2, '0');
@@ -7822,7 +7860,7 @@ function allOpenQuestions(entries, nodeIds) {
     groupByNode(entries, nodeIds).forEach((list, id) => out.push(...openQuestions(threadEntries(list, id))));
     return out;
 }
-/** Every answered or won't-answer question (rows in `nodeIds` only, when given). */
+/** Every answered question (rows in `nodeIds` only, when given). */
 function allSettledQuestions(entries, nodeIds) {
     const out = [];
     groupByNode(entries, nodeIds).forEach((list, id) => {
@@ -7918,118 +7956,6 @@ function openItemAge(createdAt, now) {
 }
 
 /* GENERATED:discussionStatus:END */
-/* GENERATED:questionList:START — DO NOT EDIT BY HAND. Source of truth: src/utils/questionList.ts (tests: tests/unit/questionList.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
-/**
- * Pasting a list of questions into a thread's reply line (owner, 2026-10-27): colleagues send
- * batches of questions laid out as name › question › indented answer, and each should become its
- * own thread entry rather than one long comment.
- *
- * - A short line with questions under it is who asked them ("Kristoffer"); a short line with
- *   names under it is only a heading ("Open Questions") and is dropped.
- * - Every other line is a question; the lines indented under it are its answers. A question with
- *   nothing under it stays open.
- * - A short line just before a question at the same level is its title ("OQ-3: ATP validation").
- * - A short leftover line with nothing under it ("Additional Questions") is a heading and dropped.
- * - A question already in the thread, or pasted twice, is added once.
- *
- * Pure parts only; reading the clipboard and adding the entries stay in index.html next to
- * attachThreadPaste. Wired in via scripts/generate-index-blocks.mjs's `questionList` block.
- */
-// Bullets as typed or as Word writes them in plain text ("o" and "§" before a tab).
-const BULLET = /^(?:[-*•◦▪‣·–§]|o(?=\t)|\d{1,3}[.)]|[a-zA-Z][.)])\s+/;
-/** Plain text as indented lines: blank lines dropped, a tab counts as four spaces, bullets removed. */
-function outlineFromText(text) {
-    const raw = [];
-    for (const line of String(text || '').replace(/\r\n?/g, '\n').split('\n')) {
-        const m = /^[ \t ]*/.exec(line);
-        const lead = m ? m[0] : '';
-        const body = line.slice(lead.length).replace(BULLET, '').trim();
-        if (!body)
-            continue;
-        let indent = 0;
-        for (const ch of lead)
-            indent += ch === '\t' ? 4 : 1;
-        raw.push({ indent, text: body.replace(/\s+/g, ' ') });
-    }
-    // Depth is the indent's rank among the indents used, so 3-space and tab outlines read the same.
-    const widths = [...new Set(raw.map((l) => l.indent))].sort((a, b) => a - b);
-    return raw.map((l) => ({ depth: widths.indexOf(l.indent), text: l.text }));
-}
-function buildTree(lines) {
-    const root = { text: '', children: [] };
-    const stack = [{ depth: -1, node: root }];
-    for (const l of lines) {
-        while (stack.length > 1 && stack[stack.length - 1].depth >= l.depth)
-            stack.pop();
-        const node = { text: l.text, children: [] };
-        stack[stack.length - 1].node.children.push(node);
-        stack.push({ depth: l.depth, node });
-    }
-    return root.children;
-}
-const words = (t) => t.split(/\s+/).filter(Boolean).length;
-/** Reads as a question or a statement worth an entry (not a name or heading). */
-function isQuestionLike(t) {
-    return t.includes('?') || words(t) > 6;
-}
-/** A short line that is no question: a name, a heading or a title. */
-function isShortLabel(t, maxWords) {
-    return !t.includes('?') && words(t) <= maxWords && !/[.!]$/.test(t);
-}
-/** Looks like a person's name: one to three words, no digits or colons. */
-function isNameLike(t) {
-    return isShortLabel(t, 3) && !/[\d:]/.test(t) && t.length <= 40;
-}
-function flatten(n) {
-    return [n.text, ...n.children.map(flatten)].join('\n');
-}
-const sameText = (t) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
-/**
- * The questions in an indented list. `existing` is the plain text of the questions already in
- * the thread, so a list pasted again (or a block repeated inside it) adds nothing twice.
- */
-function parseQuestionList(lines, existing = []) {
-    const questions = [];
-    const seen = new Set(existing.map(sameText).filter(Boolean));
-    let repeats = 0;
-    const walk = (nodes, author) => {
-        let title = null;
-        nodes.forEach((n, i) => {
-            if (n.children.length && isShortLabel(n.text, 4)) {
-                const asks = n.children.some((c) => isQuestionLike(c.text));
-                walk(n.children, asks && isNameLike(n.text) ? n.text : author);
-                title = null;
-                return;
-            }
-            if (!n.children.length && isShortLabel(n.text, 10)) {
-                const next = nodes[i + 1];
-                title = next && isQuestionLike(next.text) ? n.text : null;
-                return;
-            }
-            const key = sameText(n.text);
-            if (seen.has(key))
-                repeats++;
-            else {
-                seen.add(key);
-                questions.push({ author, title, text: n.text, answers: n.children.map(flatten) });
-            }
-            title = null;
-        });
-    };
-    walk(buildTree(lines), null);
-    return { questions, repeats };
-}
-/**
- * Whether a paste is a question list worth splitting rather than one comment: three or more
- * lines, and two or more questions with a question mark, or an indented list of two or more.
- */
-function isQuestionList(lines, result) {
-    if (lines.length < 3 || result.questions.length + result.repeats < 2)
-        return false;
-    return lines.filter((l) => l.text.includes('?')).length >= 2 || lines.some((l) => l.depth > 0);
-}
-
-/* GENERATED:questionList:END */
 /* GENERATED:deleteImpact:START — DO NOT EDIT BY HAND. Source of truth: src/utils/deleteImpact.ts (tests: tests/unit/deleteImpact.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * What deleting rows takes with it (owner decision: a row's linked objects go with it, with a
@@ -10171,7 +10097,7 @@ function repointNodeLinks(fromId,toId){
 function nodeDiscussionCopies(nodeId){
   const clone=x=>JSON.parse(JSON.stringify(x));
   const qas=(Array.isArray(qaItems)?qaItems:[]).filter(q=>q&&q.sourceNodeId===nodeId).map(clone);
-  const rms=(Array.isArray(remarks)?remarks:[]).filter(r=>r&&r.anchorNodeId===nodeId&&(stripHtmlToText(r.text||'').trim()||r.verdict)).map(clone);
+  const rms=(Array.isArray(remarks)?remarks:[]).filter(r=>r&&r.anchorNodeId===nodeId&&stripHtmlToText(r.text||'').trim()).map(clone);
   return {qas,rms};
 }
 function attachDiscussionCopies(toId,qas,rms){
@@ -14729,7 +14655,6 @@ function ctxActionAllowed(actionId){
   // saveToStorage), and 'version-history' just opens a read-only viewer.
   if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()&&!['focus','fold','version-history'].includes(actionId))return false;
   // Only offered on a row with rows under it.
-  if(actionId==='make-questions'){ const i=getIndex(nodes,contextMenuNodeId??selectedId); return i>=0&&nodeHasChildren(nodes,i); }
   if(actionId==='focus')return featureFocusEnabled;
   if(actionId==='ai-rewrite')return featureAiEnabled;
   return true;
@@ -18265,9 +18190,9 @@ function collectRemarkMatches(q){
         if(r.anchorNodeId==null)continue; // unlinked: no row to reveal it under
         const plainText=stripHtmlToText(r.text||'');
         // Every thread entry is searched: its text, author and an answer's Yes / No.
-        const hay=plainText+' '+(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'')+' '+(r.person||'')+' '+(r.context||'');
+        const hay=plainText+' '+(r.person||'')+' '+(r.context||'');
         if(!qaHayMatches(hay,tokens))continue;
-        const label=plainText.trim()||(r.verdict==='yes'?'Yes':r.verdict==='no'?'No':(r.decision?'Decision':'(empty entry)'));
+        const label=plainText.trim()||(r.decision?'Decision':'(empty entry)');
         out.push(isTrash?{
           group:'Threads', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
           meta:'In Trash · '+(docTitle||'Untitled'),
@@ -21159,7 +21084,6 @@ const CTX_ACTION_META={
   'ai-rewrite':{label:'Rewrite row',svg:'<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/>',group:'ai'},
   note:{label:'Note…',dynamicLabel:true,svg:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',group:'node'},
   remark:{label:'Thread…',svg:'<path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/>',group:'discuss'},
-  'make-questions':{label:'Make thread questions',svg:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2.3-2.4 3.8"/><line x1="12" y1="17" x2="12.01" y2="17"/>',group:'discuss'},
   diagram:{label:'Add diagram…',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8.5" y="14" width="7" height="7" rx="1"/>',group:'visual'},
   'diagram-gen':{label:'Generate diagram',svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/>',group:'visual'},
   table:{label:'Add table…',svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/>',group:'visual'},
@@ -21170,7 +21094,7 @@ const CTX_ACTION_META={
   'no-export':{label:'Leave out of export',dynamicLabel:true,svg:'<path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-2.2 3.4"/><path d="M6.6 6.6C3.6 8.6 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/>',group:'info'},
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
-const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','make-questions','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
+const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
 // The characters (and Date/time) the "/" Insert list can offer; Settings → Editing → Insert list
 // turns each on or off. The ids are kept as saved in prefs (nodeQuickAssistActions).
 const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time'];
@@ -21629,7 +21553,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=rowStatusWords(node,true)+' — click for options, Shift+click to filter'; mkdot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault();}); mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } commitEdit(); hideNodeTooltip(); const rr=mkdot.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,rowStatusMenuItems(node));}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); commitEdit(); hideNodeTooltip(); showSbContextMenu(e.clientX,e.clientY,rowStatusMenuItems(node));}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=rowStatusWords(node,true)+' — click for options'; mkdot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault();}); mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); commitEdit(); hideNodeTooltip(); const rr=mkdot.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,rowStatusMenuItems(node));}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); commitEdit(); hideNodeTooltip(); showSbContextMenu(e.clientX,e.clientY,rowStatusMenuItems(node));}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -25559,7 +25483,6 @@ async function runQuickAction(action,ctxNodeId,anchorRect){
   }
   if(action==='date-time'){if(selectedId!==null)insertDateTime(); return}
   if(action==='tags'){if(_ctxNodeId!==null)openTagManager(_ctxNodeId,anchorRect); return}
-  if(action==='make-questions'){if(_ctxNodeId!==null)makeThreadQuestionsFromBranch(_ctxNodeId); return}
   if(action==='version-history'){if(_ctxNodeId!==null)openNodeVersionHistory(_ctxNodeId); return}
   if(action==='no-export'){if(_ctxNodeId===null)return; const _ni=getIndex(nodes,_ctxNodeId); if(_ni<0)return; const ids=multiSelectedIds.length>1&&multiSelectedIds.includes(_ctxNodeId)?multiSelectedIds.slice():[_ctxNodeId]; setNodesNoExport(ids,!nodes[_ni].noExport); return}
   if(action==='toggle-checkbox'){const _ri=getIndex(nodes,_ctxNodeId); if(_ri>=0){if(nodes[_ri].isCheckbox)removeCheckbox(_ctxNodeId); else convertToCheckbox(_ctxNodeId);} return}
@@ -30168,7 +30091,6 @@ function rowStatusMenuItems(node){
       ? {label:'Open in To-Dos', icon:todoDotIconSvg(14), onClick:()=>window.sakuraFlashTodo?.(openTodo.id)}
       : {label:'Add to To-Dos', icon:todoDotIconSvg(14), onClick:()=>addFollowupToTodos(node)});
   }
-  if(nodeThread(node.id).length)items.push({divider:true},{label:'Show thread', icon:markIconSvg('comment'), onClick:()=>revealMarkerEntry(node.id)});
   return items;
 }
 // "Someone else…" for a Follow-up's owner is typed in place, right after the row's badge (owner,
@@ -30797,11 +30719,11 @@ function previewStatusPill(state){
 }
 // The PDF prints dates in full (the outline's "Today" would be wrong by the time it's read).
 function formatThreadTimeAbsolute(r,prev){
-  const d=remarksParseISODate(r.date)||(r.createdAt?new Date(r.createdAt):null);
+  const d=r.createdAt?new Date(r.createdAt):null;
   const day=d?d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'';
   const t=r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
   // The date shows once per day: an entry on the same day as the one before it shows only its time.
-  if(prev&&t&&(prev.date||'')===(r.date||''))return t;
+  if(prev&&t&&entryDay(prev)===entryDay(r))return t;
   return day&&t?day+' · '+t:(day||t);
 }
 // One thread entry for the PDF: author, time and the same chips as the outline, then the text.
@@ -30819,8 +30741,7 @@ function previewRenderRemarkEntry(r,thread,prev,nested){
   // A reader of the PDF may not know the icons, so an open question also says so in words.
   if(isQuestion(r)){ const st=questionState(r,thread||[r]); pvNote('pv-thread-status-note'+(st==='open'?' is-open':''),st==='open'?'\u00b7 open question':st==='answered'?'\u00b7 question, answered':'\u00b7 question, won\u2019t answer'); }
   if(r.answerTo){
-    if(r.verdict)pvNote('pv-thread-verdict is-'+r.verdict,r.verdict==='yes'?'\u00b7 yes':'\u00b7 no');
-    else if(!nested)pvNote('pv-thread-verdict is-answer','\u00b7 answer');
+    if(!nested)pvNote('pv-thread-verdict is-answer','\u00b7 answer');
   }
   // Same as the editor: the handshake kind icon, and quiet text.
   if(r.decision)pvNote('pv-thread-status-note','\u00b7 decision');
@@ -31208,7 +31129,7 @@ function renderPreviewBody(){
       if(Array.isArray(remarks)&&remarks.length){
         // The node's whole thread, last (after its content), oldest first like the outline (owner: the PDF prints the whole
         // thread). Blank entries with no chip have nothing to print.
-        const nodeRemarks=nodeThread(node.id).filter(rm=>htmlHasVisibleText(rm.text)||rm.status||rm.verdict);
+        const nodeRemarks=nodeThread(node.id).filter(rm=>htmlHasVisibleText(rm.text)||rm.status);
         if(nodeRemarks.length){
           const rGroup=previewRenderRemarkGroup(nodeRemarks);
           rGroup.style.paddingLeft=inlinePad;
@@ -31249,7 +31170,7 @@ function renderPreviewBody(){
       // conversation about one node, and the section's own "Remarks" heading above already says
       // what they are. Matches the equally flat #pv-qa-section list just above for the same
       // reason: one shared heading, not a repeated per-item label.
-      leftoverRemarks.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(rm=>{
+      leftoverRemarks.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(rm=>{
         const item=document.createElement('div'); item.className='pv-remarks-section-item';
         item.appendChild(previewRenderRemarkEntry(rm));
         remarksSection.appendChild(item);
@@ -32162,6 +32083,8 @@ document.addEventListener('keydown', e=>{
 let remarksNextLocalId=1;
 function newRemarkId(){ return 'r'+Date.now().toString(36)+(remarksNextLocalId++); }
 function todayDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// A thread entry's day as yyyy-mm-dd, from its one stored time (owner, 2026-10-27: no separate date).
+function entryDay(r){ if(!r||!r.createdAt)return todayDateStr(); const d=new Date(r.createdAt); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 // A native <input type=date> always renders in the browser/OS's own font and date format —
 // clashes visually against everything else in the byline being set in the app's own Inter type,
 // and doesn't match the app's own calendar widget (Todo's due date, etc.) either. So the date is
@@ -32182,19 +32105,16 @@ function threadKindIcon(r,thread){
   // Colour only where something is still open (owner, 2026-10-23): an open question (accent); every
   // other kind is grey -- its shape already says what it is.
   if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--hint)',tip:'Decision'};
-  // An answer: ✓ / ✗ for a Yes / No, otherwise a reply arrow (its own kind, not a ✓ it didn't say).
+  // A reply has its own arrow (owner, 2026-10-27), whatever it replies to; under a question it is the answer.
   const parent=r.answerTo&&thread?threadReplyParent(r,thread):null;
-  if(r.answerTo&&(!thread||!parent||isQuestion(parent))){
-    if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--hint)',tip:'Answer'};
-    const no=r.verdict==='no'; return {kind:'answer',svg:markIconSvg(no?'close':'confirmed',14),color:'var(--hint)',tip:no?'Answer: No':'Answer: Yes'};
-  }
-  if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — Reply to answer it':(questionState(r,thread||[r])==='wont'?'Question, won\u2019t answer':'Question, answered')}; }
+  if(r.answerTo&&(!thread||parent))return {kind:'reply',svg:THREAD_REPLY_ICON,color:'var(--hint)',tip:parent&&isQuestion(parent)?'Answer':'Reply'};
+  if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — Reply to answer it':'Question, answered'}; }
   return {kind:'comment',svg:markIconSvg('comment',13),color:'var(--hint)',tip:'Comment'};
 }
 // Optical centring inside the tinted circle (measured): a bare "?" (the ringed one doubled the circle), and
 // small nudges, in the icon's own 24-unit space, for shapes whose weight sits off their box (flag, bubble, arrow).
 const THREAD_KIND_QUESTION_SVG='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="3.1"><path d="M7.8 8.2a4.3 4.3 0 0 1 8.4 1.3c0 2.8-4.2 3.4-4.2 6.1"/><line x1="12" y1="20.2" x2="12.01" y2="20.2"/></g></svg>';
-const THREAD_KIND_NUDGE={comment:'0.6 0.8',answer:'0 -0.8',decision:'0 0.6'};
+const THREAD_KIND_NUDGE={comment:'0.6 0.8',reply:'0 -0.8',decision:'0 0.6'};
 function threadKindCircleSvg(k){
   let svg=k.kind==='question'?THREAD_KIND_QUESTION_SVG:k.svg;
   const nudge=THREAD_KIND_NUDGE[k.kind];
@@ -32249,15 +32169,25 @@ function threadRecentAuthors(){
 // "10:02" today, "Yesterday · 10:02", "13 Oct · 10:02" -- the date part follows the editable date.
 // The day shows once per day, like the PDF: an entry on the same day as the one shown above it shows only its time.
 // Owner (2026-10-27, "more simple"): the day only; the time is in the tooltip.
-function formatThreadTime(r){ return formatRemarkDateDisplay(r.date); }
+function formatThreadTime(r){ return formatRemarkDateDisplay(entryDay(r)); }
 function formatThreadTimeTip(r){ return r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):''; }
+// Deletes a row's whole thread (owner, 2026-10-27), one undo step; the toast offers Undo.
+function deleteThread(nodeId){
+  const n=nodeThread(nodeId).length; if(!n)return;
+  pushUndo();
+  remarks=remarks.filter(r=>r.anchorNodeId!==nodeId);
+  _threadDrafts.delete(nodeId); _threadAnswerTo.delete(nodeId); if(_threadComposerNodeId===nodeId)_threadComposerNodeId=null;
+  inlineExpandRemarksNodeIds.delete(nodeId);
+  markDirty(); scheduleAutoSave(); render();
+  showActionToast('Thread deleted ('+n+' entr'+(n===1?'y':'ies')+')','Undo',()=>undo(),7000);
+}
 // Opens a node's thread with its reply line focused (right-click / Insert "Thread…", "+ Add to thread").
 // answerTo: a question's id when opened from that question's "Answer" (the next entry answers it).
 function openThreadComposer(nodeId,ask,answerTo){
   if(nodeId==null)return;
   forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId);
   inlineExpandRemarksNodeIds.add(nodeId);
-  _threadComposerNodeId=nodeId; if(ask)_threadAskNodeIds.add(nodeId); else _threadAskNodeIds.delete(nodeId);
+  _threadComposerNodeId=nodeId; setThreadComposerKind(nodeId,ask?'question':'comment');
   if(answerTo&&!ask)_threadAnswerTo.set(nodeId,answerTo); else _threadAnswerTo.delete(nodeId);
   _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
@@ -32284,18 +32214,7 @@ function renderNodeThread(node,placeLine){
     head.dataset.tip='Click to hide the thread';
     head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
-    head.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[{label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)}]); });
-    // A decision made in the thread shows in its header too (owner request, 2026-10-15): one click
-    // jumps to the entry, unfolding the thread if it's hidden. The row's icons stay as they are.
-    const decisions=thread.filter(r=>r.decision);
-    if(decisions.length){
-      const dec=document.createElement('button'); dec.type='button'; dec.className='thread-head-decision';
-      dec.innerHTML='· '+markIconSvg('decision',10)+'<span>'+(decisions.length===1?'Decision':decisions.length+' decisions')+'</span>';
-      dec.dataset.tip='Go to the '+(decisions.length===1?'decision':'latest decision');
-      dec.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-      dec.addEventListener('click',e=>{ e.stopPropagation(); revealInlineObject('remark',decisions[decisions.length-1].id); });
-      head.appendChild(dec);
-    }
+    head.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[{label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)},{divider:true},{label:'Delete thread', danger:true, icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>', onClick:()=>deleteThread(node.id)}]); });
     // A long thread shows its latest three (a question counts with its answers); the header says how
     // to see the rest (no line of its own).
     if(thread.length>4&&groups.length>3){
@@ -32339,12 +32258,12 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   const kindEl=threadKindEl(r,thread,'thread-kind');
   kindEl.classList.add('is-clickable'); kindEl.dataset.tip=kindEl.dataset.tip+' \u2014 click to change';
   kindEl.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-  kindEl.addEventListener('click',e=>{ e.stopPropagation(); hideNodeTooltip(); const rr=kindEl.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadKindMenuItems(node,r,thread,commit)); });
+  kindEl.addEventListener('click',e=>{ e.stopPropagation(); hideNodeTooltip(); const rr=kindEl.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadEntryMenuItems(node,r,thread,textEl,commit)); });
   // An entry emptied and left (with no Yes/No to keep) is removed, so blank entries never pile up
   // or print. Moving between its own fields keeps it.
   const dropIfBlank=e=>{
-    if(htmlHasVisibleText(r.text)||r.verdict||(e.relatedTarget&&line.contains(e.relatedTarget))||!remarks.includes(r))return false;
-    remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } });
+    if(htmlHasVisibleText(r.text)||(e.relatedTarget&&line.contains(e.relatedTarget))||!remarks.includes(r))return false;
+    remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; });
     setTimeout(commit,0); return true;
   };
   // The author is picked like on the reply line (owner request): click → the names in this document,
@@ -32389,13 +32308,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   line.appendChild(meta);
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
   textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
-  // A Yes / No with no text is one line; clicking it opens a text line under it.
-  if(!htmlHasVisibleText(r.text)&&r.verdict){
-    line.classList.add('is-event');
-    line.addEventListener('click',e=>{ if(e.target.closest('.node-remark-person-inline,.thread-time'))return; line.classList.add('is-editing'); textEl.focus(); });
-    textEl.addEventListener('blur',()=>{ if(!htmlHasVisibleText(textEl.innerHTML))line.classList.remove('is-editing'); });
-  }
-  textEl.dataset.placeholder=r.verdict?'':'Write…';
+  textEl.dataset.placeholder='Write…';
   // A plain click puts the caret in a link (the link card offers Open, Copy, Edit, Remove);
   // Ctrl/Cmd+click opens it, as in rows, To-Dos and notes; right-click has the same items.
   textEl.addEventListener('mousedown',e=>{ e.stopPropagation();
@@ -32409,15 +32322,14 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   textEl.addEventListener('blur',e=>{
     const was=htmlHasVisibleText(r.text); r.text=sakuraSanitizeRichHtml(textEl.innerHTML);
     if(dropIfBlank(e))return;
-    if(r.answerTo&&!r.verdict&&was!==htmlHasVisibleText(r.text))render();
+    if(r.answerTo&&was!==htmlHasVisibleText(r.text))render();
   });
-  // Backspace in an empty entry removes it (a Yes/No or status-only entry keeps its chip until
-  // removed from the menu).
+  // Backspace in an empty entry removes it.
   textEl.addEventListener('keydown',e=>{
     // "/" opens the Insert list in thread entries like everywhere else.
     if(handleSlashInsertKeydown(e,textEl))return;
     if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
-    if((textEl.textContent||'').trim()||r.verdict)return;
+    if((textEl.textContent||'').trim())return;
     e.preventDefault();
     const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1);
     // The caret goes back to the end of the row's text (owner: like deleting back into the row).
@@ -32453,12 +32365,10 @@ function cleanThreadPasteHtml(html){
   walk(doc.body);
   return doc.body.innerHTML.trim();
 }
-function attachThreadPaste(el,onList){
+function attachThreadPaste(el){
   el.addEventListener('paste',e=>{
     const html=e.clipboardData?.getData('text/html')||'';
     const plain=(e.clipboardData?.getData('text/plain')||'').trim();
-    // A pasted list of questions (reply line only) becomes one entry per question.
-    if(onList&&onList(pastedOutline(html,e.clipboardData?.getData('text/plain')||''))){ e.preventDefault(); return; }
     // A bare web address pasted on its own becomes a link (a selection becomes its label).
     const url=/<a[\s>]/i.test(html)?'':sanitizeHrefUrl(pastedLinkUrl(plain));
     if(url){ e.preventDefault(); const label=(window.getSelection()||'').toString().trim()||plain;
@@ -32467,77 +32377,6 @@ function attachThreadPaste(el,onList){
     e.preventDefault();
     document.execCommand('insertHTML',false,cleanThreadPasteHtml(html));
   });
-}
-// A paste as indented lines: nested lists from a web page or Word/Google Docs, otherwise the plain
-// text's own indentation (questionList.ts turns the lines into questions).
-function pastedOutline(html,plain){
-  if(/<li[\s>]/i.test(html)){
-    const box=document.createElement('div'); box.innerHTML=cleanThreadPasteHtml(html); const out=[];
-    const walk=(list,depth)=>{ Array.from(list.children).forEach(li=>{ if(li.tagName!=='LI')return;
-      const own=Array.from(li.childNodes).filter(c=>!(c.nodeType===1&&/^(UL|OL)$/.test(c.tagName))).map(c=>c.textContent||'').join(' ').replace(/\s+/g,' ').trim();
-      if(own)out.push({depth,text:own});
-      li.querySelectorAll(':scope > ul, :scope > ol').forEach(sub=>walk(sub,own?depth+1:depth)); }); };
-    // Lines outside any list (a name above it) stay at the top level, the list one deeper.
-    Array.from(box.childNodes).forEach(c=>{ if(c.nodeType===1&&/^(UL|OL)$/.test(c.tagName))walk(c,out.length?1:0);
-      else{ const t=(c.textContent||'').replace(/\s+/g,' ').trim(); if(t)out.push({depth:0,text:t}); } });
-    if(out.length)return out;
-  }
-  return outlineFromText(plain);
-}
-// Adds a pasted question list to a row's thread (owner, 2026-10-27): who asked from the name lines,
-// each question its own entry, the lines under it its answers (from you), the rest left open.
-function addPastedQuestionList(node,lines,commit){
-  const res=parseQuestionList(lines,threadQuestions(nodeThread(node.id)).map(q=>stripHtmlToText(q.text||'')));
-  if(!isQuestionList(lines,res))return false;
-  if(!res.questions.length){ showToast('Those questions are already in this thread'); return true; }
-  pushUndo();
-  const msg=addQuestionsToThread(node.id,res);
-  _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
-  commit();
-  showActionToast(msg,'Undo',()=>undo(),7000);
-  return true;
-}
-// Adds parsed questions (questionList.ts) to the end of a row's thread, after pushUndo(); returns
-// the toast's words.
-function addQuestionsToThread(nodeId,res){
-  const thread=nodeThread(nodeId);
-  const me=threadDefaultAuthor(), date=todayDateStr(), last=thread[thread.length-1];
-  let at=Math.max(Date.now(),(last&&last.createdAt||0)+1);
-  const html=t=>esc(t).replace(/\n/g,'<br>');
-  let answered=0; const askers=[];
-  res.questions.forEach(q=>{
-    const e={id:newRemarkId(),anchorNodeId:nodeId,person:q.author||me,text:(q.title?'<b>'+esc(q.title)+'</b><br>':'')+html(q.text),date,context:'',createdAt:at++,type:'question'};
-    remarks.push(e);
-    if(q.author&&!askers.includes(q.author))askers.push(q.author);
-    if(q.answers.length)answered++;
-    q.answers.forEach(a=>remarks.push({id:newRemarkId(),anchorNodeId:nodeId,person:me,text:html(a),date,context:'',createdAt:at++,answerTo:e.id}));
-  });
-  const n=res.questions.length;
-  return 'Added '+n+' question'+(n===1?'':'s')+(askers.length?' from '+askers.join(', '):'')+(answered?' ('+answered+' answered)':'')+(res.repeats?' · '+res.repeats+' already there, left out':'');
-}
-// Row menu → Make thread questions (owner, 2026-10-27): a question list typed or pasted as rows
-// under this one (name › question › answer) moves into this row's thread, and those rows go.
-function makeThreadQuestionsFromBranch(id){
-  const idx=getIndex(nodes,id); if(idx<0)return;
-  const end=getSubtreeEnd(nodes,idx); const branch=nodes.slice(idx+1,end); if(!branch.length)return;
-  const ids=branch.map(n=>n.id);
-  // Rows holding things a thread entry can't (notes, tables, pictures, diagrams, To-Dos) stay put.
-  const c=collectDeleteImpact(ids); c.questions=0; c.remarks=0;
-  const held=deletedObjectsPhrase(c)||(c.todos?countPhrase(c.todos,'to-do'):'');
-  if(held){ showToast('Rows under it hold '+held+' \u2014 move those out first'); return; }
-  const base=nodes[idx].depth+1;
-  const lines=branch.map(n=>({depth:Math.max(0,n.depth-base),text:getNodePlainText(n).replace(/\s+/g,' ').trim()})).filter(l=>l.text);
-  const res=parseQuestionList(lines,threadQuestions(nodeThread(id)).map(q=>stripHtmlToText(q.text||'')));
-  if(!res.questions.length){ showToast(res.repeats?'Those questions are already in this thread':'No questions under this row'); return; }
-  pushUndo(); markDirty();
-  // Threads on the rows that go move up to this row.
-  remarks.forEach(r=>{ if(ids.includes(r.anchorNodeId))r.anchorNodeId=id; });
-  const msg=addQuestionsToThread(id,res);
-  nodes.splice(idx+1,end-idx-1);
-  removeIdsFromAutoRewriteQueue(ids); cleanupRowLinksTo(ids); rebuildParentIds();
-  setSingleSelection(id); forceInlineItemExpanded(inlineExpandRemarksNodeIds,id); showAllRemarksNodeIds.add(id);
-  render();
-  showActionToast(msg,'Undo',()=>undo(),7000);
 }
 // The thread's questions (with text), oldest first; a short label for menus and the reply line's picker.
 function threadQuestions(thread){ return (thread||[]).filter(e=>isQuestion(e)&&htmlHasVisibleText(e.text)); }
@@ -32548,8 +32387,7 @@ const THREAD_COPY_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="no
 // Ctrl+Shift+V pastes clean lines -- for an email or a chat. Same words as the PDF transcript.
 function threadEntryNotes(r,thread){
   const out=[];
-  if(isQuestion(r)){ const st=questionState(r,thread); out.push(st==='open'?'open question':st==='answered'?'question, answered':'question, won\u2019t answer'); }
-  if(r.answerTo&&r.verdict)out.push(r.verdict==='yes'?'yes':'no');
+  if(isQuestion(r))out.push(questionState(r,thread)==='open'?'open question':'question, answered');
   if(r.decision)out.push('decision');
   return out;
 }
@@ -32561,11 +32399,10 @@ function threadHtmlToPlain(html){
 // A pasted email or chat drops SVG and CSS variables, so the rich copy carries each entry's kind as a
 // text symbol in its colour (the kind icon's meaning and colour, resolved to rgb); names are plain
 // bold, like in the editor (owner, 2026-10-23).
-const THREAD_COPY_GLYPH={decision:'\u{1F91D}',yes:'\u2713',no:'\u2717',answer:'\u21b3',question:'?',comment:'\u2022'};
+const THREAD_COPY_GLYPH={decision:'\u{1F91D}',reply:'\u21b3',question:'?',comment:'\u2022'};
 function threadCopyGlyph(r,thread){
   const k=threadKindIcon(r,thread);
-  const key=k.kind==='answer'?(r.verdict||'answer'):k.kind;
-  return {glyph:THREAD_COPY_GLYPH[key]||THREAD_COPY_GLYPH.comment, color:resolveCssColor(k.color)};
+  return {glyph:THREAD_COPY_GLYPH[k.kind]||THREAD_COPY_GLYPH.comment, color:resolveCssColor(k.color)};
 }
 function resolveCssColor(value){
   const probe=document.createElement('span'); probe.style.color=value; probe.style.display='none';
@@ -32630,22 +32467,19 @@ function addFollowupToTodos(node){
   showToast('Added to To-Dos','success');
   render();
 }
-// Clicking an entry's kind icon changes what the entry is (owner, 2026-10-23). The kinds are one
-// choice: picking one clears the others (undo brings them back). Answer links to a question before
-// it -- straight away when there is one, from a list when there are several.
 // Replies (owner decision 2026-10-27): any entry can take replies, one level deep. Puts `r` under
 // `parentId` (or back in the timeline with null); a reply to a reply goes under that reply's entry,
-// and r's own replies follow it. Yes / No only stays on a reply to a question.
+// and r's own replies follow it.
 function setThreadReplyTo(r,parentId,thread){
   let p=parentId!=null?thread.find(e=>e.id===parentId):null;
   if(p&&p.answerTo!=null)p=threadReplyParent(p,thread)||p;
   if(p===r)p=null;
-  if(!p){ delete r.answerTo; delete r.verdict; return; }
-  r.answerTo=p.id; if(!isQuestion(p))delete r.verdict;
-  if(isQuestion(r)){ delete r.type; delete r.wontAnswer; }
-  remarks.forEach(x=>{ if(x!==r&&x.answerTo===r.id){ x.answerTo=p.id; if(!isQuestion(p))delete x.verdict; } });
+  if(!p){ delete r.answerTo; return; }
+  r.answerTo=p.id;
+  if(isQuestion(r))delete r.type;
+  remarks.forEach(x=>{ if(x!==r&&x.answerTo===r.id)x.answerTo=p.id; });
 }
-// "Reply to ›" (earlier entries in the timeline) and "Not a reply", for the kind and entry menus.
+// "Reply to ›" (earlier entries in the timeline) and "Not a reply", for the entry menu.
 function threadReplyToItems(r,thread,commit){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const parent=threadReplyParent(r,thread);
@@ -32656,47 +32490,27 @@ function threadReplyToItems(r,thread,commit){
   return items;
 }
 const THREAD_REPLY_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>';
-function threadKindMenuItems(node,r,thread,commit){
-  const tick=on=>on?'✓':'';
-  const q=isQuestion(r), parent=threadReplyParent(r,thread);
-  const change=fn=>()=>{ pushUndo(); fn(); commit(); };
-  // Kind: a comment or a question (a question reads in the timeline, so it is no reply); Decision is a
-  // mark on any entry. Then where it sits: Reply to › / Not a reply.
-  const items=[{heading:'Kind'},
-    {label:'Comment', icon:markIconSvg('comment'), meta:tick(!q), onClick:change(()=>{ if(!q)return; delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.verdict; }); })},
-    {label:'Question', icon:qaDotIconSvg(14), meta:tick(q), onClick:change(()=>{ if(q)return; if(parent)setThreadReplyTo(r,null,thread); r.type='question'; })},
-    {label:'Decision', icon:markIconSvg('decision'), meta:tick(!!r.decision), onClick:change(()=>{ if(r.decision)delete r.decision; else r.decision=true; })}];
-  const where=threadReplyToItems(r,thread,commit);
-  if(where.length)items.push({divider:true},...where);
-  // A reply to a question can also say Yes or No.
-  if(parent&&isQuestion(parent))items.push({divider:true},
-    {label:'Yes', icon:markIconSvg('confirmed'), meta:tick(r.verdict==='yes'), onClick:change(()=>{ if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; })},
-    {label:'No', icon:markIconSvg('close'), meta:tick(r.verdict==='no'), onClick:change(()=>{ if(r.verdict==='no')delete r.verdict; else r.verdict='no'; })});
-  return items;
-}
+// One menu per entry (owner, 2026-10-27: "simpler"): its icon and a right-click open the same items.
 function threadEntryMenuItems(node,r,thread,textEl,commit){
-  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const change=fn=>()=>{ pushUndo(); fn(); commit(); };
   const items=[];
-  // Add to thread first: it's what you most often want from an entry.
-  items.push({label:'Add to thread', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>openThreadComposer(node.id,false)});
   // Reply opens a reply line under the entry (owner decision 2026-10-27: any entry takes replies).
   const parent=threadReplyParent(r,thread);
   items.push({label:'Reply', icon:THREAD_REPLY_ICON, onClick:()=>openThreadComposer(node.id,false,(parent||r).id)});
-  if(parent&&isQuestion(parent)){
-    items.push({label:'Answer Yes', icon:r.verdict==='yes'?CHECK:'', onClick:change(()=>{ if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; })});
-    items.push({label:'Answer No', icon:r.verdict==='no'?CHECK:'', onClick:change(()=>{ if(r.verdict==='no')delete r.verdict; else r.verdict='no'; })});
-  }
-  items.push(...threadReplyToItems(r,thread,commit));
-  if(isQuestion(r)){ const st=questionState(r,thread); if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won’t answer', onClick:change(()=>{ if(st==='wont')delete r.wontAnswer; else r.wontAnswer=true; })}); }
-  items.push({label:isQuestion(r)?'Make it a comment':'Make it a question', icon:isQuestion(r)?markIconSvg('comment'):qaDotIconSvg(14), onClick:change(()=>{ if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.verdict; }); } else { if(parent)setThreadReplyTo(r,null,thread); r.type='question'; } })});
-  // A decision is a mark on this entry only (a chip); the row's status stays as it is.
-  items.push({label:r.decision?'Not a decision':'Mark as decision', icon:markIconSvg('decision'), onClick:change(()=>{ if(r.decision)delete r.decision; else r.decision=true; })});
+  // The kind is one choice (owner, 2026-10-27): Comment, Question or Decision; a reply is a Reply or a Decision.
+  const cur=r.decision?'decision':parent?'reply':isQuestion(r)?'question':'comment';
+  const setKind=k=>change(()=>{ if(k===cur)return; delete r.decision;
+    if(k==='question'){ if(parent)setThreadReplyTo(r,null,thread); r.type='question'; } else delete r.type;
+    if(k==='decision')r.decision=true; });
+  const kinds=parent?[['reply',isQuestion(parent)?'Answer':'Comment',THREAD_REPLY_ICON],['decision','Decision',markIconSvg('decision')]]
+    :[['comment','Comment',markIconSvg('comment')],['question','Question',qaDotIconSvg(14)],['decision','Decision',markIconSvg('decision')]];
+  items.push({divider:true},{heading:'Kind'},...kinds.map(([k,label,icon])=>({label, icon, meta:cur===k?'\u2713':'', onClick:setKind(k)})));
+  const where=threadReplyToItems(r,thread,commit); if(where.length)items.push({divider:true},...where);
   items.push({divider:true});
   items.push({label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)});
   if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
-  items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); })});
+  items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; }); })});
   return items;
 }
 function renderThreadComposer(node,thread,place,commit){
@@ -32711,9 +32525,11 @@ function renderThreadComposer(node,thread,place,commit){
     return;
   }
   const line=document.createElement('div'); line.className='node-remark-line thread-composer';
-  const ask=_threadAskNodeIds.has(node.id);
+  // The end-of-thread line adds a Comment, a Question or a Decision (owner, 2026-10-27): one choice.
+  const kind=_threadDecisionNodeIds.has(node.id)?'decision':_threadAskNodeIds.has(node.id)?'question':'comment';
+  const ask=kind==='question';
   const author=threadDefaultAuthor();
-  const avatar=threadKindEl(ask?{type:'question'}:{},null,'thread-kind');
+  let avatar=threadKindEl(kind==='question'?{type:'question'}:kind==='decision'?{decision:true}:{},null,'thread-kind');
   const who=document.createElement('button'); who.type='button'; who.className='thread-author-btn'; who.textContent=(author||'Who?')+' ▾'; who.dataset.tip='Add as — pick who is speaking';
   who.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   who.addEventListener('click',e=>{ e.stopPropagation(); const r=who.getBoundingClientRect(); showSbContextMenu(r.left,r.bottom+4,threadAuthorMenuItems(node,who)); });
@@ -32724,22 +32540,22 @@ function renderThreadComposer(node,thread,place,commit){
   let chosen=chosenId?thread.find(e=>e.id===chosenId):null;
   if(chosen&&chosen.answerTo!=null)chosen=threadReplyParent(chosen,thread)||chosen;
   if(chosenId&&!chosen)_threadAnswerTo.delete(node.id);
-  if(chosen)line.classList.add('is-nested');
-  const asking=ask&&!chosen;
+  if(chosen){ line.classList.add('is-nested'); avatar=threadKindEl({answerTo:chosen.id},null,'thread-kind'); }
+  const asking=ask&&!chosen, deciding=kind==='decision'&&!chosen;
   const replyQ=chosen&&isQuestion(chosen)?chosen:null;
-  input.dataset.placeholder=asking?'Ask a question…':replyQ?'Answer “'+threadQuestionLabel(replyQ,40)+'”…':chosen?'Reply to '+(chosen.person||'this')+'…':'Add to thread…';
-  const submit=extra=>{
+  input.dataset.placeholder=replyQ?'Answer “'+threadQuestionLabel(replyQ,40)+'”…':chosen?'Reply to '+(chosen.person||'this')+'…':asking?'Ask a question…':deciding?'Record a decision…':'Add a comment…';
+  const submit=()=>{
     const html=sakuraSanitizeRichHtml(input.innerHTML);
     const hasText=htmlHasVisibleText(html);
-    if(!hasText&&!(extra&&extra.verdict))return;
+    if(!hasText)return;
     pushUndo();
     const last=thread[thread.length-1];
-    const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:hasText?html:'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
-    if(chosen){ e.answerTo=chosen.id; if(replyQ&&extra&&extra.verdict)e.verdict=extra.verdict; }
+    const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:html,context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
+    if(chosen)e.answerTo=chosen.id;
     else if(asking)e.type='question';
-    if(extra&&extra.decision)e.decision=true;
+    else if(deciding)e.decision=true;
     remarks.push(e);
-    _threadComposerNodeId=node.id; _threadAskNodeIds.delete(node.id); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
+    _threadComposerNodeId=node.id; setThreadComposerKind(node.id,'comment'); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
     _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
     commit();
   };
@@ -32748,7 +32564,7 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('input',()=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); else _threadDrafts.delete(node.id); });
   input.addEventListener('mousedown',e=>e.stopPropagation());
   input.addEventListener('click',e=>e.stopPropagation());
-  attachThreadPaste(input,lines=>addPastedQuestionList(node,lines,commit));
+  attachThreadPaste(input);
   // Right-click while adding: add it, ask it, rewrite it with AI, or close the line (on the text
   // itself while typing, the browser's menu, for spelling -- see browserMenuWhileTyping).
   input.addEventListener('contextmenu',e=>{ if(browserMenuWhileTyping(e,input)){ e.stopPropagation(); return; } e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadComposerMenuItems(node,input,ask,submit)); });
@@ -32757,40 +32573,28 @@ function renderThreadComposer(node,thread,place,commit){
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
     // Backspace on an empty input line closes it and puts the caret at the end of the row's text,
     // like an emptied entry (a held-down Backspace that just erased the text doesn't).
-    else if(e.key==='Backspace'&&!e.repeat&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(input.textContent||'').trim()&&!input.querySelector('img')){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); beginEdit(node.id,true); }
-    else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); _threadAnswerTo.delete(node.id); render(); }
+    else if(e.key==='Backspace'&&!e.repeat&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(input.textContent||'').trim()&&!input.querySelector('img')){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); render(); beginEdit(node.id,true); }
+    else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); _threadAnswerTo.delete(node.id); render(); }
   });
-  const btn=(act,label,tip,on)=>{ const b=document.createElement('button'); b.type='button'; b.className='thread-btn'+(on?' is-on':''); b.dataset.act=act; b.innerHTML=label; b.dataset.tip=tip; b.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); }); return b; };
-  const actions=document.createElement('span'); actions.className='thread-actions';
-  // Owner design (2026-10-15, 2026-10-27): the end of the thread offers Ask / Decision; a reply line
-  // offers Decision, and Yes / No when it answers a question. No statuses (the row's), no "to:" picker.
-  const kicon=(svg,color)=>'<span class="thread-btn-kind" style="color:'+color+'">'+svg+'</span>';
-  const ansGrp=document.createElement('span'); ansGrp.className='thread-btn-group';
+  // Owner design (2026-10-27): the line's own icon picks the kind -- Comment, Question or Decision --
+  // like an entry's icon; Enter adds it. A reply line has no kinds (a reply is a reply; its menu can
+  // still mark it a decision). No statuses (the row's), no Yes / No (the words say it).
   if(!chosen){
-    const askBtn=btn('ask',kicon(qaDotIconSvg(11),'var(--accent)')+'Ask',ask?'Your next entry is a question — click to make it a comment':'Make your next entry a question',ask);
-    askBtn.addEventListener('click',e=>{ e.stopPropagation(); _threadComposerNodeId=node.id; if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); });
-    actions.appendChild(askBtn);
+    const words={comment:'Comment',question:'Question',decision:'Decision'};
+    avatar.classList.add('is-clickable'); avatar.setAttribute('role','button'); avatar.tabIndex=0; avatar.setAttribute('aria-label','Kind: '+words[kind]+'. Change');
+    avatar.dataset.tip=words[kind]+' \u2014 click to '+(kind==='question'?'make it a comment or a decision':kind==='decision'?'make it a comment or a question':'ask a question or record a decision');
+    const pick=k=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); setThreadComposerKind(node.id,k); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
+    const open=()=>{ hideNodeTooltip(); const rr=avatar.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,[
+      {label:'Comment', icon:markIconSvg('comment'), meta:kind==='comment'?'\u2713':'', onClick:()=>pick('comment')},
+      {label:'Question', icon:qaDotIconSvg(14), meta:kind==='question'?'\u2713':'', onClick:()=>pick('question')},
+      {label:'Decision', icon:markIconSvg('decision'), meta:kind==='decision'?'\u2713':'', onClick:()=>pick('decision')}]); };
+    avatar.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+    avatar.addEventListener('click',e=>{ e.stopPropagation(); open(); });
+    avatar.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
   }
-  // A decision is a mark on the entry (the handshake chip), not a status: it needs words, and the row stays as is.
-  if(!asking){
-    const dec=btn('decision',kicon(markIconSvg('decision',11),'var(--fc-green)')+'Decision','Add what you typed as a decision');
-    dec.addEventListener('click',e=>{ e.stopPropagation(); if(!htmlHasVisibleText(input.innerHTML)){ showToast('Type the decision first'); input.focus(); return; } submit({decision:true}); });
-    actions.appendChild(dec);
-  }
-  if(replyQ){
-    const yes=btn('yes',kicon(markIconSvg('confirmed',11),'var(--fc-green)')+'Yes','Answer “'+stripHtmlToText(replyQ.text).slice(0,60)+'” with Yes (and what you typed)');
-    yes.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'yes'}); });
-    const no=btn('no',kicon(markIconSvg('close',11),'var(--fc-red)')+'No','Answer “'+stripHtmlToText(replyQ.text).slice(0,60)+'” with No (and what you typed)');
-    no.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'no'}); });
-    ansGrp.appendChild(yes); ansGrp.appendChild(no);
-  }
-  const sep=()=>{ const d=document.createElement('span'); d.className='thread-btn-sep'; return d; };
-  if(ansGrp.childElementCount)actions.append(sep(),ansGrp);
   const meta=document.createElement('div'); meta.className='thread-meta';
   meta.appendChild(avatar); meta.appendChild(who);
-  const foot=document.createElement('div'); foot.className='thread-composer-foot';
-  foot.appendChild(actions);
-  line.appendChild(meta); line.appendChild(input); line.appendChild(foot);
+  line.appendChild(meta); line.appendChild(input);
   // Leaving an empty reply line closes it again.
   input.addEventListener('blur',()=>{ setTimeout(()=>{ if(_threadComposerNodeId!==node.id||_threadDrafts.has(node.id)||line.contains(document.activeElement)||!document.body.contains(line))return; if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.sb-context-menu,.thread-author-edit'))return; _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id);
     // Typing somewhere else (another entry, a row): don't re-render under the caret; the reply line goes at the next render.
@@ -32801,17 +32605,20 @@ function renderThreadComposer(node,thread,place,commit){
   place(line);
 }
 // The input line's right-click menu.
+function setThreadComposerKind(nodeId,k){
+  _threadAskNodeIds.delete(nodeId); _threadDecisionNodeIds.delete(nodeId);
+  if(k==='question')_threadAskNodeIds.add(nodeId); else if(k==='decision')_threadDecisionNodeIds.add(nodeId);
+}
+// The reply line's right-click (off the typed words): add it, rewrite it, or close the line. The kind
+// is picked under the line.
 function threadComposerMenuItems(node,input,ask,submit){
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const hasText=htmlHasVisibleText(input.innerHTML);
-  const refocus=()=>{ _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; };
   const items=[];
-  if(hasText)items.push({label:ask?'Add question':'Add to thread', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>submit()});
-  if(hasText&&!ask)items.push({label:'Add as decision', icon:markIconSvg('decision'), onClick:()=>submit({decision:true})});
-  items.push({label:ask?'Make it a comment':'Make it a question', icon:ask?markIconSvg('comment'):qaDotIconSvg(14), onClick:()=>{ if(hasText)_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); if(ask)_threadAskNodeIds.delete(node.id); else _threadAskNodeIds.add(node.id); refocus(); render(); }});
+  if(hasText)items.push({label:'Add', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>submit()});
   if(featureAiEnabled&&hasText)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); refocus(); render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
   items.push({divider:true});
-  items.push({label:'Close', icon:ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'), onClick:()=>{ _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }});
+  items.push({label:'Close', icon:ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'), onClick:()=>{ _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); render(); }});
   return items;
 }
 function threadAuthorMenuItems(node,anchor){
@@ -32922,7 +32729,7 @@ function openDatePopoverUnder(pop,btn){
 function openRemarksDateEditor(btn,r){
   _remarksDateDismiss.opened(btn);
   _remarksDateTarget=r;
-  const current=remarksParseISODate(r.date)||new Date();
+  const current=r.createdAt?new Date(r.createdAt):new Date();
   _remarksDateViewMonth=new Date(current.getFullYear(),current.getMonth(),1);
   const pop=el('remarks-date-popover'); if(!pop)return;
   // The time is part of the entry too (createdAt): it orders the thread and shows next to the date.
@@ -32943,9 +32750,8 @@ function setRemarkDateTime(r,iso,hhmm){
   const m=/^(\d{1,2}):(\d{2})$/.exec(hhmm||'');
   const h=m?+m[1]:(prev?prev.getHours():0), mi=m?+m[2]:(prev?prev.getMinutes():0);
   const next=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,mi,prev&&!m?prev.getSeconds():0).getTime();
-  const changed=iso!==(r.date||'')||next!==r.createdAt;
-  if(!changed)return false;
-  pushUndo(); r.date=iso; r.createdAt=next; markDirty(); scheduleAutoSave();
+  if(next===r.createdAt)return false;
+  pushUndo(); r.createdAt=next; markDirty(); scheduleAutoSave();
   return true;
 }
 function commitRemarksDate(val){
@@ -32955,11 +32761,11 @@ function commitRemarksDate(val){
   closeRemarksDateEditor();
   render();
 }
-el('remarks-date-pop-time')?.addEventListener('change',e=>{ const r=_remarksDateTarget; if(!r)return; if(setRemarkDateTime(r,r.date||todayDateStr(),e.target.value))render(); });
+el('remarks-date-pop-time')?.addEventListener('change',e=>{ const r=_remarksDateTarget; if(!r)return; if(setRemarkDateTime(r,entryDay(r),e.target.value))render(); });
 el('remarks-date-pop-time')?.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); closeRemarksDateEditor(); render(); } else if(e.key==='Escape'){ e.preventDefault(); closeRemarksDateEditor(); } });
 function renderRemarksDatePopover(){
   const r=_remarksDateTarget, pop=el('remarks-date-popover'); if(!r||!_remarksDateViewMonth||!pop)return;
-  renderMonthCalendar(pop,_remarksDateViewMonth,r.date||todayDateStr(),commitRemarksDate);
+  renderMonthCalendar(pop,_remarksDateViewMonth,entryDay(r),commitRemarksDate);
 }
 (function initRemarksDatePopover(){
   const pop=el('remarks-date-popover'); if(!pop)return;
@@ -33598,6 +33404,8 @@ function ensureQaMigratedToDiscussion(){
   }
   const m=migrateDiscussionToThread(remarks);
   if(m.changed){ remarks=m.entries; changed=true; }
+  const sm=migrateThreadSimplify(remarks);
+  if(sm.changed){ remarks=sm.entries; changed=true; }
   if(Array.isArray(nodes)){
     const st=migrateStatusToRows(nodes,remarks);
     if(st.changed){

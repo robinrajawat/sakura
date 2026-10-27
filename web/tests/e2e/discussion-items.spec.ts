@@ -46,9 +46,9 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   const q = page.locator('.thread-entry:has(#inline-remark-text-rq1)');
   await expect(q.locator('.thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
-  await expect(a.locator('.thread-kind.is-answer')).toHaveAttribute('data-tip', /^Answer: Yes/);
-  await expect(a.locator('.thread-kind.is-answer')).toHaveCount(1);
-  await expect(a.locator('.node-remark-text-inline')).toHaveText('All of them');
+  // An old Yes says it in its text now (owner, 2026-10-27: no Yes / No).
+  await expect(a.locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Answer/);
+  await expect(a.locator('.node-remark-text-inline')).toHaveText('Yes. All of them');
   // An old decision item makes its row Agreed (by its author) and stays a decision on its entry.
   await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-kind.is-decision')).toHaveCount(1);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-kind.is-decision svg')).toHaveCount(1);
@@ -57,7 +57,7 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   expect(errors).toEqual([]);
 });
 
-test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a question, Reply → Yes answers it, the author sticks', async ({ page }) => {
+test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Question asks one, Reply answers it, the author sticks', async ({ page }) => {
   const errors = await seed(page);
   const box = page.locator('.thread-composer-input[data-node-id="2"]');
   // At rest the thread ends in "+ Add to thread", shown while the thread is hovered.
@@ -83,7 +83,9 @@ test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a qu
   await page.keyboard.press('Enter');
   await expect(page.locator('.thread-composer:has([data-node-id="2"]) .thread-author-btn')).toHaveText('Kristoffer ▾');
 
-  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="ask"]').click();
+  // The line's icon picks the kind (owner, 2026-10-27).
+  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-kind').click();
+  await page.locator('.sb-context-menu').getByText('Question', { exact: true }).click();
   await box.click();
   await page.keyboard.type('Is the rollback tested?');
   await page.keyboard.press('Enter');
@@ -98,13 +100,13 @@ test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a qu
 
   await asked.locator('.thread-reply-btn').click();
   await expect(page.locator('.thread-composer.is-nested')).toHaveCount(1);
-  await page.keyboard.type('Tested last week');
-  await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="yes"]').click();
-  // Answered: the question's icon leaves the accent colour, and the answer, under it, gets a ✓.
+  await page.keyboard.type('Yes, tested last week');
+  await page.keyboard.press('Enter');
+  // Answered: the question's icon leaves the accent colour, and the answer, under it, has the reply icon.
   await expect(asked.locator('.thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
-  await expect(page.locator('.thread-entry.is-nested', { hasText: 'Tested last week' }).locator('.thread-kind.is-answer')).toHaveCount(1);
+  await expect(page.locator('.thread-entry.is-nested', { hasText: 'Yes, tested last week' }).locator('.thread-kind.is-reply')).toHaveCount(1);
   const answer = await page.evaluate("(() => { const r = remarks[remarks.length - 1]; return [r.verdict, r.answerTo === remarks[remarks.length - 2].id, stripHtmlToText(r.text)]; })()");
-  expect(answer).toEqual(['yes', true, 'Tested last week']);
+  expect(answer).toEqual([undefined, true, 'Yes, tested last week']);
   expect(errors).toEqual([]);
 });
 
@@ -170,11 +172,12 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
   // The header names the thread; the status prints once, on the row.
   expect(r.labels).toEqual(['Thread · 4 · Decision']);
   expect(r.notes).toEqual(['· question, answered', '· decision']);
-  expect(r.verdicts).toEqual(['· yes']);
-  expect(r.texts).toEqual(['Weekend works for ops.', 'Does this cover EU customers?', 'All of them', 'Cut over on Saturday.']);
+  expect(r.verdicts).toEqual([]);
+  // Ordered by each entry's one stored time (its day folded in).
+  expect(r.texts).toEqual(['Does this cover EU customers?', 'Yes. All of them', 'Weekend works for ops.', 'Cut over on Saturday.']);
   // No chips: each entry's kind is its icon (a faint comment icon for a plain comment).
   expect(r.pills).toEqual([]);
-  expect(r.kinds).toEqual(['comment', 'question', 'answer', 'decision']);
+  expect(r.kinds).toEqual(['question', 'reply', 'comment', 'decision']);
   expect(r.decisionIcon).toBe(true);
   expect(new Set(r.nameColours).size).toBe(1);
   expect(r.kindHasCircle).toBe('50%');
@@ -183,7 +186,7 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
   expect(errors).toEqual([]);
 });
 
-test('names are one plain colour; a bare Yes takes one line', async ({ page }) => {
+test('names are one plain colour; an old bare Yes reads as the word Yes', async ({ page }) => {
   await seed(page, `
     remarks.push(
       { id: 'k', anchorNodeId: 2, person: 'Karsten', date: '2026-10-14', text: 'Fine by me.', createdAt: 5 },
@@ -196,14 +199,15 @@ test('names are one plain colour; a bare Yes takes one line', async ({ page }) =
   expect((colours as string[]).length).toBeGreaterThan(2);
   expect(new Set(colours as string[]).size).toBe(1);
 
-  // A bare Yes reply has no text and shows no text line.
+  // An old bare Yes (no text) becomes an answer that says "Yes" (owner, 2026-10-27: no Yes / No).
   await page.evaluate(`remarks.push(
     { id: 'ask', anchorNodeId: 3, person: 'Ana', date: '2026-10-14', text: 'Ready?', type: 'question', createdAt: 8 },
     { id: 'bare', anchorNodeId: 3, person: 'Robin', date: '2026-10-14', text: '', verdict: 'yes', answerTo: 'ask', createdAt: 9 }); render();`);
-  const bare = page.locator('.thread-entry.is-event');
-  await expect(bare).toHaveCount(1);
-  await expect(bare.locator('.thread-kind.is-answer')).toHaveAttribute('data-tip', /^Answer: Yes/);
-  await expect(bare.locator('.node-remark-text-inline')).toBeHidden();
+  await page.evaluate('render()');
+  const bare = page.locator('.thread-entry:has(#inline-remark-text-bare)');
+  await expect(bare.locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Answer/);
+  await expect(bare.locator('.node-remark-text-inline')).toHaveText('Yes');
+  await expect(page.locator('.thread-entry.is-event')).toHaveCount(0);
 });
 
 test('right-click and Insert offer one Thread item, no separate comment/question', async ({ page }) => {
@@ -219,27 +223,27 @@ test('right-click and Insert offer one Thread item, no separate comment/question
   await expect(page.locator('#context-menu [data-action="qa"]')).toHaveCount(0);
 });
 
-test('entry menu: Reply first, question toggle, decision; no status (that is the row\'s)', async ({ page }) => {
+test('entry menu: Reply first, one kind (Comment / Question / Decision); no status (that is the row\'s)', async ({ page }) => {
   await seed(page);
   const entry = page.locator('.thread-entry:has(#inline-remark-text-c1) .node-remark-text-inline');
   await entry.click({ button: 'right' });
   const menu = page.locator('.sb-context-menu');
-  await expect(menu.locator('.sb-context-item').first()).toHaveText('Add to thread');
-  await expect(menu.getByText('Make it a question', { exact: true })).toBeVisible();
+  await expect(menu.locator('.sb-context-item').first()).toHaveText('Reply');
+  await expect(menu.getByText('Add to thread', { exact: true })).toHaveCount(0);
+  await expect(menu.getByText('Question', { exact: true })).toBeVisible();
   await expect(menu.locator('.sb-context-choice')).toHaveCount(0);
   // A decision is marked on the entry (handshake icon, quiet text); the row's status stays as it is.
-  await menu.getByText('Mark as decision', { exact: true }).click();
+  await menu.getByText('Decision', { exact: true }).click();
   await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-kind.is-decision')).toHaveCount(1);
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker || ''")).toBe('');
   await entry.click({ button: 'right' });
-  await expect(menu.getByText('Not a decision', { exact: true })).toBeVisible();
+  await expect(menu.locator('.sb-context-item').filter({ hasText: 'Decision' })).toContainText('\u2713');
   await page.keyboard.press('Escape');
-  // The header says the thread holds a decision.
-  await expect(page.locator('.thread-head .thread-head-decision')).toHaveText('· Decision');
+  // The header just names the thread: the decision shows on its own entry (owner, 2026-10-27).
+  await expect(page.locator('.thread-head .thread-head-decision')).toHaveCount(0);
   await entry.click({ button: 'right' });
-  await menu.getByText('Add to thread', { exact: true }).click();
-  await expect(page.locator('.thread-composer-input[data-node-id="2"]')).toBeFocused();
-  expect(await page.evaluate('_threadAskNodeIds.has(2)')).toBe(false);
+  await menu.getByText('Reply', { exact: true }).click();
+  await expect(page.locator('.thread-composer.is-nested .thread-composer-input[data-node-id="2"]')).toBeFocused();
 });
 
 test('depth guides run unbroken through a thread, its "+ Add to thread" line included', async ({ page }) => {
@@ -400,7 +404,7 @@ test('Backspace on an emptied entry puts the caret at the end of the row text', 
   await expect(page.locator('.thread-composer-input[data-node-id="2"]')).toHaveCount(0);
 });
 
-test('the input line has a right-click menu: make it a question, close', async ({ page }) => {
+test('the input line has a right-click menu: add, close (the kind is picked under the line)', async ({ page }) => {
   await seed(page);
   await page.evaluate('openThreadComposer(2, false)');
   const box = page.locator('.thread-composer-input[data-node-id="2"]');
@@ -408,11 +412,8 @@ test('the input line has a right-click menu: make it a question, close', async (
   await page.keyboard.type('Is the window fixed?');
   await box.click({ button: 'right' });
   const menu = page.locator('.sb-context-menu');
-  await expect(menu.locator('.sb-context-item').first()).toHaveText('Add to thread');
-  await menu.getByText('Make it a question', { exact: true }).click();
-  expect(await page.evaluate('_threadAskNodeIds.has(2)')).toBe(true);
-  await expect(box).toHaveText('Is the window fixed?');
-  await box.click({ button: 'right' });
+  await expect(menu.locator('.sb-context-item').first()).toHaveText('Add');
+  await expect(menu.getByText('Question', { exact: true })).toHaveCount(0);
   await menu.getByText('Close', { exact: true }).click();
   await expect(box).toHaveCount(0);
 });
@@ -451,6 +452,7 @@ test('the entry date picker is the shared calendar: the chosen day is marked and
   await expect(pop).toHaveClass(/open/);
   await expect(pop.locator('.due-pop-cal-day.selected')).toHaveAttribute('data-date', '2026-10-14');
   await pop.locator('.due-pop-cal-day[data-date="2026-10-20"]').click();
-  expect(await page.evaluate("remarks.find(r => r.id === 'c1').date")).toBe('2026-10-20');
+  // One stored time (owner, 2026-10-27): the day moves, the time of day stays.
+  expect(await page.evaluate("(() => { const r = remarks.find(r => r.id === 'c1'); const d = new Date(r.createdAt); return [entryDay(r), d.getHours(), 'date' in r]; })()")).toEqual(['2026-10-20', 10, false]);
   await expect(pop).not.toHaveClass(/open/);
 });

@@ -50,36 +50,38 @@ test('Reply on a question opens a line under it; the answer reads there, even wi
   await page.keyboard.type('Friday evening run.');
   await page.keyboard.press('Enter');
   const a = await last(page);
-  expect([a.answerTo, a.verdict, a.type]).toEqual(['q1', undefined, undefined]);
+  expect([a.answerTo, a.type]).toEqual(['q1', undefined]);
   await expect(entry(page, 'q1').locator('.thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
   expect(await order(page)).toEqual(['q1', '  ' + a.id, 'c1', 'q2']);
   await expect(page.locator('.thread-quote')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test('Yes on a question\'s reply line answers that question', async ({ page }) => {
+test('a reply line has no kind buttons and no Yes / No: its words say it', async ({ page }) => {
   await seed(page, TWO_QS);
   await page.evaluate("openThreadComposer(1, false, 'q2')");
-  await page.locator('.thread-composer.is-nested .thread-btn[data-act="yes"]').click();
+  await expect(page.locator('.thread-composer.is-nested .thread-btn')).toHaveCount(0);
+  await expect(page.locator('.thread-composer.is-nested .thread-kind.is-reply')).toHaveCount(1);
+  await page.keyboard.type('Yes, the account team.');
+  await page.keyboard.press('Enter');
   const a = await last(page);
-  expect([a.answerTo, a.verdict]).toEqual(['q2', 'yes']);
+  expect([a.answerTo, a.text, a.verdict]).toEqual(['q2', 'Yes, the account team.', undefined]);
 });
 
-test('a comment takes replies too (no Yes / No); a reply to a reply joins the same entry', async ({ page }) => {
+test('a comment takes replies too; a reply to a reply joins the same entry', async ({ page }) => {
   await seed(page, TWO_QS.replace(']', `, { id: 'r1', anchorNodeId: 1, person: 'Kim', date: '2026-10-16', text: 'SAP confirmed.', answerTo: 'c1', createdAt: 4 }]`));
   expect(await order(page)).toEqual(['q1', 'c1', '  r1', 'q2']);
   await entry(page, 'r1').click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Reply', { exact: true }).click();
   const composer = page.locator('.thread-composer.is-nested');
-  await expect(composer.locator('.thread-btn[data-act="yes"]')).toHaveCount(0);
   await expect(composer.locator('.thread-composer-input')).toHaveAttribute('data-placeholder', 'Reply to Ana…');
   await page.keyboard.type('Thanks.');
   await page.keyboard.press('Enter');
   const a = await last(page);
   expect(a.answerTo).toBe('c1');
   expect(await order(page)).toEqual(['q1', 'c1', '  r1', '  ' + a.id, 'q2']);
-  // Its kind is a comment, not an answer.
-  await expect(entry(page, 'r1').locator('.thread-kind.is-comment')).toHaveCount(1);
+  // Every reply has the reply icon (owner, 2026-10-27); under a comment it reads "Reply".
+  await expect(entry(page, 'r1').locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Reply/);
 });
 
 test('Reply to › moves an entry under another, with its own replies; Not a reply puts it back in time order', async ({ page }) => {
@@ -118,4 +120,16 @@ test('one unbroken line joins the top-level entries and stops at the last one, p
   expect(await spine()).toEqual(['q1:spine-down', 'a1:spine-through', 'c1:spine-up', 'r1:']);
   await page.evaluate('openThreadComposer(1, false)');
   expect(await spine()).toEqual(['q1:spine-down', 'a1:spine-through', 'c1:spine-up,spine-down', 'r1:spine-through', 'composer:spine-up']);
+});
+
+test('Delete thread on the header removes every entry in one step; Undo brings them back', async ({ page }) => {
+  const errors = await seed(page, TWO_QS);
+  await page.locator('.thread-head').click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Delete thread', { exact: true }).click();
+  expect(await page.evaluate('remarks.length')).toBe(0);
+  await expect(page.locator('.thread-entry')).toHaveCount(0);
+  await expect(page.locator('#toast')).toContainText('Thread deleted (3 entries)');
+  await page.evaluate('undo()');
+  expect(await page.evaluate('remarks.length')).toBe(3);
+  expect(errors).toEqual([]);
 });

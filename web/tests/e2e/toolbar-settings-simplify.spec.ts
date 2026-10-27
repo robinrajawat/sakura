@@ -216,7 +216,7 @@ test.describe('Fixed right-click menu, no hover toolbar', () => {
     // (owner, 2026-10-20: shorter More). Submenus are the shared menu's flyouts.
     await expect(page.locator('#context-more-panel .sb-context-iconrow')).toHaveCount(3);
     await page.locator('#context-more-panel [data-flyout="insert"]').hover();
-    expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['date-time', 'make-questions', 'diagram-gen']);
+    expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['date-time', 'diagram-gen']);
     await page.locator('#context-more-panel [data-flyout="row"]').hover();
     expect(await actions('#context-menu .sb-context-submenu [data-action]')).toEqual(['focus', 'fold', 'tags', 'version-history', 'no-export']);
     expect(errors).toEqual([]);
