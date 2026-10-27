@@ -3649,7 +3649,7 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="toolbar" id="settings-section-quickassist">
             <div class="settings-section-title">Quick Assist</div>
             <div class="settings-list">
-              <div class="settings-list-row" id="global-search-bar-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist search box</span><span class="settings-row-desc">Show the search / Quick Assist box, currently docked in <span id="qa-location-desc-inline">the status bar</span> (Ctrl/Cmd+K opens and focuses it regardless; Quick Assist can also hide it via a command like "hide search bar" — this switch is the reliable way to bring it back)</span></div><button id="global-search-bar-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Show Quick Assist search box"></button></div>
+              <div class="settings-list-row" id="global-search-bar-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist search box</span><span class="settings-row-desc">Show the search / Quick Assist box, currently docked in <span id="qa-location-desc-inline">the status bar</span> (Ctrl/Cmd+/ opens and focuses it regardless; Quick Assist can also hide it via a command like "hide search bar" — this switch is the reliable way to bring it back)</span></div><button id="global-search-bar-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Show Quick Assist search box"></button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="data">
@@ -3965,7 +3965,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="general" id="help-section-quick-assist">  
 <h4>Quick Assist</h4>  
 <ul>  
-<li>Lives in the header, where a plain search box used to sit. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span> focuses it and opens the results dropdown from anywhere in the app; clicking directly into the box does the same. Type a plain-English instruction and it's carried out immediately: "get me toolbar," "I don't want file explorer," "toggle dark mode" — or just type anything else to search documents, notes, tags, settings, and help. Not to be confused with Quick Insert (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span>) — a much smaller character-insert menu that opens instead whenever you're actively editing text, described below</li>
+<li>Lives in the header, where a plain search box used to sit. <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> focuses it and opens the results dropdown from anywhere in the app; clicking directly into the box does the same. Type a plain-English instruction and it's carried out immediately: "get me toolbar," "I don't want file explorer," "toggle dark mode" — or just type anything else to search documents, notes, tags, settings, and help. Not to be confused with Quick Insert (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span>) — a much smaller character-insert menu that opens instead whenever you're actively editing text, described below</li>
 <li>An empty box shows a "Try things like…" tip with a handful of example phrases — click any of them to run it as a search immediately, same as typing it yourself; nothing executes without a second click on the actual result.</li>
 <li>To search just one category instead of all of them at once, type a category prefix before your query — "notes: budget" only searches Notes, "settings: dark" only searches Settings. Short aliases work too (doc/docs, note/notes, tag/tags, and so on). Threads and Diagrams each have their own prefix too — "thread: EDI" (or "comment:", "question:", "discussion:", "qa:") searches only thread entries (text, Yes/No, author and context), "diagram: flow" only Diagrams (title + note). "table: Berlin" searches only table cells and table titles (the result shows the matching row), "image: login" only image captions. Don't want to remember the exact word? Click the icon at the left of the box, or press Space while it's completely empty — either shows a picker inline in the dropdown, navigable the same way search results are (<span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> to move, <span class="help-kbd">Enter</span> to pick). Above the categories, the same picker also lists <strong>Show</strong>, <strong>Hide</strong>, <strong>Toggle</strong>, and <strong>Run</strong> — picking one inserts that bare word instead of a category prefix, which does something different: rather than scoping a search, it browses everything of that kind (see the bare-verb bullet below). Either way, choosing an entry leaves the dropdown open, cursor ready for you to keep typing and narrow further. A category prefix with nothing typed after it (just "notes: " on its own) shows no results rather than browsing the whole category — the box doesn't have a "show me everything in here" mode for categories, only "search within here," so you still need something to search for after a category prefix specifically; the four verb words above are the exception; each of those does browse everything on its own with nothing else typed</li>
 <li>Typing just a bare word — "show," "hide," "toggle," or "run," nothing else — lists everything of that kind instead of requiring you to already know a specific setting's name: "show" lists everything currently hidden that could be shown, "hide" lists everything currently shown that could be hidden, "toggle" lists everything either way regardless of its current state, and "run" lists every available Run action ("new document," "duplicate node," and the AI actions covered below). Keep typing after the bare word to narrow the list further by name — "show file" narrows to just File Explorer-related results, the same as typing "show file explorer" would, just built up in two steps instead of one</li>
@@ -3981,7 +3981,7 @@ body.printing-generic #gpe-overlay{
 <li>Rich-text fields (Notes, Q&amp;A, Remarks) are stripped to plain text before matching, so a search never hits raw HTML markup and snippets always show readable text</li>
 <li>The file explorer's own filter box only matches document names, not their contents — for anything inside a document, this box is the one that actually looks</li>
 <li>Every document has a status chip — <strong>No status</strong> by default, or Draft, Review, Approved, Rejected — next to the title field. Click it to open a small menu and pick one; it's a menu rather than a cycle-through-in-order control like the diagram status chip, since jumping straight to the one you want beats clicking past the others first. Existing documents start with no status until you set one; it's never assumed. Duplicating a document resets its copy to No status rather than carrying the original's over, same reasoning as why the title gets "(copy)" appended instead of reused verbatim — a fresh copy hasn't itself been through review or approval. Version History restores status alongside everything else for versions saved after this feature shipped; older versions predating it simply leave the current status untouched on restore rather than guessing</li>
-<li>Settings → Bars &amp; Menus → Quick Assist → "Quick Assist search box" shows or hides the box itself — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span> opens and focuses it either way</li>
+<li>Settings → Bars &amp; Menus → Quick Assist → "Quick Assist search box" shows or hides the box itself — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> opens and focuses it either way</li>
 <li>As you type, the list runs in a fixed order top to bottom — matching commands first, then Run actions, then search results — each labeled with what it'll do ("Hide File Explorer," "Turn on Zen mode," "Run: New document," "Go to: …") and, for toggles, the setting's current state; <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through the combined list (disabled Run rows are skipped, since there's nothing to activate), <span class="help-kbd">Enter</span> runs or opens whichever is highlighted, <span class="help-kbd">Esc</span> closes and clears the box, or click any of them directly</li>
 <li>Every command and Run action shows a toast with an <strong>Undo</strong> button — nothing is ever silently applied. Just typing a bare toggle name with no verb ("zen mode," "file explorer") flips its current state rather than doing nothing. If a Run action has its own confirmation step and you cancel that step, nothing happens and the toast says so instead of falsely claiming success. "Go to" rows are navigation, not a change to anything, so there's nothing to undo for those</li>
 <li>If a phrase matches more than one setting, all of them show up as separate ranked options instead of Quick Assist silently picking one for you</li>
@@ -3990,7 +3990,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="general" id="help-section-nodeqa">
 <h4>Quick Insert</h4>
 <ul>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing any text — a node, a Note, a To-Do, anywhere — opens a small character-insert menu. Same shortcut, same menu, everywhere you're editing text; the full Quick Assist is a separate shortcut (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span>) and stays free even mid-edit, so the two are never in competition for the same key</li>
+<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing any text — a node, a Note, a To-Do, anywhere — opens a small character-insert menu. Same shortcut, same menu, everywhere you're editing text; the full Quick Assist is a separate shortcut (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span>) and stays free even mid-edit, so the two are never in competition for the same key</li>
 <li>Actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time. Which of these appear (and their fixed order) is configured in Settings → Editing → Quick Insert → Menu items</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the text you're editing, which this avoids touching</li>
 <li>Every action splices directly at the cursor and keeps you in edit mode, so you don't lose your place — the fastest way to get these in, and the reason the menu exists</li>
@@ -4077,7 +4077,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">
 <h4>Formatting</h4>
 <ul>
-<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too; with nothing selected they format every word of the row. Links to other rows are typed with @. Typed symbols like ** or [ ] are plain text</li>
+<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too, and Ctrl/Cmd+K opens the Link box for the selected words; with nothing selected they format every word of the row. Links to other rows are typed with @. Typed symbols like ** or [ ] are plain text</li>
 <li>Section: Headings menu → Section (a light label with its own Contents entry)</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 
@@ -4156,8 +4156,8 @@ body.printing-generic #gpe-overlay{
 <li>Drag a document onto a folder (or "Unfiled") to file it there; drag it onto another document to reorder within that folder/Unfiled</li>
 <li><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 11 12 6 17 11"/><polyline points="7 18 12 13 17 18"/></svg></span> / <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></span> buttons by "Documents" → collapse all / expand all folders (only shown once a folder exists)</li>
 <li>Ctrl/Cmd-click a document to multi-select; Shift-click selects a range. A bar appears to move or trash the whole selection at once</li>
-<li>Deleting a document (or a selection of them) moves it to <strong>Trash</strong>, a collapsible section at the very bottom of the file explorer — out of the way since it's rarely needed, same as most apps put it. It's not gone. Each item there shows when it was trashed, with buttons to restore it or delete it forever. A toast with "Undo" also appears right after trashing, for a quick reversal without opening Trash at all. Settings → Trash controls how long items sit there before being purged automatically (default 7 days; "Forever" turns off auto-purge so only "Empty Trash" removes anything). Header search (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span>) skips Trash by default — turn on Settings → Trash → "Include Trash in search" to have it surface matches there too (across documents, node text, Notes, tags, and the Pad alike), clearly marked "In Trash"; clicking one reveals it in the Trash section rather than opening it directly, since restoring is a deliberate choice</li>
-<li>Searching the file explorer keeps folders visible (showing only matching documents and subfolders, force-expanded) but disables drag-and-drop while a search is active; it only matches document names — for text inside documents, use the header search (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span>) instead</li>
+<li>Deleting a document (or a selection of them) moves it to <strong>Trash</strong>, a collapsible section at the very bottom of the file explorer — out of the way since it's rarely needed, same as most apps put it. It's not gone. Each item there shows when it was trashed, with buttons to restore it or delete it forever. A toast with "Undo" also appears right after trashing, for a quick reversal without opening Trash at all. Settings → Trash controls how long items sit there before being purged automatically (default 7 days; "Forever" turns off auto-purge so only "Empty Trash" removes anything). Header search (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span>) skips Trash by default — turn on Settings → Trash → "Include Trash in search" to have it surface matches there too (across documents, node text, Notes, tags, and the Pad alike), clearly marked "In Trash"; clicking one reveals it in the Trash section rather than opening it directly, since restoring is a deliberate choice</li>
+<li>Searching the file explorer keeps folders visible (showing only matching documents and subfolders, force-expanded) but disables drag-and-drop while a search is active; it only matches document names — for text inside documents, use the header search (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span>) instead</li>
 <li>The file explorer's filter box is hidden by default since the header search now covers the same ground; bring it back via the <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span> icon next to "Documents", or Settings → Bars &amp; Menus → File Explorer → Filter box</li>
 <li>Drag the thin strip at the file explorer's right edge to resize it</li>
 <li><strong>Version history</strong> (right-click a document in the file explorer, or its tab, → "Version history") keeps automatic checkpoints of a document's past content — not full version control, just lightweight snapshots. A version is captured right before it would otherwise be overwritten, but only once every ~10 minutes of active editing at most, and only if something actually changed, so it won't flood with near-duplicates from every autosave tick. Capped at the last 10 per document, oldest dropped first. "Save a version now" in that panel adds one immediately, useful right before a big rewrite. Restoring an older version is itself non-destructive — whatever was there gets saved as a version first, so restoring is never a one-way trip</li>
@@ -4784,7 +4784,7 @@ body.printing-generic #gpe-overlay{
   <button type="button" class="selection-fmt-btn" id="sfmt-colors" data-cmd="colors" data-tip="Colour and highlight" aria-label="Colour and highlight"><span class="sfmt-a">A</span></button>
   <button type="button" class="selection-fmt-btn" id="sfmt-clear" data-cmd="clear" data-tip="Clear formatting" aria-label="Clear formatting"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h12v3"/><path d="M10 4 7.5 20"/><path d="M5 20h5"/><path d="m15 14 6 6"/><path d="m21 14-6 6"/></svg></button>
   <span class="sfmt-sep" aria-hidden="true"></span>
-  <button type="button" class="selection-fmt-btn" id="sfmt-link" data-cmd="link" data-tip="Link"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+  <button type="button" class="selection-fmt-btn" id="sfmt-link" data-cmd="link" data-tip="Link (Ctrl/Cmd+K)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
   <span class="sfmt-sep sfmt-sep-link" aria-hidden="true"></span>
   <button type="button" class="selection-fmt-btn sfmt-ai" id="sfmt-rewrite" data-cmd="rewrite" data-tip="Rewrite selection (AI)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></button>
   </div>
@@ -18903,6 +18903,8 @@ function qaMoveChip(dx,dy){
 el('qa-input')?.addEventListener('keydown',e=>{
   if(matchesShortcut(e,'save')){e.preventDefault(); e.stopPropagation(); fireShortcut('save'); return}
   if(matchesShortcut(e,'newDoc')){e.preventDefault(); e.stopPropagation(); fireShortcut('newDoc'); return}
+  // The same keys close it again.
+  if(matchesShortcut(e,'quickAssist')){e.preventDefault(); e.stopPropagation(); setQaOpen(false); return}
   e.stopPropagation();
   if(e.key===' '&&el('qa-input').value.trim()===''){
     // Space on a genuinely empty box (a lone space is already indistinguishable from
@@ -25903,7 +25905,7 @@ const SHORTCUTS = {
   closeTab:       {combo:'mod+alt+w',     label:'Close tab',                category:'Docs, Tabs & Zen', guarded:false, action:()=>{if(activeTabDocId!==null)closeTab(activeTabDocId);}},
   toggleZen:      {combo:'mod+shift+e',   label:'Toggle zen mode',          category:'Docs, Tabs & Zen', guarded:false, action:()=>setZenMode(!zenMode)},
   quickInsert:    {combo:'mod+space',     label:'Quick Insert (special characters)', category:'Global Search', guarded:false, action:()=>{}},
-  quickAssist:    {combo:'mod+k',         label:'Open Quick Assist',        category:'Global Search',    guarded:false, action:()=>toggleQa()},
+  quickAssist:    {combo:'mod+/',         label:'Open Quick Assist',        category:'Global Search',    guarded:false, action:()=>toggleQa()},
   findInTree:     {combo:'mod+f',         label:'Search this tree',         category:'Global Search',    guarded:false, action:()=>openSearch()},
   findReplace:    {combo:'mod+h',         label:'Search & replace',         category:'Global Search',    guarded:false, action:()=>{openSearch(); if(!el('replace-bar')?.classList.contains('open'))toggleReplaceBar();}},
   collapseAll:    {combo:'mod+alt+c',     label:'Collapse/expand all',       category:'Toolbar',          guarded:false, action:()=>toggleFoldAll()},
@@ -25919,6 +25921,7 @@ const SHORTCUTS = {
   strike:         {combo:'mod+shift+s',   label:'Strikethrough',            category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('strike')},
   highlight:      {combo:'mod+shift+h',   label:'Highlight',                category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('highlight')},
   textColor:      {combo:'mod+shift+f',   label:'Text color',               category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('color')},
+  insertLink:     {combo:'mod+k',         label:'Link selected words',      category:'Formatting',       guarded:false, action:()=>linkShortcutAtSelection()},
   heading1:       {combo:'mod+alt+1',     label:'Heading 1',                category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(1)},
   heading2:       {combo:'mod+alt+2',     label:'Heading 2',                category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(2)},
   heading3:       {combo:'mod+alt+3',     label:'Heading 3',                category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(3)},
@@ -25961,7 +25964,7 @@ function comboMatches(e, combo){
   const wantAlt = parts.includes('alt');
   const keyPart = parts[parts.length-1];
   if (wantMod !== (e.ctrlKey || e.metaKey)) return false;
-  if (wantShift !== e.shiftKey) return false;
+  if (wantShift !== e.shiftKey && !(keyPart === '/' && !wantShift)) return false;
   if (wantAlt !== e.altKey) return false;
   // Bracket keys: match the physical key (e.code), not the shifted
   // character e.key reports — Shift+[ produces '{' on a US layout (and
@@ -25980,6 +25983,8 @@ function comboMatches(e, combo){
   if (keyPart >= '0' && keyPart <= '9') return e.code === 'Digit'+keyPart;
   if (keyPart === 'enter') return e.key === 'Enter';
   if (keyPart === 'space') return e.key === ' ';
+  // '/' needs Shift on many layouts (Shift+7 on German), so take the character, Shift or not.
+  if (keyPart === '/') return e.key === '/' || (!e.shiftKey && e.code === 'Slash');
   // Same AltGr problem as the digit case above, just for letters: AltGr+E types '€' on a
   // Danish layout (and similar symbol remaps exist for other letters on other European
   // layouts), so e.key for mod+alt+e there is '€', never 'e'. Only applied when alt is
@@ -29780,7 +29785,7 @@ const TOUR_STEPS=[
   {target:'#sidebar-toggle',placement:'bottom',title:'Documents & folders',bodyHtml:'<p>Opens and closes your File Explorer.</p>'},
   {target:'#sidebar',placement:'right',title:'File Explorer',bodyHtml:'<p>Every document and folder lives here. Drag rows to reorder or move them, right-click for more options, and use the filter at the top to find anything fast.</p>',setup:()=>{ tourSidebarWasOpen=sidebarOpen; if(!sidebarOpen)setSidebarOpen(true); },teardown:()=>{ if(!tourSidebarWasOpen)setSidebarOpen(false); }},
   {target:'#editor-pane',placement:'inside',title:'Editor',bodyHtml:'<p>Click to type. Enter adds a sibling, Tab indents as a child, Shift+Tab outdents. Right-click any node for more actions.</p>'},
-  {target:'#global-search-wrap',placement:'bottom',title:'Quick Assist',bodyHtml:'<p>Searches across documents, node text, notes, tags, Q&amp;A, diagrams, and remarks — plus settings and help topics.</p><p>Press Ctrl/Cmd+K to open it from anywhere.</p>'},
+  {target:'#global-search-wrap',placement:'bottom',title:'Quick Assist',bodyHtml:'<p>Searches across documents, node text, notes, tags, Q&amp;A, diagrams, and remarks — plus settings and help topics.</p><p>Press Ctrl/Cmd+/ to open it from anywhere.</p>'},
   {target:'#export-toggle',placement:'bottom',title:'Export',bodyHtml:'<p>Export your outline as a PDF or an OPML file.</p>'},
   {target:'#import-toggle',placement:'bottom',title:'Import',bodyHtml:'<p>Bring in an OPML outline file as a new document.</p>'},
   {target:'#quick-bar',placement:'bottom',title:'Toolbar',bodyHtml:'<p>Undo, indent, formatting, notes, AI, and fold/zoom — grouped by purpose. Hover an icon to see what it does; everything else is on a node\'s right-click menu.</p>'},
@@ -36396,6 +36401,7 @@ function todosHistorySummary(list) {
           <li><span class="cs-combo" data-cs-shortcut="strike"></span> <span class="cs-desc">strike</span></li>
           <li><span class="cs-combo" data-cs-shortcut="highlight"></span> <span class="cs-desc">highlight</span></li>
           <li><span class="cs-combo" data-cs-shortcut="textColor"></span> <span class="cs-desc">text color</span></li>
+          <li><span class="cs-combo" data-cs-shortcut="insertLink"></span> <span class="cs-desc">link the selected words</span></li>
           <li><span class="cs-combo" data-cs-shortcut="heading1"></span>–<span class="help-kbd">6</span> <span class="cs-desc">heading 1–6 (independent of depth)</span></li>
           <li><span class="cs-desc">select words first → formats just those words</span></li>
           <li><span class="cs-desc">@Node name → backlink (type @ while editing to pick)</span></li>
@@ -36828,6 +36834,21 @@ function openSelectionFmtUrlBox(){
     else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); hideSelectionFmtPopover(); }
   });
 }
+// Ctrl/Cmd+K: the Link box for the selected words in a row, To-Do, note or thread, as the bar's
+// Link button. Caret only (nothing selected) in one of those: say what it needs.
+function linkShortcutAtSelection(){
+  const sel=window.getSelection(); if(!sel||!sel.rangeCount)return false;
+  const editorId=selectionFmtEditorFor(sel.anchorNode); if(!editorId)return false;
+  if(sel.isCollapsed||!sel.toString().trim()){ showToast('Select words to link'); return true; }
+  showSelectionFmtPopoverForRange(sel.getRangeAt(0),editorId);
+  if(!prepareSelectionFmtLinkTarget()){ hideSelectionFmtPopover(); return false; }
+  openSelectionFmtUrlBox(); return true;
+}
+// Capture phase: rows, notes and To-Dos handle their own keys and some stop them there.
+document.addEventListener('keydown',e=>{
+  if(!matchesShortcut(e,'insertLink'))return;
+  if(linkShortcutAtSelection()){ e.preventDefault(); e.stopPropagation(); }
+},true);
 // What people type: "example.com" means https://, "name@host" means mailto:.
 function normalizeTypedLinkUrl(raw){
   const v=String(raw||'').trim(); if(!v)return '';

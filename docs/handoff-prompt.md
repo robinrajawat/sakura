@@ -165,6 +165,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: Ctrl/Cmd+K links selected words; Quick Assist moves to Ctrl/Cmd+/.** New shortcut `insertLink`
+(mod+k, Formatting): `linkShortcutAtSelection()` opens the bar's Link box for the selected words in a row, To-Do,
+note or thread (capture-phase keydown, since those editors handle their own keys); with only a caret it toasts
+"Select words to link". `quickAssist` is now mod+/ (`comboMatches` takes the `/` character with or without Shift,
+for layouts like German), and the same keys close it from `#qa-input`. Help, cheatsheet, tour, README updated.
+Test: `tests/e2e/link-shortcut.spec.ts`.
+
 **2026-10-27: Rewrite keeps a row's formatting and links.** Rewrite (one row, several rows, auto-rewrite) sent only the
 plain words and put plain text back, so bold, colour, highlight, web links and @row links were lost. A row with marks
 now goes to the AI as small HTML (`aiRowPayload` → `rowMarksToHtml` with `aiRowTagWrap`: `<b>`, `<i>`, `<u>`, `<s>`,
@@ -181,12 +188,6 @@ is deleted for good (`permanentlyDeleteDocCore`, not Trash). Shared and pinned d
 counts as content. Existing blank documents are not swept. The separator between status and author
 (`#doc-status-wrap::after`) is now a drawn 3px dot, centred, 11px each side (the '·' glyph sat low and hugged the pill).
 Test: `tests/e2e/blank-doc-discarded.spec.ts`.
-
-**2026-10-27: Hub dark mode: menus and sheets sit above the page.** In dark mode the Hub's account menu, quick-add bar
-and bottom sheets used `--edit-bg` (#161614), a shade darker than the page, so they sank into it. hub.css now has the
-same `--surface-raised` token as index.html (dark #1c1c1a, light = `--edit-bg`), used by `#account-dropdown`,
-`#todo-quickadd-bar`, `.hub-modal` and the sheet's bottom fade. Inputs inside stay `--edit-bg` (read as recessed). Test:
-`tests/e2e/hub-dark-raised-surfaces.spec.ts`.
 
 ### In progress / not built
 
