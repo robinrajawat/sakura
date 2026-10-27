@@ -4077,7 +4077,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">
 <h4>Formatting</h4>
 <ul>
-<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too, and Ctrl/Cmd+K opens the Link box for the selected words; with nothing selected they format every word of the row. Links to other rows are typed with @. Typed symbols like ** or [ ] are plain text</li>
+<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too, and Ctrl/Cmd+K opens the Link box for the selected words; with nothing selected they format every word of the row. Links to other rows are typed with @. Typing / in an empty row opens the Insert list there (Note, Checkbox, Table…); keep typing to write a plain /. Typed symbols like ** or [ ] are plain text</li>
 <li>Section: Headings menu → Section (a light label with its own Contents entry)</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 
@@ -25170,6 +25170,9 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     closeNodeQuickAssist();
   }
   if(matchesShortcut(e,'quickInsert')){e.preventDefault(); e.stopPropagation(); openNodeQuickAssist(e.target,id); return}
+  // The Insert list from "/" owns arrows, Enter and Escape; any other key types on and closes it.
+  if(_slashMenuRowId!==null&&!['Shift','Control','Alt','Meta'].includes(e.key)){ _slashMenuRowId=null; if(_sbContextEl?.id==='insert-menu')closeSbContextMenu(); }
+  if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!(e.target.textContent||'').length)setTimeout(()=>openSlashInsertMenu(e.target,id),0);
   if(_atState){
     const cands=getAtCandidates(_atState.query);
     if(e.key==='ArrowDown'){e.preventDefault(); _atActiveIdx=Math.min(_atActiveIdx+1,cands.length-1); renderAtSuggest(); return}
@@ -27218,6 +27221,27 @@ function insertMenuItems(){
     ...act('diagram','Diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg>'),
     ...act('diagram-gen','Generate diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg>')
   ];
+}
+// "/" typed into an empty row opens the same Insert list at the caret. Picking an item takes the
+// "/" back out; Escape or typing on keeps it (a row can start with a path like /usr).
+let _slashMenuRowId=null;
+function openSlashInsertMenu(input,id){
+  if(editingId!==id||(input.textContent||'')!=='/')return;
+  setSingleSelection(id);
+  const sel=window.getSelection(); const cr=sel&&sel.rangeCount?sel.getRangeAt(0).getBoundingClientRect():null;
+  const at=cr&&(cr.width||cr.height)?cr:input.getBoundingClientRect();
+  const dropFirst=fn=>(...args)=>{ dropSlashFromRow(id); return fn(...args); };
+  const wrap=it=>it.iconRow?{...it,iconRow:it.iconRow.map(wrap)}:it.onClick?{...it,onClick:dropFirst(it.onClick)}:it;
+  showSbContextMenu(at.left,at.bottom+4,insertMenuItems().map(wrap),{id:'insert-menu',label:'Insert'});
+  _slashMenuRowId=id;
+  if(_sbContextButtons.length){ _sbContextActiveIndex=0; _sbContextUpdateHighlight(); }
+}
+function dropSlashFromRow(id){
+  _slashMenuRowId=null;
+  const input=editingId===id?el('in-'+id):null;
+  if(input&&(input.textContent||'')==='/'){ input.focus(); const r=document.createRange(); r.selectNodeContents(input); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('delete'); return; }
+  const node=nodes.find(n=>n.id===id);
+  if(node&&node.text==='/'){ node.text=''; setRowMarksOn(node,[]); render(); markDirty(); scheduleAutoSave(); }
 }
 function closeToolbarMenus(){ if(_sbAnchorBtn&&(_sbAnchorBtn.id==='qb-insert'||_sbAnchorBtn.id==='qb-ai'))closeSbContextMenu(); }
 el('qb-insert')?.addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,insertMenuItems(),{id:'insert-menu',label:'Insert',keyboard:e.detail===0}); });
