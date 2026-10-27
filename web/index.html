@@ -30941,7 +30941,7 @@ function renderPreviewBody(){
       const noteCardHasText = blockVisuals ? htmlHasVisibleContent(noteCardHtml) : noteHasContent;
       if(featureNoteEnabled&&!isPlainNote&&(noteCardHasText||hasNoteTitle)){
         const wrap=document.createElement('div'); wrap.className='pv-inline-block'; wrap.style.paddingLeft=inlinePad;
-        const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'; label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
+        const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-note'+(hasNoteTitle?'':' pv-inline-label-untitled'); label.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg><span>Note</span>'+(node.noteTitle&&node.noteTitle.trim()?`<span class="pv-inline-note-title-sep">—</span><span class="pv-inline-note-title">${esc(node.noteTitle.trim())}</span>`:'');
         const inner=document.createElement('div'); inner.className='pv-inline-note-body'+(noteMatchEditorBg?'':' bg-distinct')+(!_pvForceFullNoteCard&&!nodeIsSection(node,sectionMarkersDepthZero)&&noteCanUsePlainCard(noteCardHtml)?' pv-note-plain':'');
         // Any table left in noteCardHtml at this point (isPlainNote path only -- a non-plain
         // note's own tables were already extracted into blockVisuals above) still needs the same
@@ -31261,9 +31261,11 @@ function exportPreviewAsPdf(onDone){
          Unsupported browsers (Firefox as of this writing) just render no footer at all, which
          is a safe fallback rather than a broken one. Defining any margin box also suppresses
          Chrome's own default header/footer (page URL + date) for the page. */
-      @bottom-left{ content:"${footerContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
+      /* The 40px side padding matches #preview-doc's own (below), so the footer lines up with
+         the text column instead of reaching out to the page margin. */
+      @bottom-left{ content:"${footerContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; padding-left:40px; }
       @bottom-center{ content:"Page " counter(page) " of " counter(pages); font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
-      @bottom-right{ content:"${footerDateContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; }
+      @bottom-right{ content:"${footerDateContent}"; font-family:'Inter',sans-serif; font-size:8pt; color:#a3a099; padding-right:40px; }
     }
     /* The cover page carries no footer. It still counts as page 1, so the footer's "Page x of y"
        comes straight from the browser's own page counters and can never disagree with the PDF
@@ -31463,6 +31465,20 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview .pv-table-chart-title { font-size:12px !important; margin-bottom:6px !important; }
       body.printing-preview .pv-table-figure thead { display:table-header-group; }
       body.printing-preview .pv-table-figure tr { break-inside:avoid; page-break-inside:avoid; }
+      /* On paper a note is a thin left rule and the note's text: no box, no "Note" label (the
+         rule and smaller grey text already set it apart). A note title still prints. */
+      body.printing-preview .pv-inline-note-body{
+        background:transparent !important; border:none !important; border-left:2px solid #d6d2c7 !important;
+        border-radius:0 !important; padding:1px 0 1px 10px !important;
+      }
+      body.printing-preview .pv-inline-label-note > svg,
+      body.printing-preview .pv-inline-label-note > span:not(.pv-inline-note-title){ display:none !important; }
+      body.printing-preview .pv-inline-label-note.pv-inline-label-untitled{ display:none !important; }
+      /* Names in a table's Person column print as plain text: per-person colours mean nothing on paper. */
+      body.printing-preview .tbl-person{
+        background:none !important; box-shadow:none !important; color:inherit !important; padding:0 !important;
+      }
+      body.printing-preview .tbl-person-av{ display:none !important; }
       /* No .pv-note-inline-full/.node-note-dot-plain shrink override here (there used to be one)
          -- _pvForceFullNoteCard (see renderPreviewBody) means an export never builds that inline-
          teaser markup at all anymore, every note gets the same full card instead, so a rule
