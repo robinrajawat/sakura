@@ -103,3 +103,14 @@ test('Delete thread on the header removes every entry in one step; Undo brings t
   expect(await page.evaluate('remarks.length')).toBe(3);
   expect(errors).toEqual([]);
 });
+
+test('the day shows only where it changes; hovering an entry shows it again (owner, 2026-10-27)', async ({ page }) => {
+  await seed(page, TWO_QS.replace("{ id: 'q2', anchorNodeId: 1, person: 'Maria', date: '2026-10-15'", "{ id: 'q2', anchorNodeId: 1, person: 'Maria', date: '2026-10-16'"));
+  const time = (id: string) => entry(page, id).locator('.thread-time');
+  await expect(time('q1')).not.toHaveClass(/is-same-day/);
+  await expect(time('c1')).toHaveClass(/is-same-day/);
+  await expect(time('c1')).toHaveCSS('opacity', '0');
+  await expect(time('q2')).not.toHaveClass(/is-same-day/);
+  await entry(page, 'c1').hover();
+  await expect(time('c1')).toHaveCSS('opacity', '1');
+});
