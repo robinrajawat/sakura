@@ -21533,6 +21533,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // this), just no longer live-previewed while the caret's actually in the node.
   input.innerHTML=rowEditorHtml(node);
   input.addEventListener('keydown',onEditorKeyDown);
+  input.addEventListener('beforeinput',e=>rowTypingBeforeInput(input,node.id,e));
   input.addEventListener('input',(e)=>{
     // Words and formatting both come from the editor's DOM (readRowMarksFromDom: text is exactly
     // textContent, formatting only from the tags rowMarksToHtml writes).
@@ -25157,9 +25158,42 @@ async function commitNodeQuickAssist(actionId){
   closeNodeQuickAssist();
   await runNodeQuickAssistAction(actionId,nodeId);
 }
+// Undo while typing in a row goes back a word at a time (a run of deletes, or a paste, is its own
+// step), as in Docs and Word. Back where the edit began, Ctrl/Cmd+Z moves on to the app's own undo
+// steps; leaving the row still makes the whole edit one step.
+const _rowTyping={id:null,appDepth:-1,undo:[],redo:[],lastKind:null};
+function rowTypingState(input){ const read=readRowMarksFromDom(input); const r=getEditableSelectionRange(input); return {text:read.text,marks:read.marks,caret:r?r.end:read.text.length}; }
+function sameRowTypingState(a,b){ return a.text===b.text&&JSON.stringify(a.marks)===JSON.stringify(b.marks); }
+// Anything that took its own app undo step meanwhile (formatting, a link) ends the typing steps.
+function rowTypingLive(id){ const t=_rowTyping; return t.id===id&&t.appDepth===undoStack.length; }
+function rowTypingBeforeInput(input,id,e){
+  const it=e.inputType||''; if(/^history/.test(it))return;
+  const kind=it==='insertText'?(/^\s+$/.test(e.data||'')?'space':'word'):it==='insertCompositionText'?'word':it.startsWith('delete')?'delete':'other';
+  const t=_rowTyping;
+  if(!rowTypingLive(id)){ t.id=id; t.appDepth=undoStack.length; t.undo=[]; t.redo=[]; t.lastKind=null; }
+  t.redo=[];
+  // A new step starts with each new word (a space belongs to the word before it, or to the word
+  // after it when typing starts with one), when typing turns into deleting or back, and for
+  // anything else.
+  const last=t.lastKind; const afterWord=last==='word'||last==='space';
+  const same=(kind==='word'&&(last==='word'||last==='lead'))||(kind==='space'&&(afterWord||last==='lead'))||(kind==='delete'&&last==='delete');
+  if(!same){ const st=rowTypingState(input); const top=t.undo[t.undo.length-1]; if(!top||!sameRowTypingState(top,st)){ t.undo.push(st); if(t.undo.length>200)t.undo.shift(); } }
+  t.lastKind=kind==='space'&&!afterWord?'lead':kind;
+}
+function applyRowTypingState(id,st){
+  const i=getIndex(nodes,id); if(i<0)return;
+  nodes[i].text=st.text; setRowMarksOn(nodes[i],st.marks); nodes[i].modifiedAt=Date.now();
+  inputCaret=st.caret; render();
+}
+function rowTypingStep(input,id,back){
+  const t=_rowTyping; if(!rowTypingLive(id))return false;
+  const from=back?t.undo:t.redo, to=back?t.redo:t.undo; const cur=rowTypingState(input);
+  while(from.length){ const st=from.pop(); if(sameRowTypingState(st,cur))continue; to.push(cur); t.lastKind=null; applyRowTypingState(id,st); return true; }
+  return false;
+}
 function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
-  if(matchesShortcut(e,'undo')){e.preventDefault(); contextualUndo(); return}
-  if(matchesShortcut(e,'redo')){e.preventDefault(); contextualRedo(); return}
+  if(matchesShortcut(e,'undo')){e.preventDefault(); if(!rowTypingStep(e.target,id,true))contextualUndo(); return}
+  if(matchesShortcut(e,'redo')){e.preventDefault(); if(!rowTypingStep(e.target,id,false))contextualRedo(); return}
   if(_nqaState){
     const cands=getNodeQuickAssistCandidates();
     if(e.key==='ArrowDown'){e.preventDefault(); if(cands.length)_nqaActiveIdx=(_nqaActiveIdx+1)%cands.length; renderNodeQuickAssist(); return}
