@@ -165,6 +165,8 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Spelling on right-click while typing (2026-10-27).** A page can't add the browser's spelling suggestions to its own menu, so while you're typing in a note, thread entry or the reply line, right-clicking a word in it now leaves the browser's menu alone (rows and To-Do titles already did). Blank space beside the words, links, tables, pictures and text you weren't typing in keep Sakura's menu. `browserMenuWhileTyping(e, editable)` in `web/index.html` reads focus at the right mousedown (that mousedown focuses the text itself; focus a right-click gave doesn't count) and checks for a word under the pointer (`wordAtPoint`). Test: `tests/e2e/spelling-menu.spec.ts`.
+
 **2026-10-27: One way to insert: "/" at the start of a word, everywhere; Ctrl/Cmd+Space removed.** The old Quick
 Insert popup (`#node-qa-suggest`) and the `quickInsert` shortcut are gone. `handleSlashInsertKeydown(e,target,rowId)`
 (rows via `onEditorKeyDown`, plus notes, threads, To-Dos, title/author fields) arms the list when "/" starts a word
@@ -183,12 +185,6 @@ it), per run of deletes, and per other input (paste, etc.). `rowTypingStep` (Ctr
 walks them and re-renders with the caret where it was; when they run out (or something pushed its own app undo
 step meanwhile: `appDepth` check) it falls through to `contextualUndo/Redo`. Leaving the row still makes the whole
 edit one app step. Test: `tests/e2e/row-typing-undo.spec.ts`.
-
-**2026-10-27: "/" on an empty row opens the Insert list.** Typing `/` into an empty row (onEditorKeyDown) opens
-`insertMenuItems()` at the caret on the shared menu (`openSlashInsertMenu`, first item highlighted, so arrows and
-Enter work). Every item's onClick is wrapped to take the `/` back out first (`dropSlashFromRow`: execCommand delete
-while editing, else clears a committed "/"). Escape or any other key closes the list and keeps the `/` (a row can
-start with a path like /usr). Help and README updated. Test: `tests/e2e/slash-insert.spec.ts`.
 
 ### In progress / not built
 

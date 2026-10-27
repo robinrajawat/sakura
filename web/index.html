@@ -21756,6 +21756,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
       if(forceInlineNoteId===node.id&&!htmlHasVisibleContent(html)){ forceInlineNoteId=null; render(); }
     });
     noteLine.addEventListener('contextmenu',e=>{
+      if(browserMenuWhileTyping(e,noteLine)){ e.stopPropagation(); return; }
       e.preventDefault(); e.stopPropagation();
       const cell=e.target.closest&&e.target.closest('td,th');
       const rawTable=cell?cell.closest('table'):(e.target.closest&&e.target.closest('table'));
@@ -27092,6 +27093,35 @@ function insertMenuItems(){
 // it and keeps what was typed (so "and/or", "10/27" and paths stay plain text). In a row the list
 // is Insert ▾ with Characters after Basics; in notes, threads, To-Dos and other text it's the
 // characters and Date/time. Settings → Editing picks which characters show.
+// Spelling (owner, 2026-10-27): a page can't put the browser's spelling suggestions in its own menu,
+// so while you're typing in a note, thread entry or reply line, right-clicking a word in it shows the
+// browser's menu, as rows and To-Dos already do. Blank space beside the words, links, tables and
+// pictures, and text you weren't typing in keep Sakura's menu. A right mousedown focuses the text
+// itself, so focus is read then, and focus that a right-click gave doesn't count as typing.
+let _focusAtRightDown=null, _focusedByRight=null;
+document.addEventListener('mousedown',e=>{
+  if(e.button!==2){ _focusedByRight=null; return; }
+  _focusAtRightDown=document.activeElement;
+  const ed=e.target.closest&&e.target.closest('[contenteditable="true"]');
+  if(ed&&!ed.contains(document.activeElement))_focusedByRight=ed;
+},true);
+document.addEventListener('input',()=>{ _focusedByRight=null; },true);
+function wordAtPoint(x,y){
+  const r=document.caretRangeFromPoint?.(x,y); const n=r&&r.startContainer;
+  if(!n||n.nodeType!==3)return false;
+  return [r.startOffset,r.startOffset-1].some(i=>{
+    if(i<0||i>=n.data.length||!/[\p{L}\p{N}]/u.test(n.data[i]))return false;
+    const cr=document.createRange(); cr.setStart(n,i); cr.setEnd(n,i+1); const b=cr.getBoundingClientRect();
+    return x>=b.left-1&&x<=b.right+1&&y>=b.top&&y<=b.bottom;
+  });
+}
+function browserMenuWhileTyping(e,editable){
+  const t=e.target;
+  if(!t||!editable.contains(t)||!editable.contains(_focusAtRightDown))return false;
+  if(_focusedByRight&&(editable.contains(_focusedByRight)||_focusedByRight.contains(editable)))return false;
+  if(t.closest('a[href],table,img,figure,.pv-diagram-figure'))return false;
+  return wordAtPoint(e.clientX,e.clientY);
+}
 let _slash=null; // {target, rowId, start, at}: start is the "/" (a collapsed Range, or an index in an input)
 const isPlainField=t=>t.tagName==='TEXTAREA'||t.tagName==='INPUT';
 function slashCaret(){ const sel=window.getSelection(); return sel&&sel.rangeCount?sel.getRangeAt(0):null; }
@@ -32256,7 +32286,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   });
   attachThreadPaste(textEl);
   line.appendChild(textEl);
-  line.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation();
+  line.addEventListener('contextmenu',e=>{ if(browserMenuWhileTyping(e,textEl)){ e.stopPropagation(); return; } e.preventDefault(); e.stopPropagation();
     const a=e.target.closest&&e.target.closest('a[href]');
     const linkItems=a&&textEl.contains(a)?[...richLinkMenuItems(textEl,a,{ get:()=>remarks.includes(r)?(r.text||''):null, set:html=>{ r.text=html; }, isPendingFocus:f=>f.kind==='remarkText'&&f.remarkId===r.id }),{divider:true}]:[];
     showSbContextMenu(e.clientX,e.clientY,[...linkItems,...threadEntryMenuItems(node,r,thread,textEl,commit)]); });
@@ -32543,8 +32573,9 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('mousedown',e=>e.stopPropagation());
   input.addEventListener('click',e=>e.stopPropagation());
   attachThreadPaste(input);
-  // Right-click while adding: add it, ask it, rewrite it with AI, or close the line.
-  input.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadComposerMenuItems(node,input,ask,submit)); });
+  // Right-click while adding: add it, ask it, rewrite it with AI, or close the line (on the text
+  // itself while typing, the browser's menu, for spelling -- see browserMenuWhileTyping).
+  input.addEventListener('contextmenu',e=>{ if(browserMenuWhileTyping(e,input)){ e.stopPropagation(); return; } e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadComposerMenuItems(node,input,ask,submit)); });
   input.addEventListener('keydown',e=>{
     if(handleSlashInsertKeydown(e,input))return;
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); submit(); }
