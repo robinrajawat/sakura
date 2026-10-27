@@ -165,6 +165,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: PDF: footer lines up with the text, plain names in tables, quieter notes.** The footer (title, page, date)
+now has the same 40px side inset as `#preview-doc`, so it lines up with the text column instead of reaching out to the
+page margin. Names in a table's Person column print as plain text (no pastel chip or avatar). Notes print as a thin left
+rule plus the note's text: no box and no "Note" label; a note title still prints. All in the print CSS of
+`exportPdfDirect` (`#pv-print-override`); the untitled label gets `pv-inline-label-untitled`. Test:
+`tests/e2e/pdf-paper-polish.spec.ts`.
+
 **2026-10-26: Rewrite without an AI key says what to set up; the AI menu says "row".** Rewrite (and other AI actions) with
 no key used to show a "gemini error" box with Copy/Dismiss. Known setup problems (no key, Hosted AI signed out, Secure
 Storage locked) now show a plain "Set up AI" / "Sign in to use AI" / "Unlock Secure Storage" message with "Not now" and
@@ -179,11 +186,6 @@ sub-list (next row shallower), not only on the document's last row; with sibling
 re-enter at the same caret offset. `moveSelected` no longer shows a "Moved up/down" toast. README: Shift+Enter writes in
 the row's note (the table said "split"), and the stale `[Text]`/`(Text)`/`!Text` markup line is gone. Tests:
 `tests/e2e/move-row-while-typing.spec.ts`; `enter-outdent-cascade.spec.ts` updated for the sub-list rule.
-
-**2026-10-26: Sign-in screen: email sign-in is a button, "Continue" on its own line.** Polish round, item 4 of 4 (done).
-"Sign in with email" and "Continue without signing in" were inline buttons squeezed onto one line in two styles. Email
-sign-in is now a full-width outlined button with a mail icon, matching Google's (and hub.html's layout); "Continue without
-signing in" is a block link below it. Test: `tests/e2e/landing-signin-layout.spec.ts`.
 
 ### In progress / not built
 
