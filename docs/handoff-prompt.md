@@ -165,6 +165,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: "/" on an empty row opens the Insert list.** Typing `/` into an empty row (onEditorKeyDown) opens
+`insertMenuItems()` at the caret on the shared menu (`openSlashInsertMenu`, first item highlighted, so arrows and
+Enter work). Every item's onClick is wrapped to take the `/` back out first (`dropSlashFromRow`: execCommand delete
+while editing, else clears a committed "/"). Escape or any other key closes the list and keeps the `/` (a row can
+start with a path like /usr). Help and README updated. Test: `tests/e2e/slash-insert.spec.ts`.
+
 **2026-10-27: Ctrl/Cmd+K links selected words; Quick Assist moves to Ctrl/Cmd+/.** New shortcut `insertLink`
 (mod+k, Formatting): `linkShortcutAtSelection()` opens the bar's Link box for the selected words in a row, To-Do,
 note or thread (capture-phase keydown, since those editors handle their own keys); with only a caret it toasts
@@ -179,15 +185,6 @@ now goes to the AI as small HTML (`aiRowPayload` → `rowMarksToHtml` with `aiRo
 answer is read back by `applyAiRowResult` through `readRowMarksFromDom` (only those tags count; links pass the usual
 checks). Rows without formatting go as plain text, as before. `callAiApi`/`callAiApiBatch` take a `tagged` flag; batch
 entries carry `tagged` into `applyAiBatchResults`. Test: `tests/e2e/ai-rewrite-keeps-formatting.spec.ts` (stub AI).
-
-**2026-10-27: Empty new documents are removed when you leave them; status/author dot centred.** "+" (or New document)
-left an Untitled behind every time it was tried. `discardDocIfBlank(id)` runs after `switchDoc` leaves a document and
-after `closeTab`: if the stored doc has no title, status, link, threads or diagrams, and every row has no text and no
-other non-empty field (`BLANK_DOC_NODE_STRUCTURE_KEYS` lists the structural ones: id, depth, timestamps, styles…), it
-is deleted for good (`permanentlyDeleteDocCore`, not Trash). Shared and pinned docs are kept; an unknown non-empty field
-counts as content. Existing blank documents are not swept. The separator between status and author
-(`#doc-status-wrap::after`) is now a drawn 3px dot, centred, 11px each side (the '·' glyph sat low and hugged the pill).
-Test: `tests/e2e/blank-doc-discarded.spec.ts`.
 
 ### In progress / not built
 
