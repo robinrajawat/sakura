@@ -126,6 +126,37 @@ export function openQuestions<T extends ThreadEntry>(thread: T[]): T[] {
   return (thread || []).filter((e) => isQuestion(e) && htmlHasVisibleText(e.text) && questionState(e, thread) === 'open');
 }
 
+/**
+ * The entry a reply sits under (owner decision 2026-10-27: any entry can take replies, one level
+ * deep, as in Slack or Google Docs). `answerTo` holds the link (the key older answers already use);
+ * a reply to a reply sits under that reply's own entry. Null for an entry that is no reply, or whose
+ * entry isn't in the thread.
+ */
+export function threadReplyParent<T extends ThreadEntry>(r: T, thread: T[]): T | null {
+  if (r.answerTo == null) return null;
+  const byId = new Map(thread.map((e) => [e.id, e]));
+  let p = byId.get(r.answerTo);
+  for (let hops = 0; p && p.answerTo != null && byId.has(p.answerTo) && hops < 8; hops++) p = byId.get(p.answerTo);
+  return p && p !== r ? p : null;
+}
+
+/**
+ * A thread in reading order: entries by time, each followed by its replies (oldest first,
+ * `nested`), which keep their own dates.
+ */
+export function threadReadingOrder<T extends ThreadEntry>(thread: T[]): { entry: T; nested: boolean }[] {
+  const replies = new Map<T, T[]>();
+  const isReply = new Set<T>();
+  thread.forEach((e) => { const p = threadReplyParent(e, thread); if (p) { isReply.add(e); const l = replies.get(p) || []; l.push(e); replies.set(p, l); } });
+  const out: { entry: T; nested: boolean }[] = [];
+  thread.forEach((e) => {
+    if (isReply.has(e)) return;
+    out.push({ entry: e, nested: false });
+    (replies.get(e) || []).forEach((a) => out.push({ entry: a, nested: true }));
+  });
+  return out;
+}
+
 /** The question an answer added now (or marked at `before`) answers: the latest open question
  * before that point, or null. */
 export function questionToAnswer<T extends ThreadEntry>(thread: T[], before?: T): T | null {

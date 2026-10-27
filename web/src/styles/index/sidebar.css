@@ -768,8 +768,14 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .pv-remark-kind{grid-row:1 / span 2;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:0;border-radius:50%;background:color-mix(in srgb,currentColor 15%,#fff);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-remark-kind svg{width:11px;height:11px;stroke-width:2.6}
 
-.thread-quote{margin:1px 0 1px 22px;font-size:var(--fs-sm);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pv-thread-quote{font-size:var(--fs-xs);color:var(--muted);margin-top:1px}
+/* Replies read under their entry (owner, 2026-10-27), one step in (renderNodeThread's placeThread). */
+.pv-remark-entry.is-nested{margin-left:20px}
+/* Reply on an entry: on hover, always on an open question. */
+.thread-reply-btn{margin-left:6px;padding:0 4px;border:none;background:none;color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer;border-radius:4px;opacity:0}
+.thread-reply-btn.is-open,.thread-entry:hover .thread-reply-btn,.thread-reply-btn:focus-visible{opacity:1}
+.thread-reply-btn:hover{color:var(--fg);background:var(--hover)}
+.thread-entry.is-moved{animation:thread-moved 1.6s ease-out}
+@keyframes thread-moved{0%,30%{background:var(--hover)}100%{background:transparent}}
 /* An answer or status with no text is one line until clicked. */
 .thread-entry.is-event .node-remark-text-inline{display:none}
 .thread-entry.is-event.is-editing .node-remark-text-inline{display:block}
