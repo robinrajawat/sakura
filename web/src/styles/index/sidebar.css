@@ -575,6 +575,18 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .pv-fit{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:30px;padding:0 11px;border:1px solid var(--border);border-radius:7px;font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer}
 .pv-fit:hover{background:var(--hover)}
 .pv-fit:focus-visible,.pv-zoom button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* Canvas and the Notes pane side by side under the header; the pane shows only when toggled on. */
+.dv-body{flex:1 1 auto;display:flex;min-height:0}
+.dv-notes{display:none;flex:0 0 300px;flex-direction:column;border-left:1px solid var(--border);background:var(--bg);user-select:text;-webkit-user-select:text}
+.dv-notes-open .dv-notes{display:flex}
+.dv-notes-input{all:unset;box-sizing:border-box;flex:1 1 auto;width:100%;padding:14px 16px;font:400 13.5px/1.55 'Inter',sans-serif;color:var(--fg);white-space:pre-wrap;overflow-y:auto;cursor:text}
+.dv-notes-input::placeholder{color:var(--hint)}
+.dv-notes-foot{flex:0 0 auto;padding:8px 16px 10px;font:400 11.5px 'Inter',sans-serif;color:var(--hint)}
+.dv-notes-toggle.has-notes:not(.active)::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:-1px}
+@media (max-width:700px){
+  .dv-body{flex-direction:column}
+  .dv-notes{flex:0 0 38%;border-left:none;border-top:1px solid var(--border)}
+}
 .dv-canvas .dv-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2}
 .dv-canvas .dv-prev{left:14px}.dv-canvas .dv-next{right:14px}
 .dv-single .dv-nav{display:none}
