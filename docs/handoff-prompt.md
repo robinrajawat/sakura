@@ -165,6 +165,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: Empty new documents are removed when you leave them; status/author dot centred.** "+" (or New document)
+left an Untitled behind every time it was tried. `discardDocIfBlank(id)` runs after `switchDoc` leaves a document and
+after `closeTab`: if the stored doc has no title, status, link, threads or diagrams, and every row has no text and no
+other non-empty field (`BLANK_DOC_NODE_STRUCTURE_KEYS` lists the structural ones: id, depth, timestamps, styles…), it
+is deleted for good (`permanentlyDeleteDocCore`, not Trash). Shared and pinned docs are kept; an unknown non-empty field
+counts as content. Existing blank documents are not swept. The separator between status and author
+(`#doc-status-wrap::after`) is now a drawn 3px dot, centred, 11px each side (the '·' glyph sat low and hugged the pill).
+Test: `tests/e2e/blank-doc-discarded.spec.ts`.
+
 **2026-10-27: Hub dark mode: menus and sheets sit above the page.** In dark mode the Hub's account menu, quick-add bar
 and bottom sheets used `--edit-bg` (#161614), a shade darker than the page, so they sank into it. hub.css now has the
 same `--surface-raised` token as index.html (dark #1c1c1a, light = `--edit-bg`), used by `#account-dropdown`,
@@ -177,13 +186,6 @@ System, instead of Theme plus a separate "Auto theme" row. Picking Light or Dark
 palette) is a lasting choice: `setTheme` leaves System mode, rather than the old temporary override that a reload or OS
 change undid. Saved prefs keep their theme (old prefs say `themeMode:'manual'`). `syncThemeSegs()` marks the active
 button. Test: `tests/e2e/theme-follows-system.spec.ts`.
-
-**2026-10-27: PDF: footer lines up with the text, plain names in tables, quieter notes.** The footer (title, page, date)
-now has the same 40px side inset as `#preview-doc`, so it lines up with the text column instead of reaching out to the
-page margin. Names in a table's Person column print as plain text (no pastel chip or avatar). Notes print as a thin left
-rule plus the note's text: no box and no "Note" label; a note title still prints. All in the print CSS of
-`exportPdfDirect` (`#pv-print-override`); the untitled label gets `pv-inline-label-untitled`. Test:
-`tests/e2e/pdf-paper-polish.spec.ts`.
 
 ### In progress / not built
 
