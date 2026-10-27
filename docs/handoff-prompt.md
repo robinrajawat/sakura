@@ -165,6 +165,14 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: Rewrite keeps a row's formatting and links.** Rewrite (one row, several rows, auto-rewrite) sent only the
+plain words and put plain text back, so bold, colour, highlight, web links and @row links were lost. A row with marks
+now goes to the AI as small HTML (`aiRowPayload` → `rowMarksToHtml` with `aiRowTagWrap`: `<b>`, `<i>`, `<u>`, `<s>`,
+`<mark data-hl>`, `<span data-c>`, `<a data-a>`, `<span data-r>`), the system prompt gets `AI_ROW_TAGS_NOTE`, and the
+answer is read back by `applyAiRowResult` through `readRowMarksFromDom` (only those tags count; links pass the usual
+checks). Rows without formatting go as plain text, as before. `callAiApi`/`callAiApiBatch` take a `tagged` flag; batch
+entries carry `tagged` into `applyAiBatchResults`. Test: `tests/e2e/ai-rewrite-keeps-formatting.spec.ts` (stub AI).
+
 **2026-10-27: Empty new documents are removed when you leave them; status/author dot centred.** "+" (or New document)
 left an Untitled behind every time it was tried. `discardDocIfBlank(id)` runs after `switchDoc` leaves a document and
 after `closeTab`: if the stored doc has no title, status, link, threads or diagrams, and every row has no text and no
@@ -179,13 +187,6 @@ and bottom sheets used `--edit-bg` (#161614), a shade darker than the page, so t
 same `--surface-raised` token as index.html (dark #1c1c1a, light = `--edit-bg`), used by `#account-dropdown`,
 `#todo-quickadd-bar`, `.hub-modal` and the sheet's bottom fade. Inputs inside stay `--edit-bg` (read as recessed). Test:
 `tests/e2e/hub-dark-raised-surfaces.spec.ts`.
-
-**2026-10-27: Theme follows the device by default; one Light / Dark / System control.** A first visit now uses System
-(`themeMode='system'`), so dark-mode devices open in dark. Settings › Appearance has one Theme control, Light | Dark |
-System, instead of Theme plus a separate "Auto theme" row. Picking Light or Dark anywhere (settings, menu, command
-palette) is a lasting choice: `setTheme` leaves System mode, rather than the old temporary override that a reload or OS
-change undid. Saved prefs keep their theme (old prefs say `themeMode:'manual'`). `syncThemeSegs()` marks the active
-button. Test: `tests/e2e/theme-follows-system.spec.ts`.
 
 ### In progress / not built
 

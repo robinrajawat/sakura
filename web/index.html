@@ -26631,10 +26631,46 @@ async function callAiByShapeWithFallback(shape,baseUrl,key,model,systemPrompt,us
     throw new Error(reason+'. All fallback providers also failed. Try again later.');
   }
 }
-async function callAiApi(text){
+async function callAiApi(text,tagged=false){
   const key=requireAiKey();
   const provider=getAiProviderById(aiProvider);
-  return await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,aiRewritePrompt,'Text: '+text,1024,provider.id);
+  return await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,aiRewritePrompt+(tagged?'\n\n'+AI_ROW_TAGS_NOTE:''),'Text: '+text,1024,provider.id);
+}
+
+// Rewrite keeps a row's formatting and links (owner, 2026-10-27; it used to send the plain words
+// and put plain text back, dropping bold, links and @row links). A row with formatting goes to the
+// AI as small HTML, one tag per kind of mark, and the answer is read back with readRowMarksFromDom,
+// which only honours those tags and the app's link checks. Rows without formatting go as plain
+// text, exactly as before.
+const AI_ROW_TAGS_NOTE='The text contains simple HTML tags that mark formatting and links: <b>, <i>, <u>, <s>, <mark data-hl="…">, <span data-c="…">, <a data-a="…"> and <span data-r="…">. Keep every tag with its attribute exactly as given, around the same words or the words that replace them. Do not add, remove or escape tags, and do not add any other HTML. Keep &amp; &lt; &gt; entities as they are.';
+function aiRowTagWrap(html,f){
+  let o=html;
+  if(f.b)o='<b>'+o+'</b>';
+  if(f.i)o='<i>'+o+'</i>';
+  if(f.u)o='<u>'+o+'</u>';
+  if(f.s)o='<s>'+o+'</s>';
+  if(f.c)o=`<span data-c="${f.c}">`+o+'</span>';
+  if(f.a)o=`<a data-a="${escapeAttr(f.a)}">`+o+'</a>';
+  if(f.r)o=`<span data-r="${f.r}">`+o+'</span>';
+  if(f.hl)o=`<mark data-hl="${f.hl}">`+o+'</mark>';
+  return o;
+}
+function aiRowPayload(node){
+  const marks=rowMarksOf(node);
+  if(!marks.length)return {text:node.text||'',tagged:false};
+  return {text:rowMarksToHtml(node.text||'',marks,escapeHtml,aiRowTagWrap),tagged:true};
+}
+// Puts an AI answer into a row. Tagged answers become text + marks; one whose tags came back
+// broken still keeps its words (unknown tags add nothing). Returns false for an empty answer.
+function applyAiRowResult(node,result,tagged){
+  if(!tagged){ setRowTextFromTyped(node,result); return true; }
+  const tpl=document.createElement('template'); tpl.innerHTML=String(result||'');
+  const read=readRowMarksFromDom(tpl.content);
+  const text=read.text.replace(/\s*\n\s*/g,' ').trim();
+  if(!text)return false;
+  if(text!==read.text){ setRowTextFromTyped(node,text); return true; }
+  node.text=read.text; setRowMarksOn(node,read.marks);
+  return true;
 }
 
 // Generic low-level AI call that accepts an explicit prompt string (no aiRewritePrompt injection)
@@ -26646,7 +26682,7 @@ async function callAiRaw(prompt, maxTokens = 1024) {
 
 const AI_BATCH_CHUNK_SIZE=30;
 
-async function callAiApiBatchChunk(texts){
+async function callAiApiBatchChunk(texts,tagged=false){
   const key=requireAiKey();
   // Marker is a token no real node text would plausibly contain — deliberately not "[N]"
   // (used until this point). A node whose own content is a numbered/bulleted list (now
@@ -26657,7 +26693,7 @@ async function callAiApiBatchChunk(texts){
   const numbered=texts.map((t,i)=>`<<<SAKURA-ITEM-${i+1}>>>\n${t}`).join('\n');
   const batchPrompt=aiRewritePrompt+'\n\nYou will receive several texts, each preceded by its own marker line in the exact form <<<SAKURA-ITEM-N>>> on its own line, where N is the item number. Return each corrected/rewritten text preceded by that exact same marker line, in the same order, with no other content before, between, or after them. Do not alter, remove, or reformat the marker lines themselves — copy them exactly as given, including the number.\n\nTexts:\n'+numbered;
   const provider=getAiProviderById(aiProvider);
-  const raw=await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,aiRewritePrompt,batchPrompt.replace(aiRewritePrompt+'\n\n',''),8192,provider.id);
+  const raw=await callAiByShapeWithFallback(provider.shape,provider.baseUrl,key,aiModel,aiRewritePrompt+(tagged?'\n\n'+AI_ROW_TAGS_NOTE:''),batchPrompt.replace(aiRewritePrompt+'\n\n',''),8192,provider.id);
   // Parse <<<SAKURA-ITEM-N>>> prefixed blocks back into array
   const results=new Array(texts.length).fill('');
   const regex=/<<<SAKURA-ITEM-(\d+)>>>\s*\n?([\s\S]*?)(?=\n<<<SAKURA-ITEM-\d+>>>|$)/g;
@@ -26665,17 +26701,17 @@ async function callAiApiBatchChunk(texts){
   return results.map((r,i)=>r||texts[i]);
 }
 
-async function callAiApiBatch(texts,onChunkProgress){
+async function callAiApiBatch(texts,onChunkProgress,tagged=false){
   if(texts.length<=AI_BATCH_CHUNK_SIZE){
     if(onChunkProgress)onChunkProgress(1,texts.length,texts.length);
-    return await callAiApiBatchChunk(texts);
+    return await callAiApiBatchChunk(texts,tagged);
   }
   const allResults=new Array(texts.length).fill('');
   for(let start=0; start<texts.length; start+=AI_BATCH_CHUNK_SIZE){
     const end=Math.min(start+AI_BATCH_CHUNK_SIZE,texts.length);
     const chunk=texts.slice(start,end);
     if(onChunkProgress)onChunkProgress(start+1,end,texts.length);
-    const chunkResults=await callAiApiBatchChunk(chunk);
+    const chunkResults=await callAiApiBatchChunk(chunk,tagged);
     for(let i=0;i<chunkResults.length;i++)allResults[start+i]=chunkResults[i];
   }
   return allResults;
@@ -26711,8 +26747,7 @@ function applyAiBatchResults(entries,finalTexts){
     const finalText=finalTexts[j]; if(!finalText)return;
     const freshIdx=getIndex(nodes,entry.id); if(freshIdx<0)return;
     if(aiSnapshotChanged(entry.expectedText,nodes[freshIdx].text))return;
-    setRowTextFromTyped(nodes[freshIdx],finalText);
-    appliedCount++;
+    if(applyAiRowResult(nodes[freshIdx],finalText,!!entry.tagged))appliedCount++;
   });
   return {appliedCount,total:entries.length};
 }
@@ -26725,7 +26760,8 @@ async function rewriteNodeText(nodeId){
   try{
     const idx=getIndex(nodes,nodeId); if(idx<0)return;
     const original=nodes[idx].text||''; if(!original.trim())return;
-    const result=await callAiApi(original);
+    const sent=aiRowPayload(nodes[idx]);
+    const result=await callAiApi(sent.text,sent.tagged);
     if(!result)throw new Error('Empty response from AI');
     // Re-resolve the node's position by id rather than trusting the index captured
     // before the await: the tree can be edited (nodes inserted/deleted/reordered)
@@ -26737,7 +26773,8 @@ async function rewriteNodeText(nodeId){
     // matches what was actually sent to the AI, the user edited it again while waiting —
     // applying the result now would silently overwrite that newer edit.
     if(aiSnapshotChanged(original,nodes[freshIdx].text)){ showToast('You edited this node — AI rewrite discarded so it wouldn\'t overwrite it'); return; }
-    pushUndo(); setRowTextFromTyped(nodes[freshIdx],result); scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
+    pushUndo(); if(!applyAiRowResult(nodes[freshIdx],result,sent.tagged)){ undoStack.pop(); throw new Error('Empty response from AI'); }
+    scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
   finally{aiRewriteInFlight.delete(nodeId); if(btn)btn.classList.remove('ai-busy');}
 }
@@ -26750,16 +26787,17 @@ async function rewriteMultipleNodes(nodeIds){
     // validIds/texts built together (not filtered separately) so results[j] always maps
     // back to the correct node id below — a stale-index bug here previously misaligned
     // results whenever any id in the input was already gone at call time.
-    const validIds=[]; const texts=[];
-    nodeIds.forEach(id=>{const i=getIndex(nodes,id); if(i>=0){validIds.push(id); texts.push(nodes[i].text||'')}});
+    const validIds=[]; const texts=[]; const sent=[];
+    nodeIds.forEach(id=>{const i=getIndex(nodes,id); if(i>=0){validIds.push(id); texts.push(nodes[i].text||''); sent.push(aiRowPayload(nodes[i]))}});
     if(!validIds.length)return;
-    const results=await callAiApiBatch(texts,(start,end,total)=>{
+    const tagged=sent.some(x=>x.tagged);
+    const results=await callAiApiBatch(sent.map(x=>x.text),(start,end,total)=>{
       showToast(total>AI_BATCH_CHUNK_SIZE?`Rewriting nodes ${start}–${end}… ✦`:`Rewriting ${total} nodes… ✦`);
-    });
+    },tagged);
     pushUndo();
     // Re-resolve each node by id and skip anything edited again while waiting —
     // see applyAiBatchResults.
-    const entries=validIds.map((id,j)=>({id,expectedText:texts[j]}));
+    const entries=validIds.map((id,j)=>({id,expectedText:texts[j],tagged:sent[j].tagged}));
     const {appliedCount}=applyAiBatchResults(entries,results);
     scheduleAutoSave(); render();
     if(!callAiByShapeWithFallback._toastShown){
@@ -26901,19 +26939,19 @@ async function flushAutoRewriteQueue(){
   }
   _autoRewritePausedNoKey=false;
   const ids=Array.from(autoRewriteQueue); autoRewriteQueue.clear();
-  const validIds=[]; const texts=[];
-  ids.forEach(id=>{const i=getIndex(nodes,id); if(i>=0&&shouldAutoRewriteNode(nodes[i])){validIds.push(id); texts.push(nodes[i].text||'')}});
+  const validIds=[]; const texts=[]; const sent=[];
+  ids.forEach(id=>{const i=getIndex(nodes,id); if(i>=0&&shouldAutoRewriteNode(nodes[i])){validIds.push(id); texts.push(nodes[i].text||''); sent.push(aiRowPayload(nodes[i]))}});
   if(!validIds.length){ updateAutoRewriteStatusChip(); return; }
   _autoRewriteFlushing=true;
   updateAutoRewriteStatusChip();
   try{
-    const results=await callAiApiBatch(texts);
+    const results=await callAiApiBatch(sent.map(x=>x.text),null,sent.some(x=>x.tagged));
     pushUndo();
     // Re-resolve by id and skip anything edited again while waiting (this feature exists
     // so people keep typing while it works in the background, so that's the expected case,
     // not an edge case — a skipped node simply gets queued again next time it's committed).
     // See applyAiBatchResults.
-    const entries=validIds.map((id,j)=>({id,expectedText:texts[j]}));
+    const entries=validIds.map((id,j)=>({id,expectedText:texts[j],tagged:sent[j].tagged}));
     const {appliedCount}=applyAiBatchResults(entries,results);
     scheduleAutoSave(); render();
     const skipped=validIds.length-appliedCount;
