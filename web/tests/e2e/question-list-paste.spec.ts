@@ -85,22 +85,11 @@ test('ordinary text and lists already in the thread paste as before', async ({ p
   expect(await page.evaluate('remarks.length')).toBe(2);
 });
 
-test('Move to row… moves a question and its answers to the row picked by typing', async ({ page }) => {
-  const errors = await seed(page, `[
-    { id: 'q1', anchorNodeId: 1, person: 'Kim', date: '2026-10-20', text: 'Does tailored delivery win?', type: 'question', createdAt: 1 },
-    { id: 'a1', anchorNodeId: 1, person: 'Robin', date: '2026-10-20', text: 'Yes, always.', answerTo: 'q1', createdAt: 2 },
-    { id: 'c1', anchorNodeId: 1, person: 'Ana', date: '2026-10-20', text: 'Unrelated note.', createdAt: 3 }
-  ]`);
+test('a question menu has no Move to row… (owner, 2026-10-27: paste on the row it is about)', async ({ page }) => {
+  await seed(page, `[{ id: 'q1', anchorNodeId: 1, person: 'Kim', date: '2026-10-20', text: 'Does tailored delivery win?', type: 'question', createdAt: 1 }]`);
   await page.locator('#inline-remark-text-q1').click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Move to row…').click();
-  await page.locator('.row-picker .folder-picker-search').fill('exclu');
-  await page.keyboard.press('Enter');
-  expect(await page.evaluate(`remarks.map(r => [r.id, r.anchorNodeId])`)).toEqual([['q1', 2], ['a1', 2], ['c1', 1]]);
-  await expect(page.locator('#toast')).toContainText('Moved to “Exclusion check”');
-  // One undo step puts both back.
-  await page.evaluate('undo()');
-  expect(await page.evaluate(`remarks.map(r => r.anchorNodeId)`)).toEqual([1, 1, 1]);
-  expect(errors).toEqual([]);
+  await expect(page.locator('.sb-context-menu')).toBeVisible();
+  await expect(page.locator('.sb-context-menu').getByText('Move to row…')).toHaveCount(0);
 });
 
 async function seedBranch(page: Page, extra = '') {

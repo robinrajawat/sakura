@@ -707,9 +707,11 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
 /* One thin rule down the left of the whole thread (header, entries, reply box). */
 /* No bar: a faint line joins one avatar to the next, so the entries read as one conversation. */
-.thread-entry:has(+ .thread-entry,+ .thread-composer)::after,.thread-entry+.thread-entry::before,.thread-entry+.thread-composer::before{content:'';position:absolute;left:var(--thread-rule-x,8px);width:1px;background:var(--border);pointer-events:none}
-.thread-entry:has(+ .thread-entry,+ .thread-composer)::after{top:21px;bottom:0}
-.thread-entry+.thread-entry::before,.thread-entry+.thread-composer::before{top:0;height:3px}
+/* renderNodeThread marks where the line runs; the icons sit on top of it, so it never shows a gap. */
+.thread-line.spine-up::before,.thread-line.spine-down::after,.thread-line.spine-through::after{content:'';position:absolute;left:var(--thread-rule-x,8px);width:1px;background:var(--border);pointer-events:none}
+.thread-line.spine-up::before{top:0;height:13px}
+.thread-line.spine-down::after{top:13px;bottom:0}
+.thread-line.spine-through::after{top:0;bottom:0}
 .node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--hint);font:500 12px 'Inter',sans-serif;cursor:pointer;user-select:none}
 .thread-head svg{flex:0 0 auto}
 .thread-head-more{border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
@@ -761,7 +763,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .row-owner-edit{outline:none;color:var(--fg);font-size:var(--fs-sm);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;margin-left:4px;display:inline-block;min-width:8ch}
 .row-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
-.thread-kind{flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
+.thread-kind{position:relative;z-index:1;flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
 .thread-kind.is-clickable{cursor:pointer}.thread-kind.is-clickable:hover{background:color-mix(in srgb,currentColor 28%,var(--bg))}
 .thread-kind svg{width:11px;height:11px;stroke-width:2.6}
