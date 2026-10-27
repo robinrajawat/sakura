@@ -165,6 +165,12 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: Hub dark mode: menus and sheets sit above the page.** In dark mode the Hub's account menu, quick-add bar
+and bottom sheets used `--edit-bg` (#161614), a shade darker than the page, so they sank into it. hub.css now has the
+same `--surface-raised` token as index.html (dark #1c1c1a, light = `--edit-bg`), used by `#account-dropdown`,
+`#todo-quickadd-bar`, `.hub-modal` and the sheet's bottom fade. Inputs inside stay `--edit-bg` (read as recessed). Test:
+`tests/e2e/hub-dark-raised-surfaces.spec.ts`.
+
 **2026-10-27: Theme follows the device by default; one Light / Dark / System control.** A first visit now uses System
 (`themeMode='system'`), so dark-mode devices open in dark. Settings › Appearance has one Theme control, Light | Dark |
 System, instead of Theme plus a separate "Auto theme" row. Picking Light or Dark anywhere (settings, menu, command
@@ -178,14 +184,6 @@ page margin. Names in a table's Person column print as plain text (no pastel chi
 rule plus the note's text: no box and no "Note" label; a note title still prints. All in the print CSS of
 `exportPdfDirect` (`#pv-print-override`); the untitled label gets `pv-inline-label-untitled`. Test:
 `tests/e2e/pdf-paper-polish.spec.ts`.
-
-**2026-10-26: Rewrite without an AI key says what to set up; the AI menu says "row".** Rewrite (and other AI actions) with
-no key used to show a "gemini error" box with Copy/Dismiss. Known setup problems (no key, Hosted AI signed out, Secure
-Storage locked) now show a plain "Set up AI" / "Sign in to use AI" / "Unlock Secure Storage" message with "Not now" and
-one action ("Open settings" opens Settings › AI with the key box focused; "Unlock" unlocks). Real provider failures keep
-Copy/Dismiss, titled with the provider's name ("Gemini error"). `AI_SETUP_PROBLEMS` + `openAiSettings()` near
-`showAiErrorModal`; the Auto-rewrite chip uses `openAiSettings()` too. "Rewrite node" is "Rewrite row" in the AI menu,
-toolbar list, help and README. Test: `tests/e2e/ai-setup-message.spec.ts`.
 
 ### In progress / not built
 

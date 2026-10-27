@@ -1,7 +1,9 @@
 :root{--radius:14px;--fs-2xs:10px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:16px}
 *{box-sizing:border-box}
-body.theme-light{color-scheme:light;--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--hover:#f1f0ec;--sel:#eae8e2;--edit-bg:#ffffff;--chip:#eceae4;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-gray:#6f6b63;--fc-purple:#7d3fb5}
-body.theme-dark{color-scheme:dark;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--hover:#1d1d1a;--sel:#26241f;--edit-bg:#161614;--chip:#1d1d1a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-gray:#a8a59d;--fc-purple:#c39bea}
+/* --surface-raised: menus, the quick-add bar and sheets sit one step lighter than the page in
+   dark mode (as in index.html), so they don't sink into it; in light mode they stay white. */
+body.theme-light{color-scheme:light;--surface-raised:var(--edit-bg);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--hover:#f1f0ec;--sel:#eae8e2;--edit-bg:#ffffff;--chip:#eceae4;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-gray:#6f6b63;--fc-purple:#7d3fb5}
+body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--border:#2a2a27;--fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--hover:#1d1d1a;--sel:#26241f;--edit-bg:#161614;--chip:#1d1d1a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-gray:#a8a59d;--fc-purple:#c39bea}
 html{scrollbar-gutter:stable}
 body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 
@@ -27,7 +29,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #account-btn{width:34px;height:34px;border-radius:50%;border:none;padding:0;cursor:pointer;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
 #account-btn img{width:100%;height:100%;object-fit:cover;display:block}
 #account-menu-wrap{position:relative}
-#account-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;width:250px;max-height:min(80vh,600px);overflow-y:auto;background:var(--edit-bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:12px;z-index:20}
+#account-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;width:250px;max-height:min(80vh,600px);overflow-y:auto;background:var(--surface-raised);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:12px;z-index:20}
 #account-dropdown.open{display:block;animation:hub-fade-in .14s ease}
 #account-dropdown-name{font:600 13px 'Inter',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #account-dropdown-email{font-size:var(--fs-sm);color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -65,7 +67,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Inter',-ap
 #todo-fab.hide{transform:scale(0);box-shadow:none;pointer-events:none}
 #todo-quickadd-overlay{position:fixed;inset:0;z-index:29;display:none;background:rgba(0,0,0,.14)}
 #todo-quickadd-overlay.open{display:block;animation:hub-fade-in .15s ease}
-#todo-quickadd-bar{position:fixed;left:16px;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:31;background:var(--edit-bg);border-radius:20px;box-shadow:0 16px 38px rgba(0,0,0,.24),0 1px 2px rgba(0,0,0,.06);padding:14px 8px 10px 18px;transform:translateY(16px) scale(.97);opacity:0;pointer-events:none;transition:transform .2s cubic-bezier(.2,.9,.25,1),opacity .18s ease,bottom .15s ease}
+#todo-quickadd-bar{position:fixed;left:16px;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:31;background:var(--surface-raised);border-radius:20px;box-shadow:0 16px 38px rgba(0,0,0,.24),0 1px 2px rgba(0,0,0,.06);padding:14px 8px 10px 18px;transform:translateY(16px) scale(.97);opacity:0;pointer-events:none;transition:transform .2s cubic-bezier(.2,.9,.25,1),opacity .18s ease,bottom .15s ease}
 #todo-quickadd-bar.open{transform:none;opacity:1;pointer-events:auto}
 #todo-quickadd-label{font:700 10px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin:0 0 6px}
 #todo-quickadd-row{display:flex;align-items:flex-end;gap:8px}
@@ -177,7 +179,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 /* ---------- Reusable bottom-sheet detail view ---------- */
 .hub-modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);align-items:flex-end;justify-content:center;padding:0}
 .hub-modal-overlay.open{display:flex}
-.hub-modal{width:100%;max-width:480px;background:var(--edit-bg);border-radius:22px 22px 0 0;box-shadow:0 -10px 36px rgba(0,0,0,.22);animation:hub-modal-up .26s cubic-bezier(.16,.9,.24,1)}
+.hub-modal{width:100%;max-width:480px;background:var(--surface-raised);border-radius:22px 22px 0 0;box-shadow:0 -10px 36px rgba(0,0,0,.22);animation:hub-modal-up .26s cubic-bezier(.16,.9,.24,1)}
 @media (min-width:520px){.hub-modal-overlay{align-items:center;padding:24px}.hub-modal{border-radius:20px}}
 @keyframes hub-modal-up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
 .hub-modal-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:none;color:var(--fg);font:600 13.5px 'Inter',sans-serif;cursor:pointer;transition:background .15s ease,transform .12s ease}
@@ -204,7 +206,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
    right after the body's last child and stays pinned to the viewport edge via position:sticky
    rather than scrolling away, so it only needs a JS toggle (is there more below?) rather than
    any position tracking. */
-.hub-sheet-fade{position:sticky;left:0;right:0;bottom:0;height:30px;margin-top:-30px;background:linear-gradient(to bottom, transparent, var(--edit-bg));pointer-events:none;opacity:0;transition:opacity .15s ease}
+.hub-sheet-fade{position:sticky;left:0;right:0;bottom:0;height:30px;margin-top:-30px;background:linear-gradient(to bottom, transparent, var(--surface-raised));pointer-events:none;opacity:0;transition:opacity .15s ease}
 .hub-sheet-fade.show{opacity:1}
 .hub-sheet-foot{padding:14px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--border);flex-shrink:0}
 .hub-sheet-foot .hub-modal-btn{width:100%}
