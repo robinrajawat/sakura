@@ -165,6 +165,13 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: Theme follows the device by default; one Light / Dark / System control.** A first visit now uses System
+(`themeMode='system'`), so dark-mode devices open in dark. Settings › Appearance has one Theme control, Light | Dark |
+System, instead of Theme plus a separate "Auto theme" row. Picking Light or Dark anywhere (settings, menu, command
+palette) is a lasting choice: `setTheme` leaves System mode, rather than the old temporary override that a reload or OS
+change undid. Saved prefs keep their theme (old prefs say `themeMode:'manual'`). `syncThemeSegs()` marks the active
+button. Test: `tests/e2e/theme-follows-system.spec.ts`.
+
 **2026-10-27: PDF: footer lines up with the text, plain names in tables, quieter notes.** The footer (title, page, date)
 now has the same 40px side inset as `#preview-doc`, so it lines up with the text column instead of reaching out to the
 page margin. Names in a table's Person column print as plain text (no pastel chip or avatar). Notes print as a thin left
@@ -179,13 +186,6 @@ one action ("Open settings" opens Settings › AI with the key box focused; "Unl
 Copy/Dismiss, titled with the provider's name ("Gemini error"). `AI_SETUP_PROBLEMS` + `openAiSettings()` near
 `showAiErrorModal`; the Auto-rewrite chip uses `openAiSettings()` too. "Rewrite node" is "Rewrite row" in the AI menu,
 toolbar list, help and README. Test: `tests/e2e/ai-setup-message.spec.ts`.
-
-**2026-10-26: Editor keyboard polish.** Enter on a blank indented row now moves it out a level wherever it ends its
-sub-list (next row shallower), not only on the document's last row; with siblings after it, Enter still adds a blank row
-(outdent there would move it past them). Alt+↑/↓ (`moveUp`/`moveDown`) now also work while typing in a row: commit, move,
-re-enter at the same caret offset. `moveSelected` no longer shows a "Moved up/down" toast. README: Shift+Enter writes in
-the row's note (the table said "split"), and the stale `[Text]`/`(Text)`/`!Text` markup line is gone. Tests:
-`tests/e2e/move-row-while-typing.spec.ts`; `enter-outdent-cascade.spec.ts` updated for the sub-list rule.
 
 ### In progress / not built
 
