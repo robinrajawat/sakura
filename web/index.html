@@ -18770,7 +18770,9 @@ function setQaOpen(on){
   dropdown.classList.toggle('open',!!on);
   const wrap=el('global-search-wrap'); if(wrap)wrap.classList.toggle('qa-open',!!on);
   if(on){
-    closeAllPanelsExceptGlobalSearch(); qaRender(); setTimeout(()=>el('qa-input')?.focus(),10);
+    // Only if still open: closed again within those 10ms (the shortcut pressed twice), focusing
+    // the box would open it once more.
+    closeAllPanelsExceptGlobalSearch(); qaRender(); setTimeout(()=>{ if(isQaDropdownOpen())el('qa-input')?.focus(); },10);
   }
   else {
     if(qaRenderDebounceTimer){clearTimeout(qaRenderDebounceTimer); qaRenderDebounceTimer=null;} const input=el('qa-input'); if(input){input.value=''; input.blur();} qaRender();
