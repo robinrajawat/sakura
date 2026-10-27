@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// A row marker is its thread's status: clicking it opens the entry that set it, not a filter.
+// A row's status badge opens its menu (with Show thread), not a filter.
 // Turning a filter on and off leaves the outline folded as it was.
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
@@ -35,11 +35,11 @@ async function seed(page: Page) {
   return errors;
 }
 
-test('clicking a marker opens its thread at the entry that set it, and does not filter', async ({ page }) => {
+test('clicking a status badge opens its menu; Show thread opens the thread; it does not filter', async ({ page }) => {
   const errors = await seed(page);
   await page.locator('.node-row[data-id="2"] .node-marker-badge').click();
+  await page.locator('.sb-context-menu').getByText('Show thread', { exact: true }).click();
   await expect(page.locator('#inline-remark-text-f1')).toBeVisible();
-  await expect(page.locator('#inline-remark-text-f1')).toBeFocused();
   expect(await page.evaluate('activeMarkerFilter')).toBe(null);
   // Shift+click still filters by that marker.
   await page.locator('.node-row[data-id="2"] .node-marker-badge').click({ modifiers: ['Shift'] });
@@ -84,7 +84,7 @@ test('opening another document clears the filter and folds back what it opened',
 
 test('Open items shows how long each item has been open; a folded branch shows its follow-ups', async ({ page }) => {
   const errors = await seed(page);
-  await page.evaluate("remarks.find(r => r.id === 'f1').createdAt = Date.now() - 3 * 86400000; render()");
+  await page.evaluate("nodes.find(n => n.id === 2).markerAt = Date.now() - 3 * 86400000; render()");
   await page.locator('.open-items-btn').click();
   await expect(page.locator('.sb-context-item', { hasText: 'Cutover' }).locator('.sb-context-meta')).toHaveText('3d');
   await page.keyboard.press('Escape');

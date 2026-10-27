@@ -1,25 +1,21 @@
 /**
- * A row's thread: the conversation about one node, and the row status it drives.
+ * A row's thread, the conversation about one node, and the row's own status.
  *
  * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
- * order. An entry has an author, a time and text; it is a comment, or a question
- * (`type: 'question'`). An answer is an entry that answers a question (`answerTo`), with a Yes/No
- * (`verdict`) and/or text. A status (`status`) sits on the entry it was set on, so its author and
- * time say who set it and when; the thread's status is the latest one.
+ * order. An entry has an author, a time and text; it is a comment, a question (`type: 'question'`)
+ * or a decision (`decision: true`). An answer is an entry that answers a question (`answerTo`),
+ * with a Yes/No (`verdict`) and/or text.
  *
- * Owner decision (2026-10-15): the row marker *is* the thread's status, and there are three:
- * Agreed ('confirmed'), Follow-up ('followup') and Out of scope ('parked') — stored in the thread
- * and shown on the row. Clicking a marker adds it to the thread, so it records who and when.
- * Older values read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out
- * of scope. "Open" is no marker: an unanswered question shows on its own (derived, never stored).
- * A decision is no status either: `decision: true` marks the entry where something was decided.
- *
- * Owner decision (2026-10-21): each Follow-up entry is its own open item, like a question. It stays
- * open until it is marked done (`done`, `doneAt`) or a later Agreed / Out of scope settles the row;
- * the row shows Follow-up while any is open.
+ * Owner decision (2026-10-27): rows say what, threads say why. A row has at most one status,
+ * stored on the row: Agreed ('confirmed'), Follow-up ('followup') or Out of scope ('parked'), with
+ * who set it and when (`markerBy`, `markerAt`, the date showing how old a follow-up is) and, for a
+ * Follow-up, who owns it (`markerOwner`). Setting a status adds nothing to the thread. A decision is
+ * no status: it marks the entry where something was decided and leaves the row alone. Older values
+ * read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out of scope.
  *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
- * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
+ * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes, and
+ * `migrateStatusToRows` moves statuses that older threads held on their entries onto the row.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
@@ -51,19 +47,17 @@ export interface ThreadEntry {
   /** For an answer: the id of the question it answers. */
   answerTo?: string;
   verdict?: 'yes' | 'no';
-  /** Older documents may hold 'resolved', 'decision', 'issue' or 'na' until migrated. */
-  status?: ThreadStatus | 'resolved' | 'decision' | 'issue' | 'na';
   /** The entry where something was decided (a chip on the entry; it doesn't change the row). */
   decision?: boolean;
   /** A question closed without an answer. */
   wontAnswer?: boolean;
-  /** Who owns a follow-up. */
+  context?: string;
+  // Older shapes, read only by the migrations: a status on the entry that set it (with a follow-up's
+  // owner and done mark), and the remark / discussion-item fields before that.
+  status?: ThreadStatus | 'resolved' | 'decision' | 'issue' | 'na';
   owner?: string;
-  /** A follow-up marked done, and when (epoch ms). */
   done?: boolean;
   doneAt?: number;
-  context?: string;
-  // Older shapes, read only by the migration.
   followUp?: boolean;
   resolvedAt?: number | null;
   kind?: string;
@@ -138,65 +132,6 @@ export function questionToAnswer<T extends ThreadEntry>(thread: T[], before?: T)
   const end = before ? thread.indexOf(before) : thread.length;
   const open = openQuestions(thread.slice(0, end < 0 ? thread.length : end));
   return open.length ? open[open.length - 1] : null;
-}
-
-export function isFollowup(e: ThreadEntry): boolean {
-  return normalizeThreadStatus(e.status) === 'followup';
-}
-
-export type FollowupState = 'open' | 'done' | 'settled';
-
-/** A follow-up's state: done once marked done, settled by a later Agreed / Out of scope, else open. */
-export function followupState(f: ThreadEntry, thread: ThreadEntry[]): FollowupState {
-  if (f.done) return 'done';
-  const at = (thread || []).indexOf(f);
-  if ((thread || []).some((e, i) => i > at && e.status && !isFollowup(e))) return 'settled';
-  return 'open';
-}
-
-/** Open follow-ups in a thread, oldest first. */
-export function openFollowups<T extends ThreadEntry>(thread: T[]): T[] {
-  return (thread || []).filter((e) => isFollowup(e) && followupState(e, thread) === 'open');
-}
-
-/** The entry holding the thread's status: the latest open follow-up, else the latest Agreed / Out
- * of scope entry, or null. */
-export function threadStatusEntry<T extends ThreadEntry>(thread: T[]): T | null {
-  const open = openFollowups(thread);
-  if (open.length) return open[open.length - 1];
-  for (let i = (thread || []).length - 1; i >= 0; i--) if (thread[i].status && !isFollowup(thread[i])) return thread[i];
-  return null;
-}
-
-/** The thread's status: Follow-up while one is open, else the latest Agreed / Out of scope, or null. */
-export function threadStatus(thread: ThreadEntry[]): ThreadStatus | null {
-  const e = threadStatusEntry(thread);
-  return e ? normalizeThreadStatus(e.status) : null;
-}
-
-/** The row marker a thread status shows as: the same value. */
-export function markerForThreadStatus(s: ThreadStatus | string | null | undefined): ThreadStatus | null {
-  return normalizeThreadStatus(s);
-}
-
-/** The status a row marker sets on its thread: the same value. */
-export function threadStatusForMarker(m: string | null | undefined): ThreadStatus | null {
-  return normalizeThreadStatus(m);
-}
-
-/** Every marker is the thread's status. */
-export function isThreadMarker(m: string | null | undefined): boolean {
-  return normalizeThreadStatus(m) != null;
-}
-
-/**
- * The marker a row should show after its thread changed: the thread's status when it has one;
- * otherwise a thread-driven marker is cleared and a row-only one kept.
- */
-export function syncedMarker(current: string | null | undefined, thread: ThreadEntry[]): string {
-  const fromThread = markerForThreadStatus(threadStatus(thread));
-  if (fromThread) return fromThread;
-  return isThreadMarker(current) ? '' : (current || '');
 }
 
 // ── Migration ────────────────────────────────────────────────────────────────────────────────
@@ -288,48 +223,70 @@ export function migrateQaToRemarks<Q extends StatusQaItem & { createdAt?: number
   return { qaItems: kept, remarks: out, moved };
 }
 
+/** A row's status as stored on the row. */
+export interface RowStatus {
+  marker: ThreadStatus | '';
+  /** Who set it, and when (epoch ms); unknown for a status set before they were recorded. */
+  markerBy?: string;
+  markerAt?: number;
+  /** Who owns a Follow-up. */
+  markerOwner?: string;
+}
+
+/** True when any entry still holds a status (from before statuses moved onto the row). */
+export function needsStatusMigration(entries: ThreadEntry[]): boolean {
+  return (entries || []).some((e) => e && (e.status != null || e.owner != null || e.done != null || e.doneAt != null));
+}
+
 /**
- * Links row markers and threads once, for documents from before they were linked: a row with a
- * thread status but no marker gets the matching marker; a marked row whose thread has no status
- * puts the marker on the thread's latest entry. Returns the marker changes
- * (node id → marker); entries are updated in place.
+ * Moves statuses off thread entries onto their rows (owner decision 2026-10-27). The row takes the
+ * status its thread showed -- the latest open Follow-up (one not marked done and not settled by a
+ * later Agreed / Out of scope), else the latest Agreed / Out of scope -- with that entry's author,
+ * time and, for a Follow-up, owner. A thread with no status leaves the row's marker as it is.
+ * Entries lose their status fields; one that said nothing else (no text, Yes/No, question, answer
+ * or decision) is removed. Returns the new entries and the row changes (node id → status).
  */
-export function linkMarkersToThreads(nodes: { id: number; marker?: string | null }[], entries: ThreadEntry[]): Map<number, string> {
-  const changes = new Map<number, string>();
-  const byNode = new Map<number, ThreadEntry[]>();
+export function migrateStatusToRows<R extends ThreadEntry>(
+  nodes: { id: number; marker?: string | null }[],
+  entries: R[]
+): { entries: R[]; rows: Map<number, RowStatus>; changed: boolean } {
+  const rows = new Map<number, RowStatus>();
+  if (!needsStatusMigration(entries)) return { entries, rows, changed: false };
+  const ids = new Set((nodes || []).map((n) => n.id));
+  const byNode = new Map<number, R[]>();
   for (const e of entries || []) {
-    if (!e || e.anchorNodeId == null) continue;
+    if (!e || e.anchorNodeId == null || !ids.has(e.anchorNodeId)) continue;
     const list = byNode.get(e.anchorNodeId) || [];
     list.push(e);
     byNode.set(e.anchorNodeId, list);
   }
-  for (const n of nodes || []) {
-    const list = byNode.get(n.id);
-    if (!list || !list.length) continue;
-    const thread = threadEntries(list, n.id);
-    const st = threadStatus(thread);
-    const last = thread[thread.length - 1];
-    if (st && !n.marker) changes.set(n.id, markerForThreadStatus(st) as string);
-    else if (!st && isThreadMarker(n.marker)) last.status = threadStatusForMarker(n.marker) as ThreadStatus;
-    else if (st && normalizeThreadStatus(n.marker) === 'parked' && st !== 'parked') {
-      // Out of scope (Parked / N/A) used to be row-only, so an older row can show it over a thread
-      // with another status. The row keeps what it shows: the marker goes into the thread after its
-      // latest entry (no author or time of its own: the old marker never stored them).
-      if (!last.status) last.status = 'parked';
-      else {
-        const at = (last.createdAt || 0) + 1;
-        (entries as ThreadEntry[]).push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: 'parked' });
-      }
-    }
-    else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== normalizeThreadStatus(n.marker)) {
-      // Issue used to be row-only, so an older row can be marked Issue (now Follow-up) over a thread
-      // with another status: it goes on the latest entry when that one has no status yet; otherwise
-      // the thread's status wins.
-      if (normalizeThreadStatus(n.marker) === 'followup' && !last.status) last.status = 'followup';
-      else changes.set(n.id, markerForThreadStatus(st) as string);
-    }
+  byNode.forEach((list, id) => {
+    const thread = threadEntries(list, id);
+    const st = (e: ThreadEntry) => normalizeThreadStatus(e.status);
+    let holder: ThreadEntry | null = null;
+    thread.forEach((e, i) => {
+      if (st(e) !== 'followup' || e.done) return;
+      if (thread.some((x, k) => k > i && st(x) && st(x) !== 'followup')) return;
+      holder = e;
+    });
+    if (!holder) for (let i = thread.length - 1; i >= 0 && !holder; i--) if (st(thread[i]) && st(thread[i]) !== 'followup') holder = thread[i];
+    if (!holder) return;
+    const h = holder as ThreadEntry;
+    const row: RowStatus = { marker: st(h) as ThreadStatus };
+    if ((h.person || '').trim()) row.markerBy = (h.person as string).trim();
+    if (h.createdAt) row.markerAt = h.createdAt;
+    if (row.marker === 'followup' && (h.owner || '').trim()) row.markerOwner = (h.owner as string).trim();
+    rows.set(id, row);
+  });
+  const out: R[] = [];
+  for (const src of entries || []) {
+    if (!src) continue;
+    if (src.status == null && src.owner == null && src.done == null && src.doneAt == null) { out.push(src); continue; }
+    const e = { ...src };
+    delete e.status; delete e.owner; delete e.done; delete e.doneAt;
+    if (htmlHasVisibleText(e.text) || e.verdict || isQuestion(e) || e.answerTo != null || e.decision) out.push(e);
   }
-  return changes;
+  return { entries: out, rows, changed: true };
 }
 
 // ── Open items ───────────────────────────────────────────────────────────────────────────────
@@ -352,13 +309,6 @@ export function allOpenQuestions(entries: ThreadEntry[], nodeIds?: Set<number>):
   return out;
 }
 
-/** Every open follow-up of the document's threads (rows in `nodeIds` only, when given). */
-export function allOpenFollowups(entries: ThreadEntry[], nodeIds?: Set<number>): ThreadEntry[] {
-  const out: ThreadEntry[] = [];
-  groupByNode(entries, nodeIds).forEach((list, id) => out.push(...openFollowups(threadEntries(list, id))));
-  return out;
-}
-
 /** Every answered or won't-answer question (rows in `nodeIds` only, when given). */
 export function allSettledQuestions(entries: ThreadEntry[], nodeIds?: Set<number>): ThreadEntry[] {
   const out: ThreadEntry[] = [];
@@ -376,25 +326,17 @@ export function normalizeDiscussionFilter(v: unknown): DiscussionFilter | null {
   return v === 'openQa' || v === 'openItems' ? v : null;
 }
 
-/** Ids of the nodes with an open question; for openItems also those with an open follow-up. */
+/** Ids of the nodes with an open question; for openItems also the Follow-up rows. */
 export function nodesWithOpenItems(filter: DiscussionFilter, entries: ThreadEntry[], nodes: ProgressNode[] = []): Set<number> {
   const ids = new Set<number>();
   for (const q of allOpenQuestions(entries)) ids.add(q.anchorNodeId as number);
-  if (filter === 'openItems') {
-    for (const f of allOpenFollowups(entries)) ids.add(f.anchorNodeId as number);
-    for (const n of nodes || []) if (normalizeThreadStatus(n.marker) === 'followup') ids.add(n.id);
-  }
+  if (filter === 'openItems') for (const n of nodes || []) if (isFollowupRow(n)) ids.add(n.id);
   return ids;
 }
 
-/** How many open follow-ups each row has: one per open Follow-up entry, and one for a row marked
- * Follow-up without such an entry (marked before markers were recorded in the thread). */
-export function openFollowupCounts(nodes: ProgressNode[], entries: ThreadEntry[]): Map<number, number> {
-  const ids = new Set((nodes || []).map((n) => n.id));
-  const counts = new Map<number, number>();
-  for (const f of allOpenFollowups(entries, ids)) counts.set(f.anchorNodeId as number, (counts.get(f.anchorNodeId as number) || 0) + 1);
-  for (const n of nodes || []) if (normalizeThreadStatus(n.marker) === 'followup' && !counts.has(n.id)) counts.set(n.id, 1);
-  return counts;
+/** A row marked Follow-up: one open item. */
+export function isFollowupRow(n: ProgressNode | null | undefined): boolean {
+  return !!n && normalizeThreadStatus(n.marker) === 'followup';
 }
 
 /** "1 open question", "2 open follow-ups" — the label for a count. */
@@ -423,18 +365,18 @@ export interface DocumentProgress {
 }
 
 /**
- * The toolbar summary's counts. Row markers (which threads drive): Follow-up needs attention,
- * Out of scope is set aside, Agreed is settled; open follow-ups and questions count once each,
- * questions also when settled, when on a row of this document; unlinked Q&A entries count too.
+ * The toolbar summary's counts. Row statuses: Follow-up needs attention, Out of scope is set
+ * aside, Agreed is settled; questions count open or settled, when on a row of this document;
+ * unlinked Q&A entries count too.
  */
 export function documentProgress(nodes: ProgressNode[], qaItems: StatusQaItem[], entries: ThreadEntry[]): DocumentProgress {
   const p: DocumentProgress = { followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
   const ids = new Set<number>();
-  openFollowupCounts(nodes, entries).forEach((c) => { p.followups += c; });
   for (const n of nodes || []) {
     ids.add(n.id);
     const m = normalizeThreadStatus(n.marker);
-    if (m === 'parked') p.parked++;
+    if (m === 'followup') p.followups++;
+    else if (m === 'parked') p.parked++;
     else if (m === 'confirmed') p.settled++;
   }
   for (const q of qaItems || []) {

@@ -68,7 +68,7 @@ test('Expand all and Collapse all can be undone and redone', async ({ page }) =>
   expect(await folds()).toEqual([4]);
 });
 
-test('clicking a marker whose thread entry is already on screen does not scroll the page', async ({ page }) => {
+test('clicking a status badge opens its menu without scrolling the page', async ({ page }) => {
   await page.evaluate(() => {
     const rows = Array.from({ length: 40 }, (_, i) => ({ id: i + 1, depth: 0, text: 'Row ' + (i + 1), parentId: null, styles: {} }));
     // @ts-expect-error -- bare globals from index.html
@@ -83,7 +83,7 @@ test('clicking a marker whose thread entry is already on screen does not scroll 
   await pane.evaluate((p) => { p.scrollTop += 40; });
   const before = await pane.evaluate((p) => p.scrollTop);
   await page.locator('.node-row[data-id="21"] .node-marker-badge').click();
+  await expect(page.locator('.sb-context-menu')).toBeVisible();
   await page.waitForTimeout(400);
   expect(await pane.evaluate((p) => p.scrollTop)).toBe(before);
-  await expect(page.locator('#inline-remark-text-a1')).toBeFocused();
 });

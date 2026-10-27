@@ -1914,9 +1914,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 /* Status pills (PDF) and the row thread's chips: Question, Yes / No, Answer, Follow-up, Resolved, Decision. */
 .node-qa-status{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:4px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
 .pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"],.thread-chip.is-followup{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
-.thread-todo-note{font-size:var(--fs-sm);color:var(--muted);cursor:pointer}
-.thread-todo-note:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-.thread-todo-note.is-done{color:var(--fc-green)}
 .pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"],.pv-status-pill[data-state="decision"],.pv-status-pill[data-state="yes"],.pv-status-pill[data-state="answer"],.thread-chip.is-resolved,.thread-chip.is-decision,.thread-chip.is-answer,.thread-chip.is-question[data-state="answered"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
 .pv-status-pill[data-state="wont"],.thread-chip.is-question[data-state="wont"]{background:var(--chip);color:var(--muted)}
 .pv-status-pill[data-state="question"],.thread-chip.is-question{background:color-mix(in srgb,var(--accent) 14%,transparent);color:color-mix(in srgb,var(--accent) 80%,var(--fg))}
@@ -1978,8 +1975,9 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 .thread-verdict{font-size:var(--fs-sm);color:var(--muted)}
 .thread-status-note,.thread-q-note{font-size:var(--fs-sm);color:var(--muted)}
-.thread-owner-edit{outline:none;color:var(--fg);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;display:inline-block;min-width:4ch}
-.thread-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
+/* A Follow-up's owner typed in place, right after the row's status badge. */
+.row-owner-edit{outline:none;color:var(--fg);font-size:var(--fs-sm);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;margin-left:4px;display:inline-block;min-width:8ch}
+.row-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
@@ -4202,20 +4200,20 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="panels" id="help-section-remarks">
 <h4>Thread (comments and questions)</h4>
 <ul>
-<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a question, an answer (✓ Yes / ✗ No, or ↳ for an answer without Yes/No), a decision (handshake), a status such as Follow-up (its marker icon), or a plain comment (a faint speech bubble) — then its <strong>author</strong> (each person in a document gets their own name color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
+<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a question, an answer (✓ Yes / ✗ No, or ↳ for an answer without Yes/No), a decision (handshake), or a plain comment (a faint speech bubble) — then its <strong>author</strong> (each person in a document gets their own name color), the <strong>time</strong> it was written, and the text. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Right-click the line to add it, make it a question, Rewrite with AI (when AI is on) or close it. While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong>'s icon is in your accent colour until it's answered; then it reads “· question, answered” in grey. Right-click a question → <strong>Answer</strong> to answer that one; or answer from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line). When the thread has more than one question, the reply line shows which one it answers (“to: …”) and lets you pick another. Right-click an entry → <strong>Mark as the answer</strong> (or <strong>Answer to ›</strong> with several questions) links it, or moves a wrong link; a question can have several answers. With several questions, an answer that comes a few entries after its question quotes it (“↳ Does it…”). Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
 <li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text.</li>
-<li><strong>Status</strong>: right-click an entry → Agreed, Follow-up or Out of scope marks it (shown as quiet text, e.g. “· agreed”, on that entry). The latest one is the thread's status, and it is the row's marker — the one place the status is shown in colour. Clicking a marker on a row adds it to the thread by the current author (Follow-up also opens the reply line); clearing it takes it back. Clicking the marker badge on a row opens its thread at the entry that set it (Shift+click filters by that marker). The reply line has <strong>Follow-up</strong>, <strong>Out of scope</strong>, and <strong>Agree</strong> while the thread is a follow-up — each adds an entry by the current author</li>
+<li><strong>Status</strong> belongs to the row, not the thread: a row is <strong>Agreed</strong>, <strong>Follow-up</strong> or <strong>Out of scope</strong>, with who set it and when (hover its badge: “Follow-up · for Kim · Robin, 13 Oct (2w)”). Setting it adds nothing to the thread. Set it from the row's right-click menu, the toolbar's Insert ▾, or the reply line's <strong>Follow-up</strong>, <strong>Agree</strong> (on a Follow-up row) and <strong>Out of scope</strong> — what you typed goes in as a plain comment saying why. Marking a row Follow-up from the row opens its reply line to say what's left. Click the badge for its menu: the three statuses (the current one again clears it), <strong>Assign follow-up</strong> (who owns it), <strong>Add to To-Dos</strong> and <strong>Show thread</strong>; Shift+click filters by it, right-click clears it</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, type it and click <strong>Decision</strong> on the reply line (or right-click → Add as decision), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
 <li><strong>Links</strong>: a pasted web address becomes a link. Click a link to put the caret in it: a small card under it opens, copies, edits or removes it (Ctrl/Cmd+click opens it straight away; right-click has the same items)</li>
-<li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, its status, Assign follow-up (who owns it — shown as “· follow-up for Ana” and in the open-items list) (current one highlighted — click it again to clear), Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>Right-click an entry for <strong>Add to thread</strong>, Make it a question / comment, Mark as decision, Copy thread, Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
-<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), Yes/No and status as text, the entry icons joined by a faint line. The status prints once, on the row's marker. The outline shows the thread the same way; click its header to hide it</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day) and Yes/No as text, the entry icons joined by a faint line. The status prints on the row's marker, a Follow-up with its owner and since when. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
-<li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; follow-ups become statuses and decisions become Decision chips (Agreed), and the row marker is lined up with them. Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
+<li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; decisions become Decision chips, and a status an older thread held on an entry moves onto its row (with that entry's author, time and follow-up owner; entries that said nothing else go). Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
 </div>
           <div class="help-section" data-cat="panels" id="help-section-tables">
@@ -5081,7 +5079,6 @@ var THREAD_SEAL_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none"
 var THREAD_WARN_SVG='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
 // The thread's statuses are the row markers, same names (older 'resolved' / 'decision' read as Agreed,
 // 'issue' as Follow-up, 'na' as Out of scope).
-var THREAD_STATUS_LABEL={confirmed:'Agreed',followup:'Follow-up',parked:'Out of scope',issue:'Follow-up',na:'Out of scope',resolved:'Agreed',decision:'Agreed'};
 // The right-click menu's fixed quick row, in order. Only the first CTX_QUICK_ROW_MAX entries that
 // are allowed right now (see ctxActionAllowed) render as icons; every other node action —
 // including the rest of this list — is listed under "More".
@@ -7508,27 +7505,23 @@ function cardsTotal(grid, calculated) {
 /* GENERATED:tableDisplay:END */
 /* GENERATED:discussionStatus:START — DO NOT EDIT BY HAND. Source of truth: src/utils/discussionStatus.ts (tests: tests/unit/discussionStatus.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
- * A row's thread: the conversation about one node, and the row status it drives.
+ * A row's thread, the conversation about one node, and the row's own status.
  *
  * Owner design (2026-10-14): each node has at most one thread, a flat list of entries in time
- * order. An entry has an author, a time and text; it is a comment, or a question
- * (`type: 'question'`). An answer is an entry that answers a question (`answerTo`), with a Yes/No
- * (`verdict`) and/or text. A status (`status`) sits on the entry it was set on, so its author and
- * time say who set it and when; the thread's status is the latest one.
+ * order. An entry has an author, a time and text; it is a comment, a question (`type: 'question'`)
+ * or a decision (`decision: true`). An answer is an entry that answers a question (`answerTo`),
+ * with a Yes/No (`verdict`) and/or text.
  *
- * Owner decision (2026-10-15): the row marker *is* the thread's status, and there are three:
- * Agreed ('confirmed'), Follow-up ('followup') and Out of scope ('parked') — stored in the thread
- * and shown on the row. Clicking a marker adds it to the thread, so it records who and when.
- * Older values read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out
- * of scope. "Open" is no marker: an unanswered question shows on its own (derived, never stored).
- * A decision is no status either: `decision: true` marks the entry where something was decided.
- *
- * Owner decision (2026-10-21): each Follow-up entry is its own open item, like a question. It stays
- * open until it is marked done (`done`, `doneAt`) or a later Agreed / Out of scope settles the row;
- * the row shows Follow-up while any is open.
+ * Owner decision (2026-10-27): rows say what, threads say why. A row has at most one status,
+ * stored on the row: Agreed ('confirmed'), Follow-up ('followup') or Out of scope ('parked'), with
+ * who set it and when (`markerBy`, `markerAt`, the date showing how old a follow-up is) and, for a
+ * Follow-up, who owns it (`markerOwner`). Setting a status adds nothing to the thread. A decision is
+ * no status: it marks the entry where something was decided and leaves the row alone. Older values
+ * read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out of scope.
  *
  * Entries are stored in the document's `remarks` array (the key older documents already use);
- * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes.
+ * `migrateDiscussionToThread` converts the older remark / Q&A / discussion-item shapes, and
+ * `migrateStatusToRows` moves statuses that older threads held on their entries onto the row.
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `discussionStatus` block.
  */
@@ -7595,60 +7588,6 @@ function questionToAnswer(thread, before) {
     const end = before ? thread.indexOf(before) : thread.length;
     const open = openQuestions(thread.slice(0, end < 0 ? thread.length : end));
     return open.length ? open[open.length - 1] : null;
-}
-function isFollowup(e) {
-    return normalizeThreadStatus(e.status) === 'followup';
-}
-/** A follow-up's state: done once marked done, settled by a later Agreed / Out of scope, else open. */
-function followupState(f, thread) {
-    if (f.done)
-        return 'done';
-    const at = (thread || []).indexOf(f);
-    if ((thread || []).some((e, i) => i > at && e.status && !isFollowup(e)))
-        return 'settled';
-    return 'open';
-}
-/** Open follow-ups in a thread, oldest first. */
-function openFollowups(thread) {
-    return (thread || []).filter((e) => isFollowup(e) && followupState(e, thread) === 'open');
-}
-/** The entry holding the thread's status: the latest open follow-up, else the latest Agreed / Out
- * of scope entry, or null. */
-function threadStatusEntry(thread) {
-    const open = openFollowups(thread);
-    if (open.length)
-        return open[open.length - 1];
-    for (let i = (thread || []).length - 1; i >= 0; i--)
-        if (thread[i].status && !isFollowup(thread[i]))
-            return thread[i];
-    return null;
-}
-/** The thread's status: Follow-up while one is open, else the latest Agreed / Out of scope, or null. */
-function threadStatus(thread) {
-    const e = threadStatusEntry(thread);
-    return e ? normalizeThreadStatus(e.status) : null;
-}
-/** The row marker a thread status shows as: the same value. */
-function markerForThreadStatus(s) {
-    return normalizeThreadStatus(s);
-}
-/** The status a row marker sets on its thread: the same value. */
-function threadStatusForMarker(m) {
-    return normalizeThreadStatus(m);
-}
-/** Every marker is the thread's status. */
-function isThreadMarker(m) {
-    return normalizeThreadStatus(m) != null;
-}
-/**
- * The marker a row should show after its thread changed: the thread's status when it has one;
- * otherwise a thread-driven marker is cleared and a row-only one kept.
- */
-function syncedMarker(current, thread) {
-    const fromThread = markerForThreadStatus(threadStatus(thread));
-    if (fromThread)
-        return fromThread;
-    return isThreadMarker(current) ? '' : (current || '');
 }
 // ── Migration ────────────────────────────────────────────────────────────────────────────────
 function localDateStr(ms) {
@@ -7752,55 +7691,75 @@ function migrateQaToRemarks(qaItems, remarks) {
     }
     return { qaItems: kept, remarks: out, moved };
 }
+/** True when any entry still holds a status (from before statuses moved onto the row). */
+function needsStatusMigration(entries) {
+    return (entries || []).some((e) => e && (e.status != null || e.owner != null || e.done != null || e.doneAt != null));
+}
 /**
- * Links row markers and threads once, for documents from before they were linked: a row with a
- * thread status but no marker gets the matching marker; a marked row whose thread has no status
- * puts the marker on the thread's latest entry. Returns the marker changes
- * (node id → marker); entries are updated in place.
+ * Moves statuses off thread entries onto their rows (owner decision 2026-10-27). The row takes the
+ * status its thread showed -- the latest open Follow-up (one not marked done and not settled by a
+ * later Agreed / Out of scope), else the latest Agreed / Out of scope -- with that entry's author,
+ * time and, for a Follow-up, owner. A thread with no status leaves the row's marker as it is.
+ * Entries lose their status fields; one that said nothing else (no text, Yes/No, question, answer
+ * or decision) is removed. Returns the new entries and the row changes (node id → status).
  */
-function linkMarkersToThreads(nodes, entries) {
-    const changes = new Map();
+function migrateStatusToRows(nodes, entries) {
+    const rows = new Map();
+    if (!needsStatusMigration(entries))
+        return { entries, rows, changed: false };
+    const ids = new Set((nodes || []).map((n) => n.id));
     const byNode = new Map();
     for (const e of entries || []) {
-        if (!e || e.anchorNodeId == null)
+        if (!e || e.anchorNodeId == null || !ids.has(e.anchorNodeId))
             continue;
         const list = byNode.get(e.anchorNodeId) || [];
         list.push(e);
         byNode.set(e.anchorNodeId, list);
     }
-    for (const n of nodes || []) {
-        const list = byNode.get(n.id);
-        if (!list || !list.length)
+    byNode.forEach((list, id) => {
+        const thread = threadEntries(list, id);
+        const st = (e) => normalizeThreadStatus(e.status);
+        let holder = null;
+        thread.forEach((e, i) => {
+            if (st(e) !== 'followup' || e.done)
+                return;
+            if (thread.some((x, k) => k > i && st(x) && st(x) !== 'followup'))
+                return;
+            holder = e;
+        });
+        if (!holder)
+            for (let i = thread.length - 1; i >= 0 && !holder; i--)
+                if (st(thread[i]) && st(thread[i]) !== 'followup')
+                    holder = thread[i];
+        if (!holder)
+            return;
+        const h = holder;
+        const row = { marker: st(h) };
+        if ((h.person || '').trim())
+            row.markerBy = h.person.trim();
+        if (h.createdAt)
+            row.markerAt = h.createdAt;
+        if (row.marker === 'followup' && (h.owner || '').trim())
+            row.markerOwner = h.owner.trim();
+        rows.set(id, row);
+    });
+    const out = [];
+    for (const src of entries || []) {
+        if (!src)
             continue;
-        const thread = threadEntries(list, n.id);
-        const st = threadStatus(thread);
-        const last = thread[thread.length - 1];
-        if (st && !n.marker)
-            changes.set(n.id, markerForThreadStatus(st));
-        else if (!st && isThreadMarker(n.marker))
-            last.status = threadStatusForMarker(n.marker);
-        else if (st && normalizeThreadStatus(n.marker) === 'parked' && st !== 'parked') {
-            // Out of scope (Parked / N/A) used to be row-only, so an older row can show it over a thread
-            // with another status. The row keeps what it shows: the marker goes into the thread after its
-            // latest entry (no author or time of its own: the old marker never stored them).
-            if (!last.status)
-                last.status = 'parked';
-            else {
-                const at = (last.createdAt || 0) + 1;
-                entries.push({ id: 'm' + n.id + '-' + at, anchorNodeId: n.id, person: '', text: '', date: last.date || '', context: '', createdAt: at, status: 'parked' });
-            }
+        if (src.status == null && src.owner == null && src.done == null && src.doneAt == null) {
+            out.push(src);
+            continue;
         }
-        else if (st && isThreadMarker(n.marker) && markerForThreadStatus(st) !== normalizeThreadStatus(n.marker)) {
-            // Issue used to be row-only, so an older row can be marked Issue (now Follow-up) over a thread
-            // with another status: it goes on the latest entry when that one has no status yet; otherwise
-            // the thread's status wins.
-            if (normalizeThreadStatus(n.marker) === 'followup' && !last.status)
-                last.status = 'followup';
-            else
-                changes.set(n.id, markerForThreadStatus(st));
-        }
+        const e = { ...src };
+        delete e.status;
+        delete e.owner;
+        delete e.done;
+        delete e.doneAt;
+        if (htmlHasVisibleText(e.text) || e.verdict || isQuestion(e) || e.answerTo != null || e.decision)
+            out.push(e);
     }
-    return changes;
+    return { entries: out, rows, changed: true };
 }
 // ── Open items ───────────────────────────────────────────────────────────────────────────────
 function groupByNode(entries, ids) {
@@ -7820,12 +7779,6 @@ function allOpenQuestions(entries, nodeIds) {
     groupByNode(entries, nodeIds).forEach((list, id) => out.push(...openQuestions(threadEntries(list, id))));
     return out;
 }
-/** Every open follow-up of the document's threads (rows in `nodeIds` only, when given). */
-function allOpenFollowups(entries, nodeIds) {
-    const out = [];
-    groupByNode(entries, nodeIds).forEach((list, id) => out.push(...openFollowups(threadEntries(list, id))));
-    return out;
-}
 /** Every answered or won't-answer question (rows in `nodeIds` only, when given). */
 function allSettledQuestions(entries, nodeIds) {
     const out = [];
@@ -7838,49 +7791,39 @@ function allSettledQuestions(entries, nodeIds) {
 function normalizeDiscussionFilter(v) {
     return v === 'openQa' || v === 'openItems' ? v : null;
 }
-/** Ids of the nodes with an open question; for openItems also those with an open follow-up. */
+/** Ids of the nodes with an open question; for openItems also the Follow-up rows. */
 function nodesWithOpenItems(filter, entries, nodes = []) {
     const ids = new Set();
     for (const q of allOpenQuestions(entries))
         ids.add(q.anchorNodeId);
-    if (filter === 'openItems') {
-        for (const f of allOpenFollowups(entries))
-            ids.add(f.anchorNodeId);
+    if (filter === 'openItems')
         for (const n of nodes || [])
-            if (normalizeThreadStatus(n.marker) === 'followup')
+            if (isFollowupRow(n))
                 ids.add(n.id);
-    }
     return ids;
 }
-/** How many open follow-ups each row has: one per open Follow-up entry, and one for a row marked
- * Follow-up without such an entry (marked before markers were recorded in the thread). */
-function openFollowupCounts(nodes, entries) {
-    const ids = new Set((nodes || []).map((n) => n.id));
-    const counts = new Map();
-    for (const f of allOpenFollowups(entries, ids))
-        counts.set(f.anchorNodeId, (counts.get(f.anchorNodeId) || 0) + 1);
-    for (const n of nodes || [])
-        if (normalizeThreadStatus(n.marker) === 'followup' && !counts.has(n.id))
-            counts.set(n.id, 1);
-    return counts;
+/** A row marked Follow-up: one open item. */
+function isFollowupRow(n) {
+    return !!n && normalizeThreadStatus(n.marker) === 'followup';
 }
 /** "1 open question", "2 open follow-ups" — the label for a count. */
 function openCountLabel(n, kind) {
     return n + ' open ' + kind + (n === 1 ? '' : 's');
 }
 /**
- * The toolbar summary's counts. Row markers (which threads drive): Follow-up needs attention,
- * Out of scope is set aside, Agreed is settled; open follow-ups and questions count once each,
- * questions also when settled, when on a row of this document; unlinked Q&A entries count too.
+ * The toolbar summary's counts. Row statuses: Follow-up needs attention, Out of scope is set
+ * aside, Agreed is settled; questions count open or settled, when on a row of this document;
+ * unlinked Q&A entries count too.
  */
 function documentProgress(nodes, qaItems, entries) {
     const p = { followups: 0, parked: 0, questions: 0, settled: 0, total: 0 };
     const ids = new Set();
-    openFollowupCounts(nodes, entries).forEach((c) => { p.followups += c; });
     for (const n of nodes || []) {
         ids.add(n.id);
         const m = normalizeThreadStatus(n.marker);
-        if (m === 'parked')
+        if (m === 'followup')
+            p.followups++;
+        else if (m === 'parked')
             p.parked++;
         else if (m === 'confirmed')
             p.settled++;
@@ -10073,7 +10016,7 @@ function repointNodeLinks(fromId,toId){
 function nodeDiscussionCopies(nodeId){
   const clone=x=>JSON.parse(JSON.stringify(x));
   const qas=(Array.isArray(qaItems)?qaItems:[]).filter(q=>q&&q.sourceNodeId===nodeId).map(clone);
-  const rms=(Array.isArray(remarks)?remarks:[]).filter(r=>r&&r.anchorNodeId===nodeId&&(stripHtmlToText(r.text||'').trim()||r.verdict||r.status)).map(clone);
+  const rms=(Array.isArray(remarks)?remarks:[]).filter(r=>r&&r.anchorNodeId===nodeId&&(stripHtmlToText(r.text||'').trim()||r.verdict)).map(clone);
   return {qas,rms};
 }
 function attachDiscussionCopies(toId,qas,rms){
@@ -12021,7 +11964,7 @@ function captionFromLegacyAlt(alt) {
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=SECTION_HEADING_LEVEL?st.heading:0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})},n)}
+function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',...normalizeRowStatusMeta(n),createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})},n)}
 // images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
 // creating a NEW node from an existing one's content (duplicate, paste), so the copy's pictures
 // must be independent objects, not shared references into the source node.
@@ -12087,6 +12030,8 @@ function convertLegacyRows(list,savedFormat){
   if(changed&&!convertLegacyRows._toastShown){ convertLegacyRows._toastShown=true; setTimeout(()=>{ try{ if(localStorage.getItem('sakura_rich_rows_toast_v1'))return; localStorage.setItem('sakura_rich_rows_toast_v1','1') }catch(e){} if(typeof showToast==='function')showToast('Rows are rich text now: select words to format them from the bar above them, or press Ctrl/Cmd+B, I or U. Typed **, __ and [Section] were turned into formatting.',null,false,9000) },800) }
   return changed+folded;
 }
+// Who set a row's status and when, and a Follow-up's owner (owner decision 2026-10-27: one status, on the row).
+function normalizeRowStatusMeta(n){ const m=normalizeThreadStatus(n.marker); if(!m)return {}; const o={}; if(typeof n.markerBy==='string'&&n.markerBy.trim())o.markerBy=n.markerBy.trim(); if(Number.isFinite(n.markerAt)&&n.markerAt>0)o.markerAt=n.markerAt; if(m==='followup'&&typeof n.markerOwner==='string'&&n.markerOwner.trim())o.markerOwner=n.markerOwner.trim(); return o; }
 function normalizeNodeMarks(out,src){if(!src||!Array.isArray(src.marks)||!src.marks.length)return out; out.marks=src.marks; out.marksText=typeof src.marksText==='string'?src.marksText:out.text; setRowMarksOn(out,rowMarksOf(out)); return out}
 function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables,images,marks){const _now=Date.now(); return normalizeNodeMarks({id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],images:Array.isArray(images)?cloneNodeImagesWithNewIds(images,_now,newNodeImageId):[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null},{marks})}
 // A row from pasted or imported text, or an AI outline: Markdown-style **bold** / __italic__ in it
@@ -18165,7 +18110,7 @@ function collectRemarkMatches(q){
         // Every thread entry is searched: its text, author and an answer's Yes / No.
         const hay=plainText+' '+(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'')+' '+(r.person||'')+' '+(r.context||'');
         if(!qaHayMatches(hay,tokens))continue;
-        const label=plainText.trim()||(r.verdict==='yes'?'Yes':r.verdict==='no'?'No':THREAD_STATUS_LABEL[r.status]||'(empty entry)');
+        const label=plainText.trim()||(r.verdict==='yes'?'Yes':r.verdict==='no'?'No':(r.decision?'Decision':'(empty entry)'));
         out.push(isTrash?{
           group:'Threads', label:label.slice(0,80), labelHtml:buildMatchSnippetHtml(label,q),
           meta:'In Trash · '+(docTitle||'Untitled'),
@@ -19084,14 +19029,12 @@ function subtreeContentCounts(idx){
 // dots); it turns accent-coloured when open questions or follow-ups are hidden, and its tooltip
 // names what is inside with counts.
 // Clicking the count unfolds the branch; an accent count (something open inside) also goes to the
-// first open item in outline order, a follow-up's status entry or an open question (owner, 2026-10-20).
+// first open item in outline order, a Follow-up row or an open question (owner, 2026-10-20).
 function openFoldBadge(nodeId){
   const idx=getIndex(nodes,nodeId); if(idx<0)return;
   const end=getSubtreeEnd(nodes,idx); let target=null;
   for(let i=idx+1;i<end&&!target;i++){
     const n=nodes[i];
-    const f=Array.isArray(remarks)&&remarks.some(r=>r.anchorNodeId===n.id)?openFollowups(threadEntries(remarks,n.id))[0]:null;
-    if(f){ target=()=>revealInlineObject('remark',f.id); break; }
     if(n.marker==='followup'){ target=()=>revealMarkerEntry(n.id); break; }
     const q=Array.isArray(remarks)&&remarks.some(r=>r.anchorNodeId===n.id)?openQuestions(threadEntries(remarks,n.id))[0]:null;
     if(q)target=()=>revealInlineObject('remark',q.id);
@@ -19099,11 +19042,10 @@ function openFoldBadge(nodeId){
   expandNode(nodeId);
   if(target)target();
 }
-// Open follow-ups under a row (each Follow-up entry counts, owner 2026-10-21).
+// Follow-up rows under a row.
 function subtreeOpenFollowups(idx){
-  const end=getSubtreeEnd(nodes,idx), sub=nodes.slice(idx+1,end); let c=0;
-  openFollowupCounts(sub,Array.isArray(remarks)?remarks:[]).forEach(v=>{ c+=v; });
-  return c;
+  const end=getSubtreeEnd(nodes,idx);
+  return nodes.slice(idx+1,end).filter(isFollowupRow).length;
 }
 function foldBadgeTipParts(idx,hiddenFu){
   const c=subtreeContentCounts(idx);
@@ -21529,7 +21471,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to open its thread entry, Shift+click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } revealMarkerEntry(node.id);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; const tStatus=threadStatus(tThread); const allResolved=!openR&&(tStatus==='resolved'||tStatus==='decision'); const tHolder=threadStatusEntry(tThread); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+(tStatus?' \u00b7 '+THREAD_STATUS_LABEL[tStatus]+(tStatus==='decision'&&tHolder&&htmlHasVisibleText(tHolder.text)?': '+stripHtmlToText(tHolder.text).slice(0,80):''):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=rowStatusWords(node,true)+' — click for options, Shift+click to filter, right-click to clear'; mkdot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault();}); mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } commitEdit(); hideNodeTooltip(); const rr=mkdot.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,rowStatusMenuItems(node));}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -22457,7 +22399,7 @@ function deleteSelected(){
   cleanupRowLinksTo(deletedIds);
   rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
-function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
+function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); if(n.marker)Object.assign(clones[k],{marker:n.marker},normalizeRowStatusMeta(n)); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
 function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.isArray(parsed)||!parsed.length)return; pushUndo(); markDirty(); const insertIdx=getIndex(nodes,selectedId);
   // parseTextToTreeNodes (and friends) always normalize the parsed block's own top-level
@@ -30012,33 +29954,80 @@ function nodeMarkerColor(m){ return ({confirmed:'green',followup:'orange',parked
 // Clicking the currently-active marker again clears it — same toggle-off convention as the Q&A
 // follow-up chip — rather than needing a separate "clear" control.
 function setNodeMarker(id,marker){
-  const idx=getIndex(nodes,id); if(idx<0)return;
-  const node=nodes[idx];
+  const node=nodes[getIndex(nodes,id)]; if(!node)return;
   const next=NODE_MARKERS.includes(marker)?marker:'';
-  const prev=node.marker||'';
-  const resolved=(prev===next)?'':next;
-  if(prev===resolved)return;
-  pushUndo();
-  node.marker=resolved; node.modifiedAt=Date.now();
-  // The marker is the thread's status (owner decision 2026-10-15): clicking one records it in the
-  // row's thread, by the current author, now (starting the thread if there is none), so every
-  // status says who set it and when. Clearing it takes back the status that set it (an older one,
-  // if any, becomes the status again).
-  const thread=nodeThread(id);
-  const want=threadStatusForMarker(resolved);
-  if(want){ if(markerForThreadStatus(threadStatus(thread))!==resolved)addThreadStatus(id,want,'',true); }
-  else if(!resolved&&thread.length){
-    // A Follow-up row can hold several open follow-ups: clearing the marker takes back all of them.
-    const holders=prev==='followup'?openFollowups(thread):[threadStatusEntry(thread)].filter(Boolean);
-    holders.forEach(holder=>{ delete holder.status; if(!htmlHasVisibleText(holder.text)&&!holder.verdict&&!isQuestion(holder))remarks.splice(remarks.indexOf(holder),1); });
-    node.marker=syncedMarker('',nodeThread(id));
-  }
-  // A follow-up needs saying what's left: marking one opens the row's reply box (the caller renders).
-  if(resolved==='followup'){
+  setRowStatus(id,(node.marker||'')===next?'':next);
+}
+// A row's one status (owner decision 2026-10-27): Agreed, Follow-up or Out of scope, stored on the
+// row with who set it and when (the date says how old a follow-up is), and a Follow-up's owner.
+// Setting it adds nothing to the thread: rows say what, threads say why.
+function setRowStatus(id,marker,opts={}){
+  const node=nodes[getIndex(nodes,id)]; if(!node)return;
+  const next=NODE_MARKERS.includes(marker)?marker:'';
+  if((node.marker||'')===next)return;
+  if(!opts.noUndo)pushUndo();
+  node.marker=next; node.modifiedAt=Date.now();
+  delete node.markerBy; delete node.markerAt; delete node.markerOwner;
+  if(next){ const by=threadDefaultAuthor(); if(by)node.markerBy=by; node.markerAt=Date.now(); }
+  // A follow-up needs saying what's left: marking one from the row opens its reply line (the caller renders).
+  if(next==='followup'&&!opts.quiet){
     forceInlineItemExpanded(inlineExpandRemarksNodeIds,id); inlineExpandRemarksNodeIds.add(id);
     _threadComposerNodeId=id; _pendingInlineFocus={kind:'threadComposer',nodeId:id};
   }
   markDirty(); scheduleAutoSave();
+}
+function setRowStatusOwner(id,name){
+  const node=nodes[getIndex(nodes,id)]; if(!node||node.marker!=='followup')return;
+  const v=String(name||'').trim().slice(0,80);
+  if((node.markerOwner||'')===v)return;
+  pushUndo();
+  if(v)node.markerOwner=v; else delete node.markerOwner;
+  node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave();
+}
+// "Follow-up · for Kim · Ken, 13 Oct (2w)": what a row's status says on hover and in its menu.
+function rowStatusWords(node,withAge){
+  if(!node||!node.marker)return '';
+  const when=node.markerAt?openItemDate(node.markerAt,Date.now()):'';
+  const age=withAge&&node.markerAt?openItemAge(node.markerAt,Date.now()):'';
+  const by=[node.markerBy||'',when].filter(Boolean).join(', ');
+  return [nodeMarkerLabel(node.marker),node.marker==='followup'&&node.markerOwner?'for '+node.markerOwner:'',by+(age?' ('+age+')':'')].filter(Boolean).join(' \u00b7 ');
+}
+// Clicking a row's status badge: what it says, the three statuses (the current one again clears it),
+// and for a Follow-up its owner and its task.
+function rowStatusMenuItems(node){
+  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
+  const items=[{heading:rowStatusWords(node,true)}];
+  items.push({choices:NODE_MARKERS.map(st=>({label:nodeMarkerLabel(st), icon:markIconSvg(st), color:'var(--fc-'+nodeMarkerColor(st)+')', current:node.marker===st, tip:node.marker===st?'Clear '+nodeMarkerLabel(st):'', onClick:()=>{ setRowStatus(node.id,node.marker===st?'':st,{quiet:true}); render(); }}))});
+  if(node.marker==='followup'){
+    const set=v=>()=>{ setRowStatusOwner(node.id,v); render(); };
+    const names=threadRecentAuthors().slice(0,8);
+    items.push({label:node.markerOwner?'Follow-up for '+node.markerOwner:'Assign follow-up', icon:ico('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'), submenu:[
+      ...names.map(n=>({label:n, icon:n===node.markerOwner?CHECK:'', onClick:set(n)})),
+      ...(names.length?[{divider:true}]:[]),
+      {label:'Someone else\u2026', onClick:()=>editRowStatusOwnerInline(node)},
+      ...(node.markerOwner?[{label:'No one', onClick:set('')}]:[])
+    ]});
+    const openTodo=followupTodoRefs(node).find(t=>!t.done);
+    items.push(openTodo
+      ? {label:'Open in To-Dos', icon:todoDotIconSvg(14), onClick:()=>window.sakuraFlashTodo?.(openTodo.id)}
+      : {label:'Add to To-Dos', icon:todoDotIconSvg(14), onClick:()=>addFollowupToTodos(node)});
+  }
+  if(nodeThread(node.id).length)items.push({divider:true},{label:'Show thread', icon:markIconSvg('comment'), onClick:()=>revealMarkerEntry(node.id)});
+  return items;
+}
+// "Someone else…" for a Follow-up's owner is typed in place, right after the row's badge (owner,
+// 2026-10-22: inline editing over popups). Enter keeps it; Esc or leaving it empty changes nothing.
+function editRowStatusOwnerInline(node){
+  const badge=document.querySelector('.node-row[data-id="'+node.id+'"] .node-marker-badge'); if(!badge)return;
+  const name=document.createElement('span'); name.className='row-owner-edit'; name.contentEditable='true'; name.spellcheck=false; name.dataset.placeholder='Follow-up for…';
+  badge.after(name);
+  let done=false;
+  const finish=keep=>{ if(done)return; done=true; const v=(name.textContent||'').trim(); if(keep&&v)setRowStatusOwner(node.id,v); render(); };
+  ['mousedown','click','dblclick'].forEach(ev=>name.addEventListener(ev,e=>e.stopPropagation()));
+  name.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); finish(true); } else if(e.key==='Escape'){ e.preventDefault(); finish(false); } });
+  name.addEventListener('blur',()=>finish(true));
+  name.focus();
 }
 // Section headers are just another entry in qaItems (type:'section', title only — no
 // question/answer/sourceNodeId) rather than a separate array, so they ride along for free with
@@ -30678,8 +30667,6 @@ function previewRenderRemarkEntry(r,thread,prev){
     if(r.verdict)pvNote('pv-thread-verdict is-'+r.verdict,r.verdict==='yes'?'\u00b7 yes':'\u00b7 no');
     else pvNote('pv-thread-verdict is-answer','\u00b7 answer');
   }
-  // The status prints once, on the row's marker; the entry that set it says so quietly.
-  if(r.status){ const n=document.createElement('span'); n.className='pv-thread-status-note'; n.textContent='\u00b7 '+threadStatusNoteText(r); meta.appendChild(n); }
   // Same as the editor: the handshake kind icon, and quiet text.
   if(r.decision)pvNote('pv-thread-status-note','\u00b7 decision');
   entry.appendChild(meta);
@@ -30834,7 +30821,10 @@ function renderPreviewBody(){
     }
     if(node.marker){
       // Icon plus its name: on paper there's no hover tip, so an icon alone (⚑ vs ⚠) isn't readable.
-      const mk=document.createElement('span'); mk.className='pv-marker-badge'; mk.dataset.color=nodeMarkerColor(node.marker); mk.dataset.tip=nodeMarkerLabel(node.marker); mk.innerHTML=markIconSvg(node.marker,12)+'<span class="pv-marker-label">'+esc(nodeMarkerLabel(node.marker))+'</span>';
+      const mk=document.createElement('span'); mk.className='pv-marker-badge'; mk.dataset.color=nodeMarkerColor(node.marker); mk.dataset.tip=nodeMarkerLabel(node.marker); const since=node.markerAt?openItemDate(node.markerAt,Date.now()):'';
+      // A follow-up says who owns it and since when (a snapshot dates, it doesn't age; owner, 2026-10-21).
+      const label=nodeMarkerLabel(node.marker)+(node.marker==='followup'?(node.markerOwner?' for '+node.markerOwner:'')+(since?' \u00b7 since '+since:''):'');
+      mk.innerHTML=markIconSvg(node.marker,12)+'<span class="pv-marker-label">'+esc(label)+'</span>';
       contentEl.appendChild(mk);
     }
     const ownNote=!!(node.note&&node.note.trim());
@@ -31968,9 +31958,8 @@ function openItemsInOutlineOrder(){
   const byNode=new Map(); (remarks||[]).forEach(r=>{ if(!byNode.has(r.anchorNodeId))byNode.set(r.anchorNodeId,[]); byNode.get(r.anchorNodeId).push(r); });
   const list=[];
   nodes.forEach((n,i)=>{
-    const rs=byNode.get(n.id), fus=rs?openFollowups(threadEntries(rs,n.id)):[];
-    if(fus.length)fus.forEach(f=>list.push({key:'f'+f.id,i,go:()=>revealInlineObject('remark',f.id)}));
-    else if(n.marker==='followup')list.push({key:'f'+n.id,i,go:()=>revealMarkerEntry(n.id)});
+    const rs=byNode.get(n.id);
+    if(n.marker==='followup')list.push({key:'f'+n.id,i,go:()=>revealMarkerEntry(n.id)});
     if(rs)openQuestions(threadEntries(rs,n.id)).forEach(q=>list.push({key:'q'+q.id,i,go:()=>revealInlineObject('remark',q.id)}));
   });
   return list;
@@ -32031,16 +32020,13 @@ function remarkAuthorInitials(name){
   return (words[0][0]+words[words.length-1][0]).toUpperCase();
 }
 // A thread entry's kind icon (owner design 2026-10-15, replacing the initials avatar): the column
-// left of each entry says WHAT it is -- decision, status, answer, question -- and a plain comment
+// left of each entry says WHAT it is -- decision, answer, question -- and a plain comment
 // gets a faint comment icon; the name says who. Not a dot: the outline
 // uses dots for rows.
 function threadKindIcon(r,thread){
-  // Colour only where something is still open (owner, 2026-10-23): an open question (accent) and an
-  // open follow-up (orange); every other kind is grey -- its shape already says what it is.
+  // Colour only where something is still open (owner, 2026-10-23): an open question (accent); every
+  // other kind is grey -- its shape already says what it is.
   if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--hint)',tip:'Decision'};
-  if(r.status){ const m=markerForThreadStatus(r.status);
-    if(m==='followup'&&followupState(r,thread||[r])!=='open')return {kind:'status',marker:m,svg:markIconSvg(m,14),color:'var(--hint)',tip:r.done?'Follow-up, done':'Follow-up, settled'};
-    return {kind:'status',marker:m,svg:markIconSvg(m,14),color:m==='followup'?'var(--fc-orange)':'var(--hint)',tip:THREAD_STATUS_LABEL[r.status]}; }
   // An answer: ✓ / ✗ for a Yes / No, otherwise a reply arrow (its own kind, not a ✓ it didn't say).
   if(r.answerTo){
     if(!r.verdict)return {kind:'answer',svg:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>',color:'var(--hint)',tip:'Answer'};
@@ -32052,10 +32038,10 @@ function threadKindIcon(r,thread){
 // Optical centring inside the tinted circle (measured): a bare "?" (the ringed one doubled the circle), and
 // small nudges, in the icon's own 24-unit space, for shapes whose weight sits off their box (flag, bubble, arrow).
 const THREAD_KIND_QUESTION_SVG='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="3.1"><path d="M7.8 8.2a4.3 4.3 0 0 1 8.4 1.3c0 2.8-4.2 3.4-4.2 6.1"/><line x1="12" y1="20.2" x2="12.01" y2="20.2"/></g></svg>';
-const THREAD_KIND_NUDGE={comment:'0.6 0.8',status_followup:'1 1.2',answer:'0 -0.8',decision:'0 0.6'};
+const THREAD_KIND_NUDGE={comment:'0.6 0.8',answer:'0 -0.8',decision:'0 0.6'};
 function threadKindCircleSvg(k){
   let svg=k.kind==='question'?THREAD_KIND_QUESTION_SVG:k.svg;
-  const nudge=THREAD_KIND_NUDGE[k.kind==='status'?'status_'+k.marker:k.kind];
+  const nudge=THREAD_KIND_NUDGE[k.kind];
   if(nudge)svg=svg.replace(/(<svg[^>]*>)([\s\S]*)(<\/svg>)/,'$1<g transform="translate('+nudge+')">$2</g>$3');
   return svg;
 }
@@ -32079,13 +32065,12 @@ function formatRemarkDateDisplay(dateStr){
   return d.toLocaleDateString(undefined,opts);
 }
 // ── A node's thread (owner design 2026-10-14) ─────────────────────────────────────────────
-// One flat list per node, oldest first: author, time, text; chips only for Question, Yes/No,
-// Answer and a status (Follow-up / Resolved / Decision). The thread status and the row marker
-// are one status (see syncRowMarkerFromThread / setNodeMarker). Data helpers live in
+// One flat list per node, oldest first: author, time, text; a comment, a question (answered by an
+// entry with Yes / No or text) or a decision. The row's status lives on the row (setRowStatus),
+// not in the thread (owner decision 2026-10-27). Data helpers live in
 // src/utils/discussionStatus.ts. The reply box is the only way to add an entry, so blank entries
 // never pile up.
 // (The reply box state and chip icons are declared up top with the other inline-object state; render runs before this point.)
-function threadStatusChipHtml(st){ const m=markerForThreadStatus(st)||'confirmed'; return markIconSvg(m,10)+'<span>'+THREAD_STATUS_LABEL[m]+'</span>'; }
 // Who the reply box writes as: the author picked in it, else whoever wrote last in this document.
 function threadDefaultAuthor(){
   if(_threadAuthor!=null)return _threadAuthor;
@@ -32113,17 +32098,6 @@ function formatThreadTime(r,prev){
   if(day==='Today'||(t&&prev&&(prev.date||'')===(r.date||'')))return t||day;
   return t?day+' · '+t:day;
 }
-// Status on a thread from the row marker or the reply line: on the latest entry when it has no
-// status yet (and, from a marker, was written by the same person), else as a new status-only entry,
-// so earlier statuses stay as history and each one says who set it.
-function addThreadStatus(nodeId,status,text,sameAuthorOnly){
-  const thread=nodeThread(nodeId);
-  const last=thread[thread.length-1];
-  if(!htmlHasVisibleText(text)&&last&&!last.status&&(!sameAuthorOnly||(last.person||'')===threadDefaultAuthor())){ last.status=status; return last; }
-  const e={id:newRemarkId(),anchorNodeId:nodeId,person:threadDefaultAuthor(),text:text||'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1),status};
-  remarks.push(e);
-  return e;
-}
 // Opens a node's thread with its reply line focused (right-click / Insert "Thread…", "+ Add to thread").
 // answerTo: a question's id when opened from that question's "Answer" (the next entry answers it).
 function openThreadComposer(nodeId,ask,answerTo){
@@ -32137,7 +32111,7 @@ function openThreadComposer(nodeId,ask,answerTo){
 }
 function renderNodeThread(node,placeLine){
   const thread=nodeThread(node.id);
-  const commit=()=>{ syncRowMarkerFromThread(node.id); markDirty(); scheduleAutoSave(); render(); };
+  const commit=()=>{ markDirty(); scheduleAutoSave(); render(); };
   // Every line of the thread sits right of one thin rule, like the PDF's transcript.
   const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+7)+'px'); };
   // Hovering any line of the thread shows its "+ Add to thread" line (the lines are separate siblings).
@@ -32187,10 +32161,10 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   kindEl.classList.add('is-clickable'); kindEl.dataset.tip=kindEl.dataset.tip+' \u2014 click to change';
   kindEl.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   kindEl.addEventListener('click',e=>{ e.stopPropagation(); hideNodeTooltip(); const rr=kindEl.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadKindMenuItems(node,r,thread,commit)); });
-  // An entry emptied and left (with no Yes/No or status chip to keep) is removed, so blank
-  // entries never pile up or print. Moving between its own fields keeps it.
+  // An entry emptied and left (with no Yes/No to keep) is removed, so blank entries never pile up
+  // or print. Moving between its own fields keeps it.
   const dropIfBlank=e=>{
-    if(htmlHasVisibleText(r.text)||r.verdict||r.status||(e.relatedTarget&&line.contains(e.relatedTarget))||!remarks.includes(r))return false;
+    if(htmlHasVisibleText(r.text)||r.verdict||(e.relatedTarget&&line.contains(e.relatedTarget))||!remarks.includes(r))return false;
     remarks.splice(remarks.indexOf(r),1); remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } });
     setTimeout(commit,0); return true;
   };
@@ -32229,33 +32203,20 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
   if(isQ){ if(qState!=='open')note('thread-q-note is-'+qState,qState==='answered'?'· question, answered':'· question, won’t answer','Right-click to change'); }
   // The icon already says ✓ / ✗ (or ↳ answer); the line says it quietly, like "· decision".
   if(r.answerTo){ if(r.verdict)note('thread-verdict is-'+r.verdict,r.verdict==='yes'?'· yes':'· no','The answer — right-click to change'); else note('thread-verdict is-answer','· answer','Marked as the answer — right-click to change'); }
-  // A status is quiet text on the entry that set it (who and when); the row marker shows it in colour.
   const quoted=threadQuotedQuestion(r,thread);
-  const fuState=isFollowup(r)?followupState(r,thread):null;
-  if(r.status)note('thread-status-note is-'+markerForThreadStatus(r.status)+(fuState==='done'?' is-done':''),'· '+threadStatusNoteText(r),fuState==='done'?'Follow-up done'+(r.doneAt?' '+formatThreadTimeAbsolute({createdAt:r.doneAt},null):'')+' — right-click to reopen':fuState==='open'?'An open follow-up — right-click to mark it done':'Set the row to '+THREAD_STATUS_LABEL[r.status]+' — right-click to change');
   // A decision is marked on the entry where it was made (its kind icon, and quiet text); it doesn't change the row (owner decision 2026-10-15).
   if(r.decision)note('thread-status-note is-decision','· decision','Decided here — right-click to change');
-  // The follow-up's task, if it has one: "· in To-Dos" while open, "· To-Do done" once finished. Click opens it.
-  if(fuState==='open'){
-    const refs=followupTodoRefs(node,r,thread);
-    if(refs.length){
-      const openTodo=refs.find(t=>!t.done);
-      const n=note('thread-todo-note'+(openTodo?'':' is-done'),openTodo?'· in To-Dos':'· To-Do done',openTodo?'Open the task in To-Dos':'The task is done — mark the follow-up done when you’re ready');
-      n.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-      n.addEventListener('click',e=>{ e.stopPropagation(); window.sakuraFlashTodo?.((openTodo||refs[0]).id); });
-    }
-  }
   line.appendChild(meta);
   if(quoted){ const qq=document.createElement('div'); qq.className='thread-quote'; qq.textContent='↳ '+quoted; qq.dataset.tip='Answers this question'; line.appendChild(qq); }
   const textEl=document.createElement('div'); textEl.className='node-remark-text-inline remark-text-input'; textEl.contentEditable='true'; textEl.spellcheck=spellcheckEnabled; textEl.dataset.remarkId=r.id; textEl.id='inline-remark-text-'+r.id;
   textEl.innerHTML=sakuraSanitizeRichHtml(r.text||'');
-  // An answer or status with no text is one line; clicking it opens a text line under it.
-  if(!htmlHasVisibleText(r.text)&&(r.status||r.verdict)){
+  // A Yes / No with no text is one line; clicking it opens a text line under it.
+  if(!htmlHasVisibleText(r.text)&&r.verdict){
     line.classList.add('is-event');
     line.addEventListener('click',e=>{ if(e.target.closest('.node-remark-person-inline,.thread-time'))return; line.classList.add('is-editing'); textEl.focus(); });
     textEl.addEventListener('blur',()=>{ if(!htmlHasVisibleText(textEl.innerHTML))line.classList.remove('is-editing'); });
   }
-  textEl.dataset.placeholder=r.verdict||r.status?'':'Write…';
+  textEl.dataset.placeholder=r.verdict?'':'Write…';
   // A plain click puts the caret in a link (the link card offers Open, Copy, Edit, Remove);
   // Ctrl/Cmd+click opens it, as in rows, To-Dos and notes; right-click has the same items.
   textEl.addEventListener('mousedown',e=>{ e.stopPropagation();
@@ -32277,7 +32238,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev){
     // "/" opens the Insert list in thread entries like everywhere else.
     if(handleSlashInsertKeydown(e,textEl))return;
     if(e.key!=='Backspace'||e.shiftKey||e.altKey||e.ctrlKey||e.metaKey)return;
-    if((textEl.textContent||'').trim()||r.verdict||r.status)return;
+    if((textEl.textContent||'').trim()||r.verdict)return;
     e.preventDefault();
     const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1);
     // The caret goes back to the end of the row's text (owner: like deleting back into the row).
@@ -32346,17 +32307,10 @@ const THREAD_COPY_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="no
 // Copy thread (owner, 2026-10-16): the whole thread as rich text (names bold, the time and quiet
 // notes grey, entry text as written) with a plain-text twin, so Ctrl+V keeps the formatting and
 // Ctrl+Shift+V pastes clean lines -- for an email or a chat. Same words as the PDF transcript.
-// An entry's status in words: "follow-up for Ben", "follow-up, done" once marked done (each follow-up
-// is its own open item, owner 2026-10-21).
-function threadStatusNoteText(r){
-  const fu=markerForThreadStatus(r.status)==='followup';
-  return THREAD_STATUS_LABEL[r.status].toLowerCase()+(r.owner&&fu?' for '+r.owner:'')+(fu&&r.done?', done':'');
-}
 function threadEntryNotes(r,thread){
   const out=[];
   if(isQuestion(r)){ const st=questionState(r,thread); out.push(st==='open'?'open question':st==='answered'?'question, answered':'question, won\u2019t answer'); }
   if(r.answerTo)out.push(r.verdict==='yes'?'yes':r.verdict==='no'?'no':'answer');
-  if(r.status)out.push(threadStatusNoteText(r));
   if(r.decision)out.push('decision');
   return out;
 }
@@ -32368,10 +32322,10 @@ function threadHtmlToPlain(html){
 // A pasted email or chat drops SVG and CSS variables, so the rich copy carries each entry's kind as a
 // text symbol in its colour (the kind icon's meaning and colour, resolved to rgb); names are plain
 // bold, like in the editor (owner, 2026-10-23).
-const THREAD_COPY_GLYPH={decision:'\u{1F91D}',followup:'\u2691',confirmed:'\u2713',parked:'\u2298',yes:'\u2713',no:'\u2717',answer:'\u21b3',question:'?',comment:'\u2022'};
+const THREAD_COPY_GLYPH={decision:'\u{1F91D}',yes:'\u2713',no:'\u2717',answer:'\u21b3',question:'?',comment:'\u2022'};
 function threadCopyGlyph(r,thread){
   const k=threadKindIcon(r,thread);
-  const key=k.kind==='status'?k.marker:k.kind==='answer'?(r.verdict||'answer'):k.kind;
+  const key=k.kind==='answer'?(r.verdict||'answer'):k.kind;
   return {glyph:THREAD_COPY_GLYPH[key]||THREAD_COPY_GLYPH.comment, color:resolveCssColor(k.color)};
 }
 function resolveCssColor(value){
@@ -32408,25 +32362,29 @@ async function copyThread(nodeId){
     showToast('Thread copied');
   }catch(e){ showToast('Copy failed'); }
 }
-// "Add to To-Dos" on a follow-up: the task is what the follow-up says (or the row, when it says
-// nothing), with its owner as an @mention ("Ana Lee" → @Ana-Lee, a mention is one word), linked to
-// the row. Completing the task doesn't change the document: the follow-up shows "· To-Do done" and
-// the owner settles it (owner decision 2026-10-19).
-function followupTodoText(node,r){
-  const said=stripHtmlToText(r.text||'').trim()||getNodePlainText(node).trim();
-  const owner=String(r.owner||'').trim().replace(/[^A-Za-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'');
+// Why a Follow-up row is open: the line written nearest to when it was set (owner, 2026-10-21: not a
+// later reply), or the thread's latest line when the row has no such date.
+function followupWhyLine(t,at){
+  let best=null, gap=Infinity;
+  t.forEach(e=>{ const x=stripHtmlToText(e.text||'').replace(/\s+/g,' ').trim(); if(!x)return;
+    const d=at?Math.abs((e.createdAt||0)-at):-(e.createdAt||0); if(d<=gap){ gap=d; best={id:e.id,person:e.person||'',text:x}; } });
+  return best;
+}
+// "Add to To-Dos" on a Follow-up row: the task is what's left -- the line that says why, else the
+// row's text -- with the follow-up's owner as an @mention ("Ana Lee" → @Ana-Lee, a mention is one
+// word), linked to the row. Completing the task doesn't change the document: the row stays
+// Follow-up until someone settles it (owner decision 2026-10-19).
+function followupTodoText(node){
+  const said=followupWhyLine(nodeThread(node.id),node.markerAt)?.text||getNodePlainText(node).trim();
+  const owner=String(node.markerOwner||'').trim().replace(/[^A-Za-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'');
   return (owner&&/^[A-Za-z]/.test(owner)?'@'+owner+' ':'')+said;
 }
-// A follow-up's tasks: those added from it (remarkId), plus older ones linked only to the row when
-// this is the row's latest open follow-up.
-function followupTodoRefs(node,r,thread){
-  const refs=todoRefsForNode(node.id);
-  return refs.filter(t=>t.remarkId?t.remarkId===r.id:threadStatusEntry(thread)===r);
-}
-function addFollowupToTodos(node,r){
+// A row's tasks (a follow-up's task is linked to its row).
+function followupTodoRefs(node){ return todoRefsForNode(node.id); }
+function addFollowupToTodos(node){
   if(typeof window.sakuraAddTodoForNode!=='function'||!currentDocId)return;
-  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node,r),stripHtmlToText(r.person||'').trim(),r.id);
-  if(!id){ showToast('Nothing to add — the follow-up and its row are empty'); return; }
+  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node),stripHtmlToText(node.markerBy||'').trim());
+  if(!id){ showToast('Nothing to add — the row is empty'); return; }
   showToast('Added to To-Dos','success');
   render();
 }
@@ -32436,10 +32394,10 @@ function addFollowupToTodos(node,r){
 function threadKindMenuItems(node,r,thread,commit){
   const ANSWER_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>';
   const k=threadKindIcon(r,thread);
-  const cur=k.kind==='status'?k.marker:k.kind;
+  const cur=k.kind;
   const tick=on=>on?'\u2713':'';
   const clear=()=>{
-    delete r.decision; delete r.status; delete r.done; delete r.doneAt; delete r.owner; delete r.answerTo; delete r.verdict;
+    delete r.decision; delete r.answerTo; delete r.verdict;
     if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); }
   };
   const to=(kind,fn)=>()=>{ if(cur===kind)return; pushUndo(); clear(); if(fn)fn(); commit(); };
@@ -32452,7 +32410,6 @@ function threadKindMenuItems(node,r,thread,commit){
   else if(earlierQs.length===1)items.push({label:'Answer', icon:ANSWER_ICON, meta:tick(cur==='answer'), onClick:answerTo(earlierQs[0])});
   else items.push({label:'Answer to', icon:ANSWER_ICON, submenu:earlierQs.slice().reverse().map(q=>({label:threadQuestionLabel(q), sub:(q.person?q.person+' \u00b7 ':'')+(questionState(q,thread)==='open'?'open':'answered'), meta:tick(r.answerTo===q.id), onClick:answerTo(q)}))});
   items.push({label:'Decision', icon:markIconSvg('decision'), meta:tick(cur==='decision'), onClick:to('decision',()=>{ r.decision=true; })});
-  NODE_MARKERS.forEach(st=>items.push({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), meta:tick(cur===st), onClick:to(st,()=>{ r.status=st; })}));
   // An answer can also say Yes or No.
   if(cur==='answer')items.push({divider:true},
     {label:'Yes', icon:markIconSvg('confirmed'), meta:tick(r.verdict==='yes'), onClick:()=>{ pushUndo(); if(r.verdict==='yes')delete r.verdict; else r.verdict='yes'; commit(); }},
@@ -32491,23 +32448,6 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   }
   // A decision is a mark on this entry only (a chip); the row's status stays as it is.
   items.push({label:r.decision?'Not a decision':'Mark as decision', icon:markIconSvg('decision'), onClick:change(()=>{ if(r.decision)delete r.decision; else r.decision=true; })});
-  // Status: the row-marker icons and colors, labelled, current one tinted; clicking it again clears it.
-  items.push({heading:'Status'});
-  const cur=markerForThreadStatus(r.status);
-  items.push({choices:NODE_MARKERS.map(st=>({label:THREAD_STATUS_LABEL[st], icon:markIconSvg(st), color:'var(--fc-'+nodeMarkerColor(st)+')', current:cur===st, tip:cur===st?'Clear '+THREAD_STATUS_LABEL[st]:'', onClick:change(()=>{ if(cur===st){ delete r.status; if(!htmlHasVisibleText(r.text)&&!r.verdict&&!isQuestion(r))remarks.splice(remarks.indexOf(r),1); } else { r.status=st; delete r.done; delete r.doneAt; } })}))});
-  // A follow-up can name who owns it; the open-items list shows the name.
-  if(isFollowup(r)&&followupState(r,thread)==='open')items.push({label:r.owner?'Follow-up for '+r.owner+'…':'Assign follow-up…', icon:ico('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'), onClick:()=>{ const rect=textEl.getBoundingClientRect(); setTimeout(()=>showSbContextMenu(rect.left,rect.bottom+4,threadOwnerMenuItems(r,commit)),0); }});
-  // A follow-up can become a task in To-Dos, linked back to this row (owner decision 2026-10-19).
-  // Each follow-up is closed on its own (owner, 2026-10-21): Done, and Reopen to take it back.
-  if(isFollowup(r)){ const st=followupState(r,thread); if(st!=='settled')items.push(st==='done'
-    ? {label:'Reopen follow-up', icon:markIconSvg('followup'), onClick:change(()=>{ delete r.done; delete r.doneAt; })}
-    : {label:'Mark follow-up done', icon:CHECK, onClick:change(()=>{ r.done=true; r.doneAt=Date.now(); })}); }
-  if(isFollowup(r)&&followupState(r,thread)==='open'){
-    const openTodo=followupTodoRefs(node,r,thread).find(t=>!t.done);
-    items.push(openTodo
-      ? {label:'Open in To-Dos', icon:todoDotIconSvg(14), onClick:()=>window.sakuraFlashTodo?.(openTodo.id)}
-      : {label:'Add to To-Dos', icon:todoDotIconSvg(14), onClick:()=>addFollowupToTodos(node,r)});
-  }
   items.push({divider:true});
   items.push({label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)});
   if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
@@ -32547,22 +32487,17 @@ function renderThreadComposer(node,thread,place,commit){
     if(!hasText&&!(extra&&(extra.verdict||extra.status)))return;
     pushUndo();
     const last=thread[thread.length-1];
-    // Saying why right after setting a marker (Follow-up opens the reply line for that): the words go
-    // on the status entry the marker just added, so the status and its reason are one entry.
-    if(hasText&&!extra&&!ask&&last&&last.status&&!htmlHasVisibleText(last.text)&&!last.verdict&&!isQuestion(last)&&(last.person||'')===threadDefaultAuthor()&&Date.now()-(last.createdAt||0)<10*60*1000){
-      last.text=html;
-    } else {
+    // A status from the reply line goes on the row (owner decision 2026-10-27); what you typed with
+    // it is a plain comment, saying why.
+    if(hasText||(extra&&extra.verdict)){
       const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:hasText?html:'',date:todayDateStr(),context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
-      if(ask&&!(extra&&extra.verdict))e.type='question';
-      // A row marked Follow-up / Agreed / Out of scope before it had a thread: its first entry carries that status.
-      if(!thread.length&&!(extra&&extra.status)&&threadStatusForMarker(node.marker))e.status=threadStatusForMarker(node.marker);
+      if(ask&&!(extra&&extra.verdict)&&!(extra&&extra.status))e.type='question';
       if(extra&&extra.verdict&&openQ){ e.answerTo=openQ.id; e.verdict=extra.verdict; }
       else if(chosen&&!(extra&&extra.status)){ e.answerTo=chosen.id; delete e.type; }
-      // A status from the reply line is its own entry, so it records who moved it and when.
-      if(extra&&extra.status)e.status=extra.status;
       if(extra&&extra.decision)e.decision=true;
       remarks.push(e);
     }
+    if(extra&&extra.status)setRowStatus(node.id,extra.status,{noUndo:true,quiet:true});
     _threadComposerNodeId=node.id; _threadAskNodeIds.delete(node.id); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
     _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
     commit();
@@ -32618,21 +32553,21 @@ function renderThreadComposer(node,thread,place,commit){
     no.addEventListener('click',e=>{ e.stopPropagation(); submit({verdict:'no'}); });
     ansGrp.appendChild(yes); ansGrp.appendChild(no);
   }
-  const openStatus=threadStatus(thread);
-  // Every follow-up is its own open item (owner, 2026-10-21), so another can be added while one is open.
-  {
-    const fu=btn('followup',kicon(markIconSvg('followup',11),'var(--fc-orange)')+'Follow-up',openStatus==='followup'?'Add as another follow-up — each is closed on its own':'Add as a follow-up — the row turns Follow-up');
+  // The row's status from the thread (owner: statuses are set while talking): each button sets it
+  // on the row, with what you typed as a comment.
+  const rowStatus=node.marker||'';
+  if(rowStatus!=='followup'){
+    const fu=btn('followup',kicon(markIconSvg('followup',11),'var(--fc-orange)')+'Follow-up','Set the row to Follow-up (what you typed is added as a comment)');
     fu.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'followup'}); });
     stGrp.appendChild(fu);
   }
-  if(openStatus==='followup'){
-    const res=btn('confirm',kicon(markIconSvg('confirmed',11),'var(--fc-green)')+'Agree','Settle every open follow-up (with what you typed) — the row turns Agreed');
+  if(rowStatus==='followup'){
+    const res=btn('confirm',kicon(markIconSvg('confirmed',11),'var(--fc-green)')+'Agree','Set the row to Agreed (what you typed is added as a comment)');
     res.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'confirmed'}); });
     stGrp.appendChild(res);
   }
-  // All three statuses are reachable from the thread itself (owner: the marker is the thread's status).
-  if(openStatus!=='parked'){
-    const oos=btn('parked',kicon(markIconSvg('parked',11),'var(--fc-gray)')+'Out of scope','Set aside (with what you typed) — the row turns Out of scope');
+  if(rowStatus!=='parked'){
+    const oos=btn('parked',kicon(markIconSvg('parked',11),'var(--fc-gray)')+'Out of scope','Set the row to Out of scope (what you typed is added as a comment)');
     oos.addEventListener('click',e=>{ e.stopPropagation(); submit({status:'parked'}); });
     stGrp.appendChild(oos);
   }
@@ -32668,32 +32603,6 @@ function threadComposerMenuItems(node,input,ask,submit){
   items.push({divider:true});
   items.push({label:'Close', icon:ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'), onClick:()=>{ _threadDrafts.delete(node.id); _threadComposerNodeId=null; _threadAskNodeIds.delete(node.id); render(); }});
   return items;
-}
-// Who owns a follow-up: names used in this document, someone else, or no one.
-function threadOwnerMenuItems(r,commit){
-  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  const set=name=>()=>{ pushUndo(); if(name)r.owner=name; else delete r.owner; commit(); };
-  const items=[{heading:'Follow-up for'}];
-  threadRecentAuthors().slice(0,8).forEach(n=>items.push({label:n, icon:n===r.owner?CHECK:'', onClick:set(n)}));
-  if(items.length>1)items.push({divider:true});
-  // Anyone else is typed in place, on the entry's "· follow-up for ▏" note (owner, 2026-10-22: inline
-  // editing over popups). Enter keeps it; Esc or leaving it empty changes nothing.
-  items.push({label:'Someone else…', onClick:()=>editThreadOwnerInline(r,set)});
-  if(r.owner)items.push({label:'No one', onClick:set('')});
-  return items;
-}
-function editThreadOwnerInline(r,set){
-  const noteEl=document.getElementById('inline-remark-text-'+r.id)?.closest('.thread-entry')?.querySelector('.thread-status-note');
-  if(!noteEl)return;
-  noteEl.textContent='\u00b7 follow-up for ';
-  const name=document.createElement('span'); name.className='thread-owner-edit'; name.contentEditable='true'; name.spellcheck=false; name.dataset.placeholder='name';
-  noteEl.appendChild(name);
-  let done=false;
-  const finish=keep=>{ if(done)return; done=true; const v=(name.textContent||'').trim().slice(0,80); if(keep&&v)set(v)(); else render(); };
-  ['mousedown','click'].forEach(ev=>name.addEventListener(ev,e=>e.stopPropagation()));
-  name.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); finish(true); } else if(e.key==='Escape'){ e.preventDefault(); finish(false); } });
-  name.addEventListener('blur',()=>finish(true));
-  name.focus();
 }
 function threadAuthorMenuItems(node,anchor){
   const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -33205,11 +33114,8 @@ function updateMarkerSummary(){
   const html=oiBtn+(oiBtn&&dBtn?'<span class="oi-divider" aria-hidden="true"></span>':'')+dBtn;
   if(box.innerHTML!==html)box.innerHTML=html;
 }
-// A marker is the thread's status, so clicking it opens the entry that set it (who and when),
-// not a filter (owner, 2026-10-16). A marker with no such entry (set before #539) opens the row's thread.
+// Going to a row's status (an open item, F8, a follow-up's task): the row, with its thread open (the why).
 function revealMarkerEntry(nodeId){
-  const h=threadStatusEntry(nodeThread(nodeId));
-  if(h){ revealInlineObject('remark',h.id); return; }
   if(nodeThread(nodeId).length){ forceInlineItemExpanded(inlineExpandRemarksNodeIds,nodeId); showAllRemarksNodeIds.add(nodeId); }
   revealNodeInDoc(currentDocId,nodeId);
 }
@@ -33270,33 +33176,27 @@ function openItemsLists(){
   // [Section] row without its brackets.
   const rowText=n=>getNodePlainText(n).trim()||'Untitled row';
   const byRow=(a,b)=>(idx.get(a)??0)-(idx.get(b)??0);
-  // Each open Follow-up entry is its own item (owner, 2026-10-21), named by its row and owner
-  // ("Export (ZOR) · Karsten"). A row marked Follow-up before markers were recorded in the thread
-  // is one item of its own.
-  // Under a follow-up, the entry that set it says why it's open, without jumping there (owner,
-  // 2026-10-21: not the thread's latest line, which may be a later reply). A follow-up set without
-  // text quotes the nearest line before it, else the first one after.
-  const lineOf=(t,h)=>{ const at=h?t.indexOf(h):t.length-1;
-    const line=i=>{ const x=stripHtmlToText(t[i].text||'').replace(/\s+/g,' ').trim(); return x?{id:t[i].id,person:t[i].person||'',text:x}:null; };
-    for(let i=at;i>=0;i--){ const l=line(i); if(l)return l; }
-    for(let i=at+1;i<t.length;i++){ const l=line(i); if(l)return l; }
-    return null; };
+  // Each Follow-up row is one item (owner decision 2026-10-27: one status, on the row), named by its
+  // row and owner ("Export (ZOR) · Karsten"), dated from when it was set. Under it, the line written
+  // nearest to when it was set says why it's open, without jumping there (owner, 2026-10-21: not a
+  // later reply); a row with no such date quotes its thread's latest line.
+  const lineOf=followupWhyLine;
   // The thread's latest line, for "waiting on open question N" when a later question is still open.
   const lastIdOf=t=>{ for(let i=t.length-1;i>=0;i--) if(stripHtmlToText(t[i].text||'').trim())return t[i].id; return null; };
   // Rows with the same name (two "Export (ZOR)" under different parents) name their parent on the
   // grey line ("in Exclusion Scenarios · Karsten: …"), so the row's own name keeps the first line;
   // same name under the same parent too: numbered in outline order ("Export (ZOR) (2)").
   const parentText=n=>{ const p=n.parentId!=null?nodes.find(x=>x.id===n.parentId):null; return p?rowText(p):''; };
-  const rowsOpen=nodes.map(n=>{ const t=nodeThread(n.id), fus=openFollowups(t); return {n,t,fus:fus.length?fus:n.marker==='followup'?[null]:[]}; }).filter(x=>x.fus.length);
+  const rowsOpen=nodes.filter(isFollowupRow).map(n=>({n,t:nodeThread(n.id)}));
   const byName=new Map(), byPlace=new Map(), nth=new Map();
   const place=n=>rowText(n)+'\u0000'+n.parentId;
   rowsOpen.forEach(({n})=>{ byName.set(rowText(n),(byName.get(rowText(n))||0)+1); byPlace.set(place(n),(byPlace.get(place(n))||0)+1); });
   const followups=[];
-  rowsOpen.forEach(({n,t,fus})=>{
+  rowsOpen.forEach(({n,t})=>{
     const k=place(n); nth.set(k,(nth.get(k)||0)+1);
     const row=rowText(n)+(byPlace.get(k)>1?' ('+nth.get(k)+')':'');
-    fus.forEach(f=>followups.push({nodeId:n.id, remarkId:f?f.id:null, row, owner:f&&f.owner||'',
-      parent:byName.get(rowText(n))>1?parentText(n):'', fullParent:parentText(n), latest:lineOf(t,f), lastId:lastIdOf(t), since:f&&f.createdAt}));
+    followups.push({nodeId:n.id, row, owner:n.markerOwner||'',
+      parent:byName.get(rowText(n))>1?parentText(n):'', fullParent:parentText(n), latest:lineOf(t,n.markerAt), lastId:lastIdOf(t), since:n.markerAt});
   });
   // A question names the row it's on and who asked ("Customer comms · Maria").
   const questions=allOpenQuestions(remarks,idx).sort((a,b)=>byRow(a.anchorNodeId,b.anchorNodeId)).map(r=>{ const n=nodes[idx.get(r.anchorNodeId)];
@@ -33321,7 +33221,7 @@ function openItemsMenuItems(){
   const {followups,questions}=openItemsLists();
   addGroup('followup','Follow-ups',followups.map(f=>({label:f.row+(f.owner?' \u00B7 '+f.owner:''),
     sub:[f.parent?'in '+f.parent:'', f.latest?(f.latest.person?f.latest.person+': ':'')+f.latest.text:''].filter(Boolean).join(' \u00B7 '),
-    since:f.since, go:()=>f.remarkId?revealInlineObject('remark',f.remarkId):revealMarkerEntry(f.nodeId)})));
+    since:f.since, go:()=>revealMarkerEntry(f.nodeId)})));
   addGroup('question','Open questions',questions.map(q=>({label:q.text, sub:[q.row,q.person].filter(Boolean).join(' \u00B7 '), since:q.since, go:()=>revealInlineObject('remark',q.remarkId)})));
   return items;
 }
@@ -33475,9 +33375,10 @@ function quickToggleOpenItemsFilter(){
   applyOpenItemsFilter('openItems');
 }
 // Every node has one thread (src/utils/discussionStatus.ts), stored in `remarks`. Q&A linked to a
-// row, older remarks and discussion items are converted to thread entries, and row markers are
-// linked to thread status, before anything reads them -- so every way a document arrives (open,
-// tab switch, sync, undo, version restore) is covered. Cheap when there is nothing to convert.
+// row, older remarks and discussion items are converted to thread entries, and statuses older
+// threads held on their entries move onto the row, before anything reads them -- so every way a
+// document arrives (open, tab switch, sync, undo, version restore) is covered. Cheap when there is
+// nothing to convert.
 function ensureQaMigratedToDiscussion(){
   let changed=false;
   if(!Array.isArray(remarks))remarks=[];
@@ -33487,19 +33388,17 @@ function ensureQaMigratedToDiscussion(){
   }
   const m=migrateDiscussionToThread(remarks);
   if(m.changed){ remarks=m.entries; changed=true; }
-  if(changed&&Array.isArray(nodes)){
-    linkMarkersToThreads(nodes,remarks).forEach((mk,id)=>{ const n=nodes.find(x=>x.id===id); if(n)n.marker=mk; });
+  if(Array.isArray(nodes)){
+    const st=migrateStatusToRows(nodes,remarks);
+    if(st.changed){
+      remarks=st.entries; changed=true;
+      st.rows.forEach((row,id)=>{ const n=nodes.find(x=>x.id===id); if(!n)return; delete n.markerBy; delete n.markerAt; delete n.markerOwner; Object.assign(n,row); });
+    }
   }
   return changed;
 }
 // A node's thread, oldest first.
 function nodeThread(nodeId){ return threadEntries(Array.isArray(remarks)?remarks:[],nodeId); }
-// After a thread's status changed: the row marker follows it (Follow-up ⇄ ⚑, Resolved/Decision ⇄ ✓).
-function syncRowMarkerFromThread(nodeId){
-  const n=nodes.find(x=>x.id===nodeId); if(!n)return;
-  const next=syncedMarker(n.marker,nodeThread(nodeId));
-  if((n.marker||'')!==next){ n.marker=next; n.modifiedAt=Date.now(); }
-}
 function setDiscussionFilter(f){
   activeDiscussionFilter=normalizeDiscussionFilter(f);
   if(activeDiscussionFilter){
@@ -34502,6 +34401,9 @@ function todosHistorySummary(list) {
         const entry=t.remarkId && remarks.find(r=>r.id===t.remarkId && r.anchorNodeId===ref.nodeId);
         if(entry) revealInlineObject('remark', entry.id);
         else if(typeof revealMarkerEntry==='function') revealMarkerEntry(ref.nodeId);
+      } else if(t && typeof revealMarkerEntry==='function' && nodes.find(n=>n.id===ref.nodeId)?.marker==='followup'){
+        // A Follow-up row's task: the row, with its thread open (the why).
+        revealMarkerEntry(ref.nodeId);
       }
     }
   }
