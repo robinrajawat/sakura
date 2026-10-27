@@ -32460,7 +32460,11 @@ function renderThreadComposer(node,thread,place,commit){
     if(asking)e.type='question';
     if(deciding)e.decision=true;
     remarks.push(e);
-    _threadComposerNodeId=node.id; setThreadComposerKind(node.id,'comment'); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
+    setThreadComposerKind(node.id,'comment'); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
+    // A reply closes its line and the view stays put (owner, 2026-10-27: jumping to the end of a long
+    // thread felt odd); a new entry at the end keeps the line open for the next one.
+    if(chosen){ _threadComposerNodeId=null; commit(); return; }
+    _threadComposerNodeId=node.id;
     _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
     commit();
   };
