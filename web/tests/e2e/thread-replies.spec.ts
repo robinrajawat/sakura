@@ -84,18 +84,10 @@ test('a comment takes replies too; a reply to a reply joins the same entry', asy
   await expect(entry(page, 'r1').locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Reply/);
 });
 
-test('one unbroken line joins the top-level entries and stops at the last one, past any replies', async ({ page }) => {
-  await seed(page, `[
-    { id: 'q1', anchorNodeId: 1, person: 'Karsten', date: '2026-10-15', text: 'Does the EU file load before Saturday?', type: 'question', createdAt: 1 },
-    { id: 'a1', anchorNodeId: 1, person: 'Ana', date: '2026-10-15', text: 'Yes.', answerTo: 'q1', verdict: 'yes', createdAt: 2 },
-    { id: 'c1', anchorNodeId: 1, person: 'Maria', date: '2026-10-15', text: 'Ops are fine.', createdAt: 3 },
-    { id: 'r1', anchorNodeId: 1, person: 'Kim', date: '2026-10-15', text: 'Noted.', answerTo: 'c1', createdAt: 4 }
-  ]`);
-  const spine = () => page.evaluate(`[...document.querySelectorAll('.thread-entry,.thread-composer')].map(l => (l.dataset.remarkId || 'composer') + ':' + ['spine-up','spine-down','spine-through'].filter(c => l.classList.contains(c)).join(','))`);
-  // No reply line open: the line ends at Maria's icon, not under Kim's reply.
-  expect(await spine()).toEqual(['q1:spine-down', 'a1:spine-through', 'c1:spine-up', 'r1:']);
-  await page.evaluate('openThreadComposer(1, false)');
-  expect(await spine()).toEqual(['q1:spine-down', 'a1:spine-through', 'c1:spine-up,spine-down', 'r1:spine-through', 'composer:spine-up']);
+test('no line joins the entries (owner, 2026-10-27: cleaner)', async ({ page }) => {
+  await seed(page, TWO_QS);
+  const drawn = await page.evaluate(`[...document.querySelectorAll('.thread-entry')].some(l => ['::before', '::after'].some(p => getComputedStyle(l, p).content !== 'none' && getComputedStyle(l, p).width === '1px'))`);
+  expect(drawn).toBe(false);
 });
 
 test('Delete thread on the header removes every entry in one step; Undo brings them back', async ({ page }) => {

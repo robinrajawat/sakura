@@ -80,11 +80,11 @@ test('older lists migrate on open: Now and In progress become pinned, Waiting / 
   expect(saved.find((t: { id: string }) => t.id === 'b')).toMatchObject({ waitingFor: 'Karsten' });
 });
 
-test('the task menu is short and plain: Pin, Waiting for…, Due date…, Repeat, Link…, Rewrite with AI, Copy, Delete', async ({ page }) => {
+test('the task menu is short and plain: Pin, Waiting for…, Due date…, Repeat, Link…, Rewrite, Copy, Delete', async ({ page }) => {
   await openWith(page, [{ id: 'a', text: 'Plain task' }]);
   await openMenu(page, 'a');
   const labels = await page.locator('.sb-context-menu:not(.sb-context-submenu) > .sb-context-item .sb-context-label').allTextContents();
-  expect(labels.map((l) => l.trim())).toEqual(['Pin', 'Waiting for…', 'Due date…', 'Repeat', 'Link…', 'Rewrite with AI', 'Copy', 'Delete']);
+  expect(labels.map((l) => l.trim())).toEqual(['Pin', 'Waiting for…', 'Due date…', 'Repeat', 'Link…', 'Rewrite', 'Copy', 'Delete']);
   await expect(page.locator('.todo-edit-card, .todo-props')).toHaveCount(0);
 });
 
