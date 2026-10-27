@@ -1969,8 +1969,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 @media (hover: none){.thread-reply-label{opacity:1}}
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 /* A Follow-up's owner typed in place, right after the row's status badge. */
-.row-owner-edit{outline:none;color:var(--fg);font-size:var(--fs-sm);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;margin-left:4px;display:inline-block;min-width:8ch}
-.row-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{position:relative;z-index:1;flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
@@ -1981,9 +1979,9 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 
 /* Replies read under their entry (owner, 2026-10-27), one step in (renderNodeThread's placeThread). */
 .pv-remark-entry.is-nested{margin-left:20px}
-/* Reply on an entry: on hover, always on an open question. */
+/* Reply on an entry: on hover only (owner, 2026-10-27). */
 .thread-reply-btn{margin-left:6px;padding:0 4px;border:none;background:none;color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer;border-radius:4px;opacity:0}
-.thread-reply-btn.is-open,.thread-entry:hover .thread-reply-btn,.thread-reply-btn:focus-visible{opacity:1}
+.thread-entry:hover .thread-reply-btn,.thread-reply-btn:focus-visible{opacity:1}
 .thread-reply-btn:hover{color:var(--fg);background:var(--hover)}
 .thread-entry.is-moved{animation:thread-moved 1.6s ease-out}
 @keyframes thread-moved{0%,30%{background:var(--hover)}100%{background:transparent}}
@@ -3994,7 +3992,7 @@ body.printing-generic #gpe-overlay{
 <h4>Structure</h4>  
 <ul>  
 <li>Right-click a node → a small row of marker icons (Agreed, Follow-up, Out of scope — see the Markers entry below) sits above everything else; below that, a fixed row of icon buttons for the most common actions: <strong>Rewrite, Note, Add comment, Add question, Add diagram, Add table</strong>. Click <span class="help-kbd">More</span> for everything else — Insert above/below, Add child, Duplicate, Zoom in, Move up/down, Collapse/expand, Sort children, Add image, Tags, Generate diagram, Insert date/time, Version history, and Delete. Zoom in is also in the toolbar and via <span class="help-kbd">Ctrl/Cmd + .</span>; zoom out via <span class="help-kbd">Ctrl/Cmd + ,</span> or clicking the same toolbar button again</li>
-<li><strong>Markers</strong> — three quick marks (✓ Agreed, ⚑ Follow-up, ⊘ Out of scope) for tracking status on a node, e.g. while reviewing a document. Each one is the row's status, stored on the row with who set it and when; setting it adds nothing to the thread. Older documents' Issue rows read as Follow-up and N/A or Parked rows as Out of scope. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph (or right-clicking it) opens its menu: change or clear the status there. The open-items list in the toolbar filters the tree to the rows that need attention. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
+<li><strong>Markers</strong> — three quick marks (✓ Agreed, ⚑ Follow-up, ⊘ Out of scope) for tracking status on a node, e.g. while reviewing a document. Each one is the row's status, stored on the row with when it was set; setting it adds nothing to the thread. Older documents' Issue rows read as Follow-up and N/A or Parked rows as Out of scope. Set from the editor's own right-click menu. Once set, a small colored glyph shows on that node in the editor and in PDF exports. In the editor, clicking the glyph (or right-clicking it) opens its menu: change or clear the status there. The open-items list in the toolbar filters the tree to the rows that need attention. A marker filter and a tag filter can both be active together — matching nodes must satisfy both (tag matching itself stays a plain per-node check, unlike the marker filter's subtree behavior).</li>
 <li>Right-clicking empty space — editor canvas, file explorer, status bar, tab bar, or app bar — opens a separate, smaller menu of chrome-level actions, not the node menu above. Navigate it with <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span>, same as the category picker above, or hover with a mouse — both move the same highlight. Editor canvas: switch theme and Collapse all/Expand all sit in the menu itself; a "More…" item opens a second menu at the same spot for the rest — hide/show file explorer, and Settings. File Explorer: switch theme, hide file explorer, Settings. Status bar: switch theme, Settings. Tab bar: switch theme, new document, close current tab, Settings. App bar: switch theme, hide/show file explorer, and "Declutter app bar" — which hides the Sakura name, but deliberately never hides Settings — hiding it would remove your only way back in. Every hide action here shows an Undo toast, same pattern as Quick Assist's own toggles. The toolbar, tab bar, status bar and app bar can't be hidden (zen mode hides the toolbar and tab bar while it's on)</li>
 <li><strong>Backlinks</strong> — while editing a node, type <span class="help-kbd">@</span> to mention another node by name; a dropdown filters as you type, pick with mouse or arrow keys + Enter. The reference renders as a clickable link that jumps to the target. Deleting a referenced node removes its links from all other nodes automatically</li>
 <li><strong>Tags</strong> — select a node and click the tag icon in the toolbar or right-click → Tags to open the tag popover. Existing document tags appear as chips to toggle; type a new name and press Enter to add. Tags render as <span class="node-tag-chip" style="display:inline-flex;font:500 10px 'Inter',sans-serif;padding:1px 6px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);color:color-mix(in srgb,var(--accent) 70%,var(--fg) 30%)">#chips</span> on the node. Click a chip in the tree to filter to that tag; click again or × to clear. Multi-select: toolbar button applies to all selected nodes</li>
@@ -4191,18 +4189,18 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="panels" id="help-section-remarks">
 <h4>Thread (comments and questions)</h4>
 <ul>
-<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a comment (a faint speech bubble), a question, a decision (handshake) or a reply (↳) — then its <strong>author</strong>, the <strong>day</strong> (hover it for the time) and the text. Click the icon, or right-click the entry, for its menu. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
+<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a comment (a faint speech bubble), a question, a decision (handshake) or a reply (↳) — then its <strong>author</strong>, the <strong>day</strong> (hover it for the time) and the text. Click the icon to change the kind (Comment / Question / Decision; a reply: Reply / Decision); right-click the entry for Reply, Copy thread, Rewrite or Delete. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Click the line's icon to make it a <strong>Comment</strong>, <strong>Question</strong> or <strong>Decision</strong>. Right-click the line to add it, Rewrite with AI (when AI is on) or close it. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
-<li><strong>Replies</strong>: any entry can be replied to, one level deep — hover it and click <strong>Reply</strong> (always shown on an open question), or right-click → Reply. Replies read indented under their entry; everything else stays in time order. A <strong>question</strong> is open until it gets a reply (its icon is in your accent colour), then answered — write "Yes", "No, …" or "Won't answer" in the reply. <strong>Reply to ›</strong> in an entry's menu puts it under an earlier entry, <strong>Not a reply</strong> puts it back</li>
+<li><strong>Replies</strong>: any entry can be replied to, one level deep — hover it and click <strong>Reply</strong>, or right-click → Reply. Replies read indented under their entry; everything else stays in time order. A <strong>question</strong> is open until it gets a reply (its icon is in your accent colour), then answered — write "Yes", "No, …" or "Won't answer" in the reply.</li>
 <li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text. The header's right-click also has <strong>Delete thread</strong> (Undo in the toast).</li>
-<li><strong>Status</strong> belongs to the row, not the thread: a row is <strong>Agreed</strong>, <strong>Follow-up</strong> or <strong>Out of scope</strong>, with who set it and when (hover its badge: “Follow-up · for Kim · Robin, 13 Oct (2w)”). Setting it adds nothing to the thread. Set it from the row's right-click menu or the toolbar's Insert ▾; it opens nothing (add a comment yourself if you want to say why). Click the badge for its menu: the three statuses (the current one again clears it), <strong>Assign follow-up</strong> (who owns it), <strong>Add to To-Dos</strong>; right-click opens the same menu</li>
+<li><strong>Status</strong> belongs to the row, not the thread: a row is <strong>Agreed</strong>, <strong>Follow-up</strong> or <strong>Out of scope</strong>, with when it was set (hover its badge: “Follow-up · 13 Oct (2w)”); no names, a follow-up is your own. Setting it adds nothing to the thread. Set it from the row's right-click menu or the toolbar's Insert ▾; it opens nothing (add a comment yourself if you want to say why). Click the badge for its menu: the three statuses (the current one again clears it), <strong>Add to To-Dos</strong>; right-click opens the same menu</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, pick <strong>Decision</strong> with the line's icon first. It doesn't change the row's marker</li>
 <li><strong>Links</strong>: a pasted web address becomes a link. Click a link to put the caret in it: a small card under it opens, copies, edits or removes it (Ctrl/Cmd+click opens it straight away; right-click has the same items)</li>
-<li>Right-click an entry (or click its icon) for <strong>Reply</strong>, Make it a question / comment, Mark as decision, Reply to ›, Copy thread, Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>Right-click an entry for <strong>Reply</strong>, Copy thread, Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
-<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), the entry icons joined by a faint line. The status prints on the row's marker, a Follow-up with its owner and since when. The outline shows the thread the same way; click its header to hide it</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), the entry icons joined by a faint line. The status prints on the row's marker, a Follow-up with since when. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; decisions become Decision chips, and a status an older thread held on an entry moves onto its row (with that entry's author, time and follow-up owner; entries that said nothing else go). Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
@@ -7510,8 +7508,8 @@ function cardsTotal(grid, calculated) {
  *
  * Owner decision (2026-10-27): rows say what, threads say why. A row has at most one status,
  * stored on the row: Agreed ('confirmed'), Follow-up ('followup') or Out of scope ('parked'), with
- * who set it and when (`markerBy`, `markerAt`, the date showing how old a follow-up is) and, for a
- * Follow-up, who owns it (`markerOwner`). Setting a status adds nothing to the thread. A decision is
+ * when it was set (`markerAt`, showing how old a follow-up is). No names (owner, 2026-10-27): a
+ * follow-up is always your own. Setting a status adds nothing to the thread. A decision is
  * no status: it marks the entry where something was decided and leaves the row alone. Older values
  * read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out of scope.
  *
@@ -7823,12 +7821,8 @@ function migrateStatusToRows(nodes, entries) {
             return;
         const h = holder;
         const row = { marker: st(h) };
-        if ((h.person || '').trim())
-            row.markerBy = h.person.trim();
         if (h.createdAt)
             row.markerAt = h.createdAt;
-        if (row.marker === 'followup' && (h.owner || '').trim())
-            row.markerOwner = h.owner.trim();
         rows.set(id, row);
     });
     const out = [];
@@ -12119,7 +12113,7 @@ function convertLegacyRows(list,savedFormat){
   return changed+folded;
 }
 // Who set a row's status and when, and a Follow-up's owner (owner decision 2026-10-27: one status, on the row).
-function normalizeRowStatusMeta(n){ const m=normalizeThreadStatus(n.marker); if(!m)return {}; const o={}; if(typeof n.markerBy==='string'&&n.markerBy.trim())o.markerBy=n.markerBy.trim(); if(Number.isFinite(n.markerAt)&&n.markerAt>0)o.markerAt=n.markerAt; if(m==='followup'&&typeof n.markerOwner==='string'&&n.markerOwner.trim())o.markerOwner=n.markerOwner.trim(); return o; }
+function normalizeRowStatusMeta(n){ const m=normalizeThreadStatus(n.marker); if(!m)return {}; const o={}; if(Number.isFinite(n.markerAt)&&n.markerAt>0)o.markerAt=n.markerAt; return o; }
 function normalizeNodeMarks(out,src){if(!src||!Array.isArray(src.marks)||!src.marks.length)return out; out.marks=src.marks; out.marksText=typeof src.marksText==='string'?src.marksText:out.text; setRowMarksOn(out,rowMarksOf(out)); return out}
 function makeNode(text='',depth=0,parentId=null,styles,note='',isCheckbox=false,tables,images,marks){const _now=Date.now(); return normalizeNodeMarks({id:nextId++,text:String(text??''),depth,parentId,styles:normalizeStyles(styles||emptyStyles()),note:typeof note==='string'?note:'',tables:Array.isArray(tables)?tables.slice():[],images:Array.isArray(images)?cloneNodeImagesWithNewIds(images,_now,newNodeImageId):[],tags:[],checked:false,isCheckbox:!!isCheckbox,createdAt:_now,modifiedAt:_now,completedAt:null},{marks})}
 // A row from pasted or imported text, or an AI outline: Markdown-style **bold** / __italic__ in it
@@ -30069,61 +30063,30 @@ function setRowStatus(id,marker,opts={}){
   if(!opts.noUndo)pushUndo();
   node.marker=next; node.modifiedAt=Date.now();
   delete node.markerBy; delete node.markerAt; delete node.markerOwner;
-  if(next){ const by=threadDefaultAuthor(); if(by)node.markerBy=by; node.markerAt=Date.now(); }
+  // Only when (owner, 2026-10-27: no name; the date shows how old a follow-up is).
+  if(next)node.markerAt=Date.now();
   // No thread opens (owner, 2026-10-27): the status is the row's; add a comment only if you want one.
   markDirty(); scheduleAutoSave();
 }
-function setRowStatusOwner(id,name){
-  const node=nodes[getIndex(nodes,id)]; if(!node||node.marker!=='followup')return;
-  const v=String(name||'').trim().slice(0,80);
-  if((node.markerOwner||'')===v)return;
-  pushUndo();
-  if(v)node.markerOwner=v; else delete node.markerOwner;
-  node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave();
-}
-// "Follow-up · for Kim · Ken, 13 Oct (2w)": what a row's status says on hover and in its menu.
+// "Follow-up · 13 Oct (2w)": what a row's status says on hover and in its menu.
 function rowStatusWords(node,withAge){
   if(!node||!node.marker)return '';
   const when=node.markerAt?openItemDate(node.markerAt,Date.now()):'';
   const age=withAge&&node.markerAt?openItemAge(node.markerAt,Date.now()):'';
-  const by=[node.markerBy||'',when].filter(Boolean).join(', ');
-  return [nodeMarkerLabel(node.marker),node.marker==='followup'&&node.markerOwner?'for '+node.markerOwner:'',by+(age?' ('+age+')':'')].filter(Boolean).join(' \u00b7 ');
+  return [nodeMarkerLabel(node.marker),when+(when&&age?' ('+age+')':'')].filter(Boolean).join(' \u00b7 ');
 }
 // Clicking a row's status badge: what it says, the three statuses (the current one again clears it),
-// and for a Follow-up its owner and its task.
+// and for a Follow-up its task. No names (owner, 2026-10-27: a follow-up is always your own).
 function rowStatusMenuItems(node){
-  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const items=[{heading:rowStatusWords(node,true)}];
   items.push({choices:NODE_MARKERS.map(st=>({label:nodeMarkerLabel(st), icon:markIconSvg(st), color:'var(--fc-'+nodeMarkerColor(st)+')', current:node.marker===st, tip:node.marker===st?'Clear '+nodeMarkerLabel(st):'', onClick:()=>{ setRowStatus(node.id,node.marker===st?'':st,{quiet:true}); render(); }}))});
   if(node.marker==='followup'){
-    const set=v=>()=>{ setRowStatusOwner(node.id,v); render(); };
-    const names=threadRecentAuthors().slice(0,8);
-    items.push({label:node.markerOwner?'Follow-up for '+node.markerOwner:'Assign follow-up', icon:ico('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'), submenu:[
-      ...names.map(n=>({label:n, icon:n===node.markerOwner?CHECK:'', onClick:set(n)})),
-      ...(names.length?[{divider:true}]:[]),
-      {label:'Someone else\u2026', onClick:()=>editRowStatusOwnerInline(node)},
-      ...(node.markerOwner?[{label:'No one', onClick:set('')}]:[])
-    ]});
     const openTodo=followupTodoRefs(node).find(t=>!t.done);
     items.push(openTodo
       ? {label:'Open in To-Dos', icon:todoDotIconSvg(14), onClick:()=>window.sakuraFlashTodo?.(openTodo.id)}
       : {label:'Add to To-Dos', icon:todoDotIconSvg(14), onClick:()=>addFollowupToTodos(node)});
   }
   return items;
-}
-// "Someone else…" for a Follow-up's owner is typed in place, right after the row's badge (owner,
-// 2026-10-22: inline editing over popups). Enter keeps it; Esc or leaving it empty changes nothing.
-function editRowStatusOwnerInline(node){
-  const badge=document.querySelector('.node-row[data-id="'+node.id+'"] .node-marker-badge'); if(!badge)return;
-  const name=document.createElement('span'); name.className='row-owner-edit'; name.contentEditable='true'; name.spellcheck=false; name.dataset.placeholder='Follow-up for…';
-  badge.after(name);
-  let done=false;
-  const finish=keep=>{ if(done)return; done=true; const v=(name.textContent||'').trim(); if(keep&&v)setRowStatusOwner(node.id,v); render(); };
-  ['mousedown','click','dblclick'].forEach(ev=>name.addEventListener(ev,e=>e.stopPropagation()));
-  name.addEventListener('keydown',e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); finish(true); } else if(e.key==='Escape'){ e.preventDefault(); finish(false); } });
-  name.addEventListener('blur',()=>finish(true));
-  name.focus();
 }
 // Section headers are just another entry in qaItems (type:'section', title only — no
 // question/answer/sourceNodeId) rather than a separate array, so they ride along for free with
@@ -30753,7 +30716,7 @@ function previewRenderRemarkEntry(r,thread,prev,nested){
   // Same kind icon as the editor, and the name in its colour.
   entry.appendChild(threadKindEl(r,thread,'pv-remark-kind'));
   if(r.person){ const bEl=document.createElement('b'); bEl.textContent=r.person; meta.appendChild(bEl); }
-  else { const q=document.createElement('span'); q.className='pv-remark-anon'; q.textContent=r.answerTo?'Answer':'Unnamed'; meta.appendChild(q); }
+  else { const q=document.createElement('span'); q.className='pv-remark-anon'; q.textContent=r.answerTo?'Reply':'Unnamed'; meta.appendChild(q); }
   const when=formatThreadTimeAbsolute(r,prev); if(when)meta.appendChild(document.createTextNode(' · '+when));
   if(r.context){ meta.appendChild(document.createTextNode(' · '+r.context)); }
   const pvNote=(cls,text)=>{ const n=document.createElement('span'); n.className=cls; n.textContent=text; meta.appendChild(n); };
@@ -30917,8 +30880,8 @@ function renderPreviewBody(){
     if(node.marker){
       // Icon plus its name: on paper there's no hover tip, so an icon alone (⚑ vs ⚠) isn't readable.
       const mk=document.createElement('span'); mk.className='pv-marker-badge'; mk.dataset.color=nodeMarkerColor(node.marker); mk.dataset.tip=nodeMarkerLabel(node.marker); const since=node.markerAt?openItemDate(node.markerAt,Date.now()):'';
-      // A follow-up says who owns it and since when (a snapshot dates, it doesn't age; owner, 2026-10-21).
-      const label=nodeMarkerLabel(node.marker)+(node.marker==='followup'?(node.markerOwner?' for '+node.markerOwner:'')+(since?' \u00b7 since '+since:''):'');
+      // A follow-up says since when (a snapshot dates, it doesn't age; owner, 2026-10-21).
+      const label=nodeMarkerLabel(node.marker)+(node.marker==='followup'&&since?' \u00b7 since '+since:'');
       mk.innerHTML=markIconSvg(node.marker,12)+'<span class="pv-marker-label">'+esc(label)+'</span>';
       contentEl.appendChild(mk);
     }
@@ -32126,7 +32089,7 @@ function threadKindIcon(r,thread){
   if(r.decision)return {kind:'decision',svg:markIconSvg('decision',14),color:'var(--hint)',tip:'Decision'};
   // A reply has its own arrow (owner, 2026-10-27), whatever it replies to; under a question it is the answer.
   const parent=r.answerTo&&thread?threadReplyParent(r,thread):null;
-  if(r.answerTo&&(!thread||parent))return {kind:'reply',svg:THREAD_REPLY_ICON,color:'var(--hint)',tip:parent&&isQuestion(parent)?'Answer':'Reply'};
+  if(r.answerTo&&(!thread||parent))return {kind:'reply',svg:THREAD_REPLY_ICON,color:'var(--hint)',tip:'Reply'};
   if(isQuestion(r)){ const open=questionState(r,thread||[r])==='open'; return {kind:'question',svg:qaDotIconSvg(14),color:open?'var(--accent)':'var(--hint)',tip:open?'Open question — Reply to answer it':'Question, answered'}; }
   return {kind:'comment',svg:markIconSvg('comment',13),color:'var(--hint)',tip:'Comment'};
 }
@@ -32277,7 +32240,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   const kindEl=threadKindEl(r,thread,'thread-kind');
   kindEl.classList.add('is-clickable'); kindEl.dataset.tip=kindEl.dataset.tip+' \u2014 click to change';
   kindEl.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-  kindEl.addEventListener('click',e=>{ e.stopPropagation(); hideNodeTooltip(); const rr=kindEl.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadEntryMenuItems(node,r,thread,textEl,commit)); });
+  kindEl.addEventListener('click',e=>{ e.stopPropagation(); hideNodeTooltip(); const rr=kindEl.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadKindMenuItems(r,thread,commit)); });
   // An entry emptied and left (with no Yes/No to keep) is removed, so blank entries never pile up
   // or print. Moving between its own fields keeps it.
   const dropIfBlank=e=>{
@@ -32287,7 +32250,7 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   };
   // The author is picked like on the reply line (owner request): click → the names in this document,
   // or "Someone else…" to type one. Focusable, so moving here from an emptied entry keeps it.
-  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.setAttribute('role','button'); person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder=r.answerTo?'Answer':'Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another';
+  const person=document.createElement('span'); person.contentEditable='false'; person.tabIndex=0; person.setAttribute('role','button'); person.className='node-remark-person-inline'; person.textContent=r.person||''; person.dataset.placeholder='Who'; person.spellcheck=false; person.dataset.tip='Author — click to pick another';
   const typing=()=>person.contentEditable==='true';
   const openAuthorMenu=()=>{
     const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -32313,13 +32276,11 @@ function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   time.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
   time.addEventListener('click',e=>{ e.stopPropagation(); openRemarksDateEditor(time,r); });
   meta.appendChild(kindEl); meta.appendChild(person); meta.appendChild(time);
-  const isQ=isQuestion(r);
-  const qState=isQ?questionState(r,thread):null;
   // The kind icon says it all (owner, 2026-10-27: "more simple"): an open question in the accent
-  // color, a settled one grey, a Yes / No answer ✓ / ✗. No words repeat it on the line.
-  // Reply (owner decision 2026-10-27: any entry takes replies, one level): on hover, always on an
-  // open question; it opens a reply line under the entry's replies.
-  if(!nested){ const ab=document.createElement('button'); ab.type='button'; ab.className='thread-reply-btn'+(qState==='open'?' is-open':''); ab.textContent='Reply'; ab.dataset.tip=isQ?'Answer this question':'Reply to this';
+  // color, everything else grey. No words repeat it on the line.
+  // Reply (owner decision 2026-10-27: any entry takes replies, one level): on hover only; it opens a
+  // reply line under the entry's replies.
+  if(!nested){ const ab=document.createElement('button'); ab.type='button'; ab.className='thread-reply-btn'; ab.textContent='Reply'; ab.dataset.tip='Reply to this';
     ab.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     ab.addEventListener('click',e=>{ e.stopPropagation(); openThreadComposer(node.id,false,r.id); });
     meta.appendChild(ab); }
@@ -32437,7 +32398,7 @@ function threadCopyContent(nodeId){
   // Same reading order as the outline: a question with its answers indented under it.
   let prev=null;
   threadReadingOrder(thread).forEach(({entry:r,nested})=>{
-    const name=r.person||(r.answerTo?'Answer':'Unnamed');
+    const name=r.person||(r.answerTo?'Reply':'Unnamed');
     const meta=[formatThreadTimeAbsolute(r,prev),r.context||'',...threadEntryNotes(r,thread)].filter(Boolean).join(' \u00b7 ');
     prev=r;
     const body=htmlHasVisibleText(r.text)?sakuraSanitizeRichHtml(r.text||''):'';
@@ -32469,47 +32430,38 @@ function followupWhyLine(t,at){
   return best;
 }
 // "Add to To-Dos" on a Follow-up row: the task is what's left -- the line that says why, else the
-// row's text -- with the follow-up's owner as an @mention ("Ana Lee" → @Ana-Lee, a mention is one
-// word), linked to the row. Completing the task doesn't change the document: the row stays
+// row's text -- linked to the row. Completing the task doesn't change the document: the row stays
 // Follow-up until someone settles it (owner decision 2026-10-19).
 function followupTodoText(node){
   const said=followupWhyLine(nodeThread(node.id),node.markerAt)?.text||getNodePlainText(node).trim();
-  const owner=String(node.markerOwner||'').trim().replace(/[^A-Za-z0-9_-]+/g,'-').replace(/^-+|-+$/g,'');
-  return (owner&&/^[A-Za-z]/.test(owner)?'@'+owner+' ':'')+said;
+  return said;
 }
 // A row's tasks (a follow-up's task is linked to its row).
 function followupTodoRefs(node){ return todoRefsForNode(node.id); }
 function addFollowupToTodos(node){
   if(typeof window.sakuraAddTodoForNode!=='function'||!currentDocId)return;
-  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node),stripHtmlToText(node.markerBy||'').trim());
+  const id=window.sakuraAddTodoForNode(currentDocId,node.id,followupTodoText(node));
   if(!id){ showToast('Nothing to add — the row is empty'); return; }
   showToast('Added to To-Dos','success');
   render();
 }
-// Replies (owner decision 2026-10-27): any entry can take replies, one level deep. Puts `r` under
-// `parentId` (or back in the timeline with null); a reply to a reply goes under that reply's entry,
-// and r's own replies follow it.
-function setThreadReplyTo(r,parentId,thread){
-  let p=parentId!=null?thread.find(e=>e.id===parentId):null;
-  if(p&&p.answerTo!=null)p=threadReplyParent(p,thread)||p;
-  if(p===r)p=null;
-  if(!p){ delete r.answerTo; return; }
-  r.answerTo=p.id;
-  if(isQuestion(r))delete r.type;
-  remarks.forEach(x=>{ if(x!==r&&x.answerTo===r.id)x.answerTo=p.id; });
-}
-// "Reply to ›" (earlier entries in the timeline) and "Not a reply", for the entry menu.
-function threadReplyToItems(r,thread,commit){
-  const CHECK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  const parent=threadReplyParent(r,thread);
-  const before=thread.slice(0,Math.max(0,thread.indexOf(r))).filter(e=>e!==r&&!threadReplyParent(e,thread)&&htmlHasVisibleText(e.text));
-  const items=[];
-  if(before.length)items.push({label:'Reply to', icon:THREAD_REPLY_ICON, submenu:before.slice().reverse().slice(0,12).map(e=>({label:threadQuestionLabel(e), sub:(e.person||'')+(isQuestion(e)?' · question':''), icon:parent===e?CHECK:'', onClick:()=>{ if(parent===e)return; pushUndo(); setThreadReplyTo(r,e.id,thread); commit(); }}))});
-  if(parent)items.push({label:'Not a reply', onClick:()=>{ pushUndo(); setThreadReplyTo(r,null,thread); commit(); }});
-  return items;
-}
 const THREAD_REPLY_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>';
-// One menu per entry (owner, 2026-10-27: "simpler"): its icon and a right-click open the same items.
+// The kinds an entry can be, one at a time (owner, 2026-10-27): Comment, Question or Decision; a
+// reply is a Reply or a Decision. The icon's click menu, on entries and on the reply line.
+const THREAD_KIND_WORDS={comment:'Comment',question:'Question',decision:'Decision',reply:'Reply'};
+function threadKindChoices(isReply,cur,pick){
+  const icons={comment:markIconSvg('comment'),question:qaDotIconSvg(14),decision:markIconSvg('decision'),reply:THREAD_REPLY_ICON};
+  return (isReply?['reply','decision']:['comment','question','decision']).map(k=>({label:THREAD_KIND_WORDS[k], icon:icons[k], meta:cur===k?'\u2713':'', onClick:()=>pick(k)}));
+}
+function threadKindMenuItems(r,thread,commit){
+  const parent=threadReplyParent(r,thread);
+  const cur=r.decision?'decision':parent?'reply':isQuestion(r)?'question':'comment';
+  return threadKindChoices(!!parent,cur,k=>{ if(k===cur)return; pushUndo(); delete r.decision;
+    if(k==='question')r.type='question'; else delete r.type;
+    if(k==='decision')r.decision=true;
+    commit(); });
+}
+// Right-click on an entry: Reply, Copy thread, Rewrite, Delete. The kind is the icon's (owner, 2026-10-27).
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const change=fn=>()=>{ pushUndo(); fn(); commit(); };
@@ -32517,15 +32469,6 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   // Reply opens a reply line under the entry (owner decision 2026-10-27: any entry takes replies).
   const parent=threadReplyParent(r,thread);
   items.push({label:'Reply', icon:THREAD_REPLY_ICON, onClick:()=>openThreadComposer(node.id,false,(parent||r).id)});
-  // The kind is one choice (owner, 2026-10-27): Comment, Question or Decision; a reply is a Reply or a Decision.
-  const cur=r.decision?'decision':parent?'reply':isQuestion(r)?'question':'comment';
-  const setKind=k=>change(()=>{ if(k===cur)return; delete r.decision;
-    if(k==='question'){ if(parent)setThreadReplyTo(r,null,thread); r.type='question'; } else delete r.type;
-    if(k==='decision')r.decision=true; });
-  const kinds=parent?[['reply',isQuestion(parent)?'Answer':'Comment',THREAD_REPLY_ICON],['decision','Decision',markIconSvg('decision')]]
-    :[['comment','Comment',markIconSvg('comment')],['question','Question',qaDotIconSvg(14)],['decision','Decision',markIconSvg('decision')]];
-  items.push({divider:true},{heading:'Kind'},...kinds.map(([k,label,icon])=>({label, icon, meta:cur===k?'\u2713':'', onClick:setKind(k)})));
-  const where=threadReplyToItems(r,thread,commit); if(where.length)items.push({divider:true},...where);
   items.push({divider:true});
   items.push({label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)});
   if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
@@ -32559,10 +32502,9 @@ function renderThreadComposer(node,thread,place,commit){
   let chosen=chosenId?thread.find(e=>e.id===chosenId):null;
   if(chosen&&chosen.answerTo!=null)chosen=threadReplyParent(chosen,thread)||chosen;
   if(chosenId&&!chosen)_threadAnswerTo.delete(node.id);
-  if(chosen){ line.classList.add('is-nested'); avatar=threadKindEl({answerTo:chosen.id},null,'thread-kind'); }
-  const asking=ask&&!chosen, deciding=kind==='decision'&&!chosen;
-  const replyQ=chosen&&isQuestion(chosen)?chosen:null;
-  input.dataset.placeholder=replyQ?'Answer “'+threadQuestionLabel(replyQ,40)+'”…':chosen?'Reply to '+(chosen.person||'this')+'…':asking?'Ask a question…':deciding?'Record a decision…':'Add a comment…';
+  if(chosen){ line.classList.add('is-nested'); if(kind!=='decision')avatar=threadKindEl({answerTo:chosen.id},null,'thread-kind'); }
+  const asking=ask&&!chosen, deciding=kind==='decision';
+  input.dataset.placeholder=deciding?'Record a decision…':chosen?'Reply…':asking?'Ask a question…':'Add a comment…';
   const submit=()=>{
     const html=sakuraSanitizeRichHtml(input.innerHTML);
     const hasText=htmlHasVisibleText(html);
@@ -32571,8 +32513,8 @@ function renderThreadComposer(node,thread,place,commit){
     const last=thread[thread.length-1];
     const e={id:newRemarkId(),anchorNodeId:node.id,person:threadDefaultAuthor(),text:html,context:'',createdAt:Math.max(Date.now(),(last&&last.createdAt||0)+1)};
     if(chosen)e.answerTo=chosen.id;
-    else if(asking)e.type='question';
-    else if(deciding)e.decision=true;
+    if(asking)e.type='question';
+    if(deciding)e.decision=true;
     remarks.push(e);
     _threadComposerNodeId=node.id; setThreadComposerKind(node.id,'comment'); _threadDrafts.delete(node.id); _threadAnswerTo.delete(node.id);
     _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
@@ -32595,18 +32537,14 @@ function renderThreadComposer(node,thread,place,commit){
     else if(e.key==='Backspace'&&!e.repeat&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!(input.textContent||'').trim()&&!input.querySelector('img')){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); render(); beginEdit(node.id,true); }
     else if(e.key==='Escape'){ e.preventDefault(); _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); _threadAnswerTo.delete(node.id); render(); }
   });
-  // Owner design (2026-10-27): the line's own icon picks the kind -- Comment, Question or Decision --
-  // like an entry's icon; Enter adds it. A reply line has no kinds (a reply is a reply; its menu can
-  // still mark it a decision). No statuses (the row's), no Yes / No (the words say it).
-  if(!chosen){
-    const words={comment:'Comment',question:'Question',decision:'Decision'};
-    avatar.classList.add('is-clickable'); avatar.setAttribute('role','button'); avatar.tabIndex=0; avatar.setAttribute('aria-label','Kind: '+words[kind]+'. Change');
-    avatar.dataset.tip=words[kind]+' \u2014 click to '+(kind==='question'?'make it a comment or a decision':kind==='decision'?'make it a comment or a question':'ask a question or record a decision');
-    const pick=k=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); setThreadComposerKind(node.id,k); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
-    const open=()=>{ hideNodeTooltip(); const rr=avatar.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,[
-      {label:'Comment', icon:markIconSvg('comment'), meta:kind==='comment'?'\u2713':'', onClick:()=>pick('comment')},
-      {label:'Question', icon:qaDotIconSvg(14), meta:kind==='question'?'\u2713':'', onClick:()=>pick('question')},
-      {label:'Decision', icon:markIconSvg('decision'), meta:kind==='decision'?'\u2713':'', onClick:()=>pick('decision')}]); };
+  // Owner design (2026-10-27): the line's own icon picks the kind, like an entry's icon -- Comment,
+  // Question or Decision; on a reply line Reply or Decision. Enter adds it.
+  {
+    const cur=chosen?(deciding?'decision':'reply'):kind;
+    avatar.classList.add('is-clickable'); avatar.setAttribute('role','button'); avatar.tabIndex=0; avatar.setAttribute('aria-label','Kind: '+THREAD_KIND_WORDS[cur]+'. Change');
+    avatar.dataset.tip=THREAD_KIND_WORDS[cur]+' \u2014 click to change';
+    const pick=k=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); setThreadComposerKind(node.id,k==='reply'?'comment':k); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); };
+    const open=()=>{ hideNodeTooltip(); const rr=avatar.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,threadKindChoices(!!chosen,cur,pick)); };
     avatar.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     avatar.addEventListener('click',e=>{ e.stopPropagation(); open(); });
     avatar.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
@@ -33230,7 +33168,7 @@ function openItemsLists(){
   rowsOpen.forEach(({n,t})=>{
     const k=place(n); nth.set(k,(nth.get(k)||0)+1);
     const row=rowText(n)+(byPlace.get(k)>1?' ('+nth.get(k)+')':'');
-    followups.push({nodeId:n.id, row, owner:n.markerOwner||'',
+    followups.push({nodeId:n.id, row,
       parent:byName.get(rowText(n))>1?parentText(n):'', fullParent:parentText(n), latest:lineOf(t,n.markerAt), lastId:lastIdOf(t), since:n.markerAt});
   });
   // A question names the row it's on and who asked ("Customer comms · Maria").
@@ -33254,7 +33192,7 @@ function openItemsMenuItems(){
     if(entries.length>OPEN_ITEMS_PER_GROUP)items.push({label:(entries.length-OPEN_ITEMS_PER_GROUP)+' more — show them all in the outline', icon:FILTER_ICON, onClick:()=>{ if(!allOn)applyOpenItemsFilter('openItems'); }});
   };
   const {followups,questions}=openItemsLists();
-  addGroup('followup','Follow-ups',followups.map(f=>({label:f.row+(f.owner?' \u00B7 '+f.owner:''),
+  addGroup('followup','Follow-ups',followups.map(f=>({label:f.row,
     sub:[f.parent?'in '+f.parent:'', f.latest?(f.latest.person?f.latest.person+': ':'')+f.latest.text:''].filter(Boolean).join(' \u00B7 '),
     since:f.since, go:()=>revealMarkerEntry(f.nodeId)})));
   addGroup('question','Open questions',questions.map(q=>({label:q.text, sub:[q.row,q.person].filter(Boolean).join(' \u00B7 '), since:q.since, go:()=>revealInlineObject('remark',q.remarkId)})));
@@ -33283,7 +33221,7 @@ function openItemsSnapshot(now=Date.now(),leaveOut=null){
   return {
     asOf:'As of '+openItemDate(now,now,true)+' \u00b7 '+counts,
     followups:followups.map(f=>({nodeId:f.nodeId, title:f.row,
-      meta:[{text:f.fullParent},{text:f.owner,name:true},{text:since(f.since)}].filter(m=>m.text),
+      meta:[{text:f.fullParent},{text:since(f.since)}].filter(m=>m.text),
       sub:!f.latest?null:qNum.has(f.latest.id)?{text:'Waiting on open question '+qNum.get(f.latest.id)}
         :{person:f.latest.person,text:f.latest.text,waiting:f.lastId!==f.latest.id&&qNum.has(f.lastId)?'waiting on open question '+qNum.get(f.lastId):''}})),
     questions:questions.map(q=>({nodeId:q.nodeId, title:q.text,

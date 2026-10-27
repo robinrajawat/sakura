@@ -2,8 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// A thread entry's kind icon (owner, 2026-10-23; one menu since 2026-10-27): clicking it opens the
-// entry's menu, the same as a right-click. A status is the row's, not an entry's (owner
+// A thread entry's kind icon (owner, 2026-10-23, 2026-10-27): clicking it changes the kind and
+// nothing else; right-click has the rest. A status is the row's, not an entry's (owner
 // decision 2026-10-27). Icons are grey except an open question (accent).
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
@@ -36,27 +36,27 @@ const kind = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline
 const menu = (page: Page) => page.locator('.sb-context-menu');
 const remark = (page: Page, id: string) => page.evaluate(`JSON.parse(JSON.stringify(remarks.find(r => r.id === '${id}')))`) as Promise<Record<string, unknown>>;
 
-test('the icon opens the same menu as a right-click: Reply, one kind, Reply to › (owner, 2026-10-27)', async ({ page }) => {
+test('the icon changes only the kind; right-click is Reply, Copy, Rewrite, Delete (owner, 2026-10-27)', async ({ page }) => {
   await seed(page, THREAD);
   const labels = async () => menu(page).locator('.sb-context-item .sb-context-label').evaluateAll((els) => els.map((e) => e.childNodes[0].textContent));
   await kind(page, 'c3').click();
-  const fromIcon = await labels();
-  expect(fromIcon.slice(0, 5)).toEqual(['Reply', 'Comment', 'Question', 'Decision', 'Reply to']);
+  expect(await labels()).toEqual(['Comment', 'Question', 'Decision']);
   await page.keyboard.press('Escape');
   await page.locator('#inline-remark-text-c3').click({ button: 'right' });
-  expect(await labels()).toEqual(fromIcon);
+  const right = await labels();
+  expect(right[0]).toBe('Reply');
+  for (const gone of ['Comment', 'Question', 'Decision', 'Reply to', 'Not a reply']) expect(right).not.toContain(gone);
 });
 
-test('Reply to › a question makes it the answer, with its own reply icon; undo takes it back', async ({ page }) => {
-  await seed(page, THREAD);
-  await kind(page, 'c1').click();
-  await menu(page).getByText('Reply to', { exact: true }).hover();
-  await page.locator('.sb-context-submenu .sb-context-item').filter({ hasText: 'Does the EU file' }).click();
-  expect((await remark(page, 'c1')).answerTo).toBe('q1');
+test('a reply\'s icon offers Reply or Decision, and its tip says Reply (not Answer)', async ({ page }) => {
+  await seed(page, THREAD.replace("text: 'Friday evening run.',", "text: 'Friday evening run.', answerTo: 'q1',"));
   await expect(kind(page, 'c1')).toHaveClass(/is-reply/);
-  await expect(kind(page, 'c1')).toHaveAttribute('data-tip', /^Answer/);
+  await expect(kind(page, 'c1')).toHaveAttribute('data-tip', /^Reply/);
+  await kind(page, 'c1').click();
+  await menu(page).getByText('Decision', { exact: true }).click();
+  expect(await remark(page, 'c1')).toMatchObject({ answerTo: 'q1', decision: true });
   await page.evaluate('undo()');
-  expect((await remark(page, 'c1')).answerTo).toBeUndefined();
+  expect((await remark(page, 'c1')).decision).toBeUndefined();
 });
 
 test('Decision is a mark that keeps the entry\'s place; a question made a comment keeps its replies', async ({ page }) => {
@@ -69,12 +69,6 @@ test('Decision is a mark that keeps the entry\'s place; a question made a commen
   await menu(page).getByText('Comment', { exact: true }).click();
   expect((await remark(page, 'q1')).type).toBeUndefined();
   expect((await remark(page, 'c1')).answerTo).toBe('q1');
-});
-
-test('the first entry has nothing to reply to', async ({ page }) => {
-  await seed(page, THREAD);
-  await kind(page, 'q1').click();
-  await expect(menu(page).getByText('Reply to', { exact: true })).toHaveCount(0);
 });
 
 test('icons are grey except an open question', async ({ page }) => {

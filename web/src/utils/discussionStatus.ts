@@ -13,8 +13,8 @@
  *
  * Owner decision (2026-10-27): rows say what, threads say why. A row has at most one status,
  * stored on the row: Agreed ('confirmed'), Follow-up ('followup') or Out of scope ('parked'), with
- * who set it and when (`markerBy`, `markerAt`, the date showing how old a follow-up is) and, for a
- * Follow-up, who owns it (`markerOwner`). Setting a status adds nothing to the thread. A decision is
+ * when it was set (`markerAt`, showing how old a follow-up is). No names (owner, 2026-10-27): a
+ * follow-up is always your own. Setting a status adds nothing to the thread. A decision is
  * no status: it marks the entry where something was decided and leaves the row alone. Older values
  * read as their successor: Resolved / Decision → Agreed, Issue → Follow-up, N/A → Out of scope.
  *
@@ -311,11 +311,8 @@ export function migrateQaToRemarks<Q extends StatusQaItem & { createdAt?: number
 /** A row's status as stored on the row. */
 export interface RowStatus {
   marker: ThreadStatus | '';
-  /** Who set it, and when (epoch ms); unknown for a status set before they were recorded. */
-  markerBy?: string;
+  /** When it was set (epoch ms); unknown for a status set before it was recorded. */
   markerAt?: number;
-  /** Who owns a Follow-up. */
-  markerOwner?: string;
 }
 
 /** True when any entry still holds a status (from before statuses moved onto the row). */
@@ -358,9 +355,7 @@ export function migrateStatusToRows<R extends ThreadEntry>(
     if (!holder) return;
     const h = holder as ThreadEntry;
     const row: RowStatus = { marker: st(h) as ThreadStatus };
-    if ((h.person || '').trim()) row.markerBy = (h.person as string).trim();
     if (h.createdAt) row.markerAt = h.createdAt;
-    if (row.marker === 'followup' && (h.owner || '').trim()) row.markerOwner = (h.owner as string).trim();
     rows.set(id, row);
   });
   const out: R[] = [];

@@ -39,7 +39,7 @@ test('the line\'s icon picks the kind: Comment, Question or Decision (owner, 202
   await expect(page.locator('.thread-composer .thread-btn')).toHaveCount(0);
   await expect(page.locator('.thread-composer .thread-composer-hint')).toHaveCount(0);
   await expect(icon).toHaveClass(/is-comment/);
-  await expect(icon).toHaveAttribute('data-tip', /^Comment — click to ask a question or record a decision/);
+  await expect(icon).toHaveAttribute('data-tip', /^Comment — click to change/);
   await expect(input).toHaveAttribute('data-placeholder', 'Add a comment…');
   // Picking a kind keeps what you typed; the icon and placeholder follow it.
   await input.click();

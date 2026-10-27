@@ -46,7 +46,7 @@ test('Reply on a question opens a line under it; the answer reads there, even wi
   await expect(page.locator('.thread-composer .thread-btn[data-act="yes"]')).toHaveCount(0);
   await entry(page, 'q1').locator('.thread-reply-btn').click();
   const composer = page.locator('.thread-composer.is-nested');
-  await expect(composer.locator('.thread-composer-input')).toHaveAttribute('data-placeholder', /Answer “Does the EU file/);
+  await expect(composer.locator('.thread-composer-input')).toHaveAttribute('data-placeholder', 'Reply…');
   await page.keyboard.type('Friday evening run.');
   await page.keyboard.press('Enter');
   const a = await last(page);
@@ -74,7 +74,7 @@ test('a comment takes replies too; a reply to a reply joins the same entry', asy
   await entry(page, 'r1').click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Reply', { exact: true }).click();
   const composer = page.locator('.thread-composer.is-nested');
-  await expect(composer.locator('.thread-composer-input')).toHaveAttribute('data-placeholder', 'Reply to Ana…');
+  await expect(composer.locator('.thread-composer-input')).toHaveAttribute('data-placeholder', 'Reply…');
   await page.keyboard.type('Thanks.');
   await page.keyboard.press('Enter');
   const a = await last(page);
@@ -82,30 +82,6 @@ test('a comment takes replies too; a reply to a reply joins the same entry', asy
   expect(await order(page)).toEqual(['q1', 'c1', '  r1', '  ' + a.id, 'q2']);
   // Every reply has the reply icon (owner, 2026-10-27); under a comment it reads "Reply".
   await expect(entry(page, 'r1').locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Reply/);
-});
-
-test('Reply to › moves an entry under another, with its own replies; Not a reply puts it back in time order', async ({ page }) => {
-  await seed(page, TWO_QS.replace(']', `, { id: 'a1', anchorNodeId: 1, person: 'Ana', date: '2026-10-15', text: 'The account team.', answerTo: 'q1', createdAt: 4 }, { id: 'a2', anchorNodeId: 1, person: 'Kim', date: '2026-10-15', text: 'Agreed.', createdAt: 5 }]`));
-  await entry(page, 'a1').click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Reply to', { exact: true }).hover();
-  const sub = page.locator('.sb-context-submenu');
-  await expect(sub.locator('.sb-context-item').first()).toContainText('Who tells the customers?');
-  await sub.locator('.sb-context-item').filter({ hasText: 'Who tells the customers?' }).click();
-  expect(await page.evaluate("remarks.find(r => r.id === 'a1').answerTo")).toBe('q2');
-  await expect(entry(page, 'a1')).toHaveClass(/is-moved/);
-  await page.keyboard.press('ControlOrMeta+Z');
-  expect(await page.evaluate("remarks.find(r => r.id === 'a1').answerTo")).toBe('q1');
-
-  await entry(page, 'a1').click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Not a reply', { exact: true }).click();
-  expect(await page.evaluate("remarks.find(r => r.id === 'a1').answerTo")).toBeUndefined();
-  expect(await order(page)).toEqual(['q1', 'c1', 'q2', 'a1', 'a2']);
-  // An entry with replies, put under another, takes its replies along (one level).
-  await page.evaluate("remarks.find(r => r.id === 'a2').answerTo = 'a1'; render()");
-  await entry(page, 'a1').click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Reply to', { exact: true }).hover();
-  await page.locator('.sb-context-submenu .sb-context-item').filter({ hasText: 'Weekend works' }).click();
-  expect(await page.evaluate("['a1','a2'].map(id => remarks.find(r => r.id === id).answerTo)")).toEqual(['c1', 'c1']);
 });
 
 test('one unbroken line joins the top-level entries and stops at the last one, past any replies', async ({ page }) => {
