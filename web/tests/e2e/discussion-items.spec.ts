@@ -44,13 +44,13 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   `);
   expect(await page.evaluate('qaItems.map(q => q.id)')).toEqual(['sec', 'q2']);
   const q = page.locator('.thread-entry:has(#inline-remark-text-rq1)');
-  await expect(q.locator('.thread-q-note')).toHaveText('· question, answered');
+  await expect(q.locator('.thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
-  await expect(a.locator('.thread-verdict.is-yes')).toHaveText('· yes');
+  await expect(a.locator('.thread-kind.is-answer')).toHaveAttribute('data-tip', /^Answer: Yes/);
   await expect(a.locator('.thread-kind.is-answer')).toHaveCount(1);
   await expect(a.locator('.node-remark-text-inline')).toHaveText('All of them');
   // An old decision item makes its row Agreed (by its author) and stays a decision on its entry.
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-status-note')).toHaveText(['· decision']);
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-kind.is-decision')).toHaveCount(1);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-kind.is-decision svg')).toHaveCount(1);
   expect(await page.evaluate("[nodes.find(n => n.id === 3).marker, nodes.find(n => n.id === 3).markerBy]")).toEqual(['confirmed', 'Maria']);
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'd1'))")).not.toMatch(/"kind"|"status"/);
@@ -202,7 +202,7 @@ test('names are one plain colour; a bare Yes takes one line', async ({ page }) =
     { id: 'bare', anchorNodeId: 3, person: 'Robin', date: '2026-10-14', text: '', verdict: 'yes', answerTo: 'ask', createdAt: 9 }); render();`);
   const bare = page.locator('.thread-entry.is-event');
   await expect(bare).toHaveCount(1);
-  await expect(bare.locator('.thread-verdict.is-yes')).toBeVisible();
+  await expect(bare.locator('.thread-kind.is-answer')).toHaveAttribute('data-tip', /^Answer: Yes/);
   await expect(bare.locator('.node-remark-text-inline')).toBeHidden();
 });
 
@@ -229,7 +229,6 @@ test('entry menu: Reply first, question toggle, decision; no status (that is the
   await expect(menu.locator('.sb-context-choice')).toHaveCount(0);
   // A decision is marked on the entry (handshake icon, quiet text); the row's status stays as it is.
   await menu.getByText('Mark as decision', { exact: true }).click();
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-status-note.is-decision')).toHaveText('· decision');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-kind.is-decision')).toHaveCount(1);
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker || ''")).toBe('');
   await entry.click({ button: 'right' });
@@ -275,7 +274,7 @@ test('grey thread: only an open question takes the accent colour; an answer read
   const order = await page.evaluate(`[...document.querySelectorAll('.thread-entry')].filter(e => e.querySelector('#inline-remark-text-ask, #inline-remark-text-mid, #inline-remark-text-ans, #inline-remark-text-open')).map(e => e.dataset.remarkId + (e.classList.contains('is-nested') ? '>' : ''))`);
   expect(order).toEqual(['ask', 'ans>', 'mid', 'open']);
   await expect(page.locator('.thread-quote')).toHaveCount(0);
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-q-note')).toHaveText('· question, answered');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
 });

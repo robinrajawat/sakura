@@ -96,36 +96,36 @@ test('a question (formerly Q&A): its icon tracks the answer, Yes answers it, won
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds = new Set([2, 3, 4, 5]); render();');
   expect(await page.evaluate('qaItems.length')).toBe(0);
-  // An open question is its kind icon in the accent colour; a settled one adds quiet text.
-  const q = (id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-q-note`);
+  // An open question is its kind icon in the accent colour; the icon's tip names the state (no words on the line).
+  const q = (id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-kind.is-question`);
   const isOpen = (id: string) => expect(page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-kind.is-question`)).toHaveCSS('color', 'rgb(194, 85, 61)');
   await isOpen('rqOpen');
-  await expect(q('rqOpen')).toHaveCount(0);
-  await expect(q('rqDone')).toHaveText('· question, answered');
-  await expect(q('rqWont')).toHaveText('· question, won’t answer');
+  await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
+  await expect(q('rqDone')).toHaveAttribute('data-tip', /^Question, answered/);
+  await expect(q('rqWont')).toHaveAttribute('data-tip', /^Question, won’t answer/);
   await expect(page.locator('#inline-remark-text-rqDone-a')).toHaveText('Priya');
 
   // Yes on the question's reply line answers it.
   await page.evaluate("openThreadComposer(3, false, 'rqOpen')");
   await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="yes"]').click();
-  await expect(q('rqOpen')).toHaveText('· question, answered');
+  await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Question, answered/);
   expect(await sumButtons(page)).toEqual(['1 follow-up']);
   // "Not a reply" on the answer reopens the question.
-  const ans = page.locator('.thread-entry:has(.thread-verdict.is-yes)');
+  const ans = page.locator('.thread-entry:has(.thread-kind.is-answer[data-tip^="Answer: Yes"])').last();
   await ans.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Not a reply', { exact: true }).click();
-  await expect(q('rqOpen')).toHaveCount(0);
+  await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
   await isOpen('rqOpen');
 
   // Won't answer via right-click, then reopen it.
   const line = page.locator('.thread-entry:has(#inline-remark-text-rqOpen)');
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Won’t answer', { exact: true }).click();
-  await expect(q('rqOpen')).toHaveText('· question, won’t answer');
+  await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Question, won’t answer/);
   expect(await page.evaluate("remarks.find(r => r.id === 'rqOpen').wontAnswer")).toBe(true);
   await line.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Reopen question', { exact: true }).click();
-  await expect(q('rqOpen')).toHaveCount(0);
+  await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
   await isOpen('rqOpen');
   expect(errors).toEqual([]);
 });

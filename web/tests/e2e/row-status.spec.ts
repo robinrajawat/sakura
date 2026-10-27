@@ -123,3 +123,11 @@ test('Follow-up from the row menu sets the status and opens no thread', async ({
   await expect(page.locator('.thread-composer')).toHaveCount(0);
   expect(await page.evaluate('remarks.length')).toBe(0);
 });
+
+test('right-clicking the badge opens its menu and keeps the status (owner: one stray click must not clear it)', async ({ page }) => {
+  const errors = await seed(page, '[]', `{ marker: 'confirmed', markerBy: 'Robin', markerAt: Date.now() }`);
+  await badge(page).click({ button: 'right' });
+  await expect(menu(page).locator('.sb-context-heading').first()).toContainText('Agreed · Robin');
+  expect((await row(page)).marker).toBe('confirmed');
+  expect(errors).toEqual([]);
+});
