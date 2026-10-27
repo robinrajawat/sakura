@@ -97,9 +97,9 @@ describe('row status (owner decision 2026-10-27: one status, on the row)', () =>
     expect(needsStatusMigration(entries)).toBe(true);
     const res = migrateStatusToRows(nodes, entries);
     expect([...res.rows]).toEqual([
-      [1, { marker: 'followup', markerBy: 'Ken', markerAt: 2, markerOwner: 'Kim' }],
-      [2, { marker: 'confirmed', markerBy: 'Ana', markerAt: 1 }],
-      [3, { marker: 'parked', markerBy: 'Ana', markerAt: 2 }]
+      [1, { marker: 'followup', markerAt: 2 }],
+      [2, { marker: 'confirmed', markerAt: 1 }],
+      [3, { marker: 'parked', markerAt: 2 }]
     ]);
     // Status-only entries go; the rest keep their words with no status fields.
     expect(res.entries.map((e) => e.id)).toEqual(['a', 'd', 'e', 'f', 'g']);

@@ -47,12 +47,12 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   await expect(q.locator('.thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
   const a = page.locator('.thread-entry:has(#inline-remark-text-rq1-a)');
   // An old Yes says it in its text now (owner, 2026-10-27: no Yes / No).
-  await expect(a.locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Answer/);
+  await expect(a.locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Reply/);
   await expect(a.locator('.node-remark-text-inline')).toHaveText('Yes. All of them');
   // An old decision item makes its row Agreed (by its author) and stays a decision on its entry.
   await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-kind.is-decision')).toHaveCount(1);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-d1) .thread-kind.is-decision svg')).toHaveCount(1);
-  expect(await page.evaluate("[nodes.find(n => n.id === 3).marker, nodes.find(n => n.id === 3).markerBy]")).toEqual(['confirmed', 'Maria']);
+  expect(await page.evaluate("[nodes.find(n => n.id === 3).marker, nodes.find(n => n.id === 3).markerBy]")).toEqual(['confirmed', undefined]);
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'd1'))")).not.toMatch(/"kind"|"status"/);
   expect(errors).toEqual([]);
 });
@@ -115,7 +115,7 @@ test('the status is the row\'s: setting it adds no entry and opens nothing', asy
   const count = 'remarks.length';
   const before = await page.evaluate(count) as number;
   await page.evaluate("_threadAuthor = 'Robin'; setNodeMarker(2, 'confirmed'); render()");
-  expect(await page.evaluate("[nodes.find(n => n.id === 2).marker, nodes.find(n => n.id === 2).markerBy]")).toEqual(['confirmed', 'Robin']);
+  expect(await page.evaluate("[nodes.find(n => n.id === 2).marker, nodes.find(n => n.id === 2).markerBy]")).toEqual(['confirmed', undefined]);
   expect(await page.evaluate(count)).toBe(before);
   // A marker on a row with no thread doesn't start one.
   await page.evaluate("setNodeMarker(1, 'confirmed'); render()");
@@ -205,7 +205,7 @@ test('names are one plain colour; an old bare Yes reads as the word Yes', async 
     { id: 'bare', anchorNodeId: 3, person: 'Robin', date: '2026-10-14', text: '', verdict: 'yes', answerTo: 'ask', createdAt: 9 }); render();`);
   await page.evaluate('render()');
   const bare = page.locator('.thread-entry:has(#inline-remark-text-bare)');
-  await expect(bare.locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Answer/);
+  await expect(bare.locator('.thread-kind.is-reply')).toHaveAttribute('data-tip', /^Reply/);
   await expect(bare.locator('.node-remark-text-inline')).toHaveText('Yes');
   await expect(page.locator('.thread-entry.is-event')).toHaveCount(0);
 });
@@ -223,20 +223,22 @@ test('right-click and Insert offer one Thread item, no separate comment/question
   await expect(page.locator('#context-menu [data-action="qa"]')).toHaveCount(0);
 });
 
-test('entry menu: Reply first, one kind (Comment / Question / Decision); no status (that is the row\'s)', async ({ page }) => {
+test('entry menu: Reply first, no kinds (the icon has them), no status (that is the row\'s)', async ({ page }) => {
   await seed(page);
   const entry = page.locator('.thread-entry:has(#inline-remark-text-c1) .node-remark-text-inline');
   await entry.click({ button: 'right' });
   const menu = page.locator('.sb-context-menu');
   await expect(menu.locator('.sb-context-item').first()).toHaveText('Reply');
   await expect(menu.getByText('Add to thread', { exact: true })).toHaveCount(0);
-  await expect(menu.getByText('Question', { exact: true })).toBeVisible();
+  await expect(menu.getByText('Question', { exact: true })).toHaveCount(0);
   await expect(menu.locator('.sb-context-choice')).toHaveCount(0);
-  // A decision is marked on the entry (handshake icon, quiet text); the row's status stays as it is.
+  await page.keyboard.press('Escape');
+  // A decision is marked on the entry from its icon; the row's status stays as it is.
+  await page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-kind').click();
   await menu.getByText('Decision', { exact: true }).click();
   await expect(page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-kind.is-decision')).toHaveCount(1);
   expect(await page.evaluate("nodes.find(n => n.id === 2).marker || ''")).toBe('');
-  await entry.click({ button: 'right' });
+  await page.locator('.thread-entry:has(#inline-remark-text-c1) .thread-kind').click();
   await expect(menu.locator('.sb-context-item').filter({ hasText: 'Decision' })).toContainText('\u2713');
   await page.keyboard.press('Escape');
   // The header just names the thread: the decision shows on its own entry (owner, 2026-10-27).
@@ -292,14 +294,11 @@ test('Ctrl/Cmd+Alt+M opens a reply line in the selected row\'s thread', async ({
   await expect(page.locator('.thread-composer-input[data-node-id="3"]')).toBeFocused();
 });
 
-test('a follow-up names its owner (from its badge) in the open-items list', async ({ page }) => {
-  const errors = await seed(page, `remarks.push({ id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails.', createdAt: 4, status: 'followup' });`);
-  await page.locator('.node-row[data-id="3"] .node-marker-badge').click();
-  await page.locator('.sb-context-menu').getByText('Assign follow-up', { exact: true }).hover();
-  await page.locator('.sb-context-menu').getByText('Ana', { exact: true }).click();
-  expect(await page.evaluate("nodes.find(n => n.id === 3).markerOwner")).toBe('Ana');
+test('a follow-up in the open-items list is just its row (no names, owner 2026-10-27)', async ({ page }) => {
+  const errors = await seed(page, `remarks.push({ id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails.', createdAt: 4, status: 'followup', owner: 'Ana' });`);
+  expect(await page.evaluate("nodes.find(n => n.id === 3).markerOwner")).toBeUndefined();
   await page.locator('#marker-summary .open-items-btn').click();
-  await expect(page.locator('.open-items-menu .sb-context-item', { hasText: 'Data load' })).toHaveText(/^Data load · Ana/);
+  await expect(page.locator('.open-items-menu .sb-context-item', { hasText: 'Data load' })).not.toContainText('Ana');
   expect(errors).toEqual([]);
 });
 

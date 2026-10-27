@@ -6,8 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
 // A Follow-up row can become a To-Do linked back to it (owner decision 2026-10-19), from its status
-// badge. The task is what's left (the thread's latest line), with the follow-up's owner as an
-// @mention. Finishing the task doesn't change the document: the row stays Follow-up until someone
+// badge. The task is what's left (the thread's latest line), with no names (owner, 2026-10-27).
+// Finishing the task doesn't change the document: the row stays Follow-up until someone
 // settles it.
 
 test.beforeEach(async ({ page }) => {
@@ -47,12 +47,12 @@ async function menuItem(page: Page, label: string) {
   return page.locator('.sb-context-menu, .context-menu, [role="menu"]').getByText(label, { exact: true });
 }
 
-test('a follow-up becomes a linked To-Do with its owner as a mention, and is not added twice', async ({ page }) => {
+test('a follow-up becomes a linked To-Do (no names, owner 2026-10-27), and is not added twice', async ({ page }) => {
   await seed(page, 'Ana Lee', 'Confirm the label format with the carrier');
   await (await menuItem(page, 'Add to To-Dos')).click();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_v1') || '[]'));
   expect(saved).toHaveLength(1);
-  expect(saved[0].text).toBe('@Ana-Lee Confirm the label format with the carrier');
+  expect(saved[0].text).toBe('Confirm the label format with the carrier');
   expect(saved[0].nodeRef.nodeId).toBe(2);
   // The menu now opens the existing task instead of adding another.
   await expect(await menuItem(page, 'Open in To-Dos')).toBeVisible();

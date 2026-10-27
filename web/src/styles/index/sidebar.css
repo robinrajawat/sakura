@@ -752,8 +752,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 @media (hover: none){.thread-reply-label{opacity:1}}
 .thread-reply-link:hover .thread-reply-label{color:var(--fg)}
 /* A Follow-up's owner typed in place, right after the row's status badge. */
-.row-owner-edit{outline:none;color:var(--fg);font-size:var(--fs-sm);border-bottom:1px solid color-mix(in srgb,var(--accent) 50%,transparent);padding:0 1px;margin-left:4px;display:inline-block;min-width:8ch}
-.row-owner-edit:empty::before{content:attr(data-placeholder);color:var(--hint)}
 /* Kind icon in place of the avatar (threadKindIcon), same 16px box so the joining line still meets it. Names carry the person's colour. */
 .thread-kind{position:relative;z-index:1;flex:0 0 auto;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;border-radius:50%;background:color-mix(in srgb,currentColor 15%,var(--bg))}
 /* Owner (2026-10-15): every kind sits in the same light tinted circle, so the column keeps the even rhythm the avatars had. */
@@ -764,9 +762,9 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 
 /* Replies read under their entry (owner, 2026-10-27), one step in (renderNodeThread's placeThread). */
 .pv-remark-entry.is-nested{margin-left:20px}
-/* Reply on an entry: on hover, always on an open question. */
+/* Reply on an entry: on hover only (owner, 2026-10-27). */
 .thread-reply-btn{margin-left:6px;padding:0 4px;border:none;background:none;color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer;border-radius:4px;opacity:0}
-.thread-reply-btn.is-open,.thread-entry:hover .thread-reply-btn,.thread-reply-btn:focus-visible{opacity:1}
+.thread-entry:hover .thread-reply-btn,.thread-reply-btn:focus-visible{opacity:1}
 .thread-reply-btn:hover{color:var(--fg);background:var(--hover)}
 .thread-entry.is-moved{animation:thread-moved 1.6s ease-out}
 @keyframes thread-moved{0%,30%{background:var(--hover)}100%{background:transparent}}

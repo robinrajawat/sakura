@@ -88,8 +88,8 @@ test('picking from Sakura\'s menu on an entry, then right-clicking it again, sti
   await open(page);
   const entry = page.locator('#inline-remark-text-c1');
   await entry.click({ button: 'right' });
-  await sakuraMenu(page).getByText('Decision', { exact: true }).click();
+  await sakuraMenu(page).getByText('Copy thread', { exact: true }).click();
   await entry.click({ button: 'right' });
   expect(await lastMenu(page)).toBe('sakura');
-  await expect(sakuraMenu(page).getByText('Decision', { exact: true })).toBeVisible();
+  await expect(sakuraMenu(page).getByText('Copy thread', { exact: true })).toBeVisible();
 });

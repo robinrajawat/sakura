@@ -78,7 +78,7 @@ test('old follow-ups become the row\'s status; the entries keep their words', as
   // No status in the thread any more: the open follow-up is the row's.
   await expect(statusNote(page, 'rDone')).toHaveCount(0);
   await expect(statusNote(page, 'rOld')).toHaveCount(0);
-  expect(await page.evaluate('[nodes.find(n => n.id === 2).marker, nodes.find(n => n.id === 2).markerBy]')).toEqual(['followup', 'Maria']);
+  expect(await page.evaluate('[nodes.find(n => n.id === 2).marker, nodes.find(n => n.id === 2).markerBy]')).toEqual(['followup', undefined]);
   expect(await page.evaluate("JSON.stringify(remarks.find(r => r.id === 'rOld'))")).not.toMatch(/followUp|status/);
   expect(await sumButtons(page)).toEqual(['1 follow-up', '1 question']);
 
@@ -92,7 +92,7 @@ test('old follow-ups become the row\'s status; the entries keep their words', as
   expect(errors).toEqual([]);
 });
 
-test('a question (formerly Q&A): open or answered; a reply answers it, Not a reply reopens it (owner, 2026-10-27)', async ({ page }) => {
+test('a question (formerly Q&A): open or answered; a reply answers it, deleting the reply reopens it (owner, 2026-10-27)', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds = new Set([2, 3, 4, 5]); render();');
   expect(await page.evaluate('qaItems.length')).toBe(0);
@@ -113,10 +113,10 @@ test('a question (formerly Q&A): open or answered; a reply answers it, Not a rep
   await page.keyboard.press('Enter');
   await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Question, answered/);
   expect(await sumButtons(page)).toEqual(['1 follow-up']);
-  // "Not a reply" on the answer reopens the question.
+  // Deleting the answer reopens the question.
   const ans = page.locator('.thread-entry.is-nested', { hasText: 'Yes' }).last();
-  await ans.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Not a reply', { exact: true }).click();
+  await ans.locator('.node-remark-text-inline').click({ button: 'right' });
+  await page.locator('.sb-context-menu').getByText('Delete', { exact: true }).click();
   await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
   await isOpen('rqOpen');
   // No Won't answer in the menu any more.

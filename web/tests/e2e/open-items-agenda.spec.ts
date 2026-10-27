@@ -42,11 +42,12 @@ test('the copy button sits before Filter outline and copies a numbered agenda', 
   expect(text).toContain('Launch plan: open items');
   // A snapshot says when (owner, 2026-10-21): dates, not ages.
   expect(text).toMatch(/^As of \d{1,2} \w{3} \d{4} · 1 follow-up · 1 open question$/m);
-  expect(text).toMatch(/Follow-ups\n1\. Export\n {3}Scope · Ben · since \d{1,2} \w{3}\n {3}Ana: Check the CSV/);
+  expect(text).toMatch(/Follow-ups\n1\. Export\n {3}Scope · since \d{1,2} \w{3}\n {3}Ana: Check the CSV/);
   expect(text).toMatch(/Open questions\n1\. Who signs off\?\n {3}Comms · Maria · \d{1,2} \w{3}/);
   expect(text).not.toMatch(/\dd open/);
   expect(copied['text/html']).toContain('<ol');
-  expect(copied['text/html']).toContain('Ben</b>');
+  expect(copied['text/html']).toContain('Maria</b>');
+  expect(copied['text/html']).not.toContain('Ben');
 });
 
 test('a follow-up quotes the entry that set it, not a later reply', async ({ page }) => {
@@ -55,7 +56,7 @@ test('a follow-up quotes the entry that set it, not a later reply', async ({ pag
     // @ts-expect-error
     remarks.push({ id: 'r1', anchorNodeId: 2, text: 'Same as today', person: 'Marlene', createdAt: Date.now() });
     // @ts-expect-error
-    const menu = openItemsMenuItems().find((i) => i.label === 'Export · Ben');
+    const menu = openItemsMenuItems().find((i) => i.label === 'Export');
     // @ts-expect-error
     return { agenda: openItemsAgendaContent().text, menu: menu.sub };
   });
