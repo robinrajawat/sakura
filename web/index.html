@@ -1792,6 +1792,18 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .pv-fit{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:30px;padding:0 11px;border:1px solid var(--border);border-radius:7px;font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer}
 .pv-fit:hover{background:var(--hover)}
 .pv-fit:focus-visible,.pv-zoom button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* Canvas and the Notes pane side by side under the header; the pane shows only when toggled on. */
+.dv-body{flex:1 1 auto;display:flex;min-height:0}
+.dv-notes{display:none;flex:0 0 300px;flex-direction:column;border-left:1px solid var(--border);background:var(--bg);user-select:text;-webkit-user-select:text}
+.dv-notes-open .dv-notes{display:flex}
+.dv-notes-input{all:unset;box-sizing:border-box;flex:1 1 auto;width:100%;padding:14px 16px;font:400 13.5px/1.55 'Inter',sans-serif;color:var(--fg);white-space:pre-wrap;overflow-y:auto;cursor:text}
+.dv-notes-input::placeholder{color:var(--hint)}
+.dv-notes-foot{flex:0 0 auto;padding:8px 16px 10px;font:400 11.5px 'Inter',sans-serif;color:var(--hint)}
+.dv-notes-toggle.has-notes:not(.active)::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:-1px}
+@media (max-width:700px){
+  .dv-body{flex-direction:column}
+  .dv-notes{flex:0 0 38%;border-left:none;border-top:1px solid var(--border)}
+}
 .dv-canvas .dv-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2}
 .dv-canvas .dv-prev{left:14px}.dv-canvas .dv-next{right:14px}
 .dv-single .dv-nav{display:none}
@@ -2819,10 +2831,6 @@ body.printing-generic #gpe-overlay{
 #doc-status-wrap::after{content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:11px;flex:0 0 auto}
 /* Facts (status · author) | actions (Link, History, Share): a thin rule marks where the actions start. */
 #doc-link-wrap::before{content:'';width:1px;height:14px;margin:0 8px 0 6px;background:var(--border)}
-#diagram-editor-note-input{appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;outline:none;width:150px;transition:width .15s,border-color .12s,background .12s}
-#diagram-editor-note-input:hover{background:var(--hover)}
-#diagram-editor-note-input:focus{width:260px;background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
-#diagram-editor-note-input::placeholder{color:var(--hint)}
 #diagram-editor-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
@@ -4631,7 +4639,6 @@ body.printing-generic #gpe-overlay{
     </button>
     <span id="diagram-editor-pages-badge" class="diagram-row-pages" style="display:none"></span>
     <span class="diagram-editor-header-sep"></span>
-    <input type="text" id="diagram-editor-note-input" placeholder="+ Note to yourself" maxlength="200" autocomplete="off" spellcheck="false" data-tip="Private reminder — never shown in Preview or exports" />
     <span id="diagram-editor-status"></span>
     <span class="diagram-editor-header-sep"></span>
     <button type="button" id="diagram-editor-dup" data-tip="Duplicate diagram"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -13567,13 +13574,6 @@ function setDocLinkedUrl(url,label,persist=true){
   updateDocLinkChip();
   if(persist){ markDirty(); scheduleAutoSave(); }
 }
-// A private reminder attached to a diagram — never shown in Preview, exports, or anywhere
-// outside this panel and the row list. Edited directly in place (the row's own input, or the
-// editor header's) — no popover, no modal, just a normal text field.
-function updateDiagramEditorNoteInput(d){
-  const input=el('diagram-editor-note-input'); if(!input)return;
-  if(document.activeElement!==input)input.value=d.note||'';
-}
 // Splits a saved draw.io mxfile into its individual pages, purely by parsing the saved XML
 // string — no interaction with the live editor, so this is safe to run anytime. <diagram>
 // elements are always siblings under <mxfile> (draw.io pages never nest), so a non-greedy regex
@@ -13838,16 +13838,18 @@ function _dvEnsure(){
   // the left with the item's own action, then zoom, Fit, Copy, Download, Delete and Close.
   ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><input type="text" class="pv-name dv-title" placeholder="Untitled diagram" maxlength="200" spellcheck="false" aria-label="Diagram name" data-tip="Name · click to rename"><span class="niv-counter dv-counter"></span><span class="pv-break"></span><span class="pv-spacer"></span>'
     +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button>'
+    +'<button type="button" class="niv-markup-toggle dv-notes-toggle" aria-pressed="false" data-tip="Your notes for this diagram (N)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg><span>Notes</span></button>'
     +'<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level dv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'
     +'<button type="button" class="pv-fit dv-fit" data-tip="Fit to window (F)">Fit</button>'
     +'<button type="button" class="niv-btn dv-copy" aria-label="Copy image" data-tip="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
     +'<button type="button" class="niv-btn dv-download" aria-label="Download" data-tip="Download as PNG or SVG"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg></button>'
     +'<button type="button" class="niv-btn dv-delete" aria-label="Delete diagram" data-tip="Delete diagram"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>'
     +'<button type="button" class="niv-btn dv-close" aria-label="Close" data-tip="Close (Esc)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div>'
-    +'<div class="dv-canvas"><img alt="" draggable="false" />'
+    +'<div class="dv-body"><div class="dv-canvas"><img alt="" draggable="false" />'
     +'<button type="button" class="niv-nav dv-nav dv-prev" aria-label="Previous diagram" data-tip="Previous (←)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<button type="button" class="niv-nav dv-nav dv-next" aria-label="Next diagram" data-tip="Next (→)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
-    +'<div class="dv-hint">'+PREVIEW_HINT+'</div></div></div>';
+    +'<div class="dv-hint">'+PREVIEW_HINT+'</div></div>'
+    +'<aside class="dv-notes" aria-label="Notes"><textarea class="dv-notes-input" placeholder="Notes while you show this diagram\u2026" spellcheck="true" aria-label="Notes for this diagram"></textarea><div class="dv-notes-foot">Only you see these. Not in the PDF or exports.</div></aside></div></div>';
   document.body.appendChild(ov);
   const canvas=ov.querySelector('.dv-canvas');
   ov.addEventListener('mousedown',e=>{ if(e.target===ov)closeDiagramViewer(); });
@@ -13870,6 +13872,20 @@ function _dvEnsure(){
     d.title=val; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render();
     if(_diagramEditorState&&_diagramEditorState.diagramId===d.id){ const ti=el('diagram-editor-title-input'); if(ti)ti.value=val; }
   });
+  // Notes: a side pane for recording thoughts while the diagram is on screen (owner, 2026-10-27:
+  // moved here from the draw.io editor's header). Saved as you type; never in the PDF or exports.
+  ov.querySelector('.dv-notes-toggle').addEventListener('click',()=>toggleDiagramViewerNotes());
+  const notesEl=ov.querySelector('.dv-notes-input');
+  notesEl.addEventListener('input',()=>{
+    const d=_dvState&&findDiagram(_dvState.id); if(!d)return;
+    d.note=notesEl.value; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); _dvRefreshNotes(true);
+  });
+  notesEl.addEventListener('blur',()=>{
+    const d=_dvState&&findDiagram(_dvState.id); if(!d)return;
+    const val=notesEl.value.trim(); if(val===(d.note||''))return;
+    d.note=val; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave();
+  });
+  ['keydown','keyup','keypress','pointerdown','wheel'].forEach(t=>notesEl.addEventListener(t,e=>e.stopPropagation()));
   ov.querySelector('.dv-prev').addEventListener('click',()=>stepDiagramViewer(-1));
   ov.querySelector('.dv-next').addEventListener('click',()=>stepDiagramViewer(1));
   ov.querySelectorAll('.dv-nav').forEach(b=>b.addEventListener('pointerdown',e=>e.stopPropagation()));
@@ -13924,6 +13940,8 @@ function _dvEnsure(){
     if(!ov.classList.contains('open'))return;
     // Typing the name: keys are text, and Esc only leaves the field (its own handler puts it back).
     if(e.target&&e.target.classList&&e.target.classList.contains('dv-title'))return;
+    if(e.target&&e.target.classList&&e.target.classList.contains('dv-notes-input')){ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); e.target.blur(); ov.focus(); } return; }
+    if(e.key==='n'||e.key==='N'){ if(!e.ctrlKey&&!e.metaKey&&!e.altKey){ e.preventDefault(); e.stopPropagation(); toggleDiagramViewerNotes(); } return; }
     if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeDiagramViewer(); }
     else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.2); }
     else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.2); }
@@ -13977,7 +13995,26 @@ function openDiagramViewer(diagramId){
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
   img.src=d.previewSvg;
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
-  _dvRefreshCounter(); replayPreviewHint(ov);
+  _dvRefreshCounter(); _dvRefreshNotes(); replayPreviewHint(ov);
+}
+// The Notes pane stays open or shut as you left it (this session), from one diagram to the next.
+let _dvNotesOpen=false;
+function _dvRefreshNotes(typing){
+  const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
+  const d=findDiagram(_dvState.id); const has=!!(d&&d.note&&d.note.trim());
+  const input=ov.querySelector('.dv-notes-input');
+  if(!typing&&d)input.value=d.note||'';
+  ov.classList.toggle('dv-notes-open',_dvNotesOpen);
+  const btn=ov.querySelector('.dv-notes-toggle');
+  btn.classList.toggle('active',_dvNotesOpen); btn.classList.toggle('has-notes',has); btn.setAttribute('aria-pressed',String(_dvNotesOpen));
+  btn.dataset.tip=(_dvNotesOpen?'Hide notes':has?'Show your notes':'Add notes')+' (N) \u00b7 only you see them';
+}
+function toggleDiagramViewerNotes(open){
+  const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
+  _dvNotesOpen=open===undefined?!_dvNotesOpen:!!open;
+  _dvRefreshNotes(); _dvFit(true);
+  if(_dvNotesOpen)requestAnimationFrame(()=>{ const t=ov.querySelector('.dv-notes-input'); t.focus(); t.setSelectionRange(t.value.length,t.value.length); });
+  else ov.focus();
 }
 // The diagrams on the same row, in order, that have a picture to show (← / → step through them).
 function _dvSiblings(id){ const d=findDiagram(id); return d?diagrams.filter(x=>x.anchorNodeId===d.anchorNodeId&&x.previewSvg):[]; }
@@ -14017,7 +14054,6 @@ function openDiagramEditor(diagramId){
   const titleInput=el('diagram-editor-title-input'); if(titleInput)titleInput.value=d.title||'';
   updateDiagramEditorAnchorLabel(d);
   updateDiagramEditorPagesBadge(d);
-  updateDiagramEditorNoteInput(d);
   const status=el('diagram-editor-status'); if(status){ status.textContent='Loading draw.io…'; status.classList.remove('diagram-editor-status-saved'); }
   const handler=e=>{
     if(!iframe.contentWindow||e.source!==iframe.contentWindow)return;
@@ -14152,22 +14188,6 @@ el('diagram-editor-title-input')?.addEventListener('input',()=>{
   d.title=el('diagram-editor-title-input').value;
   markDirty(); scheduleAutoSave();
 });
-el('diagram-editor-note-input')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
-  else if(e.key==='Escape'){
-    e.preventDefault(); e.stopPropagation();
-    if(_diagramEditorState){ const d=findDiagram(_diagramEditorState.diagramId); if(d)e.target.value=d.note||''; }
-    e.target.blur();
-  }
-});
-el('diagram-editor-note-input')?.addEventListener('blur',()=>{
-  if(!_diagramEditorState)return;
-  const d=findDiagram(_diagramEditorState.diagramId); if(!d)return;
-  const input=el('diagram-editor-note-input'); const val=(input?input.value:'').trim();
-  if(val===(d.note||''))return;
-  d.note=val; d.modifiedAt=Date.now();
-  markDirty(); scheduleAutoSave();
-});
 el('diagram-editor-close')?.addEventListener('click',closeDiagramEditor);
 function duplicateDiagramFromEditor(){
   if(!_diagramEditorState)return;
@@ -14188,7 +14208,6 @@ el('diagram-editor-dup')?.addEventListener('click',duplicateDiagramFromEditor);
 el('diagram-editor-delete')?.addEventListener('click',deleteDiagramFromEditor);
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&el('diagram-editor-overlay')?.classList.contains('open')){
-    if(document.activeElement===el('diagram-editor-note-input'))return; // let the input's own Escape handler (above) deal with it — it stops propagation itself when it does
     e.stopPropagation(); closeDiagramEditor();
   }
 },true);
