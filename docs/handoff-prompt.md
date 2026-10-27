@@ -165,6 +165,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: One way to insert: "/" at the start of a word, everywhere; Ctrl/Cmd+Space removed.** The old Quick
+Insert popup (`#node-qa-suggest`) and the `quickInsert` shortcut are gone. `handleSlashInsertKeydown(e,target,rowId)`
+(rows via `onEditorKeyDown`, plus notes, threads, To-Dos, title/author fields) arms the list when "/" starts a word
+(`slashStartsWord`: start of the field/text node or after whitespace, so "and/or" stays plain); `openSlashInsertMenu`
+records where the "/" is (`_slash.start`: collapsed Range, or index in an input). A capture-phase document `input`
+listener re-filters (`slashInsertInput`, word-start match, flattened); a space, Escape or no match closes it and
+keeps the text. Items (`slashListItems`): rows get `insertMenuItems()` + Characters after Basics (Date/time inserted
+at the caret); other text gets Characters + Date/time. Every pick runs `dropSlashText()` first (deletes "/…" via
+execCommand). `showInsertListAt` keeps focus in the text. Settings section renamed "Insert list". Tests:
+`slash-insert.spec.ts`, two in `discussion-items.spec.ts`.
+
 **2026-10-27: Undo while typing in a row goes back a word at a time.** Before, Ctrl/Cmd+Z mid-edit skipped the
 typing and undid the previous app step. `rowTypingBeforeInput` (row input `beforeinput`) keeps per-edit checkpoints
 in `_rowTyping`: a new step per word (a space joins the word before it, or the next one when typing starts with
@@ -178,13 +189,6 @@ edit one app step. Test: `tests/e2e/row-typing-undo.spec.ts`.
 Enter work). Every item's onClick is wrapped to take the `/` back out first (`dropSlashFromRow`: execCommand delete
 while editing, else clears a committed "/"). Escape or any other key closes the list and keeps the `/` (a row can
 start with a path like /usr). Help and README updated. Test: `tests/e2e/slash-insert.spec.ts`.
-
-**2026-10-27: Ctrl/Cmd+K links selected words; Quick Assist moves to Ctrl/Cmd+/.** New shortcut `insertLink`
-(mod+k, Formatting): `linkShortcutAtSelection()` opens the bar's Link box for the selected words in a row, To-Do,
-note or thread (capture-phase keydown, since those editors handle their own keys); with only a caret it toasts
-"Select words to link". `quickAssist` is now mod+/ (`comboMatches` takes the `/` character with or without Shift,
-for layouts like German), and the same keys close it from `#qa-input`. Help, cheatsheet, tour, README updated.
-Test: `tests/e2e/link-shortcut.spec.ts`.
 
 ### In progress / not built
 

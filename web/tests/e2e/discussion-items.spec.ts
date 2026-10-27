@@ -388,29 +388,30 @@ test('open-items list: rows with the same name name their parent on the second l
   ]);
 });
 
-test('Quick Insert (Ctrl/Cmd+Space) works in the reply line', async ({ page }) => {
+test('the "/" Insert list works in the reply line', async ({ page }) => {
   await seed(page);
   await page.evaluate('openThreadComposer(2, false)');
   const box = page.locator('.thread-composer-input[data-node-id="2"]');
   await box.click();
-  await page.keyboard.type('A ');
-  await page.keyboard.press('ControlOrMeta+Space');
-  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await page.keyboard.type('A /');
+  await expect(page.locator('#insert-menu')).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(box).toHaveText('A —');
 });
 
-test('Quick Insert (Ctrl/Cmd+Space) works in the inline note', async ({ page }) => {
+test('the "/" Insert list works in the inline note; "and/or" stays a slash', async ({ page }) => {
   await seed(page);
   await page.evaluate("nodes[1].note = 'Note'; inlineExpandNoteNodeIds = new Set([2]); render()");
   const note = page.locator('.node-note-line[data-node-id="2"]');
   await note.click();
   await page.keyboard.press('End');
-  await page.keyboard.type(' ');
-  await page.keyboard.press('ControlOrMeta+Space');
-  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await page.keyboard.type(' and/or');
+  await expect(page.locator('#insert-menu')).toHaveCount(0);
+  await page.keyboard.type(' /arr');
+  await expect(page.locator('#insert-menu')).toBeVisible();
   await page.keyboard.press('Enter');
-  await expect(note).toContainText('Note —');
+  await expect(note).toContainText('Note and/or ➜');
+  await expect(note).not.toContainText('/arr');
 });
 
 test('open-items list: a follow-up shows its thread\'s latest line; decisions have their own chip', async ({ page }) => {

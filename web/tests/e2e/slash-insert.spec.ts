@@ -2,8 +2,9 @@ import { test, expect, type Page } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// "/" on an empty row opens the Insert list at the caret (owner, 2026-10-27); picking an item
-// takes the "/" back out, typing on keeps it.
+// One way to insert, everywhere (owner, 2026-10-27): "/" at the start of a word opens the Insert
+// list at the caret and the letters after it narrow it; picking an item takes the "/…" back out.
+// Ctrl/Cmd+Space is gone.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
@@ -53,7 +54,51 @@ test('a mouse pick works too (Checkbox), and the "/" goes', async ({ page }) => 
   await expect.poll(() => node2(page)).toMatchObject({ text: '', isCheckbox: true });
 });
 
-test('typing on after "/" closes the list and keeps the text; Escape keeps the "/"', async ({ page }) => {
+test('typing after "/" narrows the list; Enter adds the match and drops the "/…"', async ({ page }) => {
+  await open(page);
+  await page.keyboard.type('/tab');
+  await expect(menu(page).locator('.sb-context-item')).toHaveText(['Table']);
+  await page.keyboard.press('Enter');
+  // Table opens its own menu (Blank table…, Start from); the "/tab" is gone from the row.
+  await expect(page.getByText('Blank table', { exact: false }).first()).toBeVisible();
+  expect((await node2(page)).text).toBe('');
+});
+
+test('the list holds Characters; "/che" finds Check mark and puts it in place of the "/che"', async ({ page }) => {
+  await open(page);
+  await page.keyboard.type('/');
+  await expect(menu(page).getByText('Characters')).toBeVisible();
+  await page.keyboard.type('che');
+  await expect(menu(page).locator('.sb-context-item')).toContainText(['Checkbox', 'Check mark']);
+  await menu(page).locator('.sb-context-item', { hasText: 'Check mark' }).click();
+  await expect(page.locator('#in-2')).toHaveText('✓');
+  await page.keyboard.type(' done');
+  await page.keyboard.press('Escape');
+  await expect.poll(async () => (await node2(page)).text).toBe('✓ done');
+});
+
+test('"/" after a space mid-row opens the list there; the character replaces just the "/…"', async ({ page }) => {
+  await open(page);
+  await page.keyboard.press('Escape');
+  await page.locator('.node-row[data-id="1"] .node-label').click();
+  await expect(page.locator('#in-1')).toBeFocused();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' /arr');
+  await expect(menu(page)).toBeVisible();
+  await page.keyboard.press('Enter');
+  await page.keyboard.type(' next');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.evaluate(() => (window as any).eval('nodes[0].text'))).toBe('Plan ➜ next');
+});
+
+test('Ctrl/Cmd+Space no longer opens anything', async ({ page }) => {
+  await open(page);
+  await page.keyboard.press('ControlOrMeta+Space');
+  await page.waitForTimeout(50);
+  await expect(menu(page)).toHaveCount(0);
+});
+
+test('a "/" search with no match closes the list and keeps the text; a space or Escape keeps the "/"', async ({ page }) => {
   await open(page);
   await page.keyboard.type('/usr');
   await expect(menu(page)).toHaveCount(0);
@@ -71,7 +116,7 @@ test('typing on after "/" closes the list and keeps the text; Escape keeps the "
   await expect.poll(async () => (await node2(page)).text).toBe('/x');
 });
 
-test('"/" in a row that has words is just a slash', async ({ page }) => {
+test('"/" inside a word is just a slash', async ({ page }) => {
   await open(page);
   await page.locator('.node-row[data-id="1"] .node-label').click();
   await page.keyboard.press('End');
