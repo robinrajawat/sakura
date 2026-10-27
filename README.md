@@ -307,7 +307,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | New document / Close tab | Ctrl/Cmd+Alt+N / Ctrl/Cmd+Alt+W |
 | Copy selected nodes | Ctrl/Cmd+C |
 | Select all | Ctrl/Cmd+A |
-| Undo / Redo | Ctrl/Cmd+Z / Ctrl/Cmd+Y |
+| Undo / Redo (while typing in a row, a word at a time; once you leave the row, the whole edit is one step) | Ctrl/Cmd+Z / Ctrl/Cmd+Y |
 
 If a shortcut is intercepted by the OS or browser before it reaches the page (notably `Ctrl/Cmd+Space` for Quick Insert, which can conflict with macOS Spotlight), the equivalent toolbar button or menu item works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
 
