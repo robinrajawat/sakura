@@ -56,7 +56,7 @@ test('the title byline is sentence case; status is the one soft tag, the actions
       histTransform: getComputedStyle(hist).textTransform,
       histBg: getComputedStyle(hist).backgroundColor,
       histBorder: getComputedStyle(hist).borderTopStyle,
-      sep: getComputedStyle(document.getElementById('doc-status-wrap')!, '::after').content
+      sep: (() => { const a = getComputedStyle(document.getElementById('doc-status-wrap')!, '::after'); return [a.width, a.height, a.borderRadius].join(' '); })()
     };
   });
   expect(s.statusText).toBe('Review');
@@ -66,5 +66,6 @@ test('the title byline is sentence case; status is the one soft tag, the actions
   expect(s.histTransform).toBe('none');
   expect(s.histBg).toBe('rgba(0, 0, 0, 0)');
   expect(s.histBorder).toBe('none');
-  expect(s.sep).toBe('"·"');
+  // A drawn, centred dot (the '·' glyph sat low next to the status pill).
+  expect(s.sep).toBe('3px 3px 50%');
 });

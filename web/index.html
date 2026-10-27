@@ -2841,7 +2841,9 @@ body.printing-generic #gpe-overlay{
 #editor-meta-row #doc-status-chip.unset:hover{color:var(--fg);background:var(--hover)}
 #editor-meta-row #sb-author.doc-author-chip{font-weight:500;cursor:text}
 #editor-meta-row #sb-author.doc-author-chip::placeholder{color:var(--hint)}
-#doc-status-wrap::after{content:'\00B7';color:var(--hint);padding:0 2px}
+/* Separator dot between status and author: a drawn 3px dot, centred on the row (the '·' glyph sat
+   low and hugged the status pill). 11px each side: margin here, row gap 4px + author padding 7px. */
+#doc-status-wrap::after{content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:11px;flex:0 0 auto}
 /* Facts (status · author) | actions (Link, History, Share): a thin rule marks where the actions start. */
 #doc-link-wrap::before{content:'';width:1px;height:14px;margin:0 8px 0 6px;background:var(--border)}
 #diagram-editor-note-input{appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:400 12px 'Inter',sans-serif;padding:6px 9px;border-radius:7px;outline:none;width:150px;transition:width .15s,border-color .12s,background .12s}
@@ -12769,7 +12771,32 @@ function cycleOpenTab(dir){
   if(nextId===null)return;
   switchDoc(nextId);
 }
+// A document that was opened (the + tab, New document, a folder's New) and left without anything
+// in it -- no title, no row text, no notes/tables/pictures/diagrams, no thread, status or link --
+// is removed when you switch away from it or close its tab, so trying "+" doesn't leave a trail
+// of empty Untitled documents behind. Shared and pinned documents are always kept. Any field this
+// doesn't know about that holds a value counts as content, so the check errs on keeping.
+const BLANK_DOC_NODE_STRUCTURE_KEYS=new Set(['id','depth','parentId','isCheckbox','checked','styles','marksText','createdAt','modifiedAt','completedAt']);
+function isEmptyValue(v){ return v==null||v===''||v===false||(Array.isArray(v)&&!v.length)||(typeof v==='object'&&!Array.isArray(v)&&!Object.keys(v).length); }
+function docPayloadIsBlank(d){
+  if(!d||typeof d!=='object')return false;
+  if(String(d.title||'').trim()||d.docStatus||d.docLinkedUrl)return false;
+  if(Array.isArray(d.remarks)&&d.remarks.length)return false;
+  if(Array.isArray(d.diagrams)&&d.diagrams.length)return false;
+  const list=Array.isArray(d.nodes)?d.nodes:[];
+  return list.every(n=>n&&!String(n.text||'').trim()&&Object.keys(n).every(k=>k==='text'||BLANK_DOC_NODE_STRUCTURE_KEYS.has(k)||isEmptyValue(n[k])));
+}
+function discardDocIfBlank(id){
+  if(!id||id===activeTabDocId||sharedDocMeta[id]||findOpenTab(id)?.pinned)return false;
+  let d=null; try{ d=JSON.parse(localStorage.getItem(docKey(id))||'null'); }catch(e){ return false; }
+  if(!docPayloadIsBlank(d))return false;
+  const i=openTabs.findIndex(t=>t.docId===id); if(i>=0)openTabs.splice(i,1);
+  permanentlyDeleteDocCore(id);
+  persistOpenTabs(); renderTabStrip(); renderSidebar();
+  return true;
+}
 function switchDoc(id){
+  const prevId=activeTabDocId;
   let tab=findOpenTab(id);
   if(!tab){
     tab=loadTabFromStorageObj(id);
@@ -12782,13 +12809,14 @@ function switchDoc(id){
   commitEdit(); clearFiltersForDocChange(); captureActiveTabSnapshot(); saveToStorage();
   applyTabSnapshot(tab);
   persistOpenTabs(); renderTabStrip();
+  if(prevId&&prevId!==id)discardDocIfBlank(prevId);
   showToast('Switched document');
 }
 
 function closeTab(id, force=false){
   const idx=openTabs.findIndex(t=>t.docId===id); if(idx<0)return;
   if(openTabs[idx].pinned && !force){ showToast('Pinned tab — unpin it first to close'); return; }
-  const wasActive=id===activeTabDocId;
+  const wasActive=id===activeTabDocId, wasShared=!!sharedDocMeta[id];
   if(wasActive){ commitEdit(); captureActiveTabSnapshot(); saveToStorage() }
   openTabs.splice(idx,1);
   if(sharedDocMeta[id])delete sharedDocMeta[id]; // see removeDocFromOpenTabs' comment
@@ -12800,6 +12828,7 @@ function closeTab(id, force=false){
   }
   persistOpenTabs(); renderTabStrip();
   if(wentToEmptyState) renderSidebar();
+  if(!wasShared)discardDocIfBlank(id);
 }
 
 function setTabPinned(id, pinned){
