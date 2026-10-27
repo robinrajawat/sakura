@@ -248,7 +248,7 @@ input[type=number]{-moz-appearance:textfield}
 .settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,#doc-tab-strip,.cs-rail,#shortcuts-rail,
 #sakura-modal-body,#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,
 .qa-dropdown,.history-modal-body,#sidebar-scroll,
-#at-suggest,#node-qa-suggest,#demo-chapters-menu,
+#at-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
 #diagram-anchor-suggest,#account-menu,.sb-context-menu{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
@@ -2106,16 +2106,8 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .at-suggest-item:hover,.at-suggest-item.at-active{background:var(--hover);color:var(--accent)}
 .at-suggest-item mark{background:none;color:var(--accent);font-weight:600}
 .at-suggest-empty{padding:8px 10px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
-#node-qa-suggest{position:fixed;z-index:1200;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14),0 1px 3px rgba(0,0,0,.08);padding:4px;min-width:190px;max-width:260px;max-height:260px;overflow-y:auto;display:none;font-family:'Inter',sans-serif}
-#node-qa-suggest.open{display:block}
-.nqa-item{display:flex;align-items:center;gap:var(--gap-menu-item);padding:var(--pad-menu-item);border-radius:8px;cursor:pointer;font:400 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
-.nqa-item svg{flex:0 0 auto;color:var(--muted)}
-.nqa-item .nqa-glyph{flex:0 0 auto;width:14px;text-align:center;font:600 12px 'Inter',sans-serif;color:var(--muted)}
-.nqa-item:hover{background:var(--hover)}
-.nqa-item.at-active{background:color-mix(in srgb,var(--accent) 10%,var(--hover))}
-.nqa-item.at-active::before{content:'';position:absolute;left:3px;top:22%;bottom:22%;width:3px;border-radius:3px;background:var(--accent)}
-.nqa-item.at-active svg,.nqa-item.at-active .nqa-glyph{color:var(--accent)}
-.nqa-empty{padding:8px 10px;font:400 12px 'Inter',sans-serif;color:var(--hint);max-width:220px;white-space:normal}
+/* Characters row in the Insert list (Ctrl/Cmd+Space, "/") */
+.insert-char-glyph{display:inline-block;width:14px;text-align:center;font:600 13px 'Inter',sans-serif;line-height:1}
 .node-cb{display:inline-flex;align-items:center;justify-content:center;width:calc(14px * var(--editor-scale));height:calc(14px * var(--editor-scale));flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative;align-self:flex-start;margin-top:calc((var(--row-line) - 14px * var(--editor-scale)) / 2)}
 .node-cb:hover{border-color:var(--accent)}
 .node-cb.cb-checked{background:color-mix(in srgb,var(--accent) 85%,transparent);border-color:var(--accent)}
@@ -2703,13 +2695,13 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    doesn't read correctly - so this is grouped by background rather than one blanket rule. */
 .settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
 #why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,.qa-dropdown,
-.history-modal-body,#at-suggest,#node-qa-suggest,#demo-chapters-menu,
+.history-modal-body,#at-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#link-pop-node-results,#diagram-gen-review-list
 {scrollbar-gutter:stable}
 .settings-content::-webkit-scrollbar,.settings-rail::-webkit-scrollbar,#shortcuts-modal-body::-webkit-scrollbar,.cs-rail::-webkit-scrollbar,#shortcuts-rail::-webkit-scrollbar,
 #cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,#diagram-gen-review-modal::-webkit-scrollbar,#diagram-gen-review-list::-webkit-scrollbar,
 .app-modal-body::-webkit-scrollbar,.doc-tab-overview-menu::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
-.history-modal-body::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,#node-qa-suggest::-webkit-scrollbar,
+.history-modal-body::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
 .anchor-suggest-results::-webkit-scrollbar,#link-pop-node-results::-webkit-scrollbar,#todo-link-popover::-webkit-scrollbar,
@@ -2717,7 +2709,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
 .app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
-.history-modal-body::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,#node-qa-suggest::-webkit-scrollbar-thumb,
+.history-modal-body::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
 .anchor-suggest-results::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
@@ -3625,7 +3617,7 @@ body.printing-generic #gpe-overlay{
           </div>
           <div class="settings-section" data-cat="editing" id="settings-section-nodeqa">
             <div class="settings-section-title">Quick Insert menu</div>
-            <div class="muted-help">Which characters Quick Insert (Ctrl/Cmd+Space) offers while you edit a node, note, remark, Q&amp;A or To-Do.</div>
+            <div class="muted-help">Which characters the Insert list (Ctrl/Cmd+Space, or / in an empty row) offers while you edit a row, note, thread or To-Do.</div>
             <div class="settings-grid" id="nqa-actions-grid" style="margin-top:6px">
               <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-emdash" /> Insert em dash</label>
               <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-endash" checked /> Insert en dash</label>
@@ -3990,7 +3982,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="general" id="help-section-nodeqa">
 <h4>Quick Insert</h4>
 <ul>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing any text — a node, a Note, a To-Do, anywhere — opens a small character-insert menu. Same shortcut, same menu, everywhere you're editing text; the full Quick Assist is a separate shortcut (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span>) and stays free even mid-edit, so the two are never in competition for the same key</li>
+<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Space</span> while actively editing any text — a node, a Note, a To-Do, anywhere — opens the Insert list at the caret: in a row the whole list (Note, Checkbox, Table… plus Characters), in a note, thread or To-Do the characters and date/time. Same shortcut, same list, everywhere you're editing text; the full Quick Assist is a separate shortcut (<span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span>) and stays free even mid-edit, so the two are never in competition for the same key</li>
 <li>Actions, in order: Insert em dash, Insert en dash, Insert arrow, Insert check mark, Insert cross mark, Insert middle dot, Insert date/time. Which of these appear (and their fixed order) is configured in Settings → Editing → Quick Insert → Menu items</li>
 <li>No typeahead — unlike @mentions or the full Quick Assist, this menu doesn't filter as you type. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through it and wraps at either end, <span class="help-kbd">Enter</span> runs the highlighted action, <span class="help-kbd">Esc</span> or resuming normal typing dismisses it. There's deliberately nowhere for a typed query to live except the text you're editing, which this avoids touching</li>
 <li>Every action splices directly at the cursor and keeps you in edit mode, so you don't lose your place — the fastest way to get these in, and the reason the menu exists</li>
@@ -4077,7 +4069,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="editing">
 <h4>Formatting</h4>
 <ul>
-<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too, and Ctrl/Cmd+K opens the Link box for the selected words; with nothing selected they format every word of the row. Links to other rows are typed with @. Typing / in an empty row opens the Insert list there (Note, Checkbox, Table…); keep typing to write a plain /. Typed symbols like ** or [ ] are plain text</li>
+<li>Select words in a row (drag over them, or Shift+arrows) and a small bar appears above them: Bold, Italic, Underline, Strikethrough, A (text colour and highlight), Clear formatting, Link (type or paste a web address; pasting one over selected words links them too) and ✦ Rewrite. Ctrl/Cmd+B, I and U work too, and Ctrl/Cmd+K opens the Link box for the selected words; with nothing selected they format every word of the row. Links to other rows are typed with @. Typing / in an empty row opens the Insert list there (Note, Checkbox, Table…, Characters); type on to narrow it (/tab finds Table), or a space to write a plain /. Typed symbols like ** or [ ] are plain text</li>
 <li>Section: Headings menu → Section (a light label with its own Contents entry)</li>
 <li><span class="sem-example">@Node name</span> → <span class="bl-link" style="background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);padding:1px 3px;border-radius:4px;font-weight:500">Node name</span> — backlink to another node; type @ while editing to pick from a list</li>
 
@@ -4773,7 +4765,6 @@ body.printing-generic #gpe-overlay{
 </div>
 
 <div id="at-suggest"></div>
-<div id="node-qa-suggest"></div>
 <div id="selection-fmt-popover" class="selection-fmt-popover" role="toolbar" aria-label="Text formatting">
   <div class="sfmt-main">
   <button type="button" class="selection-fmt-btn" data-cmd="bold" data-tip="Bold (Ctrl/Cmd+B)"><strong>B</strong></button>
@@ -21456,7 +21447,6 @@ function commitAtSuggest(node) {
 }
 
 function handleAtInput(inputEl, nodeId) {
-  closeNodeQuickAssist();
   if (!backlinksEnabled) { closeAtSuggest(); return; }
   const val = inputEl.textContent||'';
   const pos = getEditableCaretOffset(inputEl) ?? val.length;
@@ -21540,9 +21530,9 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     const i=getIndex(nodes,node.id); const read=readRowMarksFromDom(input); const plain=read.text;
     if(i>=0){nodes[i].text=plain; setRowMarksOn(nodes[i],read.marks); nodes[i].modifiedAt=Date.now();}
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
-    autosizeNodeInput(input); handleAtInput(input,node.id);
+    autosizeNodeInput(input); handleAtInput(input,node.id); if(_slashMenu&&_slashMenu.id===node.id)slashInsertInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeNodeQuickAssist(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to open its thread entry, Shift+click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } revealMarkerEntry(node.id);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; const tStatus=threadStatus(tThread); const allResolved=!openR&&(tStatus==='resolved'||tStatus==='decision'); const tHolder=threadStatusEntry(tThread); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+(tStatus?' \u00b7 '+THREAD_STATUS_LABEL[tStatus]+(tStatus==='decision'&&tHolder&&htmlHasVisibleText(tHolder.text)?': '+stripHtmlToText(tHolder.text).slice(0,80):''):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=nodeMarkerLabel(node.marker)+' — click to open its thread entry, Shift+click to filter, right-click to clear'; mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); if(e.shiftKey){ applyOpenItemsFilter(node.marker); return; } revealMarkerEntry(node.id);}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); setNodeMarker(node.id,node.marker); render();}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; const tStatus=threadStatus(tThread); const allResolved=!openR&&(tStatus==='resolved'||tStatus==='decision'); const tHolder=threadStatusEntry(tThread); rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':'')+(allResolved?' dot-all-closed':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+(tStatus?' \u00b7 '+THREAD_STATUS_LABEL[tStatus]+(tStatus==='decision'&&tHolder&&htmlHasVisibleText(tHolder.text)?': '+stripHtmlToText(tHolder.text).slice(0,80):''):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
@@ -24949,17 +24939,6 @@ function insertDateTime(targetEditorId){
   }
   if(editingId!==null){const input=getEditingInput(); if(!input)return; const range=getEditableSelectionRange(input); const value=input.textContent||''; const start=range?range.start:value.length; const end=range?range.end:value.length; const piece=formatNow(); input.textContent=value.slice(0,start)+piece+value.slice(end); input.dispatchEvent(new Event('input')); setInputCaret(input,start+piece.length); input.focus()} else {if(selectedId===null||getIndex(nodes,selectedId)<0){const n=makeNode(formatNow(),0,null); nodes.push(n); selectedId=n.id; markDirty(); render(); return} const idx=getIndex(nodes,selectedId); pushUndo(); markDirty(); nodes[idx].text=((nodes[idx].text||'').trim()?nodes[idx].text+' ':'')+formatNow(); render()}
 }
-// === Quick Insert (character-insert mini menu, Ctrl/Cmd+Space while editing) ===
-let _nqaState=null; // {inputEl, nodeId}
-let _nqaActiveIdx=0;
-function getNodeQuickAssistCandidates(){
-  return NODE_QA_ACTION_ORDER.filter(id=>{
-    if(!nodeQuickAssistActions.includes(id))return false;
-    if(id==='note'&&!featureNoteEnabled)return false;
-    if(id==='ai-rewrite'&&!featureAiEnabled)return false;
-    return true;
-  });
-}
 // Textarea caret coordinates via the standard mirror-div technique: clone the textarea's
 // box model/font into an offscreen div, insert a marker span at the caret position, and
 // read the marker's flow position. getBoundingClientRect() on the textarea itself only
@@ -24984,30 +24963,16 @@ function getCaretClientRect(textarea){
   document.body.removeChild(div);
   return {left,top,height};
 }
-function openNodeQuickAssist(inputEl,nodeId){
-  closeAtSuggest();
-  _nqaState={inputEl,nodeId};
-  _nqaActiveIdx=0;
-  renderNodeQuickAssist();
+// === Quick Insert (Ctrl/Cmd+Space while editing) ===
+// One Insert list everywhere text is typed. In a row it's the whole list (insertMenuItems plus
+// Characters); in notes, threads, To-Dos and other text it's the characters and Date/time, the
+// part that makes sense there. Settings → Editing → Quick Insert picks which characters show.
+const INSERT_CHAR_GLYPH={emdash:'—',endash:'–',arrow:'➜',checkmark:'✓',crossmark:'✗',middot:'·'};
+function insertCharItems(insertText){
+  const ids=Object.keys(INSERT_CHAR_GLYPH).filter(id=>nodeQuickAssistActions.includes(id)); if(!ids.length)return [];
+  return [{heading:'Characters'},{id:'insert-chars',iconRow:ids.map(id=>({label:NODE_QA_ACTION_META[id].label.replace(/^Insert /,'').replace(/^./,c=>c.toUpperCase()),
+    icon:`<span class="insert-char-glyph">${esc(INSERT_CHAR_GLYPH[id])}</span>`,onClick:()=>insertText(INSERT_CHAR_GLYPH[id])}))}];
 }
-function closeNodeQuickAssist(){
-  _nqaState=null;
-  const pop=el('node-qa-suggest');
-  if(pop)pop.classList.remove('open','icon-row');
-}
-// === Mini Quick Assist for OTHER editable areas (Pad, Note, To-Dos text) ===
-// Same trigger (Ctrl/Cmd+Space), same popup, same character-insert actions as Node Quick
-// Assist above — but deliberately without Note/Tags/AI rewrite,
-// since all three only make sense pointed at a specific outline node. Reuses the node
-// version's action metadata and the nodeQuickAssistActions on/off list (so unchecking
-// "em dash" in Settings hides it everywhere this shows up, not just in node editing), just
-// restricted to the subset that's actually generic. Shares the #node-qa-suggest popup DOM
-// with the node version — the two are never open at the same time, since only one editable
-// area can have focus.
-const GENERIC_QA_ACTIONS=['emdash','endash','arrow','checkmark','crossmark','middot','date-time'];
-let _gqaState=null; // {target} — target is the textarea or contenteditable element currently focused
-let _gqaActiveIdx=0;
-function getGenericQaCandidates(){ return GENERIC_QA_ACTIONS.filter(id=>nodeQuickAssistActions.includes(id)); }
 function insertTextAtGenericTarget(target,text){
   if(!target) return;
   if(target.tagName==='TEXTAREA'||target.tagName==='INPUT'){
@@ -25038,100 +25003,27 @@ function getCaretClientRectGeneric(target){
   const r=target.getBoundingClientRect();
   return {left:r.left+8, top:r.top+8, height:18};
 }
-function openGenericQuickAssist(target){
-  closeAtSuggest(); closeNodeQuickAssist();
-  _gqaState={target};
-  _gqaActiveIdx=0;
-  renderGenericQuickAssist();
+function genericInsertListItems(target){
+  const ins=t=>insertTextAtGenericTarget(target,t);
+  return [...insertCharItems(ins),...(nodeQuickAssistActions.includes('date-time')?[{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}]:[])];
 }
-function closeGenericQuickAssist(){
-  _gqaState=null;
-  const pop=el('node-qa-suggest');
-  if(pop)pop.classList.remove('open','icon-row');
+// The list opens under the caret and leaves focus in the text, so what's picked goes in there.
+function showInsertListAt(rect,items){
+  if(!items.length){ showToast('No characters turned on. Settings › Editing › Quick Insert'); return; }
+  showSbContextMenu(rect.left,rect.top+rect.height+4,items,{id:'insert-menu',label:'Insert'});
+  _sbContextEl?.addEventListener('mousedown',e=>e.preventDefault());
+  if(_sbContextButtons.length){ _sbContextActiveIndex=0; _sbContextUpdateHighlight(); }
 }
-function renderGenericQuickAssist(){
-  const pop=el('node-qa-suggest'); if(!pop||!_gqaState)return;
-  const {target}=_gqaState;
-  const candidates=getGenericQaCandidates();
-  pop.innerHTML='';
-  if(!candidates.length){
-    pop.innerHTML='<div class="nqa-empty">No characters enabled — Settings → Editing → Quick Insert</div>';
-  } else {
-    candidates.forEach((id,i)=>{
-      const meta=NODE_QA_ACTION_META[id];
-      const item=document.createElement('div');
-      item.className='nqa-item'+(i===_gqaActiveIdx?' at-active':'');
-      const iconHtml=meta.svg
-        ?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`
-        :`<span class="nqa-glyph"${meta.glyphStyle?` style="${meta.glyphStyle}"`:''}>${esc(meta.glyph)}</span>`;
-      item.innerHTML=iconHtml+`<span>${esc(meta.label)}</span>`;
-      item.addEventListener('mousedown',e=>{e.preventDefault(); commitGenericQuickAssist(id)});
-      pop.appendChild(item);
-    });
-  }
-  const rect=getCaretClientRectGeneric(target);
-  pop.style.left=Math.min(rect.left,window.innerWidth-260)+'px';
-  pop.style.top=(rect.top+rect.height+4)+'px';
-  pop.classList.add('open');
-}
-function commitGenericQuickAssist(actionId){
-  if(!_gqaState)return;
-  const {target}=_gqaState;
-  closeGenericQuickAssist();
-  const glyphs={emdash:'—',endash:'–',arrow:'➜',checkmark:'✓',crossmark:'✗',middot:'·'};
-  if(glyphs[actionId]){ insertTextAtGenericTarget(target,glyphs[actionId]); return; }
-  if(actionId==='date-time'){ insertTextAtGenericTarget(target,formatNow()); return; }
-}
+function insertListOpen(){ return _sbContextEl?.id==='insert-menu'; }
+function closeGenericQuickAssist(){ if(insertListOpen())closeSbContextMenu(); }
 // Call at the top of a keydown handler on any generic editable area. Returns true if it
 // handled the event (so the caller can bail out early), matching the pattern already used
 // for the node version inside onEditorKeyDown.
 function handleGenericQaKeydown(e,target){
-  if(_gqaState){
-    const cands=getGenericQaCandidates();
-    if(e.key==='ArrowDown'){e.preventDefault(); if(cands.length)_gqaActiveIdx=(_gqaActiveIdx+1)%cands.length; renderGenericQuickAssist(); return true}
-    if(e.key==='ArrowUp'){e.preventDefault(); if(cands.length)_gqaActiveIdx=(_gqaActiveIdx-1+cands.length)%cands.length; renderGenericQuickAssist(); return true}
-    if(e.key==='Enter'||e.key==='Tab'){if(cands.length){e.preventDefault(); commitGenericQuickAssist(cands[_gqaActiveIdx]); return true} closeGenericQuickAssist(); return false}
-    if(e.key==='Escape'){e.preventDefault(); e.stopPropagation(); closeGenericQuickAssist(); return true}
-    if(matchesShortcut(e,'quickInsert')){e.preventDefault(); e.stopPropagation(); closeGenericQuickAssist(); return true}
-    closeGenericQuickAssist();
-    return false;
-  }
-  if(matchesShortcut(e,'quickInsert')){e.preventDefault(); e.stopPropagation(); openGenericQuickAssist(target); return true}
-  return false;
-}
-// Quick Insert (the node-editing version) closes itself via each node textarea's own
-// blur handler — but note-editor/code-editor/todo-text/todos-input have no
-// equivalent blur-driven cleanup for this generic version, so without this, clicking
-// anywhere outside the popup (rather than pressing a key) left it stuck open indefinitely.
-document.addEventListener('mousedown',e=>{
-  if(!_gqaState) return;
-  const pop=el('node-qa-suggest');
-  if(pop && !pop.contains(e.target)) closeGenericQuickAssist();
-});
-function renderNodeQuickAssist(){
-  const pop=el('node-qa-suggest'); if(!pop||!_nqaState)return;
-  const {inputEl}=_nqaState;
-  const candidates=getNodeQuickAssistCandidates();
-  pop.innerHTML='';
-  if(!candidates.length){
-    pop.innerHTML='<div class="nqa-empty">No characters enabled — Settings → Editing → Quick Insert</div>';
-  } else {
-    candidates.forEach((id,i)=>{
-      const meta=NODE_QA_ACTION_META[id];
-      const item=document.createElement('div');
-      item.className='nqa-item'+(i===_nqaActiveIdx?' at-active':'');
-      const iconHtml=meta.svg
-        ?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${meta.svg}</svg>`
-        :`<span class="nqa-glyph"${meta.glyphStyle?` style="${meta.glyphStyle}"`:''}>${esc(meta.glyph)}</span>`;
-      item.innerHTML=iconHtml+`<span>${esc(meta.label)}</span>`;
-      item.addEventListener('mousedown',e=>{e.preventDefault(); commitNodeQuickAssist(id)});
-      pop.appendChild(item);
-    });
-  }
-  const rect=getCaretClientRectGeneric(inputEl);
-  pop.style.left=Math.min(rect.left,window.innerWidth-260)+'px';
-  pop.style.top=(rect.top+rect.height+4)+'px';
-  pop.classList.add('open');
+  if(!matchesShortcut(e,'quickInsert'))return false;
+  e.preventDefault(); e.stopPropagation();
+  if(insertListOpen())closeSbContextMenu(); else showInsertListAt(getCaretClientRectGeneric(target),genericInsertListItems(target));
+  return true;
 }
 function insertGlyphAtCurrentEdit(glyph){
   const input=getEditingInput(); if(!input)return;
@@ -25142,21 +25034,6 @@ function insertGlyphAtCurrentEdit(glyph){
   input.dispatchEvent(new Event('input'));
   setInputCaret(input,start+glyph.length);
   input.focus();
-}
-async function runNodeQuickAssistAction(actionId,nodeId){
-  if(actionId==='emdash'){insertGlyphAtCurrentEdit('—'); return}
-  if(actionId==='endash'){insertGlyphAtCurrentEdit('–'); return}
-  if(actionId==='arrow'){insertGlyphAtCurrentEdit('➜'); return}
-  if(actionId==='checkmark'){insertGlyphAtCurrentEdit('✓'); return}
-  if(actionId==='crossmark'){insertGlyphAtCurrentEdit('✗'); return}
-  if(actionId==='middot'){insertGlyphAtCurrentEdit('·'); return}
-  if(actionId==='date-time'){insertDateTime(); return}
-}
-async function commitNodeQuickAssist(actionId){
-  if(!_nqaState)return;
-  const {nodeId}=_nqaState;
-  closeNodeQuickAssist();
-  await runNodeQuickAssistAction(actionId,nodeId);
 }
 // Undo while typing in a row goes back a word at a time (a run of deletes, or a paste, is its own
 // step), as in Docs and Word. Back where the edit began, Ctrl/Cmd+Z moves on to the app's own undo
@@ -25194,18 +25071,9 @@ function rowTypingStep(input,id,back){
 function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
   if(matchesShortcut(e,'undo')){e.preventDefault(); if(!rowTypingStep(e.target,id,true))contextualUndo(); return}
   if(matchesShortcut(e,'redo')){e.preventDefault(); if(!rowTypingStep(e.target,id,false))contextualRedo(); return}
-  if(_nqaState){
-    const cands=getNodeQuickAssistCandidates();
-    if(e.key==='ArrowDown'){e.preventDefault(); if(cands.length)_nqaActiveIdx=(_nqaActiveIdx+1)%cands.length; renderNodeQuickAssist(); return}
-    if(e.key==='ArrowUp'){e.preventDefault(); if(cands.length)_nqaActiveIdx=(_nqaActiveIdx-1+cands.length)%cands.length; renderNodeQuickAssist(); return}
-    if(e.key==='Enter'||e.key==='Tab'){if(cands.length){e.preventDefault(); commitNodeQuickAssist(cands[_nqaActiveIdx]); return} closeNodeQuickAssist();}
-    if(e.key==='Escape'){e.preventDefault(); closeNodeQuickAssist(); return}
-    if(matchesShortcut(e,'quickInsert')){e.preventDefault(); e.stopPropagation(); closeNodeQuickAssist(); return}
-    closeNodeQuickAssist();
-  }
-  if(matchesShortcut(e,'quickInsert')){e.preventDefault(); e.stopPropagation(); openNodeQuickAssist(e.target,id); return}
-  // The Insert list from "/" owns arrows, Enter and Escape; any other key types on and closes it.
-  if(_slashMenuRowId!==null&&!['Shift','Control','Alt','Meta'].includes(e.key)){ _slashMenuRowId=null; if(_sbContextEl?.id==='insert-menu')closeSbContextMenu(); }
+  if(matchesShortcut(e,'quickInsert')){e.preventDefault(); e.stopPropagation(); if(insertListOpen())closeSlashInsertMenu(); else openRowInsertList(e.target,id); return}
+  // The open Insert list owns arrows, Enter and Escape; a space ends a "/" search and stays typed.
+  if(_slashMenu&&e.key===' ')closeSlashInsertMenu();
   if(e.key==='/'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!(e.target.textContent||'').length)setTimeout(()=>openSlashInsertMenu(e.target,id),0);
   if(_atState){
     const cands=getAtCandidates(_atState.query);
@@ -25709,20 +25577,6 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[role="dialog"][aria-modal="true"].open'))return;
   const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
 },true);
-// Dedicated capture-phase listener for Quick Insert's outside-click dismissal.
-// Deliberately NOT folded into the bubble-phase listener above: at least 47 buttons in this
-// app call e.stopPropagation() in their own click handlers (each managing its own menu's
-// mutual exclusivity), which would silently prevent the click from ever reaching a
-// bubble-phase document listener. Capture phase runs top-down, before any descendant
-// (including the click target itself) gets a chance to call stopPropagation, so this fires
-// reliably regardless of what else is on the page. mousedown rather than click, to match
-// the mousedown-based selection already used inside the popup itself and to close as soon
-// as the interaction starts rather than waiting for it to complete.
-document.addEventListener('mousedown',e=>{
-  if(!_nqaState)return;
-  const pop=el('node-qa-suggest');
-  if(pop&&!pop.contains(e.target))closeNodeQuickAssist();
-},true);
 el('editor-pane').addEventListener('click',e=>{
   const blLink=e.target.closest('.bl-link[data-r]');
   if(blLink&&!blLink.closest('.node-input')){e.stopPropagation(); openRowLink(blLink); return;}
@@ -25941,7 +25795,7 @@ const SHORTCUTS = {
   newDoc:         {combo:'mod+alt+n',     label:'New document',             category:'Docs, Tabs & Zen', guarded:false, action:()=>{commitEdit(); createDoc();}},
   closeTab:       {combo:'mod+alt+w',     label:'Close tab',                category:'Docs, Tabs & Zen', guarded:false, action:()=>{if(activeTabDocId!==null)closeTab(activeTabDocId);}},
   toggleZen:      {combo:'mod+shift+e',   label:'Toggle zen mode',          category:'Docs, Tabs & Zen', guarded:false, action:()=>setZenMode(!zenMode)},
-  quickInsert:    {combo:'mod+space',     label:'Quick Insert (special characters)', category:'Global Search', guarded:false, action:()=>{}},
+  quickInsert:    {combo:'mod+space',     label:'Insert list (while typing)', category:'Global Search', guarded:false, action:()=>{}},
   quickAssist:    {combo:'mod+/',         label:'Open Quick Assist',        category:'Global Search',    guarded:false, action:()=>toggleQa()},
   findInTree:     {combo:'mod+f',         label:'Search this tree',         category:'Global Search',    guarded:false, action:()=>openSearch()},
   findReplace:    {combo:'mod+h',         label:'Search & replace',         category:'Global Search',    guarded:false, action:()=>{openSearch(); if(!el('replace-bar')?.classList.contains('open'))toggleReplaceBar();}},
@@ -27256,26 +27110,57 @@ function insertMenuItems(){
     ...act('diagram-gen','Generate diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg>')
   ];
 }
-// "/" typed into an empty row opens the same Insert list at the caret. Picking an item takes the
-// "/" back out; Escape or typing on keeps it (a row can start with a path like /usr).
-let _slashMenuRowId=null;
+// A row's Insert list: the toolbar's Insert ▾ with Characters after Basics. Ctrl/Cmd+Space opens it
+// at the caret; "/" typed into an empty row does too, and the words typed after the "/" narrow it
+// ("/tab" → Table). Picking an item takes the "/…" back out; Escape or a space keeps what was typed
+// (a row can start with a path like /usr).
+let _slashMenu=null; // {id, at} while the list opened from "/" is showing
+function rowInsertListItems(){
+  const base=insertMenuItems(); const chars=insertCharItems(t=>insertGlyphAtCurrentEdit(t));
+  const at=base.findIndex((it,i)=>i>0&&it.heading);
+  return chars.length&&at>0?[...base.slice(0,at),...chars,...base.slice(at)]:[...base,...chars];
+}
+function rowCaretRect(input){
+  const sel=window.getSelection(); const cr=sel&&sel.rangeCount&&input.contains(sel.anchorNode)?sel.getRangeAt(0).getBoundingClientRect():null;
+  const r=cr&&(cr.width||cr.height)?cr:input.getBoundingClientRect();
+  return {left:r.left,top:r.top,height:r.height};
+}
+function openRowInsertList(input,id){
+  _slashMenu=null; setSingleSelection(id);
+  showInsertListAt(rowCaretRect(input),rowInsertListItems());
+}
 function openSlashInsertMenu(input,id){
-  if(editingId!==id||(input.textContent||'')!=='/')return;
+  // Typed fast, the search may already have begun by the time this runs.
+  const t=input.textContent||''; if(editingId!==id||!/^\/\S*$/.test(t))return;
   setSingleSelection(id);
-  const sel=window.getSelection(); const cr=sel&&sel.rangeCount?sel.getRangeAt(0).getBoundingClientRect():null;
-  const at=cr&&(cr.width||cr.height)?cr:input.getBoundingClientRect();
+  _slashMenu={id,at:rowCaretRect(input)};
+  showSlashInsertMenu(id,t.slice(1).toLowerCase());
+}
+// Search by the start of any word in an item's name.
+function insertItemMatches(label,q){ return String(label||'').toLowerCase().split(/[^a-z0-9]+/).some(w=>w.startsWith(q)); }
+function showSlashInsertMenu(id,q){
   const dropFirst=fn=>(...args)=>{ dropSlashFromRow(id); return fn(...args); };
   const wrap=it=>it.iconRow?{...it,iconRow:it.iconRow.map(wrap)}:it.onClick?{...it,onClick:dropFirst(it.onClick)}:it;
-  showSbContextMenu(at.left,at.bottom+4,insertMenuItems().map(wrap),{id:'insert-menu',label:'Insert'});
-  _slashMenuRowId=id;
-  if(_sbContextButtons.length){ _sbContextActiveIndex=0; _sbContextUpdateHighlight(); }
+  let items=rowInsertListItems();
+  if(q){
+    items=items.flatMap(it=>it.heading?[]:it.iconRow?it.iconRow.map(b=>({label:b.label,icon:b.icon,onClick:b.onClick})):[it]).filter(it=>insertItemMatches(it.label,q));
+    if(!items.length){ closeSlashInsertMenu(); return; }
+  }
+  const at=_slashMenu.at; showInsertListAt(at,items.map(wrap)); _slashMenu={id,at};
 }
+function slashInsertInput(input,id){
+  if(!insertListOpen()){ _slashMenu=null; return; }
+  const t=input.textContent||'';
+  if(!/^\/\S*$/.test(t)){ closeSlashInsertMenu(); return; }
+  showSlashInsertMenu(id,t.slice(1).toLowerCase());
+}
+function closeSlashInsertMenu(){ _slashMenu=null; if(insertListOpen())closeSbContextMenu(); }
 function dropSlashFromRow(id){
-  _slashMenuRowId=null;
+  _slashMenu=null;
   const input=editingId===id?el('in-'+id):null;
-  if(input&&(input.textContent||'')==='/'){ input.focus(); const r=document.createRange(); r.selectNodeContents(input); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('delete'); return; }
+  if(input&&/^\/\S*$/.test(input.textContent||'')){ input.focus(); const r=document.createRange(); r.selectNodeContents(input); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('delete'); return; }
   const node=nodes.find(n=>n.id===id);
-  if(node&&node.text==='/'){ node.text=''; setRowMarksOn(node,[]); render(); markDirty(); scheduleAutoSave(); }
+  if(node&&/^\/\S*$/.test(node.text||'')){ node.text=''; setRowMarksOn(node,[]); render(); markDirty(); scheduleAutoSave(); }
 }
 function closeToolbarMenus(){ if(_sbAnchorBtn&&(_sbAnchorBtn.id==='qb-insert'||_sbAnchorBtn.id==='qb-ai'))closeSbContextMenu(); }
 el('qb-insert')?.addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,insertMenuItems(),{id:'insert-menu',label:'Insert',keyboard:e.detail===0}); });

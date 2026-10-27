@@ -165,6 +165,15 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+**2026-10-27: One Insert list: "/" search, Ctrl/Cmd+Space opens it too, Characters folded in.** The separate Quick
+Insert popup (`#node-qa-suggest`, `_nqaState`/`_gqaState`) is gone. In a row, Ctrl/Cmd+Space (`openRowInsertList`)
+and "/" in an empty row (`openSlashInsertMenu`) open `rowInsertListItems()` = `insertMenuItems()` with a Characters
+iconRow after Basics (`insertCharItems`, still filtered by Settings › Editing › Quick Insert). Letters typed after
+"/" narrow it (`slashInsertInput` → `showSlashInsertMenu`, word-start match, flattened); no match or a space closes
+it and keeps the text. In notes, threads, To-Dos and other text, `handleGenericQaKeydown` opens the same shared
+menu with the characters and Date/time (`genericInsertListItems`). `showInsertListAt` keeps focus in the text.
+Test: `tests/e2e/slash-insert.spec.ts`.
+
 **2026-10-27: Undo while typing in a row goes back a word at a time.** Before, Ctrl/Cmd+Z mid-edit skipped the
 typing and undid the previous app step. `rowTypingBeforeInput` (row input `beforeinput`) keeps per-edit checkpoints
 in `_rowTyping`: a new step per word (a space joins the word before it, or the next one when typing starts with
@@ -178,13 +187,6 @@ edit one app step. Test: `tests/e2e/row-typing-undo.spec.ts`.
 Enter work). Every item's onClick is wrapped to take the `/` back out first (`dropSlashFromRow`: execCommand delete
 while editing, else clears a committed "/"). Escape or any other key closes the list and keeps the `/` (a row can
 start with a path like /usr). Help and README updated. Test: `tests/e2e/slash-insert.spec.ts`.
-
-**2026-10-27: Ctrl/Cmd+K links selected words; Quick Assist moves to Ctrl/Cmd+/.** New shortcut `insertLink`
-(mod+k, Formatting): `linkShortcutAtSelection()` opens the bar's Link box for the selected words in a row, To-Do,
-note or thread (capture-phase keydown, since those editors handle their own keys); with only a caret it toasts
-"Select words to link". `quickAssist` is now mod+/ (`comboMatches` takes the `/` character with or without Shift,
-for layouts like German), and the same keys close it from `#qa-input`. Help, cheatsheet, tour, README updated.
-Test: `tests/e2e/link-shortcut.spec.ts`.
 
 ### In progress / not built
 

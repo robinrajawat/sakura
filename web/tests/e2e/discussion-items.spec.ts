@@ -395,7 +395,7 @@ test('Quick Insert (Ctrl/Cmd+Space) works in the reply line', async ({ page }) =
   await box.click();
   await page.keyboard.type('A ');
   await page.keyboard.press('ControlOrMeta+Space');
-  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await expect(page.locator('#insert-menu')).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(box).toHaveText('A —');
 });
@@ -408,7 +408,7 @@ test('Quick Insert (Ctrl/Cmd+Space) works in the inline note', async ({ page }) 
   await page.keyboard.press('End');
   await page.keyboard.type(' ');
   await page.keyboard.press('ControlOrMeta+Space');
-  await expect(page.locator('#node-qa-suggest')).toHaveClass(/open/);
+  await expect(page.locator('#insert-menu')).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(note).toContainText('Note —');
 });
