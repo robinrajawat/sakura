@@ -44,7 +44,7 @@ Key capabilities:
 - **To-Dos** — one app-level task list (with subtasks, due dates, repeats, pins and "waiting for") shared across your whole workspace, independent of any single document, reachable from one button in the app bar
 - Diagrams — add a draw.io diagram to any node (right-click → Add diagram…, or Generate diagram for a rough first draft from that branch), or paste or drop a draw.io file — .drawio, or a .drawio.svg / .drawio.png export — onto a row; a row can hold several, and the toast offers Undo); embeds as a real picture in PDF exports; click a diagram's picture to **preview** it in a large window, the same window as a picture's preview, its name first in the header (click to rename) (Ctrl/Cmd+scroll or pinch to zoom, scroll or drag to move, **Fit** or `F`, click the zoom level or `0` for actual size, **←/→** or the side arrows to step through the row's diagrams, Delete with Undo, Esc to close) and **Edit** there to open it in draw.io, **Copy image** (or `Ctrl/Cmd+C`) to paste it elsewhere, or **Download** it as a PNG or an SVG (the SVG reopens in draw.io; draw.io adds a small margin around the drawing); right-click the picture for the same menu as a picture: Open, Copy image, Download, Rename, Edit in draw.io and Delete diagram. Copy nodes with Ctrl/Cmd+C and paste them into another document or app
 - Multiple documents open as independent tabs
-- Theming: Light/Dark theme with an optional System auto-theme, and six accent colors
+- Theming: Light, Dark or System theme (System, the default, follows the device), and six accent colors
 - Zen mode: a fullscreen, distraction-reduced editor that keeps the app bar and status bar in view
 - Installable as a desktop/mobile app (PWA) in supporting browsers
 - Manual full-data backup to a file (and restore, with one-step undo); signed in, your data also syncs to your account automatically
@@ -209,7 +209,7 @@ Export ▾ offers two formats, **PDF** and **OPML**; Import ▾ offers **OPML** 
 
 ## Theming & Appearance
 
-- **Light/Dark theme** with an **Auto theme** mode: Off (manual only) or System (follows the OS/browser's dark-mode setting live). Manually overriding the theme while in System mode holds as a temporary override until the automatic value naturally catches up and matches it again.
+- **Theme**: Light, Dark or System. System (the default) follows the OS/browser's dark-mode setting live; picking Light or Dark, in Settings or from a menu, keeps that theme until you pick System again.
 - **Accent color** — six presets (Terracotta, the default, plus Teal, Indigo, Violet, Moss, and Amber), used for buttons, borders, and highlights (not node text itself).
 - **Zen mode** (`Ctrl/Cmd+Shift+E`, or the maximize button by the editor) gives the outline the whole screen and always switches the browser to fullscreen; exiting fullscreen (Esc, F11, the browser's control) exits Zen too. Zen hides the toolbar, the tab bar and the file explorer (the file explorer's own toggle still works while in Zen); the app bar and status bar always stay visible.
 - **Status bar, app bar and tab bar** are always shown (outside Zen, for the tab bar). The status bar shows word count and current depth, saved status, the Secure Storage lock chip while locked, the auto-rewrite chip while auto-rewrite is on, and Quick Assist when docked there. None of them are customisable.
@@ -266,7 +266,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Search bar | Bars & Menus | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+K`) folds this in regardless of this setting |
 | Reopen tabs on launch | *(Quick Assist only)* | On | No Settings UI control yet — toggle via Quick Assist ("reopen tabs"); turn off to always start with a single tab |
 | Start each session blank | *(Quick Assist only)* | Off | No Settings UI control yet — new blank document every launch instead of restoring the last state |
-| Auto theme | Appearance | Off | Off / System — see Theming & Appearance above |
+| Theme | Appearance | System | Light / Dark / System — see Theming & Appearance above |
 | AI Capabilities | AI | On | Master switch for all AI features; each still needs Sakura Hosted AI (sign in) or a BYOK provider key active |
 | Auto-rewrite on commit | AI | Off | See AI Features above; needs a configured API key |
 | Provider fallback | AI | Off | Auto-retries with the next configured provider on failure (except a bad key) |

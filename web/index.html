@@ -1080,13 +1080,13 @@ body.zen-mode #quick-bar{display:none}
 
 
 .theme-segmented{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
-.theme-seg,.theme-mode-seg,.profile-visibility-seg,.share-role-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;white-space:nowrap;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.theme-seg,.profile-visibility-seg,.share-role-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;white-space:nowrap;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 body.appbar-decluttered #app-brand{display:none}
-.theme-seg:hover,.theme-mode-seg:hover,.profile-visibility-seg:hover,.share-role-seg:hover{color:var(--fg)}
-.theme-seg:focus-visible,.theme-mode-seg:focus-visible,.profile-visibility-seg:focus-visible,.share-role-seg:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
-.theme-seg.active,.theme-mode-seg.active,.profile-visibility-seg.active,.share-role-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
-body.theme-dark .theme-seg.active,body.theme-dark .theme-mode-seg.active,body.theme-dark .profile-visibility-seg.active,body.theme-dark .share-role-seg.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
-body.theme-light .theme-seg.active,body.theme-light .theme-mode-seg.active,body.theme-light .profile-visibility-seg.active,body.theme-light .share-role-seg.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
+.theme-seg:hover,.profile-visibility-seg:hover,.share-role-seg:hover{color:var(--fg)}
+.theme-seg:focus-visible,.profile-visibility-seg:focus-visible,.share-role-seg:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.theme-seg.active,.profile-visibility-seg.active,.share-role-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
+body.theme-dark .theme-seg.active,body.theme-dark .profile-visibility-seg.active,body.theme-dark .share-role-seg.active{background:color-mix(in srgb,var(--accent) 18%, var(--bg) 82%)}
+body.theme-light .theme-seg.active,body.theme-light .profile-visibility-seg.active,body.theme-light .share-role-seg.active{background:color-mix(in srgb,var(--accent) 12%, var(--bg) 88%)}
 .segmented-control{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
 .segmented-btn{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;cursor:pointer;flex:1 1 0;white-space:nowrap;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 .segmented-btn:hover{color:var(--fg)}
@@ -3582,15 +3582,7 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="general">
             <div class="settings-section-title">Appearance</div>
             <div class="settings-grid one-col">
-              <div class="settings-field"><label>Theme</label><div class="theme-segmented" id="theme-segmented" role="tablist" aria-label="Theme"><button type="button" class="theme-seg" data-theme="light" role="tab" aria-selected="true">Light</button><button type="button" class="theme-seg" data-theme="dark" role="tab" aria-selected="false">Dark</button></div></div>
-              <div class="settings-field">
-                <label>Auto theme</label>
-                <div class="theme-segmented" id="theme-mode-segmented" role="tablist" aria-label="Auto theme">
-                  <button type="button" class="theme-mode-seg active" data-theme-mode="manual" role="tab" aria-selected="true">Off</button>
-                  <button type="button" class="theme-mode-seg" data-theme-mode="system" role="tab" aria-selected="false">System</button>
-                </div>
-                <span class="settings-row-desc">Off: only the Light/Dark switch above, changed by hand. System: follows your OS/browser's dark mode setting automatically. Clicking Light/Dark above still works in System mode — it holds as a temporary override until the system value naturally catches up and agrees with it again, then automatic switching resumes from there.</span>
-              </div>
+              <div class="settings-field"><label>Theme</label><div class="theme-segmented" id="theme-segmented" role="tablist" aria-label="Theme"><button type="button" class="theme-seg" data-theme="light" role="tab" aria-selected="false">Light</button><button type="button" class="theme-seg" data-theme="dark" role="tab" aria-selected="false">Dark</button><button type="button" class="theme-seg" data-theme="system" role="tab" aria-selected="true">System</button></div><span class="settings-row-desc">System follows your device's light or dark setting.</span></div>
               <div class="settings-field"><label for="editor-scale">Text size</label><div style="display:flex;align-items:center;gap:10px"><input id="editor-scale" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="editor-scale-value" class="settings-slider-value" style="min-width:38px;text-align:right">100%</span></div></div>
               <div class="settings-color-box">
               <div class="settings-field"><label>Accent</label><div class="accent-swatch-row" id="accent-swatch-row" role="radiogroup" aria-label="Accent color">
@@ -4007,7 +3999,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="general" id="help-section-appearance">  
 <h4>Appearance &amp; Display</h4>  
 <ul>  
-<li><strong>Theme &amp; accent</strong> — Settings → Appearance: Light/Dark theme and six accent colours (Terracotta, the default, plus Teal, Indigo, Violet, Moss, and Amber). <strong>Auto theme</strong> sits below it — Off (the Light/Dark switch only, changed by hand) or System (follows your OS/browser's dark mode setting live). Manually clicking Light/Dark in System mode holds as a temporary override until the system value naturally catches up and agrees with it again</li>
+<li><strong>Theme &amp; accent</strong> — Settings → Appearance: Theme is Light, Dark or System (the default, which follows your device's light or dark setting live), plus six accent colours (Terracotta, the default, plus Teal, Indigo, Violet, Moss, and Amber). Picking Light or Dark, here or from a menu, keeps that theme until you pick System again</li>
 <li><strong>Status bar</strong> — always shown, including in zen mode: word count and current depth on the left; on the right, saved status, the Secure Storage lock chip (only while locked), the auto-rewrite indicator (while auto-rewrite is on), and Quick Assist when it's docked there</li>
 <li><strong>App bar</strong> — always shown, including in zen mode, so Settings is always one click away. "Declutter app bar" (in the app bar's own right-click menu) hides the Sakura name on the left</li>
 <li><strong>Toolbar</strong> — always shown above the editor (hidden only in zen mode), one fixed set of buttons in unlabeled groups: Undo, Redo · Outdent, Indent · Heading style · Note, Checkbox, Tags · Generate outline, Rewrite row (AI) — and Collapse all + Zoom as a small pair at the right end. It wraps onto a second line on a narrow window rather than scrolling. Everything else — Insert above/below, Add child, Duplicate, Move up/down, Delete — is in a node's right-click menu (and the keyboard shortcuts below). Formatting is in the bar that appears over selected words; a shortcut with nothing selected formats the whole row</li>
@@ -5113,7 +5105,7 @@ let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoSta
 // suddenly fall back to. So this tracks the opposite: which nodes someone has explicitly folded
 // away, not which have opted into being shown. Session-only, like the other four.
 let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
-let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let exportUseAccentColor=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='manual'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false;
+let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let exportUseAccentColor=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='system'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/export code, specifically so loadPrefs() restoring
 // a saved value isn't immediately overwritten by this line's own default when script
@@ -20280,7 +20272,11 @@ function setAccentPreset(id,persist=true){accentPreset=ACCENT_PRESETS[id]?id:'te
 // then skips re-applying the natural computed theme on each tick until that natural value
 // catches up and agrees with the override again, at which point it clears the flag and
 // resumes normal automatic governance from there. See applyAutoTheme() for the other half.
-function setTheme(theme,isAuto=false,persist=true){if(!['light','dark'].includes(theme))theme='light'; currentTheme=theme; if(!isAuto&&themeMode!=='manual')_themeOverrideActive=true; [...document.body.classList].forEach(c=>{if(c.startsWith('theme-'))document.body.classList.remove(c)}); document.body.classList.add('theme-'+theme); document.documentElement.style.colorScheme=theme; document.querySelectorAll('.theme-seg').forEach(btn=>{const active=btn.dataset.theme===theme; btn.classList.toggle('active',active); btn.setAttribute('aria-selected',String(active))}); applyAccentColor(); applyNodeFontColor(); syncThemeColorMeta(); if(persist){savePrefs(); scheduleAutoSave()} render()}
+// One Theme control: Light | Dark | System. Picking Light or Dark anywhere (settings, menu,
+// command palette) is a lasting choice, so it leaves System mode rather than holding as a
+// temporary override that the next reload or OS change would undo.
+function syncThemeSegs(){ const pick=themeMode==='system'?'system':currentTheme; document.querySelectorAll('.theme-seg').forEach(btn=>{const active=btn.dataset.theme===pick; btn.classList.toggle('active',active); btn.setAttribute('aria-selected',String(active))}); }
+function setTheme(theme,isAuto=false,persist=true){if(!['light','dark'].includes(theme))theme='light'; currentTheme=theme; if(!isAuto&&themeMode!=='manual'){ themeMode='manual'; _themeOverrideActive=false; } [...document.body.classList].forEach(c=>{if(c.startsWith('theme-'))document.body.classList.remove(c)}); document.body.classList.add('theme-'+theme); document.documentElement.style.colorScheme=theme; syncThemeSegs(); applyAccentColor(); applyNodeFontColor(); syncThemeColorMeta(); if(persist){savePrefs(); scheduleAutoSave()} render()}
 // Declutters the app bar rather than hiding it outright: #app-brand (the Sakura name) goes
 // away, but .settings-wrap
 // and .global-search-wrap (Quick Assist) are deliberately never touched by this class —
@@ -20371,16 +20367,9 @@ function appbarContextItems(){
     settingsItem
   ];
 }
-// Auto theme — 'manual' (Light/Dark switch only, no automation) or 'system' (follow the
-// OS/browser's prefers-color-scheme). Manually clicking Light/Dark always still works in
-// System mode too, since it just calls setTheme() directly — that's a *temporary*
-// override by design: the next prefers-color-scheme change event calls setTheme() again
-// and quietly supersedes whatever was clicked in between. This is tracked via
-// _themeOverrideActive (set in setTheme() whenever a non-auto call happens outside
-// 'manual' mode, cleared by a real mode change or once the natural theme catches up to
-// match). Deliberately NOT persisted across reloads — a session-only override reset on
-// every fresh load matches "temporary" as described above; persisting it previously
-// caused system sync to silently stay stuck on a stale theme after every reload.
+// themeMode — 'system' (the default: follow the OS/browser's prefers-color-scheme) or 'manual'
+// (the user picked Light or Dark; see setTheme, which leaves System mode on any explicit pick).
+// _themeOverrideActive is now only ever cleared; kept so applyAutoTheme's guard stays simple.
 function applyAutoTheme(persist=true){
   if(themeMode==='system'){
     if(!_themeMediaQuery)return;
@@ -20393,7 +20382,7 @@ function setThemeMode(mode,persist=true){
   const normalized=['manual','system'].includes(mode)?mode:'manual';
   if(normalized!==themeMode)_themeOverrideActive=false;
   themeMode=normalized;
-  document.querySelectorAll('#theme-mode-segmented .theme-mode-seg').forEach(btn=>{const active=btn.dataset.themeMode===themeMode; btn.classList.toggle('active',active); btn.setAttribute('aria-selected',String(active))});
+  syncThemeSegs();
   if(themeMode!=='manual') applyAutoTheme(persist);
   if(persist){ savePrefs(); scheduleAutoSave(); }
 }
@@ -25406,8 +25395,7 @@ function isControlTarget(target){if(!target)return false; const tag=(target.tagN
 // is empty), so a plain "is it inside editor-pane" check mistook it for tree content and copied
 // an empty tree instead of letting the person copy what they'd actually selected.
 function hasExternalTextSelection(){const sel=window.getSelection(); if(!sel||sel.isCollapsed||!sel.rangeCount)return false; const anchor=sel.anchorNode; if(!anchor)return false; const node=anchor.nodeType===Node.TEXT_NODE?anchor.parentElement:anchor; if(!node)return false; if(node.closest('.empty-state'))return true; const pane=document.getElementById('editor-pane'); return !(pane&&pane.contains(node));}
-document.querySelectorAll('.theme-seg').forEach(btn=>btn.addEventListener('click',()=>setTheme(btn.dataset.theme)));
-document.querySelectorAll('.theme-mode-seg').forEach(btn=>btn.addEventListener('click',()=>setThemeMode(btn.dataset.themeMode)));
+document.querySelectorAll('.theme-seg').forEach(btn=>btn.addEventListener('click',()=>{ if(btn.dataset.theme==='system') setThemeMode('system'); else setTheme(btn.dataset.theme); }));
 // 'system' mode's live-update path — fires the instant the OS/browser dark-mode setting
 // changes, no polling needed. addListener is the legacy fallback for older WebKit/Safari
 // that never picked up the newer addEventListener form on MediaQueryList.
