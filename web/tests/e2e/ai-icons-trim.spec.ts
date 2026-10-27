@@ -170,7 +170,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-extract-btn, #todos-summary-btn')).toHaveCount(0);
     await expect(page.locator('.todo-subtask-ai')).toHaveCount(0);
     await page.locator('.todo-row[data-id="t2"]').click({ button: 'right', position: { x: 4, y: 10 } });
-    await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Rewrite with AI' })).toHaveCount(1);
+    await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Rewrite' })).toHaveCount(1);
     await expect(page.locator('.sb-context-menu .sb-context-item', { hasText: 'Break into subtasks' })).toHaveCount(0);
     await page.keyboard.press('Escape');
     // Subtasks fold behind their count at rest; open the task to see them.

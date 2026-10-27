@@ -28,8 +28,12 @@ test('Copy thread puts the thread on the clipboard as rich text and plain lines'
     ];
     qaItems = []; inlineExpandRemarksNodeIds = new Set([1]); collapsedIds = new Set(); editingId = null; render();
   `);
-  await page.locator('.thread-head').click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Copy thread', { exact: true }).click();
+  // The header's copy icon shows on hover (owner, 2026-10-27).
+  const copy = page.locator('.thread-head .thread-head-copy');
+  await expect(copy).toHaveCSS('opacity', '0');
+  await page.locator('.thread-head').hover();
+  await expect(copy).toHaveCSS('opacity', '1');
+  await copy.click();
   await expect(page.locator('.toast, #toast').filter({ hasText: 'Thread copied' }).first()).toBeVisible();
   const clip = await page.evaluate(async () => {
     const [item] = await navigator.clipboard.read();
@@ -47,8 +51,12 @@ test('Copy thread puts the thread on the clipboard as rich text and plain lines'
   expect(clip.html).toContain('<b>Karsten</b>');
   expect(clip.html).toMatch(/<span style="color:rgb\([^"]+\);font-weight:600">\u{1F91D}<\/span>/u);
   expect(clip.html).toMatch(/<span style="color:rgb\([^"]+\);font-weight:600">\u21b3<\/span>/);
-  // The entry menu offers it too.
-  await page.locator('#inline-remark-text-d').click({ button: 'right' });
+  // The header's right-click has it too; an entry's menu acts on that entry only (owner, 2026-10-27).
+  await page.locator('.thread-head').click({ button: 'right' });
   await expect(page.locator('.sb-context-menu').getByText('Copy thread', { exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.locator('#inline-remark-text-d').click({ button: 'right' });
+  await expect(page.locator('.sb-context-menu').getByText('Reply', { exact: true })).toBeVisible();
+  await expect(page.locator('.sb-context-menu').getByText('Copy thread', { exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
 });

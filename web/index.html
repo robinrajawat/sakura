@@ -1792,18 +1792,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .pv-fit{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:30px;padding:0 11px;border:1px solid var(--border);border-radius:7px;font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer}
 .pv-fit:hover{background:var(--hover)}
 .pv-fit:focus-visible,.pv-zoom button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-/* Canvas and the Notes pane side by side under the header; the pane shows only when toggled on. */
 .dv-body{flex:1 1 auto;display:flex;min-height:0}
-.dv-notes{display:none;flex:0 0 300px;flex-direction:column;border-left:1px solid var(--border);background:var(--bg);user-select:text;-webkit-user-select:text}
-.dv-notes-open .dv-notes{display:flex}
-.dv-notes-input{all:unset;box-sizing:border-box;flex:1 1 auto;width:100%;padding:14px 16px;font:400 13.5px/1.55 'Inter',sans-serif;color:var(--fg);white-space:pre-wrap;overflow-y:auto;cursor:text}
-.dv-notes-input::placeholder{color:var(--hint)}
-.dv-notes-foot{flex:0 0 auto;padding:8px 16px 10px;font:400 11.5px 'Inter',sans-serif;color:var(--hint)}
-.dv-notes-toggle.has-notes:not(.active)::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:-1px}
-@media (max-width:700px){
-  .dv-body{flex-direction:column}
-  .dv-notes{flex:0 0 38%;border-left:none;border-top:1px solid var(--border)}
-}
 .dv-canvas .dv-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2}
 .dv-canvas .dv-prev{left:14px}.dv-canvas .dv-next{right:14px}
 .dv-single .dv-nav{display:none}
@@ -1934,17 +1923,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-chip.is-decision{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fc-green) 35%,transparent)}
 /* The row thread: one flat list, each entry a meta line (avatar, author, time, chips) over its text. */
 .node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
-/* One thin rule down the left of the whole thread (header, entries, reply box). */
-/* No bar: a faint line joins one avatar to the next, so the entries read as one conversation. */
-/* renderNodeThread marks where the line runs; the icons sit on top of it, so it never shows a gap. */
-.thread-line.spine-up::before,.thread-line.spine-down::after,.thread-line.spine-through::after{content:'';position:absolute;left:var(--thread-rule-x,8px);width:1px;background:var(--border);pointer-events:none}
-.thread-line.spine-up::before{top:0;height:13px}
-.thread-line.spine-down::after{top:13px;bottom:0}
-.thread-line.spine-through::after{top:0;bottom:0}
 .node-remark-line.thread-head{align-items:center;gap:6px;padding-top:4px;padding-bottom:2px;color:var(--hint);font:500 12px 'Inter',sans-serif;cursor:pointer;user-select:none}
 .thread-head svg{flex:0 0 auto}
 .thread-head-more{border:0;background:transparent;padding:0 2px;margin-left:-2px;border-radius:4px;font:inherit;color:var(--hint);cursor:pointer}
 .thread-head-more:hover{color:var(--fg);background:var(--hover)}
+.thread-head-copy{display:inline-flex;align-items:center;border:0;background:transparent;padding:2px;border-radius:4px;color:var(--hint);cursor:pointer;opacity:0;transition:opacity .12s}
+.thread-head:hover .thread-head-copy,.thread-head-copy:focus-visible{opacity:1}
+.thread-head-copy:hover{color:var(--fg);background:var(--hover)}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
 .thread-time{font-size:var(--fs-sm)}
 .thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
@@ -2495,7 +2480,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    upright text, no box or dividers. */
 .pv-inline-remark-body.pv-thread-body{margin-left:0;padding:0;background:transparent;border:0;border-radius:0}
 .pv-thread-body .pv-remark-entry{position:relative}
-.pv-thread-body .pv-remark-entry:not(:last-child)::after{content:'';position:absolute;left:7px;top:20px;bottom:-6px;width:1px;background:var(--border)}
 .pv-thread-body .pv-remark-entry{display:grid;grid-template-columns:15px 1fr;column-gap:8px;align-items:start;margin:0;padding:3px 0;border:0}
 .pv-thread-body .pv-remark-entry+.pv-remark-entry{margin-top:3px;padding-top:3px;border:0}
 .pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
@@ -3563,7 +3547,7 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="general">
             <div class="settings-section-title">Appearance</div>
             <div class="settings-grid one-col">
-              <div class="settings-field"><label>Theme</label><div class="theme-segmented" id="theme-segmented" role="tablist" aria-label="Theme"><button type="button" class="theme-seg" data-theme="light" role="tab" aria-selected="false">Light</button><button type="button" class="theme-seg" data-theme="dark" role="tab" aria-selected="false">Dark</button><button type="button" class="theme-seg" data-theme="system" role="tab" aria-selected="true">System</button></div><span class="settings-row-desc">System follows your device's light or dark setting.</span></div>
+              <div class="settings-field"><label>Theme</label><div class="theme-segmented" id="theme-segmented" role="tablist" aria-label="Theme"><button type="button" class="theme-seg" data-theme="light" role="tab" aria-selected="false">Light</button><button type="button" class="theme-seg" data-theme="dark" role="tab" aria-selected="false">Dark</button><button type="button" class="theme-seg" data-theme="system" role="tab" aria-selected="true" data-tip="Follows your device's light or dark setting">System</button></div></div>
               <div class="settings-field"><label for="editor-scale">Text size</label><div style="display:flex;align-items:center;gap:10px"><input id="editor-scale" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="editor-scale-value" class="settings-slider-value" style="min-width:38px;text-align:right">100%</span></div></div>
               <div class="settings-color-box">
               <div class="settings-field"><label>Accent</label><div class="accent-swatch-row" id="accent-swatch-row" role="radiogroup" aria-label="Accent color">
@@ -4189,18 +4173,18 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="panels" id="help-section-remarks">
 <h4>Thread (comments and questions)</h4>
 <ul>
-<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a comment (a faint speech bubble), a question, a decision (handshake) or a reply (↳) — then its <strong>author</strong>, the <strong>day</strong> (hover it for the time) and the text. Click the icon to change the kind (Comment / Question / Decision; a reply: Reply / Decision); right-click the entry for Reply, Copy thread, Rewrite or Delete. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
+<li>Every node has one thread: the conversation about it, kept right under the row as a flat list in time order, oldest first. Each entry starts with an icon saying what it is — a comment (a faint speech bubble), a question, a decision (handshake) or a reply (↳) — then its <strong>author</strong>, the <strong>day</strong> (hover it for the time) and the text. Click the icon to change the kind (Comment / Question / Decision; a reply: Reply / Decision); right-click the entry for Reply, Rewrite or Delete. An entry is a <strong>Comment</strong> or a <strong>Question</strong></li>
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Click the line's icon to make it a <strong>Comment</strong>, <strong>Question</strong> or <strong>Decision</strong>. Right-click the line to add it, Rewrite with AI (when AI is on) or close it. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
 <li><strong>Replies</strong>: any entry can be replied to, one level deep — hover it and click <strong>Reply</strong>, or right-click → Reply. Replies read indented under their entry; everything else stays in time order. A <strong>question</strong> is open until it gets a reply (its icon is in your accent colour), then answered — write "Yes", "No, …" or "Won't answer" in the reply.</li>
-<li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text. The header's right-click also has <strong>Delete thread</strong> (Undo in the toast).</li>
+<li><strong>Copy thread</strong>: hover the “Thread · N” header and click its copy icon (or right-click the header → Copy thread), to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text. The header's right-click also has <strong>Delete thread</strong> (Undo in the toast).</li>
 <li><strong>Status</strong> belongs to the row, not the thread: a row is <strong>Agreed</strong>, <strong>Follow-up</strong> or <strong>Out of scope</strong>, with when it was set (hover its badge: “Follow-up · 13 Oct (2w)”); no names, a follow-up is your own. Setting it adds nothing to the thread. Set it from the row's right-click menu or the toolbar's Insert ▾; it opens nothing (add a comment yourself if you want to say why). Click the badge for its menu: the three statuses (the current one again clears it), <strong>Add to To-Dos</strong>; right-click opens the same menu</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, pick <strong>Decision</strong> with the line's icon first. It doesn't change the row's marker</li>
 <li><strong>Links</strong>: a pasted web address becomes a link. Click a link to put the caret in it: a small card under it opens, copies, edits or removes it (Ctrl/Cmd+click opens it straight away; right-click has the same items)</li>
-<li>Right-click an entry for <strong>Reply</strong>, Copy thread, Rewrite with AI (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
+<li>Right-click an entry for <strong>Reply</strong>, Rewrite (when AI is on) or Delete; an entry emptied and left, or emptied with Backspace, is removed</li>
 <li>A speech-bubble icon appears on a node with a thread — click it to show or hide the thread inline. The thread is grey; the icon takes your accent colour and shows a count while questions are still open</li>
 <li>A thread longer than four entries shows its latest three; the header's “show N earlier” shows the rest</li>
-<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day), the entry icons joined by a faint line. The status prints on the row's marker, a Follow-up with since when. The outline shows the thread the same way; click its header to hide it</li>
+<li>Always included in PDF exports: the whole thread prints right after its node as a transcript — a "Thread · N" header, then every entry with its author, time (the date once per day) and its icon. The status prints on the row's marker, a Follow-up with since when. The outline shows the thread the same way; click its header to hide it</li>
 <li>Deleting a node deletes its thread too (and its note, tables, images and diagrams); Undo brings it back. Only diagrams can't be undone, so deleting one asks first, with a red warning</li>
 <li>Older documents open converted: Q&amp;A linked to a node becomes a question in that node's thread with its answer as a reply; decisions become Decision chips, and a status an older thread held on an entry moves onto its row (with that entry's author, time and follow-up owner; entries that said nothing else go). Q&amp;A section headers and questions not linked to a node stay as they were and print in the PDF's closing Q&amp;A list</li>
 </ul>
@@ -4284,7 +4268,7 @@ body.printing-generic #gpe-overlay{
 <li><strong>Waiting for…</strong> (task menu) moves a task to Waiting: type who or what it waits for right on the row (names are suggested), Enter to keep. The row then says "Waiting for Karsten · since Oct 14"; click it to edit, empty it or pick Not waiting to stop</li>
 <li>A task can either <strong>repeat</strong> or hold <strong>sub-tasks</strong> — never both at once. Click the <strong>Repeat</strong> chip to cycle None → Daily → Weekdays → Weekly; checking off a recurring task doesn't complete it, it just advances the due date to the next occurrence (a toast confirms the new date), so recurring tasks never pile up in Completed. Once a repeat is set, a small repeat glyph also shows on the due-date chip, even before you've set a due date, so it's clear at a glance that a task recurs</li>
 <li>Click a task to expand it, then click <strong>Subtask</strong> to open an inline field — Enter adds it (Escape cancels), building a small nested checklist under the task with its own checkboxes, an n/300 character counter while typing, and a delete button per item on hover. A progress badge (e.g. "2/4") plus a collapse arrow appear once a task has any sub-tasks; the parent task's own checkbox is disabled and completes automatically the moment every sub-task is checked — you can't check the parent by hand while it has sub-tasks. Setting a repeat on a task removes its sub-tasks' ability to be added (and vice versa, adding a sub-task clears any repeat)</li>
-<li>Right-click a task, or hover it and click ⋯, for its menu: Pin, Waiting for…, Due date…, Repeat, Link…, Rewrite with AI (when AI is on), Copy, Delete</li>
+<li>Right-click a task, or hover it and click ⋯, for its menu: Pin, Waiting for…, Due date…, Repeat, Link…, Rewrite (when AI is on), Copy, Delete</li>
 <li>Settings → To-Dos: auto-expire completed tasks after a set number of days, and cap how many completed tasks are kept (oldest drop first). The Completed section starts collapsed each time the panel opens — click its header to expand it</li>
 <li>Typing <strong>@</strong> directly in a task's text renders an inline chip: <span class="todo-at todo-at-person">@name</span> for an assignee, <span class="todo-at todo-at-date">@date</span> (ISO date, <span class="todo-at todo-at-date">@today</span>/<span class="todo-at todo-at-date">@tomorrow</span>, or a weekday like <span class="todo-at todo-at-date">@fri</span>) for a date reference, and <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) for status. A suggestion popup appears as you type, offering the date/status keywords plus any names you've already used as <span class="todo-at todo-at-person">@name</span> elsewhere — Arrow keys to navigate, Enter/Tab to accept, Escape to dismiss. These are colored text only — display convenience within the task text, not linked to the due date or link fields</li>
 <li><span class="todo-tag-chip">#tag</span> renders as a colored tag chip — same autocomplete popup, suggesting tags you've already used. <span class="todo-remark">&gt;remark</span> renders everything from the &gt; to the end of the line as a muted italic aside. Both are display only, same as @ tokens</li>
@@ -13832,7 +13816,6 @@ function _dvEnsure(){
   // the left with the item's own action, then zoom, Fit, Copy, Download, Delete and Close.
   ov.innerHTML='<div class="dv-window"><div class="dv-bar pv-head"><input type="text" class="pv-name dv-title" placeholder="Untitled diagram" maxlength="200" spellcheck="false" aria-label="Diagram name" data-tip="Name · click to rename"><span class="niv-counter dv-counter"></span><span class="pv-break"></span><span class="pv-spacer"></span>'
     +'<button type="button" class="niv-markup-toggle dv-edit" data-tip="Open in draw.io"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Edit</span></button>'
-    +'<button type="button" class="niv-markup-toggle dv-notes-toggle" aria-pressed="false" data-tip="Your notes for this diagram (N)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg><span>Notes</span></button>'
     +'<div class="pv-zoom" role="group" aria-label="Zoom"><button type="button" class="dv-zoom-out" aria-label="Zoom out" data-tip="Zoom out (−)">−</button><button type="button" class="pv-level dv-zoom-level" data-tip="Actual size (0)">100%</button><button type="button" class="dv-zoom-in" aria-label="Zoom in" data-tip="Zoom in (+) · Ctrl+scroll or pinch">+</button></div>'
     +'<button type="button" class="pv-fit dv-fit" data-tip="Fit to window (F)">Fit</button>'
     +'<button type="button" class="niv-btn dv-copy" aria-label="Copy image" data-tip="Copy image"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
@@ -13843,7 +13826,7 @@ function _dvEnsure(){
     +'<button type="button" class="niv-nav dv-nav dv-prev" aria-label="Previous diagram" data-tip="Previous (←)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<button type="button" class="niv-nav dv-nav dv-next" aria-label="Next diagram" data-tip="Next (→)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
     +'<div class="dv-hint">'+PREVIEW_HINT+'</div></div>'
-    +'<aside class="dv-notes" aria-label="Notes"><textarea class="dv-notes-input" placeholder="Notes while you show this diagram\u2026" spellcheck="true" aria-label="Notes for this diagram"></textarea><div class="dv-notes-foot">Only you see these. Not in the PDF or exports.</div></aside></div></div>';
+    +'</div></div>';
   document.body.appendChild(ov);
   const canvas=ov.querySelector('.dv-canvas');
   ov.addEventListener('mousedown',e=>{ if(e.target===ov)closeDiagramViewer(); });
@@ -13866,20 +13849,6 @@ function _dvEnsure(){
     d.title=val; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render();
     if(_diagramEditorState&&_diagramEditorState.diagramId===d.id){ const ti=el('diagram-editor-title-input'); if(ti)ti.value=val; }
   });
-  // Notes: a side pane for recording thoughts while the diagram is on screen (owner, 2026-10-27:
-  // moved here from the draw.io editor's header). Saved as you type; never in the PDF or exports.
-  ov.querySelector('.dv-notes-toggle').addEventListener('click',()=>toggleDiagramViewerNotes());
-  const notesEl=ov.querySelector('.dv-notes-input');
-  notesEl.addEventListener('input',()=>{
-    const d=_dvState&&findDiagram(_dvState.id); if(!d)return;
-    d.note=notesEl.value; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); _dvRefreshNotes(true);
-  });
-  notesEl.addEventListener('blur',()=>{
-    const d=_dvState&&findDiagram(_dvState.id); if(!d)return;
-    const val=notesEl.value.trim(); if(val===(d.note||''))return;
-    d.note=val; d.modifiedAt=Date.now(); markDirty(); scheduleAutoSave();
-  });
-  ['keydown','keyup','keypress','pointerdown','wheel'].forEach(t=>notesEl.addEventListener(t,e=>e.stopPropagation()));
   ov.querySelector('.dv-prev').addEventListener('click',()=>stepDiagramViewer(-1));
   ov.querySelector('.dv-next').addEventListener('click',()=>stepDiagramViewer(1));
   ov.querySelectorAll('.dv-nav').forEach(b=>b.addEventListener('pointerdown',e=>e.stopPropagation()));
@@ -13934,8 +13903,6 @@ function _dvEnsure(){
     if(!ov.classList.contains('open'))return;
     // Typing the name: keys are text, and Esc only leaves the field (its own handler puts it back).
     if(e.target&&e.target.classList&&e.target.classList.contains('dv-title'))return;
-    if(e.target&&e.target.classList&&e.target.classList.contains('dv-notes-input')){ if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); e.target.blur(); ov.focus(); } return; }
-    if(e.key==='n'||e.key==='N'){ if(!e.ctrlKey&&!e.metaKey&&!e.altKey){ e.preventDefault(); e.stopPropagation(); toggleDiagramViewerNotes(); } return; }
     if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); closeDiagramViewer(); }
     else if(e.key==='+'||e.key==='='){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1.2); }
     else if(e.key==='-'||e.key==='_'){ e.preventDefault(); e.stopPropagation(); _dvZoomBy(1/1.2); }
@@ -13989,26 +13956,7 @@ function openDiagramViewer(diagramId){
   img.onload=()=>{ if(!_dvState||_dvState.id!==d.id)return; const nw=img.naturalWidth||800, nh=img.naturalHeight||600, pad=parseFloat(getComputedStyle(img).paddingLeft)||0; img.style.width=nw+'px'; img.style.height=nh+'px'; _dvState.w=nw+2*pad; _dvState.h=nh+2*pad; _dvFit(); };
   img.src=d.previewSvg;
   ov.classList.add('open'); ov.tabIndex=-1; ov.focus();
-  _dvRefreshCounter(); _dvRefreshNotes(); replayPreviewHint(ov);
-}
-// The Notes pane stays open or shut as you left it (this session), from one diagram to the next.
-let _dvNotesOpen=false;
-function _dvRefreshNotes(typing){
-  const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
-  const d=findDiagram(_dvState.id); const has=!!(d&&d.note&&d.note.trim());
-  const input=ov.querySelector('.dv-notes-input');
-  if(!typing&&d)input.value=d.note||'';
-  ov.classList.toggle('dv-notes-open',_dvNotesOpen);
-  const btn=ov.querySelector('.dv-notes-toggle');
-  btn.classList.toggle('active',_dvNotesOpen); btn.classList.toggle('has-notes',has); btn.setAttribute('aria-pressed',String(_dvNotesOpen));
-  btn.dataset.tip=(_dvNotesOpen?'Hide notes':has?'Show your notes':'Add notes')+' (N) \u00b7 only you see them';
-}
-function toggleDiagramViewerNotes(open){
-  const ov=el('diagram-viewer'); if(!ov||!_dvState)return;
-  _dvNotesOpen=open===undefined?!_dvNotesOpen:!!open;
-  _dvRefreshNotes(); _dvFit(true);
-  if(_dvNotesOpen)requestAnimationFrame(()=>{ const t=ov.querySelector('.dv-notes-input'); t.focus(); t.setSelectionRange(t.value.length,t.value.length); });
-  else ov.focus();
+  _dvRefreshCounter(); replayPreviewHint(ov);
 }
 // The diagrams on the same row, in order, that have a picture to show (← / → step through them).
 function _dvSiblings(id){ const d=findDiagram(id); return d?diagrams.filter(x=>x.anchorNodeId===d.anchorNodeId&&x.previewSvg):[]; }
@@ -18172,7 +18120,7 @@ function collectDiagramMatches(q){
       if(!Array.isArray(docDiagrams))continue;
       for(const dg of docDiagrams){
         if(out.length>=4)break;
-        const hay=(dg.title||'')+' '+(dg.note||'');
+        const hay=dg.title||'';
         if(!qaHayMatches(hay,tokens))continue;
         const label=(dg.title||'').trim()||'(untitled diagram)';
         out.push(isTrash?{
@@ -21846,7 +21794,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
         // is the equivalent of this old "Insert table" item.
         const link=e.target.closest&&e.target.closest('a[href]');
         if(link&&noteLine.contains(link))items.push(...noteLinkMenuItems(node,noteLine,link),{divider:true});
-        if(featureAiEnabled){ items.push({label:'Rewrite with AI ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
+        if(featureAiEnabled){ items.push({label:'Rewrite ✦', onClick: async()=>{ const current=noteLine.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; const i=getIndex(nodes,node.id); if(i>=0){ pushUndo(); nodes[i].note=sakuraSanitizeRichHtml(result); nodes[i].modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); } }catch(err){ showAiErrorModal(aiProvider,err); } }}); items.push({divider:true}); }
         items.push({label:'Delete note', onClick: async()=>{ pushUndo(); const i=getIndex(nodes,node.id); if(i>=0){nodes[i].note=''; nodes[i].modifiedAt=Date.now()} if(forceInlineNoteId===node.id)forceInlineNoteId=null; markDirty(); scheduleAutoSave(); render(); }});
       }
       showSbContextMenu(e.clientX,e.clientY,items);
@@ -32182,9 +32130,9 @@ function renderNodeThread(node,placeLine){
   const groups=[];
   threadReadingOrder(thread).forEach(o=>{ if(o.nested&&groups.length)groups[groups.length-1].push(o); else groups.push([o]); });
   const commit=()=>{ markDirty(); scheduleAutoSave(); render(); };
-  // Every line of the thread sits right of one thin rule, like the PDF's transcript.
-  // A reply (or a reply line) sits one step in; the thread's rule stays where it is.
-  const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; line.style.setProperty('--thread-rule-x',(x+7)+'px'); if(line.classList.contains('is-nested'))line.style.paddingLeft=(x+22)+'px'; };
+  // No line joins the entries (owner, 2026-10-27: cleaner); the header and the indent hold the
+  // thread together. A reply (or a reply line) sits one step in.
+  const placeThread=line=>{ placeLine(line); line.classList.add('thread-line'); const x=parseFloat(line.style.paddingLeft)||0; if(line.classList.contains('is-nested'))line.style.paddingLeft=(x+22)+'px'; };
   // Hovering any line of the thread shows its "+ Add to thread" line (the lines are separate siblings).
   const lines=[];
   const hover=on=>lines.forEach(l=>l.classList.toggle('thread-hover',on));
@@ -32208,6 +32156,11 @@ function renderNodeThread(node,placeLine){
       more.addEventListener('click',e=>{ e.stopPropagation(); if(all)showAllRemarksNodeIds.delete(node.id); else showAllRemarksNodeIds.add(node.id); render(); });
       head.appendChild(more);
     }
+    // Copy shows on hover (owner, 2026-10-27): the whole thread, so it lives on the header.
+    const copy=document.createElement('button'); copy.type='button'; copy.className='thread-head-copy'; copy.innerHTML=THREAD_COPY_ICON; copy.dataset.tip='Copy thread'; copy.setAttribute('aria-label','Copy thread');
+    copy.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
+    copy.addEventListener('click',e=>{ e.stopPropagation(); copyThread(node.id); });
+    head.appendChild(copy);
     place(head);
   }
   const shownAll=showAllRemarksNodeIds.has(node.id)||thread.length<=4||groups.length<=3;
@@ -32220,15 +32173,6 @@ function renderNodeThread(node,placeLine){
     if(answering&&g[0].entry.id===answering){ renderThreadComposer(node,thread,place,commit); composerPlaced=true; }
   });
   if(!composerPlaced)renderThreadComposer(node,thread,place,commit);
-  // One unbroken line joins the top-level icons (owner, 2026-10-27: no gaps); it runs past replies
-  // and stops at the last top-level icon.
-  const spine=lines.filter(l=>l.classList.contains('thread-entry')||l.classList.contains('thread-composer'));
-  const top=spine.map(l=>!l.classList.contains('is-nested'));
-  const firstTop=top.indexOf(true), lastTop=top.lastIndexOf(true);
-  spine.forEach((l,i)=>{
-    if(top[i]){ if(i>firstTop)l.classList.add('spine-up'); if(i<lastTop)l.classList.add('spine-down'); }
-    else if(i>firstTop&&i<lastTop)l.classList.add('spine-through');
-  });
 }
 function renderThreadEntry(node,r,thread,place,commit,prev,nested){
   const line=document.createElement('div'); line.className='node-remark-line thread-entry'+(nested?' is-nested':''); line.dataset.remarkId=r.id;
@@ -32461,7 +32405,8 @@ function threadKindMenuItems(r,thread,commit){
     if(k==='decision')r.decision=true;
     commit(); });
 }
-// Right-click on an entry: Reply, Copy thread, Rewrite, Delete. The kind is the icon's (owner, 2026-10-27).
+// Right-click on an entry: Reply, Rewrite, Delete -- only what acts on this entry (owner, 2026-10-27);
+// the kind is the icon's, Copy thread the header's.
 function threadEntryMenuItems(node,r,thread,textEl,commit){
   const ico=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
   const change=fn=>()=>{ pushUndo(); fn(); commit(); };
@@ -32470,8 +32415,7 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
   const parent=threadReplyParent(r,thread);
   items.push({label:'Reply', icon:THREAD_REPLY_ICON, onClick:()=>openThreadComposer(node.id,false,(parent||r).id)});
   items.push({divider:true});
-  items.push({label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)});
-  if(featureAiEnabled)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
+  if(featureAiEnabled)items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=textEl.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; pushUndo(); r.text=sakuraSanitizeRichHtml(result); markDirty(); scheduleAutoSave(); render(); }catch(err){ showAiErrorModal(aiProvider,err); } }});
   items.push({label:'Delete', danger:true, icon:ico('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'), onClick:change(()=>{ const i=remarks.indexOf(r); if(i>=0)remarks.splice(i,1); remarks.forEach(x=>{ if(x.answerTo===r.id)delete x.answerTo; }); })});
   return items;
 }
@@ -32573,7 +32517,7 @@ function threadComposerMenuItems(node,input,ask,submit){
   const hasText=htmlHasVisibleText(input.innerHTML);
   const items=[];
   if(hasText)items.push({label:'Add', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>submit()});
-  if(featureAiEnabled&&hasText)items.push({label:'Rewrite with AI', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); refocus(); render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
+  if(featureAiEnabled&&hasText)items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); refocus(); render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
   items.push({divider:true});
   items.push({label:'Close', icon:ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'), onClick:()=>{ _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); render(); }});
   return items;
@@ -35119,7 +35063,7 @@ function todosHistorySummary(list) {
       items.push({divider:true});
     }
     // Rewrite with AI stays (an earlier AI cut-down kept it on tasks); only shown with AI on.
-    if(!t.done&&(typeof featureAiEnabled==='undefined'||featureAiEnabled)) items.push({label:'Rewrite with AI', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
+    if(!t.done&&(typeof featureAiEnabled==='undefined'||featureAiEnabled)) items.push({label:'Rewrite', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick:()=>rewriteTodo(t.id)});
     items.push({label:'Copy', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>', onClick: async()=>{ await copyTodoText(t.id); }});
     items.push({label:'Delete', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>', danger:true, onClick: async()=>{ deleteTodo(t.id); }});
     return items;
