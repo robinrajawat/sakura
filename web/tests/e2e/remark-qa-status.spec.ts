@@ -105,15 +105,15 @@ test('a question (formerly Q&A): its icon tracks the answer, Yes answers it, won
   await expect(q('rqWont')).toHaveText('· question, won’t answer');
   await expect(page.locator('#inline-remark-text-rqDone-a')).toHaveText('Priya');
 
-  // Yes from the reply line answers the open question.
-  await page.evaluate('openThreadComposer(3, false)');
+  // Yes on the question's reply line answers it.
+  await page.evaluate("openThreadComposer(3, false, 'rqOpen')");
   await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="yes"]').click();
   await expect(q('rqOpen')).toHaveText('· question, answered');
   expect(await sumButtons(page)).toEqual(['1 follow-up']);
-  // "Not the answer" on the reply reopens the question.
+  // "Not a reply" on the answer reopens the question.
   const ans = page.locator('.thread-entry:has(.thread-verdict.is-yes)');
   await ans.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Not the answer', { exact: true }).click();
+  await page.locator('.sb-context-menu').getByText('Not a reply', { exact: true }).click();
   await expect(q('rqOpen')).toHaveCount(0);
   await isOpen('rqOpen');
 

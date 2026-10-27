@@ -57,7 +57,7 @@ test('old documents migrate: linked Q&A becomes a question with its answer entry
   expect(errors).toEqual([]);
 });
 
-test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a question, Yes answers it, the author sticks', async ({ page }) => {
+test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a question, Reply → Yes answers it, the author sticks', async ({ page }) => {
   const errors = await seed(page);
   const box = page.locator('.thread-composer-input[data-node-id="2"]');
   // At rest the thread ends in "+ Add to thread", shown while the thread is hovered.
@@ -90,15 +90,19 @@ test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Ask a qu
   const last = await page.evaluate("JSON.stringify(remarks[remarks.length - 1])");
   expect(last).toContain('"type":"question"');
   expect(last).toContain('"person":"Kristoffer"');
-  await expect(page.locator('.thread-entry .thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
+  const asked = page.locator('.thread-entry', { hasText: 'Is the rollback tested?' });
+  await expect(asked.locator('.thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
   await expect(page.locator('.node-row[data-id="2"] .node-remark-dot .node-dot-count')).toHaveText('1');
+  // The bottom line has no Yes / No: a question is answered from its own Reply (owner, 2026-10-27).
+  await expect(page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="yes"]')).toHaveCount(0);
 
-  await box.click();
+  await asked.locator('.thread-reply-btn').click();
+  await expect(page.locator('.thread-composer.is-nested')).toHaveCount(1);
   await page.keyboard.type('Tested last week');
   await page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="yes"]').click();
-  // Answered: the question's icon leaves the accent colour, and the answer gets a ✓.
-  await expect(page.locator('.thread-entry .thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
-  await expect(page.locator('.thread-entry .thread-kind.is-answer')).toHaveCount(1);
+  // Answered: the question's icon leaves the accent colour, and the answer, under it, gets a ✓.
+  await expect(asked.locator('.thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
+  await expect(page.locator('.thread-entry.is-nested', { hasText: 'Tested last week' }).locator('.thread-kind.is-answer')).toHaveCount(1);
   const answer = await page.evaluate("(() => { const r = remarks[remarks.length - 1]; return [r.verdict, r.answerTo === remarks[remarks.length - 2].id, stripHtmlToText(r.text)]; })()");
   expect(answer).toEqual(['yes', true, 'Tested last week']);
   expect(errors).toEqual([]);
@@ -250,7 +254,7 @@ test('depth guides run unbroken through a thread, its "+ Add to thread" line inc
   expect(await guides('.thread-reply-link')).toEqual(entry);
 });
 
-test('grey thread: only an open question takes the accent colour; an answer quotes a question further up', async ({ page }) => {
+test('grey thread: only an open question takes the accent colour; an answer reads under its question', async ({ page }) => {
   await seed(page, `
     remarks.push(
       { id: 'ask', anchorNodeId: 3, person: 'Gro', date: '2026-10-14', text: 'Does it make sense to use the shipping condition + plant combination?', type: 'question', createdAt: 10 },
@@ -267,9 +271,10 @@ test('grey thread: only an open question takes the accent colour; an answer quot
   // The header is quiet: not uppercase, not coloured.
   await expect(page.locator('.thread-head').first()).toHaveCSS('text-transform', 'none');
 
-  // The Yes came two entries after its question, so it quotes it; an answer right after needs no quote.
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-ans) .thread-quote')).toHaveText('↳ Does it make sense to use the shipping con…');
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-rq1-a) .thread-quote')).toHaveCount(0);
+  // The Yes came two entries after its question, yet reads right under it (no quote needed).
+  const order = await page.evaluate(`[...document.querySelectorAll('.thread-entry')].filter(e => e.querySelector('#inline-remark-text-ask, #inline-remark-text-mid, #inline-remark-text-ans, #inline-remark-text-open')).map(e => e.dataset.remarkId + (e.classList.contains('is-nested') ? '>' : ''))`);
+  expect(order).toEqual(['ask', 'ans>', 'mid', 'open']);
+  await expect(page.locator('.thread-quote')).toHaveCount(0);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-q-note')).toHaveText('· question, answered');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');

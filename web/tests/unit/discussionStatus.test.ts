@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  threadReadingOrder, threadReplyParent,
   openItemAge, normalizeThreadStatus, htmlHasVisibleText, qaState, isCountableQuestion,
   normalizeDiscussionFilter, nodesWithOpenItems, openCountLabel,
   documentProgress, attentionParts, progressSummaryText,
@@ -245,5 +246,21 @@ describe('openItemAge', () => {
   it('is empty when the time is unknown', () => {
     expect(openItemAge(undefined, now)).toBe('');
     expect(openItemAge(0, now)).toBe('');
+  });
+});
+
+describe('threadReadingOrder (replies, owner decision 2026-10-27)', () => {
+  it('puts replies under their entry, one level, and keeps the rest in time order', () => {
+    const t = [
+      { id: 'q', type: 'question' as const, createdAt: 1 },
+      { id: 'c', createdAt: 2 },
+      { id: 'a', answerTo: 'q', createdAt: 3 },
+      { id: 'r', answerTo: 'c', createdAt: 4 },
+      { id: 'rr', answerTo: 'r', createdAt: 5 },
+      { id: 'lost', answerTo: 'gone', createdAt: 6 }
+    ];
+    expect(threadReadingOrder(t).map((o) => (o.nested ? '  ' : '') + o.entry.id)).toEqual(['q', '  a', 'c', '  r', '  rr', 'lost']);
+    expect(threadReplyParent(t[4], t)?.id).toBe('c');
+    expect(threadReplyParent(t[5], t)).toBeNull();
   });
 });

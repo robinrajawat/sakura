@@ -31,15 +31,21 @@ async function seed(page: Page) {
   return errors;
 }
 
-test('reply line: Ask, Decision | Yes / No, each with its kind icon (no statuses)', async ({ page }) => {
+test('reply line: Ask, Decision at the end; a question\'s reply line Decision | Yes / No; each with its kind icon', async ({ page }) => {
   const errors = await seed(page);
   await page.evaluate('openThreadComposer(1, false)');
   const acts = page.locator('.thread-composer .thread-actions');
   const shape = await acts.evaluate((a) => [...a.children].map((c) => c.classList.contains('thread-btn-sep') ? '|'
     : c.classList.contains('thread-btn-group') ? [...c.children].map((b) => (b as HTMLElement).dataset.act).join(',')
       : (c as HTMLElement).dataset.act));
-  expect(shape).toEqual(['ask', 'decision', '|', 'yes,no']);
-  await expect(acts.locator('.thread-btn .thread-btn-kind svg')).toHaveCount(4);
+  expect(shape).toEqual(['ask', 'decision']);
+  await expect(acts.locator('.thread-btn .thread-btn-kind svg')).toHaveCount(2);
+  const qid = await page.evaluate("remarks.find(r => r.type === 'question').id");
+  await page.evaluate(`openThreadComposer(1, false, '${qid}')`);
+  expect(await acts.evaluate((a) => [...a.children].map((c) => c.classList.contains('thread-btn-sep') ? '|'
+    : c.classList.contains('thread-btn-group') ? [...c.children].map((b) => (b as HTMLElement).dataset.act).join(',')
+      : (c as HTMLElement).dataset.act))).toEqual(['decision', '|', 'yes,no']);
+  await page.evaluate('openThreadComposer(1, false)');
   // Actions start right under the text, and the keyboard hint right under them (one left column).
   const order = await page.locator('.thread-composer .thread-composer-foot').evaluate((f) => [...f.children].map((c) => c.className));
   expect(order).toEqual(['thread-actions', 'thread-composer-hint']);

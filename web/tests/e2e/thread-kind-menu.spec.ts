@@ -36,18 +36,20 @@ const kind = (page: Page, id: string) => page.locator(`.thread-entry:has(#inline
 const menu = (page: Page) => page.locator('.sb-context-menu');
 const remark = (page: Page, id: string) => page.evaluate(`JSON.parse(JSON.stringify(remarks.find(r => r.id === '${id}')))`) as Promise<Record<string, unknown>>;
 
-test('the menu lists the four kinds with the current one ticked', async ({ page }) => {
+test('the menu: Comment / Question with the current one ticked, Decision as a mark, then Reply to ›', async ({ page }) => {
   await seed(page, THREAD);
   await kind(page, 'c3').click();
   const labels = await menu(page).locator('.sb-context-item .sb-context-label').evaluateAll((els) => els.map((e) => e.childNodes[0].textContent));
-  expect(labels).toEqual(['Comment', 'Question', 'Answer', 'Decision']);
+  expect(labels).toEqual(['Comment', 'Question', 'Decision', 'Reply to']);
+  await expect(menu(page).locator('.sb-context-item', { hasText: 'Comment' }).locator('.sb-context-meta')).toHaveText('✓');
   await expect(menu(page).locator('.sb-context-item', { hasText: 'Decision' }).locator('.sb-context-meta')).toHaveText('✓');
 });
 
-test('Comment → Answer links to the question before it, then Yes; undo takes it back', async ({ page }) => {
+test('Reply to › a question makes it the answer, then Yes; undo takes it back', async ({ page }) => {
   await seed(page, THREAD);
   await kind(page, 'c1').click();
-  await menu(page).getByText('Answer', { exact: true }).click();
+  await menu(page).getByText('Reply to', { exact: true }).hover();
+  await page.locator('.sb-context-submenu .sb-context-item').filter({ hasText: 'Does the EU file' }).click();
   expect((await remark(page, 'c1')).answerTo).toBe('q1');
   await kind(page, 'c1').click();
   await menu(page).getByText('Yes', { exact: true }).click();
@@ -57,8 +59,8 @@ test('Comment → Answer links to the question before it, then Yes; undo takes i
   expect([c1.answerTo, c1.verdict]).toEqual([undefined, undefined]);
 });
 
-test('picking a kind replaces the old one: Comment → Decision, Question → Comment unlinks its answers', async ({ page }) => {
-  await seed(page, THREAD.replace("text: 'Friday evening run.',", "text: 'Friday evening run.', answerTo: 'q1',"));
+test('Decision is a mark that keeps the entry\'s place; Question → Comment keeps its replies (without Yes / No)', async ({ page }) => {
+  await seed(page, THREAD.replace("text: 'Friday evening run.',", "text: 'Friday evening run.', answerTo: 'q1', verdict: 'yes',"));
   await kind(page, 'c2').click();
   await menu(page).getByText('Decision', { exact: true }).click();
   const c2 = await remark(page, 'c2');
@@ -66,13 +68,14 @@ test('picking a kind replaces the old one: Comment → Decision, Question → Co
   await kind(page, 'q1').click();
   await menu(page).getByText('Comment', { exact: true }).click();
   expect((await remark(page, 'q1')).type).toBeUndefined();
-  expect((await remark(page, 'c1')).answerTo).toBeUndefined();
+  const c1 = await remark(page, 'c1');
+  expect([c1.answerTo, c1.verdict]).toEqual(['q1', undefined]);
 });
 
-test('the first entry cannot be an answer (no question before it)', async ({ page }) => {
+test('the first entry has nothing to reply to', async ({ page }) => {
   await seed(page, THREAD);
   await kind(page, 'q1').click();
-  await expect(menu(page).locator('.sb-context-item.disabled', { hasText: 'Answer' })).toContainText('No question before it');
+  await expect(menu(page).getByText('Reply to', { exact: true })).toHaveCount(0);
 });
 
 test('icons are grey except an open question', async ({ page }) => {

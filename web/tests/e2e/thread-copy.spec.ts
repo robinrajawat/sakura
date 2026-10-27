@@ -38,7 +38,9 @@ test('Copy thread puts the thread on the clipboard as rich text and plain lines'
   expect(clip.text.split('\n')[0]).toBe('Thread · Cutover weekend');
   expect(clip.text).toContain('question, answered');
   expect(clip.text).toContain('Does it include EDI?');
-  expect(clip.text).toMatch(/Ana · [^\n]* · yes\nAll partners\./);
+  // An answer is indented under its question, as in the outline.
+  expect(clip.text).toMatch(/\n {4}Ana · [^\n]* · yes\n {4}All partners\./);
+  expect(clip.html).toContain('margin-left:24px');
   expect(clip.text).toMatch(/Robin · [^\n]*2026[^\n]* · decision\nWe go with Nov 2\./);
   expect(clip.html).toContain('<b>EDI</b>');
   // Names plain bold (owner, 2026-10-23) and each entry's kind as a symbol in its colour (SVG doesn't survive a paste).
