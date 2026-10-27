@@ -165,20 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Pasting a question list into a thread; Move to row… (2026-10-27).** Colleagues send batches of questions as name > question > indented answer. Pasted into a thread's reply line, such a list now becomes one entry per question: a short line with questions under it is who asked (the entry's author), a short line with names under it ("Open Questions") or with nothing under it ("Additional Questions") is a heading and dropped, a short line right before a question is its bold title ("OQ-3: ATP validation"), lines indented under a question are its answers (linked, by you), and questions without one stay open. A question already in the thread, or pasted twice, is added once. Ordinary text pastes as before (needs 3+ lines and 2+ questions with "?", or an indented list). Nested HTML lists (web, Word, Google Docs) and Word's plain-text bullets are read too. One undo step; the toast names the askers and offers Undo. Right-click a question → **Move to row…** (type to find the row) moves it with its answers. Pure parts in `src/utils/questionList.ts` (generated block `questionList`); wiring in `pastedOutline`, `addPastedQuestionList`, `moveQuestionToRow`, `openRowPicker`. Next (owner asked): **Make thread questions** from a selected row branch, same layout.
+
 - **One status, on the row (2026-10-27).** Owner decision: rows say what, threads say why. A row is Agreed / Follow-up / Out of scope, stored on the node as `marker` with `markerBy`, `markerAt` (the follow-up's age) and `markerOwner`; setting it (`setRowStatus` / `setNodeMarker`) adds nothing to the thread. Thread entries are Comment / Question (answers linked, Yes/No) / Decision only; the entry status fields, per-entry follow-ups, Mark follow-up done and the entry owner are gone. Click a row's badge for `rowStatusMenuItems` (statuses, Assign follow-up with inline "Someone else…", Add/Open in To-Dos, Show thread). The reply line's Follow-up / Agree / Out of scope set the row and add what you typed as a comment. Open items, F8, the fold badge and the agenda read Follow-up rows; the why-line is `followupWhyLine` (the line nearest `markerAt`). Older documents convert on render via `migrateStatusToRows` (src/utils/discussionStatus.ts). Tests: `tests/e2e/row-status.spec.ts` plus the thread specs.
 
 - **Spelling on right-click while typing (2026-10-27).** A page can't add the browser's spelling suggestions to its own menu, so while you're typing in a note, thread entry or the reply line, right-clicking a word in it now leaves the browser's menu alone (rows and To-Do titles already did). Blank space beside the words, links, tables, pictures and text you weren't typing in keep Sakura's menu. `browserMenuWhileTyping(e, editable)` in `web/index.html` reads focus at the right mousedown (that mousedown focuses the text itself; focus a right-click gave doesn't count) and checks for a word under the pointer (`wordAtPoint`). Test: `tests/e2e/spelling-menu.spec.ts`.
-
-**2026-10-27: One way to insert: "/" at the start of a word, everywhere; Ctrl/Cmd+Space removed.** The old Quick
-Insert popup (`#node-qa-suggest`) and the `quickInsert` shortcut are gone. `handleSlashInsertKeydown(e,target,rowId)`
-(rows via `onEditorKeyDown`, plus notes, threads, To-Dos, title/author fields) arms the list when "/" starts a word
-(`slashStartsWord`: start of the field/text node or after whitespace, so "and/or" stays plain); `openSlashInsertMenu`
-records where the "/" is (`_slash.start`: collapsed Range, or index in an input). A capture-phase document `input`
-listener re-filters (`slashInsertInput`, word-start match, flattened); a space, Escape or no match closes it and
-keeps the text. Items (`slashListItems`): rows get `insertMenuItems()` + Characters after Basics (Date/time inserted
-at the caret); other text gets Characters + Date/time. Every pick runs `dropSlashText()` first (deletes "/…" via
-execCommand). `showInsertListAt` keeps focus in the text. Settings section renamed "Insert list". Tests:
-`slash-insert.spec.ts`, two in `discussion-items.spec.ts`.
 
 ### In progress / not built
 

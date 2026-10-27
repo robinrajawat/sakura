@@ -4204,6 +4204,7 @@ body.printing-generic #gpe-overlay{
 <li>Right-click any node (or Insert, or <strong>Ctrl/Cmd+Alt+M</strong>) → <strong>Thread…</strong> opens the node's thread with the cursor on a new line at its end. Type and press <strong>Enter</strong> to add the entry (Shift+Enter for a new line; Esc, or Backspace on an empty line, closes it — Backspace puts the caret back at the end of the row's text). Right-click the line to add it, make it a question, Rewrite with AI (when AI is on) or close it. While you type, <strong>Ask</strong> makes it a question. At rest a thread shows no input line — hover it for <strong>+ Add to thread</strong>. What you type is kept if you move to another row</li>
 <li>The new line writes as the last author used — click the name (<strong>Robin ▾</strong>) to add as someone else, e.g. when you note what a colleague said in a call; <strong>Remove from this list</strong> takes a name off it (their entries stay). Click an entry's name or time to correct it</li>
 <li>A <strong>question</strong>'s icon is in your accent colour until it's answered; then it reads “· question, answered” in grey. Right-click a question → <strong>Answer</strong> to answer that one; or answer from the reply line with <strong>Yes</strong> or <strong>No</strong> (plus anything you typed — a bare Yes/No takes one line). When the thread has more than one question, the reply line shows which one it answers (“to: …”) and lets you pick another. Right-click an entry → <strong>Mark as the answer</strong> (or <strong>Answer to ›</strong> with several questions) links it, or moves a wrong link; a question can have several answers. With several questions, an answer that comes a few entries after its question quotes it (“↳ Does it…”). Right-click the question → <strong>Won't answer</strong> closes it without one; "Reopen question" takes that back</li>
+<li><strong>Paste a list of questions</strong> into the reply line — say a colleague's batch, as name › question › indented answer — and each question becomes its own entry: the name says who asked, the lines indented under a question are its answers, and the rest stay open. Headings are dropped, a short line before a question becomes its title, and questions already in the thread are left out. Right-click a question → <strong>Move to row…</strong> to move it, with its answers, to the row it's about</li>
 <li><strong>Copy thread</strong>: right-click the “Thread · N” header or an entry → Copy thread, to paste it into an email or chat. Ctrl/Cmd+V keeps the formatting; Ctrl/Cmd+Shift+V pastes plain text.</li>
 <li><strong>Status</strong> belongs to the row, not the thread: a row is <strong>Agreed</strong>, <strong>Follow-up</strong> or <strong>Out of scope</strong>, with who set it and when (hover its badge: “Follow-up · for Kim · Robin, 13 Oct (2w)”). Setting it adds nothing to the thread. Set it from the row's right-click menu, the toolbar's Insert ▾, or the reply line's <strong>Follow-up</strong>, <strong>Agree</strong> (on a Follow-up row) and <strong>Out of scope</strong> — what you typed goes in as a plain comment saying why. Marking a row Follow-up from the row opens its reply line to say what's left. Click the badge for its menu: the three statuses (the current one again clears it), <strong>Assign follow-up</strong> (who owns it), <strong>Add to To-Dos</strong> and <strong>Show thread</strong>; Shift+click filters by it, right-click clears it</li>
 <li><strong>Decision</strong>: right-click the entry where something was decided → <strong>Mark as decision</strong> puts a Decision chip on it (in the PDF too); to add a new entry as a decision, type it and click <strong>Decision</strong> on the reply line (or right-click → Add as decision), and the thread's header says “· Decision” (click it to jump there). It doesn't change the row's marker</li>
@@ -7875,6 +7876,118 @@ function openItemAge(createdAt, now) {
 }
 
 /* GENERATED:discussionStatus:END */
+/* GENERATED:questionList:START — DO NOT EDIT BY HAND. Source of truth: src/utils/questionList.ts (tests: tests/unit/questionList.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Pasting a list of questions into a thread's reply line (owner, 2026-10-27): colleagues send
+ * batches of questions laid out as name › question › indented answer, and each should become its
+ * own thread entry rather than one long comment.
+ *
+ * - A short line with questions under it is who asked them ("Kristoffer"); a short line with
+ *   names under it is only a heading ("Open Questions") and is dropped.
+ * - Every other line is a question; the lines indented under it are its answers. A question with
+ *   nothing under it stays open.
+ * - A short line just before a question at the same level is its title ("OQ-3: ATP validation").
+ * - A short leftover line with nothing under it ("Additional Questions") is a heading and dropped.
+ * - A question already in the thread, or pasted twice, is added once.
+ *
+ * Pure parts only; reading the clipboard and adding the entries stay in index.html next to
+ * attachThreadPaste. Wired in via scripts/generate-index-blocks.mjs's `questionList` block.
+ */
+// Bullets as typed or as Word writes them in plain text ("o" and "§" before a tab).
+const BULLET = /^(?:[-*•◦▪‣·–§]|o(?=\t)|\d{1,3}[.)]|[a-zA-Z][.)])\s+/;
+/** Plain text as indented lines: blank lines dropped, a tab counts as four spaces, bullets removed. */
+function outlineFromText(text) {
+    const raw = [];
+    for (const line of String(text || '').replace(/\r\n?/g, '\n').split('\n')) {
+        const m = /^[ \t ]*/.exec(line);
+        const lead = m ? m[0] : '';
+        const body = line.slice(lead.length).replace(BULLET, '').trim();
+        if (!body)
+            continue;
+        let indent = 0;
+        for (const ch of lead)
+            indent += ch === '\t' ? 4 : 1;
+        raw.push({ indent, text: body.replace(/\s+/g, ' ') });
+    }
+    // Depth is the indent's rank among the indents used, so 3-space and tab outlines read the same.
+    const widths = [...new Set(raw.map((l) => l.indent))].sort((a, b) => a - b);
+    return raw.map((l) => ({ depth: widths.indexOf(l.indent), text: l.text }));
+}
+function buildTree(lines) {
+    const root = { text: '', children: [] };
+    const stack = [{ depth: -1, node: root }];
+    for (const l of lines) {
+        while (stack.length > 1 && stack[stack.length - 1].depth >= l.depth)
+            stack.pop();
+        const node = { text: l.text, children: [] };
+        stack[stack.length - 1].node.children.push(node);
+        stack.push({ depth: l.depth, node });
+    }
+    return root.children;
+}
+const words = (t) => t.split(/\s+/).filter(Boolean).length;
+/** Reads as a question or a statement worth an entry (not a name or heading). */
+function isQuestionLike(t) {
+    return t.includes('?') || words(t) > 6;
+}
+/** A short line that is no question: a name, a heading or a title. */
+function isShortLabel(t, maxWords) {
+    return !t.includes('?') && words(t) <= maxWords && !/[.!]$/.test(t);
+}
+/** Looks like a person's name: one to three words, no digits or colons. */
+function isNameLike(t) {
+    return isShortLabel(t, 3) && !/[\d:]/.test(t) && t.length <= 40;
+}
+function flatten(n) {
+    return [n.text, ...n.children.map(flatten)].join('\n');
+}
+const sameText = (t) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+/**
+ * The questions in an indented list. `existing` is the plain text of the questions already in
+ * the thread, so a list pasted again (or a block repeated inside it) adds nothing twice.
+ */
+function parseQuestionList(lines, existing = []) {
+    const questions = [];
+    const seen = new Set(existing.map(sameText).filter(Boolean));
+    let repeats = 0;
+    const walk = (nodes, author) => {
+        let title = null;
+        nodes.forEach((n, i) => {
+            if (n.children.length && isShortLabel(n.text, 4)) {
+                const asks = n.children.some((c) => isQuestionLike(c.text));
+                walk(n.children, asks && isNameLike(n.text) ? n.text : author);
+                title = null;
+                return;
+            }
+            if (!n.children.length && isShortLabel(n.text, 10)) {
+                const next = nodes[i + 1];
+                title = next && isQuestionLike(next.text) ? n.text : null;
+                return;
+            }
+            const key = sameText(n.text);
+            if (seen.has(key))
+                repeats++;
+            else {
+                seen.add(key);
+                questions.push({ author, title, text: n.text, answers: n.children.map(flatten) });
+            }
+            title = null;
+        });
+    };
+    walk(buildTree(lines), null);
+    return { questions, repeats };
+}
+/**
+ * Whether a paste is a question list worth splitting rather than one comment: three or more
+ * lines, and two or more questions with a question mark, or an indented list of two or more.
+ */
+function isQuestionList(lines, result) {
+    if (lines.length < 3 || result.questions.length + result.repeats < 2)
+        return false;
+    return lines.filter((l) => l.text.includes('?')).length >= 2 || lines.some((l) => l.depth > 0);
+}
+
+/* GENERATED:questionList:END */
 /* GENERATED:deleteImpact:START — DO NOT EDIT BY HAND. Source of truth: src/utils/deleteImpact.ts (tests: tests/unit/deleteImpact.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * What deleting rows takes with it (owner decision: a row's linked objects go with it, with a
@@ -32274,10 +32387,12 @@ function cleanThreadPasteHtml(html){
   walk(doc.body);
   return doc.body.innerHTML.trim();
 }
-function attachThreadPaste(el){
+function attachThreadPaste(el,onList){
   el.addEventListener('paste',e=>{
     const html=e.clipboardData?.getData('text/html')||'';
     const plain=(e.clipboardData?.getData('text/plain')||'').trim();
+    // A pasted list of questions (reply line only) becomes one entry per question.
+    if(onList&&onList(pastedOutline(html,e.clipboardData?.getData('text/plain')||''))){ e.preventDefault(); return; }
     // A bare web address pasted on its own becomes a link (a selection becomes its label).
     const url=/<a[\s>]/i.test(html)?'':sanitizeHrefUrl(pastedLinkUrl(plain));
     if(url){ e.preventDefault(); const label=(window.getSelection()||'').toString().trim()||plain;
@@ -32286,6 +32401,83 @@ function attachThreadPaste(el){
     e.preventDefault();
     document.execCommand('insertHTML',false,cleanThreadPasteHtml(html));
   });
+}
+// A paste as indented lines: nested lists from a web page or Word/Google Docs, otherwise the plain
+// text's own indentation (questionList.ts turns the lines into questions).
+function pastedOutline(html,plain){
+  if(/<li[\s>]/i.test(html)){
+    const box=document.createElement('div'); box.innerHTML=cleanThreadPasteHtml(html); const out=[];
+    const walk=(list,depth)=>{ Array.from(list.children).forEach(li=>{ if(li.tagName!=='LI')return;
+      const own=Array.from(li.childNodes).filter(c=>!(c.nodeType===1&&/^(UL|OL)$/.test(c.tagName))).map(c=>c.textContent||'').join(' ').replace(/\s+/g,' ').trim();
+      if(own)out.push({depth,text:own});
+      li.querySelectorAll(':scope > ul, :scope > ol').forEach(sub=>walk(sub,own?depth+1:depth)); }); };
+    // Lines outside any list (a name above it) stay at the top level, the list one deeper.
+    Array.from(box.childNodes).forEach(c=>{ if(c.nodeType===1&&/^(UL|OL)$/.test(c.tagName))walk(c,out.length?1:0);
+      else{ const t=(c.textContent||'').replace(/\s+/g,' ').trim(); if(t)out.push({depth:0,text:t}); } });
+    if(out.length)return out;
+  }
+  return outlineFromText(plain);
+}
+// Adds a pasted question list to a row's thread (owner, 2026-10-27): who asked from the name lines,
+// each question its own entry, the lines under it its answers (from you), the rest left open.
+function addPastedQuestionList(node,lines,commit){
+  const thread=nodeThread(node.id);
+  const res=parseQuestionList(lines,threadQuestions(thread).map(q=>stripHtmlToText(q.text||'')));
+  if(!isQuestionList(lines,res))return false;
+  if(!res.questions.length){ showToast('Those questions are already in this thread'); return true; }
+  pushUndo();
+  const me=threadDefaultAuthor(), date=todayDateStr(), last=thread[thread.length-1];
+  let at=Math.max(Date.now(),(last&&last.createdAt||0)+1);
+  const html=t=>esc(t).replace(/\n/g,'<br>');
+  let answered=0; const askers=[];
+  res.questions.forEach(q=>{
+    const e={id:newRemarkId(),anchorNodeId:node.id,person:q.author||me,text:(q.title?'<b>'+esc(q.title)+'</b><br>':'')+html(q.text),date,context:'',createdAt:at++,type:'question'};
+    remarks.push(e);
+    if(q.author&&!askers.includes(q.author))askers.push(q.author);
+    if(q.answers.length)answered++;
+    q.answers.forEach(a=>remarks.push({id:newRemarkId(),anchorNodeId:node.id,person:me,text:html(a),date,context:'',createdAt:at++,answerTo:e.id}));
+  });
+  _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id};
+  commit();
+  const n=res.questions.length;
+  showActionToast('Added '+n+' question'+(n===1?'':'s')+(askers.length?' from '+askers.join(', '):'')+(answered?' ('+answered+' answered)':'')+(res.repeats?' · '+res.repeats+' already there, left out':''),'Undo',()=>undo(),7000);
+  return true;
+}
+// Moves a question, with its answers, to another row's thread (owner, 2026-10-27: a pasted batch
+// usually covers several rows).
+function moveQuestionToRow(q,targetId){
+  const from=q.anchorNodeId;
+  if(targetId===from||getIndex(nodes,targetId)<0)return;
+  pushUndo();
+  remarks.forEach(x=>{ if(x===q||(x.answerTo===q.id&&x.anchorNodeId===from))x.anchorNodeId=targetId; });
+  markDirty(); render();
+  const t=nodes[getIndex(nodes,targetId)];
+  const label=getNodePlainText(t).replace(/\s+/g,' ').trim();
+  showActionToast('Moved to “'+(label.length>40?label.slice(0,38).trimEnd()+'…':label)+'”','Show',()=>revealInlineObject('remark',q.id));
+}
+// Pick a row by typing part of its text (Move to row…).
+function openRowPicker(excludeId,onPick){
+  closeSbContextMenu(); closeFolderPicker();
+  const overlay=document.createElement('div'); overlay.className='folder-picker-overlay row-picker'; _folderPickerEl=overlay;
+  overlay.addEventListener('click',e=>{ if(e.target===overlay)closeFolderPicker(); });
+  const panel=document.createElement('div'); panel.className='folder-picker-panel'; panel.addEventListener('click',e=>e.stopPropagation());
+  const searchWrap=document.createElement('div'); searchWrap.className='folder-picker-search-wrap';
+  const search=document.createElement('input'); search.type='text'; search.className='folder-picker-search'; search.placeholder='Move to row… type to find it'; search.autocomplete='off'; search.spellcheck=false;
+  searchWrap.appendChild(search); panel.appendChild(searchWrap);
+  const list=document.createElement('div'); list.className='folder-picker-list'; panel.appendChild(list);
+  const renderList=()=>{
+    const q=search.value.trim().toLowerCase(); list.innerHTML='';
+    const hits=nodes.filter(n=>{ if(n.id===excludeId)return false; const t=getNodePlainText(n); return t.trim()&&(!q||t.toLowerCase().includes(q)); }).slice(0,40);
+    hits.forEach(n=>{ const b=document.createElement('button'); b.type='button'; b.className='move-folder-item'; b.dataset.nodeId=n.id;
+      b.style.paddingLeft=(10+Math.min(n.depth||0,6)*12)+'px'; b.textContent=getNodePlainText(n).replace(/\s+/g,' ').trim();
+      b.addEventListener('click',()=>{ closeFolderPicker(); onPick(n.id); }); list.appendChild(b); });
+    if(!hits.length){ const empty=document.createElement('div'); empty.className='folder-picker-empty'; empty.textContent='No matching rows'; list.appendChild(empty); }
+  };
+  search.addEventListener('input',renderList);
+  search.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const first=list.querySelector('.move-folder-item'); if(first)first.click(); } });
+  renderList();
+  overlay.appendChild(panel); document.body.appendChild(overlay);
+  setTimeout(()=>{ search.focus(); document.addEventListener('keydown',_folderPickerKeyHandler,true); },0);
 }
 // The thread's questions (with text), oldest first; a short label for menus and the reply line's picker.
 function threadQuestions(thread){ return (thread||[]).filter(e=>isQuestion(e)&&htmlHasVisibleText(e.text)); }
@@ -32444,6 +32636,7 @@ function threadEntryMenuItems(node,r,thread,textEl,commit){
     if(isQuestion(r))items.push({label:'Answer', icon:ico('<polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>'), onClick:()=>openThreadComposer(node.id,false,r.id)});
     items.push(...linkItems());
     if(isQuestion(r)){ const st=questionState(r,thread); if(st!=='answered')items.push({label:st==='wont'?'Reopen question':'Won’t answer', onClick:change(()=>{ if(st==='wont')delete r.wontAnswer; else r.wontAnswer=true; })}); }
+    if(isQuestion(r))items.push({label:'Move to row\u2026', icon:ico('<polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'), onClick:()=>openRowPicker(node.id,id=>moveQuestionToRow(r,id))});
     items.push({label:isQuestion(r)?'Make it a comment':'Make it a question', icon:isQuestion(r)?markIconSvg('comment'):qaDotIconSvg(14), onClick:change(()=>{ if(isQuestion(r)){ delete r.type; delete r.wontAnswer; remarks.forEach(x=>{ if(x.answerTo===r.id){ delete x.answerTo; delete x.verdict; } }); } else r.type='question'; })});
   }
   // A decision is a mark on this entry only (a chip); the row's status stays as it is.
@@ -32507,7 +32700,7 @@ function renderThreadComposer(node,thread,place,commit){
   input.addEventListener('input',()=>{ if(htmlHasVisibleText(input.innerHTML))_threadDrafts.set(node.id,sakuraSanitizeRichHtml(input.innerHTML)); else _threadDrafts.delete(node.id); });
   input.addEventListener('mousedown',e=>e.stopPropagation());
   input.addEventListener('click',e=>e.stopPropagation());
-  attachThreadPaste(input);
+  attachThreadPaste(input,lines=>addPastedQuestionList(node,lines,commit));
   // Right-click while adding: add it, ask it, rewrite it with AI, or close the line (on the text
   // itself while typing, the browser's menu, for spelling -- see browserMenuWhileTyping).
   input.addEventListener('contextmenu',e=>{ if(browserMenuWhileTyping(e,input)){ e.stopPropagation(); return; } e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,threadComposerMenuItems(node,input,ask,submit)); });
