@@ -76,7 +76,7 @@ Sakura supports multiple open documents at once, shown as tabs above the toolbar
 - Clicking a document in the file explorer, or the **+** at the end of the tab strip, opens it as a tab
 - **Each tab keeps its own undo/redo history, scroll position, and selection independently.** Switching tabs does not reset undo history the way switching documents used to
 - **Double-click a tab** to rename it — the name is edited right there on the tab (Enter keeps, Esc cancels); F2 or Rename in the sidebar does the same on the sidebar entry
-- The file explorer's **search icon** opens a filter box that narrows the document list by name; it closes again on Esc, or when it's empty and you click away. To search inside documents, use Quick Assist (`Ctrl/Cmd+K`)
+- The file explorer's **search icon** opens a filter box that narrows the document list by name; it closes again on Esc, or when it's empty and you click away. To search inside documents, use Quick Assist (`Ctrl/Cmd+/`)
 - The **X icon** on a tab closes the tab only — the document itself is not deleted and remains in the file explorer
 - The **dropdown arrow** at the right of the tab strip opens a searchable list of all open tabs (arrow keys + Enter to jump, or click a result) — useful once you have more tabs open than fit on screen
 - **"Reopen tabs on launch"** (toggle via Quick Assist — no Settings UI control for this yet) controls whether your previously open tabs come back automatically, or whether each session starts with just one
@@ -188,7 +188,7 @@ Both modes are available side by side in the same dropdown, and every AI feature
 
 ## Quick Assist & Quick Insert
 
-- **Quick Assist** (`Ctrl/Cmd+K` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide file explorer," "toggle dark mode," "toggle zen mode" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark," "todo: milk") narrows a search to one area — including Discussion, Diagrams, Tables and Images individually (`discussion:` — or `remark:`, `question:`, `qa:` — `diagram:`, `table:`, `image:`). Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, and the AI actions above: rewrite this node, generate outline) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, Discussion items (text, answer, Yes/No), Diagrams, table cells (the matching row), image captions, to-dos, and settings/help topics show up as **Go to** results.
+- **Quick Assist** (`Ctrl/Cmd+/` from anywhere, or click the search box in the header/status bar) is a combined command bar and search box. Plain-English commands work directly — "hide file explorer," "toggle dark mode," "toggle zen mode" — and toggle/search behavior is rule-based (a fixed phrase list), not AI, so it never improvises and needs no API key. Typing a bare word like "show," "hide," "toggle," or "run" lists everything of that kind; a category prefix ("notes: budget," "settings: dark," "todo: milk") narrows a search to one area — including Discussion, Diagrams, Tables and Images individually (`discussion:` — or `remark:`, `question:`, `qa:` — `diagram:`, `table:`, `image:`). Below commands, a separate **Run** row type covers one-off actions (new document, duplicate node, and the AI actions above: rewrite this node, generate outline) — always undoable, and never anything destructive. Below that, matching documents, node text, notes, tags, Discussion items (text, answer, Yes/No), Diagrams, table cells (the matching row), image captions, to-dos, and settings/help topics show up as **Go to** results.
 - **Quick Insert** (`Ctrl/Cmd+Space` while actively editing text — anywhere: a node, the title field, a note, a thread entry or reply, a To-Do) opens a small labeled list of characters to insert — em dash, en dash, arrow, checkmark, cross mark, middle dot, date/time — which of them appear is configurable in Settings → Editing. Same menu, same shortcut, everywhere; it's deliberately just characters, not a second command bar, so it's never in competition with Quick Assist for the same key. Node-specific actions (Note, Tags, Add question, Rewrite, Version history) live on the right-click menu instead.
 
 ## Export & Import (PDF, OPML)
@@ -264,7 +264,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 
 | Setting | Section | Default | Notes |
 |---|---|---|---|
-| Search bar | Bars & Menus | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+K`) folds this in regardless of this setting |
+| Search bar | Bars & Menus | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+/`) folds this in regardless of this setting |
 | Reopen tabs on launch | *(Quick Assist only)* | On | No Settings UI control yet — toggle via Quick Assist ("reopen tabs"); turn off to always start with a single tab |
 | Start each session blank | *(Quick Assist only)* | Off | No Settings UI control yet — new blank document every launch instead of restoring the last state |
 | Theme | Appearance | System | Light / Dark / System — see Theming & Appearance above |
@@ -289,13 +289,14 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Strike | Ctrl/Cmd+Shift+S |
 | Highlight | Ctrl/Cmd+Shift+H |
 | Text color | Ctrl/Cmd+Shift+F |
+| Link the selected words | Ctrl/Cmd+K |
 | Heading 1–6 / Body text | Ctrl/Cmd+Alt+1–6 / Ctrl/Cmd+Alt+0 |
 | Collapse / expand selected | ← / → |
 | Collapse all / Expand all (branches and every inline note, Q&A, remark, diagram, table and image; Ctrl/Cmd+Z puts every fold back) | Ctrl/Cmd+Alt+C |
 | Zoom into branch (Focus) / Exit | Ctrl/Cmd+. / Ctrl/Cmd+, |
 | Next / previous open item (follow-up or open question, in outline order; unfolds its branch) | F8 / Shift+F8 |
 | Search this document / Search & replace | Ctrl/Cmd+F / Ctrl/Cmd+H |
-| Quick Assist (command + search) | Ctrl/Cmd+K |
+| Quick Assist (command + search) | Ctrl/Cmd+/ |
 | Quick Insert (character insert, while editing text) | Ctrl/Cmd+Space |
 | Add/edit note | Ctrl/Cmd+Shift+N |
 | Insert date/time | Ctrl/Cmd+Shift+D |
