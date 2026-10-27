@@ -35,15 +35,14 @@ async function seed(page: Page) {
   return errors;
 }
 
-test('clicking a status badge opens its menu; Show thread opens the thread; it does not filter', async ({ page }) => {
+test('clicking a status badge opens its menu (no Show thread, no Shift+click filter: owner, 2026-10-27)', async ({ page }) => {
   const errors = await seed(page);
   await page.locator('.node-row[data-id="2"] .node-marker-badge').click();
-  await page.locator('.sb-context-menu').getByText('Show thread', { exact: true }).click();
-  await expect(page.locator('#inline-remark-text-f1')).toBeVisible();
-  expect(await page.evaluate('activeMarkerFilter')).toBe(null);
-  // Shift+click still filters by that marker.
+  await expect(page.locator('.sb-context-menu .sb-context-choice')).toHaveCount(3);
+  await expect(page.locator('.sb-context-menu').getByText('Show thread', { exact: true })).toHaveCount(0);
+  await page.keyboard.press('Escape');
   await page.locator('.node-row[data-id="2"] .node-marker-badge').click({ modifiers: ['Shift'] });
-  expect(await page.evaluate('activeMarkerFilter')).toBe('followup');
+  expect(await page.evaluate('activeMarkerFilter')).toBe(null);
   expect(errors).toEqual([]);
 });
 

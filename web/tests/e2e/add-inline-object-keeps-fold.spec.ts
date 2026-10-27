@@ -29,9 +29,9 @@ for (const action of ['qa', 'remark'] as const) {
     await seedFolded(page);
     expect(await childVisible(page)).toBe(false);
     await page.evaluate(`runQuickAction('${action}', 1)`);
-    // Both open the row's thread with its reply box focused; a question has Ask switched on.
+    // Both open the row's thread with its reply box focused; a question's line has the question icon.
     await expect(page.locator('.thread-composer-input[data-node-id="1"]')).toBeFocused();
-    await expect(page.locator('.thread-btn[data-act="ask"].is-on')).toHaveCount(action === 'qa' ? 1 : 0);
+    await expect(page.locator('.thread-composer .thread-kind.is-question')).toHaveCount(action === 'qa' ? 1 : 0);
     expect(await page.evaluate('collapsedIds.has(1)')).toBe(true);
     expect(await childVisible(page)).toBe(false);
   });

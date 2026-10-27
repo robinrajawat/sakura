@@ -92,41 +92,36 @@ test('old follow-ups become the row\'s status; the entries keep their words', as
   expect(errors).toEqual([]);
 });
 
-test('a question (formerly Q&A): its icon tracks the answer, Yes answers it, won\'t answer closes and reopens', async ({ page }) => {
+test('a question (formerly Q&A): open or answered; a reply answers it, Not a reply reopens it (owner, 2026-10-27)', async ({ page }) => {
   const errors = await open(page);
   await page.evaluate('inlineExpandRemarksNodeIds = new Set([2, 3, 4, 5]); render();');
   expect(await page.evaluate('qaItems.length')).toBe(0);
   // An open question is its kind icon in the accent colour; the icon's tip names the state (no words on the line).
   const q = (id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-kind.is-question`);
-  const isOpen = (id: string) => expect(page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-kind.is-question`)).toHaveCSS('color', 'rgb(194, 85, 61)');
+  const isOpen = (id: string) => expect(q(id)).toHaveCSS('color', 'rgb(194, 85, 61)');
   await isOpen('rqOpen');
   await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
   await expect(q('rqDone')).toHaveAttribute('data-tip', /^Question, answered/);
-  await expect(q('rqWont')).toHaveAttribute('data-tip', /^Question, won’t answer/);
+  // An old "won't answer" question got a reply saying so: it reads as answered.
+  await expect(q('rqWont')).toHaveAttribute('data-tip', /^Question, answered/);
+  await expect(page.locator('#inline-remark-text-rqWont-w')).toHaveText('Won’t answer');
   await expect(page.locator('#inline-remark-text-rqDone-a')).toHaveText('Priya');
 
-  // Yes on the question's reply line answers it.
+  // A reply answers it.
   await page.evaluate("openThreadComposer(3, false, 'rqOpen')");
-  await page.locator('.thread-composer:has([data-node-id="3"]) .thread-btn[data-act="yes"]').click();
+  await page.keyboard.type('Yes');
+  await page.keyboard.press('Enter');
   await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Question, answered/);
   expect(await sumButtons(page)).toEqual(['1 follow-up']);
   // "Not a reply" on the answer reopens the question.
-  const ans = page.locator('.thread-entry:has(.thread-kind.is-answer[data-tip^="Answer: Yes"])').last();
+  const ans = page.locator('.thread-entry.is-nested', { hasText: 'Yes' }).last();
   await ans.click({ button: 'right' });
   await page.locator('.sb-context-menu').getByText('Not a reply', { exact: true }).click();
   await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
   await isOpen('rqOpen');
-
-  // Won't answer via right-click, then reopen it.
-  const line = page.locator('.thread-entry:has(#inline-remark-text-rqOpen)');
-  await line.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Won’t answer', { exact: true }).click();
-  await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Question, won’t answer/);
-  expect(await page.evaluate("remarks.find(r => r.id === 'rqOpen').wontAnswer")).toBe(true);
-  await line.click({ button: 'right' });
-  await page.locator('.sb-context-menu').getByText('Reopen question', { exact: true }).click();
-  await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
-  await isOpen('rqOpen');
+  // No Won't answer in the menu any more.
+  await page.locator('.thread-entry:has(#inline-remark-text-rqOpen)').click({ button: 'right' });
+  await expect(page.locator('.sb-context-menu').getByText('Won’t answer', { exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -175,7 +170,8 @@ test('PDF shows each entry\'s question state, and no Open items summary page', a
   const r = await exportPdf(page);
   // No pills: question state is quiet text (an open question says so in words, for readers who don't know the icons).
   expect(r.pills).toEqual([]);
-  expect(r.notes).toEqual(expect.arrayContaining(['· open question', '· question, answered', '· question, won’t answer']));
+  expect(r.notes).toEqual(expect.arrayContaining(['· open question', '· question, answered']));
+  expect(r.notes).not.toContain('· question, won’t answer');
   expect(r.notes).not.toContain('· follow-up');
   expect(r.pills).not.toContain('Follow-up');
   // Owner decision: the closing "Open items" summary page was removed.
@@ -202,23 +198,23 @@ test('a long thread shows its latest three entries; the rest fold, and the PDF p
   const errors = await open(page);
   await page.evaluate(`
     remarks.push(
-      { id: 'c1', anchorNodeId: 4, person: 'A', date: '2026-10-01', text: 'Oldest comment', createdAt: 10 },
-      { id: 'c2', anchorNodeId: 4, person: 'B', date: '2026-10-02', text: 'Older comment', createdAt: 11 },
-      { id: 'c3', anchorNodeId: 4, person: 'C', date: '2026-10-03', text: 'Newest comment', createdAt: 12 }
+      { id: 'c1', anchorNodeId: 4, person: 'A', date: '2026-10-11', text: 'Oldest comment', createdAt: 10 },
+      { id: 'c2', anchorNodeId: 4, person: 'B', date: '2026-10-12', text: 'Older comment', createdAt: 11 },
+      { id: 'c3', anchorNodeId: 4, person: 'C', date: '2026-10-13', text: 'Newest comment', createdAt: 12 }
     );
     inlineExpandRemarksNodeIds.add(4); render();
   `);
   const itemIds = () => page.evaluate(() => [...document.querySelectorAll('.node-row[data-id="4"] ~ .thread-entry')]
     .filter(e => e.querySelector('.node-remark-text-inline'))
     .map(e => (e as HTMLElement).dataset.remarkId).filter(id => ['rPlain', 'rqDone', 'rqDone-a', 'c1', 'c2', 'c3'].includes(id!)));
-  // Oldest first: rPlain (2), the old Q&A (2) and its answer (3), then c1..c3.
   expect(await itemIds()).toEqual(['c1', 'c2', 'c3']);
   // The header says how to see the rest; there's no extra line for it.
   const more = page.locator('.node-row[data-id="4"] ~ .thread-head .thread-head-more').first();
   await expect(more).toHaveText('· show 3 earlier');
   await expect(page.locator('.node-remark-resolved-toggle', { hasText: 'earlier entr' })).toHaveCount(0);
   await more.click();
-  expect(await itemIds()).toEqual(['rPlain', 'rqDone', 'rqDone-a', 'c1', 'c2', 'c3']);
+  // By each entry's day: the old Q&A (no date) first, rPlain (Oct 7), then c1..c3.
+  expect(await itemIds()).toEqual(['rqDone', 'rqDone-a', 'rPlain', 'c1', 'c2', 'c3']);
 
   const printed = await page.evaluate(async () => {
     const w = window as any;

@@ -43,7 +43,7 @@ test('right-click a link in an entry: edit it, undo, remove it', async ({ page }
   await link.click({ button: 'right' });
   const menu = page.locator('.sb-context-menu');
   await expect(menu).toContainText('Open link');
-  await expect(menu).toContainText('Add to thread');
+  await expect(menu).toContainText('Reply');
   await menu.getByText('Edit link…').click();
   // The same Link box as the selection bar, over the link.
   await expect(page.locator('#selection-fmt-popover')).toHaveAttribute('data-pick', 'url');
