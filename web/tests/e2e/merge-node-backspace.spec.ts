@@ -122,7 +122,7 @@ test.describe('Backspace-merges a node into the previous visible node (continuou
     expect(result.editingId).toBe(1);
   });
 
-  test('a node with children refuses to merge (nodeHasChildren guard)', async ({ page }) => {
+  test('a node with children does not merge into a row at another level', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -130,6 +130,7 @@ test.describe('Backspace-merges a node into the previous visible node (continuou
       // @ts-expect-error
       nodes = [
         { id: 1, depth: 0, text: 'A', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} },
+        { id: 4, depth: 1, text: 'A-child', parentId: 1, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} },
         { id: 2, depth: 0, text: 'B', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} },
         { id: 3, depth: 1, text: 'B-child', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} }
       ];
@@ -139,9 +140,9 @@ test.describe('Backspace-merges a node into the previous visible node (continuou
       selectedId = 2; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = [];
       // @ts-expect-error
       render();
-      const before = { ids: [1, 2, 3], texts: ['A', 'B', 'B-child'] };
+      const before = { ids: [1, 4, 2, 3], texts: ['A', 'A-child', 'B', 'B-child'] };
 
-      // @ts-expect-error — node 2 has a child (node 3); must be a no-op
+      // @ts-expect-error — the row above B is A-child (deeper); B's child would change level, so no-op
       mergeNodeIntoPrevAndFocus(2, 'B');
 
       return {
@@ -152,6 +153,28 @@ test.describe('Backspace-merges a node into the previous visible node (continuou
     });
 
     expect(result.after).toEqual(result.before);
+  });
+
+  test('a node with children merges into a childless sibling above, which takes its children', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} },
+        { id: 2, depth: 0, text: 'B', parentId: null, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} },
+        { id: 3, depth: 1, text: 'B-child', parentId: 2, isCheckbox: false, checked: false, note: '', codeBlock: null, tags: [], styles: {} }
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set(); selectedId = 2; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; render();
+      // @ts-expect-error
+      mergeNodeIntoPrevAndFocus(2, 'B');
+      // @ts-expect-error
+      return { texts: nodes.map((n: any) => n.text), parents: nodes.map((n: any) => n.parentId), editingId };
+    });
+    expect(result.texts).toEqual(['AB', 'B-child']);
+    expect(result.parents).toEqual([null, 1]);
+    expect(result.editingId).toBe(1);
   });
 
   test('real keyboard integration: caret at offset 0 + Backspace merges; caret mid-text does not', async ({ page }) => {
