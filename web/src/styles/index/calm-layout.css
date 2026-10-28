@@ -1,50 +1,99 @@
-/* === Calm layout (trial, owner 2026-10-28) ===
-   A document-first frame, set by html.calm-layout (Settings → General → Layout, or Quick
-   Assist). The app bar becomes a thin icon rail on the left; the toolbar row and the status
-   bar go; open items, History and Share sit quietly at the page's top-right beside the title
-   (setCalmLayout moves #quick-bar into #editor-wrap); tabs show only when two or more are
-   open. Insert, AI, undo, indent and folding stay on "/", the selection bar, right-click and
-   their keys. Off = the standard layout, untouched. */
+/* === The layout (owner 2026-10-28: tried as "Calm", now the only layout) ===
+   A document-first frame, set by html.calm-layout before first paint. The app bar is a thin icon
+   rail on the left; there is no toolbar row or status bar; one quiet top line holds the tabs (only
+   when two or more are open) on the left and open items, History and Share on the right
+   (applyCalmLayout moves #quick-bar into the tab row). Insert, AI, undo, indent and folding live
+   on "/", the selection bar, right-click and their keys. */
 .rail-only{display:none}
 html.calm-layout body{flex-direction:row;padding-top:0}
-html.calm-layout #appbar{position:relative;flex-direction:column;justify-content:flex-start;align-items:center;width:48px;height:100vh;min-height:0;padding:14px 0 12px;gap:14px;border-bottom:none;border-right:1px solid var(--border);background:var(--bg);-webkit-app-region:no-drag;app-region:no-drag}
+html.calm-layout #appbar{position:relative;flex-direction:column;justify-content:flex-start;align-items:center;width:52px;height:100vh;min-height:0;padding:14px 0 10px;gap:12px;border-bottom:none;border-right:none;background:var(--bg);-webkit-app-region:no-drag;app-region:no-drag}
 html.calm-layout #app-brand{flex:0 0 auto;width:auto;justify-content:center}
 html.calm-layout #app-brand-icon{margin-right:0!important}
 html.calm-layout #app-name{display:none}
-html.calm-layout #header-actions{flex:1 1 auto;flex-direction:column;align-items:center;gap:6px;width:100%}
+html.calm-layout #header-actions{flex:1 1 auto;flex-direction:column;align-items:center;gap:4px;width:100%}
 html.calm-layout #header-actions .rail-only{display:inline-flex}
-html.calm-layout #header-actions>.btn,html.calm-layout #header-actions>.export-wrap>.btn,html.calm-layout #header-actions .rail-only{width:34px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
-html.calm-layout #header-actions>.btn:hover,html.calm-layout #header-actions>.export-wrap>.btn:hover{color:var(--fg)}
-html.calm-layout #account-wrap{margin-top:auto;order:1}
+/* Rail buttons: one size, one icon size and stroke, grey; hover and "open" share a soft fill.
+   Top: Documents, Quick Assist, To-Dos. Bottom: Settings, notifications, account. */
+html.calm-layout #header-actions>.btn,html.calm-layout #header-actions>.export-wrap>.btn,html.calm-layout #header-actions .rail-only{width:36px;height:36px;padding:0;border:none;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);background:transparent}
+html.calm-layout #header-actions>.btn:hover,html.calm-layout #header-actions>.export-wrap>.btn:hover,html.calm-layout #header-actions .btn.on,html.calm-layout #header-actions .btn[aria-expanded="true"]{color:var(--fg);background:var(--hover)}
+html.calm-layout #header-actions>.btn>svg,html.calm-layout #header-actions>.export-wrap>.btn>svg{width:18px;height:18px;stroke-width:1.7}
+html.calm-layout #global-search-wrap .qa-icon-btn{width:auto;height:auto;padding:0;color:inherit;background:transparent;opacity:1}
+html.calm-layout #global-search-wrap .qa-icon-btn svg{width:18px;height:18px;stroke-width:1.7}
+html.calm-layout #app-brand-icon{width:20px;height:20px}
+html.calm-layout #appbar .export-wrap{height:auto}
+/* Wrappers whose own button is hidden in the rail (their panels still open from elsewhere) take no room. */
+html.calm-layout #header-actions>.settings-wrap,html.calm-layout #header-actions>.help-wrap,html.calm-layout #header-actions>.export-wrap:not([id]){position:absolute;left:0;bottom:0;width:0;height:0}
+html.calm-layout #rail-settings-btn{order:1;margin-top:auto}
+html.calm-layout #notif-wrap{order:2}
+html.calm-layout #account-wrap{order:3}
+html.calm-layout:has(.settings-panel.open) #rail-settings-btn,html.calm-layout:has(#todos-panel.open) #dock-panel-appbar-toggle{color:var(--fg);background:var(--hover)}
+/* Overdue To-Dos: a small red dot instead of a counted badge (the count is in its label). */
+html.calm-layout #dock-panel-appbar-toggle .todo-overdue-badge{top:7px;right:7px;min-width:0;width:7px;height:7px;padding:0;font-size:0;outline:2px solid var(--bg)}
 html.calm-layout #sidebar-reopen-btn{display:none!important}
+/* The rail's Documents icon opens and closes the File Explorer, so its header has no toggle of its own. */
+html.calm-layout #sidebar-toggle{display:none}
 html.calm-layout #account-toggle-label{display:none}
 html.calm-layout #account-toggle:not(:has(#account-toggle-avatar-wrap[style*="inline"]))::before{content:'';width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat}
 /* Rail menus open to the right of their button (the bottom one upwards). */
 html.calm-layout #header-actions .export-menu{top:0;left:calc(100% + 8px);right:auto}
 html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
-html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:12px;left:56px;right:auto}
+/* Panels belong to the frame: everything the rail opens sits beside it, full height. To-Dos
+   takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
+   are sheets over the page. */
+html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:0!important;left:52px!important;right:auto!important;height:100vh!important;max-height:none!important;border-radius:0;border-top:none;border-bottom:none;border-left:none}
+html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:400px!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
+html.calm-layout #todos-panel.maximized{width:calc(100vw - 52px)!important}
+html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:400px}
 /* Quick Assist is the rail's search icon; opened, its field and results float beside the rail. */
 html.calm-layout #appbar-qa-slot{width:auto}
-html.calm-layout #global-search-wrap .qa-input-row{width:22px;padding:3px;gap:0;overflow:hidden;border-color:transparent;background:transparent}
+html.calm-layout #global-search-wrap .qa-input-row{width:36px;height:36px;padding:0;gap:0;justify-content:center;overflow:hidden;border-color:transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+html.calm-layout #global-search-wrap:not(.qa-open) .qa-input-row{width:36px!important;min-width:0!important}
+html.calm-layout #global-search-wrap:not(.qa-open) .qa-input-row input{display:none}
+html.calm-layout #appbar-qa-slot,html.calm-layout #global-search-wrap:not(.qa-open){width:36px!important;min-width:0!important}
+html.calm-layout #global-search-wrap:not(.qa-open) .qa-input-row:hover{background:var(--hover);color:var(--fg)}
 html.calm-layout #global-search-wrap .qa-input-row input{width:0;opacity:0;padding:0}
-html.calm-layout #global-search-wrap.qa-open .qa-input-row{position:fixed;left:56px;top:12px;width:440px;padding:6px 10px;gap:8px;overflow:visible;z-index:10002;background:var(--surface-panel);border-color:var(--border)}
+html.calm-layout #global-search-wrap.qa-open .qa-input-row{position:fixed;left:calc(50% + 26px);top:14vh;transform:translateX(-50%);width:min(560px,calc(100vw - 84px));height:auto;padding:10px 14px;box-shadow:var(--shadow-panel);border-radius:var(--radius-panel);padding:6px 10px;gap:8px;overflow:visible;z-index:10002;background:var(--surface-panel);border-color:var(--border)}
 html.calm-layout #global-search-wrap.qa-open .qa-input-row input{width:auto;opacity:1}
-html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:56px;top:52px;right:auto;bottom:auto;width:440px}
-/* No status bar; a single tab needs no strip (switch documents from the rail's Documents). */
-html.calm-layout #statusbar{display:none}
-html.calm-layout #doc-tab-strip-row.single-tab{display:none}
-/* The toolbar row becomes the page's top-right corner: open items · History · Share. */
-html.calm-layout #editor-wrap{position:relative}
-html.calm-layout #quick-bar{position:absolute;top:18px;right:24px;z-index:5;padding:0;min-height:0;height:auto;border:none;background:transparent;width:auto}
+html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:calc(50% + 26px);top:calc(14vh + 50px);transform:translateX(-50%);right:auto;bottom:auto;width:min(560px,calc(100vw - 84px))}
+/* No status bar. One top line on the page colour: tabs (plain words; the open one in the text
+   colour, close × on hover) with + beside them, and open items · History · Share on the right.
+   One open document still shows its tab, so it can be closed; with none open there are no tabs. */
+html.calm-layout #doc-tab-strip-row.no-tabs>:is(#doc-tab-strip,#doc-tab-overview-wrap){display:none!important}
+/* No status bar: word count, depth and "Saved …" go. What still needs saying (storage full, the
+   Secure Storage nudge, AI Rewrite at work) floats quietly at the bottom-right while it applies. */
+html.calm-layout #statusbar{position:fixed;left:auto;top:auto;right:56px;bottom:12px;z-index:50;height:auto;min-height:0;padding:0;border:none;background:transparent;display:flex;pointer-events:none}
+html.calm-layout #statusbar>*{pointer-events:auto}
+html.calm-layout #statusbar :is(.status-divider,#sb-wordcount,#sb-depth),html.calm-layout #sb-saved:not(.is-failed),html.calm-layout #sb-auto-rewrite-chip.is-idle{display:none!important}
+html.calm-layout #doc-tab-strip-row{align-items:center;gap:4px;height:52px;padding:0 20px 0 12px;background:var(--canvas-bg);border-bottom:none}
+html.calm-layout #doc-tab-strip{flex:0 1 auto;align-items:center;gap:2px;padding:0}
+html.calm-layout .doc-tab{top:0;min-width:0;padding:5px 6px 5px 10px;border:none;border-radius:6px;background:transparent;color:var(--hint);font-weight:400;font-size:var(--fs-md)}
+html.calm-layout .doc-tab:hover{background:var(--hover);color:var(--muted)}
+html.calm-layout .doc-tab.active{background:transparent;color:var(--fg)}
+html.calm-layout .doc-tab:not(:hover) .doc-tab-close{visibility:hidden}
+html.calm-layout .doc-tab .doc-tab-close:hover{background:var(--hover);color:var(--fg)}
+html.calm-layout .doc-tab-add,html.calm-layout #doc-tab-overview-btn{margin:0;color:var(--hint)}
+html.calm-layout #quick-bar{position:static;flex:0 0 auto;margin-left:auto;z-index:5;padding:0;min-height:0;height:auto;border:none;background:transparent;width:auto}
+/* Under the title: what the document is (status, author, link), then what's open in it. Empty
+   "+ Add…" slots show only while the title area is hovered or in use (as Notion does). No dots;
+   spacing separates the parts. */
+html.calm-layout #editor-meta-row{gap:4px 10px}
+html.calm-layout #editor-meta-row>#ag-markers{margin:0 0 0 6px}
+html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){height:auto;padding:3px 7px;font-size:var(--fs-sm)}
+html.calm-layout #editor-meta-row>#ag-markers .ag-buttons{padding:0;background:transparent;border:none}
+html.calm-layout #doc-status-wrap::after,html.calm-layout #doc-link-wrap::before{display:none}
+html.calm-layout #editor-title-row:not(:hover) #editor-meta-row:not(:focus-within):not(:has([aria-expanded="true"]))>:is(#doc-status-wrap:has(>.unset),#sb-author.unset,#doc-link-wrap:has(>#doc-link-chip.unset)){display:none}
+html.calm-layout #marker-summary .oi-part>span{color:var(--muted)}
+html.calm-layout #marker-summary{gap:14px}
+html.calm-layout #marker-summary .oi-sep,html.calm-layout #ag-markers:not([hidden])+#ag-fold::before{display:none}
 html.calm-layout #quick-bar>.action-group:not(.ag-right),html.calm-layout #quick-bar>.quick-sep{display:none}
 html.calm-layout #quick-bar #qb-collapse,html.calm-layout #quick-bar #qb-zoom,html.calm-layout #quick-bar #ag-fold .tb-sep{display:none}
 /* The page: more air above a lighter title; folded counts as plain grey text. */
-html.calm-layout #editor-title-row{padding-top:56px;padding-right:340px}
+html.calm-layout #editor-title-row{padding-top:28px}
 html.calm-layout #header-title{letter-spacing:-.005em}
 html.calm-layout .fold-badge,html.calm-layout .fold-badge.fold-badge-open{background:transparent;color:var(--hint)}
 html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
-/* Narrow windows: the page actions sit on their own line above the title instead of beside it. */
+/* Narrow windows: the tabs give way to the page actions. */
 @media (max-width:900px){
-  html.calm-layout #quick-bar{position:static;display:flex;justify-content:flex-end;margin:0;padding:12px 16px 0;background:var(--canvas-bg)}
-  html.calm-layout #editor-title-row{padding-top:8px;padding-right:0}
+  html.calm-layout #doc-tab-strip-row{padding:0 12px 0 8px}
+  html.calm-layout #doc-tab-strip{flex:1 1 auto}
 }

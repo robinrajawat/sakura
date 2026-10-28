@@ -19,6 +19,8 @@ const link = (page: Page) => page.evaluate(() => (window as any).eval('[docLinke
 test('add a link: the address first, Enter keeps; then the name is renamed on the chip and clicking away keeps', async ({ page }) => {
   await open(page);
   const chip = page.locator('#doc-link-chip');
+  // An empty link slot shows while the title area is hovered.
+  await page.hover('#header-title');
   await chip.click();
   const menu = page.locator('#doc-link-menu');
   await expect(page.locator('#doc-link-input')).toBeFocused();

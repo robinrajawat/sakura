@@ -60,53 +60,31 @@ const rootTexts = (page: import('@playwright/test').Page) =>
   page.evaluate(() => nodes.filter((n: { depth: number }) => n.depth === 0).map((n: { text: string }) => n.text));
 
 test.describe('Fixed main toolbar', () => {
-  test('shows exactly the fixed buttons, in order, with no group labels', async ({ page }) => {
+  // The one layout (owner 2026-10-28) shows no toolbar row: the top line keeps only History and Share.
+  // Insert ▾ and AI ▾ still back the same actions (right-click, "/", the selection bar).
+  test('the top line shows only History and Share; Insert ▾ and AI ▾ keep their items', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
-    await expect(page.locator('#quick-bar')).toBeVisible();
     const shown = await page.evaluate(() =>
       Array.from(document.querySelectorAll('#quick-bar .quick-btn'))
         .filter((b) => (b as HTMLElement).offsetParent !== null)
         .map((b) => b.id || (b as HTMLElement).dataset.style));
-    expect(shown).toEqual([
-      'undo-btn', 'redo-btn',
-      'qb-outdent', 'qb-indent',
-      'heading-toggle-btn',
-      'qb-insert', 'qb-ai',
-      'qb-collapse', 'qb-zoom',
-      'doc-history-chip', 'doc-share-chip',
-    ]);
-    // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
-    // Rewrite + Generate outline live in AI ▾.
-    await page.locator('#qb-insert').click();
-    // Both are the shared menu (the right-click menu's look and keys), opened under the button.
-    // Groups are split by plain dividers, no section headings.
+    expect(shown).toEqual(['doc-history-chip', 'doc-share-chip']);
+    await page.locator('#qb-insert').dispatchEvent('click');
     await expect(page.locator('#insert-menu .sb-context-heading')).toHaveCount(0);
     await expect(page.locator('#insert-menu > .sb-context-divider')).toHaveCount(3);
     await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(3);
-    await page.locator('#qb-ai').click();
+    await page.locator('#qb-ai').dispatchEvent('click');
     await expect(page.locator('#insert-menu')).toHaveCount(0);
     await expect(page.locator('#ai-menu .sb-context-label')).toHaveText(['Rewrite row', 'Generate outline']);
-    await page.locator('#qb-ai').click();
-    // Bold/Italic/Highlight/Text colour moved to the selection popover (words) and right-click ›
-    // More › Format (whole rows), owner 2026-10-22.
+    await page.locator('#qb-ai').dispatchEvent('click');
     await expect(page.locator('#hl-caret-btn')).toHaveCount(0);
     await expect(page.locator('#fc-caret-btn')).toHaveCount(0);
     await expect(page.locator('#quick-bar .ag-label')).toHaveCount(0);
     for (const gone of ['#qb-above', '#qb-child', '#qb-duplicate', '#qb-up', '#qb-down', '#qb-delete', '#qb-smart-paste', '#insert-dt-btn', '#more-toggle', '#more-menu', '.fmt-btn[data-style="underline"]', '.fmt-btn[data-style="strike"]', '#editor-toolbar-toggle']) {
       await expect(page.locator(gone)).toHaveCount(0);
     }
-    // Collapse all + Zoom, then History and Share, end the bar at its right edge.
-    const gap = await page.evaluate(() => {
-      const bar = document.getElementById('quick-bar')!.getBoundingClientRect();
-      const zoom = document.getElementById('qb-zoom')!.getBoundingClientRect();
-      const hist = document.getElementById('doc-share-chip')!.getBoundingClientRect();
-      const rewrite = document.getElementById('qb-ai')!.getBoundingClientRect();
-      return { toRightEdge: bar.right - hist.right, afterAi: zoom.left - rewrite.right };
-    });
-    expect(gap.toRightEdge).toBeLessThan(40);
-    expect(gap.afterAi).toBeGreaterThan(100);
     expect(errors).toEqual([]);
   });
 
@@ -116,7 +94,7 @@ test.describe('Fixed main toolbar', () => {
     // @ts-expect-error -- bare globals from index.html
     expect(await page.evaluate(() => 'toggleToolbar' in SHORTCUTS)).toBe(false);
     await page.keyboard.press('Control+Shift+X');
-    await expect(page.locator('#quick-bar')).toBeVisible();
+    await expect(page.locator('#doc-share-chip')).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -268,8 +246,8 @@ test.describe('Settings', () => {
     await open(page);
     await seedDoc(page);
     await page.locator('.node-row[data-id="1"]').click();
-    await page.locator('#qb-insert').click();
-    await page.locator('#insert-menu [data-insert-action="remark"]').click();
+    await page.locator('#qb-insert').dispatchEvent('click');
+    await page.locator('#insert-menu [data-insert-action="remark"]').dispatchEvent('click');
     await expect(page.locator('#insert-menu')).toHaveCount(0);
     await expect(page.locator('.thread-composer-input[data-node-id="1"]')).toBeFocused();
   });
@@ -278,30 +256,30 @@ test.describe('Settings', () => {
     await open(page);
     await seedDoc(page);
     await page.locator('.node-row[data-id="1"]').click();
-    await page.locator('#qb-insert').click();
-    await page.locator('#insert-markers [data-marker="followup"]').click();
+    await page.locator('#qb-insert').dispatchEvent('click');
+    await page.locator('#insert-markers [data-marker="followup"]').dispatchEvent('click');
     await expect(page.locator('#insert-menu')).toHaveCount(0);
     // @ts-expect-error -- bare global from index.html
     expect(await page.evaluate(() => nodes.find((n: { id: number }) => n.id === 1).marker)).toBe('followup');
-    await page.locator('#qb-insert').click();
+    await page.locator('#qb-insert').dispatchEvent('click');
     await expect(page.locator('#insert-markers [data-marker="followup"]')).toHaveClass(/active/);
-    await page.locator('#insert-markers [data-marker="followup"]').click();
+    await page.locator('#insert-markers [data-marker="followup"]').dispatchEvent('click');
     // @ts-expect-error
     expect(await page.evaluate(() => nodes.find((n: { id: number }) => n.id === 1).marker)).toBe('');
   });
 
-  test('turning AI Capabilities off from Settings → AI hides the AI toolbar buttons but keeps its own switch', async ({ page }) => {
+  test('turning AI Capabilities off from Settings → AI hides the AI entry points but keeps its own switch', async ({ page }) => {
     await open(page);
     await page.evaluate(() => {
       document.getElementById('settings-toggle')!.click();
       (document.querySelector('.settings-rail-btn[data-cat="ai"]') as HTMLElement).click();
     });
     await page.locator('#feat-ai-toggle').click();
-    await expect(page.locator('#qb-ai')).toBeHidden();
+    await expect(page.locator('body')).toHaveClass(/feature-off-ai/);
     await expect(page.locator('#feat-ai-toggle')).toBeVisible();
     await expect(page.locator('#settings-section-ai-rewrite')).toBeHidden();
     await page.locator('#feat-ai-toggle').click();
-    await expect(page.locator('#qb-ai')).toBeVisible();
+    await expect(page.locator('body')).not.toHaveClass(/feature-off-ai/);
   });
 
   test('Text size lives in Settings → Appearance', async ({ page }) => {
@@ -317,7 +295,7 @@ test.describe('Settings', () => {
 });
 
 test.describe('Zen mode', () => {
-  test('hides the toolbar, tab bar and File Explorer, and restores them on exit', async ({ page }) => {
+  test('hides the top line and File Explorer, and restores them on exit', async ({ page }) => {
     await open(page);
     await seedDoc(page);
     // @ts-expect-error -- bare globals from index.html
@@ -326,7 +304,6 @@ test.describe('Zen mode', () => {
     await expect(page.locator('#doc-tab-strip-row')).toBeHidden();
     // @ts-expect-error
     expect(await page.evaluate(() => sidebarOpen)).toBe(false);
-    await expect(page.locator('#statusbar')).toBeVisible();
     // @ts-expect-error
     await page.evaluate(() => setZenMode(false));
     await expect(page.locator('#quick-bar')).toBeVisible();
@@ -379,23 +356,12 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
-    // Toolbar: always shown, every fixed button visible despite the old hidden lists.
-    await expect(page.locator('#quick-bar')).toBeVisible();
-    for (const id of ['#undo-btn', '#qb-outdent', '#heading-wrap', '#qb-insert', '#qb-ai', '#qb-collapse', '#qb-zoom']) {
-      await expect(page.locator(id), id).toBeVisible();
-    }
+    // The top line (History, Share) and the rail show whatever the old hidden lists said.
+    await expect(page.locator('#doc-share-chip')).toBeVisible();
+    await expect(page.locator('#doc-history-chip')).toBeVisible();
     await expect(page.locator('#editor-zen-toggle')).toBeVisible();
-    // Tab bar always on; status bar items fixed; app bar items all shown.
     await expect(page.locator('#doc-tab-strip-row')).toBeVisible();
-    await expect(page.locator('#sb-wordcount')).toBeVisible();
-    // Depth shows once a row is selected, Saved once something has been saved.
-    await page.evaluate(() => {
-      // @ts-expect-error — globals from index.html
-      selectedId = 1; render(); saveToStorage();
-    });
-    await expect(page.locator('#sb-depth')).toBeVisible();
-    await expect(page.locator('#sb-saved')).toBeVisible();
-    for (const id of ['#help-toggle', '#import-toggle', '#export-toggle']) await expect(page.locator(id), id).toBeVisible();
+    for (const id of ['#rail-docs-btn', '#dock-panel-appbar-toggle', '#rail-settings-btn']) await expect(page.locator(id), id).toBeVisible();
     // Right-click menu fixed.
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     const quick = await page.evaluate(() => Array.from(document.querySelectorAll('#context-quickbar [data-action]')).map((b) => (b as HTMLElement).dataset.action));
@@ -404,9 +370,9 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="sort-az"]')).toBeVisible();
     await page.keyboard.press('Escape');
     // Tagging / Quick Assist / Quick Insert are always on.
-    await page.locator('#qb-insert').click();
-    await expect(page.locator('#qb-tags')).toBeVisible();
-    await page.locator('#qb-insert').click();
+    await page.locator('#qb-insert').dispatchEvent('click');
+    await expect(page.locator('#qb-tags')).toHaveCount(1);
+    await page.locator('#qb-insert').dispatchEvent('click');
     // @ts-expect-error -- bare globals from index.html
     await page.evaluate(() => toggleQa());
     await expect(page.locator('#qa-dropdown')).toHaveClass(/open/);

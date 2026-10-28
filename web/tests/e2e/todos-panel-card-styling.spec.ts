@@ -87,14 +87,15 @@ test.describe('To-Dos panel: flat grouped rows with click-to-expand', () => {
     expect(result.textDecoration).toBe('none'); // muted grey only, like a completed subtask
   });
 
-  test('the panel stops above the status bar instead of running behind it', async ({ page }) => {
-    await openTodosPanelWithTask(page, 'Status bar clearance check');
-    const result = await page.evaluate(() => {
-      const panel = document.getElementById('todos-panel')!;
-      const statusbar = document.getElementById('statusbar')!;
-      return { panelBottom: panel.getBoundingClientRect().bottom, statusbarTop: statusbar.getBoundingClientRect().top };
+  test('the panel runs the full height beside the rail', async ({ page }) => {
+    await openTodosPanelWithTask(page, 'Full height check');
+    const r = await page.evaluate(() => {
+      const b = document.getElementById('todos-panel')!.getBoundingClientRect();
+      return { top: b.top, bottom: b.bottom, left: b.left, vh: window.innerHeight, rail: document.getElementById('appbar')!.getBoundingClientRect().right };
     });
-    expect(result.panelBottom).toBeLessThanOrEqual(result.statusbarTop + 1); // +1 for sub-pixel rounding
+    expect(r.top).toBe(0);
+    expect(Math.abs(r.bottom - r.vh)).toBeLessThan(1);
+    expect(Math.abs(r.left - r.rail)).toBeLessThan(1);
   });
 
   // An open task's subtasks are a plain indented block -- no rule, no branch/tree connector, no

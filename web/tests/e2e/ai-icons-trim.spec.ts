@@ -79,8 +79,9 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await dismissOverlays(page);
     await seedDoc(page);
 
-    // Toolbar AI group: exactly Generate outline + Rewrite row.
-    await page.locator('#qb-ai').click();
+    // Toolbar AI group: exactly Generate outline + Rewrite row (the toolbar row is hidden in the one
+    // layout; its menu still backs the same actions).
+    await page.locator('#qb-ai').dispatchEvent('click');
     await expect(page.locator('#ai-menu .sb-context-item')).toHaveCount(2);
     await expect(page.locator('#qb-ai-outline')).toHaveCount(1);
     await expect(page.locator('#qb-ai-rewrite')).toHaveCount(1);

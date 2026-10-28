@@ -19,7 +19,7 @@ test('Rewrite with no AI key says what to set up and opens AI settings', async (
   await page.click('#es-first-row-btn');
   await page.keyboard.type('fix teh data', { delay: 20 });
   await page.keyboard.press('Escape');
-  await page.click('#qb-ai');
+  await page.locator('#qb-ai').dispatchEvent('click');
   await page.locator('#ai-menu .sb-context-label', { hasText: 'Rewrite row' }).click();
   await expect(page.locator('#sakura-modal-title')).toHaveText('Set up AI');
   await expect(page.locator('#sakura-modal-body')).toContainText('Settings › AI Rewrite');

@@ -296,8 +296,8 @@ test('Headings menu → Section makes a row a section', async ({ page }) => {
   const id = await rowId(page, 'Scope');
   await page.locator(`.node-row[data-id="${id}"] .node-label`).click();
   await page.keyboard.press('Escape');
-  await page.locator('#heading-toggle-btn').click();
-  await page.locator('#heading-palette .heading-option[data-level="7"]').click();
+  await page.locator('#heading-toggle-btn').dispatchEvent('click');
+  await page.locator('#heading-palette .heading-option[data-level="7"]').dispatchEvent('click');
   await expect(page.locator(`.node-row[data-id="${id}"]`)).toHaveClass(/is-section/);
   const saved = await page.evaluate(() => (window as any).eval('JSON.parse(JSON.stringify(nodes)).map(normalizeNode)[0].styles.heading'));
   expect(saved).toBe(7);

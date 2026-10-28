@@ -63,21 +63,19 @@ test.describe('PDF status stamp', () => {
   });
 });
 
-test.describe('Import & Export menu', () => {
-  // Owner, 2026-10-23 (one menu everywhere): Export ▾ is the shared menu, opened under its button.
-  test('Import & Export is the shared menu, right-aligned under its button, and a second click closes it', async ({ page }) => {
+test.describe('Share menu', () => {
+  // Owner, 2026-10-23 (one menu everywhere): Share is the shared menu, opened under its button.
+  test('Share is the shared menu, right-aligned under its button, and a second click closes it', async ({ page }) => {
     await open(page);
-    const btn = page.locator('#appbar-more-toggle');
+    const btn = page.locator('#doc-share-chip');
     await btn.click();
-    const menu = page.locator('#appbar-more-menu');
+    const menu = page.locator('#share-menu');
     await expect(menu).toHaveClass(/sb-context-menu/);
-    await expect(btn).toHaveAttribute('aria-expanded', 'true');
     const b = (await btn.boundingBox())!, m = (await menu.boundingBox())!;
     expect(Math.abs(m.x + m.width - (b.x + b.width))).toBeLessThan(2);
     expect(m.y).toBeGreaterThan(b.y + b.height - 1);
     await btn.click();
     await expect(menu).toHaveCount(0);
-    await expect(btn).toHaveAttribute('aria-expanded', 'false');
   });
 });
 
@@ -87,7 +85,7 @@ test.describe('Quick Assist docked in the app bar', () => {
     await open(page);
     // @ts-expect-error -- bare global from index.html
     await page.evaluate(() => setQaLocation('appbar', false));
-    await page.locator('#qa-input').click();
+    await page.locator('#qa-category-icon-btn').click();
     // An empty box shows nothing (owner, 2026-10-28), so type to open the results.
     await page.keyboard.type('dark');
     const dd = page.locator('#qa-dropdown');
