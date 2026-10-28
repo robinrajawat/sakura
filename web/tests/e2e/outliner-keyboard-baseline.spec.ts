@@ -113,7 +113,7 @@ test('Alt+Arrow moves a row with its children past its siblings', async ({ page 
   await expect.poll(() => outline(page)).toEqual(['0:One', '0:Three', '0:Two', '1:Two child']);
 });
 
-test('pasting several lines into a row makes one row per line', async ({ page }) => {
+test('pasting several lines at the end of a row makes one row per line, after it', async ({ page }) => {
   await seed(page, [[0, 'List:']]);
   await editAt(page, 'List:');
   await page.evaluate(() => {

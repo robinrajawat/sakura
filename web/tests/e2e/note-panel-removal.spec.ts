@@ -62,10 +62,9 @@ test.describe('Note Panel + Code Block removal', () => {
     expect(state.highlightCodeFn).toBe('undefined');
     expect(state.noteFeatureFlag).toBe(false);
     expect(state.codeblockFeatureFlag).toBe(false);
-    // Backlinks is an unrelated, still-active feature whose Settings row used to share a
-    // wrapper section with the deleted Note feature -- it must have survived with its own section.
-    expect(state.backlinksSettingsSection).toBe(true);
-    expect(state.backlinksFeatureFlag).toBe(true);
+    // Backlinks is always on now (owner, 2026-10-28): no switch, no section, no flag.
+    expect(state.backlinksSettingsSection).toBe(false);
+    expect(state.backlinksFeatureFlag).toBe(false);
   });
 
   test('Ctrl/Cmd+Shift+N expands and focuses the inline note line, and typed text persists to node.note', async ({ page }) => {
