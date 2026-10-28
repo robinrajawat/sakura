@@ -235,14 +235,27 @@ test.describe('Settings', () => {
       '#arw-minwords-input', '#arw-pause-input', '#arw-batchcap-input', '#arw-chip-detail-toggle', '[id^="arwex-"]', '#debug-log-toggle', '[id^="sbitem-"]', '[id^="abhsec-"]', '[id^="ctxq-"]', '[id^="hoverq-"]',
       '.settings-rail-btn[data-cat="features"]', '#help-section-features', '#sb-hint-bar',
       '#feat-focus-toggle', '#typewriter-mode-toggle', '#feat-backlinks-toggle', '#editor-full-width-toggle', '#settings-section-nodeqa',
-      '#settings-rail .settings-rail-btn[data-cat="toolbar"]', '#settings-rail .settings-rail-btn[data-cat="panels"]']) {
+      '#settings-rail .settings-rail-btn[data-cat="toolbar"]', '#settings-rail .settings-rail-btn[data-cat="panels"]',
+      '#datetime-format-select', '#global-search-bar-toggle', '#todos-cap-select', '#preview-branding-toggle', '#export-accent-toggle', '#ai-max-tokens-select',
+      '#account-greeting-name-input', '#settings-section-quickassist']) {
       await expect(page.locator(gone), gone).toHaveCount(0);
     }
-    for (const kept of ['#theme-segmented', '#accent-swatch-row', '#editor-scale', '#datetime-format-select', '#default-author-input',
-      '#global-search-bar-toggle', '#todos-expiry-select', '#todos-cap-select', '#trash-retention-select', '#cover-page-toggle', '#preview-branding-toggle', '#export-accent-toggle', '#auto-rewrite-toggle',
-      '#ai-provider-select', '#ai-prompt-input', '#ai-max-tokens-select', '#shortcuts-open-modal-btn', '#sb-export-all-btn', '#vault-setup-btn', '#open-feedback-modal-btn']) {
+    for (const kept of ['#theme-segmented', '#accent-swatch-row', '#editor-scale', '#default-author-input',
+      '#todos-expiry-select', '#trash-retention-select', '#cover-page-toggle', '#preview-branding-text-input', '#auto-rewrite-toggle',
+      '#ai-provider-select', '#ai-prompt-input', '#shortcuts-open-modal-btn', '#sb-export-all-btn', '#vault-setup-btn', '#open-feedback-modal-btn']) {
       await expect(page.locator(kept), kept).toHaveCount(1);
     }
+    // Five rails (plus Admin for admins only).
+    await expect(page.locator('#settings-rail .settings-rail-btn:not(#settings-rail-admin-btn) span')).toHaveText(['General', 'Documents', 'Data & backup', 'AI', 'Account & about']);
+    // General = Appearance, To-Dos, Keyboard Shortcuts; Documents = New documents, PDF, Trash.
+    // @ts-expect-error -- bare global from index.html
+    await page.evaluate(() => { document.getElementById('settings-toggle')!.click(); applySettingsCategory('general'); });
+    const titles = () => page.locator('#settings-content .settings-section:visible > .settings-section-title').allTextContents();
+    expect(await titles()).toEqual(['Appearance', 'To-Dos', 'Keyboard Shortcuts']);
+    await page.locator('#settings-rail .settings-rail-btn[data-cat="documents"]').click();
+    expect(await titles()).toEqual(['New documents', 'PDF', 'Trash']);
+    await page.locator('#settings-rail .settings-rail-btn[data-cat="account"]').click();
+    expect(await titles()).toEqual(expect.arrayContaining(['About', 'Privacy & data', 'Support', 'Feedback & Crash Reports']));
     // AI Capabilities now lives in the AI category, in its own always-visible section.
     await expect(page.locator('#settings-section-ai-capabilities[data-cat="ai"] #feat-ai-toggle')).toHaveCount(1);
   });
@@ -337,6 +350,8 @@ const OLD_PREFS = {
   confirmBeforeDelete: false,
   autoRewriteMinWords: 0, autoRewriteIdleSec: 3, autoRewriteBatchCap: 50, autoRewriteChipShowQueued: false, autoRewriteExclusions: [],
   debugLoggingEnabled: true,
+  dateTimeFormat: 'iso', globalSearchVisible: false, exportUseAccentColor: false, aiMaxTokens: 4096, greetingDisplayName: 'Rob',
+  previewBrandingEnabled: true, previewBrandingText: '',
   qaSearchHiddenCategories: ['features'],
 };
 const REMOVED_KEYS = Object.keys(OLD_PREFS).filter((k) => k !== 'theme' && k !== 'qaSearchHiddenCategories');
@@ -430,8 +445,7 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     expect(saved.qaSearchHiddenCategories).toEqual([]);
     const todo = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_todos_settings_v1') || '{}'));
     expect(todo.expiryDays).toBe(14);
-    expect(todo.capMax).toBe(25);
-    for (const k of ['featureEnabled', 'rowActionsMode', 'showOverdueBadge', 'subtasksCollapsedByDefault', 'completedCollapsedByDefault', 'hiddenElements']) expect(todo, k).not.toHaveProperty(k);
+    for (const k of ['capMax', 'featureEnabled', 'rowActionsMode', 'showOverdueBadge', 'subtasksCollapsedByDefault', 'completedCollapsedByDefault', 'hiddenElements']) expect(todo, k).not.toHaveProperty(k);
     expect(errors).toEqual([]);
   });
 });
