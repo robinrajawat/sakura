@@ -125,5 +125,5 @@ test('signed in on your own document, Share also offers Invite people…', async
     // @ts-expect-error
     return shareMenuItems().map((i: { label: string }) => i.label);
   });
-  expect(labels).toEqual(['Download PDF', 'Invite people…']);
+  expect(labels).toEqual(['Download PDF', 'Export', 'Invite people…']);
 });

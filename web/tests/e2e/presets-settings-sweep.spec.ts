@@ -176,17 +176,11 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     expect(errors).toEqual([]);
   });
 
-  test('Zen mode keeps the status bar and app bar visible, always requests browser fullscreen, and exits it', async ({ page }) => {
+  test('Zen mode keeps the app bar visible, always requests browser fullscreen, and exits it', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
     await seedRichDoc(page);
-    // Saved shows once something has been saved.
-    // @ts-expect-error — global from index.html
-    await page.evaluate(() => saveToStorage());
-    const statusItemsBefore = await page.locator('#statusbar [id^="sb-"]:visible').evaluateAll((els) => els.map((e) => e.id));
-    expect(statusItemsBefore).toContain('sb-wordcount');
-    expect(statusItemsBefore).toContain('sb-saved');
 
     await page.evaluate(() => {
       const w = window as unknown as { __fs: { req: number; exit: number; el: Element | null } };
@@ -199,11 +193,7 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     });
     await expect(page.locator('body')).toHaveClass(/zen-mode/);
     await expect(page.locator('#appbar')).toBeVisible();
-    await expect(page.locator('#statusbar')).toBeVisible();
-    await expect(page.locator('#settings-toggle')).toBeVisible();
-    // Zen no longer trims the status bar either — the same items show as outside Zen.
-    const statusItemsZen = await page.locator('#statusbar [id^="sb-"]:visible').evaluateAll((els) => els.map((e) => e.id));
-    expect(statusItemsZen).toEqual(statusItemsBefore);
+    await expect(page.locator('#rail-settings-btn')).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { __fs: { req: number } }).__fs.req)).toBe(1);
 
     await page.evaluate(() => {
@@ -303,7 +293,6 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
 
     // The old divider node is an ordinary row (no badge) and the old hidden-bar prefs don't hide anything.
     await expect(page.locator('.node-slide-divider-badge')).toHaveCount(0);
-    await expect(page.locator('#statusbar')).toBeVisible();
     await expect(page.locator('#appbar')).toBeVisible();
 
     const state = await page.evaluate(() => {

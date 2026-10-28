@@ -15,17 +15,16 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('Depth and Saved stay hidden until they have something to say', async ({ page }) => {
-  await expect(page.locator('#sb-wordcount')).toBeVisible();
-  await expect(page.locator('#sb-depth')).toBeHidden();
-  await expect(page.locator('#sb-depth-divider')).toBeHidden();
-  await expect(page.locator('#sb-saved')).toBeHidden();
-  await expect(page.locator('#statusbar')).not.toContainText('—');
-
+// The one layout has no status bar (owner, 2026-10-28): word count, depth and "Saved …" never show;
+// only a failed save speaks up, at the bottom-right.
+test('word count, depth and Saved stay out of sight; a failed save shows', async ({ page }) => {
   await page.click('#es-first-row-btn');
   await page.keyboard.type('Hello', { delay: 30 });
   await page.keyboard.press('Escape');
-  await expect(page.locator('#sb-depth')).toHaveText('Depth 0');
-  await expect(page.locator('#sb-depth-divider')).toBeVisible();
-  await expect(page.locator('#sb-saved')).toContainText('Saved');
+  await expect(page.locator('#sb-wordcount')).toBeHidden();
+  await expect(page.locator('#sb-depth')).toBeHidden();
+  await expect(page.locator('#sb-saved')).toBeHidden();
+  await page.evaluate(() => (window as any).eval('storageWriteFailed = true; updateSavedIndicator()'));
+  await expect(page.locator('#sb-saved')).toBeVisible();
+  await expect(page.locator('#sb-saved')).toContainText('Not saved');
 });

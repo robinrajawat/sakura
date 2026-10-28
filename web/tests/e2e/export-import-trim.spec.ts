@@ -54,30 +54,27 @@ async function seedNodes(page: import('@playwright/test').Page) {
 }
 
 async function openExportMenu(page: import('@playwright/test').Page) {
-  // Import & Export is the shared menu, flat: Export and Import (.opml). PDF lives under Share.
-  await page.locator('#appbar-more-toggle').click();
-  await expect(page.locator('#appbar-more-menu')).toBeVisible();
+  // Share holds Download PDF and Export (.opml); Import (.opml) is in the File Explorer header.
+  await page.locator('#doc-share-chip').click();
+  await expect(page.locator('#share-menu')).toBeVisible();
 }
 
 test.describe('Export/Import trim (PDF under Share; OPML export and import)', () => {
-  test('Import & Export is flat (Export, Import: .opml); Share holds Download PDF', async ({ page }) => {
+  test('Share holds Download PDF and Export (.opml); Import is in the File Explorer header', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    await openExportMenu(page);
-    const items = page.locator('#appbar-more-menu .sb-context-item');
-    await expect(items.locator('.sb-context-label')).toHaveText(['Export', 'Import']);
-    expect(await items.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.save || (e as HTMLElement).dataset.import))).toEqual(['opml', 'opml']);
-    // No submenus, and no leftover section labels/dividers from the old Copy / Document / Send a copy grouping.
-    await expect(page.locator('#appbar-more-menu .sb-context-submenu, #appbar-more-menu .sb-context-heading, #appbar-more-menu .sb-context-divider')).toHaveCount(0);
-    await page.keyboard.press('Escape');
-
-    // Share is always there; signed out it offers only Download PDF (inviting needs an account).
+    // Share is always there; signed out it offers Download PDF and Export (inviting needs an account).
     await expect(page.locator('#doc-share-chip')).toBeVisible();
-    await page.locator('#doc-share-chip').click();
-    await expect(page.locator('#share-menu .sb-context-label')).toHaveText(['Download PDF']);
+    await openExportMenu(page);
+    const items = page.locator('#share-menu .sb-context-item');
+    await expect(items.locator('.sb-context-label')).toHaveText(['Download PDF', 'Export']);
+    expect(await items.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.save))).toEqual(['pdf', 'opml']);
+    await expect(page.locator('#share-menu .sb-context-submenu, #share-menu .sb-context-heading')).toHaveCount(0);
     await page.keyboard.press('Escape');
+    await expect(page.locator('#appbar-more-toggle')).toHaveCount(0);
+    await expect(page.locator('#sb-import-btn')).toHaveCount(1);
     // The Import ▾ button opens the same items.
     await page.evaluate(() => document.getElementById('import-toggle')?.click());
     await expect(page.locator('#import-menu .sb-context-item')).toHaveText([/OPML/]);
@@ -129,7 +126,7 @@ test.describe('Export/Import trim (PDF under Share; OPML export and import)', ()
     expect(errors).toEqual([]);
   });
 
-  test('Import & Export → Export still produces a valid OPML file', async ({ page }) => {
+  test('Share → Export still produces a valid OPML file', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -137,7 +134,7 @@ test.describe('Export/Import trim (PDF under Share; OPML export and import)', ()
 
     await openExportMenu(page);
     const downloadPromise = page.waitForEvent('download');
-    await page.locator('#appbar-more-menu .sb-context-item[data-save="opml"]').click();
+    await page.locator('#share-menu .sb-context-item[data-save="opml"]').click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.opml$/);
     const filePath = await download.path();
@@ -287,10 +284,10 @@ test.describe('Export/Import trim (PDF under Share; OPML export and import)', ()
 
     // (skipFoldedInExports was removed later, in cutdown 9b — exports and copy now always include
     // folded sections; App bar items were removed in item 14 — Help/Import/Export always show.)
-    await expect(page.locator('#help-toggle')).toBeVisible();
+    await expect(page.locator('#help-toggle')).toHaveCount(1);
     // OPML is always in the Export menu now, even though the old prefs had hidden it.
     await openExportMenu(page);
-    await expect(page.locator('#appbar-more-menu .sb-context-item[data-save="opml"]')).toBeVisible();
+    await expect(page.locator('#share-menu .sb-context-item[data-save="opml"]')).toBeVisible();
 
     // The next save writes no removed keys back.
     const saved = await page.evaluate(() => {
