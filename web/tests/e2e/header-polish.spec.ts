@@ -95,21 +95,14 @@ test('open items and decisions are separated by a dot, not a rule', async ({ pag
   await expect(page.locator('#marker-summary .oi-divider')).toHaveCount(0);
 });
 
-test('on a wide window the toolbar lines up with the page; Full width puts it back edge to edge', async ({ page }) => {
+test('the editor runs the full width, the toolbar edge to edge', async ({ page }) => {
   await page.setViewportSize({ width: 1900, height: 700 });
-  const m = () => page.evaluate(() => {
+  const m = await page.evaluate(() => {
     const r = (id: string) => document.getElementById(id)!.getBoundingClientRect();
-    return { undo: r('undo-btn').left, page: r('editor-pane-inner').left, bar: r('quick-bar').left };
+    return { undo: r('undo-btn').left - r('quick-bar').left, page: r('editor-pane-inner').width, pane: r('editor-pane').width };
   });
-  const a = await m();
-  // The button's icon (about 9px in) lands on the page's left edge.
-  expect(Math.abs(a.undo + 9 - a.page)).toBeLessThan(8);
-  await page.evaluate(() => {
-    // @ts-expect-error -- bare globals from index.html
-    setEditorFullWidth(true, false);
-  });
-  const b = await m();
-  expect(b.undo - b.bar).toBeLessThanOrEqual(16);
+  expect(m.undo).toBeLessThanOrEqual(16);
+  expect(m.pane - m.page).toBeLessThan(80);
 });
 
 test('Share is the one labelled button, with no fill; a shared document says Shared · N', async ({ page }) => {

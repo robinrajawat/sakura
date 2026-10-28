@@ -160,3 +160,71 @@ test('Backspace at the start of a to-do row removes its checkbox first, then mer
   await page.keyboard.press('Control+z');
   expect(await page.evaluate('nodes[3].isCheckbox')).toBe(true);
 });
+
+const pasteText = (page: Page, text: string) => page.evaluate((t) => {
+  const dt = new DataTransfer(); dt.setData('text/plain', t);
+  document.activeElement!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+}, text);
+const texts = (page: Page) => page.evaluate('nodes.map(n => "  ".repeat(n.depth) + n.text)') as Promise<string[]>;
+const seedFlat = (page: Page) => page.evaluate(`
+  const n = (id, depth, text) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tables: [], images: [], tags: [], styles: {} });
+  nodes = [n(1, 0, 'Alpha'), n(2, 0, 'Delta'), n(3, 0, 'Foxtrot')]; rebuildParentIds(); nextId = 4; collapsedIds = new Set(); editingId = null; undoStack = []; selectedId = null; render();
+`);
+
+test('pasting several lines mid-row puts them in as rows between the two halves', async ({ page }) => {
+  await seed(page); await seedFlat(page);
+  await edit(page, 2, 2);
+  await pasteText(page, 'one\ntwo\nthree');
+  expect(await texts(page)).toEqual(['Alpha', 'De', 'one', 'two', 'three', 'lta', 'Foxtrot']);
+  await expect.poll(() => where(page)).toEqual({ index: 4, depth: 0, text: 'three', caret: 5 });
+  // One undo puts the row back as it was.
+  await page.keyboard.press('Control+z');
+  expect(await texts(page)).toEqual(['Alpha', 'Delta', 'Foxtrot']);
+});
+
+test('pasting several lines at the start of a row puts them above it, the row stays whole', async ({ page }) => {
+  await seed(page); await seedFlat(page);
+  await edit(page, 2, 0);
+  await pasteText(page, 'one\ntwo');
+  expect(await texts(page)).toEqual(['Alpha', 'one', 'two', 'Delta', 'Foxtrot']);
+  await expect.poll(() => where(page)).toEqual({ index: 2, depth: 0, text: 'two', caret: 3 });
+});
+
+test('pasting lines into a row whose children show puts them in its list', async ({ page }) => {
+  await seed(page);
+  await edit(page, 1, 4);
+  await pasteText(page, 'one\ntwo');
+  expect((await texts(page)).slice(0, 5)).toEqual(['Sect', '  one', '  two', '  ion 0', '  Child 0.0']);
+});
+
+test('one line copied with its line break pastes as just the words', async ({ page }) => {
+  await seed(page); await seedFlat(page);
+  await edit(page, 2, 2);
+  await pasteText(page, 'one\n');
+  // The synthetic event can't run the browser's own paste; the handler inserts it itself.
+  await expect.poll(() => texts(page)).toEqual(['Alpha', 'Deonelta', 'Foxtrot']);
+});
+
+test('with several rows selected: Backspace deletes them, typing does nothing, Escape keeps just one', async ({ page }) => {
+  await seed(page); await seedFlat(page);
+  await page.evaluate('setSingleSelection(1); render()');
+  await page.keyboard.press('Shift+ArrowDown');
+  expect(await page.evaluate('multiSelectedIds.length')).toBe(2);
+  await page.keyboard.type('x');
+  expect(await texts(page)).toEqual(['Alpha', 'Delta', 'Foxtrot']);
+  expect(await page.evaluate('editingId')).toBe(null);
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate('multiSelectedIds.length <= 1')).toBe(true);
+  await page.keyboard.press('Shift+ArrowDown');
+  await page.keyboard.press('Backspace');
+  await expect.poll(() => texts(page)).not.toContain('Delta');
+});
+
+test('pasting several lines into an empty row fills it, then adds the rest after it', async ({ page }) => {
+  await seed(page); await seedFlat(page);
+  await page.evaluate('nodes[1].text = ""; render()');
+  await edit(page, 2, 0);
+  await pasteText(page, 'one\ntwo');
+  expect(await texts(page)).toEqual(['Alpha', 'one', 'two', 'Foxtrot']);
+  await expect.poll(() => where(page)).toEqual({ index: 2, depth: 0, text: 'two', caret: 3 });
+});

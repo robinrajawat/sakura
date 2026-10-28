@@ -395,7 +395,7 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .notif-item-meta{font:400 11px 'Inter',sans-serif;color:var(--hint);margin-top:2px}
 .export-menu-rich .export-ext{color:var(--muted);font-size:var(--fs-xs);margin-left:2px}
 .export-menu-rich .export-divider{height:1px;background:var(--border);margin:4px 6px}
-#editor-wrap{flex:1;min-height:0;display:flex} #editor-pane{flex:1;min-height:0;overflow:auto;padding:16px 24px 18px 40px;background:var(--canvas-bg);font-size:calc(14.5px * var(--editor-scale));position:relative} #editor-pane-inner{max-width:var(--editor-reading-width,calc(900px * var(--editor-scale,1)));margin:0 auto;min-height:100%} #editor-pane::-webkit-scrollbar{width:8px;height:8px} #editor-pane::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--canvas-bg);background-clip:padding-box}
+#editor-wrap{flex:1;min-height:0;display:flex} #editor-pane{flex:1;min-height:0;overflow:auto;padding:16px 24px 18px 40px;background:var(--canvas-bg);font-size:calc(14.5px * var(--editor-scale));position:relative} #editor-pane-inner{margin:0 auto;min-height:100%} #editor-pane::-webkit-scrollbar{width:8px;height:8px} #editor-pane::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--canvas-bg);background-clip:padding-box}
 .node-row .node-label,.node-row .node-input{margin-left:-1px}
 .empty-state{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted)} .empty-state>div{display:flex;flex-direction:column;align-items:center;gap:8px}
 /* The "no document open" state sits inside #editor-pane-inner, whose min-height:100% doesn't
@@ -652,7 +652,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .meta-inline:hover{background:color-mix(in srgb,var(--hover) 45%, transparent)}
 .meta-inline:focus{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%, transparent)}
 #editor-title-row{flex:0 0 auto;padding:34px 24px 2px 40px;background:var(--canvas-bg)}
-#editor-title-inner{max-width:var(--editor-reading-width,calc(900px * var(--editor-scale,1)));margin:0 auto}
+#editor-title-inner{margin:0 auto}
 #header-title{appearance:none;-webkit-appearance:none;-moz-appearance:none;display:block;width:100%;border:none;outline:none;background:transparent;padding:2px 2px 4px;font:800 28px/34px 'Inter',sans-serif;min-height:20px;color:var(--fg);min-width:0;max-width:100%;border-radius:4px;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 #header-title::placeholder{color:var(--hint);opacity:1}
 #header-title:focus{box-shadow:none}
@@ -905,12 +905,6 @@ body.zen-mode #quick-bar{display:none}
 .doc-tab-overview-item .doc-tab-overview-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
 .doc-tab-overview-empty{padding:10px 8px;font:400 12px 'Inter',sans-serif;color:var(--hint);text-align:center}
 #quick-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-wrap:wrap}
-/* The toolbar lines up with the page: Undo over the page's left edge, Share over its right edge
-   (the page is centred in #editor-pane, whose padding is 40px left / 24px right, so its centre sits
-   8px right of the bar's; Undo's icon and Share's word land on the page edges). Full width
-   and narrow windows keep the plain 12px padding. */
-#quick-bar{padding-left:max(12px,calc((100% - 900px * var(--editor-scale,1)) / 2 - 2px));padding-right:max(12px,calc((100% - 900px * var(--editor-scale,1)) / 2 - 18px))}
-.editor-full-width #quick-bar{padding-left:12px;padding-right:12px}
 .action-group{display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;max-width:100%}
 .action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px}
 /* Collapse all + Zoom sit as a small pair at the right end of the toolbar. */
@@ -3581,12 +3575,6 @@ body.printing-generic #gpe-overlay{
           
           
           
-          <div class="settings-section" data-cat="editing" id="settings-section-backlinks">
-            <div class="settings-section-title">Backlinks</div>
-            <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backlinks</span><span class="settings-row-desc">Type @ in a row to link another row; existing links work either way</span></div><button id="feat-backlinks-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Backlinks"></button></div>
-            </div>
-          </div>
           <div class="settings-section" data-cat="hub" id="settings-section-todos">
             <div class="settings-section-title">To-Dos</div>
             <div class="settings-list">
@@ -3600,17 +3588,6 @@ body.printing-generic #gpe-overlay{
 
               <div class="settings-list-row"><span class="settings-switch-text">Date/time format</span><span class="select-wrap"><select id="datetime-format-select" class="select" style="width:172px"><option value="default">January 02, 2025, 14:30</option><option value="iso">2025-01-02 14:30</option><option value="eu">02/01/2025 14:30</option></select><svg class="select-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Default author</span><span class="settings-row-desc">Pre-fills the author on every new document, so you don't have to set it each time. Existing documents are unaffected — change a single document's author from the status bar.</span></div><input id="default-author-input" type="text" class="meta-input" placeholder="Your name" style="width:140px;text-align:left" /></div>
-            </div>
-          </div>
-          <div class="settings-section" data-cat="editing" id="settings-section-focus">
-            <div class="settings-section-title">Focus</div>
-            <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Focus</span><span class="settings-row-desc">Zoom into a branch — toolbar button, right-click action, and Ctrl/Cmd+.</span></div><button id="feat-focus-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Focus"></button></div>
-          </div>
-          <div class="settings-section" data-cat="editing">
-            <div class="settings-section-title">Editor</div>
-            <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Full width</span><span class="settings-row-desc">Let the document run the whole width of the window instead of a centred page</span></div><button id="editor-full-width-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Full width"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Typewriter mode</span><span class="settings-row-desc">Keeps the line you're typing on pinned at a fixed height — the document scrolls under your cursor instead of your cursor drifting toward the bottom of the screen. Also keeps pace with arrow-key navigation. A manual scroll (wheel/trackpad) is left alone until you type or navigate again</span></div><button id="typewriter-mode-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Typewriter mode"></button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="general" id="settings-section-quickassist">
@@ -4008,7 +3985,6 @@ body.printing-generic #gpe-overlay{
 <li>While editing a row, type <span class="help-kbd">@</span> to link another row by name; a dropdown filters as you type — pick with mouse or arrow keys + Enter. The row's name goes in as a link; click it to jump to that row</li>
 <li>The link points at the row itself, so it keeps working when that row is renamed (a link showing the old name updates to the new one)</li>
 <li>Deleting a linked row turns its links in other rows into plain words</li>
-<li>Turning the feature off (Settings → Editing → Backlinks) suppresses the @ dropdown. Existing links still work</li>
 </ul>
 </div>
           <div class="help-section" data-cat="editing" id="help-section-focus">
@@ -4017,7 +3993,6 @@ body.printing-generic #gpe-overlay{
 <li>Right-click a node → Zoom in (or <span class="help-kbd">Ctrl/Cmd + .</span>, or the zoom icon at the right end of the toolbar) → only that node and its descendants are shown. A breadcrumb bar appears above the editor showing the path back to the root; click any crumb to zoom out to that level</li>
 <li>Exit focus with <span class="help-kbd">Ctrl/Cmd + ,</span>, by clicking the same toolbar button again, or by clicking the root crumb in the breadcrumb bar</li>
 <li>Focus state is saved with the document, the same way fold state is — closing and reopening it (even in a new session) returns to whatever branch was last focused</li>
-<li>Turning the feature off (Settings → Editing → Focus) hides the zoom-in toolbar button and right-click action, and exits any active focus session immediately. <span class="help-kbd">Ctrl/Cmd + .</span> also stops working while the feature is off</li>
 </ul>
 </div>
           <div class="help-section" data-cat="editing">
@@ -5066,7 +5041,7 @@ const CTX_QUICK_ROW=['ai-rewrite','note','remark','diagram','table','image','tag
 // dragging quick-row icons, right-click → Move/Remove, or More's pin buttons; saved in prefs as
 // ctxQuickRow. Declared up here because savePrefs/loadPrefs run during boot.
 let ctxQuickRowCustom=null;
-let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let qaItems=[]; let diagrams=[]; let remarks=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let editorFullWidth=false; let treeIndentWidth=3; let outlineNumbering=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set();
+let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoStack=[]; let redoStack=[]; let qaItems=[]; let diagrams=[]; let remarks=[]; let todosTextUndoStack=[]; let todosTextRedoStack=[]; let currentTheme='light'; let editorScale=1; let treeIndentWidth=3; let outlineNumbering=false; let selectAllMode=false; let inputCaret=null; let multiSelectedIds=[]; let selectionAnchorId=null; let flashNodeId=null; let flashTimer=null; let dirty=false; let suppressBeforeUnloadOnce=false; let titleAutoSyncEnabled=true; let lastAutoTitle=''; let currentDocId=null; let docStatus=''; let docLinkedUrl=''; let docLinkedUrlLabel=''; let lastSavedAt=null; let collapsedIds=new Set(); let focusedId=null; let searchOpen=false; let searchQuery=''; let searchMatches=[]; let searchIndex=-1; let dragState={draggedId:null,targetId:null,mode:null}; let contextMenuNodeId=null; let spellcheckEnabled=true; const compactRows=false; /* fixed: roomy Dynalist-style rows, no user toggle */ let inlineExpandNoteNodeIds=new Set(); let inlineExpandRemarksNodeIds=new Set(); let inlineExpandQaNodeIds=new Set(); let inlineExpandDiagramNodeIds=new Set();
 // Unlike the inlineExpand*NodeIds sets above (which track which items have been opened from
 // their closed-by-default state), a table/chart/Cards object has always rendered inline
 // unconditionally -- open by default, with no prior collapsed state for any existing document to
@@ -14477,7 +14452,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorFullWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -14500,7 +14475,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorFullWidth=!!d.editorFullWidth; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -14509,15 +14484,13 @@ function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlin
 // hides every entry point for it (toolbar buttons, right-click menu items, Settings
 // sub-sections, Help sub-sections) via the feature-off-* body classes below, plus a defensive
 // guard inside the underlying functions themselves (enterFocus, generateOutlineWithAi) so a
-// keyboard shortcut can't slip past a hidden button. Tagging, To-Dos, the Insert list and Quick
-// Assist used to have switches here too; they're always on now.
+// keyboard shortcut can't slip past a hidden button. Tagging, To-Dos, the Insert list, Quick
+// Assist, Backlinks and Focus used to have switches here too; they're always on now.
 const FEATURE_FLAGS={
   ai:{get:()=>featureAiEnabled,set:v=>{featureAiEnabled=v; if(!v)clearAutoRewriteQueue();}},
-  backlinks:{get:()=>backlinksEnabled,set:v=>{setBacklinksEnabled(v); return}},
-  focus:{get:()=>featureFocusEnabled,set:v=>{featureFocusEnabled=v; if(!v&&focusedId!==null)exitFocus();}},
 };
-const FEATURE_SETTINGS_SECTIONS={ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite'],focus:['settings-section-focus']};
-const FEATURE_HELP_SECTIONS={ai:['help-section-ai'],backlinks:['help-section-backlinks'],focus:['help-section-focus']};
+const FEATURE_SETTINGS_SECTIONS={ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite']};
+const FEATURE_HELP_SECTIONS={ai:['help-section-ai']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
   ov.querySelectorAll('.cs-card[data-feature-requires]').forEach(card=>{
@@ -14583,7 +14556,7 @@ function applyFeatureVisibility(){
 // Focus puts its own enable switch inside the very settings section that gets hidden when the
 // feature is off (AI's switch lives in its own always-visible "AI Capabilities" section instead).
 // Hiding the whole section would hide the only way back to turning it on again.
-const FEATURE_SELF_TOGGLE_IDS={focus:'feat-focus-toggle'};
+const FEATURE_SELF_TOGGLE_IDS={};
 function hideSectionExceptToggle(sec,toggleBtn,on,touchSectionDisplay=true){
   const toggleRow=toggleBtn?toggleBtn.closest('.settings-list-row'):null;
   if(!toggleRow){ if(touchSectionDisplay){sec.style.display=on?'':'none'; sec.dataset.featureHidden=on?'':'1';} return; }
@@ -18295,7 +18268,6 @@ const QA_COMMANDS=[
   {id:'auto-rewrite',label:'Auto-rewrite on commit',keywords:['auto rewrite','auto-rewrite','automatic rewrite'],get:()=>autoRewriteEnabled,set:v=>setAutoRewriteEnabled(v)},
   {id:'light-mode',label:'Light mode',keywords:['light mode','light theme'],get:()=>currentTheme==='light',set:v=>setTheme(v?'light':'dark')},
   {id:'spellcheck',label:'Spellcheck',keywords:['spellcheck','spell check'],get:()=>spellcheckEnabled,set:v=>setSpellcheckEnabled(v)},
-  {id:'backlinks',label:'Backlinks',keywords:['backlinks','back links'],get:()=>backlinksEnabled,set:v=>setBacklinksEnabled(v)},
   {id:'outline-numbering',label:'Outline numbering',keywords:['outline numbering','numbering'],get:()=>outlineNumbering,set:v=>setOutlineNumbering(v)},
   {id:'global-search-bar',label:'Quick Assist search box',keywords:['global search','header search','search bar'],get:()=>globalSearchVisible,set:v=>setGlobalSearchVisible(v)},
   {id:'qa-icon-only',label:'Quick Assist icon only',keywords:['quick assist icon only','icon only','collapse quick assist'],get:()=>qaIconOnly,set:v=>setQaIconOnly(v)},
@@ -18310,8 +18282,6 @@ const QA_COMMANDS=[
   // in one place. They use longer, qualified phrases ("focus feature", not "focus") so they
   // don't outrank real search hits — commands always render before search results.
   {id:'ai-feature',label:'AI Capabilities',keywords:['ai capabilities','ai feature','ai features'],get:()=>FEATURE_FLAGS.ai.get(),set:v=>setFeatureEnabled('ai',v)},
-  {id:'focus-feature',label:'Focus',keywords:['focus feature','branch focus'],get:()=>FEATURE_FLAGS.focus.get(),set:v=>setFeatureEnabled('focus',v)},
-  {id:'backlinks-feature',label:'Backlinks',keywords:['backlinks feature','backlink feature'],get:()=>FEATURE_FLAGS.backlinks.get(),set:v=>setFeatureEnabled('backlinks',v)},
 ];
 // Longest-match-wins, checked as a whole-word/phrase substring — this is what correctly
 // resolves "get rid of toolbar" to the 11-character "get rid of" (hide) rather than the
@@ -20416,18 +20386,6 @@ function setThemeMode(mode,persist=true){
 }
 el('editor-scale')?.addEventListener('input',e=>setEditorScale(e.target.value,true));
 function setEditorScale(scale,persist=true){const normalized=Math.min(1.4,Math.max(0.85,Number(scale)||1)); editorScale=normalized; document.documentElement.style.setProperty('--editor-scale', String(normalized)); const slider=el('editor-scale'); const value=el('editor-scale-value'); if(slider){slider.value=normalized.toFixed(2); updateSliderFill(slider)} if(value)value.textContent=`${Math.round(normalized*100)}%`; if(persist){savePrefs(); scheduleAutoSave()}}
-// The editor is a centred 900px page (title, rows, notes, threads, tables), like Notion or Docs,
-// growing with Text size so a line keeps the same length (owner, 2026-10-28). Settings → Editor →
-// Full width lets it run the whole window instead.
-function setEditorFullWidth(on,persist=true){
-  editorFullWidth=!!on;
-  document.documentElement.classList.toggle('editor-full-width',editorFullWidth);
-  if(editorFullWidth)document.documentElement.style.setProperty('--editor-reading-width','none'); else document.documentElement.style.removeProperty('--editor-reading-width');
-  const toggle=el('editor-full-width-toggle'); if(toggle){toggle.classList.toggle('on',editorFullWidth); toggle.setAttribute('aria-checked',String(editorFullWidth))}
-  if(persist){savePrefs(); scheduleAutoSave()}
-}
-el('editor-full-width-toggle')?.addEventListener('click',()=>setEditorFullWidth(!editorFullWidth));
-el('editor-full-width-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setEditorFullWidth(!editorFullWidth);}});
 function setTreeIndentWidth(width,persist=true){const normalized=Math.min(6,Math.max(2,Math.round(Number(width)||3))); treeIndentWidth=normalized; document.querySelectorAll('#branch-spacing-segmented .segmented-btn').forEach(btn=>{const active=Number(btn.dataset.value)===normalized; btn.classList.toggle('active',active); btn.setAttribute('aria-checked',String(active))}); if(persist){savePrefs(); scheduleAutoSave()} render()}
 /* GENERATED:toasts:START — DO NOT EDIT BY HAND. Source of truth: src/ui/toasts.ts (tests: tests/unit/toasts.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 // Reuses the exact glyph from the header Quick Assist box (qa-input-row) so a toast
@@ -20650,49 +20608,6 @@ function scrollToNode(id,block='center'){requestAnimationFrame(()=>{const row=do
 function focusPane(){el('editor-pane').focus()} function getEditingInput(){return editingId!==null?document.getElementById('in-'+editingId):null}
 function autosizeNodeInput(input){/* no-op: .node-input is a contenteditable div now, which sizes itself naturally -- explicitly forcing style.height via scrollHeight (a <textarea>-era necessity) was introducing a small but measurable height mismatch against .node-label, which has no explicit height at all */}
 
-// ===== Typewriter mode =====
-// Keeps the actively-edited line pinned at a fixed vertical position (~40% down the
-// visible editor area) while typing or navigating with arrow keys, so the document scrolls
-// to the cursor rather than the cursor drifting toward the bottom of the screen. Deliberately
-// event-driven, not continuous/polling: it only recenters in direct response to a genuine
-// typing or arrow-key-navigation event — which is also what makes "a manual scroll doesn't
-// fight you" work for free, with no separate suspend/resume state to track. A wheel/trackpad
-// scroll away from the cursor simply isn't one of the trigger events below, so the view just
-// stays where the person left it until they type or navigate again.
-let typewriterModeEnabled=false;
-function typewriterRecenter(){
-  if(!typewriterModeEnabled)return;
-  const pane=el('editor-pane'); if(!pane)return;
-  const input=getEditingInput();
-  let targetTop;
-  if(input){
-    // getCaretClientRect (defined above, near the Insert list characters) is caret-precise —
-    // needed since node inputs auto-grow and wrap onto several lines (see
-    // autosizeNodeInput), so the row's own bounding rect alone isn't enough.
-    targetTop=getCaretClientRectGeneric(input).top;
-  } else if(selectedId!==null){
-    const rowEl=document.querySelector(`.node-row[data-id="${selectedId}"]`);
-    if(!rowEl)return;
-    targetTop=rowEl.getBoundingClientRect().top;
-  } else return;
-  const paneRect=pane.getBoundingClientRect();
-  const delta=targetTop-(paneRect.top+paneRect.height*0.4);
-  if(Math.abs(delta)>3)pane.scrollTop+=delta;
-}
-function setTypewriterMode(on,persist=true){
-  typewriterModeEnabled=!!on;
-  const toggle=el('typewriter-mode-toggle');
-  if(toggle){ toggle.classList.toggle('on',typewriterModeEnabled); toggle.setAttribute('aria-checked',String(typewriterModeEnabled)); }
-  if(typewriterModeEnabled)typewriterRecenter();
-  if(persist)savePrefs();
-}
-el('typewriter-mode-toggle')?.addEventListener('click',()=>setTypewriterMode(!typewriterModeEnabled));
-el('typewriter-mode-toggle')?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault(); setTypewriterMode(!typewriterModeEnabled);}});
-el('editor-pane')?.addEventListener('input',typewriterRecenter);
-el('editor-pane')?.addEventListener('keyup',e=>{
-  if(!typewriterModeEnabled)return;
-  if(e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='Home'||e.key==='End'||e.key==='PageUp'||e.key==='PageDown')typewriterRecenter();
-});
 
 function beginEdit(id,atEnd=true){if(id===null||getIndex(nodes,id)<0)return; if(typeof isViewerOnCurrentDoc==='function'&&isViewerOnCurrentDoc()){ showToast("View only — you don't have edit access to this document",null,false,2600); setSingleSelection(id); render(); return; } setSingleSelection(id); editingId=id; inputCaret=atEnd?-1:0; autoRewritePasteTainted=false; editSessionOriginalText=nodes[getIndex(nodes,id)].text; editSessionOriginalMarks=rowMarksOf(nodes[getIndex(nodes,id)]); render()}
 // Standard mirror-div technique: clones the textarea's exact text-layout styles (width, font,
@@ -22449,6 +22364,39 @@ function splitNodeAtCursorAndFocus(id,beforeText,afterText){
   setSingleSelection(nn.id);
   flashNode(nn.id);
   beginEditAt(nn.id,0);
+}
+// Several lines pasted into a row being edited go in as whole rows, where the caret is: after the
+// row when the caret is at its end (into its list when its children show, as Enter does), above
+// it when the caret is at its start, and between its two halves when it is mid-text (the words
+// after the caret become their own row after the pasted ones). An empty row takes the first line.
+// The cursor ends after the last pasted line.
+function pasteLinesIntoRow(id,parsed){
+  const input=getEditingInput(); const r=input?getEditableSelectionRange(input):null;
+  commitEdit();
+  const idx=getIndex(nodes,id); if(idx<0||!parsed.length)return;
+  const node=nodes[idx]; const text=node.text||''; const marks=rowMarksOf(node);
+  const s=Math.min(r?Math.min(r.start,r.end):text.length,text.length), e=Math.min(r?Math.max(r.start,r.end):text.length,text.length);
+  const before=text.slice(0,s), after=text.slice(e);
+  pushUndo(); markDirty();
+  const d0=parsed[0].depth||0;
+  const make=(n,base)=>makeNodeFromTyped(n.text||'',base+Math.max(0,(n.depth||0)-d0),null,n.styles||emptyStyles(),n.note||'',false,n.tables);
+  let pasted;
+  if(!before&&!after){
+    const [first,...rest]=parsed;
+    nodes[idx]={...node,text:first.text||'',styles:first.styles||node.styles,note:first.note||node.note}; setRowMarksOn(nodes[idx],[]);
+    const made=rest.map(n=>make(n,node.depth)); nodes.splice(getSubtreeEnd(nodes,idx),0,...made);
+    pasted=[nodes[idx],...made];
+  } else if(!before){
+    pasted=parsed.map(n=>make(n,node.depth)); nodes.splice(idx,0,...pasted);
+  } else {
+    const intoList=rowListIsOpen(id); const base=node.depth+(intoList?1:0);
+    nodes[idx]={...node,text:before}; setRowMarksOn(nodes[idx],sliceRowMarks(marks,text.length,0,before.length));
+    pasted=parsed.map(n=>make(n,base)); const made=[...pasted];
+    if(after){ const tail=makeBlankNode(base,null); tail.text=after; setRowMarksOn(tail,sliceRowMarks(marks,text.length,e,text.length)); made.push(tail); }
+    nodes.splice(intoList?idx+1:getSubtreeEnd(nodes,idx),0,...made);
+  }
+  rebuildParentIds();
+  const last=pasted[pasted.length-1]; clearMultiSelection(); setSingleSelection(last.id); beginEditAt(last.id,(last.text||'').length);
 }
 function deleteSelected(){
   if(selectAllMode){pushUndo(); markDirty(); const allIds=nodes.map(n=>n.id); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; clearAutoRewriteQueue(); render(); showToast('Cleared tree'); return}
@@ -25740,7 +25688,15 @@ document.addEventListener('paste',e=>{
     }
     if(/<table[\s>]/i.test(html)&&!extractSakuraClipPayload(html)&&pasteTableIntoNode(e,editingId,html))return;
     const parsedHtml=parseTreeClipboardHtml(html); const parsed=parsedHtml.length?parsedHtml:parseTextToTreeNodes(text);
-    if(parsed.length>1){ e.preventDefault(); commitEdit(); const clipExtras=extractSakuraClipPayload(html); pasteParsedNodes(parsed,undefined,clipExtras); return }
+    if(parsed.length>1){
+      e.preventDefault(); const clipExtras=extractSakuraClipPayload(html);
+      // Rows copied from Sakura (with their threads, images…) go in whole, after this row; plain lines
+      // land at the caret.
+      if(Array.isArray(clipExtras)&&clipExtras.length){ commitEdit(); pasteParsedNodes(parsed,undefined,clipExtras); return }
+      pasteLinesIntoRow(editingId,parsed); return
+    }
+    // One line copied with its line break ("one\n") goes in as the line alone; a row holds no line breaks.
+    if(/[\r\n]/.test(text)&&trimmedText&&!/[\r\n]/.test(trimmedText)){ e.preventDefault(); document.execCommand('insertText',false,trimmedText); return }
     return; // single line (or nothing parseable) -- let the browser paste it normally into the active node
   }
   if(isControlTarget(e.target))return; if(editingId!==null)return; if(!multiSelectedIds.length&&pasteImagesIntoNodeIfImageOnly(e,selectedId))return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}}
@@ -26247,14 +26203,14 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('keydown', e=>{ if (e.key==='Escape' && overlay.classList.contains('open') && document.activeElement!==searchInput) close(); });
 });
 
-document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
+document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
     // Zoomed into a node with no children yet: render() shows only the focus-empty-state
     // placeholder here, with no row to click or type into -- so typing or Enter must create
     // that first child directly, mirroring the !nodes.length branch just above.
     if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); const newId=insertChildFirst(focusedId,false); if(newId!==undefined){const ni=getIndex(nodes,newId); if(ni>=0)nodes[ni].text=e.key; beginEditAt(newId,e.key.length)} return}
     if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); insertChildFirst(focusedId,true); return}
     return
-  }} ensureSelection(); const idx=getIndex(nodes,selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(nodes,idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(nodes,idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(nodes,idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,true); const input=getEditingInput(); if(input){input.focus(); setInputCaret(input,-1); document.execCommand('insertText',false,e.key)}}});
+  }} ensureSelection(); const idx=getIndex(nodes,selectedId); if(e.key==='ArrowLeft'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(nodeHasChildren(nodes,idx)&&!collapsedIds.has(selectedId)){collapseNode(selectedId)} else if(nodes[idx].depth>0){const p=getParentIndex(nodes,idx); if(p>=0){selectedId=nodes[p].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')}} return} if(e.key==='ArrowRight'&&!e.altKey&&selectedId!==null&&idx>=0){e.preventDefault(); if(collapsedIds.has(selectedId)){expandNode(selectedId)} else if(nodeHasChildren(nodes,idx)){selectedId=nodes[idx+1].id; selectionAnchorId=selectedId; selectAllMode=false; clearMultiSelection(); render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowUp'){e.preventDefault(); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos>0){const nextId=nodes[vis[pos-1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='ArrowDown'){e.preventDefault(); const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos>=0&&pos<vis.length-1){const nextId=nodes[vis[pos+1]].id; if(e.shiftKey){selectAllMode=false; const anchor=selectionAnchorId??selectedId; selectionAnchorId=anchor; multiSelectedIds=getSelectionRangeIds(nodes,collapsedIds,anchor,nextId); selectedId=nextId}else{selectAllMode=false; clearMultiSelection(); selectedId=nextId; selectionAnchorId=nextId} render(); scrollToNode(selectedId,'nearest')} return} if(e.key==='F2'||e.key==='Enter'){e.preventDefault(); if(selectAllMode){selectAllMode=false; selectedId=nodes[0]?.id??null} clearMultiSelection(); selectionAnchorId=selectedId; if(selectedId!==null)beginEdit(selectedId,true); return} if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault(); confirmDeleteIfNeeded().then(ok=>{if(ok)deleteSelected()}); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault(); if(selectAllMode)return; if(e.shiftKey)outdentSelected(); else indentSelected(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); if(selectAllMode||multiSelectedIds.length>1)return; clearMultiSelection(); selectionAnchorId=selectedId; beginEdit(selectedId,true); const input=getEditingInput(); if(input){input.focus(); setInputCaret(input,-1); document.execCommand('insertText',false,e.key)}}});
 // --- AI Rewrite ---
 /* GENERATED:aiProviders:START — DO NOT EDIT BY HAND. Source of truth: src/state/aiProviders.ts (tests: tests/unit/aiProvidersState.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -27516,7 +27472,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setEditorFullWidth(editorFullWidth,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
@@ -32724,7 +32680,6 @@ function subtreeHasRemark(idx){if(!Array.isArray(remarks)||!remarks.length)retur
 setNoteBgMatch(noteMatchEditorBg, false);
 setCodeBgMatch(codeMatchEditorBg, false);
 setAutoErrorReportEnabled(autoErrorReportEnabled, false);
-setTypewriterMode(typewriterModeEnabled, false);
 setPreviewTocIncludeSections(previewTocIncludeSections, false);
 setSectionMarkersDepthZero(sectionMarkersDepthZero, false);
 setPreviewBrandingEnabled(previewBrandingEnabled, false);
@@ -36349,7 +36304,7 @@ function todosHistorySummary(list) {
         <h3>Optional capabilities</h3>
         <ul>
           <li><span class="cs-desc"><strong>AI Capabilities</strong> (Settings → AI) — Generate outline, Rewrite, Auto-rewrite</span></li>
-          <li><span class="cs-desc"><strong>@ Mentions &amp; Backlinks</strong> (Settings → Editing) — link nodes; type @ to mention another by name</span></li>
+          <li><span class="cs-desc"><strong>@ Mentions &amp; Backlinks</strong> — link nodes; type @ to mention another by name</span></li>
           <li><span class="cs-desc"><strong>Focus</strong> (Settings → Editing) — zoom into a branch; <span class="help-kbd">Ctrl/Cmd + .</span> to enter, <span class="help-kbd">Ctrl/Cmd + ,</span> to exit</span></li>
           <li><span class="cs-desc">Off = hidden, not deleted — data is always preserved; states saved across sessions</span></li>
         </ul>

@@ -95,15 +95,15 @@ test.describe('Fixed main toolbar', () => {
     for (const gone of ['#qb-above', '#qb-child', '#qb-duplicate', '#qb-up', '#qb-down', '#qb-delete', '#qb-smart-paste', '#insert-dt-btn', '#more-toggle', '#more-menu', '.fmt-btn[data-style="underline"]', '.fmt-btn[data-style="strike"]', '#editor-toolbar-toggle']) {
       await expect(page.locator(gone)).toHaveCount(0);
     }
-    // Collapse all + Zoom, then History (Share when signed in), end the bar, over the page's right edge.
+    // Collapse all + Zoom, then History and Share, end the bar at its right edge.
     const gap = await page.evaluate(() => {
-      const bar = document.getElementById('editor-pane-inner')!.getBoundingClientRect();
+      const bar = document.getElementById('quick-bar')!.getBoundingClientRect();
       const zoom = document.getElementById('qb-zoom')!.getBoundingClientRect();
       const hist = document.getElementById('doc-share-chip')!.getBoundingClientRect();
       const rewrite = document.getElementById('qb-ai')!.getBoundingClientRect();
       return { toRightEdge: bar.right - hist.right, afterAi: zoom.left - rewrite.right };
     });
-    expect(Math.abs(gap.toRightEdge)).toBeLessThan(40);
+    expect(gap.toRightEdge).toBeLessThan(40);
     expect(gap.afterAi).toBeGreaterThan(100);
     expect(errors).toEqual([]);
   });
@@ -233,10 +233,12 @@ test.describe('Settings', () => {
       '#todos-overdue-badge-toggle', '#todos-actions-mode-select', '#todos-subtasks-collapse-toggle', '#todos-completed-collapse-toggle', '[id^="todoel-"]', '#confirm-delete-toggle', '#nqa-icon-row-toggle',
       '#always-expand-inline-toggle', '#node-timestamp-hover-toggle', '#diagram-gen-skip-review-toggle', '#feat-tagging-toggle', '#feat-todos-toggle', '#feat-quickassist-toggle', '#feat-nodeqa-toggle',
       '#arw-minwords-input', '#arw-pause-input', '#arw-batchcap-input', '#arw-chip-detail-toggle', '[id^="arwex-"]', '#debug-log-toggle', '[id^="sbitem-"]', '[id^="abhsec-"]', '[id^="ctxq-"]', '[id^="hoverq-"]',
-      '.settings-rail-btn[data-cat="features"]', '#help-section-features', '#sb-hint-bar']) {
+      '.settings-rail-btn[data-cat="features"]', '#help-section-features', '#sb-hint-bar',
+      '#feat-focus-toggle', '#typewriter-mode-toggle', '#feat-backlinks-toggle', '#editor-full-width-toggle', '#settings-section-nodeqa',
+      '#settings-rail .settings-rail-btn[data-cat="toolbar"]', '#settings-rail .settings-rail-btn[data-cat="panels"]']) {
       await expect(page.locator(gone), gone).toHaveCount(0);
     }
-    for (const kept of ['#theme-segmented', '#accent-swatch-row', '#editor-scale', '#datetime-format-select', '#default-author-input', '#feat-focus-toggle', '#typewriter-mode-toggle', '#feat-backlinks-toggle',
+    for (const kept of ['#theme-segmented', '#accent-swatch-row', '#editor-scale', '#datetime-format-select', '#default-author-input',
       '#global-search-bar-toggle', '#todos-expiry-select', '#todos-cap-select', '#trash-retention-select', '#cover-page-toggle', '#preview-branding-toggle', '#export-accent-toggle', '#auto-rewrite-toggle',
       '#ai-provider-select', '#ai-prompt-input', '#ai-max-tokens-select', '#shortcuts-open-modal-btn', '#sb-export-all-btn', '#vault-setup-btn', '#open-feedback-modal-btn']) {
       await expect(page.locator(kept), kept).toHaveCount(1);
