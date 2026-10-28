@@ -69,3 +69,26 @@ test('the top line is always there; Import is in the File Explorer, Export under
   await page.locator('#doc-share-chip').click();
   await expect(page.locator('#share-menu .sb-context-item[data-save="opml"]')).toBeVisible();
 });
+
+// No tabs (owner 2026-10-28): the top line shows back/forward and Folder › Document; Search opens
+// with recent documents.
+test('no tabs: path on the top line, back/forward between documents, recent documents in Search', async ({ page }) => {
+  await expect(page.locator('#doc-tab-strip')).toBeHidden();
+  const first = await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    ensureDocumentForEditing(); el('header-title').value = 'First'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); return currentDocId;
+  });
+  await expect(page.locator('.doc-path-title')).toHaveText('First');
+  await expect(page.locator('#doc-nav-back')).toBeDisabled();
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    createDoc(); el('header-title').value = 'Second'; el('header-title').dispatchEvent(new Event('input')); saveToStorage();
+  });
+  await expect(page.locator('.doc-path-title')).toHaveText('Second');
+  await page.locator('#doc-nav-back').click();
+  // @ts-expect-error -- bare globals from index.html
+  await expect.poll(() => page.evaluate(() => currentDocId)).toBe(first);
+  await expect(page.locator('#doc-nav-forward')).toBeEnabled();
+  await page.locator('#qa-category-icon-btn').click();
+  await expect(page.locator('.qa-item', { hasText: 'Second' }).first()).toBeVisible();
+});

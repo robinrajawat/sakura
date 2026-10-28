@@ -120,13 +120,13 @@ test.describe('Fixed main toolbar', () => {
   });
 });
 
-test.describe('Document tab menu: Version history, Sort, Clear all', () => {
-  test('sorts top-level nodes A→Z, Z→A and by depth from the open document\'s tab', async ({ page }) => {
+test.describe('Document menu (right-click the name on the top line): Version history, Sort, Clear all', () => {
+  test('sorts top-level nodes A→Z, Z→A and by depth from the document menu', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
     const pick = async (label: string) => {
-      await page.locator('.doc-tab.active').click({ button: 'right' });
+      await page.locator('.doc-path-title').click({ button: 'right' });
       await page.locator('.sb-context-menu .sb-context-item', { hasText: label }).click();
     };
     await pick('Sort rows A → Z');
@@ -139,10 +139,10 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Version history opens from the tab menu', async ({ page }) => {
+  test('Version history opens from the document menu', async ({ page }) => {
     await open(page);
     await seedDoc(page);
-    await page.locator('.doc-tab.active').click({ button: 'right' });
+    await page.locator('.doc-path-title').click({ button: 'right' });
     await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Version history…' }).click();
     await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
   });
@@ -151,7 +151,7 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
-    await page.locator('.doc-tab.active').click({ button: 'right' });
+    await page.locator('.doc-path-title').click({ button: 'right' });
     await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Clear all rows' }).click();
     await expect(page.locator('#sakura-modal-overlay')).not.toHaveClass(/open/);
     // @ts-expect-error -- bare globals from index.html
@@ -163,18 +163,13 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Sort and Clear only appear on the open document\'s tab; Version history on every tab', async ({ page }) => {
+  test('the document menu lists Version history, Sort and Clear all; there is no tab menu', async ({ page }) => {
     await open(page);
     await seedDoc(page);
-    await page.evaluate(() => {
-      // @ts-expect-error -- bare globals from index.html
-      createDoc();
-    });
-    await page.locator('.doc-tab:not(.active)').first().click({ button: 'right' });
+    await expect(page.locator('#doc-tab-strip')).toBeHidden();
+    await page.locator('.doc-path-title').click({ button: 'right' });
     const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
-    expect(labels).toContain('Version history…');
-    expect(labels.some((l) => l.startsWith('Sort'))).toBe(false);
-    expect(labels).not.toContain('Clear all rows');
+    expect(labels).toEqual(['Version history…', 'Sort rows A → Z', 'Sort rows Z → A', 'Sort rows by depth', 'Clear all rows']);
   });
 });
 

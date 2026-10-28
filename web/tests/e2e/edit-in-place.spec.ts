@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Short values are typed where they're shown, not in a dialog (owner, 2026-10-23: unified UI,
-// inline editing over popups): document name (tab, sidebar), chart / Cards title, AI outline topic.
+// inline editing over popups): document name (sidebar), chart / Cards title, AI outline topic.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
@@ -25,18 +25,6 @@ test.afterEach(() => { expect(errors).toEqual([]); });
 
 const box = (page: Page) => page.locator('.inline-edit-input');
 const title = (page: Page) => page.evaluate(() => (window as any).eval('loadDocsIndex().find(d => d.id === currentDocId).title'));
-
-test('double-click a tab: its name is edited in place; Enter keeps, no dialog', async ({ page }) => {
-  await page.locator('.doc-tab.active .doc-tab-title').dblclick();
-  await expect(box(page)).toBeFocused();
-  await expect(box(page)).toHaveValue('Plan');
-  await expect(page.locator('#sakura-modal-overlay.open')).toHaveCount(0);
-  await page.keyboard.type('Launch plan');
-  await page.keyboard.press('Enter');
-  await expect(box(page)).toHaveCount(0);
-  await expect.poll(() => title(page)).toBe('Launch plan');
-  await expect(page.locator('#header-title')).toHaveValue('Launch plan');
-});
 
 test('sidebar F2 renames in place; Esc leaves the name as it was', async ({ page }) => {
   const nb = page.locator('.sdoc-name-btn[data-doc-id]').first();
