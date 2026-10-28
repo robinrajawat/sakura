@@ -50,12 +50,59 @@ test('Enter mid-text on an open parent moves the rest into its first child', asy
   expect(await page.evaluate('nodes[0].text')).toBe('Sect');
 });
 
-test('Enter at the start of a row opens a blank row above; the cursor stays with the words', async ({ page }) => {
+test('Enter at the start of a row opens a blank row above, with the cursor on it (as in Dynalist)', async ({ page }) => {
   await seed(page);
   await edit(page, 4, 0);
   await page.keyboard.press('Enter');
-  await expect.poll(() => where(page)).toEqual({ index: 4, depth: 1, text: 'Child 0.2', caret: 0 });
-  expect(await page.evaluate('nodes[3].text')).toBe('');
+  await expect.poll(() => where(page)).toEqual({ index: 3, depth: 1, text: '', caret: 0 });
+  expect(await page.evaluate('nodes[4].text')).toBe('Child 0.2');
+});
+
+test('Enter with words selected replaces them, then splits there', async ({ page }) => {
+  await seed(page);
+  await edit(page, 4, 2);
+  await page.keyboard.press('Shift+ArrowRight');
+  await page.keyboard.press('Shift+ArrowRight');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => where(page)).toEqual({ index: 4, depth: 1, text: 'ild 0.2'.slice(2), caret: 0 });
+  expect(await page.evaluate('nodes[3].text')).toBe('Ch');
+});
+
+test('a checklist continues on Enter; Enter on an empty to-do ends it', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('nodes[3].isCheckbox = true; render()');
+  await edit(page, 4, -1);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.evaluate('[getIndex(nodes, editingId), nodes[getIndex(nodes, editingId)].isCheckbox]')).toEqual([4, true]);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.evaluate('[getIndex(nodes, editingId), nodes[getIndex(nodes, editingId)].isCheckbox]')).toEqual([4, false]);
+});
+
+test('Delete at the end of an empty row removes it, even before a row with children', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('nodes.splice(7, 0, { id: 99, depth: 0, text: "", parentId: null, isCheckbox: false, checked: false, note: "", tables: [], images: [], tags: [], styles: {} }); rebuildParentIds(); render()');
+  await edit(page, 99, 0);
+  await page.keyboard.press('Delete');
+  await expect.poll(() => where(page)).toEqual({ index: 7, depth: 0, text: 'Section 1', caret: 0 });
+});
+
+test('Undo and Redo from a row keep you editing, with the cursor where it was', async ({ page }) => {
+  await seed(page);
+  await edit(page, 4, 4);
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => where(page)).toEqual({ index: 3, depth: 1, text: 'Child 0.2', caret: 4 });
+  await page.keyboard.press('Control+y');
+  await expect.poll(() => page.evaluate('nodes[3].text')).toBe('Chil');
+  expect(await page.evaluate('editingId !== null')).toBe(true);
+});
+
+test('typing right after Shift+Enter goes into the note', async ({ page }) => {
+  await seed(page);
+  await edit(page, 4, -1);
+  await page.keyboard.press('Shift+Enter');
+  await page.keyboard.type('fast');
+  await expect.poll(() => page.evaluate('[nodes[3].text, document.activeElement.textContent]')).toEqual(['Child 0.2', 'fast']);
 });
 
 test('whole-row formatting and headings keep the caret where it was', async ({ page }) => {

@@ -165,7 +165,7 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
-- **Typing on a selected row adds, never replaces (2026-10-28).** Owner agreed: a letter typed on a selected (not editing) row used to replace the row's whole text (spreadsheet style), e.g. a stray key after sending a thread reply. It now opens the row with the caret at the end and inserts the letter there (`execCommand('insertText')` in the global keydown handler). Test in `cursor-stays-put.spec.ts`.
+- **Row editing pass (2026-10-28).** Owner: editing must be the best part. Typing on a selected row adds at its end (was: replaced the text; inserted synchronously so fast typing keeps order). Enter at the start of a row: blank row above, cursor on it (owner checked Dynalist; #691's "stay on the words" reverted). Enter with words selected replaces them, then splits. To-do rows continue on Enter (`continueChecklist`); Enter on an empty to-do makes it plain. Delete at the end of an empty row removes it even before a row with children. Undo/Redo from the row editor resume editing at the recorded caret (`_undoEditPos` set per row-editor key, `snapshotWithEdit`, `resumeEditFrom`). Shift+Enter focuses the note synchronously (fast typing used to land in the row). Tests: `cursor-stays-put.spec.ts`.
 
 - **PDF threads match the editor (2026-10-28).** Owner spotted replies printing flat: `.pv-thread-body .pv-remark-entry{margin:0}` (preview.css) beat `.pv-remark-entry.is-nested` (sidebar.css). The indent and the editor's spacing (more room before top-level entries, little inside a reply block) now live in preview.css. PDF and Copy thread show the day only, where it changes, no times (`formatThreadTimeAbsolute`); the PDF thread header is just "Thread · N" (no "· Decision").
 
