@@ -77,3 +77,10 @@ test('arrow keys on selected rows do not scroll while the row is in view', async
   expect(await page.evaluate('selectedId')).toBe(6);
   expect(await scrollTops()).toBe(before);
 });
+
+test('typing on a selected row adds to the end of its words, never replaces them', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('editingId = null; selectedId = 3; render()');
+  await page.keyboard.type('!x');
+  await expect.poll(() => where(page)).toEqual({ index: 2, depth: 1, text: 'Child 0.1!x', caret: 11 });
+});
