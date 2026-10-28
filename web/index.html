@@ -180,11 +180,13 @@ window.addEventListener('unhandledrejection',e=>{
 
     var appbarIconOnlyExportImport = false;
     var qaLocation = 'appbar';
+    var calmLayout = false;
     var raw = localStorage.getItem('sakura_v001_prefs');
     if (raw) {
       var d = JSON.parse(raw);
       if (d.appbarIconOnlyExportImport !== undefined) appbarIconOnlyExportImport = !!d.appbarIconOnlyExportImport;
       if (d.qaLocation === 'statusbar') qaLocation = 'statusbar';
+      if (d.calmLayout) calmLayout = true;
     }
     var dockRailCollapsed = localStorage.getItem('sakura_dock_rail_collapsed') === 'true';
 
@@ -200,6 +202,8 @@ window.addEventListener('unhandledrejection',e=>{
     // buttons are static markup, so they'd paint open for a frame before setDockRailCollapsed
     // (which runs later, alongside the rest of the panel wiring) reads the saved state.
     if (dockRailCollapsed) cls.push('presetup-dockrail-collapsed');
+    // Calm layout (trial) moves the app bar to a left rail; set before first paint so it never flashes.
+    if (calmLayout) cls.push('calm-layout');
     if (cls.length) document.documentElement.className += ' ' + cls.join(' ');
   }catch(e){}
 })();
@@ -216,7 +220,7 @@ window.addEventListener('unhandledrejection',e=>{
 /* GENERATED:css-presetup:END */
 </style>
 <style>
-/* GENERATED:css-app:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/base.css, src/styles/index/feature-activation.css, src/styles/index/modal.css, src/styles/index/welcome.css, src/styles/index/settings-help-layout.css, src/styles/index/fold.css, src/styles/index/outline-numbering.css, src/styles/index/search-bar.css, src/styles/index/action-bar.css, src/styles/index/documents-menu.css, src/styles/index/drag-drop.css, src/styles/index/context-menu.css, src/styles/index/sidebar.css, src/styles/index/tags.css, src/styles/index/guided-tour.css, src/styles/index/preview.css, src/styles/index/pasted-image.css, src/styles/index/settings-help-rail.css, src/styles/index/pdf-export-overlay.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
+/* GENERATED:css-app:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/base.css, src/styles/index/feature-activation.css, src/styles/index/modal.css, src/styles/index/welcome.css, src/styles/index/settings-help-layout.css, src/styles/index/fold.css, src/styles/index/outline-numbering.css, src/styles/index/search-bar.css, src/styles/index/action-bar.css, src/styles/index/documents-menu.css, src/styles/index/drag-drop.css, src/styles/index/context-menu.css, src/styles/index/sidebar.css, src/styles/index/tags.css, src/styles/index/guided-tour.css, src/styles/index/preview.css, src/styles/index/pasted-image.css, src/styles/index/settings-help-rail.css, src/styles/index/pdf-export-overlay.css, src/styles/index/calm-layout.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
 *{box-sizing:border-box;margin:0;padding:0} :root{--pad-menu:6px;--pad-menu-item:7px 10px;--gap-menu-item:8px;--pad-card:4px;--pad-card-item:5px 8px;--pad-pop:10px;--pad-dialog:20px;--fs-2xs:10px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:16px;--radius-menu:10px;--radius-panel:12px;--radius-dialog:14px;--shadow-menu:0 10px 24px rgba(0,0,0,.14);--shadow-panel:0 14px 36px rgba(0,0,0,.14);--shadow-dialog:0 24px 48px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);--editor-scale:1;--row-density:1} html,body{height:100%;overflow:hidden}
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
 /* Same category as the scrollbar-button reset above and the number-input spinner fix below:
@@ -2743,6 +2747,59 @@ body.printing-generic #gpe-overlay{
   .gpe-subtask{margin-left:25px}
   .gpe-subtask .gpe-task-box{width:12px;height:12px}
 }
+/* === Calm layout (trial, owner 2026-10-28) ===
+   A document-first frame, set by html.calm-layout (Settings → General → Layout, or Quick
+   Assist). The app bar becomes a thin icon rail on the left; the toolbar row and the status
+   bar go; open items, History and Share sit quietly at the page's top-right beside the title
+   (setCalmLayout moves #quick-bar into #editor-wrap); tabs show only when two or more are
+   open. Insert, AI, undo, indent and folding stay on "/", the selection bar, right-click and
+   their keys. Off = the standard layout, untouched. */
+.rail-only{display:none}
+html.calm-layout body{flex-direction:row;padding-top:0}
+html.calm-layout #appbar{position:relative;flex-direction:column;justify-content:flex-start;align-items:center;width:48px;height:100vh;min-height:0;padding:14px 0 12px;gap:14px;border-bottom:none;border-right:1px solid var(--border);background:var(--bg);-webkit-app-region:no-drag;app-region:no-drag}
+html.calm-layout #app-brand{flex:0 0 auto;width:auto;justify-content:center}
+html.calm-layout #app-brand-icon{margin-right:0!important}
+html.calm-layout #app-name{display:none}
+html.calm-layout #header-actions{flex:1 1 auto;flex-direction:column;align-items:center;gap:6px;width:100%}
+html.calm-layout #header-actions .rail-only{display:inline-flex}
+html.calm-layout #header-actions>.btn,html.calm-layout #header-actions>.export-wrap>.btn,html.calm-layout #header-actions .rail-only{width:34px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
+html.calm-layout #header-actions>.btn:hover,html.calm-layout #header-actions>.export-wrap>.btn:hover{color:var(--fg)}
+html.calm-layout #account-wrap{margin-top:auto;order:1}
+html.calm-layout #sidebar-reopen-btn{display:none!important}
+html.calm-layout #account-toggle-label{display:none}
+html.calm-layout #account-toggle:not(:has(#account-toggle-avatar-wrap[style*="inline"]))::before{content:'';width:18px;height:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 20.7a7 7 0 0 1 10 0'/%3E%3C/svg%3E") center/contain no-repeat}
+/* Rail menus open to the right of their button (the bottom one upwards). */
+html.calm-layout #header-actions .export-menu{top:0;left:calc(100% + 8px);right:auto}
+html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
+html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:12px;left:56px;right:auto}
+/* Quick Assist is the rail's search icon; opened, its field and results float beside the rail. */
+html.calm-layout #appbar-qa-slot{width:auto}
+html.calm-layout #global-search-wrap .qa-input-row{width:22px;padding:3px;gap:0;overflow:hidden;border-color:transparent;background:transparent}
+html.calm-layout #global-search-wrap .qa-input-row input{width:0;opacity:0;padding:0}
+html.calm-layout #global-search-wrap.qa-open .qa-input-row{position:fixed;left:56px;top:12px;width:440px;padding:6px 10px;gap:8px;overflow:visible;z-index:10002;background:var(--surface-panel);border-color:var(--border)}
+html.calm-layout #global-search-wrap.qa-open .qa-input-row input{width:auto;opacity:1}
+html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:56px;top:52px;right:auto;bottom:auto;width:440px}
+/* No status bar; a single tab needs no strip (switch documents from the rail's Documents). */
+html.calm-layout #statusbar{display:none}
+html.calm-layout #doc-tab-strip-row.single-tab{display:none}
+/* The toolbar row becomes the page's top-right corner: open items · History · Share. */
+html.calm-layout #editor-wrap{position:relative}
+html.calm-layout #quick-bar{position:absolute;top:18px;right:24px;z-index:5;padding:0;min-height:0;height:auto;border:none;background:transparent;width:auto}
+html.calm-layout #quick-bar>.action-group:not(.ag-right),html.calm-layout #quick-bar>.quick-sep{display:none}
+html.calm-layout #quick-bar #qb-collapse,html.calm-layout #quick-bar #qb-zoom,html.calm-layout #quick-bar #ag-fold .tb-sep{display:none}
+/* The page: more air above a lighter title; folded counts as plain grey text. */
+html.calm-layout #editor-title-row{padding-top:56px;padding-right:340px}
+html.calm-layout #header-title{font-weight:500;letter-spacing:-.005em}
+/* Dark: a neutral page (owner's Dynalist reference: background rgb(26,26,26), title rgb(238,238,238)). */
+html.calm-layout body.theme-dark{--canvas-bg:#1a1a1a}
+html.calm-layout body.theme-dark #header-title{color:#eeeeee}
+html.calm-layout .fold-badge,html.calm-layout .fold-badge.fold-badge-open{background:transparent;color:var(--hint)}
+html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
+/* Narrow windows: the page actions sit on their own line above the title instead of beside it. */
+@media (max-width:900px){
+  html.calm-layout #quick-bar{position:static;display:flex;justify-content:flex-end;margin:0;padding:12px 16px 0;background:var(--canvas-bg)}
+  html.calm-layout #editor-title-row{padding-top:8px;padding-right:0}
+}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -3422,6 +3479,7 @@ body.printing-generic #gpe-overlay{
       <span id="app-name">SAKURA</span>
     </div>
     <div id="header-actions">
+      <button class="btn rail-only" id="rail-docs-btn" data-tip="Documents" aria-label="Documents"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></button>
       <div id="appbar-qa-slot"></div>
       <button class="btn" id="dock-panel-appbar-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)" aria-label="Open To-Dos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
       <div class="export-wrap" id="appbar-more-wrap">
@@ -3539,6 +3597,7 @@ body.printing-generic #gpe-overlay{
                 <button type="button" class="accent-swatch" data-accent="amber" style="background:#917233" data-tip="Amber" aria-label="Amber" role="radio" aria-checked="false"></button>
               </div>
               </div>
+              <div class="settings-field"><label>Layout</label><div class="theme-segmented" id="layout-segmented" role="tablist" aria-label="Layout"><button type="button" class="theme-seg" data-layout="standard" role="tab" aria-selected="true" data-tip="Toolbar, tabs and status bar">Standard</button><button type="button" class="theme-seg" data-layout="calm" role="tab" aria-selected="false" data-tip="Just the document; app icons in a rail on the left (trial)">Calm</button></div></div>
             </div>
           </div>
           <div class="settings-section" data-cat="general" id="settings-section-todos">
@@ -4780,7 +4839,7 @@ let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoSta
 // unconditionally -- open by default, with no prior collapsed state for any existing document to
 // suddenly fall back to. So this tracks the opposite: which nodes someone has explicitly folded
 // away, not which have opted into being shown. Session-only, like the other four.
-let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let accentPreset='terracotta'; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
+let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let accentPreset='terracotta'; let qaIconOnly=false; let calmLayout=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
 let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='system'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let searchMatchCase=false; let searchWholeWord=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/export code, specifically so loadPrefs() restoring
@@ -12625,6 +12684,8 @@ function renderTabStrip(){
     row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docTabContextItems(tab)); });
     strip.appendChild(row);
   });
+  // Calm layout hides the strip while only one document is open.
+  el('doc-tab-strip-row')?.classList.toggle('single-tab',openTabs.length<2);
   updateHeaderRefChip();
 }
 // Moved out of the tab strip and into the title area (next to the document-status chip) —
@@ -14183,7 +14244,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,accentPreset,qaIconOnly,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,appbarIconOnlyExportImport,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,accentPreset,qaIconOnly,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,appbarIconOnlyExportImport,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,autoErrorReportEnabled,calmLayout};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -14206,7 +14267,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; qaIconOnly=!!d.qaIconOnly; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); calmLayout=!!d.calmLayout; ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; qaIconOnly=!!d.qaIconOnly; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -17976,6 +18037,7 @@ const QA_COMMANDS=[
   {id:'light-mode',label:'Light mode',keywords:['light mode','light theme'],get:()=>currentTheme==='light',set:v=>setTheme(v?'light':'dark')},
   {id:'spellcheck',label:'Spellcheck',keywords:['spellcheck','spell check'],get:()=>spellcheckEnabled,set:v=>setSpellcheckEnabled(v)},
   {id:'outline-numbering',label:'Outline numbering',keywords:['outline numbering','numbering'],get:()=>outlineNumbering,set:v=>setOutlineNumbering(v)},
+  {id:'calm-layout',label:'Calm layout',keywords:['calm layout','calm','minimal layout','hide toolbar'],get:()=>calmLayout,set:v=>setCalmLayout(v)},
   {id:'qa-icon-only',label:'Quick Assist icon only',keywords:['quick assist icon only','icon only','collapse quick assist'],get:()=>qaIconOnly,set:v=>setQaIconOnly(v)},
   {id:'appbar-io-icononly',label:'Icon-only Import/Export',keywords:['icon only import export','app bar icon only','collapse import export'],get:()=>appbarIconOnlyExportImport,set:v=>setAppbarIconOnlyExportImport(v)},
   {id:'preview-toc-sections',label:'PDF contents page: include sections',keywords:['table of contents','toc','contents','section markers','preview contents'],get:()=>previewTocIncludeSections,set:v=>setPreviewTocIncludeSections(v)},
@@ -19923,7 +19985,7 @@ function setAccentPreset(id,persist=true){accentPreset=ACCENT_PRESETS[id]?id:'te
 // One Theme control: Light | Dark | System. Picking Light or Dark anywhere (settings, menu,
 // command palette) is a lasting choice, so it leaves System mode rather than holding as a
 // temporary override that the next reload or OS change would undo.
-function syncThemeSegs(){ const pick=themeMode==='system'?'system':currentTheme; document.querySelectorAll('.theme-seg').forEach(btn=>{const active=btn.dataset.theme===pick; btn.classList.toggle('active',active); btn.setAttribute('aria-selected',String(active))}); }
+function syncThemeSegs(){ const pick=themeMode==='system'?'system':currentTheme; document.querySelectorAll('.theme-seg[data-theme]').forEach(btn=>{const active=btn.dataset.theme===pick; btn.classList.toggle('active',active); btn.setAttribute('aria-selected',String(active))}); }
 function setTheme(theme,isAuto=false,persist=true){if(!['light','dark'].includes(theme))theme='light'; currentTheme=theme; if(!isAuto&&themeMode!=='manual'){ themeMode='manual'; _themeOverrideActive=false; } [...document.body.classList].forEach(c=>{if(c.startsWith('theme-'))document.body.classList.remove(c)}); document.body.classList.add('theme-'+theme); document.documentElement.style.colorScheme=theme; syncThemeSegs(); applyAccentColor(); applyNodeFontColor(); syncThemeColorMeta(); if(persist){savePrefs(); scheduleAutoSave()} render()}
 function setAppbarIconOnlyExportImport(on,persist=true){ appbarIconOnlyExportImport=!!on; const bar=el('appbar'); if(bar) bar.classList.toggle('appbar-io-icononly',appbarIconOnlyExportImport); const t=el('appbar-io-icononly-toggle'); if(t){t.classList.toggle('on',appbarIconOnlyExportImport); t.setAttribute('aria-checked',String(appbarIconOnlyExportImport));} if(persist){savePrefs(); scheduleAutoSave();} }
 // Shared by every right-click "hide" menu item below: flips a boolean setting via its
@@ -22145,7 +22207,19 @@ function getScopedNodes(forceFull=false){
   }
   return base;
 }
-function setQaIconOnly(on,persist=true){qaIconOnly=!!on; const wrap=el('global-search-wrap'); if(wrap)wrap.classList.toggle('qa-icon-only',qaIconOnly); const toggle=el('qa-icon-only-toggle'); if(toggle){toggle.classList.toggle('on',qaIconOnly); toggle.setAttribute('aria-checked',String(qaIconOnly))} if(persist){savePrefs(); scheduleAutoSave()}}
+function setQaIconOnly(on,persist=true){qaIconOnly=!!on; const wrap=el('global-search-wrap'); if(wrap)wrap.classList.toggle('qa-icon-only',qaIconOnly||calmLayout); const toggle=el('qa-icon-only-toggle'); if(toggle){toggle.classList.toggle('on',qaIconOnly); toggle.setAttribute('aria-checked',String(qaIconOnly))} if(persist){savePrefs(); scheduleAutoSave()}}
+// Calm layout (trial, owner 2026-10-28): see calm-layout.css. The toolbar row moves into the
+// page (#editor-wrap) so open items, History and Share sit beside the title; the element itself
+// moves (never a clone), so its listeners and menus keep working, and moves back when off.
+function setCalmLayout(on,persist=true){
+  calmLayout=!!on;
+  document.documentElement.classList.toggle('calm-layout',calmLayout);
+  const qb=el('quick-bar'), wrap=el('editor-wrap'), row=el('editor-row');
+  if(qb&&wrap&&row){ if(calmLayout){ if(qb.parentElement!==wrap)wrap.insertBefore(qb,wrap.firstChild); } else if(qb.parentElement===wrap)row.parentElement.insertBefore(qb,row); }
+  el('global-search-wrap')?.classList.toggle('qa-icon-only',qaIconOnly||calmLayout);
+  document.querySelectorAll('#layout-segmented .theme-seg').forEach(b=>{ const a=(b.dataset.layout==='calm')===calmLayout; b.classList.toggle('active',a); b.setAttribute('aria-selected',String(a)); });
+  if(persist)savePrefs();
+}
 // Moves the actual Quick Assist element (never a clone — keeps its listeners, dropdown, and
 // open/closed state intact) between the status bar's right-hand cluster and a dedicated slot
 // in the app bar, left of Settings. Mirrors the "Experimental relocation" comment further up:
@@ -24873,7 +24947,9 @@ function isControlTarget(target){if(!target)return false; const tag=(target.tagN
 // is empty), so a plain "is it inside editor-pane" check mistook it for tree content and copied
 // an empty tree instead of letting the person copy what they'd actually selected.
 function hasExternalTextSelection(){const sel=window.getSelection(); if(!sel||sel.isCollapsed||!sel.rangeCount)return false; const anchor=sel.anchorNode; if(!anchor)return false; const node=anchor.nodeType===Node.TEXT_NODE?anchor.parentElement:anchor; if(!node)return false; if(node.closest('.empty-state'))return true; const pane=document.getElementById('editor-pane'); return !(pane&&pane.contains(node));}
-document.querySelectorAll('.theme-seg').forEach(btn=>btn.addEventListener('click',()=>{ if(btn.dataset.theme==='system') setThemeMode('system'); else setTheme(btn.dataset.theme); }));
+document.querySelectorAll('.theme-seg[data-theme]').forEach(btn=>btn.addEventListener('click',()=>{ if(btn.dataset.theme==='system') setThemeMode('system'); else setTheme(btn.dataset.theme); }));
+document.querySelectorAll('#layout-segmented .theme-seg').forEach(btn=>btn.addEventListener('click',()=>setCalmLayout(btn.dataset.layout==='calm')));
+el('rail-docs-btn')?.addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
 // 'system' mode's live-update path — fires the instant the OS/browser dark-mode setting
 // changes, no polling needed. addListener is the legacy fallback for older WebKit/Safari
 // that never picked up the newer addEventListener form on MediaQueryList.
@@ -25082,6 +25158,8 @@ function anchorMenuToButton(menuEl,anchorEl){
   if(!menuEl||!anchorEl)return;
   const r=anchorEl.getBoundingClientRect();
   menuEl.style.position='fixed';
+  // Calm layout: the anchor sits in the left rail, so the panel opens beside the rail.
+  if(calmLayout&&anchorEl.closest('#appbar')){ menuEl.style.top='12px'; menuEl.style.left='56px'; menuEl.style.right='auto'; return; }
   menuEl.style.top=(r.bottom+6)+'px';
   menuEl.style.right=(window.innerWidth-r.right)+'px';
   menuEl.style.left='auto';
@@ -27060,7 +27138,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setAlwaysStartBlank(alwaysStartBlank,false); setAccentPreset(accentPreset,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setAlwaysStartBlank(alwaysStartBlank,false); setAccentPreset(accentPreset,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setQaIconOnly(qaIconOnly,false); setCalmLayout(calmLayout,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
