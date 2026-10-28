@@ -10,7 +10,7 @@ const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|COR
 
 // A Phase 3-adjacent state slice (not core/, since these functions never touch the outline
 // `nodes` array — only `openTabs`/`activeTabDocId`). Exercises the real, unchanged
-// cycleOpenTab()/reorderTab() wrapper functions — the same functions the Ctrl+Tab shortcut and
+// cycleOpenTab()/reorderTab() wrapper functions — the same functions the (now hidden) tab strip and
 // tab-strip drag-and-drop call — against real openTabs state built from fully-formed tab
 // snapshot objects (the same shape switchDoc/loadTabFromStorageObj produce for a real document).
 test.describe('generated tabOrder block (src/state/tabOrder.ts spliced into index.html)', () => {

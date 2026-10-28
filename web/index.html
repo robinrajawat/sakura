@@ -2747,9 +2747,9 @@ body.printing-generic #gpe-overlay{
 }
 /* === The layout (owner 2026-10-28: tried as "Calm", now the only layout) ===
    A document-first frame, set by html.calm-layout before first paint. The app bar is a thin icon
-   rail on the left; there is no toolbar row or status bar; one quiet top line holds the tabs (only
-   when two or more are open) on the left and open items, History and Share on the right
-   (applyCalmLayout moves #quick-bar into the tab row). Insert, AI, undo, indent and folding live
+   rail on the left; there is no toolbar row, status bar or tab strip; one quiet top line holds
+   back/forward and the document's path on the left and History and Share on the right
+   (applyCalmLayout moves #quick-bar into that row). Insert, AI, undo, indent and folding live
    on "/", the selection bar, right-click and their keys. */
 .rail-only{display:none}
 html.calm-layout body{flex-direction:row;padding-top:0}
@@ -2802,23 +2802,26 @@ html.calm-layout #global-search-wrap .qa-input-row input{width:0;opacity:0;paddi
 html.calm-layout #global-search-wrap.qa-open .qa-input-row{position:fixed;left:calc(50% + 26px);top:14vh;transform:translateX(-50%);width:min(560px,calc(100vw - 84px));height:auto;padding:10px 14px;box-shadow:var(--shadow-panel);border-radius:var(--radius-panel);padding:6px 10px;gap:8px;overflow:visible;z-index:10002;background:var(--surface-panel);border-color:var(--border)}
 html.calm-layout #global-search-wrap.qa-open .qa-input-row input{width:auto;opacity:1}
 html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:calc(50% + 26px);top:calc(14vh + 50px);transform:translateX(-50%);right:auto;bottom:auto;width:min(560px,calc(100vw - 84px))}
-/* No status bar. One top line on the page colour: tabs (plain words; the open one in the text
-   colour, close × on hover) with + beside them, and open items · History · Share on the right.
-   One open document still shows its tab, so it can be closed; with none open there are no tabs. */
-html.calm-layout #doc-tab-strip-row.no-tabs>:is(#doc-tab-strip,#doc-tab-overview-wrap){display:none!important}
+/* One top line on the page colour: back / forward and where you are (Folder › Document) on the
+   left, History · Share on the right. No tabs (owner,
+   2026-10-28): one document at a time; switch from the File Explorer or Search. */
+html.calm-layout #doc-tab-strip-row{align-items:center;gap:4px;height:52px;padding:0 20px 0 12px;background:var(--canvas-bg);border-bottom:none}
+html.calm-layout #doc-tab-strip,html.calm-layout #doc-tab-add-btn,html.calm-layout #doc-tab-overview-wrap{display:none!important}
+#doc-path{display:none}
+html.calm-layout #doc-path{display:flex;align-items:center;gap:2px;min-width:0;flex:1 1 auto}
+.doc-nav-btn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;flex:0 0 auto}
+.doc-nav-btn:hover:not(:disabled){background:var(--hover);color:var(--fg)}
+.doc-nav-btn:disabled{color:var(--hint);opacity:.45;cursor:default}
+#doc-path-crumbs{display:flex;align-items:center;gap:4px;min-width:0;margin-left:8px;font-size:var(--fs-md);color:var(--hint);white-space:nowrap;overflow:hidden}
+.doc-path-folder{border:none;background:transparent;padding:3px 6px;border-radius:6px;color:var(--hint);font:inherit;cursor:pointer;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.doc-path-folder:hover{background:var(--hover);color:var(--fg)}
+.doc-path-sep{color:var(--hint);flex:0 0 auto}
+.doc-path-title{color:var(--muted);padding:3px 6px;min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* No status bar: word count, depth and "Saved …" go. What still needs saying (storage full, the
    Secure Storage nudge, AI Rewrite at work) floats quietly at the bottom-right while it applies. */
 html.calm-layout #statusbar{position:fixed;left:auto;top:auto;right:56px;bottom:12px;z-index:50;height:auto;min-height:0;padding:0;border:none;background:transparent;display:flex;pointer-events:none}
 html.calm-layout #statusbar>*{pointer-events:auto}
 html.calm-layout #statusbar :is(.status-divider,#sb-wordcount,#sb-depth),html.calm-layout #sb-saved:not(.is-failed),html.calm-layout #sb-auto-rewrite-chip.is-idle{display:none!important}
-html.calm-layout #doc-tab-strip-row{align-items:center;gap:4px;height:52px;padding:0 20px 0 12px;background:var(--canvas-bg);border-bottom:none}
-html.calm-layout #doc-tab-strip{flex:0 1 auto;align-items:center;gap:2px;padding:0}
-html.calm-layout .doc-tab{top:0;min-width:0;padding:5px 6px 5px 10px;border:none;border-radius:6px;background:transparent;color:var(--hint);font-weight:400;font-size:var(--fs-md)}
-html.calm-layout .doc-tab:hover{background:var(--hover);color:var(--muted)}
-html.calm-layout .doc-tab.active{background:transparent;color:var(--fg)}
-html.calm-layout .doc-tab:not(:hover) .doc-tab-close{visibility:hidden}
-html.calm-layout .doc-tab .doc-tab-close:hover{background:var(--hover);color:var(--fg)}
-html.calm-layout .doc-tab-add,html.calm-layout #doc-tab-overview-btn{margin:0;color:var(--hint)}
 html.calm-layout #quick-bar{position:static;flex:0 0 auto;margin-left:auto;z-index:5;padding:0;min-height:0;height:auto;border:none;background:transparent;width:auto}
 /* Under the title: what the document is (status, author, link), then what's open in it. Empty
    "+ Add…" slots show only while the title area is hovered or in use (as Notion does). No dots;
@@ -2839,10 +2842,9 @@ html.calm-layout #editor-title-row{padding-top:28px}
 html.calm-layout #header-title{letter-spacing:-.005em}
 html.calm-layout .fold-badge,html.calm-layout .fold-badge.fold-badge-open{background:transparent;color:var(--hint)}
 html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
-/* Narrow windows: the tabs give way to the page actions. */
+/* Narrow windows: a tighter top line (the path shortens first). */
 @media (max-width:900px){
   html.calm-layout #doc-tab-strip-row{padding:0 12px 0 8px}
-  html.calm-layout #doc-tab-strip{flex:1 1 auto}
 }
 /* GENERATED:css-app:END */
 </style>
@@ -4031,7 +4033,7 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
 <h4>Tabs</h4>
 <ul>
 <li>Each open document is a tab with its own undo and scroll. Double-click a tab to rename, drag to reorder, <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Alt</span> + <span class="help-kbd">W</span> closes it</li>
-<li>Right-click a tab for Version history, Sort and Clear all rows</li>
+<li>Right-click the document name on the top line for Version history, Sort and Clear all rows</li>
 </ul>
 </div>
           <div class="help-section" data-cat="documents">
@@ -4172,6 +4174,7 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
   <!-- Main content column -->
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
   <div id="doc-tab-strip-row">
+    <div id="doc-path"><button type="button" class="doc-nav-btn" id="doc-nav-back" data-tip="Back (Ctrl/Cmd+[)" aria-label="Back" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button><button type="button" class="doc-nav-btn" id="doc-nav-forward" data-tip="Forward (Ctrl/Cmd+])" aria-label="Forward" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button><nav id="doc-path-crumbs" aria-label="Where you are"></nav></div>
     <button id="sidebar-reopen-btn" data-tip="Show file explorer" aria-label="Show file explorer" style="display:none">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
     </button>
@@ -12627,9 +12630,67 @@ function switchDoc(id){
   }
   commitEdit(); clearFiltersForDocChange(); captureActiveTabSnapshot(); saveToStorage();
   applyTabSnapshot(tab);
+  noteDocVisit(prevId,id);
+  trimOpenDocCache();
   persistOpenTabs(); renderTabStrip();
   if(prevId&&prevId!==id)discardDocIfBlank(prevId);
-  showToast('Switched document');
+}
+
+// No tabs (owner, 2026-10-28): one document at a time. Switching goes through the File Explorer
+// or Search (recent documents first), with back/forward (Ctrl/Cmd+[ and ]) like a browser.
+// openTabs stays as a small cache of recently open documents (their undo and scroll survive a
+// quick hop back); it is never shown.
+const RECENT_DOCS_KEY='sakura_recent_docs_v1', OPEN_DOC_CACHE=6;
+let docNavStack=[], docNavIndex=-1, _docNavMoving=false;
+function noteDocVisit(prevId,id){
+  if(!id)return;
+  try{ const r=JSON.parse(localStorage.getItem(RECENT_DOCS_KEY)||'[]'); const list=[id,...(Array.isArray(r)?r:[]).filter(x=>x!==id)].slice(0,20); localStorage.setItem(RECENT_DOCS_KEY,JSON.stringify(list)); }catch(e){}
+  if(_docNavMoving)return;
+  if(docNavIndex<0&&prevId){ docNavStack=[prevId]; docNavIndex=0; }
+  if(docNavStack[docNavIndex]===id)return;
+  docNavStack=docNavStack.slice(0,docNavIndex+1); docNavStack.push(id); docNavIndex=docNavStack.length-1;
+  updateDocNavButtons();
+}
+function recentDocIds(){ try{ const r=JSON.parse(localStorage.getItem(RECENT_DOCS_KEY)||'[]'); return Array.isArray(r)?r:[]; }catch(e){ return []; } }
+function trimOpenDocCache(){
+  const rank=id=>{ const r=recentDocIds().indexOf(id); return r<0?1e9:r; };
+  while(openTabs.filter(t=>!t.pinned).length>OPEN_DOC_CACHE){
+    const old=openTabs.filter(t=>!t.pinned&&t.docId!==activeTabDocId&&!sharedDocMeta[t.docId]).sort((a,b)=>rank(b.docId)-rank(a.docId))[0]; if(!old)break;
+    closeTab(old.docId);
+  }
+}
+function goDocNav(step){
+  const live=new Set(loadActiveDocsIndex().map(d=>d.id));
+  let j=docNavIndex+step;
+  while(j>=0&&j<docNavStack.length&&(!live.has(docNavStack[j])||docNavStack[j]===currentDocId))j+=step;
+  if(j<0||j>=docNavStack.length)return;
+  docNavIndex=j; _docNavMoving=true;
+  try{ switchDoc(docNavStack[j]); }finally{ _docNavMoving=false; }
+  updateDocNavButtons();
+}
+function updateDocNavButtons(){
+  const b=el('doc-nav-back'), f=el('doc-nav-forward'); if(!b||!f)return;
+  b.disabled=docNavIndex<=0; f.disabled=docNavIndex<0||docNavIndex>=docNavStack.length-1;
+}
+// Where you are: Folder › Sub-folder › Document. A folder opens the File Explorer on it.
+function renderDocPath(){
+  const box=el('doc-path-crumbs'); if(!box)return;
+  box.innerHTML='';
+  const title=(el('header-title')?.value||'').trim()||'Untitled';
+  if(currentDocId){
+    const folders=loadFolders(); let f=folders.find(x=>x.id===loadDocFolderMap()[currentDocId]); const chain=[]; let guard=0;
+    while(f&&guard++<20){ chain.unshift(f); f=f.parentId?folders.find(x=>x.id===f.parentId):null; }
+    chain.forEach(fd=>{
+      const b=document.createElement('button'); b.type='button'; b.className='doc-path-folder'; b.textContent=fd.name||'Unnamed folder';
+      b.addEventListener('click',()=>revealFolderInSidebar(fd.id));
+      box.appendChild(b);
+      const sep=document.createElement('span'); sep.className='doc-path-sep'; sep.setAttribute('aria-hidden','true'); sep.textContent='›'; box.appendChild(sep);
+    });
+  }
+  const t=document.createElement('span'); t.className='doc-path-title'; t.textContent=title;
+  t.dataset.tip='Right-click for Version history, Sort and Clear all rows';
+  t.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); if(currentDocId)showSbContextMenu(e.clientX,e.clientY,docMenuItems()); });
+  box.appendChild(t);
 }
 
 function closeTab(id, force=false){
@@ -12686,6 +12747,7 @@ function reorderTab(draggedId,targetId,side){
 }
 
 function renderTabStrip(){
+  renderDocPath(); updateDocNavButtons();
   const strip=el('doc-tab-strip'); if(!strip)return;
   const docIndexMap=new Map(loadDocsIndex().map(d=>[d.id,d]));
   strip.innerHTML='';
@@ -12723,7 +12785,7 @@ function renderTabStrip(){
     row.addEventListener('click',e=>{ if(e.target.closest('.doc-tab-close'))return; if(!isActive)switchDoc(tab.docId) });
     row.addEventListener('dblclick',e=>{ if(e.target.closest('.doc-tab-close'))return; e.preventDefault(); renameDoc(tab.docId,row.querySelector('.doc-tab-title')) });
     row.querySelector('.doc-tab-close').addEventListener('click',e=>{ e.stopPropagation(); closeTab(tab.docId) });
-    row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docTabContextItems(tab)); });
+    row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docMenuItems()); });
     strip.appendChild(row);
   });
   // Calm layout hides the strip while only one document is open.
@@ -12747,29 +12809,18 @@ function updateHeaderRefChip(){
   chip.onclick=()=>openRefJumpPopover(chip, tRefs, 'References the whole document');
 }
 
-// A document tab's right-click menu is also the document's own menu: Version history for any
-// tab, and — on the open document's tab only, since they act on the outline that's on screen —
+// The open document's own menu (right-click its name on the top line): Version history,
 // Sort top-level rows (A → Z, Z → A, by depth) and Clear all rows (Undo in the toast).
 const DOC_MENU_ICON=svg=>'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svg+'</svg>';
-function docTabContextItems(tab){
+function docMenuItems(){
   const items=[];
-  items.push(tab.pinned
-    ? {label:'Unpin tab', onClick: async()=>{ setTabPinned(tab.docId,false); }}
-    : {label:'Pin tab', onClick: async()=>{ setTabPinned(tab.docId,true); }});
+  items.push({label:'Version history…', icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>'), onClick: async()=>{ commitEdit(); openVersionHistory(currentDocId); }});
   items.push({divider:true});
-  if(!tab.pinned) items.push({label:'Close tab', onClick: async()=>{ closeTab(tab.docId); }});
-  items.push({label:'Close other tabs', onClick: async()=>{ closeOtherTabs(tab.docId); }});
-  items.push({label:'Close tabs to the right', onClick: async()=>{ closeTabsToRight(tab.docId); }});
+  items.push({label:'Sort rows A → Z', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'az'); }});
+  items.push({label:'Sort rows Z → A', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'za'); }});
+  items.push({label:'Sort rows by depth', icon:DOC_MENU_ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'depth'); }});
   items.push({divider:true});
-  items.push({label:'Version history…', icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>'), onClick: async()=>{ commitEdit(); openVersionHistory(tab.docId); }});
-  if(tab.docId===activeTabDocId){
-    items.push({divider:true});
-    items.push({label:'Sort rows A → Z', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'az'); }});
-    items.push({label:'Sort rows Z → A', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'za'); }});
-    items.push({label:'Sort rows by depth', icon:DOC_MENU_ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'depth'); }});
-    items.push({divider:true});
-    items.push({label:'Clear all rows', danger:true, icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>'), onClick: async()=>{ await clearAllNodes(); }});
-  }
+  items.push({label:'Clear all rows', danger:true, icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>'), onClick: async()=>{ await clearAllNodes(); }});
   return items;
 }
 
@@ -17599,6 +17650,13 @@ function collectFolderMatches(q){
   });
   return out.slice(0,5);
 }
+function recentDocItems(){
+  const live=new Map(loadActiveDocsIndex().map(d=>[d.id,d]));
+  return recentDocIds().filter(id=>id!==currentDocId&&live.has(id)).slice(0,6).map(id=>{ const d=live.get(id); return {
+    group:'Recent',label:d.title||'Untitled',labelHtml:esc(d.title||'Untitled'),meta:'',
+    action:()=>{closeAllPanelsExceptGlobalSearch(); switchDoc(id)}
+  }; });
+}
 function collectDocMatches(q){
   const tokens=qaTokenizeQuery(q);
   const active=loadActiveDocsIndex().filter(d=>qaHayMatches(d.title||'Untitled',tokens)).slice(0,5).map(d=>({
@@ -18085,7 +18143,7 @@ const QA_COMMANDS=[
   {id:'preview-toc-sections',label:'PDF contents page: include sections',keywords:['table of contents','toc','contents','section markers','preview contents'],get:()=>previewTocIncludeSections,set:v=>setPreviewTocIncludeSections(v)},
   {id:'section-marker-depth0',label:'Treat top-level rows as sections',keywords:['section marker','section','depth 0','top level'],get:()=>sectionMarkersDepthZero,set:v=>setSectionMarkersDepthZero(v)},
   {id:'accent-branches',label:'Accent color on branches',keywords:['accent branches','colored branches','coloured branches','branch color','branch colour'],get:()=>accentBranches,set:v=>setAccentBranches(v)},
-  {id:'restore-tabs',label:'Reopen tabs on launch',keywords:['restore tabs','reopen tabs'],get:()=>restoreTabsOnLaunch,set:v=>setRestoreTabsOnLaunch(v)},
+  {id:'restore-tabs',label:'Reopen the last document on launch',keywords:['restore tabs','reopen tabs','reopen last document'],get:()=>restoreTabsOnLaunch,set:v=>setRestoreTabsOnLaunch(v)},
   {id:'always-blank',label:'Start each session blank',keywords:['start blank','blank session','always start blank'],get:()=>alwaysStartBlank,set:v=>setAlwaysStartBlank(v)},
   // Feature Activation toggles — reuse setFeatureEnabled() rather than touching the
   // underlying flags directly, so persistence, UI sync, and body-class updates all stay
@@ -18342,27 +18400,32 @@ function qaRender(){
   const q=(prefixed?prefixed.rest:text).trim().toLowerCase().replace(/\s+/g,' ');
   results.innerHTML=''; qaEntries=[];
   const dropdown=el('qa-dropdown');
-  // An empty box shows nothing until you type (owner, 2026-10-28: no "Try things like" examples).
-  if(!q){ if(dropdown)dropdown.classList.toggle('qa-dropdown-empty',!scopedCategoryKey); qaActiveIndex=-1; return; }
+  // An empty box lists recent documents (there are no tabs, owner 2026-10-28), else nothing: no
+  // "Try things like" examples.
+  const recentItems=!q&&!scopedCategoryKey?recentDocItems():[];
+  if(!q&&!recentItems.length){ if(dropdown)dropdown.classList.toggle('qa-dropdown-empty',!scopedCategoryKey); qaActiveIndex=-1; return; }
   if(dropdown)dropdown.classList.remove('qa-dropdown-empty');
-  const {verb,targets}=scopedCategoryKey?{verb:null,targets:[]}:qaParse(text);
+  const {verb,targets}=(scopedCategoryKey||!q)?{verb:null,targets:[]}:qaParse(text);
   let commands=targets.slice(0,6);
   let effVerb=verb;
   let suggesting=false;
-  if(!commands.length&&!scopedCategoryKey){
+  if(!commands.length&&!scopedCategoryKey&&q){
     const bare=qaSuggestForBareVerb(q);
     if(bare.verb&&bare.suggestions.length){ commands=bare.suggestions; effVerb=bare.verb; suggesting=true; }
   }
   commands.forEach(cmd=>qaEntries.push({kind:'command',cmd,verb:effVerb}));
-  let actionRows=scopedCategoryKey?[]:qaParseActionsList(q).slice(0,4).map(action=>({action,disabled:action.requiresSelection&&selectedId===null}));
-  if(!actionRows.length&&!scopedCategoryKey){
+  let actionRows=(scopedCategoryKey||!q)?[]:qaParseActionsList(q).slice(0,4).map(action=>({action,disabled:action.requiresSelection&&selectedId===null}));
+  if(!actionRows.length&&!scopedCategoryKey&&q){
     const bareRun=qaSuggestActionsForBareVerb(q);
     if(bareRun.matched&&bareRun.actions.length){ actionRows=bareRun.actions.map(action=>({action,disabled:action.requiresSelection&&selectedId===null})); }
   }
   actionRows.forEach(row=>{ if(!row.disabled)qaEntries.push({kind:'action',action:row.action}); });
   const renderedGroups=[];
   let fuzzyUsed=false;
-  if(qaSearchResultsEnabled){
+  if(recentItems.length){
+    renderedGroups.push({name:'Recent',items:recentItems});
+    recentItems.forEach(item=>qaEntries.push({kind:'search',item}));
+  } else if(qaSearchResultsEnabled){
     let searchGroups=collectSearchGroups(q).filter(g=>{
       const key=QA_CATEGORY_KEY_BY_GROUP[g.name];
       return (!scopedCategoryKey||key===scopedCategoryKey)&&(!key||!qaSearchHiddenCategories.includes(key));
@@ -18653,9 +18716,12 @@ el('qa-input')?.addEventListener('keydown',e=>{
 });
 el('qa-category-icon-btn')?.addEventListener('click',e=>{
   e.preventDefault(); e.stopPropagation();
+  // From the rail it opens Search (recent documents first); clicked again inside the open box it
+  // browses by category.
+  const wasOpen=!!el('global-search-wrap')?.classList.contains('qa-open');
   setQaOpen(true);
   el('qa-input')?.focus();
-  qaRenderCategoryPicker();
+  if(wasOpen)qaRenderCategoryPicker(); else qaRender();
 });
 /* GENERATED:nodeQueries:START — DO NOT EDIT BY HAND. Source of truth: src/core/nodeQueries.ts (tests: tests/unit/nodeQueries.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -24992,6 +25058,9 @@ function isControlTarget(target){if(!target)return false; const tag=(target.tagN
 function hasExternalTextSelection(){const sel=window.getSelection(); if(!sel||sel.isCollapsed||!sel.rangeCount)return false; const anchor=sel.anchorNode; if(!anchor)return false; const node=anchor.nodeType===Node.TEXT_NODE?anchor.parentElement:anchor; if(!node)return false; if(node.closest('.empty-state'))return true; const pane=document.getElementById('editor-pane'); return !(pane&&pane.contains(node));}
 document.querySelectorAll('.theme-seg[data-theme]').forEach(btn=>btn.addEventListener('click',()=>{ if(btn.dataset.theme==='system') setThemeMode('system'); else setTheme(btn.dataset.theme); }));
 el('rail-docs-btn')?.addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
+el('doc-nav-back')?.addEventListener('click',()=>goDocNav(-1));
+el('doc-nav-forward')?.addEventListener('click',()=>goDocNav(1));
+el('header-title')?.addEventListener('input',()=>renderDocPath());
 el('sb-import-btn')?.addEventListener('click',e=>{e.stopPropagation(); triggerOpmlImport();});
 el('rail-settings-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-toggle').click();});
 // 'system' mode's live-update path — fires the instant the OS/browser dark-mode setting
@@ -25449,7 +25518,8 @@ try { shortcutOverrides = JSON.parse(localStorage.getItem('sakura-shortcut-overr
 const SHORTCUTS = {
   save:           {combo:'mod+s',         label:'Save now',                 category:'Docs, Tabs & Zen', guarded:false, action:()=>manualSave()},
   newDoc:         {combo:'mod+alt+n',     label:'New document',             category:'Docs, Tabs & Zen', guarded:false, action:()=>{commitEdit(); createDoc();}},
-  closeTab:       {combo:'mod+alt+w',     label:'Close tab',                category:'Docs, Tabs & Zen', guarded:false, action:()=>{if(activeTabDocId!==null)closeTab(activeTabDocId);}},
+  docBack:        {combo:'mod+[',         label:'Back to the previous document', category:'Docs, Tabs & Zen', guarded:false, action:()=>goDocNav(-1)},
+  docForward:     {combo:'mod+]',         label:'Forward',                  category:'Docs, Tabs & Zen', guarded:false, action:()=>goDocNav(1)},
   toggleZen:      {combo:'mod+shift+e',   label:'Toggle zen mode',          category:'Docs, Tabs & Zen', guarded:false, action:()=>setZenMode(!zenMode)},
   quickAssist:    {combo:'mod+/',         label:'Open Quick Assist',        category:'Global Search',    guarded:false, action:()=>toggleQa()},
   findInTree:     {combo:'mod+f',         label:'Search this tree',         category:'Global Search',    guarded:false, action:()=>openSearch()},
@@ -25487,14 +25557,6 @@ const SHORTCUTS = {
 // Drop saved overrides for shortcuts that no longer exist (e.g. the removed Pad/Diagrams-panel
 // toggles), so they don't linger in the "N shortcuts customized" count.
 Object.keys(shortcutOverrides).forEach(id=>{ if(!SHORTCUTS[id]) delete shortcutOverrides[id]; });
-// Plain Ctrl/Cmd+W for Close Tab only makes sense in standalone/PWA mode — in an ordinary
-// browser tab, Ctrl+W is reserved by the browser itself and preventDefault can't stop it
-// from closing the actual browser tab, so binding it there would be actively misleading
-// (looks bound in Settings, does nothing or fights the browser). mod+alt+w keeps working
-// everywhere as the reliable combo regardless of display mode.
-if((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true){
-  SHORTCUTS.closeTab.altCombos = ['mod+w'];
-}
 
 function getShortcutCombos(id){
   const def = SHORTCUTS[id];
@@ -25914,7 +25976,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('keydown', e=>{ if (e.key==='Escape' && overlay.classList.contains('open') && document.activeElement!==searchInput) close(); });
 });
 
-document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'closeTab')) { e.preventDefault(); fireShortcut('closeTab'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key==='Tab'){e.preventDefault(); cycleOpenTab(e.shiftKey?-1:1); return;} if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
+document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
     // Zoomed into a node with no children yet: render() shows only the focus-empty-state
     // placeholder here, with no row to click or type into -- so typing or Enter must create
     // that first child directly, mirroring the !nodes.length branch just above.
@@ -27180,7 +27242,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setAlwaysStartBlank(alwaysStartBlank,false); setAccentPreset(accentPreset,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setQaIconOnly(qaIconOnly,false); applyCalmLayout(); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setAlwaysStartBlank(alwaysStartBlank,false); setAccentPreset(accentPreset,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setQaIconOnly(qaIconOnly,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
@@ -35975,7 +36037,7 @@ function todosHistorySummary(list) {
         <ul>
           <li><span class="cs-combo" data-cs-shortcut="newDoc"></span> <span class="cs-desc">new document</span></li>
           <li><span class="cs-desc">Click a doc's icon in the file explorer → pick from a small icon set</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="closeTab"></span> <span class="cs-desc">close tab</span></li>
+          <li><span class="cs-combo" data-cs-shortcut="docBack"></span> / <span class="cs-combo" data-cs-shortcut="docForward"></span> <span class="cs-desc">back / forward between documents</span></li>
           <li><span class="cs-combo" data-cs-shortcut="save"></span> <span class="cs-desc">save now</span></li>
           <li><span class="cs-combo" data-cs-shortcut="toggleZen"></span> <span class="cs-desc">toggle zen mode</span></li>
           <li><span class="help-kbd">Esc</span> <span class="cs-desc">exit zen mode only (doesn't toggle back in)</span></li>
@@ -35991,14 +36053,11 @@ function todosHistorySummary(list) {
         </ul>
       </div>
       <div class="cs-card" data-cs-anchor="tabs">
-        <h3>Tabs</h3>
+        <h3>Switching documents</h3>
         <ul>
-          <li><span class="cs-desc">Click a doc in the file explorer or <span class="help-kbd">+</span> at end of strip → open as tab</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="newDoc"></span> <span class="cs-desc">new document</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="closeTab"></span> <span class="cs-desc">close active tab (doc stays in file explorer)</span></li>
-          <li><span class="cs-desc">Double-click tab → rename · Drag to reorder · <span class="help-kbd">▾</span> → search open tabs</span></li>
-          <li><span class="cs-desc">Each tab keeps its own undo history, scroll, and selection</span></li>
-          <li><span class="cs-desc">Settings → Startup → "Reopen tabs on launch" restores them next session</span></li>
+          <li><span class="cs-desc">One document at a time: open another from the File Explorer, or from Search (recent documents first)</span></li>
+          <li><span class="cs-combo" data-cs-shortcut="docBack"></span> / <span class="cs-combo" data-cs-shortcut="docForward"></span> <span class="cs-desc">back / forward, or the arrows at the top left</span></li>
+          <li><span class="cs-desc">The top line shows where you are: Folder › Document (click a folder to show it)</span></li>
         </ul>
       </div>
 
