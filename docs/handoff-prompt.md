@@ -165,11 +165,9 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Editor page width (2026-10-28).** Owner chose: the editor is a centred 900px page by default (`#editor-pane-inner`/`#editor-title-inner` max-width `var(--editor-reading-width, calc(900px * var(--editor-scale)))`), with Settings → Editor → **Full width** (`editorFullWidth` pref, `setEditorFullWidth`) to run the whole window. Replaces the old opt-in reading width that had no UI (`editorReadingWidth*` removed). Test: `editor-page-width.spec.ts`.
+
 - **Row editing pass (2026-10-28).** Owner: editing must be the best part. Typing on a selected row adds at its end (was: replaced the text; inserted synchronously so fast typing keeps order). Enter at the start of a row: blank row above, cursor on it (owner checked Dynalist; #691's "stay on the words" reverted). Enter with words selected replaces them, then splits. To-do rows continue on Enter (`continueChecklist`); Enter on an empty to-do makes it plain. Delete at the end of an empty row removes it even before a row with children. Undo/Redo from the row editor resume editing at the recorded caret (`_undoEditPos` set per row-editor key, `snapshotWithEdit`, `resumeEditFrom`). Shift+Enter focuses the note synchronously (fast typing used to land in the row). Tests: `cursor-stays-put.spec.ts`.
-
-- **PDF threads match the editor (2026-10-28).** Owner spotted replies printing flat: `.pv-thread-body .pv-remark-entry{margin:0}` (preview.css) beat `.pv-remark-entry.is-nested` (sidebar.css). The indent and the editor's spacing (more room before top-level entries, little inside a reply block) now live in preview.css. PDF and Copy thread show the day only, where it changes, no times (`formatThreadTimeAbsolute`); the PDF thread header is just "Thread · N" (no "· Decision").
-
-- **Cursor stays put (2026-10-28).** Owner: the cursor jumped to odd places while editing. Enter on a row whose children show now adds its first child (mid-text, the rest of the words go there), as in Workflowy/Dynalist (`rowListIsOpen`; before, the new row landed below the whole sub-list). Enter at the start of a row opens a blank row above and the cursor stays on the words. Whole-row formatting and heading shortcuts with nothing selected keep the caret (`beginEditAt(id,c)`, was end of row). ↑/↓ on selected rows scroll only when the row would leave the view (`scrollToNode(id,'nearest')`, was centring on every press). Tests: `cursor-stays-put.spec.ts`.
 
 ### In progress / not built
 
