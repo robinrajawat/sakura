@@ -114,3 +114,19 @@ test('the day shows only where it changes; hovering an entry shows it again (own
   await entry(page, 'c1').hover();
   await expect(time('c1')).toHaveCSS('opacity', '1');
 });
+
+test('the PDF indents replies under their entry, as the editor does, and shows each day once', async ({ page }) => {
+  const d = Date.UTC(2026, 9, 15, 9);
+  await seed(page, `[
+    { id: 'q1', anchorNodeId: 1, person: 'Karsten', text: 'Does the EU file load before Saturday?', type: 'question', createdAt: ${d} },
+    { id: 'a1', anchorNodeId: 1, person: 'Ana', text: 'Yes.', answerTo: 'q1', createdAt: ${d + 60000} },
+    { id: 'c1', anchorNodeId: 1, person: 'Maria', text: 'Weekend works.', decision: true, createdAt: ${d + 86400000} }
+  ]`);
+  await page.evaluate('_applyNodeContentExportState(); previewActive = true; renderPreviewBody()');
+  const rows = await page.evaluate(`[...document.querySelectorAll('#preview-body .pv-thread-body .pv-remark-entry')].map(e => ({ indent: getComputedStyle(e).marginLeft, meta: e.querySelector('.pv-remark-meta').textContent }))`) as { indent: string; meta: string }[];
+  expect(rows.map((r) => r.indent)).toEqual(['0px', '20px', '0px']);
+  // The day shows where it changes, with no times (as in the editor).
+  expect(rows.map((r) => /2026/.test(r.meta))).toEqual([true, false, true]);
+  expect(rows.some((r) => /\d:\d\d/.test(r.meta))).toBe(false);
+  await expect(page.locator('#preview-body .pv-inline-label-remark span')).toHaveText('Thread · 3');
+});

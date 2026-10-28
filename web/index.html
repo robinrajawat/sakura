@@ -1969,7 +1969,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .pv-remark-kind svg{width:11px;height:11px;stroke-width:2.6}
 
 /* Replies read under their entry (owner, 2026-10-27), one step in (renderNodeThread's placeThread). */
-.pv-remark-entry.is-nested{margin-left:20px}
 /* Reply on an entry: on hover only (owner, 2026-10-27). */
 .thread-reply-btn{margin-left:6px;padding:0 4px;border:none;background:none;color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer;border-radius:4px;opacity:0}
 .thread-entry:hover .thread-reply-btn,.thread-reply-btn:focus-visible{opacity:1}
@@ -2488,6 +2487,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-thread-body .pv-remark-entry{position:relative}
 .pv-thread-body .pv-remark-entry{display:grid;grid-template-columns:15px 1fr;column-gap:8px;align-items:start;margin:0;padding:3px 0;border:0}
 .pv-thread-body .pv-remark-entry+.pv-remark-entry{margin-top:3px;padding-top:3px;border:0}
+/* Same as the editor: replies indented under their entry, a little room before each top-level entry. */
+.pv-thread-body .pv-remark-entry+.pv-remark-entry:not(.is-nested){margin-top:8px}
+.pv-thread-body .pv-remark-entry.is-nested{margin-left:20px;margin-top:1px}
 .pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
 .pv-thread-body .pv-remark-meta,.pv-thread-body .pv-remark-text{grid-column:2}
 .pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px}
@@ -30658,14 +30660,12 @@ function previewStatusPill(state){
   pill.textContent=({open:'Open',issue:'Issue',followup:'Follow-up',resolved:'Resolved',answered:'Question \u00b7 Answered',wont:'Question \u00b7 Won\u2019t answer',question:'Question \u00b7 Open',decision:'Decision',yes:'\u2713 Yes',no:'\u2717 No',answer:'Answer'})[state]||'';
   return pill;
 }
-// The PDF prints dates in full (the outline's "Today" would be wrong by the time it's read).
+// The PDF prints dates in full (the outline's "Today" would be wrong by the time it's read). As in
+// the editor, the day only, and only where it changes from the entry above.
 function formatThreadTimeAbsolute(r,prev){
-  const d=r.createdAt?new Date(r.createdAt):null;
-  const day=d?d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'';
-  const t=r.createdAt?new Date(r.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
-  // The date shows once per day: an entry on the same day as the one before it shows only its time.
-  if(prev&&t&&entryDay(prev)===entryDay(r))return t;
-  return day&&t?day+' · '+t:(day||t);
+  if(!r.createdAt)return '';
+  if(prev&&entryDay(prev)===entryDay(r))return '';
+  return new Date(r.createdAt).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 }
 // One thread entry for the PDF: author, time and the same chips as the outline, then the text.
 // `thread` (the node's entries) tells a question whether it's been answered.
@@ -30703,8 +30703,7 @@ function previewRenderRemarkEntry(r,thread,prev,nested){
 function previewRenderRemarkGroup(remarksForNode){
   const wrap=document.createElement('div'); wrap.className='pv-inline-block pv-remark-block';
   const label=document.createElement('div'); label.className='pv-inline-label pv-inline-label-remark';
-  const decisions=remarksForNode.filter(r=>r.decision).length;
-  label.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+remarksForNode.length+(decisions?' · '+(decisions===1?'Decision':decisions+' decisions'):'')+'</span>';
+  label.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+remarksForNode.length+'</span>';
   const body=document.createElement('div'); body.className='pv-inline-remark-body pv-thread-body';
   // Same reading order as the outline: a question with its answers under it.
   let prev=null;
