@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Typing on a selected row adds, never replaces (2026-10-28).** Owner agreed: a letter typed on a selected (not editing) row used to replace the row's whole text (spreadsheet style), e.g. a stray key after sending a thread reply. It now opens the row with the caret at the end and inserts the letter there (`execCommand('insertText')` in the global keydown handler). Test in `cursor-stays-put.spec.ts`.
+
 - **PDF threads match the editor (2026-10-28).** Owner spotted replies printing flat: `.pv-thread-body .pv-remark-entry{margin:0}` (preview.css) beat `.pv-remark-entry.is-nested` (sidebar.css). The indent and the editor's spacing (more room before top-level entries, little inside a reply block) now live in preview.css. PDF and Copy thread show the day only, where it changes, no times (`formatThreadTimeAbsolute`); the PDF thread header is just "Thread · N" (no "· Decision").
 
 - **Cursor stays put (2026-10-28).** Owner: the cursor jumped to odd places while editing. Enter on a row whose children show now adds its first child (mid-text, the rest of the words go there), as in Workflowy/Dynalist (`rowListIsOpen`; before, the new row landed below the whole sub-list). Enter at the start of a row opens a blank row above and the cursor stays on the words. Whole-row formatting and heading shortcuts with nothing selected keep the caret (`beginEditAt(id,c)`, was end of row). ↑/↓ on selected rows scroll only when the row would leave the view (`scrollToNode(id,'nearest')`, was centring on every press). Tests: `cursor-stays-put.spec.ts`.
-
-- **Calmer thread reading (2026-10-27).** Owner asked for better readability. An entry's day shows only where it changes from the entry above (`.thread-time.is-same-day`, shown again on hover, still clickable); top-level entries get more room above them (8px) and replies less (1px), so a question and its replies read as one block.
 
 ### In progress / not built
 
