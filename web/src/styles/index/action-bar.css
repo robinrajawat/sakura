@@ -37,6 +37,12 @@
 .doc-tab-overview-item .doc-tab-overview-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
 .doc-tab-overview-empty{padding:10px 8px;font:400 12px 'Inter',sans-serif;color:var(--hint);text-align:center}
 #quick-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-wrap:wrap}
+/* The toolbar lines up with the page: Undo over the page's left edge, Share over its right edge
+   (the page is centred in #editor-pane, whose padding is 40px left / 24px right, so its centre sits
+   8px right of the bar's; Undo's icon and the Share pill's edge land on the page edges). Full width
+   and narrow windows keep the plain 12px padding. */
+#quick-bar{padding-left:max(12px,calc((100% - 900px * var(--editor-scale,1)) / 2 - 2px));padding-right:max(12px,calc((100% - 900px * var(--editor-scale,1)) / 2 - 11px))}
+.editor-full-width #quick-bar{padding-left:12px;padding-right:12px}
 .action-group{display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;max-width:100%}
 .action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px}
 /* Collapse all + Zoom sit as a small pair at the right end of the toolbar. */
@@ -53,7 +59,10 @@
    group, so a narrow window wraps them together and they stay on the right. */
 #ag-fold .ag-buttons{flex-wrap:nowrap}
 #ag-fold .tb-sep{flex:0 0 1px;width:1px;height:18px;margin:0 5px;background:color-mix(in srgb,var(--border) 70%,transparent)}
-#doc-share-chip{display:inline-flex;align-items:center;gap:6px;width:auto;padding:0 10px;font:500 12.5px 'Inter',sans-serif;color:var(--fg)}
+/* Share is the one labelled button: a soft accent pill (Docs, Notion), so the word reads as the
+   main action rather than an odd one out among the icons. */
+#doc-share-chip{display:inline-flex;align-items:center;gap:6px;width:auto;height:30px;padding:0 12px 0 10px;margin-left:4px;border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font:600 12.5px 'Inter',sans-serif}
+#doc-share-chip:hover{background:color-mix(in srgb,var(--accent) 20%,transparent)}
 #doc-share-wrap .todo-dd-menu{left:auto;right:0}
 /* Open-items summary: words in the text colour, only each icon tinted (--mc), so it doesn't
    outshout the document. One button; its list opens below (.open-items-menu). */

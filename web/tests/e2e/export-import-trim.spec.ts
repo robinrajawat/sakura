@@ -54,33 +54,29 @@ async function seedNodes(page: import('@playwright/test').Page) {
 }
 
 async function openExportMenu(page: import('@playwright/test').Page) {
-  // Import & Export is the shared menu; Export › opens its formats beside it.
+  // Import & Export is the shared menu, flat: Export and Import (.opml). PDF lives under Share.
   await page.locator('#appbar-more-toggle').click();
-  await page.locator('#appbar-more-menu').getByText('Export', { exact: true }).click();
-  await expect(page.locator('#appbar-more-menu .sb-context-submenu')).toBeVisible();
+  await expect(page.locator('#appbar-more-menu')).toBeVisible();
 }
 
-test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => {
-  test('Export menu shows exactly PDF and OPML; Import menu shows only OPML', async ({ page }) => {
+test.describe('Export/Import trim (PDF under Share; OPML export and import)', () => {
+  test('Import & Export is flat (Export, Import: .opml); Share holds Download PDF', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
     await openExportMenu(page);
-    const exportItems = page.locator('#appbar-more-menu .sb-context-submenu .sb-context-item');
-    await expect(exportItems).toHaveCount(2);
-    expect(await exportItems.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.save))).toEqual(['pdf', 'opml']);
-    await expect(page.locator('.sb-context-item[data-save="pdf"]')).toBeVisible();
-    await expect(page.locator('.sb-context-item[data-save="opml"]')).toBeVisible();
-    // No leftover section labels/dividers from the old Copy / Document / Send a copy grouping.
-    await expect(page.locator('#appbar-more-menu .sb-context-heading, #appbar-more-menu .sb-context-divider')).toHaveCount(0);
-
+    const items = page.locator('#appbar-more-menu .sb-context-item');
+    await expect(items.locator('.sb-context-label')).toHaveText(['Export', 'Import']);
+    expect(await items.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.save || (e as HTMLElement).dataset.import))).toEqual(['opml', 'opml']);
+    // No submenus, and no leftover section labels/dividers from the old Copy / Document / Send a copy grouping.
+    await expect(page.locator('#appbar-more-menu .sb-context-submenu, #appbar-more-menu .sb-context-heading, #appbar-more-menu .sb-context-divider')).toHaveCount(0);
     await page.keyboard.press('Escape');
-    await page.locator('#appbar-more-toggle').click();
-    await page.locator('#appbar-more-menu').getByText('Import', { exact: true }).click();
-    const importItems = page.locator('#appbar-more-menu .sb-context-submenu .sb-context-item');
-    await expect(importItems).toHaveCount(1);
-    expect(await importItems.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.import))).toEqual(['opml']);
+
+    // Share is always there; signed out it offers only Download PDF (inviting needs an account).
+    await expect(page.locator('#doc-share-chip')).toBeVisible();
+    await page.locator('#doc-share-chip').click();
+    await expect(page.locator('#share-menu .sb-context-label')).toHaveText(['Download PDF']);
     await page.keyboard.press('Escape');
     // The Import ▾ button opens the same items.
     await page.evaluate(() => document.getElementById('import-toggle')?.click());
@@ -107,7 +103,7 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     expect(errors).toEqual([]);
   });
 
-  test('Export ▾ → PDF still renders the document headlessly and calls print()', async ({ page }) => {
+  test('Share → Download PDF still renders the document headlessly and calls print()', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -117,8 +113,8 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
       window.print = () => { (window as unknown as { __printCalls: number }).__printCalls++; };
     });
 
-    await openExportMenu(page);
-    await page.locator('#appbar-more-menu .sb-context-item[data-save="pdf"]').click();
+    await page.locator('#doc-share-chip').click();
+    await page.locator('#share-menu .sb-context-item[data-save="pdf"]').click();
 
     await expect.poll(() => page.evaluate(() => (window as unknown as { __printCalls: number }).__printCalls)).toBe(1);
     expect(await page.evaluate(() => document.body.classList.contains('printing-preview'))).toBe(true);
@@ -133,7 +129,7 @@ test.describe('Export/Import trim (PDF + OPML export, OPML-only import)', () => 
     expect(errors).toEqual([]);
   });
 
-  test('Export ▾ → OPML still produces a valid OPML file', async ({ page }) => {
+  test('Import & Export → Export still produces a valid OPML file', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);

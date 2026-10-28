@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Toolbar follows the page; Share holds PDF (2026-10-28).** Owner chose: on a wide window the toolbar lines up with the 900px page (`#quick-bar` padding from `(100% - 900px*scale)/2`; `.editor-full-width` on `<html>` from `setEditorFullWidth` resets it). Share is always shown, the one labelled button (soft accent pill, "Shared · N" when shared); its menu (`shareMenuItems`) = Download PDF, then Invite people… (signed in, own doc) opening the old panel. App bar Import & Export is flat: Export, Import (.opml at right, owner: no "OPML" in labels). Settings: Bars & menus and Panels rails removed (one setting each): Quick Assist search box -> Appearance, Backlinks -> Editing. Editing: splitting a heading keeps both halves headings; Backspace at the start of a to-do removes the checkbox first. Tests: header-polish, export-import-trim, cursor-stays-put, toolbar-settings-simplify.
+
 - **Header and toolbar (2026-10-28).** Owner: clean, simple, standard. The byline under the title is facts only, Status · author · link (same 3px dot before `#doc-link-wrap`). History (`#doc-history-chip`, now a toolbar icon), presence and Share (`#doc-share-wrap`, Share last, menu opens from its right edge) moved into `#ag-fold` after Collapse all/Zoom with a `.tb-sep`. Open items, fold and document actions sit in one `.ag-right` cluster that wraps flush right. Open items · decisions use a `.oi-sep` dot instead of a rule. Tests: header-polish, doc-history-chip, toolbar-settings-simplify.
 
 - **Open questions never fold away (2026-10-28).** Owner: a long thread folds to its last 3 top-level entries behind "show N earlier", which hid open questions. `renderNodeThread` now keeps every top-level open question visible in the folded view too (`foldedGroups`), and "show N earlier" counts only what is actually hidden (gone when nothing is). No new filter or header control. Test: thread-replies.spec.ts "a folded long thread still shows every open question".
-
-- **Editor page width (2026-10-28).** Owner chose: the editor is a centred 900px page by default (`#editor-pane-inner`/`#editor-title-inner` max-width `var(--editor-reading-width, calc(900px * var(--editor-scale)))`), with Settings → Editor → **Full width** (`editorFullWidth` pref, `setEditorFullWidth`) to run the whole window. Replaces the old opt-in reading width that had no UI (`editorReadingWidth*` removed). Test: `editor-page-width.spec.ts`.
 
 ### In progress / not built
 
