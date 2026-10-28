@@ -257,13 +257,13 @@ How your data is protected depends on whether you're signed in:
 
 ## Feedback & Crash Reports
 
-**Send feedback** (account menu, or Settings → Account & about) opens a small form — a message and an optional email — that goes straight to a write-only mailbox only Robin can read; nobody, including you, can read it back through the app. This is a deliberate, one-time exception to the no-network-call-to-Firebase-unless-you-sign-in principle above: sending it is its own explicit consent, the same as clicking Sign in with Google is.
+**Send feedback** (account menu, or Settings → About) opens a small form — a message and an optional email — that goes straight to a write-only mailbox only Robin can read; nobody, including you, can read it back through the app. This is a deliberate, one-time exception to the no-network-call-to-Firebase-unless-you-sign-in principle above: sending it is its own explicit consent, the same as clicking Sign in with Google is.
 
-**Automatic crash reports** (Settings → Account & about, off by default) does the same thing without asking each time: if something throws an uncaught error, it silently files a short report — the error message, the last few console errors leading up to it, and basic environment info (browser, URL) — capped at 10 reports per session with duplicates skipped. It's off by default specifically because it's the one thing in this app that would otherwise phone home without you asking; turning it on is that ask. Either path never includes document, note, or task content — only the error itself and where it happened.
+**Automatic crash reports** (Settings → About, off by default) does the same thing without asking each time: if something throws an uncaught error, it silently files a short report — the error message, the last few console errors leading up to it, and basic environment info (browser, URL) — capped at 10 reports per session with duplicates skipped. It's off by default specifically because it's the one thing in this app that would otherwise phone home without you asking; turning it on is that ask. Either path never includes document, note, or task content — only the error itself and where it happened.
 
 ## Settings Reference
 
-The Settings panel has five sections: **General** (theme, accent, text size, To-Dos auto-expiry, keyboard shortcuts), **Documents** (your name, PDF cover page / open items page / PDF mark, Trash), **Data & backup** (backup, restore, Secure Storage, reset), **AI**, and **Account & about** (account, about, privacy, support, feedback and crash reports). Dates and times follow your browser's language and region.
+The Settings panel has five sections, plus Account while signed in: **General** (theme, accent, text size, To-Dos auto-expiry, keyboard shortcuts), **Documents** (your name, PDF cover page / open items page / PDF mark, Trash), **Data & backup** (backup, restore, Secure Storage, reset), **AI**, and **About** (about, privacy, support, feedback and crash reports), and **Account** when signed in (Delete account; profile visibility is switched from the account menu). Dates and times follow your browser's language and region.
 
 | Setting | Section | Default | Notes |
 |---|---|---|---|
