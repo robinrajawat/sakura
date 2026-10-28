@@ -32035,6 +32035,8 @@ function openThreadComposer(nodeId,ask,answerTo){
   _pendingInlineFocus={kind:'threadComposer',nodeId};
   render();
 }
+// Per node: questions kept on screen after being answered (see renderNodeThread).
+const _threadKeptQuestions=new Map();
 // Where each entry last rendered (nested under which question, or ''), so a move can flash.
 const _threadEntryPlace=new Map();
 function renderNodeThread(node,placeLine){
@@ -32042,7 +32044,10 @@ function renderNodeThread(node,placeLine){
   // Reading order (owner, 2026-10-27): a question with its answers under it, the rest by time.
   const groups=[];
   threadReadingOrder(thread).forEach(o=>{ if(o.nested&&groups.length)groups[groups.length-1].push(o); else groups.push([o]); });
-  const foldedGroups=groups.filter((g,i)=>i>=groups.length-3||(isQuestion(g[0].entry)&&questionState(g[0].entry,thread)==='open'));
+  // A question shown because it was open stays shown once answered, until the thread is hidden, so
+  // answering it doesn't drop it into the fold under your cursor (owner, 2026-10-28).
+  let kept=_threadKeptQuestions.get(node.id); if(!kept){ kept=new Set(); _threadKeptQuestions.set(node.id,kept); }
+  const foldedGroups=groups.filter((g,i)=>{ const q=g[0].entry; if(isQuestion(q)&&questionState(q,thread)==='open')kept.add(q.id); return i>=groups.length-3||kept.has(q.id); });
   const commit=()=>{ markDirty(); scheduleAutoSave(); render(); };
   // No line joins the entries (owner, 2026-10-27: cleaner); the header and the indent hold the
   // thread together. A reply (or a reply line) sits one step in.
@@ -32057,7 +32062,7 @@ function renderNodeThread(node,placeLine){
     head.innerHTML=REMARK_DOT_SVG+'<span>Thread · '+thread.length+'</span>';
     head.dataset.tip='Click to hide the thread';
     head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
-    head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
+    head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); _threadKeptQuestions.delete(node.id); render(); });
     head.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[{label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)},{divider:true},{label:'Delete thread', danger:true, icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>', onClick:()=>deleteThread(node.id)}]); });
     // A long thread shows its latest three (a question counts with its answers) and every open
     // question, which never folds away (owner, 2026-10-28); the header says how to see the rest.
@@ -32436,7 +32441,7 @@ function threadComposerMenuItems(node,input,ask,submit){
   const hasText=htmlHasVisibleText(input.innerHTML);
   const items=[];
   if(hasText)items.push({label:'Add', icon:ico('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>'), onClick:()=>submit()});
-  if(featureAiEnabled&&hasText)items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); refocus(); render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
+  if(featureAiEnabled&&hasText)items.push({label:'Rewrite', icon:'<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg>', onClick: async()=>{ const current=input.textContent||''; if(!current.trim())return; try{ const result=await callAiApi(current); if(!result)return; _threadDrafts.set(node.id,sakuraSanitizeRichHtml(result)); _threadComposerNodeId=node.id; _pendingInlineFocus={kind:'threadComposer',nodeId:node.id}; render(); }catch(err){ showToast('Rewrite failed: '+(err&&err.message||err)); } }});
   items.push({divider:true});
   items.push({label:'Close', icon:ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'), onClick:()=>{ _threadDrafts.delete(node.id); _threadComposerNodeId=null; setThreadComposerKind(node.id,'comment'); render(); }});
   return items;
