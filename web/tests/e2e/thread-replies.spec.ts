@@ -144,4 +144,29 @@ test('a folded long thread still shows every open question', async ({ page }) =>
   await page.evaluate('showAllRemarksNodeIds = new Set(); render()');
   expect(await order(page)).toEqual(['old-q', 'c3', 'c4', 'c5']);
   await expect(page.locator('.thread-head-more')).toHaveText('· show 2 earlier');
+
+  // Answering it keeps it (and its answer) on screen, so it doesn't vanish into the fold
+  // (owner, 2026-10-28); hiding and reopening the thread folds it like any answered question.
+  await entry(page, 'old-q').locator('.thread-reply-btn').click();
+  await page.keyboard.type('Done in staging.');
+  await page.keyboard.press('Enter');
+  const a = await last(page);
+  expect(await order(page)).toEqual(['old-q', '  ' + a.id, 'c3', 'c4', 'c5']);
+  await page.locator('.thread-head').click();
+  await page.evaluate('inlineExpandRemarksNodeIds.add(1); render()');
+  expect(await order(page)).toEqual(['c3', 'c4', 'c5']);
+});
+
+test('Rewrite from the reply line\'s right-click puts the rewritten words back in the line', async ({ page }) => {
+  const errors = await seed(page, TWO_QS);
+  await page.evaluate(`featureAiEnabled = true; callAiApi = async (t) => 'Rewritten: ' + t; openThreadComposer(1, false)`);
+  const input = page.locator('.thread-composer-input');
+  await input.click();
+  await page.keyboard.type('draft words');
+  await page.evaluate(`showSbContextMenu = (x, y, items) => { window.__items = items; }`);
+  await page.evaluate(`(() => { const el = document.querySelector('.thread-composer-input'); const r = el.getBoundingClientRect(); el.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: r.right + 40, clientY: r.top + 4 })); })()`);
+  await page.evaluate(`window.__items.find(i => i.label === 'Rewrite').onClick()`);
+  await expect(page.locator('.thread-composer-input')).toHaveText('Rewritten: draft words');
+  await expect(page.locator('.thread-composer-input')).toBeFocused();
+  expect(errors).toEqual([]);
 });
