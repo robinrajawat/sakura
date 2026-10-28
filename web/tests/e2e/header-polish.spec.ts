@@ -44,7 +44,7 @@ test('the open-items summary uses the text colour; only the icon is tinted', asy
   expect(c.text).toBe(probe);
 });
 
-test('the title byline is sentence case; status is the one soft tag, the actions have no pill backgrounds', async ({ page }) => {
+test('the title byline is sentence case; status is the one soft tag, History has no pill background', async ({ page }) => {
   const s = await page.evaluate(() => {
     const status = document.getElementById('doc-status-chip')!;
     const hist = document.getElementById('doc-history-chip')!;
@@ -55,7 +55,6 @@ test('the title byline is sentence case; status is the one soft tag, the actions
       statusDot: getComputedStyle(status, '::before').content,
       histTransform: getComputedStyle(hist).textTransform,
       histBg: getComputedStyle(hist).backgroundColor,
-      histBorder: getComputedStyle(hist).borderTopStyle,
       sep: (() => { const a = getComputedStyle(document.getElementById('doc-status-wrap')!, '::after'); return [a.width, a.height, a.borderRadius].join(' '); })()
     };
   });
@@ -65,7 +64,33 @@ test('the title byline is sentence case; status is the one soft tag, the actions
   expect(s.statusDot).toBe('none');
   expect(s.histTransform).toBe('none');
   expect(s.histBg).toBe('rgba(0, 0, 0, 0)');
-  expect(s.histBorder).toBe('none');
   // A drawn, centred dot (the '·' glyph sat low next to the status pill).
   expect(s.sep).toBe('3px 3px 50%');
+});
+
+test('the byline is Status · author · link; History and Share close the toolbar, Share last', async ({ page }) => {
+  const s = await page.evaluate(() => {
+    const dot = (id: string, pseudo: string) => { const a = getComputedStyle(document.getElementById(id)!, pseudo); return [a.width, a.height, a.borderRadius].join(' '); };
+    const fold = document.querySelector('#ag-fold .ag-buttons')!;
+    return {
+      linkSep: dot('doc-link-wrap', '::before'),
+      inByline: ['doc-history-chip', 'doc-share-wrap', 'doc-presence-chip'].filter((id) => document.getElementById(id)!.closest('#editor-meta-row')),
+      order: [...fold.children].map((c) => c.id || c.className),
+      menuRight: getComputedStyle(document.getElementById('share-dd-menu')!).right
+    };
+  });
+  expect(s.linkSep).toBe('3px 3px 50%');
+  expect(s.inByline).toEqual([]);
+  expect(s.order).toEqual(['qb-collapse', 'qb-zoom', 'tb-sep', 'doc-history-chip', 'doc-presence-chip', 'doc-share-wrap']);
+  // Share sits at the right edge, so its menu opens leftwards from there.
+  expect(s.menuRight).toBe('0px');
+});
+
+test('open items and decisions are separated by a dot, not a rule', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    documentDecisions = () => [{}]; updateMarkerSummary();
+  });
+  await expect(page.locator('#marker-summary > .oi-sep')).toHaveText('\u00B7');
+  await expect(page.locator('#marker-summary .oi-divider')).toHaveCount(0);
 });

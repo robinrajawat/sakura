@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Header and toolbar (2026-10-28).** Owner: clean, simple, standard. The byline under the title is facts only, Status · author · link (same 3px dot before `#doc-link-wrap`). History (`#doc-history-chip`, now a toolbar icon), presence and Share (`#doc-share-wrap`, Share last, menu opens from its right edge) moved into `#ag-fold` after Collapse all/Zoom with a `.tb-sep`. Open items, fold and document actions sit in one `.ag-right` cluster that wraps flush right. Open items · decisions use a `.oi-sep` dot instead of a rule. Tests: header-polish, doc-history-chip, toolbar-settings-simplify.
+
 - **Open questions never fold away (2026-10-28).** Owner: a long thread folds to its last 3 top-level entries behind "show N earlier", which hid open questions. `renderNodeThread` now keeps every top-level open question visible in the folded view too (`foldedGroups`), and "show N earlier" counts only what is actually hidden (gone when nothing is). No new filter or header control. Test: thread-replies.spec.ts "a folded long thread still shows every open question".
 
 - **Editor page width (2026-10-28).** Owner chose: the editor is a centred 900px page by default (`#editor-pane-inner`/`#editor-title-inner` max-width `var(--editor-reading-width, calc(900px * var(--editor-scale)))`), with Settings → Editor → **Full width** (`editorFullWidth` pref, `setEditorFullWidth`) to run the whole window. Replaces the old opt-in reading width that had no UI (`editorReadingWidth*` removed). Test: `editor-page-width.spec.ts`.
-
-- **Row editing pass (2026-10-28).** Owner: editing must be the best part. Typing on a selected row adds at its end (was: replaced the text; inserted synchronously so fast typing keeps order). Enter at the start of a row: blank row above, cursor on it (owner checked Dynalist; #691's "stay on the words" reverted). Enter with words selected replaces them, then splits. To-do rows continue on Enter (`continueChecklist`); Enter on an empty to-do makes it plain. Delete at the end of an empty row removes it even before a row with children. Undo/Redo from the row editor resume editing at the recorded caret (`_undoEditPos` set per row-editor key, `snapshotWithEdit`, `resumeEditFrom`). Shift+Enter focuses the note synchronously (fast typing used to land in the row). Tests: `cursor-stays-put.spec.ts`.
 
 ### In progress / not built
 
