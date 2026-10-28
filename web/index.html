@@ -3530,7 +3530,6 @@ body.printing-generic #gpe-overlay{
             <div class="settings-grid one-col">
               <div class="settings-field"><label>Theme</label><div class="theme-segmented" id="theme-segmented" role="tablist" aria-label="Theme"><button type="button" class="theme-seg" data-theme="light" role="tab" aria-selected="false">Light</button><button type="button" class="theme-seg" data-theme="dark" role="tab" aria-selected="false">Dark</button><button type="button" class="theme-seg" data-theme="system" role="tab" aria-selected="true" data-tip="Follows your device's light or dark setting">System</button></div></div>
               <div class="settings-field"><label for="editor-scale">Text size</label><div style="display:flex;align-items:center;gap:10px"><input id="editor-scale" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="editor-scale-value" class="settings-slider-value" style="min-width:38px;text-align:right">100%</span></div></div>
-              <div class="settings-color-box">
               <div class="settings-field"><label>Accent</label><div class="accent-swatch-row" id="accent-swatch-row" role="radiogroup" aria-label="Accent color">
                 <button type="button" class="accent-swatch active" data-accent="terracotta" style="background:#c2553d" data-tip="Terracotta (default)" aria-label="Terracotta (default)" role="radio" aria-checked="true"></button>
                 <button type="button" class="accent-swatch" data-accent="teal" style="background:#2e8479" data-tip="Teal" aria-label="Teal" role="radio" aria-checked="false"></button>
@@ -3538,7 +3537,6 @@ body.printing-generic #gpe-overlay{
                 <button type="button" class="accent-swatch" data-accent="violet" style="background:#8c4ec2" data-tip="Violet" aria-label="Violet" role="radio" aria-checked="false"></button>
                 <button type="button" class="accent-swatch" data-accent="moss" style="background:#4b842e" data-tip="Moss" aria-label="Moss" role="radio" aria-checked="false"></button>
                 <button type="button" class="accent-swatch" data-accent="amber" style="background:#917233" data-tip="Amber" aria-label="Amber" role="radio" aria-checked="false"></button>
-              </div>
               </div>
               </div>
             </div>
@@ -3589,9 +3587,7 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="data">
             <div class="settings-section-title">Secure Storage</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Encrypt keys at rest</span><span class="settings-row-desc">Locks your AI keys with a passphrase. It can't be recovered if forgotten.</span></div></div>
-              <div class="settings-list-row"><span class="settings-switch-text" id="vault-summary"></span><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="vault-setup-btn" class="btn data-io-btn">Set up…</button><button id="vault-unlock-btn" class="btn data-io-btn backup-btn" style="display:none">Unlock…</button><button id="vault-lock-btn" class="btn data-io-btn" style="display:none">Lock now</button><button id="vault-disable-btn" class="btn data-io-btn" style="display:none">Turn off…</button></div></div>
-              <div class="settings-list-row"><span class="settings-row-desc" id="vault-status">Not set up — keys are stored as plain text.</span></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Encrypt keys at rest</span><span class="settings-row-desc">Locks your AI keys with a passphrase. It can't be recovered if forgotten.</span><span class="settings-row-desc" id="vault-status" style="margin-top:2px">Not set up — keys are stored as plain text.</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="vault-setup-btn" class="btn data-io-btn">Set up…</button><button id="vault-unlock-btn" class="btn data-io-btn backup-btn" style="display:none">Unlock…</button><button id="vault-lock-btn" class="btn data-io-btn" style="display:none">Lock now</button><button id="vault-disable-btn" class="btn data-io-btn" style="display:none">Turn off…</button></div></div>
             </div>
           </div>
           <div class="settings-section" data-cat="about" id="settings-section-about">
@@ -5170,10 +5166,9 @@ async function disableVaultEncryption(){
 }
 function updateVaultStatusUI(){
   const active=vaultActive(); const unlocked=vaultUnlocked();
-  const statusEl=el('vault-status'); const summaryEl=el('vault-summary');
+  const statusEl=el('vault-status');
   let text=!active?'Not set up — keys are stored as plain text.':(unlocked?'Unlocked for this session.':'Locked. Unlock to use your saved AI provider keys.');
   if(statusEl)statusEl.textContent=text;
-  if(summaryEl)summaryEl.textContent=!active?'':(unlocked?'Unlocked':'Locked');
   el('vault-setup-btn')?.style.setProperty('display',active?'none':'');
   el('vault-unlock-btn')?.style.setProperty('display',(active&&!unlocked)?'':'none');
   el('vault-lock-btn')?.style.setProperty('display',(active&&unlocked)?'':'none');
