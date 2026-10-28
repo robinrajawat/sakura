@@ -965,6 +965,10 @@ body.zen-mode #quick-bar{display:none}
 .sb-context-item.sb-context-heading-action.on{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .quick-btn{width:34px;height:34px;font-size:var(--fs-xl);border-radius:7px;border-color:transparent;background:transparent;transition:background .12s,color .12s,transform .08s,box-shadow .12s}
 .quick-btn:hover{background:var(--hover);border-color:transparent;transform:translateY(-1px);box-shadow:0 2px 5px rgba(0,0,0,.08)}
+/* Toolbar icons are neutral grey like any standard editor (owner, 2026-10-28); colour only marks
+   state: a pressed/active button keeps the accent, and the open-items counts keep their status colours. */
+#quick-bar .quick-btn:not(.toggle-on):not(.active):not([aria-pressed="true"]):not([aria-expanded="true"]){color:var(--muted)}
+#quick-bar .quick-btn:not(.toggle-on):not(.active):not([aria-pressed="true"]):hover{color:var(--fg)}
 .quick-btn:active{transform:translateY(0) scale(.94);box-shadow:none}
 .quick-btn:disabled{opacity:.35;cursor:default;pointer-events:none;transform:none;box-shadow:none}
 .quick-sep{width:1px;height:18px;background:color-mix(in srgb,var(--border) 70%,transparent);margin:0 3px;flex:0 0 auto}
@@ -1204,7 +1208,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
   }
   .node-cb{border:1.5px solid #888 !important;background:transparent !important}
   .node-cb.cb-checked{background:transparent !important;border-color:#888 !important}
-  .node-cb.cb-checked::after{border-color:#888 !important}
+  .node-cb.cb-checked::after{background:#888 !important}
   .cb-progress{background:transparent !important;border:1px solid var(--accent) !important;color:var(--accent) !important}
   .node-tag-chip{background:transparent !important;border:1px solid #888 !important;color:#444 !important}
   .bl-link{background:transparent !important;color:var(--accent) !important;font-weight:500 !important}
@@ -2086,11 +2090,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .at-suggest-empty{padding:8px 10px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
 /* Characters row in the "/" Insert list */
 .insert-char-glyph{display:inline-block;width:14px;text-align:center;font:600 13px 'Inter',sans-serif;line-height:1}
+/* One tick everywhere (rows, PDF preview, To-Dos): a thin SVG check used as a mask, so it takes the box colour. */
+:root{--tick-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.4l3.3 3.3L13 4.6' fill='none' stroke='%23000' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 /* Checkboxes are grey, checked or not (owner, 2026-10-28, like Dynalist): a done row recedes. */
 .node-cb{display:inline-flex;align-items:center;justify-content:center;width:calc(14px * var(--editor-scale));height:calc(14px * var(--editor-scale));flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative;align-self:flex-start;margin-top:calc((var(--row-line) - 14px * var(--editor-scale)) / 2)}
 .node-cb:hover{border-color:var(--muted)}
 .node-cb.cb-checked{background:transparent;border-color:var(--muted)}
-.node-cb.cb-checked::after{content:'';position:absolute;left:50%;top:43%;width:6px;height:9px;border:2px solid var(--muted);border-top:none;border-left:none;transform:translate(-50%,-50%) rotate(42deg) scaleX(0.85)}
+.node-cb.cb-checked::after{content:'';position:absolute;inset:0;background:var(--muted);-webkit-mask:var(--tick-mask) center/contain no-repeat;mask:var(--tick-mask) center/contain no-repeat}
 .node-cb.cb-indeterminate{border-color:var(--muted)}
 .node-cb.cb-indeterminate::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:2px;background:var(--muted);border-radius:1px;transform:translate(-50%,-50%)}
 .node-row.cb-done .node-label{opacity:.55;text-decoration:line-through}
@@ -2237,7 +2243,7 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 .demo-todo-row{display:flex;align-items:center;gap:7px;font:400 12px 'Inter',sans-serif;color:var(--fg);padding:3px 0;min-height:16px}
 .demo-todo-cb{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--border);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);color:var(--bg);transition:background .18s,border-color .18s}
 .demo-todo-cb.demo-checked{background:transparent;border-color:var(--muted);color:var(--muted)}
-.demo-todo-cb.demo-checked::after{content:'✓'}
+.demo-todo-cb.demo-checked::after{content:'';width:100%;height:100%;background:var(--muted);-webkit-mask:var(--tick-mask) center/contain no-repeat;mask:var(--tick-mask) center/contain no-repeat}
 .demo-todo-row.demo-done span:last-child{text-decoration:line-through;color:var(--muted)}
 /* Demo: opening splash card */
 #demo-splash{display:none;position:absolute;inset:0;z-index:20;align-items:center;justify-content:center;border-radius:0;opacity:0;overflow:hidden;transition:opacity .5s ease;background:radial-gradient(circle at 50% 38%, color-mix(in srgb,var(--accent) 10%,var(--bg)) 0%, var(--bg) 62%)}
@@ -2403,7 +2409,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
 .pv-cb:hover{border-color:var(--muted)}
 .pv-cb.pv-cb-checked{background:transparent;border-color:var(--muted)}
-.pv-cb.pv-cb-checked::after{content:'';position:absolute;left:2px;top:0px;width:6px;height:9px;border:2px solid var(--muted);border-top:none;border-left:none;transform:rotate(42deg) scaleX(0.85)}
+.pv-cb.pv-cb-checked::after{content:'';position:absolute;inset:1px;background:var(--muted);-webkit-mask:var(--tick-mask) center/contain no-repeat;mask:var(--tick-mask) center/contain no-repeat}
 .pv-row.pv-cb-done .pv-text{opacity:.55;text-decoration:line-through}
 .pv-text{flex:1;min-width:0;font-size:14.5px;line-height:1.55;padding:1px 0;word-break:break-word}.pv-text.pv-d2{color:color-mix(in srgb,var(--fg) 72%,var(--muted))}.pv-text.pv-d3{color:color-mix(in srgb,var(--fg) 50%,var(--muted))}
 /* Depth already reads via color dimming everywhere (see .pv-d2/.pv-d3/.pv-deep above); while
@@ -2930,8 +2936,8 @@ body.printing-generic #gpe-overlay{
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-check:hover{border-color:var(--muted)}
 .todo-check:checked{background:transparent;border-color:var(--muted)}
-.todo-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
-@keyframes todo-check-pop{to{transform:rotate(40deg) scale(1)}}
+.todo-check:checked::after{content:'';position:absolute;inset:0.5px;background:var(--muted);-webkit-mask:var(--tick-mask) center/contain no-repeat;mask:var(--tick-mask) center/contain no-repeat;transform:scale(0);animation:todo-check-pop .18s ease-out forwards}
+@keyframes todo-check-pop{to{transform:scale(1)}}
 /* Feedback Inbox priority/status pills -- same ghost-button recipe as .todo-priority/.todo-status
    just above (transparent until hover, color-only, small dot icon + label), with their own
    attribute values and colors since feedback's states (open/planned/fixed/wontfix,
@@ -3048,7 +3054,7 @@ body.printing-generic #gpe-overlay{
 .todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;margin-top:1.5px;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
 .todo-subtask-check:hover{border-color:var(--muted)}
 .todo-subtask-check:checked{background:transparent;border-color:var(--muted)}
-.todo-subtask-check:checked::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
+.todo-subtask-check:checked::after{content:'';position:absolute;inset:1px;background:var(--muted);-webkit-mask:var(--tick-mask) center/contain no-repeat;mask:var(--tick-mask) center/contain no-repeat}
 .todo-subtask-text{flex:1;font-family:var(--content-font);font-size:var(--fs-sm);line-height:1.4;color:var(--fg);overflow-wrap:anywhere;outline:none;cursor:text}
 .todo-subtask-text.completed{color:var(--hint)}
 .todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
@@ -3156,7 +3162,6 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-main{gap:2px}
 #todos-body .todo-check{border-radius:5px;border-color:color-mix(in srgb,var(--hint) 70%,transparent);background:transparent;margin-top:1.5px}
 #todos-body .todo-check:hover{border-color:var(--muted)}
-#todos-body .todo-check:checked::after{left:4.5px;top:1.5px}
 #todos-body .todo-check:disabled{opacity:1;cursor:default}
 #todos-body .todo-line{display:flex;align-items:flex-start;gap:10px;min-width:0}
 #todos-body .todo-textwrap{flex:1 1 auto;min-width:0}
@@ -3199,7 +3204,7 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-subtask-row:hover{background:none}
 #todos-body .todo-subtask-check{border-radius:4px;border-color:color-mix(in srgb,var(--hint) 60%,transparent);background:transparent}
 #todos-body .todo-subtask-check:checked,#todos-body .todo-row.completed .todo-check:checked{background:transparent;border-color:color-mix(in srgb,var(--hint) 60%,transparent)}
-#todos-body .todo-subtask-check:checked::after,#todos-body .todo-row.completed .todo-check:checked::after{border-color:var(--hint)}
+#todos-body .todo-subtask-check:checked::after,#todos-body .todo-row.completed .todo-check:checked::after{background:var(--hint)}
 .todo-subtasks-foot{display:flex;align-items:center;gap:12px;min-height:20px;padding-left:1px}
 #todos-body .todo-subtasks-done-toggle{appearance:none;border:none;background:none;padding:1px 0;margin:0;font:500 11px 'Inter',sans-serif;color:var(--hint);cursor:pointer;width:auto}
 #todos-body .todo-subtasks-done-toggle:hover{color:var(--fg);background:none}

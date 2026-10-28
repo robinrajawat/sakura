@@ -49,11 +49,13 @@
 .at-suggest-empty{padding:8px 10px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
 /* Characters row in the "/" Insert list */
 .insert-char-glyph{display:inline-block;width:14px;text-align:center;font:600 13px 'Inter',sans-serif;line-height:1}
+/* One tick everywhere (rows, PDF preview, To-Dos): a thin SVG check used as a mask, so it takes the box colour. */
+:root{--tick-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.4l3.3 3.3L13 4.6' fill='none' stroke='%23000' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
 /* Checkboxes are grey, checked or not (owner, 2026-10-28, like Dynalist): a done row recedes. */
 .node-cb{display:inline-flex;align-items:center;justify-content:center;width:calc(14px * var(--editor-scale));height:calc(14px * var(--editor-scale));flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative;align-self:flex-start;margin-top:calc((var(--row-line) - 14px * var(--editor-scale)) / 2)}
 .node-cb:hover{border-color:var(--muted)}
 .node-cb.cb-checked{background:transparent;border-color:var(--muted)}
-.node-cb.cb-checked::after{content:'';position:absolute;left:50%;top:43%;width:6px;height:9px;border:2px solid var(--muted);border-top:none;border-left:none;transform:translate(-50%,-50%) rotate(42deg) scaleX(0.85)}
+.node-cb.cb-checked::after{content:'';position:absolute;inset:0;background:var(--muted);-webkit-mask:var(--tick-mask) center/contain no-repeat;mask:var(--tick-mask) center/contain no-repeat}
 .node-cb.cb-indeterminate{border-color:var(--muted)}
 .node-cb.cb-indeterminate::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:2px;background:var(--muted);border-radius:1px;transform:translate(-50%,-50%)}
 .node-row.cb-done .node-label{opacity:.55;text-decoration:line-through}
