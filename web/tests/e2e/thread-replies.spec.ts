@@ -130,3 +130,18 @@ test('the PDF indents replies under their entry, as the editor does, and shows e
   expect(rows.some((r) => /\d:\d\d/.test(r.meta))).toBe(false);
   await expect(page.locator('#preview-body .pv-inline-label-remark span')).toHaveText('Thread · 3');
 });
+
+test('a folded long thread still shows every open question', async ({ page }) => {
+  const d = Date.UTC(2026, 9, 15, 9);
+  await seed(page, `[
+    { id: 'old-q', anchorNodeId: 1, person: 'Kristoffer', text: 'OQ-3: ATP validation?', type: 'question', createdAt: ${d} },
+    { id: 'c1', anchorNodeId: 1, person: 'Ana', text: 'one', createdAt: ${d + 1000} },
+    { id: 'c2', anchorNodeId: 1, person: 'Ana', text: 'two', createdAt: ${d + 2000} },
+    { id: 'c3', anchorNodeId: 1, person: 'Ana', text: 'three', createdAt: ${d + 3000} },
+    { id: 'c4', anchorNodeId: 1, person: 'Ana', text: 'four', createdAt: ${d + 4000} },
+    { id: 'c5', anchorNodeId: 1, person: 'Ana', text: 'five', createdAt: ${d + 5000} }
+  ]`);
+  await page.evaluate('showAllRemarksNodeIds = new Set(); render()');
+  expect(await order(page)).toEqual(['old-q', 'c3', 'c4', 'c5']);
+  await expect(page.locator('.thread-head-more')).toHaveText('· show 2 earlier');
+});
