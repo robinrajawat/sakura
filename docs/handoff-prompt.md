@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Quick Assist plain results; steady Help size (2026-10-28).** Owner OK'd dropping Quick Assist's coloured RUN/GO TO/SHOW/HIDE badges and the accent bar on the active result (active = grey hover fill). Toggles read as plain words: Show/Hide for things on screen (File Explorer, its filter box), Turn on/Turn off for settings; the "currently on/off" tail is gone (the group title already says it). Owner: Help grew and shrank with each rail, so Settings and Help now share a fixed `height:min(78vh,640px)` (settings-help-rail.css). Test qa-help-steady.spec.ts.
+
 - **App-wide polish sweep (2026-10-28).** Owner: "small polishing in UI/UX also matters… clean, simple, standard and elegant". Sidebar active document is a grey fill (no accent); folder toggles are an SVG chevron (`sfolderChevron()`), not ▶; theme switch labels sentence case; no accent flash on the saved indicator; tab menu says "Sort rows …" (not "nodes"); Insert ▾ and the "/" list split groups with plain dividers, no BASICS/MARKER/… headings, and the characters row has no heading; Settings descriptions cut to one short line (Why this matters row folded into Backup's line), Undo restore button same width as the others. Tests: toolbar-settings-simplify, slash-insert, backup-simplified updated.
 
 - **Grey chrome; accent only for meaning (2026-10-28).** Owner: open-items words looked odd in dark text next to grey buttons; then "go ahead" for all chrome. Removed the accent-blend machinery (`--accent-text/border/hint-blend`, `ACCENT_BLEND_BASE`, `applyAccentBlend`, its preload copy): `.btn`/`.select`/`.meta-input`, the status bar, status chips and the dock now use plain `--muted`/`--border`/`--hint`; hover darkens to `--fg` with a grey border. Open-items words are `--muted` (icons keep status colours). Heading button icon is a plain H (no accent dot). Accent stays for links, selection, focus, active/pressed states and primary buttons.
-
-- **Editing pass: Esc leaves a note; rows with children merge (2026-10-28).** Owner asked for a thorough editing check. Walked ~40 keyboard scenarios (Enter/Tab/arrows/merge/undo/paste/fold) with a Playwright script; two gaps fixed. Esc in a note line now leaves it with the row selected (it did nothing; also clears a stale `_pendingInlineFocus` that pulled focus back). Backspace at row start / Delete at row end now merge a row that has children when the other row is its childless sibling (`canAdoptChildrenOf`): the children move under the kept row, fold state included (Workflowy/Dynalist behaviour); other cases still do nothing. Up on the first row goes to the title (intended).
 
 ### In progress / not built
 
