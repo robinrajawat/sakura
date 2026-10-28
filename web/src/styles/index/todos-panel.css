@@ -20,7 +20,7 @@
 #diagram-editor-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--tb-bg)}
 #diagram-editor-title-input{flex:0 1 320px;min-width:120px;appearance:none;border:1px solid transparent;background:transparent;color:var(--fg);font:600 14px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;outline:none;transition:border-color .12s,background .12s}
 #diagram-editor-title-input:hover{background:var(--hover)}
-#diagram-editor-title-input:focus{background:var(--edit-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+#diagram-editor-title-input:focus{background:var(--edit-bg);border-color:var(--accent)}
 #diagram-editor-anchor-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;padding:5px 8px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;max-width:260px;transition:border-color .12s,color .12s,background .12s}
 #diagram-editor-anchor-btn:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-anchor-btn.diagram-editor-anchor-unlinked{color:var(--fc-orange)}
@@ -40,7 +40,7 @@
 .doc-presence-chip{display:inline-flex;align-items:center;gap:5px;font:600 11px 'Inter',sans-serif;padding:3px 9px 3px 8px;border-radius:999px;flex-shrink:0;white-space:nowrap;background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
 .doc-presence-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--fc-green);box-shadow:0 0 0 2px color-mix(in srgb,var(--fc-green) 30%,transparent);animation:sakuraPresencePulse 1.8s ease-in-out infinite}
 @keyframes sakuraPresencePulse{0%,100%{opacity:1}50%{opacity:.4}}
-.doc-status-chip:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.doc-status-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .doc-status-chip.unset{background:transparent;color:var(--hint);border:1px dashed var(--border);opacity:.7}
 .doc-status-chip.unset:hover{opacity:1;border-color:var(--muted)}
 .doc-status-chip[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
@@ -125,7 +125,7 @@
    from anywhere in the panel; the hint badge was dropped as clutter. */
 #todos-add-row{display:flex;align-items:flex-start;gap:8px;margin:0 10px 8px;padding:5px 6px 5px 10px;border:1px dashed var(--border);border-radius:9px;flex-shrink:0;transition:border-color .12s,background .12s,box-shadow .12s}
 #todos-add-row:hover{background:var(--hover)}
-#todos-add-row:focus-within{border-style:solid;border-color:color-mix(in srgb,var(--accent) 45%,var(--border));background:var(--edit-bg);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)}
+#todos-add-row:focus-within{border-style:solid;border-color:var(--accent);background:var(--edit-bg)}
 .todos-add-plus{flex:0 0 auto;width:18px;height:18px;margin-top:5px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
 #todos-input{flex:1 1 auto;min-width:0;box-sizing:border-box;appearance:none;resize:none;overflow:hidden;min-height:28px;max-height:120px;border:none;background:transparent;color:var(--fg);font:400 13px 'Inter',sans-serif;font-family:var(--content-font);line-height:1.4;padding:5px 0;outline:none}
 #todos-input::placeholder{color:var(--hint)}
@@ -140,7 +140,7 @@
 #todos-search-row.open{display:flex}
 #todos-search-row svg{flex:0 0 auto;color:var(--hint)}
 #todos-search-input{flex:1;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;padding:5px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
-#todos-search-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+#todos-search-input:focus{border-color:var(--accent)}
 #todos-search-input::placeholder{color:var(--hint)}
 #todos-search-clear-btn{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:3px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #todos-search-clear-btn:hover{color:var(--fg);background:var(--hover)}
@@ -163,7 +163,7 @@
 .todo-dd-item svg{flex-shrink:0;color:var(--hint)}
 .todo-dd-item:hover{background:var(--hover)}
 .todo-dd-item:active{background:var(--sel)}
-.todo-dd-item:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 24%,transparent)}
+.todo-dd-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .todo-dd-item.selected{color:var(--accent)}
 .todo-dd-item .dd-check{width:13px;height:13px;flex:0 0 auto;color:var(--accent);opacity:0;display:inline-flex}
 .todo-dd-item.selected .dd-check{opacity:1}
@@ -316,7 +316,7 @@
 .todo-subtask-rewrite.ai-busy{opacity:.45!important;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .todo-subtask-input-row{margin-top:3px;display:flex;align-items:center;gap:6px}
 .todo-subtask-input{flex:1;min-width:0;box-sizing:border-box;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 11.5px 'Inter',sans-serif;font-family:var(--content-font);padding:4px 8px;border-radius:6px;outline:none;transition:border-color .12s,box-shadow .12s}
-.todo-subtask-input:focus{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+.todo-subtask-input:focus{border-color:var(--accent)}
 .todo-subtask-charcount{flex:0 0 auto;font:400 9.5px 'Inter',sans-serif;color:var(--hint);white-space:nowrap}
 .todo-subtask-charcount.warn{color:var(--sem-alert,#b85450)}
 .todo-subtask-charcount.max{color:var(--sem-alert,#b85450);font-weight:600}

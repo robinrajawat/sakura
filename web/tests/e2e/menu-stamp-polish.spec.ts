@@ -88,6 +88,8 @@ test.describe('Quick Assist docked in the app bar', () => {
     // @ts-expect-error -- bare global from index.html
     await page.evaluate(() => setQaLocation('appbar', false));
     await page.locator('#qa-input').click();
+    // An empty box shows nothing (owner, 2026-10-28), so type to open the results.
+    await page.keyboard.type('dark');
     const dd = page.locator('#qa-dropdown');
     await expect(dd).toBeVisible();
     const box = await dd.boundingBox();
