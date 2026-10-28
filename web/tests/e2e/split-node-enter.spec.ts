@@ -287,8 +287,8 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
   // were, and a duplicate of its text popped up below them with the cursor jumping there. The
   // fix special-cases position 0: insert a blank row BEFORE instead -- same as the "insert row
   // above" quick-bar action -- leaving this node (text, styles, children, fold state) completely
-  // untouched. The cursor stays on the words, as in a word processor (owner, 2026-10-28).
-  test('Enter at the start of a folded row with children inserts a blank row above it, cursor staying on the words', async ({ page }) => {
+  // untouched. The cursor lands on the new blank row, as in Dynalist (owner, 2026-10-28).
+  test('Enter at the start of a folded row with children inserts a blank row above it, cursor landing on the new row', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -332,7 +332,7 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
         editingId,
         // @ts-expect-error
         stillFolded: collapsedIds.has(1),
-        caretOffset: (() => { const inp = document.getElementById('in-1'); return inp ? getEditableCaretOffset(inp) : null; })(),
+        caretOffset: (() => { const inp = document.getElementById('in-' + newId); return inp ? getEditableCaretOffset(inp) : null; })(),
       };
     });
 
@@ -342,8 +342,8 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     expect(result.texts).toEqual(['', 'Folded parent', 'Hidden child']);
     expect(result.depths).toEqual([0, 0, 1]);
     expect(result.parentIds).toEqual([null, null, 1]);
-    // The cursor stays at the start of the original row (which stays folded, untouched).
-    expect(result.editingId).toBe(1);
+    // The cursor lands on the new blank row, not the original (which stays folded, untouched).
+    expect(result.editingId).toBe(result.newId);
     expect(result.stillFolded).toBe(true);
     expect(result.caretOffset).toBe(0);
   });

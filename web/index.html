@@ -12131,9 +12131,14 @@ const snapshotHasFolds=s=>s.includes('"folds":{');
 // to it -- reattaching old content to unrelated new content. Never reusing an id, even across
 // undo/redo, closes that without touching the intentional orphan/re-anchor behavior at all.
 function restoreFromSnapshot(s){const d=JSON.parse(s);nodes=(d.nodes||[]).map(normalizeNode); convertLegacyRows(nodes,d.rowFormat);nextId=Math.max(nextId,d.nextId||1);selectedId=d.selectedId??(nodes[0]?.id??null);multiSelectedIds=Array.isArray(d.multiSelectedIds)?d.multiSelectedIds.filter(id=>nodes.some(n=>n.id===id)):[];selectionAnchorId=d.selectionAnchorId??(selectedId??null);focusedId=(d.focusedId!=null&&nodes.some(n=>n.id===d.focusedId))?d.focusedId:null;editingId=null;selectAllMode=false;flashNodeId=null;if(Array.isArray(d.remarks))remarks=d.remarks;if(Array.isArray(d.qaItems))qaItems=d.qaItems;if(d.folds)applyFoldState(d.folds)}
-function pushUndo(){undoStack.push(snapshot()); if(undoStack.length>200)undoStack.shift(); redoStack=[]}
-function undo(){if(!undoStack.length)return; const s=undoStack.pop(); redoStack.push(snapshot(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render()}
-function redo(){if(!redoStack.length)return; const s=redoStack.pop(); undoStack.push(snapshot(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render()}
+// Where the cursor was in the row being edited when a step was recorded (set while a row editor key
+// is handled), so Undo/Redo from the editor puts you back there instead of leaving edit mode.
+let _undoEditPos=null;
+function snapshotWithEdit(withFolds){ const s=snapshot(withFolds); return _undoEditPos?s.slice(0,-1)+',"edit":'+JSON.stringify(_undoEditPos)+'}':s; }
+function resumeEditFrom(s,wasEditing){ if(!wasEditing)return; let d=null; try{ d=JSON.parse(s).edit; }catch(e){} if(d&&getIndex(nodes,d.id)>=0)beginEditAt(d.id,d.caret); }
+function pushUndo(){undoStack.push(snapshotWithEdit()); if(undoStack.length>200)undoStack.shift(); redoStack=[]}
+function undo(){if(!undoStack.length)return; const wasEditing=editingId!==null; const s=undoStack.pop(); redoStack.push(snapshotWithEdit(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render(); resumeEditFrom(s,wasEditing)}
+function redo(){if(!redoStack.length)return; const wasEditing=editingId!==null; const s=redoStack.pop(); undoStack.push(snapshotWithEdit(snapshotHasFolds(s))); restoreFromSnapshot(s); dirty=true; render(); resumeEditFrom(s,wasEditing)}
 // Contextual dispatcher: routes to whichever stack matches what's currently focused.
 // This dispatcher exists so the visible toolbar Undo/Redo buttons behave identically to the
 // keyboard shortcut instead of always hitting the outline stack regardless of where focus
@@ -22402,7 +22407,12 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
 function mergeNextNodeIntoAndFocus(id,liveText){
   const idx=getIndex(nodes,id); if(idx<0)return;
   const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0||pos>=vis.length-1)return;
-  const nextIdx=vis[pos+1]; if(nodeHasChildren(nodes,nextIdx))return;
+  const nextIdx=vis[pos+1];
+  // An empty row just goes away and the cursor lands at the start of the next one.
+  if(!(liveText||'')&&!nodeHasChildren(nodes,idx)&&!collectDeleteImpact([id]).diagrams){
+    const nextId=nodes[nextIdx].id; pushUndo(); markDirty(); nodes.splice(idx,1); removeLinkedObjectsForNodeIds([id]); removeIdsFromAutoRewriteQueue([id]); cleanupRowLinksTo([id]); rebuildParentIds(); beginEditAt(nextId,0); return;
+  }
+  if(nodeHasChildren(nodes,nextIdx))return;
   const curOldText=liveText||''; const nextText=nodes[nextIdx].text||'';
   const caretAt=curOldText.length; const curNewText=curOldText+nextText;
   const mergedMarks=concatRowMarks(rowMarksOf(nodes[idx]),curOldText.length,rowMarksOf(nodes[nextIdx]),nextText.length);
@@ -22423,6 +22433,8 @@ function mergeNextNodeIntoAndFocus(id,liveText){
 // children are never reparented. Caret lands at the start of the new sibling, matching where a
 // cursor would sit right after a real newline split.
 // Enter on a row whose children show adds to that list (as in Workflowy or Dynalist), not after it.
+// Enter on a to-do row makes the new row a to-do too (a checklist continues, as in Dynalist).
+function continueChecklist(fromId){ const from=nodes[getIndex(nodes,fromId)]; const nn=editingId!=null&&editingId!==fromId?nodes[getIndex(nodes,editingId)]:null; if(!from||!nn||!from.isCheckbox||nn.isCheckbox)return; nn.isCheckbox=true; nn.checked=false; render(); }
 function rowListIsOpen(id){ const idx=getIndex(nodes,id); return idx>=0&&nodeHasChildren(nodes,idx)&&!collapsedIds.has(id); }
 function splitNodeAtCursorAndFocus(id,beforeText,afterText){
   const idx=getIndex(nodes,id); if(idx<0)return;
@@ -25046,7 +25058,8 @@ function rowTypingStep(input,id,back){
   while(from.length){ const st=from.pop(); if(sameRowTypingState(st,cur))continue; to.push(cur); t.lastKind=null; applyRowTypingState(id,st); return true; }
   return false;
 }
-function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
+function onEditorKeyDown(e){ _undoEditPos={id:Number(e.target.id.replace('in-','')),caret:getEditableCaretOffset(e.target)??-1}; try{ onEditorKeyDownInner(e); } finally { _undoEditPos=null; } }
+function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
   if(matchesShortcut(e,'undo')){e.preventDefault(); if(!rowTypingStep(e.target,id,true))contextualUndo(); return}
   if(matchesShortcut(e,'redo')){e.preventDefault(); if(!rowTypingStep(e.target,id,false))contextualRedo(); return}
   handleSlashInsertKeydown(e,e.target,id);
@@ -25191,6 +25204,8 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     // because there are no later siblings for it to move past. Once it's back at depth 0, or
     // when siblings follow it, Enter keeps adding further blank rows at the same depth, the
     // same way it already does for real text.
+    // An empty to-do row ends the checklist first: Enter turns it into a plain row (as in Dynalist).
+    if(currentNode.isCheckbox){ commitEdit(); pushUndo(); markDirty(); currentNode.isCheckbox=false; currentNode.checked=false; beginEdit(id,true); return }
     const afterSubtree=nodes[getSubtreeEnd(nodes,idx)];
     const endsSubList=!afterSubtree||afterSubtree.depth<currentNode.depth;
     if(endsSubList&&currentNode.depth>0){ commitEdit(); selectedId=id; outdentSelected(); beginEdit(id,true); return }
@@ -25201,10 +25216,12 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
     // fix applied there). A folded node's own row, and its own inline note, render regardless
     // of whether its children are hidden.
     commitEdit(); forceInlineNoteId=id; forceInlineItemExpanded(inlineExpandNoteNodeIds,id); render();
-    requestAnimationFrame(()=>{ const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } });
+    { const ln=document.querySelector(`.node-note-line[data-node-id="${id}"]`); if(ln){ ln.focus(); const rg=document.createRange(); rg.selectNodeContents(ln); rg.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(rg); } }
     return;
   } if(!(e.ctrlKey||e.metaKey)){
-    const selRange=getEditableSelectionRange(input);
+    let selRange=getEditableSelectionRange(input);
+    // Words selected: Enter replaces them, then splits there (as any editor does).
+    if(selRange&&selRange.start!==selRange.end){ document.execCommand('delete'); selRange=getEditableSelectionRange(input); }
     if(selRange&&selRange.start===selRange.end){
       const splitAt=selRange.start;
       if(splitAt===0){
@@ -25216,13 +25233,15 @@ function onEditorKeyDown(e){const id=Number(e.target.id.replace('in-',''));
         // instead (same as the right-click "Insert above" action) and
         // land the cursor on THAT new row, leaving this node's text/styles/children/fold state
         // completely untouched.
-        commitEdit(); insertSiblingBefore(id,false); beginEditAt(id,0); return;
+        commitEdit(); insertSiblingBefore(id); return;
       }
-      const beforeText=currentValue.slice(0,splitAt); const afterText=currentValue.slice(splitAt);
-      splitNodeAtCursorAndFocus(id,beforeText,afterText); return;
+      const liveValue=String(input?.textContent||'');
+      if(splitAt>=liveValue.length){ commitEdit(); selectedId=id; if(rowListIsOpen(id))insertChildFirst(id,true); else insertSiblingAfter(id,true); continueChecklist(id); return; }
+      const beforeText=liveValue.slice(0,splitAt); const afterText=liveValue.slice(splitAt);
+      splitNodeAtCursorAndFocus(id,beforeText,afterText); continueChecklist(id); return;
     }
   }
-  commitEdit(); selectedId=id; if(e.ctrlKey||e.metaKey||rowListIsOpen(id))insertChildFirst(id,true); else insertSiblingAfter(id,true); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();
+  commitEdit(); selectedId=id; if(e.ctrlKey||e.metaKey||rowListIsOpen(id))insertChildFirst(id,true); else insertSiblingAfter(id,true); if(!(e.ctrlKey||e.metaKey))continueChecklist(id); return} if(e.key==='Tab'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();
     // Continuous-editing feel: indenting/outdenting never changes the row's own text, so the
     // caret should stay exactly where it was -- not jump to the end the way a fresh beginEdit
     // normally would.
