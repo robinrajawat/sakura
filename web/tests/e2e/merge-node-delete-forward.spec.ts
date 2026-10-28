@@ -116,14 +116,15 @@ test.describe('Delete pulls the next visible node into this one at the end of th
     expect(result.editingId).toBe(1);
   });
 
-  test('a next node with children refuses to merge (nodeHasChildren guard)', async ({ page }) => {
+  test('a next node with children at another level does not merge', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
     const result = await page.evaluate(() => {
       // @ts-expect-error
       nodes = [
-        { id: 1, depth: 0, text: 'A', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 4, depth: 0, text: 'P', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 1, depth: 1, text: 'A', parentId: 4, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
         { id: 2, depth: 0, text: 'B', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
         { id: 3, depth: 1, text: 'B-child', parentId: 2, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
       ];
@@ -133,9 +134,9 @@ test.describe('Delete pulls the next visible node into this one at the end of th
       selectedId = 1; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = [];
       // @ts-expect-error
       render();
-      const before = { ids: [1, 2, 3], texts: ['A', 'B', 'B-child'] };
+      const before = { ids: [4, 1, 2, 3], texts: ['P', 'A', 'B', 'B-child'] };
 
-      // @ts-expect-error -- node 2 (next after id 1) has a child (node 3); must be a no-op
+      // @ts-expect-error -- B is a level above A and has a child; its child would change level, so no-op
       mergeNextNodeIntoAndFocus(1, 'A');
 
       return {
@@ -146,6 +147,27 @@ test.describe('Delete pulls the next visible node into this one at the end of th
     });
 
     expect(result.after).toEqual(result.before);
+  });
+
+  test('a next sibling with children merges in and its children move under this row', async ({ page }) => {
+    await page.goto('file://' + indexPath);
+    await dismissOverlays(page);
+    const result = await page.evaluate(() => {
+      // @ts-expect-error
+      nodes = [
+        { id: 1, depth: 0, text: 'A', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 2, depth: 0, text: 'B', parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+        { id: 3, depth: 1, text: 'B-child', parentId: 2, isCheckbox: false, checked: false, note: '', tags: [], styles: {} },
+      ];
+      // @ts-expect-error
+      collapsedIds = new Set(); selectedId = 1; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; render();
+      // @ts-expect-error
+      mergeNextNodeIntoAndFocus(1, 'A');
+      // @ts-expect-error
+      return { texts: nodes.map((n: any) => n.text), parents: nodes.map((n: any) => n.parentId) };
+    });
+    expect(result.texts).toEqual(['AB', 'B-child']);
+    expect(result.parents).toEqual([null, 1]);
   });
 
   test('deleting forward when this is the last visible row is a no-op', async ({ page }) => {

@@ -21209,6 +21209,8 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     noteLine.addEventListener('keydown',e=>{
       // "/" opens the Insert list in the inline note like in other text.
       if(handleSlashInsertKeydown(e,noteLine))return;
+      // Esc leaves the note like it leaves a row: the row stays selected for the keyboard.
+      if(e.key==='Escape'&&!e.defaultPrevented&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){ e.preventDefault(); const nid=Number(noteLine.dataset.nodeId); noteLine.blur(); if(Number.isFinite(nid)){ _pendingInlineFocus=null; setSingleSelection(nid); render(); } return; }
       if(e.key==='Tab'){
         // Not e.target -- a keydown's target is always the focused contenteditable HOST (noteLine
         // itself), never whichever descendant the caret happens to sit in, unless that descendant
@@ -21889,12 +21891,19 @@ function deleteEmptyNodeAndFocusPrev(id){
 // node, then deletes the now-merged node and lands the caret at the join point. "Previous
 // VISIBLE node" is the same fold-aware getVisibleNodeIndexes lookup deleteEmptyNodeAndFocusPrev
 // uses, so merging next to a collapsed node appends into that collapsed row itself, never its
-// hidden last descendant. Refuses on nodes with children (nothing to structurally do with them,
-// same guard as above) or when there's no previous visible row.
+// hidden last descendant. A row with children merges only into a childless sibling right above
+// it (its children move under that row, fold state included); otherwise, or with no previous
+// visible row, it does nothing.
+// True when the row at keepIdx can take over the children of the row at goneIdx in a merge: same
+// level, and keepIdx has no children of its own (the two rows are adjacent siblings).
+function canAdoptChildrenOf(keepIdx,goneIdx){ return (nodes[keepIdx].depth||0)===(nodes[goneIdx].depth||0)&&!nodeHasChildren(nodes,keepIdx); }
 function mergeNodeIntoPrevAndFocus(id,liveText){
-  const idx=getIndex(nodes,id); if(idx<0)return; if(nodeHasChildren(nodes,idx))return;
+  const idx=getIndex(nodes,id); if(idx<0)return;
   const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<=0)return;
   const prevIdx=vis[pos-1]; const prevId=nodes[prevIdx].id;
+  // A row with children merges only into a childless sibling just above it: its children then
+  // simply become that row's children (as in Workflowy/Dynalist). Anywhere else they'd change level.
+  if(nodeHasChildren(nodes,idx)&&!canAdoptChildrenOf(prevIdx,idx))return;
   const mergedText=liveText||''; const prevOldText=nodes[prevIdx].text||'';
   const caretAt=prevOldText.length; const prevNewText=prevOldText+mergedText;
   const mergedMarks=concatRowMarks(rowMarksOf(nodes[prevIdx]),prevOldText.length,rowMarksOf(nodes[idx]),mergedText.length);
@@ -21904,6 +21913,7 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
   // than vanishing with it -- node.images is user content, never silently dropped.
   nodes[prevIdx]={...nodes[prevIdx],text:prevNewText,...mergedNodeContent(nodes[prevIdx],nodes[idx])}; setRowMarksOn(nodes[prevIdx],mergedMarks);
   repointNodeLinks(nodes[idx].id,prevId);
+  if(collapsedIds.has(nodes[idx].id))collapsedIds.add(prevId);
   nodes.splice(idx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupRowLinksTo(deletedIds);
@@ -21917,9 +21927,9 @@ function mergeNodeIntoPrevAndFocus(id,liveText){
 // never reach into a collapsed node's hidden children. The join point is exactly where the caret
 // already was, so it doesn't move at all (unlike the backspace-merge case, which lands the caret
 // at the end of the row above -- here the row itself doesn't change position). A next node that's
-// empty is absorbed the same way, appending '' -- no separate empty-node branch needed. Refuses
-// when the next node has children (nothing to structurally do with them, same guard
-// mergeNodeIntoPrevAndFocus uses for the node it removes).
+// empty is absorbed the same way, appending '' -- no separate empty-node branch needed. A next
+// node with children is absorbed only when this row is its childless sibling (same rule as
+// mergeNodeIntoPrevAndFocus).
 function mergeNextNodeIntoAndFocus(id,liveText){
   const idx=getIndex(nodes,id); if(idx<0)return;
   const vis=getVisibleNodeIndexes(nodes,collapsedIds); const pos=vis.indexOf(idx); if(pos<0||pos>=vis.length-1)return;
@@ -21928,7 +21938,7 @@ function mergeNextNodeIntoAndFocus(id,liveText){
   if(!(liveText||'')&&!nodeHasChildren(nodes,idx)&&!collectDeleteImpact([id]).diagrams){
     const nextId=nodes[nextIdx].id; pushUndo(); markDirty(); nodes.splice(idx,1); removeLinkedObjectsForNodeIds([id]); removeIdsFromAutoRewriteQueue([id]); cleanupRowLinksTo([id]); rebuildParentIds(); beginEditAt(nextId,0); return;
   }
-  if(nodeHasChildren(nodes,nextIdx))return;
+  if(nodeHasChildren(nodes,nextIdx)&&!canAdoptChildrenOf(idx,nextIdx))return;
   const curOldText=liveText||''; const nextText=nodes[nextIdx].text||'';
   const caretAt=curOldText.length; const curNewText=curOldText+nextText;
   const mergedMarks=concatRowMarks(rowMarksOf(nodes[idx]),curOldText.length,rowMarksOf(nodes[nextIdx]),nextText.length);
@@ -21936,6 +21946,7 @@ function mergeNextNodeIntoAndFocus(id,liveText){
   const deletedIds=[nodes[nextIdx].id];
   nodes[idx]={...nodes[idx],text:curNewText,...mergedNodeContent(nodes[idx],nodes[nextIdx])}; setRowMarksOn(nodes[idx],mergedMarks);
   repointNodeLinks(nodes[nextIdx].id,id);
+  if(collapsedIds.has(nodes[nextIdx].id))collapsedIds.add(id);
   nodes.splice(nextIdx,1);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupRowLinksTo(deletedIds);
