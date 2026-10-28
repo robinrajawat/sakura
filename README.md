@@ -201,8 +201,8 @@ Both modes are available side by side in the same dropdown, and every AI feature
 - **Untitled in the sidebar:** with no document open, the editor shows an empty "Untitled"; the sidebar lists it at the top, marked "not saved", until you type and it becomes a real document.
 - **Empty documents don't pile up:** a document you open with **+** (or New document) and leave without adding anything (no title, no row text, notes, tables, pictures, diagrams, threads, status or link) is removed when you switch to another document or close its tab. Shared and pinned documents are always kept.
 - **Leave out of export:** right-click a row → More → Row › **Leave out of export** to keep it, and everything under it, out of PDF and OPML exports (handy for internal notes in a document you share). The row stays as it is in the editor, apart from a small eye-with-a-slash icon after its text; click the dot, or the same menu item (now **Include in export**), to bring it back. Several selected rows can be set at once. The exported file never mentions what was left out; a toast after exporting says how many rows were skipped.
-- **PDF branding** (Settings → Data & backup → Export & copy) adds a small attribution mark to the cover page and the bottom-right of every PDF page — on by default, with your own company/team name as an optional override for the default "SAKURA" wordmark ("PDF branding text").
-- PDF exports (documents and the To-Dos list) use your current accent color by default; **Settings → Export & copy → "Use accent color in exports"** turns that off in favor of one fixed color, for consistent branding when the document is going to someone else rather than staying on your own screen.
+- **PDF mark** (Settings → Documents → PDF) is a small mark on the PDF cover page: "SAKURA" by default, your own company or team name, or blank for none.
+- PDF exports (documents and the To-Dos list) use your current accent color.
 - **Status stamp on PDFs:** when the document has a status (Draft, Review, Approved, Rejected), the exported PDF carries it as a coloured rubber-stamp mark on the cover page — or on the title block when the cover page is turned off. The in-app status pill never reaches someone reading the PDF. No status, no stamp.
 - **PDF markers and footer:** markers print as their icon plus name (Agreed, Follow-up, Out of scope), since a printed page has no hover tip. Every page after the cover shows in its footer the document title and status on the left, the page number in the centre, and the export date on the right; the branding wordmark appears on the cover page only.
 - **Import & Export → Export** saves the outline's structure, text, and each node's note (as an `_note` attribute) as an `.opml` file — always including folded sections. Images aren't part of OPML and are left out.
@@ -217,7 +217,7 @@ Both modes are available side by side in the same dropdown, and every AI feature
 - **Zen mode** (`Ctrl/Cmd+Shift+E`, or the maximize button by the editor) gives the outline the whole screen and always switches the browser to fullscreen; exiting fullscreen (Esc, F11, the browser's control) exits Zen too. Zen hides the toolbar, the tab bar and the file explorer (the file explorer's own toggle still works while in Zen); the app bar and status bar always stay visible.
 - **Status bar, app bar and tab bar** are always shown (outside Zen, for the tab bar). The status bar shows word count and current depth, saved status, the Secure Storage lock chip while locked, the auto-rewrite chip while auto-rewrite is on, and Quick Assist when docked there. None of them are customisable.
 - **Page width** — the document runs the full width of the window; there's no width setting.
-- **Text size** (Settings → Appearance, 85–140%). Hovering a row's dot always shows its created/modified times, long lines always wrap, and notes/remarks/Q&A always start collapsed under their dot.
+- **Text size** (Settings → General, 85–140%). Hovering a row's dot always shows its created/modified times, long lines always wrap, and notes/remarks/Q&A always start collapsed under their dot.
 - Notes, remarks, and Q&A each show as a small dot next to their node; click a dot to expand that item as its own editable line(s) directly underneath the node. Right-click a note or remark line for a small menu (Rewrite with AI, Delete).
 
 ## Installing as an App (PWA)
@@ -257,26 +257,24 @@ How your data is protected depends on whether you're signed in:
 
 ## Feedback & Crash Reports
 
-**Send feedback** (account menu, or Settings → Data) opens a small form — a message and an optional email — that goes straight to a write-only mailbox only Robin can read; nobody, including you, can read it back through the app. This is a deliberate, one-time exception to the no-network-call-to-Firebase-unless-you-sign-in principle above: sending it is its own explicit consent, the same as clicking Sign in with Google is.
+**Send feedback** (account menu, or Settings → Account & about) opens a small form — a message and an optional email — that goes straight to a write-only mailbox only Robin can read; nobody, including you, can read it back through the app. This is a deliberate, one-time exception to the no-network-call-to-Firebase-unless-you-sign-in principle above: sending it is its own explicit consent, the same as clicking Sign in with Google is.
 
-**Automatic crash reports** (Settings → Data, off by default) does the same thing without asking each time: if something throws an uncaught error, it silently files a short report — the error message, the last few console errors leading up to it, and basic environment info (browser, URL) — capped at 10 reports per session with duplicates skipped. It's off by default specifically because it's the one thing in this app that would otherwise phone home without you asking; turning it on is that ask. Either path never includes document, note, or task content — only the error itself and where it happened.
+**Automatic crash reports** (Settings → Account & about, off by default) does the same thing without asking each time: if something throws an uncaught error, it silently files a short report — the error message, the last few console errors leading up to it, and basic environment info (browser, URL) — capped at 10 reports per session with duplicates skipped. It's off by default specifically because it's the one thing in this app that would otherwise phone home without you asking; turning it on is that ask. Either path never includes document, note, or task content — only the error itself and where it happened.
 
 ## Settings Reference
 
-Selected settings worth knowing about (Settings panel, organized by section):
+The Settings panel has five sections: **General** (theme, accent, text size, To-Dos auto-expiry, keyboard shortcuts), **Documents** (your name, PDF cover page / open items page / PDF mark, Trash), **Data & backup** (backup, restore, Secure Storage, reset), **AI**, and **Account & about** (account, about, privacy, support, feedback and crash reports). Dates and times follow your browser's language and region.
 
 | Setting | Section | Default | Notes |
 |---|---|---|---|
-| Search bar | Bars & Menus | **Off** | Global header search; Quick Assist (`Ctrl/Cmd+/`) folds this in regardless of this setting |
 | Reopen tabs on launch | *(Quick Assist only)* | On | No Settings UI control yet — toggle via Quick Assist ("reopen tabs"); turn off to always start with a single tab |
 | Start each session blank | *(Quick Assist only)* | Off | No Settings UI control yet — new blank document every launch instead of restoring the last state |
-| Theme | Appearance | System | Light / Dark / System — see Theming & Appearance above |
+| Theme | General | System | Light / Dark / System — see Theming & Appearance above |
+| Your name | Documents | Blank | Signs new documents and greets you on a blank document (blank: the greeting uses your account's first name) |
+| PDF mark | Documents → PDF | SAKURA | Small mark on the PDF cover page; your own text, or blank for none |
 | AI Capabilities | AI | On | Master switch for all AI features; each still needs Sakura Hosted AI (sign in) or a BYOK provider key active |
 | Auto-rewrite on commit | AI | Off | See AI Features above; needs a configured API key |
 | Provider fallback | AI | Off | Auto-retries with the next configured provider on failure (except a bad key) |
-| Focus | Editing | On | Zoom into a branch; can be turned off entirely |
-| PDF branding | Data & Backup → Export & copy | On | Small mark on the PDF cover page and every page's corner; optional custom text |
-| Use accent color in exports | Data & Backup | On | Off: PDF exports (documents and To-Dos) use one fixed color instead of your live accent, for consistent branding when sharing |
 
 ## Keyboard Shortcuts
 

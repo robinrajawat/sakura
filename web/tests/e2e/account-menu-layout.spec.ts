@@ -81,11 +81,12 @@ test('header opens Settings → Account; visibility link does not', async ({ pag
   await expect(page.locator('#settings-panel .settings-rail-btn[data-cat="account"]')).toHaveClass(/active/);
 });
 
-test('Help → About Sakura opens Settings → About', async ({ page }) => {
+test('Help → About Sakura opens Settings → Account & about', async ({ page }) => {
   await page.locator('#account-toggle').click();
   await page.locator('#account-help-btn').click();
   await expect(page.locator('#help-panel')).toHaveClass(/open/);
   await page.locator('#help-about-open-btn').click();
   await expect(page.locator('#settings-panel')).toHaveClass(/open/);
-  await expect(page.locator('#settings-panel .settings-rail-btn[data-cat="about"]')).toHaveClass(/active/);
+  await expect(page.locator('#settings-panel .settings-rail-btn[data-cat="account"]')).toHaveClass(/active/);
+  await expect(page.locator('#settings-section-about')).toBeVisible();
 });

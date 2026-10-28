@@ -93,7 +93,9 @@ const REMOVED_GLOBALS = [
 const KEPT_GLOBALS = [
   'setZenMode', 'exportPdfDirect', 'exportPreviewAsPdf', 'renderPreviewBody', 'exportOpml', 'serializeOpml', 'copyNodesToClipboard',
   'setTheme', 'setEditorScale', 'generateOutlineWithAi', 'rewriteMultipleNodes', 'rewriteSubTextSelection', 'setAutoRewriteEnabled',
-  'setPreviewBrandingEnabled', 'setPreviewBrandingText', 'setCoverPageEnabled', 'setExportUseAccentColor', 'setAccentPreset'
+  'setPreviewBrandingText', 'setCoverPageEnabled', 'setAccentPreset'
+  // (setPreviewBrandingEnabled and setExportUseAccentColor went with their switches: one PDF mark field,
+  // exports always use the accent.)
   // (setZenHideToolbar/-Sidebar/-Tabbar and setTabbarVisible were removed later, in item 14 —
   // Zen always hides those, and the tab bar is always on.)
 ];
@@ -128,20 +130,13 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     expect(sectionTitles).not.toContain('Zen mode');
     await expect(page.locator('#settings-section-zen')).toHaveCount(0);
 
-    // Export & copy: Cover page, PDF branding (+ text), accent color — and nothing else.
-    await openSettingsCategory(page, 'data');
-    const exportSection = page.locator('#settings-panel .settings-section[data-cat="data"]').filter({ has: page.locator('.settings-section-title', { hasText: /^Export & copy$/ }) });
-    const rows = exportSection.locator('.settings-list-row .settings-switch-text');
-    expect(await rows.allTextContents()).toEqual(['Cover page', 'Open items page', 'PDF branding', 'PDF branding text', 'Use accent color in exports']);
-    // Branding defaults to on (its description now says so), and the text row follows it.
-    await expect(page.locator('#preview-branding-toggle')).toHaveAttribute('aria-checked', 'true');
-    await expect(exportSection).toContainText('On by default');
-    await expect(page.locator('#preview-branding-text-row')).toBeVisible();
-    await page.locator('#preview-branding-toggle').click();
-    await expect(page.locator('#preview-branding-toggle')).toHaveAttribute('aria-checked', 'false');
-    await expect(page.locator('#preview-branding-text-row')).toBeHidden();
-    await page.locator('#preview-branding-toggle').click();
-    await expect(page.locator('#preview-branding-text-row')).toBeVisible();
+    // Documents → PDF: Cover page, Open items page, PDF mark — and nothing else.
+    await openSettingsCategory(page, 'documents');
+    const pdfSection = page.locator('#settings-panel .settings-section[data-cat="documents"]').filter({ has: page.locator('.settings-section-title', { hasText: /^PDF$/ }) });
+    const rows = pdfSection.locator('.settings-list-row .settings-switch-text');
+    expect(await rows.allTextContents()).toEqual(['Cover page', 'Open items page', 'PDF mark']);
+    // The mark defaults to SAKURA; blank means no mark.
+    await expect(page.locator('#preview-branding-text-input')).toHaveValue('SAKURA');
 
     // Six accent swatches, the default (terracotta) first; no chrome or custom swatches.
     const accents = await page.locator('#accent-swatch-row .accent-swatch').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.accent));
@@ -327,7 +322,7 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
         accentVar: getComputedStyle(document.body).getPropertyValue('--accent').trim(),
         inlineBg: document.body.style.getPropertyValue('--bg'),
         // @ts-expect-error
-        branding: [previewBrandingEnabled, previewBrandingText],
+        branding: [previewBrandingText, prefs.pdfMark],
         // @ts-expect-error
         dividerFlags: nodes.map((n) => n.slideDivider)
       };
@@ -344,7 +339,8 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     expect(state.prefs.accentPreset).toBe('terracotta');
     expect(state.accentVar).toBe('#c2553d');
     expect(state.inlineBg).toBe('');
-    expect(state.branding).toEqual([false, 'Acme']);
+    // Branding was off, so the old prefs migrate to no mark.
+    expect(state.branding).toEqual(['', '']);
     expect(state.overrideInMemory).toBeUndefined();
     expect(state.overrides.toggleAppbar).toBeUndefined();
     // The stray slideDivider flag isn't carried on loaded nodes.
