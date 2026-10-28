@@ -692,7 +692,7 @@ const STYLE_BLOCKS = [
       'base', 'feature-activation', 'modal', 'welcome', 'settings-help-layout', 'fold',
       'outline-numbering', 'search-bar', 'action-bar', 'documents-menu', 'drag-drop',
       'context-menu', 'sidebar', 'tags', 'guided-tour', 'preview', 'pasted-image',
-      'settings-help-rail', 'pdf-export-overlay'
+      'settings-help-rail', 'pdf-export-overlay', 'calm-layout'
     ].map((n) => `src/styles/index/${n}.css`)
   },
   {
