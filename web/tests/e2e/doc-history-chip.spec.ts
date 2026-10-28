@@ -33,7 +33,7 @@ test('the History chip opens a small menu like Link and Share; "All versions…"
   page.on('pageerror', (err) => { if (!KNOWN_NOISE.test(err.message)) errors.push(err.message); });
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('file://' + indexPath);
-  const chip = page.locator('#editor-meta-row #doc-history-chip');
+  const chip = page.locator('#ag-fold #doc-history-chip');
   await expect(chip).toBeVisible();
   await expect(chip).toHaveAttribute('aria-label', 'Version history');
 
@@ -58,15 +58,6 @@ test('the History chip opens a small menu like Link and Share; "All versions…"
   expect(errors).toEqual([]);
 });
 
-test('the byline separates facts from actions with a thin rule', async ({ page }) => {
-  await page.goto('file://' + indexPath);
-  const rule = await page.evaluate(() => {
-    const st = getComputedStyle(document.getElementById('doc-link-wrap')!, '::before');
-    return { content: st.content, width: st.width, height: st.height };
-  });
-  expect(rule).toEqual({ content: '""', width: '1px', height: '14px' });
-});
-
 test('"Where used…" is gone from the node menu', async ({ page }) => {
   await page.goto('file://' + indexPath);
   const r = await page.evaluate(() => ({
@@ -77,14 +68,14 @@ test('"Where used…" is gone from the node menu', async ({ page }) => {
   expect(r).toEqual({ meta: false, order: false, popover: 'undefined' });
 });
 
-test('byline dropdowns open from their chip\'s left edge (Share used to open leftwards over the title)', async ({ page }) => {
+test('Share sits at the toolbar\'s right end, so its menu lines up with the chip\'s right edge', async ({ page }) => {
   await page.goto('file://' + indexPath);
   const r = await page.evaluate(() => {
     document.getElementById('doc-share-wrap')!.style.display = '';
     document.getElementById('share-dd-menu')!.classList.add('open');
     return {
-      chip: Math.round(document.getElementById('doc-share-chip')!.getBoundingClientRect().left),
-      menu: Math.round(document.getElementById('share-dd-menu')!.getBoundingClientRect().left)
+      chip: Math.round(document.getElementById('doc-share-chip')!.getBoundingClientRect().right),
+      menu: Math.round(document.getElementById('share-dd-menu')!.getBoundingClientRect().right)
     };
   });
   expect(r.menu).toBe(r.chip);

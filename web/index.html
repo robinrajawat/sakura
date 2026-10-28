@@ -645,9 +645,8 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 #sb-author.doc-author-chip{text-transform:none;letter-spacing:0;font-weight:600;cursor:text;width:132px;text-align:left;outline:none}
 /* Hug the name instead of a fixed 132px box (which left trailing grey on short names); browsers without field-sizing keep the fixed width. */
 @supports (field-sizing:content){#sb-author.doc-author-chip{field-sizing:content;width:auto;min-width:64px;max-width:220px}}
-/* Every byline dropdown opens from its chip's left edge (Share used to align its right edge to
-   the chip, so it opened leftwards over the title). */
-#doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu,#doc-share-wrap .todo-dd-menu{right:auto;left:0}
+/* Byline dropdowns open from their chip's left edge. */
+#doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu{right:auto;left:0}
 .meta-inline{appearance:none;-webkit-appearance:none;-moz-appearance:none;border:none;background:transparent;color:var(--fg);padding:0 2px;min-width:0;font-family:'Inter',sans-serif;line-height:1.2;border-radius:4px}
 .meta-inline::placeholder{color:var(--hint)}
 .meta-inline:hover{background:color-mix(in srgb,var(--hover) 45%, transparent)}
@@ -910,10 +909,20 @@ body.zen-mode #quick-bar{display:none}
 .action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px}
 /* Collapse all + Zoom sit as a small pair at the right end of the toolbar. */
 #ag-fold{margin-left:auto}
+/* Open items, fold and document actions as one right-hand cluster: a narrow window wraps it to
+   the next line still flush right (not left-aligned under Undo). */
+.ag-right{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:4px;margin-left:auto;min-width:0}
 /* Marker summary: whole-document counts per marker (folded branches included), left of the fold group. */
 #ag-markers{margin-left:auto}#ag-markers[hidden]{display:none}
 #ag-markers:not([hidden])+#ag-fold{position:relative;margin-left:13px}
 #ag-markers:not([hidden])+#ag-fold::before{content:'';position:absolute;left:-7px;top:50%;width:1px;height:18px;transform:translateY(-50%);background:color-mix(in srgb,var(--border) 70%,transparent)}
+/* Document actions (History, who's here, Share) close the toolbar after Collapse all and Zoom,
+   Share last (where Docs/Notion put it), instead of sitting in the byline under the title. One
+   group, so a narrow window wraps them together and they stay on the right. */
+#ag-fold .ag-buttons{flex-wrap:nowrap}
+#ag-fold .tb-sep{flex:0 0 1px;width:1px;height:18px;margin:0 5px;background:color-mix(in srgb,var(--border) 70%,transparent)}
+#doc-share-chip{display:inline-flex;align-items:center;gap:6px;width:auto;padding:0 10px;font:500 12.5px 'Inter',sans-serif;color:var(--fg)}
+#doc-share-wrap .todo-dd-menu{left:auto;right:0}
 /* Open-items summary: words in the text colour, only each icon tinted (--mc), so it doesn't
    outshout the document. One button; its list opens below (.open-items-menu). */
 .open-items-btn,.decisions-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px;border:none;border-radius:8px;background:transparent;color:var(--fg);font:500 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -923,7 +932,6 @@ body.zen-mode #quick-bar{display:none}
 .oi-part{display:inline-flex;align-items:center;gap:4px}
 .oi-part svg{color:var(--mc);flex:0 0 auto}
 .oi-sep{color:var(--hint)}
-.oi-divider{flex:0 0 1px;width:1px;height:16px;align-self:center;background:var(--border);margin:0 3px}
 .open-items-menu{width:340px;max-width:calc(100vw - 16px)}
 .open-items-menu .sb-context-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A second, quieter line under an item: e.g. why a follow-up is open (the thread line that set it). */
@@ -2819,8 +2827,8 @@ body.printing-generic #gpe-overlay{
 /* Separator dot between status and author: a drawn 3px dot, centred on the row (the '·' glyph sat
    low and hugged the status pill). 11px each side: margin here, row gap 4px + author padding 7px. */
 #doc-status-wrap::after{content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:11px;flex:0 0 auto}
-/* Facts (status · author) | actions (Link, History, Share): a thin rule marks where the actions start. */
-#doc-link-wrap::before{content:'';width:1px;height:14px;margin:0 8px 0 6px;background:var(--border)}
+/* Same dot before the link, so the byline reads Status · author · link (History and Share live in the toolbar). */
+#doc-link-wrap::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-right:4px;flex:0 0 auto}
 #diagram-editor-close{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;padding:7px;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
 #diagram-editor-close:hover{color:var(--fg);background:var(--hover)}
 #diagram-editor-iframe-wrap{flex:1;min-height:0;position:relative}
@@ -4435,12 +4443,45 @@ body.printing-generic #gpe-overlay{
         </div>
       </div>
     </div>
+    <div class="ag-right">
     <div class="action-group" id="ag-markers" hidden><div class="ag-buttons" id="marker-summary" role="group" aria-label="Open items"></div></div>
     <div class="action-group" id="ag-fold">
       <div class="ag-buttons">
         <button class="btn icon-btn quick-btn" id="qb-collapse" data-tip="Collapse all" aria-label="Collapse all"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/></svg></button>
         <button class="btn icon-btn quick-btn" id="qb-zoom" data-tip="Zoom into selected node (Ctrl+.) · Zoom out (Ctrl+,)" aria-label="Zoom"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+        <span class="tb-sep" aria-hidden="true"></span>
+        <button type="button" class="btn icon-btn quick-btn" id="doc-history-chip" data-tip="Version history" aria-label="Version history" aria-haspopup="menu"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
+        <div class="doc-presence-chip" id="doc-presence-chip" style="display:none"></div>
+        <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
+          <button type="button" class="btn quick-btn" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
+          <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
+            <div class="share-dd-header">
+              <span class="share-dd-header-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
+              <div class="share-dd-header-text">
+                <div class="share-dd-title">Share document</div>
+                <div class="share-dd-doctitle" id="share-dd-doctitle"></div>
+              </div>
+            </div>
+            <div class="muted-help share-dd-help">Only people with their profile set to Public (Settings → Account → "Profile visibility") can be found this way.</div>
+            <div style="display:flex;gap:6px;position:relative">
+              <div class="share-search-wrap">
+                <span class="share-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" />
+              </div>
+              <div class="theme-segmented share-role-segmented" id="share-modal-role-segmented" role="tablist" aria-label="Access level">
+                <button type="button" class="share-role-seg active" data-role="viewer" role="tab" aria-selected="true" data-tip="Can view">View</button>
+                <button type="button" class="share-role-seg" data-role="editor" role="tab" aria-selected="false" data-tip="Can edit">Edit</button>
+              </div>
+              <div id="share-modal-results" class="share-modal-results" style="display:none"></div>
+            </div>
+            <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
+            <div class="share-modal-divider"></div>
+            <div class="share-modal-section-label">Who has access</div>
+            <div id="share-modal-list"></div>
+          </div>
+        </div>
       </div>
+    </div>
     </div>
   </div>
 <div id="cross-tab-banner" class="cross-tab-banner" hidden>
@@ -4466,36 +4507,6 @@ body.printing-generic #gpe-overlay{
               <button type="button" id="doc-link-copy-btn" class="link-card-btn doc-link-has" data-i="1" data-tip="Copy link" aria-label="Copy link"></button>
               <button type="button" id="doc-link-remove-btn" class="link-card-btn danger doc-link-has" data-i="3" data-tip="Remove link" aria-label="Remove link"></button>
             </div>
-          </div>
-        </div>
-        <button type="button" class="doc-status-chip unset doc-history-chip" id="doc-history-chip" data-tip="Version history — earlier versions of this document" aria-label="Version history" aria-haspopup="menu"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:3px;vertical-align:-1px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>History</button>
-        <div class="doc-presence-chip" id="doc-presence-chip" style="display:none"></div>
-        <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
-          <button type="button" class="doc-status-chip unset" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
-          <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
-            <div class="share-dd-header">
-              <span class="share-dd-header-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
-              <div class="share-dd-header-text">
-                <div class="share-dd-title">Share document</div>
-                <div class="share-dd-doctitle" id="share-dd-doctitle"></div>
-              </div>
-            </div>
-            <div class="muted-help share-dd-help">Only people with their profile set to Public (Settings → Account → "Profile visibility") can be found this way.</div>
-            <div style="display:flex;gap:6px;position:relative">
-              <div class="share-search-wrap">
-                <span class="share-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-                <input id="share-modal-email-input" type="text" class="meta-input" placeholder="Search by name or email" autocomplete="off" />
-              </div>
-              <div class="theme-segmented share-role-segmented" id="share-modal-role-segmented" role="tablist" aria-label="Access level">
-                <button type="button" class="share-role-seg active" data-role="viewer" role="tab" aria-selected="true" data-tip="Can view">View</button>
-                <button type="button" class="share-role-seg" data-role="editor" role="tab" aria-selected="false" data-tip="Can edit">Edit</button>
-              </div>
-              <div id="share-modal-results" class="share-modal-results" style="display:none"></div>
-            </div>
-            <div id="share-modal-error" class="share-modal-error" style="display:none"></div>
-            <div class="share-modal-divider"></div>
-            <div class="share-modal-section-label">Who has access</div>
-            <div id="share-modal-list"></div>
           </div>
         </div>
         <button type="button" class="doc-status-chip" id="doc-ref-chip" style="display:none" data-tip="Referenced by a to-do — click to view">
@@ -33056,7 +33067,7 @@ function updateMarkerSummary(){
   const dLabel=dn+(dn===1?' decision':' decisions');
   const dBtn=dn?`<button type="button" class="decisions-btn" aria-haspopup="menu" data-tip="What was decided in threads. Click for the list." aria-label="${dLabel}"><span class="oi-part" style="--mc:${openItemKindColor('decision')}">${openItemKindIcon('decision')}<span>${dLabel}</span></span></button>`:'';
   const oiBtn=(open||filtering)?`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list; right-click (or Shift+click) to show only open items." aria-label="${esc(text)}">${segs}</button>`:'';
-  const html=oiBtn+(oiBtn&&dBtn?'<span class="oi-divider" aria-hidden="true"></span>':'')+dBtn;
+  const html=oiBtn+(oiBtn&&dBtn?'<span class="oi-sep" aria-hidden="true">\u00B7</span>':'')+dBtn;
   if(box.innerHTML!==html)box.innerHTML=html;
 }
 // Going to a row's status (an open item, F8, a follow-up's task): the row, with its thread open (the why).
