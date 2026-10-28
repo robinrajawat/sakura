@@ -43,7 +43,7 @@ test('Copy thread puts the thread on the clipboard as rich text and plain lines'
   expect(clip.text).toContain('question, answered');
   expect(clip.text).toContain('Does it include EDI?');
   // An answer is indented under its question, as in the outline.
-  expect(clip.text).toMatch(/\n {4}Ana · [^\n]*\n {4}Yes, all partners\./);
+  expect(clip.text).toMatch(/\n {4}Ana\n {4}Yes, all partners\./);
   expect(clip.html).toContain('margin-left:24px');
   expect(clip.text).toMatch(/Robin · [^\n]*2026[^\n]* · decision\nWe go with Nov 2\./);
   expect(clip.html).toContain('<b>EDI</b>');

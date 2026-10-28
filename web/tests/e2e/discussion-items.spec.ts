@@ -170,7 +170,7 @@ test('PDF prints the whole thread with kind icons, author, time and notes', asyn
     };
   });
   // The header names the thread; the status prints once, on the row.
-  expect(r.labels).toEqual(['Thread · 4 · Decision']);
+  expect(r.labels).toEqual(['Thread · 4']);
   expect(r.notes).toEqual(['· question, answered', '· decision']);
   expect(r.verdicts).toEqual([]);
   // Ordered by each entry's one stored time (its day folded in).
