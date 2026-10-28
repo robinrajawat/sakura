@@ -32151,6 +32151,7 @@ function renderNodeThread(node,placeLine){
   // Reading order (owner, 2026-10-27): a question with its answers under it, the rest by time.
   const groups=[];
   threadReadingOrder(thread).forEach(o=>{ if(o.nested&&groups.length)groups[groups.length-1].push(o); else groups.push([o]); });
+  const foldedGroups=groups.filter((g,i)=>i>=groups.length-3||(isQuestion(g[0].entry)&&questionState(g[0].entry,thread)==='open'));
   const commit=()=>{ markDirty(); scheduleAutoSave(); render(); };
   // No line joins the entries (owner, 2026-10-27: cleaner); the header and the indent hold the
   // thread together. A reply (or a reply line) sits one step in.
@@ -32167,10 +32168,11 @@ function renderNodeThread(node,placeLine){
     head.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); });
     head.addEventListener('click',e=>{ e.stopPropagation(); inlineExpandRemarksNodeIds.delete(node.id); render(); });
     head.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[{label:'Copy thread', icon:THREAD_COPY_ICON, onClick:()=>copyThread(node.id)},{divider:true},{label:'Delete thread', danger:true, icon:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>', onClick:()=>deleteThread(node.id)}]); });
-    // A long thread shows its latest three (a question counts with its answers); the header says how
-    // to see the rest (no line of its own).
-    if(thread.length>4&&groups.length>3){
-      const all=showAllRemarksNodeIds.has(node.id), hidden=thread.length-groups.slice(-3).reduce((n,g)=>n+g.length,0);
+    // A long thread shows its latest three (a question counts with its answers) and every open
+    // question, which never folds away (owner, 2026-10-28); the header says how to see the rest.
+    const hiddenCount=thread.length-foldedGroups.reduce((n,g)=>n+g.length,0);
+    if(thread.length>4&&groups.length>3&&hiddenCount>0){
+      const all=showAllRemarksNodeIds.has(node.id), hidden=hiddenCount;
       const more=document.createElement('button'); more.type='button'; more.className='thread-head-more';
       more.textContent=all?'· show latest only':'· show '+hidden+' earlier'; more.dataset.tip=all?'Show only the latest entries':'Show the whole thread';
       more.setAttribute('aria-expanded',String(all));
@@ -32186,7 +32188,7 @@ function renderNodeThread(node,placeLine){
     place(head);
   }
   const shownAll=showAllRemarksNodeIds.has(node.id)||thread.length<=4||groups.length<=3;
-  const visible=shownAll?groups:groups.slice(-3);
+  const visible=shownAll?groups:foldedGroups;
   // Answering a question opens the reply line under its answers.
   const answering=_threadComposerNodeId===node.id?_threadAnswerTo.get(node.id):null;
   let composerPlaced=false, prev=null;
