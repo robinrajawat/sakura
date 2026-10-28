@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **One empty-space menu; no Declutter (2026-10-28).** Owner: the right-click menus on empty space (editor, File Explorer, status bar, tab bar, app bar) were five different lists. Now one `chromeContextItems()` everywhere: New document, Expand/Collapse all, Show/Hide File Explorer, Switch theme, Settings. "More…", "Close current tab" and Declutter app bar (`appbarDecluttered`, its presetup class) are gone. Share's icon and word take the toolbar's own colour like every other button (no `--fg`). History stays in the toolbar (owner asked; recommended keeping it).
+
 - **Account and About apart; no visibility setting (2026-10-28).** Owner: the account menu already switches profile visibility, so the Settings row went (with it the whole Account section). Rails: General, Documents, Data & backup, AI, Account (only while signed in: `#settings-rail-account-btn`, holds Delete account), About (About, Privacy, Support, Feedback & crash reports). Hosted AI's "Sign in" now opens the account menu.
 
 - **Thread fixes (2026-10-28).** Owner: answering an open question in a folded long thread made it vanish into the fold. `_threadKeptQuestions` (per node) keeps a question that was shown as open on screen after it's answered, until the thread is hidden. Reply line right-click Rewrite called an undefined `refocus()` ("Rewrite failed: refocus is not defined"); it now reopens the line with `_pendingInlineFocus`.
-
-- **Settings panel: 5 rails, fewer settings (2026-10-28).** Owner asked to remove more settings and simplify the panel. Rails are now General (Appearance, To-Dos, Keyboard Shortcuts), Documents (New documents, PDF, Trash), Data & backup, AI, Account & about (`data-cat="account"` now also holds About, Privacy, Support, Feedback; Admin stays separate). Removed: Date/time format (`formatDateTimeLocal` follows the browser locale), the Account "Display name" (`greetingDisplayName` folds into `defaultAuthorName`, shown as "Your name"; greeting uses its first word), To-Dos "Keep at most" (`capMax`), the Quick Assist search box switch (`globalSearchVisible`), "Use accent color in exports" (always the accent), the PDF branding switch (one `previewBrandingText` field saved as `pdfMark`, default "SAKURA", blank = no mark; old prefs migrate), and "Rewrite max response length" (`rewriteMaxTokens(text)` scales 1024-8192 with the input).
 
 ### In progress / not built
 
