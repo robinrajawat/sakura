@@ -94,3 +94,43 @@ test('open items and decisions are separated by a dot, not a rule', async ({ pag
   await expect(page.locator('#marker-summary > .oi-sep')).toHaveText('\u00B7');
   await expect(page.locator('#marker-summary .oi-divider')).toHaveCount(0);
 });
+
+test('on a wide window the toolbar lines up with the page; Full width puts it back edge to edge', async ({ page }) => {
+  await page.setViewportSize({ width: 1900, height: 700 });
+  const m = () => page.evaluate(() => {
+    const r = (id: string) => document.getElementById(id)!.getBoundingClientRect();
+    return { undo: r('undo-btn').left, page: r('editor-pane-inner').left, bar: r('quick-bar').left };
+  });
+  const a = await m();
+  // The button's icon (about 9px in) lands on the page's left edge.
+  expect(Math.abs(a.undo + 9 - a.page)).toBeLessThan(8);
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    setEditorFullWidth(true, false);
+  });
+  const b = await m();
+  expect(b.undo - b.bar).toBeLessThanOrEqual(16);
+});
+
+test('Share is the one labelled button, with no fill; a shared document says Shared · N', async ({ page }) => {
+  const label = page.locator('#doc-share-chip-label');
+  await expect(label).toHaveText('Share');
+  const bg = await page.locator('#doc-share-chip').evaluate((b) => getComputedStyle(b).backgroundColor);
+  expect(bg).toBe('rgba(0, 0, 0, 0)');
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    docShareStatusCache[currentDocId] = [{}, {}]; renderDocShareChip(currentDocId);
+  });
+  await expect(label).toHaveText('Shared \u00B7 2');
+  await expect(page.locator('#doc-share-chip')).toHaveAttribute('aria-label', /Shared with 2 people/);
+});
+
+test('signed in on your own document, Share also offers Invite people…', async ({ page }) => {
+  const labels = await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    currentUser = { uid: 'u1' }; currentDocId = currentDocId || 'd1'; sharedDocMeta = {};
+    // @ts-expect-error
+    return shareMenuItems().map((i: { label: string }) => i.label);
+  });
+  expect(labels).toEqual(['Download PDF', 'Invite people…']);
+});

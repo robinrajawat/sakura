@@ -74,7 +74,7 @@ test.describe('Fixed main toolbar', () => {
       'heading-toggle-btn',
       'qb-insert', 'qb-ai',
       'qb-collapse', 'qb-zoom',
-      'doc-history-chip',
+      'doc-history-chip', 'doc-share-chip',
     ]);
     // Note/Checkbox/Tags + the other node inserts live in Insert ▾ (same order as right-click);
     // Rewrite + Generate outline live in AI ▾.
@@ -95,15 +95,15 @@ test.describe('Fixed main toolbar', () => {
     for (const gone of ['#qb-above', '#qb-child', '#qb-duplicate', '#qb-up', '#qb-down', '#qb-delete', '#qb-smart-paste', '#insert-dt-btn', '#more-toggle', '#more-menu', '.fmt-btn[data-style="underline"]', '.fmt-btn[data-style="strike"]', '#editor-toolbar-toggle']) {
       await expect(page.locator(gone)).toHaveCount(0);
     }
-    // Collapse all + Zoom, then History (Share when signed in), sit at the right end of the bar.
+    // Collapse all + Zoom, then History (Share when signed in), end the bar, over the page's right edge.
     const gap = await page.evaluate(() => {
-      const bar = document.getElementById('quick-bar')!.getBoundingClientRect();
+      const bar = document.getElementById('editor-pane-inner')!.getBoundingClientRect();
       const zoom = document.getElementById('qb-zoom')!.getBoundingClientRect();
-      const hist = document.getElementById('doc-history-chip')!.getBoundingClientRect();
+      const hist = document.getElementById('doc-share-chip')!.getBoundingClientRect();
       const rewrite = document.getElementById('qb-ai')!.getBoundingClientRect();
       return { toRightEdge: bar.right - hist.right, afterAi: zoom.left - rewrite.right };
     });
-    expect(gap.toRightEdge).toBeLessThan(40);
+    expect(Math.abs(gap.toRightEdge)).toBeLessThan(40);
     expect(gap.afterAi).toBeGreaterThan(100);
     expect(errors).toEqual([]);
   });

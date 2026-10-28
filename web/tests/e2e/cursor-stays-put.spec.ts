@@ -131,3 +131,32 @@ test('typing on a selected row adds to the end of its words, never replaces them
   await page.keyboard.type('!x');
   await expect.poll(() => where(page)).toEqual({ index: 2, depth: 1, text: 'Child 0.1!x', caret: 11 });
 });
+
+test('Enter mid-text in a heading keeps both halves headings; Enter at its end starts a plain row', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('nodes[3].styles = { ...nodes[3].styles, heading: 2 }; render()');
+  await edit(page, 4, 5);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => where(page)).toEqual({ index: 4, depth: 1, text: ' 0.2', caret: 0 });
+  expect(await page.evaluate('[nodes[3].styles.heading, nodes[4].styles.heading]')).toEqual([2, 2]);
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => where(page)).toEqual({ index: 5, depth: 1, text: '', caret: 0 });
+  expect(await page.evaluate('nodes[5].styles.heading || 0')).toBe(0);
+});
+
+test('Backspace at the start of a to-do row removes its checkbox first, then merges', async ({ page }) => {
+  await seed(page);
+  await page.evaluate('nodes[3].isCheckbox = true; render()');
+  await edit(page, 4, 0);
+  await page.keyboard.press('Backspace');
+  await expect.poll(() => where(page)).toEqual({ index: 3, depth: 1, text: 'Child 0.2', caret: 0 });
+  expect(await page.evaluate('nodes[3].isCheckbox')).toBe(false);
+  expect(await page.locator('[data-id="4"] input[type=checkbox], [data-id="4"] .node-checkbox').count()).toBe(0);
+  await page.keyboard.press('Backspace');
+  await expect.poll(() => where(page)).toEqual({ index: 2, depth: 1, text: 'Child 0.1Child 0.2', caret: 9 });
+  // One undo brings the checkbox back.
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Control+z');
+  expect(await page.evaluate('nodes[3].isCheckbox')).toBe(true);
+});

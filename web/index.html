@@ -905,6 +905,12 @@ body.zen-mode #quick-bar{display:none}
 .doc-tab-overview-item .doc-tab-overview-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
 .doc-tab-overview-empty{padding:10px 8px;font:400 12px 'Inter',sans-serif;color:var(--hint);text-align:center}
 #quick-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-wrap:wrap}
+/* The toolbar lines up with the page: Undo over the page's left edge, Share over its right edge
+   (the page is centred in #editor-pane, whose padding is 40px left / 24px right, so its centre sits
+   8px right of the bar's; Undo's icon and Share's word land on the page edges). Full width
+   and narrow windows keep the plain 12px padding. */
+#quick-bar{padding-left:max(12px,calc((100% - 900px * var(--editor-scale,1)) / 2 - 2px));padding-right:max(12px,calc((100% - 900px * var(--editor-scale,1)) / 2 - 18px))}
+.editor-full-width #quick-bar{padding-left:12px;padding-right:12px}
 .action-group{display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;max-width:100%}
 .action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px}
 /* Collapse all + Zoom sit as a small pair at the right end of the toolbar. */
@@ -921,7 +927,9 @@ body.zen-mode #quick-bar{display:none}
    group, so a narrow window wraps them together and they stay on the right. */
 #ag-fold .ag-buttons{flex-wrap:nowrap}
 #ag-fold .tb-sep{flex:0 0 1px;width:1px;height:18px;margin:0 5px;background:color-mix(in srgb,var(--border) 70%,transparent)}
-#doc-share-chip{display:inline-flex;align-items:center;gap:6px;width:auto;padding:0 10px;font:500 12.5px 'Inter',sans-serif;color:var(--fg)}
+/* Share is the one labelled button: its word sets it apart, so no fill (Notion); hover as the
+   other buttons. */
+#doc-share-chip{display:inline-flex;align-items:center;gap:6px;width:auto;padding:0 10px;color:var(--fg);font:500 12.5px 'Inter',sans-serif}
 #doc-share-wrap .todo-dd-menu{left:auto;right:0}
 /* Open-items summary: words in the text colour, only each icon tinted (--mc), so it doesn't
    outshout the document. One button; its list opens below (.open-items-menu). */
@@ -3517,14 +3525,6 @@ body.printing-generic #gpe-overlay{
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.1"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.76 2.76l1.41 1.41M9.83 9.83l1.41 1.41M2.76 11.24l1.41-1.41M9.83 4.17l1.41-1.41"/></svg>
                 <span>Appearance</span>
               </button>
-              <button type="button" class="settings-rail-btn" data-cat="toolbar" data-tip="Bars &amp; Menus">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="3.5" x2="13" y2="3.5"/><line x1="1" y1="7" x2="13" y2="7"/><line x1="1" y1="10.5" x2="8.5" y2="10.5"/></svg>
-                <span>Bars &amp; menus</span>
-              </button>
-              <button type="button" class="settings-rail-btn" data-cat="panels" data-tip="Panels">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.4" y="2" width="11.2" height="10" rx="1.4"/><line x1="5.6" y1="2" x2="5.6" y2="12"/></svg>
-                <span>Panels</span>
-              </button>
               <button type="button" class="settings-rail-btn" data-cat="hub" data-tip="Hub">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="1.8"/><path d="M7 2v2.2M7 9.8V12M2 7h2.2M9.8 7H12"/></svg>
                 <span>Hub</span>
@@ -3581,7 +3581,7 @@ body.printing-generic #gpe-overlay{
           
           
           
-          <div class="settings-section" data-cat="panels" id="settings-section-backlinks">
+          <div class="settings-section" data-cat="editing" id="settings-section-backlinks">
             <div class="settings-section-title">Backlinks</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backlinks</span><span class="settings-row-desc">Type @ in a row to link another row; existing links work either way</span></div><button id="feat-backlinks-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Backlinks"></button></div>
@@ -3602,19 +3602,6 @@ body.printing-generic #gpe-overlay{
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Default author</span><span class="settings-row-desc">Pre-fills the author on every new document, so you don't have to set it each time. Existing documents are unaffected — change a single document's author from the status bar.</span></div><input id="default-author-input" type="text" class="meta-input" placeholder="Your name" style="width:140px;text-align:left" /></div>
             </div>
           </div>
-          <div class="settings-section" data-cat="editing" id="settings-section-nodeqa">
-            <div class="settings-section-title">Insert list</div>
-            <div class="muted-help">Which characters the Insert list offers when you type / at the start of a word in a row, note, thread or To-Do.</div>
-            <div class="settings-grid" id="nqa-actions-grid" style="margin-top:6px">
-              <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-emdash" /> Insert em dash</label>
-              <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-endash" checked /> Insert en dash</label>
-              <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-arrow" checked /> Insert arrow</label>
-              <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-checkmark" checked /> Insert check mark</label>
-              <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-crossmark" checked /> Insert cross mark</label>
-              <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-middot" checked /> Insert middle dot</label>
-              <label class="settings-checkbox-row"><input type="checkbox" id="nqaq-date-time" checked /> Insert date/time</label>
-            </div>
-          </div>
           <div class="settings-section" data-cat="editing" id="settings-section-focus">
             <div class="settings-section-title">Focus</div>
             <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Focus</span><span class="settings-row-desc">Zoom into a branch — toolbar button, right-click action, and Ctrl/Cmd+.</span></div><button id="feat-focus-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable Focus"></button></div>
@@ -3626,7 +3613,7 @@ body.printing-generic #gpe-overlay{
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Typewriter mode</span><span class="settings-row-desc">Keeps the line you're typing on pinned at a fixed height — the document scrolls under your cursor instead of your cursor drifting toward the bottom of the screen. Also keeps pace with arrow-key navigation. A manual scroll (wheel/trackpad) is left alone until you type or navigate again</span></div><button id="typewriter-mode-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Typewriter mode"></button></div>
             </div>
           </div>
-          <div class="settings-section" data-cat="toolbar" id="settings-section-quickassist">
+          <div class="settings-section" data-cat="general" id="settings-section-quickassist">
             <div class="settings-section-title">Quick Assist</div>
             <div class="settings-list">
               <div class="settings-list-row" id="global-search-bar-row"><div class="settings-row-text"><span class="settings-switch-text">Quick Assist search box</span><span class="settings-row-desc">Show the search / Quick Assist box, currently docked in <span id="qa-location-desc-inline">the status bar</span> (Ctrl/Cmd+/ opens and focuses it regardless; Quick Assist can also hide it via a command like "hide search bar" — this switch is the reliable way to bring it back)</span></div><button id="global-search-bar-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Show Quick Assist search box"></button></div>
@@ -3961,7 +3948,7 @@ body.printing-generic #gpe-overlay{
 <li>Rich-text fields (Notes, Q&amp;A, Remarks) are stripped to plain text before matching, so a search never hits raw HTML markup and snippets always show readable text</li>
 <li>The file explorer's own filter box only matches document names, not their contents — for anything inside a document, this box is the one that actually looks</li>
 <li>Every document has a status chip — <strong>No status</strong> by default, or Draft, Review, Approved, Rejected — next to the title field. Click it to open a small menu and pick one; it's a menu rather than a cycle-through-in-order control like the diagram status chip, since jumping straight to the one you want beats clicking past the others first. Existing documents start with no status until you set one; it's never assumed. Duplicating a document resets its copy to No status rather than carrying the original's over, same reasoning as why the title gets "(copy)" appended instead of reused verbatim — a fresh copy hasn't itself been through review or approval. Version History restores status alongside everything else for versions saved after this feature shipped; older versions predating it simply leave the current status untouched on restore rather than guessing</li>
-<li>Settings → Bars &amp; Menus → Quick Assist → "Quick Assist search box" shows or hides the box itself — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> opens and focuses it either way</li>
+<li>Settings → Appearance → "Quick Assist search box" shows or hides the box itself — <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> opens and focuses it either way</li>
 <li>As you type, the list runs in a fixed order top to bottom — matching commands first, then Run actions, then search results — each labeled with what it'll do ("Hide File Explorer," "Turn on Zen mode," "Run: New document," "Go to: …") and, for toggles, the setting's current state; <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> moves through the combined list (disabled Run rows are skipped, since there's nothing to activate), <span class="help-kbd">Enter</span> runs or opens whichever is highlighted, <span class="help-kbd">Esc</span> closes and clears the box, or click any of them directly</li>
 <li>Every command and Run action shows a toast with an <strong>Undo</strong> button — nothing is ever silently applied. Just typing a bare toggle name with no verb ("zen mode," "file explorer") flips its current state rather than doing nothing. If a Run action has its own confirmation step and you cancel that step, nothing happens and the toast says so instead of falsely claiming success. "Go to" rows are navigation, not a change to anything, so there's nothing to undo for those</li>
 <li>If a phrase matches more than one setting, all of them show up as separate ranked options instead of Quick Assist silently picking one for you</li>
@@ -3973,7 +3960,6 @@ body.printing-generic #gpe-overlay{
 <li>Type <span class="help-kbd">/</span> at the start of a word, anywhere you type text (a row, a note, a thread entry or reply, a To-Do), and the Insert list opens at the caret. In a row it holds everything Insert ▾ does (Note, Checkbox, Tags, Date/time, markers, Thread, Table, Image, Diagram) plus Characters; in other text, the characters and date/time</li>
 <li>Keep typing to narrow it: <span class="help-kbd">/tab</span> finds Table, <span class="help-kbd">/che</span> Checkbox and Check mark. <span class="help-kbd">↓</span> / <span class="help-kbd">↑</span> and <span class="help-kbd">Enter</span> pick; picking takes the "/…" back out</li>
 <li>A <span class="help-kbd">/</span> inside a word (and/or, 10/27) is just a slash. A space, <span class="help-kbd">Esc</span> or a search with no match closes the list and keeps what you typed</li>
-<li>Which characters appear (em dash, en dash, arrow, check mark, cross mark, middle dot) and whether Date/time does is set in Settings → Editing → Insert list</li>
 <li><strong>Version history…</strong> (right-click a node → in the "notes" group of the More panel) — shows earlier text for just this one node, drawn from the document's regular version history (captured automatically roughly every 10 minutes of active changes — see the Version History entry below) — skips straight past versions where this particular node didn't change, so a document with 20 saved versions might show far fewer than 20 rows here. "Restore text" replaces only this node's text, through the normal undo stack (Ctrl/Cmd+Z undoes it like any other edit) — nothing else about the node (note, code, tags) is touched</li>
 </ul>
 </div>
@@ -4022,7 +4008,7 @@ body.printing-generic #gpe-overlay{
 <li>While editing a row, type <span class="help-kbd">@</span> to link another row by name; a dropdown filters as you type — pick with mouse or arrow keys + Enter. The row's name goes in as a link; click it to jump to that row</li>
 <li>The link points at the row itself, so it keeps working when that row is renamed (a link showing the old name updates to the new one)</li>
 <li>Deleting a linked row turns its links in other rows into plain words</li>
-<li>Turning the feature off (Settings → Panels → Backlinks) suppresses the @ dropdown. Existing links still work</li>
+<li>Turning the feature off (Settings → Editing → Backlinks) suppresses the @ dropdown. Existing links still work</li>
 </ul>
 </div>
           <div class="help-section" data-cat="editing" id="help-section-focus">
@@ -4084,8 +4070,8 @@ body.printing-generic #gpe-overlay{
 <ul>  
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">S</span> → save now (kept in-app — doesn't trigger the browser's "Save Page As")</li>
   
-<li>Export ▾ has two items: PDF and OPML. Both always include folded sections, whatever is collapsed in the outline editor; PDF also includes every note, code block, Q&amp;A item, and remark, and OPML writes each node's note as its <code>_note</code> attribute. Copying nodes with <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">C</span> likewise always includes folded children</li>
-<li>Import ▾ (next to Export ▾) → OPML imports an <span class="help-kbd">.opml</span> outline file as a new document</li>
+<li>Share → Download PDF and Import &amp; Export → Export (.opml) both always include folded sections, whatever is collapsed in the outline editor; PDF also includes every note, code block, Q&amp;A item, and remark, and OPML writes each node's note as its <code>_note</code> attribute. Copying nodes with <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">C</span> likewise always includes folded children</li>
+<li>Import &amp; Export → Import (.opml) imports an <span class="help-kbd">.opml</span> outline file as a new document</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">D</span> → insert the date/time (also in the Insert list, <span class="help-kbd">/</span>, and right-click → <span class="help-kbd">More</span> → Insert date/time)</li>
 <li>Shortcuts that double as OS/browser bindings can occasionally be intercepted before they reach the page — if one doesn't fire, the matching button or menu item always works</li>  
 </ul>  
@@ -4101,7 +4087,7 @@ body.printing-generic #gpe-overlay{
           <div class="help-section" data-cat="data">
 <h4>Export as PDF</h4>
 <ul>
-<li>Export ▾ → PDF renders the document straight from its current content and opens the browser's print dialog — choose "Save as PDF" there. No separate step needed first</li>
+<li>Share → Download PDF renders the document straight from its current content and opens the browser's print dialog — choose "Save as PDF" there. No separate step needed first</li>
 <li>The PDF always contains the whole document: folded sections, notes and code blocks, Q&amp;A, and remarks are all included, each right under the node it belongs to</li>
 <li>Headings come from the Heading 1–6 style you apply in the editor (the toolbar's Heading style button) — not from tree depth. A node with no heading style of its own renders as plain body text; [Bracketed] section markers render as section headings</li>
 <li>A Contents page built from headings (levels 1–2) and Section rows is included at the start of every PDF export. Every page gets a footer with the export date and "Page N of M"</li>
@@ -4171,7 +4157,7 @@ body.printing-generic #gpe-overlay{
 <ul>
 <li>Signing in (see "Sharing &amp; sync" above) syncs your documents continuously to your account — a live, off-device copy that needs no extra setup. Signed out, backing up is manual: nothing leaves this browser unless you run Backup yourself</li>
 <li>Everything is stored locally in the browser, scoped to this exact file. Opening a different copy or a newer version of this file starts with empty storage — that's a browser limitation, not a bug</li>
-<li>Settings → Data → Backup all data → saves every document, folder, To-Do, and setting to a single file you keep. Restore from backup reads one back — it replaces everything currently in the app, which is why both live only in Settings rather than as one-click shortcuts. The header's Export ▾ and Import ▾ buttons are for the current document only (PDF, OPML) — Backup/Restore cover all your data</li>
+<li>Settings → Data → Backup all data → saves every document, folder, To-Do, and setting to a single file you keep. Restore from backup reads one back — it replaces everything currently in the app, which is why both live only in Settings rather than as one-click shortcuts. Share (PDF) and Import &amp; Export (OPML) are for the current document only — Backup/Restore cover all your data</li>
 <li>Settings → Data → Undo last restore → appears only after you've used Restore — a snapshot of whatever was in the app right before that restore, in case the file you picked turns out to have been the wrong one. One level deep: it holds only what was there before your most recent restore</li>
 <li>Settings → Data → Secure Storage → optional, encrypts AI provider keys at rest (AES-GCM, passphrase-derived key) instead of storing them as plain text — in this browser and in local backup files. The passphrase itself is never stored anywhere; unlocking derives the key fresh each time, and it only lives in memory for that session — reload the page and you'll need to unlock again to use your own AI keys. There's no recovery if you forget it. Turning it off writes everything back as plain text. Once it's set up, a status-bar chip shows when it's locked and unlocks it in one click; right-click the chip to jump to the full Secure Storage controls instead. Unlocking also automatically resumes Auto-rewrite on commit if it was paused waiting on a key</li>
 <li>Recommended: back up all data before switching to a new version of this file, then restore right after opening it</li>
@@ -4452,8 +4438,8 @@ body.printing-generic #gpe-overlay{
         <span class="tb-sep" aria-hidden="true"></span>
         <button type="button" class="btn icon-btn quick-btn" id="doc-history-chip" data-tip="Version history" aria-label="Version history" aria-haspopup="menu"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
         <div class="doc-presence-chip" id="doc-presence-chip" style="display:none"></div>
-        <div class="todo-dd-wrap" id="doc-share-wrap" style="display:none">
-          <button type="button" class="btn quick-btn" id="doc-share-chip" data-tip="Share this document with another Sakura account" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
+        <div class="todo-dd-wrap" id="doc-share-wrap">
+          <button type="button" class="btn quick-btn" id="doc-share-chip" aria-label="Share" data-tip="Download a PDF, or invite people on Sakura" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
           <div class="todo-dd-menu share-dd-menu" id="share-dd-menu" role="menu">
             <div class="share-dd-header">
               <span class="share-dd-header-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
@@ -5087,7 +5073,7 @@ let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoSta
 // suddenly fall back to. So this tracks the opposite: which nodes someone has explicitly folded
 // away, not which have opted into being shown. Session-only, like the other four.
 let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let dateTimeFormat='default'; let accentPreset='terracotta'; let globalSearchVisible=true; let qaIconOnly=false; let sidebarSearchVisible=false; let sbSearchQuery=''; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
-let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let nodeQuickAssistActions=['emdash','endash','arrow','checkmark','crossmark','middot','date-time']; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let exportUseAccentColor=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='system'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false;
+let defaultAuthorName=''; let greetingDisplayName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let exportUseAccentColor=true; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='system'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarDecluttered=false; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let aiMaxTokens=1024; let searchMatchCase=false; let searchWholeWord=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/export code, specifically so loadPrefs() restoring
 // a saved value isn't immediately overwritten by this line's own default when script
@@ -14491,7 +14477,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorFullWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,nodeQuickAssistActions,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,editorFullWidth,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,dateTimeFormat,accentPreset,globalSearchVisible,qaIconOnly,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,previewBrandingEnabled,previewBrandingText,defaultAuthorName,greetingDisplayName,trashRetentionDays,searchIncludesTrash,backlinksEnabled,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,featureFocusEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,exportUseAccentColor,appbarDecluttered,appbarIconOnlyExportImport,aiMaxTokens,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,typewriterModeEnabled,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -14514,7 +14500,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorFullWidth=!!d.editorFullWidth; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; if(Array.isArray(d.nodeQuickAssistActions)){const NQA_LEGACY_KEYS=['emdash','note','codeblock','tags','ai-rewrite']; const savedSet=new Set(d.nodeQuickAssistActions); NODE_QA_ACTION_ORDER.filter(k=>!NQA_LEGACY_KEYS.includes(k)).forEach(k=>savedSet.add(k)); nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(a=>savedSet.has(a));} qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); editorFullWidth=!!d.editorFullWidth; outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; dateTimeFormat=['default','iso','eu'].includes(d.dateTimeFormat)?d.dateTimeFormat:'default'; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; globalSearchVisible=d.globalSearchVisible===undefined?true:!!d.globalSearchVisible; qaIconOnly=!!d.qaIconOnly; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingEnabled=d.previewBrandingEnabled===undefined?true:!!d.previewBrandingEnabled; previewBrandingText=typeof d.previewBrandingText==='string'?d.previewBrandingText:''; defaultAuthorName=typeof d.defaultAuthorName==='string'?d.defaultAuthorName:''; greetingDisplayName=typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''; trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; backlinksEnabled=d.backlinksEnabled===undefined?true:!!d.backlinksEnabled; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; featureFocusEnabled=d.featureFocusEnabled===undefined?true:!!d.featureFocusEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; exportUseAccentColor=d.exportUseAccentColor===undefined?true:!!d.exportUseAccentColor; appbarDecluttered=!!d.appbarDecluttered; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; aiMaxTokens=[512,1024,2048,4096,8192].includes(Number(d.aiMaxTokens))?Number(d.aiMaxTokens):1024; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; typewriterModeEnabled=!!d.typewriterModeEnabled; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -15695,8 +15681,11 @@ async function changeDocumentAccessRole(docId,uid,role){
 function updateDocShareChipVisibility(){
   const wrap=el('doc-share-wrap'); if(!wrap)return;
   const isOwnDoc=currentDocId&&!sharedDocMeta[currentDocId];
-  wrap.style.display=(currentUser&&isOwnDoc)?'':'none';
+  // Share is how a document leaves Sakura (PDF), so it is always there; inviting people (and the
+  // count on the icon) only applies to your own document while signed in (owner, 2026-10-28).
+  wrap.style.display='';
   if(currentUser&&isOwnDoc)refreshDocShareChipStatus(currentDocId);
+  else { const label=el('doc-share-chip-label'); if(label)label.textContent='Share'; }
 }
 // Passive "is this shared, and with how many people" indicator on the chip itself, so that's
 // visible at a glance without opening the dialog — previously the chip always looked identical
@@ -15715,13 +15704,15 @@ function renderDocShareChip(docId){
   if(count>0){
     chip.classList.remove('unset');
     chip.setAttribute('data-color','green');
-    label.textContent='Shared · '+count;
+    label.textContent='Shared \u00B7 '+count;
     chip.dataset.tip='Shared with '+count+' '+(count===1?'person':'people')+' — click to manage';
+    chip.setAttribute('aria-label',chip.dataset.tip);
   }else{
     chip.classList.add('unset');
     chip.removeAttribute('data-color');
     label.textContent='Share';
-    chip.dataset.tip='Share this document with another Sakura account';
+    chip.dataset.tip='Download a PDF, or invite people on Sakura';
+    chip.setAttribute('aria-label','Share');
   }
   // Share status for an OWNED document only becomes known asynchronously (the fetch in
   // refreshDocShareChipStatus below); presence tracking for the owner's side gates on that same
@@ -15747,13 +15738,17 @@ async function refreshDocShareChipStatus(docId){
 // looking at, and a full centered overlay with a backdrop was heavier than that action warrants.
 el('doc-share-chip')?.addEventListener('click',e=>{
   e.stopPropagation();
-  if(!currentDocId)return;
   const menu=el('share-dd-menu'); if(!menu)return;
-  const isOpen=menu.classList.contains('open');
-  document.querySelectorAll('.todo-dd-menu.open').forEach(m=>{ if(m!==menu)m.classList.remove('open'); });
-  if(isOpen){ closeShareDropdown(); return; }
-  openShareDropdown(currentDocId, el('header-title')?.value||'Untitled');
+  if(menu.classList.contains('open')){ closeShareDropdown(); return; }
+  document.querySelectorAll('.todo-dd-menu.open').forEach(m=>m.classList.remove('open'));
+  openSbMenuUnder(e.currentTarget,shareMenuItems(),{id:'share-menu',label:'Share',alignRight:true,keyboard:e.detail===0});
 });
+// Share ▾: PDF first (works signed out, on any document), then inviting Sakura people.
+function shareMenuItems(){
+  const items=[{label:'Download PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()}];
+  if(currentUser&&currentDocId&&!sharedDocMeta[currentDocId])items.push({label:'Invite people\u2026', icon:SB_PEOPLE_ICON, onClick:()=>openShareDropdown(currentDocId, el('header-title')?.value||'Untitled')});
+  return items;
+}
 
 let shareModalDocId=null, shareModalDocTitle='', shareModalSelectedRole='viewer';
 function setShareModalSelectedRole(role){
@@ -18446,7 +18441,7 @@ let qaActiveIndex=-1;
 // list, rather than Quick Assist needing to know which section the selection is in.
 let qaEntries=[];
 // Which "kind" of content each search group corresponds to, for the category checklist in
-// Settings → Bars & Menus → Quick Assist. Keys are slugs safe for use in checkbox element ids;
+// Settings → Appearance → Quick Assist. Keys are slugs safe for use in checkbox element ids;
 // group must match the `name` used in collectSearchGroups() exactly, since that's what ties
 // a rendered group back to a category a person can turn off.
 const QA_SEARCH_CATEGORIES=[
@@ -20426,6 +20421,7 @@ function setEditorScale(scale,persist=true){const normalized=Math.min(1.4,Math.m
 // Full width lets it run the whole window instead.
 function setEditorFullWidth(on,persist=true){
   editorFullWidth=!!on;
+  document.documentElement.classList.toggle('editor-full-width',editorFullWidth);
   if(editorFullWidth)document.documentElement.style.setProperty('--editor-reading-width','none'); else document.documentElement.style.removeProperty('--editor-reading-width');
   const toggle=el('editor-full-width-toggle'); if(toggle){toggle.classList.toggle('on',editorFullWidth); toggle.setAttribute('aria-checked',String(editorFullWidth))}
   if(persist){savePrefs(); scheduleAutoSave()}
@@ -21073,9 +21069,6 @@ const CTX_ACTION_META={
   delete:{label:'Delete',svg:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',group:'delete',danger:true}
 };
 const CTX_ACTION_ORDER=['child','above','below','duplicate','focus','up','down','fold','ai-rewrite','note','date-time','remark','table','image','diagram','diagram-gen','tags','version-history','no-export','delete'];
-// The characters (and Date/time) the "/" Insert list can offer; Settings → Editing → Insert list
-// turns each on or off. The ids are kept as saved in prefs (nodeQuickAssistActions).
-const NODE_QA_ACTION_ORDER=['emdash','endash','arrow','checkmark','crossmark','middot','date-time'];
 const NODE_QA_ACTION_META={
   emdash:{label:'Insert em dash',glyph:'—'},
   endash:{label:'Insert en dash',glyph:'–'},
@@ -22449,6 +22442,8 @@ function splitNodeAtCursorAndFocus(id,beforeText,afterText){
   // instead of below the whole sub-list.
   const intoList=rowListIsOpen(id);
   const nn=intoList?makeBlankNode(nodes[idx].depth+1,id):makeBlankNode(nodes[idx].depth,nodes[idx].parentId); nn.text=afterText; setRowMarksOn(nn,sliceRowMarks(oldMarks,oldText.length,oldText.length-afterText.length,oldText.length));
+  // Splitting a heading keeps both halves headings (Docs, Notion); Enter at its end still starts a plain row.
+  if(afterText&&nodes[idx].styles?.heading)nn.styles={...nn.styles,heading:nodes[idx].styles.heading};
   nodes.splice(intoList?idx+1:getSubtreeEnd(nodes,idx),0,nn);
   rebuildParentIds();
   setSingleSelection(nn.id);
@@ -24978,7 +24973,7 @@ function getCaretClientRect(textarea){
 // === Insert list characters (see the "/" Insert list further down) ===
 const INSERT_CHAR_GLYPH={emdash:'—',endash:'–',arrow:'➜',checkmark:'✓',crossmark:'✗',middot:'·'};
 function insertCharItems(insertText){
-  const ids=Object.keys(INSERT_CHAR_GLYPH).filter(id=>nodeQuickAssistActions.includes(id)); if(!ids.length)return [];
+  const ids=Object.keys(INSERT_CHAR_GLYPH);
   return [{heading:'Characters'},{id:'insert-chars',iconRow:ids.map(id=>({label:NODE_QA_ACTION_META[id].label.replace(/^Insert /,'').replace(/^./,c=>c.toUpperCase()),
     icon:`<span class="insert-char-glyph">${esc(INSERT_CHAR_GLYPH[id])}</span>`,onClick:()=>insertText(INSERT_CHAR_GLYPH[id])}))}];
 }
@@ -25175,6 +25170,12 @@ function onEditorKeyDownInner(e){const id=Number(e.target.id.replace('in-',''));
   if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'){ _lastArrowCol=null }
   if(e.key==='Backspace'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
     const ta=e.target;
+    // At the start of a to-do row, Backspace first takes the checkbox away (Notion, Dynalist);
+    // a second Backspace then merges the plain row as usual.
+    const bsNode=nodes[getIndex(nodes,id)]; const bsSel=getEditableSelectionRange(ta);
+    if(bsNode?.isCheckbox&&bsSel&&bsSel.start===0&&bsSel.end===0){
+      e.preventDefault(); commitEdit(); pushUndo(); markDirty(); bsNode.isCheckbox=false; bsNode.checked=false; bsNode.completedAt=null; beginEditAt(id,0); return
+    }
     if((ta.textContent||'').length===0){
       e.preventDefault(); deleteEmptyNodeAndFocusPrev(id); return
     }
@@ -25517,13 +25518,15 @@ el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); toggleNoti
 el('import-toggle')?.addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,importMenuItems(),{id:'import-menu',label:'Import',alignRight:true,keyboard:e.detail===0});});
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
 el('appbar-more-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('account-menu')?.classList.remove('open'); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,[
-  {label:'Export', icon:SB_EXPORT_ICON, submenu:exportMenuItems()},
-  {label:'Import', icon:SB_IMPORT_ICON, submenu:importMenuItems()}
+  {label:'Export', meta:'.opml', icon:SB_EXPORT_ICON, data:{save:'opml'}, onClick:()=>exportOpml()},
+  {label:'Import', meta:'.opml', icon:SB_IMPORT_ICON, data:{import:'opml'}, onClick:()=>triggerOpmlImport()}
 ],{id:'appbar-more-menu',label:'Import & Export',alignRight:true,keyboard:e.detail===0});});
-// Export ▾ / Import ▾ (and the app bar's Import & Export ›): the shared menu, one item per format.
+// Export ▾ / Import ▾ and the app bar's Import & Export: the shared menu, one item per format. PDF
+// lives under Share (the toolbar), so the app bar menu is just Export / Import (.opml shown at right).
 const SB_EXPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
 const SB_IMPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 const SB_PDF_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>';
+const SB_PEOPLE_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
 const SB_OPML_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg>';
 function exportMenuItems(){ return [
   {label:'PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},
@@ -25753,18 +25756,6 @@ el('statusbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global
 el('doc-tab-strip')?.addEventListener('contextmenu',e=>{if(e.target.closest('.doc-tab'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,tabbarContextItems())});
 el('appbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap')||e.target.closest('.settings-wrap')||e.target.closest('input')||e.target.closest('button'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,appbarContextItems())});
 
-function setupNodeQuickAssistSettings(){
-  NODE_QA_ACTION_ORDER.forEach(a=>{
-    const cb=el('nqaq-'+a); if(!cb)return;
-    cb.checked=nodeQuickAssistActions.includes(a);
-    cb.addEventListener('change',()=>{
-      const set=new Set(nodeQuickAssistActions);
-      if(cb.checked)set.add(a); else set.delete(a);
-      nodeQuickAssistActions=NODE_QA_ACTION_ORDER.filter(x=>set.has(x));
-      savePrefs();
-    });
-  });
-}
 
 /* ====================================================================
    KEYBOARD SHORTCUT REGISTRY
@@ -27183,7 +27174,7 @@ function slashTyped(){
 function slashListItems(){
   const s=_slash; const ins=t=>insertTextAtGenericTarget(s.target,t);
   const chars=insertCharItems(ins);
-  if(s.rowId===null)return [...chars,...(nodeQuickAssistActions.includes('date-time')?[{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}]:[])];
+  if(s.rowId===null)return [...chars,{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}];
   // Date/time goes in at the caret, keeping the row's formatting.
   const base=insertMenuItems().map(it=>it.data&&it.data.insertAction==='date-time'?{...it,onClick:()=>ins(formatNow())}:it);
   const at=base.findIndex((it,i)=>i>0&&it.heading);
@@ -27525,7 +27516,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setEditorFullWidth(editorFullWidth,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); setupNodeQuickAssistSettings(); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setEditorFullWidth(editorFullWidth,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setExportUseAccentColor(exportUseAccentColor,false); setAlwaysStartBlank(alwaysStartBlank,false); setDateTimeFormat(dateTimeFormat,false); setAccentPreset(accentPreset,false); setAppbarDecluttered(appbarDecluttered,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setAiMaxTokens(aiMaxTokens,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setGlobalSearchVisible(globalSearchVisible,false); setQaIconOnly(qaIconOnly,false); setQaLocation(qaLocation,false); setDefaultAuthorName(defaultAuthorName,false); setGreetingDisplayName(greetingDisplayName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
@@ -36336,9 +36327,9 @@ function todosHistorySummary(list) {
         <h3>Copy &amp; Export</h3>
         <ul>
           <li><span class="cs-combo" data-cs-shortcut="copyAsText"></span> <span class="cs-desc">copy selected nodes — paste back into any Sakura document, or into another app as text</span></li>
-          <li><span class="cs-desc">Export ▾ → PDF</span> <span class="help-kbd">.pdf</span> <span class="cs-desc">— renders the full document, always fully expanded</span></li>
-          <li><span class="cs-desc">Export ▾ → OPML</span> <span class="help-kbd">.opml</span> <span class="cs-desc">— outline structure, text, and notes; always includes folded sections</span></li>
-          <li><span class="cs-desc">Import ▾ in header — OPML file, as a new document</span></li>
+          <li><span class="cs-desc">Share → Download PDF</span> <span class="help-kbd">.pdf</span> <span class="cs-desc">— renders the full document, always fully expanded</span></li>
+          <li><span class="cs-desc">Import &amp; Export → Export (.opml)</span> <span class="help-kbd">.opml</span> <span class="cs-desc">— outline structure, text, and notes; always includes folded sections</span></li>
+          <li><span class="cs-desc">Import &amp; Export → Import (.opml) — as a new document</span></li>
           <li><span class="cs-desc">File Explorer footer → Backup / Restore — full app data</span></li>
         </ul>
       </div>
@@ -36358,7 +36349,7 @@ function todosHistorySummary(list) {
         <h3>Optional capabilities</h3>
         <ul>
           <li><span class="cs-desc"><strong>AI Capabilities</strong> (Settings → AI) — Generate outline, Rewrite, Auto-rewrite</span></li>
-          <li><span class="cs-desc"><strong>@ Mentions &amp; Backlinks</strong> (Settings → Panels) — link nodes; type @ to mention another by name</span></li>
+          <li><span class="cs-desc"><strong>@ Mentions &amp; Backlinks</strong> (Settings → Editing) — link nodes; type @ to mention another by name</span></li>
           <li><span class="cs-desc"><strong>Focus</strong> (Settings → Editing) — zoom into a branch; <span class="help-kbd">Ctrl/Cmd + .</span> to enter, <span class="help-kbd">Ctrl/Cmd + ,</span> to exit</span></li>
           <li><span class="cs-desc">Off = hidden, not deleted — data is always preserved; states saved across sessions</span></li>
         </ul>
