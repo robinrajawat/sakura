@@ -1203,8 +1203,8 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
     display: none !important;
   }
   .node-cb{border:1.5px solid #888 !important;background:transparent !important}
-  .node-cb.cb-checked{background:var(--accent) !important;border-color:var(--accent) !important}
-  .node-cb.cb-checked::after{border-color:#fff !important}
+  .node-cb.cb-checked{background:transparent !important;border-color:#888 !important}
+  .node-cb.cb-checked::after{border-color:#888 !important}
   .cb-progress{background:transparent !important;border:1px solid var(--accent) !important;color:var(--accent) !important}
   .node-tag-chip{background:transparent !important;border:1px solid #888 !important;color:#444 !important}
   .bl-link{background:transparent !important;color:var(--accent) !important;font-weight:500 !important}
@@ -2086,12 +2086,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .at-suggest-empty{padding:8px 10px;font:400 12px 'Inter',sans-serif;color:var(--hint)}
 /* Characters row in the "/" Insert list */
 .insert-char-glyph{display:inline-block;width:14px;text-align:center;font:600 13px 'Inter',sans-serif;line-height:1}
-.node-cb{display:inline-flex;align-items:center;justify-content:center;width:calc(14px * var(--editor-scale));height:calc(14px * var(--editor-scale));flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative;align-self:flex-start;margin-top:calc((var(--row-line) - 14px * var(--editor-scale)) / 2)}
-.node-cb:hover{border-color:var(--accent)}
-.node-cb.cb-checked{background:color-mix(in srgb,var(--accent) 85%,transparent);border-color:var(--accent)}
-.node-cb.cb-checked::after{content:'';position:absolute;left:50%;top:43%;width:6px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:translate(-50%,-50%) rotate(42deg) scaleX(0.85)}
-.node-cb.cb-indeterminate{border-color:var(--accent)}
-.node-cb.cb-indeterminate::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:2px;background:var(--accent);border-radius:1px;transform:translate(-50%,-50%)}
+/* Checkboxes are grey, checked or not (owner, 2026-10-28, like Dynalist): a done row recedes. */
+.node-cb{display:inline-flex;align-items:center;justify-content:center;width:calc(14px * var(--editor-scale));height:calc(14px * var(--editor-scale));flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;margin-right:5px;cursor:pointer;flex-shrink:0;position:relative;align-self:flex-start;margin-top:calc((var(--row-line) - 14px * var(--editor-scale)) / 2)}
+.node-cb:hover{border-color:var(--muted)}
+.node-cb.cb-checked{background:transparent;border-color:var(--muted)}
+.node-cb.cb-checked::after{content:'';position:absolute;left:50%;top:43%;width:6px;height:9px;border:2px solid var(--muted);border-top:none;border-left:none;transform:translate(-50%,-50%) rotate(42deg) scaleX(0.85)}
+.node-cb.cb-indeterminate{border-color:var(--muted)}
+.node-cb.cb-indeterminate::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:2px;background:var(--muted);border-radius:1px;transform:translate(-50%,-50%)}
 .node-row.cb-done .node-label{opacity:.55;text-decoration:line-through}
 .cb-progress{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:1px 6px;margin-left:5px;flex-shrink:0;cursor:default;align-self:flex-start;margin-top:calc((var(--row-line-base) - 15px) / 2)}
 
@@ -2235,7 +2236,7 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 #demo-todos-head{display:flex;align-items:center;gap:6px;font:700 11.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--border)}
 .demo-todo-row{display:flex;align-items:center;gap:7px;font:400 12px 'Inter',sans-serif;color:var(--fg);padding:3px 0;min-height:16px}
 .demo-todo-cb{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--border);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:var(--fs-2xs);color:var(--bg);transition:background .18s,border-color .18s}
-.demo-todo-cb.demo-checked{background:var(--accent);border-color:var(--accent)}
+.demo-todo-cb.demo-checked{background:transparent;border-color:var(--muted);color:var(--muted)}
 .demo-todo-cb.demo-checked::after{content:'✓'}
 .demo-todo-row.demo-done span:last-child{text-decoration:line-through;color:var(--muted)}
 /* Demo: opening splash card */
@@ -2399,10 +2400,10 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-section::after{content:'';flex:1;height:1px;background:var(--border)}
 .pv-section-label{color:var(--accent)}.pv-section-sep{color:var(--muted)}
 .pv-bullet{flex:0 0 auto;width:16px;display:flex;justify-content:center;color:var(--hint);font-size:14.5px}
-.pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--accent) 50%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
-.pv-cb:hover{border-color:var(--accent)}
-.pv-cb.pv-cb-checked{background:color-mix(in srgb,var(--accent) 85%,transparent);border-color:var(--accent)}
-.pv-cb.pv-cb-checked::after{content:'';position:absolute;left:2px;top:0px;width:6px;height:9px;border:2px solid #fff;border-top:none;border-left:none;transform:rotate(42deg) scaleX(0.85)}
+.pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
+.pv-cb:hover{border-color:var(--muted)}
+.pv-cb.pv-cb-checked{background:transparent;border-color:var(--muted)}
+.pv-cb.pv-cb-checked::after{content:'';position:absolute;left:2px;top:0px;width:6px;height:9px;border:2px solid var(--muted);border-top:none;border-left:none;transform:rotate(42deg) scaleX(0.85)}
 .pv-row.pv-cb-done .pv-text{opacity:.55;text-decoration:line-through}
 .pv-text{flex:1;min-width:0;font-size:14.5px;line-height:1.55;padding:1px 0;word-break:break-word}.pv-text.pv-d2{color:color-mix(in srgb,var(--fg) 72%,var(--muted))}.pv-text.pv-d3{color:color-mix(in srgb,var(--fg) 50%,var(--muted))}
 /* Depth already reads via color dimming everywhere (see .pv-d2/.pv-d3/.pv-deep above); while
@@ -2931,9 +2932,9 @@ body.printing-generic #gpe-overlay{
 .todo-row:hover{background:var(--hover)}
 #todos-panel.select-mode .todo-row:not(.completed){padding-left:20px}
 .todo-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
-.todo-check:hover{border-color:var(--accent)}
-.todo-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
-.todo-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--accent);border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
+.todo-check:hover{border-color:var(--muted)}
+.todo-check:checked{background:transparent;border-color:var(--muted)}
+.todo-check:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(40deg) scale(0);animation:todo-check-pop .18s ease-out forwards}
 @keyframes todo-check-pop{to{transform:rotate(40deg) scale(1)}}
 /* Feedback Inbox priority/status pills -- same ghost-button recipe as .todo-priority/.todo-status
    just above (transparent until hover, color-only, small dot icon + label), with their own
@@ -3049,9 +3050,9 @@ body.printing-generic #gpe-overlay{
 .todo-subtask-row{display:flex;align-items:flex-start;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
 .todo-subtask-row:hover{background:var(--hover)}
 .todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;margin-top:1.5px;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
-.todo-subtask-check:hover{border-color:var(--accent)}
-.todo-subtask-check:checked{background:color-mix(in srgb,var(--accent) 16%,var(--edit-bg));border-color:var(--accent)}
-.todo-subtask-check:checked::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--accent);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
+.todo-subtask-check:hover{border-color:var(--muted)}
+.todo-subtask-check:checked{background:transparent;border-color:var(--muted)}
+.todo-subtask-check:checked::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
 .todo-subtask-text{flex:1;font-family:var(--content-font);font-size:var(--fs-sm);line-height:1.4;color:var(--fg);overflow-wrap:anywhere;outline:none;cursor:text}
 .todo-subtask-text.completed{color:var(--hint)}
 .todo-subtask-delete{appearance:none;border:none;background:none;color:var(--hint);flex:0 0 auto;padding:2px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
@@ -3158,7 +3159,7 @@ body.printing-generic #gpe-overlay{
 #todos-body .todo-row{padding:6px 10px;margin-bottom:0;gap:10px;border-radius:8px}
 #todos-body .todo-main{gap:2px}
 #todos-body .todo-check{border-radius:5px;border-color:color-mix(in srgb,var(--hint) 70%,transparent);background:transparent;margin-top:1.5px}
-#todos-body .todo-check:hover{border-color:var(--accent)}
+#todos-body .todo-check:hover{border-color:var(--muted)}
 #todos-body .todo-check:checked::after{left:4.5px;top:1.5px}
 #todos-body .todo-check:disabled{opacity:1;cursor:default}
 #todos-body .todo-line{display:flex;align-items:flex-start;gap:10px;min-width:0}
@@ -25497,6 +25498,8 @@ el('sidebar')?.addEventListener('contextmenu',e=>{e.preventDefault(); showSbCont
 el('statusbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 el('doc-tab-strip')?.addEventListener('contextmenu',e=>{if(e.target.closest('.doc-tab'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 el('appbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap')||e.target.closest('.settings-wrap')||e.target.closest('input')||e.target.closest('button'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
+// Toolbar empty space: same app menu as the app bar, status bar and editor background (buttons keep their own behaviour).
+el('quick-bar')?.addEventListener('contextmenu',e=>{if(e.target.closest('button,input,[role="menu"],.hl-palette,.todo-dd-menu'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 
 
 /* ====================================================================
