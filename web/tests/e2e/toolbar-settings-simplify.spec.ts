@@ -80,7 +80,9 @@ test.describe('Fixed main toolbar', () => {
     // Rewrite + Generate outline live in AI ▾.
     await page.locator('#qb-insert').click();
     // Both are the shared menu (the right-click menu's look and keys), opened under the button.
-    await expect(page.locator('#insert-menu .sb-context-heading')).toHaveText(['Basics', 'Marker', 'Discuss', 'Visuals']);
+    // Groups are split by plain dividers, no section headings.
+    await expect(page.locator('#insert-menu .sb-context-heading')).toHaveCount(0);
+    await expect(page.locator('#insert-menu > .sb-context-divider')).toHaveCount(3);
     await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(3);
     await page.locator('#qb-ai').click();
@@ -149,11 +151,11 @@ test.describe('Document tab menu: Version history, Sort, Clear all', () => {
       await page.locator('.doc-tab.active').click({ button: 'right' });
       await page.locator('.sb-context-menu .sb-context-item', { hasText: label }).click();
     };
-    await pick('Sort top-level nodes A → Z');
+    await pick('Sort rows A → Z');
     expect(await rootTexts(page)).toEqual(['Alpha', 'Bravo', 'Charlie']);
-    await pick('Sort top-level nodes Z → A');
+    await pick('Sort rows Z → A');
     expect(await rootTexts(page)).toEqual(['Charlie', 'Bravo', 'Alpha']);
-    await pick('Sort top-level nodes by depth');
+    await pick('Sort rows by depth');
     // Shallowest subtree first: the two leaf roots before Charlie (which has a child).
     expect((await rootTexts(page))[2]).toBe('Charlie');
     expect(errors).toEqual([]);

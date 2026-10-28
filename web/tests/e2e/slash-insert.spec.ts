@@ -64,10 +64,10 @@ test('typing after "/" narrows the list; Enter adds the match and drops the "/â€
   expect((await node2(page)).text).toBe('');
 });
 
-test('the list holds Characters; "/che" finds Check mark and puts it in place of the "/che"', async ({ page }) => {
+test('the list holds the characters; "/che" finds Check mark and puts it in place of the "/che"', async ({ page }) => {
   await open(page);
   await page.keyboard.type('/');
-  await expect(menu(page).getByText('Characters')).toBeVisible();
+  await expect(menu(page).locator('#insert-chars')).toBeVisible();
   await page.keyboard.type('che');
   await expect(menu(page).locator('.sb-context-item')).toContainText(['Checkbox', 'Check mark']);
   await menu(page).locator('.sb-context-item', { hasText: 'Check mark' }).click();

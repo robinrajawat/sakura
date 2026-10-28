@@ -146,7 +146,7 @@ async function restoreFile(page: import('@playwright/test').Page, file: string) 
 }
 
 test.describe('Simplified data backup (manual when signed out)', () => {
-  test('Settings → Data shows only Backup all data, Restore, Undo last restore (+ note and Reset); no Cloud Backup', async ({ page }) => {
+  test('Settings → Data shows only Backup all data, Restore, Undo last restore (+ Reset); no Cloud Backup', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -160,7 +160,7 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     const dataSection = page.locator('#settings-panel .settings-section[data-cat="data"]').filter({ has: page.locator('.settings-section-title', { hasText: /^Data$/ }) });
     await expect(dataSection).toBeVisible();
     const rows = dataSection.locator('.settings-list-row .settings-switch-text');
-    expect(await rows.allTextContents()).toEqual(['Backup all data', 'Restore from backup', 'Undo last restore', 'Why this matters', 'Reset to default settings']);
+    expect(await rows.allTextContents()).toEqual(['Backup all data', 'Restore from backup', 'Undo last restore', 'Reset to default settings']);
     await expect(page.locator('#sb-export-all-btn')).toBeVisible();
     await expect(page.locator('#sb-import-all-btn')).toBeVisible();
     await expect(page.locator('#sb-undo-restore-btn')).toBeVisible();
