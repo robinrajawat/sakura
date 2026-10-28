@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Settings: flat Accent row; Secure storage on one row (2026-10-28).** Owner OK'd. Accent swatches no longer sit in a bordered `.settings-color-box` inside the Appearance card; they are a plain field under Text size like Theme. Secure storage was three rows (title, an empty row holding Set up…/Unlock…/Lock now/Turn off…, a status row); now one row: title, description and status on the left, the buttons on the right. The redundant Locked/Unlocked summary (`#vault-summary`) is gone; `#vault-status` says it.
+
 - **Quick Assist plain results; steady Help size (2026-10-28).** Owner OK'd dropping Quick Assist's coloured RUN/GO TO/SHOW/HIDE badges and the accent bar on the active result (active = grey hover fill). Toggles read as plain words: Show/Hide for things on screen (File Explorer, its filter box), Turn on/Turn off for settings; the "currently on/off" tail is gone (the group title already says it). Owner: Help grew and shrank with each rail, so Settings and Help now share a fixed `height:min(78vh,640px)` (settings-help-rail.css). Test qa-help-steady.spec.ts.
 
 - **App-wide polish sweep (2026-10-28).** Owner: "small polishing in UI/UX also matters… clean, simple, standard and elegant". Sidebar active document is a grey fill (no accent); folder toggles are an SVG chevron (`sfolderChevron()`), not ▶; theme switch labels sentence case; no accent flash on the saved indicator; tab menu says "Sort rows …" (not "nodes"); Insert ▾ and the "/" list split groups with plain dividers, no BASICS/MARKER/… headings, and the characters row has no heading; Settings descriptions cut to one short line (Why this matters row folded into Backup's line), Undo restore button same width as the others. Tests: toolbar-settings-simplify, slash-insert, backup-simplified updated.
-
-- **Grey chrome; accent only for meaning (2026-10-28).** Owner: open-items words looked odd in dark text next to grey buttons; then "go ahead" for all chrome. Removed the accent-blend machinery (`--accent-text/border/hint-blend`, `ACCENT_BLEND_BASE`, `applyAccentBlend`, its preload copy): `.btn`/`.select`/`.meta-input`, the status bar, status chips and the dock now use plain `--muted`/`--border`/`--hint`; hover darkens to `--fg` with a grey border. Open-items words are `--muted` (icons keep status colours). Heading button icon is a plain H (no accent dot). Accent stays for links, selection, focus, active/pressed states and primary buttons.
 
 ### In progress / not built
 
