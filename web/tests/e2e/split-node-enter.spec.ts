@@ -83,7 +83,7 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     expect(unexpectedErrors).toEqual([]);
   });
 
-  test('splitting a node with children inserts the new sibling after the whole subtree, never reparenting the children', async ({ page }) => {
+  test('splitting a node whose children show moves the rest into its first child, never reparenting the children', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -117,11 +117,11 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
       };
     });
 
-    // The new sibling (the split-off " text") must land AFTER the child, at depth 0 -- not as
-    // a sibling of the child inside the subtree.
-    expect(result.texts).toEqual(['Parent', 'Child', ' text']);
-    expect(result.depths).toEqual([0, 1, 0]);
-    expect(result.parentIds).toEqual([null, 1, null]);
+    // Owner (2026-10-28): the split-off " text" lands right under the caret as the open parent's
+    // first child (as in Workflowy / Dynalist), not below the whole sub-list; the child stays put.
+    expect(result.texts).toEqual(['Parent', ' text', 'Child']);
+    expect(result.depths).toEqual([0, 1, 1]);
+    expect(result.parentIds).toEqual([null, 1, 1]);
   });
 
   test('real keyboard integration: Enter mid-text splits; Enter at end still appends a blank sibling', async ({ page }) => {
@@ -286,9 +286,9 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
   // was clearly wrong: the visible row went blank, its hidden children stayed right where they
   // were, and a duplicate of its text popped up below them with the cursor jumping there. The
   // fix special-cases position 0: insert a blank row BEFORE instead -- same as the "insert row
-  // above" quick-bar action -- landing the cursor on that new blank row and leaving this node
-  // (text, styles, children, fold state) completely untouched.
-  test('Enter at the start of a folded row with children inserts a blank row above it, cursor landing on the new row', async ({ page }) => {
+  // above" quick-bar action -- leaving this node (text, styles, children, fold state) completely
+  // untouched. The cursor stays on the words, as in a word processor (owner, 2026-10-28).
+  test('Enter at the start of a folded row with children inserts a blank row above it, cursor staying on the words', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -332,7 +332,7 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
         editingId,
         // @ts-expect-error
         stillFolded: collapsedIds.has(1),
-        caretOffset: (() => { const inp = document.getElementById('in-' + newId); return inp ? getEditableCaretOffset(inp) : null; })(),
+        caretOffset: (() => { const inp = document.getElementById('in-1'); return inp ? getEditableCaretOffset(inp) : null; })(),
       };
     });
 
@@ -342,8 +342,8 @@ test.describe('Enter splits a node at the caret into a new sibling (continuous e
     expect(result.texts).toEqual(['', 'Folded parent', 'Hidden child']);
     expect(result.depths).toEqual([0, 0, 1]);
     expect(result.parentIds).toEqual([null, null, 1]);
-    // The cursor lands on the new blank row, not the original (which stays folded, untouched).
-    expect(result.editingId).toBe(result.newId);
+    // The cursor stays at the start of the original row (which stays folded, untouched).
+    expect(result.editingId).toBe(1);
     expect(result.stillFolded).toBe(true);
     expect(result.caretOffset).toBe(0);
   });

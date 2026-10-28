@@ -53,7 +53,7 @@ Key capabilities:
 
 ## Core Editing
 
-- **Enter** — new sibling node below (with the cursor mid-text, the text after it moves into the new row); on an empty indented row that ends its sub-list, Enter moves it out one level instead; **Shift+Enter** — write in the row's note, a line under the row; **Ctrl/Cmd+Enter** — new child node
+- **Enter** — new sibling node below (with the cursor mid-text, the text after it moves into the new row); on a row whose children are showing, the new row is its first child, right under the caret; at the very start of a row, a blank row opens above and the cursor stays with the words; on an empty indented row that ends its sub-list, Enter moves it out one level instead. Formatting shortcuts with nothing selected (bold, headings…) keep the cursor where it is, and ↑/↓ on selected rows scroll only when the row would leave the view; **Shift+Enter** — write in the row's note, a line under the row; **Ctrl/Cmd+Enter** — new child node
 - **Alt+↑ / Alt+↓** — move the row (with its children) up or down past its sibling, also while typing in it
 - **Tab / Shift+Tab** — indent / outdent the selected node
 - **Backspace** at the start of a row merges it into the row above; **Delete** at the end of a row pulls the next row up into it. The merged-away row's note, tables, images and tags move onto the row that stays, and any Q&A, remarks, diagrams or to-dos linked to it follow along (one **Undo** splits them apart again)
@@ -280,7 +280,7 @@ Selected settings worth knowing about (Settings panel, organized by section):
 | Action | Shortcut |
 |---|---|
 | Edit node | Enter / F2 |
-| New sibling below (splits the row when the cursor is mid-text) | Enter |
+| New sibling below (splits the row when the cursor is mid-text; first child when the row's children show) | Enter |
 | Write in the row's note (a line under the row) | Shift+Enter |
 | New child | Ctrl/Cmd+Enter |
 | Indent / Outdent | Tab / Shift+Tab |
