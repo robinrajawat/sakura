@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **App-wide polish sweep (2026-10-28).** Owner: "small polishing in UI/UX also matters… clean, simple, standard and elegant". Sidebar active document is a grey fill (no accent); folder toggles are an SVG chevron (`sfolderChevron()`), not ▶; theme switch labels sentence case; no accent flash on the saved indicator; tab menu says "Sort rows …" (not "nodes"); Insert ▾ and the "/" list split groups with plain dividers, no BASICS/MARKER/… headings, and the characters row has no heading; Settings descriptions cut to one short line (Why this matters row folded into Backup's line), Undo restore button same width as the others. Tests: toolbar-settings-simplify, slash-insert, backup-simplified updated.
+
 - **Grey chrome; accent only for meaning (2026-10-28).** Owner: open-items words looked odd in dark text next to grey buttons; then "go ahead" for all chrome. Removed the accent-blend machinery (`--accent-text/border/hint-blend`, `ACCENT_BLEND_BASE`, `applyAccentBlend`, its preload copy): `.btn`/`.select`/`.meta-input`, the status bar, status chips and the dock now use plain `--muted`/`--border`/`--hint`; hover darkens to `--fg` with a grey border. Open-items words are `--muted` (icons keep status colours). Heading button icon is a plain H (no accent dot). Accent stays for links, selection, focus, active/pressed states and primary buttons.
 
 - **Editing pass: Esc leaves a note; rows with children merge (2026-10-28).** Owner asked for a thorough editing check. Walked ~40 keyboard scenarios (Enter/Tab/arrows/merge/undo/paste/fold) with a Playwright script; two gaps fixed. Esc in a note line now leaves it with the row selected (it did nothing; also clears a stale `_pendingInlineFocus` that pulled focus back). Backspace at row start / Delete at row end now merge a row that has children when the other row is its childless sibling (`canAdoptChildrenOf`): the children move under the kept row, fold state included (Workflowy/Dynalist behaviour); other cases still do nothing. Up on the first row goes to the title (intended).
-
-- **One SVG tick; grey toolbar (2026-10-28).** Owner: the checkbox tick looked heavy, and accent on every toolbar button meant colour signalled nothing. Rows, PDF preview, print, To-Dos and the tour demo now share one thin SVG tick (`--tick-mask` in tags.css, used as a CSS mask so it takes the box colour). Toolbar buttons (`#quick-bar .quick-btn`) are `--muted` grey, `--fg` on hover; pressed/active ones keep the accent and the open-items counts keep their status colours. The rest of the chrome (app bar, status bar) still uses the accent blend.
 
 ### In progress / not built
 

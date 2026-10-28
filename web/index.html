@@ -1085,7 +1085,7 @@ body.zen-mode #quick-bar{display:none}
 
 
 .theme-segmented{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--tb-bg) 86%, transparent);min-height:36px}
-.theme-seg,.share-role-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:600 12px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;flex:1 1 0;white-space:nowrap;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.theme-seg,.share-role-seg{appearance:none;border:none;background:transparent;color:var(--muted);padding:7px 12px;border-radius:8px;font:500 12.5px 'Inter',sans-serif;cursor:pointer;flex:1 1 0;white-space:nowrap;transition:background .15s ease,color .15s ease,box-shadow .15s ease}
 .theme-seg:hover,.share-role-seg:hover{color:var(--fg)}
 .theme-seg:focus-visible,.share-role-seg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .theme-seg.active,.share-role-seg.active{background:color-mix(in srgb,var(--accent) 14%, var(--bg) 86%);color:var(--accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 38%, transparent),0 1px 2px rgba(0,0,0,.06)}
@@ -1327,7 +1327,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 /* Folder rows */
 .sfolder-row{display:flex;align-items:center;border-radius:7px;min-height:28px;cursor:pointer;transition:background .1s;margin-bottom:1px}
 .sfolder-row:hover{background:var(--hover)}
-.sfolder-toggle{appearance:none;border:none;background:none;color:var(--muted);cursor:pointer;padding:4px 2px 4px 6px;font-size:var(--fs-2xs);line-height:1;transition:transform .15s,color .1s;flex-shrink:0}
+.sfolder-toggle{appearance:none;border:none;background:none;color:var(--muted);cursor:pointer;padding:4px 2px 4px 6px;font-size:var(--fs-2xs);line-height:1;display:inline-flex;align-items:center;transition:transform .15s,color .1s;flex-shrink:0}
 .sfolder-toggle.open{transform:rotate(90deg)}
 .sfolder-icon{display:inline-flex;align-items:center;margin-right:4px;flex-shrink:0;opacity:.75}
 .sfolder-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 12px 'Inter',sans-serif;color:var(--fg);padding:4px 4px 4px 0}
@@ -1342,11 +1342,12 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 /* Doc items */
 .sdoc-item{display:flex;align-items:center;gap:0;border-radius:8px;margin-bottom:2px;cursor:pointer;min-height:32px;transition:background .1s}
 .sdoc-item:hover{background:var(--hover)}
-.sdoc-item.active{background:color-mix(in srgb,var(--accent) 11%,transparent)}
+/* The open document is marked like a selection in any file list: grey, not the accent (2026-10-28). */
+.sdoc-item.active{background:color-mix(in srgb,var(--fg) 8%,transparent)}
 .sdoc-icon{display:inline-flex;align-items:center;margin-left:8px;margin-right:4px;flex-shrink:0;opacity:.75}
-.sdoc-item.active .sdoc-icon{color:var(--accent);opacity:1}
+.sdoc-item.active .sdoc-icon{color:var(--fg);opacity:1}
 .sdoc-name-btn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 13px 'Inter',sans-serif;color:var(--fg);padding:6px 8px 6px 2px;line-height:1.3;appearance:none;border:none;background:none;text-align:left;cursor:pointer}
-.sdoc-item.active .sdoc-name-btn{color:var(--accent);font-weight:600}
+.sdoc-item.active .sdoc-name-btn{color:var(--fg);font-weight:600}
 .sdoc-unsaved-hint{flex:none;padding-right:8px;font:400 11px 'Inter',sans-serif;color:var(--hint)}
 .sdoc-actions{display:none;gap:1px;align-items:center;padding-right:4px;flex-shrink:0}
 .sdoc-item:hover .sdoc-actions{display:flex}
@@ -3549,7 +3550,7 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="general" id="settings-section-todos">
             <div class="settings-section-title">To-Dos</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-expire completed tasks</span><span class="settings-row-desc">Automatically delete completed tasks after this long. "Never" keeps them until you delete them yourself.</span></div><select id="todos-expiry-select" class="select" style="width:auto"><option value="0">Never</option><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-expire completed tasks</span><span class="settings-row-desc">Completed tasks are deleted after this long.</span></div><select id="todos-expiry-select" class="select" style="width:auto"><option value="0">Never</option><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
             </div>
           </div>
           <div class="settings-section" data-cat="general" id="keyboard-shortcuts-section">
@@ -3568,32 +3569,31 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="documents">
             <div class="settings-section-title">PDF</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">Add a title page (document title, author, word/read-time stats) before the contents page when exporting to PDF. The PDF mark below, if any, sits above the title.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open items page</span><span class="settings-row-desc">Add a page after the contents listing every follow-up and open question, with the page each is on, when exporting to PDF. Left out when nothing is open.</span></div><button id="open-items-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open items page"></button></div>
-              <div class="settings-list-row" id="preview-branding-text-row"><div class="settings-row-text"><span class="settings-switch-text">PDF mark</span><span class="settings-row-desc">A small mark on the cover page of PDF exports, such as your company or team name. Clear it for no mark.</span></div><input id="preview-branding-text-input" type="text" class="meta-input" placeholder="No mark" value="SAKURA" style="width:160px;text-align:left" /></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Cover page</span><span class="settings-row-desc">A title page before the contents in PDF exports.</span></div><button id="cover-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Cover page"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Open items page</span><span class="settings-row-desc">A page listing every follow-up and open question in PDF exports.</span></div><button id="open-items-page-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Open items page"></button></div>
+              <div class="settings-list-row" id="preview-branding-text-row"><div class="settings-row-text"><span class="settings-switch-text">PDF mark</span><span class="settings-row-desc">Shown on the PDF cover, such as your team name. Leave blank for none.</span></div><input id="preview-branding-text-input" type="text" class="meta-input" placeholder="No mark" value="SAKURA" style="width:160px;text-align:left" /></div>
             </div>
           </div>
           <div class="settings-section" data-cat="documents" id="settings-section-trash">
             <div class="settings-section-title">Trash</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Keep deleted documents for</span><span class="settings-row-desc">Deleted documents go to Trash, not gone for good. After this long they're purged automatically — pick "Forever" to only ever remove them by emptying Trash yourself.</span></div><select id="trash-retention-select" class="select" style="width:auto"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="0">Forever (manual only)</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Keep deleted documents for</span><span class="settings-row-desc">How long deleted documents stay in Trash.</span></div><select id="trash-retention-select" class="select" style="width:auto"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="0">Forever (manual only)</option></select></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Empty Trash</span><span class="settings-row-desc" id="sb-trash-settings-status">Permanently deletes every document currently in Trash. This cannot be undone.</span></div><button id="sb-empty-trash-btn" class="btn data-io-btn">Empty…</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="data">
             <div class="settings-section-title">Data</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backup all data</span><span class="settings-row-desc">Saves every document and folder to a single backup file — also includes AI provider keys (encrypted if Secure Storage below is on, plain text otherwise). Handle this file like you would a password: don't upload it anywhere you wouldn't put a key.</span><span class="settings-row-desc" id="sb-export-status" style="margin-top:2px"></span></div><button id="sb-export-all-btn" class="btn data-io-btn">Backup</button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Restore from backup</span><span class="settings-row-desc">Restores from a backup file — replaces everything currently in the app</span></div><button id="sb-import-all-btn" class="btn data-io-btn">Restore…</button></div>
-              <div class="settings-list-row" id="sb-undo-restore-row" style="display:none"><div class="settings-row-text"><span class="settings-switch-text">Undo last restore</span><span class="settings-row-desc">A snapshot of what was here right before your last Restore, in case that restore turns out to have been the wrong file.</span><span class="settings-row-desc" id="sb-undo-restore-status" style="margin-top:2px"></span></div><button id="sb-undo-restore-btn" class="btn data-io-btn backup-btn">Undo…</button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Why this matters</span><span class="settings-row-desc">Signed in, your documents and settings sync to your account automatically. Signed out, everything lives only in this browser — and opening a new version of this file starts with empty storage (browsers isolate it per file). Back up all data now and then, and before switching files, then Restore right after to carry your data over: it's the only copy outside the browser.</span></div></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Reset to default settings</span><span class="settings-row-desc">Restores appearance and behavior preferences (theme, accent color, text size, and the like) to their defaults. Doesn't touch your documents, folders, or AI provider settings.</span></div><button id="sb-reset-settings-btn" class="btn data-io-btn">Reset…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Backup all data</span><span class="settings-row-desc">Everything in one file, AI keys included. Signed out, it is your only copy.</span><span class="settings-row-desc" id="sb-export-status" style="margin-top:2px"></span></div><button id="sb-export-all-btn" class="btn data-io-btn">Backup</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Restore from backup</span><span class="settings-row-desc">Replaces everything in the app.</span></div><button id="sb-import-all-btn" class="btn data-io-btn">Restore…</button></div>
+              <div class="settings-list-row" id="sb-undo-restore-row" style="display:none"><div class="settings-row-text"><span class="settings-switch-text">Undo last restore</span><span class="settings-row-desc">Brings back what was here before your last Restore.</span><span class="settings-row-desc" id="sb-undo-restore-status" style="margin-top:2px"></span></div><button id="sb-undo-restore-btn" class="btn data-io-btn">Undo…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Reset to default settings</span><span class="settings-row-desc">Theme, text size and other preferences. Documents and AI settings stay.</span></div><button id="sb-reset-settings-btn" class="btn data-io-btn">Reset…</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="data">
             <div class="settings-section-title">Secure Storage</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Encrypt keys at rest</span><span class="settings-row-desc">Encrypts your AI provider keys — in this browser's storage and in local backup files — with a passphrase only you know. Off by default; keys are stored as plain text until you set one. There's no recovery if you forget the passphrase.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Encrypt keys at rest</span><span class="settings-row-desc">Locks your AI keys with a passphrase. It can't be recovered if forgotten.</span></div></div>
               <div class="settings-list-row"><span class="settings-switch-text" id="vault-summary"></span><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="vault-setup-btn" class="btn data-io-btn">Set up…</button><button id="vault-unlock-btn" class="btn data-io-btn backup-btn" style="display:none">Unlock…</button><button id="vault-lock-btn" class="btn data-io-btn" style="display:none">Lock now</button><button id="vault-disable-btn" class="btn data-io-btn" style="display:none">Turn off…</button></div></div>
               <div class="settings-list-row"><span class="settings-row-desc" id="vault-status">Not set up — keys are stored as plain text.</span></div>
             </div>
@@ -3628,8 +3628,8 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="about">
             <div class="settings-section-title">Feedback &amp; Crash Reports</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Automatic crash reports</span><span class="settings-row-desc">Off by default — turning this on sends a short report (the error message, the last few console errors, and basic environment info like your browser and URL) if something crashes, so it can get fixed. Never includes your document, note, or task content. Nobody but Robin can read these; you can't undo a report already sent. You can always send one manually below, on or off.</span></div><button id="auto-error-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Automatic crash reports"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Send feedback</span><span class="settings-row-desc">Report a bug, suggest something, or just say hi — goes straight to the same place as a crash report, reviewed by Robin.</span></div><button type="button" class="btn" id="open-feedback-modal-btn">Send Feedback…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Automatic crash reports</span><span class="settings-row-desc">Sends a short error report if something crashes. Never includes your content.</span></div><button id="auto-error-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Automatic crash reports"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Send feedback</span><span class="settings-row-desc">Report a bug or suggest something.</span></div><button type="button" class="btn" id="open-feedback-modal-btn">Send Feedback…</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-admin" data-feature-hidden="1" style="display:none">
@@ -3674,7 +3674,7 @@ body.printing-generic #gpe-overlay{
           <div class="settings-section" data-cat="ai" id="settings-section-ai-capabilities">
             <div class="settings-section-title">AI Capabilities</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI Capabilities</span><span class="settings-row-desc">Generate outline, Rewrite (node, selection, note and remark lines, To-Do tasks), and Auto-rewrite — the AI toolbar buttons and matching right-click items. Off hides every AI entry point and the AI settings below.</span></div><button id="feat-ai-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable AI Capabilities"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI Capabilities</span><span class="settings-row-desc">Off hides every AI button, menu item and setting.</span></div><button id="feat-ai-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable AI Capabilities"></button></div>
             </div>
           </div>
           <input id="sakura-import-file-input" type="file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
@@ -3736,12 +3736,12 @@ body.printing-generic #gpe-overlay{
                   <span class="muted-help" style="margin-top:0" id="ai-usage-summary">No requests to this provider yet today.</span>
                 </div>
                 <div class="settings-list-row">
-                  <div class="settings-row-text"><span class="settings-switch-text">Fallback order</span><span class="settings-row-desc">When any error occurs on the active provider (quota, rate limit, or other failure), Sakura retries with the next checked provider in order. The active provider is always tried first. Providers without a saved key are skipped. A toast confirms which provider was used.</span></div>
+                  <div class="settings-row-text"><span class="settings-switch-text">Fallback order</span><span class="settings-row-desc">If the active provider fails, try the next checked one with a saved key.</span></div>
                   <button class="toggle-switch" type="button" role="switch" id="ai-fallback-toggle" aria-checked="false" aria-label="Enable provider fallback"></button>
                 </div>
                 <div id="ai-fallback-list" style="display:none;padding:4px 12px 8px;flex-direction:column;gap:4px"></div>
                 <div class="settings-inline-notice" id="ai-fallback-empty-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="ai-fallback-empty-warning-text"></span></div>
-                <div class="settings-list-row" style="border-top:1px solid var(--border)"><div class="settings-row-text"><span class="settings-switch-text">Reset AI settings</span><span class="settings-row-desc">Restores your provider and model choices to their defaults and clears every saved API key. Also resets the shared rewrite prompt (want just that, without touching your keys? Use "Reset to default" next to the prompt box instead, in Rewrite below). Separate from the general settings reset — your documents and other app preferences aren't touched either way.</span></div><button id="ai-settings-reset-btn" class="btn data-io-btn">Reset…</button></div>
+                <div class="settings-list-row" style="border-top:1px solid var(--border)"><div class="settings-row-text"><span class="settings-switch-text">Reset AI settings</span><span class="settings-row-desc">Default provider and model, and clears every saved API key.</span></div><button id="ai-settings-reset-btn" class="btn data-io-btn">Reset…</button></div>
               </div>
             </div>
           </div>
@@ -3763,7 +3763,7 @@ body.printing-generic #gpe-overlay{
             <div class="settings-section-title">Auto-rewrite on commit</div>
             <div class="settings-list">
               <div class="settings-list-row">
-                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite on commit</span><span class="settings-row-desc">Runs Rewrite automatically on nodes as you finish editing them — no manual click. Queued and sent as a single batched request after two minutes without further edits, or as soon as five nodes have queued up — not one request per node, to avoid burning through provider rate limits during continuous note-taking. Short nodes (under five words), checkbox items, headings, and rows with row links or `code` are left alone. Uses the same Rewrite prompt configured above — there's no separate prompt for auto-rewrite. Requires a usable active provider — an API key configured above for a BYOK provider, or just being signed in for Sakura Hosted AI; if that's not the case right now (no key set, Secure Storage is locked, or hosted is selected and you're signed out), queued nodes wait rather than being discarded and send automatically as soon as the provider becomes usable again. Turns itself off after repeated AI-call failures rather than retrying silently forever — a separate case from simply not having a key yet. Shows a live status in the bottom status bar whenever it's on — how many nodes are queued and when they'll be sent.</span></div>
+                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite on commit</span><span class="settings-row-desc">Rewrites rows a while after you finish editing them, in one batched request.</span></div>
                 <button class="toggle-switch" type="button" role="switch" id="auto-rewrite-toggle" aria-checked="false" aria-label="Enable auto-rewrite on commit"></button>
               </div>
             </div>
@@ -12271,7 +12271,6 @@ function saveToStorage(){
     if(sbSyncKey!==_sbTitleSyncCache){_sbTitleSyncCache=sbSyncKey; renderSidebar(); renderTabStrip();}
     lastSavedAt=Date.now();
     updateSavedIndicator();
-    const elx=el('sb-saved'); if(elx){elx.style.color='var(--accent)'; setTimeout(()=>{if(elx)elx.style.color=''},900)}
   }catch(e){ }
 }
 function loadDocFromStorage(id){
@@ -12656,7 +12655,7 @@ function updateHeaderRefChip(){
 
 // A document tab's right-click menu is also the document's own menu: Version history for any
 // tab, and — on the open document's tab only, since they act on the outline that's on screen —
-// Sort top-level nodes (A → Z, Z → A, by depth) and Clear all rows (Undo in the toast).
+// Sort top-level rows (A → Z, Z → A, by depth) and Clear all rows (Undo in the toast).
 const DOC_MENU_ICON=svg=>'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+svg+'</svg>';
 function docTabContextItems(tab){
   const items=[];
@@ -12671,9 +12670,9 @@ function docTabContextItems(tab){
   items.push({label:'Version history…', icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>'), onClick: async()=>{ commitEdit(); openVersionHistory(tab.docId); }});
   if(tab.docId===activeTabDocId){
     items.push({divider:true});
-    items.push({label:'Sort top-level nodes A → Z', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'az'); }});
-    items.push({label:'Sort top-level nodes Z → A', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'za'); }});
-    items.push({label:'Sort top-level nodes by depth', icon:DOC_MENU_ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'depth'); }});
+    items.push({label:'Sort rows A → Z', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="13" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="7" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 16 17 20 21 16"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'az'); }});
+    items.push({label:'Sort rows Z → A', icon:DOC_MENU_ICON('<line x1="3" y1="6" x2="7" y2="6"/><line x1="3" y1="12" x2="10" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/><polyline points="17 4 17 20"/><polyline points="13 8 17 4 21 8"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'za'); }});
+    items.push({label:'Sort rows by depth', icon:DOC_MENU_ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/>'), onClick: async()=>{ commitEdit(); sortChildBlocks(null,'depth'); }});
     items.push({divider:true});
     items.push({label:'Clear all rows', danger:true, icon:DOC_MENU_ICON('<circle cx="12" cy="12" r="9"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>'), onClick: async()=>{ await clearAllNodes(); }});
   }
@@ -19951,6 +19950,8 @@ function toggleWithUndoToast(label,getCurrent,setter){
 }
 // Right-clicking empty space anywhere (editor, File Explorer, status bar, tab bar, app bar) opens
 // this one menu, the same everywhere (owner, 2026-10-28: simple and consistent).
+// One disclosure chevron for folders, Shared and Trash (it rotates open).
+function sfolderChevron(){ return '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>'; }
 function chromeContextItems(){
   return [
     {label:'New document', onClick: async()=>{ createDoc(); }},
@@ -24527,7 +24528,7 @@ function getCaretClientRect(textarea){
 const INSERT_CHAR_GLYPH={emdash:'—',endash:'–',arrow:'➜',checkmark:'✓',crossmark:'✗',middot:'·'};
 function insertCharItems(insertText){
   const ids=Object.keys(INSERT_CHAR_GLYPH);
-  return [{heading:'Characters'},{id:'insert-chars',iconRow:ids.map(id=>({label:NODE_QA_ACTION_META[id].label.replace(/^Insert /,'').replace(/^./,c=>c.toUpperCase()),
+  return [{id:'insert-chars',iconRow:ids.map(id=>({label:NODE_QA_ACTION_META[id].label.replace(/^Insert /,'').replace(/^./,c=>c.toUpperCase()),
     icon:`<span class="insert-char-glyph">${esc(INSERT_CHAR_GLYPH[id])}</span>`,onClick:()=>insertText(INSERT_CHAR_GLYPH[id])}))}];
 }
 function insertTextAtGenericTarget(target,text){
@@ -26641,16 +26642,15 @@ function insertMenuItems(){
   const act=(a,label,icon)=>ctxActionAllowed(a)?[{label,icon,data:{insertAction:a},onClick:()=>{ if(selectedId!==null)runQuickAction(a,selectedId,el('qb-insert')?.getBoundingClientRect()); }}]:[];
   const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.marker||''):'';
   return [
-    {heading:'Basics'},
     {id:'qb-note', label:'Note', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>', disabled:selectedId===null, onClick:()=>{ if(selectedId!==null)openInlineNoteAndFocus(selectedId); }},
     {id:'qb-checkbox', label:'Checkbox', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg>', disabled:!one, onClick:toggleCheckboxOnSelection},
     {id:'qb-tags', label:'Tags…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', disabled:!one, onClick:()=>{ if(selectedId!==null)openTagManager(selectedId); }},
     ...act('date-time','Date/time','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'),
-    {heading:'Marker'},
+    {divider:true},
     {id:'insert-markers', iconRow:NODE_MARKERS.map(m=>({label:nodeMarkerLabel(m), icon:markIconSvg(m), cls:'pv-qm-mark tb-menu-marker', current:cur===m, data:{marker:m,color:nodeMarkerColor(m)}, onClick:()=>{ if(selectedId!==null){ setNodeMarker(selectedId,m); render(); } }}))},
-    {heading:'Discuss'},
+    {divider:true},
     ...act('remark','Thread','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>'),
-    {heading:'Visuals'},
+    {divider:true},
     ...act('table','Table','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>'),
     ...act('image','Image','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'),
     ...act('diagram','Diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg>'),
@@ -26733,11 +26733,11 @@ function slashTyped(){
 function slashListItems(){
   const s=_slash; const ins=t=>insertTextAtGenericTarget(s.target,t);
   const chars=insertCharItems(ins);
-  if(s.rowId===null)return [...chars,{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}];
+  if(s.rowId===null)return [...chars,{divider:true},{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}];
   // Date/time goes in at the caret, keeping the row's formatting.
   const base=insertMenuItems().map(it=>it.data&&it.data.insertAction==='date-time'?{...it,onClick:()=>ins(formatNow())}:it);
-  const at=base.findIndex((it,i)=>i>0&&it.heading);
-  return chars.length&&at>0?[...base.slice(0,at),...chars,...base.slice(at)]:[...base,...chars];
+  const at=base.findIndex((it,i)=>i>0&&it.divider);
+  return chars.length&&at>0?[...base.slice(0,at),{divider:true},...chars,...base.slice(at)]:[...base,{divider:true},...chars];
 }
 // Search by the start of any word in an item's name.
 function insertItemMatches(label,q){ return String(label||'').toLowerCase().split(/[^a-z0-9]+/).some(w=>w.startsWith(q)); }
@@ -26749,7 +26749,7 @@ function slashInsertInput(){
   const dropFirst=fn=>(...args)=>{ dropSlashText(); return fn(...args); };
   const wrap=it=>it.iconRow?{...it,iconRow:it.iconRow.map(wrap)}:it.onClick?{...it,onClick:dropFirst(it.onClick)}:it;
   let items=slashListItems();
-  if(q)items=items.flatMap(it=>it.heading?[]:it.iconRow?it.iconRow.map(b=>({label:b.label,icon:b.icon,onClick:b.onClick})):[it]).filter(it=>insertItemMatches(it.label,q));
+  if(q)items=items.flatMap(it=>it.heading||it.divider?[]:it.iconRow?it.iconRow.map(b=>({label:b.label,icon:b.icon,onClick:b.onClick})):[it]).filter(it=>insertItemMatches(it.label,q));
   if(!items.length){ closeSlashInsertMenu(); return; }
   const s=_slash; showInsertListAt(s.at,items.map(wrap)); _slash=s;
 }
@@ -28077,7 +28077,7 @@ function renderSidebarShared(){
 
   const row=document.createElement('div'); row.className='sfolder-row';
   row.dataset.tip='Documents other Sakura accounts have shared with you';
-  const tog=document.createElement('button'); tog.className='sfolder-toggle'+(sharedSectionOpen?' open':''); tog.textContent='▶';
+  const tog=document.createElement('button'); tog.className='sfolder-toggle'+(sharedSectionOpen?' open':''); tog.innerHTML=sfolderChevron();
   tog.addEventListener('click',e=>{
     e.stopPropagation(); sharedSectionOpen=!sharedSectionOpen;
     if(sharedSectionOpen&&sharedWithMeCache===null){ renderSidebarShared(); loadSharedWithMeList().then(renderSidebarShared); return; }
@@ -28142,7 +28142,7 @@ function renderSidebarTrash(){
 
   const row=document.createElement('div'); row.className='sfolder-row';
   row.dataset.tip='Documents you deleted, kept here until restored or purged';
-  const tog=document.createElement('button'); tog.className='sfolder-toggle'+(trashSectionOpen?' open':''); tog.textContent='▶';
+  const tog=document.createElement('button'); tog.className='sfolder-toggle'+(trashSectionOpen?' open':''); tog.innerHTML=sfolderChevron();
   tog.addEventListener('click',e=>{ e.stopPropagation(); trashSectionOpen=!trashSectionOpen; renderSidebarTrash(); });
   row.appendChild(tog);
   const icon=document.createElement('span'); icon.className='sfolder-icon'; icon.innerHTML=TRASH_ICON.replace('width="24" height="24"','width="13" height="13"').replace('stroke-width="1.8"','stroke-width="2"');
@@ -28346,7 +28346,7 @@ function renderSidebarDocs(){
     folderRow.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY, sbFolderContextItems(folder)); });
 
     const tog = document.createElement('button'); tog.className='sfolder-toggle'+(isOpen?' open':'');
-    tog.textContent='▶';
+    tog.innerHTML=sfolderChevron();
     if(q){ tog.disabled=true; tog.style.opacity='.4'; tog.style.cursor='default'; }
     else tog.addEventListener('click',e=>{ e.stopPropagation(); toggleFolder(folder.id); });
     folderRow.appendChild(tog);
