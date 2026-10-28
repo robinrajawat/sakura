@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Cursor stays put (2026-10-28).** Owner: the cursor jumped to odd places while editing. Enter on a row whose children show now adds its first child (mid-text, the rest of the words go there), as in Workflowy/Dynalist (`rowListIsOpen`; before, the new row landed below the whole sub-list). Enter at the start of a row opens a blank row above and the cursor stays on the words. Whole-row formatting and heading shortcuts with nothing selected keep the caret (`beginEditAt(id,c)`, was end of row). ↑/↓ on selected rows scroll only when the row would leave the view (`scrollToNode(id,'nearest')`, was centring on every press). Tests: `cursor-stays-put.spec.ts`.
+
 - **Calmer thread reading (2026-10-27).** Owner asked for better readability. An entry's day shows only where it changes from the entry above (`.thread-time.is-same-day`, shown again on hover, still clickable); top-level entries get more room above them (8px) and replies less (1px), so a question and its replies read as one block.
 
 - **Reply keeps your place (2026-10-27).** Owner: replying in the middle of a long thread jumped the reply line to the end. Sending a reply now closes its line and the view stays put (`renderThreadComposer` submit: `chosen` → `_threadComposerNodeId=null`); a new end-of-thread entry keeps the line open as before.
-
-- **No thread line, no diagram notes, shorter menus (2026-10-27).** Owner: cleaner. The faint line joining a thread's icons is gone in the editor and the PDF (spine classes and `--thread-rule-x` removed); the "Thread · N" header and the indent hold it together. The diagram preview's Notes pane (#685: button, `N`, `_dvRefreshNotes`, `toggleDiagramViewerNotes`) is removed; `d.note` stays in the data, unshown and no longer searched. Settings → Theme: "System follows your device…" is now the System button's tooltip. Entry right-click is Reply, Rewrite, Delete (Copy thread only on the header: a copy icon on hover, `.thread-head-copy`, plus its right-click). Menus say "Rewrite", not "Rewrite with AI" (threads, notes, To-Dos).
 
 ### In progress / not built
 
