@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Help rewritten short and current (2026-10-28).** Owner: Help needed the same polish as Settings. It was ~12k words of stale, implementation-heavy text (Yes/No answers, Bars & Menus, profile visibility, Shift+Enter "splits" which actually opens the note). Now 7 rails in the Settings outline icon set (Get started, Writing, Notes & threads, Documents, To-Dos, AI, App), short user-facing bullets, and the guided tour is one row of the Get started list instead of a pink banner. Kept ids `help-section-ai` (feature flag) and the quick-link row ids. Test `help-panel-tidy.spec.ts` guards rails and removed-feature words.
+
 - **Quick Assist opens empty; one focus look (2026-10-28).** Owner: the "Try things like" examples and "Browse all shortcuts" link under an empty box were filler. `#qa-hint`, its phrases, listeners and CSS are gone; an empty box keeps the dropdown closed (`qa-dropdown-empty`) until you type. Focus looks unified (owner: "different ring styles, doesn't look like a standard app"): text fields show one accent border on focus, no soft halo (`box-shadow:0 0 0 3px color-mix(...)` gone everywhere); buttons, toggles and chips show a crisp `outline:2px solid var(--accent);outline-offset:2px` on `:focus-visible` only (`.btn:focus` no longer rings after a mouse click). Checkboxes are grey (owner, like Dynalist): rows, PDF preview, print and To-Dos draw a grey box with a grey tick, no accent fill; links stay accent. Right-click on empty toolbar space (`#quick-bar`) opens the same `chromeContextItems()` menu as other empty space (test `toolbar-context-menu.spec.ts`).
 
 - **One empty-space menu; no Declutter (2026-10-28).** Owner: the right-click menus on empty space (editor, File Explorer, status bar, tab bar, app bar) were five different lists. Now one `chromeContextItems()` everywhere: New document, Expand/Collapse all, Show/Hide File Explorer, Switch theme, Settings. "More…", "Close current tab" and Declutter app bar (`appbarDecluttered`, its presetup class) are gone. Share's icon and word take the toolbar's own colour like every other button (no `--fg`). History stays in the toolbar (owner asked; recommended keeping it).
-
-- **Account and About apart; no visibility setting (2026-10-28).** Owner: the account menu already switches profile visibility, so the Settings row went (with it the whole Account section). Rails: General, Documents, Data & backup, AI, Account (only while signed in: `#settings-rail-account-btn`, holds Delete account), About (About, Privacy, Support, Feedback & crash reports). Hosted AI's "Sign in" now opens the account menu.
 
 ### In progress / not built
 
