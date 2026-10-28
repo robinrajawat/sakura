@@ -112,11 +112,11 @@ test('on a wide window the toolbar lines up with the page; Full width puts it ba
   expect(b.undo - b.bar).toBeLessThanOrEqual(16);
 });
 
-test('Share is the one labelled button, a soft pill; a shared document says Shared · N', async ({ page }) => {
+test('Share is the one labelled button, with no fill; a shared document says Shared · N', async ({ page }) => {
   const label = page.locator('#doc-share-chip-label');
   await expect(label).toHaveText('Share');
   const bg = await page.locator('#doc-share-chip').evaluate((b) => getComputedStyle(b).backgroundColor);
-  expect(bg).not.toBe('rgba(0, 0, 0, 0)');
+  expect(bg).toBe('rgba(0, 0, 0, 0)');
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     docShareStatusCache[currentDocId] = [{}, {}]; renderDocShareChip(currentDocId);
