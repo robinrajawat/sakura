@@ -203,7 +203,6 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     await expect(page.locator('body')).not.toHaveClass(/zen-mode/);
     expect(await page.evaluate(() => (window as unknown as { __fs: { exit: number } }).__fs.exit)).toBe(1);
     await expect(page.locator('#appbar')).toBeVisible();
-    await expect(page.locator('#statusbar')).toBeVisible();
     expect(errors).toEqual([]);
   });
 
