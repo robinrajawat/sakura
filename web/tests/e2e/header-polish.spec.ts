@@ -31,13 +31,13 @@ test('toolbar groups have no background box', async ({ page }) => {
   for (const bg of bgs) expect(bg).toBe('rgba(0, 0, 0, 0)');
 });
 
-test('the open-items summary uses the text colour; only the icon is tinted', async ({ page }) => {
+test('the open-items words are grey like the other toolbar buttons; only the icon is tinted', async ({ page }) => {
   const part = page.locator('#marker-summary .oi-part').first();
   await expect(part).toBeVisible();
   const c = await part.evaluate((b) => ({
     text: getComputedStyle(b).color,
     icon: getComputedStyle(b.querySelector('svg')!).color,
-    fg: getComputedStyle(document.body).getPropertyValue('--fg').trim()
+    fg: getComputedStyle(document.body).getPropertyValue('--muted').trim()
   }));
   expect(c.icon).not.toBe(c.text);
   const probe = await page.evaluate((fg) => { const d = document.createElement('div'); d.style.color = fg; document.body.appendChild(d); const v = getComputedStyle(d).color; d.remove(); return v; }, c.fg);

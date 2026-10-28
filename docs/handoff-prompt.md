@@ -165,11 +165,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Grey chrome; accent only for meaning (2026-10-28).** Owner: open-items words looked odd in dark text next to grey buttons; then "go ahead" for all chrome. Removed the accent-blend machinery (`--accent-text/border/hint-blend`, `ACCENT_BLEND_BASE`, `applyAccentBlend`, its preload copy): `.btn`/`.select`/`.meta-input`, the status bar, status chips and the dock now use plain `--muted`/`--border`/`--hint`; hover darkens to `--fg` with a grey border. Open-items words are `--muted` (icons keep status colours). Heading button icon is a plain H (no accent dot). Accent stays for links, selection, focus, active/pressed states and primary buttons.
+
 - **Editing pass: Esc leaves a note; rows with children merge (2026-10-28).** Owner asked for a thorough editing check. Walked ~40 keyboard scenarios (Enter/Tab/arrows/merge/undo/paste/fold) with a Playwright script; two gaps fixed. Esc in a note line now leaves it with the row selected (it did nothing; also clears a stale `_pendingInlineFocus` that pulled focus back). Backspace at row start / Delete at row end now merge a row that has children when the other row is its childless sibling (`canAdoptChildrenOf`): the children move under the kept row, fold state included (Workflowy/Dynalist behaviour); other cases still do nothing. Up on the first row goes to the title (intended).
 
 - **One SVG tick; grey toolbar (2026-10-28).** Owner: the checkbox tick looked heavy, and accent on every toolbar button meant colour signalled nothing. Rows, PDF preview, print, To-Dos and the tour demo now share one thin SVG tick (`--tick-mask` in tags.css, used as a CSS mask so it takes the box colour). Toolbar buttons (`#quick-bar .quick-btn`) are `--muted` grey, `--fg` on hover; pressed/active ones keep the accent and the open-items counts keep their status colours. The rest of the chrome (app bar, status bar) still uses the accent blend.
-
-- **Help rewritten short and current (2026-10-28).** Owner: Help needed the same polish as Settings. It was ~12k words of stale, implementation-heavy text (Yes/No answers, Bars & Menus, profile visibility, Shift+Enter "splits" which actually opens the note). Now 7 rails in the Settings outline icon set (Get started, Writing, Notes & threads, Documents, To-Dos, AI, App), short user-facing bullets, and the guided tour is one row of the Get started list instead of a pink banner. Kept ids `help-section-ai` (feature flag) and the quick-link row ids. Test `help-panel-tidy.spec.ts` guards rails and removed-feature words.
 
 ### In progress / not built
 
