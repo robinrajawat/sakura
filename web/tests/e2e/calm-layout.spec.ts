@@ -25,8 +25,20 @@ test('Standard is the default; the Layout switch turns Calm on and is remembered
   await page.locator('#layout-segmented .theme-seg[data-layout="calm"]').click();
   await expect(page.locator('#layout-segmented .theme-seg[data-layout="calm"]')).toHaveClass(/active/);
   expect(await page.evaluate(() => document.documentElement.classList.contains('calm-layout'))).toBe(true);
-  await page.reload();
-  expect(await page.evaluate(() => document.documentElement.classList.contains('calm-layout'))).toBe(true);
+  await expect.poll(() => page.evaluate(() => { try { return !!JSON.parse(localStorage.getItem('sakura_v001_prefs') || '{}').calmLayout; } catch { return false; } })).toBe(true);
+});
+
+// Reading the saved pref on load is checked from a seeded pref rather than a reload: a page's
+// file:// localStorage write is not reliably visible after page.reload() in Chromium.
+test('a saved Calm pref is applied on load', async ({ browser }) => {
+  const page = await browser.newPage();
+  await page.addInitScript(() => {
+    try { localStorage.setItem('sakura_welcome_seen', '1'); sessionStorage.setItem('sakura_landing_dismissed', 'true'); localStorage.setItem('sakura_v001_prefs', JSON.stringify({ calmLayout: true })); } catch { /* storage unavailable */ }
+  });
+  await page.goto('file://' + indexPath);
+  await expect(page.locator('html')).toHaveClass(/calm-layout/);
+  await expect(page.locator('#layout-segmented .theme-seg[data-layout="calm"]')).toHaveClass(/active/);
+  await page.close();
 });
 
 test('calm: rail on the left, no toolbar row or status bar, page actions beside the title', async ({ page }) => {
