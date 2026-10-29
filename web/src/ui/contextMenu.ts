@@ -50,6 +50,8 @@ export function closeSbContextMenu(e?: any){
 // the menu element, so closing the menu always closes it too.
 export function _sbBuildItemButton(it: any, container: any, list: any){
   if(it.divider){ const d=document.createElement('div'); d.className='sb-context-divider'; container.appendChild(d); return null; }
+  // A quiet line of help text at the end of a list (e.g. "Type to find more…"); not an item.
+  if(it.hint){ const h=document.createElement('div'); h.className='sb-context-hint'; h.textContent=it.hint; container.appendChild(h); return null; }
   // A small section heading, and a compact grid of icon-only tiles (name on hover) — used by the
   // card icon picker so two dozen icons fit in one short submenu.
   if(it.heading){

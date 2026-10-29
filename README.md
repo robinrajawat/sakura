@@ -67,7 +67,7 @@ Key capabilities:
 - `SAP Note 12345` or `OSS Note 12345` (a 5–10 digit number) auto-links to that note on me.sap.com
 - Hover a row's tree connector or dot to see when the node was created and last modified
 - **Checkboxes** — `/` → Checkbox, or right-click → Insert › Checkbox (typing `[ ] ` stays plain text). Click the box to check/uncheck; checked nodes show struck-through, dimmed text. A checkbox parent with checkbox children shows a live progress badge (e.g. `2/5`) and auto-checks itself once every child is checked
-- Typing `/` at the start of a word opens the **Insert list** at the caret: in a row the whole list plus a **Characters** row (em dash, en dash, arrow, check mark, cross mark, middle dot); in notes, threads, To-Dos and the title field the characters and date/time. One way, everywhere text is typed; letters after the `/` narrow it (`/tab` → Table), and a `/` inside a word (and/or, 10/27) stays a slash
+- Typing `/` at the start of a word opens the **Insert list** at the caret: in a row a short list under **Text** (Heading 1–3, Checkbox) and **Insert** (Note, Table, Image, Diagram, Thread), ending with a faint “Type to find more…”, and typing finds the rest (Body text, Date/time, Tags…, the row status marks and the characters: em dash, en dash, arrow, check mark, cross mark, middle dot); in notes, threads, To-Dos and the title field the characters and date/time. One way, everywhere text is typed; letters after the `/` narrow it (`/tab` → Table), and a `/` inside a word (and/or, 10/27) stays a slash
 
 ## Documents & Tabs
 

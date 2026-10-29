@@ -1275,6 +1275,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .table-grid-picker-hint{font:400 11px 'Inter',sans-serif;color:var(--muted);text-align:center}
 .sb-context-label{flex:1 1 auto}
 .sb-context-heading{font:600 10px 'Inter',sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--hint);padding:7px 8px 3px;user-select:none}
+.sb-context-hint{font:400 11.5px 'Inter',sans-serif;color:var(--hint);padding:6px 8px 3px;user-select:none}
 .sb-context-tiles{display:grid;grid-template-columns:repeat(6,30px);gap:2px;padding:0 4px 2px}
 .sb-context-item.sb-context-tile{width:30px;height:30px;padding:0;justify-content:center;gap:0}
 .sb-context-item.sb-context-tile.current{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
@@ -24745,7 +24746,9 @@ function slashListItems(all=false){
   // Date/time goes in at the caret, keeping the row's formatting.
   // The short grouped list until you type; then everything, characters and row status marks too.
   const base=insertMenuItems(!!all).map(it=>it.data&&it.data.insertAction==='date-time'?{...it,onClick:()=>ins(formatNow())}:it);
-  return all?[...base,...chars]:base;
+  // The short list says there's more (owner 2026-10-29): typing finds Body text, Date/time, Tags…,
+  // the row status marks and characters.
+  return all?[...base,...chars]:[...base,{hint:'Type to find more…'}];
 }
 // Search by the start of any word in an item's name.
 function insertItemMatches(label,q){ return String(label||'').toLowerCase().split(/[^a-z0-9]+/).some(w=>w.startsWith(q)); }
@@ -25361,6 +25364,14 @@ function _sbBuildItemButton(it, container, list) {
         const d = document.createElement('div');
         d.className = 'sb-context-divider';
         container.appendChild(d);
+        return null;
+    }
+    // A quiet line of help text at the end of a list (e.g. "Type to find more…"); not an item.
+    if (it.hint) {
+        const h = document.createElement('div');
+        h.className = 'sb-context-hint';
+        h.textContent = it.hint;
+        container.appendChild(h);
         return null;
     }
     // A small section heading, and a compact grid of icon-only tiles (name on hover) — used by the
