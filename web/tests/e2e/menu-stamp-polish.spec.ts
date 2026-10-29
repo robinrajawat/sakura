@@ -109,7 +109,8 @@ test.describe('Toolbar open-items summary', () => {
       collapsedIds = new Set([1]); render();
     });
     const btn = page.locator('#marker-summary .open-items-btn');
-    await expect(btn).toHaveText('3 follow-ups');
+    await expect(btn).toHaveText('3');
+    await expect(btn.locator('.oi-part')).toHaveAttribute('data-tip', '3 follow-ups');
     await expect(btn).toHaveAttribute('aria-label', 'Needs attention: 3 follow-ups.');
     await expect(page.locator('.node-row[data-id="2"]')).toHaveCount(0);
 
