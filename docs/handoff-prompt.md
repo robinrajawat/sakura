@@ -173,6 +173,14 @@ contradicts README.md, trust README.md.)*
 
 ### In progress / not built
 
+- Queued next (owner 2026-10-29, finish one before starting the next):
+  1. Merge decisions into the open-items button: one button under the title, its list shows "Needs attention"
+     then "Decisions" (owner agreed).
+  2. Remove Generate diagram everywhere (owner asked).
+  3. Remove the leftover hidden toolbar code (`#quick-bar` hidden buttons, Insert ▾/AI ▾; tests still call
+     `dispatchEvent` on `#qb-insert`/`#qb-ai`, so rewrite them against `insertMenuItems()` etc.).
+  4. Owner to decide: remove the bottom-right focus-mode (zen) expand icon?
+  - Optional, not decided: a faint "Type to find more…" line at the bottom of the "/" list.
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
 - Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default; the outliner on phones (read and
