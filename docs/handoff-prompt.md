@@ -176,6 +176,8 @@ contradicts README.md, trust README.md.)*
 
 - **Fix: multi-row Shift+Tab reversed the rows (2026-10-29).** Owner: "depth 0 is being sorted automatically". `outdentRootIndexes` (src/core/nodeMutations.ts) now outdents the selected roots bottom-up, so they keep their order. Outdenting one row at a time from the top still reverses them (each goes after its old parent's block, as in Workflowy/Dynalist); selecting them and outdenting once keeps the order.
 
+- **The folder path takes you to the document (2026-10-29).** Owner's idea. Clicking a folder on the top line now calls `revealDocInSidebar(currentDocId)` (unfold its folder chain, scroll, flash once) instead of `revealFolderInSidebar` (still used by Search). No trailing "›" after the last folder: the title is on its own line, so it would read as cut off. The rail's Documents button does the same reveal without the flash.
+
 ### In progress / not built
 
 - Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
