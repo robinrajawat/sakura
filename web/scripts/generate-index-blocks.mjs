@@ -359,87 +359,6 @@ initHubTodosState({
     footer: ''
   },
   {
-    // First slice of the diagramGen* subsystem (see this module's own header for scope notes
-    // and why it lives in src/core/ despite not touching `nodes`). The five target functions
-    // were ~500 lines apart in index.html — relocated next to each other in a separate
-    // pure-code-motion commit first, so this one contiguous block can replace all five.
-    name: 'diagramGenDims',
-    sourceFile: 'src/core/diagramGenDims.ts',
-    testFile: 'tests/unit/diagramGenDims.test.ts',
-    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. The five
-    // real call sites (diagramGenHardTruncate/diagramGenLighten/diagramGenAdjustDimsForShape/
-    // diagramGenBoxDims/diagramGenMergedBoxDims wrapper bodies in index.html) were updated in
-    // the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Second slice of the diagramGen* subsystem — the pure topology/confirmed-nodeMeta query
-    // layer (see this module's own header for full scope notes). 15 functions, relocated next to
-    // each other in a separate pure-code-motion commit first (diagramGenIsContainer/IsSequence/
-    // IsHorizontal were ~320 lines away from the rest).
-    name: 'diagramGenTopology',
-    sourceFile: 'src/state/diagramGenTopology.ts',
-    testFile: 'tests/unit/diagramGenTopology.test.ts',
-    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. All 15 real
-    // call sites (the original diagramGenIsContainer/IsSequence/IsHorizontal/AllChildIdxs/
-    // HasEdgeLabelTag/ChildIdxs/IsLeaf/IsChainGroup/ChainHeaderSuppressed/IsConfirmedEdgeLabel/
-    // IsPassthrough/IsMergeCandidate/RenderChildIdxs/ChainTailIdx/EdgeLabelBefore wrapper bodies
-    // in index.html) were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Third slice of the diagramGen* subsystem — the nodeMeta classification-proposal and
-    // plain-object (de)serialization layer (see this module's own header for full scope notes).
-    // Already contiguous in index.html, no pure-code-motion commit needed.
-    name: 'diagramGenNodeMeta',
-    sourceFile: 'src/state/diagramGenNodeMeta.ts',
-    testFile: 'tests/unit/diagramGenNodeMeta.test.ts',
-    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. The three
-    // real call sites (diagramGenProposeNodeMeta/NodeMetaFromPlain/NodeMetaToPlain wrapper
-    // bodies in index.html) were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Fourth slice of the diagramGen* subsystem — the pure branch/tag/marker color-assignment
-    // layer (see this module's own header for full scope notes). diagramGenTagColorKey (its
-    // sole caller, assignDiagramGenColors) was relocated next to it in a separate
-    // pure-code-motion commit first (they were separated by pickDiagramGenScope).
-    name: 'diagramGenColors',
-    sourceFile: 'src/state/diagramGenColors.ts',
-    testFile: 'tests/unit/diagramGenColors.test.ts',
-    // No production wiring needed — pure functions, no DOM/canvas/AI side effects. Both real
-    // call sites (diagramGenTagColorKey/assignDiagramGenColors wrapper bodies in index.html)
-    // were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Fifth slice of the diagramGen* subsystem — the pure tree-layout engine (see this module's
-    // own header for full scope notes). Already an isolated, self-contained function in
-    // index.html, no pure-code-motion commit needed.
-    name: 'diagramGenLayout',
-    sourceFile: 'src/state/diagramGenLayout.ts',
-    testFile: 'tests/unit/diagramGenLayout.test.ts',
-    // No production wiring needed — pure function, no DOM/canvas/AI side effects. The one real
-    // call site (layoutDiagramGenTree's own wrapper body in index.html) was updated in the same
-    // commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Sixth slice of the diagramGen* subsystem — the pure final-rect/bounds computation (see
-    // this module's own header for full scope notes). Unlike every prior slice, this was never
-    // a standalone named function — an inline fragment inside diagramGenFinishGenerate. The
-    // hand-written glue right after this block's markers destructures the Core function's
-    // result into the same local names (finalRect/minX/maxX/maxY/offsetX) the rest of
-    // diagramGenFinishGenerate already reads, so nothing downstream needed to change.
-    name: 'diagramGenRects',
-    sourceFile: 'src/state/diagramGenRects.ts',
-    testFile: 'tests/unit/diagramGenRects.test.ts',
-    // No production wiring needed — pure function, zero dependencies on any other diagramGen*
-    // function or constant. The one real call site (inside diagramGenFinishGenerate) was
-    // updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
     // Export domain — first slice. Pure once traced: every function it calls is already a
     // generated ambient global (buildPrefix/hasLaterSiblingAtDepth from nodeQueries.ts,
     // computeOutlineNumbers from computeOutlineNumbers.ts, getNodePlainText from
@@ -482,38 +401,6 @@ initHubTodosState({
     // No production wiring needed — pure functions, no DOM/side effects. The hand-written
     // wrappers in index.html (getClipboardExportColors/parseStyledTextForClipboard/
     // serializeClipboardHtml) forward to the Core functions.
-    footer: ''
-  },
-  {
-    // diagramGen* subsystem — fifth slice (alongside diagramGenDims/Topology/NodeMeta/Colors,
-    // and diagramGenLayout/Rects). Legend-generation layer: diagramGenLegendEntries/
-    // diagramGenLegendCells turned out pure once traced — nodes promoted to an explicit
-    // parameter, same pattern diagramGenColors.ts already established. escXmlAttr is inlined
-    // (has real other callers outside this slice, in still-hand-written
-    // diagramGenFinishGenerate) rather than referenced via declare function.
-    name: 'diagramGenLegend',
-    sourceFile: 'src/state/diagramGenLegend.ts',
-    testFile: 'tests/unit/diagramGenLegend.test.ts',
-    // No production wiring needed — pure functions, no DOM/side effects. Both real call sites
-    // (diagramGenLegendEntries/diagramGenLegendCells wrapper bodies, called from
-    // diagramGenFinishGenerate) were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // diagramGen* subsystem — sixth slice, the XML-cell-string-assembly pass diagramGenRects.ts's
-    // own header flagged as a separate future scoping question. Everything from color assignment
-    // through the fully assembled draw.io XML string turned out pure — every dependency is
-    // already a generated *Core function. escXmlAttr is inlined (no real caller left anywhere
-    // after this slice). Date.now() promoted to an injectable `now` parameter, matching
-    // formatRelativeTime.ts's established pattern. diagramGenFinishGenerate itself stays
-    // hand-written — only real orchestration (diagrams array mutation, markDirty/
-    // scheduleAutoSave, toast) is left in it once this slice's XML-assembly core is factored out.
-    name: 'diagramGenFinishGenerate',
-    sourceFile: 'src/state/diagramGenFinishGenerate.ts',
-    testFile: 'tests/unit/diagramGenFinishGenerate.test.ts',
-    // No production wiring needed — pure function, no DOM/side effects. diagramGenFinishGenerate
-    // (the hand-written orchestration wrapper) was updated in the same commit that wired this
-    // block in to call diagramGenFinishGenerateXmlCore for the xml string.
     footer: ''
   },
   {

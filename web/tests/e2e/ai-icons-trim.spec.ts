@@ -64,12 +64,14 @@ const REMOVED_FUNCTIONS = [
   // other removed AI
   'expandNodeWithAi', 'suggestTagsWithAi', 'summariseSelectionWithAi', 'restructureTextWithAi', 'callAiApiRestructure',
   'looksAlreadyStructured', 'insertAiOutlineAsNewDoc', 'sakuraTextareaPrompt', 'setQaAiAnswerEnabled', 'serializeMarkdown',
-  'extractTodosFromDocument', 'breakTodoIntoSubtasks', 'generateTodosSummary'
+  'extractTodosFromDocument', 'breakTodoIntoSubtasks', 'generateTodosSummary',
+  // Generate diagram, removed everywhere (owner, 2026-10-29)
+  'diagramGenTrimText', 'generateDiagramFromOutline'
 ];
 const KEPT_FUNCTIONS = [
   'generateOutlineWithAi', 'insertAiOutline', 'rewriteNodeText', 'rewriteMultipleNodes', 'rewriteSubTextSelection',
   'setAutoRewriteEnabled', 'queueAutoRewrite', 'flushAutoRewriteQueue', 'callAiApi', 'callAiRaw',
-  'callAiApiBatch', 'diagramGenTrimText', 'generateDiagramFromOutline', 'computeOutlineNumbers', 'renderCardsHtml'
+  'callAiApiBatch', 'computeOutlineNumbers', 'renderCardsHtml'
 ];
 
 test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons removed', () => {

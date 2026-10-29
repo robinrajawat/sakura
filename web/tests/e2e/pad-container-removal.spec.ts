@@ -152,7 +152,8 @@ test.describe('Pad container removal', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Generate diagram is offered on the right-click menu and anchors its result under that node', async ({ page }) => {
+  // Generate diagram was removed everywhere (owner, 2026-10-29): not in the menu, no review screen.
+  test('Generate diagram is gone from the right-click menu', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -161,28 +162,11 @@ test.describe('Pad container removal', () => {
     await page.locator('.node-row[data-id="1"]').click({ button: 'right' });
     await page.locator('#context-more-toggle').click();
     await page.locator('#context-more-panel [data-flyout="insert"]').hover();
-    await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="diagram-gen"]')).toBeVisible();
-    await page.keyboard.press('Escape');
-
-    // The review screen always opens first (its skip setting was removed in item 14).
-    await page.evaluate(async () => {
-      // @ts-expect-error
-      await runQuickAction('diagram-gen', 1);
-    });
-    await expect(page.locator('#diagram-gen-review-overlay')).toHaveClass(/open/);
-    await page.locator('#diagram-gen-review-confirm').click();
-    // @ts-expect-error
-    await expect.poll(() => page.evaluate(() => diagrams.length)).toBe(1);
-    const result = await page.evaluate(() => ({
-      // @ts-expect-error
-      count: diagrams.length,
-      // @ts-expect-error
-      anchor: diagrams[0]?.anchorNodeId,
-      // @ts-expect-error
-      hasXml: !!(diagrams[0]?.xml || '').includes('<mxfile')
-    }));
-    expect(result).toEqual({ count: 1, anchor: 1, hasXml: true });
-    await expect(page.locator('.node-diagram-line .node-diagram-preview-card')).toHaveCount(1);
+    await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="date-time"]')).toBeVisible();
+    await expect(page.locator('#context-menu [data-action="diagram-gen"]')).toHaveCount(0);
+    await expect(page.locator('#diagram-gen-review-overlay')).toHaveCount(0);
+    // @ts-expect-error -- bare globals from index.html
+    expect(await page.evaluate(() => typeof generateDiagramFromOutline)).toBe('undefined');
     expect(errors).toEqual([]);
   });
 });
