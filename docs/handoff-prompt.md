@@ -172,11 +172,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **"Unfiled" on the top line (2026-10-29).** Owner chose it over a "Documents ›" root on every path. A document in no folder (or new and unsaved) shows "Unfiled" where the folders go, a shared one "Shared"; clicking it reveals the document (or opens Documents when unsaved). `renderDocPath`, class `doc-path-root`.
+
 - **Settings, grouped (2026-10-29).** Owner: "too many boxes", then "not too flat, a standard approach". Settings is 760px wide (descriptions fit on one line); headings are sentence case with no rule under them; each group is one soft card (`--bg`, 10px radius, hairlines between rows), Appearance included (label left, control right); row actions look like buttons (`#settings-panel` in the selector beats `#appbar .btn`). All in calm-layout.css, scoped to the Settings panel, sizes from the `--fs-*` tokens. Section titles in sentence case (Keyboard shortcuts, Secure storage…); the AI provider note is two lines; About no longer lists removed AI features.
 
 - **Fix: multi-row Shift+Tab reversed the rows (2026-10-29).** Owner: "depth 0 is being sorted automatically". `outdentRootIndexes` (src/core/nodeMutations.ts) now outdents the selected roots bottom-up, so they keep their order. Outdenting one row at a time from the top still reverses them (each goes after its old parent's block, as in Workflowy/Dynalist); selecting them and outdenting once keeps the order.
-
-- **The folder path takes you to the document (2026-10-29).** Owner's idea. Clicking a folder on the top line now calls `revealDocInSidebar(currentDocId)` (unfold its folder chain, scroll, flash once) instead of `revealFolderInSidebar` (still used by Search). No trailing "›" after the last folder: the title is on its own line, so it would read as cut off. The rail's Documents button does the same reveal without the flash.
 
 ### In progress / not built
 

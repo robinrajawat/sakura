@@ -12477,20 +12477,20 @@ function goDocNav(step){
 }
 
 // Where you are: Folder › Sub-folder. Clicking any folder takes you to the document in the File
-// Explorer (owner 2026-10-29): its folders unfold and its row flashes once.
-// The top line shows only the folders the document sits in (owner 2026-10-29: the title is right
-// below, so its name here read as a duplicate). A document at the top level shows nothing.
+// Explorer (owner 2026-10-29): its folders unfold and its row flashes once. A document in no folder
+// says where the explorer lists it, "Unfiled" (or "Shared" for one shared with you), instead of
+// showing nothing (owner 2026-10-29); a new document not saved yet is Unfiled too.
 function renderDocPath(){
   const box=el('doc-path-crumbs'); if(!box)return;
   box.innerHTML='';
-  if(!currentDocId)return;
-  const folders=loadFolders(); let f=folders.find(x=>x.id===loadDocFolderMap()[currentDocId]); const chain=[]; let guard=0;
+  const go=()=>{ if(currentDocId)revealDocInSidebar(currentDocId); else openDocumentsPanel(); };
+  const crumb=(text,cls='')=>{ const b=document.createElement('button'); b.type='button'; b.className='doc-path-folder'+(cls?' '+cls:''); b.textContent=text; b.addEventListener('click',go); box.appendChild(b); };
+  const folders=currentDocId?loadFolders():[]; let f=currentDocId?folders.find(x=>x.id===loadDocFolderMap()[currentDocId]):null; const chain=[]; let guard=0;
   while(f&&guard++<20){ chain.unshift(f); f=f.parentId?folders.find(x=>x.id===f.parentId):null; }
+  if(!chain.length){ crumb(currentDocId&&sharedDocMeta[currentDocId]?'Shared':'Unfiled','doc-path-root'); return; }
   chain.forEach((fd,i)=>{
     if(i){ const sep=document.createElement('span'); sep.className='doc-path-sep'; sep.setAttribute('aria-hidden','true'); sep.textContent='›'; box.appendChild(sep); }
-    const b=document.createElement('button'); b.type='button'; b.className='doc-path-folder'; b.textContent=fd.name||'Unnamed folder';
-    b.addEventListener('click',()=>revealDocInSidebar(currentDocId));
-    box.appendChild(b);
+    crumb(fd.name||'Unnamed folder');
   });
 }
 
