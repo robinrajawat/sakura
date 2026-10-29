@@ -230,6 +230,15 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'versionHistory',
+    sourceFile: 'src/utils/versionHistory.ts',
+    testFile: 'tests/unit/versionHistory.test.ts',
+    // Which versions to keep (spread over time), merging two devices' To-Dos version lists, and
+    // spotting a save that removes a lot at once. New functions, called from the document and
+    // To-Dos version history code.
+    footer: ''
+  },
+  {
     name: 'computeOutlineNumbers',
     sourceFile: 'src/utils/computeOutlineNumbers.ts',
     testFile: 'tests/unit/computeOutlineNumbers.test.ts',

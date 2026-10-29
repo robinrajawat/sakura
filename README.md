@@ -49,7 +49,7 @@ Key capabilities:
 - Installable as a desktop/mobile app (PWA) in supporting browsers
 - Manual full-data backup to a file (and restore, with one-step undo); signed in, your data also syncs to your account automatically
 - Optional account sign-in (Google or email) syncs documents, folders, To-Dos, and settings across devices, and lets you share individual documents with other Sakura accounts as viewer or editor
-- Version History for documents and the To-Dos list — periodic snapshots you can restore from independently of the undo stack (the last 10 per document, the last 5 for To-Dos)
+- Version History for documents and the To-Dos list — periodic snapshots you can restore from independently of the undo stack (10 per document, 5 for To-Dos, spread over time: close together for the last hour, then hours and days apart). A version holds everything: rows with their notes, tables, pictures and status, threads, diagrams, title, author, status and link. Safety versions are also kept, even minutes after the last one, before a large removal (Clear all rows, a big branch, many thread entries), before another device's or tab's copy replaces this one (or this one replaces it), and before Reload latest. Versions stay on this device
 
 ## Core Editing
 

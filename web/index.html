@@ -12066,49 +12066,112 @@ async function loadDocRevisions(id){
 }
 async function saveDocRevisions(id,list){ try{ await idbSet('docrev:'+id,list) }catch(e){} }
 async function deleteDocRevisions(id){ try{ await idbDelete('docrev:'+id); localStorage.removeItem(revisionKey(id)) }catch(e){} }
-// `reason` shows in the History panel — 'Auto', 'Manual checkpoint', or 'Before restoring
-// an older version' (recorded automatically so restoring itself is never destructive).
+// `reason` shows in the History panel — 'Auto', 'Manual checkpoint', 'Before restoring an older
+// version' (recorded automatically so restoring itself is never destructive), or one of the
+// safety copies below ('Before a large change', 'Before changes from another device').
 //
 // Diagrams are stored without their exported preview images (previewSvg/pageSvgs) — those
 // regenerate automatically the next time a restored diagram is reopened and saved once in
 // draw.io, and keeping them out of every revision avoids multiplying storage use by however
 // large those images are, times up to REVISION_MAX_PER_DOC copies. The XML — the actual
-// recoverable content — is kept in full. Q&A content still isn't captured here at all (a
-// smaller, separate gap); restoring a version leaves it untouched rather than wiping it, same
-// as it always has.
+// recoverable content — is kept in full. Everything else a document holds is kept and restored:
+// rows (text, notes, tables, pictures, row status), threads, Q&A, title, author, status, link.
 function trimDiagramsForRevision(arr){
   if(!Array.isArray(arr))return [];
   return arr.map(d=>({id:d.id,title:d.title||'',xml:d.xml||'',note:d.note||'',anchorNodeId:d.anchorNodeId??null,pageCount:d.pageCount||1,createdAt:d.createdAt||Date.now(),modifiedAt:d.modifiedAt||Date.now()}));
 }
-async function recordDocRevision(id,contentObj,reason){
-  if(!id||!Array.isArray(contentObj?.nodes))return;
-  const list=await loadDocRevisions(id);
-  list.push({ts:Date.now(),reason:reason||'Auto',...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
-  while(list.length>REVISION_MAX_PER_DOC)list.shift();
-  await saveDocRevisions(id,list);
+// What "the same content" means when deciding whether a version is worth keeping. Threads, title,
+// author, status and link count too (thread-only edits used to never make a version).
+function docRevisionContentKey(o){
+  if(!o)return null;
+  return JSON.stringify({n:o.nodes||[],d:trimDiagramsForRevision(o.diagrams).map(({createdAt,modifiedAt,...d})=>d),q:o.qa||[],r:o.remarks||[],t:o.title||'',a:o.author||'',s:typeof o.docStatus==='string'?o.docStatus:'',l:o.docLinkedUrl||''});
 }
-async function maybeAutoSnapshotBeforeSave(id){
+// The open document, in the shape a revision is recorded from.
+function currentDocRevisionContent(){
+  return {rowFormat:ROW_FORMAT,nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus,docLinkedUrl,docLinkedUrlLabel};
+}
+// A document as stored, with each diagram's xml filled in from the overflow store (the stored
+// copy only carries diagram metadata — see saveToStorage), ready to record as a revision.
+// `raw` is read by the caller when the stored copy is about to be overwritten: it must be read
+// synchronously, before that write.
+async function storedDocForRevision(id,raw){
+  if(raw===undefined){ try{ raw=localStorage.getItem(docKey(id)); }catch(e){ raw=null; } }
+  if(!raw)return null;
+  let prev; try{ prev=JSON.parse(raw); }catch(e){ return null; }
+  if(!prev||!Array.isArray(prev.nodes))return null;
+  if(Array.isArray(prev.diagrams)&&prev.diagrams.length){
+    for(const dg of prev.diagrams){
+      if(dg.xml)continue; // legacy pre-split shape already has it inline — nothing to fetch
+      try{ const blob=await idbGet('diagblob:'+id+':'+dg.id); if(blob)dg.xml=blob.xml||''; }catch(e){}
+    }
+  }
+  return prev;
+}
+// Every read-modify-write of one document's revision list runs one after another. Two saves
+// landing together (a restore's "Before restoring" copy and the autosave right after it, a manual
+// save during an autosave) used to read the same list and the second write dropped the first's
+// version.
+const _docRevisionLocks={};
+function withDocRevisionLock(id,fn){
+  const run=(_docRevisionLocks[id]||Promise.resolve()).then(fn,fn);
+  _docRevisionLocks[id]=run.catch(()=>{});
+  return run;
+}
+async function recordDocRevisionNow(id,contentObj,reason,opts){
+  const list=await loadDocRevisions(id);
+  const last=list[list.length-1];
+  if(opts&&opts.dedupe&&last&&docRevisionContentKey(last)===docRevisionContentKey(contentObj))return false;
+  const now=Date.now();
+  list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',docLinkedUrl:typeof contentObj.docLinkedUrl==='string'?contentObj.docLinkedUrl:'',docLinkedUrlLabel:typeof contentObj.docLinkedUrlLabel==='string'?contentObj.docLinkedUrlLabel:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
+  // Keeps REVISION_MAX_PER_DOC versions spread over time (src/utils/versionHistory.ts), not just
+  // the newest ones.
+  await saveDocRevisions(id,trimVersions(list,REVISION_MAX_PER_DOC,now));
+  return true;
+}
+// The content is copied now (JSON round trip), so later edits to the live document can't change
+// what this version remembers while it waits its turn.
+function recordDocRevision(id,contentObj,reason,opts){
+  if(!id||!Array.isArray(contentObj?.nodes))return Promise.resolve(false);
+  const copy=JSON.parse(JSON.stringify({...contentObj,diagrams:trimDiagramsForRevision(contentObj.diagrams)}));
+  return withDocRevisionLock(id,()=>recordDocRevisionNow(id,copy,reason,opts));
+}
+// Called by saveToStorage right before it overwrites the stored copy, with the content about to be
+// written. Keeps the stored (previous) state as a version when the last version is 10+ minutes
+// old — or straight away, inside that gap, when this save takes away a lot at once (Clear all
+// rows, deleting a big branch, many thread entries) or the stored copy came from another device
+// or tab (`foreign`, see _foreignDocVersionPending), so neither is lost once Undo is gone.
+async function maybeAutoSnapshotBeforeSave(id,nextNodes,nextRemarks,foreign){
   try{
     const raw=localStorage.getItem(docKey(id)); if(!raw)return;
-    const prev=JSON.parse(raw);
-    if(!Array.isArray(prev.nodes)||!prev.nodes.length)return; // nothing meaningful to preserve
-    // prev.diagrams only carries lightweight metadata now (see saveToStorage's diagram/
-    // overflow-store split) — hydrate the real xml from there before this snapshot compares
-    // or records it, otherwise every revision taken after that split would remember a diagram
-    // with no recoverable content at all.
-    if(Array.isArray(prev.diagrams)&&prev.diagrams.length){
-      for(const dg of prev.diagrams){
-        if(dg.xml)continue; // legacy pre-split shape already has it inline — nothing to fetch
-        try{ const blob=await idbGet('diagblob:'+id+':'+dg.id); if(blob)dg.xml=blob.xml||''; }catch(e){}
-      }
-    }
-    const revisions=await loadDocRevisions(id);
-    const last=revisions[revisions.length-1];
-    const prevKey=JSON.stringify({n:prev.nodes,d:trimDiagramsForRevision(prev.diagrams),q:prev.qa||[]});
-    const lastKey=last?JSON.stringify({n:last.nodes,d:trimDiagramsForRevision(last.diagrams),q:last.qa||[]}):null;
-    if(last&&lastKey===prevKey)return; // no real change (nodes, diagrams, or Q&A) since the last snapshot
-    if(last&&(Date.now()-last.ts)<REVISION_MIN_GAP_MS)return;
-    await recordDocRevision(id,prev,'Auto');
+    let peek; try{ peek=JSON.parse(raw); }catch(e){ return; }
+    if(!Array.isArray(peek.nodes)||!peek.nodes.length)return; // nothing meaningful to preserve
+    const large=isLargeRemoval(peek.nodes,nextNodes,peek.remarks,nextRemarks);
+    const prev=await storedDocForRevision(id,raw); if(!prev)return;
+    await withDocRevisionLock(id,async()=>{
+      const revisions=await loadDocRevisions(id);
+      const last=revisions[revisions.length-1];
+      if(last&&docRevisionContentKey(last)===docRevisionContentKey(prev))return; // no real change since the last version
+      if(foreign){ await recordDocRevisionNow(id,prev,'Before changes from another device'); return; }
+      if(large){ await recordDocRevisionNow(id,prev,'Before a large change'); return; }
+      if(last&&(Date.now()-last.ts)<REVISION_MIN_GAP_MS)return;
+      await recordDocRevisionNow(id,prev,'Auto');
+    });
+  }catch(e){}
+}
+// Set when another device or tab has just written the open document's stored copy (the "updated
+// on another device" banner). The next save of this tab overwrites that copy, so it keeps it as a
+// version first — once.
+let _foreignDocVersionPending=null;
+// Sync is about to replace a document's stored copy (one not open on screen) with a newer one
+// from another device. Keeps the local copy as a version first when it differs, so edits made
+// here offline, beaten by a newer edit elsewhere, can still be brought back.
+async function keepLocalDocBeforeIncoming(id,incoming){
+  try{
+    const raw=localStorage.getItem(docKey(id)); if(!raw)return;
+    const prev=await storedDocForRevision(id,raw); if(!prev||!prev.nodes.length)return;
+    const sameRows=JSON.stringify({n:prev.nodes,r:prev.remarks||[],q:prev.qa||[],t:prev.title||''})===JSON.stringify({n:incoming.nodes||[],r:incoming.remarks||[],q:incoming.qa||[],t:incoming.title||''});
+    if(sameRows)return;
+    await recordDocRevision(id,prev,'Before changes from another device',{dedupe:true});
   }catch(e){}
 }
 
@@ -12182,7 +12245,8 @@ function saveToStorage(){
       }
     }
     if(typeof commitDecisionCardIfFocused==='function')commitDecisionCardIfFocused();
-    maybeAutoSnapshotBeforeSave(currentDocId);
+    const foreignStored=_foreignDocVersionPending===currentDocId; if(foreignStored)_foreignDocVersionPending=null;
+    maybeAutoSnapshotBeforeSave(currentDocId,nodes,remarks,foreignStored);
     // Diagram XML + rendered SVG page thumbnails are the single heaviest thing any document
     // holds, and writing them into localStorage on every save is what actually exhausts its
     // quota. Only lightweight metadata (title, status, note, link, page count) goes into the
@@ -12951,7 +13015,7 @@ async function restoreDocRevision(docId,ts){
   let restoreOrphanMsg='';
   if(docId===currentDocId){
     commitEdit();
-    recordDocRevision(docId,{rowFormat:ROW_FORMAT,nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Before restoring an older version');
+    recordDocRevision(docId,currentDocRevisionContent(),'Before restoring an older version');
     nodes=freshNodes; nextId=safeNextId(freshNodes); selectedId=freshNodes[0]?.id??null; multiSelectedIds=[]; selectionAnchorId=selectedId; collapsedIds=new Set(); collapsedTableNodeIds=new Set(); collapsedImageNodeIds=new Set(); editingId=null;
     if(Array.isArray(rev.diagrams)){
       // Revision diagrams never include their exported preview image (see recordDocRevision);
@@ -12969,7 +13033,12 @@ async function restoreDocRevision(docId,ts){
     if(Array.isArray(rev.qa)){
       qaItems=rev.qa.map(q=>({...q}));
     }
+    // Threads come back with their rows (they used to stay as they are now, so comments on rows
+    // that came back were gone).
+    if(Array.isArray(rev.remarks))remarks=JSON.parse(JSON.stringify(rev.remarks));
     if(el('header-title'))el('header-title').value=rev.title||'';
+    if('author' in rev&&el('doc-author')){ el('doc-author').value=rev.author||''; if(typeof updateAuthorDisplay==='function')updateAuthorDisplay(); }
+    if('docLinkedUrl' in rev)setDocLinkedUrl(rev.docLinkedUrl||'',rev.docLinkedUrlLabel||'',false);
     // Older revisions predate docStatus entirely and simply lack the key — leaving the current
     // status untouched in that case, rather than blanking it, since "unknown" isn't the same as
     // "explicitly had no status at that point in time".
@@ -12978,26 +13047,18 @@ async function restoreDocRevision(docId,ts){
     regenerateMissingDiagramPreviews();
     restoreOrphanMsg=describeOrphanedLinksAfterRestore(nodes,diagrams,remarks);
   } else {
-    let prevQa=[]; let prevDiagramsCurrent=[]; let prevDocStatusCurrent=''; let prevRemarksCurrent=[];
+    let prevQa=[]; let prevDiagramsCurrent=[]; let prevDocStatusCurrent=''; let prevRemarksCurrent=[]; let prevLinkCurrent=['',''];
     try{
-      const raw=localStorage.getItem(docKey(docId));
-      if(raw){
-        const prev=JSON.parse(raw);
-        // prev.diagrams only carries lightweight metadata (see saveToStorage's diagram/
-        // overflow-store split) — hydrate real xml before this gets snapshotted, same fix as
-        // maybeAutoSnapshotBeforeSave, and for the same reason (otherwise the "before restore"
-        // safety snapshot would remember diagrams with no recoverable content).
-        if(Array.isArray(prev.diagrams)&&prev.diagrams.length){
-          for(const dg of prev.diagrams){
-            if(dg.xml)continue;
-            try{ const blob=await idbGet('diagblob:'+docId+':'+dg.id); if(blob)dg.xml=blob.xml||''; }catch(e){}
-          }
-        }
+      // Diagram xml filled in first (storedDocForRevision), or the "before restore" safety copy
+      // would remember diagrams with no recoverable content.
+      const prev=await storedDocForRevision(docId);
+      if(prev){
         await recordDocRevision(docId,prev,'Before restoring an older version');
         prevQa=Array.isArray(prev.qa)?prev.qa:[];
         prevDiagramsCurrent=Array.isArray(prev.diagrams)?prev.diagrams:[];
         prevDocStatusCurrent=typeof prev.docStatus==='string'?prev.docStatus:'';
         prevRemarksCurrent=Array.isArray(prev.remarks)?prev.remarks:[];
+        prevLinkCurrent=[typeof prev.docLinkedUrl==='string'?prev.docLinkedUrl:'',typeof prev.docLinkedUrlLabel==='string'?prev.docLinkedUrlLabel:''];
       }
     }catch(e){}
     // Same fallback logic as the active-doc branch above: restore from the revision when it has
@@ -13020,8 +13081,10 @@ async function restoreDocRevision(docId,ts){
       restoredDiagramsMeta.push(meta);
     }
     const restoredDocStatus='docStatus' in rev?(rev.docStatus||''):prevDocStatusCurrent;
-    const payload={rowFormat:ROW_FORMAT,nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,qa:restoredQa,diagrams:restoredDiagramsMeta,remarks:prevRemarksCurrent};
-    restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,prevRemarksCurrent);
+    const restoredRemarks=Array.isArray(rev.remarks)?rev.remarks:prevRemarksCurrent;
+    const restoredLink='docLinkedUrl' in rev?[rev.docLinkedUrl||'',rev.docLinkedUrlLabel||'']:prevLinkCurrent;
+    const payload={rowFormat:ROW_FORMAT,nodes:freshNodes,nextId:safeNextId(freshNodes),selectedId:freshNodes[0]?.id??null,multiSelectedIds:[],selectionAnchorId:freshNodes[0]?.id??null,collapsed:[],title:rev.title||'',author:rev.author||'',docStatus:restoredDocStatus,docLinkedUrl:restoredLink[0],docLinkedUrlLabel:restoredLink[1],qa:restoredQa,diagrams:restoredDiagramsMeta,remarks:restoredRemarks};
+    restoreOrphanMsg=describeOrphanedLinksAfterRestore(freshNodes,restoredDiagrams,restoredRemarks);
     try{ localStorage.setItem(docKey(docId),JSON.stringify(payload)); }catch(e){ showToast('Storage full — restore did not save. Free up space or export a backup.'); renderVersionHistoryList(); return; }
     touchDocIndex(docId,rev.title||'Untitled');
     // If it's open in the background (not on screen), refresh that cached copy too —
@@ -13056,25 +13119,9 @@ async function saveManualDocVersion(docId=historyModalDocId){
   if(!docId)return;
   if(docId===currentDocId){
     commitEdit();
-    await recordDocRevision(docId,{rowFormat:ROW_FORMAT,nodes,diagrams,qa:qaItems,remarks,title:el('header-title')?.value||'',author:el('doc-author')?.value||'',docStatus},'Manual checkpoint');
+    await recordDocRevision(docId,currentDocRevisionContent(),'Manual checkpoint');
   } else {
-    try{
-      const raw=localStorage.getItem(docKey(docId));
-      if(raw){
-        const prev=JSON.parse(raw);
-        // Same hydration gap as maybeAutoSnapshotBeforeSave/restoreDocRevision's background-doc
-        // branch — prev.diagrams here is metadata-only, so a manual checkpoint on a document
-        // that isn't the active one needs its diagram xml filled in from the overflow store
-        // before recording, or the checkpoint would remember diagrams with no content.
-        if(Array.isArray(prev.diagrams)&&prev.diagrams.length){
-          for(const dg of prev.diagrams){
-            if(dg.xml)continue;
-            try{ const blob=await idbGet('diagblob:'+docId+':'+dg.id); if(blob)dg.xml=blob.xml||''; }catch(e){}
-          }
-        }
-        await recordDocRevision(docId,prev,'Manual checkpoint');
-      }
-    }catch(e){}
+    try{ const prev=await storedDocForRevision(docId); if(prev)await recordDocRevision(docId,prev,'Manual checkpoint'); }catch(e){}
   }
   renderVersionHistoryList();
   showToast('Version saved');
@@ -16807,6 +16854,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
     const {updatedAt,...rawDocData}=cloud;
     const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
     localStorage.setItem(docKey(id),JSON.stringify(docData)); // safe: not touching live `nodes`
+    _foreignDocVersionPending=currentDocId; // the next save here keeps the other copy as a version first
     if(crossTabWarningDocId!==currentDocId){
       crossTabWarningDocId=currentDocId;
       const txt=el('cross-tab-banner-text'); if(txt)txt.textContent='This document was just updated on another device.';
@@ -16815,6 +16863,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
     return true;
   }
   const {updatedAt,...rawDocData}=cloud;
+  await keepLocalDocBeforeIncoming(id,rawDocData); // before hydrateCloudDocBlobs replaces the local diagram blobs
   const docData=await hydrateCloudDocBlobs(mod,db,ownerUid,id,rawDocData);
   localStorage.setItem(docKey(id),JSON.stringify(docData));
   touchDocIndex(id,docData.title||'Untitled');
@@ -16839,6 +16888,7 @@ async function applyIncomingDocData(mod,db,ownerUid,id,cloud,viaRealtime){
   }
   return true;
 }
+const TODOS_VERSIONS_MAX=5; // owner, 2026-10-20: the last 5 are enough, listed inline in the To-Dos ⋯ menu
 async function applyIncomingMetaData(metaKey,cloud){
   const idbKeyName=getIdbSyncMetaKeys()[metaKey];
   const localKeyName=idbKeyName?null:getSyncMetaKeys()[metaKey];
@@ -16846,6 +16896,39 @@ async function applyIncomingMetaData(metaKey,cloud){
   const localTs=_loadSyncLocalTs(); const localT=Number(localTs[metaKey])||0;
   if(!shouldApplyIncomingSyncCore(cloud.updatedAt,localT,_lastPushedTs['meta:'+metaKey]))return false;
   const cloudTs=Number(cloud.updatedAt)||0;
+  if(localKeyName&&cloud.value!==null&&cloud.value!==undefined){
+    // To-Dos version lists from two devices are joined, not replaced: each device keeps its own
+    // versions, and the joined list goes back up when it holds some the cloud copy lacks.
+    if(metaKey==='todosRevisions'&&Array.isArray(cloud.value)){
+      let local=[]; try{ const raw=localStorage.getItem(localKeyName); local=raw?JSON.parse(raw):[]; }catch(e){}
+      const merged=mergeVersionLists(Array.isArray(local)?local:[],cloud.value,TODOS_VERSIONS_MAX,Date.now());
+      try{ localStorage.setItem(localKeyName,JSON.stringify(merged)); }catch(e){ return false; }
+      localTs[metaKey]=cloudTs; _saveSyncLocalTs(localTs);
+      const cloudTimes=new Set(cloud.value.map(v=>v&&v.ts));
+      if(merged.some(v=>!cloudTimes.has(v.ts)))setTimeout(()=>markMetaChanged('todosRevisions'),0);
+      return true;
+    }
+    // The To-Dos list is about to be replaced by another device's: keep this device's list as a
+    // version first when it differs, so offline changes beaten by a newer edit elsewhere (the
+    // phone page included) can be brought back.
+    if(metaKey==='todos'&&Array.isArray(cloud.value)){
+      try{
+        const raw=localStorage.getItem(localKeyName); const local=raw?JSON.parse(raw):null;
+        if(Array.isArray(local)&&local.length&&JSON.stringify(local)!==JSON.stringify(cloud.value)){
+          const revKey=getSyncMetaKeys().todosRevisions;
+          let list=[]; try{ list=JSON.parse(localStorage.getItem(revKey)||'[]'); }catch(e){}
+          if(!Array.isArray(list))list=[];
+          const last=list[list.length-1];
+          if(!last||JSON.stringify(last.todos)!==raw){
+            const now=Date.now();
+            list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:'Before changes from another device',todos:local});
+            localStorage.setItem(revKey,JSON.stringify(trimVersions(list,TODOS_VERSIONS_MAX,now)));
+            markMetaChanged('todosRevisions');
+          }
+        }
+      }catch(e){}
+    }
+  }
   if(idbKeyName){
     if(cloud.value===null||cloud.value===undefined){ try{await idbDelete(idbKeyName)}catch(e){} }
     else{ try{await idbSet(idbKeyName,cloud.value)}catch(e){return false} }
@@ -19697,6 +19780,82 @@ function stripRowMarkChars(text, marks, ch) {
 }
 
 /* GENERATED:rowMarks:END */
+/* GENERATED:versionHistory:START — DO NOT EDIT BY HAND. Source of truth: src/utils/versionHistory.ts (tests: tests/unit/versionHistory.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Version history rules shared by documents and the To-Dos list (owner, 2026-10-29: "check that
+ * our versioning is absolutely robust").
+ *
+ * - `trimVersions` keeps a fixed number of versions but spreads them over time instead of keeping
+ *   only the newest: 10 versions 10 minutes apart used to cover under two hours of work. When the
+ *   list is over the limit, the version whose removal leaves the smallest hole *relative to its
+ *   age* goes first, so recent versions stay close together and older ones thin out (an hour
+ *   apart, then a day apart). The newest version is never dropped, and named versions (anything
+ *   but "Auto": a manual save, "Before restoring…", a safety copy) count three times as hard to
+ *   drop.
+ * - `isLargeRemoval` spots a save that takes away a lot at once (Clear all rows, deleting a big
+ *   branch, many thread entries), so the state before it is kept even inside the 10-minute gap.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `versionHistory` block.
+ */
+/** Index of the version to drop next, or -1 when there are fewer than two. */
+function pickVersionToDrop(list, now) {
+    if (list.length < 2)
+        return -1;
+    const ts = list.map((v) => Number(v.ts) || 0);
+    let best = -1;
+    let bestScore = Infinity;
+    for (let i = 0; i < list.length - 1; i++) {
+        // The hole left behind: from the version before it to the version after it. The oldest has
+        // nothing before it, so it counts as if the gap before it were 8 times its gap after: without
+        // that the list stops reaching back (five days of work kept only the last day; with it,
+        // 4 days, 2, 1, 8 hours…).
+        const after = ts[i + 1];
+        const before = i > 0 ? ts[i - 1] : ts[i] - (after - ts[i]) * 8;
+        const age = Math.max(60000, now - ts[i]);
+        // Plain number, not a module constant: index.html can call this before the block's own
+        // top-level `const`s have run.
+        const weight = (list[i].reason || 'Auto') === 'Auto' ? 1 : 3;
+        const score = ((after - before) / age) * weight;
+        if (score < bestScore) {
+            bestScore = score;
+            best = i;
+        }
+    }
+    return best;
+}
+/** Sorts oldest first and drops versions (see `pickVersionToDrop`) until at most `max` remain. */
+function trimVersions(list, max, now) {
+    const out = list.slice().sort((a, b) => (Number(a.ts) || 0) - (Number(b.ts) || 0));
+    while (out.length > Math.max(1, max))
+        out.splice(pickVersionToDrop(out, now), 1);
+    return out;
+}
+/** Joins two version lists (one device's and another's), keeping one copy per timestamp. */
+function mergeVersionLists(a, b, max, now) {
+    const byTs = new Map();
+    for (const v of [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]) {
+        if (v && Number.isFinite(Number(v.ts)) && !byTs.has(Number(v.ts)))
+            byTs.set(Number(v.ts), v);
+    }
+    return trimVersions([...byTs.values()], max, now);
+}
+function countRemoved(prev, next) {
+    const before = Array.isArray(prev) ? prev : [];
+    const after = new Set((Array.isArray(next) ? next : []).map((x) => x && x.id));
+    return { before: before.length, removed: before.filter((x) => x && !after.has(x.id)).length };
+}
+/** True when going from `prev` to `next` removes 10+ rows, half of a document of 4+ rows, or 5+
+ * thread entries. */
+function isLargeRemoval(prevNodes, nextNodes, prevRemarks, nextRemarks) {
+    const rows = countRemoved(prevNodes, nextNodes);
+    if (rows.removed >= 10)
+        return true;
+    if (rows.before >= 4 && rows.removed * 2 >= rows.before)
+        return true;
+    return countRemoved(prevRemarks, nextRemarks).removed >= 5;
+}
+
+/* GENERATED:versionHistory:END */
 // A node counts as a section if its text uses [Bracket] syntax (any depth, always has),
 // OR — when the setting is on — it's simply at depth 0, with no bracket text required.
 // The two are independent and additive, per the setting's own description: [Bracket]
@@ -28745,6 +28904,12 @@ function hideCrossTabWarning(){
 function reloadCurrentDocFromOtherTab(){
   if(!currentDocId){ hideCrossTabWarning(); return; }
   const id=currentDocId;
+  // What's on screen here is about to be dropped for the other copy: keep it as a version first
+  // (when it differs), so Reload latest can never lose this tab's own edits.
+  commitEdit();
+  if(_foreignDocVersionPending===id)_foreignDocVersionPending=null; // the other copy becomes the one on screen
+  let sameAsOther=false; try{ const o=JSON.parse(localStorage.getItem(docKey(id))||'null'); sameAsOther=!!o&&JSON.stringify([o.nodes,o.remarks||[]])===JSON.stringify([nodes,remarks]); }catch(e){}
+  if(!sameAsOther)recordDocRevision(id,currentDocRevisionContent(),'Before reloading the other version',{dedupe:true});
   const fresh=loadTabFromStorageObj(id);
   if(!fresh){ showToast('Could not reload — it may have been deleted or moved to Trash in the other tab'); hideCrossTabWarning(); renderSidebar(); return; }
   const idx=openTabs.findIndex(t=>t.docId===id);
@@ -28827,6 +28992,7 @@ function startSharedDocRealtimeSyncIfNeeded(docId){
       const {updatedAt,...rawDocData}=cloud;
       const docData=await hydrateCloudDocBlobs(mod,db,meta.ownerUid,docId,rawDocData);
       localStorage.setItem(docKey(docId),JSON.stringify(docData));
+      _foreignDocVersionPending=currentDocId; // the next save here keeps the other copy as a version first
       if(crossTabWarningDocId!==currentDocId){
         crossTabWarningDocId=currentDocId;
         const who=cloud.lastEditedByDisplayName||cloud.lastEditedByEmail||'someone else';
@@ -28860,6 +29026,7 @@ window.addEventListener('storage', e=>{
     if(openTab.docId===currentDocId){
       // The document on screen right now just changed underneath us. Warn rather than
       // silently reload — the person may have unsaved edits here worth keeping instead.
+      _foreignDocVersionPending=currentDocId; // the next save here keeps the other copy as a version first
       if(crossTabWarningDocId!==currentDocId){
         crossTabWarningDocId=currentDocId;
         const txt=el('cross-tab-banner-text'); if(txt)txt.textContent='This document changed in another tab.';
@@ -33338,16 +33505,17 @@ function todosHistorySummary(list) {
   // history modal, since that's tightly coupled to per-document/per-node concepts Todos doesn't
   // have.
   const TODOS_REVISION_KEY='sakura_todos_revisions_v1';
-  const TODOS_REVISION_MAX=5; // owner, 2026-10-20: the last 5 are enough, listed inline in the ⋯ menu
+  const TODOS_REVISION_MAX=TODOS_VERSIONS_MAX;
   const TODOS_REVISION_MIN_GAP_MS=10*60*1000; // 10 minutes, same cadence as document revisions
   function loadTodosRevisions(){ try{ const raw=localStorage.getItem(TODOS_REVISION_KEY); const arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[] }catch(e){ return [] } }
   function saveTodosRevisions(list){ try{ localStorage.setItem(TODOS_REVISION_KEY,JSON.stringify(list)) }catch(e){} if(typeof markMetaChanged==='function')markMetaChanged('todosRevisions'); }
   function recordTodosRevision(snapshotTodos,reason){
     if(!Array.isArray(snapshotTodos))return;
     const list=loadTodosRevisions();
-    list.push({ts:Date.now(),reason:reason||'Auto',todos:JSON.parse(JSON.stringify(snapshotTodos))});
-    while(list.length>TODOS_REVISION_MAX)list.shift();
-    saveTodosRevisions(list);
+    const now=Date.now(); const last=list[list.length-1];
+    list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',todos:JSON.parse(JSON.stringify(snapshotTodos))});
+    // Spread over time like document versions (src/utils/versionHistory.ts), not just the newest 5.
+    saveTodosRevisions(trimVersions(list,TODOS_REVISION_MAX,now));
   }
   function maybeAutoSnapshotTodos(){
     try{
