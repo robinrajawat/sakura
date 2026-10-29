@@ -220,15 +220,15 @@ test.describe('Settings', () => {
     await expect(page.locator('#settings-rail .settings-rail-btn span')).toHaveText(['General', 'Documents', 'Data & backup', 'AI', 'Account', 'About']);
     await expect(page.locator('#settings-rail-account-btn')).toBeHidden();
     await expect(page.locator('#settings-rail-admin-btn, #profile-visibility-segmented, #settings-section-account')).toHaveCount(0);
-    // General = Appearance, To-Dos, Keyboard Shortcuts; Documents = New documents, PDF, Trash.
+    // General = Appearance, To-Dos, Keyboard shortcuts; Documents = New documents, PDF, Trash.
     // @ts-expect-error -- bare global from index.html
     await page.evaluate(() => { document.getElementById('settings-toggle')!.click(); applySettingsCategory('general'); });
     const titles = () => page.locator('#settings-content .settings-section:visible > .settings-section-title').allTextContents();
-    expect(await titles()).toEqual(['Appearance', 'To-Dos', 'Keyboard Shortcuts']);
+    expect(await titles()).toEqual(['Appearance', 'To-Dos', 'Keyboard shortcuts']);
     await page.locator('#settings-rail .settings-rail-btn[data-cat="documents"]').click();
     expect(await titles()).toEqual(['New documents', 'PDF', 'Trash']);
     await page.locator('#settings-rail .settings-rail-btn[data-cat="about"]').click();
-    expect(await titles()).toEqual(expect.arrayContaining(['About', 'Privacy & data', 'Support', 'Feedback & Crash Reports']));
+    expect(await titles()).toEqual(expect.arrayContaining(['About', 'Privacy & data', 'Support', 'Feedback & crash reports']));
     // AI Capabilities now lives in the AI category, in its own always-visible section.
     await expect(page.locator('#settings-section-ai-capabilities[data-cat="ai"] #feat-ai-toggle')).toHaveCount(1);
   });

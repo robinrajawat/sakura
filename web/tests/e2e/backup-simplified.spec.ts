@@ -166,7 +166,7 @@ test.describe('Simplified data backup (manual when signed out)', () => {
     await expect(page.locator('#sb-undo-restore-btn')).toBeVisible();
 
     const titles = await page.locator('#settings-panel .settings-section[data-cat="data"] .settings-section-title').allTextContents();
-    expect(titles).toContain('Secure Storage');
+    expect(titles).toContain('Secure storage');
     expect(titles).not.toContain('Cloud Backup');
 
     // Nothing from the removed features is left in the panel's text or DOM.

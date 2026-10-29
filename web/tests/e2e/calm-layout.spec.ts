@@ -148,3 +148,25 @@ test('opening Documents reveals the open document, unfolding only its folders', 
   // @ts-expect-error
   expect(await page.evaluate(() => sidebarOpen)).toBe(false);
 });
+
+// Settings, grouped (owner 2026-10-29: fewer boxes, but a standard look): one card per group under a
+// sentence-case heading, no rule under the heading, and the actions look like buttons.
+test('Settings: sentence-case headings, one card per group, real buttons', async ({ page }) => {
+  await page.locator('#rail-settings-btn').click();
+  await page.locator('#settings-panel .settings-rail-btn[data-cat="data"]').click();
+  const s = await page.evaluate(() => {
+    const title = document.querySelector('#settings-panel .settings-section[data-cat="data"] .settings-section-title')!;
+    const list = title.parentElement!.querySelector('.settings-list')!;
+    const btn = document.getElementById('sb-export-all-btn')!;
+    return {
+      transform: getComputedStyle(title).textTransform, rule: getComputedStyle(title).borderBottomStyle,
+      radius: getComputedStyle(list).borderTopLeftRadius, btnBorder: getComputedStyle(btn).borderTopColor,
+      width: Math.round(document.getElementById('settings-panel')!.getBoundingClientRect().width)
+    };
+  });
+  expect(s.transform).toBe('none');
+  expect(s.rule).toBe('none');
+  expect(s.radius).toBe('10px');
+  expect(s.btnBorder).not.toBe('rgba(0, 0, 0, 0)');
+  expect(s.width).toBeGreaterThan(700);
+});
