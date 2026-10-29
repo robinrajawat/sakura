@@ -2751,6 +2751,26 @@ html.calm-layout #notif-menu{padding:0 0 8px}
 html.calm-layout .notif-empty{text-align:left;padding:8px 16px}
 html.calm-layout .settings-rail-btn.active{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
 html.calm-layout .settings-section{border:none;background:none;padding:0}
+/* Settings, grouped (owner 2026-10-29: fewer boxes, but not flat): a wider panel so descriptions fit
+   on one line, sentence-case headings, each group in one soft card with hairlines between rows (as
+   macOS System Settings), and actions that look like buttons. Scoped to the Settings panel. */
+html.calm-layout .settings-panel{width:760px;max-width:calc(100vw - 52px)}
+html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px}
+html.calm-layout .settings-panel .settings-section{gap:8px}
+html.calm-layout .settings-panel .settings-section-title{font:600 var(--fs-md) 'Inter',sans-serif;letter-spacing:0;text-transform:none;color:var(--fg);border-bottom:none;padding:0}
+html.calm-layout .settings-panel .settings-list{border:1px solid color-mix(in srgb,var(--border) 70%,transparent);border-radius:10px;background:var(--bg);overflow:hidden}
+html.calm-layout .settings-panel .settings-list-row{padding:11px 14px}
+html.calm-layout .settings-panel .settings-list>.settings-field{padding:11px 14px 13px}
+html.calm-layout .settings-panel .settings-list>:is(.settings-list-row,.settings-field)+:is(.settings-list-row,.settings-field){border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
+html.calm-layout .settings-panel .settings-row-desc{font-size:var(--fs-sm)}
+/* Appearance is the one group of fields: the same card, a label on the left and its control on the right. */
+html.calm-layout .settings-panel .settings-section>.settings-grid{display:block;border:1px solid color-mix(in srgb,var(--border) 70%,transparent);border-radius:10px;background:var(--bg)}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 14px}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field+.settings-field{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>label{font-size:var(--fs-md);color:var(--fg)}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>:not(label){flex:0 1 320px;min-width:0}
+html.calm-layout #settings-panel .settings-list-row>.btn,html.calm-layout #settings-panel .settings-list-row .data-io-btn{height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif}
+html.calm-layout #settings-panel .settings-list-row>.btn:hover:not(:disabled),html.calm-layout #settings-panel .settings-list-row .data-io-btn:hover:not(:disabled){background:var(--hover)}
 html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle){padding-left:10px}
 html.calm-layout #editor-meta-row .open-items-btn{font-weight:400}
 /* The frame never scrolls (owner 2026-10-29: the rail's top icon was cut off): hidden helper
@@ -3558,7 +3578,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             </div>
           </div>
           <div class="settings-section" data-cat="general" id="keyboard-shortcuts-section">
-            <div class="settings-section-title">Keyboard Shortcuts</div>
+            <div class="settings-section-title">Keyboard shortcuts</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Customize shortcuts</span><span class="settings-row-desc" id="shortcuts-summary-desc">All shortcuts are at their defaults</span></div><button class="btn" id="shortcuts-open-modal-btn">Open…</button></div>
             </div>
@@ -3595,7 +3615,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             </div>
           </div>
           <div class="settings-section" data-cat="data">
-            <div class="settings-section-title">Secure Storage</div>
+            <div class="settings-section-title">Secure storage</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Encrypt keys at rest</span><span class="settings-row-desc">Locks your AI keys with a passphrase. It can't be recovered if forgotten.</span><span class="settings-row-desc" id="vault-status" style="margin-top:2px">Not set up — keys are stored as plain text.</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button id="vault-setup-btn" class="btn data-io-btn">Set up…</button><button id="vault-unlock-btn" class="btn data-io-btn backup-btn" style="display:none">Unlock…</button><button id="vault-lock-btn" class="btn data-io-btn" style="display:none">Lock now</button><button id="vault-disable-btn" class="btn data-io-btn" style="display:none">Turn off…</button></div></div>
             </div>
@@ -3607,7 +3627,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
               <span style="font-weight:600">Sakura</span>
             </div>
             <div class="muted-help" style="margin-top:0">A knowledge-management workspace for structured documents and everyday personal productivity — To-Dos in the Hub.</div>
-            <div class="muted-help">Single-file, no build step, works offline once loaded, no account required — sign in (Google or email) if you want your documents to follow you across devices, and use optional AI features (rewrite, expand, outline generation, diagram generation, action-item extraction, tagging, and more) with a provider of your choice.</div>
+            <div class="muted-help">Single-file, no build step, works offline once loaded, no account required — sign in (Google or email) if you want your documents to follow you across devices, and use optional AI features (rewrite and outline generation) with a provider of your choice.</div>
             <div class="muted-help">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">License</a></div>
             <div class="muted-help">Diagram editing embeds draw.io/diagrams.net. <a href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">Full attribution →</a></div>
           </div>
@@ -3628,7 +3648,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             </button>
           </div>
           <div class="settings-section" data-cat="about">
-            <div class="settings-section-title">Feedback &amp; Crash Reports</div>
+            <div class="settings-section-title">Feedback &amp; crash reports</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Automatic crash reports</span><span class="settings-row-desc">Sends a short error report if something crashes. Never includes your content.</span></div><button id="auto-error-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Automatic crash reports"></button></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Send feedback</span><span class="settings-row-desc">Report a bug or suggest something.</span></div><button type="button" class="btn" id="open-feedback-modal-btn">Send Feedback…</button></div>
@@ -3639,7 +3659,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Feedback Inbox</span><span class="settings-row-desc">Review bug reports and feedback sent in by users.</span></div><button type="button" class="btn" id="account-feedback-inbox-btn">Open…</button></div>
             </div>
-            <div class="settings-section-title" style="margin-top:4px">AI Providers</div>
+            <div class="settings-section-title" style="margin-top:4px">AI providers</div>
             <div class="settings-row-desc" style="margin:-4px 0 0">Hosted-AI provider fallback chain (docs/ai-hosted-vault-design.md). Tried in order; keys are encrypted at rest and never shown again after saving.</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Daily AI quota</span><span class="settings-row-desc">Requests per signed-in user per UTC day against hosted AI, across all providers combined.</span></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><input id="ai-vault-quota-input" type="number" class="meta-input" min="1" step="1" style="width:64px" /><button type="button" class="btn" id="ai-vault-quota-save-btn">Save</button></div></div>
@@ -3674,7 +3694,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             </div>
           </div>
           <div class="settings-section" data-cat="ai" id="settings-section-ai-capabilities">
-            <div class="settings-section-title">AI Capabilities</div>
+            <div class="settings-section-title">AI capabilities</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI Capabilities</span><span class="settings-row-desc">Off hides every AI button, menu item and setting.</span></div><button id="feat-ai-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable AI Capabilities"></button></div>
             </div>
@@ -3716,7 +3736,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
                   <div class="select-wrap"><select class="select" id="ai-provider-select" style="width:172px"></select><span class="select-arrow">▾</span></div>
                 </div>
                 <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px" id="ai-provider-help-byok">
-                  <span class="muted-help" style="margin-top:0">All seven built-in providers require their own API key — select one from the Provider dropdown above to see where to get it. GitHub Models requires a fine-grained personal access token with <code>models:read</code> scope. This is a fixed list — Sakura doesn't support adding another API endpoint, so a Content-Security-Policy can restrict outbound requests to these known providers rather than staying open to anywhere. Would rather skip finding a key entirely? Switch to "Sakura Hosted AI" above instead — just sign in.</span>
+                  <span class="muted-help" style="margin-top:0">Each provider needs its own API key; where to get one shows under the key field (GitHub Models: a fine-grained token with <code>models:read</code>). Rather not get a key? Switch to Sakura Hosted AI above and sign in.</span>
                 </div>
                 <div class="settings-list-row">
                   <span class="settings-switch-text">Model</span>

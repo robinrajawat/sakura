@@ -118,6 +118,26 @@ html.calm-layout #notif-menu{padding:0 0 8px}
 html.calm-layout .notif-empty{text-align:left;padding:8px 16px}
 html.calm-layout .settings-rail-btn.active{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
 html.calm-layout .settings-section{border:none;background:none;padding:0}
+/* Settings, grouped (owner 2026-10-29: fewer boxes, but not flat): a wider panel so descriptions fit
+   on one line, sentence-case headings, each group in one soft card with hairlines between rows (as
+   macOS System Settings), and actions that look like buttons. Scoped to the Settings panel. */
+html.calm-layout .settings-panel{width:760px;max-width:calc(100vw - 52px)}
+html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px}
+html.calm-layout .settings-panel .settings-section{gap:8px}
+html.calm-layout .settings-panel .settings-section-title{font:600 var(--fs-md) 'Inter',sans-serif;letter-spacing:0;text-transform:none;color:var(--fg);border-bottom:none;padding:0}
+html.calm-layout .settings-panel .settings-list{border:1px solid color-mix(in srgb,var(--border) 70%,transparent);border-radius:10px;background:var(--bg);overflow:hidden}
+html.calm-layout .settings-panel .settings-list-row{padding:11px 14px}
+html.calm-layout .settings-panel .settings-list>.settings-field{padding:11px 14px 13px}
+html.calm-layout .settings-panel .settings-list>:is(.settings-list-row,.settings-field)+:is(.settings-list-row,.settings-field){border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
+html.calm-layout .settings-panel .settings-row-desc{font-size:var(--fs-sm)}
+/* Appearance is the one group of fields: the same card, a label on the left and its control on the right. */
+html.calm-layout .settings-panel .settings-section>.settings-grid{display:block;border:1px solid color-mix(in srgb,var(--border) 70%,transparent);border-radius:10px;background:var(--bg)}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 14px}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field+.settings-field{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>label{font-size:var(--fs-md);color:var(--fg)}
+html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>:not(label){flex:0 1 320px;min-width:0}
+html.calm-layout #settings-panel .settings-list-row>.btn,html.calm-layout #settings-panel .settings-list-row .data-io-btn{height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif}
+html.calm-layout #settings-panel .settings-list-row>.btn:hover:not(:disabled),html.calm-layout #settings-panel .settings-list-row .data-io-btn:hover:not(:disabled){background:var(--hover)}
 html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle){padding-left:10px}
 html.calm-layout #editor-meta-row .open-items-btn{font-weight:400}
 /* The frame never scrolls (owner 2026-10-29: the rail's top icon was cut off): hidden helper
