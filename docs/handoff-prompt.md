@@ -172,19 +172,22 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Generate diagram removed everywhere (2026-10-29).** Owner asked. Gone: the right-click item (Insert ›) and its default quick-row slot, the "Review before generating" dialog (HTML, CSS, handlers), the generator code, and the eight `diagramGen*` modules with their codegen blocks, unit and smoke tests (~6,200 lines). Add diagram, paste/drop of draw.io files and existing diagrams are unchanged (`addDiagramFromXml` stays; saved diagrams' old `nodeMeta` is ignored). Saved quick rows that list `diagram-gen` skip it (`CTX_ACTION_META` filter). Tests now assert it's absent.
+
 - **Decisions in the open-items button (2026-10-29).** Owner agreed. One button under the title: open-item icons + counts, then a grey decisions count (only when there are some). Its list: "Needs attention" head (copy, Filter outline), Follow-ups, Open questions, then "Decisions · N" (all of them; click jumps to the entry). With only decisions there's no head and the list starts at "Decisions". `openDecisionsMenu` and `.decisions-btn`/`.decisions-menu` are gone; decisions are built in `openItemsMenuItems()`.
 
 - **CI once per PR; docs-only PRs skip the checks (2026-10-29).** Owner asks. `ci.yml` runs on `pull_request` and pushes to `main` (was every branch push too, so each PR ran twice). A `changes` job runs `.github/scripts/docs-only.sh`; when every changed file is under `docs/` or ends in `.md`, `verify-web`/`verify-worker` are skipped by their job `if:`, which GitHub reports as passed, so required checks don't block. Manual runs, unknown bases and mixed changes run everything. A newer push to a PR cancels its older run. Handoff: local checks are skipped for docs-only changes too.
 
-- **One sidebar; shorter "/" list (2026-10-29).** Owner asks. Side panels (Documents, To-Dos, Notifications, Settings, Help) are flat (`--tb-bg`, no shadow, border-right) with one 48px header and a plain bold 14.5px title. To-Dos: no Expand/✕ (rail icon or Esc closes), width = `--todos-w` (drag the right edge, `sakura_dock_panel_width_v1`, 280–640), the page moves over. Notifications open full height beside the rail. Settings: grey selected rail item, no box around sections. Explorer rows: name only (no date column, no hover buttons); right-click has the actions (Trash: Empty Trash, Shared: Refresh), double-click/F2 renames, tooltip says when it was edited. Rail Documents icon = "files". New document focuses its title. Back/forward buttons removed (owner chose shortcuts only: Ctrl/Cmd+[ ] and mouse back/forward). "/" list: 9 items under two small headings, "Text" (Heading 1–3, Checkbox) and "Insert" (Note, Table, Image, Diagram, Thread); Body text, Date/time, Tags…, characters and row status marks show once you type (`insertMenuItems(all)`); Generate diagram left the list. Subline is one plain style (status word without a pill, coloured only for Approved/Rejected-type colours; author/link/counts same 13px grey; even dots, one before the open items). Wide tables (when not editing) and long code lines in notes scroll inside their box, so nothing crosses the page margins. Top line: back/forward gone and only the folders show (the title sits right below, so the name read as a duplicate; nothing at top level); the document menu (Version history, Sort, Clear all) is right-click on the title when you're not typing in it. Opening Search keeps its slot on the rail (`#appbar-qa-slot` fixed 36px, shown pressed), so To-Dos no longer slides up under the pointer. Share is the one button on the top line: the History button is hidden (Version history via the title's or the explorer row's right-click; the window has Save a version now). The frame can't scroll (`overflow:clip` on html/body): hidden helper buttons below the window had let it shift up and cut off the rail's top icon.
-
 ### In progress / not built
 
 - Queued next (owner 2026-10-29, finish one before starting the next):
-  2. Remove Generate diagram everywhere (owner asked).
   3. Remove the leftover hidden toolbar code (`#quick-bar` hidden buttons, Insert ▾/AI ▾; tests still call
      `dispatchEvent` on `#qb-insert`/`#qb-ai`, so rewrite them against `insertMenuItems()` etc.).
-  4. Owner to decide: remove the bottom-right focus-mode (zen) expand icon?
+  4. Remove the bottom-right focus-mode (zen) icon `#editor-zen-toggle` (owner: yes, 2026-10-29). Proposed: keep
+     focus mode on Ctrl/Cmd+Shift+E and Esc; owner hasn't confirmed whether to drop the mode entirely.
+  5. Proposed, awaiting owner: the top line always shows a path starting at "Documents" (a top-level document
+     shows "Documents"), and the title's right-click gets "Show in Documents" (`revealDocInSidebar` exists,
+     nothing calls it from the page). Owner asked how to find a document in the folders; Share stays top-right.
   - Optional, not decided: a faint "Type to find more…" line at the bottom of the "/" list.
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
