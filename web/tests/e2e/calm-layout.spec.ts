@@ -103,7 +103,8 @@ test('the File Explorer header has two buttons; its right-click has Import', asy
 });
 
 // The title sits right below the top line, so the top line names only the folders (owner 2026-10-29).
-test('the top line shows the folders, not the document name; a folder there opens the explorer', async ({ page }) => {
+// Clicking one takes you to the document in the explorer, not just to the folder.
+test('the top line shows the folders, not the document name; a folder there shows the document in the explorer', async ({ page }) => {
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     setSidebarOpen(false); ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); renderDocPath();
@@ -114,9 +115,13 @@ test('the top line shows the folders, not the document name; a folder there open
     const fs = loadFolders(); fs.push({ id: 'f1', name: 'Work', parentId: null }); saveFolders(fs); const m = loadDocFolderMap(); m[currentDocId] = 'f1'; saveDocFolderMap(m); renderDocPath();
   });
   await expect(page.locator('#doc-path-crumbs')).toHaveText('Work');
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => { const fs = loadFolders(); fs.find((f: any) => f.id === 'f1').open = false; saveFolders(fs); renderSidebar(); });
   await page.locator('.doc-path-folder').click();
   // @ts-expect-error -- bare globals from index.html
   expect(await page.evaluate(() => sidebarOpen)).toBe(true);
+  await expect(page.locator('.sdoc-item.active')).toBeInViewport();
+  await expect(page.locator('.sdoc-item.active')).toContainText('Plan');
 });
 
 // Opening Documents points at the open document (owner 2026-10-29): only the folders it sits in

@@ -172,11 +172,9 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **The folder path takes you to the document (2026-10-29).** Owner's idea. Clicking a folder on the top line now calls `revealDocInSidebar(currentDocId)` (unfold its folder chain, scroll, flash once) instead of `revealFolderInSidebar` (still used by Search). No trailing "›" after the last folder: the title is on its own line, so it would read as cut off. The rail's Documents button does the same reveal without the flash.
+
 - **"/" list says there's more (2026-10-29).** Owner asked. A row's short "/" list ends with a faint "Type to find more…" (`{hint:'…'}` items in the shared menu, `src/ui/contextMenu.ts`, `.sb-context-hint` in sidebar.css); it goes once you type. The non-row lists (title, notes, threads) show everything already, so no hint.
-
-- **Opening Documents reveals the open document (2026-10-29).** Owner's idea (instead of a "Documents ›" crumb or a "Show in Documents" item). The rail's Documents icon, `#sidebar-toggle` and `#sidebar-reopen-btn` go through `toggleDocumentsPanel`/`openDocumentsPanel`: `revealDocInSidebar(currentDocId,{flash:false})` unfolds only that document's folder chain and scrolls to its row (already `.active`). A search in the panel is left alone (then it just opens). The top line's folder crumbs still use `revealFolderInSidebar`. Share stays top-right (owner asked; convention).
-
-- **Hidden toolbar buttons removed (2026-10-29).** Queued item 3. Gone from the page: Undo/Redo, Outdent/Indent, the Heading palette, Insert ▾ and AI ▾, Collapse all, Zoom and the hidden Version history button (`#doc-history-chip`, `openHistoryMenu`), with their handlers, `updateQuickBarStates`/`updateFoldToggleButton`, CSS and three onboarding-tour steps. `#quick-bar` now holds only `.ag-right` (presence + Share; `#ag-markers` still moves under the title). Actions stay on shortcuts, the "/" list (`insertMenuItems()`) and right-click; Generate outline on Ctrl/Cmd+Shift+O and the empty page. Tests open the Insert list with `openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), {id:'insert-menu'})` or use right-click.
 
 ### In progress / not built
 
