@@ -12,15 +12,45 @@ name: CI
 # typecheck/lint/unit tests only, no wrangler dev or deploy. The real deploy runs from a
 # separate workflow, deploy-worker.yml, triggered by a push to main that touches worker/ (not
 # by this workflow) — see that file for the Cloudflare credentials it needs.
+#
+# Runs once per PR (pull_request), plus on pushes to main; branch pushes alone don't run it.
+# When every changed file is under docs/ or ends in .md, the `changes` job says so and both verify
+# jobs are skipped. A job skipped by its `if:` reports as passed, so required checks don't block
+# docs-only PRs. Nothing in the build or tests reads a .md file.
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: {}
+
+# A newer push to the same PR cancels the older run; runs on main always finish.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.diff.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Docs-only change?
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: sh .github/scripts/docs-only.sh >> "$GITHUB_OUTPUT"
+
   verify-web:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +98,8 @@ jobs:
           retention-days: 14
 
   verify-worker:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
