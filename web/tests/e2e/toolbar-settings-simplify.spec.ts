@@ -60,16 +60,16 @@ const rootTexts = (page: import('@playwright/test').Page) =>
   page.evaluate(() => nodes.filter((n: { depth: number }) => n.depth === 0).map((n: { text: string }) => n.text));
 
 test.describe('Fixed main toolbar', () => {
-  // The one layout (owner 2026-10-28) shows no toolbar row: the top line keeps only History and Share.
+  // The one layout (owner 2026-10-28) shows no toolbar row: the top line keeps only Share (History left it 2026-10-29).
   // Insert ▾ and AI ▾ still back the same actions (right-click, "/", the selection bar).
-  test('the top line shows only History and Share; Insert ▾ and AI ▾ keep their items', async ({ page }) => {
+  test('the top line shows only Share; Insert ▾ and AI ▾ keep their items', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
     const shown = await page.evaluate(() =>
       Array.from(document.querySelectorAll('#quick-bar .quick-btn'))
         .filter((b) => (b as HTMLElement).offsetParent !== null)
         .map((b) => b.id || (b as HTMLElement).dataset.style));
-    expect(shown).toEqual(['doc-history-chip', 'doc-share-chip']);
+    expect(shown).toEqual(['doc-share-chip']);
     await page.locator('#qb-insert').dispatchEvent('click');
     // Two groups under small headings (owner 2026-10-29); row status marks only when you type.
     await expect(page.locator('#insert-menu .sb-context-heading')).toHaveText(['Text', 'Insert']);
@@ -335,9 +335,9 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
-    // The top line (History, Share) and the rail show whatever the old hidden lists said.
+    // The top line (Share) and the rail show whatever the old hidden lists said.
     await expect(page.locator('#doc-share-chip')).toBeVisible();
-    await expect(page.locator('#doc-history-chip')).toBeVisible();
+    await expect(page.locator('#doc-history-chip')).toBeHidden();
     await expect(page.locator('#editor-zen-toggle')).toBeVisible();
     await expect(page.locator('#doc-tab-strip-row')).toBeVisible();
     for (const id of ['#rail-docs-btn', '#dock-panel-appbar-toggle', '#rail-settings-btn']) await expect(page.locator(id), id).toBeVisible();
