@@ -39,14 +39,19 @@ test('Ctrl/Cmd+K on selected words in a row opens the Link box; Quick Assist sta
   await expect.poll(() => row(page)).toEqual({ text: 'Read the guide', marks: [{ s: 9, e: 14, k: 'a', v: URL }] });
 });
 
-test('Ctrl/Cmd+K with only a caret says to select words', async ({ page }) => {
+// Ctrl/Cmd+K is Search unless words are selected (owner 2026-10-29: the standard in Slack, Linear, GitHub).
+test('Ctrl/Cmd+K with only a caret, or outside text, opens Search', async ({ page }) => {
   await open(page);
   await page.locator('.node-row[data-id="1"] .node-label').click();
   await page.keyboard.press('End');
   await page.keyboard.press(`${mod}+k`);
-  await expect(page.locator('#toast')).toContainText('Select words to link');
+  await expect(page.locator('#qa-input')).toBeFocused();
   await expect(page.locator('#sfmt-url')).toHaveCount(0);
-  expect(await qaOpen(page)).toBe(false);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => qaOpen(page)).toBe(false);
+  await page.locator('#editor-pane').click({ position: { x: 600, y: 500 } });
+  await page.keyboard.press(`${mod}+k`);
+  await expect.poll(() => qaOpen(page)).toBe(true);
 });
 
 test('Ctrl/Cmd+/ opens Quick Assist, also while editing a row', async ({ page }) => {

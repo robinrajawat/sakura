@@ -63,9 +63,10 @@ async function open(page: Page) {
   return errors;
 }
 
-// The toolbar open-items summary's parts ("1 follow-up", "1 question").
+// The open-items summary's parts, by their tooltips ("1 follow-up", "1 question"); the chips show only
+// icons and numbers (owner, 2026-10-29).
 const sumButtons = (page: Page) => page.evaluate(() =>
-  [...document.querySelectorAll('#marker-summary .oi-part')].map(b => (b as HTMLElement).textContent));
+  [...document.querySelectorAll('#marker-summary .open-items-btn .oi-part')].map(b => (b as HTMLElement).dataset.tip || b.textContent));
 // Opens the summary's list and flips "Show only open items in the outline" (the one filter).
 async function clickOpenItemsSwitch(page: Page) {
   await page.locator('#marker-summary .open-items-btn').click();

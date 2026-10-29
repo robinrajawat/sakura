@@ -255,7 +255,7 @@ async function openSavedDoc(page: Page, docId: string, doc: Record<string, unkno
 }
 const row = (id: number, depth: number, text: string) => ({ id, depth, text, parentId: null, isCheckbox: false, checked: false, note: '', tags: [], styles: {} });
 
-test('an old document converts once: **bold**/__italic__ to formatting, a [Label] row to the Section format, old text kept in history', async ({ page }) => {
+test('an old document converts once: **bold**/__italic__ to formatting, a [Label] row to Heading 3, old text kept in history', async ({ page }) => {
   await openSavedDoc(page, 'legacydoc', {
     nodes: [row(1, 0, '[Release 2.4] Plan'), row(2, 1, 'Ship **today** or __never__'), row(3, 1, '[Intro]'), row(4, 1, 'plain [x] text')],
     nextId: 5, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Old', author: ''
@@ -266,8 +266,8 @@ test('an old document converts once: **bold**/__italic__ to formatting, a [Label
     { text: 'Intro', marks: [] },
     { text: 'plain [x] text', marks: [] }
   ]);
-  expect(await page.evaluate(() => (window as any).eval('nodes[2].styles.heading'))).toBe(7);
-  await expect(page.locator('.node-row[data-id="3"]')).toHaveClass(/is-section/);
+  expect(await page.evaluate(() => (window as any).eval('nodes[2].styles.heading'))).toBe(3);
+  await expect(page.locator('.node-row[data-id="3"] .node-label')).toHaveClass(/style-heading-3/);
   await expect.poll(() => page.evaluate(() => (window as any).eval(`(async () => (await loadDocRevisions('legacydoc')).map(r => r.reason + ':' + r.nodes[1].text))()`))).toContain('Before rich text rows:Ship **today** or __never__');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('sakura_doc_v1_legacydoc') || '{}'));
   expect(stored.rowFormat).toBe(4);
@@ -291,16 +291,15 @@ test('in a converted document, typed ** and [ ] stay plain text', async ({ page 
   expect((await rows(page))[0]).toEqual({ text: '2 **x** 3 __y__', marks: [] });
 });
 
-test('Headings menu → Section makes a row a section', async ({ page }) => {
-  await seed(page, [{ depth: 1, text: 'Scope' }]);
-  const id = await rowId(page, 'Scope');
-  await page.locator(`.node-row[data-id="${id}"] .node-label`).click();
-  await page.keyboard.press('Escape');
-  await page.locator('#heading-toggle-btn').dispatchEvent('click');
-  await page.locator('#heading-palette .heading-option[data-level="7"]').dispatchEvent('click');
-  await expect(page.locator(`.node-row[data-id="${id}"]`)).toHaveClass(/is-section/);
-  const saved = await page.evaluate(() => (window as any).eval('JSON.parse(JSON.stringify(nodes)).map(normalizeNode)[0].styles.heading'));
-  expect(saved).toBe(7);
+// Three heading levels (owner 2026-10-29): saved Heading 4–6 and the old Section format read as Heading 3.
+test('saved Heading 4-6 and Section rows open as Heading 3', async ({ page }) => {
+  await openSavedDoc(page, 'oldheadings', {
+    rowFormat: 4,
+    nodes: [4, 5, 6, 7, 2].map((h, i) => ({ ...row(i + 1, 1, 'Row ' + h), styles: { heading: h } })),
+    nextId: 6, selectedId: null, multiSelectedIds: [], selectionAnchorId: null, collapsed: [], title: 'Old headings', author: ''
+  });
+  await expect.poll(() => page.evaluate(() => (window as any).eval('nodes.map(n => n.styles.heading)'))).toEqual([3, 3, 3, 3, 2]);
+  await expect(page.locator('.node-row[data-id="4"]')).not.toHaveClass(/is-section/);
 });
 
 test('pasted Markdown-style **bold** / __italic__ lines become formatting', async ({ page }) => {

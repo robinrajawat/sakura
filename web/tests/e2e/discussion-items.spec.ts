@@ -357,7 +357,7 @@ test('open-items list: a follow-up shows its thread\'s latest line; decisions ha
   await page.locator('#marker-summary .open-items-btn').click();
   await expect(menu).toHaveCount(0);
   const chip = page.locator('#marker-summary .decisions-btn');
-  await expect(chip).toHaveText('1 decision');
+  await expect(chip).toHaveText('1');
   await chip.click();
   const list = page.locator('.decisions-menu');
   await expect(list.locator('.sb-context-heading')).toHaveText('Decisions · 1');
