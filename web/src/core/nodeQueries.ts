@@ -129,18 +129,15 @@ export function buildVertFlags(scopedNodes: QueryableNode[], idx: number, depthO
   return new Array(Math.max(0, depth)).fill(true);
 }
 
-/** The Section format: heading level 7 in the Headings menu (owner, 2026-10-22: rows are rich
- * text; a typed `[Label]` no longer makes a section — old ones were converted to this format). */
-export const SECTION_HEADING_LEVEL = 7;
-
-/** Whether a node should render/export as a section header — the Section format, or (when the
- * `sectionMarkersDepthZero` preference is on) simply being a top-level node. */
+/** Whether a node should render/export as a section header: a top-level node while the
+ * `sectionMarkersDepthZero` preference is on. (The Section format, heading level 7, became
+ * Heading 3 in 2026-10-29 when headings went down to three levels.) */
 export function nodeIsSection(
   node: (QueryableNode & { styles?: { heading?: number | null } | null }) | null | undefined,
   sectionMarkersDepthZero: boolean
 ): boolean {
   if (!node) return false;
-  return (node.styles?.heading ?? 0) === SECTION_HEADING_LEVEL || (sectionMarkersDepthZero && (node.depth || 0) === 0);
+  return sectionMarkersDepthZero && (node.depth || 0) === 0;
 }
 
 /** Whether `id` is part of the current selection — the primary single selection, "select all"

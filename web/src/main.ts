@@ -35,7 +35,6 @@ export {
   hasLaterSiblingAtDepth,
   buildPrefix,
   buildVertFlags,
-  SECTION_HEADING_LEVEL,
   nodeIsSection,
   isIdSelected,
   getSelectionRangeIds,

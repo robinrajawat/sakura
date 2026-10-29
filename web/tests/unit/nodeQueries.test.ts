@@ -207,9 +207,7 @@ describe('buildPrefix / buildVertFlags', () => {
 });
 
 describe('nodeIsSection', () => {
-  it('the Section format (heading 7) is always a section; a depth-0 node only when the setting is on', () => {
-    const section = { ...n(100, 1, 'Intro'), styles: { heading: 7 } };
-    expect(nodeIsSection(section, false)).toBe(true);
+  it('a depth-0 node is a section only when the setting is on; headings never are', () => {
     expect(nodeIsSection({ ...n(101, 0, 'Heading'), styles: { heading: 1 } }, false)).toBe(false);
     expect(nodeIsSection(n(102, 0, 'not a section'), false)).toBe(false);
     expect(nodeIsSection(n(102, 0, 'not a section'), true)).toBe(true);

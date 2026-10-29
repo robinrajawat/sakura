@@ -73,7 +73,7 @@ test.describe('Fixed main toolbar', () => {
     await page.locator('#qb-insert').dispatchEvent('click');
     await expect(page.locator('#insert-menu .sb-context-heading')).toHaveCount(0);
     await expect(page.locator('#insert-menu > .sb-context-divider')).toHaveCount(4);
-    await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Note', 'Checkbox', 'Tags…', 'Date/time', 'Heading 1', 'Heading 2', 'Heading 3', 'Section', 'Body text', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
+    await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Note', 'Tags…', 'Date/time', 'Heading 1', 'Heading 2', 'Heading 3', 'Body text', 'Checkbox', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
     await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(3);
     await page.locator('#qb-ai').dispatchEvent('click');
     await expect(page.locator('#insert-menu')).toHaveCount(0);
