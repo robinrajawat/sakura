@@ -172,21 +172,17 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Opening Documents reveals the open document (2026-10-29).** Owner's idea (instead of a "Documents ›" crumb or a "Show in Documents" item). The rail's Documents icon, `#sidebar-toggle` and `#sidebar-reopen-btn` go through `toggleDocumentsPanel`/`openDocumentsPanel`: `revealDocInSidebar(currentDocId,{flash:false})` unfolds only that document's folder chain and scrolls to its row (already `.active`). A search in the panel is left alone (then it just opens). The top line's folder crumbs still use `revealFolderInSidebar`. Share stays top-right (owner asked; convention).
+
 - **Hidden toolbar buttons removed (2026-10-29).** Queued item 3. Gone from the page: Undo/Redo, Outdent/Indent, the Heading palette, Insert ▾ and AI ▾, Collapse all, Zoom and the hidden Version history button (`#doc-history-chip`, `openHistoryMenu`), with their handlers, `updateQuickBarStates`/`updateFoldToggleButton`, CSS and three onboarding-tour steps. `#quick-bar` now holds only `.ag-right` (presence + Share; `#ag-markers` still moves under the title). Actions stay on shortcuts, the "/" list (`insertMenuItems()`) and right-click; Generate outline on Ctrl/Cmd+Shift+O and the empty page. Tests open the Insert list with `openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), {id:'insert-menu'})` or use right-click.
 
 - **Generate diagram removed everywhere (2026-10-29).** Owner asked. Gone: the right-click item (Insert ›) and its default quick-row slot, the "Review before generating" dialog (HTML, CSS, handlers), the generator code, and the eight `diagramGen*` modules with their codegen blocks, unit and smoke tests (~6,200 lines). Add diagram, paste/drop of draw.io files and existing diagrams are unchanged (`addDiagramFromXml` stays; saved diagrams' old `nodeMeta` is ignored). Saved quick rows that list `diagram-gen` skip it (`CTX_ACTION_META` filter). Tests now assert it's absent.
 
-- **Decisions in the open-items button (2026-10-29).** Owner agreed. One button under the title: open-item icons + counts, then a grey decisions count (only when there are some). Its list: "Needs attention" head (copy, Filter outline), Follow-ups, Open questions, then "Decisions · N" (all of them; click jumps to the entry). With only decisions there's no head and the list starts at "Decisions". `openDecisionsMenu` and `.decisions-btn`/`.decisions-menu` are gone; decisions are built in `openItemsMenuItems()`.
-
 ### In progress / not built
 
-- Queued next (owner 2026-10-29, finish one before starting the next). Decided: the bottom-right focus-mode
+- Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
   button `#editor-zen-toggle` stays (owner: "not really adding noise"; it's how people find focus mode). Its
   removal is dropped unless the owner asks again.
-  1. Opening Documents (rail icon) reveals the open document: unfold only its folder chain, scroll to it, mark it
-     (owner's idea, 2026-10-29; `revealDocInSidebar` exists but isn't called on open, and flashes; flash only
-     when arriving from the top line's folder path). Replaces the earlier "Documents ›" crumb / "Show in
-     Documents" proposal. Share stays top-right.
   - Optional, not decided: a faint "Type to find more…" line at the bottom of the "/" list.
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
