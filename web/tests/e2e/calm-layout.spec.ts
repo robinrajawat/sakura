@@ -62,10 +62,9 @@ test('the rail: Documents and To-Dos share the slot beside it; Settings opens fr
   await expect(page.locator('#settings-panel')).toHaveClass(/open/);
 });
 
-test('the top line is always there; Import is in the File Explorer, Export under Share', async ({ page }) => {
+test('the top line is always there; Export is under Share', async ({ page }) => {
   await expect(page.locator('#doc-tab-strip-row')).toBeVisible();
   await expect(page.locator('#appbar-more-toggle')).toHaveCount(0);
-  await expect(page.locator('#sb-import-btn')).toHaveCount(1);
   await page.locator('#doc-share-chip').click();
   await expect(page.locator('#share-menu .sb-context-item[data-save="opml"]')).toBeVisible();
 });
@@ -91,4 +90,22 @@ test('no tabs: path on the top line, back/forward between documents, recent docu
   await expect(page.locator('#doc-nav-forward')).toBeEnabled();
   await page.locator('#qa-category-icon-btn').click();
   await expect(page.locator('.qa-item', { hasText: 'Second' }).first()).toBeVisible();
+});
+
+// Fewer Documents buttons (owner 2026-10-29): the header keeps New folder and New document; Import
+// and Collapse all folders are on the explorer's right-click; clicking the document name locates it.
+test('the File Explorer header has two buttons; its right-click has Import', async ({ page }) => {
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => { setSidebarOpen(true); ensureDocumentForEditing(); });
+  const ids = await page.locator('.sb-section-actions .sb-icon-btn').evaluateAll((els) => els.map((e) => e.id));
+  expect(ids).toEqual(['sb-new-folder-btn', 'sb-new-doc-btn']);
+  await page.locator('#sidebar').click({ button: 'right', position: { x: 60, y: 400 } });
+  const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
+  expect(labels.slice(0, 3)).toEqual(['New document', 'New folder', 'Import (.opml)…']);
+  await page.keyboard.press('Escape');
+  // @ts-expect-error -- bare globals from index.html
+  await page.evaluate(() => setSidebarOpen(false));
+  await page.locator('.doc-path-title').click();
+  // @ts-expect-error -- bare globals from index.html
+  expect(await page.evaluate(() => sidebarOpen)).toBe(true);
 });

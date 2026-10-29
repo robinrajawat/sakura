@@ -60,7 +60,7 @@ async function openExportMenu(page: import('@playwright/test').Page) {
 }
 
 test.describe('Export/Import trim (PDF under Share; OPML export and import)', () => {
-  test('Share holds Download PDF and Export (.opml); Import is in the File Explorer header', async ({ page }) => {
+  test('Share holds Download PDF and Export (.opml); Import is on the File Explorer right-click', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -74,7 +74,6 @@ test.describe('Export/Import trim (PDF under Share; OPML export and import)', ()
     await expect(page.locator('#share-menu .sb-context-submenu, #share-menu .sb-context-heading')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(page.locator('#appbar-more-toggle')).toHaveCount(0);
-    await expect(page.locator('#sb-import-btn')).toHaveCount(1);
     // The Import ▾ button opens the same items.
     await page.evaluate(() => document.getElementById('import-toggle')?.click());
     await expect(page.locator('#import-menu .sb-context-item')).toHaveText([/OPML/]);

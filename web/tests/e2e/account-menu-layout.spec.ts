@@ -37,10 +37,10 @@ const visibleItems = (page) =>
       .map((b) => b.id),
   );
 
-test('signed out: three items and support, no sign out or About', async ({ page }) => {
+// Settings lives on the rail's gear only (owner 2026-10-29), so the account menu doesn't repeat it.
+test('signed out: Help, Send feedback and support; no Settings, sign out or About', async ({ page }) => {
   await page.locator('#account-toggle').click();
   expect(await visibleItems(page)).toEqual([
-    'account-settings-btn',
     'account-help-btn',
     'account-feedback-btn',
     'account-support-btn',
@@ -52,8 +52,7 @@ test('signed out: three items and support, no sign out or About', async ({ page 
 test('signed in: sync and visibility share one line, sign out is last', async ({ page }) => {
   await showSignedIn(page);
   await page.locator('#account-toggle').click();
-  const items = await visibleItems(page);
-  expect(items[items.length - 1]).toBe('account-signout-btn');
+  expect(await visibleItems(page)).toEqual(['account-help-btn', 'account-feedback-btn', 'account-support-btn', 'account-signout-btn']);
   // Synced shows as a ring on the avatar, not as text, so the line doesn't change width.
   await expect(page.locator('#account-manage-btn')).toHaveClass(/sync-synced/);
   await expect(page.locator('#account-sync-status')).toBeHidden();
