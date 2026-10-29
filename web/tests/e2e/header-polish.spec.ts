@@ -92,7 +92,7 @@ test('open items and decisions are separated by a dot, not a rule', async ({ pag
     // @ts-expect-error -- bare globals from index.html
     documentDecisions = () => [{}]; updateMarkerSummary();
   });
-  await expect(page.locator('#marker-summary > .oi-sep')).toHaveText('\u00B7');
+  await expect(page.locator('#marker-summary .open-items-btn > .oi-sep')).toHaveText('\u00B7');
   await expect(page.locator('#marker-summary .oi-divider')).toHaveCount(0);
 });
 

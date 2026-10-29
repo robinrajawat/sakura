@@ -868,11 +868,10 @@ body.zen-mode #quick-bar{display:none}
 #doc-share-wrap .todo-dd-menu{left:auto;right:0}
 /* Open-items summary: words in the text colour, only each icon tinted (--mc), so it doesn't
    outshout the document. One button; its list opens below (.open-items-menu). */
-.open-items-btn,.decisions-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px;border:none;border-radius:8px;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums;white-space:nowrap}
-.open-items-btn:hover,.decisions-btn:hover,.open-items-btn.active{background:var(--hover);color:var(--fg)}
-.open-items-btn:hover,.decisions-btn:hover{background:var(--hover)}
+.open-items-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px;border:none;border-radius:8px;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer;font-variant-numeric:tabular-nums;white-space:nowrap}
+.open-items-btn:hover,.open-items-btn.active{background:var(--hover);color:var(--fg)}
 .open-items-btn.active{background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 45%,transparent)}
-.open-items-btn:focus-visible,.decisions-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.open-items-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .oi-part{display:inline-flex;align-items:center;gap:4px}
 .oi-part svg{color:var(--mc);flex:0 0 auto}
 .oi-sep{color:var(--hint)}
@@ -889,7 +888,7 @@ body.zen-mode #quick-bar{display:none}
 .oi-menu-icon{display:inline-flex}
 .oi-head{display:flex;flex-direction:column;gap:6px;padding:6px 8px 8px;margin-bottom:2px;border-bottom:1px solid var(--border)}
 .oi-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.decisions-menu .sb-context-heading{padding-top:6px}
+.open-items-menu > .sb-context-heading:first-child{padding-top:6px}
 .oi-head-title{font:600 12.5px 'Inter',sans-serif;color:var(--fg)}
 .oi-head-actions{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
 .oi-copy{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:none;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
@@ -2765,7 +2764,7 @@ html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb
    author is an input, so its dots sit on its neighbours); the open items follow after space alone. */
 html.calm-layout #editor-meta-row:has(#sb-author:not(.unset)) #doc-status-wrap:has(>#doc-status-chip:not(.unset))::after{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:8px;flex:0 0 auto}
 html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset))) #doc-link-wrap:has(>#doc-link-chip:not(.unset))::before{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-right:8px;flex:0 0 auto}
-html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){height:auto;padding:2px 4px;font-size:var(--fs-md)}
+html.calm-layout #editor-meta-row .open-items-btn{height:auto;padding:2px 4px;font-size:var(--fs-md)}
 html.calm-layout #editor-meta-row #marker-summary{gap:8px}
 html.calm-layout #editor-meta-row>#ag-markers .ag-buttons{padding:0;background:transparent;border:none}
 html.calm-layout #doc-status-wrap::after,html.calm-layout #doc-link-wrap::before{display:none}
@@ -2798,7 +2797,7 @@ html.calm-layout .notif-empty{text-align:left;padding:8px 16px}
 html.calm-layout .settings-rail-btn.active{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
 html.calm-layout .settings-section{border:none;background:none;padding:0}
 html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle){padding-left:10px}
-html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){font-weight:400}
+html.calm-layout #editor-meta-row .open-items-btn{font-weight:400}
 /* The frame never scrolls (owner 2026-10-29: the rail's top icon was cut off): hidden helper
    buttons sit just below the window, and scrollIntoView or a focus could scroll <body> to them.
    overflow:clip, unlike hidden, can't be scrolled by script either; the panes scroll inside. */
@@ -32652,13 +32651,14 @@ function updateMarkerSummary(){
   const segs=parts.length
     ? parts.map(a=>`<span class="oi-part" data-key="${a.key}" data-tip="${esc(a.label)}" style="--mc:${openItemKindColor(a.key)}">${openItemKindIcon(a.key)}<span>${a.n}</span></span>`).join('<span class="oi-sep" aria-hidden="true">·</span>')
     : `<span class="oi-part" data-key="done" style="--mc:${openItemKindColor('done')}">${openItemKindIcon('done')}<span>All settled</span></span>`;
-  const text=progressSummaryText(p);
-  // Decisions are a record, not open items (owner, 2026-10-15): their own chip, only when there are some.
-  // Icons and numbers only, words in the tooltip; decisions are settled, so grey (owner, 2026-10-29).
+  // One button (owner, 2026-10-29): what needs attention, then the decisions, which are a record
+  // (settled, so grey) and only show when there are some. Icons and numbers; words in the tooltip.
   const dLabel=dn+(dn===1?' decision':' decisions');
-  const dBtn=dn?`<button type="button" class="decisions-btn" aria-haspopup="menu" data-tip="${dLabel}: what was decided in threads. Click for the list." aria-label="${dLabel}"><span class="oi-part" data-key="decision" style="--mc:var(--muted)">${openItemKindIcon('decision')}<span>${dn}</span></span></button>`:'';
-  const oiBtn=(open||filtering)?`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list; right-click (or Shift+click) to show only open items." aria-label="${esc(text)}">${segs}</button>`:'';
-  const html=oiBtn+(oiBtn&&dBtn?'<span class="oi-sep" aria-hidden="true">\u00B7</span>':'')+dBtn;
+  const dSeg=dn?`<span class="oi-part" data-key="decision" data-tip="${dLabel}" style="--mc:var(--muted)">${openItemKindIcon('decision')}<span>${dn}</span></span>`:'';
+  const shown=open||filtering;
+  const text=[shown?progressSummaryText(p):'',dn?dLabel.charAt(0).toUpperCase()+dLabel.slice(1)+'.':''].filter(Boolean).join(' ');
+  const how=shown?' Click for the list; right-click (or Shift+click) to show only open items.':' Click for the list.';
+  const html=(shown||dn)?`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text+how)}" aria-label="${esc(text)}">${shown?segs:''}${shown&&dSeg?'<span class="oi-sep" aria-hidden="true">\u00B7</span>':''}${dSeg}</button>`:'';
   if(box.innerHTML!==html)box.innerHTML=html;
 }
 // Going to a row's status (an open item, F8, a follow-up's task): the row, with its thread open (the why).
@@ -32770,6 +32770,17 @@ function openItemsMenuItems(){
     sub:[f.parent?'in '+f.parent:'', f.latest?(f.latest.person?f.latest.person+': ':'')+f.latest.text:''].filter(Boolean).join(' \u00B7 '),
     since:f.since, go:()=>revealMarkerEntry(f.nodeId)})));
   addGroup('question','Open questions',questions.map(q=>({label:q.text, sub:[q.row,q.person].filter(Boolean).join(' \u00B7 '), since:q.since, go:()=>revealInlineObject('remark',q.remarkId)})));
+  // Then the decisions (owner, 2026-10-29): what was decided, on which row and by whom; all of them,
+  // since "show them all in the outline" filters open items only.
+  const decisions=documentDecisions();
+  if(decisions.length){
+    const rowText=id=>{ const n=nodes.find(x=>x.id===id); return n?(getNodePlainText(n).trim()||'Untitled row'):''; };
+    const dIcon=`<span class="oi-menu-icon" style="color:${openItemKindColor('decision')}">${openItemKindIcon('decision')}</span>`;
+    if(items.length)items.push({divider:true});
+    items.push({heading:'Decisions \u00B7 '+decisions.length});
+    decisions.forEach(r=>{ const t=stripHtmlToText(r.text||'').replace(/\s+/g,' ').trim(); const row=rowText(r.anchorNodeId);
+      items.push({label:t||row, sub:t?[row,r.person||''].filter(Boolean).join(' \u00B7 '):(r.person||''), icon:dIcon, onClick:()=>revealInlineObject('remark',r.id)}); });
+  }
   return items;
 }
 // "Copy as agenda" and the PDF's Open items page are snapshots, so they say when (owner, 2026-10-21):
@@ -32857,20 +32868,6 @@ function documentDecisions(){
   return (remarks||[]).filter(r=>r&&r.decision&&idx.has(r.anchorNodeId))
     .sort((a,b)=>(idx.get(a.anchorNodeId)-idx.get(b.anchorNodeId))||(a.createdAt||0)-(b.createdAt||0));
 }
-// The Decisions chip's list: what was decided, and on which row. Each jumps to its entry.
-function openDecisionsMenu(btn){
-  const list=documentDecisions(); if(!list.length)return;
-  const rowText=id=>{ const n=nodes.find(x=>x.id===id); return n?(getNodePlainText(n).trim()||'Untitled row'):''; };
-  const icon=`<span class="oi-menu-icon" style="color:${openItemKindColor('decision')}">${openItemKindIcon('decision')}</span>`;
-  const items=[{heading:'Decisions \u00B7 '+list.length}].concat(list.map(r=>{ const t=stripHtmlToText(r.text||'').replace(/\s+/g,' ').trim(); const row=rowText(r.anchorNodeId);
-    return {label:t||row, sub:t?[row,r.person||''].filter(Boolean).join(' \u00B7 '):(r.person||''), icon, onClick:()=>revealInlineObject('remark',r.id)}; }));
-  const rect=btn.getBoundingClientRect();
-  showSbContextMenu(rect.left,rect.bottom+6,items);
-  const menu=_sbContextEl; if(!menu)return;
-  menu.classList.add('open-items-menu','decisions-menu');
-  menu.style.left=Math.max(8,Math.min(rect.right-menu.offsetWidth,window.innerWidth-menu.offsetWidth-8))+'px';
-  _sbFitMenuHeight(menu);
-}
 function openOpenItemsMenu(btn){
   const p=documentProgress(nodes,qaItems,remarks);
   const r=btn.getBoundingClientRect();
@@ -32884,8 +32881,9 @@ function openOpenItemsMenu(btn){
   const sw=hasOpen||allOn?`<button type="button" class="oi-switch${allOn?' on':''}" role="switch" aria-checked="${allOn}" aria-label="Show only open items in the outline" data-tip="Show only open items in the outline"><span class="oi-switch-label">Filter outline</span><span class="oi-switch-track" aria-hidden="true"><span></span></span></button>`:'';
   // Copy sits before the switch (owner, 2026-10-20): every open item as a numbered agenda.
   const copy=hasOpen?`<button type="button" class="oi-copy" aria-label="Copy as agenda" data-tip="Copy as agenda">${THREAD_COPY_ICON}</button>`:'';
-  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Open items':'Nothing needs attention'}</span><span class="oi-head-actions">${copy}${sw}</span></div>`;
-  menu.insertBefore(head,menu.firstChild);
+  head.innerHTML=`<div class="oi-head-row"><span class="oi-head-title">${hasOpen?'Needs attention':'Nothing needs attention'}</span><span class="oi-head-actions">${copy}${sw}</span></div>`;
+  // With only decisions there is nothing to filter or copy: no head, the list starts at "Decisions".
+  if(hasOpen||allOn)menu.insertBefore(head,menu.firstChild);
   head.querySelector('.oi-copy')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); copyOpenItemsAgenda(); });
   head.querySelector('.oi-switch')?.addEventListener('click',e=>{ e.stopPropagation(); closeSbContextMenu(); applyOpenItemsFilter('openItems'); });
   // Right-align under the summary; showSbContextMenu keeps it on screen.
@@ -32897,13 +32895,10 @@ function openOpenItemsMenu(btn){
   let wasOpen=false;
   // The menu closes itself on any outside click (capture phase), so remember whether it was open
   // before this press: a second click on the summary closes it instead of reopening it.
-  // Which list was open: the open items or the decisions (each button closes only its own).
-  const openList=()=>!_sbContextEl||!_sbContextEl.classList.contains('open-items-menu')?'':_sbContextEl.classList.contains('decisions-menu')?'decisions':'open';
-  box.addEventListener('pointerdown',e=>{ const b=e.target.closest('.open-items-btn,.decisions-btn'); wasOpen=!!b&&openList()===(b.classList.contains('decisions-btn')?'decisions':'open'); });
+  box.addEventListener('pointerdown',e=>{ wasOpen=!!e.target.closest('.open-items-btn')&&!!_sbContextEl&&_sbContextEl.classList.contains('open-items-menu'); });
   box.addEventListener('click',e=>{
-    const btn=e.target.closest('.open-items-btn,.decisions-btn'); if(!btn)return;
+    const btn=e.target.closest('.open-items-btn'); if(!btn)return;
     if(wasOpen){ wasOpen=false; return; }
-    if(btn.classList.contains('decisions-btn')){ openDecisionsMenu(btn); return; }
     if(e.shiftKey){ quickToggleOpenItemsFilter(); return; }
     openOpenItemsMenu(btn);
   });
