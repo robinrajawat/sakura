@@ -172,22 +172,21 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Hidden toolbar buttons removed (2026-10-29).** Queued item 3. Gone from the page: Undo/Redo, Outdent/Indent, the Heading palette, Insert ▾ and AI ▾, Collapse all, Zoom and the hidden Version history button (`#doc-history-chip`, `openHistoryMenu`), with their handlers, `updateQuickBarStates`/`updateFoldToggleButton`, CSS and three onboarding-tour steps. `#quick-bar` now holds only `.ag-right` (presence + Share; `#ag-markers` still moves under the title). Actions stay on shortcuts, the "/" list (`insertMenuItems()`) and right-click; Generate outline on Ctrl/Cmd+Shift+O and the empty page. Tests open the Insert list with `openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), {id:'insert-menu'})` or use right-click.
+
 - **Generate diagram removed everywhere (2026-10-29).** Owner asked. Gone: the right-click item (Insert ›) and its default quick-row slot, the "Review before generating" dialog (HTML, CSS, handlers), the generator code, and the eight `diagramGen*` modules with their codegen blocks, unit and smoke tests (~6,200 lines). Add diagram, paste/drop of draw.io files and existing diagrams are unchanged (`addDiagramFromXml` stays; saved diagrams' old `nodeMeta` is ignored). Saved quick rows that list `diagram-gen` skip it (`CTX_ACTION_META` filter). Tests now assert it's absent.
 
 - **Decisions in the open-items button (2026-10-29).** Owner agreed. One button under the title: open-item icons + counts, then a grey decisions count (only when there are some). Its list: "Needs attention" head (copy, Filter outline), Follow-ups, Open questions, then "Decisions · N" (all of them; click jumps to the entry). With only decisions there's no head and the list starts at "Decisions". `openDecisionsMenu` and `.decisions-btn`/`.decisions-menu` are gone; decisions are built in `openItemsMenuItems()`.
 
-- **CI once per PR; docs-only PRs skip the checks (2026-10-29).** Owner asks. `ci.yml` runs on `pull_request` and pushes to `main` (was every branch push too, so each PR ran twice). A `changes` job runs `.github/scripts/docs-only.sh`; when every changed file is under `docs/` or ends in `.md`, `verify-web`/`verify-worker` are skipped by their job `if:`, which GitHub reports as passed, so required checks don't block. Manual runs, unknown bases and mixed changes run everything. A newer push to a PR cancels its older run. Handoff: local checks are skipped for docs-only changes too.
-
 ### In progress / not built
 
-- Queued next (owner 2026-10-29, finish one before starting the next):
-  3. Remove the leftover hidden toolbar code (`#quick-bar` hidden buttons, Insert ▾/AI ▾; tests still call
-     `dispatchEvent` on `#qb-insert`/`#qb-ai`, so rewrite them against `insertMenuItems()` etc.).
-  4. Remove the bottom-right focus-mode (zen) icon `#editor-zen-toggle` (owner: yes, 2026-10-29). Proposed: keep
-     focus mode on Ctrl/Cmd+Shift+E and Esc; owner hasn't confirmed whether to drop the mode entirely.
-  5. Proposed, awaiting owner: the top line always shows a path starting at "Documents" (a top-level document
-     shows "Documents"), and the title's right-click gets "Show in Documents" (`revealDocInSidebar` exists,
-     nothing calls it from the page). Owner asked how to find a document in the folders; Share stays top-right.
+- Queued next (owner 2026-10-29, finish one before starting the next). Decided: the bottom-right focus-mode
+  button `#editor-zen-toggle` stays (owner: "not really adding noise"; it's how people find focus mode). Its
+  removal is dropped unless the owner asks again.
+  1. Opening Documents (rail icon) reveals the open document: unfold only its folder chain, scroll to it, mark it
+     (owner's idea, 2026-10-29; `revealDocInSidebar` exists but isn't called on open, and flashes; flash only
+     when arriving from the top line's folder path). Replaces the earlier "Documents ›" crumb / "Show in
+     Documents" proposal. Share stays top-right.
   - Optional, not decided: a faint "Type to find more…" line at the bottom of the "/" list.
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
