@@ -345,26 +345,38 @@ test('the "/" Insert list works in the inline note; "and/or" stays a slash', asy
   await expect(note).not.toContainText('/arr');
 });
 
-test('open-items list: a follow-up shows its thread\'s latest line; decisions have their own chip', async ({ page }) => {
+test('open-items list: a follow-up shows its thread\'s latest line; decisions come last in the same list', async ({ page }) => {
   await seed(page, `remarks.push(
     { id: 'k1', anchorNodeId: 3, person: 'Karsten', date: '2026-10-14', text: 'Script fails on the EU file.', createdAt: 4, status: 'followup' },
     { id: 'd1', anchorNodeId: 2, person: 'Maria', date: '2026-10-14', text: 'Cut over on Saturday.', createdAt: 5, decision: true });`);
-  await page.locator('#marker-summary .open-items-btn').click();
+  // One button (owner, 2026-10-29): open items, then the decisions count.
+  const btn = page.locator('#marker-summary .open-items-btn');
+  await expect(btn).toHaveCount(1);
+  await expect(btn.locator('.oi-part[data-key="decision"]')).toHaveAttribute('data-tip', '1 decision');
+  await btn.click();
   const menu = page.locator('.open-items-menu');
+  await expect(menu.locator('.oi-head-title')).toHaveText('Needs attention');
   await expect(menu.locator('.sb-context-item', { hasText: 'Data load' }).locator('.sb-context-sub')).toHaveText('Karsten: Script fails on the EU file.');
-  // Decisions aren't open items (owner, 2026-10-15): not in this list, but their own toolbar chip.
-  await expect(menu).not.toContainText('Cut over on Saturday.');
-  await page.locator('#marker-summary .open-items-btn').click();
-  await expect(menu).toHaveCount(0);
-  const chip = page.locator('#marker-summary .decisions-btn');
-  await expect(chip).toHaveText('1');
-  await chip.click();
-  const list = page.locator('.decisions-menu');
-  await expect(list.locator('.sb-context-heading')).toHaveText('Decisions · 1');
-  const item = list.locator('.sb-context-item', { hasText: 'Cut over on Saturday.' });
+  const headings = await menu.locator('.sb-context-heading').allTextContents();
+  expect(headings[headings.length - 1]).toBe('Decisions · 1');
+  const item = menu.locator('.sb-context-item', { hasText: 'Cut over on Saturday.' });
   await expect(item.locator('.sb-context-sub')).toHaveText('Cutover · Maria');
   await item.click();
   await expect(page.locator('#inline-remark-text-d1')).toBeFocused();
+});
+
+test('with only decisions, the button shows them and the list starts at "Decisions"', async ({ page }) => {
+  await seed(page, `remarks.push(
+    { id: 'd1', anchorNodeId: 2, person: 'Maria', date: '2026-10-14', text: 'Cut over on Saturday.', createdAt: 5, decision: true });`);
+  const btn = page.locator('#marker-summary .open-items-btn');
+  await expect(btn).toHaveText('1');
+  await btn.click();
+  const menu = page.locator('.open-items-menu');
+  await expect(menu.locator('.oi-head')).toHaveCount(0);
+  expect(await menu.locator('.sb-context-heading').allTextContents()).toEqual(['Decisions · 1']);
+  // A second click closes it.
+  await btn.click();
+  await expect(menu).toHaveCount(0);
 });
 
 test('Backspace on an empty reply line closes it; with text it just deletes', async ({ page }) => {
