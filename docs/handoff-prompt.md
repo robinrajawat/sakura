@@ -117,6 +117,13 @@ failure mode if skipped.) CI (`.github/workflows/ci.yml`, `verify-web`
 job) runs the same checks plus an HTML-structure validation script
 (`web/scripts/validate_html_structure.py`) — safe to rely on CI for that
 last one rather than running it locally every time, but never skip the rest.
+Exception: when every changed file is under `docs/` or ends in `.md`, skip
+the local checks — nothing in the build or tests reads them. Decide from the
+changed-file list (`git diff --name-only origin/main...`), not from how small
+the change feels; one non-docs file means the full gauntlet. CI makes the
+same call (`.github/scripts/docs-only.sh`): docs-only PRs get skipped,
+passing verify jobs. CI runs once per PR plus on pushes to `main`; a branch
+push with no PR gets no CI.
 
 **CI flake:** `tests/unit/generateId.test.ts`'s collision test fails
 sporadically (~1/12 runs). If a CI job fails and the diff doesn't touch
@@ -165,11 +172,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **CI once per PR; docs-only PRs skip the checks (2026-10-29).** Owner asks. `ci.yml` runs on `pull_request` and pushes to `main` (was every branch push too, so each PR ran twice). A `changes` job runs `.github/scripts/docs-only.sh`; when every changed file is under `docs/` or ends in `.md`, `verify-web`/`verify-worker` are skipped by their job `if:`, which GitHub reports as passed, so required checks don't block. Manual runs, unknown bases and mixed changes run everything. A newer push to a PR cancels its older run. Handoff: local checks are skipped for docs-only changes too.
+
 - **One sidebar; shorter "/" list (2026-10-29).** Owner asks. Side panels (Documents, To-Dos, Notifications, Settings, Help) are flat (`--tb-bg`, no shadow, border-right) with one 48px header and a plain bold 14.5px title. To-Dos: no Expand/✕ (rail icon or Esc closes), width = `--todos-w` (drag the right edge, `sakura_dock_panel_width_v1`, 280–640), the page moves over. Notifications open full height beside the rail. Settings: grey selected rail item, no box around sections. Explorer rows: name only (no date column, no hover buttons); right-click has the actions (Trash: Empty Trash, Shared: Refresh), double-click/F2 renames, tooltip says when it was edited. Rail Documents icon = "files". New document focuses its title. Back/forward buttons removed (owner chose shortcuts only: Ctrl/Cmd+[ ] and mouse back/forward). "/" list: 9 items under two small headings, "Text" (Heading 1–3, Checkbox) and "Insert" (Note, Table, Image, Diagram, Thread); Body text, Date/time, Tags…, characters and row status marks show once you type (`insertMenuItems(all)`); Generate diagram left the list. Subline is one plain style (status word without a pill, coloured only for Approved/Rejected-type colours; author/link/counts same 13px grey; even dots, one before the open items). Wide tables (when not editing) and long code lines in notes scroll inside their box, so nothing crosses the page margins. Top line: back/forward gone and only the folders show (the title sits right below, so the name read as a duplicate; nothing at top level); the document menu (Version history, Sort, Clear all) is right-click on the title when you're not typing in it. Opening Search keeps its slot on the rail (`#appbar-qa-slot` fixed 36px, shown pressed), so To-Dos no longer slides up under the pointer. Share is the one button on the top line: the History button is hidden (Version history via the title's or the explorer row's right-click; the window has Save a version now). The frame can't scroll (`overflow:clip` on html/body): hidden helper buttons below the window had let it shift up and cut off the rail's top icon.
 
 - **Headings: three levels (2026-10-29).** Owner: "too many headings… see if they are standard". Now Heading 1–3 + Body text only, semibold (600), normal text colour (the `--heading-cN` tints are gone), no italics; rows 22/19/16.5px × text size, PDF `.pv-heading-1..3` the same sizes. Saved Heading 4–6 and the old Section format (heading 7) read as Heading 3 (`normalizeStyles`; legacy `[Label]` rows convert to Heading 3); `nodeIsSection` is now only the top-level-rows preference. Shortcuts Ctrl/Cmd+Alt+1–3 and 0 (body text). In "/", Heading 1–3, Body text and Checkbox form one block (the row's own format), with characters after it.
-
-- **Polish round: overlap, right-click, headings in "/", open items, byline, margins, Ctrl/Cmd+K (2026-10-29).** Revealing a document/folder in the explorer used `scrollIntoView`, which also scrolled the page under the rail; now `scrollSidebarRowIntoView` scrolls only `#sidebar-scroll`, and a window scroll guard keeps the page at 0,0. Right-click on empty space of the top line and title row opens the app menu (`chromeContextItems`). Headings are in the "/" list (`headingInsertItems`). Open items show icon + number (words in the tooltip), the decision chip is grey. Byline uses dots only between filled slots (CSS `:has`). Right page margin = left (`clamp(24px,7vw,96px)`). Ctrl/Cmd+K: selected words get the Link box, otherwise Search opens.
 
 ### In progress / not built
 
