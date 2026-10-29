@@ -28,8 +28,9 @@ export function pickVersionToDrop(list: VersionEntry[], now: number): number {
   let bestScore = Infinity;
   for (let i = 0; i < list.length - 1; i++) {
     // The hole left behind: from the version before it to the version after it. The oldest has
-    // nothing before it, so its hole counts four times its gap: without that the list stops
-    // reaching back (five days of work kept only the last day; with it, 4 days, 2, 1, 8 hours…).
+    // nothing before it, so it counts as if the gap before it were 8 times its gap after: without
+    // that the list stops reaching back (five days of work kept only the last day; with it,
+    // 4 days, 2, 1, 8 hours…).
     const after = ts[i + 1];
     const before = i > 0 ? ts[i - 1] : ts[i] - (after - ts[i]) * 8;
     const age = Math.max(60000, now - ts[i]);
