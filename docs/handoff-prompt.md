@@ -172,18 +172,18 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **"/" list says there's more (2026-10-29).** Owner asked. A row's short "/" list ends with a faint "Type to find more…" (`{hint:'…'}` items in the shared menu, `src/ui/contextMenu.ts`, `.sb-context-hint` in sidebar.css); it goes once you type. The non-row lists (title, notes, threads) show everything already, so no hint.
+
 - **Opening Documents reveals the open document (2026-10-29).** Owner's idea (instead of a "Documents ›" crumb or a "Show in Documents" item). The rail's Documents icon, `#sidebar-toggle` and `#sidebar-reopen-btn` go through `toggleDocumentsPanel`/`openDocumentsPanel`: `revealDocInSidebar(currentDocId,{flash:false})` unfolds only that document's folder chain and scrolls to its row (already `.active`). A search in the panel is left alone (then it just opens). The top line's folder crumbs still use `revealFolderInSidebar`. Share stays top-right (owner asked; convention).
 
 - **Hidden toolbar buttons removed (2026-10-29).** Queued item 3. Gone from the page: Undo/Redo, Outdent/Indent, the Heading palette, Insert ▾ and AI ▾, Collapse all, Zoom and the hidden Version history button (`#doc-history-chip`, `openHistoryMenu`), with their handlers, `updateQuickBarStates`/`updateFoldToggleButton`, CSS and three onboarding-tour steps. `#quick-bar` now holds only `.ag-right` (presence + Share; `#ag-markers` still moves under the title). Actions stay on shortcuts, the "/" list (`insertMenuItems()`) and right-click; Generate outline on Ctrl/Cmd+Shift+O and the empty page. Tests open the Insert list with `openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), {id:'insert-menu'})` or use right-click.
-
-- **Generate diagram removed everywhere (2026-10-29).** Owner asked. Gone: the right-click item (Insert ›) and its default quick-row slot, the "Review before generating" dialog (HTML, CSS, handlers), the generator code, and the eight `diagramGen*` modules with their codegen blocks, unit and smoke tests (~6,200 lines). Add diagram, paste/drop of draw.io files and existing diagrams are unchanged (`addDiagramFromXml` stays; saved diagrams' old `nodeMeta` is ignored). Saved quick rows that list `diagram-gen` skip it (`CTX_ACTION_META` filter). Tests now assert it's absent.
 
 ### In progress / not built
 
 - Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
   button `#editor-zen-toggle` stays (owner: "not really adding noise"; it's how people find focus mode). Its
   removal is dropped unless the owner asks again.
-  - Optional, not decided: a faint "Type to find more…" line at the bottom of the "/" list.
+  Also decided: the top line's folder path stays (owner: it's the "where am I" cue; Notion/Confluence do it).
 - Modularization as its own project is paused (owner, 2026-10-26): move code into `src/` only when that area is being
   changed anyway (e.g. lazy-loading draw.io/AI, or a To-Dos rework giving the panel explicit state).
 - Ideas offered 2026-10-26, not chosen yet: dark mode follows the system by default; the outliner on phones (read and

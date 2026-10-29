@@ -34,7 +34,10 @@ test('"/" on an empty row opens the Insert list in two groups; "/note" + Enter o
   // Owner 2026-10-29: a short list under two headings; characters and status marks wait for typing.
   await expect(menu(page).locator('.sb-context-heading')).toHaveText(['Text', 'Insert']);
   await expect(menu(page).locator('#insert-chars, #insert-markers')).toHaveCount(0);
+  // The short list ends with a quiet hint that typing finds more; it goes once you type.
+  await expect(menu(page).locator('.sb-context-hint')).toHaveText('Type to find more…');
   await page.keyboard.type('note');
+  await expect(menu(page).locator('.sb-context-hint')).toHaveCount(0);
   await expect(menu(page).locator('.sb-context-active')).toContainText('Note');
   await page.keyboard.press('Enter');
   await expect(menu(page)).toHaveCount(0);
