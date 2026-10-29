@@ -2780,7 +2780,11 @@ html.calm-layout #quick-bar{position:static;flex:0 0 auto;margin-left:auto;z-ind
    "+ Add…" slots show only while the title area is hovered or in use (as Notion does). No dots;
    spacing separates the parts. */
 html.calm-layout #editor-meta-row{gap:4px 10px}
-html.calm-layout #editor-meta-row>#ag-markers{margin:0 0 0 6px}
+html.calm-layout #editor-meta-row>#ag-markers{margin:0 0 0 14px}
+/* Byline dots (owner 2026-10-29): Status · Author · Link, only between the ones that are set (the
+   author is an input, so its dots sit on its neighbours); the open items follow after space alone. */
+html.calm-layout #editor-meta-row:has(#sb-author:not(.unset)) #doc-status-wrap:has(>#doc-status-chip:not(.unset))::after{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:10px;flex:0 0 auto}
+html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset))) #doc-link-wrap:has(>#doc-link-chip:not(.unset))::before{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-right:10px;flex:0 0 auto}
 html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){height:auto;padding:3px 7px;font-size:var(--fs-sm)}
 html.calm-layout #editor-meta-row>#ag-markers .ag-buttons{padding:0;background:transparent;border:none}
 html.calm-layout #doc-status-wrap::after,html.calm-layout #doc-link-wrap::before{display:none}
@@ -2791,10 +2795,10 @@ html.calm-layout #marker-summary .oi-sep,html.calm-layout #ag-markers:not([hidde
 html.calm-layout #quick-bar>.action-group:not(.ag-right),html.calm-layout #quick-bar>.quick-sep{display:none}
 html.calm-layout #quick-bar #qb-collapse,html.calm-layout #quick-bar #qb-zoom,html.calm-layout #quick-bar #ag-fold .tb-sep{display:none}
 /* The page: more air above a lighter title; folded counts as plain grey text. */
-/* Page margins (owner 2026-10-29, after Dynalist): room on the left that shrinks on narrow
-   screens, and space above the title. */
-html.calm-layout #editor-title-row{padding-top:64px;padding-left:clamp(24px,7vw,96px)}
-html.calm-layout #editor-pane{padding-left:clamp(24px,7vw,96px)}
+/* Page margins (owner 2026-10-29, after Dynalist): the same room left and right (shrinking on narrow
+   screens) that every row, table and card keeps inside, and space above the title. */
+html.calm-layout #editor-title-row{padding-top:64px;padding-left:clamp(24px,7vw,96px);padding-right:clamp(24px,7vw,96px)}
+html.calm-layout #editor-pane{padding-left:clamp(24px,7vw,96px);padding-right:clamp(24px,7vw,96px)}
 html.calm-layout #header-title{letter-spacing:-.005em}
 html.calm-layout .fold-badge,html.calm-layout .fold-badge.fold-badge-open{background:transparent;color:var(--hint)}
 html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
@@ -25248,6 +25252,15 @@ document.addEventListener('paste',e=>{
   if(/<table[\s>]/i.test(html)&&selectedId!==null&&!multiSelectedIds.length&&pasteTableIntoNode(e,selectedId,html))return;
   const parsed=parseTreeClipboardHtml(html); const fallback=parsed.length?parsed:parseTextToTreeNodes(text); if(!fallback.length)return; e.preventDefault(); const clipExtras=extractSakuraClipPayload(html); pasteParsedNodes(fallback,undefined,clipExtras)});
 el('editor-pane').addEventListener('contextmenu',e=>{if(e.target.closest('.node-row'))return; hideContextMenu(); e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
+// The top line and the title area: empty space gets the same menu as the page; words in the title,
+// buttons, links and menus keep their own.
+['doc-tab-strip-row','editor-title-row'].forEach(id=>el(id)?.addEventListener('contextmenu',e=>{
+  if(e.defaultPrevented||e.target.closest('input,textarea,[contenteditable="true"],button,a,[role="menu"],.todo-dd-menu,.sb-context-menu'))return;
+  e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems());
+}));
+// The frame never scrolls as a page (the rail, explorer and editor scroll on their own). A stray
+// scrollIntoView or focus() could still shift it, leaving everything under the rail; undo that.
+window.addEventListener('scroll',()=>{ if(window.scrollX||window.scrollY)window.scrollTo(0,0); },{passive:true});
 el('sidebar')?.addEventListener('contextmenu',e=>{e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,explorerContextItems())});
 el('statusbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 el('appbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap')||e.target.closest('.settings-wrap')||e.target.closest('input')||e.target.closest('button'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
@@ -25299,7 +25312,7 @@ const SHORTCUTS = {
   strike:         {combo:'mod+shift+s',   label:'Strikethrough',            category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('strike')},
   highlight:      {combo:'mod+shift+h',   label:'Highlight',                category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('highlight')},
   textColor:      {combo:'mod+shift+f',   label:'Text color',               category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('color')},
-  insertLink:     {combo:'mod+k',         label:'Link selected words',      category:'Formatting',       guarded:false, action:()=>linkShortcutAtSelection()},
+  insertLink:     {combo:'mod+k',         label:'Link selected words, or Search',      category:'Formatting',       guarded:false, action:()=>linkShortcutAtSelection()},
   heading1:       {combo:'mod+alt+1',     label:'Heading 1',                category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(1)},
   heading2:       {combo:'mod+alt+2',     label:'Heading 2',                category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(2)},
   heading3:       {combo:'mod+alt+3',     label:'Heading 3',                category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(3)},
@@ -26570,6 +26583,15 @@ function aiMenuItems(){ return [
 ]; }
 // Rows the current document can't use (ctxActionAllowed) are left out; Insert's extra rows run
 // through runQuickAction, exactly like the right-click menu.
+// Headings (owner 2026-10-29: "no way to apply headings?"): in the "/" list like most editors, with
+// Ctrl/Cmd+Alt+1–6 as the keys. Picking the level a row already has turns it back into body text.
+const HEADING_INSERT_LEVELS=[[1,'Heading 1'],[2,'Heading 2'],[3,'Heading 3'],[7,'Section'],[0,'Body text']];
+function headingInsertItems(){
+  const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.styles?.heading||0):0;
+  return HEADING_INSERT_LEVELS.map(([level,label])=>({label, checked:level===cur&&level!==0,
+    icon:`<svg width="13" height="13" viewBox="0 0 24 24"><text x="12" y="16.5" text-anchor="middle" font-size="${level===0||level===7?11:10}" font-weight="600" font-family="Inter,sans-serif" fill="currentColor">${level===0?'T':level===7?'§':'H'+level}</text></svg>`,
+    data:{heading:String(level)}, onClick:()=>{ if(selectedId!==null)applyHeadingOption(level); }}));
+}
 function insertMenuItems(){
   const one=selectedId!==null&&!selectAllMode;
   const act=(a,label,icon)=>ctxActionAllowed(a)?[{label,icon,data:{insertAction:a},onClick:()=>{ if(selectedId!==null)runQuickAction(a,selectedId,el('qb-insert')?.getBoundingClientRect()); }}]:[];
@@ -26579,6 +26601,8 @@ function insertMenuItems(){
     {id:'qb-checkbox', label:'Checkbox', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg>', disabled:!one, onClick:toggleCheckboxOnSelection},
     {id:'qb-tags', label:'Tags…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', disabled:!one, onClick:()=>{ if(selectedId!==null)openTagManager(selectedId); }},
     ...act('date-time','Date/time','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'),
+    {divider:true},
+    ...headingInsertItems(),
     {divider:true},
     {id:'insert-markers', iconRow:NODE_MARKERS.map(m=>({label:nodeMarkerLabel(m), icon:markIconSvg(m), cls:'pv-qm-mark tb-menu-marker', current:cur===m, data:{marker:m,color:nodeMarkerColor(m)}, onClick:()=>{ if(selectedId!==null){ setNodeMarker(selectedId,m); render(); } }}))},
     {divider:true},
@@ -28477,7 +28501,7 @@ function revealTrashedItemInSidebar(selector){
   setTimeout(()=>{
     const row=document.querySelector(selector);
     if(!row)return;
-    try{ row.scrollIntoView({block:'center',behavior:'smooth'}) }catch(e){}
+    scrollSidebarRowIntoView(row);
     row.style.transition='background .2s'; const prev=row.style.background; row.style.background='var(--sel)';
     setTimeout(()=>{row.style.background=prev},900);
   },30);
@@ -28496,7 +28520,7 @@ function revealFolderInSidebar(id){
   setTimeout(()=>{
     const row=document.querySelector(`.sfolder-row[data-folder-id="${id}"]`);
     if(!row)return;
-    try{ row.scrollIntoView({block:'center',behavior:'smooth'}) }catch(e){}
+    scrollSidebarRowIntoView(row);
     row.style.transition='background .2s'; const prev=row.style.background; row.style.background='var(--sel)';
     setTimeout(()=>{row.style.background=prev},900);
   },30);
@@ -28507,6 +28531,13 @@ function revealFolderInSidebar(id){
 // starting from the doc's folder rather than a folder id), then scrolls to and briefly
 // highlights it. This is what "open the current document in the sidebar" needs — the
 // document might be several folders deep and none of them expanded.
+// Centre a File Explorer row by scrolling only the explorer's own list. scrollIntoView would also
+// scroll every ancestor, and could leave the whole page shifted under the rail.
+function scrollSidebarRowIntoView(row){
+  const box=el('sidebar-scroll'); if(!box||!row)return;
+  const r=row.getBoundingClientRect(), b=box.getBoundingClientRect();
+  box.scrollTo({top:box.scrollTop+(r.top-b.top)-(b.height-r.height)/2,behavior:'smooth'});
+}
 function revealDocInSidebar(id){
   if(id===null||id===undefined)return;
   if(!sidebarOpen)setSidebarOpen(true);
@@ -28522,7 +28553,7 @@ function revealDocInSidebar(id){
   setTimeout(()=>{
     const row=document.querySelector(`.sdoc-item[data-doc-id="${id}"]`);
     if(!row)return;
-    try{ row.scrollIntoView({block:'center',behavior:'smooth'}) }catch(e){}
+    scrollSidebarRowIntoView(row);
     row.style.transition='background .2s'; const prev=row.style.background; row.style.background='var(--sel)';
     setTimeout(()=>{row.style.background=prev},900);
   },30);
@@ -32518,12 +32549,13 @@ function updateMarkerSummary(){
   group.hidden=!open&&!dn&&!filtering;
   const parts=attentionParts(p);
   const segs=parts.length
-    ? parts.map(a=>`<span class="oi-part" data-key="${a.key}" style="--mc:${openItemKindColor(a.key)}">${openItemKindIcon(a.key)}<span>${a.label}</span></span>`).join('<span class="oi-sep" aria-hidden="true">·</span>')
+    ? parts.map(a=>`<span class="oi-part" data-key="${a.key}" data-tip="${esc(a.label)}" style="--mc:${openItemKindColor(a.key)}">${openItemKindIcon(a.key)}<span>${a.n}</span></span>`).join('<span class="oi-sep" aria-hidden="true">·</span>')
     : `<span class="oi-part" data-key="done" style="--mc:${openItemKindColor('done')}">${openItemKindIcon('done')}<span>All settled</span></span>`;
   const text=progressSummaryText(p);
   // Decisions are a record, not open items (owner, 2026-10-15): their own chip, only when there are some.
+  // Icons and numbers only, words in the tooltip; decisions are settled, so grey (owner, 2026-10-29).
   const dLabel=dn+(dn===1?' decision':' decisions');
-  const dBtn=dn?`<button type="button" class="decisions-btn" aria-haspopup="menu" data-tip="What was decided in threads. Click for the list." aria-label="${dLabel}"><span class="oi-part" style="--mc:${openItemKindColor('decision')}">${openItemKindIcon('decision')}<span>${dLabel}</span></span></button>`:'';
+  const dBtn=dn?`<button type="button" class="decisions-btn" aria-haspopup="menu" data-tip="${dLabel}: what was decided in threads. Click for the list." aria-label="${dLabel}"><span class="oi-part" data-key="decision" style="--mc:var(--muted)">${openItemKindIcon('decision')}<span>${dn}</span></span></button>`:'';
   const oiBtn=(open||filtering)?`<button type="button" class="open-items-btn${filtering?' active':''}" aria-haspopup="menu" data-tip="${esc(text)} Click for the list; right-click (or Shift+click) to show only open items." aria-label="${esc(text)}">${segs}</button>`:'';
   const html=oiBtn+(oiBtn&&dBtn?'<span class="oi-sep" aria-hidden="true">\u00B7</span>':'')+dBtn;
   if(box.innerHTML!==html)box.innerHTML=html;
@@ -35680,7 +35712,7 @@ function todosHistorySummary(list) {
           <li><span class="cs-combo" data-cs-shortcut="strike"></span> <span class="cs-desc">strike</span></li>
           <li><span class="cs-combo" data-cs-shortcut="highlight"></span> <span class="cs-desc">highlight</span></li>
           <li><span class="cs-combo" data-cs-shortcut="textColor"></span> <span class="cs-desc">text color</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="insertLink"></span> <span class="cs-desc">link the selected words</span></li>
+          <li><span class="cs-combo" data-cs-shortcut="insertLink"></span> <span class="cs-desc">link the selected words, otherwise Search</span></li>
           <li><span class="cs-combo" data-cs-shortcut="heading1"></span>–<span class="help-kbd">6</span> <span class="cs-desc">heading 1–6 (independent of depth)</span></li>
           <li><span class="cs-desc">select words first → formats just those words</span></li>
           <li><span class="cs-desc">@Node name → backlink (type @ while editing to pick)</span></li>
@@ -36109,15 +36141,17 @@ function openSelectionFmtUrlBox(){
     else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); hideSelectionFmtPopover(); }
   });
 }
-// Ctrl/Cmd+K: the Link box for the selected words in a row, To-Do, note or thread, as the bar's
-// Link button. Caret only (nothing selected) in one of those: say what it needs.
+// Ctrl/Cmd+K (owner 2026-10-29, as most apps): selected words in a row, To-Do, note or thread get
+// the Link box, as the bar's Link button; anything else opens Search.
 function linkShortcutAtSelection(){
-  const sel=window.getSelection(); if(!sel||!sel.rangeCount)return false;
-  const editorId=selectionFmtEditorFor(sel.anchorNode); if(!editorId)return false;
-  if(sel.isCollapsed||!sel.toString().trim()){ showToast('Select words to link'); return true; }
-  showSelectionFmtPopoverForRange(sel.getRangeAt(0),editorId);
-  if(!prepareSelectionFmtLinkTarget()){ hideSelectionFmtPopover(); return false; }
-  openSelectionFmtUrlBox(); return true;
+  const sel=window.getSelection();
+  const editorId=sel&&sel.rangeCount?selectionFmtEditorFor(sel.anchorNode):null;
+  if(editorId&&!sel.isCollapsed&&sel.toString().trim()){
+    showSelectionFmtPopoverForRange(sel.getRangeAt(0),editorId);
+    if(prepareSelectionFmtLinkTarget()){ openSelectionFmtUrlBox(); return true; }
+    hideSelectionFmtPopover();
+  }
+  setQaOpen(true); return true;
 }
 // Capture phase: rows, notes and To-Dos handle their own keys and some stop them there.
 document.addEventListener('keydown',e=>{

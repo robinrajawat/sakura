@@ -45,7 +45,7 @@ test('an older thread with two follow-ups becomes one Follow-up row; the entries
   expect(await page.evaluate('remarks.some(r => r.status || r.owner || r.done)')).toBe(false);
   await expect(page.locator('.thread-entry .thread-status-note')).toHaveCount(0);
   // One open item, named by its row (no names), with the thread's latest line.
-  await expect(page.locator('#marker-summary .open-items-btn')).toContainText('1 follow-up');
+  await expect(page.locator('#marker-summary .oi-part[data-key="followup"]')).toHaveAttribute('data-tip', '1 follow-up');
   await page.locator('#marker-summary .open-items-btn').click();
   await expect(menu(page)).not.toContainText('Shipping condition · Ana');
   await expect(menu(page)).toContainText('Robin: Check the extra freight price.');

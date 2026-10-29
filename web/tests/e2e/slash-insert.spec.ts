@@ -124,3 +124,17 @@ test('"/" inside a word is just a slash', async ({ page }) => {
   await page.waitForTimeout(50);
   await expect(menu(page)).toHaveCount(0);
 });
+
+// Headings live in the "/" list (owner 2026-10-29), like most editors; picking the current level again
+// turns the row back into body text.
+test('"/head" lists the headings; picking one sets the row\'s heading and keeps its words', async ({ page }) => {
+  await open(page);
+  await page.keyboard.type('Scope /head');
+  await expect(menu(page).locator('.sb-context-item .sb-context-label')).toHaveText(['Heading 1', 'Heading 2', 'Heading 3']);
+  await menu(page).getByText('Heading 2', { exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).eval('[nodes[1].styles.heading, nodes[1].text.trim()]')))
+    .toEqual([2, 'Scope']);
+  await page.keyboard.type('/body');
+  await menu(page).getByText('Body text', { exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).eval('nodes[1].styles.heading||0'))).toBe(0);
+});
