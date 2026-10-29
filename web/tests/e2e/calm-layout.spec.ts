@@ -118,3 +118,28 @@ test('the top line shows the folders, not the document name; a folder there open
   // @ts-expect-error -- bare globals from index.html
   expect(await page.evaluate(() => sidebarOpen)).toBe(true);
 });
+
+// Opening Documents points at the open document (owner 2026-10-29): only the folders it sits in
+// unfold, its row (already marked as current) is in view, and a search in the panel is left alone.
+test('opening Documents reveals the open document, unfolding only its folders', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    setSidebarOpen(false); ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage();
+    // @ts-expect-error
+    saveFolders([{ id: 'f1', name: 'Work', parentId: null, open: false }, { id: 'f2', name: 'Q4', parentId: 'f1', open: false }, { id: 'f3', name: 'Other', parentId: null, open: false }]);
+    // @ts-expect-error
+    const m = loadDocFolderMap(); m[currentDocId] = 'f2'; saveDocFolderMap(m); renderSidebar();
+  });
+  await page.locator('#rail-docs-btn').click();
+  const row = page.locator('.sdoc-item.active');
+  await expect(row).toBeVisible();
+  await expect(row).toContainText('Plan');
+  await expect(row).toBeInViewport();
+  // @ts-expect-error -- bare globals from index.html
+  const open = await page.evaluate(() => Object.fromEntries(loadFolders().map((f: any) => [f.id, f.open !== false])));
+  expect(open).toEqual({ f1: true, f2: true, f3: false });
+  // Clicking it again closes the panel.
+  await page.locator('#rail-docs-btn').click();
+  // @ts-expect-error
+  expect(await page.evaluate(() => sidebarOpen)).toBe(false);
+});

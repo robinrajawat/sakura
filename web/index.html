@@ -22912,7 +22912,7 @@ function isControlTarget(target){if(!target)return false; const tag=(target.tagN
 // an empty tree instead of letting the person copy what they'd actually selected.
 function hasExternalTextSelection(){const sel=window.getSelection(); if(!sel||sel.isCollapsed||!sel.rangeCount)return false; const anchor=sel.anchorNode; if(!anchor)return false; const node=anchor.nodeType===Node.TEXT_NODE?anchor.parentElement:anchor; if(!node)return false; if(node.closest('.empty-state'))return true; const pane=document.getElementById('editor-pane'); return !(pane&&pane.contains(node));}
 document.querySelectorAll('.theme-seg[data-theme]').forEach(btn=>btn.addEventListener('click',()=>{ if(btn.dataset.theme==='system') setThemeMode('system'); else setTheme(btn.dataset.theme); }));
-el('rail-docs-btn')?.addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
+el('rail-docs-btn')?.addEventListener('click',()=>toggleDocumentsPanel());
 // Back/forward between documents (owner 2026-10-29: shortcuts only, no buttons): Ctrl/Cmd+[ / ]
 // and the mouse's back/forward buttons.
 window.addEventListener('mouseup',e=>{ if(e.button===3||e.button===4){ e.preventDefault(); goDocNav(e.button===3?-1:1); } });
@@ -26531,7 +26531,7 @@ function scrollSidebarRowIntoView(row){
   const r=row.getBoundingClientRect(), b=box.getBoundingClientRect();
   box.scrollTo({top:box.scrollTop+(r.top-b.top)-(b.height-r.height)/2,behavior:'smooth'});
 }
-function revealDocInSidebar(id){
+function revealDocInSidebar(id,{flash=true}={}){
   if(id===null||id===undefined)return;
   if(!sidebarOpen)setSidebarOpen(true);
   if(sbSearchQuery){
@@ -26547,6 +26547,7 @@ function revealDocInSidebar(id){
     const row=document.querySelector(`.sdoc-item[data-doc-id="${id}"]`);
     if(!row)return;
     scrollSidebarRowIntoView(row);
+    if(!flash)return;
     row.style.transition='background .2s'; const prev=row.style.background; row.style.background='var(--sel)';
     setTimeout(()=>{row.style.background=prev},900);
   },30);
@@ -26578,8 +26579,16 @@ el('sb-new-doc-btn').addEventListener('click',()=>{ createDoc(); renderSidebar()
 el('sb-bulk-clear-btn')?.addEventListener('click',()=>{ sbSelectedDocIds.clear(); renderSidebar(); });
 el('sb-bulk-delete-btn')?.addEventListener('click',async()=>{ await bulkDeleteDocs(Array.from(sbSelectedDocIds)); });
 el('sb-bulk-move-btn')?.addEventListener('click',e=>{ showBulkMoveMenu(e); });
-el('sidebar-toggle').addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
-el('sidebar-reopen-btn')?.addEventListener('click',()=>setSidebarOpen(true));
+// Opening Documents points at the open document (owner 2026-10-29): only its folders unfold, the list
+// scrolls to it, and its row is already marked as the current one, so no flash. A search filter in the
+// panel is left as it is.
+function openDocumentsPanel(){
+  if(currentDocId&&!sbSearchQuery){ revealDocInSidebar(currentDocId,{flash:false}); return; }
+  setSidebarOpen(true);
+}
+function toggleDocumentsPanel(){ if(sidebarOpen)setSidebarOpen(false); else openDocumentsPanel(); }
+el('sidebar-toggle').addEventListener('click',toggleDocumentsPanel);
+el('sidebar-reopen-btn')?.addEventListener('click',openDocumentsPanel);
 function setZenMode(on){zenMode=!!on; document.body.classList.toggle('zen-mode',zenMode); const btn=el('editor-zen-toggle'); if(btn){btn.classList.toggle('is-active',zenMode); btn.setAttribute('aria-pressed',String(zenMode)); btn.dataset.tip=zenMode?'Restore (Esc or Ctrl/Cmd+Shift+E)':'Maximize editor (hide File Explorer & chrome) (Ctrl/Cmd+Shift+E)'} const icon=el('editor-zen-icon'); if(icon)icon.innerHTML=zenMode?'<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>':'<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
   // The toolbar and tab bar are hidden by CSS while zen mode is on (body.zen-mode). The File
   // Explorer is hidden on entry and restored on exit — but only if it's still in the
