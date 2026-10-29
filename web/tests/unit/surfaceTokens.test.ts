@@ -36,6 +36,8 @@ describe('floating surfaces use the shared tier tokens', () => {
       .filter((r) => !/:hover|:focus|\.is-invalid|cal-day/.test(r.sel))
       .filter((r) => !(r.sel in ALLOWED && (r.sel !== '#todos-panel' || r.file === 'hub-dock.css')))
       .filter((r) => !/box-shadow\s*:\s*var\(--shadow-(menu|panel|dialog)\)/.test(r.body))
+      // Side panels beside the rail are flat (owner 2026-10-29): no shadow at all is fine.
+      .filter((r) => !/box-shadow\s*:\s*none/.test(r.body))
       .map((r) => `${r.file}: ${r.sel}`);
     expect(offenders).toEqual([]);
   });

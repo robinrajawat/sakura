@@ -76,8 +76,8 @@ test.describe('To-Dos is always on: its launcher and panel cannot be switched of
   });
 
   // With only one dock panel there's nothing to switch between, so there's no tab strip at
-  // all -- the To-Dos panel's own header carries maximize/close instead.
-  test('there is no dock tab strip, and the To-Dos panel shows its own maximize/close; the launcher toggles it', async ({ page }) => {
+  // all; the rail's To-Dos icon (or Esc) closes the panel, so it has no maximize/close of its own (owner 2026-10-29).
+  test('there is no dock tab strip, and the To-Dos panel has no maximize/close; the launcher toggles it', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
@@ -97,8 +97,8 @@ test.describe('To-Dos is always on: its launcher and panel cannot be switched of
     expect(opened.strip).toBe(false);
     expect(opened.tabs).toBe(0);
     expect(opened.open).toBe(true);
-    expect(opened.maxDisplay).not.toBe('none');
-    expect(opened.closeDisplay).not.toBe('none');
+    expect(opened.maxDisplay).toBeNull();
+    expect(opened.closeDisplay).toBeNull();
 
     const closed = await page.evaluate(() => {
       document.getElementById('dock-panel-appbar-toggle')?.click();

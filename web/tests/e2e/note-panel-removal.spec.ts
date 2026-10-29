@@ -214,7 +214,11 @@ test.describe('Note Panel + Code Block removal', () => {
     );
     expect(focused).toBe(1);
 
-    await page.locator('#qb-insert').dispatchEvent('click');
+    // Tags… is in the full Insert list (the short one leaves it for typing "/tag", owner 2026-10-29).
+    await page.evaluate(() => {
+      // @ts-expect-error
+      openSbMenuUnder(document.getElementById('qb-insert'), insertMenuItems(true), { id: 'insert-menu', label: 'Insert' });
+    });
     await page.locator('#qb-tags').dispatchEvent('click');
     const tagPopoverOpen = await page.locator('#tag-popover').evaluate((el) => el.classList.contains('open'));
     expect(tagPopoverOpen).toBe(true);

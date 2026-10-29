@@ -5,9 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// The document's version history is one click from its title: the History chip opens a small menu
-// (recent versions to restore, Save a version now, All versions…) like the Link and Share chips, and the node menu no longer offers "Where used…" -- every linked item already
-// shows as its own dot on the row.
+// The node menu no longer offers "Where used…": every linked item already shows as its own dot on the row.
 
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 
@@ -28,33 +26,18 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('the History chip opens a small menu like Link and Share; "All versions…" opens the full window', async ({ page }) => {
+// Share is the one button on the top line (owner 2026-10-29): Version history opens from the title's
+// right-click, and the window has Save a version now.
+test('no History button on the top line; the title\'s right-click opens Version history', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (err) => { if (!KNOWN_NOISE.test(err.message)) errors.push(err.message); });
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('file://' + indexPath);
-  const chip = page.locator('#ag-fold #doc-history-chip');
-  await expect(chip).toBeVisible();
-  await expect(chip).toHaveAttribute('aria-label', 'Version history');
-
-  await chip.click();
-  const menu = page.locator('.history-menu');
-  await expect(menu).toBeVisible();
-  await expect(menu.locator('.sb-context-item', { hasText: 'No earlier versions yet' })).toBeDisabled();
-  await expect(page.locator('#history-modal-overlay')).not.toHaveClass(/open/);
-  // A second click on the chip closes the menu.
-  await chip.click();
-  await expect(page.locator('.history-menu')).toHaveCount(0);
-
-  // Save a version, then it is listed and restorable from the menu.
-  await chip.click();
-  await menu.locator('.sb-context-item', { hasText: 'Save a version now' }).click();
-  await chip.click();
-  await expect(menu.locator('.sb-context-heading')).toHaveText('Restore an earlier version');
-  await expect(menu.locator('.sb-context-item', { hasText: /^Today .* · / })).toHaveCount(1);
-
-  await menu.locator('.sb-context-item', { hasText: 'All versions…' }).click();
+  await expect(page.locator('#doc-history-chip')).toBeHidden();
+  await page.locator('#header-title').click({ button: 'right' });
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Version history…' }).click();
   await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
+  await expect(page.locator('#history-save-now-btn')).toBeVisible();
   expect(errors).toEqual([]);
 });
 

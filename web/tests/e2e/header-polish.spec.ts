@@ -44,7 +44,7 @@ test('the open-items words are grey like the other toolbar buttons; only the ico
   expect(c.text).toBe(probe);
 });
 
-test('the title byline is sentence case; status is the one soft tag, History has no pill background', async ({ page }) => {
+test('the title byline is sentence case; status is plain text like the rest of the subline, History has no pill background', async ({ page }) => {
   const s = await page.evaluate(() => {
     const status = document.getElementById('doc-status-chip')!;
     const hist = document.getElementById('doc-history-chip')!;
@@ -60,7 +60,8 @@ test('the title byline is sentence case; status is the one soft tag, History has
   });
   expect(s.statusText).toBe('Review');
   expect(s.transform).toBe('none');
-  expect(s.statusBg).not.toBe('rgba(0, 0, 0, 0)');
+  // Plain text, no pill (owner 2026-10-29: the subline is one quiet style).
+  expect(s.statusBg).toBe('rgba(0, 0, 0, 0)');
   expect(s.statusDot).toBe('none');
   expect(s.histTransform).toBe('none');
   expect(s.histBg).toBe('rgba(0, 0, 0, 0)');

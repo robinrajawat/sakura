@@ -27,10 +27,14 @@ async function open(page: Page) {
 const node2 = (page: Page) => page.evaluate(() => (window as any).eval('({ text: nodes[1].text, isCheckbox: nodes[1].isCheckbox, editing: editingId })'));
 const menu = (page: Page) => page.locator('#insert-menu');
 
-test('"/" on an empty row opens the Insert list; Enter on Note opens the note and drops the "/"', async ({ page }) => {
+test('"/" on an empty row opens the Insert list in two groups; "/note" + Enter opens the note and drops the "/note"', async ({ page }) => {
   await open(page);
   await page.keyboard.type('/');
   await expect(menu(page)).toBeVisible();
+  // Owner 2026-10-29: a short list under two headings; characters and status marks wait for typing.
+  await expect(menu(page).locator('.sb-context-heading')).toHaveText(['Text', 'Insert']);
+  await expect(menu(page).locator('#insert-chars, #insert-markers')).toHaveCount(0);
+  await page.keyboard.type('note');
   await expect(menu(page).locator('.sb-context-active')).toContainText('Note');
   await page.keyboard.press('Enter');
   await expect(menu(page)).toHaveCount(0);
@@ -41,6 +45,8 @@ test('"/" on an empty row opens the Insert list; Enter on Note opens the note an
 test('Date/time goes into the row in place of the "/"', async ({ page }) => {
   await open(page);
   await page.keyboard.type('/');
+  await expect(menu(page).getByText('Date/time', { exact: true })).toHaveCount(0);
+  await page.keyboard.type('date');
   await menu(page).getByText('Date/time', { exact: true }).click();
   await page.keyboard.press('Escape');
   await expect.poll(async () => (await node2(page)).text).toMatch(/^\S.*\d/);
@@ -64,11 +70,9 @@ test('typing after "/" narrows the list; Enter adds the match and drops the "/â€
   expect((await node2(page)).text).toBe('');
 });
 
-test('the list holds the characters; "/che" finds Check mark and puts it in place of the "/che"', async ({ page }) => {
+test('typing finds the characters; "/che" finds Check mark and puts it in place of the "/che"', async ({ page }) => {
   await open(page);
-  await page.keyboard.type('/');
-  await expect(menu(page).locator('#insert-chars')).toBeVisible();
-  await page.keyboard.type('che');
+  await page.keyboard.type('/che');
   await expect(menu(page).locator('.sb-context-item')).toContainText(['Checkbox', 'Check mark']);
   await menu(page).locator('.sb-context-item', { hasText: 'Check mark' }).click();
   await expect(page.locator('#in-2')).toHaveText('âœ“');
@@ -137,4 +141,13 @@ test('"/head" lists the headings; picking one sets the row\'s heading and keeps 
   await page.keyboard.type('/body');
   await menu(page).getByText('Body text', { exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as any).eval('nodes[1].styles.heading||0'))).toBe(0);
+});
+
+// Row status marks are found by typing (owner 2026-10-29), not shown in the short list.
+test('"/follow" sets the row\'s Follow-up status', async ({ page }) => {
+  await open(page);
+  await page.keyboard.type('/follow');
+  await expect(menu(page).locator('.sb-context-item')).toHaveText(['Follow-up']);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.evaluate(() => (window as any).eval('nodes[1].marker'))).toBe('followup');
 });

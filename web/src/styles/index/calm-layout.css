@@ -37,9 +37,13 @@ html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
    takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
    are sheets over the page. */
 html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:0!important;left:52px!important;right:auto!important;height:100vh!important;max-height:none!important;border-radius:0;border-top:none;border-bottom:none;border-left:none}
-html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:400px!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
-html.calm-layout #todos-panel.maximized{width:calc(100vw - 52px)!important}
-html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:400px}
+html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,400px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
+html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:var(--todos-w,400px)}
+html.calm-layout #todos-resize-handle{left:auto;right:0;z-index:5}
+/* Same flat surface as the File Explorer, so the two read as one sidebar showing different things. */
+html.calm-layout #todos-panel,html.calm-layout .settings-panel,html.calm-layout .help-panel{background:var(--tb-bg);box-shadow:none;border-right:1px solid var(--border)}
+/* Notifications use the same side slot (owner 2026-10-29): full height beside the rail, flat, the list scrolls. */
+html.calm-layout #notif-menu{position:fixed;top:0!important;left:52px!important;right:auto!important;bottom:auto;width:340px;max-width:calc(100vw - 52px);height:100vh;max-height:none;margin:0;padding:14px 8px;border-radius:0;border:none;border-right:1px solid var(--border);background:var(--tb-bg);box-shadow:none;overflow-y:auto}
 /* Quick Assist is the rail's search icon; opened, its field and results float beside the rail. */
 html.calm-layout #appbar-qa-slot{width:auto}
 html.calm-layout #global-search-wrap .qa-input-row{width:36px;height:36px;padding:0;gap:0;justify-content:center;overflow:hidden;border-color:transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
@@ -57,14 +61,10 @@ html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:calc(50% +
 html.calm-layout #doc-tab-strip-row{align-items:center;gap:4px;height:52px;padding:0 20px 0 12px;background:var(--canvas-bg);border-bottom:none}
 #doc-path{display:none}
 html.calm-layout #doc-path{display:flex;align-items:center;gap:2px;min-width:0;flex:1 1 auto}
-.doc-nav-btn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;flex:0 0 auto}
-.doc-nav-btn:hover:not(:disabled){background:var(--hover);color:var(--fg)}
-.doc-nav-btn:disabled{color:var(--hint);opacity:.45;cursor:default}
 #doc-path-crumbs{display:flex;align-items:center;gap:4px;min-width:0;margin-left:8px;font-size:var(--fs-md);color:var(--hint);white-space:nowrap;overflow:hidden}
 .doc-path-folder{border:none;background:transparent;padding:3px 6px;border-radius:6px;color:var(--hint);font:inherit;cursor:pointer;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .doc-path-folder:hover{background:var(--hover);color:var(--fg)}
 .doc-path-sep{color:var(--hint);flex:0 0 auto}
-.doc-path-title{color:var(--muted);padding:3px 6px;min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* No status bar: word count, depth and "Saved …" go. What still needs saying (storage full, the
    Secure Storage nudge, AI Rewrite at work) floats quietly at the bottom-right while it applies. */
 html.calm-layout #statusbar{position:fixed;left:auto;top:auto;right:56px;bottom:12px;z-index:50;height:auto;min-height:0;padding:0;border:none;background:transparent;display:flex;pointer-events:none}
@@ -74,13 +74,22 @@ html.calm-layout #quick-bar{position:static;flex:0 0 auto;margin-left:auto;z-ind
 /* Under the title: what the document is (status, author, link), then what's open in it. Empty
    "+ Add…" slots show only while the title area is hovered or in use (as Notion does). No dots;
    spacing separates the parts. */
-html.calm-layout #editor-meta-row{gap:4px 10px}
-html.calm-layout #editor-meta-row>#ag-markers{margin:0 0 0 14px}
+/* The subline is one quiet line of plain text (owner 2026-10-29: "still looks odd"): status,
+   author and link in the same size, weight and grey, with evenly spaced dots, then the open items.
+   Only the status word keeps its colour when it has one (Approved green, Rejected red). */
+html.calm-layout #editor-meta-row{gap:4px 8px}
+html.calm-layout #editor-meta-row .doc-status-chip,html.calm-layout #editor-meta-row #sb-author.doc-author-chip{font-weight:400;font-size:var(--fs-md);padding:2px 4px;margin:0 -4px}
+html.calm-layout #editor-meta-row #doc-status-chip{background:transparent;font-weight:400;padding:2px 4px}
+html.calm-layout #editor-meta-row #doc-status-chip:not([data-color="orange"]):not([data-color="green"]):not([data-color="red"]){color:var(--muted)}
+html.calm-layout #editor-meta-row #doc-status-chip:hover{background:var(--hover)}
+html.calm-layout #editor-meta-row>#ag-markers{margin:0}
+html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset)),:has(#doc-link-chip:not(.unset))) #marker-summary:has(button)::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);flex:0 0 auto}
 /* Byline dots (owner 2026-10-29): Status · Author · Link, only between the ones that are set (the
    author is an input, so its dots sit on its neighbours); the open items follow after space alone. */
-html.calm-layout #editor-meta-row:has(#sb-author:not(.unset)) #doc-status-wrap:has(>#doc-status-chip:not(.unset))::after{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:10px;flex:0 0 auto}
-html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset))) #doc-link-wrap:has(>#doc-link-chip:not(.unset))::before{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-right:10px;flex:0 0 auto}
-html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){height:auto;padding:3px 7px;font-size:var(--fs-sm)}
+html.calm-layout #editor-meta-row:has(#sb-author:not(.unset)) #doc-status-wrap:has(>#doc-status-chip:not(.unset))::after{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:8px;flex:0 0 auto}
+html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset))) #doc-link-wrap:has(>#doc-link-chip:not(.unset))::before{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-right:8px;flex:0 0 auto}
+html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){height:auto;padding:2px 4px;font-size:var(--fs-md)}
+html.calm-layout #editor-meta-row #marker-summary{gap:8px}
 html.calm-layout #editor-meta-row>#ag-markers .ag-buttons{padding:0;background:transparent;border:none}
 html.calm-layout #doc-status-wrap::after,html.calm-layout #doc-link-wrap::before{display:none}
 html.calm-layout #editor-title-row:not(:hover) #editor-meta-row:not(:focus-within):not(:has([aria-expanded="true"]))>:is(#doc-status-wrap:has(>.unset),#sb-author.unset,#doc-link-wrap:has(>#doc-link-chip.unset)){display:none}
@@ -101,3 +110,22 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
 @media (max-width:900px){
   html.calm-layout #doc-tab-strip-row{padding:0 12px 0 8px}
 }
+/* One look for every side panel (owner 2026-10-29): a 48px header with a plain bold title at 16px
+   from the rail; grey for the selected item, as in the File Explorer; no box around a box. */
+html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle),html.calm-layout #todos-panel-header,html.calm-layout .notif-menu-header{min-height:48px;padding:0 8px 0 16px;box-sizing:border-box}
+html.calm-layout :is(#sidebar .sb-section-hdr .sb-section-label,.notif-menu-title,#todos-title,.settings-panel .settings-header h3,.help-panel .settings-header h3){font:600 14.5px 'Inter',sans-serif;letter-spacing:0;text-transform:none;color:var(--fg)}
+html.calm-layout :is(.settings-panel,.help-panel){padding-top:0}
+html.calm-layout :is(.settings-panel,.help-panel) .settings-header{min-height:48px}
+html.calm-layout #notif-menu{padding:0 0 8px}
+html.calm-layout .notif-empty{text-align:left;padding:8px 16px}
+html.calm-layout .settings-rail-btn.active{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
+html.calm-layout .settings-section{border:none;background:none;padding:0}
+html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle){padding-left:10px}
+html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){font-weight:400}
+/* The frame never scrolls (owner 2026-10-29: the rail's top icon was cut off): hidden helper
+   buttons sit just below the window, and scrollIntoView or a focus could scroll <body> to them.
+   overflow:clip, unlike hidden, can't be scrolled by script either; the panes scroll inside. */
+html.calm-layout,html.calm-layout body{overflow:clip}
+/* Share is the one button on the top line (owner 2026-10-29); Version history is on the title's and
+   the explorer row's right-click. */
+html.calm-layout #doc-history-chip{display:none}

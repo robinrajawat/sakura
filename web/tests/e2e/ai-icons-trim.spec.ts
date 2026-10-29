@@ -252,7 +252,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
 
   // To-Dos header: title + open count, Search, Sort-and-filter, ⋯ (Version history / Export as PDF /
   // Select), then Maximize/Close on one row; "Add a task" is its own row just below.
-  test('To-Dos panel: header controls share one row and the add-task row sits below it, at default, minimum, and maximized widths', async ({ page }) => {
+  test('To-Dos panel: header controls share one row and the add-task row sits below it, at default and minimum widths', async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
@@ -264,14 +264,13 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-panel')).toHaveClass(/open/);
     await expect(page.locator('#todos-open-row')).toHaveCount(0);
     const order = await page.locator('#todos-panel-header > *').evaluateAll((els) => els.map((e) => e.id || e.className));
-    expect(order).toEqual(['todos-title', 'todos-open-label', 'todos-search-wrap', 'todos-more-wrap', 'todos-panel-maximize', 'todos-panel-close']);
+    expect(order).toEqual(['todos-title', 'todos-open-label', 'todos-search-wrap', 'todos-more-wrap']);
     await expect(page.locator('#todos-add-row #todos-input')).toHaveCount(1);
     await expect(page.locator('#todos-add-row #todos-add-btn')).toHaveAttribute('data-tip', 'Add task');
-    await expect(page.locator('#todos-panel-close')).toHaveAttribute('data-tip', 'Close (Esc)');
 
     const layout = async () => page.evaluate(() => {
       const panel = document.getElementById('todos-panel')!.getBoundingClientRect();
-      const ids = ['todos-title', 'todos-search-trigger', 'todos-more-trigger', 'todos-panel-maximize', 'todos-panel-close'];
+      const ids = ['todos-title', 'todos-search-trigger', 'todos-more-trigger'];
       const rects = ids.map((id) => document.getElementById(id)!.getBoundingClientRect());
       const mids = rects.map((r) => Math.round(r.top + r.height / 2));
       const input = document.getElementById('todos-input')!.getBoundingClientRect();
@@ -287,16 +286,9 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     expect(def).toMatchObject({ sameRow: true, allInside: true, ordered: true, inputBelow: true });
     expect(def.inputWidth).toBeGreaterThan(150);
 
-    // Minimum dock width (TODOS_WIDTH_MIN = 320): every header control stays visible.
-    await page.evaluate(() => { document.getElementById('todos-panel')!.style.width = '320px'; });
+    // Minimum dock width (TODOS_WIDTH_MIN = 280): every header control stays visible.
+    await page.evaluate(() => { document.documentElement.style.setProperty('--todos-w', '280px'); });
     expect(await layout()).toMatchObject({ sameRow: true, allInside: true, ordered: true, inputBelow: true });
-
-    // Maximized.
-    await page.locator('#todos-panel-maximize').click();
-    await expect(page.locator('#todos-panel')).toHaveClass(/maximized/);
-    expect(await layout()).toMatchObject({ sameRow: true, allInside: true, ordered: true, inputBelow: true });
-    await page.locator('#todos-panel-maximize').click();
-    await expect(page.locator('#todos-panel')).not.toHaveClass(/maximized/);
 
     // ⋯ holds Version history (a flyout), Export as PDF and Select.
     await page.locator('#todos-more-trigger').click();
@@ -306,7 +298,7 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await expect(page.locator('#todos-more-menu')).toHaveCount(0);
 
     // N (with focus in the panel, outside any text field) jumps to the add-task input.
-    await page.locator('#todos-panel-maximize').focus();
+    await page.locator('#todos-more-trigger').focus();
     await page.keyboard.press('n');
     await expect(page.locator('#todos-input')).toBeFocused();
     await expect(page.locator('#todos-input')).toHaveValue('');
