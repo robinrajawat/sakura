@@ -12,7 +12,7 @@
  * and clearing the parent task's `repeat` (subtasks and repeat are mutually exclusive in the
  * UI: adding a subtask always clears repeat, matching the original's `t.repeat=null`).
  *
- * Same in-place-mutation convention as `nodeMutations.ts`/`tabOrder.ts`/`diagramAnchor.ts`:
+ * Same in-place-mutation convention as `nodeMutations.ts`/`diagramAnchor.ts`:
  * each function mutates the passed-in `task` (and its `subtasks` array) directly rather than
  * returning a new object, since a plain function parameter can't reassign the caller's own
  * `todos` array element the way a global assignment could.

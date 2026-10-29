@@ -102,7 +102,8 @@ test('the editor runs the full width, the toolbar edge to edge', async ({ page }
     return { undo: r('undo-btn').left - r('quick-bar').left, page: r('editor-pane-inner').width, pane: r('editor-pane').width };
   });
   expect(m.undo).toBeLessThanOrEqual(16);
-  expect(m.pane - m.page).toBeLessThan(80);
+  // Only the page margins (up to 96px left, 24px right since 2026-10-29) sit beside the page; no width cap.
+  expect(m.pane - m.page).toBeLessThanOrEqual(120);
 });
 
 test('Share is the one labelled button, with no fill; a shared document says Shared · N', async ({ page }) => {

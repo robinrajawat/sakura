@@ -243,8 +243,8 @@ input[type=number]{-moz-appearance:textfield}
    supported keeps Chromium on the fully custom (arrow-free) rendering path, while Firefox still
    gets its thin scrollbar via the standard properties. */
 @supports not selector(::-webkit-scrollbar){
-.settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,#doc-tab-strip,.cs-rail,#shortcuts-rail,
-#sakura-modal-body,#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,
+.settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,.cs-rail,#shortcuts-rail,
+#sakura-modal-body,#why-sakura-modal,.app-modal-body,
 .qa-dropdown,.history-modal-body,#sidebar-scroll,
 #at-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
@@ -863,42 +863,6 @@ body.zen-mode #quick-bar{display:none}
 
 /* === Action bar (single, always-visible toolbar) === */
 #doc-tab-strip-row{display:flex;align-items:stretch;background:var(--tb-bg);border-bottom:1px solid var(--border)}
-#doc-tab-strip{display:flex;align-items:stretch;gap:2px;padding:6px 4px 0 8px;overflow-x:auto;overflow-y:hidden;flex:1 1 auto;min-width:0}
-
-.doc-tab{display:flex;align-items:center;gap:6px;max-width:180px;min-width:90px;padding:6px 8px 7px 12px;border-radius:8px 8px 0 0;background:transparent;color:var(--muted);font:500 12px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;overflow:hidden;flex:0 0 auto;border:1px solid transparent;border-bottom:none;position:relative;top:1px}
-.doc-tab.dragging{opacity:.48}
-.doc-tab.drag-over-left::before,.doc-tab.drag-over-right::after{content:'';position:absolute;top:4px;bottom:4px;width:2px;border-radius:999px;background:color-mix(in srgb,var(--accent) 70%, transparent);pointer-events:none}
-.doc-tab.drag-over-left::before{left:0}
-.doc-tab.drag-over-right::after{right:0}
-.doc-tab:hover{background:var(--hover);color:var(--fg)}
-.doc-tab.active{background:var(--edit-bg);color:var(--fg);border-color:var(--border)}
-.doc-tab .doc-tab-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
-.doc-tab .doc-tab-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto;opacity:0;transition:opacity .15s}
-.doc-tab.is-dirty .doc-tab-dirty{opacity:1}
-.doc-tab .doc-tab-close{flex:0 0 auto;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--muted);font-size:var(--fs-md);line-height:1}
-.doc-tab .doc-tab-close:hover{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
-.doc-tab.pinned{max-width:34px;min-width:34px;padding:6px 0 7px;justify-content:center;gap:0}
-.doc-tab.pinned .doc-tab-title,.doc-tab.pinned .doc-tab-close{display:none}
-.doc-tab.pinned .doc-tab-pin-icon{display:flex;color:var(--muted)}
-.doc-tab.pinned.active .doc-tab-pin-icon{color:var(--accent)}
-.doc-tab.pinned .doc-tab-dirty{position:absolute;top:4px;right:4px}
-.doc-tab-pin-icon{display:none;align-items:center;justify-content:center;flex:0 0 auto}
-.doc-tab-add{flex:0 0 auto;align-self:center;width:24px;height:24px;margin:6px 2px 0;border:none;background:transparent;color:var(--muted);font:600 15px 'Inter',sans-serif;border-radius:6px;cursor:pointer;line-height:1}
-.doc-tab-add:hover{background:var(--hover);color:var(--accent)}
-.doc-tab-overview-wrap{position:relative;flex:0 0 auto;display:flex;align-items:center;padding-right:6px}
-.doc-tab-overview-btn{width:22px;height:22px;margin-top:4px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);border-radius:6px;cursor:pointer}
-.doc-tab-overview-btn:hover{background:var(--hover);color:var(--fg)}
-.doc-tab-overview-menu{position:absolute;top:calc(100% + 4px);right:0;min-width:260px;max-width:320px;max-height:360px;overflow:auto;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-menu);box-shadow:var(--shadow-menu);z-index:65;display:none;padding:var(--pad-menu);--hover:var(--hover-raised)}
-
-.doc-tab-overview-menu.open{display:block}
-.doc-tab-overview-menu input{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--border);border-radius:7px;background:var(--edit-bg);color:var(--fg);font:400 12px 'Inter',sans-serif;outline:none;margin-bottom:6px}
-.doc-tab-overview-menu input:focus{border-color:var(--accent)}
-.doc-tab-overview-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:7px 8px;border:none;background:transparent;border-radius:7px;cursor:pointer;color:var(--fg);font:400 12px 'Inter',sans-serif}
-.doc-tab-overview-item .doc-tab-overview-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0}
-.doc-tab-overview-item:hover,.doc-tab-overview-item.kbd-active{background:var(--hover)}
-.doc-tab-overview-item.active{color:var(--accent);font-weight:600}
-.doc-tab-overview-item .doc-tab-overview-dirty{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
-.doc-tab-overview-empty{padding:10px 8px;font:400 12px 'Inter',sans-serif;color:var(--hint);text-align:center}
 #quick-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--border);background:var(--tb-bg);flex-wrap:wrap}
 .action-group{display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex:0 0 auto;max-width:100%}
 .action-group .ag-buttons{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%;padding:3px;border-radius:10px}
@@ -2674,13 +2638,13 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    The border color must equal each surface's own background exactly, or the "floating" trick
    doesn't read correctly - so this is grouped by background rather than one blanket rule. */
 .settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
-#why-sakura-modal,.app-modal-body,.doc-tab-overview-menu,.qa-dropdown,
+#why-sakura-modal,.app-modal-body,.qa-dropdown,
 .history-modal-body,#at-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#link-pop-node-results,#diagram-gen-review-list
 {scrollbar-gutter:stable}
 .settings-content::-webkit-scrollbar,.settings-rail::-webkit-scrollbar,#shortcuts-modal-body::-webkit-scrollbar,.cs-rail::-webkit-scrollbar,#shortcuts-rail::-webkit-scrollbar,
 #cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,#diagram-gen-review-modal::-webkit-scrollbar,#diagram-gen-review-list::-webkit-scrollbar,
-.app-modal-body::-webkit-scrollbar,.doc-tab-overview-menu::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
+.app-modal-body::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
 .history-modal-body::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,
 #demo-chapters-menu::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
 #preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
@@ -2688,15 +2652,13 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #account-menu::-webkit-scrollbar,#notif-menu::-webkit-scrollbar,.sb-context-menu::-webkit-scrollbar{width:8px;height:8px}
 .settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
 #cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,#diagram-gen-review-modal::-webkit-scrollbar-thumb,#diagram-gen-review-list::-webkit-scrollbar-thumb,
-.app-modal-body::-webkit-scrollbar-thumb,.doc-tab-overview-menu::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
+.app-modal-body::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
 .history-modal-body::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,
 #demo-chapters-menu::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
 #preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
 .anchor-suggest-results::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
 #account-menu::-webkit-scrollbar-thumb,#notif-menu::-webkit-scrollbar-thumb,.sb-context-menu::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
 /* --tb-bg surfaces */
-#doc-tab-strip::-webkit-scrollbar{width:8px;height:8px}
-#doc-tab-strip::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
 #sidebar-scroll::-webkit-scrollbar{width:8px}
 #sidebar-scroll::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
 /* --edit-bg surfaces */
@@ -2798,7 +2760,6 @@ html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:calc(50% +
    left, History · Share on the right. No tabs (owner,
    2026-10-28): one document at a time; switch from the File Explorer or Search. */
 html.calm-layout #doc-tab-strip-row{align-items:center;gap:4px;height:52px;padding:0 20px 0 12px;background:var(--canvas-bg);border-bottom:none}
-html.calm-layout #doc-tab-strip,html.calm-layout #doc-tab-add-btn,html.calm-layout #doc-tab-overview-wrap{display:none!important}
 #doc-path{display:none}
 html.calm-layout #doc-path{display:flex;align-items:center;gap:2px;min-width:0;flex:1 1 auto}
 .doc-nav-btn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;flex:0 0 auto}
@@ -2830,7 +2791,10 @@ html.calm-layout #marker-summary .oi-sep,html.calm-layout #ag-markers:not([hidde
 html.calm-layout #quick-bar>.action-group:not(.ag-right),html.calm-layout #quick-bar>.quick-sep{display:none}
 html.calm-layout #quick-bar #qb-collapse,html.calm-layout #quick-bar #qb-zoom,html.calm-layout #quick-bar #ag-fold .tb-sep{display:none}
 /* The page: more air above a lighter title; folded counts as plain grey text. */
-html.calm-layout #editor-title-row{padding-top:28px}
+/* Page margins (owner 2026-10-29, after Dynalist): room on the left that shrinks on narrow
+   screens, and space above the title. */
+html.calm-layout #editor-title-row{padding-top:64px;padding-left:clamp(24px,7vw,96px)}
+html.calm-layout #editor-pane{padding-left:clamp(24px,7vw,96px)}
 html.calm-layout #header-title{letter-spacing:-.005em}
 html.calm-layout .fold-badge,html.calm-layout .fold-badge.fold-badge-open{background:transparent;color:var(--hint)}
 html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
@@ -4153,15 +4117,6 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
     <button id="sidebar-reopen-btn" data-tip="Show file explorer" aria-label="Show file explorer" style="display:none">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
     </button>
-    <div id="doc-tab-strip" role="tablist" aria-label="Open documents"></div>
-    <button id="doc-tab-add-btn" class="doc-tab-add" data-tip="New document in a new tab" aria-label="New document">+</button>
-    <div class="doc-tab-overview-wrap" id="doc-tab-overview-wrap">
-      <button id="doc-tab-overview-btn" class="doc-tab-overview-btn" data-tip="Search open tabs" aria-label="Search open tabs"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-      <div class="doc-tab-overview-menu" id="doc-tab-overview-menu">
-        <input id="doc-tab-overview-search" type="text" placeholder="Search open tabs…" autocomplete="off" aria-label="Search open tabs" />
-        <div id="doc-tab-overview-list"></div>
-      </div>
-    </div>
   </div>
   <div id="tag-filter-bar" style="display:none;align-items:center;gap:6px;padding:5px 10px;background:var(--tb-bg);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);flex-shrink:0"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -12046,11 +12001,10 @@ function reconcileDocState(list){
     const raw=localStorage.getItem(OPEN_TABS_KEY); const saved=raw?JSON.parse(raw):null;
     if(saved){
       const tabs=Array.isArray(saved.tabs)?saved.tabs.filter(id=>realIds.has(id)):[];
-      const pinned=Array.isArray(saved.pinned)?saved.pinned.filter(id=>realIds.has(id)):[];
       const active=(saved.active&&realIds.has(saved.active))?saved.active:null;
-      if(tabs.length!==(Array.isArray(saved.tabs)?saved.tabs.length:0)||pinned.length!==(Array.isArray(saved.pinned)?saved.pinned.length:0)||active!==saved.active){
+      if(tabs.length!==(Array.isArray(saved.tabs)?saved.tabs.length:0)||saved.pinned||active!==saved.active){
         changed=true;
-        localStorage.setItem(OPEN_TABS_KEY,JSON.stringify({tabs,pinned,active}));
+        localStorage.setItem(OPEN_TABS_KEY,JSON.stringify({tabs,active}));
       }
     }
   }catch(e){}
@@ -12507,67 +12461,8 @@ function loadTabFromStorageObj(id){
   }catch(e){ console.warn('[sakura] loadTabFromStorageObj(',id,') failed — falling back to null:',e); return null }
 }
 
-function persistOpenTabs(){ try{ localStorage.setItem(OPEN_TABS_KEY, JSON.stringify({tabs:openTabs.map(t=>t.docId), pinned:openTabs.filter(t=>t.pinned).map(t=>t.docId), active:activeTabDocId})) }catch(e){} }
+function persistOpenTabs(){ try{ localStorage.setItem(OPEN_TABS_KEY, JSON.stringify({tabs:openTabs.map(t=>t.docId), active:activeTabDocId})) }catch(e){} }
 
-/* GENERATED:tabOrder:START — DO NOT EDIT BY HAND. Source of truth: src/state/tabOrder.ts (tests: tests/unit/tabOrder.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
-/**
- * Pure open-tab ordering/cycling logic — a Phase 2 (docs/architecture-plan.md) slice, revisiting
- * "tab state" after it was originally set aside alongside outline search and diagram-anchor
- * state as "core-outline-coupled." That framing doesn't actually hold for these two functions
- * specifically: `cycleOpenTab`/`reorderTab` only ever read/write `openTabs`/`activeTabDocId` —
- * neither touches the outline `nodes` array at all. Same shape of over-broad original judgment
- * as `nodeSearch.ts`'s revisit of search-matching.
- *
- * `switchDoc`/`persistOpenTabs`/`renderTabStrip` (real orchestration: loading a document's full
- * editor state, writing to localStorage, rebuilding the tab strip DOM) stay hand-written in
- * index.html, exactly the same "extract only the pure, testable core; leave orchestration
- * alone" split used throughout this project. `openDockTab`/`toggleDockTab`/`dockPanelIsOpen`
- * (Hub-panel docking, a different "tab" concept entirely — pad/notes/diagrams panel tabs, not
- * open-document tabs) are unrelated and untouched.
- */
-/** Pure: which tab to switch to when cycling open tabs by `dir` (+1/-1), wrapping around.
- * Returns `null` when there's nothing to cycle through (fewer than 2 tabs open) — the same
- * early-return-as-no-op the original had, made explicit as a return value here since this
- * function has no side effect of its own to skip. If `activeTabDocId` isn't found among
- * `openTabs` (shouldn't normally happen), cycling starts from index 0, matching the original's
- * `idx<0?0:idx` fallback. */
-function computeNextTabDocId(openTabs, activeTabDocId, dir) {
-    if (openTabs.length < 2)
-        return null;
-    const idx = openTabs.findIndex((t) => t.docId === activeTabDocId);
-    const from = idx < 0 ? 0 : idx;
-    const next = (from + dir + openTabs.length) % openTabs.length;
-    return openTabs[next].docId;
-}
-/** Mutates `openTabs` in place, moving the tab identified by `draggedId` to just before (side
- * `'left'`) or just after (side `'right'`) the tab identified by `targetId` — the same
- * splice-out/splice-back-in convention as `nodeMutations.ts`'s own in-place-mutation pattern.
- * A no-op (no mutation) when `draggedId===targetId` or either id isn't found in `openTabs`,
- * matching the original's early returns exactly. Returns whether a reorder actually happened,
- * so a caller can skip its own follow-up work (persist/render) on a true no-op — the original
- * didn't need this since its early `return`s skipped the follow-up calls directly, but a pure
- * function needs an explicit signal instead of a bare `return`. */
-function reorderTabsCore(openTabs, draggedId, targetId, side) {
-    if (draggedId === targetId)
-        return false;
-    const fromIdx = openTabs.findIndex((t) => t.docId === draggedId);
-    const toIdx = openTabs.findIndex((t) => t.docId === targetId);
-    if (fromIdx < 0 || toIdx < 0)
-        return false;
-    const [moved] = openTabs.splice(fromIdx, 1);
-    let insertAt = openTabs.findIndex((t) => t.docId === targetId);
-    if (side === 'right')
-        insertAt += 1;
-    openTabs.splice(insertAt, 0, moved);
-    return true;
-}
-
-/* GENERATED:tabOrder:END */
-function cycleOpenTab(dir){
-  const nextId=computeNextTabDocId(openTabs,activeTabDocId,dir);
-  if(nextId===null)return;
-  switchDoc(nextId);
-}
 // A document that was opened (the + tab, New document, a folder's New) and left without anything
 // in it -- no title, no row text, no notes/tables/pictures/diagrams, no thread, status or link --
 // is removed when you switch away from it or close its tab, so trying "+" doesn't leave a trail
@@ -12584,7 +12479,7 @@ function docPayloadIsBlank(d){
   return list.every(n=>n&&!String(n.text||'').trim()&&Object.keys(n).every(k=>k==='text'||BLANK_DOC_NODE_STRUCTURE_KEYS.has(k)||isEmptyValue(n[k])));
 }
 function discardDocIfBlank(id){
-  if(!id||id===activeTabDocId||sharedDocMeta[id]||findOpenTab(id)?.pinned)return false;
+  if(!id||id===activeTabDocId||sharedDocMeta[id])return false;
   let d=null; try{ d=JSON.parse(localStorage.getItem(docKey(id))||'null'); }catch(e){ return false; }
   if(!docPayloadIsBlank(d))return false;
   const i=openTabs.findIndex(t=>t.docId===id); if(i>=0)openTabs.splice(i,1);
@@ -12629,8 +12524,8 @@ function noteDocVisit(prevId,id){
 function recentDocIds(){ try{ const r=JSON.parse(localStorage.getItem(RECENT_DOCS_KEY)||'[]'); return Array.isArray(r)?r:[]; }catch(e){ return []; } }
 function trimOpenDocCache(){
   const rank=id=>{ const r=recentDocIds().indexOf(id); return r<0?1e9:r; };
-  while(openTabs.filter(t=>!t.pinned).length>OPEN_DOC_CACHE){
-    const old=openTabs.filter(t=>!t.pinned&&t.docId!==activeTabDocId&&!sharedDocMeta[t.docId]).sort((a,b)=>rank(b.docId)-rank(a.docId))[0]; if(!old)break;
+  while(openTabs.length>OPEN_DOC_CACHE){
+    const old=openTabs.filter(t=>t.docId!==activeTabDocId&&!sharedDocMeta[t.docId]).sort((a,b)=>rank(b.docId)-rank(a.docId))[0]; if(!old)break;
     closeTab(old.docId);
   }
 }
@@ -12669,9 +12564,8 @@ function renderDocPath(){
   box.appendChild(t);
 }
 
-function closeTab(id, force=false){
+function closeTab(id){
   const idx=openTabs.findIndex(t=>t.docId===id); if(idx<0)return;
-  if(openTabs[idx].pinned && !force){ showToast('Pinned tab — unpin it first to close'); return; }
   const wasActive=id===activeTabDocId, wasShared=!!sharedDocMeta[id];
   if(wasActive){ commitEdit(); captureActiveTabSnapshot(); saveToStorage() }
   openTabs.splice(idx,1);
@@ -12687,20 +12581,6 @@ function closeTab(id, force=false){
   if(!wasShared)discardDocIfBlank(id);
 }
 
-function setTabPinned(id, pinned){
-  const tab=findOpenTab(id); if(!tab) return;
-  tab.pinned=!!pinned;
-  persistOpenTabs(); renderTabStrip();
-}
-function toggleTabPinned(id){ const tab=findOpenTab(id); if(!tab)return; setTabPinned(id, !tab.pinned); }
-function closeOtherTabs(keepId){
-  openTabs.slice().forEach(t=>{ if(t.docId!==keepId && !t.pinned) closeTab(t.docId); });
-}
-function closeTabsToRight(fromId){
-  const idx=openTabs.findIndex(t=>t.docId===fromId); if(idx<0)return;
-  openTabs.slice(idx+1).forEach(t=>{ if(!t.pinned) closeTab(t.docId); });
-}
-
 function removeDocFromOpenTabs(id){
   const idx=openTabs.findIndex(t=>t.docId===id); if(idx<0)return;
   openTabs.splice(idx,1); persistOpenTabs();
@@ -12711,61 +12591,10 @@ function removeDocFromOpenTabs(id){
   if(sharedDocMeta[id])delete sharedDocMeta[id];
 }
 
-// === Tab strip drag-and-drop reordering ===
-let tabDragState={draggedId:null,targetId:null,side:null};
-function clearTabDragIndicators(){
-  const strip=el('doc-tab-strip'); if(!strip)return;
-  strip.querySelectorAll('.doc-tab').forEach(r=>r.classList.remove('drag-over-left','drag-over-right'));
-}
-function reorderTab(draggedId,targetId,side){
-  if(!reorderTabsCore(openTabs,draggedId,targetId,side))return;
-  persistOpenTabs(); renderTabStrip();
-}
-
+// The top line: back/forward, where you are, and the whole-document to-do chip. (Named for the tab
+// strip it replaced; openTabs is only a hidden cache now.)
 function renderTabStrip(){
   renderDocPath(); updateDocNavButtons();
-  const strip=el('doc-tab-strip'); if(!strip)return;
-  const docIndexMap=new Map(loadDocsIndex().map(d=>[d.id,d]));
-  strip.innerHTML='';
-  const ordered=[...openTabs.filter(t=>t.pinned), ...openTabs.filter(t=>!t.pinned)];
-  ordered.forEach(tab=>{
-    const isActive=tab.docId===activeTabDocId;
-    const row=document.createElement('div');
-    const tabIsDirty=isActive?dirty:!!tab.dirty;
-    row.dataset.docId=tab.docId; row.className='doc-tab'+(isActive?' active':'')+(tabIsDirty?' is-dirty':'')+(tab.pinned?' pinned':'');
-    row.setAttribute('role','tab'); row.setAttribute('aria-selected',String(isActive));
-    const indexEntry=docIndexMap.get(tab.docId);
-    const title=isActive?(el('header-title')?.value||'Untitled'):(indexEntry?.title||tab.title||'Untitled');
-    row.dataset.tip=tab.pinned?(title||'Untitled')+' (pinned — right-click for options)':'Double-click to rename';
-    row.draggable=true;
-    row.addEventListener('dragstart',e=>{ tabDragState={draggedId:tab.docId,targetId:null,side:null}; e.dataTransfer.effectAllowed='move'; try{e.dataTransfer.setData('text/plain',String(tab.docId))}catch(err){} row.classList.add('dragging'); hideContextMenu(); closeTabOverviewMenu() });
-    row.addEventListener('dragover',e=>{
-      const draggedId=tabDragState.draggedId; if(!draggedId||draggedId===tab.docId)return;
-      const draggedTab=findOpenTab(draggedId); if(!draggedTab||!!draggedTab.pinned!==!!tab.pinned)return; // pinned and unpinned tabs stay in their own groups
-      e.preventDefault();
-      const rect=row.getBoundingClientRect(); const side=(e.clientX-rect.left)<rect.width/2?'left':'right';
-      tabDragState.targetId=tab.docId; tabDragState.side=side;
-      clearTabDragIndicators(); row.classList.add(side==='left'?'drag-over-left':'drag-over-right');
-    });
-    row.addEventListener('dragleave',e=>{ if(!row.contains(e.relatedTarget)){ row.classList.remove('drag-over-left','drag-over-right') } });
-    row.addEventListener('drop',e=>{
-      const draggedId=tabDragState.draggedId; if(!draggedId)return;
-      const draggedTab=findOpenTab(draggedId); if(!draggedTab||!!draggedTab.pinned!==!!tab.pinned)return;
-      e.preventDefault();
-      clearTabDragIndicators(); reorderTab(draggedId,tab.docId,tabDragState.side||'left');
-      tabDragState={draggedId:null,targetId:null,side:null};
-    });
-    row.addEventListener('dragend',()=>{ clearTabDragIndicators(); tabDragState={draggedId:null,targetId:null,side:null} });
-    row.innerHTML=`<span class="doc-tab-pin-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span><span class="doc-tab-dirty"></span><span class="doc-tab-title"></span><span class="doc-tab-close" data-tip="Close tab"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></span>`;
-    row.querySelector('.doc-tab-title').textContent=truncateTitle(title||'Untitled',60);
-    row.addEventListener('click',e=>{ if(e.target.closest('.doc-tab-close'))return; if(!isActive)switchDoc(tab.docId) });
-    row.addEventListener('dblclick',e=>{ if(e.target.closest('.doc-tab-close'))return; e.preventDefault(); renameDoc(tab.docId,row.querySelector('.doc-tab-title')) });
-    row.querySelector('.doc-tab-close').addEventListener('click',e=>{ e.stopPropagation(); closeTab(tab.docId) });
-    row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docMenuItems()); });
-    strip.appendChild(row);
-  });
-  // Calm layout hides the strip while only one document is open.
-  el('doc-tab-strip-row')?.classList.toggle('no-tabs',openTabs.length===0);
   updateHeaderRefChip();
 }
 // Moved out of the tab strip and into the title area (next to the document-status chip) —
@@ -12800,44 +12629,6 @@ function docMenuItems(){
   return items;
 }
 
-// === Chrome-style "search open tabs" overview ===
-let tabOverviewItems=[]; let tabOverviewActiveIndex=-1;
-
-function openTabOverviewMenu(){
-  const menu=el('doc-tab-overview-menu'); if(!menu)return;
-  menu.classList.add('open');
-  const search=el('doc-tab-overview-search');
-  if(search){ search.value=''; renderTabOverviewList(''); setTimeout(()=>search.focus(),0) }
-}
-function closeTabOverviewMenu(){ const menu=el('doc-tab-overview-menu'); if(menu)menu.classList.remove('open') }
-
-function renderTabOverviewList(query){
-  const list=el('doc-tab-overview-list'); if(!list)return;
-  const q=query.trim().toLowerCase();
-  const titleIndex=new Map(loadDocsIndex().map(d=>[d.id,d.title||'Untitled']));
-  tabOverviewItems=openTabs.map(tab=>({tab,title:tab.docId===activeTabDocId?(el('header-title')?.value||'Untitled'):(titleIndex.get(tab.docId)||tab.title||'Untitled')})).filter(x=>!q||(x.title||'').toLowerCase().includes(q));
-  list.innerHTML='';
-  if(!tabOverviewItems.length){ list.innerHTML=`<div class="doc-tab-overview-empty">No open tabs match "${esc(query.trim())}"</div>`; tabOverviewActiveIndex=-1; return }
-  tabOverviewItems.forEach(({tab,title},idx)=>{
-    const isActiveDoc=tab.docId===activeTabDocId;
-    const tabIsDirty=isActiveDoc?dirty:!!tab.dirty;
-    const btn=document.createElement('button'); btn.className='doc-tab-overview-item'+(isActiveDoc?' active':''); btn.dataset.idx=String(idx);
-    btn.innerHTML=`<span class="doc-tab-overview-dirty" style="visibility:${tabIsDirty?'visible':'hidden'}"></span><span class="doc-tab-overview-title"></span>`;
-    btn.querySelector('.doc-tab-overview-title').textContent=title||'Untitled';
-    btn.addEventListener('click',()=>{ closeTabOverviewMenu(); if(!isActiveDoc)switchDoc(tab.docId) });
-    list.appendChild(btn);
-  });
-  tabOverviewActiveIndex=0; updateTabOverviewHighlight();
-}
-function updateTabOverviewHighlight(){
-  const list=el('doc-tab-overview-list'); if(!list)return;
-  list.querySelectorAll('.doc-tab-overview-item').forEach(b=>b.classList.toggle('kbd-active',Number(b.dataset.idx)===tabOverviewActiveIndex));
-  const activeBtn=list.querySelector(`.doc-tab-overview-item[data-idx="${tabOverviewActiveIndex}"]`);
-  if(activeBtn){ try{ activeBtn.scrollIntoView({block:'nearest'}) }catch(e){} }
-}
-function moveTabOverviewSelection(dir){ if(!tabOverviewItems.length)return; tabOverviewActiveIndex=(tabOverviewActiveIndex+dir+tabOverviewItems.length)%tabOverviewItems.length; updateTabOverviewHighlight() }
-function activateTabOverviewSelection(){ if(tabOverviewActiveIndex<0||!tabOverviewItems[tabOverviewActiveIndex])return; const {tab}=tabOverviewItems[tabOverviewActiveIndex]; closeTabOverviewMenu(); if(tab.docId!==activeTabDocId)switchDoc(tab.docId) }
-
 function restoreOpenTabsOnStartup(forceActiveId){
   let saved=null; try{ const raw=localStorage.getItem(OPEN_TABS_KEY); saved=raw?JSON.parse(raw):null }catch(e){}
   const validIds=new Set(loadActiveDocsIndex().map(d=>d.id));
@@ -12851,9 +12642,8 @@ function restoreOpenTabsOnStartup(forceActiveId){
   // sure the real current document is always among the restored tabs, so a stale OPEN_TABS_KEY
   // can never hide it behind some other tab.
   if(currentDocId&&!ids.includes(currentDocId)) ids=[...ids,currentDocId];
-  const pinnedIds=new Set(restoreTabsOnLaunch&&saved&&Array.isArray(saved.pinned)?saved.pinned:[]);
   openTabs=[];
-  ids.forEach(id=>{ const t=loadTabFromStorageObj(id); if(t){ t.pinned=pinnedIds.has(id); openTabs.push(t) } });
+  ids.forEach(id=>{ const t=loadTabFromStorageObj(id); if(t)openTabs.push(t); });
   // Active-tab priority: the real current document first (if it actually loaded), then the
   // persisted `active` pointer (if still valid), then just the first open tab.
   let activeId=(currentDocId&&findOpenTab(currentDocId))?currentDocId
@@ -12942,7 +12732,7 @@ function renameDoc(id,anchor){
   return new Promise(resolve=>{
     const entry=loadDocsIndex().find(d=>d.id===id); const current=entry?entry.title:'';
     const sel=CSS.escape(String(id));
-    const target=anchor||[...document.querySelectorAll(`.sdoc-name-btn[data-doc-id="${sel}"], .doc-tab[data-doc-id="${sel}"] .doc-tab-title`)].find(e=>e.getClientRects().length);
+    const target=anchor||[...document.querySelectorAll(`.sdoc-name-btn[data-doc-id="${sel}"]`)].find(e=>e.getClientRects().length);
     if(!target){
       if(id!==currentDocId)switchDoc(id);
       const h=el('header-title'); if(h){ h.focus(); h.select(); }
@@ -17303,7 +17093,7 @@ function stopRealtimeSync(){
 
 
 function markDirty(){ensureDocumentForEditing(); dirty=true; updateDirtyIndicator(); scheduleAutoSave()} function resetDirty(){dirty=false; updateDirtyIndicator()}
-function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'; const strip=el('doc-tab-strip'); const activeRow=strip?strip.querySelector('.doc-tab.active'):null; if(activeRow)activeRow.classList.toggle('is-dirty',dirty)}
+function updateDirtyIndicator(){document.title=dirty?'• Sakura':'Sakura'}
 // Expand all / Collapse all cover inline objects too (owner request): every note, Q&A, remark and
 // diagram opens or closes under its row, and tables and images unfold or fold, along with the
 // branches themselves.
@@ -25061,17 +24851,6 @@ document.querySelectorAll('#accent-swatch-row .accent-swatch').forEach(btn=>{if(
 // Clear all rows — reached from the open document's tab menu (right-click the active tab).
 // Undoable like any other edit, but asks first since it empties the whole document at once.
 async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const allIds=nodes.map(n=>n.id); const impactText=deleteImpactText(collectDeleteImpact(allIds)); if(impactText.permanent){ const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all rows?',body:'Remove every row from this document?'+[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('')+'\n\nYou can undo this with Ctrl/Cmd+Z.',warning:impactText.permanent,confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; } pushUndo(); markDirty(); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane(); showActionToast('Cleared all rows','Undo',()=>undo())}
-el('doc-tab-add-btn')?.addEventListener('click',()=>createDoc());
-el('doc-tab-overview-btn')?.addEventListener('click',e=>{ e.stopPropagation(); const menu=el('doc-tab-overview-menu'); if(menu&&menu.classList.contains('open'))closeTabOverviewMenu(); else openTabOverviewMenu() });
-el('doc-tab-overview-search')?.addEventListener('click',e=>e.stopPropagation());
-el('doc-tab-overview-search')?.addEventListener('input',e=>renderTabOverviewList(e.target.value));
-el('doc-tab-overview-search')?.addEventListener('keydown',e=>{
-  e.stopPropagation();
-  if(e.key==='Escape'){e.preventDefault(); closeTabOverviewMenu(); return}
-  if(e.key==='ArrowDown'){e.preventDefault(); moveTabOverviewSelection(1); return}
-  if(e.key==='ArrowUp'){e.preventDefault(); moveTabOverviewSelection(-1); return}
-  if(e.key==='Enter'){e.preventDefault(); activateTabOverviewSelection(); return}
-});
 el('undo-btn').addEventListener('click',contextualUndo); el('redo-btn').addEventListener('click',contextualRedo);
 el('qb-outdent').addEventListener('click',()=>{commitEdit(); outdentSelected(); focusPane()});
 el('qb-indent').addEventListener('click',()=>{commitEdit(); indentSelected(); focusPane()});
@@ -25286,7 +25065,7 @@ document.addEventListener('click',e=>{
   // AI fallback warning ran into: clicking the password prompt's own button silently closed the
   // Settings panel behind it, only visible once the prompt itself closed a moment later.
   if(e.target.closest('[role="dialog"][aria-modal="true"].open'))return;
-  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),tabOverview=el('doc-tab-overview-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(tabOverview&&!tabOverview.contains(e.target))closeTabOverviewMenu(); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
+  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
 },true);
 el('editor-pane').addEventListener('click',e=>{
   const blLink=e.target.closest('.bl-link[data-r]');
@@ -25471,7 +25250,6 @@ document.addEventListener('paste',e=>{
 el('editor-pane').addEventListener('contextmenu',e=>{if(e.target.closest('.node-row'))return; hideContextMenu(); e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 el('sidebar')?.addEventListener('contextmenu',e=>{e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,explorerContextItems())});
 el('statusbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
-el('doc-tab-strip')?.addEventListener('contextmenu',e=>{if(e.target.closest('.doc-tab'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 el('appbar')?.addEventListener('contextmenu',e=>{if(e.target.closest('.global-search-wrap')||e.target.closest('.settings-wrap')||e.target.closest('input')||e.target.closest('button'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 // Toolbar empty space: same app menu as the app bar, status bar and editor background (buttons keep their own behaviour).
 el('quick-bar')?.addEventListener('contextmenu',e=>{if(e.target.closest('button,input,[role="menu"],.hl-palette,.todo-dd-menu'))return; e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
@@ -25960,7 +25738,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('keydown', e=>{ if (e.key==='Escape' && overlay.classList.contains('open') && document.activeElement!==searchInput) close(); });
 });
 
-document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); closeTabOverviewMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
+document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'heading4')) { e.preventDefault(); fireShortcut('heading4'); return; } if (matchesShortcut(e,'heading5')) { e.preventDefault(); fireShortcut('heading5'); return; } if (matchesShortcut(e,'heading6')) { e.preventDefault(); fireShortcut('heading6'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
     // Zoomed into a node with no children yet: render() shows only the focus-empty-state
     // placeholder here, with no row to click or type into -- so typing or Enter must create
     // that first child directly, mirroring the !nodes.length branch just above.
