@@ -71,10 +71,10 @@ test.describe('Fixed main toolbar', () => {
         .map((b) => b.id || (b as HTMLElement).dataset.style));
     expect(shown).toEqual(['doc-history-chip', 'doc-share-chip']);
     await page.locator('#qb-insert').dispatchEvent('click');
-    await expect(page.locator('#insert-menu .sb-context-heading')).toHaveCount(0);
-    await expect(page.locator('#insert-menu > .sb-context-divider')).toHaveCount(4);
-    await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Note', 'Tags…', 'Date/time', 'Heading 1', 'Heading 2', 'Heading 3', 'Body text', 'Checkbox', 'Thread', 'Table', 'Image', 'Diagram', 'Generate diagram']);
-    await expect(page.locator('#insert-markers .tb-menu-marker')).toHaveCount(3);
+    // Two groups under small headings (owner 2026-10-29); row status marks only when you type.
+    await expect(page.locator('#insert-menu .sb-context-heading')).toHaveText(['Text', 'Insert']);
+    await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Heading 1', 'Heading 2', 'Heading 3', 'Checkbox', 'Note', 'Table', 'Image', 'Diagram', 'Thread']);
+    await expect(page.locator('#insert-markers')).toHaveCount(0);
     await page.locator('#qb-ai').dispatchEvent('click');
     await expect(page.locator('#insert-menu')).toHaveCount(0);
     await expect(page.locator('#ai-menu .sb-context-label')).toHaveText(['Rewrite row', 'Generate outline']);
@@ -120,13 +120,13 @@ test.describe('Fixed main toolbar', () => {
   });
 });
 
-test.describe('Document menu (right-click the name on the top line): Version history, Sort, Clear all', () => {
+test.describe('Document menu (right-click the title): Version history, Sort, Clear all', () => {
   test('sorts top-level nodes A→Z, Z→A and by depth from the document menu', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
     const pick = async (label: string) => {
-      await page.locator('.doc-path-title').click({ button: 'right' });
+      await page.locator('#header-title').click({ button: 'right' });
       await page.locator('.sb-context-menu .sb-context-item', { hasText: label }).click();
     };
     await pick('Sort rows A → Z');
@@ -142,7 +142,7 @@ test.describe('Document menu (right-click the name on the top line): Version his
   test('Version history opens from the document menu', async ({ page }) => {
     await open(page);
     await seedDoc(page);
-    await page.locator('.doc-path-title').click({ button: 'right' });
+    await page.locator('#header-title').click({ button: 'right' });
     await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Version history…' }).click();
     await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
   });
@@ -151,7 +151,7 @@ test.describe('Document menu (right-click the name on the top line): Version his
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
-    await page.locator('.doc-path-title').click({ button: 'right' });
+    await page.locator('#header-title').click({ button: 'right' });
     await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Clear all rows' }).click();
     await expect(page.locator('#sakura-modal-overlay')).not.toHaveClass(/open/);
     // @ts-expect-error -- bare globals from index.html
@@ -167,7 +167,7 @@ test.describe('Document menu (right-click the name on the top line): Version his
     await open(page);
     await seedDoc(page);
     await expect(page.locator('#doc-tab-strip')).toBeHidden();
-    await page.locator('.doc-path-title').click({ button: 'right' });
+    await page.locator('#header-title').click({ button: 'right' });
     const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
     expect(labels).toEqual(['Version history…', 'Sort rows A → Z', 'Sort rows Z → A', 'Sort rows by depth', 'Clear all rows']);
   });
@@ -245,22 +245,6 @@ test.describe('Settings', () => {
     await page.locator('#insert-menu [data-insert-action="remark"]').dispatchEvent('click');
     await expect(page.locator('#insert-menu')).toHaveCount(0);
     await expect(page.locator('.thread-composer-input[data-node-id="1"]')).toBeFocused();
-  });
-
-  test('Insert ▾ marker strip sets the selected node\'s marker, and clicking the active one clears it', async ({ page }) => {
-    await open(page);
-    await seedDoc(page);
-    await page.locator('.node-row[data-id="1"]').click();
-    await page.locator('#qb-insert').dispatchEvent('click');
-    await page.locator('#insert-markers [data-marker="followup"]').dispatchEvent('click');
-    await expect(page.locator('#insert-menu')).toHaveCount(0);
-    // @ts-expect-error -- bare global from index.html
-    expect(await page.evaluate(() => nodes.find((n: { id: number }) => n.id === 1).marker)).toBe('followup');
-    await page.locator('#qb-insert').dispatchEvent('click');
-    await expect(page.locator('#insert-markers [data-marker="followup"]')).toHaveClass(/active/);
-    await page.locator('#insert-markers [data-marker="followup"]').dispatchEvent('click');
-    // @ts-expect-error
-    expect(await page.evaluate(() => nodes.find((n: { id: number }) => n.id === 1).marker)).toBe('');
   });
 
   test('turning AI Capabilities off from Settings → AI hides the AI entry points but keeps its own switch', async ({ page }) => {
@@ -365,9 +349,9 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     await expect(page.locator('#context-menu :is(#context-more-panel, .sb-context-submenu) [data-action="sort-az"]')).toBeVisible();
     await page.keyboard.press('Escape');
     // Tagging / Quick Assist / Quick Insert are always on.
-    await page.locator('#qb-insert').dispatchEvent('click');
-    await expect(page.locator('#qb-tags')).toHaveCount(1);
-    await page.locator('#qb-insert').dispatchEvent('click');
+    // Tags… is in the full list ("/tag" finds it; owner 2026-10-29 shortened the unfiltered one).
+    // @ts-expect-error -- bare global from index.html
+    expect(await page.evaluate(() => insertMenuItems(true).some((it: { id?: string }) => it.id === 'qb-tags'))).toBe(true);
     // @ts-expect-error -- bare globals from index.html
     await page.evaluate(() => toggleQa());
     await expect(page.locator('#qa-dropdown')).toHaveClass(/open/);

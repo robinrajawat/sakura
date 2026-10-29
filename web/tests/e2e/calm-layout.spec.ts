@@ -69,25 +69,22 @@ test('the top line is always there; Export is under Share', async ({ page }) => 
   await expect(page.locator('#share-menu .sb-context-item[data-save="opml"]')).toBeVisible();
 });
 
-// No tabs (owner 2026-10-28): the top line shows back/forward and Folder › Document; Search opens
-// with recent documents.
+// No tabs (owner 2026-10-28): the top line shows Folder › Document; back/forward are shortcuts only
+// (owner 2026-10-29); Search opens with recent documents.
 test('no tabs: path on the top line, back/forward between documents, recent documents in Search', async ({ page }) => {
   await expect(page.locator('#doc-tab-strip')).toBeHidden();
   const first = await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     ensureDocumentForEditing(); el('header-title').value = 'First'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); return currentDocId;
   });
-  await expect(page.locator('.doc-path-title')).toHaveText('First');
-  await expect(page.locator('#doc-nav-back')).toBeDisabled();
+  await expect(page.locator('#doc-nav-back')).toHaveCount(0);
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     createDoc(); el('header-title').value = 'Second'; el('header-title').dispatchEvent(new Event('input')); saveToStorage();
   });
-  await expect(page.locator('.doc-path-title')).toHaveText('Second');
-  await page.locator('#doc-nav-back').click();
+  await page.keyboard.press('ControlOrMeta+BracketLeft');
   // @ts-expect-error -- bare globals from index.html
   await expect.poll(() => page.evaluate(() => currentDocId)).toBe(first);
-  await expect(page.locator('#doc-nav-forward')).toBeEnabled();
   await page.locator('#qa-category-icon-btn').click();
   await expect(page.locator('.qa-item', { hasText: 'Second' }).first()).toBeVisible();
 });
@@ -103,9 +100,21 @@ test('the File Explorer header has two buttons; its right-click has Import', asy
   const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
   expect(labels.slice(0, 3)).toEqual(['New document', 'New folder', 'Import (.opml)…']);
   await page.keyboard.press('Escape');
-  // @ts-expect-error -- bare globals from index.html
-  await page.evaluate(() => setSidebarOpen(false));
-  await page.locator('.doc-path-title').click();
+});
+
+// The title sits right below the top line, so the top line names only the folders (owner 2026-10-29).
+test('the top line shows the folders, not the document name; a folder there opens the explorer', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    setSidebarOpen(false); ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); renderDocPath();
+  });
+  await expect(page.locator('#doc-path-crumbs')).toHaveText('');
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    const fs = loadFolders(); fs.push({ id: 'f1', name: 'Work', parentId: null }); saveFolders(fs); const m = loadDocFolderMap(); m[currentDocId] = 'f1'; saveDocFolderMap(m); renderDocPath();
+  });
+  await expect(page.locator('#doc-path-crumbs')).toHaveText('Work');
+  await page.locator('.doc-path-folder').click();
   // @ts-expect-error -- bare globals from index.html
   expect(await page.evaluate(() => sidebarOpen)).toBe(true);
 });

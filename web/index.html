@@ -1272,10 +1272,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sfolder-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 12px 'Inter',sans-serif;color:var(--fg);padding:4px 4px 4px 0}
 .sfolder-name-input{flex:1;min-width:0;font:500 12px 'Inter',sans-serif;color:var(--fg);background:var(--edit-bg);border:1px solid var(--accent);border-radius:4px;padding:2px 5px;margin:2px 2px 2px 0;outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
 .sfolder-count{font:400 10px 'Inter',sans-serif;color:var(--hint);margin-right:4px;flex-shrink:0}
-.sfolder-actions{display:none;gap:1px;align-items:center;padding-right:3px;flex-shrink:0}
-.sfolder-row:hover .sfolder-actions{display:flex}
 .sfolder-row:hover .sfolder-count{display:none}
-.sfolder-actions .sdoc-action-btn:first-child{color:var(--accent)}
 .sfolder-children{padding-left:14px;display:grid;gap:0}
 .sfolder-children.hidden{display:none}
 /* Doc items */
@@ -1288,13 +1285,6 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sdoc-name-btn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 13px 'Inter',sans-serif;color:var(--fg);padding:6px 8px 6px 2px;line-height:1.3;appearance:none;border:none;background:none;text-align:left;cursor:pointer}
 .sdoc-item.active .sdoc-name-btn{color:var(--fg);font-weight:600}
 .sdoc-unsaved-hint{flex:none;padding-right:8px;font:400 11px 'Inter',sans-serif;color:var(--hint)}
-.sdoc-actions{display:none;gap:1px;align-items:center;padding-right:4px;flex-shrink:0}
-.sdoc-item:hover .sdoc-actions{display:flex}
-.sdoc-meta{flex-shrink:0;font:400 10px 'Inter',sans-serif;color:var(--hint);padding-right:8px;white-space:nowrap}
-.sdoc-item:hover .sdoc-meta{display:none}
-.sdoc-action-btn{appearance:none;border:none;background:none;color:var(--muted);cursor:pointer;font-size:var(--fs-xs);padding:3px 4px;border-radius:5px;line-height:1;transition:color .1s,background .1s;display:flex;align-items:center;justify-content:center}
-.sdoc-action-btn:hover{color:var(--fg);background:var(--sel)}
-.sdoc-action-btn.danger:hover{color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent)}
 /* Move-to-folder sub-menu */
 .move-folder-menu{position:absolute;z-index:80;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-menu);box-shadow:var(--shadow-menu);padding:var(--pad-menu);min-width:150px;font-family:'Inter',sans-serif;--hover:var(--hover-raised)}
 .move-folder-item{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);border:none;background:none;width:100%;text-align:left}
@@ -1648,7 +1638,11 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
    for its actual table/chart styling (border, header shading, SVG sizing), same as Preview/PDF
    already get for free; these two classes just place it correctly in the outline's own layout. */
 .node-table-line-wrap{position:relative;width:calc(100% - 16px);max-width:calc(100% - 16px);margin:2px 0 8px}
-.node-table-line{cursor:pointer;border-radius:6px}
+.node-table-line{cursor:pointer;border-radius:6px;max-width:100%}
+.node-table-line:not(.editing){overflow-x:auto}
+/* Objects keep inside the page margins (owner 2026-10-29): a table wider than the page scrolls
+   sideways in its own box, and so does a code block in a note. */
+.node-note-line pre{max-width:100%;overflow-x:auto}
 .node-table-line:has(td[contenteditable="true"],th[contenteditable="true"]){cursor:text}
 /* .pv-table-figure table's own font/padding (14px, 7px/12px) is a fine, deliberately fixed size for
    a static Preview/PDF export, but the live outline editor scales everything else in a row off
@@ -2720,9 +2714,13 @@ html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
    takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
    are sheets over the page. */
 html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:0!important;left:52px!important;right:auto!important;height:100vh!important;max-height:none!important;border-radius:0;border-top:none;border-bottom:none;border-left:none}
-html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:400px!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
-html.calm-layout #todos-panel.maximized{width:calc(100vw - 52px)!important}
-html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:400px}
+html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,400px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
+html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:var(--todos-w,400px)}
+html.calm-layout #todos-resize-handle{left:auto;right:0;z-index:5}
+/* Same flat surface as the File Explorer, so the two read as one sidebar showing different things. */
+html.calm-layout #todos-panel,html.calm-layout .settings-panel,html.calm-layout .help-panel{background:var(--tb-bg);box-shadow:none;border-right:1px solid var(--border)}
+/* Notifications use the same side slot (owner 2026-10-29): full height beside the rail, flat, the list scrolls. */
+html.calm-layout #notif-menu{position:fixed;top:0!important;left:52px!important;right:auto!important;bottom:auto;width:340px;max-width:calc(100vw - 52px);height:100vh;max-height:none;margin:0;padding:14px 8px;border-radius:0;border:none;border-right:1px solid var(--border);background:var(--tb-bg);box-shadow:none;overflow-y:auto}
 /* Quick Assist is the rail's search icon; opened, its field and results float beside the rail. */
 html.calm-layout #appbar-qa-slot{width:auto}
 html.calm-layout #global-search-wrap .qa-input-row{width:36px;height:36px;padding:0;gap:0;justify-content:center;overflow:hidden;border-color:transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
@@ -2740,14 +2738,10 @@ html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:calc(50% +
 html.calm-layout #doc-tab-strip-row{align-items:center;gap:4px;height:52px;padding:0 20px 0 12px;background:var(--canvas-bg);border-bottom:none}
 #doc-path{display:none}
 html.calm-layout #doc-path{display:flex;align-items:center;gap:2px;min-width:0;flex:1 1 auto}
-.doc-nav-btn{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;flex:0 0 auto}
-.doc-nav-btn:hover:not(:disabled){background:var(--hover);color:var(--fg)}
-.doc-nav-btn:disabled{color:var(--hint);opacity:.45;cursor:default}
 #doc-path-crumbs{display:flex;align-items:center;gap:4px;min-width:0;margin-left:8px;font-size:var(--fs-md);color:var(--hint);white-space:nowrap;overflow:hidden}
 .doc-path-folder{border:none;background:transparent;padding:3px 6px;border-radius:6px;color:var(--hint);font:inherit;cursor:pointer;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .doc-path-folder:hover{background:var(--hover);color:var(--fg)}
 .doc-path-sep{color:var(--hint);flex:0 0 auto}
-.doc-path-title{color:var(--muted);padding:3px 6px;min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* No status bar: word count, depth and "Saved …" go. What still needs saying (storage full, the
    Secure Storage nudge, AI Rewrite at work) floats quietly at the bottom-right while it applies. */
 html.calm-layout #statusbar{position:fixed;left:auto;top:auto;right:56px;bottom:12px;z-index:50;height:auto;min-height:0;padding:0;border:none;background:transparent;display:flex;pointer-events:none}
@@ -2757,13 +2751,22 @@ html.calm-layout #quick-bar{position:static;flex:0 0 auto;margin-left:auto;z-ind
 /* Under the title: what the document is (status, author, link), then what's open in it. Empty
    "+ Add…" slots show only while the title area is hovered or in use (as Notion does). No dots;
    spacing separates the parts. */
-html.calm-layout #editor-meta-row{gap:4px 10px}
-html.calm-layout #editor-meta-row>#ag-markers{margin:0 0 0 14px}
+/* The subline is one quiet line of plain text (owner 2026-10-29: "still looks odd"): status,
+   author and link in the same size, weight and grey, with evenly spaced dots, then the open items.
+   Only the status word keeps its colour when it has one (Approved green, Rejected red). */
+html.calm-layout #editor-meta-row{gap:4px 8px}
+html.calm-layout #editor-meta-row .doc-status-chip,html.calm-layout #editor-meta-row #sb-author.doc-author-chip{font-weight:400;font-size:var(--fs-md);padding:2px 4px;margin:0 -4px}
+html.calm-layout #editor-meta-row #doc-status-chip{background:transparent;font-weight:400;padding:2px 4px}
+html.calm-layout #editor-meta-row #doc-status-chip:not([data-color="orange"]):not([data-color="green"]):not([data-color="red"]){color:var(--muted)}
+html.calm-layout #editor-meta-row #doc-status-chip:hover{background:var(--hover)}
+html.calm-layout #editor-meta-row>#ag-markers{margin:0}
+html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset)),:has(#doc-link-chip:not(.unset))) #marker-summary:has(button)::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);flex:0 0 auto}
 /* Byline dots (owner 2026-10-29): Status · Author · Link, only between the ones that are set (the
    author is an input, so its dots sit on its neighbours); the open items follow after space alone. */
-html.calm-layout #editor-meta-row:has(#sb-author:not(.unset)) #doc-status-wrap:has(>#doc-status-chip:not(.unset))::after{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:10px;flex:0 0 auto}
-html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset))) #doc-link-wrap:has(>#doc-link-chip:not(.unset))::before{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-right:10px;flex:0 0 auto}
-html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){height:auto;padding:3px 7px;font-size:var(--fs-sm)}
+html.calm-layout #editor-meta-row:has(#sb-author:not(.unset)) #doc-status-wrap:has(>#doc-status-chip:not(.unset))::after{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-left:8px;flex:0 0 auto}
+html.calm-layout #editor-meta-row:is(:has(#doc-status-chip:not(.unset)),:has(#sb-author:not(.unset))) #doc-link-wrap:has(>#doc-link-chip:not(.unset))::before{display:block;content:'';width:3px;height:3px;border-radius:50%;background:var(--hint);margin-right:8px;flex:0 0 auto}
+html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){height:auto;padding:2px 4px;font-size:var(--fs-md)}
+html.calm-layout #editor-meta-row #marker-summary{gap:8px}
 html.calm-layout #editor-meta-row>#ag-markers .ag-buttons{padding:0;background:transparent;border:none}
 html.calm-layout #doc-status-wrap::after,html.calm-layout #doc-link-wrap::before{display:none}
 html.calm-layout #editor-title-row:not(:hover) #editor-meta-row:not(:focus-within):not(:has([aria-expanded="true"]))>:is(#doc-status-wrap:has(>.unset),#sb-author.unset,#doc-link-wrap:has(>#doc-link-chip.unset)){display:none}
@@ -2784,6 +2787,22 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
 @media (max-width:900px){
   html.calm-layout #doc-tab-strip-row{padding:0 12px 0 8px}
 }
+/* One look for every side panel (owner 2026-10-29): a 48px header with a plain bold title at 16px
+   from the rail; grey for the selected item, as in the File Explorer; no box around a box. */
+html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle),html.calm-layout #todos-panel-header,html.calm-layout .notif-menu-header{min-height:48px;padding:0 8px 0 16px;box-sizing:border-box}
+html.calm-layout :is(#sidebar .sb-section-hdr .sb-section-label,.notif-menu-title,#todos-title,.settings-panel .settings-header h3,.help-panel .settings-header h3){font:600 14.5px 'Inter',sans-serif;letter-spacing:0;text-transform:none;color:var(--fg)}
+html.calm-layout :is(.settings-panel,.help-panel){padding-top:0}
+html.calm-layout :is(.settings-panel,.help-panel) .settings-header{min-height:48px}
+html.calm-layout #notif-menu{padding:0 0 8px}
+html.calm-layout .notif-empty{text-align:left;padding:8px 16px}
+html.calm-layout .settings-rail-btn.active{background:color-mix(in srgb,var(--fg) 8%,transparent);color:var(--fg)}
+html.calm-layout .settings-section{border:none;background:none;padding:0}
+html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle){padding-left:10px}
+html.calm-layout #editor-meta-row :is(.open-items-btn,.decisions-btn){font-weight:400}
+/* The frame never scrolls (owner 2026-10-29: the rail's top icon was cut off): hidden helper
+   buttons sit just below the window, and scrollIntoView or a focus could scroll <body> to them.
+   overflow:clip, unlike hidden, can't be scrolled by script either; the panes scroll inside. */
+html.calm-layout,html.calm-layout body{overflow:clip}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -2892,7 +2911,6 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
 .node-todo-dot,.node-qa-dot{color:var(--accent)}
 
 #todos-panel.open{display:flex}
-#todos-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important;transform:none!important}
 /* The To-Dos panel's single top bar: the add-task input (flexible, shrinks first) and its add
    button, then History / Export / Maximize / Close. No title — it's the only dock panel and the
    app-bar launcher already says To-Dos. Bottom-aligned so the icon buttons stay on the input's
@@ -2905,11 +2923,8 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
 #todos-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
 #todos-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
 #todos-resize-handle:hover::after,#todos-resize-handle.dragging::after{opacity:1}
-#todos-panel.maximized #todos-resize-handle{display:none}
 #todos-panel-header.dragging{cursor:grabbing}
 #todos-panel.dragging{user-select:none}
-#todos-panel-maximize,#todos-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:var(--fs-lg);cursor:pointer;width:28px;height:28px;flex:0 0 auto;padding:0;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#todos-panel-maximize:hover,#todos-panel-close:hover{color:var(--fg);background:var(--hover)}
 /* "Add a task" — a quiet first row under the header: dashed outline at rest, a normal input once
    focused. The add button only appears while the row is in use (Enter adds too). N still focuses it
    from anywhere in the panel; the hint badge was dropped as clutter. */
@@ -3459,7 +3474,7 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
   </div>
   <div id="appbar">
     <div id="header-actions">
-      <button class="btn rail-only" id="rail-docs-btn" data-tip="Documents" aria-label="Documents"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></button>
+      <button class="btn rail-only" id="rail-docs-btn" data-tip="Documents" aria-label="Documents"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/></svg></button>
       <div id="appbar-qa-slot"></div>
       <button class="btn" id="dock-panel-appbar-toggle" data-tip="To-Dos (Ctrl/Cmd+Shift+T)" aria-label="Open To-Dos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/></svg></button>
       <div class="export-wrap" id="notif-wrap">
@@ -4095,7 +4110,7 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
   <!-- Main content column -->
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
   <div id="doc-tab-strip-row">
-    <div id="doc-path"><button type="button" class="doc-nav-btn" id="doc-nav-back" data-tip="Back (Ctrl/Cmd+[)" aria-label="Back" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button><button type="button" class="doc-nav-btn" id="doc-nav-forward" data-tip="Forward (Ctrl/Cmd+])" aria-label="Forward" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button><nav id="doc-path-crumbs" aria-label="Where you are"></nav></div>
+    <div id="doc-path"><nav id="doc-path-crumbs" aria-label="Where you are"></nav></div>
     <button id="sidebar-reopen-btn" data-tip="Show file explorer" aria-label="Show file explorer" style="display:none">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
     </button>
@@ -4294,7 +4309,7 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
 
 <!-- Node Note Panel -->
 <div id="todos-panel" role="dialog" aria-label="To-Dos">
-  <div id="todos-resize-handle" data-tip="Drag to resize"></div>
+  <div id="todos-resize-handle"></div>
   <!-- One bar: the add-task input + its add button, then History / Export / Maximize / Close.
        (Used to be a header row of icon buttons over a separate "Add a task" row; merged once the
        To-Dos AI header buttons were removed.) The whole bar is still the drag handle when the
@@ -4312,8 +4327,6 @@ html.calm-layout .fold-badge:hover{background:var(--hover);color:var(--muted)}
     <div class="todo-dd-wrap" id="todos-more-wrap">
       <button type="button" class="todo-dd-trigger" id="todos-more-trigger" data-tip="More" aria-label="More To-Do actions" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>
     </div>
-    <button id="todos-panel-maximize" data-tip="Expand to full view" aria-label="Maximize Todos"><svg id="todos-max-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/></svg></button>
-    <button id="todos-panel-close" data-tip="Close (Esc)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
   </div>
   <div id="todos-add-row">
     <span class="todos-add-plus" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
@@ -12561,7 +12574,6 @@ function noteDocVisit(prevId,id){
   if(docNavIndex<0&&prevId){ docNavStack=[prevId]; docNavIndex=0; }
   if(docNavStack[docNavIndex]===id)return;
   docNavStack=docNavStack.slice(0,docNavIndex+1); docNavStack.push(id); docNavIndex=docNavStack.length-1;
-  updateDocNavButtons();
 }
 function recentDocIds(){ try{ const r=JSON.parse(localStorage.getItem(RECENT_DOCS_KEY)||'[]'); return Array.isArray(r)?r:[]; }catch(e){ return []; } }
 function trimOpenDocCache(){
@@ -12578,32 +12590,23 @@ function goDocNav(step){
   if(j<0||j>=docNavStack.length)return;
   docNavIndex=j; _docNavMoving=true;
   try{ switchDoc(docNavStack[j]); }finally{ _docNavMoving=false; }
-  updateDocNavButtons();
 }
-function updateDocNavButtons(){
-  const b=el('doc-nav-back'), f=el('doc-nav-forward'); if(!b||!f)return;
-  b.disabled=docNavIndex<=0; f.disabled=docNavIndex<0||docNavIndex>=docNavStack.length-1;
-}
+
 // Where you are: Folder › Sub-folder › Document. A folder opens the File Explorer on it.
+// The top line shows only the folders the document sits in (owner 2026-10-29: the title is right
+// below, so its name here read as a duplicate). A document at the top level shows nothing.
 function renderDocPath(){
   const box=el('doc-path-crumbs'); if(!box)return;
   box.innerHTML='';
-  const title=(el('header-title')?.value||'').trim()||'Untitled';
-  if(currentDocId){
-    const folders=loadFolders(); let f=folders.find(x=>x.id===loadDocFolderMap()[currentDocId]); const chain=[]; let guard=0;
-    while(f&&guard++<20){ chain.unshift(f); f=f.parentId?folders.find(x=>x.id===f.parentId):null; }
-    chain.forEach(fd=>{
-      const b=document.createElement('button'); b.type='button'; b.className='doc-path-folder'; b.textContent=fd.name||'Unnamed folder';
-      b.addEventListener('click',()=>revealFolderInSidebar(fd.id));
-      box.appendChild(b);
-      const sep=document.createElement('span'); sep.className='doc-path-sep'; sep.setAttribute('aria-hidden','true'); sep.textContent='›'; box.appendChild(sep);
-    });
-  }
-  const t=document.createElement('span'); t.className='doc-path-title'; t.textContent=title;
-  t.dataset.tip='Show in File Explorer · right-click for Version history, Sort and Clear all rows';
-  t.addEventListener('click',()=>{ if(currentDocId)revealDocInSidebar(currentDocId); });
-  t.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); if(currentDocId)showSbContextMenu(e.clientX,e.clientY,docMenuItems()); });
-  box.appendChild(t);
+  if(!currentDocId)return;
+  const folders=loadFolders(); let f=folders.find(x=>x.id===loadDocFolderMap()[currentDocId]); const chain=[]; let guard=0;
+  while(f&&guard++<20){ chain.unshift(f); f=f.parentId?folders.find(x=>x.id===f.parentId):null; }
+  chain.forEach((fd,i)=>{
+    if(i){ const sep=document.createElement('span'); sep.className='doc-path-sep'; sep.setAttribute('aria-hidden','true'); sep.textContent='›'; box.appendChild(sep); }
+    const b=document.createElement('button'); b.type='button'; b.className='doc-path-folder'; b.textContent=fd.name||'Unnamed folder';
+    b.addEventListener('click',()=>revealFolderInSidebar(fd.id));
+    box.appendChild(b);
+  });
 }
 
 function closeTab(id){
@@ -12636,7 +12639,7 @@ function removeDocFromOpenTabs(id){
 // The top line: back/forward, where you are, and the whole-document to-do chip. (Named for the tab
 // strip it replaced; openTabs is only a hidden cache now.)
 function renderTabStrip(){
-  renderDocPath(); updateDocNavButtons();
+  renderDocPath();
   updateHeaderRefChip();
 }
 // Moved out of the tab strip and into the title area (next to the document-status chip) —
@@ -12720,6 +12723,8 @@ function createDoc(folderId){
   touchDocIndex(id,'Untitled');
   if(folderId){ setFolderForDoc(id,folderId); }
   switchDoc(id);
+  // A new document starts in its title (owner 2026-10-29), as in most editors; Enter goes on to the first row.
+  requestAnimationFrame(()=>{ const t=el('header-title'); if(t&&!t.value){ t.focus(); } });
 }
 // Called from any content-mutation entry point (typing, pasting, loading a template) that can
 // fire while no document is open (the empty welcome state after closing the last tab). Silently
@@ -24969,9 +24974,9 @@ function isControlTarget(target){if(!target)return false; const tag=(target.tagN
 function hasExternalTextSelection(){const sel=window.getSelection(); if(!sel||sel.isCollapsed||!sel.rangeCount)return false; const anchor=sel.anchorNode; if(!anchor)return false; const node=anchor.nodeType===Node.TEXT_NODE?anchor.parentElement:anchor; if(!node)return false; if(node.closest('.empty-state'))return true; const pane=document.getElementById('editor-pane'); return !(pane&&pane.contains(node));}
 document.querySelectorAll('.theme-seg[data-theme]').forEach(btn=>btn.addEventListener('click',()=>{ if(btn.dataset.theme==='system') setThemeMode('system'); else setTheme(btn.dataset.theme); }));
 el('rail-docs-btn')?.addEventListener('click',()=>setSidebarOpen(!sidebarOpen));
-el('doc-nav-back')?.addEventListener('click',()=>goDocNav(-1));
-el('doc-nav-forward')?.addEventListener('click',()=>goDocNav(1));
-el('header-title')?.addEventListener('input',()=>renderDocPath());
+// Back/forward between documents (owner 2026-10-29: shortcuts only, no buttons): Ctrl/Cmd+[ / ]
+// and the mouse's back/forward buttons.
+window.addEventListener('mouseup',e=>{ if(e.button===3||e.button===4){ e.preventDefault(); goDocNav(e.button===3?-1:1); } });
 el('rail-settings-btn')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-toggle').click();});
 // 'system' mode's live-update path — fires the instant the OS/browser dark-mode setting
 // changes, no polling needed. addListener is the legacy fallback for older WebKit/Safari
@@ -25385,6 +25390,11 @@ document.addEventListener('paste',e=>{
 el('editor-pane').addEventListener('contextmenu',e=>{if(e.target.closest('.node-row'))return; hideContextMenu(); e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems())});
 // The top line and the title area: empty space gets the same menu as the page; words in the title,
 // buttons, links and menus keep their own.
+// The title itself, when you're not typing in it: the document menu (Version history, Sort, Clear all),
+// like a row's own menu; while typing, the browser's menu (spelling) as in notes and threads.
+{ let titleWasFocused=false; const ht=el('header-title');
+  ht?.addEventListener('mousedown',e=>{ if(e.button===2){ titleWasFocused=document.activeElement===ht; if(!titleWasFocused)e.preventDefault(); } });
+  ht?.addEventListener('contextmenu',e=>{ if(titleWasFocused||!currentDocId)return; e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docMenuItems()); }); }
 ['doc-tab-strip-row','editor-title-row'].forEach(id=>el(id)?.addEventListener('contextmenu',e=>{
   if(e.defaultPrevented||e.target.closest('input,textarea,[contenteditable="true"],button,a,[role="menu"],.todo-dd-menu,.sb-context-menu'))return;
   e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems());
@@ -26715,32 +26725,32 @@ function aiMenuItems(){ return [
 // Ctrl/Cmd+Alt+1–3 (0 = body text) as the keys. Picking the level a row already has turns it back
 // into body text. They sit in one block with Checkbox: the items that change the row itself.
 const HEADING_INSERT_LEVELS=[[1,'Heading 1'],[2,'Heading 2'],[3,'Heading 3'],[0,'Body text']];
-function headingInsertItems(){
+function headingInsertItems(all=true){
   const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.styles?.heading||0):0;
-  return HEADING_INSERT_LEVELS.map(([level,label])=>({label, checked:level===cur&&level!==0,
+  return HEADING_INSERT_LEVELS.filter(([level])=>all||level!==0).map(([level,label])=>({label, checked:level===cur&&level!==0,
     icon:`<svg width="13" height="13" viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="${level===0?17:14}" font-weight="600" font-family="Inter,sans-serif" fill="currentColor">${level===0?'T':'H'+level}</text></svg>`,
     data:{heading:String(level)}, onClick:()=>{ if(selectedId!==null)applyHeadingOption(level); }}));
 }
-function insertMenuItems(){
+function insertMenuItems(all=false){
   const one=selectedId!==null&&!selectAllMode;
   const act=(a,label,icon)=>ctxActionAllowed(a)?[{label,icon,data:{insertAction:a},onClick:()=>{ if(selectedId!==null)runQuickAction(a,selectedId,el('qb-insert')?.getBoundingClientRect()); }}]:[];
   const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.marker||''):'';
+  // Two short groups under small headings (owner 2026-10-29: "still feels too long"): what the row
+  // is, then what goes into it. Body text, Date/time, Tags…, the row status marks (all:true) and the
+  // characters only show once you type, e.g. "/body", "/date", "/agreed" or "/arrow".
   return [
-    {id:'qb-note', label:'Note', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>', disabled:selectedId===null, onClick:()=>{ if(selectedId!==null)openInlineNoteAndFocus(selectedId); }},
-    {id:'qb-tags', label:'Tags…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', disabled:!one, onClick:()=>{ if(selectedId!==null)openTagManager(selectedId); }},
-    ...act('date-time','Date/time','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'),
-    {divider:true},
-    ...headingInsertItems(),
+    {heading:'Text'},
+    ...headingInsertItems(all),
     {id:'qb-checkbox', label:'Checkbox', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 12l2.5 2.5L15 9"/></svg>', disabled:!one, onClick:toggleCheckboxOnSelection},
-    {divider:true},
-    {id:'insert-markers', iconRow:NODE_MARKERS.map(m=>({label:nodeMarkerLabel(m), icon:markIconSvg(m), cls:'pv-qm-mark tb-menu-marker', current:cur===m, data:{marker:m,color:nodeMarkerColor(m)}, onClick:()=>{ if(selectedId!==null){ setNodeMarker(selectedId,m); render(); } }}))},
-    {divider:true},
-    ...act('remark','Thread','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>'),
-    {divider:true},
+    {heading:'Insert'},
+    {id:'qb-note', label:'Note', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>', disabled:selectedId===null, onClick:()=>{ if(selectedId!==null)openInlineNoteAndFocus(selectedId); }},
     ...act('table','Table','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>'),
     ...act('image','Image','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'),
     ...act('diagram','Diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg>'),
-    ...act('diagram-gen','Generate diagram','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 0 0 2 2H14"/></svg>')
+    ...act('remark','Thread','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/><path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"/></svg>'),
+    ...(all?[...act('date-time','Date/time','<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'),
+    {id:'qb-tags', label:'Tags…', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>', disabled:!one, onClick:()=>{ if(selectedId!==null)openTagManager(selectedId); }},
+      {divider:true},{id:'insert-markers', iconRow:NODE_MARKERS.map(m=>({label:nodeMarkerLabel(m), icon:markIconSvg(m), cls:'pv-qm-mark tb-menu-marker', current:cur===m, data:{marker:m,color:nodeMarkerColor(m)}, onClick:()=>{ if(selectedId!==null){ setNodeMarker(selectedId,m); render(); } }}))}]:[])
   ];
 }
 // === Insert list ("/") ===
@@ -26816,15 +26826,14 @@ function slashTyped(){
   const r=slashCaret(); if(!r||!s.start.startContainer.isConnected)return '';
   try{ const q=document.createRange(); q.setStart(s.start.startContainer,s.start.startOffset); q.setEnd(r.endContainer,r.endOffset); return q.toString(); }catch(err){ return ''; }
 }
-function slashListItems(){
+function slashListItems(all=false){
   const s=_slash; const ins=t=>insertTextAtGenericTarget(s.target,t);
   const chars=insertCharItems(ins);
   if(s.rowId===null)return [...chars,{divider:true},{label:'Date/time',icon:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${CTX_ACTION_META['date-time'].svg}</svg>`,onClick:()=>ins(formatNow())}];
   // Date/time goes in at the caret, keeping the row's formatting.
-  const base=insertMenuItems().map(it=>it.data&&it.data.insertAction==='date-time'?{...it,onClick:()=>ins(formatNow())}:it);
-  // Characters come after Basics and the row's own formats (headings, Checkbox).
-  const at=base.findIndex((it,i)=>it.divider&&base.slice(0,i).filter(b=>b.divider).length===1);
-  return chars.length&&at>0?[...base.slice(0,at),{divider:true},...chars,...base.slice(at)]:[...base,{divider:true},...chars];
+  // The short grouped list until you type; then everything, characters and row status marks too.
+  const base=insertMenuItems(!!all).map(it=>it.data&&it.data.insertAction==='date-time'?{...it,onClick:()=>ins(formatNow())}:it);
+  return all?[...base,...chars]:base;
 }
 // Search by the start of any word in an item's name.
 function insertItemMatches(label,q){ return String(label||'').toLowerCase().split(/[^a-z0-9]+/).some(w=>w.startsWith(q)); }
@@ -26835,7 +26844,7 @@ function slashInsertInput(){
   const q=typed.slice(1).toLowerCase();
   const dropFirst=fn=>(...args)=>{ dropSlashText(); return fn(...args); };
   const wrap=it=>it.iconRow?{...it,iconRow:it.iconRow.map(wrap)}:it.onClick?{...it,onClick:dropFirst(it.onClick)}:it;
-  let items=slashListItems();
+  let items=slashListItems(!!q);
   if(q)items=items.flatMap(it=>it.heading||it.divider?[]:it.iconRow?it.iconRow.map(b=>({label:b.label,icon:b.icon,onClick:b.onClick})):[it]).filter(it=>insertItemMatches(it.label,q));
   if(!items.length){ closeSlashInsertMenu(); return; }
   const s=_slash; showInsertListAt(s.at,items.map(wrap)); _slash=s;
@@ -27266,11 +27275,6 @@ function persistBucketOrder(orderedDocIds){
 }
 
 // --- Create a small action button for doc rows ---
-function makeDocActionBtn(title, innerHTML, extraClass=''){
-  const b=document.createElement('button'); b.className='sdoc-action-btn'+(extraClass?' '+extraClass:'');
-  b.dataset.tip=title; b.innerHTML=innerHTML; return b;
-}
-
 // --- Relative time helper for sidebar rows ---
 function sbRelativeTime(ts){
   if(!ts) return '';
@@ -27320,7 +27324,12 @@ function makeDocItem(d, allFolders, filterActive){
   item.appendChild(docIcon);
 
   const nb = document.createElement('button'); nb.className='sdoc-name-btn'; nb.dataset.docId=d.id;
-  nb.textContent = truncateTitle(d.title||'Untitled',60); nb.dataset.tip = truncateTitle(d.title||'Untitled',120);
+  // Just the name (owner 2026-10-29): no date column or hover buttons; the right-click menu has
+  // Rename, Duplicate, Move and Trash, the tooltip says when it was last edited, and a
+  // double-click or F2 renames, as in most file lists.
+  nb.textContent = truncateTitle(d.title||'Untitled',60);
+  nb.dataset.tip = truncateTitle(d.title||'Untitled',120)+(d.updatedAt?' · edited '+sbRelativeTime(d.updatedAt):'');
+  nb.addEventListener('dblclick',e=>{ if(filterActive)return; e.preventDefault(); e.stopPropagation(); renameDoc(d.id,nb); });
   nb.addEventListener('keydown',e=>{
     if(e.key==='F2'){ e.preventDefault(); e.stopPropagation(); renameDoc(d.id,nb); }
   });
@@ -27344,29 +27353,6 @@ function makeDocItem(d, allFolders, filterActive){
   });
   item.appendChild(nb);
 
-  const meta = document.createElement('span'); meta.className='sdoc-meta';
-  meta.textContent = sbRelativeTime(d.updatedAt);
-  meta.dataset.tip = d.updatedAt ? new Date(d.updatedAt).toLocaleString() : '';
-  item.appendChild(meta);
-
-  const acts = document.createElement('div'); acts.className='sdoc-actions';
-
-  // Move to folder button (only if folders exist or not filtering)
-  if(allFolders.length>0){
-    const moveBtn = makeDocActionBtn('Move to folder','<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>');
-    moveBtn.addEventListener('click',e=>{ e.stopPropagation(); showMoveMenu(e, d.id, allFolders); });
-    acts.appendChild(moveBtn);
-  }
-
-  const renBtn = makeDocActionBtn('Rename','✎');
-  renBtn.addEventListener('click',e=>{ e.stopPropagation(); renameDoc(d.id,nb); });
-  const dupBtn = makeDocActionBtn('Duplicate','⧉');
-  dupBtn.addEventListener('click',async e=>{ e.stopPropagation(); await duplicateDoc(d.id); renderSidebar(); });
-  const delBtn = makeDocActionBtn('Move to Trash',TRASH_ICON.replace('width="24" height="24"','width="11" height="11"').replace('stroke-width="1.8"','stroke-width="2.5"'),'danger');
-  delBtn.addEventListener('click',async e=>{ e.stopPropagation(); await deleteDoc(d.id); renderSidebar(); });
-
-  acts.appendChild(renBtn); acts.appendChild(dupBtn); acts.appendChild(delBtn);
-  item.appendChild(acts);
   return item;
 }
 
@@ -28177,12 +28163,8 @@ function renderSidebarShared(){
   row.appendChild(name);
   const count=document.createElement('span'); count.className='sfolder-count'; count.textContent=sharedWithMeCache===null?'…':sharedWithMeCache.length;
   row.appendChild(count);
-  const facts=document.createElement('div'); facts.className='sfolder-actions';
-  const refreshBtn=document.createElement('button'); refreshBtn.className='sdoc-action-btn'; refreshBtn.dataset.tip='Refresh';
-  refreshBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
-  refreshBtn.addEventListener('click',async e=>{ e.stopPropagation(); sharedSectionOpen=true; renderSidebarShared(); await loadSharedWithMeList(true); renderSidebarShared(); });
-  facts.appendChild(refreshBtn);
-  row.appendChild(facts);
+  // No hover buttons (owner 2026-10-29): Refresh is on right-click.
+  row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[{label:'Refresh', onClick:async()=>{ sharedSectionOpen=true; renderSidebarShared(); await loadSharedWithMeList(true); renderSidebarShared(); }}]); });
   wrap.appendChild(row);
 
   const children=document.createElement('div'); children.className='sfolder-children'+(sharedSectionOpen?'':' hidden');
@@ -28197,11 +28179,9 @@ function renderSidebarShared(){
         el2.addEventListener('click',()=>openSharedDocument(item.ownerUid,item.docId,item.role,item.ownerDisplayName,item.ownerEmail));
         const docIcon=document.createElement('span'); docIcon.className='sdoc-icon'; docIcon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
         el2.appendChild(docIcon);
-        const nb=document.createElement('span'); nb.className='sdoc-name-btn'; nb.style.cssText='cursor:pointer'; nb.textContent=item.title; nb.dataset.tip=item.title;
+        const nb=document.createElement('span'); nb.className='sdoc-name-btn'; nb.style.cssText='cursor:pointer'; const who=item.ownerDisplayName||item.ownerEmail||'Someone';
+        nb.textContent=item.title; nb.dataset.tip=`${item.title} · ${who} · ${item.role==='editor'?'can edit':'view only'}`;
         el2.appendChild(nb);
-        const who=item.ownerDisplayName||item.ownerEmail||'Someone';
-        const meta=document.createElement('span'); meta.className='sdoc-meta'; meta.textContent=`${who} · ${item.role==='editor'?'can edit':'view only'}`;
-        el2.appendChild(meta);
         children.appendChild(el2);
       });
     }
@@ -28238,13 +28218,8 @@ function renderSidebarTrash(){
   row.appendChild(name);
   const count=document.createElement('span'); count.className='sfolder-count'; count.textContent=trashed.length;
   row.appendChild(count);
-  const facts=document.createElement('div'); facts.className='sfolder-actions';
-  if(trashed.length){
-    const emptyBtn=document.createElement('button'); emptyBtn.className='sdoc-action-btn danger'; emptyBtn.dataset.tip='Empty Trash — permanently deletes everything below'; emptyBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    emptyBtn.addEventListener('click',async e=>{ e.stopPropagation(); await emptyTrash(); });
-    facts.appendChild(emptyBtn);
-  }
-  row.appendChild(facts);
+  // No hover buttons (owner 2026-10-29): Empty Trash is on right-click.
+  if(trashed.length)row.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,[{label:'Empty Trash', danger:true, onClick:()=>emptyTrash()}]); });
   wrap.appendChild(row);
 
   const children=document.createElement('div'); children.className='sfolder-children'+(trashSectionOpen?'':' hidden');
@@ -28305,18 +28280,8 @@ function renderSidebarTrash(){
       const dIcon=document.createElement('span'); dIcon.className='sdoc-icon'; dIcon.style.opacity='.55';
       dIcon.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
       item.appendChild(dIcon);
-      const nb=document.createElement('span'); nb.className='sdoc-name-btn'; nb.style.cssText='opacity:.7;cursor:pointer'; nb.textContent=d.title||'Untitled'; nb.dataset.tip=d.title||'';
+      const nb=document.createElement('span'); nb.className='sdoc-name-btn'; nb.style.cssText='opacity:.7;cursor:pointer'; nb.textContent=d.title||'Untitled'; nb.dataset.tip=(d.title||'Untitled')+(d.trashedAt?' · trashed '+sbRelativeTime(d.trashedAt):'')+' · right-click to restore';
       item.appendChild(nb);
-      const meta=document.createElement('span'); meta.className='sdoc-meta'; meta.textContent='trashed '+sbRelativeTime(d.trashedAt);
-      meta.dataset.tip=new Date(d.trashedAt).toLocaleString();
-      item.appendChild(meta);
-      const acts=document.createElement('div'); acts.className='sdoc-actions';
-      const restoreBtn=makeDocActionBtn('Restore','<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>');
-      restoreBtn.addEventListener('click',e=>{ e.stopPropagation(); restoreDocFromTrash(d.id); });
-      const forgetBtn=makeDocActionBtn('Delete forever','<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>','danger');
-      forgetBtn.addEventListener('click',async e=>{ e.stopPropagation(); await permanentlyDeleteDoc(d.id); });
-      acts.appendChild(restoreBtn); acts.appendChild(forgetBtn);
-      item.appendChild(acts);
       children.appendChild(item);
     });
   }
@@ -28461,17 +28426,6 @@ function renderSidebarDocs(){
     folderRow.appendChild(count);
     folderRow.dataset.tip = q ? 'Matching documents in this folder' : 'Right-click for more options · drag to reorder or nest';
 
-    if(!q){
-      const facts = document.createElement('div'); facts.className='sfolder-actions';
-      const addF = document.createElement('button'); addF.className='sdoc-action-btn'; addF.dataset.tip='New document in this folder'; addF.textContent='＋';
-      addF.addEventListener('click',e=>{ e.stopPropagation(); createDoc(folder.id); renderSidebar(); });
-      const renF = document.createElement('button'); renF.className='sdoc-action-btn'; renF.dataset.tip='Rename folder'; renF.textContent='✎';
-      renF.addEventListener('click',e=>{ e.stopPropagation(); renameFolderById(folder.id); });
-      const delF = document.createElement('button'); delF.className='sdoc-action-btn danger'; delF.dataset.tip='Delete folder'; delF.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-      delF.addEventListener('click',async e=>{ e.stopPropagation(); await deleteFolderById(folder.id); });
-      facts.appendChild(addF); facts.appendChild(renF); facts.appendChild(delF);
-      folderRow.appendChild(facts);
-    }
     containerEl.appendChild(folderRow);
 
     const children = document.createElement('div'); children.className='sfolder-children'+(isOpen?'':' hidden');
@@ -33462,7 +33416,7 @@ function todosHistorySummary(list) {
   // both. Whichever is set is what todo-link/todo-link-open render and act on.
   const REPEATS=[null,'daily','weekdays','weekly'];
   let searchQuery=''; // quick-find text, transient (not persisted); now filters (hides non-matches), not dims
-  const TODOS_WIDTH_MIN=320, TODOS_WIDTH_MAX=720;
+  const TODOS_WIDTH_MIN=280, TODOS_WIDTH_MAX=640;
   let todosWidth=440; // default matches the shared dock-panel width all four tabs now share
   let completedOpen=false; // the Completed section starts collapsed; then a per-session toggle
   // Only the user-facing choices that remain live here. Old builds also stored featureEnabled,
@@ -35164,7 +35118,7 @@ function todosHistorySummary(list) {
   }
   function closeTodosPanel(){
     const panel=document.getElementById('todos-panel');
-    if(panel){ panel.classList.remove('open'); panel.classList.remove('maximized'); _updateTodosMaximizeIcon(); }
+    if(panel){ panel.classList.remove('open'); }
     document.querySelectorAll('#todos-toggle').forEach(b=>b.classList.remove('is-active'));
     closeTodosSearch();
     if(typeof closeTodoAtSuggest==='function') closeTodoAtSuggest();
@@ -35240,28 +35194,6 @@ function todosHistorySummary(list) {
     if(row&&row.classList.contains('open')) closeTodosSearch(); else openTodosSearch();
   }
 
-  // ── Maximize ─────────────────────────────────────────────────────────────
-  let todosMaximized=false;
-  function _updateTodosMaximizeIcon(){
-    todosMaximized = !!document.getElementById('todos-panel')?.classList.contains('maximized');
-    const btn=document.getElementById('todos-panel-maximize');
-    if(!btn) return;
-    if(todosMaximized){
-      btn.dataset.tip='Restore default view';
-      btn.querySelector('svg').innerHTML='<polyline points="9 3 9 9 3 9"/><polyline points="15 3 15 9 21 9"/><polyline points="9 21 9 15 3 15"/><polyline points="15 21 15 15 21 15"/>';
-    } else {
-      btn.dataset.tip='Expand to full view';
-      btn.querySelector('svg').innerHTML='<polyline points="9 3 3 3 3 9"/><polyline points="15 3 21 3 21 9"/><polyline points="3 15 3 21 9 21"/><polyline points="21 15 21 21 15 21"/>';
-    }
-  }
-  function toggleTodosMaximize(){
-    const panel=document.getElementById('todos-panel');
-    if(!panel) return;
-    const goingMax=!panel.classList.contains('maximized');
-    panel.classList.toggle('maximized', goingMax);
-    if(!goingMax){ applyTodosWidth(); anchorTodosToStatusbarChip(); }
-    _updateTodosMaximizeIcon();
-  }
 
   // Anchors the floating To-Dos dock panel above its own dock-rail chip,
   // clamped so it always stays fully on-screen. Must be called AFTER anything that changes
@@ -35300,7 +35232,7 @@ function todosHistorySummary(list) {
 
   function restoreTodosPosition(){
     const panel=document.getElementById('todos-panel');
-    if(!panel || panel.classList.contains('maximized')) return;
+    if(!panel) return;
     panel.classList.remove('anchored');
     panel.style.bottom='auto';
     try{
@@ -35330,12 +35262,11 @@ function todosHistorySummary(list) {
     todosWidth=w;
     try{ localStorage.setItem(TODOS_WIDTH_KEY, String(w)); }catch(e){}
   }
+  // The width is --todos-w on the page: the panel and the page beside it both follow it.
   function applyTodosWidth(){
-    const panel=document.getElementById('todos-panel');
-    if(!panel||panel.classList.contains('maximized')) return;
     try{ const raw=localStorage.getItem(TODOS_WIDTH_KEY); if(raw){ const n=parseInt(raw,10); if(Number.isFinite(n))todosWidth=n; } }catch(e){}
     const clamped=Math.max(TODOS_WIDTH_MIN, Math.min(TODOS_WIDTH_MAX, Math.min(todosWidth, window.innerWidth-24)));
-    panel.style.width=clamped+'px';
+    document.documentElement.style.setProperty('--todos-w', clamped+'px');
   }
 
   function initTodosDrag(){
@@ -35347,7 +35278,6 @@ function todosHistorySummary(list) {
       // The bar also holds the add-task input and every action button — pressing on any of
       // those must keep its own behavior (focus/caret, click), never start a panel drag.
       if(e.target.closest('button,textarea,input,a')) return;
-      if(panel.classList.contains('maximized')) return;
       if(panel.classList.contains('anchored')) return; // tethered to the status bar chip — not freely draggable
       dragging=true;
       const rect=panel.getBoundingClientRect();
@@ -35372,42 +35302,32 @@ function todosHistorySummary(list) {
     });
   }
 
-  // Resizable width. The panel can be right-anchored (default docked position, or tethered
-  // to the status bar chip) or left-anchored (after being dragged by its header) — in the
-  // first case the browser keeps the right edge fixed automatically as width changes; in the
-  // second we have to move `left` in lockstep so the right edge doesn't drift as you resize.
+  // Resizable width, like the File Explorer (owner 2026-10-29): drag the panel's right edge;
+  // the width is remembered.
   function initTodosResize(){
     const handle=document.getElementById('todos-resize-handle');
     const panel=document.getElementById('todos-panel');
     if(!handle||!panel) return;
-    let dragging=false, startX=0, startWidth=0, isLeftAnchored=false, rightEdge=0;
+    let dragging=false, startX=0, startWidth=0;
     handle.addEventListener('mousedown',e=>{
-      if(panel.classList.contains('maximized')) return;
       dragging=true;
-      const rect=panel.getBoundingClientRect();
-      startX=e.clientX; startWidth=rect.width;
-      isLeftAnchored = !!(panel.style.left && panel.style.left!=='auto');
-      rightEdge = rect.left+rect.width;
+      startX=e.clientX; startWidth=panel.getBoundingClientRect().width;
       handle.classList.add('dragging'); panel.classList.add('dragging');
       document.body.style.userSelect='none';
       e.preventDefault(); e.stopPropagation();
     });
     document.addEventListener('mousemove',e=>{
       if(!dragging) return;
-      const dx=e.clientX-startX;
       const maxW=Math.min(TODOS_WIDTH_MAX, window.innerWidth-24);
-      const newWidth=Math.max(TODOS_WIDTH_MIN, Math.min(maxW, startWidth-dx));
-      panel.style.width=newWidth+'px';
-      if(isLeftAnchored){ panel.style.left=(rightEdge-newWidth)+'px'; panel.style.right='auto'; }
+      todosWidth=Math.round(Math.max(TODOS_WIDTH_MIN, Math.min(maxW, startWidth+e.clientX-startX)));
+      document.documentElement.style.setProperty('--todos-w', todosWidth+'px');
     });
     document.addEventListener('mouseup',()=>{
       if(!dragging) return;
       dragging=false;
       handle.classList.remove('dragging'); panel.classList.remove('dragging');
       document.body.style.userSelect='';
-      const rect=panel.getBoundingClientRect();
-      saveTodosWidth(Math.round(rect.width));
-      if(isLeftAnchored) saveTodosPosition(rect.left, rect.top);
+      saveTodosWidth(todosWidth);
     });
   }
 
@@ -35555,8 +35475,6 @@ function todosHistorySummary(list) {
   setInterval(updateOverdueBadge, 60000); // catches a due date rolling into "overdue" at midnight while the app stays open
 
   document.getElementById('todos-toggle')?.addEventListener('click',()=>toggleDockTab('todos'));
-  document.getElementById('todos-panel-close')?.addEventListener('click',closeTodosPanel);
-  document.getElementById('todos-panel-maximize')?.addEventListener('click',toggleTodosMaximize);
   // Links rendered inside .todo-text (see renderTodoTextHtml's SAP Note handling) sit inside a
   // contenteditable region, where browsers generally intercept clicks for cursor placement
   // rather than following the link — mousedown+preventDefault, before that focus/placement

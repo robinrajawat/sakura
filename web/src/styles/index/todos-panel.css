@@ -102,7 +102,6 @@
 .node-todo-dot,.node-qa-dot{color:var(--accent)}
 
 #todos-panel.open{display:flex}
-#todos-panel.maximized{position:fixed;inset:16px;width:auto!important;height:auto!important;max-height:none!important;left:16px!important;top:16px!important;right:16px!important;bottom:16px!important;transform:none!important}
 /* The To-Dos panel's single top bar: the add-task input (flexible, shrinks first) and its add
    button, then History / Export / Maximize / Close. No title — it's the only dock panel and the
    app-bar launcher already says To-Dos. Bottom-aligned so the icon buttons stay on the input's
@@ -115,11 +114,8 @@
 #todos-resize-handle{position:absolute;left:0;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:1}
 #todos-resize-handle::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:1px;height:32px;border-radius:1px;background:var(--accent);opacity:0;transition:opacity .15s}
 #todos-resize-handle:hover::after,#todos-resize-handle.dragging::after{opacity:1}
-#todos-panel.maximized #todos-resize-handle{display:none}
 #todos-panel-header.dragging{cursor:grabbing}
 #todos-panel.dragging{user-select:none}
-#todos-panel-maximize,#todos-panel-close{appearance:none;border:none;background:none;color:var(--hint);font-size:var(--fs-lg);cursor:pointer;width:28px;height:28px;flex:0 0 auto;padding:0;border-radius:8px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-#todos-panel-maximize:hover,#todos-panel-close:hover{color:var(--fg);background:var(--hover)}
 /* "Add a task" — a quiet first row under the header: dashed outline at rest, a normal input once
    focused. The add button only appears while the row is in use (Enter adds too). N still focuses it
    from anywhere in the panel; the hint badge was dropped as clutter. */
