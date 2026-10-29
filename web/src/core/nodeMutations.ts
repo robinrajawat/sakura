@@ -107,7 +107,10 @@ export function indentRootIndexes(nodes: QueryableNode[], rootIndexes: number[])
  * would otherwise be stale by the time its turn comes. See indentRootIndexes's own comment for
  * why this mutates in place and doesn't call rebuildParentIds() itself. */
 export function outdentRootIndexes(nodes: QueryableNode[], rootIndexes: number[]): void {
-  const roots = rootIndexes.map(idx => nodes[idx]);
+  // Bottom-up (owner 2026-10-29: outdenting several rows at once reversed them). Each block lands
+  // just past its remaining siblings; done top-down, every later block landed in front of the ones
+  // already moved. Done from the last root up, each one lands before them and the order holds.
+  const roots = rootIndexes.slice().sort((a, b) => b - a).map(idx => nodes[idx]);
   for (const rootNode of roots) {
     if (rootNode.depth === 0) continue;
     const idx = nodes.indexOf(rootNode);

@@ -87,6 +87,23 @@ describe('indentRootIndexes', () => {
 });
 
 describe('outdentRootIndexes', () => {
+  // Owner 2026-10-29: selecting several children and pressing Shift+Tab reversed them.
+  it('outdenting several sibling rows at once keeps their order', () => {
+    // P(0) A(1) A1(2) B(1) C(1) C1(2) -- select A, B, C
+    const nodes = tree([0, 1, 2, 1, 1, 2]);
+    outdentRootIndexes(nodes, [1, 3, 4]);
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(nodes.map((n) => n.depth)).toEqual([0, 0, 1, 0, 0, 1]);
+  });
+
+  it('outdenting some of the children keeps their order and leaves the rest under the parent', () => {
+    // P(0) A(1) B(1) C(1) D(1) -- select B, C: they go after P's block (after D), in order
+    const nodes = tree([0, 1, 1, 1, 1]);
+    outdentRootIndexes(nodes, [2, 3]);
+    expect(nodes.map((n) => n.id)).toEqual([1, 2, 5, 3, 4]);
+    expect(nodes.map((n) => n.depth)).toEqual([0, 1, 1, 0, 0]);
+  });
+
   it('decrements depth by 1 for a node at depth > 0', () => {
     const nodes = tree([0, 1]);
     outdentRootIndexes(nodes, [1]);
