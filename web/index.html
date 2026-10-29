@@ -327,10 +327,9 @@ body{padding-top:env(titlebar-area-height,40px)}
 .settings-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--bg) 88%,transparent)}
 .settings-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;min-height:36px}
 /* === Feature Activation: hide every entry point for a deactivated feature === */
-body.feature-off-ai #ag-ai,body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite{display:none!important}
+body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite{display:none!important}
 body.feature-off-paddiagrams .node-diagram-dot{display:none!important}
 body.feature-off-padremarks .node-remark-dot{display:none!important}
-body.feature-off-focus #qb-zoom{display:none!important}
 body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .ai-rewrite-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 @keyframes ai-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -447,12 +446,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .hl-caret-btn{position:absolute;right:1px;top:1px;width:12px;height:12px;min-width:12px;padding:0;font-size:7px;line-height:1;border-radius:3px!important;opacity:.5;background:color-mix(in srgb,var(--bg) 70%,transparent)!important;border:none!important;display:flex;align-items:center;justify-content:center;color:var(--muted);transform:none!important;box-shadow:none!important}
 .hl-caret-btn:hover{opacity:1;color:var(--accent)}
 @media (max-width:560px){.hl-wrap .hl-btn{width:36px;height:36px}.hl-caret-btn{width:13px;height:13px;min-width:13px}}
-#quick-bar .tb-menu-trigger{display:inline-flex;align-items:center;gap:5px;padding:0 8px;width:auto;min-width:0}
-.tb-menu-trigger svg{flex:0 0 auto}
-.tb-menu-trigger-label{font:500 12.5px 'Inter',sans-serif}
 .tb-caret{opacity:.55}
-/* AI work in progress spins the AI button's icon (its menu is closed by then). */
-#ai-wrap:has(.ai-busy) #qb-ai svg:first-child{animation:ai-spin 1.1s linear infinite}
 .hl-palette{position:absolute;top:calc(100% + 8px);left:0;z-index:60;display:none;gap:6px;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 14px 28px rgba(0,0,0,.12);padding:8px}
 .hl-palette.open{display:flex}
 .hl-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;transition:border-color .12s,transform .12s}
@@ -461,14 +455,6 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .hl-swatch.hl-swatch-active{border-color:var(--fg)}
 .hl-swatch-none{width:22px;height:22px;border-radius:50%;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--muted);font-size:var(--fs-sm);display:flex;align-items:center;justify-content:center;padding:0}
 .hl-swatch-none:hover{border-color:var(--sem-alert);color:var(--sem-alert)}
-.heading-palette{flex-direction:column;align-items:stretch;min-width:172px;gap:1px;padding:6px}
-.heading-option{appearance:none;border:none;background:transparent;text-align:left;width:100%;display:block;padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--fg);font-family:'Inter',sans-serif;line-height:1.3}
-.heading-option:hover{background:var(--hover)}
-.heading-option.heading-option-active{background:var(--sel);color:var(--sel-fg)}
-.heading-option-h1{font-size:18px;font-weight:400}
-.heading-option-h2{font-size:15.5px;font-weight:400}
-.heading-option-h3{font-size:14.5px;font-weight:400}
-.heading-option-clear{font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);margin-top:3px;padding-top:7px;border-radius:0 0 6px 6px}
 #fc-color-bar,#hl-color-bar{transition:fill .12s}
 .sem-quote{display:inline;color:var(--sem-quote);font-style:italic;font-size:.9em;opacity:.85;padding-left:9px;margin-left:1px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}.sem-sap-note{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px;cursor:pointer}.sem-sap-note:hover{text-decoration-color:var(--accent)}
 #app-icon svg{display:block;width:20px;height:20px}
@@ -833,7 +819,6 @@ body.zen-mode #quick-bar{display:none}
    Share last (where Docs/Notion put it), instead of sitting in the byline under the title. One
    group, so a narrow window wraps them together and they stay on the right. */
 #ag-fold .ag-buttons{flex-wrap:nowrap}
-#ag-fold .tb-sep{flex:0 0 1px;width:1px;height:18px;margin:0 5px;background:color-mix(in srgb,var(--border) 70%,transparent)}
 /* Share is the one labelled button: its word sets it apart, so no fill (Notion); hover as the
    other buttons. */
 #doc-share-chip{display:inline-flex;align-items:center;gap:6px;width:auto;padding:0 10px;font:500 12.5px 'Inter',sans-serif}
@@ -888,8 +873,7 @@ body.zen-mode #quick-bar{display:none}
 #quick-bar .quick-btn:not(.toggle-on):not(.active):not([aria-pressed="true"]):hover{color:var(--fg)}
 .quick-btn:active{transform:translateY(0) scale(.94);box-shadow:none}
 .quick-btn:disabled{opacity:.35;cursor:default;pointer-events:none;transform:none;box-shadow:none}
-.quick-sep{width:1px;height:18px;background:color-mix(in srgb,var(--border) 70%,transparent);margin:0 3px;flex:0 0 auto}
-@media (max-width:560px){#quick-bar{padding:6px 8px;gap:3px}.quick-btn{width:36px;height:36px}.quick-sep{margin-left:2px;margin-right:2px}}
+@media (max-width:560px){#quick-bar{padding:6px 8px;gap:3px}.quick-btn{width:36px;height:36px}}
 
 /* === Documents menu === */
 .docs-wrap{position:relative}
@@ -2744,8 +2728,6 @@ html.calm-layout #editor-title-row:not(:hover) #editor-meta-row:not(:focus-withi
 html.calm-layout #marker-summary .oi-part>span{color:var(--muted)}
 html.calm-layout #marker-summary{gap:14px}
 html.calm-layout #marker-summary .oi-sep,html.calm-layout #ag-markers:not([hidden])+#ag-fold::before{display:none}
-html.calm-layout #quick-bar>.action-group:not(.ag-right),html.calm-layout #quick-bar>.quick-sep{display:none}
-html.calm-layout #quick-bar #qb-collapse,html.calm-layout #quick-bar #qb-zoom,html.calm-layout #quick-bar #ag-fold .tb-sep{display:none}
 /* The page: more air above a lighter title; folded counts as plain grey text. */
 /* Page margins (owner 2026-10-29, after Dynalist): the same room left and right (shrinking on narrow
    screens) that every row, table and card keeps inside, and space above the title. */
@@ -2776,7 +2758,6 @@ html.calm-layout #editor-meta-row .open-items-btn{font-weight:400}
 html.calm-layout,html.calm-layout body{overflow:clip}
 /* Share is the one button on the top line (owner 2026-10-29); Version history is on the title's and
    the explorer row's right-click. */
-html.calm-layout #doc-history-chip{display:none}
 /* The Search slot keeps its place on the rail while the palette is open (owner 2026-10-29: To-Dos
    slid up under the pointer). */
 html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
@@ -4101,66 +4082,10 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
     <button id="tag-filter-clear-btn" data-tip="Clear all filters" style="appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:5px;line-height:1;flex-shrink:0">×</button>
   </div>
   <div id="quick-bar" aria-label="Editor actions">
-    <div class="action-group" id="ag-history">
-      <div class="ag-buttons">
-        <button class="btn icon-btn quick-btn" id="undo-btn" data-tip="Undo (Ctrl/Cmd+Z)" aria-label="Undo">↶</button>
-        <button class="btn icon-btn quick-btn" id="redo-btn" data-tip="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo">↷</button>
-      </div>
-    </div>
-    <span class="quick-sep"></span>
-    <div class="action-group" id="ag-structure">
-      <div class="ag-buttons">
-        <button class="btn icon-btn quick-btn" id="qb-outdent" data-tip="Outdent (Shift+Tab)" aria-label="Outdent">⇤</button>
-        <button class="btn icon-btn quick-btn" id="qb-indent" data-tip="Indent (Tab)" aria-label="Indent">⇥</button>
-      </div>
-    </div>
-    <span class="quick-sep"></span>
-    <div class="action-group" id="ag-format">
-      <div class="ag-buttons">
-        <div class="hl-wrap" id="heading-wrap">
-          <button class="btn icon-btn quick-btn hl-btn" id="heading-toggle-btn" data-tip="Heading style" aria-haspopup="true" aria-expanded="false">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 4v16M18 4v16M6 12h12"/>
-            </svg>
-          </button>
-          <div class="hl-palette heading-palette" id="heading-palette">
-            <button class="heading-option heading-option-h1" data-level="1" data-tip="Main section / top-level heading">Heading 1</button>
-            <button class="heading-option heading-option-h2" data-level="2" data-tip="Major subsection">Heading 2</button>
-            <button class="heading-option heading-option-h3" data-level="3" data-tip="Subsection">Heading 3</button>
-            <button class="heading-option heading-option-clear" data-level="0">Body text</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <span class="quick-sep"></span>
-    <!-- Insert ▾ — everything you can add to the selected node, in the same order as the right-click
-         menu's content group. The original Note/Checkbox/Tags buttons live on inside it (same ids and
-         handlers); the rest dispatch through runQuickAction like the right-click menu does. -->
-    <div class="action-group" id="ag-inserts">
-      <div class="ag-buttons">
-        <div class="hl-wrap tb-menu-wrap" id="insert-wrap">
-          <button class="btn quick-btn tb-menu-trigger" id="qb-insert" data-tip="Insert into the selected node" aria-label="Insert" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="tb-menu-trigger-label">Insert</span><svg class="tb-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-                  </div>
-      </div>
-    </div>
-    <span class="quick-sep"></span>
-    <!-- AI ▾ — Rewrite and Generate outline (same ids/handlers as the old standalone buttons). -->
-    <div class="action-group" id="ag-ai">
-      <div class="ag-buttons">
-        <div class="hl-wrap tb-menu-wrap" id="ai-wrap">
-          <button class="btn quick-btn tb-menu-trigger" id="qb-ai" data-tip="AI" aria-label="AI" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg><span class="tb-menu-trigger-label">AI</span><svg class="tb-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-          
-        </div>
-      </div>
-    </div>
     <div class="ag-right">
     <div class="action-group" id="ag-markers" hidden><div class="ag-buttons" id="marker-summary" role="group" aria-label="Open items"></div></div>
     <div class="action-group" id="ag-fold">
       <div class="ag-buttons">
-        <button class="btn icon-btn quick-btn" id="qb-collapse" data-tip="Collapse all" aria-label="Collapse all"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/></svg></button>
-        <button class="btn icon-btn quick-btn" id="qb-zoom" data-tip="Zoom into selected node (Ctrl+.) · Zoom out (Ctrl+,)" aria-label="Zoom"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
-        <span class="tb-sep" aria-hidden="true"></span>
-        <button type="button" class="btn icon-btn quick-btn" id="doc-history-chip" data-tip="Version history" aria-label="Version history" aria-haspopup="menu"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg></button>
         <div class="doc-presence-chip" id="doc-presence-chip" style="display:none"></div>
         <div class="todo-dd-wrap" id="doc-share-wrap">
           <button type="button" class="btn quick-btn" id="doc-share-chip" aria-label="Share" data-tip="Download a PDF, or invite people on Sakura" aria-haspopup="true" aria-expanded="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span id="doc-share-chip-label">Share</span></button>
@@ -13906,29 +13831,6 @@ function historyMenuWhen(ts){
   if(ts>=day-864e5)return 'Yesterday '+time;
   return d.toLocaleDateString([], {month:'short',day:'numeric'})+', '+time;
 }
-async function openHistoryMenu(chip){
-  const docId=currentDocId; if(!docId)return;
-  commitEdit();
-  const revisions=(await loadDocRevisions(docId)).slice().reverse().slice(0,HISTORY_MENU_RECENT);
-  const CLOCK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>';
-  const items=[{heading:revisions.length?'Restore an earlier version':'Version history'}];
-  if(revisions.length)revisions.forEach(rev=>items.push({label:historyMenuWhen(rev.ts)+' \u00B7 '+(rev.reason||'Auto'), icon:CLOCK, onClick:()=>restoreDocRevision(docId,rev.ts)}));
-  else items.push({label:'No earlier versions yet', disabled:true, title:'Versions are saved automatically as you edit (at most every 10 minutes)'});
-  items.push({divider:true});
-  items.push({label:'Save a version now', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>', onClick:()=>saveManualDocVersion(docId)});
-  items.push({label:'All versions\u2026', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>', onClick:()=>openVersionHistory(docId)});
-  const r=chip.getBoundingClientRect();
-  showSbContextMenu(r.left,r.bottom+6,items);
-  _sbContextEl?.classList.add('history-menu');
-}
-(function(){
-  const chip=el('doc-history-chip'); if(!chip)return;
-  let wasOpen=false;
-  // The menu closes itself on any outside click, so a second click on the chip closes it
-  // instead of reopening it.
-  chip.addEventListener('pointerdown',()=>{ wasOpen=!!(_sbContextEl&&_sbContextEl.classList.contains('history-menu')); });
-  chip.addEventListener('click',e=>{ e.stopPropagation(); if(wasOpen){ wasOpen=false; return; } openHistoryMenu(chip); });
-})();
 // The document's own link: the same card as a link in the text (owner, 2026-10-23: "can't we use
 // the same way for document header link?"). Enter or clicking away keeps, Escape cancels, an
 // emptied Address removes it.
@@ -17284,7 +17186,7 @@ el('help-search')?.addEventListener('input',e=>{const v=e.target.value; filterHe
 el('help-search-clear')?.addEventListener('click',()=>{const inp=el('help-search'); if(inp&&inp.value){inp.value=''; inp.focus(); filterHelpPanel(''); el('help-search-clear')?.classList.remove('visible')} else {toggleHelpSearch()}});
 el('help-search')?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault(); toggleHelpSearch()}});
 
-function closeAllPanelsExceptGlobalSearch(){el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('docs-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open');}
+function closeAllPanelsExceptGlobalSearch(){el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('docs-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open');}
 // A `.settings-field` can be a collapsible section wrapping many nested sub-controls
 // (checkboxes, selects) that carry their own label / settings-switch-text elements of their
 // own. Naively querying for the first such descendant grabs whichever sub-item happens to
@@ -19885,35 +19787,7 @@ function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.s
   return {cls,html,hasQuotes:false};
 }
 function updateToolbarStates(){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const hasSelection=selectedNodes.length>0; document.querySelectorAll('.fmt-btn').forEach(btn=>{const styleName=btn.dataset.style; const active=hasSelection&&selectedNodes.every(n=>!!n.styles[styleName]); btn.classList.toggle('toggle-on',active); btn.disabled=!hasSelection; btn.style.opacity=hasSelection?'1':'.55'});
-  const headingBtn=el('heading-toggle-btn');
-  if(headingBtn){
-    const levels=hasSelection?selectedNodes.map(n=>n.styles.heading||0):[];
-    const allSameH=levels.length&&levels.every(l=>l===levels[0])&&levels[0]>0;
-    headingBtn.classList.toggle('toggle-on',allSameH);
-    headingBtn.disabled=!hasSelection; headingBtn.style.opacity=hasSelection?'1':'.55';
-  }
-}
-function updateQuickBarStates(){
-  const roots=selectAllMode?[]:getSelectionRootIndexes();
-  const hasSelection=selectAllMode?false:(roots.length>0);
-  const atRootDepth=hasSelection&&roots.every(idx=>nodes[idx].depth===0);
-  const set=(id,enabled)=>{const b=el(id); if(b)b.disabled=!enabled};
-  set('qb-outdent',hasSelection&&!atRootDepth);
-  set('qb-indent',hasSelection&&roots[0]>0);
-  set('qb-checkbox',selectedId!==null&&!selectAllMode); set('qb-tags',selectedId!==null&&!selectAllMode); set('qb-zoom',selectedId!==null&&!selectAllMode||focusedId!==null);
-  updateFoldToggleButton();
-}
-const FOLD_ICON_COLLAPSE='<polyline points="8 6 13 12 8 18"/><polyline points="14 6 19 12 14 18"/>';
-const FOLD_ICON_EXPAND='<polyline points="6 8 12 13 18 8"/><polyline points="6 14 12 19 18 14"/>';
-function updateFoldToggleButton(){
-  const btn=el('qb-collapse'); if(!btn)return;
-  const anyCollapsed=anyFoldClosed();
-  const o=inlineObjectNodeIds();
-  const anyFoldable=nodes.some((_,i)=>nodeHasChildren(nodes,i))||Object.values(o).some(set=>set.size>0);
-  btn.disabled=!(anyCollapsed||anyFoldable);
-  const svg=btn.querySelector('svg'); if(svg)svg.innerHTML=anyCollapsed?FOLD_ICON_EXPAND:FOLD_ICON_COLLAPSE;
-  const tip=anyCollapsed?'Expand all (Ctrl/Cmd+Alt+E)':'Collapse all (Ctrl/Cmd+Alt+C)';
-  btn.dataset.tip=tip; btn.setAttribute('aria-label',anyCollapsed?'Expand all':'Collapse all');
+
 }
 const ACCENT_PRESETS={terracotta:{light:'#c2553d',dark:'#d97757'},teal:{light:'#2e8479',dark:'#3caa9b'},indigo:{light:'#5173c2',dark:'#8199d3'},violet:{light:'#8c4ec2',dark:'#a774d4'},moss:{light:'#4b842e',dark:'#61ac3c'},amber:{light:'#917233',dark:'#bd9442'}};
 // Keeps the browser's theme-color meta (mobile address bar tint) matched to the current
@@ -21444,8 +21318,8 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
   // into a childless node, or every node deleted). Previously this only ran inside the normal-
   // tree branch, so an active filter's bar/chips could keep showing stale state — or simply
   // never get hidden — once the pane had no rows to filter in the first place.
-  applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')){el('sb-depth').textContent=selectedDepth===null?'':`Depth ${selectedDepth}`; el('sb-depth').style.display=selectedDepth===null?'none':''; const dd=el('sb-depth-divider'); if(dd)dd.style.display=selectedDepth===null?'none':''} if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates(); updateQuickBarStates();
-  updateDirtyIndicator(); updateMarkerSummary(); const zoomQb=el('qb-zoom'); if(zoomQb)zoomQb.classList.toggle('active',focusedId!==null);
+  applyTagFilterToPane(pane); if(editingId!==null){const input=getEditingInput(); if(input){autosizeNodeInput(input); input.focus(); setInputCaret(input,inputCaret??_preservedCaretOffset??-1); inputCaret=null}} else if(_pendingInlineFocus){ const pf=_pendingInlineFocus; _pendingInlineFocus=null; const target=pf.kind==='note'?document.querySelector(`.node-note-line[data-node-id="${pf.nodeId}"]`):(pf.kind==='threadComposer'?document.querySelector(`.thread-composer-input[data-node-id="${pf.nodeId}"]`):(pf.kind==='remarkText'?document.querySelector(`.node-remark-text-inline[data-remark-id="${pf.remarkId}"]`):(pf.kind==='qaQuestion'?document.querySelector(`.node-qa-question[data-qa-id="${pf.qaId}"]`):(pf.kind==='qaAnswer'?document.querySelector(`.node-qa-answer[data-qa-id="${pf.qaId}"]`):null)))); if(target){ target.focus(); if(pf.kind==='threadComposer'&&target.textContent){ const rg=document.createRange(); rg.selectNodeContents(target); rg.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(rg); } } } const idx=getIndex(nodes,selectedId); const selectedDepth=idx>=0?nodes[idx].depth:null; if(el('sb-depth')){el('sb-depth').textContent=selectedDepth===null?'':`Depth ${selectedDepth}`; el('sb-depth').style.display=selectedDepth===null?'none':''; const dd=el('sb-depth-divider'); if(dd)dd.style.display=selectedDepth===null?'none':''} if(el('sb-wordcount')){const wc=nodes.reduce((sum,n)=>{const t=getNodePlainText(n).trim(); return sum+(t?t.split(/\s+/).length:0)},0); el('sb-wordcount').textContent=`Words ${wc}`} updateAuthorDisplay(); updateToolbarStates();
+  updateDirtyIndicator(); updateMarkerSummary();
   document.querySelectorAll('#editor-pane .bl-link[data-r]').forEach(lnk=>{const target=findNodeByRowLinkId(lnk.dataset.r); lnk.classList.toggle('bl-unresolved',!target); lnk.dataset.tip=target?'Go to: '+(getNodePlainText(target).trim()||'(empty row)'):'The linked row no longer exists';});
 }
 // Whole rows (a shortcut with nothing selected): the same word formatting on every word of each
@@ -21453,8 +21327,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
 // value undefined toggles: on unless every row already has it all over.
 function setWholeRowMarks(kind,value){const ids=getSelectedIds(); const list=ids.map(id=>nodes[getIndex(nodes,id)]).filter(n=>n&&(n.text||'').length); if(!list.length)return false; let v=value; if(v===undefined){const allOn=list.every(n=>rowMarkCovers(rowMarksOf(n),n.text.length,0,n.text.length,kind)); v=allOn?false:(kind==='hl'?lastHighlightColor:kind==='c'?lastFontColor:true)} pushUndo(); list.forEach(n=>{setRowMarksOn(n,setRowMark(rowMarksOf(n),n.text.length,0,n.text.length,kind,v)); n.modifiedAt=Date.now()}); markDirty(); render(); return true}
 function toggleNodeStyle(styleName){const kind=ROW_STYLE_TO_MARK[styleName]; if(kind)setWholeRowMarks(kind)}
-function applyHeadingOption(level){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const allSame=selectedNodes.every(n=>(n.styles.heading||0)===level); const newLevel=level===0?0:(allSame?0:level); selectedNodes.forEach(n=>n.styles.heading=newLevel); markDirty(); render(); hideHeadingPalette()}
-function hideHeadingPalette(){el('heading-palette')?.classList.remove('open'); el('heading-toggle-btn')?.setAttribute('aria-expanded','false')}
+function applyHeadingOption(level){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const allSame=selectedNodes.every(n=>(n.styles.heading||0)===level); const newLevel=level===0?0:(allSame?0:level); selectedNodes.forEach(n=>n.styles.heading=newLevel); markDirty(); render()}
 function hideHighlightPalette(){el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open')}
 function hideFontColorPalette(){el('fc-palette')?.classList.remove('open')}
 function insertSiblingBefore(id,begin=true){const idx=getIndex(nodes,id); if(idx<0)return; pushUndo(); markDirty(); const node=nodes[idx]; const nn=makeBlankNode(node.depth,node.parentId); nodes.splice(idx,0,nn); rebuildParentIds(); setSingleSelection(nn.id); flashNode(nn.id); if(begin)beginEdit(nn.id,false); else render()}
@@ -23057,10 +22930,6 @@ document.querySelectorAll('#accent-swatch-row .accent-swatch').forEach(btn=>{if(
 // Clear all rows — reached from the open document's tab menu (right-click the active tab).
 // Undoable like any other edit, but asks first since it empties the whole document at once.
 async function clearAllNodes(){commitEdit(); if(!nodes.length){showToast('This document is already empty'); return} const allIds=nodes.map(n=>n.id); const impactText=deleteImpactText(collectDeleteImpact(allIds)); if(impactText.permanent){ const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Clear all rows?',body:'Remove every row from this document?'+[impactText.undoable,impactText.todos].filter(Boolean).map(t=>'\n\n'+t).join('')+'\n\nYou can undo this with Ctrl/Cmd+Z.',warning:impactText.permanent,confirmLabel:'Clear all',confirmCls:'danger',cancelLabel:'Cancel'}); if(!ok)return; } pushUndo(); markDirty(); removeLinkedObjectsForNodeIds(allIds); nodes=[]; nextId=1; selectedId=null; editingId=null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=null; flashNodeId=null; render(); focusPane(); showActionToast('Cleared all rows','Undo',()=>undo())}
-el('undo-btn').addEventListener('click',contextualUndo); el('redo-btn').addEventListener('click',contextualRedo);
-el('qb-outdent').addEventListener('click',()=>{commitEdit(); outdentSelected(); focusPane()});
-el('qb-indent').addEventListener('click',()=>{commitEdit(); indentSelected(); focusPane()});
-el('qb-collapse').addEventListener('click',()=>{commitEdit(); toggleFoldAll(); focusPane()});
 ['doc-author','header-title'].forEach(id=>{const node=el(id); if(!node)return; ['mousedown','click','dblclick','keyup','focus'].forEach(evt=>node.addEventListener(evt,ev=>ev.stopPropagation())); node.addEventListener('keydown',ev=>{if(handleSlashInsertKeydown(ev,node))return; if(matchesShortcut(ev,'save')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('save'); return} if(matchesShortcut(ev,'quickAssist')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('quickAssist'); return} if(matchesShortcut(ev,'newDoc')){ev.preventDefault(); ev.stopPropagation(); fireShortcut('newDoc'); return} if(id==='header-title'&&ev.key==='Enter'){ev.preventDefault(); ev.stopPropagation(); if(!nodes.length){createRootAndEdit('')}else{selectedId=nodes[0].id; selectionAnchorId=selectedId; clearMultiSelection(); beginEdit(selectedId,false)} return}
     // Continuous flow, mirrored from the node side (ArrowUp/ArrowLeft at the first row jump here):
     // ArrowDown/ArrowRight from the title cross into the first row instead of dead-ending.
@@ -23198,9 +23067,7 @@ el('search-input').addEventListener('keydown',e=>{
   if (matchesShortcut(e,'findInTree') || matchesShortcut(e,'findReplace')) return;
   e.stopPropagation(); if(e.key==='Enter'){e.preventDefault(); jumpSearch(e.shiftKey?-1:1)} else if(e.key==='Escape'){e.preventDefault(); closeSearch()}});
 document.querySelectorAll('.fmt-btn').forEach(btn=>btn.addEventListener('click',()=>handleToolbarStyle(btn.dataset.style)));
-el('heading-toggle-btn')?.addEventListener('click',e=>{e.stopPropagation(); const pal=el('heading-palette'); if(!pal)return; const opening=!pal.classList.contains('open'); closeAllPanelsExceptGlobalSearch?.(); if(opening){pal.querySelectorAll('.heading-option').forEach(o=>o.classList.remove('heading-option-active')); const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const levels=selectedNodes.map(n=>n.styles.heading||0); const allSame=levels.length&&levels.every(l=>l===levels[0]); if(allSame)pal.querySelector(`.heading-option[data-level="${levels[0]}"]`)?.classList.add('heading-option-active'); pal.classList.add('open'); el('heading-toggle-btn')?.setAttribute('aria-expanded','true')}});
-document.querySelectorAll('.heading-option').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation(); applyHeadingOption(Number(btn.dataset.level))}));
-el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); el('heading-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
+el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,exportMenuItems(),{id:'export-menu',label:'Export',alignRight:true,keyboard:e.detail===0});});
 el('import-toggle')?.addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,importMenuItems(),{id:'import-menu',label:'Import',alignRight:true,keyboard:e.detail===0});});
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
@@ -23260,7 +23127,7 @@ document.addEventListener('click',e=>{
   // AI fallback warning ran into: clicking the password prompt's own button silently closed the
   // Settings panel behind it, only visible once the prompt itself closed a moment later.
   if(e.target.closest('[role="dialog"][aria-modal="true"].open'))return;
-  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open'); const headPal=el('heading-palette'),headBtn=el('heading-toggle-btn'); if(headPal&&!headPal.contains(e.target)&&e.target!==headBtn&&!headBtn?.contains(e.target))headPal.classList.remove('open')
+  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle)settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open');
 },true);
 el('editor-pane').addEventListener('click',e=>{
   const blLink=e.target.closest('.bl-link[data-r]');
@@ -24337,7 +24204,6 @@ const aiRewriteInFlight=new Set();
 async function rewriteNodeText(nodeId){
   if(aiRewriteInFlight.has(nodeId))return; // already rewriting this node — a rapid double-trigger would otherwise fire two concurrent requests
   aiRewriteInFlight.add(nodeId);
-  const btn=el('qb-ai'); if(btn)btn.classList.add('ai-busy');
   try{
     const idx=getIndex(nodes,nodeId); if(idx<0)return;
     const original=nodes[idx].text||''; if(!original.trim())return;
@@ -24357,13 +24223,12 @@ async function rewriteNodeText(nodeId){
     pushUndo(); if(!applyAiRowResult(nodes[freshIdx],result,sent.tagged)){ undoStack.pop(); throw new Error('Empty response from AI'); }
     scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
-  finally{aiRewriteInFlight.delete(nodeId); if(btn)btn.classList.remove('ai-busy');}
+  finally{aiRewriteInFlight.delete(nodeId);}
 }
 
 async function rewriteMultipleNodes(nodeIds){
   if(!nodeIds.length)return;
   if(nodeIds.length===1){await rewriteNodeText(nodeIds[0]); return;}
-  const btn=el('qb-ai'); if(btn)btn.classList.add('ai-busy');
   try{
     // validIds/texts built together (not filtered separately) so results[j] always maps
     // back to the correct node id below — a stale-index bug here previously misaligned
@@ -24389,7 +24254,6 @@ async function rewriteMultipleNodes(nodeIds){
       }
     }
   }catch(err){showAiErrorModal(aiProvider, err);}
-  finally{if(btn)btn.classList.remove('ai-busy');}
 }
 
 // === Auto-rewrite on commit (debounced batch) ===
@@ -24648,7 +24512,7 @@ async function rewriteSubTextSelection(busyBtn){
   const {start,end}=range;
   const selected=(input.textContent||'').slice(start,end);
   if(!selected.trim())return;
-  const btn=busyBtn||el('qb-ai'); if(btn)btn.classList.add('ai-busy');
+  const btn=busyBtn; if(btn)btn.classList.add('ai-busy');
   try{
     const result=await callAiApi(selected);
     if(!result)throw new Error('Empty response from AI');
@@ -24754,10 +24618,7 @@ function aiRewriteSelection(){
   if(selectedId!==null){rewriteNodeText(selectedId); return;}
   showToast('Select a node first');
 }
-el('qb-zoom')?.addEventListener('click', () => {
-  if (focusedId !== null) exitFocus();
-  else if (selectedId !== null) enterFocus(selectedId);
-});
+
 function toggleCheckboxOnSelection(){
   const targets = multiSelectedIds.length > 1 ? multiSelectedIds : (selectedId !== null ? [selectedId] : []);
   if (!targets.length) return;
@@ -24770,10 +24631,6 @@ function toggleCheckboxOnSelection(){
   });
   markDirty(); render();
 }
-function aiMenuItems(){ return [
-  {id:'qb-ai-rewrite', label:'Rewrite row', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>', title:'Rewrite row (AI)', onClick:aiRewriteSelection},
-  {id:'qb-ai-outline', label:'Generate outline', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg>', title:'Generate outline (AI)', onClick:()=>generateOutlineWithAi(el('qb-ai'))}
-]; }
 // Rows the current document can't use (ctxActionAllowed) are left out; Insert's extra rows run
 // through runQuickAction, exactly like the right-click menu.
 // Headings (owner 2026-10-29): three levels and Body text, in the "/" list like most editors, with
@@ -24788,7 +24645,7 @@ function headingInsertItems(all=true){
 }
 function insertMenuItems(all=false){
   const one=selectedId!==null&&!selectAllMode;
-  const act=(a,label,icon)=>ctxActionAllowed(a)?[{label,icon,data:{insertAction:a},onClick:()=>{ if(selectedId!==null)runQuickAction(a,selectedId,el('qb-insert')?.getBoundingClientRect()); }}]:[];
+  const act=(a,label,icon)=>ctxActionAllowed(a)?[{label,icon,data:{insertAction:a},onClick:()=>{ if(selectedId!==null)runQuickAction(a,selectedId); }}]:[];
   const cur=selectedId!==null?(nodes.find(n=>n.id===selectedId)?.marker||''):'';
   // Two short groups under small headings (owner 2026-10-29: "still feels too long"): what the row
   // is, then what goes into it. Body text, Date/time, Tags…, the row status marks (all:true) and the
@@ -24919,9 +24776,6 @@ function dropSlashText(){
   const d=document.createRange(); d.setStart(s.start.startContainer,s.start.startOffset); d.setEnd(r.endContainer,r.endOffset);
   const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(d); document.execCommand('delete');
 }
-function closeToolbarMenus(){ if(_sbAnchorBtn&&(_sbAnchorBtn.id==='qb-insert'||_sbAnchorBtn.id==='qb-ai'))closeSbContextMenu(); }
-el('qb-insert')?.addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,insertMenuItems(),{id:'insert-menu',label:'Insert',keyboard:e.detail===0}); });
-el('qb-ai')?.addEventListener('click',e=>{ e.stopPropagation(); openSbMenuUnder(e.currentTarget,aiMenuItems(),{id:'ai-menu',label:'AI',keyboard:e.detail===0}); });
 // BYOK-only dropdown now — hosted lives in the separate AI Mode toggle above it, not as an 8th
 // option here. getAllAiProviders() (the fixed seven, unchanged) is the right list; hosted is
 // never a valid value for this specific <select>.
@@ -27433,9 +27287,6 @@ const TOUR_STEPS=[
   {target:'#global-search-wrap',placement:'bottom',title:'Quick Assist',bodyHtml:'<p>Searches across documents, node text, notes, tags, Q&amp;A, diagrams, and remarks — plus settings and help topics.</p><p>Press Ctrl/Cmd+/ to open it from anywhere.</p>'},
   {target:'#export-toggle',placement:'bottom',title:'Export',bodyHtml:'<p>Export your outline as a PDF or an OPML file.</p>'},
   {target:'#import-toggle',placement:'bottom',title:'Import',bodyHtml:'<p>Bring in an OPML outline file as a new document.</p>'},
-  {target:'#quick-bar',placement:'bottom',title:'Toolbar',bodyHtml:'<p>Undo, indent, formatting, notes, AI, and fold/zoom — grouped by purpose. Hover an icon to see what it does; everything else is on a node\'s right-click menu.</p>'},
-  {target:'#ag-inserts',placement:'bottom',title:'Notes & tags',bodyHtml:'<p>Drop a <strong>note</strong> (Ctrl/Cmd+Shift+N) for longer thoughts that live alongside a node. Add <strong>tags</strong> to organize and filter your tree by topic.</p>'},
-  {target:'#ag-ai',placement:'bottom',title:'AI features',bodyHtml:'<p>Generate a whole outline from a prompt, or rewrite a node or a selection — all powered by Sakura Hosted AI or your own choice of AI provider, with automatic fallback if one fails.</p><p>Configure providers and keys in Settings.</p>'},
   {target:'#editor-floating-controls',placement:'left',title:'Editor controls',bodyHtml:'<p>Toggle the <strong>toolbar</strong>, or <strong>maximize</strong> to hide the File Explorer and chrome — Esc brings it all back.</p>'},
   {target:'#dock-panel-appbar-toggle',placement:'bottom',title:'To-Dos',bodyHtml:'<p><strong>To-Dos</strong> — one task list that isn\'t tied to any single document, with due dates, priorities, and subtasks — reachable from this one button, docked to the side wherever you are.</p>'},
   {target:'#settings-toggle',placement:'bottom',title:'Settings',bodyHtml:'<p>Theme, accent color, toolbar layout, and a lot more. Everything is stored locally in this browser.</p>'},

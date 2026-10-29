@@ -118,8 +118,8 @@ test.describe('Note Panel + Code Block removal', () => {
       render();
     });
 
-    // The toolbar row is hidden in the one layout; its Insert menu still backs the same actions.
-    await page.locator('#qb-insert').dispatchEvent('click');
+    // The Insert list (behind "/" and right-click) still backs the same actions.
+    await page.evaluate(() => (window as any).eval("openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), { id: 'insert-menu', label: 'Insert' })"));
     await page.locator('#qb-note').dispatchEvent('click');
     const noteLine = page.locator('.node-note-line[data-node-id="1"]');
     await expect(noteLine).toBeVisible();
@@ -193,7 +193,7 @@ test.describe('Note Panel + Code Block removal', () => {
       render();
     });
 
-    await page.locator('#qb-insert').dispatchEvent('click');
+    await page.evaluate(() => (window as any).eval("openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), { id: 'insert-menu', label: 'Insert' })"));
     await page.locator('#qb-checkbox').dispatchEvent('click');
     const isCheckbox = await page.evaluate(() =>
       // @ts-expect-error
@@ -201,12 +201,10 @@ test.describe('Note Panel + Code Block removal', () => {
     );
     expect(isCheckbox).toBe(true);
 
-    // qb-zoom is hidden by default (an unrelated, pre-existing toolbar-config default, not
-    // something this removal touched) -- dispatch its click directly rather than fighting
-    // Playwright's visibility requirement over an unrelated setting.
+    // Zoom in (the toolbar's zoom button is gone, owner 2026-10-29): the right-click action.
     await page.evaluate(() =>
       // @ts-expect-error
-      document.getElementById('qb-zoom')?.click()
+      runQuickAction('focus', 1)
     );
     const focused = await page.evaluate(() =>
       // @ts-expect-error
@@ -217,7 +215,7 @@ test.describe('Note Panel + Code Block removal', () => {
     // Tags… is in the full Insert list (the short one leaves it for typing "/tag", owner 2026-10-29).
     await page.evaluate(() => {
       // @ts-expect-error
-      openSbMenuUnder(document.getElementById('qb-insert'), insertMenuItems(true), { id: 'insert-menu', label: 'Insert' });
+      openSbMenuUnder(document.getElementById('editor-pane-inner'), insertMenuItems(true), { id: 'insert-menu', label: 'Insert' });
     });
     await page.locator('#qb-tags').dispatchEvent('click');
     const tagPopoverOpen = await page.locator('#tag-popover').evaluate((el) => el.classList.contains('open'));

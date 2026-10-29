@@ -214,7 +214,7 @@ test('right-click and Insert offer one Thread item, no separate comment/question
   await seed(page);
   await page.locator('.node-row[data-id="2"] .node-label').click();
   await page.keyboard.press('Escape');
-  await page.locator('#qb-insert').dispatchEvent('click');
+  await page.evaluate(() => (window as any).eval("openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), { id: 'insert-menu', label: 'Insert' })"));
   const labels = await page.evaluate(`[...document.querySelectorAll('#insert-menu [data-insert-action]')].map(b => [b.dataset.insertAction, b.textContent.trim()])`) as string[][];
   expect(labels.filter(([a]) => a === 'remark').map(([, t]) => t)).toEqual(['Thread']);
   expect(labels.some(([a]) => a === 'qa')).toBe(false);

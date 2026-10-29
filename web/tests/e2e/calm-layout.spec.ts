@@ -28,7 +28,7 @@ test('one layout: no switch, a rail on the left, no toolbar row or status bar', 
     return {
       rail: r('appbar'), share: r('doc-share-chip'), title: r('header-title'),
       wordcount: getComputedStyle(document.getElementById('sb-wordcount')!).display,
-      undo: getComputedStyle(document.getElementById('undo-btn')!.closest('.action-group')!).display,
+      undo: document.getElementById('undo-btn'),
       onTopLine: document.getElementById('doc-tab-strip-row')!.contains(document.getElementById('quick-bar')),
       marksUnderTitle: document.getElementById('editor-meta-row')!.contains(document.getElementById('ag-markers'))
     };
@@ -36,7 +36,7 @@ test('one layout: no switch, a rail on the left, no toolbar row or status bar', 
   expect(m.rail.width).toBeLessThan(60);
   expect(m.rail.height).toBeGreaterThan(400);
   expect(m.wordcount).toBe('none');
-  expect(m.undo).toBe('none');
+  expect(m.undo).toBeNull();
   expect(m.onTopLine).toBe(true);
   expect(m.marksUnderTitle).toBe(true);
   expect(m.share.bottom).toBeLessThan(m.title.top);

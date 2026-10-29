@@ -61,8 +61,8 @@ const rootTexts = (page: import('@playwright/test').Page) =>
 
 test.describe('Fixed main toolbar', () => {
   // The one layout (owner 2026-10-28) shows no toolbar row: the top line keeps only Share (History left it 2026-10-29).
-  // Insert ▾ and AI ▾ still back the same actions (right-click, "/", the selection bar).
-  test('the top line shows only Share; Insert ▾ and AI ▾ keep their items', async ({ page }) => {
+  // The hidden toolbar buttons are gone (owner 2026-10-29); the Insert list still backs "/" and right-click.
+  test('the top line shows only Share; the Insert list keeps its items', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
     const shown = await page.evaluate(() =>
@@ -70,19 +70,15 @@ test.describe('Fixed main toolbar', () => {
         .filter((b) => (b as HTMLElement).offsetParent !== null)
         .map((b) => b.id || (b as HTMLElement).dataset.style));
     expect(shown).toEqual(['doc-share-chip']);
-    await page.locator('#qb-insert').dispatchEvent('click');
+    await page.evaluate(() => (window as any).eval("openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), { id: 'insert-menu', label: 'Insert' })"));
     // Two groups under small headings (owner 2026-10-29); row status marks only when you type.
     await expect(page.locator('#insert-menu .sb-context-heading')).toHaveText(['Text', 'Insert']);
     await expect(page.locator('#insert-menu > .sb-context-item .sb-context-label')).toHaveText(['Heading 1', 'Heading 2', 'Heading 3', 'Checkbox', 'Note', 'Table', 'Image', 'Diagram', 'Thread']);
     await expect(page.locator('#insert-markers')).toHaveCount(0);
-    await page.locator('#qb-ai').dispatchEvent('click');
-    await expect(page.locator('#insert-menu')).toHaveCount(0);
-    await expect(page.locator('#ai-menu .sb-context-label')).toHaveText(['Rewrite row', 'Generate outline']);
-    await page.locator('#qb-ai').dispatchEvent('click');
     await expect(page.locator('#hl-caret-btn')).toHaveCount(0);
     await expect(page.locator('#fc-caret-btn')).toHaveCount(0);
     await expect(page.locator('#quick-bar .ag-label')).toHaveCount(0);
-    for (const gone of ['#qb-above', '#qb-child', '#qb-duplicate', '#qb-up', '#qb-down', '#qb-delete', '#qb-smart-paste', '#insert-dt-btn', '#more-toggle', '#more-menu', '.fmt-btn[data-style="underline"]', '.fmt-btn[data-style="strike"]', '#editor-toolbar-toggle']) {
+    for (const gone of ['#qb-above', '#qb-child', '#qb-duplicate', '#qb-up', '#qb-down', '#qb-delete', '#qb-smart-paste', '#insert-dt-btn', '#more-toggle', '#more-menu', '#qb-insert', '#qb-ai', '#undo-btn', '#redo-btn', '#qb-indent', '#qb-outdent', '#heading-toggle-btn', '#qb-collapse', '#qb-zoom', '#doc-history-chip', '.fmt-btn[data-style="underline"]', '.fmt-btn[data-style="strike"]', '#editor-toolbar-toggle']) {
       await expect(page.locator(gone)).toHaveCount(0);
     }
     expect(errors).toEqual([]);
@@ -237,11 +233,11 @@ test.describe('Settings', () => {
     await expect(page.locator('#settings-section-ai-capabilities[data-cat="ai"] #feat-ai-toggle')).toHaveCount(1);
   });
 
-  test('Insert ▾ items run the same action as the right-click menu (Add comment opens the selected node\'s reply box)', async ({ page }) => {
+  test('Insert list items run the same action as the right-click menu (Add comment opens the selected node\'s reply box)', async ({ page }) => {
     await open(page);
     await seedDoc(page);
     await page.locator('.node-row[data-id="1"]').click();
-    await page.locator('#qb-insert').dispatchEvent('click');
+    await page.evaluate(() => (window as any).eval("openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), { id: 'insert-menu', label: 'Insert' })"));
     await page.locator('#insert-menu [data-insert-action="remark"]').dispatchEvent('click');
     await expect(page.locator('#insert-menu')).toHaveCount(0);
     await expect(page.locator('.thread-composer-input[data-node-id="1"]')).toBeFocused();
@@ -337,7 +333,7 @@ test.describe('Old prefs load harmlessly and drop on the next save', () => {
     await seedDoc(page);
     // The top line (Share) and the rail show whatever the old hidden lists said.
     await expect(page.locator('#doc-share-chip')).toBeVisible();
-    await expect(page.locator('#doc-history-chip')).toBeHidden();
+    await expect(page.locator('#doc-history-chip')).toHaveCount(0);
     await expect(page.locator('#editor-zen-toggle')).toBeVisible();
     await expect(page.locator('#doc-tab-strip-row')).toBeVisible();
     for (const id of ['#rail-docs-btn', '#dock-panel-appbar-toggle', '#rail-settings-btn']) await expect(page.locator(id), id).toBeVisible();

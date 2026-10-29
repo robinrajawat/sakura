@@ -25,9 +25,9 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('toolbar groups have no background box', async ({ page }) => {
+test('the top line\'s button group has no background box', async ({ page }) => {
   const bgs = await page.locator('#quick-bar .action-group .ag-buttons').evaluateAll((els) => els.map((e) => getComputedStyle(e).backgroundColor));
-  expect(bgs.length).toBeGreaterThan(2);
+  expect(bgs.length).toBeGreaterThan(0);
   for (const bg of bgs) expect(bg).toBe('rgba(0, 0, 0, 0)');
 });
 
@@ -44,17 +44,14 @@ test('the open-items words are grey like the other toolbar buttons; only the ico
   expect(c.text).toBe(probe);
 });
 
-test('the title byline is sentence case; status is plain text like the rest of the subline, History has no pill background', async ({ page }) => {
+test('the title byline is sentence case; status is plain text like the rest of the subline', async ({ page }) => {
   const s = await page.evaluate(() => {
     const status = document.getElementById('doc-status-chip')!;
-    const hist = document.getElementById('doc-history-chip')!;
     return {
       statusText: status.textContent,
       transform: getComputedStyle(status).textTransform,
       statusBg: getComputedStyle(status).backgroundColor,
       statusDot: getComputedStyle(status, '::before').content,
-      histTransform: getComputedStyle(hist).textTransform,
-      histBg: getComputedStyle(hist).backgroundColor,
       sep: (() => { const a = getComputedStyle(document.getElementById('doc-status-wrap')!, '::after'); return [a.width, a.height, a.borderRadius].join(' '); })()
     };
   });
@@ -63,26 +60,24 @@ test('the title byline is sentence case; status is plain text like the rest of t
   // Plain text, no pill (owner 2026-10-29: the subline is one quiet style).
   expect(s.statusBg).toBe('rgba(0, 0, 0, 0)');
   expect(s.statusDot).toBe('none');
-  expect(s.histTransform).toBe('none');
-  expect(s.histBg).toBe('rgba(0, 0, 0, 0)');
   // A drawn, centred dot (the '·' glyph sat low next to the status pill).
   expect(s.sep).toBe('3px 3px 50%');
 });
 
-test('the byline is Status · author · link; History and Share close the toolbar, Share last', async ({ page }) => {
+test('the byline is Status · author · link; Share closes the top line', async ({ page }) => {
   const s = await page.evaluate(() => {
     const dot = (id: string, pseudo: string) => { const a = getComputedStyle(document.getElementById(id)!, pseudo); return [a.width, a.height, a.borderRadius].join(' '); };
     const fold = document.querySelector('#ag-fold .ag-buttons')!;
     return {
       linkSep: dot('doc-link-wrap', '::before'),
-      inByline: ['doc-history-chip', 'doc-share-wrap', 'doc-presence-chip'].filter((id) => document.getElementById(id)!.closest('#editor-meta-row')),
+      inByline: ['doc-share-wrap', 'doc-presence-chip'].filter((id) => document.getElementById(id)!.closest('#editor-meta-row')),
       order: [...fold.children].map((c) => c.id || c.className),
       menuRight: getComputedStyle(document.getElementById('share-dd-menu')!).right
     };
   });
   expect(s.linkSep).toBe('3px 3px 50%');
   expect(s.inByline).toEqual([]);
-  expect(s.order).toEqual(['qb-collapse', 'qb-zoom', 'tb-sep', 'doc-history-chip', 'doc-presence-chip', 'doc-share-wrap']);
+  expect(s.order).toEqual(['doc-presence-chip', 'doc-share-wrap']);
   // Share sits at the right edge, so its menu opens leftwards from there.
   expect(s.menuRight).toBe('0px');
 });
@@ -96,13 +91,12 @@ test('open items and decisions are separated by a dot, not a rule', async ({ pag
   await expect(page.locator('#marker-summary .oi-divider')).toHaveCount(0);
 });
 
-test('the editor runs the full width, the toolbar edge to edge', async ({ page }) => {
+test('the editor runs the full width', async ({ page }) => {
   await page.setViewportSize({ width: 1900, height: 700 });
   const m = await page.evaluate(() => {
     const r = (id: string) => document.getElementById(id)!.getBoundingClientRect();
-    return { undo: r('undo-btn').left - r('quick-bar').left, page: r('editor-pane-inner').width, pane: r('editor-pane').width };
+    return { page: r('editor-pane-inner').width, pane: r('editor-pane').width };
   });
-  expect(m.undo).toBeLessThanOrEqual(16);
   // Only the page margins (up to 96px each side since 2026-10-29) sit beside the page; no width cap.
   expect(m.pane - m.page).toBeLessThanOrEqual(192);
 });
