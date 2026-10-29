@@ -81,13 +81,12 @@ test.describe('cutdown 9a: AI trimmed to Generate outline + Rewrite; node icons 
     await dismissOverlays(page);
     await seedDoc(page);
 
-    // Toolbar AI group: exactly Generate outline + Rewrite row (the toolbar row is hidden in the one
-    // layout; its menu still backs the same actions).
-    await page.locator('#qb-ai').dispatchEvent('click');
-    await expect(page.locator('#ai-menu .sb-context-item')).toHaveCount(2);
-    await expect(page.locator('#qb-ai-outline')).toHaveCount(1);
-    await expect(page.locator('#qb-ai-rewrite')).toHaveCount(1);
-    for (const id of ['qb-ai-expand', 'qb-ai-summarise', 'qb-ai-tags', 'qb-ai-icon', 'icon-picker-popover',
+    // AI entry points: Rewrite row on the right-click menu; Generate outline by shortcut and on the
+    // empty page (KEPT_FUNCTIONS). The hidden toolbar's AI ▾ is gone (owner 2026-10-29).
+    await page.locator('.node-row').first().click({ button: 'right' });
+    await expect(page.locator('#context-quickbar [data-action="ai-rewrite"]')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    for (const id of ['qb-ai', 'ai-menu', 'qb-ai-outline', 'qb-ai-rewrite', 'qb-ai-expand', 'qb-ai-summarise', 'qb-ai-tags', 'qb-ai-icon', 'icon-picker-popover',
       'todos-extract-btn', 'todos-summary-btn', 'todos-summary-modal-overlay', 'settings-section-ai-todos',
       'todos-ai-settings-jump-btn', 'qa-ai-answer-toggle', 'sakura-modal-textarea', 'aitb-expand', 'aitb-summarise',
       'aitb-tags', 'aitb-icon', 'hoverq-ai-icon', 'ctxq-ai-icon']) {
