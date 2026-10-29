@@ -259,21 +259,10 @@ initAiProvidersState({
     sourceFile: 'src/state/diagramAnchor.ts',
     testFile: 'tests/unit/diagramAnchor.test.ts',
     // No production wiring needed — pure functions (reorderDiagramsCore mutates the diagrams
-    // array passed to it, same convention as nodeMutations.ts/tabOrder.ts's own in-place-
+    // array passed to it, same convention as nodeMutations.ts's own in-place-
     // mutation pattern; no DOM/undo-stack/render side effects). The four real call sites
     // (diagramAnchorLabel/reorderDiagramRow/diagramIsOrphaned/diagramNeedsAttention wrapper
     // bodies in index.html) were updated in the same commit that wired this block in.
-    footer: ''
-  },
-  {
-    name: 'tabOrder',
-    sourceFile: 'src/state/tabOrder.ts',
-    testFile: 'tests/unit/tabOrder.test.ts',
-    // No production wiring needed — pure functions (reorderTabsCore mutates the openTabs array
-    // passed to it, same convention as nodeMutations.ts/nodeSelection.ts's own in-place-mutation
-    // pattern; no DOM/localStorage side effects). The two real call sites (cycleOpenTab/
-    // reorderTab wrapper bodies in index.html) were updated in the same commit that wired this
-    // block in.
     footer: ''
   },
   {
@@ -355,7 +344,7 @@ initHubTodosState({
     testFile: 'tests/unit/hubSubtasks.test.ts',
     targetFile: 'hub.html',
     // No production wiring needed — pure functions (mutate the passed-in task in place, same
-    // convention as nodeMutations.ts/tabOrder.ts/diagramAnchor.ts; no DOM/storage side effects
+    // convention as nodeMutations.ts/diagramAnchor.ts; no DOM/storage side effects
     // of their own). The three real call sites (the subtask toggle/remove click handler and the
     // subtask-input keydown handler) were updated in the same commit that wired this block in.
     footer: ''
