@@ -77,3 +77,12 @@ test('back/forward are shortcuts only: no buttons on the top line', async ({ pag
   await expect(page.locator('.doc-nav-btn')).toHaveCount(0);
   await expect(page.locator('#doc-path')).toBeAttached();
 });
+
+// Opening Search keeps its slot on the rail, so To-Dos doesn't slide up under the pointer (owner 2026-10-29).
+test('opening Search leaves the rail icons where they were', async ({ page }) => {
+  const top = () => page.locator('#dock-panel-appbar-toggle').evaluate((b) => Math.round(b.getBoundingClientRect().top));
+  const before = await top();
+  await page.locator('#qa-category-icon-btn').click();
+  await expect(page.locator('#global-search-wrap')).toHaveClass(/qa-open/);
+  expect(await top()).toBe(before);
+});
