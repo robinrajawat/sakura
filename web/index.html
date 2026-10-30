@@ -471,6 +471,15 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .toast-action-btn:hover{opacity:.85}
 .toast-qa-icon{flex-shrink:0;display:flex;color:var(--accent)}
 
+.notif-item.notif-copy{cursor:default}
+.notif-copy-title{font-weight:600}
+.notif-copy-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.notif-copy-btn{appearance:none;font:500 12px 'Inter',sans-serif;padding:5px 10px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--fg)}
+.notif-copy-btn:hover{background:var(--hover)}
+.notif-copy-btn.primary{border-color:var(--accent);color:#fff;background:color-mix(in srgb,var(--accent) 86%,var(--tb-bg) 14%)}
+.notif-copy-btn.primary:hover{background:var(--accent)}
+.notif-copy-btn:disabled{opacity:.6;cursor:default}
+.notif-copy-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* === Sakura Modal === */
 #sakura-modal-overlay{position:fixed;inset:0;z-index:1150;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s}
 #sakura-modal-overlay.open{opacity:1;pointer-events:all}
@@ -3977,7 +3986,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 <h4>Share and PDF</h4>
 <ul>
 <li>Share → Download PDF prints the whole document, with notes, threads, tables and images. Cover page and PDF mark are in Settings → Documents</li>
-<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep. It arrives in their notifications; clicking it adds it to their documents</li>
+<li>Share → Send a copy (signed in) gives another Sakura user their own copy to edit and keep. It arrives in their notifications with Add to my documents and Decline; nothing is added until they choose</li>
 <li>Share → Export saves the outline as an OPML file; right-click empty space in the File Explorer → Import (.opml)… opens one</li>
 </ul>
 </div>
@@ -14905,9 +14914,10 @@ async function addSentCopyToMyDocs(n){
     localStorage.setItem(docKey(newId),JSON.stringify({...d,title,diagrams}));
     touchDocIndex(newId,title);
     try{ await mod.deleteDoc(ref); }catch(e){ console.warn('[sakura] could not remove the sent copy after adding it:',e); }
-    if(n.id)deleteNotification(n.id);
-    renderSidebar();
-    switchDoc(newId);
+    // The notification stays as "Added … to your documents" with Open, rather than vanishing.
+    n.addedDocId=newId; n.read=true;
+    if(n.id)try{ await mod.updateDoc(mod.doc(db,'notifications',currentUser.uid,'items',n.id),{addedDocId:newId,read:true}); }catch(e){ console.warn('[sakura] could not mark the sent copy as added:',e); }
+    renderSidebar(); renderNotifList();
     showToast('Added to your documents');
   }catch(e){ console.warn('[sakura] addSentCopyToMyDocs failed:',e); showToast('Could not add this copy — try again'); }
 }
@@ -15082,8 +15092,11 @@ function isNotifMenuOpen() {
  */
 function notifText(n) {
     if (n.type === 'doc_copy') {
+        const title = n.docTitle || 'a document';
+        if (n.addedDocId)
+            return `Added "${title}" to your documents`;
         const from = n.fromDisplayName || n.fromEmail || 'Someone';
-        return `${from} sent you a copy of "${n.docTitle || 'a document'}". Click to add it to your documents.`;
+        return `${from} sent you a copy of "${title}"`;
     }
     return n.message || 'New notification';
 }
@@ -15313,18 +15326,36 @@ function renderNotifList(){
     const meta=document.createElement('div'); meta.className='notif-item-meta'; meta.textContent=formatRelativeTime(n.createdAt||Date.now());
     body.appendChild(meta);
     item.appendChild(body);
+    // A sent copy says plainly that nothing happens until you choose (owner, 2026-10-30): Add or
+    // Decline, then Open once added. Clicking the text itself never accepts it.
+    const isCopy=n.type==='doc_copy'&&n.docId;
+    if(isCopy){
+      item.classList.add('notif-copy');
+      const title=n.docTitle||'a document', from=n.fromDisplayName||n.fromEmail||'Someone';
+      text.textContent='';
+      const strong=document.createElement('span'); strong.className='notif-copy-title'; strong.textContent=title;
+      if(n.addedDocId)text.append('Added ',strong,' to your documents');
+      else text.append(from+' sent you a copy of ',strong);
+      const ago=formatRelativeTime(n.createdAt||Date.now());
+      meta.textContent=n.addedDocId?('From '+from+' \u00B7 '+ago):('Not in your documents until you add it \u00B7 '+ago);
+      const actions=document.createElement('div'); actions.className='notif-copy-actions';
+      const btn=(label,primary,fn)=>{ const b=document.createElement('button'); b.type='button'; b.className='notif-copy-btn'+(primary?' primary':''); b.textContent=label; b.addEventListener('click',e=>{ e.stopPropagation(); fn(b); }); actions.appendChild(b); return b; };
+      if(n.addedDocId){
+        btn('Open',false,()=>{
+          if(!loadActiveDocsIndex().some(d=>d.id===n.addedDocId)){ showToast('That document is no longer in your documents'); return; }
+          toggleNotifMenu(false); switchDoc(n.addedDocId);
+        });
+      }else{
+        btn('Add to my documents',true,async b=>{ actions.querySelectorAll('button').forEach(x=>x.disabled=true); b.textContent='Adding\u2026'; await addSentCopyToMyDocs(n); if(!n.addedDocId)renderNotifList(); });
+        btn('Decline',false,()=>deleteNotification(n.id));
+      }
+      body.appendChild(actions);
+    }
     const dismiss=document.createElement('button'); dismiss.type='button'; dismiss.className='notif-item-dismiss'; dismiss.dataset.tip='Dismiss';
     dismiss.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
     dismiss.addEventListener('click',e=>{ e.stopPropagation(); deleteNotification(n.id); });
-    item.appendChild(dismiss);
-    item.addEventListener('click',()=>{
-      if(!n.read)markNotificationRead(n.id);
-      // A sent copy is added as the recipient's own document; other types just mark read.
-      if(n.type==='doc_copy'&&n.docId){
-        toggleNotifMenu(false);
-        addSentCopyToMyDocs(n);
-      }
-    });
+    if(!isCopy||n.addedDocId)item.appendChild(dismiss); // an open copy has Decline instead
+    item.addEventListener('click',()=>{ if(!n.read)markNotificationRead(n.id); });
     list.appendChild(item);
   });
 }
