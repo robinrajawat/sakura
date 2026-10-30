@@ -172,11 +172,11 @@ contradicts README.md, trust README.md.)*
 
 ### Latest changes
 
+- **Settings details (2026-10-30).** Owner: "too flat… add a + button and then open the form… small details all around". Admin AI providers: a list (order number, name · model, URL; Edit/Remove on hover) with "Add provider" opening a labelled form (Name, API format, Order, Endpoint URL, Model, API key; Cancel/Save); Edit fills the form (key must be pasted again). About: logo + one line + © header, then Source code/License/Third-party notices rows with ↗ buttons; Privacy & data as six short rows; Support one row. AI: "AI features" switch card with no title; Provider rows tidied (Mode, Sakura Hosted AI row with Sign in/Test, Provider/Model/API key); Auto-rewrite joins the Rewrite card. Delete account is one calm row (red-text button) instead of the pink danger box. Selected segments are a neutral raised pill; settings selects all show their arrow. Also: while Auto-rewrite is on, "✦ Auto-rewrite on" shows quietly bottom-right (owner: you couldn't tell from the editor); off shows nothing.
+
 - **Docs and tour brought up to date (2026-10-29).** Owner asked. Help, the Cheatsheet, the onboarding tour and README described the old layout (toolbar, tabs, app bar across the top, Import/Export buttons, status bar always shown, "Hub in the app bar", headings 1–6). Rewritten against the app as it is. The tour now points at the rail, Documents, Search, Share, the Zen corner button, To-Dos, Settings and the account menu (Help); its old Export/Import/Settings/Help steps pointed at hidden off-screen buttons. Shortcut groups: "Toolbar" → "Editing", "Docs, Tabs & Zen" → "Documents & Zen". Naming: "Zen mode" stays (the app already uses "Focus" for zooming into a branch).
 
 - **"Unfiled" on the top line (2026-10-29).** Owner chose it over a "Documents ›" root on every path. A document in no folder (or new and unsaved) shows "Unfiled" where the folders go, a shared one "Shared"; clicking it reveals the document (or opens Documents when unsaved). `renderDocPath`, class `doc-path-root`.
-
-- **Settings, grouped (2026-10-29).** Owner: "too many boxes", then "not too flat, a standard approach". Settings is 760px wide (descriptions fit on one line); headings are sentence case with no rule under them; each group is one soft card (`--bg`, 10px radius, hairlines between rows), Appearance included (label left, control right); row actions look like buttons (`#settings-panel` in the selector beats `#appbar .btn`). All in calm-layout.css, scoped to the Settings panel, sizes from the `--fs-*` tokens. Section titles in sentence case (Keyboard shortcuts, Secure storage…); the AI provider note is two lines; About no longer lists removed AI features.
 
 ### In progress / not built
 

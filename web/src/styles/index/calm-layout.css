@@ -136,8 +136,47 @@ html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-fiel
 html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field+.settings-field{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
 html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>label{font-size:var(--fs-md);color:var(--fg)}
 html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>:not(label){flex:0 1 320px;min-width:0}
-html.calm-layout #settings-panel .settings-list-row>.btn,html.calm-layout #settings-panel .settings-list-row .data-io-btn{height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif}
-html.calm-layout #settings-panel .settings-list-row>.btn:hover:not(:disabled),html.calm-layout #settings-panel .settings-list-row .data-io-btn:hover:not(:disabled){background:var(--hover)}
+html.calm-layout #settings-panel .settings-list-row>.btn,html.calm-layout #settings-panel .settings-inline-field>.btn:not(.primary),html.calm-layout #settings-panel .settings-list-row .data-io-btn{height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif}
+html.calm-layout #settings-panel .settings-list-row>.btn:hover:not(:disabled),html.calm-layout #settings-panel .settings-inline-field>.btn:not(.primary):hover:not(:disabled),html.calm-layout #settings-panel .settings-list-row .data-io-btn:hover:not(:disabled){background:var(--hover)}
+/* Settings details (owner 2026-10-30: "too flat… small details all around"). More air between
+   groups; selected segments are a raised neutral pill, not accent (colour is for meaning); link
+   rows look like the other row buttons; forms open from a "+" button instead of sitting open. */
+html.calm-layout .settings-panel .settings-content{gap:34px}
+html.calm-layout .settings-panel .settings-section{gap:10px}
+html.calm-layout #settings-panel :is(.theme-segmented,.segmented-control){background:color-mix(in srgb,var(--fg) 5%,transparent);border-color:transparent;min-height:32px}
+html.calm-layout #settings-panel :is(.theme-seg,.segmented-btn){padding:5px 12px;font:500 12.5px 'Inter',sans-serif}
+html.calm-layout .settings-content :is(.theme-seg,.segmented-btn).active{background:var(--edit-bg);color:var(--fg);box-shadow:0 0 0 1px color-mix(in srgb,var(--border) 80%,transparent),0 1px 2px color-mix(in srgb,var(--fg) 10%,transparent)}
+html.calm-layout #settings-panel .settings-list-row .select-wrap .select{white-space:nowrap;text-overflow:ellipsis;height:28px;padding:0 26px 0 10px;border-radius:7px;font:500 12.5px 'Inter',sans-serif}
+html.calm-layout #settings-panel .settings-list-row>.settings-link-btn{display:inline-flex;align-items:center;text-decoration:none;flex:0 0 auto}
+html.calm-layout #settings-panel .settings-list-row>.settings-link-btn::after{content:'\2197';margin-left:5px;color:var(--hint)}
+html.calm-layout #settings-panel #about-support-btn{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
+html.calm-layout #settings-panel .settings-list-row>.settings-danger-btn{color:var(--danger)}
+html.calm-layout #settings-panel .settings-list-row>.settings-danger-btn:hover:not(:disabled){background:color-mix(in srgb,var(--danger) 8%,transparent);border-color:color-mix(in srgb,var(--danger) 40%,transparent)}
+html.calm-layout #settings-panel .settings-row-desc a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.settings-inline-field{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+html.calm-layout #settings-panel :is(#ai-hosted-section,#ai-byok-section)>.settings-list-row:first-child{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
+.settings-about-head{display:flex;align-items:center;gap:14px;padding:2px 2px 6px}
+.settings-about-head svg{flex:0 0 auto}
+.settings-about-name{font:600 var(--fs-lg,15px) 'Inter',sans-serif;color:var(--fg)}
+.settings-subhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:22px}
+.settings-subhead .settings-section-title{margin:0}
+html.calm-layout #settings-panel .settings-add-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;flex:0 0 auto}
+html.calm-layout #settings-panel .settings-add-btn:hover{background:var(--hover)}
+html.calm-layout #settings-panel .settings-add-btn[aria-expanded="true"]{background:var(--hover)}
+.settings-empty{padding:14px;color:var(--muted);font-size:var(--fs-sm);text-align:center}
+.settings-order-num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--muted);font:600 11px 'Inter',sans-serif}
+.settings-row-actions{display:flex;gap:2px;flex:0 0 auto;opacity:0;transition:opacity .12s}
+.settings-list-row:hover .settings-row-actions,.settings-row-actions:focus-within{opacity:1}
+.settings-row-actions .sb-icon-btn{color:var(--muted)}
+.settings-form{padding:14px}
+.settings-form-title{font:600 var(--fs-md) 'Inter',sans-serif;color:var(--fg);margin-bottom:12px}
+.settings-form-grid{display:grid;grid-template-columns:1fr 150px 70px;gap:10px 10px}
+.settings-form-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.settings-form-field>span:first-child{font:500 var(--fs-xs,11.5px) 'Inter',sans-serif;color:var(--muted)}
+.settings-form-field.is-wide{grid-column:1 / -1}
+.settings-form-field .meta-input,.settings-form-field .select-wrap,.settings-form-field .select{width:100%;box-sizing:border-box;text-align:left}
+.settings-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+@media (max-width:700px){.settings-form-grid{grid-template-columns:1fr 1fr}.settings-form-field:first-child{grid-column:1 / -1}}
 html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle){padding-left:10px}
 html.calm-layout #editor-meta-row .open-items-btn{font-weight:400}
 /* The frame never scrolls (owner 2026-10-29: the rail's top icon was cut off): hidden helper
