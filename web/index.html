@@ -1517,6 +1517,7 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:anywhere;background:none;padding:0}
 .pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer}
 .pv-api-curl:hover{background:var(--hover);color:var(--fg)}
+.pv-api-curl{white-space:nowrap}.pv-api-curl svg{flex:none;width:12px;height:12px}
 .pv-api-desc{color:var(--muted);line-height:1.45}
 .pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
 .pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -5764,6 +5765,23 @@ function apiCellText(c){ if(!c)return ''; const k=c.cloneNode(true); k.querySele
 function tableApiInfo(table){ if(!table)return null; return apiRequestFromGrid(Array.from(table.rows).map(r=>Array.from(r.cells).map(apiCellText))); }
 function tableApiEligible(table){ return !!tableApiInfo(table); }
 function isTableShownAsApi(table){ return !!(table&&table.getAttribute('data-table-display')==='api'); }
+// The card's own Postman actions (owner 2026-10-30): Copy for Postman puts the request on the
+// clipboard as cURL (Postman's Import takes it pasted); Export to Postman saves just this request
+// as a one-request v2.1 collection named after its row, which -- unlike cURL -- keeps the
+// description and the example response. The whole document still exports from Share.
+async function copyApiRequestCurl(table){
+  const r=tableApiInfo(table); if(!r)return;
+  try{ await navigator.clipboard.writeText(apiRequestToCurl(r)); showToast('Copied \u2014 in Postman, Import \u203a paste'); }
+  catch(err){ showToast('Couldn\u2019t copy \u2014 the browser blocked the clipboard'); }
+}
+function exportApiRequestToPostman(node,table){
+  const grid=Array.from(table.rows).map(r=>Array.from(r.cells).map(apiCellText));
+  const name=(node.text||'').trim()||'API request';
+  const {collection,requestCount}=outlineToPostman(name,[{depth:0,text:name,grid}]);
+  if(!requestCount){ showToast('This table isn\u2019t a complete API request'); return; }
+  downloadBlob(`${name.replace(/[\\/:*?"<>|]+/g,'_')}.postman_collection.json`,'application/json;charset=utf-8',JSON.stringify(collection,null,2));
+  showToast('Exported \u2014 in Postman, Import \u203a the file');
+}
 // API request editor (owner 2026-10-30: "a nicer editor, no shortcuts"). Double-click, Edit
 // request… or a new API request starter opens this form instead of the raw Field | Value grid:
 // method and URL on one line, a description, query parameters and headers as name/value rows
@@ -5942,7 +5960,7 @@ function apiEditorSave(){
 document.addEventListener('click',async e=>{
   const b=e.target.closest?.('.pv-api-curl'); if(!b)return;
   e.preventDefault(); e.stopPropagation();
-  try{ await navigator.clipboard.writeText(b.dataset.curl||''); showToast('Copied as cURL — paste into Postman › Import'); }
+  try{ await navigator.clipboard.writeText(b.dataset.curl||''); showToast('Copied \u2014 in Postman, Import \u203a paste'); }
   catch(err){ showToast('Couldn’t copy — the browser blocked the clipboard'); }
 },true);
 function renderApiRequestHtml(table){
@@ -5956,7 +5974,7 @@ function renderApiRequestHtml(table){
   const extras=r.extras.length?`<div class="pv-api-sec">${r.extras.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span><span class="pv-api-sep">:</span><span class="pv-api-val">${esc(v)}</span></div>`).join('')}</div>`:'';
   return `<div class="pv-api" data-method="${escAttr(r.method.toLowerCase())}">`
     +`<div class="pv-api-line"><span class="pv-api-method">${esc(r.method)}</span><code class="pv-api-url">${esc(apiFullUrl(r))}</code>`
-    +`<button type="button" class="pv-api-curl" data-curl="${escAttr(apiRequestToCurl(r))}" data-tip="Copy as cURL — paste into Postman (Import) or a terminal">${COPY}<span>cURL</span></button></div>`
+    +`<button type="button" class="pv-api-curl" data-curl="${escAttr(apiRequestToCurl(r))}" data-tip="Copies the request as cURL. In Postman: Import › paste">${COPY}<span>Copy for Postman</span></button></div>`
     +(r.description?`<div class="pv-api-desc">${esc(r.description)}</div>`:'')
     +pairs('Query',r.query,'=')+pairs('Headers',r.headers,':')+code('Body',r.body)+responseSec+extras
     +`</div>`;
@@ -9979,7 +9997,9 @@ function buildNodeTableObject(node,tIdx){
     // "Edit data": shows a chart's/Cards' underlying table in the same editing session a plain
     // table gets on click (cells editable, the row/column menu on right-click), and re-renders the
     // chart/Cards from the edited values when it ends (Esc, click outside).
-    if(table&&isTableShownAsApi(table)&&tableApiEligible(table))items.push({label:'Edit request\u2026', onClick:()=>enterEdit(-1)},{label:'Edit as table', onClick:()=>enterEdit(-1,undefined,undefined,{asTable:true})});
+    if(table&&isTableShownAsApi(table)&&tableApiEligible(table))items.push({label:'Edit request\u2026', onClick:()=>enterEdit(-1)},{label:'Edit as table', onClick:()=>enterEdit(-1,undefined,undefined,{asTable:true})},{divider:true},
+      {label:'Copy for Postman', sub:'cURL \u2014 Import \u203a paste in Postman', onClick:()=>copyApiRequestCurl(table)},
+      {label:'Export to Postman (.json)', sub:'Keeps the description and example response', onClick:()=>exportApiRequestToPostman(node,table)});
     else if(table&&isTableFeatured(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
     items.push({label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)},{divider:true});
     items.push({label:'Delete', danger:true, onClick:()=>{ pushUndo(); node.tables.splice(tIdx,1); node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); showToast('Table deleted — Ctrl/Cmd+Z to undo'); }});
