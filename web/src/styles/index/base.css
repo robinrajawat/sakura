@@ -1,11 +1,5 @@
 *{box-sizing:border-box;margin:0;padding:0} :root{--gap-row-marker:4px;--pad-menu:6px;--pad-menu-item:7px 10px;--gap-menu-item:8px;--pad-card:4px;--pad-card-item:5px 8px;--pad-pop:10px;--pad-dialog:20px;--fs-2xs:10px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:16px;--radius-menu:12px;--radius-panel:12px;--radius-dialog:12px;--shadow-menu:0 10px 24px rgba(0,0,0,.14);--shadow-panel:0 14px 36px rgba(0,0,0,.14);--shadow-dialog:0 24px 48px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);--editor-scale:1;--row-density:1} html,body{height:100%;overflow:hidden}
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
-/* Same category as the scrollbar-button reset above and the number-input spinner fix below:
-   native browser chrome that ignores theme variables and renders its own light/white default
-   regardless of dark mode. The scrollbar corner (where vertical and horizontal scrollbars would
-   meet) is easy to miss since it only shows up inside a scrollable, rounded-corner container —
-   but unstyled, it's a stray white square peeking through the rounding in dark mode. */
-::-webkit-scrollbar-corner{background:transparent}
 /* Native number-input spin buttons are OS-chrome, same category as native scrollbars — no
    theme variable reaches them, so on a dark theme they render as a mismatched light-grey
    box. Suppressing them
@@ -14,22 +8,20 @@
    without the visible buttons. */
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
-/* Firefox has no ::-webkit-scrollbar-*, so it needs the standard scrollbar-width/scrollbar-color
-   properties instead. Chromium (incl. Edge) now also reads those same standard properties - and
-   on Windows 11 doing so switches it to the OS's new "Fluent" scrollbar renderer, which draws its
-   own small arrow affordances that no CSS can suppress, overriding our custom ::-webkit-scrollbar-
-   button:none. Scoping scrollbar-width/color to only fire where ::-webkit-scrollbar isn't
-   supported keeps Chromium on the fully custom (arrow-free) rendering path, while Firefox still
-   gets its thin scrollbar via the standard properties. */
+/* One scrollbar everywhere (owner 2026-10-30: "one standard across the application"): 8px, a
+   rounded thumb in --scroll (darker on hover), no track, no arrows. A transparent border with
+   background-clip:padding-box insets the thumb on any background, so no panel needs its own copy.
+   Firefox has no ::-webkit-scrollbar-*, so it gets the standard thin scrollbar-width/-color --
+   only there: Chromium also reads those properties and, when set, drops the ::-webkit look
+   (including the hidden arrow buttons), hence the @supports guard. */
+*::-webkit-scrollbar{width:8px;height:8px}
+*::-webkit-scrollbar-thumb{background-color:var(--scroll);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background-color:var(--scroll-hover)}
+*::-webkit-scrollbar-track,*::-webkit-scrollbar-corner{background:transparent}
 @supports not selector(::-webkit-scrollbar){
-.settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,.cs-rail,#shortcuts-rail,
-#sakura-modal-body,#why-sakura-modal,.app-modal-body,
-.qa-dropdown,.history-modal-body,#sidebar-scroll,
-#at-suggest,#demo-chapters-menu,
-#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#account-menu,.sb-context-menu,
-.pv-api-code,.api-ed-area,.api-ed-body{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+*{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
+
 body{display:flex;flex-direction:column;overflow:hidden;font-size:var(--fs-lg);transition:background .15s,color .15s;font-family:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 /* --content-font is the single source of truth for "what font is the text I actually write
    in" — every content surface (outline, To-Dos text, Pad, Note) references this variable
@@ -40,8 +32,8 @@ body{display:flex;flex-direction:column;overflow:hidden;font-size:var(--fs-lg);t
    purpose — it's code/structure, not prose, and must stay monospace regardless. Fixed, not a
    setting. */
 :root{--content-font:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#2e8479;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
-body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#3caa9b;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#34322e;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
+body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#2e8479;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--scroll-hover:#a9a598;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
+body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#3caa9b;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#4a4742;--scroll-hover:#67635c;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
 body{background:var(--bg);color:var(--fg)}
 #appbar,#statusbar{flex-shrink:0;background:var(--tb-bg);border:none}#appbar{border-bottom:1px solid var(--border)}
 @media (display-mode: window-controls-overlay){

@@ -209,12 +209,6 @@ window.addEventListener('unhandledrejection',e=>{
 /* GENERATED:css-app:START — DO NOT EDIT BY HAND. Source of truth: src/styles/index/base.css, src/styles/index/feature-activation.css, src/styles/index/modal.css, src/styles/index/welcome.css, src/styles/index/settings-help-layout.css, src/styles/index/fold.css, src/styles/index/outline-numbering.css, src/styles/index/search-bar.css, src/styles/index/action-bar.css, src/styles/index/documents-menu.css, src/styles/index/drag-drop.css, src/styles/index/context-menu.css, src/styles/index/sidebar.css, src/styles/index/tags.css, src/styles/index/guided-tour.css, src/styles/index/preview.css, src/styles/index/pasted-image.css, src/styles/index/settings-help-rail.css, src/styles/index/pdf-export-overlay.css, src/styles/index/calm-layout.css. Regenerate with `npm run generate` after changing them; CI fails if this block drifts (see scripts/generate-index-blocks.mjs). */
 *{box-sizing:border-box;margin:0;padding:0} :root{--gap-row-marker:4px;--pad-menu:6px;--pad-menu-item:7px 10px;--gap-menu-item:8px;--pad-card:4px;--pad-card-item:5px 8px;--pad-pop:10px;--pad-dialog:20px;--fs-2xs:10px;--fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-lg:14px;--fs-xl:16px;--radius-menu:12px;--radius-panel:12px;--radius-dialog:12px;--shadow-menu:0 10px 24px rgba(0,0,0,.14);--shadow-panel:0 14px 36px rgba(0,0,0,.14);--shadow-dialog:0 24px 48px rgba(0,0,0,.18),0 2px 8px rgba(0,0,0,.08);--editor-scale:1;--row-density:1} html,body{height:100%;overflow:hidden}
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
-/* Same category as the scrollbar-button reset above and the number-input spinner fix below:
-   native browser chrome that ignores theme variables and renders its own light/white default
-   regardless of dark mode. The scrollbar corner (where vertical and horizontal scrollbars would
-   meet) is easy to miss since it only shows up inside a scrollable, rounded-corner container —
-   but unstyled, it's a stray white square peeking through the rounding in dark mode. */
-::-webkit-scrollbar-corner{background:transparent}
 /* Native number-input spin buttons are OS-chrome, same category as native scrollbars — no
    theme variable reaches them, so on a dark theme they render as a mismatched light-grey
    box. Suppressing them
@@ -223,22 +217,20 @@ window.addEventListener('unhandledrejection',e=>{
    without the visible buttons. */
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
-/* Firefox has no ::-webkit-scrollbar-*, so it needs the standard scrollbar-width/scrollbar-color
-   properties instead. Chromium (incl. Edge) now also reads those same standard properties - and
-   on Windows 11 doing so switches it to the OS's new "Fluent" scrollbar renderer, which draws its
-   own small arrow affordances that no CSS can suppress, overriding our custom ::-webkit-scrollbar-
-   button:none. Scoping scrollbar-width/color to only fire where ::-webkit-scrollbar isn't
-   supported keeps Chromium on the fully custom (arrow-free) rendering path, while Firefox still
-   gets its thin scrollbar via the standard properties. */
+/* One scrollbar everywhere (owner 2026-10-30: "one standard across the application"): 8px, a
+   rounded thumb in --scroll (darker on hover), no track, no arrows. A transparent border with
+   background-clip:padding-box insets the thumb on any background, so no panel needs its own copy.
+   Firefox has no ::-webkit-scrollbar-*, so it gets the standard thin scrollbar-width/-color --
+   only there: Chromium also reads those properties and, when set, drops the ::-webkit look
+   (including the hidden arrow buttons), hence the @supports guard. */
+*::-webkit-scrollbar{width:8px;height:8px}
+*::-webkit-scrollbar-thumb{background-color:var(--scroll);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background-color:var(--scroll-hover)}
+*::-webkit-scrollbar-track,*::-webkit-scrollbar-corner{background:transparent}
 @supports not selector(::-webkit-scrollbar){
-.settings-content,#shortcuts-modal-body,#cheatsheet-body,.settings-rail,.cs-rail,#shortcuts-rail,
-#sakura-modal-body,#why-sakura-modal,.app-modal-body,
-.qa-dropdown,.history-modal-body,#sidebar-scroll,
-#at-suggest,#demo-chapters-menu,
-#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#account-menu,.sb-context-menu,
-.pv-api-code,.api-ed-area,.api-ed-body{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+*{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
+
 body{display:flex;flex-direction:column;overflow:hidden;font-size:var(--fs-lg);transition:background .15s,color .15s;font-family:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 /* --content-font is the single source of truth for "what font is the text I actually write
    in" — every content surface (outline, To-Dos text, Pad, Note) references this variable
@@ -249,8 +241,8 @@ body{display:flex;flex-direction:column;overflow:hidden;font-size:var(--fs-lg);t
    purpose — it's code/structure, not prose, and must stay monospace regardless. Fixed, not a
    setting. */
 :root{--content-font:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#2e8479;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
-body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#3caa9b;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#34322e;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
+body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#2e8479;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--scroll-hover:#a9a598;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
+body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#3caa9b;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#4a4742;--scroll-hover:#67635c;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
 body{background:var(--bg);color:var(--fg)}
 #appbar,#statusbar{flex-shrink:0;background:var(--tb-bg);border:none}#appbar{border-bottom:1px solid var(--border)}
 @media (display-mode: window-controls-overlay){
@@ -386,7 +378,7 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .notif-item-meta{font:400 11px 'Inter',sans-serif;color:var(--hint);margin-top:2px}
 .export-menu-rich .export-ext{color:var(--muted);font-size:var(--fs-xs);margin-left:2px}
 .export-menu-rich .export-divider{height:1px;background:var(--border);margin:4px 6px}
-#editor-wrap{flex:1;min-height:0;display:flex} #editor-pane{flex:1;min-height:0;overflow:auto;padding:16px 24px 18px 40px;background:var(--canvas-bg);font-size:calc(14.5px * var(--editor-scale));position:relative} #editor-pane-inner{margin:0 auto;min-height:100%;padding-bottom:max(18px,calc(50vh - 60px))}@media print{#editor-pane-inner{padding-bottom:0}} #editor-pane::-webkit-scrollbar{width:8px;height:8px} #editor-pane::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--canvas-bg);background-clip:padding-box}
+#editor-wrap{flex:1;min-height:0;display:flex} #editor-pane{flex:1;min-height:0;overflow:auto;padding:16px 24px 18px 40px;background:var(--canvas-bg);font-size:calc(14.5px * var(--editor-scale));position:relative} #editor-pane-inner{margin:0 auto;min-height:100%;padding-bottom:max(18px,calc(50vh - 60px))}@media print{#editor-pane-inner{padding-bottom:0}}
 .node-row .node-label,.node-row .node-input{margin-left:-1px}
 .empty-state{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted)} .empty-state>div{display:flex;flex-direction:column;align-items:center;gap:8px}
 /* The "no document open" state sits inside #editor-pane-inner, whose min-height:100% doesn't
@@ -1529,11 +1521,6 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
 .pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
 @media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere}}
-/* The app's scrollbar (as #editor-pane / menus): 8px, rounded var(--scroll) thumb, no track. The
-   transparent border + padding-box keeps the thumb inset on any background (code boxes are tinted). */
-.pv-api-code::-webkit-scrollbar,.api-ed-area::-webkit-scrollbar,.api-ed-body::-webkit-scrollbar{width:8px;height:8px}
-.pv-api-code::-webkit-scrollbar-thumb,.api-ed-area::-webkit-scrollbar-thumb,.api-ed-body::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
-.pv-api-code::-webkit-scrollbar-track,.api-ed-area::-webkit-scrollbar-track,.api-ed-body::-webkit-scrollbar-track{background:transparent}
 /* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
 .api-ed{width:min(720px,94vw)}
 .api-ed-body{display:flex;flex-direction:column;gap:12px}
@@ -2620,25 +2607,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .history-modal-body,#at-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#link-pop-node-results
 {scrollbar-gutter:stable}
-.settings-content::-webkit-scrollbar,.settings-rail::-webkit-scrollbar,#shortcuts-modal-body::-webkit-scrollbar,.cs-rail::-webkit-scrollbar,#shortcuts-rail::-webkit-scrollbar,
-#cheatsheet-body::-webkit-scrollbar,#sakura-modal-body::-webkit-scrollbar,#why-sakura-modal::-webkit-scrollbar,#icon-library-modal::-webkit-scrollbar,
-.app-modal-body::-webkit-scrollbar,.qa-dropdown::-webkit-scrollbar,
-.history-modal-body::-webkit-scrollbar,#at-suggest::-webkit-scrollbar,
-#demo-chapters-menu::-webkit-scrollbar,#preview-toc::-webkit-scrollbar,
-#preview-body::-webkit-scrollbar,.pv-popover::-webkit-scrollbar,#ai-prompt-input::-webkit-scrollbar,#todos-body::-webkit-scrollbar,.todo-dd-menu::-webkit-scrollbar,
-.anchor-suggest-results::-webkit-scrollbar,#link-pop-node-results::-webkit-scrollbar,#todo-link-popover::-webkit-scrollbar,
-#account-menu::-webkit-scrollbar,#notif-menu::-webkit-scrollbar,.sb-context-menu::-webkit-scrollbar{width:8px;height:8px}
-.settings-content::-webkit-scrollbar-thumb,.settings-rail::-webkit-scrollbar-thumb,#shortcuts-modal-body::-webkit-scrollbar-thumb,.cs-rail::-webkit-scrollbar-thumb,#shortcuts-rail::-webkit-scrollbar-thumb,
-#cheatsheet-body::-webkit-scrollbar-thumb,#sakura-modal-body::-webkit-scrollbar-thumb,#why-sakura-modal::-webkit-scrollbar-thumb,#icon-library-modal::-webkit-scrollbar-thumb,
-.app-modal-body::-webkit-scrollbar-thumb,.qa-dropdown::-webkit-scrollbar-thumb,
-.history-modal-body::-webkit-scrollbar-thumb,#at-suggest::-webkit-scrollbar-thumb,
-#demo-chapters-menu::-webkit-scrollbar-thumb,#preview-toc::-webkit-scrollbar-thumb,
-#preview-body::-webkit-scrollbar-thumb,.pv-popover::-webkit-scrollbar-thumb,#ai-prompt-input::-webkit-scrollbar-thumb,#todos-body::-webkit-scrollbar-thumb,.todo-dd-menu::-webkit-scrollbar-thumb,
-.anchor-suggest-results::-webkit-scrollbar-thumb,#link-pop-node-results::-webkit-scrollbar-thumb,#todo-link-popover::-webkit-scrollbar-thumb,
-#account-menu::-webkit-scrollbar-thumb,#notif-menu::-webkit-scrollbar-thumb,.sb-context-menu::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--bg);background-clip:padding-box}
-/* --tb-bg surfaces */
-#sidebar-scroll::-webkit-scrollbar{width:8px}
-#sidebar-scroll::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid var(--tb-bg);background-clip:padding-box}
 /* --edit-bg surfaces */
 /* ── Generic PDF export overlay (To-Dos standalone export) ──────────────────────────────────
    Off-screen at all times except while body.printing-generic is active (set by
