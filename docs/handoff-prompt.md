@@ -169,11 +169,11 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none beyond this PR. Open question: should `social-card.png` (link preview) also go black? Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none beyond this PR. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
 
-- **Logo in black, not terracotta (2026-10-30).** Owner: black, aligned with the rest of the app. `flower-glyph.svg` (tab icon) is #222 ink with an internal `prefers-color-scheme:dark` rule to #ececea, so it shows on dark tab bars. The 8 PNG icons (apple-touch, icon-192*, icon-512*, icon-glyph-192) were recoloured pixel by pixel (terracotta → ink, cards/shadows kept; light ink on the dark apple icon). The 9 in-app flower SVGs use `var(--fg)` instead of `var(--accent)`. `sw.js` cache bumped to v7 so returning visitors get the new icons. Not changed: `social-card.png` (link preview), still terracotta.
+- **Logo in black, not terracotta (2026-10-30).** Owner: black, aligned with the rest of the app. `flower-glyph.svg` (tab icon) is #222 ink with an internal `prefers-color-scheme:dark` rule to #ececea, so it shows on dark tab bars. The 8 PNG icons (apple-touch, icon-192*, icon-512*, icon-glyph-192) were recoloured pixel by pixel (terracotta → ink, cards/shadows kept; light ink on the dark apple icon). The 9 in-app flower SVGs use `var(--fg)` instead of `var(--accent)`. `sw.js` cache bumped to v7 so returning visitors get the new icons. `social-card.png` (link preview): logo and the second headline line ("and follow it through.") recoloured to ink; the app screenshot inside it keeps its data colours.
 
 - **Browser tab says SAKURA (2026-10-30).** Owner: tab header from "Sakura" to "SAKURA". `<title>` and `updateDirtyIndicator()` (`• SAKURA` with unsaved changes). Not changed: Hub tab ("Sakura Hub"), the installed-app name in the manifests, export filename fallbacks. e2e: calm-layout "the browser tab says SAKURA".
 
