@@ -171,3 +171,18 @@ test('Settings: sentence-case headings, one card per group, real buttons', async
   expect(s.btnBorder).not.toBe('rgba(0, 0, 0, 0)');
   expect(s.width).toBeGreaterThan(700);
 });
+
+// Bug (owner 2026-10-30): a filed document still said "Unfiled". Moves and cloud sync redraw the
+// sidebar, not the top line, so the path went stale. Redrawing the sidebar now redraws the path too.
+test('the folder path follows the sidebar when a document is filed after it opened', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); renderDocPath();
+  });
+  await expect(page.locator('#doc-path-crumbs')).toHaveText('Unfiled');
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    const fs = loadFolders(); fs.push({ id: 'f2', name: 'Projects', parentId: null }); saveFolders(fs); const m = loadDocFolderMap(); m[currentDocId] = 'f2'; saveDocFolderMap(m); renderSidebar();
+  });
+  await expect(page.locator('#doc-path-crumbs')).toHaveText('Projects');
+});
