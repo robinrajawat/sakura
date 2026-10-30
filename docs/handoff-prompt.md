@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
-- **Flat app icons, no card (2026-10-30).** Owner: clean, elegant, standard. All PNG icons (apple-touch, icon-192*, icon-512*) are the `flower-glyph.svg` glyph flat on white (#121212 for the -dark ones), no baked-in card or shadow; OSes draw their own tile. `icon-512-maskable` keeps the glyph in Android's safe zone (66%). Hub sign-in logo uses `flower-glyph.svg` (follows light/dark), card shadow removed from `#auth-logo img`. `sw.js` cache v8. Next queued: one 4px gap token for all row markers (fold badge 10px and cb-progress 5px are the outliers).
+- **One gap for row markers (2026-10-30).** Owner: spacing between the fold count and icons looked uneven; "make it standard, robust". New token `--gap-row-marker:4px` (base.css `:root`) is the left margin of every marker after the row text: `.node-note-dot`, `.node-qa-dot`, `.node-arw-dot`, `.node-marker-badge`, `.node-tag-chip`, `.cb-progress` (was 5px), `.fold-badge` (was 10px). Measured: "+N" now 12px from the text (was 18), 13px from an eye icon (was 19-20). Use the token for any new marker.
+
+- **Flat app icons, no card (2026-10-30).** Owner: clean, elegant, standard. All PNG icons (apple-touch, icon-192*, icon-512*) are the `flower-glyph.svg` glyph flat on white (#121212 for the -dark ones), no baked-in card or shadow; OSes draw their own tile. `icon-512-maskable` keeps the glyph in Android's safe zone (66%). Hub sign-in logo uses `flower-glyph.svg` (follows light/dark), card shadow removed from `#auth-logo img`. `sw.js` cache v8.
 
 - **Rail Settings button toggles (2026-10-30).** Owner bug: every rail button toggles its panel except Settings. The document outside-click handler (mouseup) exempted only the hidden `#settings-toggle`, so a second click on `#rail-settings-btn` closed Settings on mouseup and the click reopened it. Now the rail button (and its icon) is exempt too. e2e: calm-layout "the rail Settings button toggles…" (fails without the fix).
-
-- **Logo in black, not terracotta (2026-10-30).** Owner: black, aligned with the rest of the app. `flower-glyph.svg` (tab icon) is #222 ink with an internal `prefers-color-scheme:dark` rule to #ececea, so it shows on dark tab bars. The 8 PNG icons (apple-touch, icon-192*, icon-512*, icon-glyph-192) were recoloured pixel by pixel (terracotta → ink, cards/shadows kept; light ink on the dark apple icon). The 9 in-app flower SVGs use `var(--fg)` instead of `var(--accent)`. `sw.js` cache bumped to v7 so returning visitors get the new icons. `social-card.png` (link preview): logo and the second headline line ("and follow it through.") recoloured to ink; the app screenshot inside it keeps its data colours.
 
 ### In progress / not built
 
@@ -191,6 +191,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   light edit); faster first load by loading draw.io/AI on demand.
 - hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
+- API block (owner 2026-10-30, decided): document API calls in specs, not run them. Phase 1: block on a row (method, URL, query, headers, body, example response), Copy as cURL, PDF. Phase 2: Postman v2.1 import/export. Live Send dropped (CORS, secrets).
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
 
 ### Parked / open questions for the owner
