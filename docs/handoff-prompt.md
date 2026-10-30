@@ -23,7 +23,8 @@ and stays production permanently.
 Clone a fresh copy and run `sh scripts/setup-git-identity.sh` before
 touching anything. Then read:
 
-- README.md — the full feature reference for what Sakura actually does
+- README.md — what Sakura is and what it is for (usage first, with a technical section).
+- docs/feature-reference.md — the full feature reference for what Sakura actually does
   today; read this before changing user-facing behavior, since it's the
   source of truth for intended functionality, not just a description.
 - docs/history/architecture-plan.md — this app's own TypeScript
@@ -166,17 +167,17 @@ site root on every push to `main` — that's the only thing it publishes.
 PR, in the same branch as the code: add an entry for the change at the top of "Latest changes",
 keep only the last 3 entries, and delete older ones (git history and the PRs keep them). Move
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
-contradicts README.md, trust README.md.)*
+contradicts README.md or docs/feature-reference.md, trust them.)*
 
 **Open work:** none beyond this PR. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
 
+- **README, social card and "What is Sakura" rewritten (2026-10-30).** Owner: the app has matured; describe what it actually is, usage first, plus one technical section. README.md is now short and usage-led (what it's for, a day with Sakura, outline, objects, threads, To-Dos, PDF, AI, data, keys, technical details). The old long behaviour reference moved to docs/feature-reference.md (still the source of truth for behaviour). New social card from a real screenshot (web/public/social-card.png, 1200×630), new meta/og descriptions, Help's "What is Sakura" window rewritten (7 points, two columns, grey icons), About's one line updated.
+
 - **Settings details (2026-10-30).** Owner: "too flat… add a + button and then open the form… small details all around". Admin AI providers: a list (order number, name · model, URL; Edit/Remove on hover) with "Add provider" opening a labelled form (Name, API format, Order, Endpoint URL, Model, API key; Cancel/Save); Edit fills the form (key must be pasted again). About: logo + one line + © header, then Source code/License/Third-party notices rows with ↗ buttons; Privacy & data as six short rows; Support one row. AI: "AI features" switch card with no title; Provider rows tidied (Mode, Sakura Hosted AI row with Sign in/Test, Provider/Model/API key); Auto-rewrite joins the Rewrite card. Delete account is one calm row (red-text button) instead of the pink danger box. Selected segments are a neutral raised pill; settings selects all show their arrow. Also: while Auto-rewrite is on, "✦ Auto-rewrite on" shows quietly bottom-right (owner: you couldn't tell from the editor); off shows nothing.
 
 - **Docs and tour brought up to date (2026-10-29).** Owner asked. Help, the Cheatsheet, the onboarding tour and README described the old layout (toolbar, tabs, app bar across the top, Import/Export buttons, status bar always shown, "Hub in the app bar", headings 1–6). Rewritten against the app as it is. The tour now points at the rail, Documents, Search, Share, the Zen corner button, To-Dos, Settings and the account menu (Help); its old Export/Import/Settings/Help steps pointed at hidden off-screen buttons. Shortcut groups: "Toolbar" → "Editing", "Docs, Tabs & Zen" → "Documents & Zen". Naming: "Zen mode" stays (the app already uses "Focus" for zooming into a branch).
-
-- **"Unfiled" on the top line (2026-10-29).** Owner chose it over a "Documents ›" root on every path. A document in no folder (or new and unsaved) shows "Unfiled" where the folders go, a shared one "Shared"; clicking it reveals the document (or opens Documents when unsaved). `renderDocPath`, class `doc-path-root`.
 
 ### In progress / not built
 

@@ -76,16 +76,16 @@ Sakura v1.0.0 — see LICENSE for terms.
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
 <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), display-capture=(), screen-wake-lock=(), xr-spatial-tracking=(), interest-cohort=(), browsing-topics=(), clipboard-read=(self), clipboard-write=(self), fullscreen=(self)" />
 <title>Sakura</title>
-<meta name="description" content="Sakura — a single-file outliner and knowledge-management workspace. Outliner, to-dos, and PDF export, all in one HTML file. No install, no account, no backend." />
+<meta name="description" content="Sakura: outline your work, and follow it through. Structured documents with diagrams, tables, marked-up screenshots, threads for questions and decisions, To-Dos and PDF export. In your browser, no install." />
 <link rel="canonical" href="https://www.sakura-notes.com/" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.sakura-notes.com/" />
-<meta property="og:title" content="Sakura — a single-file productivity workspace" />
-<meta property="og:description" content="Outliner, to-dos, diagrams, and AI writing tools — export to PDF. No install, no account, no backend." />
+<meta property="og:title" content="Sakura — outline your work, and follow it through" />
+<meta property="og:description" content="Outline plans, specs and meeting notes. Diagrams, tables and screenshots on each point, threads for questions and decisions, open items tracked, To-Dos and a clean PDF." />
 <meta property="og:image" content="https://www.sakura-notes.com/social-card.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Sakura — a single-file productivity workspace" />
-<meta name="twitter:description" content="Outliner, to-dos, diagrams, and AI writing tools — export to PDF. No install, no account, no backend." />
+<meta name="twitter:title" content="Sakura — outline your work, and follow it through" />
+<meta name="twitter:description" content="Outline plans, specs and meeting notes. Diagrams, tables and screenshots on each point, threads for questions and decisions, open items tracked, To-Dos and a clean PDF." />
 <meta name="twitter:image" content="https://www.sakura-notes.com/social-card.png" />
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f8f8f6">
@@ -517,7 +517,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .welcome-choice:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent);box-shadow:0 2px 8px rgba(0,0,0,.07)}
 .welcome-choice:hover .welcome-choice-icon{background:color-mix(in srgb,var(--accent) 18%,transparent)}
 .welcome-choice:focus{outline:none;border-color:var(--accent)}.welcome-choice:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.welcome-choice-icon{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);flex-shrink:0}
+.welcome-choice-icon{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--muted);flex-shrink:0}
 .welcome-choice-text{display:flex;flex-direction:column;gap:4px}
 .welcome-choice-label{font:600 13px 'Inter',sans-serif;color:var(--fg)}
 .welcome-choice-desc{font:400 11.5px 'Inter',sans-serif;color:var(--muted);line-height:1.45}
@@ -528,7 +528,7 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 #why-sakura-overlay{position:fixed;inset:0;z-index:1210;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .22s}
 #why-sakura-overlay.open{opacity:1;pointer-events:all}
 #why-sakura-overlay.closing{opacity:0;pointer-events:none}
-#why-sakura-modal{background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-dialog);box-shadow:var(--shadow-dialog);padding:28px 28px 22px;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1);--hover:var(--hover-raised)}
+#why-sakura-modal{background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-dialog);box-shadow:var(--shadow-dialog);padding:28px 28px 22px;width:min(720px,calc(100vw - 32px));max-height:calc(100vh - 48px);overflow-y:auto;font-family:'Inter',sans-serif;transform:translateY(8px) scale(.97);transition:transform .22s cubic-bezier(.22,.8,.34,1);--hover:var(--hover-raised)}
 
 #why-sakura-overlay.open #why-sakura-modal{transform:translateY(0) scale(1)}
 #why-sakura-overlay.closing #why-sakura-modal{transform:translateY(8px) scale(.97)}
@@ -566,13 +566,15 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 #why-sakura-brand-name{font:600 13px 'Inter',sans-serif;color:var(--muted);letter-spacing:.04em}
 #why-sakura-modal h2{font:700 18px 'Inter',sans-serif;color:var(--fg);margin:0 0 6px}
 #why-sakura-sub{font:400 13px 'Inter',sans-serif;color:var(--muted);margin:0 0 18px;line-height:1.55}
-#why-sakura-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-.why-row{display:flex;flex-direction:row;align-items:flex-start;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;background:transparent}
-.why-row-icon{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);flex-shrink:0}
+#why-sakura-list{display:grid;grid-template-columns:1fr 1fr;gap:18px 26px;margin:4px 0 20px}
+.why-row:last-child:nth-child(odd){grid-column:1 / -1}
+@media (max-width:620px){#why-sakura-list{grid-template-columns:1fr}}
+.why-row{display:flex;flex-direction:row;align-items:flex-start;gap:12px}
+.why-row-icon{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--muted);flex-shrink:0}
 .why-row-text{display:flex;flex-direction:column;gap:4px}
 .why-row-label{font:600 13px 'Inter',sans-serif;color:var(--fg);line-height:1.3}
 .why-row-desc{font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.5}
-#why-sakura-caveat{font:400 11.5px 'Inter',sans-serif;color:var(--hint);line-height:1.5;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%);border:1px solid var(--border);margin-bottom:16px}
+#why-sakura-caveat{font:400 12px 'Inter',sans-serif;color:var(--hint);line-height:1.5;margin:0 0 16px}
 #why-sakura-close{display:block;width:100%;padding:10px;border-radius:9px;border:none;background:var(--accent);color:#fff;font:600 13px 'Inter',sans-serif;cursor:pointer;transition:opacity .12s}
 #why-sakura-close:hover{opacity:.9}
 
@@ -3663,7 +3665,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             <div class="settings-section-title">About</div>
             <div class="settings-about-head">
               <svg width="44" height="44" viewBox="4.5 0.5 63 63" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg>
-              <div class="settings-row-text"><span class="settings-about-name">Sakura</span><span class="settings-row-desc">Structured documents and everyday To-Dos. Works offline, no account needed.</span><span class="settings-row-desc">© 2026 Robin Singh Rajawat. All rights reserved.</span></div>
+              <div class="settings-row-text"><span class="settings-about-name">Sakura</span><span class="settings-row-desc">Outline your work, and follow it through. Structured documents, threads, open items, To-Dos and PDF.</span><span class="settings-row-desc">© 2026 Robin Singh Rajawat. All rights reserved.</span></div>
             </div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Source code</span><span class="settings-row-desc">On GitHub.</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a></div>
@@ -3862,7 +3864,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div id="help-quick-links">
           <div id="help-tour-replay-row"><span>New here? Take the guided tour.</span><button type="button" id="tour-replay-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Take the tour</button></div>
           <div id="help-cheatsheet-row"><span>Quick reference for everything below.</span><button type="button" id="cheatsheet-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>Cheatsheet</button></div>
-          <div id="help-why-row"><span>Curious why an outliner helps?</span><button type="button" id="help-why-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/></svg>Why Sakura</button></div>
+          <div id="help-why-row"><span>What Sakura is, and what it is for.</span><button type="button" id="help-why-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/></svg>What is Sakura</button></div>
           <div id="help-demo-row"><span>See it all come together, end to end.</span><button type="button" id="demo-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 18 12 6 20 6 4"/></svg>Watch a demo</button></div>
           <div id="help-about-row"><span>Version, licence and privacy.</span><button type="button" id="help-about-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About Sakura</button></div>
           </div>
@@ -4571,7 +4573,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <span class="welcome-choice-text"><span class="welcome-choice-label">Watch the demo</span><span class="welcome-choice-desc">A scripted animation showing the key features — just sit back and watch.</span></span>
         </button>
       </div>
-      <button id="welcome-why-link" type="button">Why an outliner instead of plain notes? →</button>
+      <button id="welcome-why-link" type="button">What is Sakura for? →</button>
       <button id="welcome-skip">Skip for now, I'll explore on my own</button>
     </div>
   </div>
@@ -4579,47 +4581,61 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
   <div id="why-sakura-overlay" role="dialog" aria-modal="true" aria-labelledby="why-sakura-heading">
     <div id="why-sakura-modal">
       <div id="why-sakura-brand"><span id="why-sakura-brand-icon"><svg width="1em" height="1em" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg></span><span id="why-sakura-brand-name">Sakura</span></div>
-      <h2 id="why-sakura-heading">Why an outliner — and why Sakura?</h2>
-      <p id="why-sakura-sub">Think of an outliner as turning your notes into a family tree, instead of a messy pile of paragraphs. Instead of writing left to right, you write in points that tuck inside one another. Here's why that makes life easier:</p>
+      <h2 id="why-sakura-heading">What Sakura is for</h2>
+      <p id="why-sakura-sub">Sakura is a home for structured work documents: plans, specs, designs, meeting notes and decisions. Outline the points, keep everything about each point on it, and follow what's open until it's settled.</p>
       <div id="why-sakura-list">
         <div class="why-row">
           <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
           <div class="why-row-text">
-            <span class="why-row-label">See the big picture without the clutter</span>
-            <span class="why-row-desc">Five pages of notes usually means scrolling forever to find what you want. In Sakura, you can collapse the details and see just your main headings — like a table of contents. Click one open when you need it.</span>
-          </div>
-        </div>
-        <div class="why-row">
-          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l4-4 4 4"/><path d="M9 5v14"/><path d="M19 15l-4 4-4-4"/><path d="M15 19V5"/></svg></span>
-          <div class="why-row-text">
-            <span class="why-row-label">Move things around like LEGO blocks</span>
-            <span class="why-row-desc">In a normal document, moving a section means highlighting, cutting, pasting, and fixing the spacing. Here you just grab one point and drag it — everything tucked underneath comes with it automatically.</span>
-          </div>
-        </div>
-        <div class="why-row">
-          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/></svg></span>
-          <div class="why-row-text">
-            <span class="why-row-label">Bring in the mess, get back structure</span>
-            <span class="why-row-desc">Paste in messy notes or import a Word document — Sakura sorts it into a tree for you, AI-assisted when it needs to be. This part's specific to Sakura, not outliners in general.</span>
+            <span class="why-row-label">Shape first</span>
+            <span class="why-row-desc">Write in points that sit inside one another. Fold the detail away to see the big picture, and drag a point to move everything under it.</span>
           </div>
         </div>
         <div class="why-row">
           <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
           <div class="why-row-text">
-            <span class="why-row-label">It keeps you thinking, not just typing</span>
-            <span class="why-row-desc">Plain note-taking lets you write down what someone said without really processing it. An outliner makes you decide, in the moment: is this a new idea, or a detail under the last one? That keeps you actively sorting instead of just transcribing.</span>
+            <span class="why-row-label">Everything about a point, on that point</span>
+            <span class="why-row-desc">Attach a draw.io diagram, a table or chart, a marked-up screenshot or a note to any row.</span>
           </div>
         </div>
         <div class="why-row">
-          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></span>
+          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
           <div class="why-row-text">
-            <span class="why-row-label">It grows into a full workspace, not just a tree</span>
-            <span class="why-row-desc">Attach notes, questions and answers, remarks, tables, or a real embedded diagram to any node, then export the whole thing as a PDF. Track to-dos alongside it. All still the same outline underneath — nothing here is a separate app bolted on.</span>
+            <span class="why-row-label">Discuss it where it is</span>
+            <span class="why-row-desc">Each row has a thread for comments, questions and decisions, and a status: Follow-up, Agreed or Out of scope.</span>
+          </div>
+        </div>
+        <div class="why-row">
+          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></span>
+          <div class="why-row-text">
+            <span class="why-row-label">Nothing slips</span>
+            <span class="why-row-desc">The open items button lists every follow-up and open question with how long it has been open. Copy it as an agenda for the next meeting.</span>
+          </div>
+        </div>
+        <div class="why-row">
+          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+          <div class="why-row-text">
+            <span class="why-row-label">Your tasks, linked back</span>
+            <span class="why-row-desc">One To-Do list across all documents, with due dates, repeats and "waiting for". A follow-up becomes a task in one click.</span>
+          </div>
+        </div>
+        <div class="why-row">
+          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>
+          <div class="why-row-text">
+            <span class="why-row-label">Hand over a clean PDF</span>
+            <span class="why-row-desc">Cover, contents, every diagram and table in place, threads under their rows, and a page of what is still open.</span>
+          </div>
+        </div>
+        <div class="why-row">
+          <span class="why-row-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/></svg></span>
+          <div class="why-row-text">
+            <span class="why-row-label">AI when you want it</span>
+            <span class="why-row-desc">Rewrite a row or a whole selection, or start from a generated outline. Optional, and off with one switch.</span>
           </div>
         </div>
       </div>
-      <div id="why-sakura-caveat">Not every kind of writing wants this. Flowing essays and loosely connected notes are still better off elsewhere — Sakura's built for things that have a shape: plans, specs, architecture, meeting notes, decisions.</div>
-      <button id="why-sakura-close">Got it — let's start</button>
+      <div id="why-sakura-caveat">Built for work that has a shape. For a flowing essay, a plain document still suits better.</div>
+      <button id="why-sakura-close">Got it</button>
     </div>
   </div>
 
