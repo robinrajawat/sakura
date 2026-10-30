@@ -78,6 +78,8 @@ test('disabled displays show their reason; Lanes by Release / Phase groups the t
     // Only the repeating column is offered, with a preview of its lanes.
     ['Lanes by Release / Phase', '3 lanes: Current Release, Separate Release, Phase 2'],
     ['Pros & cons', 'Needs 2 columns; this has 3'],
+    // Same reason as the line above, so it isn't repeated.
+    ['API request', ''],
     ['# Timeline', ''], ['Vertical', 'A timeline needs a date column'], ['Horizontal', '']
   ]);
   await expect(sub.locator('.sb-context-item', { hasText: 'Chips' }).first()).toBeDisabled();

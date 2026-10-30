@@ -1506,6 +1506,25 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-pc-list li{display:flex;gap:8px;align-items:flex-start;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.4;overflow-wrap:anywhere}
 .pv-pc-mark{color:var(--pc);flex:none;margin-top:2px;display:inline-flex}
 @media (max-width:640px){.pv-proscons{grid-template-columns:minmax(0,1fr)}}
+/* API request card (data-table-display="api"): method + URL, then query, headers, body, response.
+   Method colours follow the common convention (GET green, POST blue, PUT/PATCH orange, DELETE red). */
+.pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 13px 'Inter',sans-serif;color:var(--fg)}
+.pv-api[data-method="get"]{--mc:var(--fc-green)}.pv-api[data-method="post"]{--mc:var(--fc-blue)}.pv-api[data-method="put"],.pv-api[data-method="patch"]{--mc:var(--fc-orange)}.pv-api[data-method="delete"]{--mc:var(--fc-red)}
+.pv-api-line{display:flex;align-items:center;gap:8px;min-width:0}
+.pv-api-method{flex:none;font:700 11px 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-api-url{flex:1;min-width:0;font:400 12.5px 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:anywhere;background:none;padding:0}
+.pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 11px 'Inter',sans-serif;cursor:pointer}
+.pv-api-curl:hover{background:var(--hover);color:var(--fg)}
+.pv-api-desc{color:var(--muted);line-height:1.45}
+.pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pv-api-label{display:flex;align-items:center;gap:8px;font:600 10.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pv-api-pairs{display:flex;flex-direction:column;gap:2px}
+.pv-api-pair{font:400 12px 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
+.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 12px/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
+.pv-api-status{font:600 10.5px 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
+.pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
+@media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible}}
 .tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
 .tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--pc);color:#fff;font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -5699,6 +5718,40 @@ function tableProsConsInfo(table){
 }
 function tableProsConsEligible(table){ return !!tableProsConsInfo(table); }
 function isTableShownAsProsCons(table){ return !!(table&&table.getAttribute('data-table-display')==='proscons'); }
+// API request (owner 2026-10-30: document API calls in specs). A two-column Field | Value table
+// (Method, URL, Query, Header, Body, Status, Response, Description -- see src/utils/apiRequest.ts)
+// shown as a request card: method and URL on one line, then query, headers, body and the example
+// response. Copy as cURL puts the request on the clipboard for Postman's Import or a terminal; the
+// button is left out of the PDF. Stored as data-table-display="api".
+function apiCellText(c){ if(!c)return ''; const k=c.cloneNode(true); k.querySelectorAll(TABLE_HANDLE_SEL).forEach(h=>h.remove()); k.querySelectorAll('br').forEach(b=>b.replaceWith('\n')); k.querySelectorAll('div,p').forEach(d=>{ if(d.previousSibling)d.before('\n'); }); return (k.textContent||'').replace(/ /g,' ').trim(); }
+function tableApiInfo(table){ if(!table)return null; return apiRequestFromGrid(Array.from(table.rows).map(r=>Array.from(r.cells).map(apiCellText))); }
+function tableApiEligible(table){ return !!tableApiInfo(table); }
+function isTableShownAsApi(table){ return !!(table&&table.getAttribute('data-table-display')==='api'); }
+// Copy as cURL: a click on the card's button copies the command and does nothing else (the card
+// itself opens the table's editing like any featured table).
+['mousedown','pointerdown'].forEach(t=>document.addEventListener(t,e=>{ if(e.target.closest?.('.pv-api-curl'))e.stopPropagation(); },true));
+document.addEventListener('click',async e=>{
+  const b=e.target.closest?.('.pv-api-curl'); if(!b)return;
+  e.preventDefault(); e.stopPropagation();
+  try{ await navigator.clipboard.writeText(b.dataset.curl||''); showToast('Copied as cURL — paste into Postman › Import'); }
+  catch(err){ showToast('Couldn’t copy — the browser blocked the clipboard'); }
+},true);
+function renderApiRequestHtml(table){
+  const r=tableApiInfo(table); if(!r)return null;
+  const COPY='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const pairs=(label,list,sep)=>list.length?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}</div><div class="pv-api-pairs">${list.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span>${v?`<span class="pv-api-sep">${sep}</span><span class="pv-api-val">${esc(v)}</span>`:''}</div>`).join('')}</div></div>`:'';
+  const code=(label,raw,extra)=>raw?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}${extra||''}</div><pre class="pv-api-code">${esc(prettyJson(raw))}</pre></div>`:'';
+  const statusCls=/^\s*2/.test(r.status)?'ok':/^\s*[45]/.test(r.status)?'err':'';
+  const statusChip=r.status?` <span class="pv-api-status ${statusCls}">${esc(r.status)}</span>`:'';
+  const responseSec=r.response?code('Response',r.response,statusChip):(r.status?`<div class="pv-api-sec"><div class="pv-api-label">Response${statusChip}</div></div>`:'');
+  const extras=r.extras.length?`<div class="pv-api-sec">${r.extras.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span><span class="pv-api-sep">:</span><span class="pv-api-val">${esc(v)}</span></div>`).join('')}</div>`:'';
+  return `<div class="pv-api" data-method="${escAttr(r.method.toLowerCase())}">`
+    +`<div class="pv-api-line"><span class="pv-api-method">${esc(r.method)}</span><code class="pv-api-url">${esc(apiFullUrl(r))}</code>`
+    +`<button type="button" class="pv-api-curl" data-curl="${escAttr(apiRequestToCurl(r))}" data-tip="Copy as cURL — paste into Postman (Import) or a terminal">${COPY}<span>cURL</span></button></div>`
+    +(r.description?`<div class="pv-api-desc">${esc(r.description)}</div>`:'')
+    +pairs('Query',r.query,'=')+pairs('Headers',r.headers,':')+code('Body',r.body)+responseSec+extras
+    +`</div>`;
+}
 // Row cards (owner request 2026-10-19): a wide table whose rows read as records -- a level and its
 // risk, approach and severity, say -- shown as one card per row in a grid. The first column is the
 // card's title, a short second column its subtitle, every other column a labelled field (the header
@@ -5904,6 +5957,7 @@ function tableFeatureDisplayHtml(table){
   if(isTableShownAsTimeline(table)&&tableTimelineEligible(table))return renderTimelineHtml(table);
   if(isTableShownAsBoard(table)&&tableStatusBoardEligible(table))return renderStatusBoardHtml(table);
   if(isTableShownAsProsCons(table)&&tableProsConsEligible(table))return renderProsConsHtml(table);
+  if(isTableShownAsApi(table)&&tableApiEligible(table))return renderApiRequestHtml(table);
   if(isTableShownAsRowCards(table)&&tableRowCardsEligible(table))return renderRowCardsHtml(table);
   if(isTableFeaturedAsChart(table)){
     // A Cards table edited out of shape (too many rows, text in the value column…) shows as a table.
@@ -5912,7 +5966,7 @@ function tableFeatureDisplayHtml(table){
   }
   return null;
 }
-function isTableFeatured(table){ return isTableShownAsRowCards(table)||isTableShownAsChips(table)||isTableShownAsInline(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableShownAsProsCons(table)||isTableFeaturedAsChart(table); }
+function isTableFeatured(table){ return isTableShownAsRowCards(table)||isTableShownAsChips(table)||isTableShownAsInline(table)||isTableShownAsProgress(table)||isTableShownAsTimeline(table)||isTableShownAsBoard(table)||isTableShownAsProsCons(table)||isTableShownAsApi(table)||isTableFeaturedAsChart(table); }
 function isTableFeaturedAsChart(table){
   return !!(table&&table.getAttribute('data-feature-chart')==='1');
 }
@@ -7085,6 +7139,146 @@ function cardsTotal(grid, calculated) {
 }
 
 /* GENERATED:tableDisplay:END */
+/* GENERATED:apiRequest:START — DO NOT EDIT BY HAND. Source of truth: src/utils/apiRequest.ts (tests: tests/unit/apiRequest.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * API request tables (owner, 2026-10-30: document API calls in specs, not run them).
+ *
+ * An API request is an ordinary two-column table, Field | Value, shown with
+ * data-table-display="api" as a request card. Keeping it a table means storage, undo, sync,
+ * copy/paste and search work unchanged; this module is only the reading of the cells.
+ *
+ * Recognised fields (first column, any case, a trailing colon is ignored):
+ *   Method               GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
+ *   URL / Endpoint       the address; {{variables}} stay as typed
+ *   Query / Param        one per row, "name=value" or "name: value"
+ *   Header               one per row, "Name: value"
+ *   Body                 request body; JSON is pretty-printed on the card
+ *   Status               response status, e.g. "201 Created"
+ *   Response             response body
+ *   Description / Notes  a line of text under the request line
+ * Any other field shows as a labelled extra. A table is an API request when it has a Method
+ * with a known verb and a URL.
+ *
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `apiRequest` block.
+ */
+const API_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+const FIELD_ALIASES = {
+    method: 'method', verb: 'method',
+    url: 'url', endpoint: 'url', path: 'url',
+    query: 'query', param: 'query', params: 'query', parameter: 'query', 'query param': 'query',
+    header: 'header', headers: 'header',
+    body: 'body', 'request body': 'body', payload: 'body',
+    status: 'status', 'response status': 'status', 'status code': 'status',
+    response: 'response', 'response body': 'response',
+    description: 'description', notes: 'description', note: 'description'
+};
+/** The field a first-column label names, or null for an unknown label. */
+function apiFieldKey(label) {
+    const k = String(label || '').trim().replace(/:$/, '').trim().toLowerCase();
+    return FIELD_ALIASES[k] || null;
+}
+/** "Name: value" or "name=value" split once, trimmed; a bare word is a name with no value. */
+function splitPair(raw) {
+    const s = String(raw || '').trim();
+    const colon = s.indexOf(':');
+    const eq = s.indexOf('=');
+    const at = colon < 0 ? eq : eq < 0 ? colon : Math.min(colon, eq);
+    if (at < 0)
+        return [s, ''];
+    return [s.slice(0, at).trim(), s.slice(at + 1).trim()];
+}
+/**
+ * Reads a Field | Value grid (header row optional) as an API request, or null when it isn't one.
+ * A grid with more or fewer than two columns is never a request.
+ */
+function apiRequestFromGrid(grid) {
+    if (!grid.length || grid.some(r => r.length !== 2))
+        return null;
+    const req = { method: '', url: '', query: [], headers: [], body: '', status: '', response: '', description: '', extras: [] };
+    grid.forEach((row, i) => {
+        const [label, rawValue] = row;
+        const value = String(rawValue || '').trim();
+        const key = apiFieldKey(label);
+        if (!key) {
+            // The first row is a header ("Field | Value") unless it is a field itself.
+            if (i > 0 && String(label || '').trim() && value)
+                req.extras.push([String(label).trim().replace(/:$/, ''), value]);
+            return;
+        }
+        if (!value)
+            return;
+        switch (key) {
+            case 'method':
+                req.method = value.toUpperCase();
+                break;
+            case 'url':
+                req.url = value;
+                break;
+            case 'query':
+                req.query.push(splitPair(value));
+                break;
+            case 'header':
+                req.headers.push(splitPair(value));
+                break;
+            case 'body':
+                req.body = req.body ? req.body + '\n' + value : value;
+                break;
+            case 'status':
+                req.status = value;
+                break;
+            case 'response':
+                req.response = req.response ? req.response + '\n' + value : value;
+                break;
+            case 'description':
+                req.description = value;
+                break;
+        }
+    });
+    if (!API_METHODS.includes(req.method) || !req.url)
+        return null;
+    return req;
+}
+/** The URL with the Query rows appended (raw, so {{variables}} survive). */
+function apiFullUrl(req) {
+    if (!req.query.length)
+        return req.url;
+    const qs = req.query.map(([k, v]) => (v ? k + '=' + v : k)).join('&');
+    return req.url + (req.url.includes('?') ? (/[?&]$/.test(req.url) ? '' : '&') : '?') + qs;
+}
+/** JSON pretty-printed with two spaces when it parses; anything else unchanged. */
+function prettyJson(raw) {
+    const s = String(raw || '').trim();
+    if (!/^[[{]/.test(s))
+        return String(raw || '');
+    try {
+        return JSON.stringify(JSON.parse(s), null, 2);
+    }
+    catch {
+        return String(raw || '');
+    }
+}
+/** Single-quoted for a POSIX shell: a ' inside becomes '\''. */
+function shellQuote(s) {
+    return "'" + String(s).replace(/'/g, "'\\''") + "'";
+}
+/**
+ * The request as a cURL command (one option per line), for pasting into Postman's Import,
+ * Insomnia, Bruno or a terminal. GET without a body leaves out -X; a body is sent as typed
+ * (--data-raw), so JSON keeps its formatting.
+ */
+function apiRequestToCurl(req) {
+    const parts = ['curl'];
+    const needsX = req.method !== 'GET' || !!req.body;
+    if (needsX)
+        parts.push('-X ' + req.method);
+    parts.push(shellQuote(apiFullUrl(req)));
+    req.headers.forEach(([k, v]) => parts.push('-H ' + shellQuote(v ? k + ': ' + v : k + ';')));
+    if (req.body)
+        parts.push('--data-raw ' + shellQuote(req.body));
+    return parts.join(' \\\n  ');
+}
+
+/* GENERATED:apiRequest:END */
 /* GENERATED:discussionStatus:START — DO NOT EDIT BY HAND. Source of truth: src/utils/discussionStatus.ts (tests: tests/unit/discussionStatus.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
  * A row's thread, the conversation about one node, and the row's own status.
@@ -8068,6 +8262,7 @@ function currentTableDisplay(table){
   if(isTableShownAsProgress(table))return 'progress';
   if(isTableShownAsBoard(table)){ const by=tableMarkedColumn(table,'data-board-by'); return by>=0?'board:'+by:'board'; }
   if(isTableShownAsProsCons(table))return 'proscons';
+  if(isTableShownAsApi(table))return 'api';
   if(isTableShownAsRowCards(table))return 'rowcards';
   if(isTableShownAsTimeline(table))return isTimelineHorizontal(table)?'timeline:horizontal':'timeline';
   if(isTableFeaturedAsChart(table)){ const t=getTableChartType(table); return t==='cards'?'cards':'chart:'+t; }
@@ -8084,11 +8279,11 @@ function setTableDisplay(table,mode){
   else table.removeAttribute('data-timeline-layout');
   if(mode==='chips'){ setTableChips(table,true); return; }
   if(mode==='progress'){ setTableProgress(table,true); return; }
-  if(mode==='timeline'||mode==='timeline:horizontal'||mode==='board'||mode==='proscons'||mode==='inline'||mode==='rowcards'){
+  if(mode==='timeline'||mode==='timeline:horizontal'||mode==='board'||mode==='proscons'||mode==='api'||mode==='inline'||mode==='rowcards'){
     const attr=mode.startsWith('timeline')?'timeline':mode;
     table.setAttribute('data-table-display',attr); table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type');
     table.removeAttribute('data-heatmap'); table.removeAttribute('data-heatmap-reverse');
-    showToast({timeline:'Showing as timeline',board:'Showing as status board',proscons:'Showing as pros & cons',inline:'Showing inline',rowcards:'Showing as row cards'}[attr]); return;
+    showToast({timeline:'Showing as timeline',board:'Showing as status board',proscons:'Showing as pros & cons',api:'Showing as API request',inline:'Showing inline',rowcards:'Showing as row cards'}[attr]); return;
   }
   table.removeAttribute('data-table-display');
   if(mode==='table'){ table.removeAttribute('data-feature-chart'); table.removeAttribute('data-chart-type'); showToast('Showing as table'); return; }
@@ -8138,6 +8333,7 @@ function buildChartFeatureItems(table,commit,figure){
     opt('board','Status board',!!tableStatusBoardInfo(table,true),'A status board needs a Status column (e.g. Open, In progress, Blocked, Done) and at least two items.'),
     ...laneItems,
     opt('proscons','Pros & cons',tableProsConsEligible(table),colsReason(2,2,'Pros & cons needs headers like Pros / Cons (or Advantages / Disadvantages, For / Against).')),
+    opt('api','API request',tableApiEligible(table),colsReason(2,2,'An API request needs Field | Value rows with a Method (GET, POST…) and a URL.')),
     {heading:'Timeline'},
     opt('timeline','Vertical',tlOk,TL_REASON),
     opt('timeline:horizontal','Horizontal',tlOk&&tlRows<=TIMELINE_HORIZONTAL_MAX,tlOk?`A horizontal timeline fits up to ${TIMELINE_HORIZONTAL_MAX} milestones; this table has ${tlRows}. Use Vertical.`:TL_REASON),
@@ -8381,6 +8577,7 @@ const TABLE_STARTERS=[
   {key:'cards',label:'Cards',cols:'Metric · Value · Change'},
   {key:'progress',label:'Progress bars',cols:'Workstream · Done %'},
   {key:'proscons',label:'Pros & cons',cols:'Pros · Cons'},
+  {key:'api',label:'API request',cols:'Method · URL · Headers · Body · Response'},
   {key:'chips',label:'Codes (chips)',cols:'Code · Meaning'},
   {key:'bar',label:'Bar chart',cols:'Label · Value'}
 ];
@@ -8394,6 +8591,7 @@ function tableStarterHtml(key){
     case 'cards': return t(['Metric','Value','Change'],[['Orders','1,240','+8%'],['Revenue','€86k','+3%'],['Returns','2.1%','-0.4%']],' data-feature-chart="1" data-chart-type="cards"');
     case 'progress': return t(['Workstream','Done'],[['Design','80%'],['Build','45%'],['Test','10%']],' data-table-display="progress"');
     case 'proscons': return t(['Pros','Cons'],[['Faster delivery','Higher cost'],['Fewer manual steps','Needs training']],' data-table-display="proscons"');
+    case 'api': return t(['Field','Value'],[['Method','POST'],['URL','https://api.example.com/v1/orders'],['Header','Content-Type: application/json'],['Body','{"orderId": "4711", "priority": "express"}'],['Status','201 Created'],['Response','{"id": "4711", "status": "accepted"}'],['Description','Creates an order']].map(r=>r.map(esc)),' data-table-display="api"');
     case 'chips': return t(['Code','Meaning'],[['P1','Critical'],['P2','High'],['P3','Normal']],' data-table-display="chips"');
     case 'bar': return t(['Label','Value'],[['Q1','120'],['Q2','150'],['Q3','90']],' data-feature-chart="1" data-chart-type="bar"');
   }
@@ -9191,7 +9389,7 @@ function setTableChartTitle(table,title){
 function isTablePositionCenter(table){ return table?.getAttribute('data-position')==='center'; }
 function tablePositionReason(table){
   const cur=currentTableDisplay(table);
-  if(cur==='cards'||cur.startsWith('board')||cur==='proscons'||cur==='progress'||cur==='timeline:horizontal')return 'Fills the full width';
+  if(cur==='cards'||cur.startsWith('board')||cur==='proscons'||cur==='api'||cur==='progress'||cur==='timeline:horizontal')return 'Fills the full width';
   return '';
 }
 function tableShowsCentered(table){ return isTablePositionCenter(table)&&!tablePositionReason(table); }
