@@ -15577,19 +15577,22 @@ async function saveFeedbackNote(item){
   }else showToast(result.error);
   renderFeedbackInboxList();
 }
-async function requestDeleteFeedback(item){
+// No "Delete this report?" dialog (owner 2026-10-30: undo over confirm): the report leaves the
+// list at once and is deleted on the server only once the Undo toast has gone.
+function requestDeleteFeedback(item){
   if(feedbackInboxBusyId)return;
-  const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',title:'Delete this report?',body:"This can't be undone.",confirmLabel:'Delete',confirmCls:'danger',cancelLabel:'Cancel'});
-  if(!ok)return;
-  feedbackInboxBusyId=item.id; renderFeedbackInboxList();
-  const result=await deleteFeedbackDoc(item.id);
-  feedbackInboxBusyId=null;
-  if(result.ok){
-    feedbackInboxItems=feedbackInboxItems.filter(x=>x.id!==item.id);
-    delete feedbackInboxNoteDrafts[item.id];
-    if(feedbackInboxExpandedId===item.id)feedbackInboxExpandedId=null;
-  }else showToast(result.error);
+  const at=feedbackInboxItems.indexOf(item); if(at<0)return;
+  let undone=false;
+  feedbackInboxItems=feedbackInboxItems.filter(x=>x.id!==item.id);
+  if(feedbackInboxExpandedId===item.id)feedbackInboxExpandedId=null;
   renderFeedbackInboxList();
+  showActionToast('Report deleted','Undo',()=>{ undone=true; feedbackInboxItems.splice(Math.min(at,feedbackInboxItems.length),0,item); renderFeedbackInboxList(); });
+  setTimeout(async()=>{
+    if(undone)return;
+    const result=await deleteFeedbackDoc(item.id);
+    if(result.ok){ delete feedbackInboxNoteDrafts[item.id]; return; }
+    feedbackInboxItems.splice(Math.min(at,feedbackInboxItems.length),0,item); renderFeedbackInboxList(); showToast(result.error);
+  },5200);
 }
 async function openFeedbackInboxModal(){
   const ov=el('feedback-inbox-modal-overlay'); if(!ov||!isAdmin)return;
@@ -15718,19 +15721,23 @@ async function refreshAiVaultProvidersList(){
   aiVaultProvidersLoading=false;
   renderAiVaultProvidersList();
 }
-async function requestDeleteAiVaultProvider(p){
+// No "Remove this provider?" dialog (owner 2026-10-30: undo over confirm): the row goes at once
+// and the server delete runs only once the Undo toast has gone.
+function requestDeleteAiVaultProvider(p){
   if(aiVaultProvidersBusyId)return;
-  const ok=await sakuraConfirm({icon:TRASH_ICON,title:'Remove this provider?',body:esc(p.id)+' will no longer be tried for hosted AI requests.',confirmLabel:'Remove',confirmCls:'danger',cancelLabel:'Cancel'});
-  if(!ok)return;
-  aiVaultProvidersBusyId=p.id; renderAiVaultProvidersList();
-  try{
-    await deleteAiVaultProviderApi(p.id);
-    aiVaultProvidersItems=aiVaultProvidersItems.filter(x=>x.id!==p.id);
-  }catch(e){
-    showToast((e&&e.message)?String(e.message):'Failed to remove provider');
-  }
-  aiVaultProvidersBusyId=null;
+  const at=aiVaultProvidersItems.indexOf(p); if(at<0)return;
+  let undone=false;
+  aiVaultProvidersItems=aiVaultProvidersItems.filter(x=>x.id!==p.id);
   renderAiVaultProvidersList();
+  showActionToast('Removed '+p.id,'Undo',()=>{ undone=true; aiVaultProvidersItems.splice(Math.min(at,aiVaultProvidersItems.length),0,p); renderAiVaultProvidersList(); });
+  setTimeout(async()=>{
+    if(undone)return;
+    try{ await deleteAiVaultProviderApi(p.id); }
+    catch(e){
+      aiVaultProvidersItems.splice(Math.min(at,aiVaultProvidersItems.length),0,p); renderAiVaultProvidersList();
+      showToast((e&&e.message)?String(e.message):'Failed to remove provider');
+    }
+  },5200);
 }
 async function addOrUpdateAiVaultProvider(){
   const btn=el('ai-vault-provider-add-btn'); if(!btn)return;
