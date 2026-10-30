@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **API request form editor (2026-10-30).** Owner: "a nicer editor, no shortcuts". `openApiRequestEditor(node,tIdx)` (index.html, after `renderApiRequestHtml`) is an `app-modal-overlay` built once on first use: method select + URL, description, query/header name/value rows (+ Add / ×, header-name datalist), body and example response with Format JSON (`isValidJson`/`prettyJson`), URL required, Esc/Cancel discard, Ctrl/Cmd+Enter or Save writes `apiRequestToGrid(req)` back into the same table (old table attributes kept) as one undo step. Hooked into `enterEdit` (API tables open the form unless `opts.asTable`), right-click (Edit request… / Edit as table) and the API starter (opens the form). CSS `.api-ed*` in sidebar.css. Tests: 3 unit, 2 e2e in `table-api.spec.ts`, starter test closes the form.
+
 - **Postman auth + several API cards per row (2026-10-30).** Import maps auth (request's own, else nearest folder's, else collection's; `inherit` = no own) via `postmanAuthRows`: Bearer/Basic → Authorization header, API key → header or query, other kinds → an "Auth" extra; literal secrets become `{{token}}`/`{{password}}`/`{{apiKey}}` (never stored). Export takes every API table on a row (`nodeApiGrids`), numbering extras "Row (2)". Tests: 4 more unit tests, 1 e2e.
 
 - **Tab title back to "Sakura" (2026-10-30).** Owner: keep Sakura. "SAKURA" (#744) read loud, didn't match the in-app wordmark, and made an installed app's title bar show "Sakura - SAKURA" (manifest name - page title). `<title>` and `updateDirtyIndicator()` say "Sakura" again; manifests unchanged. The PDF branding mark's own "SAKURA" default is separate and untouched.
-
-- **Postman collection import/export (2026-10-30).** Phase 2 of the API work. Import › / Export › **Postman collection** (.json), plus File Explorer empty-space › Import Postman collection. Import makes a new document: folders → parent rows, requests → rows with an API request table (`apiGridToTableHtml`, multi-line values as `<br>`). Export walks the scoped rows (no-export rows dropped), turns rows with an API table into requests and their ancestors into folders. Pure conversion in `src/utils/postmanCollection.ts` (block after `apiRequest`, 10 unit tests incl. a round trip); wiring next to `importOpmlText`. e2e `postman-import-export.spec.ts`. The API work is done (live Send deliberately not built).
 
 ### In progress / not built
 

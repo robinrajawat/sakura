@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl
+  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson
 } from '../../src/utils/apiRequest';
 
 const sample = [
@@ -94,5 +94,24 @@ describe('apiRequestToCurl', () => {
     const curl = apiRequestToCurl(apiRequestFromGrid([['Method', 'GET'], ['URL', "/search?q=it's"]])!);
     expect(curl).toBe("curl \\\n  '/search?q=it'\\''s'");
     expect(shellQuote("a'b")).toBe("'a'\\''b'");
+  });
+});
+
+describe('apiRequestToGrid', () => {
+  it('round-trips a request through the table rows', () => {
+    const r = apiRequestFromGrid(sample)!;
+    expect(apiRequestFromGrid(apiRequestToGrid(r))).toEqual(r);
+  });
+  it('leaves out empty parts and blank query/header names', () => {
+    const r = apiRequestFromGrid([['Method', 'GET'], ['URL', '/x']])!;
+    r.query.push(['', 'orphan']); r.headers.push(['Accept', 'application/json']);
+    expect(apiRequestToGrid(r)).toEqual([['Field', 'Value'], ['Method', 'GET'], ['URL', '/x'], ['Header', 'Accept: application/json']]);
+  });
+});
+
+describe('isValidJson', () => {
+  it('tells JSON from other text', () => {
+    expect(isValidJson('{"a":[1,2]}')).toBe(true);
+    expect(isValidJson('{a:1}')).toBe(false);
   });
 });

@@ -132,3 +132,25 @@ export function apiRequestToCurl(req: ApiRequest): string {
   if (req.body) parts.push('--data-raw ' + shellQuote(req.body));
   return parts.join(' \\\n  ');
 }
+
+/**
+ * The request as Field | Value rows (header row first) in the standard order -- what the API
+ * request editor saves back into the table. Empty parts are left out; extras keep their place at
+ * the end. apiRequestFromGrid(apiRequestToGrid(r)) gives r back.
+ */
+export function apiRequestToGrid(req: ApiRequest): string[][] {
+  const grid: string[][] = [['Field', 'Value'], ['Method', req.method], ['URL', req.url]];
+  req.query.forEach(([k, v]) => { if (k.trim()) grid.push(['Query', v ? k + '=' + v : k]); });
+  req.headers.forEach(([k, v]) => { if (k.trim()) grid.push(['Header', v ? k + ': ' + v : k]); });
+  if (req.body.trim()) grid.push(['Body', req.body]);
+  if (req.status.trim()) grid.push(['Status', req.status.trim()]);
+  if (req.response.trim()) grid.push(['Response', req.response]);
+  if (req.description.trim()) grid.push(['Description', req.description.trim()]);
+  req.extras.forEach(([k, v]) => { if (k.trim() && v.trim()) grid.push([k, v]); });
+  return grid;
+}
+
+/** Whether text is valid JSON (for the editor's Format button and its warning). */
+export function isValidJson(raw: string): boolean {
+  try { JSON.parse(String(raw)); return true; } catch { return false; }
+}

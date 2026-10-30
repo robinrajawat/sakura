@@ -390,23 +390,54 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 @media (max-width:640px){.pv-proscons{grid-template-columns:minmax(0,1fr)}}
 /* API request card (data-table-display="api"): method + URL, then query, headers, body, response.
    Method colours follow the common convention (GET green, POST blue, PUT/PATCH orange, DELETE red). */
-.pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 13px 'Inter',sans-serif;color:var(--fg)}
+.pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 var(--fs-md) 'Inter',sans-serif;color:var(--fg)}
 .pv-api[data-method="get"]{--mc:var(--fc-green)}.pv-api[data-method="post"]{--mc:var(--fc-blue)}.pv-api[data-method="put"],.pv-api[data-method="patch"]{--mc:var(--fc-orange)}.pv-api[data-method="delete"]{--mc:var(--fc-red)}
 .pv-api-line{display:flex;align-items:center;gap:8px;min-width:0}
-.pv-api-method{flex:none;font:700 11px 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.pv-api-url{flex:1;min-width:0;font:400 12.5px 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:anywhere;background:none;padding:0}
-.pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 11px 'Inter',sans-serif;cursor:pointer}
+.pv-api-method{flex:none;font:700 var(--fs-xs) 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:anywhere;background:none;padding:0}
+.pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer}
 .pv-api-curl:hover{background:var(--hover);color:var(--fg)}
 .pv-api-desc{color:var(--muted);line-height:1.45}
 .pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
-.pv-api-label{display:flex;align-items:center;gap:8px;font:600 10.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pv-api-pairs{display:flex;flex-direction:column;gap:2px}
-.pv-api-pair{font:400 12px 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-pair{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
 .pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
-.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 12px/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
-.pv-api-status{font:600 10.5px 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
+.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
+.pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
 .pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
 @media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible}}
+/* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
+.api-ed{width:min(720px,94vw)}
+.api-ed-body{display:flex;flex-direction:column;gap:12px}
+.api-ed-line{display:flex;gap:8px;min-width:0}
+.api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
+.api-ed-input:focus{outline:none;border-color:var(--accent)}
+.api-ed-input.invalid{border-color:var(--fc-red)}
+.api-ed-mono{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-method{flex:0 0 112px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:700 var(--fs-sm) 'Fira Code',Consolas,monospace;cursor:pointer}
+.api-ed-method:focus{outline:none;border-color:var(--accent)}
+.api-ed-line .api-ed-input{flex:1}
+.api-ed-sec{display:flex;flex-direction:column;gap:6px}
+.api-ed-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.api-ed-pairs{display:flex;flex-direction:column;gap:6px}
+.api-ed-pairs:empty{display:none}
+.api-ed-pair{display:flex;align-items:center;gap:6px}
+.api-ed-pair .api-ed-k{flex:0 0 38%}
+.api-ed-pair .api-ed-v{flex:1}
+.api-ed-sep{color:var(--muted);font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-remove{flex:none;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:var(--hint);cursor:pointer}
+.api-ed-remove:hover{background:var(--hover);color:var(--fg)}
+.api-ed-add,.api-ed-format{align-self:flex-start;border:none;background:none;padding:2px 0;color:var(--muted);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
+.api-ed-add:hover,.api-ed-format:hover{color:var(--fg)}
+.api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
+.api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:vertical;white-space:pre;overflow:auto}
+.api-ed-status{width:180px;flex:none}
+.api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
+.api-ed-foot{display:flex;align-items:center;gap:8px;padding:12px var(--pad-dialog);border-top:1px solid var(--border);flex:0 0 auto}
+.api-ed-astable{margin-right:auto;padding-left:0}
+.api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
+@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}}
 .tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
 .tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--pc);color:#fff;font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
