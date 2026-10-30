@@ -5788,13 +5788,13 @@ function apiEditorEl(){
         <button type="button" class="api-ed-add" data-add="query">+ Add parameter</button></div>
       <div class="api-ed-sec"><div class="api-ed-label">Headers</div><div class="api-ed-pairs" id="api-ed-headers"></div>
         <button type="button" class="api-ed-add" data-add="headers">+ Add header</button></div>
-      <div class="api-ed-sec"><div class="api-ed-label">Body<button type="button" class="api-ed-format" data-format="api-ed-body">Format JSON</button></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Body<button type="button" class="api-ed-format" data-format="api-ed-body">Format</button></div>
         <textarea id="api-ed-body" class="api-ed-input api-ed-mono api-ed-area" spellcheck="false" placeholder='{ "orderId": "4711" }' aria-label="Body"></textarea>
-        <div class="api-ed-err" data-err-for="api-ed-body" hidden>Not valid JSON. It's saved as typed.</div></div>
-      <div class="api-ed-sec"><div class="api-ed-label">Example response<button type="button" class="api-ed-format" data-format="api-ed-response">Format JSON</button></div>
+        <div class="api-ed-err" data-err-for="api-ed-body" hidden>Not valid JSON or XML. It's saved as typed.</div></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Example response<button type="button" class="api-ed-format" data-format="api-ed-response">Format</button></div>
         <input id="api-ed-status" class="api-ed-input api-ed-mono api-ed-status" type="text" autocomplete="off" placeholder="200 OK" aria-label="Response status">
         <textarea id="api-ed-response" class="api-ed-input api-ed-mono api-ed-area" spellcheck="false" placeholder='{ "status": "accepted" }' aria-label="Response body"></textarea>
-        <div class="api-ed-err" data-err-for="api-ed-response" hidden>Not valid JSON. It's saved as typed.</div></div>
+        <div class="api-ed-err" data-err-for="api-ed-response" hidden>Not valid JSON or XML. It's saved as typed.</div></div>
       <datalist id="api-ed-header-names">${API_EDITOR_HEADER_NAMES.map(h=>`<option value="${h}">`).join('')}</datalist>
     </div>
     <div class="api-ed-foot">
@@ -5831,7 +5831,7 @@ function apiEditorEl(){
   ov.querySelectorAll('.api-ed-format').forEach(b=>b.addEventListener('click',()=>{
     const ta=el(b.dataset.format), err=ov.querySelector(`[data-err-for="${b.dataset.format}"]`);
     if(!ta.value.trim())return;
-    if(isValidJson(ta.value)){ ta.value=prettyJson(ta.value); err.hidden=true; } else err.hidden=false;
+    const f=formatPayload(ta.value); if(f.ok){ ta.value=f.text; err.hidden=true; } else err.hidden=false;
   }));
   ['api-ed-body','api-ed-response'].forEach(id=>el(id).addEventListener('input',()=>{ ov.querySelector(`[data-err-for="${id}"]`).hidden=true; }));
   ov.addEventListener('keydown',e=>{
@@ -5864,7 +5864,7 @@ function apiEditorFillFromCurl(text){
   el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML='';
   r.query.forEach(([k,v])=>apiEditorAddPair('query',k,v));
   r.headers.forEach(([k,v])=>apiEditorAddPair('headers',k,v));
-  el('api-ed-body').value=r.body?prettyJson(r.body):'';
+  el('api-ed-body').value=r.body?formatPayload(r.body).text:'';
   // A brand-new request still holds the starter's sample description and response: drop them so
   // nothing from the sample is left describing the pasted request.
   if(_apiEd?.fresh){ el('api-ed-desc').value=''; el('api-ed-status').value=''; el('api-ed-response').value=''; _apiEd.fresh=false; }
@@ -5885,9 +5885,9 @@ function openApiRequestEditor(node,tIdx,{asTable,fresh}={}){
   el('api-ed-method').value=API_METHODS.includes(req.method)?req.method:'GET';
   el('api-ed-url').value=req.url; el('api-ed-url').classList.remove('invalid'); el('api-ed-url-err').hidden=true;
   el('api-ed-desc').value=req.description;
-  el('api-ed-body').value=req.body?prettyJson(req.body):'';
+  el('api-ed-body').value=req.body?formatPayload(req.body).text:'';
   el('api-ed-status').value=req.status;
-  el('api-ed-response').value=req.response?prettyJson(req.response):'';
+  el('api-ed-response').value=req.response?formatPayload(req.response).text:'';
   ov.querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
   el('api-ed-curl-wrap').hidden=true; el('api-ed-curl').value='';
   el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML='';
@@ -5940,7 +5940,7 @@ function renderApiRequestHtml(table){
   const r=tableApiInfo(table); if(!r)return null;
   const COPY='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   const pairs=(label,list,sep)=>list.length?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}</div><div class="pv-api-pairs">${list.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span>${v?`<span class="pv-api-sep">${sep}</span><span class="pv-api-val">${esc(v)}</span>`:''}</div>`).join('')}</div></div>`:'';
-  const code=(label,raw,extra)=>raw?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}${extra||''}</div><pre class="pv-api-code">${esc(prettyJson(raw))}</pre></div>`:'';
+  const code=(label,raw,extra)=>raw?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}${extra||''}</div><pre class="pv-api-code">${esc(formatPayload(raw).text)}</pre></div>`:'';
   const statusCls=/^\s*2/.test(r.status)?'ok':/^\s*[45]/.test(r.status)?'err':'';
   const statusChip=r.status?` <span class="pv-api-status ${statusCls}">${esc(r.status)}</span>`:'';
   const responseSec=r.response?code('Response',r.response,statusChip):(r.status?`<div class="pv-api-sec"><div class="pv-api-label">Response${statusChip}</div></div>`:'');
@@ -7456,6 +7456,75 @@ function prettyJson(raw) {
     catch {
         return String(raw || '');
     }
+}
+/**
+ * XML indented two spaces per level: one tag per line, an element holding only text kept on one
+ * line (<a>text</a>), comments / CDATA / the <?xml?> prolog kept as they are. Returns null when the
+ * text isn't well-formed enough to indent safely (not starting with "<", or tags that don't
+ * balance), so callers can leave it untouched. No DOM needed, so it runs in tests and workers.
+ */
+function prettyXml(raw) {
+    const s = String(raw || '').trim();
+    if (!s.startsWith('<'))
+        return null;
+    const tokens = s.match(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->|<[^>]+>|[^<]+/g);
+    if (!tokens || tokens.join('') !== s)
+        return null;
+    const lines = [];
+    const stack = [];
+    const pad = () => '  '.repeat(stack.length);
+    for (let i = 0; i < tokens.length; i++) {
+        const t = tokens[i];
+        if (!t.startsWith('<') || t.startsWith('<![CDATA[')) {
+            const text = t.startsWith('<![CDATA[') ? t : t.trim();
+            if (text)
+                lines.push(pad() + text);
+            continue;
+        }
+        if (t.startsWith('<?') || t.startsWith('<!')) {
+            lines.push(pad() + t);
+            continue;
+        }
+        if (t.startsWith('</')) {
+            const name = t.slice(2, -1).trim();
+            if (stack.pop() !== name)
+                return null;
+            lines.push(pad() + t);
+            continue;
+        }
+        if (t.endsWith('/>')) {
+            lines.push(pad() + t);
+            continue;
+        }
+        const name = (/^<([^\s/>]+)/.exec(t) || [])[1];
+        if (!name)
+            return null;
+        // <a>text</a> stays on one line.
+        const next = tokens[i + 1], after = tokens[i + 2];
+        if (next !== undefined && !next.startsWith('<') && after === '</' + name + '>') {
+            lines.push(pad() + t + next.trim() + after);
+            i += 2;
+            continue;
+        }
+        lines.push(pad() + t);
+        stack.push(name);
+    }
+    return stack.length ? null : lines.join('\n');
+}
+/**
+ * A request or response body formatted for reading: JSON pretty-printed, else XML indented, else
+ * unchanged. `ok` is false when the text looks like JSON or XML but isn't valid, so the API form
+ * can say so.
+ */
+function formatPayload(raw) {
+    const s = String(raw || '').trim();
+    if (/^[[{]/.test(s))
+        return isValidJson(s) ? { text: prettyJson(s), ok: true, kind: 'json' } : { text: String(raw || ''), ok: false, kind: 'json' };
+    if (s.startsWith('<')) {
+        const x = prettyXml(s);
+        return x === null ? { text: String(raw || ''), ok: false, kind: 'xml' } : { text: x, ok: true, kind: 'xml' };
+    }
+    return { text: String(raw || ''), ok: true, kind: 'text' };
 }
 /** Single-quoted for a POSIX shell: a ' inside becomes '\''. */
 function shellQuote(s) {

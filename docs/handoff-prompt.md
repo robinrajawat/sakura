@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **API card: XML formatted like JSON (2026-10-30).** Owner: beautify JSON and XML in the API card (SAP OData often answers in XML). `prettyXml` (no-DOM tokenizer: one element per line, text-only elements on one line, comments/CDATA/prolog kept, null unless tags balance) and `formatPayload` (JSON → XML → as typed, with `ok` for the warning) in `src/utils/apiRequest.ts`; the card's code boxes and the form use `formatPayload`; the form button is **Format** (JSON or XML). 5 unit tests, 1 e2e.
+
 - **One scrollbar standard, app-wide (2026-10-30).** Owner: one standard everywhere. Audit: 41 scrolling areas, 14 unstyled (Settings/Help panels, folder picker, share results, submenus, wide tables…), the Hub unstyled, and the look duplicated 4× with per-panel border colours. Now one global rule in base.css (and hub.css): `*::-webkit-scrollbar` 8px, `--scroll` thumb (rounded, transparent 2px border + padding-box), `--scroll-hover` on hover, no track/corner/buttons; Firefox gets `scrollbar-width:thin` via `@supports not selector(::-webkit-scrollbar)` (the guard matters: Chromium drops the ::-webkit look when scrollbar-width/-color are set). Dark thumb raised #34322e → #4a4742 (was barely visible). All per-panel ::-webkit-scrollbar rules removed; don't add new ones.
 
 - **API card scrollbars to the app standard (2026-10-30).** Owner: scroll bars in the API cards weren't standard. `.pv-api-code`, `.api-ed-area` and `.api-ed-body` get the app scrollbar (8px, rounded `var(--scroll)` thumb, transparent border + padding-box so it sits inset on the tinted code box, no track) and join base.css's Firefox `scrollbar-width:thin` list. Code boxes no longer wrap (`white-space:pre`, horizontal scroll keeps JSON indentation); print still wraps. Headless screenshots need `ignoreDefaultArgs:['--hide-scrollbars']` to show scrollbars.
-
-- **Desktop app icon: bigger flower (2026-10-30).** Owner: the PWA icon looked small; match the original (pre-#746) icon. The original's card filled ~100% of the canvas with the flower at ~80% of the card; #757's tile was 84% with the flower at ~48% of it (the glyph SVG has its own padding, ~78% of its viewBox). `icon-192-pwa` / `icon-512-pwa` now: tile 90% of the canvas (room for the shadow), glyph SVG = tile size, so the flower is ~78% of the tile / 71% of the canvas. `sw.js` cache v10.
 
 ### In progress / not built
 

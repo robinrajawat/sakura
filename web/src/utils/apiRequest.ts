@@ -113,6 +113,65 @@ export function prettyJson(raw: string): string {
   }
 }
 
+/**
+ * XML indented two spaces per level: one tag per line, an element holding only text kept on one
+ * line (<a>text</a>), comments / CDATA / the <?xml?> prolog kept as they are. Returns null when the
+ * text isn't well-formed enough to indent safely (not starting with "<", or tags that don't
+ * balance), so callers can leave it untouched. No DOM needed, so it runs in tests and workers.
+ */
+export function prettyXml(raw: string): string | null {
+  const s = String(raw || '').trim();
+  if (!s.startsWith('<')) return null;
+  const tokens = s.match(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->|<[^>]+>|[^<]+/g);
+  if (!tokens || tokens.join('') !== s) return null;
+  const lines: string[] = [];
+  const stack: string[] = [];
+  const pad = () => '  '.repeat(stack.length);
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (!t.startsWith('<') || t.startsWith('<![CDATA[')) {
+      const text = t.startsWith('<![CDATA[') ? t : t.trim();
+      if (text) lines.push(pad() + text);
+      continue;
+    }
+    if (t.startsWith('<?') || t.startsWith('<!')) { lines.push(pad() + t); continue; }
+    if (t.startsWith('</')) {
+      const name = t.slice(2, -1).trim();
+      if (stack.pop() !== name) return null;
+      lines.push(pad() + t);
+      continue;
+    }
+    if (t.endsWith('/>')) { lines.push(pad() + t); continue; }
+    const name = (/^<([^\s/>]+)/.exec(t) || [])[1];
+    if (!name) return null;
+    // <a>text</a> stays on one line.
+    const next = tokens[i + 1], after = tokens[i + 2];
+    if (next !== undefined && !next.startsWith('<') && after === '</' + name + '>') {
+      lines.push(pad() + t + next.trim() + after);
+      i += 2;
+      continue;
+    }
+    lines.push(pad() + t);
+    stack.push(name);
+  }
+  return stack.length ? null : lines.join('\n');
+}
+
+/**
+ * A request or response body formatted for reading: JSON pretty-printed, else XML indented, else
+ * unchanged. `ok` is false when the text looks like JSON or XML but isn't valid, so the API form
+ * can say so.
+ */
+export function formatPayload(raw: string): { text: string; ok: boolean; kind: 'json' | 'xml' | 'text' } {
+  const s = String(raw || '').trim();
+  if (/^[[{]/.test(s)) return isValidJson(s) ? { text: prettyJson(s), ok: true, kind: 'json' } : { text: String(raw || ''), ok: false, kind: 'json' };
+  if (s.startsWith('<')) {
+    const x = prettyXml(s);
+    return x === null ? { text: String(raw || ''), ok: false, kind: 'xml' } : { text: x, ok: true, kind: 'xml' };
+  }
+  return { text: String(raw || ''), ok: true, kind: 'text' };
+}
+
 /** Single-quoted for a POSIX shell: a ' inside becomes '\''. */
 export function shellQuote(s: string): string {
   return "'" + String(s).replace(/'/g, "'\\''") + "'";

@@ -217,3 +217,23 @@ test('the card says Copy for Postman, and right-click copies or exports just thi
   expect(out.item[0].request.description).toBe('Open orders only');
   expect(out.item[0].response[0]).toMatchObject({ code: 200, status: 'OK' });
 });
+
+test('XML bodies and responses are formatted like JSON, and the form Format handles both', async ({ page }) => {
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    const xml = '<?xml version="1.0"?><entry><content type="application/xml"><m:properties><d:PostalCode>2300</d:PostalCode></m:properties></content></entry>';
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = apiGridToTableHtml([['Field', 'Value'], ['Method', 'GET'], ['URL', '/PostalCodeSet(\'2300\')'], ['Status', '200 OK'], ['Response', xml]]); render();
+  });
+  const code = page.locator('.pv-api .pv-api-code');
+  await expect(code).toContainText('<entry>\n  <content type="application/xml">\n    <m:properties>\n      <d:PostalCode>2300</d:PostalCode>');
+
+  await page.locator('.pv-api').dblclick();
+  await expect(page.locator('.api-ed-format').first()).toHaveText('Format');
+  await page.locator('#api-ed-body').fill('<a><b>1</b></a>');
+  await page.locator('.api-ed-format[data-format="api-ed-body"]').click();
+  await expect(page.locator('#api-ed-body')).toHaveValue('<a>\n  <b>1</b>\n</a>');
+  await page.locator('#api-ed-body').fill('<a><b></a>');
+  await page.locator('.api-ed-format[data-format="api-ed-body"]').click();
+  await expect(page.locator('[data-err-for="api-ed-body"]')).toContainText('Not valid JSON or XML');
+});

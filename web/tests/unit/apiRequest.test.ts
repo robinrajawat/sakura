@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson, shellWords, maskSecretHeader, curlToApiRequest
+  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson, shellWords, maskSecretHeader, curlToApiRequest, prettyXml, formatPayload
 } from '../../src/utils/apiRequest';
 
 const sample = [
@@ -168,5 +168,42 @@ describe('curlToApiRequest', () => {
   it('is null for text that is not a cURL command', () => {
     expect(curlToApiRequest('GET https://a/b')).toBeNull();
     expect(curlToApiRequest('curl --silent')).toBeNull();
+  });
+});
+
+describe('prettyXml', () => {
+  it('indents nested elements and keeps text-only elements on one line', () => {
+    expect(prettyXml('<?xml version="1.0"?><entry><id>4711</id><content type="xml"><m:properties><d:Country>DK</d:Country><d:Empty/></m:properties></content></entry>')).toBe([
+      '<?xml version="1.0"?>',
+      '<entry>',
+      '  <id>4711</id>',
+      '  <content type="xml">',
+      '    <m:properties>',
+      '      <d:Country>DK</d:Country>',
+      '      <d:Empty/>',
+      '    </m:properties>',
+      '  </content>',
+      '</entry>'
+    ].join('\n'));
+  });
+  it('re-indents already formatted XML and keeps comments and CDATA', () => {
+    expect(prettyXml('<a>\n      <!-- note -->\n   <b><![CDATA[x < y]]></b>\n</a>')).toBe('<a>\n  <!-- note -->\n  <b>\n    <![CDATA[x < y]]>\n  </b>\n</a>');
+  });
+  it('is null for text that is not well-formed XML', () => {
+    expect(prettyXml('<a><b></a>')).toBeNull();
+    expect(prettyXml('<a>')).toBeNull();
+    expect(prettyXml('plain')).toBeNull();
+  });
+});
+
+describe('formatPayload', () => {
+  it('formats JSON, then XML, and leaves other text alone', () => {
+    expect(formatPayload('{"a":1}')).toEqual({ text: '{\n  "a": 1\n}', ok: true, kind: 'json' });
+    expect(formatPayload('<a><b>1</b></a>')).toEqual({ text: '<a>\n  <b>1</b>\n</a>', ok: true, kind: 'xml' });
+    expect(formatPayload('name=value')).toEqual({ text: 'name=value', ok: true, kind: 'text' });
+  });
+  it('flags invalid JSON or XML and keeps it as typed', () => {
+    expect(formatPayload('{broken')).toMatchObject({ text: '{broken', ok: false, kind: 'json' });
+    expect(formatPayload('<a><b></a>')).toMatchObject({ text: '<a><b></a>', ok: false, kind: 'xml' });
   });
 });
