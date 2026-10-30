@@ -37,7 +37,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('a Postman collection imports as rows with API cards and exports back', async ({ page }) => {
+test('a Postman collection imports as rows with API cards, and a card exports back', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (err) => { if (!KNOWN_NOISE.test(err.message)) errors.push(err.message); });
   await page.setViewportSize({ width: 1200, height: 800 });
@@ -59,14 +59,15 @@ test('a Postman collection imports as rows with API cards and exports back', asy
   // A multi-line body survives the table round trip.
   await expect(page.locator('.pv-api').first().locator('.pv-api-code').first()).toContainText('"id": "4711"');
 
+  // Export is one request at a time, from the card (owner 2026-10-30).
+  await page.locator('.pv-api').first().click({ button: 'right' });
   const download = page.waitForEvent('download');
-  // @ts-expect-error -- bare global from index.html
-  await page.evaluate(() => exportPostman());
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Export this request (.json)' }).click();
   const file = await (await download).path();
   const out = JSON.parse(readFileSync(file!, 'utf8'));
-  expect(out.info.name).toBe('Orders API');
-  expect(out.item.map((i: any) => i.name)).toEqual(['Orders', 'Health']);
-  const create = out.item[0].item[0];
+  expect(out.info.name).toBe('Create order');
+  expect(out.item).toHaveLength(1);
+  const create = out.item[0];
   expect(create.request.method).toBe('POST');
   expect(create.request.url.raw).toBe('{{baseUrl}}/orders');
   expect(create.request.body.raw).toBe('{\n  "id": "4711"\n}');
@@ -90,31 +91,33 @@ test('Import and Export menus offer Postman collection', async ({ page }) => {
     exp: (window as any).exportMenuItems().map((i: any) => i.label),
     imp: (window as any).importMenuItems().map((i: any) => i.label)
   }));
-  expect(r.exp).toContain('Postman collection');
+  // Import is an entry point; exporting lives on the API cards, not the general export menus.
+  expect(r.exp).not.toContain('Postman collection');
   expect(r.imp).toContain('Postman collection');
 });
 
-test('Share offers Export to Postman only when the document has API requests', async ({ page }) => {
+test('Postman export is only per card: not in Share, and no export-all', async ({ page }) => {
   await page.goto('file://' + indexPath);
   await page.evaluate(() => {
     document.getElementById('sakura-landing-overlay')?.style.setProperty('display', 'none');
     document.getElementById('welcome-overlay')?.classList.remove('open');
   });
-  const shareLabels = async () => {
-    await page.locator('#doc-share-chip').click();
-    const labels = await page.locator('#share-menu .sb-context-item .sb-context-label').allTextContents();
-    await page.keyboard.press('Escape');
-    return labels;
-  };
-  expect(await shareLabels()).not.toContain('Export to Postman');
   await page.locator('#sakura-postman-file-input').setInputFiles({
     name: 'c.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(COLLECTION))
   });
   await expect(page.locator('.pv-api')).toHaveCount(2);
-  expect(await shareLabels()).toContain('Export to Postman');
+  await page.locator('#doc-share-chip').click();
+  const labels = await page.locator('#share-menu .sb-context-item .sb-context-label').allTextContents();
+  await page.keyboard.press('Escape');
+  expect(labels.join('|')).not.toMatch(/Postman/);
+  await page.locator('.pv-api').first().click({ button: 'right' });
+  const items = await page.locator('.sb-context-menu .sb-context-item .sb-context-label').allTextContents();
+  expect(items.some((t) => t.startsWith('Export this request (.json)'))).toBe(true);
+  expect(items.join('|')).not.toMatch(/Export all/);
 });
 
-test('a row with two API requests exports both, and collection auth imports as a header', async ({ page }) => {
+
+test('collection auth imports as a header with the secret replaced', async ({ page }) => {
   await page.goto('file://' + indexPath);
   await page.evaluate(() => {
     document.getElementById('sakura-landing-overlay')?.style.setProperty('display', 'none');
@@ -130,16 +133,4 @@ test('a row with two API requests exports both, and collection auth imports as a
   // @ts-expect-error -- bare global from index.html
   expect(await page.evaluate(() => JSON.stringify(nodes))).not.toContain('real-secret-123');
 
-  // A second API request on the "Health" row.
-  await page.evaluate(() => {
-    // @ts-expect-error -- bare globals from index.html
-    const n = nodes.find((x: any) => x.text === 'Health'); n.tables.push(tableStarterHtml('api')); render();
-  });
-  await expect(page.locator('.pv-api')).toHaveCount(3);
-  const download = page.waitForEvent('download');
-  // @ts-expect-error -- bare global from index.html
-  await page.evaluate(() => exportPostman());
-  const out = JSON.parse(readFileSync((await (await download).path())!, 'utf8'));
-  expect(out.item.map((i: any) => i.name)).toEqual(['Orders', 'Health', 'Health (2)']);
-  expect(out.item[2].request.method).toBe('POST');
 });

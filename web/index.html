@@ -9999,7 +9999,7 @@ function buildNodeTableObject(node,tIdx){
     // chart/Cards from the edited values when it ends (Esc, click outside).
     if(table&&isTableShownAsApi(table)&&tableApiEligible(table))items.push({label:'Edit request\u2026', onClick:()=>enterEdit(-1)},{label:'Edit as table', onClick:()=>enterEdit(-1,undefined,undefined,{asTable:true})},{divider:true},
       {label:'Copy for Postman', sub:'cURL \u2014 Import \u203a paste in Postman', onClick:()=>copyApiRequestCurl(table)},
-      {label:'Export to Postman (.json)', sub:'Keeps the description and example response', onClick:()=>exportApiRequestToPostman(node,table)});
+      {label:'Export this request (.json)', sub:'For Postman; keeps the description and example', onClick:()=>exportApiRequestToPostman(node,table)});
     else if(table&&isTableFeatured(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
     items.push({label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)},{divider:true});
     items.push({label:'Delete', danger:true, onClick:()=>{ pushUndo(); node.tables.splice(tIdx,1); node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); showToast('Table deleted — Ctrl/Cmd+Z to undo'); }});
@@ -15775,8 +15775,6 @@ el('doc-share-chip')?.addEventListener('click',e=>{
 // Share ▾: PDF first (works signed out, on any document), Export (.opml), then a copy to a Sakura user.
 function shareMenuItems(){
   const items=[{label:'Download PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},{label:'Export', meta:'.opml', icon:SB_EXPORT_ICON, data:{save:'opml'}, onClick:()=>exportOpml()}];
-  // Only for a document that has API requests, so other documents' Share menu stays as it was.
-  if(nodes.some(n=>(n.tables||[]).some(h=>/data-table-display="api"/.test(h))))items.push({label:'Export to Postman', meta:'.json', icon:SB_API_ICON, data:{save:'postman'}, onClick:()=>exportPostman()});
   if(currentUser&&currentDocId)items.push({label:'Send a copy…', icon:SB_PEOPLE_ICON, onClick:()=>openShareDropdown(currentDocId, el('header-title')?.value||'Untitled')});
   return items;
 }
@@ -22791,8 +22789,8 @@ function importOpmlText(xmlText){
 }
 function triggerOpmlImport(){ el('sakura-opml-file-input')?.click(); }
 // Postman (owner 2026-10-30): import a collection as a new document -- folders as parent rows,
-// each request a row with an API request table -- and export a document's API request tables back
-// as a v2.1 collection (their ancestor rows become folders). See src/utils/postmanCollection.ts.
+// each request a row with an API request table. Export is one request at a time, from the card
+// (exportApiRequestToPostman); owner: no document-wide export. See src/utils/postmanCollection.ts.
 function triggerPostmanImport(){ el('sakura-postman-file-input')?.click(); }
 function apiGridToTableHtml(grid){
   const cell=v=>esc(v).replace(/\n/g,'<br>');
@@ -22813,28 +22811,6 @@ function importPostmanText(text){
   render(); scheduleAutoSave();
   showToast(`Imported ${parsed.requestCount} request${parsed.requestCount===1?'':'s'} from “${parsed.title}”`);
   return true;
-}
-// Every API request table on a row, in order (a row can hold several).
-function nodeApiGrids(node){
-  const out=[];
-  for(const html of (node.tables||[])){
-    if(!/data-table-display="api"/.test(html))continue;
-    const d=document.createElement('div'); d.innerHTML=sakuraSanitizeRichHtml(html);
-    const t=d.querySelector('table'); if(!t)continue;
-    const grid=Array.from(t.rows).map(r=>Array.from(r.cells).map(apiCellText));
-    if(apiRequestFromGrid(grid))out.push(grid);
-  }
-  return out;
-}
-function exportPostman(){
-  const scoped=withoutNoExportNodes(getScopedNodes(true));
-  const title=(getMeta().title||'Sakura collection').trim();
-  // A row with several API requests exports each one, numbered after the first ("Orders (2)").
-  const rows=scoped.flatMap(n=>{ const grids=nodeApiGrids(n), text=n.text||''; return grids.length?grids.map((grid,i)=>({depth:n.depth,text:i?`${text} (${i+1})`:text,grid})):[{depth:n.depth,text,grid:null}]; });
-  const {collection,requestCount}=outlineToPostman(title,rows);
-  if(!requestCount){ showToast('No API requests to export — add one with Table › API request'); return; }
-  downloadBlob(`${title.replace(/[\\/:*?"<>|]+/g,'_')}.postman_collection.json`,'application/json;charset=utf-8',JSON.stringify(collection,null,2));
-  showToast(`Exported ${requestCount} request${requestCount===1?'':'s'} — import the file in Postman`);
 }
 function insertDateTime(targetEditorId){
   if(targetEditorId){
@@ -23401,8 +23377,7 @@ const SB_API_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" s
 const SB_OPML_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg>';
 function exportMenuItems(){ return [
   {label:'PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},
-  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{save:'opml'}, onClick:()=>exportOpml()},
-  {label:'Postman collection', meta:'.json', icon:SB_API_ICON, data:{save:'postman'}, onClick:()=>exportPostman()}
+  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{save:'opml'}, onClick:()=>exportOpml()}
 ]; }
 function importMenuItems(){ return [
   {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{import:'opml'}, onClick:()=>triggerOpmlImport()},
