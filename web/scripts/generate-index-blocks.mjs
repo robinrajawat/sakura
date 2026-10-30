@@ -477,6 +477,14 @@ initHubTodosState({
     footer: ''
   },
   {
+    // API request tables (Field | Value shown as a request card): reading the cells as a request,
+    // the full URL, pretty JSON and Copy as cURL. index.html's renderApiRequestHtml draws the card.
+    name: 'apiRequest',
+    sourceFile: 'src/utils/apiRequest.ts',
+    testFile: 'tests/unit/apiRequest.test.ts',
+    footer: ''
+  },
+  {
     // Remark and Q&A status (open / resolved / answered / won't answer) -- pure parts only: an
     // item's state, the toolbar's open counts, which nodes a status filter shows, and the PDF's
     // "Open items" grouping. Buttons, pills, the filter and the PDF markup stay hand-written in

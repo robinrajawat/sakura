@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **API request display (2026-10-30).** Owner: document API calls in specs (most docs need API details); try them in Postman. Built as a table display, not a new block, so storage/undo/sync/copy/search/PDF come free: a Field | Value table with Method + URL shows as a request card via `data-table-display="api"`. Pure parsing + cURL in `src/utils/apiRequest.ts` (generated block `apiRequest`, unit tests); `renderApiRequestHtml` in index.html; Show as › API request, a Table starter, full width, CSS `.pv-api*` in sidebar.css. **cURL** button copies the command (Postman › Import › Raw text); hidden in print. e2e `table-api.spec.ts`. Next (Phase 2): Postman v2.1 collection import (each request a row with an API table, folders as parent rows) and export.
+
 - **One gap for row markers (2026-10-30).** Owner: spacing between the fold count and icons looked uneven; "make it standard, robust". New token `--gap-row-marker:4px` (base.css `:root`) is the left margin of every marker after the row text: `.node-note-dot`, `.node-qa-dot`, `.node-arw-dot`, `.node-marker-badge`, `.node-tag-chip`, `.cb-progress` (was 5px), `.fold-badge` (was 10px). Measured: "+N" now 12px from the text (was 18), 13px from an eye icon (was 19-20). Use the token for any new marker.
 
 - **Flat app icons, no card (2026-10-30).** Owner: clean, elegant, standard. All PNG icons (apple-touch, icon-192*, icon-512*) are the `flower-glyph.svg` glyph flat on white (#121212 for the -dark ones), no baked-in card or shadow; OSes draw their own tile. `icon-512-maskable` keeps the glyph in Android's safe zone (66%). Hub sign-in logo uses `flower-glyph.svg` (follows light/dark), card shadow removed from `#auth-logo img`. `sw.js` cache v8.
-
-- **Rail Settings button toggles (2026-10-30).** Owner bug: every rail button toggles its panel except Settings. The document outside-click handler (mouseup) exempted only the hidden `#settings-toggle`, so a second click on `#rail-settings-btn` closed Settings on mouseup and the click reopened it. Now the rail button (and its icon) is exempt too. e2e: calm-layout "the rail Settings button toggles…" (fails without the fix).
 
 ### In progress / not built
 
@@ -191,7 +191,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
   light edit); faster first load by loading draw.io/AI on demand.
 - hub.html's raised surfaces in dark mode (index.html has `--surface-raised`/`--surface-panel`; hub.html does not).
 - Grouping displays (lanes/stages) beyond Lanes by ‹column›: only if needed.
-- API block (owner 2026-10-30, decided): document API calls in specs, not run them. Phase 1: block on a row (method, URL, query, headers, body, example response), Copy as cURL, PDF. Phase 2: Postman v2.1 import/export. Live Send dropped (CORS, secrets).
+- API requests Phase 2 (owner 2026-10-30, decided): Postman v2.1 collection import/export onto API request tables. Live Send dropped (CORS, secrets).
 - Suggested, not chosen: a "down is good" option so a falling change shows green.
 
 ### Parked / open questions for the owner

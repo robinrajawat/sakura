@@ -36,7 +36,7 @@ test('Add table opens Table ›: Blank table… then starters with their columns
   expect(rows).toEqual([
     'Blank table… | Pick a size', '# Start from',
     'Status board | Item · Status · Owner · Due', 'Timeline | Date · Milestone · Note', 'Cards | Metric · Value · Change',
-    'Progress bars | Workstream · Done %', 'Pros & cons | Pros · Cons', 'Codes (chips) | Code · Meaning', 'Bar chart | Label · Value'
+    'Progress bars | Workstream · Done %', 'Pros & cons | Pros · Cons', 'API request | Method · URL · Headers · Body · Response', 'Codes (chips) | Code · Meaning', 'Bar chart | Label · Value'
   ]);
   // Blank table… is the size grid, as before; the new table opens into editing.
   await page.locator('.sb-context-menu').getByText('Blank table…').click();
@@ -55,6 +55,7 @@ test('every starter shows as its display right away, and Undo removes it', async
     'Cards': '.pv-table-cards-grid',
     'Progress bars': '.pv-table-progress',
     'Pros & cons': '.pv-proscons',
+    'API request': '.pv-api',
     'Codes (chips)': '.pv-table-chips',
     'Bar chart': 'svg.pv-table-chart-svg'
   };
@@ -63,10 +64,10 @@ test('every starter shows as its display right away, and Undo removes it', async
     await page.locator('.sb-context-menu .sb-context-item').filter({ hasText: label }).first().click();
     await expect(page.locator('.node-table-line').last().locator(sel).first(), label).toBeVisible();
   }
-  expect(await page.evaluate('nodes[0].tables.length')).toBe(7);
+  expect(await page.evaluate('nodes[0].tables.length')).toBe(8);
   // Not opened for editing: the starter shows as its display.
   expect(await page.evaluate('!!document.querySelector(".node-table-line [contenteditable=true]")')).toBe(false);
   await page.keyboard.press('ControlOrMeta+Z');
-  expect(await page.evaluate('nodes[0].tables.length')).toBe(6);
+  expect(await page.evaluate('nodes[0].tables.length')).toBe(7);
   expect(errors).toEqual([]);
 });
