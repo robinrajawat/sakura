@@ -1,5 +1,5 @@
 /**
- * Notifications inbox state (Firestore-backed share/collab notifications, plus a separate
+ * Notifications inbox state (Firestore-backed notifications such as sent copies, plus a separate
  * local/device-only channel for backup and sync events — see the header comment this file's
  * generated output replaces in index.html for why those two channels exist and are merged
  * for display via `combinedNotifItems()`).
@@ -111,19 +111,9 @@ export function isNotifMenuOpen(): boolean {
  * Extracted unchanged from the original `notifText()`.
  */
 export function notifText(n: NotifItem): string {
-  if (n.type === 'share_invite') {
+  if (n.type === 'doc_copy') {
     const from = n.fromDisplayName || n.fromEmail || 'Someone';
-    const role = n.role === 'editor' ? 'edit' : 'view';
-    return `${from} shared "${n.docTitle || 'a document'}" with you (${role} access)`;
-  }
-  if (n.type === 'access_revoked') {
-    const from = n.fromDisplayName || n.fromEmail || 'The owner';
-    return `${from} removed your access to "${n.docTitle || 'a document'}"`;
-  }
-  if (n.type === 'access_role_changed') {
-    const from = n.fromDisplayName || n.fromEmail || 'The owner';
-    const role = n.role === 'editor' ? 'edit access' : 'view-only access';
-    return `${from} gave you ${role} to "${n.docTitle || 'a document'}"`;
+    return `${from} sent you a copy of "${n.docTitle || 'a document'}". Click to add it to your documents.`;
   }
   return n.message || 'New notification';
 }
@@ -235,6 +225,15 @@ export async function markNotificationRead(id: string): Promise<void> {
   }
 }
 
+/** Best-effort removal of a sent copy (copies/{uid}/items/{copyId}) whose notification is gone. */
+async function deleteSentCopy(mod: NotifFirestoreModLike, db: unknown, uid: string, copyId: string): Promise<void> {
+  try {
+    await mod.deleteDoc(mod.doc(db, 'copies', uid, 'items', copyId));
+  } catch (e) {
+    console.warn('[sakura] could not remove a sent copy:', e);
+  }
+}
+
 export async function deleteNotification(id: string): Promise<void> {
   const d = requireNotifDeps();
   if (!id) return;
@@ -249,7 +248,10 @@ export async function deleteNotification(id: string): Promise<void> {
   if (!user) return;
   try {
     const { mod, db } = await d.loadFirestoreMods();
+    const item = notifItems.find((x) => x.id === id);
     await mod.deleteDoc(mod.doc(db, 'notifications', user.uid, 'items', id));
+    // A dismissed sent copy goes too, so it doesn't linger unseen in the recipient's inbox.
+    if (item && item.type === 'doc_copy' && item.docId) await deleteSentCopy(mod, db, user.uid, item.docId);
     // No local-array splice needed for this branch — the Firestore onSnapshot listener already
     // updates notifItems and re-renders on its own once the delete round-trips back.
   } catch (e) {
@@ -267,6 +269,7 @@ export async function clearAllNotifications(): Promise<void> {
   saveLocalNotifItems();
   // Cloud items: best-effort parallel delete. A failure on one doesn't block the rest.
   const cloudIds = notifItems.map((n) => n.id);
+  const copyIds = notifItems.filter((n) => n.type === 'doc_copy' && n.docId).map((n) => n.docId as string);
   const user = d.getCurrentUser();
   if (cloudIds.length && user) {
     try {
@@ -278,6 +281,7 @@ export async function clearAllNotifications(): Promise<void> {
           )
         )
       );
+      await Promise.all(copyIds.map((copyId) => deleteSentCopy(mod, db, user.uid, copyId)));
     } catch (e) {
       console.warn('[sakura] clearAllNotifications failed:', e);
     }

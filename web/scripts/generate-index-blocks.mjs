@@ -51,27 +51,6 @@ const TARGET_FILE_PATHS = { 'index.html': indexPath, 'hub.html': hubPath };
  */
 const BLOCKS = [
   {
-    name: 'presence',
-    sourceFile: 'src/state/presence.ts',
-    testFile: 'tests/unit/presenceState.test.ts',
-    footer: `
-// --- production wiring (also generated, not hand-written — see the header above) ---
-// Real ambient globals, referenced directly since this code shares the classic script's own
-// scope at runtime: currentUser, sharedDocMeta, docShareStatusCache, loadFirestoreMods, el.
-initPresenceState({
-  getCurrentUser:()=>currentUser,
-  getSharedDocMeta:(docId)=>sharedDocMeta[docId],
-  getDocShareStatusCache:(docId)=>docShareStatusCache[docId],
-  loadFirestoreMods:()=>loadFirestoreMods(),
-  getChipElement:()=>el('doc-presence-chip'),
-  setInterval:(fn,ms)=>setInterval(fn,ms),
-  clearInterval:(id)=>clearInterval(id),
-  now:()=>Date.now()
-});
-window.addEventListener('beforeunload',handlePresenceBeforeUnload);
-`.trim()
-  },
-  {
     name: 'notifications',
     sourceFile: 'src/state/notifications.ts',
     testFile: 'tests/unit/notificationsState.test.ts',
@@ -445,21 +424,6 @@ initHubTodosState({
     // No production wiring needed — pure function, no DOM/side effects. Both real call sites
     // (the docs loop and the templates loop inside pullAndMergeFromCloud) were updated in the
     // same commit that wired this block in.
-    footer: ''
-  },
-  {
-    // Sync subsystem — Phase 4, third slice. The shared-doc realtime "should this incoming
-    // update actually be applied" decision (first-snapshot/existence/echo/open-tab checks) from
-    // startSharedDocRealtimeSyncIfNeeded's own onSnapshot callback — a distinct, simpler variant
-    // of shouldApplyIncomingSyncCore (no staleness check, since a shared doc has no local index
-    // entry to compare against). Everything else in that callback — localStorage.setItem, the
-    // cross-tab banner — stays hand-written.
-    name: 'sharedDocSync',
-    sourceFile: 'src/state/sharedDocSync.ts',
-    testFile: 'tests/unit/sharedDocSync.test.ts',
-    // No production wiring needed — pure function, no DOM/side effects. The one real call site
-    // (the onSnapshot callback body inside startSharedDocRealtimeSyncIfNeeded) was updated in
-    // the same commit that wired this block in.
     footer: ''
   },
   {

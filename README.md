@@ -14,6 +14,7 @@ Open it at **[www.sakura-notes.com](https://www.sakura-notes.com)**. There's not
 - [A day with Sakura](#a-day-with-sakura)
 - [The outline](#the-outline)
 - [Diagrams, tables and pictures](#diagrams-tables-and-pictures)
+- [One table, many views](#one-table-many-views)
 - [Threads: questions, follow-ups and decisions](#threads-questions-follow-ups-and-decisions)
 - [To-Dos](#to-dos)
 - [PDF](#pdf)
@@ -30,7 +31,7 @@ Most work documents aren't essays. They are a set of points, each with details u
 Sakura keeps all of it on the point it belongs to:
 
 - **The outline** gives the document its shape. Fold away the detail to see the big picture, and drag a point to move everything under it.
-- **Objects on a row** hold the content that isn't text: a draw.io diagram, a table or chart, a marked-up screenshot, or a note.
+- **Objects on a row** hold the content that isn't text: a draw.io diagram, a table shown as a chart, KPI cards, a status board or a timeline, a marked-up screenshot, or a note.
 - **A thread on a row** holds the conversation about that point, with comments, questions and answers, and decisions.
 - **A status on a row** says where the point stands: Follow-up, Agreed or Out of scope.
 - **Open items** collects everything still open in the document into one list you can work through, copy as an agenda or print.
@@ -73,11 +74,29 @@ It works well for:
 Each row can hold several objects, shown directly under it:
 
 - **Diagrams:** a full **draw.io** editor is built in. Add a diagram to a row, or drop a `.drawio`, `.drawio.svg` or `.drawio.png` file onto it. The preview zooms, steps through a row's diagrams, copies the picture, and downloads PNG or SVG (the SVG reopens in draw.io).
-- **Tables:** start blank, paste a range straight from Excel or Google Sheets, or pick a ready-made shape. The same data can **show as** a plain table, chips, cards with change arrows, progress bars, a status board, a vertical or horizontal timeline, pros and cons, or a bar, line, pie or doughnut chart. Columns can be typed as status, date, person or any currency. There are also a heat-map, group rows and a total row that is calculated every time, so it can't go stale.
+- **Tables:** start blank, paste a range straight from Excel or Google Sheets, or pick a ready-made shape. Each table can be shown in many ways; see [One table, many views](#one-table-many-views).
 - **Pictures:** paste a screenshot or drop image files onto a row. Images are compressed automatically and shown as captioned thumbnails. **Mark up** draws rectangles, arrows, highlighter boxes and text labels on top of the picture, while the original stays untouched underneath.
 - **Notes:** a few lines of supporting text under a row (`Shift+Enter`), with links and formatting.
 
 All of it comes along when you copy, duplicate, undo, restore a version, sync or print.
+
+## One table, many views
+
+Type the data once as a plain table, then pick how it **shows** (right-click → Show as). Switching never changes the data, and the PDF prints the same view.
+
+| View | Good for |
+|---|---|
+| **Table** | The data itself, with clean rules, typed columns (status, date, person, any currency), a heat-map, grouped rows and a total row that is always up to date |
+| **Bar, stacked bar, line, pie and doughnut charts** | Comparing numbers and trends |
+| **Cards** | KPIs: a big value per card with a green ▲ or red ▼ change, an icon and an accent colour |
+| **Progress bars** | How far each workstream is, against 100% or its own goal |
+| **Status board** | Open points in lanes (Open, In progress, Blocked, Done) with owners and due dates; late items turn red |
+| **Timeline** | Milestones on a vertical or horizontal line, with the next one highlighted |
+| **Pros and cons** | Two side-by-side cards, ticks and crosses, for a decision |
+| **Chips** and **inline** | Short code lists, such as `ZN · Night distribution` |
+| **Row cards** | Wide tables whose rows read as records |
+
+When a view doesn't fit the data, Show as says why ("A timeline needs a date column") and offers a fix where it can, such as using another column as the date. Ready-made starters (status board, timeline, cards, progress bars, pros and cons, bar chart) open with sample rows to type over.
 
 ## Threads: questions, follow-ups and decisions
 
@@ -131,7 +150,7 @@ Two ways to run it:
 
 - **No account needed.** Everything is stored in your browser and works offline once loaded. Sakura can also be installed as an app from the browser's address bar.
 - **Sign in** (Google or email) to sync documents, folders, To-Dos and settings across your devices.
-- **Share** a document with another Sakura user.
+- **Send a copy** of a document to another Sakura user. It becomes their own document; nothing stays linked.
 - **Backup** saves everything to one file, and **Restore** brings it back (with one-step undo).
 - **Secure storage** locks your AI keys with a passphrase.
 - **No analytics or tracking.** Crash reports are off unless you turn them on, and never include your content.
