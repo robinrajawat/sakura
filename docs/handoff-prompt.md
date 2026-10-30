@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Postman auth + several API cards per row (2026-10-30).** Import maps auth (request's own, else nearest folder's, else collection's; `inherit` = no own) via `postmanAuthRows`: Bearer/Basic → Authorization header, API key → header or query, other kinds → an "Auth" extra; literal secrets become `{{token}}`/`{{password}}`/`{{apiKey}}` (never stored). Export takes every API table on a row (`nodeApiGrids`), numbering extras "Row (2)". Tests: 4 more unit tests, 1 e2e.
+
 - **Tab title back to "Sakura" (2026-10-30).** Owner: keep Sakura. "SAKURA" (#744) read loud, didn't match the in-app wordmark, and made an installed app's title bar show "Sakura - SAKURA" (manifest name - page title). `<title>` and `updateDirtyIndicator()` say "Sakura" again; manifests unchanged. The PDF branding mark's own "SAKURA" default is separate and untouched.
 
 - **Postman collection import/export (2026-10-30).** Phase 2 of the API work. Import › / Export › **Postman collection** (.json), plus File Explorer empty-space › Import Postman collection. Import makes a new document: folders → parent rows, requests → rows with an API request table (`apiGridToTableHtml`, multi-line values as `<br>`). Export walks the scoped rows (no-export rows dropped), turns rows with an API table into requests and their ancestors into folders. Pure conversion in `src/utils/postmanCollection.ts` (block after `apiRequest`, 10 unit tests incl. a round trip); wiring next to `importOpmlText`. e2e `postman-import-export.spec.ts`. The API work is done (live Send deliberately not built).
-
-- **API request display (2026-10-30).** Owner: document API calls in specs (most docs need API details); try them in Postman. Built as a table display, not a new block, so storage/undo/sync/copy/search/PDF come free: a Field | Value table with Method + URL shows as a request card via `data-table-display="api"`. Pure parsing + cURL in `src/utils/apiRequest.ts` (generated block `apiRequest`, unit tests); `renderApiRequestHtml` in index.html; Show as › API request, a Table starter, full width, CSS `.pv-api*` in sidebar.css. **cURL** button copies the command (Postman › Import › Raw text); hidden in print. e2e `table-api.spec.ts`.
 
 ### In progress / not built
 
