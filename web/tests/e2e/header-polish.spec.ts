@@ -70,14 +70,14 @@ test('the byline is Status · author · link; Share closes the top line', async 
     const fold = document.querySelector('#ag-fold .ag-buttons')!;
     return {
       linkSep: dot('doc-link-wrap', '::before'),
-      inByline: ['doc-share-wrap', 'doc-presence-chip'].filter((id) => document.getElementById(id)!.closest('#editor-meta-row')),
+      inByline: ['doc-share-wrap'].filter((id) => document.getElementById(id)!.closest('#editor-meta-row')),
       order: [...fold.children].map((c) => c.id || c.className),
       menuRight: getComputedStyle(document.getElementById('share-dd-menu')!).right
     };
   });
   expect(s.linkSep).toBe('3px 3px 50%');
   expect(s.inByline).toEqual([]);
-  expect(s.order).toEqual(['doc-presence-chip', 'doc-share-wrap']);
+  expect(s.order).toEqual(['doc-share-wrap']);
   // Share sits at the right edge, so its menu opens leftwards from there.
   expect(s.menuRight).toBe('0px');
 });
@@ -101,25 +101,18 @@ test('the editor runs the full width', async ({ page }) => {
   expect(m.pane - m.page).toBeLessThanOrEqual(192);
 });
 
-test('Share is the one labelled button, with no fill; a shared document says Shared · N', async ({ page }) => {
-  const label = page.locator('#doc-share-chip-label');
-  await expect(label).toHaveText('Share');
+test('Share is the one labelled button, with no fill', async ({ page }) => {
+  await expect(page.locator('#doc-share-chip-label')).toHaveText('Share');
   const bg = await page.locator('#doc-share-chip').evaluate((b) => getComputedStyle(b).backgroundColor);
   expect(bg).toBe('rgba(0, 0, 0, 0)');
-  await page.evaluate(() => {
-    // @ts-expect-error -- bare globals from index.html
-    docShareStatusCache[currentDocId] = [{}, {}]; renderDocShareChip(currentDocId);
-  });
-  await expect(label).toHaveText('Shared \u00B7 2');
-  await expect(page.locator('#doc-share-chip')).toHaveAttribute('aria-label', /Shared with 2 people/);
 });
 
-test('signed in on your own document, Share also offers Invite people…', async ({ page }) => {
+test('signed in, Share also offers Send a copy…', async ({ page }) => {
   const labels = await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
-    currentUser = { uid: 'u1' }; currentDocId = currentDocId || 'd1'; sharedDocMeta = {};
+    currentUser = { uid: 'u1' }; currentDocId = currentDocId || 'd1';
     // @ts-expect-error
     return shareMenuItems().map((i: { label: string }) => i.label);
   });
-  expect(labels).toEqual(['Download PDF', 'Export', 'Invite people…']);
+  expect(labels).toEqual(['Download PDF', 'Export', 'Send a copy…']);
 });

@@ -8,201 +8,26 @@ rules_version = '2';
 //
 // Collections:
 //   1. /users/{uid}/...     — cloud sync. Every synced document, template, and settings blob
-//      lives under here. Most of this subtree stays owner-only; /users/{uid}/docs/{docId}
-//      specifically also grants access to anyone listed in that one document's own sharedWith
-//      map, at the role (viewer/editor) recorded there — see that match block below for why
-//      this can't just be "owner or nothing" anymore now that sharing exists.
+//      lives under here, owner-only. Documents are never shared live: sending someone a copy
+//      goes through /copies (below) instead.
 //   2. /profiles/{uid}      — one doc per account, owned and written only by that account.
 //      Always readable by its own owner; readable by anyone else ONLY when visibility=="public"
 //      — a private profile is invisible to every other account, not just "found but unreachable".
-//      This is what lookup-by-email for sharing queries against (see index.html's profile/share
+//      This is what lookup-by-email for Send a copy queries against (see index.html's profile/share
 //      code), rather than a separate always-public email→uid directory, specifically so no one
 //      can probe whether an email has an account at all unless that account opted in.
-//   3. /notifications/{uid}/items/{id} — generic, reusable notification inbox (share invites
+//   3. /notifications/{uid}/items/{id} — generic, reusable notification inbox (sent copies
 //      today, anything else later — see the bell icon in index.html). Owner-only, both ways:
 //      no one can read another account's notifications, and nothing here is created directly
 //      by a client write from a DIFFERENT account — see the comment on that match block for how
-//      a share invite still reaches the right inbox despite that restriction.
+//      a sent-copy notice still reaches the right inbox despite that restriction.
+//   3b. /copies/{uid}/items/{id} — documents other accounts sent this one ("Send a copy"). The
+//      sender creates; only the recipient reads and deletes (after adding it to their documents).
 //   4. /feedback/{id}       — anyone can file one (create-only for non-admins); a small admin
 //      set can read/triage/delete (see submitFeedback/reportErrorAuto in index.html).
 //   5. /admins/{uid}        — existence-only admin registry backing isFeedbackAdminAuth() below.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/docs/{docId} {
-      // Shared-access model: the owner always has full access. Anyone else needs their uid
-      // present in this specific document's own sharedWith map, with role=='editor' required
-      // for write access (role=='viewer' or 'editor' both suffice for read). Each sharedWith
-      // entry is an object ({role, email, displayName, sharedAt}), not a bare role string —
-      // so who-has-access can be displayed later even if that person's own profile has since
-      // gone private. sharedWith lives on the document itself (not a separate collection) so a
-      // single read of the doc a person is already fetching also tells them their own access
-      // level — no second round-trip.
-      //
-      // A second field, sharedWithUids, sits alongside sharedWith purely so this document can be
-      // FOUND via a collectionGroup query in the first place (see findDocsSharedWithMe in
-      // index.html) — a plain array of collaborator uids, kept in sync by grantDocumentAccess/
-      // revokeDocumentAccess. sharedWith alone can't be queried this way: a query on
-      // sharedWith.<uid>.role embeds the CALLING user's own uid into the field path itself, and
-      // Firestore indexes a collectionGroup query by its exact literal field path — there's no
-      // way to pre-create an index for a field path that only exists once a specific uid is
-      // plugged in, so every different account's first attempt would hit an un-indexed query
-      // and fail, forever, no matter how many times any ONE of those per-uid indexes gets
-      // created via the Console. sharedWithUids has one static field name, so one
-      // array-contains index (collection-group scope) covers every user permanently. No rules
-      // change was needed for this field itself — the owner's write access below is already
-      // unrestricted by field name.
-      //
-      // request.resource.data is used (not resource.data) for read/write's OWN check where
-      // sharedWith is being evaluated against a write, per Firestore's rule for `create` (no
-      // `resource` exists yet); for existing-document read/update, resource.data is what's
-      // already stored, which is the correct thing to check against for an incoming reader/
-      // editor that isn't touching sharedWith themselves.
-      // 'sharedWith' in resource.data (existence check) rather than resource.data.sharedWith !=
-      // null: a doc that's never been shared has no sharedWith field at all, not a null one, and
-      // directly dereferencing an absent field throws an evaluation error rather than returning
-      // null. For a single get() that just denies that one read, but for the collectionGroup
-      // list query in findDocsSharedWithMe (index.html), an error evaluating the rule against
-      // ANY one candidate document fails the ENTIRE query with "Missing or insufficient
-      // permissions" — not merely excluding that document. Since most docs predate ever being
-      // shared, the old `!= null` form broke every shared-docs query, not just direct reads.
-      //
-      // The sharedWithUids branch below is not redundant with the sharedWith branch — it exists
-      // specifically because "security rules are not filters": for a list/collectionGroup query
-      // (unlike a plain get() by exact document reference), Firestore does not evaluate the rule
-      // against each candidate's actual stored data. It has to PROVE, from the query's own where
-      // clause alone, that every possible match would satisfy the rule — without ever looking at
-      // real field values. findDocsSharedWithMe's query filters on
-      // where('sharedWithUids','array-contains',uid); a rule that only checks a DIFFERENT field
-      // (sharedWith.keys()) can never be proven safe against that specific query, no matter what
-      // the data actually contains, and Firestore rejects the whole query with "Missing or
-      // insufficient permissions" — this is the same error a missing rule produces, but it's a
-      // rule/query field MISMATCH, not an actual missing permission. The fix demonstrated in
-      // Firebase's own docs is to give the rule a branch matching the query's own constraint
-      // field+operator exactly (array-contains here) — this branch is that: it mirrors the query
-      // precisely, so Firestore can verify it directly, while the sharedWith branch remains for
-      // ordinary get()-by-reference reads (openSharedDocument, fetchDocSharedWith), which face no
-      // such restriction since there's no "potential result set" to reason about for one exact,
-      // already-identified document.
-      //
-      // Deliberately NO `'sharedWithUids' in resource.data &&` existence guard on this specific
-      // branch, unlike every other field check in this file — that first attempt still failed
-      // with the same "Missing or insufficient permissions" error. Firestore's query-safety
-      // prover does fairly literal pattern-matching between the query's own where clause and the
-      // rule expression; it recognizes the bare idiomatic form `uid in resource.data.FIELD`
-      // (matching every official array-contains rule example) but apparently doesn't reduce a
-      // compound `('FIELD' in resource.data) && (uid in resource.data.FIELD)` down to the same
-      // provable shape, so it fails safe (rejects) rather than proving it true. Dropping the
-      // guard is safe here specifically because it's provably unreachable-when-absent for THIS
-      // query: array-contains can only ever match a document where the array field exists, so
-      // every candidate this branch would need to evaluate for already has it. A direct get() on
-      // some other, unrelated document that genuinely lacks sharedWithUids would still correctly
-      // deny (via a thrown-and-caught error rather than a clean false) — same outcome, just take
-      // a different path through the expression; the sharedWith branch either short-circuits
-      // first or is independently sufficient for those.
-      allow read: if request.auth != null && (
-        request.auth.uid == userId ||
-        ('sharedWith' in resource.data && request.auth.uid in resource.data.sharedWith.keys()) ||
-        request.auth.uid in resource.data.sharedWithUids
-      );
-      // Only the owner can create a new doc record under their own path — sharing only ever
-      // grants access to a document the owner already created, never lets a collaborator mint
-      // one that appears to live under someone else's account.
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (
-        request.auth.uid == userId ||
-        ('sharedWith' in resource.data && request.auth.uid in resource.data.sharedWith.keys() && resource.data.sharedWith[request.auth.uid].role == 'editor')
-      );
-      // Only the owner can delete — an editor can change content, not make the document
-      // disappear from the owner's account entirely.
-      allow delete: if request.auth != null && request.auth.uid == userId;
-    }
-    // Supplementary grant for the collectionGroup('docs') query in findDocsSharedWithMe
-    // (index.html) — added after the sharedWithUids branch above STILL failed with "Missing or
-    // insufficient permissions" even once it matched the query's field/operator exactly.
-    // Firebase's own "Securely query data" documentation demonstrates authorizing a
-    // collectionGroup query through a SEPARATE match block written with the recursive wildcard
-    // {path=**}, distinct from the fixed-depth block used for direct get()/write access — their
-    // worked example (the forums/posts case) keeps these as two match blocks, not one. Whether a
-    // fixed-depth match is actually insufficient to authorize a collection-group query on its
-    // own, or the real fix was already the field/operator match added above and this block is
-    // now redundant, isn't something this sandbox can verify against a live project — but this
-    // mirrors Firebase's own documented pattern exactly, which the previous attempts didn't.
-    // Multiple matching `match` blocks for the same path are ORed together by Firestore (a read
-    // is allowed if ANY matching block allows it), so this is purely additive: it cannot narrow
-    // what the block above already grants, and write access is untouched, still governed
-    // entirely by the fixed-depth block above.
-    match /{path=**}/docs/{docId} {
-      allow read: if request.auth != null && request.auth.uid in resource.data.sharedWithUids;
-    }
-    // Live "who's here" presence — one doc per active viewer/editor, written by that person
-    // only, under the document they're currently looking at. Lives as a subcollection of the
-    // doc itself (mirroring the sharedWith access model) rather than a separate top-level
-    // collection, so access to presence exactly tracks access to the document: the same get()
-    // check used for the parent doc's own read rule, re-run here via get() since a subcollection
-    // match doesn't inherit the parent's `resource`. Client heartbeats every ~20s and treats
-    // entries older than ~45s as stale (index.html: startPresenceTracking) — there's no TTL
-    // policy configured here, so a crashed tab's last-written doc lingers harmlessly until the
-    // next write overwrites it or the client-side staleness filter hides it; not worth a
-    // Cloud Function just to prune a handful of small documents.
-    match /users/{ownerUid}/docs/{docId}/presence/{uid} {
-      allow read: if request.auth != null && (
-        request.auth.uid == ownerUid ||
-        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
-      );
-      // Each person may only write their OWN presence doc (uid must match their auth uid) — no
-      // one can spoof someone else's presence — and only if they'd actually be allowed to read
-      // the document in the first place (same owner-or-collaborator check as above). Shape is
-      // restricted to exactly the three fields the client writes, so this can't become a way to
-      // stash arbitrary data.
-      allow create, update: if request.auth != null && request.auth.uid == uid && (
-        request.auth.uid == ownerUid ||
-        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
-      ) &&
-      request.resource.data.keys().hasOnly(['displayName','role','lastSeen']) &&
-      request.resource.data.lastSeen is number;
-      // Delete needs no access-to-parent-doc check: leaving your own presence marker (tab
-      // closed, doc switched, signed out) should always succeed even if access was revoked in
-      // the same moment — the only requirement is that it's your own entry.
-      allow delete: if request.auth != null && request.auth.uid == uid;
-    }
-    // Diagram XML and Files-tab attachment data both live in their own subcollection of the
-    // parent doc now (see pushDocToCloud/hydrateCloudDocBlobs in index.html) instead of inline —
-    // kept out of the parent doc specifically so neither one, however large on its own, is
-    // bounded by Firestore's 1MB-per-document cap together with everything else in the document.
-    // Access mirrors the parent doc's own model exactly: owner always; any collaborator
-    // (viewer or editor) can read; only an editor can write. Re-checked here via get() on the
-    // parent, the same reason the presence block above already does — a subcollection match
-    // doesn't inherit the parent's `resource`. The owner's own access to these is already covered
-    // by the generic /users/{userId}/{document=**} rule below, which is broader (it isn't scoped
-    // to just these two subcollections) — these two blocks exist purely to extend that same
-    // access to collaborators, the same way the sharedWith/sharedWithUids blocks on the parent
-    // doc itself do; multiple matching blocks are ORed together, so this is purely additive.
-    match /users/{ownerUid}/docs/{docId}/diagrams/{diagramId} {
-      allow read: if request.auth != null && (
-        request.auth.uid == ownerUid ||
-        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
-      );
-      allow write: if request.auth != null && (
-        request.auth.uid == ownerUid ||
-        (
-          'sharedWith' in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data &&
-          get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWith[request.auth.uid].role == 'editor'
-        )
-      );
-    }
-    match /users/{ownerUid}/docs/{docId}/attachments/{attachmentId} {
-      allow read: if request.auth != null && (
-        request.auth.uid == ownerUid ||
-        request.auth.uid in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWithUids
-      );
-      allow write: if request.auth != null && (
-        request.auth.uid == ownerUid ||
-        (
-          'sharedWith' in get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data &&
-          get(/databases/$(database)/documents/users/$(ownerUid)/docs/$(docId)).data.sharedWith[request.auth.uid].role == 'editor'
-        )
-      );
-    }
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
@@ -222,7 +47,7 @@ service cloud.firestore {
 
     match /notifications/{uid}/items/{itemId} {
       allow read, update, delete: if request.auth != null && request.auth.uid == uid;
-      // A share invite is written by the SENDER into the RECIPIENT's inbox — i.e. request.auth.uid
+      // A sent-copy notice is written by the SENDER into the RECIPIENT's inbox — i.e. request.auth.uid
       // (sender) != uid (recipient) is the normal case here, not an attack. Shape-restricted
       // instead of identity-restricted: any signed-in account can create an item in anyone's
       // inbox, but only with this specific known shape (type/fromUid/fromEmail/docId/createdAt,
@@ -234,6 +59,21 @@ service cloud.firestore {
         request.resource.data.createdAt is number &&
         request.resource.data.read == false &&
         request.resource.data.keys().hasOnly(['type','fromUid','fromEmail','fromDisplayName','docId','docTitle','role','createdAt','read']);
+    }
+
+    // Send a copy: a snapshot of a document, written by the sender into the recipient's inbox
+    // (sender != recipient is the normal case, same as notifications above). Shape-restricted and
+    // stamped with the sender's own uid; the document itself is one JSON string, so it can't grow
+    // past Firestore's 1MB document limit. Only the recipient can read or delete it, and nobody
+    // can change it after it's sent.
+    match /copies/{uid}/items/{itemId} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null &&
+        request.resource.data.fromUid == request.auth.uid &&
+        request.resource.data.doc is string &&
+        request.resource.data.title is string &&
+        request.resource.data.createdAt is number &&
+        request.resource.data.keys().hasOnly(['fromUid','fromEmail','fromDisplayName','title','doc','createdAt']);
     }
 
     // App-wide admin check for /feedback triage. Hardcoded email kept as a bootstrap fallback (so

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const hubPath = path.resolve(__dirname, '../../hub.html');
 
-// See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
+// See tests/e2e/generated-notifications-smoke.spec.ts for why these are expected/benign here.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource|Firebase|firestore/i;
 
 // hub.html's first FEATURE-DOMAIN slice (hubGenerateId was just an infrastructure pilot).

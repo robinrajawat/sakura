@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
+// See tests/e2e/generated-notifications-smoke.spec.ts for why these are expected/benign here.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
 // A fourth `core/` slice alongside nodeQueries.ts, nodeMutations.ts, and nodeSelection.ts.

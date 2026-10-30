@@ -463,39 +463,6 @@ test.describe('Image markup', () => {
     expect(errors).toEqual([]);
   });
 
-  test('a view-only shared document shows marks but cannot edit them', async ({ page }) => {
-    const errors = trackErrors(page);
-    await page.goto('file://' + indexPath);
-    await dismissOverlays(page);
-    await seedDoc(page, [{ id: 'i1', src: SHOT, caption: 'Shot', annotations: [
-      { id: 'r1', type: 'rect', x: 0.2, y: 0.2, w: 0.3, h: 0.3, color: '#e8384f' }
-    ] }]);
-    await page.evaluate(() => {
-      // @ts-expect-error
-      sharedDocMeta[currentDocId] = { ownerUid: 'someone', role: 'viewer' };
-      // @ts-expect-error
-      render();
-    });
-    const viewer = await openViewer(page);
-    await expect(viewer.locator('.niv-annot-layer [data-annot-id]')).toHaveCount(1);
-    await expect(viewer.locator('.niv-markup-toggle')).toBeHidden();
-    await page.keyboard.press('m');
-    await expect(viewer).not.toHaveClass(/niv-marking/);
-    await page.evaluate(() => {
-      // @ts-expect-error
-      setNodeImageMarkupMode(true);
-    });
-    await expect(viewer).not.toHaveClass(/niv-marking/);
-    await drag(page, viewer.locator('.niv-annot-layer'), [0.6, 0.6], [0.9, 0.9]);
-    expect((await annotations(page)).length).toBe(1);
-    await page.keyboard.press('Escape');
-    await page.evaluate(() => {
-      // @ts-expect-error
-      delete sharedDocMeta[currentDocId];
-    });
-    expect(errors).toEqual([]);
-  });
-
   test('malformed annotations in a stored document load without errors; duplicate and copy carry marks', async ({ page }) => {
     const errors = trackErrors(page);
     await page.addInitScript((src) => {
