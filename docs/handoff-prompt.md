@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none beyond this PR. Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none beyond this PR. Queued from the owner (2026-10-30): slider thumb in accent, logo colour (teal or black?), "Unfiled" shown for filed documents, "SAKURA" wordmark. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **Scroll past end (2026-10-30).** Owner: the editor stopped at the last row; it should scroll like Dynalist/VS Code "scroll past end". `#editor-pane-inner` gets `padding-bottom:max(18px,calc(50vh - 60px))` (0 in print), so the last row can scroll up to about the middle of the editor. It sits inside the `min-height:100%` box, so short documents still get no scrollbar.
 
 - **Undo instead of "Are you sure?" where it can be undone (2026-10-30).** Owner: cut popups, do what is best. Remove AI provider (Admin) and Delete feedback report now act at once with an Undo toast; the server delete runs only after the toast (~5s). Kept as dialogs on purpose: Clear all rows (asks only when linked objects would be lost for good, otherwise Undo), Close diagram editor (draw.io unsaved changes cannot be saved from the host), and the irreversible ones (Delete forever, Empty Trash, Delete account, Turn off encryption, Import/Restore, Reset AI). No text-entry popups remain except the Secure storage passphrase (standard).
 
 - **One teal accent; five hidden settings removed (2026-10-30).** Owner: lock the accent setting to teal; remove settings that only lived in Quick Assist. The accent is `--accent` teal in the theme tokens (#2e8479 light / #3caa9b dark, index + hub); Settings → General Accent swatches, `ACCENT_PRESETS`, `setAccentPreset`, the presetup accent script and the `accentPreset` pref are gone (`applyAccentColor` now only drops an inline print override). Removed Quick Assist-only switches: Quick Assist icon only, Icon-only Import/Export (app bar keeps the icon-only look), PDF contents include sections (always on), Treat top-level rows as sections (fixed on, `const sectionMarkersDepthZero=true`), Accent color on branches, Reopen last document / Start each session blank (always reopens). Kept on purpose (owner): the per-card colour picker on Cards (groups like EWM/ERP/CXP by colour), Outline numbering, Spellcheck, Zen.
-
-- **Fields, corners and shadows match the buttons (2026-10-30).** Owner: "go ahead" on the polish sweep after #737. Text fields and dropdowns (`.select`, `.meta-input`, settings selects, To-Dos search, tag field) are 32px with 8px corners and normal text, like buttons. Corner scale is now four sizes: 4px or less for marks inside text (checks, highlights, dots), 6px small items, 8px controls and cards, 12px surfaces (menus, dialogs, panels; `--radius-menu`/`--radius-dialog` now 12px). Was 11 sizes. Hub keeps its 12px+ phone sheets. `#at-suggest`, `#diagram-anchor-suggest` and `.hl-palette` are proper menu-tier surfaces (shadow, corners, padding, raised colour tokens). Focus halos on the folder-name and inline-edit fields removed (accent border only). Last orange fills went neutral (`--btn-primary-*`): date picker selected day, To-Dos select checkbox, image markup Done.
 
 ### In progress / not built
 
