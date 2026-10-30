@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Tab title back to "Sakura" (2026-10-30).** Owner: keep Sakura. "SAKURA" (#744) read loud, didn't match the in-app wordmark, and made an installed app's title bar show "Sakura - SAKURA" (manifest name - page title). `<title>` and `updateDirtyIndicator()` say "Sakura" again; manifests unchanged. The PDF branding mark's own "SAKURA" default is separate and untouched.
+
 - **Postman collection import/export (2026-10-30).** Phase 2 of the API work. Import › / Export › **Postman collection** (.json), plus File Explorer empty-space › Import Postman collection. Import makes a new document: folders → parent rows, requests → rows with an API request table (`apiGridToTableHtml`, multi-line values as `<br>`). Export walks the scoped rows (no-export rows dropped), turns rows with an API table into requests and their ancestors into folders. Pure conversion in `src/utils/postmanCollection.ts` (block after `apiRequest`, 10 unit tests incl. a round trip); wiring next to `importOpmlText`. e2e `postman-import-export.spec.ts`. The API work is done (live Send deliberately not built).
 
 - **API request display (2026-10-30).** Owner: document API calls in specs (most docs need API details); try them in Postman. Built as a table display, not a new block, so storage/undo/sync/copy/search/PDF come free: a Field | Value table with Method + URL shows as a request card via `data-table-display="api"`. Pure parsing + cURL in `src/utils/apiRequest.ts` (generated block `apiRequest`, unit tests); `renderApiRequestHtml` in index.html; Show as › API request, a Table starter, full width, CSS `.pv-api*` in sidebar.css. **cURL** button copies the command (Postman › Import › Raw text); hidden in print. e2e `table-api.spec.ts`.
-
-- **One gap for row markers (2026-10-30).** Owner: spacing between the fold count and icons looked uneven; "make it standard, robust". New token `--gap-row-marker:4px` (base.css `:root`) is the left margin of every marker after the row text: `.node-note-dot`, `.node-qa-dot`, `.node-arw-dot`, `.node-marker-badge`, `.node-tag-chip`, `.cb-progress` (was 5px), `.fold-badge` (was 10px). Measured: "+N" now 12px from the text (was 18), 13px from an eye icon (was 19-20). Use the token for any new marker.
 
 ### In progress / not built
 
