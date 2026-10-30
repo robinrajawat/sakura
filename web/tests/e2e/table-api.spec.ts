@@ -207,7 +207,7 @@ test('the card says Copy for Postman, and right-click copies or exports just thi
 
   await card.click({ button: 'right' });
   const download = page.waitForEvent('download');
-  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Export to Postman (.json)' }).click();
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Export this request (.json)' }).click();
   const dl = await download;
   expect(dl.suggestedFilename()).toBe('List open orders.postman_collection.json');
   const out = JSON.parse(readFileSync((await dl.path())!, 'utf8'));
