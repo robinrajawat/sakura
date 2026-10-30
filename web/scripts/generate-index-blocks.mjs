@@ -485,6 +485,14 @@ initHubTodosState({
     footer: ''
   },
   {
+    // Postman collections <-> API request rows: import a v2.0/v2.1 collection as rows with API
+    // request tables (folders as parent rows), export those rows back. Uses apiRequest above.
+    name: 'postmanCollection',
+    sourceFile: 'src/utils/postmanCollection.ts',
+    testFile: 'tests/unit/postmanCollection.test.ts',
+    footer: ''
+  },
+  {
     // Remark and Q&A status (open / resolved / answered / won't answer) -- pure parts only: an
     // item's state, the toolbar's open counts, which nodes a status filter shows, and the PDF's
     // "Open items" grouping. Buttons, pills, the filter and the PDF markup stay hand-written in

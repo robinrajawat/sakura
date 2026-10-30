@@ -76,7 +76,7 @@ test.describe('Export/Import trim (PDF under Share; OPML export and import)', ()
     await expect(page.locator('#appbar-more-toggle')).toHaveCount(0);
     // The Import ▾ button opens the same items.
     await page.evaluate(() => document.getElementById('import-toggle')?.click());
-    await expect(page.locator('#import-menu .sb-context-item')).toHaveText([/OPML/]);
+    await expect(page.locator('#import-menu .sb-context-item')).toHaveText([/OPML/, /Postman/]);
     await page.keyboard.press('Escape');
 
     // Removed surfaces are really gone, not just hidden.
