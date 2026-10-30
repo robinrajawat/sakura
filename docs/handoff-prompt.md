@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Desktop app icon: rounded 3D tile (2026-10-30).** Owner: the installed app icon looked sharp. Desktop Chrome/Windows/macOS show the manifest's "any" icons as drawn (only iOS and Android round), so `icon-192-pwa` / `icon-512-pwa` now carry an Apple-style tile: 84% of the canvas, 22.5% corners, soft shadow, subtle white-to-#ededea shading, glyph at 60% of the tile, transparent outside. apple-touch, icon-192(-dark) and the maskable icon stay flat (the OS rounds them). `sw.js` cache v9. Installed apps pick it up on their own manifest check (or reinstall).
+
 - **Paste from Postman (cURL) in the API form (2026-10-30).** Owner wants one specific request from a Postman collection, and Postman only exports whole collections. `curlToApiRequest` (+ `shellWords`, `maskSecretHeader`) in `src/utils/apiRequest.ts` reads Postman's Code › cURL, browser bash/cmd copies and Sakura's own cURL: method, URL with query split into rows, headers, body/form; auth secrets → `{{token}}` / `{{username}}:{{password}}` / `{{apiKey}}` / `{{cookie}}`. Form: a "Paste from Postman (cURL)…" button (clipboard, else a paste box with a hint) and a cURL pasted into the URL box fills everything; on a new starter (`fresh`) the sample description/response are cleared. 7 unit tests, 1 e2e.
 
 - **API request form editor (2026-10-30).** Owner: "a nicer editor, no shortcuts". `openApiRequestEditor(node,tIdx)` (index.html, after `renderApiRequestHtml`) is an `app-modal-overlay` built once on first use: method select + URL, description, query/header name/value rows (+ Add / ×, header-name datalist), body and example response with Format JSON (`isValidJson`/`prettyJson`), URL required, Esc/Cancel discard, Ctrl/Cmd+Enter or Save writes `apiRequestToGrid(req)` back into the same table (old table attributes kept) as one undo step. Hooked into `enterEdit` (API tables open the form unless `opts.asTable`), right-click (Edit request… / Edit as table) and the API starter (opens the form). CSS `.api-ed*` in sidebar.css. Tests: 3 unit, 2 e2e in `table-api.spec.ts`, starter test closes the form.
-
-- **Postman auth + several API cards per row (2026-10-30).** Import maps auth (request's own, else nearest folder's, else collection's; `inherit` = no own) via `postmanAuthRows`: Bearer/Basic → Authorization header, API key → header or query, other kinds → an "Auth" extra; literal secrets become `{{token}}`/`{{password}}`/`{{apiKey}}` (never stored). Export takes every API table on a row (`nodeApiGrids`), numbering extras "Row (2)". Tests: 4 more unit tests, 1 e2e.
 
 ### In progress / not built
 

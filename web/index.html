@@ -95,10 +95,12 @@ Sakura v1.0.0 — see LICENSE for terms.
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));}</script>
   <!-- Icons (owner 2026-10-30: clean, flat, black). flower-glyph.svg is the tab favicon: the bare
   glyph, ink #222, switching to #ececea on dark tab bars via its own prefers-color-scheme rule; a
-  vector scales to any tab/bookmark size. Every PNG icon (apple-touch, icon-192*, icon-512*) is the
-  same glyph flat on white (#121212 for -dark), no baked-in card or shadow: iOS and Android draw
-  their own rounded tile, so a card inside it reads as a tile within a tile. icon-512-maskable
-  keeps the glyph inside Android's safe zone. -->
+  vector scales to any tab/bookmark size. apple-touch-icon*, icon-192(-dark) and icon-512-maskable
+  are the glyph flat on white (#121212 for -dark): iOS and Android round those themselves, so a
+  baked-in tile would read as a tile within a tile (the maskable one keeps the glyph in Android's
+  safe zone). icon-192-pwa / icon-512-pwa ("any" in the manifests) are what desktop Chrome, Windows
+  and macOS show as-is, so they carry their own Apple-style rounded tile (22.5% corners, soft
+  shadow, subtle top-to-bottom shading, transparent outside). -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
