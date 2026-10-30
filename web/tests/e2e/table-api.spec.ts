@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -188,4 +189,31 @@ test('Paste from Postman (cURL) fills a new API request and drops the sample tex
   const html = await page.evaluate(() => nodes[1].tables[0]);
   expect(html).toContain('<td>DELETE</td>');
   expect(html).not.toContain('real-secret');
+});
+
+test('the card says Copy for Postman, and right-click copies or exports just this request', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = nodes[0].tables[0].replace('<table>', '<table data-table-display="api">').replace('<tr><td>Status</td>', '<tr><td>Description</td><td>Open orders only</td></tr><tr><td>Status</td>'); render();
+  });
+  const card = page.locator('.pv-api');
+  await expect(card.locator('.pv-api-curl')).toHaveText('Copy for Postman');
+
+  await card.click({ button: 'right' });
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Copy for Postman' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("'{{baseUrl}}/orders?status=open'");
+
+  await card.click({ button: 'right' });
+  const download = page.waitForEvent('download');
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Export to Postman (.json)' }).click();
+  const dl = await download;
+  expect(dl.suggestedFilename()).toBe('List open orders.postman_collection.json');
+  const out = JSON.parse(readFileSync((await dl.path())!, 'utf8'));
+  expect(out.info.name).toBe('List open orders');
+  expect(out.item).toHaveLength(1);
+  // Unlike cURL, the file keeps the description and the example response.
+  expect(out.item[0].request.description).toBe('Open orders only');
+  expect(out.item[0].response[0]).toMatchObject({ code: 200, status: 'OK' });
 });
