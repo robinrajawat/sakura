@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none beyond this PR. Queued from the owner (2026-10-30): logo colour (teal or black? social card too?). Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none beyond this PR. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **Logo in black, not terracotta (2026-10-30).** Owner: black, aligned with the rest of the app. `flower-glyph.svg` (tab icon) is #222 ink with an internal `prefers-color-scheme:dark` rule to #ececea, so it shows on dark tab bars. The 8 PNG icons (apple-touch, icon-192*, icon-512*, icon-glyph-192) were recoloured pixel by pixel (terracotta → ink, cards/shadows kept; light ink on the dark apple icon). The 9 in-app flower SVGs use `var(--fg)` instead of `var(--accent)`. `sw.js` cache bumped to v7 so returning visitors get the new icons. `social-card.png` (link preview): logo and the second headline line ("and follow it through.") recoloured to ink; the app screenshot inside it keeps its data colours.
 
 - **Browser tab says SAKURA (2026-10-30).** Owner: tab header from "Sakura" to "SAKURA". `<title>` and `updateDirtyIndicator()` (`• SAKURA` with unsaved changes). Not changed: Hub tab ("Sakura Hub"), the installed-app name in the manifests, export filename fallbacks. e2e: calm-layout "the browser tab says SAKURA".
 
 - **Slider knob in the accent (2026-10-30).** Owner: "accent only in the bar seems odd". The Text size slider (the only `.settings-slider`) had a teal fill with a black knob (`--btn-primary-bg`, from the neutral-buttons sweep); both thumb rules now use `var(--accent)`. Checked light and dark.
-
-- **Folder path no longer says "Unfiled" for a filed document (2026-10-30).** Owner bug report. `renderDocPath()` only ran from `renderTabStrip()`, so moving a document or a cloud sync of folders redrew the sidebar but left the top line stale. `renderSidebar()` now calls `renderDocPath()` too. e2e: calm-layout "the folder path follows the sidebar…" (fails without the fix).
 
 ### In progress / not built
 
