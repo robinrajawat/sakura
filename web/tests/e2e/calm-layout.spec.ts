@@ -111,11 +111,6 @@ test('the top line shows the folders, not the document name; a folder there show
   });
   // In no folder: it says where the explorer lists it (owner 2026-10-29).
   await expect(page.locator('#doc-path-crumbs')).toHaveText('Unfiled');
-  // @ts-expect-error -- bare globals from index.html
-  await page.evaluate(() => { sharedDocMeta[currentDocId] = { ownerUid: 'x' }; renderDocPath(); });
-  await expect(page.locator('#doc-path-crumbs')).toHaveText('Shared');
-  // @ts-expect-error
-  await page.evaluate(() => { delete sharedDocMeta[currentDocId]; renderDocPath(); });
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     const fs = loadFolders(); fs.push({ id: 'f1', name: 'Work', parentId: null }); saveFolders(fs); const m = loadDocFolderMap(); m[currentDocId] = 'f1'; saveDocFolderMap(m); renderDocPath();

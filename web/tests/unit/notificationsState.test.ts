@@ -18,33 +18,15 @@ import {
 } from '../../src/state/notifications';
 
 describe('notifText (pure)', () => {
-  it('formats a share invite with a display name and role', () => {
-    expect(notifText({ id: '1', type: 'share_invite', fromDisplayName: 'Alice', docTitle: 'Roadmap', role: 'editor' })).toBe(
-      'Alice shared "Roadmap" with you (edit access)'
+  it('formats a sent copy, falling back to email, then "Someone"', () => {
+    expect(notifText({ id: '1', type: 'doc_copy', fromDisplayName: 'Alice', docTitle: 'Roadmap' })).toBe(
+      'Alice sent you a copy of "Roadmap". Click to add it to your documents.'
     );
-  });
-
-  it('falls back to email, then "Someone", for a share invite', () => {
-    expect(notifText({ id: '1', type: 'share_invite', fromEmail: 'a@example.com', docTitle: 'Doc', role: 'viewer' })).toBe(
-      'a@example.com shared "Doc" with you (view access)'
+    expect(notifText({ id: '1', type: 'doc_copy', fromEmail: 'a@example.com', docTitle: 'Doc' })).toBe(
+      'a@example.com sent you a copy of "Doc". Click to add it to your documents.'
     );
-    expect(notifText({ id: '1', type: 'share_invite', docTitle: 'Doc', role: 'viewer' })).toBe(
-      'Someone shared "Doc" with you (view access)'
-    );
-  });
-
-  it('formats access_revoked', () => {
-    expect(notifText({ id: '1', type: 'access_revoked', fromDisplayName: 'Bob', docTitle: 'Plan' })).toBe(
-      'Bob removed your access to "Plan"'
-    );
-  });
-
-  it('formats access_role_changed for both roles', () => {
-    expect(notifText({ id: '1', type: 'access_role_changed', fromDisplayName: 'Bob', docTitle: 'Plan', role: 'editor' })).toBe(
-      'Bob gave you edit access to "Plan"'
-    );
-    expect(notifText({ id: '1', type: 'access_role_changed', fromDisplayName: 'Bob', docTitle: 'Plan', role: 'viewer' })).toBe(
-      'Bob gave you view-only access to "Plan"'
+    expect(notifText({ id: '1', type: 'doc_copy' })).toBe(
+      'Someone sent you a copy of "a document". Click to add it to your documents.'
     );
   });
 
@@ -237,7 +219,7 @@ describe('stateful notifications (initNotificationsState + lifecycle)', () => {
     await flushMicrotasks();
     expect(snapshotCallback).not.toBeNull();
     snapshotCallback!({
-      docs: [{ id: 'n1', data: () => ({ type: 'share_invite', createdAt: 10, read: false, docTitle: 'X', role: 'viewer' }) }]
+      docs: [{ id: 'n1', data: () => ({ type: 'doc_copy', createdAt: 10, read: false, docTitle: 'X' }) }]
     });
     const items = combinedNotifItems();
     expect(items).toHaveLength(1);
@@ -299,6 +281,20 @@ describe('stateful notifications (initNotificationsState + lifecycle)', () => {
     expect(combinedNotifItems()).toHaveLength(2);
     await clearAllNotifications();
     expect(deleteDocCalls).toEqual([['notifications', 'me-uid', 'items', 'cloud-1']]);
+  });
+
+  it('dismissing or clearing a sent-copy notification also removes the copy', async () => {
+    startNotificationsListener();
+    await flushMicrotasks();
+    snapshotCallback!({ docs: [
+      { id: 'c1', data: () => ({ type: 'doc_copy', docId: 'copy-1', createdAt: 2, read: false }) },
+      { id: 'c2', data: () => ({ type: 'doc_copy', docId: 'copy-2', createdAt: 1, read: false }) }
+    ] });
+    await deleteNotification('c1');
+    expect(deleteDocCalls).toEqual([['notifications', 'me-uid', 'items', 'c1'], ['copies', 'me-uid', 'items', 'copy-1']]);
+    deleteDocCalls.length = 0;
+    await clearAllNotifications();
+    expect(deleteDocCalls).toContainEqual(['copies', 'me-uid', 'items', 'copy-2']);
   });
 
   it('clearAllNotifications does nothing when there is nothing to clear', async () => {

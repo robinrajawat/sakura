@@ -5,9 +5,10 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign in this
-// file:// test harness (ServiceWorker rejected on the 'null' origin; cdnjs/jsdelivr CORS
-// failures for optional export libraries not used by this test).
+// Known-noise error substrings that are expected artifacts of loading index.html directly via
+// file:// in a headless test harness, not real application bugs: ServiceWorker registration is
+// rejected on the 'null' origin; the cdnjs/jsdelivr patterns are leftovers from CDN-loaded
+// export/import libraries that have since been removed, harmless to keep matching.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|CORS policy|Failed to load resource/i;
 
 test.describe('generated notifications block (src/state/notifications.ts spliced into index.html)', () => {

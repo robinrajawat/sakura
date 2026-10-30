@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => { try { localStorage.setItem('sakura_welcome_seen', '1'); } catch { /* storage unavailable */ } });
 });
 
-// See tests/e2e/generated-presence-smoke.spec.ts for why these are expected/benign here.
+// See tests/e2e/generated-notifications-smoke.spec.ts for why these are expected/benign here.
 const KNOWN_NOISE = /ServiceWorker|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|embed\.diagrams\.net|CORS policy|Failed to load resource|net::ERR/i;
 
 function trackErrors(page: import('@playwright/test').Page) {
