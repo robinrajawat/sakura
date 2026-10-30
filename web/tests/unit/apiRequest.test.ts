@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson
+  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson, shellWords, maskSecretHeader, curlToApiRequest
 } from '../../src/utils/apiRequest';
 
 const sample = [
@@ -113,5 +113,60 @@ describe('isValidJson', () => {
   it('tells JSON from other text', () => {
     expect(isValidJson('{"a":[1,2]}')).toBe(true);
     expect(isValidJson('{a:1}')).toBe(false);
+  });
+});
+
+describe('shellWords', () => {
+  it('handles quotes, escapes and line continuations', () => {
+    expect(shellWords(`curl 'a b' "c \\"d\\"" e\\ f \\\n --x`)).toEqual(['curl', 'a b', 'c "d"', 'e f', '--x']);
+    expect(shellWords('curl ^\n "x"')).toEqual(['curl', 'x']);
+  });
+});
+
+describe('maskSecretHeader', () => {
+  it('replaces literal secrets, keeps variables and ordinary headers', () => {
+    expect(maskSecretHeader('Authorization', 'Bearer eyJ.real')).toBe('Bearer {{token}}');
+    expect(maskSecretHeader('Authorization', 'Basic dXNlcjpwdw==')).toBe('Basic {{username}}:{{password}}');
+    expect(maskSecretHeader('X-API-Key', 'abc123')).toBe('{{apiKey}}');
+    expect(maskSecretHeader('Authorization', 'Bearer {{token}}')).toBe('Bearer {{token}}');
+    expect(maskSecretHeader('Content-Type', 'application/json')).toBe('application/json');
+  });
+});
+
+describe('curlToApiRequest', () => {
+  it("reads Postman's Code › cURL snippet", () => {
+    const r = curlToApiRequest(`curl --location 'https://erp.example.com/sap/opu/odata/ZSD_SHIPPING_SRV/PostalCodes?$format=json&country=DK' \\
+--header 'Content-Type: application/json' \\
+--header 'Authorization: Bearer eyJhbGciOi.secret' \\
+--data '{
+    "PostalCode": "2300"
+}'`)!;
+    expect(r.method).toBe('POST');
+    expect(r.url).toBe('https://erp.example.com/sap/opu/odata/ZSD_SHIPPING_SRV/PostalCodes');
+    expect(r.query).toEqual([['$format', 'json'], ['country', 'DK']]);
+    expect(r.headers).toEqual([['Content-Type', 'application/json'], ['Authorization', 'Bearer {{token}}']]);
+    expect(r.body).toBe('{\n    "PostalCode": "2300"\n}');
+  });
+  it('reads -X, -H, -d short forms, -u and a plain GET', () => {
+    expect(curlToApiRequest("curl -X PATCH https://a/b -H 'Accept: */*' -d x=1")).toMatchObject({ method: 'PATCH', url: 'https://a/b', headers: [['Accept', '*/*']], body: 'x=1' });
+    expect(curlToApiRequest('curl -u robin:hunter2 https://a/b')!.headers).toEqual([['Authorization', 'Basic {{username}}:{{password}}']]);
+    expect(curlToApiRequest('curl https://a/health')).toMatchObject({ method: 'GET', body: '' });
+  });
+  it("reads a browser's Windows cmd copy", () => {
+    const r = curlToApiRequest('curl "https://a/b" ^\n  -H "Accept: application/json" ^\n  --data-raw "{\\"a\\":1}"')!;
+    expect(r).toMatchObject({ method: 'POST', url: 'https://a/b', body: '{"a":1}' });
+  });
+  it("round-trips Sakura's own cURL button", () => {
+    const r = apiRequestFromGrid(sample)!;
+    const back = curlToApiRequest(apiRequestToCurl(r))!;
+    expect(back.method).toBe(r.method);
+    expect(back.url).toBe(r.url);
+    expect(back.query).toEqual(r.query);
+    expect(back.body).toBe(r.body);
+    expect(back.headers[0]).toEqual(['Content-Type', 'application/json']);
+  });
+  it('is null for text that is not a cURL command', () => {
+    expect(curlToApiRequest('GET https://a/b')).toBeNull();
+    expect(curlToApiRequest('curl --silent')).toBeNull();
   });
 });
