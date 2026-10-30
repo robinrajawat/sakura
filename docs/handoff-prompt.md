@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none beyond this PR. Queued from the owner (2026-10-30): logo colour (teal or black? social card too?), "SAKURA" in the browser tab title. Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none beyond this PR. Queued from the owner (2026-10-30): logo colour (teal or black? social card too?). Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **Browser tab says SAKURA (2026-10-30).** Owner: tab header from "Sakura" to "SAKURA". `<title>` and `updateDirtyIndicator()` (`• SAKURA` with unsaved changes). Not changed: Hub tab ("Sakura Hub"), the installed-app name in the manifests, export filename fallbacks. e2e: calm-layout "the browser tab says SAKURA".
 
 - **Slider knob in the accent (2026-10-30).** Owner: "accent only in the bar seems odd". The Text size slider (the only `.settings-slider`) had a teal fill with a black knob (`--btn-primary-bg`, from the neutral-buttons sweep); both thumb rules now use `var(--accent)`. Checked light and dark.
 
 - **Folder path no longer says "Unfiled" for a filed document (2026-10-30).** Owner bug report. `renderDocPath()` only ran from `renderTabStrip()`, so moving a document or a cloud sync of folders redrew the sidebar but left the top line stale. `renderSidebar()` now calls `renderDocPath()` too. e2e: calm-layout "the folder path follows the sidebar…" (fails without the fix).
-
-- **Scroll past end (2026-10-30).** Owner: the editor stopped at the last row; it should scroll like Dynalist/VS Code "scroll past end". `#editor-pane-inner` gets `padding-bottom:max(18px,calc(50vh - 60px))` (0 in print), so the last row can scroll up to about the middle of the editor. It sits inside the `min-height:100%` box, so short documents still get no scrollbar.
 
 ### In progress / not built
 
