@@ -772,7 +772,7 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-qa-answer:hover,.node-qa-question:hover{opacity:1}
 .node-qa-answer:focus{opacity:1;color:var(--fg)}
 .node-qa-answer:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
-.node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:4px;color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px;align-self:flex-start;margin-top:calc((var(--row-line-base) - 16px) / 2)}
+.node-arw-dot{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 auto;margin-left:var(--gap-row-marker);color:var(--accent);opacity:.7;cursor:pointer;border-radius:4px;align-self:flex-start;margin-top:calc((var(--row-line-base) - 16px) / 2)}
 .node-arw-dot:hover{opacity:1}
 .node-row.selected .node-arw-dot,.node-row.primary-selection .node-arw-dot{opacity:.85}
 
@@ -781,13 +781,13 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
    which is why their offsets use --row-line-base. */
 .node-row :is(.node-note-dot,.node-qa-dot,.node-arw-dot,.node-marker-badge,.node-tag-chip,.cb-progress){zoom:var(--editor-scale)}
 /* Note indicator dot on node rows */
-.node-note-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;opacity:.55;font-size:10px;cursor:pointer;border-radius:4px}
+.node-note-dot{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:var(--gap-row-marker);opacity:.55;font-size:10px;cursor:pointer;border-radius:4px}
 .node-note-dot:hover{opacity:1}
 /* Scoped to .node-row (not the bare class) -- this same class is reused inside Preview mode's
    inline text flow (contentEl.appendChild), where it's not a flex sibling of a wrapping label
    and this offset would just misalign it against the surrounding text baseline instead. */
 .node-row .node-note-dot{align-self:flex-start;margin-top:calc((var(--row-line-base) - 18px) / 2)}
-.node-marker-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:4px;font-size:10px;cursor:pointer;border-radius:4px;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);align-self:flex-start;margin-top:calc((var(--row-line-base) - 18px) / 2)}
+.node-marker-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:0 0 auto;margin-left:var(--gap-row-marker);font-size:10px;cursor:pointer;border-radius:4px;background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);align-self:flex-start;margin-top:calc((var(--row-line-base) - 18px) / 2)}
 .node-marker-badge:hover{background:color-mix(in srgb,var(--fc-gray) 26%,transparent)}
 /* Row icons are grey; colour is kept for what is still open (a Follow-up, open questions) so it stands out (owner, 2026-10-22). */
 .node-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--muted)}
