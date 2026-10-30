@@ -167,7 +167,7 @@ test('Settings: sentence-case headings, one card per group, real buttons', async
   });
   expect(s.transform).toBe('none');
   expect(s.rule).toBe('none');
-  expect(s.radius).toBe('10px');
+  expect(s.radius).toBe('12px'); // cards take the large corner (12px) since the 2026-10-30 corner scale;
   expect(s.btnBorder).not.toBe('rgba(0, 0, 0, 0)');
   expect(s.width).toBeGreaterThan(700);
 });
