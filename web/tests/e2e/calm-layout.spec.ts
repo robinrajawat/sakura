@@ -187,12 +187,13 @@ test('the folder path follows the sidebar when a document is filed after it open
   await expect(page.locator('#doc-path-crumbs')).toHaveText('Projects');
 });
 
-// Owner 2026-10-30: the browser tab names the app in capitals, with a dot while there are unsaved changes.
-test('the browser tab says SAKURA', async ({ page }) => {
-  await expect(page).toHaveTitle('SAKURA');
+// Owner 2026-10-30: the browser tab says Sakura (tried SAKURA; reverted -- it read loud and made an
+// installed app's title bar show "Sakura - SAKURA"), with a dot while there are unsaved changes.
+test('the browser tab says Sakura', async ({ page }) => {
+  await expect(page).toHaveTitle('Sakura');
   // @ts-expect-error -- bare globals from index.html
   await page.evaluate(() => { dirty = true; updateDirtyIndicator(); });
-  await expect(page).toHaveTitle('• SAKURA');
+  await expect(page).toHaveTitle('• Sakura');
 });
 
 // Bug (owner 2026-10-30): every rail button toggles its panel except Settings. The outside-click
