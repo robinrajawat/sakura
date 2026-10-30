@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Flat app icons, no card (2026-10-30).** Owner: clean, elegant, standard. All PNG icons (apple-touch, icon-192*, icon-512*) are the `flower-glyph.svg` glyph flat on white (#121212 for the -dark ones), no baked-in card or shadow; OSes draw their own tile. `icon-512-maskable` keeps the glyph in Android's safe zone (66%). Hub sign-in logo uses `flower-glyph.svg` (follows light/dark), card shadow removed from `#auth-logo img`. `sw.js` cache v8. Next queued: one 4px gap token for all row markers (fold badge 10px and cb-progress 5px are the outliers).
+
 - **Rail Settings button toggles (2026-10-30).** Owner bug: every rail button toggles its panel except Settings. The document outside-click handler (mouseup) exempted only the hidden `#settings-toggle`, so a second click on `#rail-settings-btn` closed Settings on mouseup and the click reopened it. Now the rail button (and its icon) is exempt too. e2e: calm-layout "the rail Settings button toggles…" (fails without the fix).
 
 - **Logo in black, not terracotta (2026-10-30).** Owner: black, aligned with the rest of the app. `flower-glyph.svg` (tab icon) is #222 ink with an internal `prefers-color-scheme:dark` rule to #ececea, so it shows on dark tab bars. The 8 PNG icons (apple-touch, icon-192*, icon-512*, icon-glyph-192) were recoloured pixel by pixel (terracotta → ink, cards/shadows kept; light ink on the dark apple icon). The 9 in-app flower SVGs use `var(--fg)` instead of `var(--accent)`. `sw.js` cache bumped to v7 so returning visitors get the new icons. `social-card.png` (link preview): logo and the second headline line ("and follow it through.") recoloured to ink; the app screenshot inside it keeps its data colours.
-
-- **Browser tab says SAKURA (2026-10-30).** Owner: tab header from "Sakura" to "SAKURA". `<title>` and `updateDirtyIndicator()` (`• SAKURA` with unsaved changes). Not changed: Hub tab ("Sakura Hub"), the installed-app name in the manifests, export filename fallbacks. e2e: calm-layout "the browser tab says SAKURA".
 
 ### In progress / not built
 

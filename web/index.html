@@ -93,24 +93,12 @@ Sakura v1.0.0 — see LICENSE for terms.
 <link rel="apple-touch-icon" href="apple-touch-icon.png" media="(prefers-color-scheme: light)">
 <link rel="apple-touch-icon" href="apple-touch-icon-dark.png" media="(prefers-color-scheme: dark)">
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));}</script>
-  <!-- Favicon: the card background + shadow (icon-192.png, used for the in-app auth-screen logo
-  and the PWA manifest icons) exists so the icon holds up as an app tile sitting on an arbitrary OS
-  background. A plain browser-tab favicon never needs that — it's always composited against the
-  browser's own chrome, rendered at ~16-32px, and that card's padding just makes the actual
-  flower glyph smaller and less legible at that size for no benefit. flower-glyph.svg is the
-  bare glyph on its own (same circle geometry/colors as the PWA icon, no card, no shadow) — a
-  vector favicon also scales perfectly at any size Chrome/tab-strip/bookmark-bar needs, unlike a
-  fixed-resolution PNG. Previously this same idea (a plain flower glyph as favicon) existed as a
-  second, competing rel="icon" and got removed because IT was low-fidelity (see old history) and
-  duplicated rather than replaced icon-192.png; this is the fix done properly, one favicon
-  declaration, correct asset for what a favicon actually needs.
-
-  apple-touch-icon.png/-dark.png (not icon-192.png) back the apple-touch-icon links above for the
-  same reason: iOS Safari's "Suggestions"/frequently-visited tile already clips the icon into its
-  own rounded square and adds its own shadow, so an icon.png with its own baked-in white card +
-  shadow reads as a small card floating inside a second, larger card. apple-touch-icon.png is the
-  bare flower glyph full-bleed on a flat background (#f8f8f6 / #121212), so iOS's own rounding is
-  the only rounding applied — same treatment other apps' tiles (e.g. Claude, Club Scorer) use. -->
+  <!-- Icons (owner 2026-10-30: clean, flat, black). flower-glyph.svg is the tab favicon: the bare
+  glyph, ink #222, switching to #ececea on dark tab bars via its own prefers-color-scheme rule; a
+  vector scales to any tab/bookmark size. Every PNG icon (apple-touch, icon-192*, icon-512*) is the
+  same glyph flat on white (#121212 for -dark), no baked-in card or shadow: iOS and Android draw
+  their own rounded tile, so a card inside it reads as a tile within a tile. icon-512-maskable
+  keeps the glyph inside Android's safe zone. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">

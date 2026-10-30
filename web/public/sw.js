@@ -21,7 +21,7 @@
 // origin's Cache Storage, only the OS-level shortcut, so the newly-redesigned icon on the
 // server was never actually seen. Bump the version suffix whenever an asset in
 // PRECACHE_URLS (or anything else served under a STATIC_DESTINATIONS type) changes.
-const CACHE_NAME = 'sakura-shell-v7';
+const CACHE_NAME = 'sakura-shell-v8';
 
 // Assets whose content is effectively immutable for a given URL -- Google Fonts'
 // own CSS is stable enough in practice that unconditional long-term caching is the right
