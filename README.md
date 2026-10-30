@@ -157,6 +157,16 @@ Two ways to run it:
 
 Settings → About → Privacy & data in the app explains exactly what goes where.
 
+## Security
+
+What Sakura protects, and where the limits are:
+
+- **Your documents are yours.** The database rules let only your own account read or write your documents, folders, To-Dos and settings. A copy you send can be read only by the person you sent it to, and nobody can change it after it is sent.
+- **Your AI keys can be locked.** Secure storage encrypts them in your browser with a passphrase only you know (AES-256, key derived with PBKDF2). Without the passphrase they cannot be read.
+- **The page talks only to known hosts.** A Content-Security-Policy allowlist limits where the app can send requests, and there are no analytics or trackers.
+- **Hosted AI keys never reach the browser.** They live in the server that forwards your request, and each account has a daily quota.
+- **Not end-to-end encrypted.** Synced documents are encrypted at rest by Google Cloud, but the service can technically read them. Text you send to AI goes to the AI provider you chose (and through Sakura's server for Hosted AI). For anything that must stay strictly private, stay signed out and leave AI off: then your documents never leave your browser.
+
 ## Keyboard
 
 | Action | Keys |
