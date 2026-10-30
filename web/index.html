@@ -3753,7 +3753,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             </div>
           </div>
           <input id="sakura-import-file-input" type="file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
-          <input id="sakura-postman-file-input" type="file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
           <input id="sakura-opml-file-input" type="file" accept=".opml,.xml,text/x-opml,text/xml,application/xml" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
           <input id="doc-author" type="text" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
           <div class="settings-section" data-cat="ai" id="settings-section-ai-rewrite">
@@ -5775,10 +5774,10 @@ async function copyApiRequestCurl(table){
   catch(err){ showToast('Couldn\u2019t copy \u2014 the browser blocked the clipboard'); }
 }
 function exportApiRequestToPostman(node,table){
-  const grid=Array.from(table.rows).map(r=>Array.from(r.cells).map(apiCellText));
+  const r=tableApiInfo(table);
+  if(!r){ showToast('This table isn\u2019t a complete API request'); return; }
   const name=(node.text||'').trim()||'API request';
-  const {collection,requestCount}=outlineToPostman(name,[{depth:0,text:name,grid}]);
-  if(!requestCount){ showToast('This table isn\u2019t a complete API request'); return; }
+  const collection=apiRequestToPostmanCollection(name,r);
   downloadBlob(`${name.replace(/[\\/:*?"<>|]+/g,'_')}.postman_collection.json`,'application/json;charset=utf-8',JSON.stringify(collection,null,2));
   showToast('Exported \u2014 in Postman, Import \u203a the file');
 }
@@ -7724,169 +7723,19 @@ function curlToApiRequest(text) {
 /* GENERATED:apiRequest:END */
 /* GENERATED:postmanCollection:START — DO NOT EDIT BY HAND. Source of truth: src/utils/postmanCollection.ts (tests: tests/unit/postmanCollection.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
- * Postman collections <-> API request rows (owner, 2026-10-30: Phase 2 of documenting APIs).
+ * One API request as a Postman collection file (owner, 2026-10-30: API requests move one at a
+ * time -- in by pasting a cURL command, out from the card).
  *
- * Import reads a Postman Collection v2.0/v2.1 file into outline rows: a folder becomes a row
- * with its requests (and sub-folders) under it, and each request becomes a row named like the
- * request with an API request table (see apiRequest.ts) holding its method, URL, query, headers,
- * body, description and the first saved example response. Disabled query rows and headers are
- * left out. Collection variables ({{baseUrl}}) stay as typed in the URL. Auth (the request's,
- * else the nearest folder's or the collection's) becomes an Authorization header or API key row,
- * with any literal secret replaced by a {{variable}} so a spec never carries a real token.
+ * Right-click an API card › Export this request (.json) saves the request as a Postman v2.1
+ * collection holding just that request, named after its row. Unlike Copy for Postman (cURL) it
+ * keeps the description and the example response (status and body) as a saved example.
+ * There is deliberately no collection import and no document-wide export (owner decisions).
  *
- * Export is the reverse: rows holding an API request table become requests, and their ancestor
- * rows become folders, so a spec's outline round-trips into Postman.
- *
- * Pure data in and out; index.html does the file picking, row creation and download.
+ * Pure data in and out; index.html does the download.
  * Wired into index.html via scripts/generate-index-blocks.mjs's `postmanCollection` block.
  */
-const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
-const str = (v) => (typeof v === 'string' ? v : v == null ? '' : String(v));
-/** Postman descriptions may be a string or {content}. */
-function descriptionText(d) {
-    if (isObj(d))
-        return str(d.content).trim();
-    return str(d).trim();
-}
-/** A Postman url (string or object) as the address without its query, plus the enabled query rows. */
-function postmanUrl(url) {
-    if (!isObj(url)) {
-        const raw = str(url);
-        return { url: raw, query: [] };
-    }
-    const raw = str(url.raw);
-    const query = Array.isArray(url.query)
-        ? url.query.filter(q => isObj(q) && !q.disabled && str(q.key)).map(q => [str(q.key), str(q.value)])
-        : [];
-    let base = raw;
-    if (!base) {
-        const host = Array.isArray(url.host) ? url.host.map(str).join('.') : str(url.host);
-        const path = Array.isArray(url.path) ? url.path.map(str).join('/') : str(url.path);
-        const proto = str(url.protocol);
-        base = (proto ? proto + '://' : '') + host + (path ? '/' + path : '');
-    }
-    // The structured query wins over the raw string's, so drop the raw query when there is one.
-    if (query.length || (Array.isArray(url.query) && url.query.length))
-        base = base.split('?')[0];
-    return { url: base, query };
-}
-/** A Postman request body as text: raw as is, form fields one per line. */
-function bodyText(body) {
-    if (!isObj(body))
-        return '';
-    const mode = str(body.mode);
-    if (mode === 'raw')
-        return str(body.raw);
-    if (mode === 'urlencoded' || mode === 'formdata') {
-        const list = Array.isArray(body[mode]) ? body[mode] : [];
-        return list.filter(f => isObj(f) && !f.disabled && str(f.key))
-            .map(f => str(f.key) + '=' + (str(f.type) === 'file' ? '<file>' : str(f.value)))
-            .join(mode === 'urlencoded' ? '&' : '\n');
-    }
-    if (mode === 'graphql' && isObj(body.graphql))
-        return str(body.graphql.query);
-    return '';
-}
-/** A Postman auth list ([{key, value}]) as a lookup. */
-function authValues(list) {
-    const out = {};
-    (Array.isArray(list) ? list : []).forEach(e => { if (isObj(e))
-        out[str(e.key)] = str(e.value); });
-    return out;
-}
-/**
- * A literal secret is never written into a spec: anything that isn't already a {{variable}}
- * becomes one named after its field ({{token}}, {{password}}), so the card shows where it goes.
- */
-function asVariable(value, name) {
-    return /\{\{[^}]+\}\}/.test(value) ? value : '{{' + name + '}}';
-}
-/**
- * The rows a Postman auth block adds: Bearer and Basic as an Authorization header, an API key
- * as a header or query row (with its name kept, its value a variable), and any other kind
- * (OAuth 2.0, Digest...) as an "Auth" extra naming it. "noauth" adds nothing.
- */
-function postmanAuthRows(auth) {
-    if (!isObj(auth))
-        return [];
-    const type = str(auth.type);
-    const v = authValues(auth[type]);
-    if (!type || type === 'noauth')
-        return [];
-    if (type === 'bearer')
-        return [['Header', 'Authorization: Bearer ' + asVariable(v.token || '', 'token')]];
-    if (type === 'basic')
-        return [['Header', 'Authorization: Basic ' + asVariable(v.username || '', 'username') + ':' + asVariable(v.password || '', 'password')]];
-    if (type === 'apikey') {
-        const name = v.key || 'X-API-Key';
-        const value = asVariable(v.value || '', 'apiKey');
-        return v.in === 'query' ? [['Query', name + '=' + value]] : [['Header', name + ': ' + value]];
-    }
-    return [['Auth', type]];
-}
-/** The Field | Value grid for one Postman item that has a request; `inheritedAuth` is the nearest folder's or the collection's. */
-function postmanItemToGrid(item, inheritedAuth) {
-    const req = isObj(item.request) ? item.request : { url: str(item.request) };
-    const method = (str(req.method) || 'GET').toUpperCase();
-    const { url, query } = postmanUrl(req.url);
-    const grid = [['Field', 'Value'], ['Method', method], ['URL', url]];
-    query.forEach(([k, v]) => grid.push(['Query', v ? k + '=' + v : k]));
-    (Array.isArray(req.header) ? req.header : [])
-        .filter(h => isObj(h) && !h.disabled && str(h.key))
-        .forEach(h => grid.push(['Header', str(h.key) + ': ' + str(h.value)]));
-    // A request's own auth wins; without one (or "inherit") it takes its folder's or the collection's.
-    const ownAuth = isObj(req.auth) && str(req.auth.type) !== 'inherit' ? req.auth : inheritedAuth;
-    postmanAuthRows(ownAuth).forEach(r => grid.push(r));
-    const body = bodyText(req.body);
-    if (body)
-        grid.push(['Body', body]);
-    const example = Array.isArray(item.response) ? item.response.find(isObj) : null;
-    if (example) {
-        const code = str(example.code);
-        const status = [code, str(example.status)].filter(Boolean).join(' ');
-        if (status)
-            grid.push(['Status', status]);
-        if (str(example.body))
-            grid.push(['Response', str(example.body)]);
-    }
-    const desc = descriptionText(req.description) || descriptionText(item.description);
-    if (desc)
-        grid.push(['Description', desc]);
-    return grid;
-}
-/**
- * Reads a Postman collection (already JSON-parsed) as outline rows starting at depth 0.
- * Throws an Error with a user-facing message when the file isn't a collection.
- */
-function postmanToOutline(json) {
-    if (!isObj(json) || !Array.isArray(json.item))
-        throw new Error('This file isn’t a Postman collection (no requests found).');
-    const info = isObj(json.info) ? json.info : {};
-    const rows = [];
-    let requestCount = 0;
-    const authOf = (o, fallback) => (isObj(o.auth) && str(o.auth.type) !== 'inherit' ? o.auth : fallback);
-    const walk = (items, depth, auth) => {
-        items.forEach(it => {
-            if (!isObj(it))
-                return;
-            const name = str(it.name).trim();
-            if (Array.isArray(it.item)) {
-                rows.push({ depth, text: name || 'Folder', grid: null });
-                walk(it.item, depth + 1, authOf(it, auth));
-            }
-            else if (it.request !== undefined) {
-                requestCount++;
-                rows.push({ depth, text: name || 'Request', grid: postmanItemToGrid(it, auth) });
-            }
-        });
-    };
-    walk(json.item, 0, authOf(json, null));
-    if (!requestCount)
-        throw new Error('This Postman collection has no requests.');
-    return { title: str(info.name).trim() || 'Postman collection', rows, requestCount };
-}
 const POSTMAN_SCHEMA = 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json';
-/** One API request as a Postman v2.1 item. */
+/** One API request as a Postman v2.1 item (request + its example response, if any). */
 function apiRequestToPostmanItem(name, r) {
     const request = {
         method: r.method,
@@ -7912,33 +7761,10 @@ function apiRequestToPostmanItem(name, r) {
     }
     return item;
 }
-/**
- * Outline rows (depth order) as a Postman v2.1 collection: rows with an API request become
- * requests, their ancestor rows become folders; other rows and empty folders are left out.
- */
-function outlineToPostman(title, rows) {
-    const root = { name: title, item: [] };
-    const stack = [];
-    let requestCount = 0;
-    rows.forEach(row => {
-        while (stack.length && stack[stack.length - 1].depth >= row.depth)
-            stack.pop();
-        const parentFolder = stack.length ? stack[stack.length - 1].folder : root;
-        const req = row.grid ? apiRequestFromGrid(row.grid) : null;
-        if (req) {
-            // Attach every not-yet-attached ancestor folder on the way down.
-            stack.forEach((s, i) => {
-                if (!s.used) {
-                    (i ? stack[i - 1].folder : root).item.push(s.folder);
-                    s.used = true;
-                }
-            });
-            parentFolder.item.push(apiRequestToPostmanItem(row.text.trim(), req));
-            requestCount++;
-        }
-        stack.push({ depth: row.depth, folder: { name: row.text.trim() || 'Folder', item: [] }, used: false, parent: parentFolder });
-    });
-    return { collection: { info: { name: title, schema: POSTMAN_SCHEMA }, item: root.item }, requestCount };
+/** A Postman v2.1 collection holding just this request, both named `name`. */
+function apiRequestToPostmanCollection(name, r) {
+    const title = name.trim() || r.method + ' ' + r.url;
+    return { info: { name: title, schema: POSTMAN_SCHEMA }, item: [apiRequestToPostmanItem(title, r)] };
 }
 
 /* GENERATED:postmanCollection:END */
@@ -20104,8 +19930,7 @@ function explorerContextItems(){
   const folders=loadFolders(), items=[
     {label:'New document', onClick: async()=>{ createDoc(); renderSidebar(); }},
     {label:'New folder', onClick: async()=>{ createFolder(); }},
-    {label:'Import (.opml)…', onClick: async()=>{ triggerOpmlImport(); }},
-    {label:'Import Postman collection (.json)…', onClick: async()=>{ triggerPostmanImport(); }}
+    {label:'Import (.opml)…', onClick: async()=>{ triggerOpmlImport(); }}
   ];
   if(folders.length){ const anyOpen=folders.some(f=>f.open!==false); items.push({label:anyOpen?'Collapse all folders':'Expand all folders', onClick: async()=>{ toggleAllFolders(); }}); }
   return items.concat({divider:true}, chromeContextItems().filter(it=>it.label!=='New document'&&!/^(Expand|Collapse) all$/.test(it.label||'')));
@@ -22788,29 +22613,13 @@ function importOpmlText(xmlText){
   return true;
 }
 function triggerOpmlImport(){ el('sakura-opml-file-input')?.click(); }
-// Postman (owner 2026-10-30): import a collection as a new document -- folders as parent rows,
-// each request a row with an API request table. Export is one request at a time, from the card
-// (exportApiRequestToPostman); owner: no document-wide export. See src/utils/postmanCollection.ts.
-function triggerPostmanImport(){ el('sakura-postman-file-input')?.click(); }
+// API request tables built from Field | Value rows (the API form's Save and a pasted cURL). Postman
+// collection import was removed (owner 2026-10-30): requests come in one at a time, by pasting.
 function apiGridToTableHtml(grid){
   const cell=v=>esc(v).replace(/\n/g,'<br>');
   const [head,...rows]=grid;
   return '<table data-table-display="api"><thead><tr>'+head.map(h=>'<th>'+cell(h)+'</th>').join('')+'</tr></thead><tbody>'
     +rows.map(r=>'<tr>'+r.map(c=>'<td>'+cell(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
-}
-function importPostmanText(text){
-  let parsed;
-  try{ parsed=postmanToOutline(JSON.parse(text)); }
-  catch(err){ showToast(err instanceof SyntaxError?'That file isn’t valid JSON':(err?.message||'Could not read that Postman file')); return false; }
-  createDoc();
-  pushUndo(); markDirty();
-  nodes=parsed.rows.map(r=>makeNodeFromTyped(r.text,r.depth,null,emptyStyles(),'',false,r.grid?[apiGridToTableHtml(r.grid)]:undefined));
-  rebuildParentIds();
-  selectedId=nodes[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null;
-  applyDocRename(currentDocId,parsed.title);
-  render(); scheduleAutoSave();
-  showToast(`Imported ${parsed.requestCount} request${parsed.requestCount===1?'':'s'} from “${parsed.title}”`);
-  return true;
 }
 function insertDateTime(targetEditorId){
   if(targetEditorId){
@@ -23373,15 +23182,13 @@ const SB_EXPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none
 const SB_IMPORT_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 const SB_PDF_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>';
 const SB_PEOPLE_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
-const SB_API_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
 const SB_OPML_ICON='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><circle cx="17" cy="12" r="2.4"/><path d="M8 6h4a4 4 0 0 1 4 4"/><path d="M8 18h4a4 4 0 0 0 4-4"/></svg>';
 function exportMenuItems(){ return [
   {label:'PDF', meta:'.pdf', icon:SB_PDF_ICON, data:{save:'pdf'}, onClick:()=>exportPdfDirect()},
   {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{save:'opml'}, onClick:()=>exportOpml()}
 ]; }
 function importMenuItems(){ return [
-  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{import:'opml'}, onClick:()=>triggerOpmlImport()},
-  {label:'Postman collection', meta:'.json', icon:SB_API_ICON, data:{import:'postman'}, onClick:()=>triggerPostmanImport()}
+  {label:'OPML', meta:'.opml', icon:SB_OPML_ICON, data:{import:'opml'}, onClick:()=>triggerOpmlImport()}
 ]; }
 // Makes a real panel/menu open anchored to the button that was actually clicked (the '...'
 // or Account toggle), instead of its own default position — which is relative to its original,
@@ -23506,6 +23313,28 @@ let hideNodeTooltip=function(){};
 // web page or file manager) pasted while a node row is selected or being edited becomes one of
 // that node's node.images -- never text, never note HTML. Anything with real text keeps going
 // through the tree/text paste paths below unchanged.
+// A cURL command pasted into a row (owner 2026-10-30: "paste to the row results in the API card,
+// one at a time") adds an API request card to that row instead of text -- Postman's request ›
+// Code › cURL, a browser's Copy as cURL, or Sakura's own Copy for Postman. An empty row is named
+// after the call ("POST PostalCodeSet"). One undo step removes both. Literal secrets come in as
+// {{variables}} (curlToApiRequest).
+function pasteCurlIntoNode(e,nodeId){
+  const text=e.clipboardData?.getData('text/plain')||'';
+  if(nodeId==null||!/^\s*curl(\.exe)?\s/i.test(text))return false;
+  const r=curlToApiRequest(text); if(!r)return false;
+  e.preventDefault(); e.stopPropagation();
+  if(editingId===nodeId)commitEdit();
+  insertNodeTableHtml(nodeId,apiGridToTableHtml(apiRequestToGrid(r)),false);
+  const idx=getIndex(nodes,nodeId);
+  if(idx>=0&&!String(nodes[idx].text||'').trim()){
+    const path=r.url.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i,'').replace(/^\{\{[^}]+\}\}/,'');
+    const last=path.split('/').filter(Boolean).pop()||r.url;
+    nodes[idx].text=(r.method+' '+last).slice(0,120); nodes[idx].marks=[];
+    render();
+  }
+  showToast('API request added — double-click it to edit, Ctrl/Cmd+Z to undo');
+  return true;
+}
 function pasteImagesIntoNodeIfImageOnly(e,nodeId){
   if(nodeId===null||nodeId===undefined)return false;
   const text=e.clipboardData?.getData('text/plain')||'';
@@ -23580,6 +23409,7 @@ document.addEventListener('paste',e=>{
   if(nodeImageViewerIsOpen())return;
   if(editingId!==null && e.target===getEditingInput()){
     if(pasteImagesIntoNodeIfImageOnly(e,editingId))return;
+    if(pasteCurlIntoNode(e,editingId))return;
     const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim();
     // A web address pasted over selected words links them (the way Docs and Notion do).
     if(pastedLinkUrl(trimmedText)&&applyRowMarkToSelection('a',pastedLinkUrl(trimmedText))){ e.preventDefault(); return }
@@ -23602,7 +23432,7 @@ document.addEventListener('paste',e=>{
     if(/[\r\n]/.test(text)&&trimmedText&&!/[\r\n]/.test(trimmedText)){ e.preventDefault(); document.execCommand('insertText',false,trimmedText); return }
     return; // single line (or nothing parseable) -- let the browser paste it normally into the active node
   }
-  if(isControlTarget(e.target))return; if(editingId!==null)return; if(!multiSelectedIds.length&&pasteImagesIntoNodeIfImageOnly(e,selectedId))return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}}
+  if(isControlTarget(e.target))return; if(editingId!==null)return; if(!multiSelectedIds.length&&pasteImagesIntoNodeIfImageOnly(e,selectedId))return; if(!multiSelectedIds.length&&pasteCurlIntoNode(e,selectedId))return; const html=e.clipboardData?.getData('text/html')||''; const text=e.clipboardData?.getData('text/plain')||''; const trimmedText=text.trim(); if(/^<\?xml[\s\S]*?<opml[\s>]/i.test(trimmedText)||/^<opml[\s>]/i.test(trimmedText)){const opmlParsed=parseOpmlToTreeNodes(text); if(opmlParsed.length){e.preventDefault(); pasteParsedNodes(opmlParsed,'Imported'); return}}
   // A table copied from outside (Excel, Sheets, a web page) lands as a node.tables object on the
   // selected node -- the same shape "Add table..." creates -- rather than falling through to
   // parseTextToTreeNodes below, which would otherwise shred its tab/newline-separated cell text
@@ -27216,12 +27046,6 @@ el('sakura-import-file-input')?.addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0];
   e.target.value='';
   if(file) await importAllDataFromFile(file);
-});
-el('sakura-postman-file-input')?.addEventListener('change',async e=>{
-  const file=e.target.files&&e.target.files[0];
-  e.target.value='';
-  if(!file)return;
-  try{ importPostmanText(await file.text()); }catch(err){ showToast('Could not read that Postman file') }
 });
 el('sakura-opml-file-input')?.addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0];
