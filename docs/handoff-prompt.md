@@ -173,15 +173,15 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **API requests in by paste, one at a time (2026-10-30).** Owner: importing via the document Import menu doesn't make sense; pasting into a row should give the API card. `pasteCurlIntoNode` (index.html, before `pasteImagesIntoNodeIfImageOnly`) runs in both row paste paths (editing / selected): a cURL becomes an API table on the row via `insertNodeTableHtml` (one undo), an empty row is named "METHOD lastPathSegment". Removed Postman collection import (Import ▾ item, File Explorer item, file input, `importPostmanText`, `triggerPostmanImport`) and the import half of `src/utils/postmanCollection.ts` (now just `apiRequestToPostmanItem` / `apiRequestToPostmanCollection` for the card's Export this request). Auth masking for paste lives in `apiRequest.ts` (`maskSecretHeader`). e2e `api-paste-into-row.spec.ts` (replaces postman-import-export).
+
 - **Postman export is per card only (2026-10-30).** Owner: APIs don't belong in Share, and an export-all "seems out of place — one by one". Removed Share › Export to Postman, Export ▾ › Postman collection and the document-wide export (`exportPostman`, `nodeApiGrids` deleted). Right-click an API card: Copy for Postman / **Export this request (.json)**. Import stays (Import ▾, File Explorer right-click). `outlineToPostman` is still used for the one-request file. Tests reworked to per-card export.
 
 - **API card actions (2026-10-30).** Owner: export/copy belong on the card too. The card's button reads **Copy for Postman** (was "cURL"; nowrap + fixed 12px icon). Right-click an API card: Edit request… / Edit as table, then **Copy for Postman** (`copyApiRequestCurl`) and **Export to Postman (.json)** (`exportApiRequestToPostman`: one-request v2.1 collection named after the row, keeps description + example, which cURL can't). Share › Export to Postman stays for the whole document. 1 e2e.
 
-- **Desktop app icon: rounded 3D tile (2026-10-30).** Owner: the installed app icon looked sharp. Desktop Chrome/Windows/macOS show the manifest's "any" icons as drawn (only iOS and Android round), so `icon-192-pwa` / `icon-512-pwa` now carry an Apple-style tile: 84% of the canvas, 22.5% corners, soft shadow, subtle white-to-#ededea shading, glyph at 60% of the tile, transparent outside. apple-touch, icon-192(-dark) and the maskable icon stay flat (the OS rounds them). `sw.js` cache v9. Installed apps pick it up on their own manifest check (or reinstall).
-
 ### In progress / not built
 
-- API documentation (2026-10-30): done — API request card + Copy as cURL, form editor, Paste cURL, Postman collection import (with auth) and per-card export (no document-wide export, owner). Live "Send" deliberately not built (CORS, secrets); "try it" = cURL or Postman. Next only if the owner asks.
+- API documentation (2026-10-30): done — API request card + Copy as cURL, form editor, cURL paste (into the form or straight into a row) and per-card export. Owner decisions: no collection import, no document-wide export, nothing API-specific in Share. Live "Send" deliberately not built (CORS, secrets); "try it" = cURL or Postman. Next only if the owner asks.
 - Queue from 2026-10-29: done. Decided: the bottom-right focus-mode
   button `#editor-zen-toggle` stays (owner: "not really adding noise"; it's how people find focus mode). Its
   removal is dropped unless the owner asks again.

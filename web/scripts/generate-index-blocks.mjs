@@ -485,8 +485,8 @@ initHubTodosState({
     footer: ''
   },
   {
-    // Postman collections <-> API request rows: import a v2.0/v2.1 collection as rows with API
-    // request tables (folders as parent rows), export those rows back. Uses apiRequest above.
+    // One API request as a Postman v2.1 collection file (the card's Export this request). No
+    // collection import or document-wide export (owner). Uses apiRequest's ApiRequest type.
     name: 'postmanCollection',
     sourceFile: 'src/utils/postmanCollection.ts',
     testFile: 'tests/unit/postmanCollection.test.ts',
