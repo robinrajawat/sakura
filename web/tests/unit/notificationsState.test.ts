@@ -20,14 +20,15 @@ import {
 describe('notifText (pure)', () => {
   it('formats a sent copy, falling back to email, then "Someone"', () => {
     expect(notifText({ id: '1', type: 'doc_copy', fromDisplayName: 'Alice', docTitle: 'Roadmap' })).toBe(
-      'Alice sent you a copy of "Roadmap". Click to add it to your documents.'
+      'Alice sent you a copy of "Roadmap"'
     );
     expect(notifText({ id: '1', type: 'doc_copy', fromEmail: 'a@example.com', docTitle: 'Doc' })).toBe(
-      'a@example.com sent you a copy of "Doc". Click to add it to your documents.'
+      'a@example.com sent you a copy of "Doc"'
     );
     expect(notifText({ id: '1', type: 'doc_copy' })).toBe(
-      'Someone sent you a copy of "a document". Click to add it to your documents.'
+      'Someone sent you a copy of "a document"'
     );
+    expect(notifText({ id: '1', type: 'doc_copy', docTitle: 'Doc', addedDocId: 'd9' })).toBe('Added "Doc" to your documents');
   });
 
   it('falls back to the message field, then a generic string, for unknown types', () => {

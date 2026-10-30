@@ -42,6 +42,8 @@ export interface NotifItem {
   fromUid?: string;
   docId?: string;
   role?: string;
+  /** doc_copy only: the recipient's own document id once they added the copy. */
+  addedDocId?: string;
 }
 
 export interface NotifFirestoreModLike {
@@ -112,8 +114,10 @@ export function isNotifMenuOpen(): boolean {
  */
 export function notifText(n: NotifItem): string {
   if (n.type === 'doc_copy') {
+    const title = n.docTitle || 'a document';
+    if (n.addedDocId) return `Added "${title}" to your documents`;
     const from = n.fromDisplayName || n.fromEmail || 'Someone';
-    return `${from} sent you a copy of "${n.docTitle || 'a document'}". Click to add it to your documents.`;
+    return `${from} sent you a copy of "${title}"`;
   }
   return n.message || 'New notification';
 }
