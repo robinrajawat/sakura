@@ -99,7 +99,7 @@ test('a question (formerly Q&A): open or answered; a reply answers it, deleting 
   expect(await page.evaluate('qaItems.length')).toBe(0);
   // An open question is its kind icon in the accent colour; the icon's tip names the state (no words on the line).
   const q = (id: string) => page.locator(`.thread-entry:has(#inline-remark-text-${id}) .thread-kind.is-question`);
-  const isOpen = (id: string) => expect(q(id)).toHaveCSS('color', 'rgb(194, 85, 61)');
+  const isOpen = (id: string) => expect(q(id)).toHaveCSS('color', 'rgb(46, 132, 121)');
   await isOpen('rqOpen');
   await expect(q('rqOpen')).toHaveAttribute('data-tip', /^Open question/);
   await expect(q('rqDone')).toHaveAttribute('data-tip', /^Question, answered/);

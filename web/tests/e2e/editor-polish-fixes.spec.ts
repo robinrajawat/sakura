@@ -96,8 +96,8 @@ test.describe('Exporting to PDF does not permanently reset the accent color', ()
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);
 
-    // A non-default preset (custom accent colors were removed in cutdown 9b), so the restored
-    // value is distinguishable from the stylesheet's terracotta default.
+    // The accent is one fixed teal since 2026-10-30; print sets a light override inline and
+    // cleanup must drop it again.
     const distinctiveAccent = '#2e8479';
     await page.evaluate(() => {
       // @ts-expect-error
@@ -105,7 +105,7 @@ test.describe('Exporting to PDF does not permanently reset the accent color', ()
       // @ts-expect-error
       collapsedIds = new Set(); selectedId = null; multiSelectedIds = []; selectAllMode = false; focusedId = null; undoStack = []; editingId = null; nextId = 2;
       // @ts-expect-error
-      setTheme('light', false, false); accentPreset = 'teal';
+      setTheme('light', false, false);
       // @ts-expect-error
       applyAccentColor();
       // @ts-expect-error
