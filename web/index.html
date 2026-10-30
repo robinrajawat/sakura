@@ -1554,6 +1554,9 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
 .api-ed-foot{display:flex;align-items:center;gap:8px;padding:12px var(--pad-dialog);border-top:1px solid var(--border);flex:0 0 auto}
 .api-ed-astable{margin-right:auto;padding-left:0}
+.api-ed-curlbar{display:flex;margin:-4px 0 -4px}
+.api-ed-curl{min-height:72px}
+.api-ed-sec[hidden]{display:none}
 .api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
 @media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}}
 .tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -5777,6 +5780,11 @@ function apiEditorEl(){
     <div class="app-modal-head"><div><h2 id="api-ed-heading">API request</h2><div class="cs-sub">Documented in the spec. Sakura never sends it; use cURL or Postman to try it.</div></div>
       <button type="button" class="app-modal-close-btn" id="api-ed-close" aria-label="Close">${X}</button></div>
     <div class="app-modal-body api-ed-body">
+      <div class="api-ed-curlbar"><button type="button" class="api-ed-add" id="api-ed-curl-btn">Paste from Postman (cURL)…</button></div>
+      <div class="api-ed-sec" id="api-ed-curl-wrap" hidden>
+        <textarea id="api-ed-curl" class="api-ed-input api-ed-mono api-ed-area api-ed-curl" spellcheck="false" placeholder="Paste a cURL command here. In Postman: open the request › Code (</>) › cURL › Copy." aria-label="cURL command"></textarea>
+        <div class="api-ed-err" id="api-ed-curl-err" hidden>That isn\u2019t a cURL command. In Postman: open the request › Code (</>) › cURL › Copy.</div>
+      </div>
       <div class="api-ed-line">
         <select id="api-ed-method" class="api-ed-method" aria-label="Method">${API_METHODS.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
         <input id="api-ed-url" class="api-ed-input api-ed-mono" type="text" spellcheck="false" autocomplete="off" placeholder="https://api.example.com/v1/orders or {{baseUrl}}/orders" aria-label="URL">
@@ -5809,6 +5817,23 @@ function apiEditorEl(){
   el('api-ed-save').addEventListener('click',()=>apiEditorSave());
   el('api-ed-astable').addEventListener('click',()=>{ const ed=_apiEd; apiEditorClose(); ed?.asTable?.(); });
   el('api-ed-url').addEventListener('input',()=>{ el('api-ed-url-err').hidden=true; el('api-ed-url').classList.remove('invalid'); });
+  // A cURL command pasted into the URL box fills the whole form instead.
+  el('api-ed-url').addEventListener('paste',e=>{
+    const t=e.clipboardData?.getData('text')||'';
+    if(/^\s*curl(\.exe)?\s/i.test(t)&&apiEditorFillFromCurl(t)){ e.preventDefault(); }
+  });
+  // Paste cURL: read the clipboard when the browser allows it, otherwise show a box to paste into.
+  el('api-ed-curl-btn').addEventListener('click',async()=>{
+    let t='';
+    try{ t=await navigator.clipboard.readText(); }catch(err){}
+    if(/^\s*curl(\.exe)?\s/i.test(t)&&apiEditorFillFromCurl(t))return;
+    const wrap=el('api-ed-curl-wrap'); wrap.hidden=false; el('api-ed-curl-err').hidden=true; el('api-ed-curl').value=''; el('api-ed-curl').focus();
+  });
+  el('api-ed-curl').addEventListener('input',()=>{
+    const t=el('api-ed-curl').value; if(!t.trim()){ el('api-ed-curl-err').hidden=true; return; }
+    if(apiEditorFillFromCurl(t)){ el('api-ed-curl-wrap').hidden=true; el('api-ed-curl').value=''; }
+    else el('api-ed-curl-err').hidden=false;
+  });
   ov.querySelectorAll('.api-ed-add').forEach(b=>b.addEventListener('click',()=>{ const row=apiEditorAddPair(b.dataset.add,'',''); row.querySelector('input').focus(); }));
   ov.querySelectorAll('.api-ed-format').forEach(b=>b.addEventListener('click',()=>{
     const ta=el(b.dataset.format), err=ov.querySelector(`[data-err-for="${b.dataset.format}"]`);
@@ -5836,11 +5861,30 @@ function apiEditorAddPair(kind,k,v){
   list.appendChild(row);
   return row;
 }
+// Fills method, URL, query, headers and body from a cURL command (src/utils/apiRequest.ts
+// curlToApiRequest; literal secrets come in as {{variables}}). Description and the example
+// response are left as they are. False when the text isn't cURL.
+function apiEditorFillFromCurl(text){
+  const r=curlToApiRequest(text); if(!r)return false;
+  el('api-ed-method').value=r.method;
+  el('api-ed-url').value=r.url; el('api-ed-url').classList.remove('invalid'); el('api-ed-url-err').hidden=true;
+  el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML='';
+  r.query.forEach(([k,v])=>apiEditorAddPair('query',k,v));
+  r.headers.forEach(([k,v])=>apiEditorAddPair('headers',k,v));
+  el('api-ed-body').value=r.body?prettyJson(r.body):'';
+  // A brand-new request still holds the starter's sample description and response: drop them so
+  // nothing from the sample is left describing the pasted request.
+  if(_apiEd?.fresh){ el('api-ed-desc').value=''; el('api-ed-status').value=''; el('api-ed-response').value=''; _apiEd.fresh=false; }
+  el('api-editor-overlay').querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
+  showToast('Filled from cURL \u2014 check it, then Save');
+  el('api-ed-url').focus();
+  return true;
+}
 function apiEditorPairs(kind){
   return [...el(kind==='query'?'api-ed-query':'api-ed-headers').querySelectorAll('.api-ed-pair')]
     .map(r=>[r.querySelector('.api-ed-k').value.trim(),r.querySelector('.api-ed-v').value.trim()]).filter(([k])=>k);
 }
-function openApiRequestEditor(node,tIdx,{asTable}={}){
+function openApiRequestEditor(node,tIdx,{asTable,fresh}={}){
   const div=document.createElement('div'); div.innerHTML=node.tables?.[tIdx]||'';
   const table=div.querySelector('table'); if(!table)return;
   const req=tableApiInfo(table)||{method:'GET',url:'',query:[],headers:[],body:'',status:'',response:'',description:'',extras:[]};
@@ -5852,10 +5896,11 @@ function openApiRequestEditor(node,tIdx,{asTable}={}){
   el('api-ed-status').value=req.status;
   el('api-ed-response').value=req.response?prettyJson(req.response):'';
   ov.querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
+  el('api-ed-curl-wrap').hidden=true; el('api-ed-curl').value='';
   el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML='';
   req.query.forEach(([k,v])=>apiEditorAddPair('query',k,v));
   req.headers.forEach(([k,v])=>apiEditorAddPair('headers',k,v));
-  _apiEd={nodeId:node.id,tIdx,extras:req.extras,asTable,returnFocus:document.activeElement};
+  _apiEd={nodeId:node.id,tIdx,extras:req.extras,asTable,fresh:!!fresh,returnFocus:document.activeElement};
   ov.classList.add('open');
   requestAnimationFrame(()=>{ const u=el('api-ed-url'); u.focus(); u.select(); });
 }
@@ -7472,6 +7517,189 @@ function isValidJson(raw) {
         return false;
     }
 }
+/**
+ * Splits a shell command into words the way bash would for the cURL snippets Postman and browsers
+ * produce: single quotes (literal), double quotes (with \" \\ \$ escapes), backslash-newline
+ * continuations, and Windows cmd's ^ line continuations.
+ */
+function shellWords(cmd) {
+    const s = String(cmd || '').replace(/\^\r?\n/g, ' ').replace(/\\\r?\n/g, ' ');
+    const words = [];
+    let cur = '';
+    let has = false;
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (c === "'") {
+            const end = s.indexOf("'", i + 1);
+            cur += s.slice(i + 1, end < 0 ? s.length : end);
+            has = true;
+            i = end < 0 ? s.length : end;
+        }
+        else if (c === '"') {
+            i++;
+            has = true;
+            while (i < s.length && s[i] !== '"') {
+                if (s[i] === '\\' && i + 1 < s.length && '"\\$`'.includes(s[i + 1])) {
+                    cur += s[i + 1];
+                    i += 2;
+                }
+                else {
+                    cur += s[i];
+                    i++;
+                }
+            }
+        }
+        else if (c === '\\' && i + 1 < s.length) {
+            cur += s[i + 1];
+            i++;
+            has = true;
+        }
+        else if (/\s/.test(c)) {
+            if (has) {
+                words.push(cur);
+                cur = '';
+                has = false;
+            }
+        }
+        else {
+            cur += c;
+            has = true;
+        }
+    }
+    if (has)
+        words.push(cur);
+    return words;
+}
+const SECRET_HEADER = /^(authorization|proxy-authorization|cookie|x-api-key|api-key|apikey|x-auth-token|x-access-token)$/i;
+/**
+ * A header value with any literal secret swapped for a {{variable}} (the same rule as Postman
+ * import): Bearer/Basic keep their scheme, other secret headers become {{name}}.
+ */
+function maskSecretHeader(name, value) {
+    if (!SECRET_HEADER.test(name) || /\{\{[^}]+\}\}/.test(value))
+        return value;
+    const m = /^(Bearer|Basic|Token|Digest)\s+/i.exec(value);
+    if (m)
+        return m[1] + ' ' + (m[1].toLowerCase() === 'basic' ? '{{username}}:{{password}}' : '{{token}}');
+    if (/^cookie$/i.test(name))
+        return '{{cookie}}';
+    return /key/i.test(name) ? '{{apiKey}}' : '{{token}}';
+}
+/**
+ * Reads a cURL command (as Postman's Code › cURL, a browser's "Copy as cURL" or Sakura's own
+ * cURL button write it) as an API request: method, URL with its query split into rows, headers,
+ * body and form fields. Literal secrets in auth headers and -u become {{variables}}. Returns null
+ * when the text isn't a cURL command with a URL.
+ */
+function curlToApiRequest(text) {
+    const words = shellWords(String(text || '').trim());
+    if (!words.length || !/^curl(\.exe)?$/i.test(words[0]))
+        return null;
+    let method = '';
+    let url = '';
+    const headers = [];
+    const data = [];
+    const form = [];
+    let getMode = false;
+    const takesValue = new Set(['-X', '--request', '-H', '--header', '-d', '--data', '--data-raw', '--data-binary', '--data-ascii',
+        '--data-urlencode', '-F', '--form', '--form-string', '-u', '--user', '--url', '-A', '--user-agent', '-e', '--referer',
+        '-b', '--cookie', '-o', '--output', '-m', '--max-time', '--connect-timeout', '-x', '--proxy', '--cacert', '--cert', '--key']);
+    for (let i = 1; i < words.length; i++) {
+        let w = words[i];
+        let v;
+        const eq = w.startsWith('--') ? w.indexOf('=') : -1;
+        if (eq > 0) {
+            v = w.slice(eq + 1);
+            w = w.slice(0, eq);
+        }
+        else if (/^-[XHdFuAeb]./.test(w)) {
+            v = w.slice(2);
+            w = w.slice(0, 2);
+        }
+        const val = () => (v !== undefined ? v : words[++i] ?? '');
+        if (!w.startsWith('-')) {
+            if (!url)
+                url = w;
+            continue;
+        }
+        if (!takesValue.has(w)) {
+            if (w === '-G' || w === '--get')
+                getMode = true;
+            else if (w === '-I' || w === '--head')
+                method = 'HEAD';
+            continue;
+        }
+        const value = val();
+        switch (w) {
+            case '-X':
+            case '--request':
+                method = value.toUpperCase();
+                break;
+            case '--url':
+                url = value;
+                break;
+            case '-H':
+            case '--header': {
+                const [k, hv] = splitPair(value.replace(/;$/, ''));
+                if (k)
+                    headers.push([k, maskSecretHeader(k, hv)]);
+                break;
+            }
+            case '-u':
+            case '--user':
+                headers.push(['Authorization', 'Basic {{username}}:{{password}}']);
+                break;
+            case '-A':
+            case '--user-agent':
+                headers.push(['User-Agent', value]);
+                break;
+            case '-e':
+            case '--referer':
+                headers.push(['Referer', value]);
+                break;
+            case '-b':
+            case '--cookie':
+                headers.push(['Cookie', '{{cookie}}']);
+                break;
+            case '-F':
+            case '--form':
+            case '--form-string':
+                form.push(value);
+                break;
+            case '-d':
+            case '--data':
+            case '--data-raw':
+            case '--data-binary':
+            case '--data-ascii':
+            case '--data-urlencode':
+                data.push(value.startsWith('@') && w !== '--data-raw' ? '<file ' + value.slice(1) + '>' : value);
+                break;
+            default: break;
+        }
+    }
+    if (!url)
+        return null;
+    const query = [];
+    const qAt = url.indexOf('?');
+    let base = url;
+    if (qAt >= 0) {
+        base = url.slice(0, qAt);
+        url.slice(qAt + 1).split('&').filter(Boolean).forEach(p => {
+            const e = p.indexOf('=');
+            query.push(e < 0 ? [p, ''] : [p.slice(0, e), p.slice(e + 1)]);
+        });
+    }
+    let body = form.length ? form.join('\n') : data.join('&');
+    if (getMode && data.length) {
+        data.join('&').split('&').filter(Boolean).forEach(p => query.push(splitPair(p.replace('=', ':'))));
+        body = '';
+    }
+    if (!method)
+        method = body ? 'POST' : 'GET';
+    if (!API_METHODS.includes(method))
+        return null;
+    return { method, url: base, query, headers, body, status: '', response: '', description: '', extras: [] };
+}
 
 /* GENERATED:apiRequest:END */
 /* GENERATED:postmanCollection:START — DO NOT EDIT BY HAND. Source of truth: src/utils/postmanCollection.ts (tests: tests/unit/postmanCollection.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -9024,7 +9252,7 @@ function openTableStartMenu(nodeId,pos){
       const n=nodes[getIndex(nodes,nodeId)];
       if(st.key==='api'&&n?.tables?.length){
         const tIdx=n.tables.length-1;
-        openApiRequestEditor(n,tIdx,{asTable:()=>{ const w=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)][tIdx]; w?._sakuraEnterEdit?.(-1,{asTable:true}); }});
+        openApiRequestEditor(n,tIdx,{fresh:true,asTable:()=>{ const w=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)][tIdx]; w?._sakuraEnterEdit?.(-1,{asTable:true}); }});
         return;
       }
       showToast(st.label+' added \u2014 double-click it to edit the data');

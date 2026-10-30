@@ -150,3 +150,42 @@ test('the form needs a URL, warns about invalid JSON, and Edit as table opens th
   await expect(page.locator('#api-editor-overlay')).not.toHaveClass(/open/);
   await expect(page.locator('.node-table-line td[contenteditable="true"]').first()).toBeVisible();
 });
+
+test('Paste from Postman (cURL) fills a new API request and drops the sample text', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('file://' + indexPath);
+  // @ts-expect-error -- bare global from index.html
+  await page.evaluate(() => openTableStartMenu(2, { x: 300, y: 200 }));
+  await page.locator('.sb-context-menu .sb-context-item', { hasText: 'API request' }).click();
+  await expect(page.locator('#api-editor-overlay')).toHaveClass(/open/);
+  const curl = "curl --location 'https://erp.example.com/PostalCodeSet?$format=json' \\\n"
+    + "--header 'Authorization: Bearer real-secret' \\\n--data '{\"PostalCode\":\"2300\"}'";
+  // Pasting into the URL box fills the whole form.
+  await page.locator('#api-ed-url').focus();
+  await page.evaluate((t) => {
+    const dt = new DataTransfer(); dt.setData('text', t);
+    document.getElementById('api-ed-url')!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  }, curl);
+  await expect(page.locator('#api-ed-method')).toHaveValue('POST');
+  await expect(page.locator('#api-ed-url')).toHaveValue('https://erp.example.com/PostalCodeSet');
+  await expect(page.locator('#api-ed-query .api-ed-k')).toHaveValue('$format');
+  await expect(page.locator('#api-ed-headers .api-ed-v')).toHaveValue('Bearer {{token}}');
+  await expect(page.locator('#api-ed-desc')).toHaveValue('');
+  await expect(page.locator('#api-ed-status')).toHaveValue('');
+
+  // The button reads the clipboard; text that isn't cURL opens the paste box with a hint.
+  await page.evaluate(() => navigator.clipboard.writeText('not a command'));
+  await page.locator('#api-ed-curl-btn').click();
+  await expect(page.locator('#api-ed-curl')).toBeVisible();
+  await page.locator('#api-ed-curl').fill('hello');
+  await expect(page.locator('#api-ed-curl-err')).toBeVisible();
+  await page.locator('#api-ed-curl').fill("curl -X DELETE 'https://a/orders/1'");
+  await expect(page.locator('#api-ed-curl-wrap')).toBeHidden();
+  await expect(page.locator('#api-ed-method')).toHaveValue('DELETE');
+
+  await page.locator('#api-ed-save').click();
+  // @ts-expect-error -- bare global from index.html
+  const html = await page.evaluate(() => nodes[1].tables[0]);
+  expect(html).toContain('<td>DELETE</td>');
+  expect(html).not.toContain('real-secret');
+});

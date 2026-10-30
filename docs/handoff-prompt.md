@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Paste from Postman (cURL) in the API form (2026-10-30).** Owner wants one specific request from a Postman collection, and Postman only exports whole collections. `curlToApiRequest` (+ `shellWords`, `maskSecretHeader`) in `src/utils/apiRequest.ts` reads Postman's Code › cURL, browser bash/cmd copies and Sakura's own cURL: method, URL with query split into rows, headers, body/form; auth secrets → `{{token}}` / `{{username}}:{{password}}` / `{{apiKey}}` / `{{cookie}}`. Form: a "Paste from Postman (cURL)…" button (clipboard, else a paste box with a hint) and a cURL pasted into the URL box fills everything; on a new starter (`fresh`) the sample description/response are cleared. 7 unit tests, 1 e2e.
+
 - **API request form editor (2026-10-30).** Owner: "a nicer editor, no shortcuts". `openApiRequestEditor(node,tIdx)` (index.html, after `renderApiRequestHtml`) is an `app-modal-overlay` built once on first use: method select + URL, description, query/header name/value rows (+ Add / ×, header-name datalist), body and example response with Format JSON (`isValidJson`/`prettyJson`), URL required, Esc/Cancel discard, Ctrl/Cmd+Enter or Save writes `apiRequestToGrid(req)` back into the same table (old table attributes kept) as one undo step. Hooked into `enterEdit` (API tables open the form unless `opts.asTable`), right-click (Edit request… / Edit as table) and the API starter (opens the form). CSS `.api-ed*` in sidebar.css. Tests: 3 unit, 2 e2e in `table-api.spec.ts`, starter test closes the form.
 
 - **Postman auth + several API cards per row (2026-10-30).** Import maps auth (request's own, else nearest folder's, else collection's; `inherit` = no own) via `postmanAuthRows`: Bearer/Basic → Authorization header, API key → header or query, other kinds → an "Auth" extra; literal secrets become `{{token}}`/`{{password}}`/`{{apiKey}}` (never stored). Export takes every API table on a row (`nodeApiGrids`), numbering extras "Row (2)". Tests: 4 more unit tests, 1 e2e.
-
-- **Tab title back to "Sakura" (2026-10-30).** Owner: keep Sakura. "SAKURA" (#744) read loud, didn't match the in-app wordmark, and made an installed app's title bar show "Sakura - SAKURA" (manifest name - page title). `<title>` and `updateDirtyIndicator()` say "Sakura" again; manifests unchanged. The PDF branding mark's own "SAKURA" default is separate and untouched.
 
 ### In progress / not built
 

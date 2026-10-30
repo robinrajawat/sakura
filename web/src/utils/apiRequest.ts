@@ -154,3 +154,111 @@ export function apiRequestToGrid(req: ApiRequest): string[][] {
 export function isValidJson(raw: string): boolean {
   try { JSON.parse(String(raw)); return true; } catch { return false; }
 }
+
+/**
+ * Splits a shell command into words the way bash would for the cURL snippets Postman and browsers
+ * produce: single quotes (literal), double quotes (with \" \\ \$ escapes), backslash-newline
+ * continuations, and Windows cmd's ^ line continuations.
+ */
+export function shellWords(cmd: string): string[] {
+  const s = String(cmd || '').replace(/\^\r?\n/g, ' ').replace(/\\\r?\n/g, ' ');
+  const words: string[] = [];
+  let cur = '';
+  let has = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "'") {
+      const end = s.indexOf("'", i + 1);
+      cur += s.slice(i + 1, end < 0 ? s.length : end); has = true; i = end < 0 ? s.length : end;
+    } else if (c === '"') {
+      i++; has = true;
+      while (i < s.length && s[i] !== '"') {
+        if (s[i] === '\\' && i + 1 < s.length && '"\\$`'.includes(s[i + 1])) { cur += s[i + 1]; i += 2; } else { cur += s[i]; i++; }
+      }
+    } else if (c === '\\' && i + 1 < s.length) {
+      cur += s[i + 1]; i++; has = true;
+    } else if (/\s/.test(c)) {
+      if (has) { words.push(cur); cur = ''; has = false; }
+    } else { cur += c; has = true; }
+  }
+  if (has) words.push(cur);
+  return words;
+}
+
+const SECRET_HEADER = /^(authorization|proxy-authorization|cookie|x-api-key|api-key|apikey|x-auth-token|x-access-token)$/i;
+
+/**
+ * A header value with any literal secret swapped for a {{variable}} (the same rule as Postman
+ * import): Bearer/Basic keep their scheme, other secret headers become {{name}}.
+ */
+export function maskSecretHeader(name: string, value: string): string {
+  if (!SECRET_HEADER.test(name) || /\{\{[^}]+\}\}/.test(value)) return value;
+  const m = /^(Bearer|Basic|Token|Digest)\s+/i.exec(value);
+  if (m) return m[1] + ' ' + (m[1].toLowerCase() === 'basic' ? '{{username}}:{{password}}' : '{{token}}');
+  if (/^cookie$/i.test(name)) return '{{cookie}}';
+  return /key/i.test(name) ? '{{apiKey}}' : '{{token}}';
+}
+
+/**
+ * Reads a cURL command (as Postman's Code › cURL, a browser's "Copy as cURL" or Sakura's own
+ * cURL button write it) as an API request: method, URL with its query split into rows, headers,
+ * body and form fields. Literal secrets in auth headers and -u become {{variables}}. Returns null
+ * when the text isn't a cURL command with a URL.
+ */
+export function curlToApiRequest(text: string): ApiRequest | null {
+  const words = shellWords(String(text || '').trim());
+  if (!words.length || !/^curl(\.exe)?$/i.test(words[0])) return null;
+  let method = '';
+  let url = '';
+  const headers: [string, string][] = [];
+  const data: string[] = [];
+  const form: string[] = [];
+  let getMode = false;
+  const takesValue = new Set(['-X', '--request', '-H', '--header', '-d', '--data', '--data-raw', '--data-binary', '--data-ascii',
+    '--data-urlencode', '-F', '--form', '--form-string', '-u', '--user', '--url', '-A', '--user-agent', '-e', '--referer',
+    '-b', '--cookie', '-o', '--output', '-m', '--max-time', '--connect-timeout', '-x', '--proxy', '--cacert', '--cert', '--key']);
+  for (let i = 1; i < words.length; i++) {
+    let w = words[i];
+    let v: string | undefined;
+    const eq = w.startsWith('--') ? w.indexOf('=') : -1;
+    if (eq > 0) { v = w.slice(eq + 1); w = w.slice(0, eq); }
+    else if (/^-[XHdFuAeb]./.test(w)) { v = w.slice(2); w = w.slice(0, 2); }
+    const val = () => (v !== undefined ? v : words[++i] ?? '');
+    if (!w.startsWith('-')) { if (!url) url = w; continue; }
+    if (!takesValue.has(w)) { if (w === '-G' || w === '--get') getMode = true; else if (w === '-I' || w === '--head') method = 'HEAD'; continue; }
+    const value = val();
+    switch (w) {
+      case '-X': case '--request': method = value.toUpperCase(); break;
+      case '--url': url = value; break;
+      case '-H': case '--header': {
+        const [k, hv] = splitPair(value.replace(/;$/, ''));
+        if (k) headers.push([k, maskSecretHeader(k, hv)]);
+        break;
+      }
+      case '-u': case '--user': headers.push(['Authorization', 'Basic {{username}}:{{password}}']); break;
+      case '-A': case '--user-agent': headers.push(['User-Agent', value]); break;
+      case '-e': case '--referer': headers.push(['Referer', value]); break;
+      case '-b': case '--cookie': headers.push(['Cookie', '{{cookie}}']); break;
+      case '-F': case '--form': case '--form-string': form.push(value); break;
+      case '-d': case '--data': case '--data-raw': case '--data-binary': case '--data-ascii': case '--data-urlencode':
+        data.push(value.startsWith('@') && w !== '--data-raw' ? '<file ' + value.slice(1) + '>' : value); break;
+      default: break;
+    }
+  }
+  if (!url) return null;
+  const query: [string, string][] = [];
+  const qAt = url.indexOf('?');
+  let base = url;
+  if (qAt >= 0) {
+    base = url.slice(0, qAt);
+    url.slice(qAt + 1).split('&').filter(Boolean).forEach(p => {
+      const e = p.indexOf('=');
+      query.push(e < 0 ? [p, ''] : [p.slice(0, e), p.slice(e + 1)]);
+    });
+  }
+  let body = form.length ? form.join('\n') : data.join('&');
+  if (getMode && data.length) { data.join('&').split('&').filter(Boolean).forEach(p => query.push(splitPair(p.replace('=', ':')))); body = ''; }
+  if (!method) method = body ? 'POST' : 'GET';
+  if (!(API_METHODS as readonly string[]).includes(method)) return null;
+  return { method, url: base, query, headers, body, status: '', response: '', description: '', extras: [] };
+}
