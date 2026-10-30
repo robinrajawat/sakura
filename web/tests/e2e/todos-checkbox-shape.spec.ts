@@ -34,7 +34,7 @@ test.describe('The To-Dos completion control is a left-led rounded square', () =
     const row = await openTodosPanelWithTask(page, 'Checkbox shape check');
     const id = await row.getAttribute('data-id');
     const radius = await page.locator(`.todo-check[data-id="${id}"]`).evaluate(el => getComputedStyle(el).borderRadius);
-    expect(radius).toBe('5px');
+    expect(radius).toBe('6px'); // small corner on the 4/6/8/12 scale (2026-10-30);
   });
 
   test('a checked task control is a light ring with a grey tick, not filled and not the accent', async ({ page }) => {
