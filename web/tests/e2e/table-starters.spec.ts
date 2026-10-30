@@ -63,6 +63,12 @@ test('every starter shows as its display right away, and Undo removes it', async
     await tableMenu(page);
     await page.locator('.sb-context-menu .sb-context-item').filter({ hasText: label }).first().click();
     await expect(page.locator('.node-table-line').last().locator(sel).first(), label).toBeVisible();
+    // A new API request also opens its form; Esc closes it and keeps the sample.
+    if (label === 'API request') {
+      await expect(page.locator('#api-editor-overlay')).toHaveClass(/open/);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#api-editor-overlay')).not.toHaveClass(/open/);
+    }
   }
   expect(await page.evaluate('nodes[0].tables.length')).toBe(8);
   // Not opened for editing: the starter shows as its display.

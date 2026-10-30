@@ -1508,23 +1508,54 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 @media (max-width:640px){.pv-proscons{grid-template-columns:minmax(0,1fr)}}
 /* API request card (data-table-display="api"): method + URL, then query, headers, body, response.
    Method colours follow the common convention (GET green, POST blue, PUT/PATCH orange, DELETE red). */
-.pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 13px 'Inter',sans-serif;color:var(--fg)}
+.pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 var(--fs-md) 'Inter',sans-serif;color:var(--fg)}
 .pv-api[data-method="get"]{--mc:var(--fc-green)}.pv-api[data-method="post"]{--mc:var(--fc-blue)}.pv-api[data-method="put"],.pv-api[data-method="patch"]{--mc:var(--fc-orange)}.pv-api[data-method="delete"]{--mc:var(--fc-red)}
 .pv-api-line{display:flex;align-items:center;gap:8px;min-width:0}
-.pv-api-method{flex:none;font:700 11px 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.pv-api-url{flex:1;min-width:0;font:400 12.5px 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:anywhere;background:none;padding:0}
-.pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 11px 'Inter',sans-serif;cursor:pointer}
+.pv-api-method{flex:none;font:700 var(--fs-xs) 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:anywhere;background:none;padding:0}
+.pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer}
 .pv-api-curl:hover{background:var(--hover);color:var(--fg)}
 .pv-api-desc{color:var(--muted);line-height:1.45}
 .pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
-.pv-api-label{display:flex;align-items:center;gap:8px;font:600 10.5px 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pv-api-pairs{display:flex;flex-direction:column;gap:2px}
-.pv-api-pair{font:400 12px 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-pair{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
 .pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
-.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 12px/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
-.pv-api-status{font:600 10.5px 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
+.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
+.pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
 .pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
 @media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible}}
+/* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
+.api-ed{width:min(720px,94vw)}
+.api-ed-body{display:flex;flex-direction:column;gap:12px}
+.api-ed-line{display:flex;gap:8px;min-width:0}
+.api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
+.api-ed-input:focus{outline:none;border-color:var(--accent)}
+.api-ed-input.invalid{border-color:var(--fc-red)}
+.api-ed-mono{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-method{flex:0 0 112px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:700 var(--fs-sm) 'Fira Code',Consolas,monospace;cursor:pointer}
+.api-ed-method:focus{outline:none;border-color:var(--accent)}
+.api-ed-line .api-ed-input{flex:1}
+.api-ed-sec{display:flex;flex-direction:column;gap:6px}
+.api-ed-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.api-ed-pairs{display:flex;flex-direction:column;gap:6px}
+.api-ed-pairs:empty{display:none}
+.api-ed-pair{display:flex;align-items:center;gap:6px}
+.api-ed-pair .api-ed-k{flex:0 0 38%}
+.api-ed-pair .api-ed-v{flex:1}
+.api-ed-sep{color:var(--muted);font:400 var(--fs-sm) 'Fira Code',Consolas,monospace}
+.api-ed-remove{flex:none;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:6px;background:none;color:var(--hint);cursor:pointer}
+.api-ed-remove:hover{background:var(--hover);color:var(--fg)}
+.api-ed-add,.api-ed-format{align-self:flex-start;border:none;background:none;padding:2px 0;color:var(--muted);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
+.api-ed-add:hover,.api-ed-format:hover{color:var(--fg)}
+.api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
+.api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:vertical;white-space:pre;overflow:auto}
+.api-ed-status{width:180px;flex:none}
+.api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
+.api-ed-foot{display:flex;align-items:center;gap:8px;padding:12px var(--pad-dialog);border-top:1px solid var(--border);flex:0 0 auto}
+.api-ed-astable{margin-right:auto;padding-left:0}
+.api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
+@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}}
 .tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
 .tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--pc);color:#fff;font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -5728,6 +5759,136 @@ function apiCellText(c){ if(!c)return ''; const k=c.cloneNode(true); k.querySele
 function tableApiInfo(table){ if(!table)return null; return apiRequestFromGrid(Array.from(table.rows).map(r=>Array.from(r.cells).map(apiCellText))); }
 function tableApiEligible(table){ return !!tableApiInfo(table); }
 function isTableShownAsApi(table){ return !!(table&&table.getAttribute('data-table-display')==='api'); }
+// API request editor (owner 2026-10-30: "a nicer editor, no shortcuts"). Double-click, Edit
+// request… or a new API request starter opens this form instead of the raw Field | Value grid:
+// method and URL on one line, a description, query parameters and headers as name/value rows
+// (add/remove), body and example response with Format JSON. Save writes the request back into the
+// same table (apiRequestToGrid), keeping the table's own display attributes, as one undo step.
+// Esc or Cancel leaves the table as it was; Ctrl/Cmd+Enter saves. "Edit as table" is still there
+// for fields the form doesn't show (extras keep their rows either way).
+const API_EDITOR_HEADER_NAMES=['Accept','Authorization','Cache-Control','Content-Type','Cookie','If-None-Match','User-Agent','X-API-Key','X-Correlation-ID','X-Request-ID'];
+let _apiEd=null;
+function apiEditorEl(){
+  let ov=el('api-editor-overlay'); if(ov)return ov;
+  const X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
+  ov=document.createElement('div'); ov.id='api-editor-overlay'; ov.className='app-modal-overlay';
+  ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-labelledby','api-ed-heading');
+  ov.innerHTML=`<div class="app-modal api-ed">
+    <div class="app-modal-head"><div><h2 id="api-ed-heading">API request</h2><div class="cs-sub">Documented in the spec. Sakura never sends it; use cURL or Postman to try it.</div></div>
+      <button type="button" class="app-modal-close-btn" id="api-ed-close" aria-label="Close">${X}</button></div>
+    <div class="app-modal-body api-ed-body">
+      <div class="api-ed-line">
+        <select id="api-ed-method" class="api-ed-method" aria-label="Method">${API_METHODS.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
+        <input id="api-ed-url" class="api-ed-input api-ed-mono" type="text" spellcheck="false" autocomplete="off" placeholder="https://api.example.com/v1/orders or {{baseUrl}}/orders" aria-label="URL">
+      </div>
+      <div class="api-ed-err" id="api-ed-url-err" hidden>Add the URL</div>
+      <input id="api-ed-desc" class="api-ed-input" type="text" autocomplete="off" placeholder="What it does (optional)" aria-label="Description">
+      <div class="api-ed-sec"><div class="api-ed-label">Query parameters</div><div class="api-ed-pairs" id="api-ed-query"></div>
+        <button type="button" class="api-ed-add" data-add="query">+ Add parameter</button></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Headers</div><div class="api-ed-pairs" id="api-ed-headers"></div>
+        <button type="button" class="api-ed-add" data-add="headers">+ Add header</button></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Body<button type="button" class="api-ed-format" data-format="api-ed-body">Format JSON</button></div>
+        <textarea id="api-ed-body" class="api-ed-input api-ed-mono api-ed-area" spellcheck="false" placeholder='{ "orderId": "4711" }' aria-label="Body"></textarea>
+        <div class="api-ed-err" data-err-for="api-ed-body" hidden>Not valid JSON. It's saved as typed.</div></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Example response<button type="button" class="api-ed-format" data-format="api-ed-response">Format JSON</button></div>
+        <input id="api-ed-status" class="api-ed-input api-ed-mono api-ed-status" type="text" autocomplete="off" placeholder="200 OK" aria-label="Response status">
+        <textarea id="api-ed-response" class="api-ed-input api-ed-mono api-ed-area" spellcheck="false" placeholder='{ "status": "accepted" }' aria-label="Response body"></textarea>
+        <div class="api-ed-err" data-err-for="api-ed-response" hidden>Not valid JSON. It's saved as typed.</div></div>
+      <datalist id="api-ed-header-names">${API_EDITOR_HEADER_NAMES.map(h=>`<option value="${h}">`).join('')}</datalist>
+    </div>
+    <div class="api-ed-foot">
+      <button type="button" class="smodal-btn api-ed-astable" id="api-ed-astable">Edit as table</button>
+      <span class="api-ed-hint">${navigator.platform?.includes('Mac')?'⌘':'Ctrl'}+Enter to save</span>
+      <button type="button" class="smodal-btn" id="api-ed-cancel">Cancel</button>
+      <button type="button" class="smodal-btn primary" id="api-ed-save">Save</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('mousedown',e=>{ if(e.target===ov)apiEditorClose(); });
+  el('api-ed-close').addEventListener('click',()=>apiEditorClose());
+  el('api-ed-cancel').addEventListener('click',()=>apiEditorClose());
+  el('api-ed-save').addEventListener('click',()=>apiEditorSave());
+  el('api-ed-astable').addEventListener('click',()=>{ const ed=_apiEd; apiEditorClose(); ed?.asTable?.(); });
+  el('api-ed-url').addEventListener('input',()=>{ el('api-ed-url-err').hidden=true; el('api-ed-url').classList.remove('invalid'); });
+  ov.querySelectorAll('.api-ed-add').forEach(b=>b.addEventListener('click',()=>{ const row=apiEditorAddPair(b.dataset.add,'',''); row.querySelector('input').focus(); }));
+  ov.querySelectorAll('.api-ed-format').forEach(b=>b.addEventListener('click',()=>{
+    const ta=el(b.dataset.format), err=ov.querySelector(`[data-err-for="${b.dataset.format}"]`);
+    if(!ta.value.trim())return;
+    if(isValidJson(ta.value)){ ta.value=prettyJson(ta.value); err.hidden=true; } else err.hidden=false;
+  }));
+  ['api-ed-body','api-ed-response'].forEach(id=>el(id).addEventListener('input',()=>{ ov.querySelector(`[data-err-for="${id}"]`).hidden=true; }));
+  ov.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); apiEditorClose(); }
+    else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); e.stopPropagation(); apiEditorSave(); }
+    // Keep the outline's own shortcuts (arrows, Delete, Tab-indent...) from firing behind the form.
+    else e.stopPropagation();
+  });
+  return ov;
+}
+function apiEditorAddPair(kind,k,v){
+  const list=el(kind==='query'?'api-ed-query':'api-ed-headers');
+  const row=document.createElement('div'); row.className='api-ed-pair';
+  const sep=kind==='query'?'=':':';
+  row.innerHTML=`<input class="api-ed-input api-ed-mono api-ed-k" type="text" spellcheck="false" autocomplete="off" placeholder="${kind==='query'?'name':'Header'}" aria-label="${kind==='query'?'Parameter name':'Header name'}"${kind==='headers'?' list="api-ed-header-names"':''}>`
+    +`<span class="api-ed-sep">${sep}</span><input class="api-ed-input api-ed-mono api-ed-v" type="text" spellcheck="false" autocomplete="off" placeholder="value" aria-label="Value">`
+    +`<button type="button" class="api-ed-remove" aria-label="Remove" data-tip="Remove"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>`;
+  row.querySelector('.api-ed-k').value=k; row.querySelector('.api-ed-v').value=v;
+  row.querySelector('.api-ed-remove').addEventListener('click',()=>{ const next=row.nextElementSibling||row.previousElementSibling; row.remove(); (next?.querySelector('input')||list.parentElement.querySelector('.api-ed-add'))?.focus(); });
+  list.appendChild(row);
+  return row;
+}
+function apiEditorPairs(kind){
+  return [...el(kind==='query'?'api-ed-query':'api-ed-headers').querySelectorAll('.api-ed-pair')]
+    .map(r=>[r.querySelector('.api-ed-k').value.trim(),r.querySelector('.api-ed-v').value.trim()]).filter(([k])=>k);
+}
+function openApiRequestEditor(node,tIdx,{asTable}={}){
+  const div=document.createElement('div'); div.innerHTML=node.tables?.[tIdx]||'';
+  const table=div.querySelector('table'); if(!table)return;
+  const req=tableApiInfo(table)||{method:'GET',url:'',query:[],headers:[],body:'',status:'',response:'',description:'',extras:[]};
+  const ov=apiEditorEl();
+  el('api-ed-method').value=API_METHODS.includes(req.method)?req.method:'GET';
+  el('api-ed-url').value=req.url; el('api-ed-url').classList.remove('invalid'); el('api-ed-url-err').hidden=true;
+  el('api-ed-desc').value=req.description;
+  el('api-ed-body').value=req.body?prettyJson(req.body):'';
+  el('api-ed-status').value=req.status;
+  el('api-ed-response').value=req.response?prettyJson(req.response):'';
+  ov.querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
+  el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML='';
+  req.query.forEach(([k,v])=>apiEditorAddPair('query',k,v));
+  req.headers.forEach(([k,v])=>apiEditorAddPair('headers',k,v));
+  _apiEd={nodeId:node.id,tIdx,extras:req.extras,asTable,returnFocus:document.activeElement};
+  ov.classList.add('open');
+  requestAnimationFrame(()=>{ const u=el('api-ed-url'); u.focus(); u.select(); });
+}
+function apiEditorClose(){
+  const ov=el('api-editor-overlay'); if(!ov||!ov.classList.contains('open'))return;
+  ov.classList.remove('open');
+  const back=_apiEd?.returnFocus; _apiEd=null;
+  if(back&&back.isConnected&&typeof back.focus==='function')back.focus(); else focusPane();
+}
+function apiEditorSave(){
+  const ed=_apiEd; if(!ed)return;
+  const url=el('api-ed-url').value.trim();
+  if(!url){ el('api-ed-url').classList.add('invalid'); el('api-ed-url-err').hidden=false; el('api-ed-url').focus(); return; }
+  const idx=getIndex(nodes,ed.nodeId); const node=nodes[idx];
+  if(idx<0||!node.tables?.[ed.tIdx]){ apiEditorClose(); showToast('That API request was removed in the meantime'); return; }
+  const req={method:el('api-ed-method').value,url,query:apiEditorPairs('query'),headers:apiEditorPairs('headers'),
+    body:el('api-ed-body').value.trim(),status:el('api-ed-status').value.trim(),response:el('api-ed-response').value.trim(),
+    description:el('api-ed-desc').value.trim(),extras:ed.extras||[]};
+  const old=document.createElement('div'); old.innerHTML=node.tables[ed.tIdx];
+  const oldTable=old.querySelector('table');
+  const fresh=document.createElement('div'); fresh.innerHTML=apiGridToTableHtml(apiRequestToGrid(req));
+  const table=fresh.querySelector('table');
+  // Keep how the table was set up (display, position...) and make sure it shows as a request.
+  [...(oldTable?.attributes||[])].forEach(a=>table.setAttribute(a.name,a.value));
+  table.setAttribute('data-table-display','api');
+  const html=sakuraSanitizeRichHtml(table.outerHTML);
+  apiEditorClose();
+  if(html===node.tables[ed.tIdx])return;
+  pushUndo();
+  node.tables[ed.tIdx]=html; node.modifiedAt=Date.now();
+  markDirty(); scheduleAutoSave(); render();
+  showToast('API request saved');
+}
 // Copy as cURL: a click on the card's button copies the command and does nothing else (the card
 // itself opens the table's editing like any featured table).
 ['mousedown','pointerdown'].forEach(t=>document.addEventListener(t,e=>{ if(e.target.closest?.('.pv-api-curl'))e.stopPropagation(); },true));
@@ -7278,6 +7439,39 @@ function apiRequestToCurl(req) {
         parts.push('--data-raw ' + shellQuote(req.body));
     return parts.join(' \\\n  ');
 }
+/**
+ * The request as Field | Value rows (header row first) in the standard order -- what the API
+ * request editor saves back into the table. Empty parts are left out; extras keep their place at
+ * the end. apiRequestFromGrid(apiRequestToGrid(r)) gives r back.
+ */
+function apiRequestToGrid(req) {
+    const grid = [['Field', 'Value'], ['Method', req.method], ['URL', req.url]];
+    req.query.forEach(([k, v]) => { if (k.trim())
+        grid.push(['Query', v ? k + '=' + v : k]); });
+    req.headers.forEach(([k, v]) => { if (k.trim())
+        grid.push(['Header', v ? k + ': ' + v : k]); });
+    if (req.body.trim())
+        grid.push(['Body', req.body]);
+    if (req.status.trim())
+        grid.push(['Status', req.status.trim()]);
+    if (req.response.trim())
+        grid.push(['Response', req.response]);
+    if (req.description.trim())
+        grid.push(['Description', req.description.trim()]);
+    req.extras.forEach(([k, v]) => { if (k.trim() && v.trim())
+        grid.push([k, v]); });
+    return grid;
+}
+/** Whether text is valid JSON (for the editor's Format button and its warning). */
+function isValidJson(raw) {
+    try {
+        JSON.parse(String(raw));
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
 
 /* GENERATED:apiRequest:END */
 /* GENERATED:postmanCollection:START — DO NOT EDIT BY HAND. Source of truth: src/utils/postmanCollection.ts (tests: tests/unit/postmanCollection.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -8824,7 +9018,17 @@ function openTableStartMenu(nodeId,pos){
   showSbContextMenu(pos.x,pos.y,[
     {label:'Blank table\u2026', icon:ico, sub:'Pick a size', onClick:()=>openTableGridPicker(pos,(rows,cols)=>insertNodeTable(nodeId,rows,cols))},
     {heading:'Start from'},
-    ...TABLE_STARTERS.map(st=>({label:st.label, sub:st.cols, onClick:()=>{ insertNodeTableHtml(nodeId,tableStarterHtml(st.key),false); showToast(st.label+' added \u2014 double-click it to edit the data'); }}))
+    ...TABLE_STARTERS.map(st=>({label:st.label, sub:st.cols, onClick:()=>{
+      insertNodeTableHtml(nodeId,tableStarterHtml(st.key),false);
+      // A new API request opens straight in its form, the sample values ready to type over.
+      const n=nodes[getIndex(nodes,nodeId)];
+      if(st.key==='api'&&n?.tables?.length){
+        const tIdx=n.tables.length-1;
+        openApiRequestEditor(n,tIdx,{asTable:()=>{ const w=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)][tIdx]; w?._sakuraEnterEdit?.(-1,{asTable:true}); }});
+        return;
+      }
+      showToast(st.label+' added \u2014 double-click it to edit the data');
+    }}))
   ]);
 }
 // Adds a table's HTML to a node; a blank one opens straight into editing, a starter shows as its display.
@@ -9250,6 +9454,10 @@ function buildNodeTableObject(node,tIdx){
     const div=document.createElement('div'); div.innerHTML=tidyTableHtml(node.tables[tIdx]||'');
     const liveTable=div.querySelector('table');
     if(!liveTable)return;
+    // An API request edits in its own form; "Edit as table" (opts.asTable) still opens the grid.
+    if(!opts?.asTable&&isTableShownAsApi(liveTable)&&tableApiEligible(liveTable)){
+      openApiRequestEditor(node,tIdx,{asTable:()=>enterEdit(-1,undefined,undefined,{asTable:true})}); return;
+    }
     liveTable.querySelectorAll('td,th').forEach(c=>c.contentEditable='true');
     wrap.innerHTML='';
     wrap.classList.remove('pv-table-chart-figure','pos-center');
@@ -9541,7 +9749,8 @@ function buildNodeTableObject(node,tIdx){
     // "Edit data": shows a chart's/Cards' underlying table in the same editing session a plain
     // table gets on click (cells editable, the row/column menu on right-click), and re-renders the
     // chart/Cards from the edited values when it ends (Esc, click outside).
-    if(table&&isTableFeatured(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
+    if(table&&isTableShownAsApi(table)&&tableApiEligible(table))items.push({label:'Edit request\u2026', onClick:()=>enterEdit(-1)},{label:'Edit as table', onClick:()=>enterEdit(-1,undefined,undefined,{asTable:true})});
+    else if(table&&isTableFeatured(table))items.push({label:'Edit data', onClick:()=>enterEdit(-1)});
     items.push({label:'Copy', onClick:()=>copyNodeTableObject(node,tIdx)},{divider:true});
     items.push({label:'Delete', danger:true, onClick:()=>{ pushUndo(); node.tables.splice(tIdx,1); node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); render(); showToast('Table deleted — Ctrl/Cmd+Z to undo'); }});
     showSbContextMenu(e.clientX,e.clientY,items);

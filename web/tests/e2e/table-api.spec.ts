@@ -81,3 +81,72 @@ test('API request is greyed out for a table without a Method and URL, and is a t
   expect(r.starter).toContain('data-table-display="api"');
   expect(r.starter).toContain('"orderId"');
 });
+
+test('the API request form edits the card: method, URL, query, headers, body; Esc cancels; one undo step', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.goto('file://' + indexPath);
+  // The table is stored as an API request already.
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = nodes[0].tables[0].replace('<table>', '<table data-table-display="api">'); render();
+  });
+  const card = page.locator('.pv-api');
+  await card.dblclick();
+  const form = page.locator('#api-editor-overlay');
+  await expect(form).toHaveClass(/open/);
+  await expect(page.locator('#api-ed-url')).toBeFocused();
+  await expect(page.locator('#api-ed-url')).toHaveValue('{{baseUrl}}/orders');
+  await expect(page.locator('#api-ed-query .api-ed-k')).toHaveValue('status');
+
+  // Esc leaves the card as it was.
+  await page.locator('#api-ed-url').fill('/changed');
+  await page.keyboard.press('Escape');
+  await expect(form).not.toHaveClass(/open/);
+  await expect(card.locator('.pv-api-url')).toHaveText('{{baseUrl}}/orders?status=open');
+
+  // Edit and save.
+  await card.dblclick();
+  await page.locator('#api-ed-method').selectOption('POST');
+  await page.locator('#api-ed-url').fill('{{baseUrl}}/orders');
+  await page.locator('#api-ed-query .api-ed-remove').click();
+  await page.locator('.api-ed-add[data-add="headers"]').click();
+  const h = page.locator('#api-ed-headers .api-ed-pair').last();
+  await h.locator('.api-ed-k').fill('Content-Type');
+  await h.locator('.api-ed-v').fill('application/json');
+  await page.locator('#api-ed-body').fill('{"id":"4711"}');
+  await page.locator('.api-ed-format[data-format="api-ed-body"]').click();
+  await expect(page.locator('#api-ed-body')).toHaveValue('{\n  "id": "4711"\n}');
+  await page.locator('#api-ed-save').click();
+  await expect(form).not.toHaveClass(/open/);
+  await expect(card).toHaveAttribute('data-method', 'post');
+  await expect(card.locator('.pv-api-url')).toHaveText('{{baseUrl}}/orders');
+  await expect(card.locator('.pv-api-key')).toHaveText(['Authorization', 'Content-Type']);
+  // The table keeps its display and stays a plain Field | Value table underneath.
+  // @ts-expect-error -- bare global from index.html
+  const html = await page.evaluate(() => nodes[0].tables[0]);
+  expect(html).toContain('data-table-display="api"');
+  expect(html).toContain('<td>Method</td><td>POST</td>');
+
+  // One undo step brings the old request back.
+  await page.keyboard.press('ControlOrMeta+Z');
+  await expect(card).toHaveAttribute('data-method', 'get');
+});
+
+test('the form needs a URL, warns about invalid JSON, and Edit as table opens the grid', async ({ page }) => {
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = nodes[0].tables[0].replace('<table>', '<table data-table-display="api">'); render();
+  });
+  await page.locator('.pv-api').dblclick();
+  await page.locator('#api-ed-url').fill('');
+  await page.keyboard.press('ControlOrMeta+Enter');
+  await expect(page.locator('#api-ed-url-err')).toBeVisible();
+  await expect(page.locator('#api-editor-overlay')).toHaveClass(/open/);
+  await page.locator('#api-ed-body').fill('{not json');
+  await page.locator('.api-ed-format[data-format="api-ed-body"]').click();
+  await expect(page.locator('[data-err-for="api-ed-body"]')).toBeVisible();
+  await page.locator('#api-ed-astable').click();
+  await expect(page.locator('#api-editor-overlay')).not.toHaveClass(/open/);
+  await expect(page.locator('.node-table-line td[contenteditable="true"]').first()).toBeVisible();
+});
