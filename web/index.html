@@ -236,7 +236,8 @@ input[type=number]{-moz-appearance:textfield}
 .qa-dropdown,.history-modal-body,#sidebar-scroll,
 #at-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,.pv-popover,#ai-prompt-input,.todo-dd-menu,
-#diagram-anchor-suggest,#account-menu,.sb-context-menu{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+#diagram-anchor-suggest,#account-menu,.sb-context-menu,
+.pv-api-code,.api-ed-area,.api-ed-body{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
 }
 body{display:flex;flex-direction:column;overflow:hidden;font-size:var(--fs-lg);transition:background .15s,color .15s;font-family:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 /* --content-font is the single source of truth for "what font is the text I actually write
@@ -1524,10 +1525,15 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-pairs{display:flex;flex-direction:column;gap:2px}
 .pv-api-pair{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
 .pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
-.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto}
+.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre;max-height:320px;overflow:auto}
 .pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
 .pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
-@media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible}}
+@media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere}}
+/* The app's scrollbar (as #editor-pane / menus): 8px, rounded var(--scroll) thumb, no track. The
+   transparent border + padding-box keeps the thumb inset on any background (code boxes are tinted). */
+.pv-api-code::-webkit-scrollbar,.api-ed-area::-webkit-scrollbar,.api-ed-body::-webkit-scrollbar{width:8px;height:8px}
+.pv-api-code::-webkit-scrollbar-thumb,.api-ed-area::-webkit-scrollbar-thumb,.api-ed-body::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+.pv-api-code::-webkit-scrollbar-track,.api-ed-area::-webkit-scrollbar-track,.api-ed-body::-webkit-scrollbar-track{background:transparent}
 /* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
 .api-ed{width:min(720px,94vw)}
 .api-ed-body{display:flex;flex-direction:column;gap:12px}
