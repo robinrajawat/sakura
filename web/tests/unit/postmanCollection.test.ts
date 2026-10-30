@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { postmanUrl, postmanItemToGrid, postmanToOutline, outlineToPostman, apiRequestToPostmanItem } from '../../src/utils/postmanCollection';
+import { postmanUrl, postmanItemToGrid, postmanToOutline, outlineToPostman, apiRequestToPostmanItem, postmanAuthRows } from '../../src/utils/postmanCollection';
 import { apiRequestFromGrid } from '../../src/utils/apiRequest';
 
 const collection = {
@@ -88,5 +88,53 @@ describe('outlineToPostman', () => {
   it('writes the example status as code and text', () => {
     const item = apiRequestToPostmanItem('X', apiRequestFromGrid([['Method', 'GET'], ['URL', '/x'], ['Status', '404 Not Found']])!);
     expect((item.response as any[])[0]).toMatchObject({ code: 404, status: 'Not Found' });
+  });
+});
+
+describe('postmanAuthRows', () => {
+  it('turns bearer, basic and API key auth into rows, keeping variables', () => {
+    expect(postmanAuthRows({ type: 'bearer', bearer: [{ key: 'token', value: '{{token}}' }] })).toEqual([['Header', 'Authorization: Bearer {{token}}']]);
+    expect(postmanAuthRows({ type: 'basic', basic: [{ key: 'username', value: '{{user}}' }, { key: 'password', value: '{{pw}}' }] }))
+      .toEqual([['Header', 'Authorization: Basic {{user}}:{{pw}}']]);
+    expect(postmanAuthRows({ type: 'apikey', apikey: [{ key: 'key', value: 'X-Key' }, { key: 'value', value: '{{k}}' }, { key: 'in', value: 'query' }] }))
+      .toEqual([['Query', 'X-Key={{k}}']]);
+    expect(postmanAuthRows({ type: 'apikey', apikey: [{ key: 'value', value: '{{k}}' }] })).toEqual([['Header', 'X-API-Key: {{k}}']]);
+  });
+  it('never writes a literal secret into the spec', () => {
+    expect(postmanAuthRows({ type: 'bearer', bearer: [{ key: 'token', value: 'eyJhbGciOi.real.token' }] })).toEqual([['Header', 'Authorization: Bearer {{token}}']]);
+    expect(postmanAuthRows({ type: 'basic', basic: [{ key: 'username', value: 'robin' }, { key: 'password', value: 'hunter2' }] }))
+      .toEqual([['Header', 'Authorization: Basic {{username}}:{{password}}']]);
+  });
+  it('names other kinds and adds nothing for no auth', () => {
+    expect(postmanAuthRows({ type: 'oauth2', oauth2: [] })).toEqual([['Auth', 'oauth2']]);
+    expect(postmanAuthRows({ type: 'noauth' })).toEqual([]);
+    expect(postmanAuthRows(undefined)).toEqual([]);
+  });
+});
+
+describe('auth inheritance on import', () => {
+  const coll = {
+    info: { name: 'Auth' },
+    auth: { type: 'bearer', bearer: [{ key: 'token', value: '{{collectionToken}}' }] },
+    item: [
+      { name: 'Uses collection auth', request: { method: 'GET', url: '/a' } },
+      {
+        name: 'Folder',
+        auth: { type: 'apikey', apikey: [{ key: 'key', value: 'X-Key' }, { key: 'value', value: '{{folderKey}}' }] },
+        item: [
+          { name: 'Uses folder auth', request: { method: 'GET', url: '/b' } },
+          { name: 'Inherit', request: { method: 'GET', url: '/c', auth: { type: 'inherit' } } },
+          { name: 'Own none', request: { method: 'GET', url: '/d', auth: { type: 'noauth' } } }
+        ]
+      }
+    ]
+  };
+  it('takes the request\'s own auth, else the nearest folder\'s, else the collection\'s', () => {
+    const rows = postmanToOutline(coll).rows.filter(r => r.grid);
+    const auth = (i: number) => rows[i].grid!.filter(r => r[0] === 'Header').map(r => r[1]);
+    expect(auth(0)).toEqual(['Authorization: Bearer {{collectionToken}}']);
+    expect(auth(1)).toEqual(['X-Key: {{folderKey}}']);
+    expect(auth(2)).toEqual(['X-Key: {{folderKey}}']);
+    expect(auth(3)).toEqual([]);
   });
 });

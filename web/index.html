@@ -7288,7 +7288,9 @@ function apiRequestToCurl(req) {
  * with its requests (and sub-folders) under it, and each request becomes a row named like the
  * request with an API request table (see apiRequest.ts) holding its method, URL, query, headers,
  * body, description and the first saved example response. Disabled query rows and headers are
- * left out. Collection variables ({{baseUrl}}) stay as typed in the URL.
+ * left out. Collection variables ({{baseUrl}}) stay as typed in the URL. Auth (the request's,
+ * else the nearest folder's or the collection's) becomes an Authorization header or API key row,
+ * with any literal secret replaced by a {{variable}} so a spec never carries a real token.
  *
  * Export is the reverse: rows holding an API request table become requests, and their ancestor
  * rows become folders, so a spec's outline round-trips into Postman.
@@ -7343,8 +7345,45 @@ function bodyText(body) {
         return str(body.graphql.query);
     return '';
 }
-/** The Field | Value grid for one Postman item that has a request. */
-function postmanItemToGrid(item) {
+/** A Postman auth list ([{key, value}]) as a lookup. */
+function authValues(list) {
+    const out = {};
+    (Array.isArray(list) ? list : []).forEach(e => { if (isObj(e))
+        out[str(e.key)] = str(e.value); });
+    return out;
+}
+/**
+ * A literal secret is never written into a spec: anything that isn't already a {{variable}}
+ * becomes one named after its field ({{token}}, {{password}}), so the card shows where it goes.
+ */
+function asVariable(value, name) {
+    return /\{\{[^}]+\}\}/.test(value) ? value : '{{' + name + '}}';
+}
+/**
+ * The rows a Postman auth block adds: Bearer and Basic as an Authorization header, an API key
+ * as a header or query row (with its name kept, its value a variable), and any other kind
+ * (OAuth 2.0, Digest...) as an "Auth" extra naming it. "noauth" adds nothing.
+ */
+function postmanAuthRows(auth) {
+    if (!isObj(auth))
+        return [];
+    const type = str(auth.type);
+    const v = authValues(auth[type]);
+    if (!type || type === 'noauth')
+        return [];
+    if (type === 'bearer')
+        return [['Header', 'Authorization: Bearer ' + asVariable(v.token || '', 'token')]];
+    if (type === 'basic')
+        return [['Header', 'Authorization: Basic ' + asVariable(v.username || '', 'username') + ':' + asVariable(v.password || '', 'password')]];
+    if (type === 'apikey') {
+        const name = v.key || 'X-API-Key';
+        const value = asVariable(v.value || '', 'apiKey');
+        return v.in === 'query' ? [['Query', name + '=' + value]] : [['Header', name + ': ' + value]];
+    }
+    return [['Auth', type]];
+}
+/** The Field | Value grid for one Postman item that has a request; `inheritedAuth` is the nearest folder's or the collection's. */
+function postmanItemToGrid(item, inheritedAuth) {
     const req = isObj(item.request) ? item.request : { url: str(item.request) };
     const method = (str(req.method) || 'GET').toUpperCase();
     const { url, query } = postmanUrl(req.url);
@@ -7353,6 +7392,9 @@ function postmanItemToGrid(item) {
     (Array.isArray(req.header) ? req.header : [])
         .filter(h => isObj(h) && !h.disabled && str(h.key))
         .forEach(h => grid.push(['Header', str(h.key) + ': ' + str(h.value)]));
+    // A request's own auth wins; without one (or "inherit") it takes its folder's or the collection's.
+    const ownAuth = isObj(req.auth) && str(req.auth.type) !== 'inherit' ? req.auth : inheritedAuth;
+    postmanAuthRows(ownAuth).forEach(r => grid.push(r));
     const body = bodyText(req.body);
     if (body)
         grid.push(['Body', body]);
@@ -7380,22 +7422,23 @@ function postmanToOutline(json) {
     const info = isObj(json.info) ? json.info : {};
     const rows = [];
     let requestCount = 0;
-    const walk = (items, depth) => {
+    const authOf = (o, fallback) => (isObj(o.auth) && str(o.auth.type) !== 'inherit' ? o.auth : fallback);
+    const walk = (items, depth, auth) => {
         items.forEach(it => {
             if (!isObj(it))
                 return;
             const name = str(it.name).trim();
             if (Array.isArray(it.item)) {
                 rows.push({ depth, text: name || 'Folder', grid: null });
-                walk(it.item, depth + 1);
+                walk(it.item, depth + 1, authOf(it, auth));
             }
             else if (it.request !== undefined) {
                 requestCount++;
-                rows.push({ depth, text: name || 'Request', grid: postmanItemToGrid(it) });
+                rows.push({ depth, text: name || 'Request', grid: postmanItemToGrid(it, auth) });
             }
         });
     };
-    walk(json.item, 0);
+    walk(json.item, 0, authOf(json, null));
     if (!requestCount)
         throw new Error('This Postman collection has no requests.');
     return { title: str(info.name).trim() || 'Postman collection', rows, requestCount };
@@ -22312,20 +22355,24 @@ function importPostmanText(text){
   showToast(`Imported ${parsed.requestCount} request${parsed.requestCount===1?'':'s'} from “${parsed.title}”`);
   return true;
 }
-function nodeApiGrid(node){
+// Every API request table on a row, in order (a row can hold several).
+function nodeApiGrids(node){
+  const out=[];
   for(const html of (node.tables||[])){
     if(!/data-table-display="api"/.test(html))continue;
     const d=document.createElement('div'); d.innerHTML=sakuraSanitizeRichHtml(html);
     const t=d.querySelector('table'); if(!t)continue;
     const grid=Array.from(t.rows).map(r=>Array.from(r.cells).map(apiCellText));
-    if(apiRequestFromGrid(grid))return grid;
+    if(apiRequestFromGrid(grid))out.push(grid);
   }
-  return null;
+  return out;
 }
 function exportPostman(){
   const scoped=withoutNoExportNodes(getScopedNodes(true));
   const title=(getMeta().title||'Sakura collection').trim();
-  const {collection,requestCount}=outlineToPostman(title,scoped.map(n=>({depth:n.depth,text:n.text||'',grid:nodeApiGrid(n)})));
+  // A row with several API requests exports each one, numbered after the first ("Orders (2)").
+  const rows=scoped.flatMap(n=>{ const grids=nodeApiGrids(n), text=n.text||''; return grids.length?grids.map((grid,i)=>({depth:n.depth,text:i?`${text} (${i+1})`:text,grid})):[{depth:n.depth,text,grid:null}]; });
+  const {collection,requestCount}=outlineToPostman(title,rows);
   if(!requestCount){ showToast('No API requests to export — add one with Table › API request'); return; }
   downloadBlob(`${title.replace(/[\\/:*?"<>|]+/g,'_')}.postman_collection.json`,'application/json;charset=utf-8',JSON.stringify(collection,null,2));
   showToast(`Exported ${requestCount} request${requestCount===1?'':'s'} — import the file in Postman`);

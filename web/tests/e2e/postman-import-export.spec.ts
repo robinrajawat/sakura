@@ -113,3 +113,33 @@ test('Share offers Export to Postman only when the document has API requests', a
   await expect(page.locator('.pv-api')).toHaveCount(2);
   expect(await shareLabels()).toContain('Export to Postman');
 });
+
+test('a row with two API requests exports both, and collection auth imports as a header', async ({ page }) => {
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    document.getElementById('sakura-landing-overlay')?.style.setProperty('display', 'none');
+    document.getElementById('welcome-overlay')?.classList.remove('open');
+  });
+  const withAuth = { ...COLLECTION, auth: { type: 'bearer', bearer: [{ key: 'token', value: 'real-secret-123' }] } };
+  await page.locator('#sakura-postman-file-input').setInputFiles({
+    name: 'c.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(withAuth))
+  });
+  // The collection's bearer token becomes a header, with the literal secret replaced by a variable.
+  const authPair = page.locator('.pv-api').first().locator('.pv-api-pair', { hasText: 'Authorization' });
+  await expect(authPair.locator('.pv-api-val')).toHaveText('Bearer {{token}}');
+  // @ts-expect-error -- bare global from index.html
+  expect(await page.evaluate(() => JSON.stringify(nodes))).not.toContain('real-secret-123');
+
+  // A second API request on the "Health" row.
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    const n = nodes.find((x: any) => x.text === 'Health'); n.tables.push(tableStarterHtml('api')); render();
+  });
+  await expect(page.locator('.pv-api')).toHaveCount(3);
+  const download = page.waitForEvent('download');
+  // @ts-expect-error -- bare global from index.html
+  await page.evaluate(() => exportPostman());
+  const out = JSON.parse(readFileSync((await (await download).path())!, 'utf8'));
+  expect(out.item.map((i: any) => i.name)).toEqual(['Orders', 'Health', 'Health (2)']);
+  expect(out.item[2].request.method).toBe('POST');
+});

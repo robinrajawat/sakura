@@ -5,7 +5,9 @@
  * with its requests (and sub-folders) under it, and each request becomes a row named like the
  * request with an API request table (see apiRequest.ts) holding its method, URL, query, headers,
  * body, description and the first saved example response. Disabled query rows and headers are
- * left out. Collection variables ({{baseUrl}}) stay as typed in the URL.
+ * left out. Collection variables ({{baseUrl}}) stay as typed in the URL. Auth (the request's,
+ * else the nearest folder's or the collection's) becomes an Authorization header or API key row,
+ * with any literal secret replaced by a {{variable}} so a spec never carries a real token.
  *
  * Export is the reverse: rows holding an API request table become requests, and their ancestor
  * rows become folders, so a spec's outline round-trips into Postman.
@@ -76,8 +78,43 @@ function bodyText(body: unknown): string {
   return '';
 }
 
-/** The Field | Value grid for one Postman item that has a request. */
-export function postmanItemToGrid(item: Json): string[][] {
+/** A Postman auth list ([{key, value}]) as a lookup. */
+function authValues(list: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  (Array.isArray(list) ? list : []).forEach(e => { if (isObj(e)) out[str(e.key)] = str(e.value); });
+  return out;
+}
+
+/**
+ * A literal secret is never written into a spec: anything that isn't already a {{variable}}
+ * becomes one named after its field ({{token}}, {{password}}), so the card shows where it goes.
+ */
+function asVariable(value: string, name: string): string {
+  return /\{\{[^}]+\}\}/.test(value) ? value : '{{' + name + '}}';
+}
+
+/**
+ * The rows a Postman auth block adds: Bearer and Basic as an Authorization header, an API key
+ * as a header or query row (with its name kept, its value a variable), and any other kind
+ * (OAuth 2.0, Digest...) as an "Auth" extra naming it. "noauth" adds nothing.
+ */
+export function postmanAuthRows(auth: unknown): string[][] {
+  if (!isObj(auth)) return [];
+  const type = str(auth.type);
+  const v = authValues(auth[type]);
+  if (!type || type === 'noauth') return [];
+  if (type === 'bearer') return [['Header', 'Authorization: Bearer ' + asVariable(v.token || '', 'token')]];
+  if (type === 'basic') return [['Header', 'Authorization: Basic ' + asVariable(v.username || '', 'username') + ':' + asVariable(v.password || '', 'password')]];
+  if (type === 'apikey') {
+    const name = v.key || 'X-API-Key';
+    const value = asVariable(v.value || '', 'apiKey');
+    return v.in === 'query' ? [['Query', name + '=' + value]] : [['Header', name + ': ' + value]];
+  }
+  return [['Auth', type]];
+}
+
+/** The Field | Value grid for one Postman item that has a request; `inheritedAuth` is the nearest folder's or the collection's. */
+export function postmanItemToGrid(item: Json, inheritedAuth?: unknown): string[][] {
   const req = isObj(item.request) ? item.request : { url: str(item.request) };
   const method = (str(req.method) || 'GET').toUpperCase();
   const { url, query } = postmanUrl(req.url);
@@ -86,6 +123,9 @@ export function postmanItemToGrid(item: Json): string[][] {
   (Array.isArray(req.header) ? (req.header as unknown[]) : [])
     .filter(h => isObj(h) && !h.disabled && str(h.key))
     .forEach(h => grid.push(['Header', str((h as Json).key) + ': ' + str((h as Json).value)]));
+  // A request's own auth wins; without one (or "inherit") it takes its folder's or the collection's.
+  const ownAuth = isObj(req.auth) && str(req.auth.type) !== 'inherit' ? req.auth : inheritedAuth;
+  postmanAuthRows(ownAuth).forEach(r => grid.push(r));
   const body = bodyText(req.body);
   if (body) grid.push(['Body', body]);
   const example = Array.isArray(item.response) ? (item.response as unknown[]).find(isObj) : null;
@@ -109,20 +149,21 @@ export function postmanToOutline(json: unknown): PostmanImport {
   const info = isObj(json.info) ? json.info : {};
   const rows: OutlineApiRow[] = [];
   let requestCount = 0;
-  const walk = (items: unknown[], depth: number) => {
+  const authOf = (o: Json, fallback: unknown) => (isObj(o.auth) && str(o.auth.type) !== 'inherit' ? o.auth : fallback);
+  const walk = (items: unknown[], depth: number, auth: unknown) => {
     items.forEach(it => {
       if (!isObj(it)) return;
       const name = str(it.name).trim();
       if (Array.isArray(it.item)) {
         rows.push({ depth, text: name || 'Folder', grid: null });
-        walk(it.item as unknown[], depth + 1);
+        walk(it.item as unknown[], depth + 1, authOf(it, auth));
       } else if (it.request !== undefined) {
         requestCount++;
-        rows.push({ depth, text: name || 'Request', grid: postmanItemToGrid(it) });
+        rows.push({ depth, text: name || 'Request', grid: postmanItemToGrid(it, auth) });
       }
     });
   };
-  walk(json.item as unknown[], 0);
+  walk(json.item as unknown[], 0, authOf(json, null));
   if (!requestCount) throw new Error('This Postman collection has no requests.');
   return { title: str(info.name).trim() || 'Postman collection', rows, requestCount };
 }
