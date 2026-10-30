@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **API card scrollbars to the app standard (2026-10-30).** Owner: scroll bars in the API cards weren't standard. `.pv-api-code`, `.api-ed-area` and `.api-ed-body` get the app scrollbar (8px, rounded `var(--scroll)` thumb, transparent border + padding-box so it sits inset on the tinted code box, no track) and join base.css's Firefox `scrollbar-width:thin` list. Code boxes no longer wrap (`white-space:pre`, horizontal scroll keeps JSON indentation); print still wraps. Headless screenshots need `ignoreDefaultArgs:['--hide-scrollbars']` to show scrollbars.
+
 - **Desktop app icon: bigger flower (2026-10-30).** Owner: the PWA icon looked small; match the original (pre-#746) icon. The original's card filled ~100% of the canvas with the flower at ~80% of the card; #757's tile was 84% with the flower at ~48% of it (the glyph SVG has its own padding, ~78% of its viewBox). `icon-192-pwa` / `icon-512-pwa` now: tile 90% of the canvas (room for the shadow), glyph SVG = tile size, so the flower is ~78% of the tile / 71% of the canvas. `sw.js` cache v10.
 
 - **API requests in by paste, one at a time (2026-10-30).** Owner: importing via the document Import menu doesn't make sense; pasting into a row should give the API card. `pasteCurlIntoNode` (index.html, before `pasteImagesIntoNodeIfImageOnly`) runs in both row paste paths (editing / selected): a cURL becomes an API table on the row via `insertNodeTableHtml` (one undo), an empty row is named "METHOD lastPathSegment". Removed Postman collection import (Import ▾ item, File Explorer item, file input, `importPostmanText`, `triggerPostmanImport`) and the import half of `src/utils/postmanCollection.ts` (now just `apiRequestToPostmanItem` / `apiRequestToPostmanCollection` for the card's Export this request). Auth masking for paste lives in `apiRequest.ts` (`maskSecretHeader`). e2e `api-paste-into-row.spec.ts` (replaces postman-import-export).
-
-- **Postman export is per card only (2026-10-30).** Owner: APIs don't belong in Share, and an export-all "seems out of place — one by one". Removed Share › Export to Postman, Export ▾ › Postman collection and the document-wide export (`exportPostman`, `nodeApiGrids` deleted). Right-click an API card: Copy for Postman / **Export this request (.json)**. Import stays (Import ▾, File Explorer right-click). `outlineToPostman` is still used for the one-request file. Tests reworked to per-card export.
 
 ### In progress / not built
 
