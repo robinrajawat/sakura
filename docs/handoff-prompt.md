@@ -23,7 +23,8 @@ and stays production permanently.
 Clone a fresh copy and run `sh scripts/setup-git-identity.sh` before
 touching anything. Then read:
 
-- README.md — the full feature reference for what Sakura actually does
+- README.md — what Sakura is and what it is for (usage first, with a technical section).
+- docs/feature-reference.md — the full feature reference for what Sakura actually does
   today; read this before changing user-facing behavior, since it's the
   source of truth for intended functionality, not just a description.
 - docs/history/architecture-plan.md — this app's own TypeScript
@@ -166,7 +167,7 @@ site root on every push to `main` — that's the only thing it publishes.
 PR, in the same branch as the code: add an entry for the change at the top of "Latest changes",
 keep only the last 3 entries, and delete older ones (git history and the PRs keep them). Move
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
-contradicts README.md, trust README.md.)*
+contradicts README.md or docs/feature-reference.md, trust them.)*
 
 **Open work:** none beyond this PR. Check `mcp__github__list_pull_requests` at session start.
 
@@ -174,9 +175,9 @@ contradicts README.md, trust README.md.)*
 
 - **One button style across the app (2026-10-30).** Owner: buttons looked old-style; "make it standard across the application". There were ~7 button families (`.btn`, `.smodal-btn`, `.notif-copy-btn`, `#tag-popover-add-btn`, settings `.data-io-btn`/`.settings-add-btn`, hub auth buttons, `#why-sakura-close`), each with its own size and an orange fill. Now one look: 32px, medium weight, 8px corners. **Primary** = near-black fill (near-white in dark; tokens `--btn-primary-bg/-fg/-hover` in both themes, index + hub), one main action per place; **secondary** = grey outline, hover grey fill, no shadow; **quiet** (`.btn.quiet`, and plain `.smodal-btn`/`.notif-copy-btn`) = text only, used for Cancel/Decline; danger = red text on grey outline. Orange stays for links, status and pressed/active states only.
 
-- **Sharing is a copy, not live editing (2026-10-30).** Owner asked to check live collaboration; audit found whole-document last-write-wins (two editors overwrote each other), shared docs gone after reload, view-only enforced on some paths only, editors able to rewrite the share list. Owner chose the copy model. Removed: Invite people, viewer/editor roles, the Shared section, presence, the shared banner, the live listener, `sharedDocMeta`/`isViewerOnCurrentDoc`, the presence and sharedDocSync generated blocks. Added: Share → **Send a copy…** (search public profiles) writes the document as one JSON string to `copies/{uid}/items` plus a `doc_copy` notification; the bell item has **Add to my documents** / **Decline** (owner 2026-10-30: be explicit; clicking the text adds nothing). Add runs `addSentCopyToMyDocs` (new document of their own, inbox copy deleted, notification kept as "Added … to your documents" with **Open** via `addedDocId`); Decline deletes notification and copy. Limit 900 KB. `firebase/firestore.rules` changed: **paste into the Firebase console** (docs owner-only again; new `/copies` block). Old `sharedWith` fields on documents are harmless and left alone.
+- **README Security section (2026-10-30).** Owner: "we should talk about security". README gets a Security section that claims only what is true: owner-only Firestore access, sent copies readable only by the recipient, Secure storage (AES-256/PBKDF2) for AI keys, CSP allowlist and no trackers, hosted keys server-side, and the limit stated plainly (not end-to-end encrypted; signed out with AI off = documents never leave the browser). Never write "end-to-end" or "zero-knowledge" about Sakura.
 
-- **Settings details (2026-10-30).** Owner: "too flat… add a + button and then open the form… small details all around". Admin AI providers: a list (order number, name · model, URL; Edit/Remove on hover) with "Add provider" opening a labelled form (Name, API format, Order, Endpoint URL, Model, API key; Cancel/Save); Edit fills the form (key must be pasted again). About: logo + one line + © header, then Source code/License/Third-party notices rows with ↗ buttons; Privacy & data as six short rows; Support one row. AI: "AI features" switch card with no title; Provider rows tidied (Mode, Sakura Hosted AI row with Sign in/Test, Provider/Model/API key); Auto-rewrite joins the Rewrite card. Delete account is one calm row (red-text button) instead of the pink danger box. Selected segments are a neutral raised pill; settings selects all show their arrow. Also: while Auto-rewrite is on, "✦ Auto-rewrite on" shows quietly bottom-right (owner: you couldn't tell from the editor); off shows nothing.
+- **README, social card and "What is Sakura" rewritten (2026-10-30).** Owner: the app has matured; describe what it actually is, usage first, plus one technical section. README.md is now short and usage-led (what it's for, a day with Sakura, outline, objects, "One table, many views" (owner: name the charts/cards/boards, not just "tables"), threads, To-Dos, PDF, AI, data, keys, technical details). The old long behaviour reference moved to docs/feature-reference.md (still the source of truth for behaviour). New social card from a real screenshot (web/public/social-card.png, 1200×630), new meta/og descriptions, Help's "What is Sakura" window rewritten (7 points, two columns, grey icons), About's one line updated.
 
 ### In progress / not built
 
