@@ -87,13 +87,13 @@ const REMOVED_GLOBALS = [
   'updateExportMenuFoldNote', 'applyFoldFilter', 'setQaExportEnabled', 'setNodeContentExportEnabled', 'setRemarksExportEnabled',
   'setPreviewSlideDepth', 'setPreviewPdfMargin', 'setPreviewPdfFooterEnabled', 'setPreviewAlwaysExpand', 'setPreviewTocMaxLevel',
   'setPreviewHeadingFallback', 'rewriteAllNodes', 'setAppLaser', 'toggleSlideDivider', 'requestDiagramGenGuideline',
-  'diagramGenValidateGuideline', 'callAiApiWithPrompt', 'setChromePreset', 'applyChromeColors', 'setAccentIntensity', 'setAccentCustomColor'
+  'diagramGenValidateGuideline', 'callAiApiWithPrompt', 'setChromePreset', 'applyChromeColors', 'setAccentIntensity', 'setAccentCustomColor', 'setAccentPreset'
 ];
 
 const KEPT_GLOBALS = [
   'setZenMode', 'exportPdfDirect', 'exportPreviewAsPdf', 'renderPreviewBody', 'exportOpml', 'serializeOpml', 'copyNodesToClipboard',
   'setTheme', 'setEditorScale', 'generateOutlineWithAi', 'rewriteMultipleNodes', 'rewriteSubTextSelection', 'setAutoRewriteEnabled',
-  'setPreviewBrandingText', 'setCoverPageEnabled', 'setAccentPreset'
+  'setPreviewBrandingText', 'setCoverPageEnabled'
   // (setPreviewBrandingEnabled and setExportUseAccentColor went with their switches: one PDF mark field,
   // exports always use the accent.)
   // (setZenHideToolbar/-Sidebar/-Tabbar and setTabbarVisible were removed later, in item 14 —
@@ -138,9 +138,8 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     // The mark defaults to SAKURA; blank means no mark.
     await expect(page.locator('#preview-branding-text-input')).toHaveValue('SAKURA');
 
-    // Six accent swatches, the default (terracotta) first; no chrome or custom swatches.
-    const accents = await page.locator('#accent-swatch-row .accent-swatch').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.accent));
-    expect(accents).toEqual(['terracotta', 'teal', 'indigo', 'violet', 'moss', 'amber']);
+    // No accent picker: the accent is one fixed teal (owner 2026-10-30).
+    await expect(page.locator('#accent-swatch-row')).toHaveCount(0);
 
     // The whole Features section (and so its old empty "Presentation" heading) was removed later,
     // in item 14; AI Capabilities moved to Settings → AI.
@@ -305,8 +304,6 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
         overrideInMemory,
         overrides: JSON.parse(localStorage.getItem('sakura-shortcut-overrides') || '{}'),
         menuGlobals: ['contextQuickActions', 'hoverToolbarActions'].filter((n) => typeof (window as unknown as Record<string, unknown>)[n] !== 'undefined'),
-        // @ts-expect-error
-        accent: accentPreset,
         accentVar: getComputedStyle(document.body).getPropertyValue('--accent').trim(),
         inlineBg: document.body.style.getPropertyValue('--bg'),
         // @ts-expect-error
@@ -318,14 +315,12 @@ test.describe('cutdown 9b: presets, dead settings, and leftovers removed', () =>
     for (const k of ['statusbarVisible', 'appbarVisible', 'zenHideStatusbar', 'zenHideAppbar', 'zenUseFullscreen', 'skipFoldedInExports',
       'exportMenuFoldNoteEnabled', 'qaExportEnabled', 'nodeContentExportEnabled', 'remarksExportEnabled', 'previewSlideDepth', 'previewPdfMargin',
       'previewPdfFooterEnabled', 'previewAlwaysExpand', 'previewTocOpen', 'previewHeadingDepthFallback', 'previewTocMaxLevel', 'noteHiddenButtons',
-      'chromePreset', 'accentIntensity', 'accentCustomColor', 'contextQuickActions', 'hoverToolbarActions']) {
+      'chromePreset', 'accentIntensity', 'accentCustomColor', 'accentPreset', 'contextQuickActions', 'hoverToolbarActions']) {
       expect(state.prefs, k).not.toHaveProperty(k);
     }
     expect(state.menuGlobals).toEqual([]);
-    // 'plum' is no longer offered — falls back to the default accent; no chrome preset applies.
-    expect(state.accent).toBe('terracotta');
-    expect(state.prefs.accentPreset).toBe('terracotta');
-    expect(state.accentVar).toBe('#c2553d');
+    // Accent presets are gone (2026-10-30): an old 'plum' choice is ignored and the fixed teal applies.
+    expect(state.accentVar).toBe('#2e8479');
     expect(state.inlineBg).toBe('');
     // Branding was off, so the old prefs migrate to no mark.
     expect(state.branding).toEqual(['', '']);

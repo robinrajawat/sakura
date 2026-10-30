@@ -93,7 +93,7 @@ test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Question
   expect(last).toContain('"type":"question"');
   expect(last).toContain('"person":"Kristoffer"');
   const asked = page.locator('.thread-entry', { hasText: 'Is the rollback tested?' });
-  await expect(asked.locator('.thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
+  await expect(asked.locator('.thread-kind.is-question')).toHaveCSS('color', 'rgb(46, 132, 121)');
   await expect(page.locator('.node-row[data-id="2"] .node-remark-dot .node-dot-count')).toHaveText('1');
   // The bottom line has no Yes / No: a question is answered from its own Reply (owner, 2026-10-27).
   await expect(page.locator('.thread-composer:has([data-node-id="2"]) .thread-btn[data-act="yes"]')).toHaveCount(0);
@@ -103,7 +103,7 @@ test('reply line: hidden until "+ Add to thread"; Enter adds a comment, Question
   await page.keyboard.type('Yes, tested last week');
   await page.keyboard.press('Enter');
   // Answered: the question's icon leaves the accent colour, and the answer, under it, has the reply icon.
-  await expect(asked.locator('.thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
+  await expect(asked.locator('.thread-kind.is-question')).not.toHaveCSS('color', 'rgb(46, 132, 121)');
   await expect(page.locator('.thread-entry.is-nested', { hasText: 'Yes, tested last week' }).locator('.thread-kind.is-reply')).toHaveCount(1);
   const answer = await page.evaluate("(() => { const r = remarks[remarks.length - 1]; return [r.verdict, r.answerTo === remarks[remarks.length - 2].id, stripHtmlToText(r.text)]; })()");
   expect(answer).toEqual([undefined, true, 'Yes, tested last week']);
@@ -281,8 +281,8 @@ test('grey thread: only an open question takes the accent colour; an answer read
   expect(order).toEqual(['ask', 'ans>', 'mid', 'open']);
   await expect(page.locator('.thread-quote')).toHaveCount(0);
   await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-kind.is-question')).toHaveAttribute('data-tip', /^Question, answered/);
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-kind.is-question')).toHaveCSS('color', 'rgb(194, 85, 61)');
-  await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-kind.is-question')).not.toHaveCSS('color', 'rgb(194, 85, 61)');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-open) .thread-kind.is-question')).toHaveCSS('color', 'rgb(46, 132, 121)');
+  await expect(page.locator('.thread-entry:has(#inline-remark-text-ask) .thread-kind.is-question')).not.toHaveCSS('color', 'rgb(46, 132, 121)');
 });
 
 test('Ctrl/Cmd+Alt+M opens a reply line in the selected row\'s thread', async ({ page }) => {

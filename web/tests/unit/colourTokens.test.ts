@@ -62,7 +62,7 @@ describe('interface colours come from the theme', () => {
     const offenders: string[] = [];
     for (const m of markup.matchAll(/<([a-z]+)\b([^>]*?style="([^"]*)"[^>]*)>/g)) {
       if (!/#[0-9a-fA-F]{3,8}\b/.test(m[3])) continue;
-      if (/class="[^"]*\baccent-swatch\b/.test(m[2]) || /id="about-support-btn"/.test(m[2])) continue;
+      if (/id="about-support-btn"/.test(m[2])) continue;
       offenders.push(`<${m[1]}${m[2].slice(0, 80)}>`);
     }
     expect(offenders).toEqual([]);

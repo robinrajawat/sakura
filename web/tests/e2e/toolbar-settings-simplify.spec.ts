@@ -208,10 +208,10 @@ test.describe('Settings', () => {
       '#feat-focus-toggle', '#typewriter-mode-toggle', '#feat-backlinks-toggle', '#editor-full-width-toggle', '#settings-section-nodeqa',
       '#settings-rail .settings-rail-btn[data-cat="toolbar"]', '#settings-rail .settings-rail-btn[data-cat="panels"]',
       '#datetime-format-select', '#global-search-bar-toggle', '#todos-cap-select', '#preview-branding-toggle', '#export-accent-toggle', '#ai-max-tokens-select',
-      '#account-greeting-name-input', '#settings-section-quickassist']) {
+      '#account-greeting-name-input', '#settings-section-quickassist', '#accent-swatch-row']) {
       await expect(page.locator(gone), gone).toHaveCount(0);
     }
-    for (const kept of ['#theme-segmented', '#accent-swatch-row', '#editor-scale', '#default-author-input',
+    for (const kept of ['#theme-segmented', '#editor-scale', '#default-author-input',
       '#todos-expiry-select', '#trash-retention-select', '#cover-page-toggle', '#preview-branding-text-input', '#auto-rewrite-toggle',
       '#ai-provider-select', '#ai-prompt-input', '#shortcuts-open-modal-btn', '#sb-export-all-btn', '#vault-setup-btn', '#open-feedback-modal-btn']) {
       await expect(page.locator(kept), kept).toHaveCount(1);

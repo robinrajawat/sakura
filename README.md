@@ -59,7 +59,7 @@ It works well for:
 ## The outline
 
 - Every line is a **row**. **Enter** adds a row, **Tab** and **Shift+Tab** indent and outdent, and **Alt+↑/↓** moves a row together with everything under it. You can also drag a row onto another to nest it.
-- **Fold** any branch to hide its detail. A folded row shows **+N** for its hidden rows, and the count turns your accent colour when an open question or follow-up is hidden inside.
+- **Fold** any branch to hide its detail. A folded row shows **+N** for its hidden rows, and the count turns teal when an open question or follow-up is hidden inside.
 - Rows are real rich text: bold, italic, underline, strikethrough, colour, highlight and links. Select words and a small bar appears.
 - **Headings** (three levels) and **checkboxes** come from the **/** list. Type `/` at the start of a word anywhere: in a row it inserts headings, a note, table, image, diagram or thread, and everywhere it offers dates and characters.
 - **@** links one row to another. The link keeps working when either row is renamed.

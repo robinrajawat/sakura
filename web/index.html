@@ -178,19 +178,17 @@ window.addEventListener('unhandledrejection',e=>{
     var sv = localStorage.getItem('sakura_sidebar_open');
     if (sv !== null) sidebarOpen = sv !== 'false';
 
-    var appbarIconOnlyExportImport = false;
     var qaLocation = 'appbar';
     var raw = localStorage.getItem('sakura_v001_prefs');
     if (raw) {
       var d = JSON.parse(raw);
-      if (d.appbarIconOnlyExportImport !== undefined) appbarIconOnlyExportImport = !!d.appbarIconOnlyExportImport;
       if (d.qaLocation === 'statusbar') qaLocation = 'statusbar';
     }
     var dockRailCollapsed = localStorage.getItem('sakura_dock_rail_collapsed') === 'true';
 
     var cls = [];
     if (!sidebarOpen) cls.push('presetup-sidebar-hidden');
-    if (appbarIconOnlyExportImport) cls.push('presetup-appbar-io-icononly');
+    cls.push('presetup-appbar-io-icononly');
     // Quick Assist's search box defaults to living in the app bar, but its markup is
     // authored inside the status bar (the only place setQaLocation() can always find it on
     // a first paint) and gets physically moved into #appbar-qa-slot by JS. Without this, it
@@ -260,8 +258,8 @@ body{display:flex;flex-direction:column;overflow:hidden;font-size:var(--fs-lg);t
    purpose — it's code/structure, not prose, and must stay monospace regardless. Fixed, not a
    setting. */
 :root{--content-font:'Inter','Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#c2553d;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
-body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#d97757;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#34322e;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
+body.theme-light{color-scheme:light;--surface-raised:var(--bg);--surface-panel:var(--bg);--hover-raised:var(--hover);--danger:#dc2626;--success:#15803d;--warning:#b45309;--bg:#f8f8f6;--tb-bg:#f8f8f6;--border:#e3e0d8;--fg:#3d3929;--node-fg:#3d3929;--muted:#73716b;--hint:#71716b;--accent:#2e8479;--pv-heading:#2c4a6e;--pv-heading-2:#4a6f9e;--hover:#f1f0ec;--sel:#eae8e2;--sel-fg:#2b2a25;--edit-bg:#ffffff;--canvas-bg:#ffffff;--title-fg:#222222;--btn-primary-bg:#222222;--btn-primary-fg:#ffffff;--btn-primary-hover:#3a3a3a;--scroll:#ccc9bf;--vert:#999999;--conn:#999999;--chip:#eceae4;--sem-section:#3a52a8;--sem-alert:#b02020;--sem-code:#4a3a8a;--sem-quote:#6b6240;--fc-red:#c0392b;--fc-orange:#c2701d;--fc-green:#27824f;--fc-blue:#2766c2;--fc-purple:#7d3fb5;--fc-gray:#6f6b63}
+body.theme-dark{color-scheme:dark;--surface-raised:#1c1c1a;--surface-panel:#171715;--hover-raised:#262623;--danger:#f87171;--success:#4ade80;--warning:#fbbf24;--bg:#121212;--tb-bg:#181816;--border:#2a2a27;--fg:#eae9e4;--node-fg:#eae9e4;--muted:#9d9a93;--hint:#7d7b75;--accent:#3caa9b;--pv-heading:#8fb3d9;--pv-heading-2:#aac4e0;--hover:#1d1d1a;--sel:#26241f;--sel-fg:#f2f0e8;--edit-bg:#1a1a1a;--canvas-bg:#1a1a1a;--title-fg:#eeeeee;--btn-primary-bg:#eeeeee;--btn-primary-fg:#1a1a1a;--btn-primary-hover:#ffffff;--scroll:#34322e;--vert:#57544f;--conn:#57544f;--chip:#1d1d1a;--sem-section:#7b9ef0;--sem-alert:#d78a80;--sem-code:#a89bce;--sem-quote:#b5a87a;--fc-red:#e08585;--fc-orange:#e0a868;--fc-green:#7fd9a6;--fc-blue:#82b4f0;--fc-purple:#c39bea;--fc-gray:#a8a59d}
 body{background:var(--bg);color:var(--fg)}
 #appbar,#statusbar{flex-shrink:0;background:var(--tb-bg);border:none}#appbar{border-bottom:1px solid var(--border)}
 @media (display-mode: window-controls-overlay){
@@ -418,7 +416,7 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .node-quote-block{margin:3px 0 1px;display:grid;gap:2px}
 .node-quote-line{color:var(--sem-quote);font-style:italic;font-size:.86em;line-height:1.4;opacity:.85;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)} body.row-hl-original .node-row.selected{background:color-mix(in srgb,var(--sel) 18%,transparent);border-radius:4px} body.row-hl-original .node-row.primary-selection{background:color-mix(in srgb,var(--sel) 32%,transparent);border-radius:4px} body.row-hl-original .node-row.primary-selection:not(.selected){background:transparent} body.row-hl-dot .node-row.selected::before{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--accent) 65%,transparent)} body.row-hl-dot .node-row.primary-selection::before{width:6px;height:6px;background:var(--accent)} body.row-hl-bar .node-row.selected{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--accent) 32%,transparent)} body.row-hl-bar .node-row.primary-selection{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 60%,transparent)} body.row-hl-outline .node-row.selected{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)} body.row-hl-outline .node-row.primary-selection{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 
-.node-prefix{white-space:pre;font-family:'Fira Code',Consolas,'Courier New',monospace;font-variant-ligatures:none;user-select:none;color:var(--vert);margin-right:-1px;letter-spacing:0;line-height:inherit;align-self:center}.node-conn{color:inherit}.node-vert-faint{opacity:.32}body.accent-branches .node-prefix{color:color-mix(in srgb,var(--accent) 28%,var(--vert) 72%)} .node-label,.node-input{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;user-select:text;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale} .node-input{border:none;background:transparent;color:var(--node-fg);padding:0;font:inherit;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;border-radius:0;box-shadow:none;font-variant-ligatures:none;resize:none;overflow:hidden;display:block;width:100%} .node-input:focus{outline:none;box-shadow:none}
+.node-prefix{white-space:pre;font-family:'Fira Code',Consolas,'Courier New',monospace;font-variant-ligatures:none;user-select:none;color:var(--vert);margin-right:-1px;letter-spacing:0;line-height:inherit;align-self:center}.node-conn{color:inherit}.node-vert-faint{opacity:.32} .node-label,.node-input{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;user-select:text;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale} .node-input{border:none;background:transparent;color:var(--node-fg);padding:0;font:inherit;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;border-radius:0;box-shadow:none;font-variant-ligatures:none;resize:none;overflow:hidden;display:block;width:100%} .node-input:focus{outline:none;box-shadow:none}
 /* The height of a row's first text line, so bullets, fold dots, checkboxes and badges centre on it
    at every text size (Settings → Text size) and on headings, which have a taller line. --row-line-base
    is that height at 100%; the row-end indicators below are zoomed by the text size, so they use it. */
@@ -784,10 +782,6 @@ body.zen-mode #quick-bar{display:none}
 .focus-bar-up{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);color:var(--muted);font:500 .85em 'Inter',sans-serif;padding:4px 9px;border-radius:8px;cursor:pointer}
 .focus-bar-up:hover{background:var(--hover);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border) 60%)}
 .focus-empty-state{padding:24px 4px}
-.accent-swatch-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.accent-swatch{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
-.accent-swatch.active{border-color:var(--fg)}
-.accent-swatch:focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
 
 /* === Outline numbering === */
 .node-number{color:var(--muted);margin-right:7px;font-variant-numeric:tabular-nums;user-select:none;font-size:.92em;flex:0 0 auto}
@@ -3427,13 +3421,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
   // which only matters if a schedule/system boundary was crossed while the tab was closed —
   // far rarer than "every single reload," which is what this fixes.
   //
-  // Accent color gets the same treatment below, now that it's been reported as an actual
-  // problem: the hardcoded --accent baked into .theme-light/.theme-dark above happens to be
-  // the terracotta preset, so anyone on a different preset saw a flash of
-  // terracotta on every reload — most visibly on the filled Export button. The base
-  // ACCENT_PRESETS table is duplicated here — a small, static lookup, cheap to keep in sync
-  // with the real one near applyAccentColor. (Chrome text is plain grey since 2026-10-28: the
-  // accent is kept for links, selection, focus and active states.)
   (function(){
     try{
       var raw=localStorage.getItem('sakura_v001_prefs');
@@ -3449,10 +3436,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
         var metaEl=document.querySelector('meta[name="theme-color"]');
         if(metaEl) metaEl.setAttribute('content','#f8f8f6');
       }
-
-      var ACCENT_PRESETS_PP={terracotta:{light:'#c2553d',dark:'#d97757'},teal:{light:'#2e8479',dark:'#3caa9b'},indigo:{light:'#5173c2',dark:'#8199d3'},violet:{light:'#8c4ec2',dark:'#a774d4'},moss:{light:'#4b842e',dark:'#61ac3c'},amber:{light:'#917233',dark:'#bd9442'}};
-      var preset=ACCENT_PRESETS_PP[d.accentPreset]?d.accentPreset:'terracotta';
-      document.body.style.setProperty('--accent',ACCENT_PRESETS_PP[preset][isDark?'dark':'light']);
 
     }catch(e){}
   })();
@@ -3496,7 +3479,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
       </details>
     </div>
   </div>
-  <div id="appbar">
+  <div id="appbar" class="appbar-io-icononly">
     <div id="header-actions">
       <button class="btn rail-only" id="rail-docs-btn" data-tip="Documents" aria-label="Documents"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/></svg></button>
       <div id="appbar-qa-slot"></div>
@@ -3602,15 +3585,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
             <div class="settings-grid one-col">
               <div class="settings-field"><label>Theme</label><div class="theme-segmented" id="theme-segmented" role="tablist" aria-label="Theme"><button type="button" class="theme-seg" data-theme="light" role="tab" aria-selected="false">Light</button><button type="button" class="theme-seg" data-theme="dark" role="tab" aria-selected="false">Dark</button><button type="button" class="theme-seg" data-theme="system" role="tab" aria-selected="true" data-tip="Follows your device's light or dark setting">System</button></div></div>
               <div class="settings-field"><label for="editor-scale">Text size</label><div style="display:flex;align-items:center;gap:10px"><input id="editor-scale" class="settings-slider" type="range" min="0.85" max="1.40" step="0.05" value="1" aria-label="Text size" /><span id="editor-scale-value" class="settings-slider-value" style="min-width:38px;text-align:right">100%</span></div></div>
-              <div class="settings-field"><label>Accent</label><div class="accent-swatch-row" id="accent-swatch-row" role="radiogroup" aria-label="Accent color">
-                <button type="button" class="accent-swatch active" data-accent="terracotta" style="background:#c2553d" data-tip="Terracotta (default)" aria-label="Terracotta (default)" role="radio" aria-checked="true"></button>
-                <button type="button" class="accent-swatch" data-accent="teal" style="background:#2e8479" data-tip="Teal" aria-label="Teal" role="radio" aria-checked="false"></button>
-                <button type="button" class="accent-swatch" data-accent="indigo" style="background:#5173c2" data-tip="Indigo" aria-label="Indigo" role="radio" aria-checked="false"></button>
-                <button type="button" class="accent-swatch" data-accent="violet" style="background:#8c4ec2" data-tip="Violet" aria-label="Violet" role="radio" aria-checked="false"></button>
-                <button type="button" class="accent-swatch" data-accent="moss" style="background:#4b842e" data-tip="Moss" aria-label="Moss" role="radio" aria-checked="false"></button>
-                <button type="button" class="accent-swatch" data-accent="amber" style="background:#917233" data-tip="Amber" aria-label="Amber" role="radio" aria-checked="false"></button>
-              </div>
-              </div>
             </div>
           </div>
           <div class="settings-section" data-cat="general" id="settings-section-todos">
@@ -4039,7 +4013,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div class="help-section" data-cat="app" id="help-section-appearance">
 <h4>Look</h4>
 <ul>
-<li>Settings → General: theme (Light, Dark or System), accent colour and text size</li>
+<li>Settings → General: theme (Light, Dark or System) and text size</li>
 <li>Zen mode (the corner button, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">Shift</span> + <span class="help-kbd">E</span>) hides the File Explorer and the top line and goes full screen; <span class="help-kbd">Esc</span> leaves it</li>
 </ul>
 </div>
@@ -4714,8 +4688,8 @@ let nodes=[]; let selectedId=null; let editingId=null; let nextId=1; let undoSta
 // unconditionally -- open by default, with no prior collapsed state for any existing document to
 // suddenly fall back to. So this tracks the opposite: which nodes someone has explicitly folded
 // away, not which have opted into being shown. Session-only, like the other four.
-let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */ let alwaysStartBlank=false; let accentPreset='terracotta'; let qaIconOnly=false; let calmLayout=true; let sidebarSearchVisible=false; let sbSearchQuery=''; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null; let previewTocIncludeSections=true; let sectionMarkersDepthZero=true;
-let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let qaSearchHiddenCategories=[]; let accentBranches=false; const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='system'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null; let appbarIconOnlyExportImport=true; let qaLocation='appbar'; let searchMatchCase=false; let searchWholeWord=false;
+let collapsedTableNodeIds=new Set(); /* Same open-by-default, explicitly-folded-away tracking for a node's node.images thumbnail strip (see the node-image-dot in render()). */ let collapsedImageNodeIds=new Set(); let forceInlineNoteId=null; let _pendingInlineFocus=null; /* {kind:'note',nodeId} or {kind:'remarkText',remarkId} or {kind:'qaQuestion'|'qaAnswer',qaId} -- set when a note/remark/Q&A line gains focus, consumed once by the next render() so focus survives a render triggered by the main row's own blur handler destroying and rebuilding the whole pane */    let calmLayout=true; let sidebarSearchVisible=false; let sbSearchQuery=''; let backlinksEnabled=true; let noteMatchEditorBg=false; let codeMatchEditorBg=false; let tourActive=false; let tourStepIndex=0; let tourDirection=1; let tourAutoplay=false; let tourAutoplayTimer=null;  const sectionMarkersDepthZero=true; /* fixed since 2026-10-30: top-level rows read as sections (no switch) */
+let defaultAuthorName=''; let trashRetentionDays=7; let searchIncludesTrash=false; let crossTabWarningDocId=null; let historyModalDocId=null; let historyModalNodeId=null; let featureNoteEnabled=true; let featureCodeEnabled=true; let featureAiEnabled=true; let featureFocusEnabled=true; let qaSearchResultsEnabled=true; let qaSearchHiddenCategories=[];  const hideTreeLines=true; const depthGuideLines=true; /* fixed: clean Dynalist-style tree, no │├└─ connectors, no user toggle */ let sectionMarkingsEnabled=false; let svgSectionIconsEnabled=true; let rowHighlightStyle='original'; let coverPageEnabled=true; let openItemsPageEnabled=false; let notePanelNodeId=null; let notePanelOpen=false; let notePanelMode='note'; let themeMode='system'; let _themeOverrideActive=false; const _themeMediaQuery=(typeof window!=='undefined'&&window.matchMedia)?window.matchMedia('(prefers-color-scheme: dark)'):null;  let qaLocation='appbar'; let searchMatchCase=false; let searchWholeWord=false;
 // Declared here (before loadPrefs() is ever called, further down the script) rather than
 // down near the rest of the Preview/export code, specifically so loadPrefs() restoring
 // a saved value isn't immediately overwritten by this line's own default when script
@@ -5294,7 +5268,7 @@ function getEffectiveFallbackChain(){
 class RateLimitError extends Error{constructor(msg){super(msg);this.name='RateLimitError';}}
 class FallbackableError extends Error{constructor(msg,status){super(msg);this.name='FallbackableError';this.status=status;}}
 
-let restoreTabsOnLaunch=true;
+
 const AI_DEFAULT_PROMPT='You are a text correction tool. Your ONLY job is to return the corrected version of the input text. Do NOT explain, do NOT offer alternatives, do NOT add any commentary. Output the corrected text and nothing else.\n\nCorrect any grammar and spelling errors. Preserve the original meaning, tone, and technical terminology exactly. Preserve all formatting exactly as given: bullet markers (-, *, •), numbered list prefixes (1., 2., ...), line breaks, and indentation must remain in the same positions. Never add, remove, renumber, or reformat list markers.';
 const AI_REPHRASE_PROMPT='You are a text rewriting tool. Your ONLY job is to return a rephrased version of the input text. Do NOT explain, do NOT offer alternatives, do NOT add any commentary. Output the rewritten text and nothing else.\n\nRephrase the text for clarity and flow — restructure sentences, vary word choice, and tighten wordy phrasing. Preserve the original meaning and technical terminology, but you are not limited to fixing errors; rewording is expected, not just correction. Preserve all formatting exactly as given: bullet markers (-, *, •), numbered list prefixes (1., 2., ...), line breaks, and indentation must remain in the same positions. Never add, remove, renumber, or reformat list markers.';
 let aiProvider='gemini'; let aiModel='gemini-3.5-flash'; let aiModelByProvider={}; let aiRewritePrompt=AI_DEFAULT_PROMPT;
@@ -12527,7 +12501,7 @@ function docMenuItems(){
 function restoreOpenTabsOnStartup(forceActiveId){
   let saved=null; try{ const raw=localStorage.getItem(OPEN_TABS_KEY); saved=raw?JSON.parse(raw):null }catch(e){}
   const validIds=new Set(loadActiveDocsIndex().map(d=>d.id));
-  let ids=(restoreTabsOnLaunch&&saved&&Array.isArray(saved.tabs)?saved.tabs:[]).filter(id=>validIds.has(id));
+  let ids=(saved&&Array.isArray(saved.tabs)?saved.tabs:[]).filter(id=>validIds.has(id));
   if(!ids.length&&currentDocId) ids=[currentDocId];
   // currentDocId (sakura_current_doc_v1) is the source of truth for "what the user was actually
   // working on" — it's written on every switchDoc/edit. The tab-strip list persisted in
@@ -12611,14 +12585,6 @@ function clearToNoDocumentState(){
   currentDocId=null; activeTabDocId=null; try{localStorage.removeItem(CURRENT_DOC_KEY)}catch(e){}
   render(); updateDirtyIndicator(); updateAuthorDisplay();
   if(typeof updateDocShareChipVisibility==='function')updateDocShareChipVisibility();
-}
-function startupEnsureBlankDoc(){
-  const id=genDocId();
-  const payload={rowFormat:ROW_FORMAT,nodes:[],nextId:1,selectedId:null,multiSelectedIds:[],selectionAnchorId:null,collapsed:[],title:'',author:defaultAuthorName||''};
-  try{localStorage.setItem(docKey(id),JSON.stringify(payload))}catch(e){}
-  touchDocIndex(id,'Untitled');
-  currentDocId=id; saveCurrentDocId(id);
-  return id;
 }
 // Renames in place: on the sidebar entry or the tab you used, else the first one showing; with
 // neither showing, the open document's title at the top takes the edit.
@@ -13957,7 +13923,7 @@ function renderDocsList(){
 }
 function savePrefs(){
   try{
-    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,alwaysStartBlank,accentPreset,qaIconOnly,restoreTabsOnLaunch,noteMatchEditorBg,codeMatchEditorBg,previewTocIncludeSections,sectionMarkersDepthZero,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,accentBranches,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,appbarIconOnlyExportImport,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,autoErrorReportEnabled};
+    const payload={ctxQuickRow:ctxQuickRowCustom,theme:currentTheme,themeMode,editorScale,outlineNumbering,treeIndentWidth,spellcheckEnabled,noteMatchEditorBg,codeMatchEditorBg,pdfMark:previewBrandingText,defaultAuthorName,trashRetentionDays,searchIncludesTrash,featureNoteEnabled,featureCodeEnabled,featureAiEnabled,qaSearchResultsEnabled,qaSearchHiddenCategories,sectionMarkingsEnabled,svgSectionIconsEnabled,rowHighlightStyle,coverPageEnabled,openItemsPageEnabled,searchMatchCase,searchWholeWord,autoRewriteEnabled,qaLocation,autoErrorReportEnabled};
     const json=JSON.stringify(payload);
     localStorage.setItem(PREFS_KEY,json);
     // Verification pass — catches the "write silently didn't stick" failure mode (private-mode
@@ -13980,7 +13946,7 @@ function savePrefs(){
     console.warn('[sakura] savePrefs failed:',e && e.message);
   }
 }
-function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled; alwaysStartBlank=!!d.alwaysStartBlank; accentPreset=ACCENT_PRESETS[d.accentPreset]?d.accentPreset:'terracotta'; qaIconOnly=!!d.qaIconOnly; restoreTabsOnLaunch=d.restoreTabsOnLaunch===undefined?true:!!d.restoreTabsOnLaunch; noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg; previewTocIncludeSections=d.previewTocIncludeSections===undefined?true:!!d.previewTocIncludeSections; sectionMarkersDepthZero=d.sectionMarkersDepthZero===undefined?true:!!d.sectionMarkersDepthZero; previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[]; accentBranches=!!d.accentBranches; sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled; appbarIconOnlyExportImport=d.appbarIconOnlyExportImport===undefined?true:!!d.appbarIconOnlyExportImport; searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
+function loadPrefs(){try{const raw=localStorage.getItem(PREFS_KEY); if(!raw)return; const d=JSON.parse(raw); ctxQuickRowCustom=Array.isArray(d.ctxQuickRow)?d.ctxQuickRow.filter(a=>typeof a==='string').slice(0,12):null; if(d.theme)currentTheme=({default:'light',vscode:'dark','clever-dark':'dark',clever:'light',sakura:'light'}[d.theme]||d.theme); if(!['light','dark'].includes(currentTheme))currentTheme='light'; themeMode=['manual','system'].includes(d.themeMode)?d.themeMode:'manual'; if(Number.isFinite(Number(d.editorScale)))editorScale=Math.min(1.4,Math.max(0.85,Number(d.editorScale))); outlineNumbering=!!d.outlineNumbering; if(Number.isFinite(Number(d.treeIndentWidth)))treeIndentWidth=Math.min(6,Math.max(2,Math.round(Number(d.treeIndentWidth)))); spellcheckEnabled=d.spellcheckEnabled===undefined?true:!!d.spellcheckEnabled;     noteMatchEditorBg=d.noteMatchEditorBg===undefined?false:!!d.noteMatchEditorBg; codeMatchEditorBg=d.codeMatchEditorBg===undefined?false:!!d.codeMatchEditorBg;   previewBrandingText=typeof d.pdfMark==='string'?d.pdfMark:(d.previewBrandingEnabled===false?'':((typeof d.previewBrandingText==='string'&&d.previewBrandingText.trim())||'SAKURA')); defaultAuthorName=typeof d.defaultAuthorName==='string'&&d.defaultAuthorName.trim()?d.defaultAuthorName:(typeof d.greetingDisplayName==='string'?d.greetingDisplayName:''); trashRetentionDays=Number.isFinite(Number(d.trashRetentionDays))?Math.min(30,Math.max(0,Math.round(Number(d.trashRetentionDays)))):7; searchIncludesTrash=!!d.searchIncludesTrash; featureNoteEnabled=d.featureNoteEnabled===undefined?true:!!d.featureNoteEnabled; featureCodeEnabled=d.featureCodeEnabled===undefined?true:!!d.featureCodeEnabled; featureAiEnabled=d.featureAiEnabled===undefined?true:!!d.featureAiEnabled; qaSearchResultsEnabled=d.qaSearchResultsEnabled===undefined?true:!!d.qaSearchResultsEnabled; qaSearchHiddenCategories=Array.isArray(d.qaSearchHiddenCategories)?d.qaSearchHiddenCategories.filter(k=>QA_SEARCH_CATEGORIES.some(c=>c.key===k)):[];  sectionMarkingsEnabled=d.sectionMarkingsEnabled===undefined?false:!!d.sectionMarkingsEnabled; svgSectionIconsEnabled=d.svgSectionIconsEnabled===undefined?true:!!d.svgSectionIconsEnabled; rowHighlightStyle=['original','dot','bar','outline'].includes(d.rowHighlightStyle)?d.rowHighlightStyle:'original'; coverPageEnabled=d.coverPageEnabled===undefined?true:!!d.coverPageEnabled; openItemsPageEnabled=!!d.openItemsPageEnabled;  searchMatchCase=!!d.searchMatchCase; searchWholeWord=!!d.searchWholeWord; autoRewriteEnabled=!!d.autoRewriteEnabled; qaLocation=d.qaLocation==='statusbar'?'statusbar':'appbar'; autoErrorReportEnabled=!!d.autoErrorReportEnabled;}catch(e){console.warn('[sakura] loadPrefs threw — prefs were NOT restored this load:',e); try{ if(typeof showToast==='function') showToast('Your settings could not be loaded this session — they were reset to defaults for now, but are still saved.'); }catch(e2){} }}
 function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlinksEnabled)closeAtSuggest(); if(persist){savePrefs(); scheduleAutoSave()} syncFeatureToggleUi('backlinks',backlinksEnabled); applyFeatureVisibility();}
 
 // === Feature Activation ===========================================
@@ -14117,7 +14083,6 @@ function setSpellcheckEnabled(on,persist=true){spellcheckEnabled=!!on; const tog
 // in the editor tree and in Preview — so notes across many nodes can be scanned at a
 // glance instead of clicking each note-dot individually. Off by default: an always-on extra
 // line under every noted row is a real cost in a dense outline, so it's opt-in.
-function setAccentBranches(on,persist=true){accentBranches=!!on; const toggle=el('accent-branches-toggle'); if(toggle){toggle.classList.toggle('on',accentBranches); toggle.setAttribute('aria-checked',String(accentBranches))} document.body.classList.toggle('accent-branches',accentBranches); if(persist){savePrefs(); scheduleAutoSave()}}
 function setSectionMarkingsEnabled(on,persist=true){sectionMarkingsEnabled=!!on; const toggle=el('section-markings-toggle'); if(toggle){toggle.classList.toggle('on',sectionMarkingsEnabled); toggle.setAttribute('aria-checked',String(sectionMarkingsEnabled))} document.body.classList.toggle('hide-section-markings',!sectionMarkingsEnabled); if(persist){savePrefs(); scheduleAutoSave()}}
 function setSvgSectionIconsEnabled(on,persist=true){svgSectionIconsEnabled=!!on; const toggle=el('svg-section-icons-toggle'); if(toggle){toggle.classList.toggle('on',svgSectionIconsEnabled); toggle.setAttribute('aria-checked',String(svgSectionIconsEnabled))} if(persist){savePrefs(); scheduleAutoSave()} render()}
 function setRowHighlightStyle(style,persist=true){rowHighlightStyle=['original','dot','bar','outline'].includes(style)?style:'original'; document.body.classList.remove('row-hl-original','row-hl-dot','row-hl-bar','row-hl-outline'); document.body.classList.add('row-hl-'+rowHighlightStyle); const sel=el('row-highlight-style-select'); if(sel)sel.value=rowHighlightStyle; if(persist){savePrefs(); scheduleAutoSave()}}
@@ -14129,8 +14094,6 @@ function resolveExportAccentColor(){
   const v=getComputedStyle(document.body).getPropertyValue('--accent').trim();
   return v||'#a8442e';
 }
-function setAlwaysStartBlank(on,persist=true){alwaysStartBlank=!!on; const toggle=el('always-start-blank-toggle'); if(toggle){toggle.classList.toggle('on',alwaysStartBlank); toggle.setAttribute('aria-checked',String(alwaysStartBlank))} if(persist){savePrefs(); scheduleAutoSave()}}
-function setRestoreTabsOnLaunch(on,persist=true){restoreTabsOnLaunch=!!on; const toggle=el('restore-tabs-toggle'); if(toggle){toggle.classList.toggle('on',restoreTabsOnLaunch); toggle.setAttribute('aria-checked',String(restoreTabsOnLaunch))} if(persist){savePrefs(); scheduleAutoSave()}}
 function setDefaultAuthorName(name,persist=true){defaultAuthorName=String(name||'').trim(); const inp=el('default-author-input'); if(inp&&document.activeElement!==inp&&inp.value!==defaultAuthorName)inp.value=defaultAuthorName; if(persist)savePrefs()}
 function getGreetingTimePrefix(){const h=new Date().getHours(); if(h<5)return 'Good night'; if(h<12)return 'Good morning'; if(h<17)return 'Good afternoon'; if(h<21)return 'Good evening'; return 'Good night'}
 // One name (Settings → General → Your name) signs new documents and greets you; blank falls back to the account's first name.
@@ -17251,13 +17214,6 @@ const QA_COMMANDS=[
   {id:'light-mode',label:'Light mode',keywords:['light mode','light theme'],get:()=>currentTheme==='light',set:v=>setTheme(v?'light':'dark')},
   {id:'spellcheck',label:'Spellcheck',keywords:['spellcheck','spell check'],get:()=>spellcheckEnabled,set:v=>setSpellcheckEnabled(v)},
   {id:'outline-numbering',label:'Outline numbering',keywords:['outline numbering','numbering'],get:()=>outlineNumbering,set:v=>setOutlineNumbering(v)},
-  {id:'qa-icon-only',label:'Quick Assist icon only',keywords:['quick assist icon only','icon only','collapse quick assist'],get:()=>qaIconOnly,set:v=>setQaIconOnly(v)},
-  {id:'appbar-io-icononly',label:'Icon-only Import/Export',keywords:['icon only import export','app bar icon only','collapse import export'],get:()=>appbarIconOnlyExportImport,set:v=>setAppbarIconOnlyExportImport(v)},
-  {id:'preview-toc-sections',label:'PDF contents page: include sections',keywords:['table of contents','toc','contents','section markers','preview contents'],get:()=>previewTocIncludeSections,set:v=>setPreviewTocIncludeSections(v)},
-  {id:'section-marker-depth0',label:'Treat top-level rows as sections',keywords:['section marker','section','depth 0','top level'],get:()=>sectionMarkersDepthZero,set:v=>setSectionMarkersDepthZero(v)},
-  {id:'accent-branches',label:'Accent color on branches',keywords:['accent branches','colored branches','coloured branches','branch color','branch colour'],get:()=>accentBranches,set:v=>setAccentBranches(v)},
-  {id:'restore-tabs',label:'Reopen the last document on launch',keywords:['restore tabs','reopen tabs','reopen last document'],get:()=>restoreTabsOnLaunch,set:v=>setRestoreTabsOnLaunch(v)},
-  {id:'always-blank',label:'Start each session blank',keywords:['start blank','blank session','always start blank'],get:()=>alwaysStartBlank,set:v=>setAlwaysStartBlank(v)},
   // Feature Activation toggles — reuse setFeatureEnabled() rather than touching the
   // underlying flags directly, so persistence, UI sync, and body-class updates all stay
   // in one place. They use longer, qualified phrases ("focus feature", not "focus") so they
@@ -19230,7 +19186,6 @@ function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.s
 function updateToolbarStates(){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); const hasSelection=selectedNodes.length>0; document.querySelectorAll('.fmt-btn').forEach(btn=>{const styleName=btn.dataset.style; const active=hasSelection&&selectedNodes.every(n=>!!n.styles[styleName]); btn.classList.toggle('toggle-on',active); btn.disabled=!hasSelection; btn.style.opacity=hasSelection?'1':'.55'});
 
 }
-const ACCENT_PRESETS={terracotta:{light:'#c2553d',dark:'#d97757'},teal:{light:'#2e8479',dark:'#3caa9b'},indigo:{light:'#5173c2',dark:'#8199d3'},violet:{light:'#8c4ec2',dark:'#a774d4'},moss:{light:'#4b842e',dark:'#61ac3c'},amber:{light:'#917233',dark:'#bd9442'}};
 // Keeps the browser's theme-color meta (mobile address bar tint) matched to the current
 // theme's toolbar background.
 function syncThemeColorMeta(){const themeColorMeta=document.querySelector('meta[name="theme-color"]'); if(themeColorMeta){const tbBg=getComputedStyle(document.body).getPropertyValue('--tb-bg').trim(); if(tbBg)themeColorMeta.setAttribute('content',tbBg);}}
@@ -19240,9 +19195,10 @@ function syncThemeColorMeta(){const themeColorMeta=document.querySelector('meta[
 // entire UI, not just document text. Text is the same color at every depth (matching Dynalist,
 // which never fades nested text) -- render() no longer mixes this toward --muted by depth.
 function applyNodeFontColor(){document.body.style.setProperty('--node-fg',currentTheme==='dark'?'#fafafa':'#222222');}
-function applyAccentColor(){const preset=ACCENT_PRESETS[accentPreset]||ACCENT_PRESETS.terracotta; document.body.style.setProperty('--accent',preset[currentTheme==='dark'?'dark':'light']);}
+// The accent is one fixed teal from the theme tokens (owner 2026-10-30: no accent setting). Print
+// cleanup calls this to drop any inline --accent override.
+function applyAccentColor(){document.body.style.removeProperty('--accent')}
 function updateSliderFill(inputEl){if(!inputEl)return; const min=Number(inputEl.min)||0; const max=Number(inputEl.max)||100; const val=Number(inputEl.value)||0; const pct=max>min?((val-min)/(max-min))*100:0; inputEl.style.setProperty('--fill-percent',pct+'%')}
-function setAccentPreset(id,persist=true){accentPreset=ACCENT_PRESETS[id]?id:'terracotta'; document.querySelectorAll('#accent-swatch-row .accent-swatch').forEach(sw=>{const active=sw.dataset.accent===accentPreset; sw.classList.toggle('active',active); sw.setAttribute('aria-checked',String(active))}); applyAccentColor(); if(persist){savePrefs(); scheduleAutoSave()}}
 // isAuto distinguishes a manual click (default) from a call originating in the auto-theme
 // engine itself (applyAutoTheme, and the startup restoration call). A manual call while
 // themeMode is 'system'/'schedule' starts a temporary override — applyAutoTheme() below
@@ -19254,7 +19210,6 @@ function setAccentPreset(id,persist=true){accentPreset=ACCENT_PRESETS[id]?id:'te
 // temporary override that the next reload or OS change would undo.
 function syncThemeSegs(){ const pick=themeMode==='system'?'system':currentTheme; document.querySelectorAll('.theme-seg[data-theme]').forEach(btn=>{const active=btn.dataset.theme===pick; btn.classList.toggle('active',active); btn.setAttribute('aria-selected',String(active))}); }
 function setTheme(theme,isAuto=false,persist=true){if(!['light','dark'].includes(theme))theme='light'; currentTheme=theme; if(!isAuto&&themeMode!=='manual'){ themeMode='manual'; _themeOverrideActive=false; } [...document.body.classList].forEach(c=>{if(c.startsWith('theme-'))document.body.classList.remove(c)}); document.body.classList.add('theme-'+theme); document.documentElement.style.colorScheme=theme; syncThemeSegs(); applyAccentColor(); applyNodeFontColor(); syncThemeColorMeta(); if(persist){savePrefs(); scheduleAutoSave()} render()}
-function setAppbarIconOnlyExportImport(on,persist=true){ appbarIconOnlyExportImport=!!on; const bar=el('appbar'); if(bar) bar.classList.toggle('appbar-io-icononly',appbarIconOnlyExportImport); const t=el('appbar-io-icononly-toggle'); if(t){t.classList.toggle('on',appbarIconOnlyExportImport); t.setAttribute('aria-checked',String(appbarIconOnlyExportImport));} if(persist){savePrefs(); scheduleAutoSave();} }
 // Shared by every right-click "hide" menu item below: flips a boolean setting via its
 // own setter, and — only when the result is "now hidden" — shows an undo toast that
 // flips it back. Nothing here needs a *new* recovery mechanism; it reuses the toast
@@ -21486,7 +21441,6 @@ function getScopedNodes(forceFull=false){
   }
   return base;
 }
-function setQaIconOnly(on,persist=true){qaIconOnly=!!on; const wrap=el('global-search-wrap'); if(wrap)wrap.classList.toggle('qa-icon-only',qaIconOnly||calmLayout); const toggle=el('qa-icon-only-toggle'); if(toggle){toggle.classList.toggle('on',qaIconOnly); toggle.setAttribute('aria-checked',String(qaIconOnly))} if(persist){savePrefs(); scheduleAutoSave()}}
 // The layout (owner 2026-10-28: the calm, document-first frame is the only layout): see
 // calm-layout.css. The toolbar row moves into the tab row so open items, History and Share sit
 // on one top line with the tabs; the element itself moves (never a clone), so its listeners and
@@ -21498,7 +21452,7 @@ function applyCalmLayout(){
   // Open items belong to the document: under the title, after what the document is (status · author · link).
   const marks=el('ag-markers'), meta=el('editor-meta-row');
   if(marks&&meta&&marks.parentElement!==meta)meta.appendChild(marks);
-  el('global-search-wrap')?.classList.toggle('qa-icon-only',qaIconOnly||calmLayout);
+  el('global-search-wrap')?.classList.toggle('qa-icon-only',calmLayout);
 }
 // Moves the actual Quick Assist element (never a clone — keeps its listeners, dropdown, and
 // open/closed state intact) between the status bar's right-hand cluster and a dedicated slot
@@ -22369,7 +22323,7 @@ if(_themeMediaQuery){ try{ _themeMediaQuery.addEventListener('change',_onSystemT
 // setThemeMode) covers the tab-stays-open case, and this covers the tab-was-backgrounded-
 // or-the-laptop-was-asleep-through-a-boundary case, both of which a bare interval misses.
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&themeMode!=='manual') applyAutoTheme(); });
-document.querySelectorAll('#accent-swatch-row .accent-swatch').forEach(btn=>{if(btn.dataset.accent!=='custom')btn.addEventListener('click',()=>setAccentPreset(btn.dataset.accent))});
+
 
 // Clear all rows — reached from the open document's tab menu (right-click the active tab).
 // Undoable like any other edit, but asks first since it empties the whole document at once.
@@ -24523,7 +24477,7 @@ let zenMode=false;
 // again by hand while in zen mode (see setZenMode). The toolbar and tab bar are hidden by CSS.
 let _zenAutoHidSidebar=false;
 
-loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); const _forceBlankId=alwaysStartBlank?startupEnsureBlankDoc():null; restoreOpenTabsOnStartup(_forceBlankId); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setAccentBranches(accentBranches,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); setAlwaysStartBlank(alwaysStartBlank,false); setAccentPreset(accentPreset,false); setAppbarIconOnlyExportImport(appbarIconOnlyExportImport,false); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); setQaIconOnly(qaIconOnly,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
+loadPrefs(); migrateStaleModelIds(); loadAiFallbackPrefs(); loadAiPrefs(); applyFallbackToggle(); ensureDocSystem(); purgeExpiredTrash(); restoreOpenTabsOnStartup(null); setTheme(currentTheme||'light',true,false); setThemeMode(themeMode,false); setEditorScale(editorScale,false); setTreeIndentWidth(treeIndentWidth,false); setOutlineNumbering(outlineNumbering,false); setBacklinksEnabled(backlinksEnabled,false); setSpellcheckEnabled(spellcheckEnabled,false); setSectionMarkingsEnabled(sectionMarkingsEnabled,false); setSvgSectionIconsEnabled(svgSectionIconsEnabled,false); setRowHighlightStyle(rowHighlightStyle,false); setCoverPageEnabled(coverPageEnabled,false); setOpenItemsPageEnabled(openItemsPageEnabled,false); applyAccentColor(); setSearchMatchCase(searchMatchCase,false); setSearchWholeWord(searchWholeWord,false); setAutoRewriteEnabled(autoRewriteEnabled,false); applyCalmLayout(); noteDocVisit(null,currentDocId); setQaLocation('appbar',false); setDefaultAuthorName(defaultAuthorName,false); setTrashRetentionDays(trashRetentionDays,false); setSearchIncludesTrash(searchIncludesTrash,false); initFeatureActivationPanel(); ensureSelection(); render(); resetDirty(); focusPane(); updateExportStatus(); updatePreRestoreSnapshotStatus(); updateAiUsageDisplay(); restoreAccountSessionIfNeeded(); renderNotifBell();
 
 /* === Sidebar === */
 /* === Sidebar: folders, search === */
@@ -26599,7 +26553,7 @@ const TOUR_STEPS=[
   {target:'#doc-share-chip',placement:'bottom',title:'Share',bodyHtml:'<p>Download the document as a PDF, export it as an OPML file, or send someone a copy when you are signed in.</p>'},
   {target:'#editor-floating-controls',placement:'left',title:'Zen mode',bodyHtml:'<p>Hides the File Explorer and the top line for a full page. Esc brings them back.</p>'},
   {target:'#dock-panel-appbar-toggle',placement:'right',title:'To-Dos',bodyHtml:'<p><strong>To-Dos</strong>: one task list that isn\'t tied to any single document, with due dates, sections and subtasks, docked beside the page wherever you are.</p>'},
-  {target:'#rail-settings-btn',placement:'right',title:'Settings',bodyHtml:'<p>Theme, accent colour, text size, PDF options, AI and backup. Everything is stored locally in this browser.</p>'},
+  {target:'#rail-settings-btn',placement:'right',title:'Settings',bodyHtml:'<p>Theme, text size, PDF options, AI and backup. Everything is stored locally in this browser.</p>'},
   {target:'#account-toggle',placement:'right',title:'Help',bodyHtml:'<p>Help is in your account menu: every shortcut and feature, in detail. Replay this tour from there anytime.</p>'},
   {target:null,placement:'center',title:"You’re set",bodyHtml:'<p>Start typing, or grow your first branch with AI.</p><p>Sakura is built on one belief.</p><span class="tour-quote">“Simplicity is the ultimate sophistication.”<span class="tour-attribution">— Leonardo da Vinci</span></span>'}
 ];
@@ -27943,7 +27897,6 @@ function renderPreviewBody(){
   }
   body.replaceChildren(doc);
   const filteredTocEntries=tocEntries.filter(e=>{
-    if(e.kind==='section'&&!previewTocIncludeSections)return false;
     if(e.level>PDF_TOC_MAX_LEVEL)return false;
     return true;
   });
@@ -28733,19 +28686,6 @@ el('img-resize-handle')?.addEventListener('mousedown',e=>{
   document.addEventListener('mouseup',onUp);
 });
 
-// Feeds the "Contents" page renderPreviewToc builds into every PDF export (see its comment) —
-// no Settings row; Quick Assist's "preview-toc-sections" command toggles it.
-function setPreviewTocIncludeSections(on,persist=true){
-  previewTocIncludeSections=!!on;
-  if(persist){savePrefs()}
-}
-function setSectionMarkersDepthZero(on,persist=true){
-  sectionMarkersDepthZero=!!on;
-  const toggle=el('section-marker-depth0-toggle');
-  if(toggle){toggle.classList.toggle('on',sectionMarkersDepthZero); toggle.setAttribute('aria-checked',String(sectionMarkersDepthZero))}
-  if(persist){savePrefs()}
-  render(); // affects outline row styling (.is-section), not just Preview
-}
 // The PDF mark (Settings → Documents → PDF mark) printed on the cover page. One field: blank means no
 // mark. The built-in "SAKURA" prints letter-spaced as "S A K U R A"; a custom name is shown as typed
 // (spacing out an arbitrary, possibly multi-word name would look broken) and relies on CSS letter-spacing.
@@ -29525,8 +29465,6 @@ function subtreeHasRemark(idx){if(!Array.isArray(remarks)||!remarks.length)retur
 setNoteBgMatch(noteMatchEditorBg, false);
 setCodeBgMatch(codeMatchEditorBg, false);
 setAutoErrorReportEnabled(autoErrorReportEnabled, false);
-setPreviewTocIncludeSections(previewTocIncludeSections, false);
-setSectionMarkersDepthZero(sectionMarkersDepthZero, false);
 setPreviewBrandingText(previewBrandingText, false);
 setQaSearchResultsEnabled(qaSearchResultsEnabled, false);
 applyQaSearchCategorySettings();
