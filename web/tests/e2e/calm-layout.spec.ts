@@ -194,3 +194,15 @@ test('the browser tab says SAKURA', async ({ page }) => {
   await page.evaluate(() => { dirty = true; updateDirtyIndicator(); });
   await expect(page).toHaveTitle('• SAKURA');
 });
+
+// Bug (owner 2026-10-30): every rail button toggles its panel except Settings. The outside-click
+// handler closed Settings on mouseup (the rail button was not exempt) and the click then reopened it.
+test('the rail Settings button toggles the panel like the other rail buttons', async ({ page }) => {
+  const btn = page.locator('#rail-settings-btn');
+  await btn.click();
+  await expect(page.locator('#settings-panel')).toHaveClass(/open/);
+  await btn.locator('svg').click();
+  await expect(page.locator('#settings-panel')).not.toHaveClass(/open/);
+  await btn.click();
+  await expect(page.locator('#settings-panel')).toHaveClass(/open/);
+});
