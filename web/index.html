@@ -2769,8 +2769,47 @@ html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-fiel
 html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field+.settings-field{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
 html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>label{font-size:var(--fs-md);color:var(--fg)}
 html.calm-layout .settings-panel .settings-section>.settings-grid>.settings-field>:not(label){flex:0 1 320px;min-width:0}
-html.calm-layout #settings-panel .settings-list-row>.btn,html.calm-layout #settings-panel .settings-list-row .data-io-btn{height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif}
-html.calm-layout #settings-panel .settings-list-row>.btn:hover:not(:disabled),html.calm-layout #settings-panel .settings-list-row .data-io-btn:hover:not(:disabled){background:var(--hover)}
+html.calm-layout #settings-panel .settings-list-row>.btn,html.calm-layout #settings-panel .settings-inline-field>.btn:not(.primary),html.calm-layout #settings-panel .settings-list-row .data-io-btn{height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif}
+html.calm-layout #settings-panel .settings-list-row>.btn:hover:not(:disabled),html.calm-layout #settings-panel .settings-inline-field>.btn:not(.primary):hover:not(:disabled),html.calm-layout #settings-panel .settings-list-row .data-io-btn:hover:not(:disabled){background:var(--hover)}
+/* Settings details (owner 2026-10-30: "too flat… small details all around"). More air between
+   groups; selected segments are a raised neutral pill, not accent (colour is for meaning); link
+   rows look like the other row buttons; forms open from a "+" button instead of sitting open. */
+html.calm-layout .settings-panel .settings-content{gap:34px}
+html.calm-layout .settings-panel .settings-section{gap:10px}
+html.calm-layout #settings-panel :is(.theme-segmented,.segmented-control){background:color-mix(in srgb,var(--fg) 5%,transparent);border-color:transparent;min-height:32px}
+html.calm-layout #settings-panel :is(.theme-seg,.segmented-btn){padding:5px 12px;font:500 12.5px 'Inter',sans-serif}
+html.calm-layout .settings-content :is(.theme-seg,.segmented-btn).active{background:var(--edit-bg);color:var(--fg);box-shadow:0 0 0 1px color-mix(in srgb,var(--border) 80%,transparent),0 1px 2px color-mix(in srgb,var(--fg) 10%,transparent)}
+html.calm-layout #settings-panel .settings-list-row .select-wrap .select{white-space:nowrap;text-overflow:ellipsis;height:28px;padding:0 26px 0 10px;border-radius:7px;font:500 12.5px 'Inter',sans-serif}
+html.calm-layout #settings-panel .settings-list-row>.settings-link-btn{display:inline-flex;align-items:center;text-decoration:none;flex:0 0 auto}
+html.calm-layout #settings-panel .settings-list-row>.settings-link-btn::after{content:'\2197';margin-left:5px;color:var(--hint)}
+html.calm-layout #settings-panel #about-support-btn{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
+html.calm-layout #settings-panel .settings-list-row>.settings-danger-btn{color:var(--danger)}
+html.calm-layout #settings-panel .settings-list-row>.settings-danger-btn:hover:not(:disabled){background:color-mix(in srgb,var(--danger) 8%,transparent);border-color:color-mix(in srgb,var(--danger) 40%,transparent)}
+html.calm-layout #settings-panel .settings-row-desc a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.settings-inline-field{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+html.calm-layout #settings-panel :is(#ai-hosted-section,#ai-byok-section)>.settings-list-row:first-child{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
+.settings-about-head{display:flex;align-items:center;gap:14px;padding:2px 2px 6px}
+.settings-about-head svg{flex:0 0 auto}
+.settings-about-name{font:600 var(--fs-lg,15px) 'Inter',sans-serif;color:var(--fg)}
+.settings-subhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:22px}
+.settings-subhead .settings-section-title{margin:0}
+html.calm-layout #settings-panel .settings-add-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--fg);font:500 12.5px 'Inter',sans-serif;flex:0 0 auto}
+html.calm-layout #settings-panel .settings-add-btn:hover{background:var(--hover)}
+html.calm-layout #settings-panel .settings-add-btn[aria-expanded="true"]{background:var(--hover)}
+.settings-empty{padding:14px;color:var(--muted);font-size:var(--fs-sm);text-align:center}
+.settings-order-num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--fg) 6%,transparent);color:var(--muted);font:600 11px 'Inter',sans-serif}
+.settings-row-actions{display:flex;gap:2px;flex:0 0 auto;opacity:0;transition:opacity .12s}
+.settings-list-row:hover .settings-row-actions,.settings-row-actions:focus-within{opacity:1}
+.settings-row-actions .sb-icon-btn{color:var(--muted)}
+.settings-form{padding:14px}
+.settings-form-title{font:600 var(--fs-md) 'Inter',sans-serif;color:var(--fg);margin-bottom:12px}
+.settings-form-grid{display:grid;grid-template-columns:1fr 150px 70px;gap:10px 10px}
+.settings-form-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.settings-form-field>span:first-child{font:500 var(--fs-xs,11.5px) 'Inter',sans-serif;color:var(--muted)}
+.settings-form-field.is-wide{grid-column:1 / -1}
+.settings-form-field .meta-input,.settings-form-field .select-wrap,.settings-form-field .select{width:100%;box-sizing:border-box;text-align:left}
+.settings-form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+@media (max-width:700px){.settings-form-grid{grid-template-columns:1fr 1fr}.settings-form-field:first-child{grid-column:1 / -1}}
 html.calm-layout #sidebar .sb-section-hdr:has(#sidebar-toggle){padding-left:10px}
 html.calm-layout #editor-meta-row .open-items-btn{font-weight:400}
 /* The frame never scrolls (owner 2026-10-29: the rail's top icon was cut off): hidden helper
@@ -3574,7 +3613,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div class="settings-section" data-cat="general" id="settings-section-todos">
             <div class="settings-section-title">To-Dos</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-expire completed tasks</span><span class="settings-row-desc">Completed tasks are deleted after this long.</span></div><select id="todos-expiry-select" class="select" style="width:auto"><option value="0">Never</option><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-expire completed tasks</span><span class="settings-row-desc">Completed tasks are deleted after this long.</span></div><span class="select-wrap"><select id="todos-expiry-select" class="select" style="width:auto"><option value="0">Never</option><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select><span class="select-arrow">▾</span></span></div>
             </div>
           </div>
           <div class="settings-section" data-cat="general" id="keyboard-shortcuts-section">
@@ -3601,7 +3640,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div class="settings-section" data-cat="documents" id="settings-section-trash">
             <div class="settings-section-title">Trash</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Keep deleted documents for</span><span class="settings-row-desc">How long deleted documents stay in Trash.</span></div><select id="trash-retention-select" class="select" style="width:auto"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="0">Forever (manual only)</option></select></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Keep deleted documents for</span><span class="settings-row-desc">How long deleted documents stay in Trash.</span></div><span class="select-wrap"><select id="trash-retention-select" class="select" style="width:auto"><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="0">Forever (manual only)</option></select><span class="select-arrow">▾</span></span></div>
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Empty Trash</span><span class="settings-row-desc" id="sb-trash-settings-status">Permanently deletes every document currently in Trash. This cannot be undone.</span></div><button id="sb-empty-trash-btn" class="btn data-io-btn">Empty…</button></div>
             </div>
           </div>
@@ -3622,81 +3661,74 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           </div>
           <div class="settings-section" data-cat="about" id="settings-section-about">
             <div class="settings-section-title">About</div>
-            <div style="text-align:center;margin-bottom:10px">
-              <svg width="56" height="56" viewBox="4.5 0.5 63 63" aria-hidden="true" style="display:block;margin:0 auto 6px"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg>
-              <span style="font-weight:600">Sakura</span>
+            <div class="settings-about-head">
+              <svg width="44" height="44" viewBox="4.5 0.5 63 63" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 38%,transparent)" stroke="color-mix(in srgb,var(--accent) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 30%,transparent)" stroke="color-mix(in srgb,var(--accent) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--accent) 22%,transparent)" stroke="color-mix(in srgb,var(--accent) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--accent) 18%,transparent)" stroke="color-mix(in srgb,var(--accent) 48%,transparent)" stroke-width="1.2"/></g></svg>
+              <div class="settings-row-text"><span class="settings-about-name">Sakura</span><span class="settings-row-desc">Structured documents and everyday To-Dos. Works offline, no account needed.</span><span class="settings-row-desc">© 2026 Robin Singh Rajawat. All rights reserved.</span></div>
             </div>
-            <div class="muted-help" style="margin-top:0">A knowledge-management workspace for structured documents and everyday personal productivity — To-Dos in the Hub.</div>
-            <div class="muted-help">Single-file, no build step, works offline once loaded, no account required — sign in (Google or email) if you want your documents to follow you across devices, and use optional AI features (rewrite and outline generation) with a provider of your choice.</div>
-            <div class="muted-help">Copyright © 2026 Robin Singh Rajawat. All rights reserved. <a href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">View source</a> · <a href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">License</a></div>
-            <div class="muted-help">Diagram editing embeds draw.io/diagrams.net. <a href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer" style="white-space:nowrap">Full attribution →</a></div>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Source code</span><span class="settings-row-desc">On GitHub.</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura" target="_blank" rel="noopener noreferrer">View source</a></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">License</span><span class="settings-row-desc">The terms Sakura is shared under.</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">View</a></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Third-party notices</span><span class="settings-row-desc">Diagram editing embeds draw.io (diagrams.net).</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer">View</a></div>
+            </div>
           </div>
           <div class="settings-section" data-cat="about" id="settings-section-about-privacy">
             <div class="settings-section-title">Privacy &amp; data</div>
-            <div class="muted-help" style="margin-top:0">Everything is stored locally in your browser by default — nothing leaves this tab unless you turn on one of the following.</div>
-            <div class="muted-help">AI features send the relevant text (a node or selected nodes, highlighted text, a note, remark or To-Do line, or the topic you give Generate outline — depending on the feature) to an AI provider; and signing in (Google or email) syncs your documents and settings to Sakura's own cloud storage so they follow you across devices. Each of these only happens while connected, and only when you actually use that feature.</div>
-            <div class="muted-help">Which AI provider depends on which mode you've picked in Settings → AI → Provider. With your own API key (the seven built-in providers), that text goes directly from your browser to the provider you configured, using your own key and account — Sakura's own server is never involved. With Sakura Hosted AI, that text instead goes to Sakura's own server first, which forwards it to a third-party provider Sakura selects (currently Groq, Cerebras, or Gemini) using Sakura's own credentials, and returns the response — Sakura's server doesn't store that text either way, only a per-day request count against your account's quota.</div>
-            <div class="muted-help">An account holds your documents, folders, To-Dos and app settings — and nothing else. No analytics or tracking anywhere in Sakura, and other users can never access your data.</div>
-            <div class="muted-help">Signing in with Google only shares your name, email, and profile picture — the same info shown in the account menu, not stored anywhere beyond that. Email sign-in needs only the email and password themselves, handled directly by Firebase Authentication — no separate profile data involved.</div>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">On this device</span><span class="settings-row-desc">Everything is stored in your browser. Nothing leaves it unless you sign in or use AI.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sync</span><span class="settings-row-desc">Your documents, folders, To-Dos and settings sync to Sakura's cloud storage so they follow you across devices. Nothing else is kept, and other users can never see it.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI with your own key</span><span class="settings-row-desc">Only the text you ask AI to work on goes straight from your browser to the provider you chose, with your key. Sakura's server is never involved.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sakura Hosted AI</span><span class="settings-row-desc">That text goes to Sakura's server, which passes it to a provider Sakura picks (currently Groq, Cerebras or Gemini). The text is not stored; only a daily request count.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sign-in</span><span class="settings-row-desc">Google shares only your name, email and picture. Email sign-in is handled by Firebase Authentication.</span></div></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Tracking</span><span class="settings-row-desc">None. No analytics anywhere in Sakura.</span></div></div>
+            </div>
           </div>
           <div class="settings-section" data-cat="about" id="settings-section-about-support">
             <div class="settings-section-title">Support</div>
-            <div class="muted-help" style="margin-top:0;margin-bottom:10px">Sakura stays free, with no ads and no locked features — built by one person in their spare time. A tip is appreciated but never expected.</div>
-            <button type="button" id="about-support-btn" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 14px;border:none;border-radius:8px;font:700 12.5px 'Inter',sans-serif;color:#4a3208;cursor:pointer;background:linear-gradient(160deg,#f0c869,#d4a544);box-shadow:0 2px 6px rgba(212,165,68,.35)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Ko-fi</title><path d="M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298"/></svg>
-              Buy me a coffee
-            </button>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Sakura is free</span><span class="settings-row-desc">No ads and no locked features. Built by one person; a tip is appreciated, never expected.</span></div><button type="button" class="btn" id="about-support-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Ko-fi</title><path d="M11.351 2.715c-2.7 0-4.986.025-6.83.26C2.078 3.285 0 5.154 0 8.61c0 3.506.182 6.13 1.585 8.493 1.584 2.701 4.233 4.182 7.662 4.182h.83c4.209 0 6.494-2.234 7.637-4a9.5 9.5 0 0 0 1.091-2.338C21.792 14.688 24 12.22 24 9.208v-.415c0-3.247-2.13-5.507-5.792-5.87-1.558-.156-2.65-.208-6.857-.208m0 1.947c4.208 0 5.09.052 6.571.182 2.624.311 4.13 1.584 4.13 4v.39c0 2.156-1.792 3.844-3.87 3.844h-.935l-.156.649c-.208 1.013-.597 1.818-1.039 2.546-.909 1.428-2.545 3.064-5.922 3.064h-.805c-2.571 0-4.831-.883-6.078-3.195-1.09-2-1.298-4.155-1.298-7.506 0-2.181.857-3.402 3.012-3.714 1.533-.233 3.559-.26 6.39-.26m6.547 2.287c-.416 0-.65.234-.65.546v2.935c0 .311.234.545.65.545 1.324 0 2.051-.754 2.051-2s-.727-2.026-2.052-2.026m-10.39.182c-1.818 0-3.013 1.48-3.013 3.142 0 1.533.858 2.857 1.949 3.897.727.701 1.87 1.429 2.649 1.896a1.47 1.47 0 0 0 1.507 0c.78-.467 1.922-1.195 2.623-1.896 1.117-1.039 1.974-2.364 1.974-3.897 0-1.662-1.247-3.142-3.039-3.142-1.065 0-1.792.545-2.338 1.298-.493-.753-1.246-1.298-2.312-1.298"/></svg>Buy me a coffee</button></div>
+            </div>
           </div>
           <div class="settings-section" data-cat="about">
             <div class="settings-section-title">Feedback &amp; crash reports</div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Automatic crash reports</span><span class="settings-row-desc">Sends a short error report if something crashes. Never includes your content.</span></div><button id="auto-error-report-toggle" class="toggle-switch" type="button" role="switch" aria-checked="false" aria-label="Automatic crash reports"></button></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Send feedback</span><span class="settings-row-desc">Report a bug or suggest something.</span></div><button type="button" class="btn" id="open-feedback-modal-btn">Send Feedback…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Send feedback</span><span class="settings-row-desc">Report a bug or suggest something.</span></div><button type="button" class="btn" id="open-feedback-modal-btn">Send feedback…</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-admin" data-feature-hidden="1" style="display:none">
             <div class="settings-section-title">Admin</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Feedback Inbox</span><span class="settings-row-desc">Review bug reports and feedback sent in by users.</span></div><button type="button" class="btn" id="account-feedback-inbox-btn">Open…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Feedback inbox</span><span class="settings-row-desc">Bug reports and feedback sent in by users.</span></div><button type="button" class="btn" id="account-feedback-inbox-btn">Open…</button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Daily AI quota</span><span class="settings-row-desc">Hosted AI requests per signed-in user per day (UTC), all providers combined.</span></div><div class="settings-inline-field"><input id="ai-vault-quota-input" type="number" class="meta-input" min="1" step="1" style="width:64px" /><button type="button" class="btn" id="ai-vault-quota-save-btn">Save</button></div></div>
             </div>
-            <div class="settings-section-title" style="margin-top:4px">AI providers</div>
-            <div class="settings-row-desc" style="margin:-4px 0 0">Hosted-AI provider fallback chain (docs/ai-hosted-vault-design.md). Tried in order; keys are encrypted at rest and never shown again after saving.</div>
-            <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Daily AI quota</span><span class="settings-row-desc">Requests per signed-in user per UTC day against hosted AI, across all providers combined.</span></div><div style="display:flex;gap:6px;align-items:center;flex-shrink:0"><input id="ai-vault-quota-input" type="number" class="meta-input" min="1" step="1" style="width:64px" /><button type="button" class="btn" id="ai-vault-quota-save-btn">Save</button></div></div>
-            </div>
+            <div class="settings-subhead"><div class="settings-row-text"><span class="settings-section-title">AI providers</span><span class="settings-row-desc">Hosted AI tries these in order. Keys are encrypted and never shown again.</span></div><button type="button" class="btn settings-add-btn" id="ai-vault-provider-new-btn" aria-expanded="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add provider</button></div>
             <div id="ai-vault-providers-loading" class="muted-help" style="margin:0">Loading…</div>
             <div id="ai-vault-providers-error" class="settings-inline-notice" style="margin:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span id="ai-vault-providers-error-text"></span></div>
-            <div id="ai-vault-providers-empty" class="muted-help" style="display:none;margin:0">No providers configured yet — add one below.</div>
-            <div class="settings-list" id="ai-vault-providers-list-wrap" style="display:none;max-height:30vh;overflow-y:auto">
+            <div id="ai-vault-providers-empty" class="settings-list settings-empty" style="display:none">No providers yet. Hosted AI needs at least one.</div>
+            <div class="settings-list" id="ai-vault-providers-list-wrap" style="display:none">
               <div id="ai-vault-providers-list"></div>
             </div>
-            <div class="settings-list">
-              <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:8px">
-                <span class="settings-switch-text" style="width:100%">Add / update provider</span>
-                <div style="display:flex;gap:6px;width:100%;flex-wrap:wrap;min-width:0">
-                  <input id="ai-vault-provider-id-input" type="text" class="meta-input" placeholder="id (e.g. groq)" style="flex:1;min-width:90px" autocomplete="off" spellcheck="false" />
-                  <div class="select-wrap" style="flex-shrink:0"><select class="select" id="ai-vault-provider-shape-select" style="width:112px"><option value="openai">openai</option><option value="gemini">gemini</option><option value="cerebras">cerebras</option><option value="anthropic">anthropic</option></select><span class="select-arrow">▾</span></div>
-                  <input id="ai-vault-provider-order-input" type="number" class="meta-input" placeholder="order" value="0" style="width:56px;flex-shrink:0" />
-                </div>
-                <input id="ai-vault-provider-baseurl-input" type="text" class="meta-input" placeholder="Base URL (e.g. https://api.groq.com/openai/v1/chat/completions)" style="width:100%" autocomplete="off" spellcheck="false" />
-                <input id="ai-vault-provider-model-input" type="text" class="meta-input" placeholder="Model (e.g. llama-3.3-70b-versatile)" style="width:100%" autocomplete="off" spellcheck="false" />
-                <input id="ai-vault-provider-apikey-input" type="password" class="meta-input" placeholder="API key" style="width:100%" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
-                <button type="button" class="btn primary" id="ai-vault-provider-add-btn">Add / update provider</button>
+            <div class="settings-list settings-form" id="ai-vault-provider-form" hidden>
+              <div class="settings-form-title" id="ai-vault-provider-form-title">New provider</div>
+              <div class="settings-form-grid">
+                <label class="settings-form-field"><span>Name</span><input id="ai-vault-provider-id-input" type="text" class="meta-input" placeholder="groq" autocomplete="off" spellcheck="false" /></label>
+                <label class="settings-form-field"><span>API format</span><span class="select-wrap"><select class="select" id="ai-vault-provider-shape-select"><option value="openai">OpenAI</option><option value="gemini">Gemini</option><option value="cerebras">Cerebras</option><option value="anthropic">Anthropic</option></select><span class="select-arrow">▾</span></span></label>
+                <label class="settings-form-field"><span>Order</span><input id="ai-vault-provider-order-input" type="number" class="meta-input" value="0" /></label>
+                <label class="settings-form-field is-wide"><span>Endpoint URL</span><input id="ai-vault-provider-baseurl-input" type="text" class="meta-input" placeholder="https://api.groq.com/openai/v1/chat/completions" autocomplete="off" spellcheck="false" /></label>
+                <label class="settings-form-field is-wide"><span>Model</span><input id="ai-vault-provider-model-input" type="text" class="meta-input" placeholder="llama-3.3-70b-versatile" autocomplete="off" spellcheck="false" /></label>
+                <label class="settings-form-field is-wide"><span>API key</span><input id="ai-vault-provider-apikey-input" type="password" class="meta-input" placeholder="Paste key" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" /></label>
               </div>
+              <div class="settings-form-actions"><button type="button" class="btn" id="ai-vault-provider-cancel-btn">Cancel</button><button type="button" class="btn primary" id="ai-vault-provider-add-btn">Save provider</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="account" id="settings-section-account-danger" data-feature-hidden="1" style="display:none">
-            <div style="background:color-mix(in srgb,var(--danger) 9%,transparent);border:1.5px solid color-mix(in srgb,var(--danger) 45%,transparent);border-radius:12px;padding:14px 16px">
-              <div style="font:700 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--danger);margin-bottom:10px">Danger zone</div>
-              <div style="font:700 12.5px 'Inter',sans-serif;color:var(--fg);margin-bottom:6px">Delete account</div>
-              <div style="font:400 11.5px/1.5 'Inter',sans-serif;color:var(--muted);margin-bottom:12px">Permanently deletes your synced documents and settings stored in the cloud for this account, and signs you out. This device's local documents are untouched and keep working exactly as they do now — sign in again anytime to start fresh. Can't be undone.</div>
-              <button type="button" class="btn" id="account-delete-open-btn" style="width:100%;box-sizing:border-box;border:1.5px solid var(--danger);color:var(--danger);background:color-mix(in srgb,var(--danger) 5%,transparent);font-weight:600">Delete my account</button>
+            <div class="settings-list">
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Delete my account</span><span class="settings-row-desc">Deletes the documents and settings synced to the cloud, and signs you out. Documents on this device stay. Can't be undone.</span></div><button type="button" class="btn settings-danger-btn" id="account-delete-open-btn">Delete…</button></div>
             </div>
           </div>
           <div class="settings-section" data-cat="ai" id="settings-section-ai-capabilities">
-            <div class="settings-section-title">AI capabilities</div>
             <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI Capabilities</span><span class="settings-row-desc">Off hides every AI button, menu item and setting.</span></div><button id="feat-ai-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="Enable AI Capabilities"></button></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">AI features</span><span class="settings-row-desc">Off hides every AI button, menu item and setting.</span></div><button id="feat-ai-toggle" class="toggle-switch" type="button" role="switch" aria-checked="true" aria-label="AI features"></button></div>
             </div>
           </div>
           <input id="sakura-import-file-input" type="file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-hidden="true" tabindex="-1" />
@@ -3705,57 +3737,47 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div class="settings-section" data-cat="ai" id="settings-section-ai-rewrite">
             <div class="settings-section-title">Provider</div>
             <div class="settings-list">
-              <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:8px">
-                <span class="settings-switch-text" style="width:100%">AI Mode</span>
-                <div class="segmented-control" id="ai-mode-toggle" role="radiogroup" aria-label="AI mode" style="width:100%">
+              <div class="settings-list-row">
+                <span class="settings-switch-text">Mode</span>
+                <div class="segmented-control" id="ai-mode-toggle" role="radiogroup" aria-label="AI mode" style="flex:0 0 300px">
                   <button type="button" class="segmented-btn" id="ai-mode-hosted-btn" role="radio" aria-checked="false">Sakura Hosted AI</button>
                   <button type="button" class="segmented-btn" id="ai-mode-byok-btn" role="radio" aria-checked="true">Bring your own key</button>
                 </div>
               </div>
               <div id="ai-hosted-section">
-                <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px" id="ai-provider-help-hosted">
-                  <span class="muted-help" style="margin-top:0">Sakura Hosted AI uses Sakura's own AI credentials — no key to find or paste, and no separate account with a provider. Requires signing in; each signed-in account gets a daily request quota. A real escape hatch still exists if you'd rather not sign in or want unlimited usage on your own dime: switch to "Bring your own key" above instead.</span>
-                  <span class="muted-help" style="margin-top:0">Disclosure: when you use this mode, the text for that request (a node or selected nodes, highlighted text, a note, remark or To-Do line, or the topic you give Generate outline — depending on the feature) is sent to Sakura's server and forwarded to a third-party AI provider Sakura selects — not stored on Sakura's server either way. See <a href="#" id="ai-privacy-jump-link" style="color:var(--accent)">Settings → About → Privacy &amp; data</a> for the full picture.</span>
-                </div>
-                <div class="settings-list-row" id="ai-hosted-status-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-                  <span class="settings-switch-text" style="width:100%">Sakura Hosted AI</span>
-                  <div id="ai-hosted-signedout" style="display:flex;gap:8px;width:100%;align-items:center;flex-wrap:wrap">
-                    <span class="muted-help" style="margin-top:0;flex:1;min-width:180px">Sign in to start using hosted AI — no API key needed.</span>
-                    <button class="btn primary" id="ai-hosted-signin-btn" type="button" style="flex-shrink:0">Sign in</button>
+                <div class="settings-list-row" id="ai-hosted-status-row">
+                  <div class="settings-row-text">
+                    <span class="settings-switch-text">Sakura Hosted AI</span>
+                    <span class="settings-row-desc" id="ai-provider-help-hosted">No key needed. Needs sign-in; each account gets a daily quota. The text you ask AI to work on goes through Sakura's server to a provider Sakura picks, and is not stored. <a href="#" id="ai-privacy-jump-link">Privacy &amp; data</a></span>
+                    <div id="ai-hosted-signedin" style="display:none;flex-direction:column;gap:2px">
+                      <span class="settings-row-desc" id="ai-hosted-account-line"></span>
+                      <span class="settings-row-desc" id="ai-usage-summary-hosted"></span>
+                    </div>
                   </div>
-                  <div id="ai-hosted-signedin" style="display:none;flex-direction:column;gap:6px;width:100%">
-                    <span class="muted-help" style="margin-top:0" id="ai-hosted-account-line"></span>
-                    <button class="btn" id="ai-hosted-test-btn" type="button" style="align-self:flex-start">Test</button>
-                    <span class="muted-help" style="margin-top:0" id="ai-usage-summary-hosted"></span>
-                  </div>
+                  <div id="ai-hosted-signedout" style="display:flex"><button class="btn primary" id="ai-hosted-signin-btn" type="button">Sign in</button></div>
+                  <button class="btn" id="ai-hosted-test-btn" type="button">Test</button>
                 </div>
               </div>
               <div id="ai-byok-section">
                 <div class="settings-list-row">
-                  <span class="settings-switch-text">Provider</span>
-                  <div class="select-wrap"><select class="select" id="ai-provider-select" style="width:172px"></select><span class="select-arrow">▾</span></div>
-                </div>
-                <div style="padding:0 12px 8px;display:flex;flex-direction:column;gap:6px" id="ai-provider-help-byok">
-                  <span class="muted-help" style="margin-top:0">Each provider needs its own API key; where to get one shows under the key field (GitHub Models: a fine-grained token with <code>models:read</code>). Rather not get a key? Switch to Sakura Hosted AI above and sign in.</span>
+                  <div class="settings-row-text"><span class="settings-switch-text">Provider</span><span class="settings-row-desc" id="ai-provider-help-byok">Each provider needs its own key; where to get one shows under the key field.</span></div>
+                  <div class="select-wrap"><select class="select" id="ai-provider-select" style="width:200px"></select><span class="select-arrow">▾</span></div>
                 </div>
                 <div class="settings-list-row">
                   <span class="settings-switch-text">Model</span>
-                  <div class="select-wrap"><select class="select" id="ai-model-select" style="width:172px"></select><span class="select-arrow">▾</span></div>
+                  <div class="settings-inline-field"><div class="select-wrap"><select class="select" id="ai-model-select" style="width:200px"></select><span class="select-arrow">▾</span></div><input class="meta-input" id="ai-model-custom-input" type="text" placeholder="Enter exact model ID" style="display:none;width:200px" /></div>
                 </div>
-                <div style="padding:0 12px 4px">
-                  <input class="meta-input" id="ai-model-custom-input" type="text" placeholder="Enter exact model ID" style="display:none;width:100%" />
-                </div>
-                <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-                  <span class="settings-switch-text" style="width:100%">API Key</span>
-                  <div style="display:flex;gap:6px;width:100%">
+                <div class="settings-list-row" style="flex-direction:column;align-items:stretch;gap:6px">
+                  <span class="settings-switch-text">API key</span>
+                  <div class="settings-inline-field" style="width:100%">
                     <input id="ai-api-key-input" type="text" class="meta-input key-masked" placeholder="Paste key here…" style="flex:1;min-width:0;font-family:'Inter',sans-serif" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" />
                     <button class="btn" id="ai-api-key-show-btn" type="button" data-tip="Show key" style="flex-shrink:0;width:30px;padding:0;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
                     <button class="btn" id="ai-api-key-test-btn" style="flex-shrink:0">Test</button>
                     <button class="btn" id="ai-api-key-save-btn" style="flex-shrink:0">Save</button>
                   </div>
-                  <span class="muted-help" style="margin-top:0" id="ai-key-status">No key saved.</span>
-                  <span class="muted-help" style="margin-top:0" id="ai-key-hint"></span>
-                  <span class="muted-help" style="margin-top:0" id="ai-usage-summary">No requests to this provider yet today.</span>
+                  <span class="settings-row-desc" id="ai-key-status">No key saved.</span>
+                  <span class="settings-row-desc" id="ai-key-hint"></span>
+                  <span class="settings-row-desc" id="ai-usage-summary">No requests to this provider yet today.</span>
                 </div>
                 <div class="settings-list-row">
                   <div class="settings-row-text"><span class="settings-switch-text">Fallback order</span><span class="settings-row-desc">If the active provider fails, try the next checked one with a saved key.</span></div>
@@ -3773,19 +3795,14 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
               <div class="settings-list-row" style="flex-direction:column;align-items:flex-start;gap:6px">
                 <span class="settings-switch-text">Rewrite prompt</span>
                 <textarea id="ai-prompt-input" class="meta-input" rows="4" style="width:100%;font-family:'Inter',sans-serif;resize:vertical;line-height:1.5;padding:6px 8px" placeholder="You are a text correction tool. Your ONLY job is to return the corrected version of the input text. Do NOT explain, do NOT offer alternatives…"></textarea>
-                <div style="display:flex;gap:6px;align-self:flex-end">
+                <div class="settings-inline-field" style="align-self:flex-end">
                   <button class="btn" id="ai-prompt-reset-btn">Reset to default</button>
                   <button class="btn" id="ai-prompt-rephrase-btn">Rephrase</button>
                   <button class="btn primary" id="ai-prompt-save-btn">Save prompt</button>
                 </div>
               </div>
-            </div>
-          </div>
-          <div class="settings-section" data-cat="ai" id="settings-section-ai-autorewrite">
-            <div class="settings-section-title">Auto-rewrite on commit</div>
-            <div class="settings-list">
               <div class="settings-list-row">
-                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite on commit</span><span class="settings-row-desc">Rewrites rows a while after you finish editing them, in one batched request.</span></div>
+                <div class="settings-row-text"><span class="settings-switch-text">Auto-rewrite</span><span class="settings-row-desc">Rewrites rows a while after you finish editing them, in one batched request.</span></div>
                 <button class="toggle-switch" type="button" role="switch" id="auto-rewrite-toggle" aria-checked="false" aria-label="Enable auto-rewrite on commit"></button>
               </div>
             </div>
@@ -14032,7 +14049,7 @@ function setBacklinksEnabled(on,persist=true){backlinksEnabled=!!on; if(!backlin
 const FEATURE_FLAGS={
   ai:{get:()=>featureAiEnabled,set:v=>{featureAiEnabled=v; if(!v)clearAutoRewriteQueue();}},
 };
-const FEATURE_SETTINGS_SECTIONS={ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior','settings-section-ai-autorewrite']};
+const FEATURE_SETTINGS_SECTIONS={ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior']};
 const FEATURE_HELP_SECTIONS={ai:['help-section-ai']};
 function applyCheatsheetFeatureVisibility(){
   const ov=el('cheatsheet-overlay'); if(!ov)return;
@@ -16303,12 +16320,17 @@ function renderAiVaultProvidersList(){
     row.className='settings-list-row';
     row.style.cssText=busy?'opacity:.55':'';
     row.innerHTML=`
-      <div style="flex:1;min-width:0">
-        <div style="font:600 12.5px 'Inter',sans-serif;color:var(--fg)">${esc(p.id)} <span style="color:var(--muted);font-weight:400">— order ${Number.isFinite(p.order)?p.order:0}</span></div>
-        <div style="font:400 11px 'Inter',sans-serif;color:var(--hint);word-break:break-all;margin-top:2px">${esc(p.shape)} · ${esc(p.model)} · ${esc(p.baseUrl)}</div>
+      <span class="settings-order-num">${Number.isFinite(p.order)?p.order:0}</span>
+      <div class="settings-row-text">
+        <span class="settings-switch-text">${esc(p.id)} <span class="settings-row-desc" style="display:inline">· ${esc(p.model)}</span></span>
+        <span class="settings-row-desc" style="word-break:break-all">${esc(p.shape)} · ${esc(p.baseUrl)}</span>
       </div>
-      <button type="button" class="ai-vault-provider-delete btn" style="flex-shrink:0;color:var(--sem-alert);border-color:color-mix(in srgb,var(--sem-alert) 40%,transparent)">${TRASH_ICON.replace('width="24" height="24"','width="12" height="12"')}</button>
+      <div class="settings-row-actions">
+        <button type="button" class="sb-icon-btn ai-vault-provider-edit" data-tip="Edit" aria-label="Edit ${esc(p.id)}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button type="button" class="sb-icon-btn ai-vault-provider-delete" data-tip="Remove" aria-label="Remove ${esc(p.id)}">${TRASH_ICON.replace('width="24" height="24"','width="13" height="13"')}</button>
+      </div>
     `;
+    row.querySelector('.ai-vault-provider-edit')?.addEventListener('click',()=>openAiVaultProviderForm(p));
     row.querySelector('.ai-vault-provider-delete')?.addEventListener('click',()=>requestDeleteAiVaultProvider(p));
     listEl.appendChild(row);
   });
@@ -16346,7 +16368,7 @@ async function addOrUpdateAiVaultProvider(){
   const model=(el('ai-vault-provider-model-input')?.value||'').trim();
   const apiKey=(el('ai-vault-provider-apikey-input')?.value||'').trim();
   const order=Number(el('ai-vault-provider-order-input')?.value)||0;
-  if(!id||!baseUrl||!model||!apiKey){ showToast('id, base URL, model, and API key are all required'); return; }
+  if(!id||!baseUrl||!model||!apiKey){ showToast('Name, endpoint URL, model and API key are all required'); return; }
   const origLabel=btn.textContent;
   btn.textContent='Saving…'; btn.disabled=true;
   try{
@@ -16356,6 +16378,7 @@ async function addOrUpdateAiVaultProvider(){
     el('ai-vault-provider-model-input').value='';
     el('ai-vault-provider-apikey-input').value='';
     el('ai-vault-provider-order-input').value='0';
+    closeAiVaultProviderForm();
     showToast('Provider saved','success');
     await refreshAiVaultProvidersList();
   }catch(e){
@@ -16364,6 +16387,28 @@ async function addOrUpdateAiVaultProvider(){
     btn.textContent=origLabel; btn.disabled=false;
   }
 }
+// The add/edit form stays folded away behind "Add provider" (or a row's Edit) until it's needed.
+function openAiVaultProviderForm(p){
+  const form=el('ai-vault-provider-form'); if(!form)return;
+  el('ai-vault-provider-id-input').value=p?p.id:'';
+  el('ai-vault-provider-id-input').readOnly=!!p;
+  el('ai-vault-provider-shape-select').value=p?p.shape:'openai';
+  el('ai-vault-provider-order-input').value=String(p&&Number.isFinite(p.order)?p.order:aiVaultProvidersItems.length);
+  el('ai-vault-provider-baseurl-input').value=p?p.baseUrl:'';
+  el('ai-vault-provider-model-input').value=p?p.model:'';
+  el('ai-vault-provider-apikey-input').value='';
+  el('ai-vault-provider-apikey-input').placeholder=p?'Paste the key again to save changes':'Paste key';
+  el('ai-vault-provider-form-title').textContent=p?'Edit '+p.id:'New provider';
+  form.hidden=false; el('ai-vault-provider-new-btn')?.setAttribute('aria-expanded','true');
+  (p?el('ai-vault-provider-baseurl-input'):el('ai-vault-provider-id-input'))?.focus();
+}
+function closeAiVaultProviderForm(){
+  const form=el('ai-vault-provider-form'); if(form)form.hidden=true;
+  el('ai-vault-provider-new-btn')?.setAttribute('aria-expanded','false');
+}
+el('ai-vault-provider-new-btn')?.addEventListener('click',()=>{ if(el('ai-vault-provider-form')?.hidden===false)closeAiVaultProviderForm(); else openAiVaultProviderForm(null); });
+el('ai-vault-provider-cancel-btn')?.addEventListener('click',closeAiVaultProviderForm);
+el('ai-vault-provider-form')?.addEventListener('keydown',e=>{ if(e.key==='Escape'){e.preventDefault(); e.stopPropagation(); closeAiVaultProviderForm();} else if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault(); addOrUpdateAiVaultProvider();} });
 el('ai-vault-provider-add-btn')?.addEventListener('click',addOrUpdateAiVaultProvider);
 async function refreshAiVaultQuota(){
   const input=el('ai-vault-quota-input'); if(!input)return;
@@ -24466,8 +24511,9 @@ function updateAutoRewriteStatusChip(){
   if(!chip||!divider)return;
   if(!featureAiEnabled){ chip.style.display='none'; divider.style.display='none'; refreshStatusbarDividers(); return; }
   chip.style.display=''; divider.style.display=''; chip.style.color='';
-  // Idle (off, or on with nothing queued) stays out of sight; the switch lives in Settings → AI.
-  chip.classList.toggle('is-idle',!autoRewriteEnabled||(!_autoRewriteFlushing&&autoRewriteQueue.size===0));
+  // Off stays out of sight (the switch lives in Settings → AI); on always shows, quietly when idle,
+  // so you can tell from the editor that rows will be rewritten.
+  chip.classList.toggle('is-idle',!autoRewriteEnabled);
   if(!autoRewriteEnabled){
     chip.textContent='✦ Auto-rewrite: Off'; chip.style.color='var(--hint)';
     chip.dataset.tip='Auto-rewrite on commit is off — click to turn on, right-click for its settings (exclusions, minimum word count).';
@@ -24485,7 +24531,7 @@ function updateAutoRewriteStatusChip(){
     chip.textContent=parts.join(' · ');
     chip.dataset.tip='These nodes will be sent as one batched request once the idle pause elapses — editing another node resets it. Click to turn off, right-click for settings.';
   } else {
-    chip.textContent='✦ Auto-rewrite'; chip.dataset.tip='On and idle — nothing queued right now. Click to turn off, right-click for settings.';
+    chip.textContent='✦ Auto-rewrite on'; chip.style.color='var(--hint)'; chip.dataset.tip='On and idle — nothing queued right now. Click to turn off, right-click for settings.';
   }
   refreshStatusbarDividers();
 }
@@ -24875,10 +24921,10 @@ function updateAiHostedStatusUI(){
   const signedOut=el('ai-hosted-signedout'), signedIn=el('ai-hosted-signedin'), line=el('ai-hosted-account-line');
   if(!signedOut||!signedIn)return;
   if(currentUser){
-    signedOut.style.display='none'; signedIn.style.display='flex';
+    signedOut.style.display='none'; signedIn.style.display='flex'; if(el('ai-hosted-test-btn'))el('ai-hosted-test-btn').style.display='';
     if(line)line.textContent='Signed in as '+(currentUser.email||currentUser.displayName||'your account')+'. Usage counts against your daily quota.';
   } else {
-    signedOut.style.display='flex'; signedIn.style.display='none';
+    signedOut.style.display='flex'; signedIn.style.display='none'; if(el('ai-hosted-test-btn'))el('ai-hosted-test-btn').style.display='none';
   }
 }
 async function testHostedAi(){
@@ -33792,7 +33838,7 @@ function todosHistorySummary(list) {
           <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> <strong>Rewrite</strong> — selected node(s), or highlighted text</span></li>
           <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg></span> <strong>Generate outline</strong></span> · <span class="cs-combo" data-cs-shortcut="generateOutline"></span></li>
           <li><span class="cs-desc">Batches over 30 nodes send in sequential chunks</span></li>
-          <li><span class="cs-desc">Settings → AI → AI Mode: "Sakura Hosted AI" (sign in, zero setup) or "Bring your own key" (seven built-in providers — Gemini, Groq, Claude, ChatGPT, OpenRouter, Cerebras, GitHub Models — paste your own API key) — all AI features share whichever is active</span></li>
+          <li><span class="cs-desc">Settings → AI → Mode: "Sakura Hosted AI" (sign in, zero setup) or "Bring your own key" (seven built-in providers — Gemini, Groq, Claude, ChatGPT, OpenRouter, Cerebras, GitHub Models — paste your own API key) — all AI features share whichever is active</span></li>
         </ul>
       </div>
 
