@@ -179,7 +179,7 @@ test.describe('Folded-branch node-marker indicator feeds the consolidated fold-b
       return badge.dataset.tip;
     });
 
-    expect(result).toBe('Click to expand · 1 hidden row — contains 1 node marked Agreed');
+    expect(result).toBe('Click to expand · 1 hidden row — contains 1 row marked Agreed');
   });
 
   test('an expanded node (not folded) never shows a fold-badge, even with a marked child', async ({ page }) => {

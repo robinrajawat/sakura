@@ -746,7 +746,7 @@ body.zen-mode #quick-bar{display:none}
 
 /* === Search bar === */
 #editor-wrap{position:relative}
-#search-replace-wrap{position:absolute;top:8px;right:18px;z-index:45;display:flex;flex-direction:column;width:420px}
+#search-replace-wrap{position:absolute;top:8px;right:18px;z-index:45;display:flex;flex-direction:column;width:360px;max-width:calc(100% - 36px)}
 .search-bar{position:relative;display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:6px 8px;box-shadow:0 10px 24px rgba(0,0,0,.14);width:100%;box-sizing:border-box}
 .search-bar[hidden]{display:none}
 .search-bar:has(+ .replace-bar.open){border-radius:12px 12px 0 0;box-shadow:0 4px 10px rgba(0,0,0,.06)}
@@ -757,14 +757,21 @@ body.zen-mode #quick-bar{display:none}
 .replace-bar #replace-one,.replace-bar #replace-all{flex:0 0 auto;white-space:nowrap;padding:4px 7px}
 .replace-bar #replace-all{margin-left:2px;color:var(--muted);border-color:var(--border)}
 #replace-input::placeholder{color:var(--hint)}
-#search-toggle-replace[aria-expanded="true"]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #search-match-case[aria-pressed="true"],#search-whole-word[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #search-input{border:none;background:transparent;color:var(--fg);font:13px 'Inter',sans-serif;outline:none;flex:1;min-width:0}
 #replace-input{border:none;background:transparent;color:var(--fg);font:13px 'Inter',sans-serif;outline:none;flex:1;min-width:0}
 #search-input::placeholder{color:var(--hint)}
 #search-count{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;min-width:38px;text-align:center;font-family:'Inter',sans-serif;flex:0 0 auto}
 .search-bar .icon-btn{flex:0 0 auto;width:26px;height:26px;font-size:13px;min-width:0}
-#search-match-case,#search-whole-word{width:30px;font-size:var(--fs-xs);font-weight:600}
+#search-match-case,#search-whole-word{width:26px;font-size:var(--fs-xs);font-weight:600;border-color:transparent;background:none;color:var(--muted)}
+#search-match-case:hover,#search-whole-word:hover{background:var(--hover);color:var(--fg)}
+.search-bar #search-prev,.search-bar #search-next,.search-bar #search-close,.search-bar #search-toggle-replace{border-color:transparent;background:none;color:var(--muted)}
+.search-bar #search-prev:hover,.search-bar #search-next:hover,.search-bar #search-close:hover,.search-bar #search-toggle-replace:hover{background:var(--hover);color:var(--fg)}
+/* A plain find box until you type: count, arrows and the two match options appear once there's a
+   query (an option you switched on stays visible). Replace opens and closes with Ctrl/Cmd+H. */
+#search-bar:has(#search-input:placeholder-shown) :is(#search-count,#search-prev,#search-next),
+#search-bar:has(#search-input:placeholder-shown) :is(#search-match-case,#search-whole-word):not([aria-pressed="true"]){display:none}
+#search-toggle-replace{display:none}
 .node-row.search-match{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
 .node-row.search-current{background:color-mix(in srgb,var(--accent) 22%,transparent) !important}
 /* In-node search highlight */
@@ -4047,14 +4054,14 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
   </div>
     <div id="search-replace-wrap">
     <div class="search-bar" id="search-bar" hidden>
-      <input id="search-input" type="text" placeholder="Search nodes…" autocomplete="off" />
+      <input id="search-input" type="text" placeholder="Find in document…" autocomplete="off" />
       <button class="btn icon-btn" id="search-match-case" data-tip="Match case" aria-pressed="false">Aa</button>
-      <button class="btn icon-btn" id="search-whole-word" data-tip="Match whole word" aria-pressed="false" style="text-decoration:underline">ab</button>
+      <button class="btn icon-btn" id="search-whole-word" data-tip="Match whole word" aria-pressed="false">W</button>
       <span id="search-count">0/0</span>
-      <button class="btn icon-btn" id="search-prev" data-tip="Previous match">↑</button>
-      <button class="btn icon-btn" id="search-next" data-tip="Next match">↓</button>
-      <button class="btn icon-btn" id="search-toggle-replace" data-tip="Toggle replace" aria-expanded="false">⇄</button>
-      <button class="btn icon-btn" id="search-close" data-tip="Close search"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+      <button class="btn icon-btn" id="search-prev" data-tip="Previous match (Shift+Enter)" aria-label="Previous match"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+      <button class="btn icon-btn" id="search-next" data-tip="Next match (Enter)" aria-label="Next match"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+      <button class="btn icon-btn" id="search-toggle-replace" data-tip="Hide replace (Ctrl/Cmd+H)" aria-label="Hide replace" aria-expanded="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+      <button class="btn icon-btn" id="search-close" data-tip="Close (Esc)" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
     </div>
     <div class="search-bar replace-bar" id="replace-bar" hidden>
       <input id="replace-input" type="text" placeholder="Replace with…" autocomplete="off" />
@@ -4150,7 +4157,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
   <div id="diagram-editor-header">
     <input id="diagram-editor-title-input" type="text" placeholder="Untitled diagram" maxlength="120" autocomplete="off" />
     <span class="diagram-editor-header-sep"></span>
-    <button type="button" id="diagram-editor-anchor-btn" data-tip="Choose which node this diagram appears under">
+    <button type="button" id="diagram-editor-anchor-btn" data-tip="Choose which row this diagram appears under">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><path d="M12 7.2V12M12 12l-6 4M12 12l6 4"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>
       <span id="diagram-editor-anchor-label">Not linked to a node</span>
     </button>
@@ -4164,7 +4171,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
   </div>
   <div id="diagram-editor-iframe-wrap"></div>
 </div>
-<div id="diagram-anchor-suggest"><input type="text" id="diagram-anchor-search" class="anchor-suggest-search" placeholder="Search nodes…" autocomplete="off" spellcheck="false" /><div id="diagram-anchor-results" class="anchor-suggest-results"></div></div>
+<div id="diagram-anchor-suggest"><input type="text" id="diagram-anchor-search" class="anchor-suggest-search" placeholder="Search rows…" autocomplete="off" spellcheck="false" /><div id="diagram-anchor-results" class="anchor-suggest-results"></div></div>
 
 <div id="feedback-modal-overlay" class="app-modal-overlay" role="dialog" aria-modal="true" aria-label="Send Feedback">
   <div class="app-modal" style="width:min(480px,94vw)">
@@ -13605,7 +13612,7 @@ async function renderVersionHistoryList(){
   if(historyModalNodeId!==null){
     const idx=getIndex(nodes,historyModalNodeId);
     if(nameEl)nameEl.textContent='This row';
-    if(footerHint)footerHint.textContent='Drawn from the document\'s regular version history — only showing where this node\'s text actually changed';
+    if(footerHint)footerHint.textContent='Drawn from the document\'s regular version history — only showing where this row\'s text actually changed';
     if(saveNowBtn)saveNowBtn.style.display='none';
     body.innerHTML='';
     if(idx<0){
@@ -13642,7 +13649,7 @@ async function renderVersionHistoryList(){
     }
     if(!shown){
       const empty=document.createElement('div'); empty.className='history-empty';
-      empty.textContent='No earlier versions of this node yet — captured automatically alongside the document\'s regular version history (roughly every 10 minutes of active changes).';
+      empty.textContent='No earlier versions of this row yet — captured automatically alongside the document\'s regular version history (roughly every 10 minutes of active changes).';
       body.appendChild(empty);
     }
     return;
@@ -13661,7 +13668,7 @@ async function renderVersionHistoryList(){
     const row=document.createElement('div'); row.className='history-row';
     const info=document.createElement('div'); info.className='history-row-info';
     const time=document.createElement('div'); time.className='history-row-time'; time.textContent=new Date(rev.ts).toLocaleString();
-    const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=(rev.reason||'Auto')+' · '+rev.nodes.length+' node'+(rev.nodes.length===1?'':'s');
+    const meta=document.createElement('div'); meta.className='history-row-meta'; meta.textContent=(rev.reason||'Auto')+' · '+rev.nodes.length+' row'+(rev.nodes.length===1?'':'s');
     info.appendChild(time); info.appendChild(meta);
     row.appendChild(info);
     const restoreBtn=document.createElement('button'); restoreBtn.className='history-row-restore'; restoreBtn.textContent='Restore';
@@ -13786,7 +13793,7 @@ async function restoreDocRevision(docId,ts){
 // person never asked to see or compare in the first place.
 async function restoreNodeTextFromRevision(nodeId,text){
   const idx=getIndex(nodes,nodeId);
-  if(idx<0){ showToast('That node no longer exists'); return; }
+  if(idx<0){ showToast('That row no longer exists'); return; }
   if(editingId===nodeId)commitEdit();
   pushUndo();
   nodes[idx].text=text;
@@ -14542,13 +14549,13 @@ function renderDiagramAnchorSuggest(query,d,btn,isFilterUpdate){
   if(!isFilterUpdate)diagramAnchorCollapsedIds=defaultCollapsedAnchorTreeIds();
   const noneItem=document.createElement('div');
   noneItem.className='diagram-anchor-item diagram-anchor-item-none';
-  noneItem.textContent='Not linked to a node';
+  noneItem.textContent='Not linked to a row';
   noneItem.addEventListener('mousedown',e=>{ e.preventDefault(); setDiagramAnchor(d,null); });
   results.appendChild(noneItem);
   if(!q){
     const tree=buildAnchorTree(diagramAnchorCollapsedIds);
     if(!tree.length){
-      const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No nodes yet';
+      const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No rows yet';
       results.appendChild(empty);
     }
     tree.forEach(n=>{
@@ -14560,7 +14567,7 @@ function renderDiagramAnchorSuggest(query,d,btn,isFilterUpdate){
   } else {
     const candidates=getDiagramAnchorCandidates(q);
     if(!candidates.length){
-      const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No matching nodes';
+      const empty=document.createElement('div'); empty.className='diagram-anchor-item-empty'; empty.textContent='No matching rows';
       results.appendChild(empty);
     }
     candidates.forEach(n=>{
@@ -17434,7 +17441,7 @@ function toggleSettingsSearch(){const wrap=el('settings-search-wrap'); const isO
 el('settings-search-toggle-btn')?.addEventListener('click',e=>{e.stopPropagation(); toggleSettingsSearch()});
 el('settings-search')?.addEventListener('input',e=>{const v=e.target.value; filterSettingsPanel(v); const clr=el('settings-search-clear'); if(clr)clr.classList.toggle('visible',v.trim().length>0)});
 el('settings-search-clear')?.addEventListener('click',()=>{const inp=el('settings-search'); if(inp&&inp.value){inp.value=''; inp.focus(); filterSettingsPanel(''); el('settings-search-clear')?.classList.remove('visible')} else {toggleSettingsSearch()}});
-el('settings-search')?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault(); toggleSettingsSearch()}});
+el('settings-search')?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault(); setSettingsSearchVisible(false); e.target.blur()}});
 // "About Sakura" (a Help -> Get Started row; it was an account-menu item until the menu was
 // trimmed) deep-links into Settings -> About, same jump-to-category pattern as
 // account-manage-btn -- it used to be an inline-expanding popover in the dropdown, but that's the same "informational content living in a one-off menu widget
@@ -17458,7 +17465,7 @@ function toggleHelpSearch(){const wrap=el('help-search-wrap'); const isOpen=!!wr
 el('help-search-toggle-btn')?.addEventListener('click',e=>{e.stopPropagation(); toggleHelpSearch()});
 el('help-search')?.addEventListener('input',e=>{const v=e.target.value; filterHelpPanel(v); const clr=el('help-search-clear'); if(clr)clr.classList.toggle('visible',v.trim().length>0)});
 el('help-search-clear')?.addEventListener('click',()=>{const inp=el('help-search'); if(inp&&inp.value){inp.value=''; inp.focus(); filterHelpPanel(''); el('help-search-clear')?.classList.remove('visible')} else {toggleHelpSearch()}});
-el('help-search')?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault(); toggleHelpSearch()}});
+el('help-search')?.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault(); setHelpSearchVisible(false); e.target.blur()}});
 
 function closeAllPanelsExceptGlobalSearch(){el('settings-panel')?.classList.remove('open'); el('help-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('docs-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open');}
 // A `.settings-field` can be a collapsible section wrapping many nested sub-controls
@@ -18098,13 +18105,13 @@ function qaBestPhrase(text,phrases){
 const QA_ACTIONS=[
   {id:'new-document',label:'New document',keywords:['new document','new doc','create document'],requiresSelection:false,
    run:()=>{ createDoc(); return true; }},
-  {id:'duplicate-node',label:'Duplicate node',keywords:['duplicate node','duplicate'],requiresSelection:true,
+  {id:'duplicate-node',label:'Duplicate row',keywords:['duplicate node','duplicate'],requiresSelection:true,
    run:()=>{ const before=undoStack.length; duplicateSelected(); return undoStack.length>before; }},
   // AI actions below all reuse the same functions as their toolbar/right-click equivalents —
   // no separate AI logic lives here. Each already handles its own missing-key error (via
   // showAiErrorModal deep in the call chain) and its own pushUndo() on real success, so
   // "did the undo stack grow" is a reliable success signal without duplicating that logic.
-  {id:'ai-rewrite-node',label:'Rewrite this node (AI)',keywords:['rewrite node','rewrite this node','ai rewrite node','rewrite selected'],requiresSelection:true,
+  {id:'ai-rewrite-node',label:'Rewrite this row',keywords:['rewrite node','rewrite this node','ai rewrite node','rewrite selected'],requiresSelection:true,
    run:async()=>{ const ids=getSelectedIds(); if(!ids.length)return false; const before=undoStack.length; await rewriteMultipleNodes(ids); return undoStack.length>before; }},
   {id:'ai-generate-outline',label:'Generate outline (AI)',keywords:['generate outline','ai outline','create outline'],requiresSelection:false,
    run:async()=>{ const before=undoStack.length; await generateOutlineWithAi(); return undoStack.length>before; }},
@@ -18404,7 +18411,7 @@ function qaRender(){
     if(disabled){
       const div=document.createElement('div'); div.className='qa-item qa-item-disabled';
       const labelEl=document.createElement('span'); labelEl.className='qa-item-label'; labelEl.textContent=action.label;
-      const stateEl=document.createElement('span'); stateEl.className='qa-item-state'; stateEl.textContent='select a node first';
+      const stateEl=document.createElement('span'); stateEl.className='qa-item-state'; stateEl.textContent='select a row first';
       div.appendChild(labelEl); div.appendChild(stateEl);
       results.appendChild(div);
       return;
@@ -20860,7 +20867,7 @@ function showContextMenu(x,y,id,opts){
   _ctxLastX=x; _ctxLastY=y;
   // A right-clicked web link puts its own items first, as in notes and thread entries.
   const linkItems=opts&&opts.linkItems?[...opts.linkItems,{divider:true}]:[];
-  showSbContextMenu(x,y,[...linkItems,...ctxMenuItems(contextMenuNodeId??selectedId,opts&&opts.more)],{id:'context-menu',label:'Node actions'});
+  showSbContextMenu(x,y,[...linkItems,...ctxMenuItems(contextMenuNodeId??selectedId,opts&&opts.more)],{id:'context-menu',label:'Row actions'});
 }
 // After customising the quick row the node menu opens again where it was, showing the change.
 function reopenContextMenu(more){ if(contextMenuNodeId!==null)showContextMenu(_ctxLastX,_ctxLastY,null,{more}); }
@@ -21160,14 +21167,14 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
     if(e&&e.inputType&&/insertFromPaste|insertFromDrop|insertFromYank/i.test(e.inputType))autoRewritePasteTainted=true;
     autosizeNodeInput(input); handleAtInput(input,node.id);
   });
-  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=rowStatusWords(node,true)+' — click for options'; mkdot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault();}); mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); commitEdit(); hideNodeTooltip(); const rr=mkdot.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,rowStatusMenuItems(node));}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); commitEdit(); hideNodeTooltip(); showSbContextMenu(e.clientX,e.clientY,rowStatusMenuItems(node));}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This node has '+nodeDiagrams.length+' diagrams — click to expand inline':'This node has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this node from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' node'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
+  input.addEventListener('blur',()=>{const thisInput=input; queueMicrotask(()=>{if(editingId!==node.id)return; if(getEditingInput()!==thisInput)return; closeAtSuggest(); closeSlashInsertMenu(); commitEdit(); render()})}); row.appendChild(input)} else {const lbl=document.createElement('div'); const view=renderLabel(node,isMatch&&searchQuery.trim()?searchQuery.trim():'',isSectionNode&&svgSectionIconsEnabled); lbl.className=view.cls; lbl.style.color=node.styles.color?`var(--fc-${node.styles.color})`:(node.styles.heading?`var(--heading-c${node.styles.heading})`:'var(--node-fg)'); lbl.innerHTML=view.html; if(view.hasQuotes)row.classList.add('has-citations'); if(isCheckboxNode(node)){const cb=document.createElement('span'); cb.className='node-cb'+(node.checked?' cb-checked':''); cb.dataset.tip=node.checked?'Mark incomplete':'Mark complete'; cb.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); toggleCheckbox(node.id)}); row.appendChild(cb); if(node.checked)row.classList.add('cb-done')} row.appendChild(lbl); if(node.marker){const mkdot=document.createElement('span'); mkdot.className='node-marker-badge'+(activeMarkerFilter===node.marker?' marker-active-filter':''); mkdot.dataset.color=nodeMarkerColor(node.marker); mkdot.innerHTML=markIconSvg(node.marker,11); mkdot.dataset.tip=rowStatusWords(node,true)+' — click for options'; mkdot.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault();}); mkdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); commitEdit(); hideNodeTooltip(); const rr=mkdot.getBoundingClientRect(); showSbContextMenu(rr.left,rr.bottom+4,rowStatusMenuItems(node));}); mkdot.addEventListener('contextmenu',e=>{e.stopPropagation(); e.preventDefault(); commitEdit(); hideNodeTooltip(); showSbContextMenu(e.clientX,e.clientY,rowStatusMenuItems(node));}); row.appendChild(mkdot)} if(node.noExport){const xdot=document.createElement('span'); xdot.className='node-note-dot node-noexport-dot'; xdot.style.color='var(--muted)'; xdot.innerHTML=NOEXPORT_DOT_SVG; xdot.dataset.tip='Left out of export (PDF, OPML), with everything under it — click to include again'; xdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); setNodesNoExport([node.id],false);}); row.appendChild(xdot)} if(Array.isArray(diagrams)&&diagrams.length){const nodeDiagrams=diagrams.filter(dg=>dg.anchorNodeId===node.id); if(nodeDiagrams.length){const gdot=document.createElement('span'); gdot.className='node-note-dot node-diagram-dot'+(inlineExpandDiagramNodeIds.has(node.id)?' pv-dot-open':''); gdot.style.color='var(--muted)'; gdot.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"8.5\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>'; gdot.dataset.tip=nodeDiagrams.length>1?'This row has '+nodeDiagrams.length+' diagrams — click to expand inline':'This row has a diagram — click to expand inline'; gdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandDiagramNodeIds.has(node.id))inlineExpandDiagramNodeIds.delete(node.id); else inlineExpandDiagramNodeIds.add(node.id); render();}); row.appendChild(gdot)}} if(Array.isArray(remarks)&&remarks.length){const nodeRemarks=remarks.filter(r=>r.anchorNodeId===node.id); if(nodeRemarks.length){const rdot=document.createElement('span'); const tThread=threadEntries(nodeRemarks,node.id); const openR=openQuestions(tThread).length; rdot.className='node-note-dot node-remark-dot'+(inlineExpandRemarksNodeIds.has(node.id)?' pv-dot-open':'')+(openR?' has-open-count':''); rdot.style.color=openR?'var(--accent)':'var(--muted)'; rdot.innerHTML=REMARK_DOT_SVG+(openR?'<span class="node-dot-count">'+openR+'</span>':''); rdot.dataset.tip='Thread: '+tThread.length+' entr'+(tThread.length===1?'y':'ies')+(openR?' \u00b7 '+openCountLabel(openR,'question'):'')+' — click to show or hide'; rdot.addEventListener('click',e=>{e.stopPropagation(); if(inlineExpandRemarksNodeIds.has(node.id))inlineExpandRemarksNodeIds.delete(node.id); else inlineExpandRemarksNodeIds.add(node.id); render();}); row.appendChild(rdot)}} {const tRefs=todoRefsForNode(node.id); if(tRefs.length){const tdot=document.createElement('span'); tdot.className='node-note-dot node-todo-dot'; tdot.style.color='var(--muted)'; tdot.innerHTML=todoDotIconSvg(11); tdot.dataset.tip=tRefs.length>1?'Referenced by '+tRefs.length+' to-dos — click to view':'Referenced by a to-do: '+esc((tRefs[0].text||'').trim()||'(untitled task)'); tdot.addEventListener('click',e=>{e.stopPropagation(); jumpToNodeTodoRefs(tdot,tRefs)}); row.appendChild(tdot)}} if(autoRewriteEnabled&&autoRewriteQueue.has(node.id)){const arwdot=document.createElement('span'); arwdot.className='node-arw-dot'; arwdot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4Z"/></svg>'; arwdot.dataset.tip='Queued for auto-rewrite — click to remove this row from the queue'; arwdot.addEventListener('click',e=>{e.stopPropagation(); e.preventDefault(); removeFromAutoRewriteQueue(node.id)}); row.appendChild(arwdot)} if(folded&&hasChildren){ const subtreeKinds=[]; if(!(node.note&&node.note.trim())&&subtreeHasNote(idx))subtreeKinds.push('a note'); if(Array.isArray(diagrams)&&diagrams.length&&!diagrams.some(dg=>dg.anchorNodeId===node.id)&&subtreeHasDiagram(idx))subtreeKinds.push('a diagram'); if(Array.isArray(remarks)&&remarks.length&&!remarks.some(r=>r.anchorNodeId===node.id)&&subtreeHasRemark(idx))subtreeKinds.push('a thread'); if(!(Array.isArray(node.tables)&&node.tables.length)&&subtreeHasTable(idx))subtreeKinds.push('a table'); if(!(Array.isArray(node.images)&&node.images.length)&&subtreeHasImage(idx))subtreeKinds.push('an image'); if(!todoRefsForNode(node.id).length&&subtreeHasTodoRef(idx))subtreeKinds.push('a to-do reference'); if(!qaRefsForNode(node.id).length&&subtreeHasQaRef(idx))subtreeKinds.push('a linked Q&A question'); subtreeMarkerTypes(idx).forEach((mcount,mtype)=>{ if(mtype===node.marker)return; subtreeKinds.push(mcount+' row'+(mcount===1?'':'s')+' marked '+nodeMarkerLabel(mtype)); }); const badge=document.createElement('span'); badge.className='fold-badge'; const hiddenCount=countDescendants(nodes,idx); const hiddenFu=subtreeOpenFollowups(idx); const tipParts=foldBadgeTipParts(idx,hiddenFu); const otherKinds=subtreeKinds.filter(k=>!/^an? (diagram|table|image)$|marked Follow-up$/.test(k)); if(hiddenFu||subtreeContentCounts(idx).question)badge.classList.add('fold-badge-open'); badge.textContent='+'+hiddenCount; badge.dataset.tip='Click to expand · '+hiddenCount+' hidden row'+(hiddenCount===1?'':'s')+(tipParts.length?' — '+tipParts.join(', '):'')+(otherKinds.length?(tipParts.length?'; also ':' — contains ')+otherKinds.join(', '):''); badge.addEventListener('mousedown',e=>{e.stopPropagation(); e.preventDefault(); openFoldBadge(node.id)}); row.appendChild(badge) } if(node.tags&&node.tags.length){node.tags.forEach(tag=>{const chip=document.createElement('span'); chip.className='node-tag-chip'+(activeTagFilter===tag?' tag-active-filter':''); chip.textContent='#'+tag; chip.dataset.tip='Click to filter by #'+tag; chip.addEventListener('click',e=>{e.stopPropagation(); setTagFilter(activeTagFilter===tag?null:tag)}); row.appendChild(chip)})} if(isCheckboxNode(node)&&hasChildren){const {total,checked}=getCheckboxChildStats(idx); if(total>0){const prog=document.createElement('span'); prog.className='cb-progress'; prog.textContent=checked+'/'+total; prog.dataset.tip=checked+' of '+total+' done'; row.appendChild(prog)}}
         // Note/code dot now lives right beside its own inline preview instead of grouped with
         // the unrelated diagram/todo/qa cross-reference dots earlier in the
         // row — cause (the dot) and effect (the preview text) read as one unit this way.
         if(node.note&&node.note.trim()){
           const dot=document.createElement('span'); dot.className='node-note-dot'+(inlineExpandNoteNodeIds.has(node.id)?' pv-dot-open':''); dot.style.color='var(--muted)';
           dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>';
-          dot.dataset.tip='This node has a note — click to expand inline';
+          dot.dataset.tip='This row has a note — click to expand inline';
           dot.addEventListener('click',e=>{
             e.stopPropagation();
             if(inlineExpandNoteNodeIds.has(node.id))inlineExpandNoteNodeIds.delete(node.id); else inlineExpandNoteNodeIds.add(node.id);
@@ -21182,7 +21189,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           const tableOpen=!collapsedTableNodeIds.has(node.id);
           const tdot=document.createElement('span'); tdot.className='node-note-dot node-table-dot'+(tableOpen?' pv-dot-open':''); tdot.style.color='var(--muted)';
           tdot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>';
-          tdot.dataset.tip=(node.tables.length>1?'This node has '+node.tables.length+' tables/charts':'This node has a table/chart')+' — click to '+(tableOpen?'fold':'unfold')+' it';
+          tdot.dataset.tip=(node.tables.length>1?'This row has '+node.tables.length+' tables/charts':'This row has a table/chart')+' — click to '+(tableOpen?'fold':'unfold')+' it';
           tdot.addEventListener('click',e=>{
             e.stopPropagation();
             if(collapsedTableNodeIds.has(node.id))collapsedTableNodeIds.delete(node.id); else collapsedTableNodeIds.add(node.id);
@@ -21195,7 +21202,7 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
           const imagesOpen=!collapsedImageNodeIds.has(node.id);
           const idot=document.createElement('span'); idot.className='node-note-dot node-image-dot'+(imagesOpen?' pv-dot-open':''); idot.style.color='var(--muted)';
           idot.innerHTML=NODE_IMAGE_DOT_SVG;
-          idot.dataset.tip=(node.images.length>1?'This node has '+node.images.length+' images':'This node has an image')+' — click to '+(imagesOpen?'fold':'unfold')+(node.images.length>1?' them':' it');
+          idot.dataset.tip=(node.images.length>1?'This row has '+node.images.length+' images':'This row has an image')+' — click to '+(imagesOpen?'fold':'unfold')+(node.images.length>1?' them':' it');
           idot.addEventListener('click',e=>{
             e.stopPropagation();
             if(collapsedImageNodeIds.has(node.id))collapsedImageNodeIds.delete(node.id); else collapsedImageNodeIds.add(node.id);
@@ -22144,7 +22151,7 @@ function deleteSelected(){
   removeLinkedObjectsForNodeIds(deletedIds);
   removeIdsFromAutoRewriteQueue(deletedIds);
   cleanupRowLinksTo(deletedIds);
-  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} node${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
+  rebuildParentIds(); const fallbackIdx=Math.min(roots[0],Math.max(0,nodes.length-1)); selectedId=nodes[fallbackIdx]?.id??nodes[nodes.length-1]?.id??null; editingId=null; clearMultiSelection(); selectionAnchorId=selectedId; flashNodeId=null; render(); showToast(`Deleted ${count} row${count===1?'':'s'}`+(goneWith?` with ${goneWith}`:''));
 }
 function duplicateSelected(){const roots=getSelectionRootIndexes(); if(!roots.length)return; pushUndo(); markDirty(); let firstNewId=null; for(let r=roots.length-1;r>=0;r--){const idx=roots[r]; const end=getSubtreeEnd(nodes,idx); const originals=nodes.slice(idx,end); const clones=originals.map(n=>makeNode(n.text,n.depth,null,n.styles,n.note||'',false,n.tables,n.images,rowMarksOf(n))); nodes.splice(end,0,...clones); originals.forEach((n,k)=>{ const {qas,rms}=nodeDiscussionCopies(n.id); attachDiscussionCopies(clones[k].id,qas,rms); copyNodeDiagrams(n.id,clones[k].id); if(n.marker)Object.assign(clones[k],{marker:n.marker},normalizeRowStatusMeta(n)); }); firstNewId=clones[0]?.id??firstNewId} rebuildParentIds(); if(firstNewId!==null){setSingleSelection(firstNewId); flashNode(firstNewId)} render()}
 function parseTextToTreeNodes(text){const rawLines=String(text||'').replace(/\r/g,'').split('\n'); const bulletRe=/^(?:[-*+•●◦▪▫■□‣⁃◉○→➜➝➞]|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)])\s+/; const sepRe=/^[\s\-–—_=~•●▪▫■□⋯·.]{3,}$/; const treeConnectorRe=/[│┃├└┣┗┠┝┞┢┡┟─━]/; const branchCharRe=/[├└┣┗┠┝┞┢┡┟]/; const hasTreeConnectors=rawLines.some(l=>treeConnectorRe.test(l)); const noPrefixRe=/^[\t \u00a0\u2000-\u200b\u202f\u205f\u3000│┃├└┣┗┠┝┞┢┡┟─━]/; const out=[]; const rows=[]; let pendingIndentWidth=null; for(const raw of rawLines){if(!raw||!raw.trim())continue; let line=raw.replace(/\u00a0/g,' ').replace(/[\u2000-\u200b\u202f\u205f\u3000]/g,' '); const isNoPrefixLine=!noPrefixRe.test(line); if(hasTreeConnectors&&rows.length&&isNoPrefixLine&&!bulletRe.test(line.trim())&&!/^(?:\[(?: |x|X)\]|☐|☑|✅|✓)\s+/.test(line.trim())){if(pendingIndentWidth!==null){const label=line.trim(); if(label){rows.push({text:label,indentWidth:pendingIndentWidth,hadBullet:false})} pendingIndentWidth=null; continue} rows[rows.length-1].text=(rows[rows.length-1].text+' '+line.trim()).trim(); continue} const strippedForBranch=line; line=line.replace(/[│┃]/g,'  ').replace(/[├└┣┗┠┝┞┢┡┟]/g,' ').replace(/[─━]/g,' '); if(sepRe.test(line.trim())){pendingIndentWidth=null; continue} const m=line.match(/^[\t ]*/); const indentRaw=(m?m[0]:'').replace(/\t/g,'  '); const indentWidth=indentRaw.length; let label=line.slice((m?m[0]:'').length).trim(); const hadBullet=bulletRe.test(label); label=label.replace(bulletRe,'').trim(); label=label.replace(/^\[(?: |x|X)\]\s+/,'').replace(/^(?:☐|☑|✅|✓)\s+/,'').trim(); if(!label){pendingIndentWidth=branchCharRe.test(strippedForBranch)?indentWidth+1:null; continue} pendingIndentWidth=null; rows.push({text:label,indentWidth,hadBullet})} if(!rows.length)return []; const stack=[{width:-1,depth:-1}]; rows.forEach(row=>{while(stack.length>1&&row.indentWidth<=stack[stack.length-1].width)stack.pop(); const depth=stack[stack.length-1].depth+1; stack.push({width:row.indentWidth,depth}); out.push({text:row.text,depth,styles:emptyStyles(),parentId:null})}); const minDepth=Math.min(...out.map(n=>n.depth)); return out.map(n=>({text:n.text,depth:n.depth-minDepth,styles:normalizeStyles(n.styles),parentId:null}))}
@@ -22186,7 +22193,7 @@ function pasteParsedNodes(parsed,toastVerb='Pasted',clipExtras=null){if(!Array.i
   }
   selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null; render();
   const extrasLabel=clipExtrasToastLabel(dgAdded,imgAdded,qaAdded,rmAdded);
-  showToast(`${toastVerb} ${mapped.length} node${mapped.length===1?'':'s'}${extrasLabel}`)}
+  showToast(`${toastVerb} ${mapped.length} row${mapped.length===1?'':'s'}${extrasLabel}`)}
 // Turns clipboard HTML into the line-per-row text parseTextToTreeNodes expects. innerText can't be
 // used here: on an element that isn't in the rendered page it degrades to textContent, which runs
 // block-level rows together -- Sakura's own copy (one white-space:pre <div> per node) used to
@@ -22629,7 +22636,7 @@ function extractSakuraClipPayload(html){
   }catch(e){}
   return null;
 }
-async function copyNodesToClipboard(forceFull=false){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const imgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.imgs?x.imgs.length:0),0):0; const qaCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.qas?x.qas.length:0),0):0; const rmCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.rms?x.rms.length:0),0):0; const extrasLabel=clipExtrasToastLabel(dgCount,imgCount,qaCount,rmCount); const toastLabel=(isSubset?`Copied ${scopeNodes.length} node${scopeNodes.length===1?'':'s'}`:'Tree copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
+async function copyNodesToClipboard(forceFull=false){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const scopeNodes=getScopedNodes(forceFull); const isSubset=!forceFull&&!selectAllMode&&scopeNodes.length<nodes.length; const useRebase=isSubset; const plain=serializeTreeText(scopeNodes,useRebase); const clipPayload=buildNodeClipboardPayload(scopeNodes); const html=serializeClipboardHtml(scopeNodes,useRebase)+(clipPayload?encodeSakuraClipComment(clipPayload):''); const dgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.dgs?x.dgs.length:0),0):0; const imgCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.imgs?x.imgs.length:0),0):0; const qaCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.qas?x.qas.length:0),0):0; const rmCount=clipPayload?clipPayload.extras.reduce((a,x)=>a+(x.rms?x.rms.length:0),0):0; const extrasLabel=clipExtrasToastLabel(dgCount,imgCount,qaCount,rmCount); const toastLabel=(isSubset?`Copied ${scopeNodes.length} row${scopeNodes.length===1?'':'s'}`:'Document copied')+extrasLabel; try{if(navigator.clipboard&&window.ClipboardItem&&navigator.clipboard.write){const item=new ClipboardItem({'text/plain':new Blob([plain],{type:'text/plain'}),'text/html':new Blob([html],{type:'text/html'})}); await navigator.clipboard.write([item])} else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(plain)} else throw new Error('Clipboard API unavailable'); showToast(toastLabel)} catch(e){const ta=document.createElement('textarea'); ta.value=plain; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast(toastLabel)}}
 function downloadBlob(filename,mime,content){suppressBeforeUnloadOnce=true; setTimeout(()=>suppressBeforeUnloadOnce=false,1000); const blob=new Blob([content],{type:mime}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),500)}
 // === OPML ===
 // Recursively walks a flat depth-tagged node list (already rebased so the first
@@ -22749,7 +22756,7 @@ function importOpmlText(xmlText){
   selectedId=mapped[0]?.id??null; selectAllMode=false; clearMultiSelection(); selectionAnchorId=selectedId; editingId=null; flashNodeId=null;
   render();
   scheduleAutoSave();
-  showToast(`Imported ${mapped.length} node${mapped.length===1?'':'s'}`);
+  showToast(`Imported ${mapped.length} row${mapped.length===1?'':'s'}`);
   return true;
 }
 function triggerOpmlImport(){ el('sakura-opml-file-input')?.click(); }
@@ -23305,6 +23312,17 @@ document.querySelectorAll('.fmt-btn').forEach(btn=>btn.addEventListener('click',
 el('settings-toggle').addEventListener('click',e=>{e.stopPropagation(); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('settings-panel').classList.toggle('open'); setSettingsSearchVisible(false); if(el('settings-panel').classList.contains('open')){updateExportStatus(); updatePreRestoreSnapshotStatus(); if(isAdmin){refreshAiVaultProvidersList(); refreshAiVaultQuota();}}}); el('help-toggle').addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('export-menu')?.classList.remove('open'); el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open'); toggleNotifMenu(false); el('help-panel').classList.toggle('open'); setHelpSearchVisible(false)});
 el('export-toggle').addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,exportMenuItems(),{id:'export-menu',label:'Export',alignRight:true,keyboard:e.detail===0});});
 el('import-toggle')?.addEventListener('click',e=>{e.stopPropagation(); toggleNotifMenu(false); openSbMenuUnder(e.currentTarget,importMenuItems(),{id:'import-menu',label:'Import',alignRight:true,keyboard:e.detail===0});});
+// Escape closes Settings or Help like every other panel, when focus is in that sheet or on the
+// rail/page (an open dialog or menu elsewhere handles its own Escape first).
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape'||e.defaultPrevented)return;
+  const sheet=['settings-panel','help-panel'].map(id=>el(id)).find(p=>p?.classList.contains('open'));
+  if(!sheet)return;
+  const a=document.activeElement;
+  if(a&&a!==document.body&&!sheet.contains(a)&&!(a.id||'').startsWith('rail-'))return;
+  e.preventDefault(); sheet.classList.remove('open');
+  if(sheet.id==='settings-panel'){ setSettingsSearchVisible(false); el('rail-settings-btn')?.focus(); } else setHelpSearchVisible(false);
+});
 el('account-toggle')?.addEventListener('click',e=>{e.stopPropagation(); el('settings-panel').classList.remove('open'); el('help-panel').classList.remove('open'); el('export-menu')?.classList.remove('open');  toggleNotifMenu(false); el('account-menu').classList.toggle('open')});
 // Export ▾ / Import ▾: the shared menu, one item per format. Download PDF and Export (.opml) live
 // under Share; Import (.opml) is in the File Explorer header.
@@ -23619,15 +23637,15 @@ const SHORTCUTS = {
   docBack:        {combo:'mod+[',         label:'Back to the previous document', category:'Documents & Zen', guarded:false, action:()=>goDocNav(-1)},
   docForward:     {combo:'mod+]',         label:'Forward',                  category:'Documents & Zen', guarded:false, action:()=>goDocNav(1)},
   toggleZen:      {combo:'mod+shift+e',   label:'Toggle zen mode',          category:'Documents & Zen', guarded:false, action:()=>setZenMode(!zenMode)},
-  quickAssist:    {combo:'mod+/',         label:'Open Quick Assist',        category:'Global Search',    guarded:false, action:()=>toggleQa()},
-  findInTree:     {combo:'mod+f',         label:'Search this tree',         category:'Global Search',    guarded:false, action:()=>openSearch()},
-  findReplace:    {combo:'mod+h',         label:'Search & replace',         category:'Global Search',    guarded:false, action:()=>{openSearch(); if(!el('replace-bar')?.classList.contains('open'))toggleReplaceBar();}},
+  quickAssist:    {combo:'mod+/',         label:'Open Quick Assist',        category:'Search',           guarded:false, action:()=>toggleQa()},
+  findInTree:     {combo:'mod+f',         label:'Find in document',         category:'Search',           guarded:false, action:()=>openSearch()},
+  findReplace:    {combo:'mod+h',         label:'Find & replace',         category:'Search',           guarded:false, action:()=>{openSearch(); if(!el('replace-bar')?.classList.contains('open'))toggleReplaceBar();}},
   collapseAll:    {combo:'mod+alt+c',     label:'Collapse/expand all',       category:'Editing',          guarded:false, action:()=>toggleFoldAll()},
   insertDateTime: {combo:'mod+shift+d',   label:'Insert date/time',         category:'Editing',          guarded:false, action:()=>insertDateTime()},
   generateOutline:{combo:'mod+shift+o',   label:'Generate outline (AI)',    category:'Editing',          guarded:false, action:()=>generateOutlineWithAi()},
   undo:           {combo:'mod+z',         label:'Undo',                     category:'Editing',          guarded:true,  action:()=>contextualUndo()},
   redo:           {combo:'mod+y', altCombos:['mod+shift+z'], label:'Redo',  category:'Editing',          guarded:true,  action:()=>contextualRedo()},
-  copyAsText:     {combo:'mod+c',         label:'Copy selected nodes',      category:'Copy & Select',           guarded:true,  action:()=>copyNodesToClipboard()},
+  copyAsText:     {combo:'mod+c',         label:'Copy selected rows',      category:'Copy & Select',           guarded:true,  action:()=>copyNodesToClipboard()},
   selectAll:      {combo:'mod+a',         label:'Select all',               category:'Copy & Select',           guarded:true,  action:()=>{if(nodes.length){commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render();}}},
   bold:           {combo:'mod+b',         label:'Bold',                     category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('bold')},
   italic:         {combo:'mod+i',         label:'Italic',                   category:'Formatting',       guarded:true,  action:()=>handleToolbarStyle('italic')},
@@ -23641,8 +23659,8 @@ const SHORTCUTS = {
   heading3:       {combo:'mod+alt+3',     label:'Heading 3',                category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(3)},
   headingClear:   {combo:'mod+alt+0',     label:'Body text (clear heading)',category:'Formatting',       guarded:true,  action:()=>applyHeadingOption(0)},
   newChild:       {combo:'mod+enter',     label:'Add child',                category:'Editing',          guarded:true,  action:()=>{if(selectedId!==null)insertChildFirst(selectedId,true);}},
-  moveUp:         {combo:'alt+arrowup',   label:'Move node up',             category:'Editing',          guarded:true,  action:()=>moveSelected(-1)},
-  moveDown:       {combo:'alt+arrowdown', label:'Move node down',           category:'Editing',          guarded:true,  action:()=>moveSelected(1)},
+  moveUp:         {combo:'alt+arrowup',   label:'Move row up',             category:'Editing',          guarded:true,  action:()=>moveSelected(-1)},
+  moveDown:       {combo:'alt+arrowdown', label:'Move row down',           category:'Editing',          guarded:true,  action:()=>moveSelected(1)},
   toggleNote:     {combo:'mod+shift+n',   label:'Add/edit note',            category:'Notes & Panels',     guarded:false, action:()=>{if(selectedId!==null)openInlineNoteAndFocus(selectedId);}},
   addThread:      {combo:'mod+alt+m',     label:'Add to thread',            category:'Notes & Panels',     guarded:false, action:()=>{const id=editingId!==null?editingId:selectedId; if(id!==null)runQuickAction('remark',id);}},
   toggleTodos:    {combo:'mod+shift+t',   label:'Open/close Todos',         category:'Notes & Panels',     guarded:false, action:()=>{if(typeof toggleDockTab==='function') toggleDockTab('todos');}},
@@ -24479,7 +24497,7 @@ async function rewriteNodeText(nodeId){
     // Same in-flight-edit race fixed elsewhere this session: if the node's text no longer
     // matches what was actually sent to the AI, the user edited it again while waiting —
     // applying the result now would silently overwrite that newer edit.
-    if(aiSnapshotChanged(original,nodes[freshIdx].text)){ showToast('You edited this node — AI rewrite discarded so it wouldn\'t overwrite it'); return; }
+    if(aiSnapshotChanged(original,nodes[freshIdx].text)){ showToast('You edited this row — AI rewrite discarded so it wouldn\'t overwrite it'); return; }
     pushUndo(); if(!applyAiRowResult(nodes[freshIdx],result,sent.tagged)){ undoStack.pop(); throw new Error('Empty response from AI'); }
     scheduleAutoSave(); render(); if(!callAiByShapeWithFallback._toastShown)showToast('Rewritten ✦', 'success');
   }catch(err){showAiErrorModal(aiProvider, err);}
@@ -24507,10 +24525,10 @@ async function rewriteMultipleNodes(nodeIds){
     const {appliedCount}=applyAiBatchResults(entries,results);
     scheduleAutoSave(); render();
     if(!callAiByShapeWithFallback._toastShown){
-      if(!appliedCount){ undoStack.pop(); showToast('Nothing rewritten — every node was edited again while waiting'); }
+      if(!appliedCount){ undoStack.pop(); showToast('Nothing rewritten — every row was edited again while waiting'); }
       else{
         const skipped=validIds.length-appliedCount;
-        showToast(`${appliedCount} node${appliedCount===1?'':'s'} rewritten${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`, 'success');
+        showToast(`${appliedCount} row${appliedCount===1?'':'s'} rewritten${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`, 'success');
       }
     }
   }catch(err){showAiErrorModal(aiProvider, err);}
@@ -24638,7 +24656,7 @@ async function flushAutoRewriteQueue(){
       // while it's visible/not hidden and only for as long as the pause lasts — the toast alone
       // is easy to miss if it fires while attention is elsewhere. One notification per pause,
       // not one per queued node.
-      if(typeof pushLocalNotification==='function')pushLocalNotification('autorewrite_paused',msg+(autoRewriteQueue.size?' — '+autoRewriteQueue.size+' node'+(autoRewriteQueue.size===1?'':'s')+' waiting':'')+'.');
+      if(typeof pushLocalNotification==='function')pushLocalNotification('autorewrite_paused',msg+(autoRewriteQueue.size?' — '+autoRewriteQueue.size+' row'+(autoRewriteQueue.size===1?'':'s')+' waiting':'')+'.');
     }
     return;
   }
@@ -24661,7 +24679,7 @@ async function flushAutoRewriteQueue(){
     scheduleAutoSave(); render();
     const skipped=validIds.length-appliedCount;
     if(appliedCount>0){
-      showToast(`Auto-rewrote ${appliedCount} node${appliedCount===1?'':'s'}${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`,'success');
+      showToast(`Auto-rewrote ${appliedCount} row${appliedCount===1?'':'s'}${skipped?` (${skipped} skipped — edited again while waiting)`:''} ✦`,'success');
     } else {
       undoStack.pop();
     }
@@ -24708,7 +24726,7 @@ function updateAutoRewriteStatusChip(){
     chip.textContent='✦ Auto-rewrite: Off'; chip.style.color='var(--hint)';
     chip.dataset.tip='Auto-rewrite on commit is off — click to turn on, right-click for its settings (exclusions, minimum word count).';
   } else if(_autoRewriteFlushing){
-    chip.textContent='✦ Rewriting…'; chip.dataset.tip='Auto-rewrite is calling the AI provider for the queued nodes right now. Click to turn off.';
+    chip.textContent='✦ Rewriting…'; chip.dataset.tip='Auto-rewrite is calling the AI provider for the queued rows right now. Click to turn off.';
   } else if(_autoRewritePausedNoKey&&autoRewriteQueue.size>0){
     const locked=vaultActive()&&!vaultUnlocked()&&hasRawAiKeyForProvider(aiProvider);
     chip.textContent=`✦ Auto-rewrite paused (${autoRewriteQueue.size} waiting)`; chip.style.color='var(--sem-alert)';
@@ -24719,7 +24737,7 @@ function updateAutoRewriteStatusChip(){
     parts.push(`${autoRewriteQueue.size} queued`);
     parts.push(`sends in ${remainingSec}s`);
     chip.textContent=parts.join(' · ');
-    chip.dataset.tip='These nodes will be sent as one batched request once the idle pause elapses — editing another node resets it. Click to turn off, right-click for settings.';
+    chip.dataset.tip='These rows will be sent as one batched request once the idle pause elapses — editing another row resets it. Click to turn off, right-click for settings.';
   } else {
     chip.textContent='✦ Auto-rewrite on'; chip.style.color='var(--hint)'; chip.dataset.tip='On and idle — nothing queued right now. Click to turn off, right-click for settings.';
   }
@@ -24868,7 +24886,7 @@ function insertAiOutline(parsed){
   render();
   scrollToNode(mapped[0].id);
   flashNode(mapped[0].id);
-  showToast(`Outline inserted — ${mapped.length} node${mapped.length===1?'':'s'} ✦`,'success');
+  showToast(`Outline inserted — ${mapped.length} row${mapped.length===1?'':'s'} ✦`,'success');
   return mapped;
 }
 
@@ -27182,7 +27200,7 @@ const _origSwitchDoc=switchDoc;
 switchDoc=async function(id){
   if(id!==activeTabDocId && autoRewriteEnabled && autoRewriteQueue.size>0){
     const n=autoRewriteQueue.size;
-    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',title:'Switch document?',body:`${n} node${n===1?' is':'s are'} still queued for auto-rewrite in this document.\nSwitching now will discard ${n===1?'it':'them'} before ${n===1?'it gets':'they get'} rewritten.`,confirmLabel:'Switch anyway',confirmCls:'primary',cancelLabel:'Cancel'});
+    const ok=await sakuraConfirm({icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',title:'Switch document?',body:`${n} row${n===1?' is':'s are'} still queued for auto-rewrite in this document.\nSwitching now will discard ${n===1?'it':'them'} before ${n===1?'it gets':'they get'} rewritten.`,confirmLabel:'Switch anyway',confirmCls:'primary',cancelLabel:'Cancel'});
     if(!ok)return;
   }
   clearAutoRewriteQueue(); _origSwitchDoc(id); renderSidebar();
@@ -28407,7 +28425,7 @@ function renderPreviewBody(){
         // notes don't get one — those render their own always-visible pv-inline-block further
         // down with its own "Note" label, so a second marker right here would be redundant in
         // a way this single-line case isn't.
-        const dot=document.createElement('span'); dot.className='node-note-dot node-note-dot-plain'; dot.dataset.tip='This node has a note — click to edit';
+        const dot=document.createElement('span'); dot.className='node-note-dot node-note-dot-plain'; dot.dataset.tip='This row has a note — click to edit';
         dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>';
         dot.addEventListener('click',e=>{
           e.stopPropagation();
@@ -28419,7 +28437,7 @@ function renderPreviewBody(){
         contentEl.appendChild(inlineFull);
       }
       if(blIds.length){
-        const dot=document.createElement('span'); dot.className='pv-backlink-dot'; dot.dataset.tip='Referenced by '+blIds.length+' node'+(blIds.length===1?'':'s')+' — click to view';
+        const dot=document.createElement('span'); dot.className='pv-backlink-dot'; dot.dataset.tip='Referenced by '+blIds.length+' row'+(blIds.length===1?'':'s')+' — click to view';
         dot.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11 4.93"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07L13 19.07"/></svg>';
         contentEl.appendChild(dot);
       }
