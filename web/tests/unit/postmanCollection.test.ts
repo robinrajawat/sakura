@@ -11,6 +11,10 @@ const req = apiRequestFromGrid([
   ['Body', '{"id":"4711"}'],
   ['Status', '201 Created'],
   ['Response', '{"status":"accepted"}'],
+  ['Status', '422 Unprocessable Entity'],
+  ['Response', '{"error":"priority must be standard or express"}'],
+  ['Parameter', 'dryRun: true checks the order without placing it'],
+  ['Auth', 'Bearer token, scope orders.write'],
   ['Description', 'Creates an order']
 ])!;
 
@@ -19,11 +23,13 @@ describe('apiRequestToPostmanItem', () => {
     const item = apiRequestToPostmanItem('Create order', req) as any;
     expect(item.name).toBe('Create order');
     expect(item.request.method).toBe('POST');
-    expect(item.request.url).toEqual({ raw: '{{baseUrl}}/orders?dryRun=true', query: [{ key: 'dryRun', value: 'true' }] });
+    expect(item.request.url).toEqual({ raw: '{{baseUrl}}/orders?dryRun=true', query: [{ key: 'dryRun', value: 'true', description: 'true checks the order without placing it' }] });
     expect(item.request.header).toEqual([{ key: 'Content-Type', value: 'application/json' }]);
     expect(item.request.body).toEqual({ mode: 'raw', raw: '{"id":"4711"}', options: { raw: { language: 'json' } } });
-    expect(item.request.description).toBe('Creates an order');
+    expect(item.request.description).toBe('Creates an order\n\nAuth: Bearer token, scope orders.write');
+    expect(item.response).toHaveLength(2);
     expect(item.response[0]).toMatchObject({ code: 201, status: 'Created', body: '{"status":"accepted"}' });
+    expect(item.response[1]).toMatchObject({ name: '422 Unprocessable Entity', code: 422, body: '{"error":"priority must be standard or express"}' });
   });
   it('leaves out what the request does not have', () => {
     const item = apiRequestToPostmanItem('', apiRequestFromGrid([['Method', 'GET'], ['URL', '/health']])!) as any;
@@ -36,6 +42,13 @@ describe('apiRequestToPostmanItem', () => {
     const item = apiRequestToPostmanItem('X', apiRequestFromGrid([['Method', 'GET'], ['URL', '/x'], ['Status', 'Accepted']])!) as any;
     expect(item.response[0]).toMatchObject({ status: 'Accepted' });
     expect(item.response[0].code).toBeUndefined();
+  });
+});
+
+describe('path variables', () => {
+  it('writes :name path variables (Postman\'s kind) with their descriptions; {{name}} stays an environment variable', () => {
+    const item = apiRequestToPostmanItem('X', apiRequestFromGrid([['Method', 'GET'], ['URL', '{{baseUrl}}/orders/:orderId/{{lineId}}'], ['Parameter', 'orderId: The order number']])!) as any;
+    expect(item.request.url.variable).toEqual([{ key: 'orderId', value: '', description: 'The order number' }]);
   });
 });
 

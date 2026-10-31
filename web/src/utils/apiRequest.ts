@@ -8,39 +8,62 @@
  * Recognised fields (first column, any case, a trailing colon is ignored):
  *   Method               GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
  *   URL / Endpoint       the address; {{variables}} stay as typed
- *   Query / Param        one per row, "name=value" or "name: value"
+ *   Query                one per row, "name=value" or "name: value"
+ *   Parameter            one per row, "name: what it means" -- documents a path or query
+ *                        parameter (a "name=value" Parameter / Param row is a Query row, as before)
  *   Header               one per row, "Name: value"
- *   Body                 request body; JSON is pretty-printed on the card
- *   Status               response status, e.g. "201 Created"
- *   Response             response body
+ *   Auth                 how to authenticate, e.g. "Bearer token (OAuth 2.0, scope orders.read)";
+ *                        when missing the card reads it from the headers (apiDetectedAuth)
+ *   Body                 request body; JSON and XML are formatted on the card
+ *   Status               starts a response, e.g. "201 Created"; repeat Status + Response for
+ *                        each case (200, 404, 422...) -- owner 2026-10-31: errors are what
+ *                        readers look for
+ *   Response             the body of the response above it
  *   Description / Notes  a line of text under the request line
  * Any other field shows as a labelled extra. A table is an API request when it has a Method
- * with a known verb and a URL.
+ * with a known verb and a URL. Parameters are not typed in a list of their own: the card finds
+ * them in the URL (path variables, the query string) and the Query rows (apiParameters).
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `apiRequest` block.
  */
 
 export const API_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 
+/** One documented response: its status line ("404 Not Found") and example body. */
+export interface ApiResponse {
+  status: string;
+  body: string;
+}
+
 export interface ApiRequest {
   method: string;
   url: string;
   query: [string, string][];
+  /** Parameter descriptions, name -> what it means. */
+  paramNotes: [string, string][];
   headers: [string, string][];
+  /** How to authenticate, as written; '' to read it from the headers. */
+  auth: string;
   body: string;
-  status: string;
-  response: string;
+  responses: ApiResponse[];
   description: string;
   extras: [string, string][];
 }
 
-type FieldKey = 'method' | 'url' | 'query' | 'header' | 'body' | 'status' | 'response' | 'description';
+/** An empty request (GET, nothing filled in). */
+export function emptyApiRequest(): ApiRequest {
+  return { method: 'GET', url: '', query: [], paramNotes: [], headers: [], auth: '', body: '', responses: [], description: '', extras: [] };
+}
+
+type FieldKey = 'method' | 'url' | 'query' | 'param' | 'header' | 'auth' | 'body' | 'status' | 'response' | 'description';
 
 const FIELD_ALIASES: Record<string, FieldKey> = {
   method: 'method', verb: 'method',
   url: 'url', endpoint: 'url', path: 'url',
-  query: 'query', param: 'query', params: 'query', parameter: 'query', 'query param': 'query',
+  query: 'query', 'query param': 'query',
+  param: 'param', params: 'param', parameter: 'param', parameters: 'param',
   header: 'header', headers: 'header',
+  auth: 'auth', authentication: 'auth', 'auth type': 'auth',
   body: 'body', 'request body': 'body', payload: 'body',
   status: 'status', 'response status': 'status', 'status code': 'status',
   response: 'response', 'response body': 'response',
@@ -69,7 +92,7 @@ export function splitPair(raw: string): [string, string] {
  */
 export function apiRequestFromGrid(grid: string[][]): ApiRequest | null {
   if (!grid.length || grid.some(r => r.length !== 2)) return null;
-  const req: ApiRequest = { method: '', url: '', query: [], headers: [], body: '', status: '', response: '', description: '', extras: [] };
+  const req: ApiRequest = { ...emptyApiRequest(), method: '' };
   grid.forEach((row, i) => {
     const [label, rawValue] = row;
     const value = String(rawValue || '').trim();
@@ -84,13 +107,32 @@ export function apiRequestFromGrid(grid: string[][]): ApiRequest | null {
       case 'method': req.method = value.toUpperCase(); break;
       case 'url': req.url = value; break;
       case 'query': req.query.push(splitPair(value)); break;
+      case 'param': {
+        // "name: what it means" documents a parameter; "name=value" (= before any :) is a query
+        // value, which is what Param / Parameter rows meant before descriptions existed.
+        const colon = value.indexOf(':'), eq = value.indexOf('=');
+        if (eq >= 0 && (colon < 0 || eq < colon)) req.query.push(splitPair(value));
+        else { const [n, d] = splitPair(value); if (n) req.paramNotes.push([n, d]); }
+        break;
+      }
       case 'header': req.headers.push(splitPair(value)); break;
+      case 'auth': req.auth = value; break;
       case 'body': req.body = req.body ? req.body + '\n' + value : value; break;
-      case 'status': req.status = value; break;
-      case 'response': req.response = req.response ? req.response + '\n' + value : value; break;
+      case 'status': req.responses.push({ status: value, body: '' }); break;
+      case 'response': {
+        const last = req.responses[req.responses.length - 1];
+        if (last) last.body = last.body ? last.body + '\n' + value : value; else req.responses.push({ status: '', body: value });
+        break;
+      }
       case 'description': req.description = value; break;
     }
   });
+  // Each Status starts a response. A body with no status followed by a status with no body is one
+  // response written the other way round (Response, then Status), as it always read.
+  for (let i = 0; i < req.responses.length - 1; i++) {
+    const a = req.responses[i], b = req.responses[i + 1];
+    if (!a.status && a.body && b.status && !b.body) { a.status = b.status; req.responses.splice(i + 1, 1); }
+  }
   if (!(API_METHODS as readonly string[]).includes(req.method) || !req.url) return null;
   return req;
 }
@@ -200,10 +242,14 @@ export function apiRequestToCurl(req: ApiRequest): string {
 export function apiRequestToGrid(req: ApiRequest): string[][] {
   const grid: string[][] = [['Field', 'Value'], ['Method', req.method], ['URL', req.url]];
   req.query.forEach(([k, v]) => { if (k.trim()) grid.push(['Query', v ? k + '=' + v : k]); });
+  req.paramNotes.forEach(([k, v]) => { if (k.trim() && v.trim()) grid.push(['Parameter', k.trim() + ': ' + v.trim()]); });
   req.headers.forEach(([k, v]) => { if (k.trim()) grid.push(['Header', v ? k + ': ' + v : k]); });
+  if (req.auth.trim()) grid.push(['Auth', req.auth.trim()]);
   if (req.body.trim()) grid.push(['Body', req.body]);
-  if (req.status.trim()) grid.push(['Status', req.status.trim()]);
-  if (req.response.trim()) grid.push(['Response', req.response]);
+  req.responses.forEach(({ status, body }) => {
+    if (status.trim()) grid.push(['Status', status.trim()]);
+    if (body.trim()) grid.push(['Response', body]);
+  });
   if (req.description.trim()) grid.push(['Description', req.description.trim()]);
   req.extras.forEach(([k, v]) => { if (k.trim() && v.trim()) grid.push([k, v]); });
   return grid;
@@ -319,7 +365,7 @@ export function curlToApiRequest(text: string): ApiRequest | null {
   if (getMode && data.length) { data.join('&').split('&').filter(Boolean).forEach(p => query.push(splitPair(p.replace('=', ':')))); body = ''; }
   if (!method) method = body ? 'POST' : 'GET';
   if (!(API_METHODS as readonly string[]).includes(method)) return null;
-  return { method, url: base, query, headers, body, status: '', response: '', description: '', extras: [] };
+  return { ...emptyApiRequest(), method, url: base, query, headers, body };
 }
 
 /**
@@ -357,4 +403,90 @@ export function urlWrapPieces(url: string): string[] {
   }
   if (cur) pieces.push(cur);
   return pieces;
+}
+
+/** A parameter the request takes: where it goes, its example value and what it means. */
+export interface ApiParam {
+  name: string;
+  /** 'path' or 'query'; '' for a description whose name the URL doesn't use. */
+  in: 'path' | 'query' | '';
+  value: string;
+  note: string;
+}
+
+/** The URL's base (scheme + host, or a leading {{variable}} such as {{baseUrl}}), path and query. */
+export function splitApiUrl(url: string): { base: string; path: string; query: string } {
+  const s = String(url || '');
+  const m = /^(?:[a-z][a-z0-9+.-]*:\/\/[^/?#]*|\{\{[^{}]+\}\})/i.exec(s);
+  const base = m ? m[0] : '';
+  const rest = s.slice(base.length).replace(/#.*$/, '');
+  const q = rest.indexOf('?');
+  return { base, path: q < 0 ? rest : rest.slice(0, q), query: q < 0 ? '' : rest.slice(q + 1) };
+}
+
+/**
+ * The parameters a request takes, found where they already are (owner 2026-10-31: parameters
+ * exist in the endpoint, so the card lists them itself): path variables in the URL's path --
+ * {{orderId}}, :orderId or {orderId} -- then the query string typed into the URL, then the Query
+ * rows. The base ({{baseUrl}}, the host) is not a parameter. Each picks up its Parameter row
+ * description; a description whose name isn't used anywhere is kept at the end.
+ */
+export function apiParameters(req: Pick<ApiRequest, 'url' | 'query' | 'paramNotes'>): ApiParam[] {
+  const notes = new Map<string, string>();
+  (req.paramNotes || []).forEach(([k, v]) => { if (k && !notes.has(k)) notes.set(k, v); });
+  const used = new Set<string>();
+  const noteFor = (name: string) => {
+    if (notes.has(name)) { used.add(name); return notes.get(name)!; }
+    const k = [...notes.keys()].find(n => n.toLowerCase() === name.toLowerCase());
+    if (k !== undefined) { used.add(k); return notes.get(k)!; }
+    return '';
+  };
+  const out: ApiParam[] = [];
+  const seen = new Set<string>();
+  const add = (name: string, where: 'path' | 'query', value: string) => {
+    const key = where + ':' + name;
+    if (!name || seen.has(key)) return;
+    seen.add(key);
+    out.push({ name, in: where, value, note: noteFor(name) });
+  };
+  const { path, query } = splitApiUrl(req.url);
+  const re = /\{\{([^{}]+)\}\}|\{([^{}]+)\}|(?:^|\/):([A-Za-z_][\w-]*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(path))) add((m[1] || m[2] || m[3]).trim(), 'path', '');
+  query.split('&').filter(Boolean).forEach(p => {
+    const e = p.indexOf('=');
+    add(e < 0 ? p : p.slice(0, e), 'query', e < 0 ? '' : p.slice(e + 1));
+  });
+  (req.query || []).forEach(([k, v]) => add(k, 'query', v));
+  notes.forEach((v, k) => { if (!used.has(k)) out.push({ name: k, in: '', value: '', note: v }); });
+  return out;
+}
+
+/**
+ * How the request authenticates, read from what it sends -- for a card whose Auth field is
+ * empty: the Authorization header's scheme, an API key or token header, a session cookie, or an
+ * API key in the query. '' when nothing says.
+ */
+export function apiDetectedAuth(req: Pick<ApiRequest, 'headers' | 'query' | 'url'>): string {
+  for (const [k, v] of req.headers || []) {
+    if (/^authorization$/i.test(k)) {
+      if (/^bearer\b/i.test(v)) return 'Bearer token';
+      if (/^basic\b/i.test(v)) return 'Basic (username and password)';
+      const scheme = (/^([A-Za-z][\w-]*)\s/.exec(v) || [])[1];
+      return scheme ? scheme + ' (Authorization header)' : 'Authorization header';
+    }
+  }
+  for (const [k] of req.headers || []) {
+    if (/^(x-api-key|api-key|apikey)$/i.test(k)) return 'API key (' + k + ' header)';
+    if (/^(x-auth-token|x-access-token)$/i.test(k)) return 'Token (' + k + ' header)';
+  }
+  if ((req.headers || []).some(([k]) => /^cookie$/i.test(k))) return 'Session cookie';
+  const q = apiParameters({ url: req.url, query: req.query || [], paramNotes: [] }).find(p => p.in === 'query' && /^(api[_-]?key|key|access_token|token)$/i.test(p.name));
+  if (q) return (/token/i.test(q.name) ? 'Token' : 'API key') + ' (' + q.name + ' query parameter)';
+  return '';
+}
+
+/** The status's class: 'ok' for 2xx, 'err' for 4xx/5xx, '' otherwise (for the card's colour). */
+export function apiStatusClass(status: string): 'ok' | 'err' | '' {
+  return /^\s*2/.test(status) ? 'ok' : /^\s*[45]/.test(status) ? 'err' : '';
 }
