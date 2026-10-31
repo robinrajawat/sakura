@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none (2026-10-31: PDF note panel merged, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none (2026-10-31: PDF thread text + dead-code cleanup merged, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **PDF thread text = note text; dead code removed (2026-10-31).** Owner: notes and threads should weigh the same under a row, but keep their own shapes (note = panel, thread = transcript). Thread text in the PDF is now `--fs-sm` + `--muted` like note text. Dead code removed: the `>quote` rendering (`pvQuotes`, `previewSplitQuotes`, `.pv-quote-*`), 27 functions nothing called (e.g. `showMoveMenu`/move-folder menu, `previewToggleNote/Qa` + their open-id sets, `aiRewriteSelection`, `getAllDocTags`), and ~340 CSS selectors naming classes no code uses (`is-*` kept: built dynamically). Found with a token-count scan (function names / class names that appear only at their definition). Also: `inline-note-alignment-and-fold-visibility.spec.ts` now seeds `sakura_welcome_seen` (the welcome dialog raced the Shift+Enter note test).
 
 - **PDF notes: soft panel, no rule (2026-10-31).** Owner: long rich notes printed with a grey left bar looked heavy. On paper a note is now a warm-grey panel (`#f6f5f2`, 6px radius, 8px 12px padding, no border/rule), aligned with the row text; headings inside a note print at note size, semibold. Print CSS only (`body.printing-preview .pv-inline-note-body` in index.html); screen Preview unchanged. `pdf-paper-polish.spec.ts` updated.
 
 - **API card: responses, auth, parameters (2026-10-31).** Owner: the card should cover "what do I get back / how do I authenticate / which parameters". `ApiRequest` now has `responses: {status, body}[]` (each Status row starts one; Response-then-Status and repeated Response rows still read as before), `auth` (Auth row; else `apiDetectedAuth` reads Authorization/API-key/cookie/query key) and `paramNotes` (Parameter rows `name: meaning`; `name=value` stays a query value). `apiParameters` finds path vars (`{{x}}`, `:x`, `{x}`, not the base) + URL query + Query rows. Card: Auth, Parameters (name, path/query tag, example, note), one section per response. Form: path params follow the URL, query rows get a description, Auth with a detected-value placeholder, response list with add/remove; a typed `?query` moves into rows. Postman export: every response as an example, query/`:path` descriptions, Auth in the description. Starter shows a 422 example. Fixed: form fields shrank when the form scrolled (`.api-ed-body>*{flex-shrink:0}`). Then (owner: the button was too big) Copy for Postman became a 24px icon button: words in `aria-label` + tooltip, the icon turns into a green check for 1.6 s.
-
-- **API card polish (2026-10-31).** Long URLs wrap only after `/ ? & =` (`urlWrapPieces` → inline-block `.pv-api-seg` pieces, so `sap-client` never splits at the hyphen; the `//` after the scheme stays whole); `{{variables}}` tinted with the accent (`splitApiVariables` → `.pv-api-var`, in the URL, header/query values and code boxes; prints in colour); the card's Copy for Postman button confirmed the copy (now an icon, see above). Method chip top-aligned with a multi-line URL. Unit + e2e covered.
 
 ### In progress / not built
 

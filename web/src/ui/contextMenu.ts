@@ -8,7 +8,6 @@
  * State is module-level `let`s shared with the rest of index.html's script (the splice keeps one
  * scope). Types are loose (`any`) on purpose: this is a move, not a rewrite.
  */
-declare function closeMoveMenu(): void;
 declare function hideLinkCard(): void;
 declare function esc(value: unknown): string;
 declare const closeAllPanelsExceptGlobalSearch: (() => void) | undefined;
@@ -247,7 +246,7 @@ export function openSbMenuUnder(btn: any, items: any, opts: any = {}){
 export function sbMenuOpener(){ const o=_sbClosedFrom; return o&&o.isConnected&&o!==document.body?o:null; }
 export function showSbContextMenu(x: any, y: any, items: any, opts?: any){
   const opener=_sbContextEl&&_sbContextEl.contains(document.activeElement)?_sbMenuOpener:document.activeElement;
-  closeSbContextMenu(); closeMoveMenu(); hideLinkCard();
+  closeSbContextMenu(); hideLinkCard();
   _sbMenuOpener=opener;
   const menu=document.createElement('div'); menu.className='sb-context-menu'; _sbContextEl=menu; menu.setAttribute('role','menu');
   if(opts&&opts.id)menu.id=opts.id; if(opts&&opts.label)menu.setAttribute('aria-label',opts.label);

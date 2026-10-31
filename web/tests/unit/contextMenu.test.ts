@@ -5,7 +5,6 @@ import { showSbContextMenu, closeSbContextMenu, openSbMenuUnder, sbMenuOpener } 
 // The app's menu system (src/ui/contextMenu.ts, moved from index.html 2026-10-25). In the page these
 // come from elsewhere in index.html's script; here they are stand-ins.
 const g = globalThis as Record<string, unknown>;
-g.closeMoveMenu = () => {};
 g.hideLinkCard = () => {};
 g.esc = (v: unknown) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 g.closeAllPanelsExceptGlobalSearch = undefined;
