@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none (2026-10-30 end of session: #741–#754 merged, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none (2026-10-31: API card work merged through the polish PR, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **API card polish (2026-10-31).** Long URLs wrap only after `/ ? & =` (`urlWrapPieces` → inline-block `.pv-api-seg` pieces, so `sap-client` never splits at the hyphen; the `//` after the scheme stays whole); `{{variables}}` tinted with the accent (`splitApiVariables` → `.pv-api-var`, in the URL, header/query values and code boxes; prints in colour); the card's Copy for Postman button shows ✓ Copied for 1.6 s. Method chip top-aligned with a multi-line URL. Unit + e2e covered.
 
 - **API card: XML formatted like JSON (2026-10-30).** Owner: beautify JSON and XML in the API card (SAP OData often answers in XML). `prettyXml` (no-DOM tokenizer: one element per line, text-only elements on one line, comments/CDATA/prolog kept, null unless tags balance) and `formatPayload` (JSON → XML → as typed, with `ok` for the warning) in `src/utils/apiRequest.ts`; the card's code boxes and the form use `formatPayload`; the form button is **Format** (JSON or XML). 5 unit tests, 1 e2e.
 
 - **One scrollbar standard, app-wide (2026-10-30).** Owner: one standard everywhere. Audit: 41 scrolling areas, 14 unstyled (Settings/Help panels, folder picker, share results, submenus, wide tables…), the Hub unstyled, and the look duplicated 4× with per-panel border colours. Now one global rule in base.css (and hub.css): `*::-webkit-scrollbar` 8px, `--scroll` thumb (rounded, transparent 2px border + padding-box), `--scroll-hover` on hover, no track/corner/buttons; Firefox gets `scrollbar-width:thin` via `@supports not selector(::-webkit-scrollbar)` (the guard matters: Chromium drops the ::-webkit look when scrollbar-width/-color are set). Dark thumb raised #34322e → #4a4742 (was barely visible). All per-panel ::-webkit-scrollbar rules removed; don't add new ones.
-
-- **API card scrollbars to the app standard (2026-10-30).** Owner: scroll bars in the API cards weren't standard. `.pv-api-code`, `.api-ed-area` and `.api-ed-body` get the app scrollbar (8px, rounded `var(--scroll)` thumb, transparent border + padding-box so it sits inset on the tinted code box, no track) and join base.css's Firefox `scrollbar-width:thin` list. Code boxes no longer wrap (`white-space:pre`, horizontal scroll keeps JSON indentation); print still wraps. Headless screenshots need `ignoreDefaultArgs:['--hide-scrollbars']` to show scrollbars.
 
 ### In progress / not built
 

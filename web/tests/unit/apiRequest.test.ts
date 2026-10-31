@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson, shellWords, maskSecretHeader, curlToApiRequest, prettyXml, formatPayload
+  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson, shellWords, maskSecretHeader, curlToApiRequest, prettyXml, formatPayload, splitApiVariables, urlWrapPieces
 } from '../../src/utils/apiRequest';
 
 const sample = [
@@ -205,5 +205,21 @@ describe('formatPayload', () => {
   it('flags invalid JSON or XML and keeps it as typed', () => {
     expect(formatPayload('{broken')).toMatchObject({ text: '{broken', ok: false, kind: 'json' });
     expect(formatPayload('<a><b></a>')).toMatchObject({ text: '<a><b></a>', ok: false, kind: 'xml' });
+  });
+});
+
+describe('splitApiVariables', () => {
+  it('separates {{variables}} from plain text', () => {
+    expect(splitApiVariables('{{baseUrl}}/orders?key={{apiKey}}')).toEqual([['{{baseUrl}}', true], ['/orders?key=', false], ['{{apiKey}}', true]]);
+    expect(splitApiVariables('Basic {{username}}:{{password}}')).toEqual([['Basic ', false], ['{{username}}', true], [':', false], ['{{password}}', true]]);
+    expect(splitApiVariables('plain')).toEqual([['plain', false]]);
+    expect(splitApiVariables('')).toEqual([]);
+  });
+});
+
+describe('urlWrapPieces', () => {
+  it('breaks after / ? & = but not inside the scheme', () => {
+    expect(urlWrapPieces('https://a.b/sap/API_X/Set?x=1&y=2')).toEqual(['https://a.b/', 'sap/', 'API_X/', 'Set?', 'x=', '1&', 'y=', '2']);
+    expect(urlWrapPieces('https://a.b/sap/opu').join('')).toBe('https://a.b/sap/opu');
   });
 });
