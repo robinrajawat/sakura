@@ -396,7 +396,7 @@ test.describe('Images as node objects', () => {
     }, PNG_1x1);
     const dot = page.locator('.node-row[data-id="2"] .node-image-dot');
     await expect(dot).toHaveClass(/pv-dot-open/);
-    await expect(dot).toHaveAttribute('data-tip', /This node has an image — click to fold it/);
+    await expect(dot).toHaveAttribute('data-tip', /This row has an image — click to fold it/);
     await dot.click();
     await expect(page.locator('.node-image-strip[data-node-id="2"]')).toHaveCount(0);
     await page.locator('.node-row[data-id="2"] .node-image-dot').click();

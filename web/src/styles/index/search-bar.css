@@ -1,6 +1,6 @@
 /* === Search bar === */
 #editor-wrap{position:relative}
-#search-replace-wrap{position:absolute;top:8px;right:18px;z-index:45;display:flex;flex-direction:column;width:420px}
+#search-replace-wrap{position:absolute;top:8px;right:18px;z-index:45;display:flex;flex-direction:column;width:360px;max-width:calc(100% - 36px)}
 .search-bar{position:relative;display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:6px 8px;box-shadow:0 10px 24px rgba(0,0,0,.14);width:100%;box-sizing:border-box}
 .search-bar[hidden]{display:none}
 .search-bar:has(+ .replace-bar.open){border-radius:12px 12px 0 0;box-shadow:0 4px 10px rgba(0,0,0,.06)}
@@ -11,14 +11,21 @@
 .replace-bar #replace-one,.replace-bar #replace-all{flex:0 0 auto;white-space:nowrap;padding:4px 7px}
 .replace-bar #replace-all{margin-left:2px;color:var(--muted);border-color:var(--border)}
 #replace-input::placeholder{color:var(--hint)}
-#search-toggle-replace[aria-expanded="true"]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #search-match-case[aria-pressed="true"],#search-whole-word[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 #search-input{border:none;background:transparent;color:var(--fg);font:13px 'Inter',sans-serif;outline:none;flex:1;min-width:0}
 #replace-input{border:none;background:transparent;color:var(--fg);font:13px 'Inter',sans-serif;outline:none;flex:1;min-width:0}
 #search-input::placeholder{color:var(--hint)}
 #search-count{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;min-width:38px;text-align:center;font-family:'Inter',sans-serif;flex:0 0 auto}
 .search-bar .icon-btn{flex:0 0 auto;width:26px;height:26px;font-size:13px;min-width:0}
-#search-match-case,#search-whole-word{width:30px;font-size:var(--fs-xs);font-weight:600}
+#search-match-case,#search-whole-word{width:26px;font-size:var(--fs-xs);font-weight:600;border-color:transparent;background:none;color:var(--muted)}
+#search-match-case:hover,#search-whole-word:hover{background:var(--hover);color:var(--fg)}
+.search-bar #search-prev,.search-bar #search-next,.search-bar #search-close,.search-bar #search-toggle-replace{border-color:transparent;background:none;color:var(--muted)}
+.search-bar #search-prev:hover,.search-bar #search-next:hover,.search-bar #search-close:hover,.search-bar #search-toggle-replace:hover{background:var(--hover);color:var(--fg)}
+/* A plain find box until you type: count, arrows and the two match options appear once there's a
+   query (an option you switched on stays visible). Replace opens and closes with Ctrl/Cmd+H. */
+#search-bar:has(#search-input:placeholder-shown) :is(#search-count,#search-prev,#search-next),
+#search-bar:has(#search-input:placeholder-shown) :is(#search-match-case,#search-whole-word):not([aria-pressed="true"]){display:none}
+#search-toggle-replace{display:none}
 .node-row.search-match{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent)}
 .node-row.search-current{background:color-mix(in srgb,var(--accent) 22%,transparent) !important}
 /* In-node search highlight */

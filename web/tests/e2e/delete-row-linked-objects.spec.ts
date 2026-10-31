@@ -47,7 +47,7 @@ test('a row with undoable objects deletes them with it without asking, and Undo 
   await startDelete(page, 2);
   expect(await page.evaluate('window.__del')).toBe(true);
   await expect(page.locator('#sakura-modal-overlay')).not.toHaveClass(/open/);
-  await expect(page.locator('#toast')).toHaveText('Deleted 2 nodes with 1 note, 1 question and 2 comments');
+  await expect(page.locator('#toast')).toHaveText('Deleted 2 rows with 1 note, 1 question and 2 comments');
   expect(await page.evaluate('nodes.map(n => n.id)')).toEqual([1, 4, 5]);
   expect(await page.evaluate('remarks.map(r => r.id)')).toEqual(['r3']);
   expect(await page.evaluate('qaItems.length')).toBe(0);
