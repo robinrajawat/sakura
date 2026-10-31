@@ -2209,11 +2209,6 @@ function todoRowInnerHtml(t,dateDisplay,overdue){
     +(dateDisplay?'<span class="todo-row-due'+(overdue?' overdue':'')+'">'+(overdue?'Overdue \u00b7 ':'')+dateDisplay+'</span>':'')+'</div>'+meta+'</div>'
     +'</div>';
 }
-function daysOverdueLabel(dueDate,today){
-  var ms=new Date(today+'T00:00:00')-new Date(dueDate+'T00:00:00');
-  var days=Math.round(ms/86400000);
-  return days<=1?'1 day overdue':days+' days overdue';
-}
 function formatShortDueDate(dueDate){
   var d=new Date(dueDate+'T00:00:00');
   return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});

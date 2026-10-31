@@ -35,6 +35,11 @@ async function dismissOverlays(page: import('@playwright/test').Page) {
 //    to add a note that has nothing to do with them. Since (2) already means the note shows
 //    fine on a folded row, that expandNode call was pure unwanted side effect.
 test.describe('Inline note/remark/Q&A lines align with row text and survive folding', () => {
+  // The welcome dialog opens on a delay and can steal focus mid-test (typed text then lands
+  // nowhere); mark it seen before load, as the other specs do.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('sakura_welcome_seen', '1'));
+  });
   test('an expanded inline note lines up exactly under the row\'s own text', async ({ page }) => {
     await page.goto('file://' + indexPath);
     await dismissOverlays(page);

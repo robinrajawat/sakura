@@ -253,7 +253,6 @@ body{padding-top:env(titlebar-area-height,40px)}
 #appbar button,#appbar input,#appbar a,#appbar select{-webkit-app-region:no-drag;app-region:no-drag}
 #app-icon{width:auto;height:auto;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;border-radius:0;font-size:20px;line-height:1}
 .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
-.toolbar-group{display:inline-flex;align-items:center;gap:6px;padding-right:10px;margin-right:2px;border-right:1px solid var(--border)} .toolbar-group:last-of-type{border-right:none;padding-right:0;margin-right:0}
 .spacer{flex:1}
 .btn,.select,.meta-input{appearance:none;-webkit-appearance:none;-moz-appearance:none;background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;font-family:'Inter',sans-serif;font-size:var(--fs-sm);line-height:1.2;transition:border-color .12s,color .12s,background .12s,box-shadow .12s}
 /* Masks API-key/token fields visually without ever using type="password" — Chrome's
@@ -302,30 +301,21 @@ body{padding-top:env(titlebar-area-height,40px)}
 .help-panel .help-section + .help-section{margin-top:12px}.help-panel p,.help-panel div{overflow-wrap:anywhere}
 .help-panel h3,.help-panel h4,.help-panel li,.help-panel .muted-help{white-space:normal;overflow-wrap:anywhere;word-break:break-word}
 .help-panel *{max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
-.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}.settings-grid.one-col{grid-template-columns:1fr}.settings-field{display:grid;gap:6px;min-width:0}.settings-field.controls-only{gap:2px}.settings-field label{font:500 12px 'Inter',sans-serif;color:var(--fg)}.settings-field-pair{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:18px;min-width:0}
-.settings-color-box{border:1px solid var(--border);border-radius:12px;padding:12px 14px;background:color-mix(in srgb,var(--bg) 88%,transparent);margin-bottom:12px}
-.settings-color-box:last-child{margin-bottom:0}
-.settings-checkbox-row{display:flex;align-items:center;gap:8px;min-height:32px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:color-mix(in srgb,var(--tb-bg) 78%,transparent);font:500 12px 'Inter',sans-serif;color:var(--fg);cursor:pointer;transition:border-color .12s,background .12s}
-.settings-checkbox-row:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
-.settings-checkbox-row input{margin:0;accent-color:var(--accent);cursor:pointer}.settings-checkbox-row:has(input:checked){border-color:color-mix(in srgb,var(--accent) 30%,var(--border))}.select-wrap{position:relative;display:inline-flex}
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}.settings-grid.one-col{grid-template-columns:1fr}.settings-field{display:grid;gap:6px;min-width:0}.settings-field.controls-only{gap:2px}.settings-field label{font:500 12px 'Inter',sans-serif;color:var(--fg)}.settings-field-pair{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:18px;min-width:0}.select-wrap{position:relative;display:inline-flex}
 .select-wrap .select{padding-right:24px}
 /* Thin chevron like the other icons, not a text glyph (2026-10-30). */
 .select-wrap .select-arrow{position:absolute;right:10px;top:50%;width:12px;height:12px;transform:translateY(-50%);font-size:0;color:var(--muted);pointer-events:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat}
 .settings-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--border);border-radius:999px;margin:0;cursor:pointer;--fill-percent:0%}.settings-slider::-webkit-slider-runnable-track{height:4px;border-radius:999px;background:linear-gradient(to right, var(--accent) var(--fill-percent), var(--border) var(--fill-percent))}.settings-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:none;margin-top:-6px;cursor:pointer}.settings-slider::-moz-range-track{height:4px;border-radius:999px;background:linear-gradient(to right, var(--accent) var(--fill-percent), var(--border) var(--fill-percent))}.settings-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);border:none;cursor:pointer}.settings-slider-value{font:600 11px 'Inter',sans-serif;color:var(--muted);min-width:36px;text-align:right;flex:0 0 auto}.settings-switch-text{font:500 12px 'Inter',sans-serif;color:var(--fg)}
 .settings-list{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--bg) 88%,transparent)}
 .settings-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;min-height:36px}
-/* === Feature Activation: hide every entry point for a deactivated feature === */
-body.feature-off-ai .ai-rewrite-btn,body.feature-off-ai #sfmt-rewrite{display:none!important}
+/* === Feature Activation: hide every entry point for a deactivated feature === */body.feature-off-ai #sfmt-rewrite{display:none!important}
 body.feature-off-paddiagrams .node-diagram-dot{display:none!important}
 body.feature-off-padremarks .node-remark-dot{display:none!important}
 body.feature-off-ai [data-feature-item="ai"]{display:none!important}
-.ai-rewrite-btn.ai-busy{opacity:.6;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 @keyframes ai-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .data-io-btn{min-width:84px;text-align:center}
 .backup-btn{min-width:120px}
 .settings-list-row + .settings-list-row{border-top:1px solid var(--border)}
-.settings-list-row .slider-control{display:flex;align-items:center;gap:8px;flex:0 0 auto;width:150px}
-.settings-list-row .slider-control .settings-slider{width:100%}
 /* Flat switch like the buttons (owner 2026-10-30): grey track off, primary (near-black / near-white) on. No gradients or glow. */
 .toggle-switch{position:relative;appearance:none;-webkit-appearance:none;width:34px;height:20px;flex:0 0 auto;border:none;border-radius:999px;background:color-mix(in srgb,var(--fg) 18%,transparent);cursor:pointer;transition:background .15s ease}.toggle-switch:hover{background:color-mix(in srgb,var(--fg) 26%,transparent)}.toggle-switch:focus{outline:none}.toggle-switch:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.toggle-switch::before{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .18s cubic-bezier(.22,.8,.34,1),background .15s ease}.toggle-switch.on{background:var(--btn-primary-bg)}.toggle-switch.on:hover{background:var(--btn-primary-hover)}.toggle-switch.on::before{transform:translateX(14px);background:var(--btn-primary-fg)}  @media (max-width:700px){.help-panel,.settings-panel{right:-4px}.settings-grid{grid-template-columns:1fr}}
 .export-menu{min-width:0;width:max-content;max-width:320px;display:none;flex-direction:column;overflow:hidden}
@@ -333,7 +323,6 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .export-item{display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:10px 12px;font:inherit;cursor:pointer;transition:background .12s}.export-item:hover{background:var(--hover)}.export-item:active{background:var(--sel)}.export-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #appbar-more-menu{min-width:130px}
 .export-menu-rich{padding:6px}
-.export-menu-rich .export-section-label{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 10px 2px}
 .export-menu-rich .export-item{display:flex;align-items:center;gap:10px;border-radius:8px;margin:0 2px;padding:5px 10px;width:auto}
 .account-head{display:flex;align-items:center;gap:12px;padding:8px 10px 10px;margin:0 2px 4px;border-radius:12px;cursor:pointer;transition:background .12s}.account-head:hover{background:var(--hover)}.account-head:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #account-manage-btn.sync-syncing #account-avatar,#account-manage-btn.sync-syncing .account-avatar-fallback{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent)!important}
@@ -376,7 +365,6 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
 .notif-item.unread::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:middle}
 .notif-item-text{font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.4;white-space:normal;overflow-wrap:break-word}
 .notif-item-meta{font:400 11px 'Inter',sans-serif;color:var(--hint);margin-top:2px}
-.export-menu-rich .export-ext{color:var(--muted);font-size:var(--fs-xs);margin-left:2px}
 .export-menu-rich .export-divider{height:1px;background:var(--border);margin:4px 6px}
 #editor-wrap{flex:1;min-height:0;display:flex} #editor-pane{flex:1;min-height:0;overflow:auto;padding:16px 24px 18px 40px;background:var(--canvas-bg);font-size:calc(14.5px * var(--editor-scale));position:relative} #editor-pane-inner{margin:0 auto;min-height:100%;padding-bottom:max(18px,calc(50vh - 60px))}@media print{#editor-pane-inner{padding-bottom:0}}
 .node-row .node-label,.node-row .node-input{margin-left:-1px}
@@ -396,10 +384,9 @@ body.feature-off-ai [data-feature-item="ai"]{display:none!important}
    toggle, bullet, number) against that extra height, pulling them down off the first text line
    instead of staying pinned to it. */
 .node-row.has-citations{align-items:flex-start}
-.node-quote-block{margin:3px 0 1px;display:grid;gap:2px}
-.node-quote-line{color:var(--sem-quote);font-style:italic;font-size:.86em;line-height:1.4;opacity:.85;padding-left:8px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)} body.row-hl-original .node-row.selected{background:color-mix(in srgb,var(--sel) 18%,transparent);border-radius:4px} body.row-hl-original .node-row.primary-selection{background:color-mix(in srgb,var(--sel) 32%,transparent);border-radius:4px} body.row-hl-original .node-row.primary-selection:not(.selected){background:transparent} body.row-hl-dot .node-row.selected::before{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--accent) 65%,transparent)} body.row-hl-dot .node-row.primary-selection::before{width:6px;height:6px;background:var(--accent)} body.row-hl-bar .node-row.selected{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--accent) 32%,transparent)} body.row-hl-bar .node-row.primary-selection{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 60%,transparent)} body.row-hl-outline .node-row.selected{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)} body.row-hl-outline .node-row.primary-selection{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+ body.row-hl-original .node-row.selected{background:color-mix(in srgb,var(--sel) 18%,transparent);border-radius:4px} body.row-hl-original .node-row.primary-selection{background:color-mix(in srgb,var(--sel) 32%,transparent);border-radius:4px} body.row-hl-original .node-row.primary-selection:not(.selected){background:transparent} body.row-hl-dot .node-row.selected::before{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--accent) 65%,transparent)} body.row-hl-dot .node-row.primary-selection::before{width:6px;height:6px;background:var(--accent)} body.row-hl-bar .node-row.selected{box-shadow:inset 2px 0 0 color-mix(in srgb,var(--accent) 32%,transparent)} body.row-hl-bar .node-row.primary-selection{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--accent) 60%,transparent)} body.row-hl-outline .node-row.selected{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)} body.row-hl-outline .node-row.primary-selection{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
 
-.node-prefix{white-space:pre;font-family:'Fira Code',Consolas,'Courier New',monospace;font-variant-ligatures:none;user-select:none;color:var(--vert);margin-right:-1px;letter-spacing:0;line-height:inherit;align-self:center}.node-conn{color:inherit}.node-vert-faint{opacity:.32} .node-label,.node-input{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;user-select:text;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale} .node-input{border:none;background:transparent;color:var(--node-fg);padding:0;font:inherit;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;border-radius:0;box-shadow:none;font-variant-ligatures:none;resize:none;overflow:hidden;display:block;width:100%} .node-input:focus{outline:none;box-shadow:none}
+.node-prefix{white-space:pre;font-family:'Fira Code',Consolas,'Courier New',monospace;font-variant-ligatures:none;user-select:none;color:var(--vert);margin-right:-1px;letter-spacing:0;line-height:inherit;align-self:center}.node-conn{color:inherit} .node-label,.node-input{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;user-select:text;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale} .node-input{border:none;background:transparent;color:var(--node-fg);padding:0;font:inherit;font-family:var(--content-font);font-weight:450;font-variation-settings:'wght' 450;line-height:1.25;border-radius:0;box-shadow:none;font-variant-ligatures:none;resize:none;overflow:hidden;display:block;width:100%} .node-input:focus{outline:none;box-shadow:none}
 /* The height of a row's first text line, so bullets, fold dots, checkboxes and badges centre on it
    at every text size (Settings → Text size) and on headings, which have a taller line. --row-line-base
    is that height at 100%; the row-end indicators below are zoomed by the text size, so they use it. */
@@ -430,12 +417,9 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .hl-mark-green{background:color-mix(in srgb,#22c55e 42%,transparent)}
 .hl-mark-blue{background:color-mix(in srgb,#0ea5e9 40%,transparent)}
 .hl-mark-pink{background:color-mix(in srgb,#ec4899 38%,transparent)}
-.hl-wrap{position:relative;display:inline-flex}
-.hl-wrap .hl-btn{width:34px;height:34px;border-radius:8px!important}
 .hl-caret-btn{position:absolute;right:1px;top:1px;width:12px;height:12px;min-width:12px;padding:0;font-size:7px;line-height:1;border-radius:3px!important;opacity:.5;background:color-mix(in srgb,var(--bg) 70%,transparent)!important;border:none!important;display:flex;align-items:center;justify-content:center;color:var(--muted);transform:none!important;box-shadow:none!important}
 .hl-caret-btn:hover{opacity:1;color:var(--accent)}
 @media (max-width:560px){.hl-wrap .hl-btn{width:36px;height:36px}.hl-caret-btn{width:13px;height:13px;min-width:13px}}
-.tb-caret{opacity:.55}
 .hl-palette{position:absolute;top:calc(100% + 8px);left:0;z-index:60;display:none;gap:6px;align-items:center;background:var(--surface-raised);--hover:var(--hover-raised);border:1px solid var(--border);border-radius:var(--radius-menu);box-shadow:var(--shadow-menu);padding:var(--pad-pop)}
 .hl-palette.open{display:flex}
 .hl-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;transition:border-color .12s,transform .12s}
@@ -445,10 +429,10 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 .hl-swatch-none{width:22px;height:22px;border-radius:50%;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--muted);font-size:var(--fs-sm);display:flex;align-items:center;justify-content:center;padding:0}
 .hl-swatch-none:hover{border-color:var(--sem-alert);color:var(--sem-alert)}
 #fc-color-bar,#hl-color-bar{transition:fill .12s}
-.sem-quote{display:inline;color:var(--sem-quote);font-style:italic;font-size:.9em;opacity:.85;padding-left:9px;margin-left:1px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}.sem-sap-note{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px;cursor:pointer}.sem-sap-note:hover{text-decoration-color:var(--accent)}
+.sem-sap-note{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px;cursor:pointer}.sem-sap-note:hover{text-decoration-color:var(--accent)}
 #app-icon svg{display:block;width:20px;height:20px}
 .node-row.has-kids{margin-top:0}
-.node-row.is-section{margin-top:0;position:relative}.node-row.is-section::before{content:'';position:absolute;left:1px;top:3px;bottom:3px;width:3px;border-radius:2px;background:color-mix(in srgb,var(--accent) 55%,transparent)}body.hide-section-markings .node-row.is-section::before{display:none}.node-emoji-icon{display:inline-flex;width:1.05em;height:1.05em;margin-right:.32em;vertical-align:-0.18em;color:inherit}.node-emoji-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.node-row.is-section{margin-top:0;position:relative}.node-row.is-section::before{content:'';position:absolute;left:1px;top:3px;bottom:3px;width:3px;border-radius:2px;background:color-mix(in srgb,var(--accent) 55%,transparent)}body.hide-section-markings .node-row.is-section::before{display:none}.node-emoji-icon{display:inline-flex;width:1.05em;height:1.05em;margin-right:.32em;vertical-align:-0.18em;color:inherit}
 #statusbar{border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:6px 12px;color:var(--muted);font-size:var(--fs-sm);font-family:'Inter',sans-serif} #status-left{display:flex;gap:10px;align-items:center;min-width:0}#status-right{display:flex;gap:10px;align-items:center;justify-content:flex-end;min-width:0}.status-chip{padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:transparent;transition:background .12s,border-color .12s}.status-chip-icon{display:inline-flex;align-items:center;gap:4px}.status-chip-icon svg{flex-shrink:0}.status-divider{opacity:.4}.status-passive{padding:2px 0}.status-strong{color:var(--fg)}.status-author-empty{color:var(--hint);font-style:italic}#sb-author:hover{color:var(--accent)}
 .status-chip-btn{appearance:none;-webkit-appearance:none;font:inherit;color:var(--muted);cursor:pointer;transition:border-color .12s,color .12s}
 .status-chip-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -584,10 +568,6 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
 @supports (field-sizing:content){#sb-author.doc-author-chip{field-sizing:content;width:auto;min-width:64px;max-width:220px}}
 /* Byline dropdowns open from their chip's left edge. */
 #doc-status-wrap .todo-dd-menu,#doc-link-wrap .todo-dd-menu{right:auto;left:0}
-.meta-inline{appearance:none;-webkit-appearance:none;-moz-appearance:none;border:none;background:transparent;color:var(--fg);padding:0 2px;min-width:0;font-family:'Inter',sans-serif;line-height:1.2;border-radius:4px}
-.meta-inline::placeholder{color:var(--hint)}
-.meta-inline:hover{background:color-mix(in srgb,var(--hover) 45%, transparent)}
-.meta-inline:focus{outline:none;box-shadow:0 0 0 1px var(--accent)}
 #editor-title-row{flex:0 0 auto;padding:34px 24px 2px 40px;background:var(--canvas-bg)}
 #editor-title-inner{margin:0 auto}
 #header-title{appearance:none;-webkit-appearance:none;-moz-appearance:none;display:block;width:100%;border:none;outline:none;background:transparent;padding:2px 2px 4px;font:400 28px/34px 'Inter',sans-serif;min-height:20px;color:var(--title-fg);min-width:0;max-width:100%;border-radius:4px;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
@@ -623,15 +603,12 @@ mark.row-hl{color:inherit;padding:0 2px;margin:0 -1px}
   #statusbar{flex-wrap:nowrap;overflow:hidden}
   #status-left,#status-right{width:auto}
   #status-right .status-chip:not(:last-child){display:none}
-  #status-right .status-passive:not(:last-child){display:none}
 }
 /* Progressive toolbar group hiding to prevent appbar overflow */
 @media (max-width:860px){
   #appbar{overflow:hidden}
-  .toolbar-group:last-of-type{display:none}
 }
 @media (max-width:720px){
-  .toolbar-group:nth-last-of-type(2){display:none}
   #header-actions .btn:not(.primary){display:none}
 }
 @media (max-width:560px){
@@ -645,8 +622,6 @@ body.zen-mode #quick-bar{display:none}
 /* === Settings panel layout & help-panel text wrapping === */
 .settings-row-text{display:flex;flex-direction:column;gap:2px;flex:1 1 0%;min-width:0}
 .settings-row-desc{font:400 11px 'Inter',sans-serif;color:var(--muted);line-height:1.4}
-.settings-subsection-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 5px;padding-top:12px;border-top:1px solid var(--border)}
-.settings-subsection-label:first-of-type{margin-top:8px;padding-top:0;border-top:none}
 .settings-section{display:grid;gap:12px;margin:0;padding:13px 14px 14px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--tb-bg) 82%,transparent)}
 .settings-section-title{font:700 11px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;padding-bottom:8px;border-bottom:1px solid var(--border)}
 #shortcuts-modal-overlay{display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:24px}
@@ -796,7 +771,6 @@ body.zen-mode #quick-bar{display:none}
 .search-highlight{background:color-mix(in srgb,var(--accent) 28%,transparent);border-radius:2px;padding:0 1px}
 .node-row.search-current .search-highlight{background:color-mix(in srgb,var(--accent) 48%,transparent)}
 /* Semantic example styling in Help panel */
-.sem-example{font-family:'Fira Code',Consolas,'Courier New',monospace;font-size:var(--fs-xs);padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%);border:1px solid var(--border)}
 
 /* === Action bar (single, always-visible toolbar) === */
 #doc-tab-strip-row{display:flex;align-items:stretch;background:var(--tb-bg);border-bottom:1px solid var(--border)}
@@ -874,7 +848,6 @@ body.zen-mode #quick-bar{display:none}
 @media (max-width:560px){#quick-bar{padding:6px 8px;gap:3px}.quick-btn{width:36px;height:36px}}
 
 /* === Documents menu === */
-.docs-wrap{position:relative}
 #docs-menu{min-width:280px;max-width:min(92vw,320px)}
 .docs-row{display:flex;align-items:center;gap:4px;padding:2px 6px}
 .docs-row .docs-name{flex:1;text-align:left;border:none;background:transparent;color:var(--fg);padding:8px 8px;font:inherit;cursor:pointer;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -931,11 +904,6 @@ body.zen-mode #quick-bar{display:none}
 .qa-fuzzy-note{font:400 11.5px 'Inter',sans-serif;font-style:italic;color:var(--hint);padding:8px 10px 6px;border-bottom:1px dashed var(--border);margin-bottom:2px}
 .gs-hit{background:color-mix(in srgb,var(--accent) 30%,transparent);color:var(--fg);border-radius:3px;padding:0 1px;font-weight:600}
 .gs-group-title{font:600 10px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 8px 4px}
-.gs-item{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;border:none;background:transparent;color:var(--fg);padding:6px 8px;font:inherit;cursor:pointer;border-radius:6px}
-.gs-item:hover,.gs-item.gs-active{background:var(--hover)}
-.gs-item-label{font:400 13px 'Inter',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.gs-item-meta{font:400 11px 'Inter',sans-serif;color:var(--muted)}
-.gs-empty{padding:10px 12px;color:var(--muted);font-size:var(--fs-sm);font-family:'Inter',sans-serif}
 
 
 /* === Drag & Drop === */
@@ -1224,7 +1192,6 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 .sdoc-item.active .sdoc-name-btn{color:var(--fg);font-weight:600}
 .sdoc-unsaved-hint{flex:none;padding-right:8px;font:400 11px 'Inter',sans-serif;color:var(--hint)}
 /* Move-to-folder sub-menu */
-.move-folder-menu{position:absolute;z-index:80;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-menu);box-shadow:var(--shadow-menu);padding:var(--pad-menu);min-width:150px;font-family:'Inter',sans-serif;--hover:var(--hover-raised)}
 .move-folder-item{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);border:none;background:none;width:100%;text-align:left}
 .move-folder-item:hover{background:var(--hover)}
 .folder-picker-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.35);display:flex;align-items:flex-start;justify-content:center;padding-top:15vh}
@@ -1309,7 +1276,6 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 #sidebar-reopen-btn{width:26px;height:26px;align-self:center;margin:3px 2px 0 6px;display:inline-flex;align-items:center;justify-content:center;appearance:none;border:none;background:none;border-radius:6px;cursor:pointer;color:var(--muted);transition:color .12s,background .12s;flex-shrink:0}
 #sidebar-reopen-btn:hover{color:var(--fg);background:var(--hover)}
 /* Hide old docs/templates toolbar dropdowns */
-.docs-wrap{display:none !important}
 /* Adjust editor wrap */
 #editor-wrap{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
 #editor-pane{flex:1;min-height:0}
@@ -1347,7 +1313,6 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .selection-fmt-btn.sfmt-ai{color:var(--accent);opacity:.8}
 .selection-fmt-btn.sfmt-ai:hover{opacity:1;background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .selection-fmt-btn.sfmt-ai.ai-busy{opacity:.45;pointer-events:none;animation:ai-spin 1.1s linear infinite}
-.selection-fmt-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 2px}
 .sfmt-main{display:flex;align-items:center;gap:2px}
 /* Faint dividers group the bar (owner, 2026-10-23): text style | colour, clear | link | AI. */
 .sfmt-sep{width:1px;height:16px;background:var(--border);margin:0 3px;flex:none}
@@ -1845,7 +1810,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-note-line table td:focus,.node-note-line table th:focus{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent);border-color:var(--accent)}
 .node-note-line .pv-table-chart-figure svg{max-width:100%}
 .node-remark-line{position:relative;display:flex;align-items:flex-start;gap:4px;max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:var(--fs-md);line-height:1.4}
-.node-remark-avatar{flex:0 0 auto;width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:700;margin-top:1px}
 .node-remark-person-inline{color:var(--fg);font:600 1em 'Inter','Public Sans',sans-serif;font-family:var(--content-font);padding:0 2px;border-radius:4px;flex:0 0 auto;min-width:8px;outline:none;cursor:text}
 .node-remark-person-inline:empty::before{content:attr(data-placeholder);color:var(--hint);font-weight:400}
 .node-remark-person-inline:hover,.node-remark-person-inline:focus{background:var(--hover)}
@@ -1856,17 +1820,12 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-remark-text-inline.remark-text-input{width:auto;font:inherit;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);padding:0;border-left:none;border-radius:4px;min-height:0;margin-bottom:0}
 .node-remark-text-inline:hover{opacity:1}
 .node-remark-text-inline:focus{opacity:1;color:var(--fg)}
-.node-qa-line{max-width:calc(100% - 16px);padding-top:2px;padding-bottom:4px;font-size:var(--fs-md);line-height:1.4}
-.node-qa-label{flex:0 0 auto;font-weight:700;color:var(--hint);width:12px;text-align:center;user-select:none}
 /* Status pills (PDF) and the row thread's chips: Question, Yes / No, Answer, Follow-up, Resolved, Decision. */
-.node-qa-status{flex:0 0 auto;display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:4px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
-.pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"],.thread-chip.is-followup{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
-.pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"],.pv-status-pill[data-state="decision"],.pv-status-pill[data-state="yes"],.pv-status-pill[data-state="answer"],.thread-chip.is-resolved,.thread-chip.is-decision,.thread-chip.is-answer,.thread-chip.is-question[data-state="answered"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
-.pv-status-pill[data-state="wont"],.thread-chip.is-question[data-state="wont"]{background:var(--chip);color:var(--muted)}
-.pv-status-pill[data-state="question"],.thread-chip.is-question{background:color-mix(in srgb,var(--accent) 14%,transparent);color:color-mix(in srgb,var(--accent) 80%,var(--fg))}
-.pv-status-pill[data-state="issue"],.thread-chip.is-issue,.pv-status-pill[data-state="no"],.thread-chip.is-no{background:color-mix(in srgb,var(--fc-red) 12%,transparent);color:color-mix(in srgb,var(--fc-red) 78%,var(--fg))}
-.thread-chip.is-yes{background:color-mix(in srgb,var(--fc-green) 72%,#0b3d1f);color:#fff}
-.thread-chip.is-decision{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fc-green) 35%,transparent)}
+.pv-status-pill[data-state="open"],.pv-status-pill[data-state="followup"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:color-mix(in srgb,var(--fc-orange) 70%,var(--fg))}
+.pv-status-pill[data-state="answered"],.pv-status-pill[data-state="resolved"],.pv-status-pill[data-state="decision"],.pv-status-pill[data-state="yes"],.pv-status-pill[data-state="answer"]{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:color-mix(in srgb,var(--fc-green) 75%,var(--fg))}
+.pv-status-pill[data-state="wont"]{background:var(--chip);color:var(--muted)}
+.pv-status-pill[data-state="question"]{background:color-mix(in srgb,var(--accent) 14%,transparent);color:color-mix(in srgb,var(--accent) 80%,var(--fg))}
+.pv-status-pill[data-state="issue"],.pv-status-pill[data-state="no"]{background:color-mix(in srgb,var(--fc-red) 12%,transparent);color:color-mix(in srgb,var(--fc-red) 78%,var(--fg))}
 /* The row thread: one flat list, each entry a meta line (avatar, author, time, chips) over its text. */
 .node-remark-line.thread-entry{display:block;padding-top:3px;padding-bottom:3px}
 /* A question and its replies read as one block (owner, 2026-10-27): more room before each top-level
@@ -1884,7 +1843,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .thread-head-copy:hover{color:var(--fg);background:var(--hover)}
 .thread-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:18px}
 .thread-time{font-size:var(--fs-sm)}
-.thread-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:3px;height:17px;padding:0 7px;border-radius:999px;font:600 10.5px 'Inter',sans-serif;white-space:nowrap;user-select:none}
 .thread-entry .node-remark-text-inline{display:block;margin-left:22px;min-height:1.4em}
 .thread-entry .node-remark-text-inline:empty::before{content:attr(data-placeholder);color:var(--hint)}
 .node-remark-line.thread-composer{display:block;padding-top:3px;padding-bottom:3px}
@@ -1925,13 +1883,10 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-remark-resolved-toggle{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 6px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:400 12.5px 'Inter',sans-serif;cursor:pointer}
 .node-remark-resolved-toggle:hover{background:var(--hover)}
 .node-remark-resolved-toggle .nrr-caret{color:var(--hint)}
-.node-qa-line.is-closed .node-qa-question{color:var(--muted)}
 .node-note-dot.has-open-count{width:auto;min-width:18px;gap:2px;padding:0 3px;opacity:.85}
 .node-dot-count{font:700 10px 'Inter',sans-serif;font-variant-numeric:tabular-nums}
-.node-note-dot.dot-all-closed{color:var(--hint)!important}
 
 .pv-status-pill{display:inline-flex;align-items:center;gap:3px;height:16px;padding:0 6px;margin-left:8px;border-radius:999px;font:600 9.5px 'Inter',sans-serif;vertical-align:middle;white-space:nowrap}
-.pv-inline-qa-line .pv-status-pill{align-self:flex-start;margin-top:1px}
 
 .node-qa-question{flex:1;min-width:0;color:var(--fg);cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
 .node-qa-answer{flex:1;min-width:0;color:color-mix(in srgb,var(--fg) 65%,var(--muted) 35%);opacity:.9;cursor:text;white-space:pre-wrap;word-break:break-word;outline:none}
@@ -2042,8 +1997,6 @@ table tr.tbl-total>td,table tr.tbl-total>th{font-weight:700;border-top:1.5px sol
 .node-cb:hover{border-color:var(--muted)}
 .node-cb.cb-checked{background:transparent;border-color:var(--muted)}
 .node-cb.cb-checked::after{content:'';position:absolute;inset:0;background:var(--muted);-webkit-mask:var(--tick-mask) center/contain no-repeat;mask:var(--tick-mask) center/contain no-repeat}
-.node-cb.cb-indeterminate{border-color:var(--muted)}
-.node-cb.cb-indeterminate::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:2px;background:var(--muted);border-radius:1px;transform:translate(-50%,-50%)}
 .node-row.cb-done .node-label{opacity:.55;text-decoration:line-through}
 .cb-progress{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:1px 6px;margin-left:var(--gap-row-marker);flex-shrink:0;cursor:default;align-self:flex-start;margin-top:calc((var(--row-line-base) - 15px) / 2)}
 
@@ -2155,8 +2108,6 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 .demo-row-dot{display:inline-flex;width:14px;justify-content:center;color:var(--muted);font-size:15px;user-select:none;line-height:1}
 .demo-node-text{position:relative}
 .demo-node.demo-selected{background:var(--sel)}
-.demo-node.demo-bold .demo-node-text{font-weight:700}
-.demo-node.demo-highlight .demo-node-text{background:color-mix(in srgb,var(--accent) 20%,transparent);border-radius:4px;padding:0 4px;margin:0 -4px}
 .demo-caret{display:inline-block;width:1.5px;height:14px;background:var(--accent);margin-left:1px;vertical-align:-2px;animation:demo-blink 1s step-end infinite}
 @keyframes demo-blink{50%{opacity:0}}
 .demo-note-dot{display:inline-flex;margin-left:6px;color:var(--accent);opacity:0;transition:opacity .2s}
@@ -2167,8 +2118,6 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 .demo-popover-body{font:400 12.5px 'Inter',sans-serif;color:var(--fg);min-height:18px;line-height:1.4}
 #demo-export-menu{position:absolute;top:8px;right:8px;width:160px;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-menu);box-shadow:var(--shadow-menu);padding:var(--pad-menu);z-index:5;opacity:0;transform:scale(.95);transform-origin:top right;pointer-events:none;transition:opacity .18s ease,transform .18s ease;--hover:var(--hover-raised)}
 #demo-export-menu.demo-shown{opacity:1;transform:scale(1)}
-.demo-menu-item{padding:var(--pad-menu-item);border-radius:6px;font:400 12px 'Inter',sans-serif;color:var(--fg)}
-.demo-menu-item.demo-pressed{background:var(--hover)}
 #demo-caption{flex:0 0 auto;padding:10px 18px;border-top:1px solid var(--border);font:500 12px 'Inter',sans-serif;color:var(--muted);min-height:18px;display:flex;align-items:center;gap:8px;transition:opacity .2s ease}
 #demo-caption .demo-caption-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:demo-pulse 1.2s ease-in-out infinite}
 @keyframes demo-pulse{0%,100%{opacity:.4}50%{opacity:1}}
@@ -2287,13 +2236,11 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 .pv-toc-item.pv-toc-lvl-4{padding-left:42px;font-weight:400;font-size:11px;color:var(--hint)}
 .pv-toc-item.pv-toc-lvl-5{padding-left:42px;font-weight:400;font-size:11px;color:var(--hint)}
 .pv-toc-item.pv-toc-lvl-6{padding-left:52px;font-weight:400;font-size:10.5px;color:var(--hint)}
-.pv-toc-item.pv-toc-lvl-7{padding-left:60px;font-weight:400;font-size:10.5px;color:var(--hint)}
 .pv-toc-item.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent);font-weight:600;box-shadow:inset 2px 0 0 0 var(--accent)}
 #preview-body{flex:1;overflow:auto;padding:28px 0 90px}
 
 
 #preview-doc{max-width:min(var(--pv-reading-width,1080px),94%);margin:0 auto;padding:0 48px 0 24px;font-family:'Inter',sans-serif;color:var(--node-fg)}
-.pv-serif-body .pv-text{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif}
 #pv-doc-header{position:relative;margin:0 0 22px;padding-bottom:14px;border-bottom:1px solid var(--border)}.pv-h-row{display:flex;align-items:center;gap:5px}
 #pv-qa-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
 #pv-open-items .pv-oi-title{font:700 22px 'Inter',sans-serif;color:#1f1c14;margin:0 0 4px}
@@ -2305,7 +2252,6 @@ body.zen-mode #doc-tab-strip-row{display:none!important}
 #pv-open-items .pv-oi-item{display:flex;align-items:baseline;gap:12px;color:inherit !important;text-decoration:none !important}
 #pv-open-items .pv-oi-text{flex:1 1 auto;min-width:0}
 #pv-open-items .pv-oi-sub{display:block;color:#79756b}
-#pv-open-items .pv-oi-grey{color:#79756b}
 #pv-open-items .pv-toc-page{flex:none;color:#79756b;font-variant-numeric:tabular-nums}
 #pv-open-items .pv-toc-page:not(:empty)::before{content:'p. '}
 #pv-remarks-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
@@ -2345,7 +2291,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #pv-doc-subtitle{margin-top:10px;font:500 15px 'Inter',sans-serif;color:var(--muted);line-height:1.4;word-break:break-word}
 .pv-section{flex:1;min-width:60px;display:flex;align-items:center;gap:10px;margin:0 0 6px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
 .pv-section::after{content:'';flex:1;height:1px;background:var(--border)}
-.pv-section-label{color:var(--accent)}.pv-section-sep{color:var(--muted)}
 .pv-bullet{flex:0 0 auto;width:16px;display:flex;justify-content:center;color:var(--hint);font-size:14.5px}
 .pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
 .pv-cb:hover{border-color:var(--muted)}
@@ -2366,24 +2311,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 /* Scoped to .node-row -- .node-qa-dot is reused inside Preview mode's inline text flow too,
    where this offset isn't wanted (see .node-row .node-note-dot above). */
 .node-row .node-qa-dot{align-self:flex-start;margin-top:calc((var(--row-line-base) - 18px) / 2)}
-.pv-popover{position:fixed;z-index:1110;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 100%,#fff 4%),var(--bg));border:1px solid color-mix(in srgb,var(--border) 55%,transparent);border-radius:12px;box-shadow:0 24px 56px rgba(0,0,0,.24),0 4px 14px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);padding:14px 16px;max-width:320px;max-height:340px;overflow-y:auto;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55;animation:pv-popover-in .16s cubic-bezier(.22,.8,.34,1)}
 @keyframes pv-popover-in{from{opacity:0;transform:scale(.96) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.pv-popover-wide{max-width:380px;max-height:420px}
-.pv-popover-capture{width:320px;max-width:calc(100vw - 24px);max-height:360px}
-.pv-popover .pv-popover-note.pv-inline-note-body,.pv-popover .pv-popover-note.pv-inline-qa-body{background:transparent;border:none;border-left:none;padding:0}
 
 
-.pv-popover-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
-.pv-popover-head-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.pv-popover-head-row .pv-popover-label{margin-bottom:0}
-.pv-popover-head-title-group{display:flex;align-items:baseline;gap:7px;min-width:0}
-.pv-popover-note-title{font:700 10px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pv-popover-note-title-sep{color:var(--muted);margin:0 1px}
-.pv-inline-qa-row-multi{position:relative;padding-right:24px}
-.pv-inline-qa-row-multi .pv-qa-delete-btn{position:absolute;top:0;right:0;width:22px;height:22px}
-.pv-popover-link{display:block;padding:6px 2px;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pv-popover-link:last-child{border-bottom:none}
-.pv-popover-link:hover{color:var(--accent)}
 /* Small at-a-glance glyph on any rendered/exported row that's been marked — set via the
    outline's own right-click menu (#context-marker-row). Sits at the far right of the row
    (appended last, after any fold-badge/hidden-content chips which live on contentEl rather
@@ -2392,7 +2322,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .pv-marker-badge[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
 .pv-marker-badge[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
-.pv-qm-row{display:flex;align-items:center;gap:3px}
 .pv-qm-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);width:28px;height:28px;flex:0 0 auto;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s,color .12s}
 .pv-qm-btn.ai-busy{color:var(--accent);opacity:.7;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .pv-qm-btn:hover{background:var(--hover);color:var(--fg)}
@@ -2402,24 +2331,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-qm-mark.active[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);border-color:color-mix(in srgb,var(--fc-gray) 32%,transparent)}
 .pv-qm-btn.pv-qm-danger:hover{background:color-mix(in srgb,var(--fc-red) 14%,transparent);color:var(--fc-red)}
 .pv-qm-sep{width:1px;align-self:stretch;background:var(--border);margin:0 3px}
-.pv-marker-popover{padding:6px}
-.pv-popover-sep{height:1px;background:var(--border);margin:2px 0 8px}
-.pv-cap-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:6px;margin-bottom:7px;border-bottom:1px solid color-mix(in srgb,var(--border) 45%,transparent)}
-.pv-cap-head-line{display:flex;align-items:baseline;gap:5px;flex:1;min-width:0;overflow:hidden}
-.pv-cap-head-label{font:700 9.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);flex:0 0 auto}
-.pv-cap-head-dot{color:var(--muted);font-size:9px;flex:0 0 auto}
-.pv-cap-head-preview{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.pv-cap-head-actions{display:flex;align-items:center;gap:1px;flex:0 0 auto;margin-right:-5px}
-.pv-cap-head-actions .pv-qm-btn{width:24px;height:24px}
-.pv-cap-head-actions .pv-qm-save:hover{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
-.pv-capture-input{width:100%;box-sizing:border-box;resize:none;min-height:64px;padding:0;border:none;background:transparent;color:var(--fg);font:400 13.5px/1.5 'Inter',sans-serif;outline:none;margin-bottom:2px}
-.pv-capture-person{width:100%;box-sizing:border-box;padding:0 0 6px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;outline:none;margin-bottom:6px}
-.pv-capture-person::placeholder{font-weight:400;color:var(--hint)}
-.pv-inline-edit-input{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%;padding:0;margin:0;border-bottom:1px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
 .node-note-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
-.pv-quote-block{margin:4px 0 10px;display:grid;gap:4px}
-.pv-quote-line{color:var(--sem-quote);font-style:italic;font-size:var(--fs-sm);line-height:1.5;opacity:.85;padding-left:9px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
 .pv-remark-entry{margin:0}
 /* Divider between several remarks grouped under one node's shared card (see
    previewRenderRemarkGroup) -- same pattern as .pv-inline-qa-row+.pv-inline-qa-row. */
@@ -2435,9 +2348,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 /* Same as the editor: replies indented under their entry, a little room before each top-level entry. */
 .pv-thread-body .pv-remark-entry+.pv-remark-entry:not(.is-nested){margin-top:8px}
 .pv-thread-body .pv-remark-entry.is-nested{margin-left:20px;margin-top:1px}
-.pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
 .pv-thread-body .pv-remark-meta,.pv-thread-body .pv-remark-text{grid-column:2}
-.pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px}
+.pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px;font-size:var(--fs-sm);color:var(--muted)}
 .pv-remark-anon{color:var(--muted)}
 /* The header lines up with the entries below: its icon centred over the 15px kind circles,
    "Thread · N" on the names' column (15px + 8px gap). */
@@ -2446,7 +2358,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-thread-status-note{color:var(--muted)}.pv-thread-status-note.is-open{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-remark-meta+.pv-remark-text{margin-top:3px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
-.pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
 .pv-remarks-section-item{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 .pv-remarks-section-item:last-child{border-bottom:none}
 .pv-inline-label{display:flex;align-items:baseline;gap:7px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;flex-wrap:wrap}
@@ -2456,7 +2367,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    style -- matches the colors their own node-row indicator dots already use elsewhere in the
    app (node-qa-dot/node-remark-dot), so the association isn't a new color to learn. */
 .pv-inline-label-note{color:var(--hint)}
-.pv-inline-label-qa{color:var(--fc-purple)}
 .pv-inline-label-remark{color:var(--sem-quote)}
 .pv-inline-note-title{font:700 10px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--muted);overflow-wrap:break-word;min-width:0}
 .pv-inline-note-title-sep{color:var(--muted);margin:0 1px}
@@ -2500,7 +2410,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
 .note-comment-entry{margin:8px 0}
 .note-comment-entry:first-child{margin-top:0}
-.note-comment-stamp{display:inline-block;font:600 10px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
 .pv-inline-note-body ul,.pv-inline-note-body ol{margin:5px 0;padding-left:22px}
 .pv-inline-note-body li{margin:2px 0}
 .pv-inline-note-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
@@ -2508,33 +2417,12 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-note-body table td,.pv-inline-note-body table th{border:1px solid var(--border);padding:4px 7px}
 .pv-inline-qa-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--fc-purple);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
 .pv-inline-qa-body.bg-distinct{background:var(--tb-bg)}
-.pv-inline-qa-row+.pv-inline-qa-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.pv-inline-qa-line{display:flex;align-items:flex-start;gap:8px}
-.pv-inline-qa-line+.pv-inline-qa-line{margin-top:4px}
-.pv-inline-qa-tag{flex:0 0 auto;font:700 9px 'Inter',sans-serif;line-height:16px;text-align:center;text-transform:uppercase;letter-spacing:.02em;width:16px;height:16px;border-radius:4px;margin-top:1px}
-.pv-inline-qa-tag-q{background:color-mix(in srgb, var(--fc-purple) 16%, transparent);color:var(--fc-purple)}
-.pv-inline-qa-tag-a{background:var(--chip);color:var(--muted)}
-.pv-inline-qa-question{font-weight:600;color:var(--fg)}
-.pv-inline-qa-answer{color:var(--fg);margin-top:2px}
-.pv-inline-qa-answer.pv-inline-qa-unanswered{color:var(--muted);font-style:italic}
-.pv-inline-qa-answer-input{flex:1;min-width:0;display:block;resize:none;overflow:hidden;border:none;border-left:2px solid var(--border);background:transparent;padding:0 0 0 8px;margin-top:2px;color:var(--fg);font:400 13px 'Inter',sans-serif;line-height:1.45;transition:border-left-color .12s}
-.pv-inline-qa-answer-input:focus{outline:none;border-left-color:var(--accent)}
-.pv-inline-qa-answer-input::placeholder{color:var(--hint);font-style:italic}
 
 
 @keyframes pvFlash{0%{background:color-mix(in srgb,var(--accent) 20%,transparent)}100%{background:transparent}}
-.pv-flash{animation:pvFlash .9s ease;border-radius:6px}
-#preview-doc .pv-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
-#preview-doc .pv-note-body ul,#preview-doc .pv-note-body ol{margin:5px 0;padding-left:22px}
-#preview-doc .pv-note-body li{margin:2px 0}
-#preview-doc .pv-note-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-#preview-doc .pv-note-body table{border-collapse:collapse;margin:6px 0;font-size:var(--fs-sm)}
-#preview-doc .pv-note-body table td,#preview-doc .pv-note-body table th{border:1px solid var(--border);padding:4px 7px}
 .pv-hidden-chip{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;border-radius:6px;opacity:.6;cursor:pointer;transition:opacity .12s,background .12s;vertical-align:middle}
 .pv-hidden-chip:hover{opacity:1;background:var(--hover)}
 .pv-hidden-chip-note{color:var(--muted)}
-.pv-hidden-chip-code{color:var(--sem-code)}
-.pv-hidden-chip-quote{color:var(--sem-quote)}
 #preview-body .pv-empty{text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif;padding:60px 0}
 
 
@@ -2585,7 +2473,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .cs-card li.cs-match{background:color-mix(in srgb,var(--accent) 10%,transparent)}
 .cs-card li .cs-desc{color:var(--fg);opacity:.92}
 .cs-inline-icon{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;color:var(--accent);flex:0 0 auto;vertical-align:-2px}
-.cs-plus{color:var(--hint);font-size:var(--fs-2xs)}
 #cheatsheet-body .help-kbd{font-family:'Fira Code',Consolas,'Courier New',monospace;font-size:var(--fs-xs);padding:1px 5px;border:1px solid var(--border);border-radius:6px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%);white-space:nowrap}
 #cheatsheet-foot{border-top:1px solid var(--border);padding:10px 20px;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
 #cheatsheet-to-shortcuts-btn{appearance:none;border:none;background:none;color:var(--accent);font:600 11px 'Inter',sans-serif;cursor:pointer;padding:2px 0;flex-shrink:0;white-space:nowrap}
@@ -2617,12 +2504,10 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 @media (max-width:700px){.settings-panel,.help-panel{width:min(94vw,420px)}.settings-rail{flex:0 0 40px;padding:6px 4px}.settings-rail-btn span{display:none}.settings-rail-btn{justify-content:center;padding:8px 4px}.settings-content{padding:12px 12px 14px;gap:12px}.settings-section{padding:11px 12px 12px}}
 /* Elegant inset-thumb scrollbar (matches #editor-pane) applied everywhere else in the app.
    The border color must equal each surface's own background exactly, or the "floating" trick
-   doesn't read correctly - so this is grouped by background rather than one blanket rule. */
-.settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
+   doesn't read correctly - so this is grouped by background rather than one blanket rule. */.settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
 #why-sakura-modal,.app-modal-body,.qa-dropdown,
 .history-modal-body,#at-suggest,#demo-chapters-menu,
-#preview-toc,#preview-body,.pv-popover,#ai-prompt-input,#link-pop-node-results
-{scrollbar-gutter:stable}
+#preview-toc,#preview-body,#ai-prompt-input,#link-pop-node-results{scrollbar-gutter:stable}
 /* --edit-bg surfaces */
 /* ── Generic PDF export overlay (To-Dos standalone export) ──────────────────────────────────
    Off-screen at all times except while body.printing-generic is active (set by
@@ -2647,9 +2532,6 @@ body.printing-generic #gpe-overlay{
   #gpe-title-rule{width:44px;height:3px;border-radius:2px;background:var(--accent,#a8442e);margin-bottom:16px}
   .gpe-exported-date{font:400 10.5px 'Inter',sans-serif;color:#a3a099;margin:-10px 0 20px;text-transform:uppercase;letter-spacing:.06em}
   .gpe-chip{display:inline-flex;align-items:center;font:600 10.5px 'Inter',sans-serif;padding:3px 9px;border-radius:999px;background:#f3f1eb;color:#5c584f;border:1px solid #e3e0d8}
-  .gpe-chip-high{background:color-mix(in srgb,#c2553d 12%,#fff);color:#c2553d;border-color:color-mix(in srgb,#c2553d 32%,#e3e0d8)}
-  .gpe-chip-med{background:color-mix(in srgb,#d1a23a 14%,#fff);color:#a17422;border-color:color-mix(in srgb,#d1a23a 34%,#e3e0d8)}
-  .gpe-chip-low{background:color-mix(in srgb,#6c9bd1 12%,#fff);color:#4a76ad;border-color:color-mix(in srgb,#6c9bd1 32%,#e3e0d8)}
   .gpe-section-heading{display:flex;align-items:center;gap:8px;font:700 12px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#5c584f;margin:26px 0 12px}
   .gpe-section-heading::before{content:'';width:4px;height:14px;border-radius:2px;background:var(--accent,#a8442e)}
   .gpe-section-heading:first-of-type{margin-top:0}
@@ -2872,8 +2754,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 .remark-text-input:empty::before{content:attr(data-placeholder);color:var(--hint);font-style:italic}
 .remark-text-input ul{margin:2px 0 2px 1.3em;padding:0}
 .remark-text-input li{margin:1px 0}
-.remark-date-input:focus{outline:none}
-.diagram-row-title{font:500 12.5px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diagram-row-pages{display:inline-flex;align-items:center;font:500 10px 'Inter',sans-serif;color:var(--hint);background:var(--hover);border-radius:4px;padding:1px 6px;cursor:help}
 
 /* Full-screen diagram editor — deliberately never a small/normal state (see the Note/Code
@@ -2942,10 +2822,8 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 .anchor-suggest-search:focus{outline:none;border-color:var(--accent)}
 .anchor-suggest-results{flex:1 1 auto;overflow-y:auto;min-height:0}
 .diagram-anchor-item{padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.diagram-anchor-item:hover,.diagram-anchor-item.as-active{background:var(--hover);color:var(--accent)}
+.diagram-anchor-item:hover{background:var(--hover);color:var(--accent)}
 .diagram-anchor-item-none{color:var(--hint);font-style:italic}
-.diagram-anchor-item-disabled{color:var(--hint);cursor:not-allowed;font-style:italic}
-.diagram-anchor-item-disabled:hover{background:none;color:var(--hint)}
 .diagram-anchor-item-empty{padding:10px 9px;color:var(--hint);font-style:italic;font:400 12px 'Inter',sans-serif;text-align:center}
 .remark-anchor-tree-item{display:flex;align-items:center;gap:4px}
 .remark-anchor-tree-fold{flex:0 0 auto;width:12px;text-align:center;color:var(--hint);cursor:pointer;font-size:var(--fs-2xs);line-height:1;border-radius:3px}
@@ -2956,7 +2834,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 #ref-jump-popover.open{display:block}
 #ref-jump-popover-title{padding:5px 9px 6px;font:600 10px 'Inter',sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--hint)}
 .ref-jump-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
-.ref-jump-empty{padding:10px 9px;font:400 12px 'Inter',sans-serif;color:var(--muted);line-height:1.5;max-width:280px}
 .ref-jump-item:hover{background:var(--hover);color:var(--accent)}
 .ref-jump-item span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ref-jump-item svg{flex-shrink:0;color:var(--accent)}
@@ -3084,7 +2961,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
    scrollport (not just the outer modal) that the dropdown menu's clipping bounds actually depend
    on, since .todo-dd-wrap lives inside .app-modal-body, which has its own overflow-y:auto. */
 #feedback-inbox-modal-overlay .app-modal-body{flex:1}
-.todo-meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
 /* A row with no priority/due/status/etc. actually set still renders a meta-row purely to hold the
    (always-present, hover-only) action buttons — reserving that same-height row unconditionally
    made every plain checklist-style task look like it had a same-sized but visually-empty gap
@@ -3093,8 +2969,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
    actions mode, where every row's chip placeholders are shown regardless. max-height (not
    display:none) so the reveal animates instead of popping, and doesn't affect chip-bearing rows
    at all — this only ever applies to rows with truly nothing else on that line. */
-.todo-row-nochips .todo-meta-row{max-height:0;overflow:hidden;margin-top:-2px;transition:max-height .15s ease,margin-top .15s ease}
-.todo-row-nochips.expanded .todo-meta-row,.todo-row-nochips:focus-within .todo-meta-row{max-height:28px;margin-top:0}
 .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .todo-textwrap{display:block}
 .todo-text{display:inline-block;max-width:100%;font-family:var(--content-font);font-size:var(--fs-md);line-height:1.4;color:var(--fg);overflow-wrap:anywhere;white-space:pre-wrap;padding-top:1px;outline:none;cursor:text}
@@ -3109,9 +2983,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 .todo-link.set{display:inline-flex}
 .todo-row.expanded .todo-link{display:inline-flex}
 .todo-link:hover{background:var(--hover);border-color:var(--border);color:var(--fg)}
-.todo-link.link-missing{color:var(--sem-alert,#b85450);border-style:dashed;border-color:color-mix(in srgb,var(--sem-alert,#b85450) 40%,transparent)}
 .todo-due.recurring{display:inline-flex}
-.todo-due-repeat-icon{opacity:.75;margin-left:1px}
 .todo-repeat{appearance:none;border:1px solid transparent;background:none;align-self:flex-start;font:400 10.5px 'Inter',sans-serif;color:var(--hint);padding:1px 6px;border-radius:6px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s,border-color .12s}
 .todo-repeat.set{display:inline-flex;color:var(--accent)}
 .todo-row.expanded .todo-repeat{display:inline-flex}
@@ -3130,32 +3002,19 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 .todo-bulk-btn.danger:hover{color:var(--sem-alert);background:color-mix(in srgb,var(--sem-alert) 12%,transparent)}
 .todo-subtasks-toggle{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .12s,background .12s}
 .todo-subtasks-toggle:hover{color:var(--fg);background:var(--hover)}
-.todo-subtasks-progress-track{width:26px;height:4px;flex:0 0 auto;border-radius:999px;background:var(--border);overflow:hidden;display:inline-block}
-.todo-subtasks-progress-fill{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .2s ease}
-.todo-subtasks-chevron{transition:transform .15s}
-.todo-subtasks-chevron.open{transform:rotate(90deg)}
 /* The one reliable, always-visible expand/collapse target — added after verifying the
    whole-row-background click (still the primary trigger, unchanged) becomes hard to hit
    reliably once a row is expanded and mostly full of chip/action buttons. This sits in its own
    reserved flex column at the row's end, so it's never covered regardless of how many chips or
    actions are showing, and never competes with .todo-text for click space the way the
    background alone could. */
-.todo-expand-toggle{appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;flex:0 0 auto;align-self:flex-start;margin-top:2px;padding:3px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;transition:color .12s,background .12s}
-.todo-expand-toggle:hover{color:var(--fg);background:var(--hover)}
-.todo-expand-chevron{transition:transform .15s}
-.todo-expand-chevron.open{transform:rotate(90deg)}
 .todo-subtask-add-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 10.5px 'Inter',sans-serif;padding:1px 4px;border-radius:6px;cursor:pointer;display:none;align-items:center;gap:3px;transition:color .12s,background .12s}
 .todo-row.expanded .todo-subtask-add-btn{display:inline-flex}
 .todo-subtask-add-btn:hover{color:var(--accent);background:var(--hover)}
 .todo-subtasks-list{display:flex;flex-direction:column;gap:1px;margin-top:6px}
 .todo-subtasks-done-toggle{appearance:none;border:none;background:none;display:flex;align-items:center;gap:6px;width:100%;padding:3px 4px;margin-top:1px;border-radius:6px;font:500 11px 'Inter',sans-serif;color:var(--muted);cursor:pointer;text-align:left}
 .todo-subtasks-done-toggle:hover{background:var(--hover);color:var(--fg)}
-.todo-subtasks-done-icon{flex:0 0 auto;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--hint);position:relative}
-.todo-subtasks-done-icon::after{content:'';position:absolute;left:3px;top:0;width:3.5px;height:7px;border:solid var(--hint);border-width:0 1.5px 1.5px 0;transform:rotate(40deg)}
-.todo-subtasks-done-chevron{margin-left:auto;transition:transform .15s}
-.todo-subtasks-done-toggle.open .todo-subtasks-done-chevron{transform:rotate(90deg)}
 /* Subtask progress as a pill in the meta row. */
-.todo-meta-row .todo-subtasks-toggle{height:20px;padding:0 7px;border-radius:999px;background:var(--hover)}
 .todo-subtask-row{display:flex;align-items:flex-start;gap:6px;padding:2px 4px;border-radius:6px;transition:background .12s}
 .todo-subtask-row:hover{background:var(--hover)}
 .todo-subtask-check{appearance:none;-webkit-appearance:none;flex:0 0 auto;margin-top:1.5px;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);background:var(--edit-bg);cursor:pointer;position:relative;transition:background .15s,border-color .15s}
@@ -3233,8 +3092,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
    (not display) still gates hover/fixed visibility, same as before, so toggling them doesn't
    shift anything else in the row — the space is already accounted for in the flex layout either
    way, it just isn't painted until revealed. */
-.todo-actions{margin-left:auto;flex:0 0 auto;display:flex;gap:2px;opacity:0;pointer-events:none;transition:opacity .12s}
-.todo-row.expanded .todo-actions{opacity:1;pointer-events:auto}
 .todo-rewrite,.todo-delete{appearance:none;border:none;background:var(--bg);color:var(--hint);flex:0 0 auto;padding:2px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:opacity .12s,color .12s,background .12s}
 .todo-rewrite{color:var(--accent)}
 .todo-rewrite:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -3318,7 +3175,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 #todos-body .todo-subtasks-foot .todo-subtask-add-btn{display:inline-flex;padding:1px 0;font:500 11px 'Inter',sans-serif;color:var(--hint);opacity:0;transition:opacity .12s}
 #todos-body .todo-row:hover .todo-subtasks-foot .todo-subtask-add-btn,#todos-body .todo-subtasks-foot.bare .todo-subtask-add-btn,#todos-body .todo-subtasks-foot .todo-subtask-add-btn:focus-visible{opacity:1}
 #todos-body .todo-subtasks-foot .todo-subtask-add-btn:hover{color:var(--accent);background:none}
-#todos-body .todo-row .todo-actions{display:none}
 /* Done: one quiet line each. */
 #todos-body .todo-row.completed .todo-text{color:var(--hint);text-decoration:none}
 /* Where a task links to (open task only): one quiet line that navigates. */
@@ -3339,10 +3195,6 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
 
 /* ===== Hub dock-panel pieces ===== */
 /* Small fixed-position dropdown menus (To-Dos Export) */
-.dock-menu-item{display:flex;align-items:center;gap:var(--gap-menu-item);width:100%;box-sizing:border-box;appearance:none;border:none;background:none;text-align:left;padding:var(--pad-menu-item);border-radius:6px;cursor:pointer;font:400 12px 'Inter',sans-serif;color:var(--fg)}
-.dock-menu-item:hover{background:var(--hover);color:var(--accent)}
-.dock-menu-icon{flex:0 0 auto;display:inline-flex;color:var(--hint)}
-.dock-menu-item:hover .dock-menu-icon{color:inherit}
 
 /* Docked to the right edge, full height below the app bar, rounded only on the left and
    shadowed only on the left edge (no screen edge to round/shadow against on the other
@@ -6338,22 +6190,6 @@ function tableChartTypeAvailability(table){
     ? {ok:true}
     : {ok:false,reason:'Stacking only means something with 2+ data columns — with just one, it\u2019s identical to a plain bar chart.'};
   return {bar:{ok:true}, stackedBar:stackedAvail, line:{ok:true}, pie:pieAvail, doughnut:pieAvail, cards:cardsAvail};
-}
-// Sets which chart shape a featured+charted table renders as. Read by every renderer that draws
-// this table as a chart: the inline SVG one used by the PDF export (renderTableChartSvg). Set from the
-// Pad's table context menu — see buildChartFeatureItems. Silently falls back to whatever type is actually available (see
-// tableChartTypeAvailability) rather than setting one that wouldn't render sensibly — callers
-// are expected to only offer available types in the first place, but this is the one place that
-// actually enforces it.
-function setTableChartType(table,type){
-  if(!table)return;
-  let clean=CHART_TYPES.includes(type)?type:'bar';
-  const avail=tableChartTypeAvailability(table);
-  if(!avail[clean]?.ok)clean='bar';
-  if(getTableChartType(table)===clean)return;
-  table.setAttribute('data-chart-type',clean);
-  markDirty(); scheduleAutoSave();
-  showToast(CHART_TYPE_LABELS[clean]);
 }
 /* GENERATED:tableData:START — DO NOT EDIT BY HAND. Source of truth: src/utils/tableData.ts (tests: tests/unit/tableData.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
 /**
@@ -11196,7 +11032,6 @@ function _nivMkStartSession(){
   _nivMk.hist=[JSON.stringify(ref.img.annotations||[])]; _nivMk.hIdx=0; _nivMk.undoPushed=false;
   _nivMk.selectedId=null; _nivMk.drag=null; _nivMk.preview=null; _nivMk.confirmClear=false;
 }
-function nodeImageMarkupIsActive(){ return !!_nivMk; }
 function setNodeImageMarkupMode(on){
   const ov=el('node-image-viewer'); if(!ov||!_nivState)return;
   if(on&&!_nivMk){
@@ -12043,25 +11878,6 @@ function noteTableByIndex(nodeId,tIdx){
 // own rendering of it.
 function persistNoteTableChange(idx,container){
   nodes[idx].note=sakuraSanitizeRichHtml(container.innerHTML);
-  nodes[idx].modifiedAt=Date.now();
-  markDirty(); scheduleAutoSave();
-}
-// Same re-parse-by-index lookup as noteTableByIndex, for a node.tables object instead of a
-// note-embedded one -- used by Preview's own right-click chart-type switcher when it lands on a
-// .pv-table-figure/.pv-table-chart-figure built from node.tables (see buildNoteTableFigure's own
-// noteChartNodeId/noteChartTableIdx tagging in renderPreviewBody), which has no live DOM table to
-// read directly since Preview only ever sees the already-rendered SVG/clone.
-function nodeTableObjByIndex(nodeId,tIdx){
-  const idx=getIndex(nodes,nodeId); if(idx<0)return null;
-  const container=document.createElement('div'); container.innerHTML=nodes[idx].tables?.[tIdx]||'';
-  const table=container.querySelector('table'); if(!table)return null;
-  return {idx,tIdx,container,table};
-}
-// Writes a nodeTableObjByIndex() mutation back into node.tables[tIdx] directly -- not node.note,
-// and not a re-parse of the WHOLE node.tables array, since each entry is independent (unlike
-// persistNoteTableChange's container, which re-serializes the whole note around one table).
-function persistNodeTableObjChange(idx,tIdx,container){
-  nodes[idx].tables[tIdx]=sakuraSanitizeRichHtml(container.innerHTML);
   nodes[idx].modifiedAt=Date.now();
   markDirty(); scheduleAutoSave();
 }
@@ -17509,7 +17325,6 @@ function expandAll(){pushFoldUndo(); collapsedIds.clear();
 // collapsed means the action is to expand it all back out, nothing collapsed means the
 // action is to fold everything down to the top level.
 function toggleFoldAll(){ if(anyFoldClosed())expandAll(); else collapseAll(); }
-function hasMeaningfulContent(){return nodes.some(n=>String(n.text||'').trim())||nodes.length>1}
 // Which rail category is currently shown, per panel. Search (below) temporarily overrides
 // this — while a query is active every category is searched at once, and clearing the query
 // (or picking a rail item) restores the single-category view.
@@ -17920,21 +17735,6 @@ function stripHtmlToText(html){
   if(!html)return '';
   const tmp=document.createElement('div');
   tmp.innerHTML=html;
-  return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
-}
-// stripHtmlToText's textContent pass concatenates across element boundaries with nothing in
-// between — fine for search indexing, but a Note's timestamp span followed by a <br> then the
-// note text (see saveNodeComment's addition markup) ends up glued together with no space at all.
-// This inserts a space at exactly those block-ish boundaries before stripping, so multiple
-// comments/timestamps in one note read as separate words. It also drops .note-comment-stamp
-// entirely — in a truncated one-line preview there's no room to spare, and "JUL 15, 2:30 PM"
-// eating a third of the available characters before any actual note content shows is a worse
-// trade than just not showing it here (the real note, with timestamps, is still one click away).
-function notePreviewPlainText(html){
-  if(!html)return '';
-  const tmp=document.createElement('div');
-  tmp.innerHTML=String(html).replace(/<\/(div|p|li)>|<br\s*\/?>/gi,' $& ');
-  tmp.querySelectorAll('.note-comment-stamp').forEach(s=>s.remove());
   return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
 }
 function getDocNodesForSearch(docId,indexEntry){
@@ -19034,11 +18834,6 @@ function subtreeMarkerTypes(idx){const end=getSubtreeEnd(nodes,idx); const found
 function subtreeHasDiagram(idx){if(!Array.isArray(diagrams)||!diagrams.length)return false; const end=getSubtreeEnd(nodes,idx); const ids=new Set(); for(let i=idx+1;i<end;i++){ids.add(nodes[i].id)} return diagrams.some(d=>ids.has(d.anchorNodeId))}
 const NODE_IMAGE_DOT_SVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-9 9"/></svg>';
 function subtreeHasTable(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(Array.isArray(nodes[i].tables)&&nodes[i].tables.length)return true} return false}
-// A node "has a citation" when its text contains a '>quoted…' segment — same detection previewSplitQuotes
-// uses for Preview/PDF/exports, kept in sync so the editor's collapsed-branch indicator below
-// matches what actually renders as a citation elsewhere.
-function nodeHasQuote(node){ return previewSplitQuotes(node.text||'').quotes.length>0 }
-function subtreeHasQuote(idx){const end=getSubtreeEnd(nodes,idx); for(let i=idx+1;i<end;i++){if(nodeHasQuote(nodes[i]))return true} return false}
 // ── "Referenced by To-Dos" lookups ───────────────────────────────────────
 // todos live inside their own IIFE closure further down the page, so they aren't a plain
 // top-level binding reachable from here — they're reached through small window.sakura*
@@ -20227,10 +20022,6 @@ const SECTION_EMOJI_ICONS={
   '📝':'<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="8" y1="18" x2="13" y2="18"/>',
   '⏳':'<path d="M6 3h12"/><path d="M6 21h12"/><path d="M7 3l5 9-5 9"/><path d="M17 3l-5 9 5 9"/>',
 };
-// Matches an emoji at the very start of a section-header's text, immediately followed by a
-// space — e.g. "📘 Landscape Boundaries". Loop-based rather than a unicode-property regex so
-// it's a plain lookup against the curated list above, not a general "is this an emoji" test.
-function matchSectionEmojiIcon(text){for(const key in SECTION_EMOJI_ICONS){if(text.startsWith(key+' '))return {inner:SECTION_EMOJI_ICONS[key],rest:text.slice(key.length+1)}}return null}
 function highlightSearchInHtml(html,q){if(!q)return html;const lq=q.toLowerCase();const result=[];let i=0;while(i<html.length){if(html[i]==='<'){const end=html.indexOf('>',i);if(end<0){result.push(html.slice(i));break}result.push(html.slice(i,end+1));i=end+1;continue}if(html[i]==='&'){const end=html.indexOf(';',i);if(end<0){result.push(html[i]);i++;continue}result.push(html.slice(i,end+1));i=end+1;continue}let j=i;let plain='';while(j<html.length&&html[j]!=='<'&&html[j]!=='&'){plain+=html[j];j++;}const lplain=plain.toLowerCase();let pi=0;let out='';while(pi<plain.length){const fi=lplain.indexOf(lq,pi);if(fi<0){out+=plain.slice(pi);break}out+=plain.slice(pi,fi)+`<mark class="search-highlight">${plain.slice(fi,fi+lq.length)}</mark>`;pi=fi+lq.length;}result.push(out);i=j;}return result.join('');}
 function parseStyledText(text,searchQ=''){const out=esc(String(text||'')); return searchQ?highlightSearchInHtml(out,searchQ):out}
 function renderLabel(node,searchQ='',isSectionRow=false){const headingCls=node.styles.heading?('style-heading-'+node.styles.heading):''; const cls=['node-label',node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':'',headingCls].filter(Boolean).join(' '); const raw=node.text||'';
@@ -21145,11 +20936,6 @@ function removeCheckbox(id){
 function rowLinkIdsOf(node){ return rowMarksOf(node).filter(m=>m.k==='r').map(m=>m.v); }
 function findNodeByRowLinkId(v){ return v==null?null:(nodes.find(n=>String(n.id)===String(v))||null); }
 
-function findNodeByText(text){
-  const t=text.trim().toLowerCase();
-  const tp=stripSemanticMarkers(t).trim().toLowerCase();
-  return nodes.find(n=>{const nt=String(n.text||'').trim().toLowerCase(); return nt===t||stripSemanticMarkers(nt).trim().toLowerCase()===tp;})||null;
-}
 
 // Rows outside nodeIds that link to any row in nodeIds.
 function getBacklinkReferrers(nodeIds){
@@ -21779,8 +21565,6 @@ const aiOutlineBtn=document.getElementById('es-ai-outline-btn'); if(aiOutlineBtn
 function setWholeRowMarks(kind,value){const ids=getSelectedIds(); const list=ids.map(id=>nodes[getIndex(nodes,id)]).filter(n=>n&&(n.text||'').length); if(!list.length)return false; let v=value; if(v===undefined){const allOn=list.every(n=>rowMarkCovers(rowMarksOf(n),n.text.length,0,n.text.length,kind)); v=allOn?false:(kind==='hl'?lastHighlightColor:kind==='c'?lastFontColor:true)} pushUndo(); list.forEach(n=>{setRowMarksOn(n,setRowMark(rowMarksOf(n),n.text.length,0,n.text.length,kind,v)); n.modifiedAt=Date.now()}); markDirty(); render(); return true}
 function toggleNodeStyle(styleName){const kind=ROW_STYLE_TO_MARK[styleName]; if(kind)setWholeRowMarks(kind)}
 function applyHeadingOption(level){const ids=getSelectedIds(); const selectedNodes=ids.map(id=>nodes[getIndex(nodes,id)]).filter(Boolean); if(!selectedNodes.length)return; pushUndo(); const allSame=selectedNodes.every(n=>(n.styles.heading||0)===level); const newLevel=level===0?0:(allSame?0:level); selectedNodes.forEach(n=>n.styles.heading=newLevel); markDirty(); render()}
-function hideHighlightPalette(){el('hl-palette')?.classList.remove('open'); el('fc-palette')?.classList.remove('open')}
-function hideFontColorPalette(){el('fc-palette')?.classList.remove('open')}
 function insertSiblingBefore(id,begin=true){const idx=getIndex(nodes,id); if(idx<0)return; pushUndo(); markDirty(); const node=nodes[idx]; const nn=makeBlankNode(node.depth,node.parentId); nodes.splice(idx,0,nn); rebuildParentIds(); setSingleSelection(nn.id); flashNode(nn.id); if(begin)beginEdit(nn.id,false); else render()}
 function insertChildFirst(id,begin=true){const idx=getIndex(nodes,id); if(idx<0)return; pushUndo(); markDirty(); const parent=nodes[idx]; const nn=makeBlankNode(parent.depth+1,parent.id); nodes.splice(idx+1,0,nn); rebuildParentIds(); setSingleSelection(nn.id); flashNode(nn.id); if(begin)beginEdit(nn.id,false); else render(); return nn.id}
 function insertSiblingAfter(id,begin=true){const idx=getIndex(nodes,id); if(idx<0)return; pushUndo(); markDirty(); const node=nodes[idx]; const nn=makeBlankNode(node.depth,node.parentId); nodes.splice(getSubtreeEnd(nodes,idx),0,nn); rebuildParentIds(); setSingleSelection(nn.id); flashNode(nn.id); if(begin)beginEdit(nn.id,false); else render()}
@@ -23056,16 +22840,6 @@ function showInsertListAt(rect,items){
   if(_sbContextButtons.length){ _sbContextActiveIndex=0; _sbContextUpdateHighlight(); }
 }
 function insertListOpen(){ return _sbContextEl?.id==='insert-menu'; }
-function insertGlyphAtCurrentEdit(glyph){
-  const input=getEditingInput(); if(!input)return;
-  const range=getEditableSelectionRange(input);
-  const value=input.textContent||'';
-  const start=range?range.start:value.length; const end=range?range.end:value.length;
-  input.textContent=value.slice(0,start)+glyph+value.slice(end);
-  input.dispatchEvent(new Event('input'));
-  setInputCaret(input,start+glyph.length);
-  input.focus();
-}
 // Undo while typing in a row goes back a word at a time (a run of deletes, or a paste, is its own
 // step), as in Docs and Word. Back where the edit began, Ctrl/Cmd+Z moves on to the app's own undo
 // steps; leaving the row still makes the whole edit one step.
@@ -25098,13 +24872,6 @@ function insertAiOutline(parsed){
   return mapped;
 }
 
-// AI ▾ and Insert ▾ on the toolbar: the shared menu, opened under the button.
-function aiRewriteSelection(){
-  // Whole rows only: rewriting selected words is the selection popover's ✦ (one place for it).
-  if(multiSelectedIds.length>1){rewriteMultipleNodes(multiSelectedIds); return;}
-  if(selectedId!==null){rewriteNodeText(selectedId); return;}
-  showToast('Select a node first');
-}
 
 function toggleCheckboxOnSelection(){
   const targets = multiSelectedIds.length > 1 ? multiSelectedIds : (selectedId !== null ? [selectedId] : []);
@@ -26213,7 +25980,6 @@ function sbMenuOpener() { const o = _sbClosedFrom; return o && o.isConnected && 
 function showSbContextMenu(x, y, items, opts) {
     const opener = _sbContextEl && _sbContextEl.contains(document.activeElement) ? _sbMenuOpener : document.activeElement;
     closeSbContextMenu();
-    closeMoveMenu();
     hideLinkCard();
     _sbMenuOpener = opener;
     const menu = document.createElement('div');
@@ -26420,7 +26186,7 @@ let _docIconMenuEl = null;
 function closeDocIconMenu(){ if(_docIconMenuEl){_docIconMenuEl.remove(); _docIconMenuEl=null;} document.removeEventListener('click', closeDocIconMenu, true); }
 function showDocIconMenu(e, itemId, kind){
   kind = kind||'doc';
-  e.stopPropagation(); closeDocIconMenu(); closeMoveMenu();
+  e.stopPropagation(); closeDocIconMenu();
   const menu = document.createElement('div'); menu.className='doc-icon-menu'; _docIconMenuEl=menu;
   const grid = document.createElement('div'); grid.className='doc-icon-grid';
   const setIcon = setDocIcon;
@@ -26440,36 +26206,8 @@ function showDocIconMenu(e, itemId, kind){
   _docIconDismiss.opened(opener);
   setTimeout(()=>document.addEventListener('click', closeDocIconMenu, true), 0);
 }
-// --- Move-to-folder popup ---
-let _moveMenuEl = null;
-function closeMoveMenu(){ if(_moveMenuEl){_moveMenuEl.remove(); _moveMenuEl=null;} document.removeEventListener('click', closeMoveMenu, true);}
 // Both sidebar menus place and close like every other popover (Escape returns to the icon or button).
 const _docIconDismiss=popoverDismiss(document,{ isOpen:()=>!!_docIconMenuEl, isInside:t=>!!_docIconMenuEl?.contains(t), close:closeDocIconMenu });
-const _moveMenuDismiss=popoverDismiss(document,{ isOpen:()=>!!_moveMenuEl, isInside:t=>!!_moveMenuEl?.contains(t), close:closeMoveMenu });
-function showMoveMenu(e, docId, folders){
-  e.stopPropagation(); closeMoveMenu();
-  const menu = document.createElement('div'); menu.className='move-folder-menu'; _moveMenuEl=menu;
-  const currentFId = getFolderForDoc(docId);
-  // "No folder" option
-  const noFolderItem = document.createElement('button'); noFolderItem.className='move-folder-item';
-  noFolderItem.innerHTML='<span style="opacity:.5;display:inline-flex;vertical-align:-2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span> No folder'+(currentFId===null?' ✓':'');
-  noFolderItem.addEventListener('click',()=>{ setFolderForDoc(docId,null); renderSidebar(); closeMoveMenu(); });
-  menu.appendChild(noFolderItem);
-  flattenFolderTree(folders).forEach(({folder:f,depth})=>{
-    const fi = document.createElement('button'); fi.className='move-folder-item';
-    fi.style.paddingLeft=(10+depth*14)+'px';
-    fi.innerHTML=`<span style="display:inline-flex;vertical-align:-2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span> ${esc(f.name)}`+(currentFId===f.id?' ✓':'');
-    fi.addEventListener('click',()=>{ setFolderForDoc(docId,f.id); renderSidebar(); closeMoveMenu(); });
-    menu.appendChild(fi);
-  });
-  // Position near click
-  document.body.appendChild(menu);
-  const opener=e.currentTarget||e.target;
-  menu.style.position='fixed';
-  showPopoverAt(menu,opener.getBoundingClientRect(),window.innerWidth,window.innerHeight);
-  _moveMenuDismiss.opened(opener);
-  setTimeout(()=>document.addEventListener('click', closeMoveMenu, true), 0);
-}
 
 // Compact searchable folder picker — replaces the old approach of listing every folder
 // directly in the right-click context menu (which got unreadable fast once you had more
@@ -26483,7 +26221,7 @@ function closeFolderPicker(){
 }
 function _folderPickerKeyHandler(e){ if(e.key==='Escape'){ e.preventDefault(); closeFolderPicker(); } }
 function openFolderPicker(docId, folders){
-  closeSbContextMenu(); closeMoveMenu(); closeFolderPicker();
+  closeSbContextMenu(); closeFolderPicker();
   const currentFId=getFolderForDoc(docId);
   const flat=flattenFolderTree(folders);
   const overlay=document.createElement('div'); overlay.className='folder-picker-overlay'; _folderPickerEl=overlay;
@@ -27471,41 +27209,6 @@ setSidebarOpen(sidebarOpen);
 setSidebarSearchVisible(false);
 renderSidebar();
 
-// Safely turns "SAP Note ######" / "OSS Note ######" into a real link within existing rich-text
-// HTML — used at natural "settle" points (blur/commit),
-// never on every keystroke, since live-typing DOM surgery on a focused contenteditable risks
-// jumping the cursor mid-word. Walks actual text nodes via TreeWalker rather than regexing the
-// raw HTML string, so it can insert an <a> around just the matched substring without disturbing
-// whatever bold/italic/list markup already wraps that text — a naive string-replace on innerHTML
-// would silently corrupt any such formatting the moment a match happened to sit inside it.
-// Skips text already inside a link (idempotent — safe to call again on unchanged content).
-function linkifySapNotesInElement(root){
-  if(!root)return false;
-  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
-    acceptNode(node){ return (node.parentElement&&node.parentElement.closest('a'))?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT; }
-  });
-  const targets=[]; let n;
-  while((n=walker.nextNode())){ if(/(SAP|OSS)\s+Note\s+\d{5,10}\b/i.test(n.nodeValue))targets.push(n); }
-  if(!targets.length)return false;
-  const re=/(SAP|OSS)\s+Note\s+(\d{5,10})\b/gi;
-  targets.forEach(node=>{
-    const text=node.nodeValue;
-    const frag=document.createDocumentFragment();
-    let lastIndex=0, m; re.lastIndex=0;
-    while((m=re.exec(text))){
-      if(m.index>lastIndex)frag.appendChild(document.createTextNode(text.slice(lastIndex,m.index)));
-      const a=document.createElement('a');
-      a.className='sem-sap-note'; a.href='https://me.sap.com/notes/'+m[2];
-      a.target='_blank'; a.rel='noopener noreferrer'; a.dataset.tip='Open SAP Note '+m[2]+' on me.sap.com';
-      a.textContent=m[0];
-      frag.appendChild(a);
-      lastIndex=re.lastIndex;
-    }
-    if(lastIndex<text.length)frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-    node.parentNode.replaceChild(frag,node);
-  });
-  return true;
-}
 // ── Column resize handles ────────────────────────────────────────────────────
 // Used by note and node table editing, even though the Note editor that originally
 // introduced this no longer accepts tables directly as plain-text input.
@@ -28427,7 +28130,6 @@ function previewToggleCollapse(id){
   if(previewCollapsedIds.has(id))previewCollapsedIds.delete(id); else previewCollapsedIds.add(id);
   renderPreviewBody();
 }
-let previewOpenNoteIds=new Set();
 // Export-only (set/restored by
 // _applyNodeContentExportState). On-screen Preview deliberately renders a plain single-
 // line note inline right after the node's own text (isPlainNote below) to stay compact while
@@ -28440,15 +28142,6 @@ let previewOpenNoteIds=new Set();
 // PDF export pass; left false for ordinary on-screen Preview browsing, where the
 // compact inline treatment is still worth keeping.
 let _pvForceFullNoteCard=false;
-function previewToggleNote(id){
-  if(previewOpenNoteIds.has(id))previewOpenNoteIds.delete(id); else previewOpenNoteIds.add(id);
-  renderPreviewBody();
-}
-let previewOpenQaIds=new Set();
-function previewToggleQa(id){
-  if(previewOpenQaIds.has(id))previewOpenQaIds.delete(id); else previewOpenQaIds.add(id);
-  renderPreviewBody();
-}
 function previewParseStyledText(text,searchQ=''){const out=esc(String(text||'')); return searchQ?highlightSearchInHtml(out,searchQ):out}
 function previewStyleClasses(node){
   return [node.styles.bold?'style-bold':'',node.styles.italic?'style-italic':'',node.styles.underline?'style-underline':'',node.styles.strike?'style-strike':''].filter(Boolean).join(' ');
@@ -28461,58 +28154,6 @@ function previewNodeInnerHtml(node,textOverride){
   const text=textOverride!==undefined?textOverride:(node.text||'');
   const inner=(text===(node.text||'')?rowMarksToHtml(text,rowMarksOf(node),t=>previewParseStyledText(t)):previewParseStyledText(text))||'&nbsp;';
   return node.styles.highlight?`<span class="hl-mark hl-mark-${esc(node.styles.highlight)}">${inner}</span>`:inner;
-}
-// Pulls '>citation' segments out of a node's text so Preview/exports can render them as their
-// own block below the node instead of sharing a wrapped line with it (see the pv-quote-block
-// this feeds into, in renderPreviewBody) — multiple citations glued into one run-on paragraph,
-// separated only by sem-quote's thin left border, read poorly once there's more than one.
-// Mirrors previewParseStyledText's own traversal — same quote-boundary rule (a
-// quote runs until the next '>' preceded by whitespace/start-of-line) and the same backtick/
-// wiki-link/bracket/paren skipping, so a literal '>' inside a code span or aside isn't mistaken
-// for a citation start. Deliberately doesn't mirror the '!alert'/'SAP Note' branches — neither
-// can plausibly contain a '>' character, so skipping them here doesn't change where a citation
-// boundary falls. Quote text itself isn't run back through inline parsing (same as
-// previewParseStyledText's own sem-quote span — always esc()'d, never nested markup) since a
-// citation is meant to be attributed text, not a second line of formatted content.
-function previewSplitQuotes(text){
-  const src=String(text||'');
-  let main=''; const quotes=[]; let i=0;
-  while(i<src.length){
-    const ch=src[i];
-    if(ch==='>'&&(i===0||/\s/.test(src[i-1]))){
-      let qEnd=src.length;
-      for(let j=i+1;j<src.length;j++){if(src[j]==='>'&&/\s/.test(src[j-1])){qEnd=j;break}}
-      const q=src.slice(i+1,qEnd).trim();
-      if(q)quotes.push(q);
-      i=qEnd;
-      continue;
-    }
-    if(ch==='`'){const end=src.indexOf('`',i+1);if(end>i+1){main+=src.slice(i,end+1);i=end+1;continue}}
-    if(ch==='['&&src[i+1]==='['){let end=-1;let _sf=i+2;while(_sf<src.length-1){const _p=src.indexOf(']]',_sf);if(_p<0)break;if(_p+2>=src.length||src[_p+2]!==']'){end=_p;break;}_sf=_p+1;}if(end>i+2){main+=src.slice(i,end+2);i=end+2;continue}}
-    if(ch==='['){const end=src.indexOf(']',i+1);if(end>i+1){main+=src.slice(i,end+1);i=end+1;continue}}
-    if(ch==='('){const end=src.indexOf(')',i+1);if(end>i+1){main+=src.slice(i,end+1);i=end+1;continue}}
-    main+=ch; i++;
-  }
-  return {main:main.replace(/\s+$/,''),quotes};
-}
-function previewStatusBadgeColor(value){
-  const v=String(value||'').toLowerCase();
-  if(/approved|accepted|implemented|resolved|done|confirmed/.test(v))return 'green';
-  if(/rejected|declined|blocked|abandoned|cancelled|canceled/.test(v))return 'red';
-  if(/hold|pending|review/.test(v))return 'orange';
-  return 'gray';
-}
-function previewBuildNodeTree(startIdx,endIdx){
-  const baseDepth=nodes[startIdx]?nodes[startIdx].depth:0;
-  const root=[]; const stack=[{depth:baseDepth-1,children:root}];
-  for(let i=startIdx;i<endIdx;i++){
-    const n=nodes[i];
-    while(stack.length>1&&stack[stack.length-1].depth>=n.depth)stack.pop();
-    const item={node:n,children:[]};
-    stack[stack.length-1].children.push(item);
-    stack.push({depth:n.depth,children:item.children});
-  }
-  return root;
 }
 // Shared by both the on-screen Preview and PDF export — PDF is a print of this same Preview
 // document, so there's exactly one renderer to write, not two. Deliberately lighter-weight: a
@@ -28583,11 +28224,6 @@ function previewSubtreeHasNote(idx){
   for(let i=idx+1;i<end;i++){ if(nodes[i].note&&nodes[i].note.trim())return true; }
   return false;
 }
-function previewSubtreeHasQuote(idx){
-  const end=getSubtreeEnd(nodes,idx);
-  for(let i=idx+1;i<end;i++){ if(previewSplitQuotes(nodes[i].text||'').quotes.length)return true; }
-  return false;
-}
 function previewFold(node,idx,hasChildren){
   const folded=previewCollapsedIds.has(node.id);
   if(hasChildren){
@@ -28652,7 +28288,7 @@ function renderPreviewBody(){
     if(folded&&hasChildren)skipDepth=node.depth;
 
     const depth=node.depth||0;
-    const pvMainText=node.text||''; const pvQuotes=[];
+    const pvMainText=node.text||'';
     const isSection=nodeIsSection(node,sectionMarkersDepthZero);
     const headingLevel=node.styles.heading||0;
     let mainEl,contentEl;
@@ -28827,19 +28463,6 @@ function renderPreviewBody(){
       // further left than everything else that follows this same isHeadingLike branch.
       const depthPad=(isHeadingLike&&depth===0)?0:(Math.min(depth,7)-1)*18;
       const inlinePad=`calc(${depthPad}px + var(${isHeadingLike?'--pv-heading-bcol':'--pv-row-bcol'}))`;
-      if(pvQuotes.length){
-        // Each citation gets its own line rather than sharing one wrapped paragraph with the
-        // node's main text (or with each other) — see previewSplitQuotes above for why. Same
-        // sem-quote visual language (italic, left accent bar) as before, just block-level and
-        // stacked instead of run-in, and indented to this node's own inlinePad so it lines up
-        // under its bullet/text exactly like the note card and diagram figures below it do.
-        const qBlock=document.createElement('div'); qBlock.className='pv-quote-block'; qBlock.style.paddingLeft=inlinePad;
-        pvQuotes.forEach(q=>{
-          const qLine=document.createElement('div'); qLine.className='pv-quote-line'; qLine.textContent=q;
-          qBlock.appendChild(qLine);
-        });
-        doc.appendChild(qBlock);
-      }
       // The note's text comes first, directly under the node, then its diagrams, tables and
       // images below. Tables and standalone images are pulled out into their own figures (see
       // blockVisuals) -- what's left here is only the note's own text, via blockVisuals.textHtml
@@ -29049,27 +28672,13 @@ function markIconSvg(kind,size){
 // Fold state follows Preview's own previewCollapsedIds — see the comment inside exportPdfDirect
 // below for why. Settings → Export & copy → "Skip folded sections" deliberately does NOT apply
 // here; it only affects copying nodes (Ctrl/Cmd+C).
-// PDF renders from Preview's own note/Q&A open state (previewOpenNoteIds/
-// previewOpenQaIds) rather than raw node data, since Preview cards are collapsed by default —
-// a note or a linked question only actually prints if its card happens to be open on screen.
-// "Include node Notes in exports"/"Include Q&A in exports" make that deliberate instead of
-// accidental: on, every node with note content (or linked Q&A) is force-opened for this one
-// export pass regardless of what's expanded on screen; off, everything is force-closed so none
-// of it prints. Either way the caller must restore the pre-export sets afterward (see the
-// restore() this returns) so an already-open Preview session isn't left in a different state
-// than the user had it. Q&A previously had no equivalent force-open step at all, so a node's
-// linked question(s) only ended up in a PDF if the user happened to have clicked that node's
-// Q&A dot open in Preview during the same session — by default every linked question printed
-// only in the flat end-of-document Q&A list, disconnected from the node it was actually about.
+// Every note prints as the same full card during an export pass; restore() puts it back.
 function _applyNodeContentExportState(){
-  const prevNote=previewOpenNoteIds, prevQa=previewOpenQaIds, prevForceCard=_pvForceFullNoteCard;
-  // Notes, Q&A and remarks are always included in exports (no setting turns them off).
-  previewOpenNoteIds=new Set(nodes.filter(n=>n.note&&n.note.trim()).map(n=>n.id));
+  const prevForceCard=_pvForceFullNoteCard;
   // Always the same card treatment for every note in an export, regardless of how short/plain
   // it is -- see _pvForceFullNoteCard's own comment above its declaration.
   _pvForceFullNoteCard=true;
-  previewOpenQaIds=new Set(qaItems.filter(it=>(it.question||'').trim()&&it.sourceNodeId!=null).map(it=>it.sourceNodeId));
-  return function restore(){ previewOpenNoteIds=prevNote; previewOpenQaIds=prevQa; _pvForceFullNoteCard=prevForceCard; };
+  return function restore(){ _pvForceFullNoteCard=prevForceCard; };
 }
 // The PDF's Contents page lists headings up to this level (plus [Section] markers).
 const PDF_TOC_MAX_LEVEL=2;
@@ -29870,18 +29479,6 @@ function newRemarkId(){ return 'r'+Date.now().toString(36)+(remarksNextLocalId++
 function todayDateStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 // A thread entry's day as yyyy-mm-dd, from its one stored time (owner, 2026-10-27: no separate date).
 function entryDay(r){ if(!r||!r.createdAt)return todayDateStr(); const d=new Date(r.createdAt); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-// A native <input type=date> always renders in the browser/OS's own font and date format —
-// clashes visually against everything else in the byline being set in the app's own Inter type,
-// and doesn't match the app's own calendar widget (Todo's due date, etc.) either. So the date is
-// shown as a small plain-text span, formatted consistently with the rest of the byline, and
-// clicking it opens the same real calendar popover component Todo's due date uses (see
-// openRemarksDateEditor below) rather than the browser's native picker.
-function remarkAuthorInitials(name){
-  const words=String(name||'').trim().split(/\s+/).filter(Boolean);
-  if(!words.length)return '?';
-  if(words.length===1)return words[0].slice(0,2).toUpperCase();
-  return (words[0][0]+words[words.length-1][0]).toUpperCase();
-}
 // A thread entry's kind icon (owner design 2026-10-15, replacing the initials avatar): the column
 // left of each entry says WHAT it is -- decision, answer, question -- and a plain comment
 // gets a faint comment icon; the name says who. Not a dot: the outline
@@ -30164,9 +29761,6 @@ function attachThreadPaste(el){
     document.execCommand('insertHTML',false,cleanThreadPasteHtml(html));
   });
 }
-// The thread's questions (with text), oldest first; a short label for menus and the reply line's picker.
-function threadQuestions(thread){ return (thread||[]).filter(e=>isQuestion(e)&&htmlHasVisibleText(e.text)); }
-function threadQuestionLabel(q,max){ const t=stripHtmlToText(q.text||'').replace(/\s+/g,' ').trim(); max=max||44; return t.length>max?t.slice(0,max-2).trimEnd()+'\u2026':t; }
 const THREAD_COPY_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 // Copy thread (owner, 2026-10-16): the whole thread as rich text (names bold, the time and quiet
 // notes grey, entry text as written) with a plain-text twin, so Ctrl+V keeps the formatting and
@@ -30723,12 +30317,6 @@ document.addEventListener('DOMContentLoaded', function(){
 // === TAGS & FILTER SYSTEM ============================================
 // =====================================================================
 
-// Collect all unique tags across the current document
-function getAllDocTags(){
-  const set=new Set();
-  nodes.forEach(n=>{if(n.tags)n.tags.forEach(t=>set.add(t))});
-  return [...set].sort((a,b)=>a.localeCompare(b));
-}
 
 // Apply or clear the active tag/marker filters — hides rows not matching ALL active filters
 // (a node with both an active tag filter and an active marker filter must match both to show).

@@ -26,13 +26,11 @@
 .pv-toc-item.pv-toc-lvl-4{padding-left:42px;font-weight:400;font-size:11px;color:var(--hint)}
 .pv-toc-item.pv-toc-lvl-5{padding-left:42px;font-weight:400;font-size:11px;color:var(--hint)}
 .pv-toc-item.pv-toc-lvl-6{padding-left:52px;font-weight:400;font-size:10.5px;color:var(--hint)}
-.pv-toc-item.pv-toc-lvl-7{padding-left:60px;font-weight:400;font-size:10.5px;color:var(--hint)}
 .pv-toc-item.active{color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent);font-weight:600;box-shadow:inset 2px 0 0 0 var(--accent)}
 #preview-body{flex:1;overflow:auto;padding:28px 0 90px}
 
 
 #preview-doc{max-width:min(var(--pv-reading-width,1080px),94%);margin:0 auto;padding:0 48px 0 24px;font-family:'Inter',sans-serif;color:var(--node-fg)}
-.pv-serif-body .pv-text{font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif}
 #pv-doc-header{position:relative;margin:0 0 22px;padding-bottom:14px;border-bottom:1px solid var(--border)}.pv-h-row{display:flex;align-items:center;gap:5px}
 #pv-qa-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
 #pv-open-items .pv-oi-title{font:700 22px 'Inter',sans-serif;color:#1f1c14;margin:0 0 4px}
@@ -44,7 +42,6 @@
 #pv-open-items .pv-oi-item{display:flex;align-items:baseline;gap:12px;color:inherit !important;text-decoration:none !important}
 #pv-open-items .pv-oi-text{flex:1 1 auto;min-width:0}
 #pv-open-items .pv-oi-sub{display:block;color:#79756b}
-#pv-open-items .pv-oi-grey{color:#79756b}
 #pv-open-items .pv-toc-page{flex:none;color:#79756b;font-variant-numeric:tabular-nums}
 #pv-open-items .pv-toc-page:not(:empty)::before{content:'p. '}
 #pv-remarks-section{margin-top:36px;padding-top:20px;border-top:2px solid var(--border)}
@@ -84,7 +81,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #pv-doc-subtitle{margin-top:10px;font:500 15px 'Inter',sans-serif;color:var(--muted);line-height:1.4;word-break:break-word}
 .pv-section{flex:1;min-width:60px;display:flex;align-items:center;gap:10px;margin:0 0 6px;font:700 12px 'Inter',sans-serif;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
 .pv-section::after{content:'';flex:1;height:1px;background:var(--border)}
-.pv-section-label{color:var(--accent)}.pv-section-sep{color:var(--muted)}
 .pv-bullet{flex:0 0 auto;width:16px;display:flex;justify-content:center;color:var(--hint);font-size:14.5px}
 .pv-cb{flex:0 0 auto;width:14px;height:14px;margin:2.5px 1px 0 1px;border:1.5px solid color-mix(in srgb,var(--muted) 55%,var(--border));border-radius:3px;cursor:pointer;position:relative;transition:background .1s,border-color .1s}
 .pv-cb:hover{border-color:var(--muted)}
@@ -105,24 +101,9 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 /* Scoped to .node-row -- .node-qa-dot is reused inside Preview mode's inline text flow too,
    where this offset isn't wanted (see .node-row .node-note-dot above). */
 .node-row .node-qa-dot{align-self:flex-start;margin-top:calc((var(--row-line-base) - 18px) / 2)}
-.pv-popover{position:fixed;z-index:1110;background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 100%,#fff 4%),var(--bg));border:1px solid color-mix(in srgb,var(--border) 55%,transparent);border-radius:12px;box-shadow:0 24px 56px rgba(0,0,0,.24),0 4px 14px rgba(0,0,0,.10),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);padding:14px 16px;max-width:320px;max-height:340px;overflow-y:auto;font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.55;animation:pv-popover-in .16s cubic-bezier(.22,.8,.34,1)}
 @keyframes pv-popover-in{from{opacity:0;transform:scale(.96) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.pv-popover-wide{max-width:380px;max-height:420px}
-.pv-popover-capture{width:320px;max-width:calc(100vw - 24px);max-height:360px}
-.pv-popover .pv-popover-note.pv-inline-note-body,.pv-popover .pv-popover-note.pv-inline-qa-body{background:transparent;border:none;border-left:none;padding:0}
 
 
-.pv-popover-label{font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
-.pv-popover-head-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.pv-popover-head-row .pv-popover-label{margin-bottom:0}
-.pv-popover-head-title-group{display:flex;align-items:baseline;gap:7px;min-width:0}
-.pv-popover-note-title{font:700 10px 'Inter',sans-serif;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pv-popover-note-title-sep{color:var(--muted);margin:0 1px}
-.pv-inline-qa-row-multi{position:relative;padding-right:24px}
-.pv-inline-qa-row-multi .pv-qa-delete-btn{position:absolute;top:0;right:0;width:22px;height:22px}
-.pv-popover-link{display:block;padding:6px 2px;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pv-popover-link:last-child{border-bottom:none}
-.pv-popover-link:hover{color:var(--accent)}
 /* Small at-a-glance glyph on any rendered/exported row that's been marked — set via the
    outline's own right-click menu (#context-marker-row). Sits at the far right of the row
    (appended last, after any fold-badge/hidden-content chips which live on contentEl rather
@@ -131,7 +112,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-marker-badge[data-color="green"]{background:color-mix(in srgb,var(--fc-green) 16%,transparent);color:var(--fc-green)}
 .pv-marker-badge[data-color="red"]{background:color-mix(in srgb,var(--fc-red) 16%,transparent);color:var(--fc-red)}
 .pv-marker-badge[data-color="orange"]{background:color-mix(in srgb,var(--fc-orange) 16%,transparent);color:var(--fc-orange)}
-.pv-qm-row{display:flex;align-items:center;gap:3px}
 .pv-qm-btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--muted);width:28px;height:28px;flex:0 0 auto;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s,color .12s}
 .pv-qm-btn.ai-busy{color:var(--accent);opacity:.7;pointer-events:none;animation:ai-spin 1.1s linear infinite}
 .pv-qm-btn:hover{background:var(--hover);color:var(--fg)}
@@ -141,24 +121,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-qm-mark.active[data-color="gray"]{background:color-mix(in srgb,var(--fc-gray) 16%,transparent);color:var(--fc-gray);border-color:color-mix(in srgb,var(--fc-gray) 32%,transparent)}
 .pv-qm-btn.pv-qm-danger:hover{background:color-mix(in srgb,var(--fc-red) 14%,transparent);color:var(--fc-red)}
 .pv-qm-sep{width:1px;align-self:stretch;background:var(--border);margin:0 3px}
-.pv-marker-popover{padding:6px}
-.pv-popover-sep{height:1px;background:var(--border);margin:2px 0 8px}
-.pv-cap-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:6px;margin-bottom:7px;border-bottom:1px solid color-mix(in srgb,var(--border) 45%,transparent)}
-.pv-cap-head-line{display:flex;align-items:baseline;gap:5px;flex:1;min-width:0;overflow:hidden}
-.pv-cap-head-label{font:700 9.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);flex:0 0 auto}
-.pv-cap-head-dot{color:var(--muted);font-size:9px;flex:0 0 auto}
-.pv-cap-head-preview{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.pv-cap-head-actions{display:flex;align-items:center;gap:1px;flex:0 0 auto;margin-right:-5px}
-.pv-cap-head-actions .pv-qm-btn{width:24px;height:24px}
-.pv-cap-head-actions .pv-qm-save:hover{background:color-mix(in srgb,var(--fc-green) 14%,transparent);color:var(--fc-green)}
-.pv-capture-input{width:100%;box-sizing:border-box;resize:none;min-height:64px;padding:0;border:none;background:transparent;color:var(--fg);font:400 13.5px/1.5 'Inter',sans-serif;outline:none;margin-bottom:2px}
-.pv-capture-person{width:100%;box-sizing:border-box;padding:0 0 6px;border:none;border-bottom:1px solid var(--border);background:transparent;color:var(--fg);font:600 13px 'Inter',sans-serif;outline:none;margin-bottom:6px}
-.pv-capture-person::placeholder{font-weight:400;color:var(--hint)}
-.pv-inline-edit-input{font:inherit;color:inherit;background:transparent;border:none;outline:none;width:100%;padding:0;margin:0;border-bottom:1px dashed color-mix(in srgb,var(--accent) 55%,transparent)}
 .node-note-dot.pv-dot-open{opacity:1;color:var(--accent)}
 .pv-inline-block{margin:6px 0 14px}
-.pv-quote-block{margin:4px 0 10px;display:grid;gap:4px}
-.pv-quote-line{color:var(--sem-quote);font-style:italic;font-size:var(--fs-sm);line-height:1.5;opacity:.85;padding-left:9px;border-left:2px solid color-mix(in srgb,var(--sem-quote) 45%,transparent)}
 .pv-remark-entry{margin:0}
 /* Divider between several remarks grouped under one node's shared card (see
    previewRenderRemarkGroup) -- same pattern as .pv-inline-qa-row+.pv-inline-qa-row. */
@@ -174,9 +138,8 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 /* Same as the editor: replies indented under their entry, a little room before each top-level entry. */
 .pv-thread-body .pv-remark-entry+.pv-remark-entry:not(.is-nested){margin-top:8px}
 .pv-thread-body .pv-remark-entry.is-nested{margin-left:20px;margin-top:1px}
-.pv-thread-body .pv-remark-avatar{grid-row:1 / span 2;width:15px;height:15px;margin-top:1px}
 .pv-thread-body .pv-remark-meta,.pv-thread-body .pv-remark-text{grid-column:2}
-.pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px}
+.pv-thread-body .pv-remark-text{font-style:normal;margin-top:1px;font-size:var(--fs-sm);color:var(--muted)}
 .pv-remark-anon{color:var(--muted)}
 /* The header lines up with the entries below: its icon centred over the 15px kind circles,
    "Thread · N" on the names' column (15px + 8px gap). */
@@ -185,7 +148,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-thread-status-note{color:var(--muted)}.pv-thread-status-note.is-open{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-remark-meta+.pv-remark-text{margin-top:3px}
 .pv-remark-meta b{font-weight:600;color:var(--fg)}
-.pv-remark-avatar{flex:0 0 auto;width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:7px;font-weight:700}
 .pv-remarks-section-item{padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 .pv-remarks-section-item:last-child{border-bottom:none}
 .pv-inline-label{display:flex;align-items:baseline;gap:7px;font:700 10px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;flex-wrap:wrap}
@@ -195,7 +157,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
    style -- matches the colors their own node-row indicator dots already use elsewhere in the
    app (node-qa-dot/node-remark-dot), so the association isn't a new color to learn. */
 .pv-inline-label-note{color:var(--hint)}
-.pv-inline-label-qa{color:var(--fc-purple)}
 .pv-inline-label-remark{color:var(--sem-quote)}
 .pv-inline-note-title{font:700 10px 'Inter',sans-serif;text-transform:none;letter-spacing:normal;color:var(--muted);overflow-wrap:break-word;min-width:0}
 .pv-inline-note-title-sep{color:var(--muted);margin:0 1px}
@@ -239,7 +200,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
 .note-comment-entry{margin:8px 0}
 .note-comment-entry:first-child{margin-top:0}
-.note-comment-stamp{display:inline-block;font:600 10px 'Inter',sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
 .pv-inline-note-body ul,.pv-inline-note-body ol{margin:5px 0;padding-left:22px}
 .pv-inline-note-body li{margin:2px 0}
 .pv-inline-note-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
@@ -247,33 +207,12 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .pv-inline-note-body table td,.pv-inline-note-body table th{border:1px solid var(--border);padding:4px 7px}
 .pv-inline-qa-body{padding:10px 12px;border-radius:8px;background:var(--edit-bg);border:1px solid var(--border);border-left:3px solid var(--fc-purple);font:400 13px 'Inter',sans-serif;color:var(--fg);line-height:1.5}
 .pv-inline-qa-body.bg-distinct{background:var(--tb-bg)}
-.pv-inline-qa-row+.pv-inline-qa-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.pv-inline-qa-line{display:flex;align-items:flex-start;gap:8px}
-.pv-inline-qa-line+.pv-inline-qa-line{margin-top:4px}
-.pv-inline-qa-tag{flex:0 0 auto;font:700 9px 'Inter',sans-serif;line-height:16px;text-align:center;text-transform:uppercase;letter-spacing:.02em;width:16px;height:16px;border-radius:4px;margin-top:1px}
-.pv-inline-qa-tag-q{background:color-mix(in srgb, var(--fc-purple) 16%, transparent);color:var(--fc-purple)}
-.pv-inline-qa-tag-a{background:var(--chip);color:var(--muted)}
-.pv-inline-qa-question{font-weight:600;color:var(--fg)}
-.pv-inline-qa-answer{color:var(--fg);margin-top:2px}
-.pv-inline-qa-answer.pv-inline-qa-unanswered{color:var(--muted);font-style:italic}
-.pv-inline-qa-answer-input{flex:1;min-width:0;display:block;resize:none;overflow:hidden;border:none;border-left:2px solid var(--border);background:transparent;padding:0 0 0 8px;margin-top:2px;color:var(--fg);font:400 13px 'Inter',sans-serif;line-height:1.45;transition:border-left-color .12s}
-.pv-inline-qa-answer-input:focus{outline:none;border-left-color:var(--accent)}
-.pv-inline-qa-answer-input::placeholder{color:var(--hint);font-style:italic}
 
 
 @keyframes pvFlash{0%{background:color-mix(in srgb,var(--accent) 20%,transparent)}100%{background:transparent}}
-.pv-flash{animation:pvFlash .9s ease;border-radius:6px}
-#preview-doc .pv-note-body img{max-width:100%;border-radius:6px;margin:5px 0;display:block}
-#preview-doc .pv-note-body ul,#preview-doc .pv-note-body ol{margin:5px 0;padding-left:22px}
-#preview-doc .pv-note-body li{margin:2px 0}
-#preview-doc .pv-note-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-#preview-doc .pv-note-body table{border-collapse:collapse;margin:6px 0;font-size:var(--fs-sm)}
-#preview-doc .pv-note-body table td,#preview-doc .pv-note-body table th{border:1px solid var(--border);padding:4px 7px}
 .pv-hidden-chip{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;border-radius:6px;opacity:.6;cursor:pointer;transition:opacity .12s,background .12s;vertical-align:middle}
 .pv-hidden-chip:hover{opacity:1;background:var(--hover)}
 .pv-hidden-chip-note{color:var(--muted)}
-.pv-hidden-chip-code{color:var(--sem-code)}
-.pv-hidden-chip-quote{color:var(--sem-quote)}
 #preview-body .pv-empty{text-align:center;color:var(--hint);font:400 13px 'Inter',sans-serif;padding:60px 0}
 
 
@@ -324,7 +263,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 .cs-card li.cs-match{background:color-mix(in srgb,var(--accent) 10%,transparent)}
 .cs-card li .cs-desc{color:var(--fg);opacity:.92}
 .cs-inline-icon{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;color:var(--accent);flex:0 0 auto;vertical-align:-2px}
-.cs-plus{color:var(--hint);font-size:var(--fs-2xs)}
 #cheatsheet-body .help-kbd{font-family:'Fira Code',Consolas,'Courier New',monospace;font-size:var(--fs-xs);padding:1px 5px;border:1px solid var(--border);border-radius:6px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%);white-space:nowrap}
 #cheatsheet-foot{border-top:1px solid var(--border);padding:10px 20px;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
 #cheatsheet-to-shortcuts-btn{appearance:none;border:none;background:none;color:var(--accent);font:600 11px 'Inter',sans-serif;cursor:pointer;padding:2px 0;flex-shrink:0;white-space:nowrap}
