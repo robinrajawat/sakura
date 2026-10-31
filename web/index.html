@@ -29375,11 +29375,16 @@ function exportPreviewAsPdf(onDone){
       body.printing-preview .pv-table-chart-title { font-size:12px !important; margin-bottom:6px !important; }
       body.printing-preview .pv-table-figure thead { display:table-header-group; }
       body.printing-preview .pv-table-figure tr { break-inside:avoid; page-break-inside:avoid; }
-      /* On paper a note is a thin left rule and the note's text: no box, no "Note" label (the
-         rule and smaller grey text already set it apart). A note title still prints. */
+      /* On paper a note is a soft warm-grey panel behind the note's text: no border, no rule,
+         no "Note" label (the panel and smaller grey text set it apart, and a long rich note
+         reads as one calm block). Headings inside a note stay small (semibold, note size) so
+         they don't compete with the rows. A note title still prints. */
       body.printing-preview .pv-inline-note-body{
-        background:transparent !important; border:none !important; border-left:2px solid #d6d2c7 !important;
-        border-radius:0 !important; padding:1px 0 1px 10px !important;
+        background:#f6f5f2 !important; border:none !important;
+        border-radius:6px !important; padding:8px 12px !important;
+      }
+      body.printing-preview .pv-inline-note-body :is(h1,h2,h3,h4,h5,h6){
+        font-size:1em !important; font-weight:600 !important; margin:8px 0 2px !important; color:#444 !important;
       }
       body.printing-preview .pv-inline-label-note > svg,
       body.printing-preview .pv-inline-label-note > span:not(.pv-inline-note-title){ display:none !important; }

@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const indexPath = path.resolve(__dirname, '../../index.html');
 
-// On paper: the footer lines up with the text column, a note is a thin rule plus its text (no
-// "Note" label or box), and names in a table's Person column print as plain text.
+// On paper: the footer lines up with the text column, a note is a soft grey panel behind its
+// text (no border, rule or "Note" label), and names in a table's Person column print as plain text.
 test('PDF: footer inside the text column, plain notes, plain names in Person columns', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('sakura_welcome_seen', '1'));
   await page.goto('file://' + indexPath);
@@ -49,9 +49,9 @@ test('PDF: footer inside the text column, plain notes, plain names in Person col
   });
   // Untitled note: no label. Titled note: only the title.
   expect(out.labelsShown).toEqual([null, 'Background']);
-  expect(out.noteBg).toBe('rgba(0, 0, 0, 0)');
+  expect(out.noteBg).toBe('rgb(246, 245, 242)');
   expect(out.noteBorderTop).toBe('none');
-  expect(out.noteRule).toBe('2px');
+  expect(out.noteRule).toBe('0px');
   expect(out.person).not.toBeNull();
   expect(out.person!.bg).toBe('none|rgba(0, 0, 0, 0)');
   expect(out.person!.shadow).toBe('none');
