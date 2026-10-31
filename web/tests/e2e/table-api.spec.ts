@@ -180,7 +180,11 @@ test('Paste from Postman (cURL) fills a new API request and drops the sample tex
   await expect(page.locator('#api-ed-query .api-ed-k')).toHaveValue('$format');
   await expect(page.locator('#api-ed-headers .api-ed-v')).toHaveValue('Bearer {{token}}');
   await expect(page.locator('#api-ed-desc')).toHaveValue('');
-  await expect(page.locator('#api-ed-status')).toHaveValue('');
+  // The sample's responses and auth are dropped too: one empty response is left to fill in.
+  await expect(page.locator('#api-ed-responses .api-ed-status')).toHaveValue('');
+  await expect(page.locator('#api-ed-auth')).toHaveValue('');
+  // …and the Auth box says what the card will show from the pasted header.
+  await expect(page.locator('#api-ed-auth')).toHaveAttribute('placeholder', /Bearer token/);
 
   // The button reads the clipboard; text that isn't cURL opens the paste box with a hint.
   await page.evaluate(() => navigator.clipboard.writeText('not a command'));
@@ -244,4 +248,67 @@ test('XML bodies and responses are formatted like JSON, and the form Format hand
   await page.locator('#api-ed-body').fill('<a><b></a>');
   await page.locator('.api-ed-format[data-format="api-ed-body"]').click();
   await expect(page.locator('[data-err-for="api-ed-body"]')).toContainText('Not valid JSON or XML');
+});
+
+test('the card lists every response, reads the auth from the headers and finds the parameters in the URL', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = nodes[0].tables[0].replace('<table>', '<table data-table-display="api">')
+      .replace('<td>{{baseUrl}}/orders</td>', '<td>{{baseUrl}}/customers/{{customerId}}/orders?sap-client={{client}}</td>')
+      .replace('<tr><td>Status</td>', '<tr><td>Parameter</td><td>customerId: The customer number, required</td></tr><tr><td>Status</td>')
+      + '';
+    // A second, error response after the first.
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = nodes[0].tables[0].replace('</tbody>', '<tr><td>Status</td><td>404 Not Found</td></tr><tr><td>Response</td><td>{"error":"no such customer"}</td></tr></tbody>');
+    // @ts-expect-error -- bare global from index.html
+    render();
+  });
+  const card = page.locator('.pv-api');
+  await expect(card.locator('.pv-api-status')).toHaveText(['200 OK', '404 Not Found']);
+  await expect(card.locator('.pv-api-status').nth(1)).toHaveClass(/err/);
+  await expect(card.locator('.pv-api-code').last()).toContainText('"error": "no such customer"');
+  // Auth: nothing typed, so it is read from the Authorization header.
+  await expect(card.locator('.pv-api-authval')).toHaveText('Bearer token');
+  // Parameters: the path variable, the query typed into the URL, and the Query row.
+  const params = card.locator('.pv-api-param');
+  await expect(params.locator('.pv-api-key')).toHaveText(['customerId', 'sap-client', 'status']);
+  await expect(params.locator('.pv-api-in')).toHaveText(['path', 'query', 'query']);
+  await expect(params.first().locator('.pv-api-note')).toHaveText('The customer number, required');
+
+  // The form: the path parameter shows with its description; the URL's query moves into rows.
+  await card.dblclick();
+  await expect(page.locator('#api-ed-url')).toHaveValue('{{baseUrl}}/customers/{{customerId}}/orders');
+  await expect(page.locator('#api-ed-path .api-ed-pname-t')).toHaveText(['customerId']);
+  await expect(page.locator('#api-ed-path .api-ed-note')).toHaveValue('The customer number, required');
+  await expect(page.locator('#api-ed-query .api-ed-k').first()).toHaveValue('sap-client');
+  await expect(page.locator('#api-ed-query .api-ed-k').last()).toHaveValue('status');
+  await expect(page.locator('#api-ed-responses .api-ed-resp')).toHaveCount(2);
+  // Path parameters follow the URL as it's typed.
+  await page.locator('#api-ed-url').fill('{{baseUrl}}/customers/{{customerId}}/orders/:orderId');
+  await expect(page.locator('#api-ed-path .api-ed-pname-t')).toHaveText(['customerId', 'orderId']);
+  await expect(page.locator('#api-ed-path .api-ed-note').first()).toHaveValue('The customer number, required');
+  await page.locator('#api-ed-path .api-ed-note').nth(1).fill('The order number');
+  await page.locator('#api-ed-query .api-ed-note').last().fill('open or closed');
+  await page.locator('#api-ed-auth').fill('OAuth 2.0, scope orders.read');
+  // A third response, then remove the 404.
+  await page.locator('#api-ed-add-response').click();
+  const third = page.locator('#api-ed-responses .api-ed-resp').last();
+  await third.locator('.api-ed-status').fill('401 Unauthorized');
+  await third.locator('textarea').fill('{"error":"token expired"}');
+  await third.locator('.api-ed-format').click();
+  await expect(third.locator('textarea')).toHaveValue('{\n  "error": "token expired"\n}');
+  await page.locator('#api-ed-responses .api-ed-resp').nth(1).locator('.api-ed-remove').click();
+  await page.locator('#api-ed-save').click();
+
+  await expect(card.locator('.pv-api-status')).toHaveText(['200 OK', '401 Unauthorized']);
+  await expect(card.locator('.pv-api-authval')).toHaveText('OAuth 2.0, scope orders.read');
+  await expect(card.locator('.pv-api-param .pv-api-key')).toHaveText(['customerId', 'orderId', 'sap-client', 'status']);
+  await expect(card.locator('.pv-api-note')).toHaveText(['The customer number, required', 'The order number', 'open or closed']);
+  await expect(card.locator('.pv-api-url')).toHaveText('{{baseUrl}}/customers/{{customerId}}/orders/:orderId?sap-client={{client}}&status=open');
+  // @ts-expect-error -- bare global from index.html
+  const html = await page.evaluate(() => nodes[0].tables[0]);
+  expect(html).toContain('<td>Parameter</td><td>orderId: The order number</td>');
+  expect(html).toContain('<td>Auth</td><td>OAuth 2.0, scope orders.read</td>');
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson, shellWords, maskSecretHeader, curlToApiRequest, prettyXml, formatPayload, splitApiVariables, urlWrapPieces
+  apiFieldKey, splitPair, apiRequestFromGrid, apiFullUrl, prettyJson, shellQuote, apiRequestToCurl, apiRequestToGrid, isValidJson, shellWords, maskSecretHeader, curlToApiRequest, prettyXml, formatPayload, splitApiVariables, urlWrapPieces,
+  apiParameters, apiDetectedAuth, splitApiUrl, apiStatusClass, emptyApiRequest
 } from '../../src/utils/apiRequest';
 
 const sample = [
@@ -45,8 +46,7 @@ describe('apiRequestFromGrid', () => {
     expect(r.query).toEqual([['dryRun', 'true']]);
     expect(r.headers).toEqual([['Content-Type', 'application/json'], ['Authorization', 'Bearer {{token}}']]);
     expect(r.body).toBe('{"orderId":"4711"}');
-    expect(r.status).toBe('201 Created');
-    expect(r.response).toBe('{"id":"4711","status":"accepted"}');
+    expect(r.responses).toEqual([{ status: '201 Created', body: '{"id":"4711","status":"accepted"}' }]);
     expect(r.description).toBe('Creates an express order');
     expect(r.extras).toEqual([['Owner', 'Team Pricing']]);
   });
@@ -221,5 +221,97 @@ describe('urlWrapPieces', () => {
   it('breaks after / ? & = but not inside the scheme', () => {
     expect(urlWrapPieces('https://a.b/sap/API_X/Set?x=1&y=2')).toEqual(['https://a.b/', 'sap/', 'API_X/', 'Set?', 'x=', '1&', 'y=', '2']);
     expect(urlWrapPieces('https://a.b/sap/opu').join('')).toBe('https://a.b/sap/opu');
+  });
+});
+
+describe('responses', () => {
+  const base = [['Method', 'GET'], ['URL', '/orders/{{id}}']];
+  it('reads each Status + Response pair as its own response, in order', () => {
+    const r = apiRequestFromGrid([...base, ['Status', '200 OK'], ['Response', '{"id":1}'], ['Status', '404 Not Found'], ['Response', '{"error":"no such order"}'], ['Status', '401 Unauthorized']])!;
+    expect(r.responses).toEqual([
+      { status: '200 OK', body: '{"id":1}' },
+      { status: '404 Not Found', body: '{"error":"no such order"}' },
+      { status: '401 Unauthorized', body: '' }
+    ]);
+  });
+  it('keeps old tables reading as before: Response then Status is one response, extra Response rows join', () => {
+    expect(apiRequestFromGrid([...base, ['Response', 'a'], ['Status', '200 OK']])!.responses).toEqual([{ status: '200 OK', body: 'a' }]);
+    expect(apiRequestFromGrid([...base, ['Status', '200 OK'], ['Response', 'a'], ['Response', 'b']])!.responses).toEqual([{ status: '200 OK', body: 'a\nb' }]);
+    expect(apiRequestFromGrid([...base, ['Response', 'only a body']])!.responses).toEqual([{ status: '', body: 'only a body' }]);
+  });
+  it('writes every response back to the grid and reads it again unchanged', () => {
+    const r = apiRequestFromGrid([...base, ['Status', '200 OK'], ['Response', 'x'], ['Status', '404 Not Found'], ['Response', 'y']])!;
+    expect(apiRequestFromGrid(apiRequestToGrid(r))).toEqual(r);
+  });
+  it('colours 2xx as ok and 4xx/5xx as errors', () => {
+    expect(apiStatusClass('201 Created')).toBe('ok');
+    expect(apiStatusClass('404 Not Found')).toBe('err');
+    expect(apiStatusClass('503')).toBe('err');
+    expect(apiStatusClass('302 Found')).toBe('');
+  });
+});
+
+describe('auth', () => {
+  it('reads an Auth row as written and writes it back', () => {
+    const r = apiRequestFromGrid([['Method', 'GET'], ['URL', '/x'], ['Authentication', 'OAuth 2.0, scope orders.read']])!;
+    expect(r.auth).toBe('OAuth 2.0, scope orders.read');
+    expect(apiRequestToGrid(r)).toContainEqual(['Auth', 'OAuth 2.0, scope orders.read']);
+  });
+  it('detects it from the headers or the query when there is no Auth row', () => {
+    const d = (headers: [string, string][], url = '/x', query: [string, string][] = []) => apiDetectedAuth({ headers, url, query });
+    expect(d([['Authorization', 'Bearer {{token}}']])).toBe('Bearer token');
+    expect(d([['authorization', 'Basic {{username}}:{{password}}']])).toBe('Basic (username and password)');
+    expect(d([['Authorization', 'Digest x']])).toBe('Digest (Authorization header)');
+    expect(d([['X-API-Key', '{{apiKey}}']])).toBe('API key (X-API-Key header)');
+    expect(d([['Cookie', '{{cookie}}']])).toBe('Session cookie');
+    expect(d([], '/x?api_key={{apiKey}}')).toBe('API key (api_key query parameter)');
+    expect(d([], '/x', [['access_token', '{{t}}']])).toBe('Token (access_token query parameter)');
+    expect(d([['Accept', 'application/json']])).toBe('');
+  });
+});
+
+describe('splitApiUrl', () => {
+  it('separates the base (host or a leading {{variable}}), the path and the query', () => {
+    expect(splitApiUrl('https://h.example.com:8443/v1/a?x=1#frag')).toEqual({ base: 'https://h.example.com:8443', path: '/v1/a', query: 'x=1' });
+    expect(splitApiUrl('{{baseUrl}}/orders/{{id}}')).toEqual({ base: '{{baseUrl}}', path: '/orders/{{id}}', query: '' });
+    expect(splitApiUrl('/health')).toEqual({ base: '', path: '/health', query: '' });
+  });
+});
+
+describe('apiParameters', () => {
+  const p = (url: string, query: [string, string][] = [], paramNotes: [string, string][] = []) => apiParameters({ url, query, paramNotes });
+  it('finds path variables in all three styles, but not the base URL', () => {
+    expect(p('{{baseUrl}}/orders/{{orderId}}/items/:itemId/{lineNo}').map(x => [x.name, x.in])).toEqual([
+      ['orderId', 'path'], ['itemId', 'path'], ['lineNo', 'path']
+    ]);
+    expect(p('https://localhost:8080/health')).toEqual([]);
+  });
+  it('finds the query typed into the URL and the Query rows, once each', () => {
+    expect(p("/sap/API_SO/A_SalesOrder?sap-client={{client}}&$filter=Status eq 'A'&$top", [['$top', '10'], ['page', '2']])).toEqual([
+      { name: 'sap-client', in: 'query', value: '{{client}}', note: '' },
+      { name: '$filter', in: 'query', value: "Status eq 'A'", note: '' },
+      { name: '$top', in: 'query', value: '', note: '' },
+      { name: 'page', in: 'query', value: '2', note: '' }
+    ]);
+  });
+  it('attaches Parameter descriptions by name (any case) and keeps unmatched ones at the end', () => {
+    const out = p('/orders/{{orderId}}?status=open', [], [['orderId', 'The order number'], ['STATUS', 'open or closed'], ['priority', 'Body field: standard or express']]);
+    expect(out).toEqual([
+      { name: 'orderId', in: 'path', value: '', note: 'The order number' },
+      { name: 'status', in: 'query', value: 'open', note: 'open or closed' },
+      { name: 'priority', in: '', value: '', note: 'Body field: standard or express' }
+    ]);
+  });
+  it('reads "Parameter | name: meaning" as a description, and "Param | name=value" as a query value as before', () => {
+    const r = apiRequestFromGrid([['Method', 'GET'], ['URL', '/x/{{id}}'], ['Param', 'page=2'], ['Parameter', 'id: The order number, required'], ['Parameter', 'filter=a:b']])!;
+    expect(r.query).toEqual([['page', '2'], ['filter', 'a:b']]);
+    expect(r.paramNotes).toEqual([['id', 'The order number, required']]);
+    expect(apiRequestFromGrid(apiRequestToGrid(r))).toEqual(r);
+  });
+});
+
+describe('emptyApiRequest', () => {
+  it('is a GET with nothing filled in', () => {
+    expect(emptyApiRequest()).toMatchObject({ method: 'GET', url: '', responses: [], auth: '', paramNotes: [] });
   });
 });

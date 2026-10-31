@@ -1518,6 +1518,10 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pv-api-pairs{display:flex;flex-direction:column;gap:2px}
 .pv-api-pair{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-param{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-in{font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.pv-api-note{flex-basis:100%;padding-left:12px;font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--muted);line-height:1.45}
+.pv-api-authval{font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--fg);line-height:1.45}
 .pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
 .pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre;max-height:320px;overflow:auto}
 .pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
@@ -1525,7 +1529,7 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 @media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere}}
 /* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
 .api-ed{width:min(720px,94vw)}
-.api-ed-body{display:flex;flex-direction:column;gap:12px}
+.api-ed-body{display:flex;flex-direction:column;gap:12px}.api-ed-body>*{flex-shrink:0}
 .api-ed-line{display:flex;gap:8px;min-width:0}
 .api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
 .api-ed-input:focus{outline:none;border-color:var(--accent)}
@@ -1549,6 +1553,16 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
 .api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:vertical;white-space:pre;overflow:auto}
 .api-ed-status{width:180px;flex:none}
+#api-ed-query .api-ed-k{flex:0 0 24%}#api-ed-query .api-ed-v{flex:1 1 0;min-width:0}.api-ed-note{flex:1.3 1 0;min-width:0}
+.api-ed-pathrow{min-height:32px}
+.api-ed-pname{flex:0 0 24%;box-sizing:border-box;padding:0 6px 0 10px;display:flex;align-items:center;gap:6px;min-width:0}
+.api-ed-pname-t{min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.api-ed-pname .api-ed-in{margin-left:auto}.api-ed-sep-blank{visibility:hidden}
+.api-ed-in{flex:none;font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.api-ed-pathrow .api-ed-note{margin-right:34px}
+.api-ed-resps{display:flex;flex-direction:column;gap:10px}.api-ed-resps:empty{display:none}
+.api-ed-resp{display:flex;flex-direction:column;gap:6px}
+.api-ed-resp-head{display:flex;align-items:center;gap:6px}.api-ed-resp-head .api-ed-format{margin-left:auto;align-self:center}
 .api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
 .api-ed-foot{display:flex;align-items:center;gap:8px;padding:12px var(--pad-dialog);border-top:1px solid var(--border);flex:0 0 auto}
 .api-ed-astable{margin-right:auto;padding-left:0}
@@ -1556,7 +1570,7 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-curl{min-height:72px}
 .api-ed-sec[hidden]{display:none}
 .api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
-@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}}
+@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}#api-ed-query .api-ed-pair{flex-wrap:wrap}#api-ed-query .api-ed-note{flex-basis:calc(100% - 34px)}}
 .tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
 .tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--pc);color:#fff;font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -5759,8 +5773,8 @@ function exportApiRequestToPostman(node,table){
 }
 // API request editor (owner 2026-10-30: "a nicer editor, no shortcuts"). Double-click, Edit
 // request… or a new API request starter opens this form instead of the raw Field | Value grid:
-// method and URL on one line, a description, query parameters and headers as name/value rows
-// (add/remove), body and example response with Format JSON. Save writes the request back into the
+// method and URL on one line, a description, parameters (path ones follow the URL; query rows with
+// a description), headers (add/remove), auth, body and any number of responses, with Format. Save writes the request back into the
 // same table (apiRequestToGrid), keeping the table's own display attributes, as one undo step.
 // Esc or Cancel leaves the table as it was; Ctrl/Cmd+Enter saves. "Edit as table" is still there
 // for fields the form doesn't show (extras keep their rows either way).
@@ -5786,17 +5800,18 @@ function apiEditorEl(){
       </div>
       <div class="api-ed-err" id="api-ed-url-err" hidden>Add the URL</div>
       <input id="api-ed-desc" class="api-ed-input" type="text" autocomplete="off" placeholder="What it does (optional)" aria-label="Description">
-      <div class="api-ed-sec"><div class="api-ed-label">Query parameters</div><div class="api-ed-pairs" id="api-ed-query"></div>
-        <button type="button" class="api-ed-add" data-add="query">+ Add parameter</button></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Parameters</div>
+        <div class="api-ed-pairs" id="api-ed-path"></div><div class="api-ed-pairs" id="api-ed-query"></div>
+        <button type="button" class="api-ed-add" data-add="query">+ Add query parameter</button></div>
       <div class="api-ed-sec"><div class="api-ed-label">Headers</div><div class="api-ed-pairs" id="api-ed-headers"></div>
         <button type="button" class="api-ed-add" data-add="headers">+ Add header</button></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Auth</div>
+        <input id="api-ed-auth" class="api-ed-input" type="text" autocomplete="off" placeholder="How to authenticate, e.g. Bearer token (OAuth 2.0, scope orders.read)" aria-label="Auth"></div>
       <div class="api-ed-sec"><div class="api-ed-label">Body<button type="button" class="api-ed-format" data-format="api-ed-body">Format</button></div>
         <textarea id="api-ed-body" class="api-ed-input api-ed-mono api-ed-area" spellcheck="false" placeholder='{ "orderId": "4711" }' aria-label="Body"></textarea>
         <div class="api-ed-err" data-err-for="api-ed-body" hidden>Not valid JSON or XML. It's saved as typed.</div></div>
-      <div class="api-ed-sec"><div class="api-ed-label">Example response<button type="button" class="api-ed-format" data-format="api-ed-response">Format</button></div>
-        <input id="api-ed-status" class="api-ed-input api-ed-mono api-ed-status" type="text" autocomplete="off" placeholder="200 OK" aria-label="Response status">
-        <textarea id="api-ed-response" class="api-ed-input api-ed-mono api-ed-area" spellcheck="false" placeholder='{ "status": "accepted" }' aria-label="Response body"></textarea>
-        <div class="api-ed-err" data-err-for="api-ed-response" hidden>Not valid JSON or XML. It's saved as typed.</div></div>
+      <div class="api-ed-sec"><div class="api-ed-label">Responses</div><div class="api-ed-resps" id="api-ed-responses"></div>
+        <button type="button" class="api-ed-add" id="api-ed-add-response">+ Add response</button></div>
       <datalist id="api-ed-header-names">${API_EDITOR_HEADER_NAMES.map(h=>`<option value="${h}">`).join('')}</datalist>
     </div>
     <div class="api-ed-foot">
@@ -5829,13 +5844,21 @@ function apiEditorEl(){
     if(apiEditorFillFromCurl(t)){ el('api-ed-curl-wrap').hidden=true; el('api-ed-curl').value=''; }
     else el('api-ed-curl-err').hidden=false;
   });
-  ov.querySelectorAll('.api-ed-add').forEach(b=>b.addEventListener('click',()=>{ const row=apiEditorAddPair(b.dataset.add,'',''); row.querySelector('input').focus(); }));
-  ov.querySelectorAll('.api-ed-format').forEach(b=>b.addEventListener('click',()=>{
-    const ta=el(b.dataset.format), err=ov.querySelector(`[data-err-for="${b.dataset.format}"]`);
+  ov.querySelectorAll('.api-ed-add[data-add]').forEach(b=>b.addEventListener('click',()=>{ const row=apiEditorAddPair(b.dataset.add,'',''); row.querySelector('input').focus(); }));
+  el('api-ed-add-response').addEventListener('click',()=>{ apiEditorAddResponse('','').querySelector('input').focus(); });
+  // Format (JSON or XML) for the body and each response; the warning clears as you type.
+  ov.addEventListener('click',e=>{
+    const b=e.target.closest('.api-ed-format'); if(!b)return;
+    const box=b.closest('.api-ed-sec,.api-ed-resp'), ta=box.querySelector('textarea'), err=box.querySelector('.api-ed-err[data-err-for]');
     if(!ta.value.trim())return;
     const f=formatPayload(ta.value); if(f.ok){ ta.value=f.text; err.hidden=true; } else err.hidden=false;
-  }));
-  ['api-ed-body','api-ed-response'].forEach(id=>el(id).addEventListener('input',()=>{ ov.querySelector(`[data-err-for="${id}"]`).hidden=true; }));
+  });
+  ov.addEventListener('input',e=>{
+    if(e.target.matches?.('textarea')){ const err=e.target.closest('.api-ed-sec,.api-ed-resp')?.querySelector('.api-ed-err[data-err-for]'); if(err)err.hidden=true; }
+    // Path parameters follow the URL as it's typed; the Auth hint follows the headers.
+    if(e.target.id==='api-ed-url')apiEditorSyncPath();
+    if(e.target.closest?.('#api-ed-headers,#api-ed-query'))apiEditorSyncAuthHint();
+  });
   ov.addEventListener('keydown',e=>{
     if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); apiEditorClose(); }
     else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); e.stopPropagation(); apiEditorSave(); }
@@ -5844,17 +5867,76 @@ function apiEditorEl(){
   });
   return ov;
 }
-function apiEditorAddPair(kind,k,v){
+const API_ED_X='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
+// Query rows: name = value, and what the parameter means. Header rows: name : value.
+function apiEditorAddPair(kind,k,v,note){
   const list=el(kind==='query'?'api-ed-query':'api-ed-headers');
   const row=document.createElement('div'); row.className='api-ed-pair';
-  const sep=kind==='query'?'=':':';
-  row.innerHTML=`<input class="api-ed-input api-ed-mono api-ed-k" type="text" spellcheck="false" autocomplete="off" placeholder="${kind==='query'?'name':'Header'}" aria-label="${kind==='query'?'Parameter name':'Header name'}"${kind==='headers'?' list="api-ed-header-names"':''}>`
-    +`<span class="api-ed-sep">${sep}</span><input class="api-ed-input api-ed-mono api-ed-v" type="text" spellcheck="false" autocomplete="off" placeholder="value" aria-label="Value">`
-    +`<button type="button" class="api-ed-remove" aria-label="Remove" data-tip="Remove"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>`;
+  const q=kind==='query';
+  row.innerHTML=`<input class="api-ed-input api-ed-mono api-ed-k" type="text" spellcheck="false" autocomplete="off" placeholder="${q?'name':'Header'}" aria-label="${q?'Parameter name':'Header name'}"${q?'':' list="api-ed-header-names"'}>`
+    +`<span class="api-ed-sep">${q?'=':':'}</span><input class="api-ed-input api-ed-mono api-ed-v" type="text" spellcheck="false" autocomplete="off" placeholder="${q?'example':'value'}" aria-label="Value">`
+    +(q?`<input class="api-ed-input api-ed-note" type="text" autocomplete="off" placeholder="What it means (optional)" aria-label="Parameter description">`:'')
+    +`<button type="button" class="api-ed-remove" aria-label="Remove" data-tip="Remove">${API_ED_X}</button>`;
   row.querySelector('.api-ed-k').value=k; row.querySelector('.api-ed-v').value=v;
-  row.querySelector('.api-ed-remove').addEventListener('click',()=>{ const next=row.nextElementSibling||row.previousElementSibling; row.remove(); (next?.querySelector('input')||list.parentElement.querySelector('.api-ed-add'))?.focus(); });
+  if(q)row.querySelector('.api-ed-note').value=note||'';
+  row.querySelector('.api-ed-remove').addEventListener('click',()=>{ const next=row.nextElementSibling||row.previousElementSibling; row.remove(); apiEditorSyncAuthHint(); (next?.querySelector('input')||list.parentElement.querySelector('.api-ed-add'))?.focus(); });
   list.appendChild(row);
   return row;
+}
+// Path parameters aren't typed as rows: they're the {{name}}, :name or {name} parts of the URL's
+// path (apiParameters), listed here as the URL changes so each can get a description. A note
+// typed for a name survives the URL being edited around it.
+function apiEditorSyncPath(){
+  const list=el('api-ed-path'); if(!list||!_apiEd)return;
+  list.querySelectorAll('.api-ed-pair').forEach(r=>{ _apiEd.notes[r.dataset.name]=r.querySelector('.api-ed-note').value; });
+  const names=apiParameters({url:el('api-ed-url').value,query:[],paramNotes:[]}).filter(p=>p.in==='path').map(p=>p.name);
+  if(names.join('\n')===[...list.children].map(r=>r.dataset.name).join('\n'))return;
+  list.innerHTML='';
+  names.forEach(n=>{
+    const row=document.createElement('div'); row.className='api-ed-pair api-ed-pathrow'; row.dataset.name=n;
+    row.innerHTML=`<span class="api-ed-pname"><span class="api-ed-pname-t">${esc(n)}</span><span class="api-ed-in">path</span></span><span class="api-ed-sep api-ed-sep-blank" aria-hidden="true">=</span><input class="api-ed-input api-ed-note" type="text" autocomplete="off" placeholder="What it means (optional)" aria-label="${escAttr('Description of '+n)}">`;
+    row.querySelector('.api-ed-note').value=_apiEd.notes[n]||'';
+    list.appendChild(row);
+  });
+}
+// The Auth box's placeholder says what the card will show when it's left empty.
+function apiEditorSyncAuthHint(){
+  const box=el('api-ed-auth'); if(!box)return;
+  const found=apiDetectedAuth({headers:apiEditorPairs('headers'),query:apiEditorPairs('query'),url:el('api-ed-url').value});
+  box.placeholder=found?`Read from the headers: ${found}. Type to describe it instead`:'How to authenticate, e.g. Bearer token (OAuth 2.0, scope orders.read)';
+}
+// One response: its status, a Format button, remove, and the example body.
+function apiEditorAddResponse(status,body){
+  const list=el('api-ed-responses');
+  const box=document.createElement('div'); box.className='api-ed-resp';
+  box.innerHTML=`<div class="api-ed-resp-head"><input class="api-ed-input api-ed-mono api-ed-status" type="text" autocomplete="off" placeholder="200 OK" aria-label="Response status">`
+    +`<button type="button" class="api-ed-format">Format</button><button type="button" class="api-ed-remove" aria-label="Remove response" data-tip="Remove response">${API_ED_X}</button></div>`
+    +`<textarea class="api-ed-input api-ed-mono api-ed-area" spellcheck="false" placeholder='{ "status": "accepted" }' aria-label="Response body"></textarea>`
+    +`<div class="api-ed-err" data-err-for="response" hidden>Not valid JSON or XML. It's saved as typed.</div>`;
+  box.querySelector('.api-ed-status').value=status; box.querySelector('textarea').value=body?formatPayload(body).text:'';
+  box.querySelector('.api-ed-remove').addEventListener('click',()=>{ const next=box.nextElementSibling||box.previousElementSibling; box.remove(); (next?.querySelector('input')||el('api-ed-add-response')).focus(); });
+  list.appendChild(box);
+  return box;
+}
+function apiEditorResponses(){
+  return [...el('api-ed-responses').querySelectorAll('.api-ed-resp')]
+    .map(b=>({status:b.querySelector('.api-ed-status').value.trim(),body:b.querySelector('textarea').value.trim()})).filter(x=>x.status||x.body);
+}
+// Every parameter description in the form: path rows, query rows, and ones whose name the request
+// no longer uses but the table had (kept, so nothing typed by hand is lost).
+function apiEditorParamNotes(){
+  const out=[], seen=new Set();
+  el('api-ed-path').querySelectorAll('.api-ed-pair').forEach(r=>{ const n=r.dataset.name, v=r.querySelector('.api-ed-note').value.trim(); if(v&&!seen.has(n)){ seen.add(n); out.push([n,v]); } });
+  el('api-ed-query').querySelectorAll('.api-ed-pair').forEach(r=>{ const n=r.querySelector('.api-ed-k').value.trim(), v=r.querySelector('.api-ed-note').value.trim(); if(n&&v&&!seen.has(n)){ seen.add(n); out.push([n,v]); } });
+  (_apiEd?.orphanNotes||[]).forEach(([n,v])=>{ if(!seen.has(n)){ seen.add(n); out.push([n,v]); } });
+  return out;
+}
+// The form keeps a typed query string in rows: "…/orders?status=open" opens as URL "…/orders"
+// plus a status=open row, so each parameter can be described. The card shows the same URL.
+function apiEditorSplitQuery(url,query){
+  const at=url.indexOf('?'); if(at<0)return {url,query};
+  const inline=url.slice(at+1).split('&').filter(Boolean).map(p=>{ const e=p.indexOf('='); return e<0?[p,'']:[p.slice(0,e),p.slice(e+1)]; });
+  return {url:url.slice(0,at),query:[...inline,...query]};
 }
 // Fills method, URL, query, headers and body from a cURL command (src/utils/apiRequest.ts
 // curlToApiRequest; literal secrets come in as {{variables}}). Description and the example
@@ -5863,13 +5945,16 @@ function apiEditorFillFromCurl(text){
   const r=curlToApiRequest(text); if(!r)return false;
   el('api-ed-method').value=r.method;
   el('api-ed-url').value=r.url; el('api-ed-url').classList.remove('invalid'); el('api-ed-url-err').hidden=true;
+  // Descriptions already typed stay with their parameter names.
+  el('api-ed-query').querySelectorAll('.api-ed-pair').forEach(row=>{ const n=row.querySelector('.api-ed-k').value.trim(), v=row.querySelector('.api-ed-note').value; if(n&&v)_apiEd.notes[n]=v; });
   el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML='';
-  r.query.forEach(([k,v])=>apiEditorAddPair('query',k,v));
+  r.query.forEach(([k,v])=>apiEditorAddPair('query',k,v,_apiEd?.notes[k]));
   r.headers.forEach(([k,v])=>apiEditorAddPair('headers',k,v));
   el('api-ed-body').value=r.body?formatPayload(r.body).text:'';
-  // A brand-new request still holds the starter's sample description and response: drop them so
-  // nothing from the sample is left describing the pasted request.
-  if(_apiEd?.fresh){ el('api-ed-desc').value=''; el('api-ed-status').value=''; el('api-ed-response').value=''; _apiEd.fresh=false; }
+  // A brand-new request still holds the starter's sample description, auth and responses: drop
+  // them so nothing from the sample is left describing the pasted request.
+  if(_apiEd?.fresh){ el('api-ed-desc').value=''; el('api-ed-auth').value=''; el('api-ed-responses').innerHTML=''; apiEditorAddResponse('',''); _apiEd.notes={}; _apiEd.orphanNotes=[]; _apiEd.fresh=false; }
+  apiEditorSyncPath(); apiEditorSyncAuthHint();
   el('api-editor-overlay').querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
   showToast('Filled from cURL \u2014 check it, then Save');
   el('api-ed-url').focus();
@@ -5882,20 +5967,25 @@ function apiEditorPairs(kind){
 function openApiRequestEditor(node,tIdx,{asTable,fresh}={}){
   const div=document.createElement('div'); div.innerHTML=node.tables?.[tIdx]||'';
   const table=div.querySelector('table'); if(!table)return;
-  const req=tableApiInfo(table)||{method:'GET',url:'',query:[],headers:[],body:'',status:'',response:'',description:'',extras:[]};
+  const req=tableApiInfo(table)||emptyApiRequest();
   const ov=apiEditorEl();
+  const {url,query}=apiEditorSplitQuery(req.url,req.query);
+  const notes=Object.fromEntries(req.paramNotes);
+  const usedNames=new Set(apiParameters({url,query,paramNotes:[]}).map(p=>p.name));
+  _apiEd={nodeId:node.id,tIdx,extras:req.extras,asTable,fresh:!!fresh,returnFocus:document.activeElement,
+    notes, orphanNotes:req.paramNotes.filter(([n])=>!usedNames.has(n))};
   el('api-ed-method').value=API_METHODS.includes(req.method)?req.method:'GET';
-  el('api-ed-url').value=req.url; el('api-ed-url').classList.remove('invalid'); el('api-ed-url-err').hidden=true;
+  el('api-ed-url').value=url; el('api-ed-url').classList.remove('invalid'); el('api-ed-url-err').hidden=true;
   el('api-ed-desc').value=req.description;
+  el('api-ed-auth').value=req.auth;
   el('api-ed-body').value=req.body?formatPayload(req.body).text:'';
-  el('api-ed-status').value=req.status;
-  el('api-ed-response').value=req.response?formatPayload(req.response).text:'';
   ov.querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
   el('api-ed-curl-wrap').hidden=true; el('api-ed-curl').value='';
-  el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML='';
-  req.query.forEach(([k,v])=>apiEditorAddPair('query',k,v));
+  el('api-ed-query').innerHTML=''; el('api-ed-headers').innerHTML=''; el('api-ed-path').innerHTML=''; el('api-ed-responses').innerHTML='';
+  query.forEach(([k,v])=>apiEditorAddPair('query',k,v,notes[k]));
   req.headers.forEach(([k,v])=>apiEditorAddPair('headers',k,v));
-  _apiEd={nodeId:node.id,tIdx,extras:req.extras,asTable,fresh:!!fresh,returnFocus:document.activeElement};
+  (req.responses.length?req.responses:[{status:'',body:''}]).forEach(x=>apiEditorAddResponse(x.status,x.body));
+  apiEditorSyncPath(); apiEditorSyncAuthHint();
   ov.classList.add('open');
   requestAnimationFrame(()=>{ const u=el('api-ed-url'); u.focus(); u.select(); });
 }
@@ -5911,8 +6001,8 @@ function apiEditorSave(){
   if(!url){ el('api-ed-url').classList.add('invalid'); el('api-ed-url-err').hidden=false; el('api-ed-url').focus(); return; }
   const idx=getIndex(nodes,ed.nodeId); const node=nodes[idx];
   if(idx<0||!node.tables?.[ed.tIdx]){ apiEditorClose(); showToast('That API request was removed in the meantime'); return; }
-  const req={method:el('api-ed-method').value,url,query:apiEditorPairs('query'),headers:apiEditorPairs('headers'),
-    body:el('api-ed-body').value.trim(),status:el('api-ed-status').value.trim(),response:el('api-ed-response').value.trim(),
+  const req={method:el('api-ed-method').value,url,query:apiEditorPairs('query'),paramNotes:apiEditorParamNotes(),headers:apiEditorPairs('headers'),
+    auth:el('api-ed-auth').value.trim(),body:el('api-ed-body').value.trim(),responses:apiEditorResponses(),
     description:el('api-ed-desc').value.trim(),extras:ed.extras||[]};
   const old=document.createElement('div'); old.innerHTML=node.tables[ed.tIdx];
   const oldTable=old.querySelector('table');
@@ -5961,15 +6051,24 @@ function renderApiRequestHtml(table){
   const COPY='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   const pairs=(label,list,sep)=>list.length?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}</div><div class="pv-api-pairs">${list.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span>${v?`<span class="pv-api-sep">${sep}</span><span class="pv-api-val">${apiVarHtml(v)}</span>`:''}</div>`).join('')}</div></div>`:'';
   const code=(label,raw,extra)=>raw?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}${extra||''}</div><pre class="pv-api-code">${apiVarHtml(formatPayload(raw).text)}</pre></div>`:'';
-  const statusCls=/^\s*2/.test(r.status)?'ok':/^\s*[45]/.test(r.status)?'err':'';
-  const statusChip=r.status?` <span class="pv-api-status ${statusCls}">${esc(r.status)}</span>`:'';
-  const responseSec=r.response?code('Response',r.response,statusChip):(r.status?`<div class="pv-api-sec"><div class="pv-api-label">Response${statusChip}</div></div>`:'');
+  const statusChip=st=>st?` <span class="pv-api-status ${apiStatusClass(st)}">${esc(st)}</span>`:'';
+  // Every documented response (200, 404, 422…) in order, each with its status.
+  const responses=r.responses.filter(x=>x.status||x.body).map(x=>x.body?code('Response',x.body,statusChip(x.status)):`<div class="pv-api-sec"><div class="pv-api-label">Response${statusChip(x.status)}</div></div>`).join('');
+  // Parameters come from the URL and the Query rows (apiParameters), each with its description.
+  const params=apiParameters(r);
+  const paramsSec=params.length?`<div class="pv-api-sec"><div class="pv-api-label">Parameters</div><div class="pv-api-pairs">${params.map(p=>`<div class="pv-api-param"><span class="pv-api-key">${esc(p.name)}</span>`
+    +(p.in?`<span class="pv-api-in">${p.in}</span>`:'')
+    +(p.value?`<span class="pv-api-val">= ${apiVarHtml(p.value)}</span>`:'')
+    +(p.note?`<span class="pv-api-note">${esc(p.note)}</span>`:'')+`</div>`).join('')}</div></div>`:'';
+  // How to authenticate: as written, else read from the headers (apiDetectedAuth).
+  const auth=r.auth||apiDetectedAuth(r);
+  const authSec=auth?`<div class="pv-api-sec pv-api-auth"><div class="pv-api-label">Auth</div><div class="pv-api-authval">${apiVarHtml(auth)}</div></div>`:'';
   const extras=r.extras.length?`<div class="pv-api-sec">${r.extras.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span><span class="pv-api-sep">:</span><span class="pv-api-val">${esc(v)}</span></div>`).join('')}</div>`:'';
   return `<div class="pv-api" data-method="${escAttr(r.method.toLowerCase())}">`
     +`<div class="pv-api-line"><span class="pv-api-method">${esc(r.method)}</span><code class="pv-api-url">${apiUrlHtml(apiFullUrl(r))}</code>`
     +`<button type="button" class="pv-api-curl" data-curl="${escAttr(apiRequestToCurl(r))}" data-tip="Copies the request as cURL. In Postman: Import › paste">${COPY}<span>Copy for Postman</span></button></div>`
     +(r.description?`<div class="pv-api-desc">${esc(r.description)}</div>`:'')
-    +pairs('Query',r.query,'=')+pairs('Headers',r.headers,':')+code('Body',r.body)+responseSec+extras
+    +authSec+paramsSec+pairs('Headers',r.headers,':')+code('Body',r.body)+responses+extras
     +`</div>`;
 }
 // Row cards (owner request 2026-10-19): a wide table whose rows read as records -- a level and its
@@ -7370,23 +7469,36 @@ function cardsTotal(grid, calculated) {
  * Recognised fields (first column, any case, a trailing colon is ignored):
  *   Method               GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
  *   URL / Endpoint       the address; {{variables}} stay as typed
- *   Query / Param        one per row, "name=value" or "name: value"
+ *   Query                one per row, "name=value" or "name: value"
+ *   Parameter            one per row, "name: what it means" -- documents a path or query
+ *                        parameter (a "name=value" Parameter / Param row is a Query row, as before)
  *   Header               one per row, "Name: value"
- *   Body                 request body; JSON is pretty-printed on the card
- *   Status               response status, e.g. "201 Created"
- *   Response             response body
+ *   Auth                 how to authenticate, e.g. "Bearer token (OAuth 2.0, scope orders.read)";
+ *                        when missing the card reads it from the headers (apiDetectedAuth)
+ *   Body                 request body; JSON and XML are formatted on the card
+ *   Status               starts a response, e.g. "201 Created"; repeat Status + Response for
+ *                        each case (200, 404, 422...) -- owner 2026-10-31: errors are what
+ *                        readers look for
+ *   Response             the body of the response above it
  *   Description / Notes  a line of text under the request line
  * Any other field shows as a labelled extra. A table is an API request when it has a Method
- * with a known verb and a URL.
+ * with a known verb and a URL. Parameters are not typed in a list of their own: the card finds
+ * them in the URL (path variables, the query string) and the Query rows (apiParameters).
  *
  * Wired into index.html via scripts/generate-index-blocks.mjs's `apiRequest` block.
  */
 const API_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+/** An empty request (GET, nothing filled in). */
+function emptyApiRequest() {
+    return { method: 'GET', url: '', query: [], paramNotes: [], headers: [], auth: '', body: '', responses: [], description: '', extras: [] };
+}
 const FIELD_ALIASES = {
     method: 'method', verb: 'method',
     url: 'url', endpoint: 'url', path: 'url',
-    query: 'query', param: 'query', params: 'query', parameter: 'query', 'query param': 'query',
+    query: 'query', 'query param': 'query',
+    param: 'param', params: 'param', parameter: 'param', parameters: 'param',
     header: 'header', headers: 'header',
+    auth: 'auth', authentication: 'auth', 'auth type': 'auth',
     body: 'body', 'request body': 'body', payload: 'body',
     status: 'status', 'response status': 'status', 'status code': 'status',
     response: 'response', 'response body': 'response',
@@ -7414,7 +7526,7 @@ function splitPair(raw) {
 function apiRequestFromGrid(grid) {
     if (!grid.length || grid.some(r => r.length !== 2))
         return null;
-    const req = { method: '', url: '', query: [], headers: [], body: '', status: '', response: '', description: '', extras: [] };
+    const req = { ...emptyApiRequest(), method: '' };
     grid.forEach((row, i) => {
         const [label, rawValue] = row;
         const value = String(rawValue || '').trim();
@@ -7437,23 +7549,53 @@ function apiRequestFromGrid(grid) {
             case 'query':
                 req.query.push(splitPair(value));
                 break;
+            case 'param': {
+                // "name: what it means" documents a parameter; "name=value" (= before any :) is a query
+                // value, which is what Param / Parameter rows meant before descriptions existed.
+                const colon = value.indexOf(':'), eq = value.indexOf('=');
+                if (eq >= 0 && (colon < 0 || eq < colon))
+                    req.query.push(splitPair(value));
+                else {
+                    const [n, d] = splitPair(value);
+                    if (n)
+                        req.paramNotes.push([n, d]);
+                }
+                break;
+            }
             case 'header':
                 req.headers.push(splitPair(value));
+                break;
+            case 'auth':
+                req.auth = value;
                 break;
             case 'body':
                 req.body = req.body ? req.body + '\n' + value : value;
                 break;
             case 'status':
-                req.status = value;
+                req.responses.push({ status: value, body: '' });
                 break;
-            case 'response':
-                req.response = req.response ? req.response + '\n' + value : value;
+            case 'response': {
+                const last = req.responses[req.responses.length - 1];
+                if (last)
+                    last.body = last.body ? last.body + '\n' + value : value;
+                else
+                    req.responses.push({ status: '', body: value });
                 break;
+            }
             case 'description':
                 req.description = value;
                 break;
         }
     });
+    // Each Status starts a response. A body with no status followed by a status with no body is one
+    // response written the other way round (Response, then Status), as it always read.
+    for (let i = 0; i < req.responses.length - 1; i++) {
+        const a = req.responses[i], b = req.responses[i + 1];
+        if (!a.status && a.body && b.status && !b.body) {
+            a.status = b.status;
+            req.responses.splice(i + 1, 1);
+        }
+    }
     if (!API_METHODS.includes(req.method) || !req.url)
         return null;
     return req;
@@ -7575,14 +7717,20 @@ function apiRequestToGrid(req) {
     const grid = [['Field', 'Value'], ['Method', req.method], ['URL', req.url]];
     req.query.forEach(([k, v]) => { if (k.trim())
         grid.push(['Query', v ? k + '=' + v : k]); });
+    req.paramNotes.forEach(([k, v]) => { if (k.trim() && v.trim())
+        grid.push(['Parameter', k.trim() + ': ' + v.trim()]); });
     req.headers.forEach(([k, v]) => { if (k.trim())
         grid.push(['Header', v ? k + ': ' + v : k]); });
+    if (req.auth.trim())
+        grid.push(['Auth', req.auth.trim()]);
     if (req.body.trim())
         grid.push(['Body', req.body]);
-    if (req.status.trim())
-        grid.push(['Status', req.status.trim()]);
-    if (req.response.trim())
-        grid.push(['Response', req.response]);
+    req.responses.forEach(({ status, body }) => {
+        if (status.trim())
+            grid.push(['Status', status.trim()]);
+        if (body.trim())
+            grid.push(['Response', body]);
+    });
     if (req.description.trim())
         grid.push(['Description', req.description.trim()]);
     req.extras.forEach(([k, v]) => { if (k.trim() && v.trim())
@@ -7780,7 +7928,7 @@ function curlToApiRequest(text) {
         method = body ? 'POST' : 'GET';
     if (!API_METHODS.includes(method))
         return null;
-    return { method, url: base, query, headers, body, status: '', response: '', description: '', extras: [] };
+    return { ...emptyApiRequest(), method, url: base, query, headers, body };
 }
 /**
  * Text split into plain pieces and {{variable}} placeholders, in order, so the card can tint the
@@ -7823,6 +7971,95 @@ function urlWrapPieces(url) {
         pieces.push(cur);
     return pieces;
 }
+/** The URL's base (scheme + host, or a leading {{variable}} such as {{baseUrl}}), path and query. */
+function splitApiUrl(url) {
+    const s = String(url || '');
+    const m = /^(?:[a-z][a-z0-9+.-]*:\/\/[^/?#]*|\{\{[^{}]+\}\})/i.exec(s);
+    const base = m ? m[0] : '';
+    const rest = s.slice(base.length).replace(/#.*$/, '');
+    const q = rest.indexOf('?');
+    return { base, path: q < 0 ? rest : rest.slice(0, q), query: q < 0 ? '' : rest.slice(q + 1) };
+}
+/**
+ * The parameters a request takes, found where they already are (owner 2026-10-31: parameters
+ * exist in the endpoint, so the card lists them itself): path variables in the URL's path --
+ * {{orderId}}, :orderId or {orderId} -- then the query string typed into the URL, then the Query
+ * rows. The base ({{baseUrl}}, the host) is not a parameter. Each picks up its Parameter row
+ * description; a description whose name isn't used anywhere is kept at the end.
+ */
+function apiParameters(req) {
+    const notes = new Map();
+    (req.paramNotes || []).forEach(([k, v]) => { if (k && !notes.has(k))
+        notes.set(k, v); });
+    const used = new Set();
+    const noteFor = (name) => {
+        if (notes.has(name)) {
+            used.add(name);
+            return notes.get(name);
+        }
+        const k = [...notes.keys()].find(n => n.toLowerCase() === name.toLowerCase());
+        if (k !== undefined) {
+            used.add(k);
+            return notes.get(k);
+        }
+        return '';
+    };
+    const out = [];
+    const seen = new Set();
+    const add = (name, where, value) => {
+        const key = where + ':' + name;
+        if (!name || seen.has(key))
+            return;
+        seen.add(key);
+        out.push({ name, in: where, value, note: noteFor(name) });
+    };
+    const { path, query } = splitApiUrl(req.url);
+    const re = /\{\{([^{}]+)\}\}|\{([^{}]+)\}|(?:^|\/):([A-Za-z_][\w-]*)/g;
+    let m;
+    while ((m = re.exec(path)))
+        add((m[1] || m[2] || m[3]).trim(), 'path', '');
+    query.split('&').filter(Boolean).forEach(p => {
+        const e = p.indexOf('=');
+        add(e < 0 ? p : p.slice(0, e), 'query', e < 0 ? '' : p.slice(e + 1));
+    });
+    (req.query || []).forEach(([k, v]) => add(k, 'query', v));
+    notes.forEach((v, k) => { if (!used.has(k))
+        out.push({ name: k, in: '', value: '', note: v }); });
+    return out;
+}
+/**
+ * How the request authenticates, read from what it sends -- for a card whose Auth field is
+ * empty: the Authorization header's scheme, an API key or token header, a session cookie, or an
+ * API key in the query. '' when nothing says.
+ */
+function apiDetectedAuth(req) {
+    for (const [k, v] of req.headers || []) {
+        if (/^authorization$/i.test(k)) {
+            if (/^bearer\b/i.test(v))
+                return 'Bearer token';
+            if (/^basic\b/i.test(v))
+                return 'Basic (username and password)';
+            const scheme = (/^([A-Za-z][\w-]*)\s/.exec(v) || [])[1];
+            return scheme ? scheme + ' (Authorization header)' : 'Authorization header';
+        }
+    }
+    for (const [k] of req.headers || []) {
+        if (/^(x-api-key|api-key|apikey)$/i.test(k))
+            return 'API key (' + k + ' header)';
+        if (/^(x-auth-token|x-access-token)$/i.test(k))
+            return 'Token (' + k + ' header)';
+    }
+    if ((req.headers || []).some(([k]) => /^cookie$/i.test(k)))
+        return 'Session cookie';
+    const q = apiParameters({ url: req.url, query: req.query || [], paramNotes: [] }).find(p => p.in === 'query' && /^(api[_-]?key|key|access_token|token)$/i.test(p.name));
+    if (q)
+        return (/token/i.test(q.name) ? 'Token' : 'API key') + ' (' + q.name + ' query parameter)';
+    return '';
+}
+/** The status's class: 'ok' for 2xx, 'err' for 4xx/5xx, '' otherwise (for the card's colour). */
+function apiStatusClass(status) {
+    return /^\s*2/.test(status) ? 'ok' : /^\s*[45]/.test(status) ? 'err' : '';
+}
 
 /* GENERATED:apiRequest:END */
 /* GENERATED:postmanCollection:START — DO NOT EDIT BY HAND. Source of truth: src/utils/postmanCollection.ts (tests: tests/unit/postmanCollection.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
@@ -7832,36 +8069,51 @@ function urlWrapPieces(url) {
  *
  * Right-click an API card › Export this request (.json) saves the request as a Postman v2.1
  * collection holding just that request, named after its row. Unlike Copy for Postman (cURL) it
- * keeps the description and the example response (status and body) as a saved example.
+ * keeps the description, parameter notes and every documented response as a saved example.
  * There is deliberately no collection import and no document-wide export (owner decisions).
  *
  * Pure data in and out; index.html does the download.
  * Wired into index.html via scripts/generate-index-blocks.mjs's `postmanCollection` block.
  */
 const POSTMAN_SCHEMA = 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json';
-/** One API request as a Postman v2.1 item (request + its example response, if any). */
+/**
+ * One API request as a Postman v2.1 item: the request (query parameters and :path variables with
+ * their descriptions, headers, body, description with the Auth note) and one saved example per
+ * documented response.
+ */
 function apiRequestToPostmanItem(name, r) {
+    const params = apiParameters(r);
+    const query = params.filter(p => p.in === 'query');
+    const raw = r.query.length ? r.url + (r.url.includes('?') ? '&' : '?') + r.query.map(([k, v]) => (v ? k + '=' + v : k)).join('&') : r.url;
+    // Postman's path variables are the :name kind; {{name}} is its environment variable.
+    const pathVars = params.filter(p => p.in === 'path' && new RegExp('(^|/):' + p.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=/|$)').test(splitApiUrl(r.url).path));
+    const withNote = (o, note) => (note ? { ...o, description: note } : o);
     const request = {
         method: r.method,
         header: r.headers.map(([key, value]) => ({ key, value })),
         url: {
-            raw: r.query.length ? r.url + (r.url.includes('?') ? '&' : '?') + r.query.map(([k, v]) => (v ? k + '=' + v : k)).join('&') : r.url,
-            ...(r.query.length ? { query: r.query.map(([key, value]) => ({ key, value })) } : {})
+            raw,
+            ...(query.length ? { query: query.map(p => withNote({ key: p.name, value: p.value }, p.note)) } : {}),
+            ...(pathVars.length ? { variable: pathVars.map(p => withNote({ key: p.name, value: '' }, p.note)) } : {})
         }
     };
     if (r.body)
-        request.body = { mode: 'raw', raw: r.body, ...(/^\s*[[{]/.test(r.body) ? { options: { raw: { language: 'json' } } } : {}) };
-    if (r.description)
-        request.description = r.description;
+        request.body = { mode: 'raw', raw: r.body, ...(/^\s*[[{]/.test(r.body) ? { options: { raw: { language: 'json' } } } : /^\s*</.test(r.body) ? { options: { raw: { language: 'xml' } } } : {}) };
+    const description = [r.description, r.auth ? 'Auth: ' + r.auth : ''].filter(Boolean).join('\n\n');
+    if (description)
+        request.description = description;
     const item = { name: name || r.method + ' ' + r.url, request };
-    if (r.status || r.response) {
-        const m = /^\s*(\d{3})\s*(.*)$/.exec(r.status);
-        item.response = [{
-                name: r.status || 'Example',
+    const examples = r.responses.filter(x => x.status || x.body);
+    if (examples.length) {
+        item.response = examples.map(x => {
+            const m = /^\s*(\d{3})\s*(.*)$/.exec(x.status);
+            return {
+                name: x.status || 'Example',
                 originalRequest: request,
-                ...(m ? { code: Number(m[1]), status: m[2] || '' } : r.status ? { status: r.status } : {}),
-                body: r.response
-            }];
+                ...(m ? { code: Number(m[1]), status: m[2] || '' } : x.status ? { status: x.status } : {}),
+                body: x.body
+            };
+        });
     }
     return item;
 }
@@ -9184,7 +9436,7 @@ function tableStarterHtml(key){
     case 'cards': return t(['Metric','Value','Change'],[['Orders','1,240','+8%'],['Revenue','€86k','+3%'],['Returns','2.1%','-0.4%']],' data-feature-chart="1" data-chart-type="cards"');
     case 'progress': return t(['Workstream','Done'],[['Design','80%'],['Build','45%'],['Test','10%']],' data-table-display="progress"');
     case 'proscons': return t(['Pros','Cons'],[['Faster delivery','Higher cost'],['Fewer manual steps','Needs training']],' data-table-display="proscons"');
-    case 'api': return t(['Field','Value'],[['Method','POST'],['URL','https://api.example.com/v1/orders'],['Header','Content-Type: application/json'],['Body','{"orderId": "4711", "priority": "express"}'],['Status','201 Created'],['Response','{"id": "4711", "status": "accepted"}'],['Description','Creates an order']].map(r=>r.map(esc)),' data-table-display="api"');
+    case 'api': return t(['Field','Value'],[['Method','POST'],['URL','https://api.example.com/v1/orders'],['Header','Content-Type: application/json'],['Body','{"orderId": "4711", "priority": "express"}'],['Status','201 Created'],['Response','{"id": "4711", "status": "accepted"}'],['Status','422 Unprocessable Entity'],['Response','{"error": "priority must be standard or express"}'],['Description','Creates an order']].map(r=>r.map(esc)),' data-table-display="api"');
     case 'chips': return t(['Code','Meaning'],[['P1','Critical'],['P2','High'],['P3','Normal']],' data-table-display="chips"');
     case 'bar': return t(['Label','Value'],[['Q1','120'],['Q2','150'],['Q3','90']],' data-feature-chart="1" data-chart-type="bar"');
   }

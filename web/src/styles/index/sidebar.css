@@ -405,6 +405,10 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pv-api-pairs{display:flex;flex-direction:column;gap:2px}
 .pv-api-pair{font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-param{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;line-height:1.5;overflow-wrap:anywhere}
+.pv-api-in{font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.pv-api-note{flex-basis:100%;padding-left:12px;font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--muted);line-height:1.45}
+.pv-api-authval{font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--fg);line-height:1.45}
 .pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
 .pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre;max-height:320px;overflow:auto}
 .pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
@@ -412,7 +416,7 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 @media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere}}
 /* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
 .api-ed{width:min(720px,94vw)}
-.api-ed-body{display:flex;flex-direction:column;gap:12px}
+.api-ed-body{display:flex;flex-direction:column;gap:12px}.api-ed-body>*{flex-shrink:0}
 .api-ed-line{display:flex;gap:8px;min-width:0}
 .api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
 .api-ed-input:focus{outline:none;border-color:var(--accent)}
@@ -436,6 +440,16 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
 .api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:vertical;white-space:pre;overflow:auto}
 .api-ed-status{width:180px;flex:none}
+#api-ed-query .api-ed-k{flex:0 0 24%}#api-ed-query .api-ed-v{flex:1 1 0;min-width:0}.api-ed-note{flex:1.3 1 0;min-width:0}
+.api-ed-pathrow{min-height:32px}
+.api-ed-pname{flex:0 0 24%;box-sizing:border-box;padding:0 6px 0 10px;display:flex;align-items:center;gap:6px;min-width:0}
+.api-ed-pname-t{min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.api-ed-pname .api-ed-in{margin-left:auto}.api-ed-sep-blank{visibility:hidden}
+.api-ed-in{flex:none;font:500 var(--fs-2xs) 'Inter',sans-serif;color:var(--hint);border:1px solid var(--border);border-radius:4px;padding:0 4px;line-height:1.5}
+.api-ed-pathrow .api-ed-note{margin-right:34px}
+.api-ed-resps{display:flex;flex-direction:column;gap:10px}.api-ed-resps:empty{display:none}
+.api-ed-resp{display:flex;flex-direction:column;gap:6px}
+.api-ed-resp-head{display:flex;align-items:center;gap:6px}.api-ed-resp-head .api-ed-format{margin-left:auto;align-self:center}
 .api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
 .api-ed-foot{display:flex;align-items:center;gap:8px;padding:12px var(--pad-dialog);border-top:1px solid var(--border);flex:0 0 auto}
 .api-ed-astable{margin-right:auto;padding-left:0}
@@ -443,7 +457,7 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-curl{min-height:72px}
 .api-ed-sec[hidden]{display:none}
 .api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
-@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}}
+@media (max-width:560px){.api-ed-hint{display:none}.api-ed-line{flex-wrap:wrap}.api-ed-method{flex-basis:100%}#api-ed-query .api-ed-pair{flex-wrap:wrap}#api-ed-query .api-ed-note{flex-basis:calc(100% - 34px)}}
 .tbl-person{border-radius:999px;background:color-mix(in srgb,var(--pc) 13%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--pc) 13%,transparent);color:color-mix(in srgb,var(--pc) 75%,var(--fg));-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .tbl-person.with-av{display:inline-flex;align-items:center;gap:5px;max-width:100%;margin:1px 4px 1px 0;padding:1px 8px 1px 2px;box-shadow:none;color:var(--fg);font-size:.92em;line-height:1.45;white-space:nowrap;vertical-align:middle}
 .tbl-person-av{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 3px;box-sizing:border-box;border-radius:999px;background:var(--pc);color:#fff;font:700 9.5px 'Inter',sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
