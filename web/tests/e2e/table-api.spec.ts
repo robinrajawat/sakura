@@ -51,6 +51,10 @@ test('Show as › API request shows a request card, and Copy as cURL copies the 
   await expect(card.locator('.pv-api-method')).toHaveText('GET');
   // Query rows are appended to the URL; {{variables}} stay as typed.
   await expect(card.locator('.pv-api-url')).toHaveText('{{baseUrl}}/orders?status=open');
+  // Long URLs wrap only after / ? & = (one unbreakable piece each); {{variables}} are tinted.
+  await expect(card.locator('.pv-api-url .pv-api-seg')).toHaveText(['{{baseUrl}}/', 'orders?', 'status=', 'open']);
+  await expect(card.locator('.pv-api-url .pv-api-var')).toHaveText('{{baseUrl}}');
+  await expect(card.locator('.pv-api-val .pv-api-var')).toContainText(['{{token}}']);
   await expect(card.locator('.pv-api-key')).toContainText(['Authorization']);
   await expect(card.locator('.pv-api-status')).toHaveText('200 OK');
   // JSON is pretty-printed.
@@ -59,6 +63,10 @@ test('Show as › API request shows a request card, and Copy as cURL copies the 
   await card.locator('.pv-api-curl').click();
   const curl = await page.evaluate(() => navigator.clipboard.readText());
   expect(curl).toBe("curl \\\n  '{{baseUrl}}/orders?status=open' \\\n  -H 'Authorization: Bearer {{token}}'");
+  // The button confirms the copy, then goes back.
+  await expect(card.locator('.pv-api-curl')).toHaveClass(/copied/);
+  await expect(card.locator('.pv-api-curl')).toHaveText('Copied');
+  await expect(card.locator('.pv-api-curl')).toHaveText('Copy for Postman', { timeout: 4000 });
 
   // @ts-expect-error -- bare global from index.html
   expect(await page.evaluate(() => nodes[0].tables[0])).toContain('data-table-display="api"');

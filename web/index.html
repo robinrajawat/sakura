@@ -1505,12 +1505,14 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
    Method colours follow the common convention (GET green, POST blue, PUT/PATCH orange, DELETE red). */
 .pv-api{--mc:var(--fc-gray);width:100%;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:10px 12px;display:flex;flex-direction:column;gap:10px;min-width:0;cursor:context-menu;break-inside:avoid;page-break-inside:avoid;font:400 var(--fs-md) 'Inter',sans-serif;color:var(--fg)}
 .pv-api[data-method="get"]{--mc:var(--fc-green)}.pv-api[data-method="post"]{--mc:var(--fc-blue)}.pv-api[data-method="put"],.pv-api[data-method="patch"]{--mc:var(--fc-orange)}.pv-api[data-method="delete"]{--mc:var(--fc-red)}
-.pv-api-line{display:flex;align-items:center;gap:8px;min-width:0}
+.pv-api-line{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.pv-api-line .pv-api-method{line-height:24px}.pv-api-line .pv-api-url{line-height:1.5;padding-top:2px}.pv-api-seg{display:inline-block;max-width:100%}
 .pv-api-method{flex:none;font:700 var(--fs-xs) 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:anywhere;background:none;padding:0}
+.pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:break-word;background:none;padding:0}
 .pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer}
 .pv-api-curl:hover{background:var(--hover);color:var(--fg)}
-.pv-api-curl{white-space:nowrap}.pv-api-curl svg{flex:none;width:12px;height:12px}
+.pv-api-curl{white-space:nowrap}.pv-api-curl.copied{color:var(--fg)}
+.pv-api-var{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-api-curl svg{flex:none;width:12px;height:12px}
 .pv-api-desc{color:var(--muted);line-height:1.45}
 .pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
 .pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -5933,20 +5935,38 @@ function apiEditorSave(){
 document.addEventListener('click',async e=>{
   const b=e.target.closest?.('.pv-api-curl'); if(!b)return;
   e.preventDefault(); e.stopPropagation();
-  try{ await navigator.clipboard.writeText(b.dataset.curl||''); showToast('Copied \u2014 in Postman, Import \u203a paste'); }
+  try{
+    await navigator.clipboard.writeText(b.dataset.curl||'');
+    showToast('Copied \u2014 in Postman, Import \u203a paste');
+    // The button itself confirms for a moment: a check and "Copied", then back.
+    const label=b.querySelector('span'), icon=b.querySelector('svg');
+    if(label&&!b.classList.contains('copied')){
+      const was=label.textContent, wasIcon=icon?.outerHTML;
+      b.classList.add('copied'); label.textContent='Copied';
+      if(icon)icon.outerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      setTimeout(()=>{ if(!b.isConnected)return; b.classList.remove('copied'); label.textContent=was; const i=b.querySelector('svg'); if(i&&wasIcon)i.outerHTML=wasIcon; },1600);
+    }
+  }
   catch(err){ showToast('Couldn’t copy — the browser blocked the clipboard'); }
 },true);
+// Placeholders ({{baseUrl}}, {{token}}…) in a quiet accent tint, so a reader sees at a glance what
+// they fill in themselves; everything else escaped as text.
+function apiVarHtml(text){ return splitApiVariables(text).map(([t,isVar])=>isVar?`<span class="pv-api-var">${esc(t)}</span>`:esc(t)).join(''); }
+// A URL that wraps only after / ? & = (never mid-word, never at a hyphen), placeholders tinted:
+// each piece is an inline-block, so lines break between pieces and inside one only when a single
+// piece is wider than the line.
+function apiUrlHtml(url){ return urlWrapPieces(url).map(p=>`<span class="pv-api-seg">${apiVarHtml(p)}</span>`).join(''); }
 function renderApiRequestHtml(table){
   const r=tableApiInfo(table); if(!r)return null;
   const COPY='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-  const pairs=(label,list,sep)=>list.length?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}</div><div class="pv-api-pairs">${list.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span>${v?`<span class="pv-api-sep">${sep}</span><span class="pv-api-val">${esc(v)}</span>`:''}</div>`).join('')}</div></div>`:'';
-  const code=(label,raw,extra)=>raw?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}${extra||''}</div><pre class="pv-api-code">${esc(formatPayload(raw).text)}</pre></div>`:'';
+  const pairs=(label,list,sep)=>list.length?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}</div><div class="pv-api-pairs">${list.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span>${v?`<span class="pv-api-sep">${sep}</span><span class="pv-api-val">${apiVarHtml(v)}</span>`:''}</div>`).join('')}</div></div>`:'';
+  const code=(label,raw,extra)=>raw?`<div class="pv-api-sec"><div class="pv-api-label">${esc(label)}${extra||''}</div><pre class="pv-api-code">${apiVarHtml(formatPayload(raw).text)}</pre></div>`:'';
   const statusCls=/^\s*2/.test(r.status)?'ok':/^\s*[45]/.test(r.status)?'err':'';
   const statusChip=r.status?` <span class="pv-api-status ${statusCls}">${esc(r.status)}</span>`:'';
   const responseSec=r.response?code('Response',r.response,statusChip):(r.status?`<div class="pv-api-sec"><div class="pv-api-label">Response${statusChip}</div></div>`:'');
   const extras=r.extras.length?`<div class="pv-api-sec">${r.extras.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span><span class="pv-api-sep">:</span><span class="pv-api-val">${esc(v)}</span></div>`).join('')}</div>`:'';
   return `<div class="pv-api" data-method="${escAttr(r.method.toLowerCase())}">`
-    +`<div class="pv-api-line"><span class="pv-api-method">${esc(r.method)}</span><code class="pv-api-url">${esc(apiFullUrl(r))}</code>`
+    +`<div class="pv-api-line"><span class="pv-api-method">${esc(r.method)}</span><code class="pv-api-url">${apiUrlHtml(apiFullUrl(r))}</code>`
     +`<button type="button" class="pv-api-curl" data-curl="${escAttr(apiRequestToCurl(r))}" data-tip="Copies the request as cURL. In Postman: Import › paste">${COPY}<span>Copy for Postman</span></button></div>`
     +(r.description?`<div class="pv-api-desc">${esc(r.description)}</div>`:'')
     +pairs('Query',r.query,'=')+pairs('Headers',r.headers,':')+code('Body',r.body)+responseSec+extras
@@ -7761,6 +7781,47 @@ function curlToApiRequest(text) {
     if (!API_METHODS.includes(method))
         return null;
     return { method, url: base, query, headers, body, status: '', response: '', description: '', extras: [] };
+}
+/**
+ * Text split into plain pieces and {{variable}} placeholders, in order, so the card can tint the
+ * placeholders (the parts a reader fills in: {{baseUrl}}, {{token}}...). Never returns empty pieces.
+ */
+function splitApiVariables(text) {
+    const out = [];
+    const s = String(text || '');
+    const re = /\{\{[^{}]+\}\}/g;
+    let last = 0;
+    let m;
+    while ((m = re.exec(s))) {
+        if (m.index > last)
+            out.push([s.slice(last, m.index), false]);
+        out.push([m[0], true]);
+        last = m.index + m[0].length;
+    }
+    if (last < s.length)
+        out.push([s.slice(last), false]);
+    return out;
+}
+/**
+ * A URL cut into the pieces it may wrap between: after each "/", "?", "&" and "=" (not inside
+ * "://"), so a long address breaks at a path segment instead of mid-word.
+ */
+function urlWrapPieces(url) {
+    const s = String(url || '');
+    const pieces = [];
+    let cur = '';
+    for (let i = 0; i < s.length; i++) {
+        cur += s[i];
+        const c = s[i];
+        const inScheme = c === '/' && (s[i + 1] === '/' || s[i - 1] === ':' || s[i - 1] === '/');
+        if ((c === '/' || c === '?' || c === '&' || c === '=') && !inScheme) {
+            pieces.push(cur);
+            cur = '';
+        }
+    }
+    if (cur)
+        pieces.push(cur);
+    return pieces;
 }
 
 /* GENERATED:apiRequest:END */

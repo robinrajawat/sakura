@@ -321,3 +321,40 @@ export function curlToApiRequest(text: string): ApiRequest | null {
   if (!(API_METHODS as readonly string[]).includes(method)) return null;
   return { method, url: base, query, headers, body, status: '', response: '', description: '', extras: [] };
 }
+
+/**
+ * Text split into plain pieces and {{variable}} placeholders, in order, so the card can tint the
+ * placeholders (the parts a reader fills in: {{baseUrl}}, {{token}}...). Never returns empty pieces.
+ */
+export function splitApiVariables(text: string): [string, boolean][] {
+  const out: [string, boolean][] = [];
+  const s = String(text || '');
+  const re = /\{\{[^{}]+\}\}/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(s))) {
+    if (m.index > last) out.push([s.slice(last, m.index), false]);
+    out.push([m[0], true]);
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) out.push([s.slice(last), false]);
+  return out;
+}
+
+/**
+ * A URL cut into the pieces it may wrap between: after each "/", "?", "&" and "=" (not inside
+ * "://"), so a long address breaks at a path segment instead of mid-word.
+ */
+export function urlWrapPieces(url: string): string[] {
+  const s = String(url || '');
+  const pieces: string[] = [];
+  let cur = '';
+  for (let i = 0; i < s.length; i++) {
+    cur += s[i];
+    const c = s[i];
+    const inScheme = c === '/' && (s[i + 1] === '/' || s[i - 1] === ':' || s[i - 1] === '/');
+    if ((c === '/' || c === '?' || c === '&' || c === '=') && !inScheme) { pieces.push(cur); cur = ''; }
+  }
+  if (cur) pieces.push(cur);
+  return pieces;
+}
