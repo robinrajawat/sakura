@@ -1509,10 +1509,10 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-line .pv-api-method{line-height:24px}.pv-api-line .pv-api-url{line-height:1.5;padding-top:2px}.pv-api-seg{display:inline-block;max-width:100%}
 .pv-api-method{flex:none;font:700 var(--fs-xs) 'Fira Code',Consolas,monospace;letter-spacing:.04em;color:var(--mc);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pv-api-url{flex:1;min-width:0;font:400 var(--fs-sm) 'Fira Code',Consolas,monospace;color:var(--fg);overflow-wrap:break-word;background:none;padding:0}
-.pv-api-curl{flex:none;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font:500 var(--fs-xs) 'Inter',sans-serif;cursor:pointer}
-.pv-api-curl:hover{background:var(--hover);color:var(--fg)}
-.pv-api-curl{white-space:nowrap}.pv-api-curl.copied{color:var(--fg)}
-.pv-api-var{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-api-curl svg{flex:none;width:12px;height:12px}
+.pv-api-curl{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:1px solid transparent;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+.pv-api-curl:hover{background:var(--hover);color:var(--fg)}.pv-api-curl:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pv-api-curl.copied{color:var(--fc-green)}
+.pv-api-var{color:var(--accent);-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv-api-curl svg{flex:none;width:14px;height:14px}
 .pv-api-desc{color:var(--muted);line-height:1.45}
 .pv-api-sec{display:flex;flex-direction:column;gap:4px;min-width:0}
 .pv-api-label{display:flex;align-items:center;gap:8px;font:600 var(--fs-2xs) 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -6028,13 +6028,13 @@ document.addEventListener('click',async e=>{
   try{
     await navigator.clipboard.writeText(b.dataset.curl||'');
     showToast('Copied \u2014 in Postman, Import \u203a paste');
-    // The button itself confirms for a moment: a check and "Copied", then back.
-    const label=b.querySelector('span'), icon=b.querySelector('svg');
-    if(label&&!b.classList.contains('copied')){
-      const was=label.textContent, wasIcon=icon?.outerHTML;
-      b.classList.add('copied'); label.textContent='Copied';
-      if(icon)icon.outerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-      setTimeout(()=>{ if(!b.isConnected)return; b.classList.remove('copied'); label.textContent=was; const i=b.querySelector('svg'); if(i&&wasIcon)i.outerHTML=wasIcon; },1600);
+    // The icon itself confirms for a moment (a check), then goes back.
+    const icon=b.querySelector('svg');
+    if(icon&&!b.classList.contains('copied')){
+      const wasIcon=icon.outerHTML;
+      b.classList.add('copied'); b.setAttribute('aria-label','Copied');
+      icon.outerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      setTimeout(()=>{ if(!b.isConnected)return; b.classList.remove('copied'); b.setAttribute('aria-label','Copy for Postman'); const i=b.querySelector('svg'); if(i)i.outerHTML=wasIcon; },1600);
     }
   }
   catch(err){ showToast('Couldn’t copy — the browser blocked the clipboard'); }
@@ -6066,7 +6066,7 @@ function renderApiRequestHtml(table){
   const extras=r.extras.length?`<div class="pv-api-sec">${r.extras.map(([k,v])=>`<div class="pv-api-pair"><span class="pv-api-key">${esc(k)}</span><span class="pv-api-sep">:</span><span class="pv-api-val">${esc(v)}</span></div>`).join('')}</div>`:'';
   return `<div class="pv-api" data-method="${escAttr(r.method.toLowerCase())}">`
     +`<div class="pv-api-line"><span class="pv-api-method">${esc(r.method)}</span><code class="pv-api-url">${apiUrlHtml(apiFullUrl(r))}</code>`
-    +`<button type="button" class="pv-api-curl" data-curl="${escAttr(apiRequestToCurl(r))}" data-tip="Copies the request as cURL. In Postman: Import › paste">${COPY}<span>Copy for Postman</span></button></div>`
+    +`<button type="button" class="pv-api-curl" data-curl="${escAttr(apiRequestToCurl(r))}" aria-label="Copy for Postman" data-tip="Copy for Postman (cURL)">${COPY}</button></div>`
     +(r.description?`<div class="pv-api-desc">${esc(r.description)}</div>`:'')
     +authSec+paramsSec+pairs('Headers',r.headers,':')+code('Body',r.body)+responses+extras
     +`</div>`;
