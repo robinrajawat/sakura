@@ -65,8 +65,9 @@ test('Show as › API request shows a request card, and Copy as cURL copies the 
   expect(curl).toBe("curl \\\n  '{{baseUrl}}/orders?status=open' \\\n  -H 'Authorization: Bearer {{token}}'");
   // The button confirms the copy, then goes back.
   await expect(card.locator('.pv-api-curl')).toHaveClass(/copied/);
-  await expect(card.locator('.pv-api-curl')).toHaveText('Copied');
-  await expect(card.locator('.pv-api-curl')).toHaveText('Copy for Postman', { timeout: 4000 });
+  await expect(card.locator('.pv-api-curl')).toHaveAttribute('aria-label', 'Copied');
+  await expect(card.locator('.pv-api-curl')).not.toHaveClass(/copied/, { timeout: 4000 });
+  await expect(card.locator('.pv-api-curl')).toHaveAttribute('aria-label', 'Copy for Postman');
 
   // @ts-expect-error -- bare global from index.html
   expect(await page.evaluate(() => nodes[0].tables[0])).toContain('data-table-display="api"');
@@ -203,7 +204,7 @@ test('Paste from Postman (cURL) fills a new API request and drops the sample tex
   expect(html).not.toContain('real-secret');
 });
 
-test('the card says Copy for Postman, and right-click copies or exports just this request', async ({ page, context }) => {
+test('the card\'s copy icon is labelled Copy for Postman, and right-click copies or exports just this request', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('file://' + indexPath);
   await page.evaluate(() => {
@@ -211,7 +212,10 @@ test('the card says Copy for Postman, and right-click copies or exports just thi
     nodes[0].tables[0] = nodes[0].tables[0].replace('<table>', '<table data-table-display="api">').replace('<tr><td>Status</td>', '<tr><td>Description</td><td>Open orders only</td></tr><tr><td>Status</td>'); render();
   });
   const card = page.locator('.pv-api');
-  await expect(card.locator('.pv-api-curl')).toHaveText('Copy for Postman');
+  // An icon only: the words are in its label and tooltip.
+  await expect(card.locator('.pv-api-curl')).toHaveText('');
+  await expect(card.locator('.pv-api-curl')).toHaveAttribute('aria-label', 'Copy for Postman');
+  await expect(card.locator('.pv-api-curl')).toHaveAttribute('data-tip', /Copy for Postman/);
 
   await card.click({ button: 'right' });
   await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Copy for Postman' }).click();
