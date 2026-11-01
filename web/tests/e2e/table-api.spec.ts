@@ -92,7 +92,7 @@ test('API request is greyed out for a table without a Method and URL, and is a t
   expect(r.starter).toContain('"orderId"');
 });
 
-test('the API request form edits the card: method, URL, query, headers, body; Esc cancels; one undo step', async ({ page }) => {
+test('the API request form edits the card in place: method, URL, query, headers, body; Esc finishes; one undo step', async ({ page }) => {
   await page.setViewportSize({ width: 1200, height: 900 });
   await page.goto('file://' + indexPath);
   // The table is stored as an API request already.
@@ -102,19 +102,21 @@ test('the API request form edits the card: method, URL, query, headers, body; Es
   });
   const card = page.locator('.pv-api');
   await card.dblclick();
-  const form = page.locator('#api-editor-overlay');
-  await expect(form).toHaveClass(/open/);
+  // The card itself turns into the form (no popup), at the card's full width.
+  const form = page.locator('.node-table-line #api-editor');
+  await expect(form).toBeVisible();
+  await expect(page.locator('.app-modal-overlay.open')).toHaveCount(0);
+  await expect(card).toHaveCount(0);
   await expect(page.locator('#api-ed-url')).toBeFocused();
   await expect(page.locator('#api-ed-url')).toHaveValue('{{baseUrl}}/orders');
   await expect(page.locator('#api-ed-query .api-ed-k')).toHaveValue('status');
 
-  // Esc leaves the card as it was.
-  await page.locator('#api-ed-url').fill('/changed');
+  // Esc with nothing changed shows the card as it was.
   await page.keyboard.press('Escape');
-  await expect(form).not.toHaveClass(/open/);
+  await expect(form).toHaveCount(0);
   await expect(card.locator('.pv-api-url')).toHaveText('{{baseUrl}}/orders?status=open');
 
-  // Edit and save.
+  // Edit; a click outside finishes and saves.
   await card.dblclick();
   await page.locator('#api-ed-method').selectOption('POST');
   await page.locator('#api-ed-url').fill('{{baseUrl}}/orders');
@@ -126,8 +128,11 @@ test('the API request form edits the card: method, URL, query, headers, body; Es
   await page.locator('#api-ed-body').fill('{"id":"4711"}');
   await page.locator('.api-ed-format[data-format="api-ed-body"]').click();
   await expect(page.locator('#api-ed-body')).toHaveValue('{\n  "id": "4711"\n}');
-  await page.locator('#api-ed-save').click();
-  await expect(form).not.toHaveClass(/open/);
+  // The body box grows with its text (three lines here) instead of scrolling.
+  const ta = await page.locator('#api-ed-body').evaluate((t: HTMLTextAreaElement) => [t.scrollHeight, t.clientHeight]);
+  expect(ta[0]).toBeLessThanOrEqual(ta[1]);
+  await page.mouse.click(5, 450);
+  await expect(form).toHaveCount(0);
   await expect(card).toHaveAttribute('data-method', 'post');
   await expect(card.locator('.pv-api-url')).toHaveText('{{baseUrl}}/orders');
   await expect(card.locator('.pv-api-key')).toHaveText(['Authorization', 'Content-Type']);
@@ -152,12 +157,16 @@ test('the form needs a URL, warns about invalid JSON, and Edit as table opens th
   await page.locator('#api-ed-url').fill('');
   await page.keyboard.press('ControlOrMeta+Enter');
   await expect(page.locator('#api-ed-url-err')).toBeVisible();
-  await expect(page.locator('#api-editor-overlay')).toHaveClass(/open/);
+  await expect(page.locator('#api-editor')).toBeVisible();
+  // A click outside doesn't finish it either while the URL is empty.
+  await page.mouse.click(5, 450);
+  await expect(page.locator('#api-editor')).toBeVisible();
+  await page.locator('#api-ed-url').fill('{{baseUrl}}/orders');
   await page.locator('#api-ed-body').fill('{not json');
   await page.locator('.api-ed-format[data-format="api-ed-body"]').click();
   await expect(page.locator('[data-err-for="api-ed-body"]')).toBeVisible();
   await page.locator('#api-ed-astable').click();
-  await expect(page.locator('#api-editor-overlay')).not.toHaveClass(/open/);
+  await expect(page.locator('#api-editor')).toHaveCount(0);
   await expect(page.locator('.node-table-line td[contenteditable="true"]').first()).toBeVisible();
 });
 
@@ -167,7 +176,7 @@ test('Paste from Postman (cURL) fills a new API request and drops the sample tex
   // @ts-expect-error -- bare global from index.html
   await page.evaluate(() => openTableStartMenu(2, { x: 300, y: 200 }));
   await page.locator('.sb-context-menu .sb-context-item', { hasText: 'API request' }).click();
-  await expect(page.locator('#api-editor-overlay')).toHaveClass(/open/);
+  await expect(page.locator('#api-editor')).toBeVisible();
   const curl = "curl --location 'https://erp.example.com/PostalCodeSet?$format=json' \\\n"
     + "--header 'Authorization: Bearer real-secret' \\\n--data '{\"PostalCode\":\"2300\"}'";
   // Pasting into the URL box fills the whole form.
@@ -197,7 +206,8 @@ test('Paste from Postman (cURL) fills a new API request and drops the sample tex
   await expect(page.locator('#api-ed-curl-wrap')).toBeHidden();
   await expect(page.locator('#api-ed-method')).toHaveValue('DELETE');
 
-  await page.locator('#api-ed-save').click();
+  await page.keyboard.press('ControlOrMeta+Enter');
+  await expect(page.locator('#api-editor')).toHaveCount(0);
   // @ts-expect-error -- bare global from index.html
   const html = await page.evaluate(() => nodes[1].tables[0]);
   expect(html).toContain('<td>DELETE</td>');
@@ -304,7 +314,7 @@ test('the card lists every response, reads the auth from the headers and finds t
   await third.locator('.api-ed-format').click();
   await expect(third.locator('textarea')).toHaveValue('{\n  "error": "token expired"\n}');
   await page.locator('#api-ed-responses .api-ed-resp').nth(1).locator('.api-ed-remove').click();
-  await page.locator('#api-ed-save').click();
+  await page.keyboard.press('ControlOrMeta+Enter');
 
   await expect(card.locator('.pv-api-status')).toHaveText(['200 OK', '401 Unauthorized']);
   await expect(card.locator('.pv-api-authval')).toHaveText('OAuth 2.0, scope orders.read');
