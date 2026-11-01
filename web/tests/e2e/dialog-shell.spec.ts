@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('dialogs share one head with the same close button', async ({ page }) => {
-  for (const id of ['feedback-modal-overlay', 'feedback-inbox-modal-overlay', 'account-delete-modal-overlay', 'shortcuts-modal-overlay', 'cheatsheet-overlay', 'history-modal-overlay', 'icon-library-overlay']) {
+  for (const id of ['feedback-modal-overlay', 'feedback-inbox-modal-overlay', 'account-delete-modal-overlay', 'history-modal-overlay', 'icon-library-overlay']) {
     await expect(page.locator(`#${id} .app-modal-head h2`), id).toHaveCount(1);
     await expect(page.locator(`#${id} .app-modal-head .app-modal-close-btn svg`), id).toHaveCount(1);
   }

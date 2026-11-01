@@ -213,18 +213,21 @@ test.describe('Settings', () => {
     }
     for (const kept of ['#theme-segmented', '#editor-scale', '#default-author-input',
       '#todos-expiry-select', '#trash-retention-select', '#cover-page-toggle', '#preview-branding-text-input', '#auto-rewrite-toggle',
-      '#ai-provider-select', '#ai-prompt-input', '#shortcuts-open-modal-btn', '#sb-export-all-btn', '#vault-setup-btn', '#open-feedback-modal-btn']) {
+      '#ai-provider-select', '#ai-prompt-input', '#sb-export-all-btn', '#vault-setup-btn', '#open-feedback-modal-btn']) {
       await expect(page.locator(kept), kept).toHaveCount(1);
     }
-    // Five rails; Account joins them only while signed in (Admin lives inside it).
-    await expect(page.locator('#settings-rail .settings-rail-btn span')).toHaveText(['General', 'Documents', 'Data & backup', 'AI', 'Account', 'About']);
+    // Six rails; Account joins them only while signed in (Admin lives inside it).
+    await expect(page.locator('#settings-rail .settings-rail-btn span')).toHaveText(['General', 'Documents', 'Shortcuts', 'Data & backup', 'AI', 'Account', 'About']);
     await expect(page.locator('#settings-rail-account-btn')).toBeHidden();
     await expect(page.locator('#settings-rail-admin-btn, #profile-visibility-segmented, #settings-section-account')).toHaveCount(0);
-    // General = Appearance, To-Dos, Keyboard shortcuts; Documents = New documents, PDF, Trash.
+    // General = Appearance, To-Dos; Shortcuts = the shortcut list itself; Documents = New documents, PDF, Trash.
     // @ts-expect-error -- bare global from index.html
     await page.evaluate(() => { document.getElementById('settings-toggle')!.click(); applySettingsCategory('general'); });
     const titles = () => page.locator('#settings-content .settings-section:visible > .settings-section-title').allTextContents();
-    expect(await titles()).toEqual(['Appearance', 'To-Dos', 'Keyboard shortcuts']);
+    expect(await titles()).toEqual(['Appearance', 'To-Dos']);
+    await page.locator('#settings-rail .settings-rail-btn[data-cat="shortcuts"]').click();
+    expect(await titles()).toEqual(['Keyboard shortcuts']);
+    await expect(page.locator('#shortcuts-list .shortcut-combo-btn').first()).toBeVisible();
     await page.locator('#settings-rail .settings-rail-btn[data-cat="documents"]').click();
     expect(await titles()).toEqual(['New documents', 'PDF', 'Trash']);
     await page.locator('#settings-rail .settings-rail-btn[data-cat="about"]').click();
