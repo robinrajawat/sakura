@@ -16,7 +16,10 @@ test('Escape closes Settings', async ({ page }) => {
   const isOpen = () => page.evaluate(() => document.getElementById('settings-panel')!.classList.contains('open'));
   await page.click('#rail-settings-btn');
   expect(await isOpen()).toBe(true);
+  // The page behind the sheet fades back so half-covered rows don't peek out beside it.
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.getElementById('editor-pane-inner')!).opacity)).toBe('0.3');
   await page.keyboard.press('Escape');
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.getElementById('editor-pane-inner')!).opacity)).toBe('1');
   expect(await isOpen()).toBe(false);
 
   await page.click('#rail-settings-btn');
