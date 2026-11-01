@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** app polish round 2026-11-01 (owner "do it", merge each on green): (1) one side panel at a time (#775 merged), (2) Search below the title over a dimmed page [this PR], (3) one Shortcuts page in Settings (no popups), (4) remove dead `sakuraPrompt`. Check `mcp__github__list_pull_requests` at session start.
+**Open work:** app polish round 2026-11-01 done: #775 one side panel, #776 Search below the title, this PR Shortcuts page. Item 4 ("dead `sakuraPrompt`") dropped: it backs `sakuraPasswordPrompt` (Secure storage passphrase), not dead. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **Shortcuts: one page in Settings, no popups (2026-11-01).** Help's Cheatsheet popup and Settings' Customize shortcuts popup listed the same thing. Now a **Shortcuts** rail in Settings (`data-cat="shortcuts"`, `#keyboard-shortcuts-section`) holds the list, search and Reset all, edited in place; Help's "Keyboard shortcuts" button (`#cheatsheet-open-btn`) opens it. Both popups and the cheatsheet's hand-written cards are gone. Spec `shortcuts-page.spec.ts`.
 
 - **Search below the title, page dims (2026-11-01).** The Ctrl/Cmd+/ box floated over the title. Box at `top:max(14vh,168px)`, results same width right under it (z above the dim), `body:has(#global-search-wrap.qa-open)::after` dims the page (rgba black .08 light / .35 dark, pointer-events:none so a page click still closes Search). Spec `search-palette-layer.spec.ts`.
 
 - **One side panel at a time (2026-11-01).** Bug: To-Dos open + Settings opened = page slid under the docked Settings sheet (cut off mid-word), two rail icons lit. Now `openTodosPanel` closes Settings/Help, and a MutationObserver on `#settings-panel`/`#help-panel` closes To-Dos when either opens (covers every opener: rail, Search, shortcuts). Spec `one-side-panel.spec.ts`. Esc in the To-Dos field still blurs first, second Esc closes (by design).
-
-- **API card shows bodies/responses in full (2026-11-01).** Owner: avoid scrolls. `.pv-api-code` has no 320px cap and wraps long lines (pre-wrap + overflow-wrap:anywhere, same as print); the form's boxes wrap too and regrow on window resize (`apiEditorRegrow`).
 
 ### In progress / not built
 
