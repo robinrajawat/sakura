@@ -1495,10 +1495,10 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-note{flex-basis:100%;padding-left:12px;font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--muted);line-height:1.45}
 .pv-api-authval{font:400 var(--fs-sm) 'Inter',sans-serif;color:var(--fg);line-height:1.45}
 .pv-api-key{color:var(--fg)}.pv-api-sep{color:var(--muted);margin:0 4px 0 1px}.pv-api-val{color:var(--muted)}
-.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre;max-height:320px;overflow:auto}
+.pv-api-code{margin:0;padding:8px 10px;border-radius:6px;background:var(--hover);font:400 var(--fs-sm)/1.5 'Fira Code',Consolas,monospace;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere}
 .pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
 .pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
-@media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere}}
+@media print{.pv-api-curl{display:none}}
 /* API request editor: the card itself turns into this form (Edit request…), at the page's full
    width. Standard 32px fields with 8px corners; body and response boxes grow with their text. */
 .api-ed{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--edit-bg);padding:8px 12px 14px;display:flex;flex-direction:column;gap:10px;cursor:auto}
@@ -1526,7 +1526,7 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-add,.api-ed-format{align-self:flex-start;border:none;background:none;padding:2px 0;color:var(--muted);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
 .api-ed-add:hover,.api-ed-format:hover{color:var(--fg)}
 .api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
-.api-ed-area{height:auto;min-height:72px;padding:8px 10px;line-height:1.5;resize:none;white-space:pre;overflow-x:auto;overflow-y:hidden}
+.api-ed-area{height:auto;min-height:72px;padding:8px 10px;line-height:1.5;resize:none;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden}
 .api-ed-status{width:240px;max-width:60%;flex:none}
 #api-ed-query .api-ed-k{flex:0 0 24%}#api-ed-query .api-ed-v{flex:1 1 0;min-width:0}.api-ed-note{flex:1.3 1 0;min-width:0}
 .api-ed-pathrow{min-height:32px}
@@ -5879,9 +5879,12 @@ function openApiRequestEditor(node,tIdx,{fresh,wrap,restore}={}){
   apiEditorSyncPath(); apiEditorSyncAuthHint();
   ov.querySelectorAll('textarea').forEach(apiEditorGrow);
   document.addEventListener('mousedown',apiEditorOutside,true);
+  window.addEventListener('resize',apiEditorRegrow);
   const u=el('api-ed-url'); u.focus({preventScroll:true}); u.select();
   wrap.scrollIntoView({block:'nearest'});
 }
+// Long lines wrap, so a narrower or wider window changes how tall the boxes need to be.
+function apiEditorRegrow(){ _apiEdForm?.querySelectorAll('textarea').forEach(apiEditorGrow); }
 // A press anywhere outside the form (not on a menu, toast or tooltip it opened) finishes it.
 function apiEditorOutside(e){
   if(!_apiEd||!_apiEdForm)return;
@@ -5917,6 +5920,7 @@ function apiEditorFinish({cancelIfInvalid=false,focusBack=true}={}){
   }
   _apiEd=null;
   document.removeEventListener('mousedown',apiEditorOutside,true);
+  window.removeEventListener('resize',apiEditorRegrow);
   const hadFocus=_apiEdForm?.contains(document.activeElement);
   _apiEdForm?.remove();
   ed.wrap?.classList.remove('editing','api-editing');
