@@ -411,8 +411,11 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
 .pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
 @media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere}}
-/* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
-.api-ed{width:min(720px,94vw)}
+/* API request editor: the card itself turns into this form (Edit request…), at the page's full
+   width. Standard 32px fields with 8px corners; body and response boxes grow with their text. */
+.api-ed{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:8px 12px 14px;display:flex;flex-direction:column;gap:10px;cursor:auto}
+.api-ed-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.api-ed-bar .api-ed-hint{margin-left:auto}
 .api-ed-body{display:flex;flex-direction:column;gap:12px}.api-ed-body>*{flex-shrink:0}
 .api-ed-line{display:flex;gap:8px;min-width:0}
 .api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
@@ -435,8 +438,8 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-add,.api-ed-format{align-self:flex-start;border:none;background:none;padding:2px 0;color:var(--muted);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
 .api-ed-add:hover,.api-ed-format:hover{color:var(--fg)}
 .api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
-.api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:vertical;white-space:pre;overflow:auto}
-.api-ed-status{width:180px;flex:none}
+.api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:none;white-space:pre;overflow-x:auto;overflow-y:hidden}
+.api-ed-status{width:240px;max-width:60%;flex:none}
 #api-ed-query .api-ed-k{flex:0 0 24%}#api-ed-query .api-ed-v{flex:1 1 0;min-width:0}.api-ed-note{flex:1.3 1 0;min-width:0}
 .api-ed-pathrow{min-height:32px}
 .api-ed-pname{flex:0 0 24%;box-sizing:border-box;padding:0 6px 0 10px;display:flex;align-items:center;gap:6px;min-width:0}
@@ -448,9 +451,6 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-resp{display:flex;flex-direction:column;gap:6px}
 .api-ed-resp-head{display:flex;align-items:center;gap:6px}.api-ed-resp-head .api-ed-format{margin-left:auto;align-self:center}
 .api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
-.api-ed-foot{display:flex;align-items:center;gap:8px;padding:12px var(--pad-dialog);border-top:1px solid var(--border);flex:0 0 auto}
-.api-ed-astable{margin-right:auto;padding-left:0}
-.api-ed-curlbar{display:flex;margin:-4px 0 -4px}
 .api-ed-curl{min-height:72px}
 .api-ed-sec[hidden]{display:none}
 .api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}

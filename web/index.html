@@ -1499,8 +1499,11 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .pv-api-status{font:600 var(--fs-2xs) 'Fira Code',Consolas,monospace;letter-spacing:0;text-transform:none;color:var(--muted)}
 .pv-api-status.ok{color:var(--fc-green)}.pv-api-status.err{color:var(--fc-red)}
 @media print{.pv-api-curl{display:none}.pv-api-code{max-height:none;overflow:visible;white-space:pre-wrap;overflow-wrap:anywhere}}
-/* API request editor (the form behind Edit request…). Standard 32px fields with 8px corners. */
-.api-ed{width:min(720px,94vw)}
+/* API request editor: the card itself turns into this form (Edit request…), at the page's full
+   width. Standard 32px fields with 8px corners; body and response boxes grow with their text. */
+.api-ed{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:8px 12px 14px;display:flex;flex-direction:column;gap:10px;cursor:auto}
+.api-ed-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.api-ed-bar .api-ed-hint{margin-left:auto}
 .api-ed-body{display:flex;flex-direction:column;gap:12px}.api-ed-body>*{flex-shrink:0}
 .api-ed-line{display:flex;gap:8px;min-width:0}
 .api-ed-input{box-sizing:border-box;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:400 var(--fs-md) 'Inter',sans-serif;min-width:0;width:100%}
@@ -1523,8 +1526,8 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-add,.api-ed-format{align-self:flex-start;border:none;background:none;padding:2px 0;color:var(--muted);font:500 var(--fs-sm) 'Inter',sans-serif;cursor:pointer}
 .api-ed-add:hover,.api-ed-format:hover{color:var(--fg)}
 .api-ed-format{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:500;font-size:var(--fs-xs)}
-.api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:vertical;white-space:pre;overflow:auto}
-.api-ed-status{width:180px;flex:none}
+.api-ed-area{height:auto;min-height:96px;padding:8px 10px;line-height:1.5;resize:none;white-space:pre;overflow-x:auto;overflow-y:hidden}
+.api-ed-status{width:240px;max-width:60%;flex:none}
 #api-ed-query .api-ed-k{flex:0 0 24%}#api-ed-query .api-ed-v{flex:1 1 0;min-width:0}.api-ed-note{flex:1.3 1 0;min-width:0}
 .api-ed-pathrow{min-height:32px}
 .api-ed-pname{flex:0 0 24%;box-sizing:border-box;padding:0 6px 0 10px;display:flex;align-items:center;gap:6px;min-width:0}
@@ -1536,9 +1539,6 @@ body:has(#diagram-viewer.open) .sb-context-menu,body:has(#node-image-viewer.open
 .api-ed-resp{display:flex;flex-direction:column;gap:6px}
 .api-ed-resp-head{display:flex;align-items:center;gap:6px}.api-ed-resp-head .api-ed-format{margin-left:auto;align-self:center}
 .api-ed-err{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--fc-red);margin-top:-6px}
-.api-ed-foot{display:flex;align-items:center;gap:8px;padding:12px var(--pad-dialog);border-top:1px solid var(--border);flex:0 0 auto}
-.api-ed-astable{margin-right:auto;padding-left:0}
-.api-ed-curlbar{display:flex;margin:-4px 0 -4px}
 .api-ed-curl{min-height:72px}
 .api-ed-sec[hidden]{display:none}
 .api-ed-hint{font:400 var(--fs-xs) 'Inter',sans-serif;color:var(--hint)}
@@ -5648,25 +5648,28 @@ function exportApiRequestToPostman(node,table){
   downloadBlob(`${name.replace(/[\\/:*?"<>|]+/g,'_')}.postman_collection.json`,'application/json;charset=utf-8',JSON.stringify(collection,null,2));
   showToast('Exported \u2014 in Postman, Import \u203a the file');
 }
-// API request editor (owner 2026-10-30: "a nicer editor, no shortcuts"). Double-click, Edit
-// request… or a new API request starter opens this form instead of the raw Field | Value grid:
-// method and URL on one line, a description, parameters (path ones follow the URL; query rows with
-// a description), headers (add/remove), auth, body and any number of responses, with Format. Save writes the request back into the
-// same table (apiRequestToGrid), keeping the table's own display attributes, as one undo step.
-// Esc or Cancel leaves the table as it was; Ctrl/Cmd+Enter saves. "Edit as table" is still there
-// for fields the form doesn't show (extras keep their rows either way).
+// API request editor (owner 2026-10-30: "a nicer editor, no shortcuts"; inline since 2026-11-01:
+// a popup squeezed the body and response boxes). Double-click, Edit request… or a new API request
+// starter turns the card itself into this form, at the page's full width: method and URL on one
+// line, a description, parameters (path ones follow the URL; query rows with a description),
+// headers (add/remove), auth, body and any number of responses, with Format; the body and response
+// boxes grow with their text. No Save/Cancel: Esc, Ctrl/Cmd+Enter, a click outside or Tab out
+// finishes and writes the request back into the same table (apiRequestToGrid), keeping the table's
+// own display attributes, as one undo step. An empty URL keeps the form open (Esc then leaves it
+// without saving). "Edit as table" is still there for fields the form doesn't show (extras keep
+// their rows either way).
 const API_EDITOR_HEADER_NAMES=['Accept','Authorization','Cache-Control','Content-Type','Cookie','If-None-Match','User-Agent','X-API-Key','X-Correlation-ID','X-Request-ID'];
-let _apiEd=null;
+let _apiEd=null, _apiEdForm=null;
 function apiEditorEl(){
-  let ov=el('api-editor-overlay'); if(ov)return ov;
-  const X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>';
-  ov=document.createElement('div'); ov.id='api-editor-overlay'; ov.className='app-modal-overlay';
-  ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-labelledby','api-ed-heading');
-  ov.innerHTML=`<div class="app-modal api-ed">
-    <div class="app-modal-head"><div><h2 id="api-ed-heading">API request</h2><div class="cs-sub">Documented in the spec. Sakura never sends it; use cURL or Postman to try it.</div></div>
-      <button type="button" class="app-modal-close-btn" id="api-ed-close" aria-label="Close">${X}</button></div>
-    <div class="app-modal-body api-ed-body">
-      <div class="api-ed-curlbar"><button type="button" class="api-ed-add" id="api-ed-curl-btn">Paste from Postman (cURL)…</button></div>
+  if(_apiEdForm)return _apiEdForm;
+  const ov=document.createElement('div'); ov.id='api-editor'; ov.className='api-ed';
+  ov.setAttribute('role','group'); ov.setAttribute('aria-label','Edit API request');
+  ov.innerHTML=`<div class="api-ed-bar">
+      <button type="button" class="api-ed-add" id="api-ed-curl-btn">Paste from Postman (cURL)…</button>
+      <button type="button" class="api-ed-add" id="api-ed-astable">Edit as table</button>
+      <span class="api-ed-hint">Esc or click outside to finish</span>
+    </div>
+    <div class="api-ed-body">
       <div class="api-ed-sec" id="api-ed-curl-wrap" hidden>
         <textarea id="api-ed-curl" class="api-ed-input api-ed-mono api-ed-area api-ed-curl" spellcheck="false" placeholder="Paste a cURL command here. In Postman: open the request › Code (</>) › cURL › Copy." aria-label="cURL command"></textarea>
         <div class="api-ed-err" id="api-ed-curl-err" hidden>That isn\u2019t a cURL command. In Postman: open the request › Code (</>) › cURL › Copy.</div>
@@ -5690,19 +5693,12 @@ function apiEditorEl(){
       <div class="api-ed-sec"><div class="api-ed-label">Responses</div><div class="api-ed-resps" id="api-ed-responses"></div>
         <button type="button" class="api-ed-add" id="api-ed-add-response">+ Add response</button></div>
       <datalist id="api-ed-header-names">${API_EDITOR_HEADER_NAMES.map(h=>`<option value="${h}">`).join('')}</datalist>
-    </div>
-    <div class="api-ed-foot">
-      <button type="button" class="smodal-btn api-ed-astable" id="api-ed-astable">Edit as table</button>
-      <span class="api-ed-hint">${navigator.platform?.includes('Mac')?'⌘':'Ctrl'}+Enter to save</span>
-      <button type="button" class="smodal-btn" id="api-ed-cancel">Cancel</button>
-      <button type="button" class="smodal-btn primary" id="api-ed-save">Save</button>
-    </div></div>`;
-  document.body.appendChild(ov);
-  ov.addEventListener('mousedown',e=>{ if(e.target===ov)apiEditorClose(); });
-  el('api-ed-close').addEventListener('click',()=>apiEditorClose());
-  el('api-ed-cancel').addEventListener('click',()=>apiEditorClose());
-  el('api-ed-save').addEventListener('click',()=>apiEditorSave());
-  el('api-ed-astable').addEventListener('click',()=>{ const ed=_apiEd; apiEditorClose(); ed?.asTable?.(); });
+    </div>`;
+  _apiEdForm=ov;
+  // The form is built once and moved into whichever card is being edited; until it's mounted,
+  // look its parts up on the form itself.
+  const el=id=>ov.querySelector('#'+id);
+  el('api-ed-astable').addEventListener('click',()=>{ const ed=_apiEd; if(!ed||!apiEditorFinish({cancelIfInvalid:true,focusBack:false}))return; apiEditorWrapFor(ed.nodeId,ed.tIdx)?._sakuraEnterEdit?.(-1,{asTable:true}); });
   el('api-ed-url').addEventListener('input',()=>{ el('api-ed-url-err').hidden=true; el('api-ed-url').classList.remove('invalid'); });
   // A cURL command pasted into the URL box fills the whole form instead.
   el('api-ed-url').addEventListener('paste',e=>{
@@ -5728,20 +5724,24 @@ function apiEditorEl(){
     const b=e.target.closest('.api-ed-format'); if(!b)return;
     const box=b.closest('.api-ed-sec,.api-ed-resp'), ta=box.querySelector('textarea'), err=box.querySelector('.api-ed-err[data-err-for]');
     if(!ta.value.trim())return;
-    const f=formatPayload(ta.value); if(f.ok){ ta.value=f.text; err.hidden=true; } else err.hidden=false;
+    const f=formatPayload(ta.value); if(f.ok){ ta.value=f.text; err.hidden=true; apiEditorGrow(ta); } else err.hidden=false;
   });
   ov.addEventListener('input',e=>{
+    if(e.target.matches?.('textarea'))apiEditorGrow(e.target);
     if(e.target.matches?.('textarea')){ const err=e.target.closest('.api-ed-sec,.api-ed-resp')?.querySelector('.api-ed-err[data-err-for]'); if(err)err.hidden=true; }
     // Path parameters follow the URL as it's typed; the Auth hint follows the headers.
     if(e.target.id==='api-ed-url')apiEditorSyncPath();
     if(e.target.closest?.('#api-ed-headers,#api-ed-query'))apiEditorSyncAuthHint();
   });
   ov.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); apiEditorClose(); }
-    else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); e.stopPropagation(); apiEditorSave(); }
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); apiEditorFinish({cancelIfInvalid:true}); }
+    else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); e.stopPropagation(); apiEditorFinish(); }
     // Keep the outline's own shortcuts (arrows, Delete, Tab-indent...) from firing behind the form.
     else e.stopPropagation();
   });
+  ov.addEventListener('focusout',e=>{ if(e.relatedTarget&&!ov.contains(e.relatedTarget))apiEditorFinish({focusBack:false}); });
+  // Clicks inside stay with the form (the outline's own pane handling would take focus back).
+  ['mousedown','click','dblclick','contextmenu'].forEach(t=>ov.addEventListener(t,e=>e.stopPropagation()));
   return ov;
 }
 const API_ED_X='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>';
@@ -5832,8 +5832,9 @@ function apiEditorFillFromCurl(text){
   // them so nothing from the sample is left describing the pasted request.
   if(_apiEd?.fresh){ el('api-ed-desc').value=''; el('api-ed-auth').value=''; el('api-ed-responses').innerHTML=''; apiEditorAddResponse('',''); _apiEd.notes={}; _apiEd.orphanNotes=[]; _apiEd.fresh=false; }
   apiEditorSyncPath(); apiEditorSyncAuthHint();
-  el('api-editor-overlay').querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
-  showToast('Filled from cURL \u2014 check it, then Save');
+  _apiEdForm.querySelectorAll('.api-ed-err[data-err-for]').forEach(e=>e.hidden=true);
+  _apiEdForm.querySelectorAll('textarea').forEach(apiEditorGrow);
+  showToast('Filled from cURL \u2014 check it');
   el('api-ed-url').focus();
   return true;
 }
@@ -5841,15 +5842,28 @@ function apiEditorPairs(kind){
   return [...el(kind==='query'?'api-ed-query':'api-ed-headers').querySelectorAll('.api-ed-pair')]
     .map(r=>[r.querySelector('.api-ed-k').value.trim(),r.querySelector('.api-ed-v').value.trim()]).filter(([k])=>k);
 }
-function openApiRequestEditor(node,tIdx,{asTable,fresh}={}){
+// A body or response box is as tall as its text (from 4 lines), so nothing scrolls inside it.
+function apiEditorGrow(ta){
+  if(!ta||!ta.isConnected)return;
+  ta.style.height='auto'; ta.style.height=(ta.scrollHeight+ta.offsetHeight-ta.clientHeight)+'px';
+}
+// The card's wrap: passed in by the card itself, or found by row and table index (a new starter).
+function apiEditorWrapFor(nodeId,tIdx){ return [...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)][tIdx]||null; }
+function openApiRequestEditor(node,tIdx,{fresh,wrap,restore}={}){
+  if(_apiEd&&!apiEditorFinish({focusBack:false}))return;
   const div=document.createElement('div'); div.innerHTML=node.tables?.[tIdx]||'';
   const table=div.querySelector('table'); if(!table)return;
+  wrap=wrap||apiEditorWrapFor(node.id,tIdx); if(!wrap)return;
+  restore=restore||wrap._sakuraShowDisplay;
   const req=tableApiInfo(table)||emptyApiRequest();
   const ov=apiEditorEl();
+  // The card turns into the form in place.
+  wrap.innerHTML=''; wrap.classList.remove('pv-table-chart-figure','pos-center'); wrap.classList.add('editing','api-editing');
+  wrap.appendChild(ov);
   const {url,query}=apiEditorSplitQuery(req.url,req.query);
   const notes=Object.fromEntries(req.paramNotes);
   const usedNames=new Set(apiParameters({url,query,paramNotes:[]}).map(p=>p.name));
-  _apiEd={nodeId:node.id,tIdx,extras:req.extras,asTable,fresh:!!fresh,returnFocus:document.activeElement,
+  _apiEd={nodeId:node.id,tIdx,extras:req.extras,fresh:!!fresh,wrap,restore,
     notes, orphanNotes:req.paramNotes.filter(([n])=>!usedNames.has(n))};
   el('api-ed-method').value=API_METHODS.includes(req.method)?req.method:'GET';
   el('api-ed-url').value=url; el('api-ed-url').classList.remove('invalid'); el('api-ed-url-err').hidden=true;
@@ -5863,38 +5877,53 @@ function openApiRequestEditor(node,tIdx,{asTable,fresh}={}){
   req.headers.forEach(([k,v])=>apiEditorAddPair('headers',k,v));
   (req.responses.length?req.responses:[{status:'',body:''}]).forEach(x=>apiEditorAddResponse(x.status,x.body));
   apiEditorSyncPath(); apiEditorSyncAuthHint();
-  ov.classList.add('open');
-  requestAnimationFrame(()=>{ const u=el('api-ed-url'); u.focus(); u.select(); });
+  ov.querySelectorAll('textarea').forEach(apiEditorGrow);
+  document.addEventListener('mousedown',apiEditorOutside,true);
+  const u=el('api-ed-url'); u.focus({preventScroll:true}); u.select();
+  wrap.scrollIntoView({block:'nearest'});
 }
-function apiEditorClose(){
-  const ov=el('api-editor-overlay'); if(!ov||!ov.classList.contains('open'))return;
-  ov.classList.remove('open');
-  const back=_apiEd?.returnFocus; _apiEd=null;
-  if(back&&back.isConnected&&typeof back.focus==='function')back.focus(); else focusPane();
+// A press anywhere outside the form (not on a menu, toast or tooltip it opened) finishes it.
+function apiEditorOutside(e){
+  if(!_apiEd||!_apiEdForm)return;
+  if(_apiEdForm.contains(e.target)||e.target.closest?.('.sb-context-menu,#toast'))return;
+  apiEditorFinish({focusBack:false});
 }
-function apiEditorSave(){
-  const ed=_apiEd; if(!ed)return;
-  const url=el('api-ed-url').value.trim();
-  if(!url){ el('api-ed-url').classList.add('invalid'); el('api-ed-url-err').hidden=false; el('api-ed-url').focus(); return; }
-  const idx=getIndex(nodes,ed.nodeId); const node=nodes[idx];
-  if(idx<0||!node.tables?.[ed.tIdx]){ apiEditorClose(); showToast('That API request was removed in the meantime'); return; }
-  const req={method:el('api-ed-method').value,url,query:apiEditorPairs('query'),paramNotes:apiEditorParamNotes(),headers:apiEditorPairs('headers'),
-    auth:el('api-ed-auth').value.trim(),body:el('api-ed-body').value.trim(),responses:apiEditorResponses(),
-    description:el('api-ed-desc').value.trim(),extras:ed.extras||[]};
-  const old=document.createElement('div'); old.innerHTML=node.tables[ed.tIdx];
-  const oldTable=old.querySelector('table');
-  const fresh=document.createElement('div'); fresh.innerHTML=apiGridToTableHtml(apiRequestToGrid(req));
-  const table=fresh.querySelector('table');
-  // Keep how the table was set up (display, position...) and make sure it shows as a request.
-  [...(oldTable?.attributes||[])].forEach(a=>table.setAttribute(a.name,a.value));
-  table.setAttribute('data-table-display','api');
-  const html=sakuraSanitizeRichHtml(table.outerHTML);
-  apiEditorClose();
-  if(html===node.tables[ed.tIdx])return;
-  pushUndo();
-  node.tables[ed.tIdx]=html; node.modifiedAt=Date.now();
-  markDirty(); scheduleAutoSave(); render();
-  showToast('API request saved');
+// Ends the inline form: writes the request back as one undo step when it changed and shows the
+// card again. An empty URL keeps the form open (returns false), unless cancelIfInvalid (Esc), which
+// leaves the table as it was.
+function apiEditorFinish({cancelIfInvalid=false,focusBack=true}={}){
+  const ed=_apiEd; if(!ed)return true;
+  const url=el('api-ed-url')?.value.trim()||'';
+  let html=null;
+  if(!url){
+    if(!cancelIfInvalid){ el('api-ed-url').classList.add('invalid'); el('api-ed-url-err').hidden=false; el('api-ed-url').focus(); return false; }
+  }else{
+    const idx=getIndex(nodes,ed.nodeId); const node=nodes[idx];
+    if(idx>=0&&node.tables?.[ed.tIdx]){
+      const req={method:el('api-ed-method').value,url,query:apiEditorPairs('query'),paramNotes:apiEditorParamNotes(),headers:apiEditorPairs('headers'),
+        auth:el('api-ed-auth').value.trim(),body:el('api-ed-body').value.trim(),responses:apiEditorResponses(),
+        description:el('api-ed-desc').value.trim(),extras:ed.extras||[]};
+      const old=document.createElement('div'); old.innerHTML=node.tables[ed.tIdx];
+      const oldTable=old.querySelector('table');
+      const fresh=document.createElement('div'); fresh.innerHTML=apiGridToTableHtml(apiRequestToGrid(req));
+      const table=fresh.querySelector('table');
+      // Keep how the table was set up (display, position...) and make sure it shows as a request.
+      [...(oldTable?.attributes||[])].forEach(a=>table.setAttribute(a.name,a.value));
+      table.setAttribute('data-table-display','api');
+      html=sakuraSanitizeRichHtml(table.outerHTML);
+      if(html===node.tables[ed.tIdx])html=null;
+      else{ pushUndo(); node.tables[ed.tIdx]=html; node.modifiedAt=Date.now(); markDirty(); scheduleAutoSave(); }
+    }
+  }
+  _apiEd=null;
+  document.removeEventListener('mousedown',apiEditorOutside,true);
+  const hadFocus=_apiEdForm?.contains(document.activeElement);
+  _apiEdForm?.remove();
+  ed.wrap?.classList.remove('editing','api-editing');
+  if(html!==null)render(); else if(ed.wrap?.isConnected)ed.restore?.(); else render();
+  // Esc / Ctrl+Enter put the keyboard back on the row; a click elsewhere keeps its own focus.
+  if(focusBack&&(hadFocus||!document.activeElement||document.activeElement===document.body))focusPane();
+  return true;
 }
 // Copy as cURL: a click on the card's button copies the command and does nothing else (the card
 // itself opens the table's editing like any featured table).
@@ -9315,7 +9344,7 @@ function openTableStartMenu(nodeId,pos){
       const n=nodes[getIndex(nodes,nodeId)];
       if(st.key==='api'&&n?.tables?.length){
         const tIdx=n.tables.length-1;
-        openApiRequestEditor(n,tIdx,{fresh:true,asTable:()=>{ const w=[...document.querySelectorAll(`.node-table-line[data-node-id="${nodeId}"]`)][tIdx]; w?._sakuraEnterEdit?.(-1,{asTable:true}); }});
+        openApiRequestEditor(n,tIdx,{fresh:true});
         return;
       }
       showToast(st.label+' added \u2014 double-click it to edit the data');
@@ -9747,7 +9776,7 @@ function buildNodeTableObject(node,tIdx){
     if(!liveTable)return;
     // An API request edits in its own form; "Edit as table" (opts.asTable) still opens the grid.
     if(!opts?.asTable&&isTableShownAsApi(liveTable)&&tableApiEligible(liveTable)){
-      openApiRequestEditor(node,tIdx,{asTable:()=>enterEdit(-1,undefined,undefined,{asTable:true})}); return;
+      openApiRequestEditor(node,tIdx,{wrap,restore:showDisplay}); return;
     }
     liveTable.querySelectorAll('td,th').forEach(c=>c.contentEditable='true');
     wrap.innerHTML='';
@@ -9984,6 +10013,7 @@ function buildNodeTableObject(node,tIdx){
   showDisplay();
   // Lets "Add table…" (grid picker) open a brand-new table straight into editing.
   wrap._sakuraEnterEdit=(flatIdx,opts)=>enterEdit(flatIdx,undefined,undefined,opts);
+  wrap._sakuraShowDisplay=showDisplay;
   // Both stopPropagation calls matter: without them, this click/mousedown bubbles up to the
   // outline's own pane-level click handling (which manages keyboard-nav focus/selection for the
   // whole document) and steals focus right back off whatever enterEdit() just focused, the same
@@ -21133,7 +21163,7 @@ function updateRowSelectionPill(){
   pill.querySelector('.rsp-hint').innerHTML='<kbd>'+mod+'+C</kbd>copy · <kbd>Del</kbd>delete · <kbd>Tab</kbd>indent';
   pill.classList.add('show');
 }
-function render(){ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill(); if(typeof updateRowsFmtBar==='function')updateRowsFmtBar();
+function render(){if(_apiEd)apiEditorFinish({cancelIfInvalid:true,focusBack:false}); ensureQaMigratedToDiscussion(); ensureSelection(); pruneCollapsedIds(); pruneInlineExpandIds(); pruneFocus(); updateRowSelectionPill(); if(typeof updateRowsFmtBar==='function')updateRowsFmtBar();
   // Runs over EVERY node, not just the ones the per-row loop below actually builds DOM for --
   // a node inside a collapsed branch never reaches that loop at all, and renderPreviewBody() reads
   // node.tables directly rather than re-deriving it from node.note, so a table living inside a

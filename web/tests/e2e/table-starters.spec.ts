@@ -62,13 +62,13 @@ test('every starter shows as its display right away, and Undo removes it', async
   for (const [label, sel] of Object.entries(shows)) {
     await tableMenu(page);
     await page.locator('.sb-context-menu .sb-context-item').filter({ hasText: label }).first().click();
-    await expect(page.locator('.node-table-line').last().locator(sel).first(), label).toBeVisible();
-    // A new API request also opens its form; Esc closes it and keeps the sample.
+    // A new API request opens as its form in place; Esc finishes it and keeps the sample.
     if (label === 'API request') {
-      await expect(page.locator('#api-editor-overlay')).toHaveClass(/open/);
+      await expect(page.locator('.node-table-line').last().locator('#api-editor')).toBeVisible();
       await page.keyboard.press('Escape');
-      await expect(page.locator('#api-editor-overlay')).not.toHaveClass(/open/);
+      await expect(page.locator('#api-editor')).toHaveCount(0);
     }
+    await expect(page.locator('.node-table-line').last().locator(sel).first(), label).toBeVisible();
   }
   expect(await page.evaluate('nodes[0].tables.length')).toBe(8);
   // Not opened for editing: the starter shows as its display.
