@@ -326,3 +326,19 @@ test('the card lists every response, reads the auth from the headers and finds t
   expect(html).toContain('<td>Parameter</td><td>orderId: The order number</td>');
   expect(html).toContain('<td>Auth</td><td>OAuth 2.0, scope orders.read</td>');
 });
+
+test('the card shows a long body and response in full: no height cap, long lines wrap, no scroll bars', async ({ page }) => {
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    const lines = Array.from({ length: 40 }, (_, i) => `"field${i}": "${'x'.repeat(i === 3 ? 400 : 5)}"`).join(',');
+    // @ts-expect-error -- bare globals from index.html
+    nodes[0].tables[0] = nodes[0].tables[0].replace('<table>', '<table data-table-display="api">').replace('[{"id":"4711"}]', '{' + lines + '}'); render();
+  });
+  const code = page.locator('.pv-api .pv-api-code');
+  await expect(code).toHaveCount(1);
+  const m = await code.evaluate((c: HTMLElement) => ({ sh: c.scrollHeight, ch: c.clientHeight, sw: c.scrollWidth, cw: c.clientWidth }));
+  expect(m.ch).toBeGreaterThan(320);
+  expect(m.sh).toBeLessThanOrEqual(m.ch);
+  expect(m.sw).toBeLessThanOrEqual(m.cw);
+});
