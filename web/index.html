@@ -624,10 +624,8 @@ body.zen-mode #quick-bar{display:none}
 .settings-row-desc{font:400 11px 'Inter',sans-serif;color:var(--muted);line-height:1.4}
 .settings-section{display:grid;gap:12px;margin:0;padding:13px 14px 14px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--tb-bg) 82%,transparent)}
 .settings-section-title{font:700 11px 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;padding-bottom:8px;border-bottom:1px solid var(--border)}
-#shortcuts-modal-overlay{display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:24px}
-#shortcuts-modal-overlay.open{display:flex}
-#shortcuts-modal{width:min(880px,94vw);max-height:min(90vh,860px);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-dialog);box-shadow:var(--shadow-dialog);display:flex;flex-direction:column;overflow:hidden;font-family:'Inter',sans-serif;--hover:var(--hover-raised)}
-#shortcuts-modal-toolbar{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);flex:0 0 auto}
+#shortcuts-modal-toolbar{display:flex;align-items:center;gap:10px;margin:10px 0 14px}
+.shortcuts-intro{margin-top:-4px}
 #shortcuts-search-wrap{position:relative;flex:1 1 auto}
 #shortcuts-search{width:100%;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;padding:7px 30px 7px 30px;border-radius:8px;outline:none;transition:border-color .12s,box-shadow .12s}
 #shortcuts-search::placeholder{color:var(--hint)}
@@ -636,14 +634,9 @@ body.zen-mode #quick-bar{display:none}
 #shortcuts-search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;font-size:var(--fs-lg);padding:0;line-height:1;display:none;align-items:center;justify-content:center}
 #shortcuts-search-clear.visible{display:block}
 #shortcuts-search-clear:hover{color:var(--fg)}
-#shortcuts-modal-body{display:flex;align-items:flex-start;overflow-y:auto;padding:14px 20px 20px}
-#shortcuts-rail{flex:0 0 168px;display:flex;flex-direction:column;gap:1px;padding:2px 10px 2px 0;margin-right:16px;border-right:1px solid var(--border);position:sticky;top:0;align-self:flex-start;max-height:calc(min(90vh,860px) - 150px);overflow-y:auto}
-#shortcuts-rail .cs-rail-btn.cs-rail-hidden{display:none}
-#shortcuts-content{flex:1 1 auto;min-width:0}
 #shortcuts-list{display:block}
 #shortcuts-empty{display:none;text-align:center;color:var(--hint);font:400 12px 'Inter',sans-serif;padding:28px 0}
 #shortcuts-empty.visible{display:block}
-#shortcuts-modal-foot{border-top:1px solid var(--border);padding:10px 20px;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 0 auto}
 /* Reusable modal shell for consolidated settings (Toolbar Buttons, Right-click Menu) —
    same visual language as the Keyboard Shortcuts modal above, factored into classes so
    it isn't duplicated per-modal. */
@@ -660,7 +653,7 @@ body.zen-mode #quick-bar{display:none}
 .app-modal-body .settings-field:first-child{margin-top:0 !important}
 .shortcut-card{background:none;border:none;border-radius:0;padding:0;margin:0 0 4px;scroll-margin-top:2px}
 .shortcut-card.cs-hidden{display:none}
-.shortcut-card h3{font:700 11.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin:0;padding:7px 5px 5px;position:sticky;top:0;background:var(--bg);z-index:1;border-bottom:1px solid var(--border)}
+.shortcut-card h3{font:600 var(--fs-2xs) 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0;padding:7px 5px 5px;position:sticky;top:0;background:var(--bg);z-index:1;border-bottom:1px solid var(--border)}
 .shortcut-row{padding:6px 5px;margin:0 0 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
 .shortcut-row:last-child{border-bottom:none}
 .shortcut-row.cs-hidden{display:none}
@@ -2443,47 +2436,6 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 #tour-replay-btn,#help-why-open-btn,#demo-open-btn,#cheatsheet-open-btn,#help-about-open-btn{appearance:none;border:none;background:none;color:var(--hint);font:500 11.5px 'Inter',sans-serif;padding:4px 2px;cursor:pointer;flex-shrink:0;transition:color .15s ease;display:inline-flex;flex-direction:row-reverse;align-items:center;gap:5px}
 #help-tour-replay-row:hover #tour-replay-btn,#help-cheatsheet-row:hover #cheatsheet-open-btn,#help-demo-row:hover #demo-open-btn,#help-why-row:hover #help-why-open-btn,#help-about-row:hover #help-about-open-btn{color:var(--accent)}
 #tour-replay-btn svg,#help-why-open-btn svg,#demo-open-btn svg,#cheatsheet-open-btn svg,#help-about-open-btn svg{flex-shrink:0}
-#cheatsheet-overlay{display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:24px}
-#cheatsheet-overlay.open{display:flex}
-#cheatsheet-modal{width:min(1600px,97vw);max-height:min(95vh,1100px);background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-dialog);box-shadow:var(--shadow-dialog);display:flex;flex-direction:column;overflow:hidden;font-family:'Inter',sans-serif;--hover:var(--hover-raised)}
-#cheatsheet-body{overflow-y:auto;padding:14px 20px 22px}
-#cheatsheet-two-pane{display:flex;align-items:flex-start;gap:0}
-.cs-rail{flex:0 0 180px;display:flex;flex-direction:column;gap:1px;padding:2px 10px 2px 0;margin-right:14px;border-right:1px solid var(--border);position:sticky;top:0;align-self:flex-start;max-height:calc(min(95vh,1100px) - 190px);overflow-y:auto}
-.cs-rail-btn{appearance:none;border:none;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 9px;border-radius:8px;font:500 11.5px 'Inter',sans-serif;text-align:left;cursor:pointer;transition:background .12s,color .12s;white-space:nowrap}
-.cs-rail-btn:hover{background:var(--hover);color:var(--fg)}
-.cs-rail-btn.active{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
-.cs-rail-btn-title{overflow:hidden;text-overflow:ellipsis}
-.cs-rail-count{font:600 10px 'Inter',sans-serif;color:var(--hint);flex:0 0 auto}
-.cs-rail-btn.active .cs-rail-count{color:var(--accent)}
-.cs-rail-btn.cs-rail-hidden{display:none}
-.cs-content{flex:1 1 auto;min-width:0}
-@media (max-width:820px){.cs-rail{flex-basis:44px;padding-right:0}.cs-rail-btn-title,.cs-rail-count{display:none}.cs-rail-btn{justify-content:center;padding:8px 4px}}
-#cheatsheet-search-wrap{position:relative;margin-bottom:12px}
-#cheatsheet-search{width:100%;appearance:none;border:1px solid var(--border);background:var(--edit-bg);color:var(--fg);font:400 12.5px 'Inter',sans-serif;padding:7px 30px 7px 30px;border-radius:8px;outline:none;transition:border-color .12s,box-shadow .12s}
-#cheatsheet-search::placeholder{color:var(--hint)}
-#cheatsheet-search:focus{border-color:var(--accent)}
-#cheatsheet-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--hint);pointer-events:none;display:flex}
-#cheatsheet-search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);appearance:none;border:none;background:none;color:var(--hint);cursor:pointer;font-size:var(--fs-lg);padding:0;line-height:1;display:none;align-items:center;justify-content:center}
-#cheatsheet-search-clear.visible{display:block}
-#cheatsheet-search-clear:hover{color:var(--fg)}
-#cheatsheet-empty{display:none;text-align:center;color:var(--hint);font:400 12px 'Inter',sans-serif;padding:28px 0}
-#cheatsheet-empty.visible{display:block}
-.cs-bottom-spacer{flex:0 0 auto}
-.cs-card{background:none;border:none;border-radius:0;padding:0;margin:0 0 4px;scroll-margin-top:2px}
-.cs-card.cs-hidden{display:none}
-.cs-card h3{font:700 11.5px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin:0;padding:7px 5px 5px;display:flex;align-items:center;gap:6px;position:sticky;top:0;background:var(--bg);z-index:1;border-bottom:1px solid var(--border)}
-.cs-card ul{margin:0 0 10px;padding:0;list-style:none;display:grid;gap:0}
-.cs-card li{font:400 11.5px/1.4 'Inter',sans-serif;color:var(--fg);display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;padding:4px 5px;margin:0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
-.cs-card li:last-child{border-bottom:none}
-.cs-card li.cs-hidden{display:none}
-.cs-card li:hover{background:var(--hover)}
-.cs-card li.cs-match{background:color-mix(in srgb,var(--accent) 10%,transparent)}
-.cs-card li .cs-desc{color:var(--fg);opacity:.92}
-.cs-inline-icon{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;color:var(--accent);flex:0 0 auto;vertical-align:-2px}
-#cheatsheet-body .help-kbd{font-family:'Fira Code',Consolas,'Courier New',monospace;font-size:var(--fs-xs);padding:1px 5px;border:1px solid var(--border);border-radius:6px;background:color-mix(in srgb,var(--bg) 80%,var(--tb-bg) 20%);white-space:nowrap}
-#cheatsheet-foot{border-top:1px solid var(--border);padding:10px 20px;font:400 11px 'Inter',sans-serif;color:var(--muted);flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
-#cheatsheet-to-shortcuts-btn{appearance:none;border:none;background:none;color:var(--accent);font:600 11px 'Inter',sans-serif;cursor:pointer;padding:2px 0;flex-shrink:0;white-space:nowrap}
-#cheatsheet-to-shortcuts-btn:hover{text-decoration:underline}
 /* === Pasted image resizing (inline notes) === */
 .node-note-line img{cursor:pointer}
 .node-note-line img.editor-img-selected{outline:2px solid var(--accent);outline-offset:2px;cursor:default}
@@ -2511,7 +2463,7 @@ body{--pv-row-bcol:43px;--pv-heading-bcol:24px}
 @media (max-width:700px){.settings-panel,.help-panel{width:min(94vw,420px)}.settings-rail{flex:0 0 40px;padding:6px 4px}.settings-rail-btn span{display:none}.settings-rail-btn{justify-content:center;padding:8px 4px}.settings-content{padding:12px 12px 14px;gap:12px}.settings-section{padding:11px 12px 12px}}
 /* Elegant inset-thumb scrollbar (matches #editor-pane) applied everywhere else in the app.
    The border color must equal each surface's own background exactly, or the "floating" trick
-   doesn't read correctly - so this is grouped by background rather than one blanket rule. */.settings-content,.settings-rail,#shortcuts-modal-body,#cheatsheet-body,#sakura-modal-body,
+   doesn't read correctly - so this is grouped by background rather than one blanket rule. */.settings-content,.settings-rail,#sakura-modal-body,
 #why-sakura-modal,.app-modal-body,.qa-dropdown,
 .history-modal-body,#at-suggest,#demo-chapters-menu,
 #preview-toc,#preview-body,#ai-prompt-input,#link-pop-node-results{scrollbar-gutter:stable}
@@ -3477,6 +3429,10 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
                 <span>Documents</span>
               </button>
+              <button type="button" class="settings-rail-btn" data-cat="shortcuts" data-tip="Shortcuts">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+                <span>Shortcuts</span>
+              </button>
               <button type="button" class="settings-rail-btn" data-cat="data" data-tip="Data &amp; Backup">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
                 <span>Data &amp; backup</span>
@@ -3509,11 +3465,19 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Auto-expire completed tasks</span><span class="settings-row-desc">Completed tasks are deleted after this long.</span></div><span class="select-wrap"><select id="todos-expiry-select" class="select" style="width:auto"><option value="0">Never</option><option value="1">1 day</option><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select><span class="select-arrow">▾</span></span></div>
             </div>
           </div>
-          <div class="settings-section" data-cat="general" id="keyboard-shortcuts-section">
+          <div class="settings-section" data-cat="shortcuts" id="keyboard-shortcuts-section">
             <div class="settings-section-title">Keyboard shortcuts</div>
-            <div class="settings-list">
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Customize shortcuts</span><span class="settings-row-desc" id="shortcuts-summary-desc">All shortcuts are at their defaults</span></div><button class="btn" id="shortcuts-open-modal-btn">Open…</button></div>
+            <div class="settings-row-desc shortcuts-intro">Click a combo to change it (it needs Ctrl/Cmd or Alt; Esc cancels). Arrow keys, Tab, Enter/F2 and Delete move around the outline and can't be changed.</div>
+            <div id="shortcuts-modal-toolbar">
+              <div id="shortcuts-search-wrap">
+                <span id="shortcuts-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                <input id="shortcuts-search" type="text" placeholder="Search shortcuts…" autocomplete="off" spellcheck="false" />
+                <button id="shortcuts-search-clear" data-tip="Clear search"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
+              </div>
+              <button class="btn" id="shortcuts-reset-all-btn">Reset all</button>
             </div>
+            <div id="shortcuts-list"></div>
+            <div id="shortcuts-empty">No matching shortcuts</div>
           </div>
           <div class="settings-section" data-cat="documents">
             <div class="settings-section-title">New documents</div>
@@ -3754,7 +3718,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div class="help-section" data-cat="overview" style="border:none">
           <div id="help-quick-links">
           <div id="help-tour-replay-row"><span>New here? Take the guided tour.</span><button type="button" id="tour-replay-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Take the tour</button></div>
-          <div id="help-cheatsheet-row"><span>Quick reference for everything below.</span><button type="button" id="cheatsheet-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>Cheatsheet</button></div>
+          <div id="help-cheatsheet-row"><span>Every shortcut, and changing them.</span><button type="button" id="cheatsheet-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>Keyboard shortcuts</button></div>
           <div id="help-why-row"><span>What Sakura is, and what it is for.</span><button type="button" id="help-why-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor" stroke="none"/></svg>What is Sakura</button></div>
           <div id="help-demo-row"><span>See it all come together, end to end.</span><button type="button" id="demo-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 18 12 6 20 6 4"/></svg>Watch a demo</button></div>
           <div id="help-about-row"><span>Version, licence and privacy.</span><button type="button" id="help-about-open-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>About Sakura</button></div>
@@ -3936,7 +3900,7 @@ html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolu
           <div class="help-section" data-cat="app">
 <h4>Shortcuts</h4>
 <ul>
-<li>The Cheatsheet (Get started) lists every shortcut; change them in Settings → General → Keyboard shortcuts</li>
+<li>Settings → Shortcuts lists every shortcut; click one to change it</li>
 <li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">S</span> saves now. If a shortcut is taken by your system or browser, the button or menu item still works</li>
 </ul>
 </div>
@@ -14890,31 +14854,12 @@ const FEATURE_FLAGS={
 };
 const FEATURE_SETTINGS_SECTIONS={ai:['settings-section-ai-rewrite','settings-section-ai-rewrite-behavior']};
 const FEATURE_HELP_SECTIONS={ai:['help-section-ai']};
-function applyCheatsheetFeatureVisibility(){
-  const ov=el('cheatsheet-overlay'); if(!ov)return;
-  ov.querySelectorAll('.cs-card[data-feature-requires]').forEach(card=>{
-    const keys=card.dataset.featureRequires.split(',').map(k=>k.trim());
-    const allOff=keys.every(k=>FEATURE_FLAGS[k]&&!FEATURE_FLAGS[k].get());
-    card.dataset.featureHidden=allOff?'1':'';
-    card.classList.toggle('cs-hidden',allOff);
-  });
-  ov.querySelectorAll('[data-feature-item]').forEach(item=>{
-    const key=item.dataset.featureItem;
-    const on=FEATURE_FLAGS[key]?FEATURE_FLAGS[key].get():true;
-    item.classList.toggle('cs-hidden',!on);
-  });
-}
 function setFeatureEnabled(key,on,persist=true){
   const flag=FEATURE_FLAGS[key]; if(!flag)return;
   flag.set(!!on);
   syncFeatureToggleUi(key,flag.get());
   applyFeatureVisibility();
   if(persist){savePrefs(); scheduleAutoSave();}
-  const csOverlay=el('cheatsheet-overlay');
-  if(csOverlay?.classList.contains('open')){
-    applyCheatsheetFeatureVisibility();
-    csOverlay.dispatchEvent(new CustomEvent('cs-feature-visibility-changed'));
-  }
 }
 function syncFeatureToggleUi(key,on){
   const toggle=el('feat-'+key+'-toggle');
@@ -17612,7 +17557,7 @@ function collectSettingsMatches(q){
 function collectHelpActionMatches(q){
   const out=[]; const tokens=qaTokenizeQuery(q);
   const items=[
-    {row:'help-cheatsheet-row',label:'Cheatsheet',hay:'cheatsheet quick reference for everything below',action:()=>{closeAllPanelsExceptGlobalSearch(); document.getElementById('cheatsheet-open-btn')?.click();}},
+    {row:'help-cheatsheet-row',label:'Keyboard shortcuts',hay:'keyboard shortcuts cheatsheet keys change customize',action:()=>{closeAllPanelsExceptGlobalSearch(); document.getElementById('cheatsheet-open-btn')?.click();}},
     {row:'help-demo-row',label:'Watch a demo',hay:'watch a demo see it all come together end to end',action:()=>{closeAllPanelsExceptGlobalSearch(); document.getElementById('demo-open-btn')?.click();}},
     {row:'help-tour-replay-row',label:'Take the tour',hay:'replay tour new here take the guided tour',action:()=>{closeAllPanelsExceptGlobalSearch(); document.getElementById('tour-replay-btn')?.click();}}
   ];
@@ -23832,37 +23777,6 @@ function formatCombo(combo){
 function comboToKbdHtml(combo){
   return combo.split('+').map(p=>`<span class="help-kbd">${esc(formatComboToken(p))}</span>`).join('+');
 }
-function syncCheatsheetShortcuts(){
-  document.querySelectorAll('#cheatsheet-body [data-cs-shortcut]').forEach(elm=>{
-    const def = SHORTCUTS[elm.dataset.csShortcut];
-    if (!def) return;
-    elm.innerHTML = getShortcutCombos(elm.dataset.csShortcut).map(comboToKbdHtml).join(' or ');
-  });
-  syncCheatsheetUncoveredShortcuts();
-}
-// Safety net: every hand-written cs-card is curated on purpose (mixing shortcuts, mouse
-// mechanics, and short explanations), so this doesn't try to replace that. It only catches
-// SHORTCUTS entries nobody remembered to reference anywhere via data-cs-shortcut — exactly
-// the class of bug the toggleZen shortcut hit when it first shipped — and lists them in one
-// generated card so they're never silently invisible, even before someone gets around to
-// writing a properly-worded row for them.
-function syncCheatsheetUncoveredShortcuts(){
-  const cardsWrap=el('cheatsheet-cards'); if(!cardsWrap)return;
-  const referenced=new Set(Array.from(document.querySelectorAll('#cheatsheet-body [data-cs-shortcut]')).map(e=>e.dataset.csShortcut));
-  const missing=Object.keys(SHORTCUTS).filter(id=>!referenced.has(id));
-  let card=el('cheatsheet-uncovered-card');
-  if(!missing.length){ const had=!!card; card?.remove(); if(had)window.rebuildCheatsheetRail?.(); return; }
-  const isNew=!card;
-  if(!card){ card=document.createElement('div'); card.id='cheatsheet-uncovered-card'; card.className='cs-card'; card.dataset.csAnchor='uncovered'; card.innerHTML='<h3>Not Yet Categorized</h3><ul></ul>'; cardsWrap.appendChild(card); }
-  const ul=card.querySelector('ul'); ul.innerHTML='';
-  missing.forEach(id=>{
-    const li=document.createElement('li');
-    const combo=document.createElement('span'); combo.innerHTML=getShortcutCombos(id).map(comboToKbdHtml).join(' or ');
-    const desc=document.createElement('span'); desc.className='cs-desc'; desc.textContent=SHORTCUTS[id].label;
-    li.appendChild(combo); li.appendChild(desc); ul.appendChild(li);
-  });
-  if(isNew)window.rebuildCheatsheetRail?.();
-}
 
 function findShortcutConflict(excludeId, combo){
   for (const otherId of Object.keys(SHORTCUTS)){
@@ -23936,85 +23850,9 @@ function startRecordingShortcut(id){
   _recordingCleanup = cancel;
 }
 
-function updateShortcutsSummary(){
-  const desc = el('shortcuts-summary-desc');
-  if (!desc) return;
-  const count = Object.keys(shortcutOverrides).length;
-  desc.textContent = count ? `${count} shortcut${count===1?'':'s'} customized` : 'All shortcuts are at their defaults';
-}
 
 function shortcutCategorySlug(cat){
   return cat.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-}
-let shortcutsScrollSpyObserver=null;
-function buildShortcutsRail(){
-  const rail = el('shortcuts-rail');
-  if (!rail) return;
-  rail.innerHTML = SHORTCUT_CATEGORY_ORDER.filter(cat=>Object.keys(SHORTCUTS).some(id=>SHORTCUTS[id].category===cat))
-    .map(cat=>{
-      const slug = shortcutCategorySlug(cat);
-      return `<button type="button" class="cs-rail-btn" data-target="${slug}" data-tip="${esc(cat)}"><span class="cs-rail-btn-title">${esc(cat)}</span><span class="cs-rail-count"></span></button>`;
-    }).join('');
-  rail.querySelectorAll('.cs-rail-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const target=document.getElementById('shortcut-cat-'+btn.dataset.target);
-      if(!target)return;
-      // Instant feedback on click; the scroll-spy observer below will
-      // naturally reinforce (or, if interrupted, correct) this once the
-      // native smooth scroll actually settles — no lock/timing logic needed.
-      rail.querySelectorAll('.cs-rail-btn').forEach(b=>b.classList.toggle('active',b===btn));
-      target.scrollIntoView({block:'start',behavior:'smooth'});
-    });
-  });
-  updateShortcutsRailCounts();
-  setupShortcutsScrollSpy();
-}
-function updateShortcutsRailCounts(){
-  const rail = el('shortcuts-rail');
-  if (!rail) return;
-  rail.querySelectorAll('.cs-rail-btn').forEach(btn=>{
-    const card = document.getElementById('shortcut-cat-'+btn.dataset.target);
-    if (!card){ btn.classList.add('cs-rail-hidden'); return; }
-    const hidden = card.classList.contains('cs-hidden');
-    btn.classList.toggle('cs-rail-hidden', hidden);
-    const visibleCount = card.querySelectorAll('.shortcut-row:not(.cs-hidden)').length;
-    const countEl = btn.querySelector('.cs-rail-count');
-    if (countEl) countEl.textContent = hidden ? '' : String(visibleCount);
-  });
-}
-// IntersectionObserver-based scroll-spy, replacing manual top-edge/atBottom
-// geometry math (which needed three separate patches for edge cases this
-// approach doesn't have in the first place). The category rows get fully
-// rebuilt on every renderShortcutsSettings() call, so the observer has to be
-// recreated each time too — old DOM nodes would otherwise be watched by a
-// dead observer. rootMargin restricts the "active" zone to roughly the top
-// third of the pane; whichever observed category is furthest down in DOM
-// order among those currently in that zone is the one marked active — this
-// naturally handles short categories, categories hidden by search or
-// feature-visibility, and any number of categories without special-casing.
-function setupShortcutsScrollSpy(){
-  const rail = el('shortcuts-rail');
-  const body = el('shortcuts-modal-body');
-  if (!rail || !body) return;
-  if (shortcutsScrollSpyObserver) shortcutsScrollSpyObserver.disconnect();
-  const cards = Array.from(document.querySelectorAll('#shortcuts-list .shortcut-card'));
-  const intersecting = new Set();
-  shortcutsScrollSpyObserver = new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{
-      if (entry.isIntersecting) intersecting.add(entry.target.id);
-      else intersecting.delete(entry.target.id);
-    });
-    let activeId=null;
-    for (const card of cards){
-      if (!card.classList.contains('cs-hidden') && intersecting.has(card.id)) activeId=card.id;
-    }
-    if (activeId){
-      rail.querySelectorAll('.cs-rail-btn').forEach(btn=>{
-        btn.classList.toggle('active', 'shortcut-cat-'+btn.dataset.target===activeId);
-      });
-    }
-  }, {root:body, rootMargin:'0px 0px -70% 0px', threshold:0});
-  cards.forEach(card=>shortcutsScrollSpyObserver.observe(card));
 }
 function filterShortcutsModal(query){
   const q = query.trim().toLowerCase();
@@ -24033,7 +23871,6 @@ function filterShortcutsModal(query){
   });
   el('shortcuts-empty')?.classList.toggle('visible', !anyVisible);
   el('shortcuts-search-clear')?.classList.toggle('visible', q.length > 0);
-  updateShortcutsRailCounts();
 }
 
 function renderShortcutsSettings(){
@@ -24066,9 +23903,6 @@ function renderShortcutsSettings(){
   wrap.innerHTML = html;
   wrap.querySelectorAll('.shortcut-combo-btn').forEach(btn=>btn.addEventListener('click',()=>startRecordingShortcut(btn.dataset.id)));
   wrap.querySelectorAll('.shortcut-reset-btn').forEach(btn=>btn.addEventListener('click',()=>resetShortcut(btn.dataset.id)));
-  syncCheatsheetShortcuts();
-  updateShortcutsSummary();
-  buildShortcutsRail();
   filterShortcutsModal(el('shortcuts-search')?.value || '');
 }
 renderShortcutsSettings();
@@ -24101,51 +23935,28 @@ document.addEventListener('DOMContentLoaded', function(){
   else window.addEventListener('resize', syncStatusbarHeight);
 });
 
-/* ---- Keyboard Shortcuts modal open/close (same pattern as the cheatsheet) ---- */
+/* ---- Keyboard shortcuts: a page in Settings (owner 2026-11-01: no popups; the Help cheatsheet and
+   the Customize shortcuts dialog were two popups for the same list). ---- */
+function openKeyboardShortcutsModal(){
+  closeAllPanelsExceptGlobalSearch();
+  el('settings-panel')?.classList.add('open');
+  applySettingsCategory('shortcuts');
+}
+window.openKeyboardShortcutsModal=openKeyboardShortcutsModal;
 document.addEventListener('DOMContentLoaded', function(){
-  const openBtn = document.getElementById('shortcuts-open-modal-btn');
-  const overlay = document.getElementById('shortcuts-modal-overlay');
-  const closeBtn = document.getElementById('shortcuts-modal-close-btn');
   const searchInput = document.getElementById('shortcuts-search');
   const searchClear = document.getElementById('shortcuts-search-clear');
-  const contentWrap = document.getElementById('shortcuts-content');
-  if (!openBtn || !overlay) return;
-  const scrollBody = document.getElementById('shortcuts-modal-body');
-  const bottomSpacer = document.getElementById('shortcuts-bottom-spacer');
-  // See the matching comment in the cheatsheet's code: padding the bottom of
-  // the scrollable list by the container's own visible height guarantees
-  // any section, however close to the end, has enough room to reach the
-  // pane's top edge when targeted by a rail click.
-  function sizeShortcutsBottomSpacer(){
-    if (!bottomSpacer || !scrollBody) return;
-    bottomSpacer.style.height = scrollBody.clientHeight+'px';
-  }
-  window.addEventListener('resize', sizeShortcutsBottomSpacer);
-  function open(){
-    el('settings-panel')?.classList.remove('open');
-    overlay.classList.add('open');
-    renderShortcutsSettings();
-    sizeShortcutsBottomSpacer();
-    setTimeout(()=>searchInput?.focus(), 10);
-  }
-  function close(){ overlay.classList.remove('open'); }
-  window.openKeyboardShortcutsModal = open;
-  openBtn.addEventListener('click', open);
-  closeBtn?.addEventListener('click', close);
-  overlay.addEventListener('click', e=>{ if (e.target === overlay) close(); });
+  renderShortcutsSettings();
+  document.getElementById('cheatsheet-open-btn')?.addEventListener('click', openKeyboardShortcutsModal);
   searchInput?.addEventListener('input', e=>filterShortcutsModal(e.target.value));
   searchInput?.addEventListener('keydown', e=>{
     e.stopPropagation();
-    if (e.key === 'Escape') {
-      if (searchInput.value) { e.preventDefault(); searchInput.value=''; filterShortcutsModal(''); }
-      else close();
-    }
+    if (e.key === 'Escape') { e.preventDefault(); if (searchInput.value) { searchInput.value=''; filterShortcutsModal(''); } else searchInput.blur(); }
   });
   searchClear?.addEventListener('click', ()=>{
     if (searchInput) { searchInput.value=''; searchInput.focus(); }
     filterShortcutsModal('');
   });
-  document.addEventListener('keydown', e=>{ if (e.key==='Escape' && overlay.classList.contains('open') && document.activeElement!==searchInput) close(); });
 });
 
 document.addEventListener('keydown',e=>{if(el('history-modal-overlay')?.classList.contains('open')){if(e.key==='Escape'){e.preventDefault(); closeVersionHistory();} return;} if(demoActive){if(e.key==='Escape'){e.preventDefault(); closeDemo();} return} if(tourActive){if(e.key==='Escape'){e.preventDefault(); tourSkip();}else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault(); tourNext();}else if(e.key==='ArrowLeft'){e.preventDefault(); tourBack();} return} if(e.key==='Escape'){hideContextMenu(); if(zenMode)setZenMode(false); if(dragState.draggedId){dragState={draggedId:null,draggedIds:null,targetId:null,mode:null}; clearDragIndicators();} if(editingId===null&&multiSelectedIds.length>1){clearMultiSelection(); selectionAnchorId=selectedId; render()} else if(focusedId!==null&&editingId===null)exitFocus();} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='.'&&editingId===null){e.preventDefault(); if(selectedId!==null)enterFocus(selectedId); return} if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key===','&&editingId===null){e.preventDefault(); focusUpOne(); return} if (matchesShortcut(e,'save')) { e.preventDefault(); fireShortcut('save'); return; } if (matchesShortcut(e,'quickAssist')) { e.preventDefault(); fireShortcut('quickAssist'); return; } if (matchesShortcut(e,'newDoc')) { e.preventDefault(); fireShortcut('newDoc'); return; } if (matchesShortcut(e,'docBack')) { e.preventDefault(); fireShortcut('docBack'); return; } if (matchesShortcut(e,'docForward')) { e.preventDefault(); fireShortcut('docForward'); return; } if (matchesShortcut(e,'findInTree')) { e.preventDefault(); fireShortcut('findInTree'); return; } if (matchesShortcut(e,'findReplace')) { e.preventDefault(); fireShortcut('findReplace'); return; } if(e.key==='Escape'&&searchOpen){e.preventDefault(); closeSearch(); return} if (matchesShortcut(e,'collapseAll')) { e.preventDefault(); fireShortcut('collapseAll'); return; } if (matchesShortcut(e,'insertDateTime')) { e.preventDefault(); fireShortcut('insertDateTime'); return; } if (matchesShortcut(e,'generateOutline')) { e.preventDefault(); fireShortcut('generateOutline'); return; } if (matchesShortcut(e,'toggleZen')) { e.preventDefault(); fireShortcut('toggleZen'); return; } if(!isTextEntryTarget(e.target)&&!hasExternalTextSelection()){ if (matchesShortcut(e,'undo')) { e.preventDefault(); fireShortcut('undo'); return; } if (matchesShortcut(e,'redo')) { e.preventDefault(); fireShortcut('redo'); return; } } if(isControlTarget(e.target))return; if(hasExternalTextSelection())return; if (matchesShortcut(e,'copyAsText')) { e.preventDefault(); fireShortcut('copyAsText'); return; } if (matchesShortcut(e,'selectAll')) { if(nodes.length){e.preventDefault(); commitEdit(); selectAllMode=true; editingId=null; clearMultiSelection(); selectionAnchorId=nodes[0]?.id??null; render()} return; } if (matchesShortcut(e,'bold')) { e.preventDefault(); fireShortcut('bold'); return; } if (matchesShortcut(e,'italic')) { e.preventDefault(); fireShortcut('italic'); return; } if (matchesShortcut(e,'underline')) { e.preventDefault(); fireShortcut('underline'); return; } if (matchesShortcut(e,'strike')) { e.preventDefault(); fireShortcut('strike'); return; } if (matchesShortcut(e,'highlight')) { e.preventDefault(); fireShortcut('highlight'); return; } if (matchesShortcut(e,'textColor')) { e.preventDefault(); fireShortcut('textColor'); return; } if (matchesShortcut(e,'heading1')) { e.preventDefault(); fireShortcut('heading1'); return; } if (matchesShortcut(e,'heading2')) { e.preventDefault(); fireShortcut('heading2'); return; } if (matchesShortcut(e,'heading3')) { e.preventDefault(); fireShortcut('heading3'); return; } if (matchesShortcut(e,'headingClear')) { e.preventDefault(); fireShortcut('headingClear'); return; } if (matchesShortcut(e,'newChild')) { e.preventDefault(); fireShortcut('newChild'); return; } if (matchesShortcut(e,'moveUp')) { e.preventDefault(); fireShortcut('moveUp'); return; } if (matchesShortcut(e,'moveDown')) { e.preventDefault(); fireShortcut('moveDown'); return; } if(editingId!==null)return; if(!nodes.length){if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='v'){e.preventDefault(); smartPasteFromClipboard(); return} if(e.key.length===1&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault(); createRootAndEdit(e.key)} if(e.key==='Enter'||e.key==='F2'){e.preventDefault(); createRootAndEdit('')} return} if(focusedId!==null){const fIdx=getIndex(nodes,focusedId); if(fIdx>=0&&getSubtreeEnd(nodes,fIdx)<=fIdx+1){
@@ -30237,161 +30048,6 @@ setPreviewBrandingText(previewBrandingText, false);
 setQaSearchResultsEnabled(qaSearchResultsEnabled, false);
 applyQaSearchCategorySettings();
 
-/* === Cheatsheet ===
-   Wired on DOMContentLoaded because the modal markup itself sits further
-   down in the document (after this script tag) and hasn't been parsed
-   into the DOM yet at the point this script block runs. */
-document.addEventListener('DOMContentLoaded', function(){
-  const openBtn=document.getElementById('cheatsheet-open-btn');
-  const overlay=document.getElementById('cheatsheet-overlay');
-  const closeBtn=document.getElementById('cheatsheet-close-btn');
-  const searchInput=document.getElementById('cheatsheet-search');
-  const searchClear=document.getElementById('cheatsheet-search-clear');
-  const emptyMsg=document.getElementById('cheatsheet-empty');
-  const railWrap=document.getElementById('cheatsheet-rail');
-  const contentWrap=document.getElementById('cheatsheet-body');
-  const bottomSpacer=document.getElementById('cheatsheet-bottom-spacer');
-  if(!openBtn||!overlay)return;
-  // A section can only be scrolled to the pane's top edge if there's enough
-  // scrollable distance *below* it to do so — for the last section (or any
-  // short section near the end) there often isn't. Rather than accept that
-  // limit (silently landing short of "start"), pad the bottom of the
-  // scrollable content by the container's own visible height: that's a
-  // mathematically sufficient amount of extra room for *any* section,
-  // however short and however close to the end, to reach the top.
-  function sizeCheatsheetBottomSpacer(){
-    if(!bottomSpacer||!contentWrap)return;
-    bottomSpacer.style.height=contentWrap.clientHeight+'px';
-  }
-  window.addEventListener('resize',sizeCheatsheetBottomSpacer);
-  // A click gives instant feedback by setting active immediately; the
-  // scroll-spy observer (setupCheatsheetScrollSpy, below) naturally
-  // reinforces or corrects this once the native smooth scroll actually
-  // settles — no lock/timing logic needed for correctness.
-  // Rail is generated from the same .cs-card sections that hold the actual
-  // content — one source of truth, so a new section never needs a second,
-  // easy-to-forget edit to a hand-maintained nav list.
-  function railTitleFor(card){
-    return card.querySelector('h3')?.textContent.trim()||'';
-  }
-  function buildCheatsheetRail(){
-    if(!railWrap)return;
-    const cards=Array.from(overlay.querySelectorAll('.cs-card[data-cs-anchor]'));
-    railWrap.innerHTML=cards.map(card=>{
-      const anchor=card.dataset.csAnchor;
-      const title=railTitleFor(card);
-      return `<button type="button" class="cs-rail-btn" data-target="${anchor}" data-tip="${title.replace(/"/g,'&quot;')}"><span class="cs-rail-btn-title">${title}</span><span class="cs-rail-count"></span></button>`;
-    }).join('');
-    railWrap.querySelectorAll('.cs-rail-btn').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const target=overlay.querySelector(`.cs-card[data-cs-anchor="${btn.dataset.target}"]`);
-        if(!target)return;
-        railWrap.querySelectorAll('.cs-rail-btn').forEach(b=>b.classList.toggle('active',b===btn));
-        target.scrollIntoView({block:'start',behavior:'smooth'});
-      });
-    });
-    updateCheatsheetRailCounts();
-    setupCheatsheetScrollSpy();
-  }
-  window.rebuildCheatsheetRail=buildCheatsheetRail;
-  function updateCheatsheetRailCounts(){
-    if(!railWrap)return;
-    railWrap.querySelectorAll('.cs-rail-btn').forEach(btn=>{
-      const card=overlay.querySelector(`.cs-card[data-cs-anchor="${btn.dataset.target}"]`);
-      if(!card){btn.classList.add('cs-rail-hidden'); return;}
-      const hidden=card.classList.contains('cs-hidden');
-      btn.classList.toggle('cs-rail-hidden',hidden);
-      const visibleCount=card.querySelectorAll('li:not(.cs-hidden)').length;
-      const countEl=btn.querySelector('.cs-rail-count');
-      if(countEl)countEl.textContent=hidden?'':String(visibleCount);
-    });
-  }
-  // IntersectionObserver-based scroll-spy, replacing manual top-edge/atBottom
-  // geometry math (which needed three separate patches for edge cases this
-  // approach doesn't have in the first place). rootMargin restricts the
-  // "active" zone to roughly the top third of the pane; whichever observed
-  // section is furthest down in DOM order among those currently in that
-  // zone is the one marked active — this naturally handles short sections,
-  // sections hidden by search or feature-visibility, and any number of
-  // sections without special-casing. Rebuilt whenever the rail is rebuilt,
-  // since the set of sections (e.g. the dynamic "uncovered shortcuts" card)
-  // can change.
-  let cheatsheetScrollSpyObserver=null;
-  function setupCheatsheetScrollSpy(){
-    if(!railWrap||!contentWrap)return;
-    if(cheatsheetScrollSpyObserver)cheatsheetScrollSpyObserver.disconnect();
-    const cards=Array.from(overlay.querySelectorAll('.cs-card[data-cs-anchor]'));
-    const intersecting=new Set();
-    cheatsheetScrollSpyObserver=new IntersectionObserver(entries=>{
-      entries.forEach(entry=>{
-        const anchor=entry.target.dataset.csAnchor;
-        if(entry.isIntersecting)intersecting.add(anchor); else intersecting.delete(anchor);
-      });
-      let activeAnchor=null;
-      for(const card of cards){
-        if(!card.classList.contains('cs-hidden')&&intersecting.has(card.dataset.csAnchor))activeAnchor=card.dataset.csAnchor;
-      }
-      if(activeAnchor){
-        railWrap.querySelectorAll('.cs-rail-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.target===activeAnchor));
-      }
-    },{root:contentWrap,rootMargin:'0px 0px -70% 0px',threshold:0});
-    cards.forEach(card=>cheatsheetScrollSpyObserver.observe(card));
-  }
-  overlay.addEventListener('cs-feature-visibility-changed',()=>{updateCheatsheetRailCounts();});
-  function filterCheatsheet(query){
-    const q=query.trim().toLowerCase();
-    const cards=overlay.querySelectorAll('.cs-card');
-    let anyVisible=false;
-    cards.forEach(card=>{
-      if(card.dataset.featureHidden==='1'){card.classList.add('cs-hidden'); return;}
-      const items=card.querySelectorAll('li');
-      let cardHasMatch=!q;
-      items.forEach(li=>{
-        clearHelpSearchHighlights(li);
-        const match=!q||li.textContent.toLowerCase().includes(q);
-        li.classList.toggle('cs-hidden',!match);
-        li.classList.toggle('cs-match',!!q&&match);
-        if(match){cardHasMatch=true; if(q)highlightHelpSearchNode(li,q);}
-      });
-      card.classList.toggle('cs-hidden',!cardHasMatch);
-      if(cardHasMatch)anyVisible=true;
-    });
-    if(emptyMsg)emptyMsg.classList.toggle('visible',!anyVisible);
-    if(searchClear)searchClear.classList.toggle('visible',q.length>0);
-    updateCheatsheetRailCounts();
-  }
-  function open(){
-    document.getElementById('help-panel')?.classList.remove('open');
-    syncCheatsheetShortcuts();
-    applyCheatsheetFeatureVisibility();
-    buildCheatsheetRail();
-    overlay.classList.add('open');
-    sizeCheatsheetBottomSpacer();
-    updateCheatsheetRailCounts();
-    setTimeout(()=>searchInput?.focus(),10);
-  }
-  function close(){overlay.classList.remove('open');}
-  openBtn.addEventListener('click',open);
-  closeBtn?.addEventListener('click',close);
-  onOverlayBackdropClick(overlay,close);
-  searchInput?.addEventListener('input',e=>filterCheatsheet(e.target.value));
-  searchInput?.addEventListener('keydown',e=>{
-    e.stopPropagation();
-    if(e.key==='Escape'){
-      if(searchInput.value){e.preventDefault(); searchInput.value=''; filterCheatsheet('');}
-      else close();
-    }
-  });
-  searchClear?.addEventListener('click',()=>{
-    if(searchInput){searchInput.value=''; searchInput.focus();}
-    filterCheatsheet('');
-  });
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open')&&document.activeElement!==searchInput)close();});
-  document.getElementById('cheatsheet-to-shortcuts-btn')?.addEventListener('click',()=>{
-    close();
-    window.openKeyboardShortcutsModal?.();
-  });
-});
 // =====================================================================
 // === TAGS & FILTER SYSTEM ============================================
 // =====================================================================
@@ -33606,242 +33262,6 @@ function todosHistorySummary(list) {
 </script>
 
 
-<div id="shortcuts-modal-overlay" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-  <div id="shortcuts-modal">
-    <div id="shortcuts-modal-head" class="app-modal-head">
-      <div><h2>Keyboard Shortcuts</h2><div class="cs-sub">Click a combo to change it · Esc cancels · needs Ctrl/Cmd or Alt</div></div>
-      <button id="shortcuts-modal-close-btn" class="app-modal-close-btn" aria-label="Close keyboard shortcuts"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-    </div>
-    <div id="shortcuts-modal-toolbar">
-      <div id="shortcuts-search-wrap">
-        <span id="shortcuts-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-        <input id="shortcuts-search" type="text" placeholder="Search shortcuts…" autocomplete="off" spellcheck="false" />
-        <button id="shortcuts-search-clear" data-tip="Clear search"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-      </div>
-      <button class="btn" id="shortcuts-reset-all-btn">Reset all</button>
-    </div>
-    <div id="shortcuts-modal-body">
-      <div id="shortcuts-rail"></div>
-      <div id="shortcuts-content">
-        <div id="shortcuts-list"></div>
-        <div id="shortcuts-empty">No matching shortcuts</div>
-        <div id="shortcuts-bottom-spacer" class="cs-bottom-spacer"></div>
-      </div>
-    </div>
-    <div id="shortcuts-modal-foot">Arrow keys, Tab, Enter/F2, and Delete are core tree navigation and aren't customizable here.</div>
-  </div>
-</div>
-<div id="cheatsheet-overlay" role="dialog" aria-modal="true" aria-label="Sakura cheatsheet">
-  <div id="cheatsheet-modal">
-    <div id="cheatsheet-head" class="app-modal-head">
-      <div><h2>Sakura Cheatsheet</h2><div class="cs-sub">Everything at a glance — full detail lives in Help</div></div>
-      <button id="cheatsheet-close-btn" class="app-modal-close-btn" aria-label="Close cheatsheet"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-    </div>
-    <div id="cheatsheet-body">
-
-      <div id="cheatsheet-search-wrap">
-        <span id="cheatsheet-search-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-        <input id="cheatsheet-search" type="text" placeholder="Search shortcuts… (e.g. bold, save, collapse)" autocomplete="off" spellcheck="false" />
-        <button id="cheatsheet-search-clear" data-tip="Clear search"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg></button>
-      </div>
-      <div id="cheatsheet-two-pane">
-        <div id="cheatsheet-rail" class="cs-rail"></div>
-        <div id="cheatsheet-content" class="cs-content">
-      <div id="cheatsheet-empty">No matching shortcuts</div>
-
-      <div id="cheatsheet-cards">
-      <div class="cs-card" data-cs-anchor="basics">
-        <h3>The Basics</h3>
-        <ul>
-          <li><span class="help-kbd">Enter</span>/<span class="help-kbd">F2</span> <span class="cs-desc">edit node</span></li>
-          <li><span class="help-kbd">Enter</span> <span class="cs-desc">new sibling (while editing)</span></li>
-          <li><span class="help-kbd">Shift</span>+<span class="help-kbd">Enter</span> <span class="cs-desc">split at cursor</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="newChild"></span> <span class="cs-desc">new child</span></li>
-          <li><span class="help-kbd">Tab</span>/<span class="help-kbd">Shift</span>+<span class="help-kbd">Tab</span> <span class="cs-desc">indent / outdent</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="moveUp"></span>/<span class="cs-combo" data-cs-shortcut="moveDown"></span> <span class="cs-desc">move node</span></li>
-          <li><span class="help-kbd">←</span>/<span class="help-kbd">→</span> <span class="cs-desc">collapse / expand</span></li>
-          <li><span class="help-kbd">Click</span> <span class="cs-desc">select</span> · <span class="help-kbd">Shift</span>+click <span class="cs-desc">range</span> · <span class="help-kbd">Ctrl/Cmd</span>+click <span class="cs-desc">multi</span></li>
-          <li>Right-click → icon row (Rewrite, Note, Thread, Add diagram, Add table, Add image) + <span class="help-kbd">More</span> for insert above/below, duplicate, move, sort, delete, and everything else</li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="semantics">
-        <h3>Semantics</h3>
-        <ul>
-          <li><span class="cs-desc">Select words + Ctrl/Cmd+B / I / U, or a highlight or text colour → formats just those words</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">@Node name</span> → clickable backlink (type @ while editing to pick)</span></li>
-          <li><span class="cs-desc">Outline numbering (1, 1.1, 1.1.1) — type "outline numbering" in Quick Assist</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="formatting">
-        <h3>Formatting</h3>
-        <ul>
-          <li><span class="cs-combo" data-cs-shortcut="bold"></span> <span class="cs-desc">bold</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="italic"></span> <span class="cs-desc">italic</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="underline"></span> <span class="cs-desc">underline</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="strike"></span> <span class="cs-desc">strike</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="highlight"></span> <span class="cs-desc">highlight</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="textColor"></span> <span class="cs-desc">text color</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="insertLink"></span> <span class="cs-desc">link the selected words, otherwise Search</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="heading1"></span>–<span class="help-kbd">3</span> <span class="cs-desc">heading 1–3; 0 = body text</span></li>
-          <li><span class="cs-desc">select words first → formats just those words</span></li>
-          <li><span class="cs-desc">@Node name → backlink (type @ while editing to pick)</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="tables">
-        <h3>Tables</h3>
-        <ul>
-          <li><span class="help-kbd">Tab</span>/<span class="help-kbd">Shift</span>+<span class="help-kbd">Tab</span> <span class="cs-desc">next / previous cell (Tab in the last cell adds a row)</span></li>
-          <li><span class="help-kbd">Enter</span> <span class="cs-desc">cell below (in the last row, adds a row)</span></li>
-          <li><span class="help-kbd">Shift</span>+<span class="help-kbd">Enter</span> <span class="cs-desc">new line inside the cell</span></li>
-          <li><span class="help-kbd">↑</span>/<span class="help-kbd">↓</span> <span class="cs-desc">cell above / below from a cell's first / last line</span></li>
-          <li><span class="help-kbd">Esc</span> <span class="cs-desc">finish editing the table</span></li>
-          <li><span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">V</span> <span class="cs-desc">paste a spreadsheet range into the cells</span></li>
-          <li><span class="cs-desc">Add table… size picker: arrows choose, Enter inserts, Esc cancels</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="toolbar">
-        <h3>Editing</h3>
-        <ul>
-          <li><span class="cs-desc">Undo / Redo</span> — <span class="cs-combo" data-cs-shortcut="undo"></span> / <span class="cs-combo" data-cs-shortcut="redo"></span></li>
-          <li><span class="cs-desc">Add child</span> — <span class="cs-combo" data-cs-shortcut="newChild"></span></li>
-          <li><span class="cs-desc">Select all</span> — <span class="cs-combo" data-cs-shortcut="selectAll"></span></li>
-          <li><span class="cs-desc">Bold, italic, highlight, text color (select words for the bar), headings in the / list</span> — (underline <span class="cs-combo" data-cs-shortcut="underline"></span>, strikethrough <span class="cs-combo" data-cs-shortcut="strike"></span>)</li>
-          <li><span class="cs-desc">Collapse / Expand all</span> — <span class="cs-combo" data-cs-shortcut="collapseAll"></span></li>
-          <li><span class="cs-desc">Paste indented or bulleted text</span> — <span class="help-kbd">Ctrl/Cmd</span>+<span class="help-kbd">V</span> parses it into nodes</li>
-          <li><span class="cs-desc">Insert date/time</span> — <span class="cs-combo" data-cs-shortcut="insertDateTime"></span></li>
-          <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg></span> Note</span> — <span class="cs-combo" data-cs-shortcut="toggleNote"></span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="search-qa">
-        <h3>Search &amp; Quick Assist</h3>
-        <ul>
-          <li><span class="cs-combo" data-cs-shortcut="quickAssist"></span> <span class="cs-desc">Quick Assist — plain-English commands, or search anything</span></li>
-          <li><span class="cs-desc">Covers settings, help, doc names, node text, notes, tags, threads, diagrams, tables and image captions — across all documents</span></li>
-          <li><span class="cs-desc">Results group by type ("In documents", "Notes", "Tags", "Discussion") with a snippet — click to jump straight there</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="findInTree"></span> <span class="cs-desc">search this tree</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="findReplace"></span> <span class="cs-desc">search &amp; replace</span></li>
-          <li><span class="cs-desc">The File Explorer filter only matches document names — use Search on the rail for text inside documents</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="notes-objects">
-        <h3>Notes &amp; inline objects</h3>
-        <ul>
-          <li><span class="cs-desc"><strong>Note</strong> — per-node, rich text</span> · <span class="cs-combo" data-cs-shortcut="toggleNote"></span></li>
-          <li><span class="cs-desc"><strong>Thread</strong> — add to the row's conversation</span> · <span class="cs-combo" data-cs-shortcut="addThread"></span></li>
-          <li><span class="cs-desc">Notes: B I U S, lists, link, table, image paste, <span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> AI rewrite</span></li>
-          <li><span class="cs-desc">Right-click a node → Thread… / Add diagram… — each lives inline under that node (comments and questions share the node's one thread; Enter adds an entry, the row marker and the thread status move together); click the node's dot to show or hide them</span></li>
-          <li><span class="cs-desc">Paste or drop a screenshot on a node (or right-click → Add image…) — thumbnails under the node; click one to enlarge, caption, or resize for the PDF</span></li>
-          <li><span class="help-kbd">M</span> <span class="cs-desc">in the image viewer: Mark up — rectangle <span class="help-kbd">R</span>, arrow <span class="help-kbd">A</span>, highlighter <span class="help-kbd">H</span>, text <span class="help-kbd">T</span>, select/move <span class="help-kbd">V</span></span></li>
-          <li><span class="cs-desc"><strong>Diagrams</strong> — a real draw.io editor per diagram, linked to a node; embeds as a picture in PDF exports.</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="todos">
-        <h3>To-Dos</h3>
-        <ul>
-          <li><span class="cs-desc">App-level task list — not tied to any document or node</span> · <span class="cs-combo" data-cs-shortcut="toggleTodos"></span></li>
-          <li><span class="cs-desc">Sections: Pinned, Today, Upcoming, Anytime, Waiting; checked-off tasks fold into <strong>Done</strong></span></li>
-          <li><span class="cs-desc">Long titles show two lines; click to edit the full text, click the background to open the task</span></li>
-          <li><span class="cs-desc">A task can <strong>repeat</strong> (Daily/Weekdays/Weekly — completing it just advances the due date) or hold <strong>sub-tasks</strong> (nested checklist, parent auto-completes when all are checked) — not both at once</span></li>
-          <li><span class="cs-desc">Right-click or ⋯: Pin, Waiting for…, Due date…, Repeat, Link…, Copy, Delete</span></li>
-          <li><span class="cs-desc">Type <span class="help-kbd">@</span> in task text for inline chips, with autocomplete — <span class="todo-at todo-at-person">@name</span> assignee, <span class="todo-at todo-at-date">@date</span> (e.g. <span class="todo-at todo-at-date">@tomorrow</span>, <span class="todo-at todo-at-date">@fri</span>), <span class="todo-at todo-at-status">@status</span> (waiting/blocked/done/review) — display only</span></li>
-          <li><span class="cs-desc"><span class="help-kbd">#</span> for a <span class="todo-tag-chip">#tag</span> (autocompletes from prior tags), <span class="help-kbd">&gt;</span> for a <span class="todo-remark">muted remark</span> to end of line — both display only</span></li>
-          <li><span class="cs-desc">Quick-find matches <span class="todo-tag-chip">#tags</span>, <span class="todo-at todo-at-person">@mentions</span>, and remark text too — it's a plain substring search over the task text</span></li>
-          <li><span class="cs-desc">Quick-find (magnifier) narrows the list as you type</span></li>
-          <li><span class="cs-desc">Select or reorder (⋯ menu): drag to reorder, or select several open tasks to set a due date, complete or delete them at once</span></li>
-          <li><span class="cs-desc">Settings → General → To-Dos: auto-expiry of completed tasks</span></li>
-          <li><span class="cs-desc">Searchable from Quick Assist — plain text or <code>todo: milk</code></span></li>
-        </ul>
-      </div>
-
-
-
-
-      <div class="cs-card" data-feature-requires="ai" data-cs-anchor="ai">
-        <h3>AI Features</h3>
-        <ul>
-          <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="none"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6Z" fill="currentColor"/></svg></span> <strong>Rewrite</strong> — selected node(s), or highlighted text</span></li>
-          <li><span class="cs-desc"><span class="cs-inline-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L15 9"/><path d="M16.5 4.5l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z" fill="currentColor" stroke="none"/></svg></span> <strong>Generate outline</strong></span> · <span class="cs-combo" data-cs-shortcut="generateOutline"></span></li>
-          <li><span class="cs-desc">Batches over 30 nodes send in sequential chunks</span></li>
-          <li><span class="cs-desc">Settings → AI → Mode: "Sakura Hosted AI" (sign in, zero setup) or "Bring your own key" (seven built-in providers — Gemini, Groq, Claude, ChatGPT, OpenRouter, Cerebras, GitHub Models — paste your own API key) — all AI features share whichever is active</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="export">
-        <h3>Copy &amp; Export</h3>
-        <ul>
-          <li><span class="cs-combo" data-cs-shortcut="copyAsText"></span> <span class="cs-desc">copy selected nodes — paste back into any Sakura document, or into another app as text</span></li>
-          <li><span class="cs-desc">Share → Download PDF</span> <span class="help-kbd">.pdf</span> <span class="cs-desc">— renders the full document, always fully expanded</span></li>
-          <li><span class="cs-desc">Share → Export (.opml)</span> <span class="help-kbd">.opml</span> <span class="cs-desc">— outline structure, text, and notes; always includes folded sections</span></li>
-          <li><span class="cs-desc">File Explorer → right-click empty space → Import (.opml)… — as a new document</span></li>
-          <li><span class="cs-desc">Settings → Data &amp; backup → Backup / Restore — full app data</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="docs-tabs-zen">
-        <h3>Documents &amp; Zen mode</h3>
-        <ul>
-          <li><span class="cs-combo" data-cs-shortcut="newDoc"></span> <span class="cs-desc">new document</span></li>
-          <li><span class="cs-desc">Click a doc's icon in the file explorer → pick from a small icon set</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="docBack"></span> / <span class="cs-combo" data-cs-shortcut="docForward"></span> <span class="cs-desc">back / forward between documents</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="save"></span> <span class="cs-desc">save now</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="toggleZen"></span> <span class="cs-desc">Zen mode (also the corner button): hides the File Explorer and the top line</span></li>
-          <li><span class="help-kbd">Esc</span> <span class="cs-desc">leaves Zen mode</span></li>
-        </ul>
-      </div>
-      <div class="cs-card" data-cs-anchor="features">
-        <h3>Optional capabilities</h3>
-        <ul>
-          <li><span class="cs-desc"><strong>AI Capabilities</strong> (Settings → AI) — Generate outline, Rewrite, Auto-rewrite</span></li>
-          <li><span class="cs-desc"><strong>@ Mentions &amp; Backlinks</strong> — link nodes; type @ to mention another by name</span></li>
-          <li><span class="cs-desc"><strong>Focus</strong> — zoom into a branch; <span class="help-kbd">Ctrl/Cmd + .</span> to enter, <span class="help-kbd">Ctrl/Cmd + ,</span> to exit</span></li>
-          <li><span class="cs-desc">Off = hidden, not deleted — data is always preserved; states saved across sessions</span></li>
-        </ul>
-      </div>
-      <div class="cs-card" data-cs-anchor="tabs">
-        <h3>Switching documents</h3>
-        <ul>
-          <li><span class="cs-desc">One document at a time: open another from the File Explorer, or from Search (recent documents first)</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="docBack"></span> / <span class="cs-combo" data-cs-shortcut="docForward"></span> <span class="cs-desc">back / forward (or the mouse’s back and forward buttons)</span></li>
-          <li><span class="cs-desc">The top line shows where the document is filed: its folders, or Unfiled — click to find it in the File Explorer</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="version-history">
-        <h3>Version History</h3>
-        <ul>
-          <li><span class="cs-desc">Right-click the title, or the document in the File Explorer → "Version history" → automatic snapshots</span></li>
-          <li><span class="cs-desc">A snapshot at most every ~10 min while you edit, and one before any big deletion; 10 are kept, spread over time (recent ones close together, older ones further apart)</span></li>
-          <li><span class="cs-desc">"Save a version now" → snapshot immediately, useful before a big rewrite</span></li>
-          <li><span class="cs-desc">Restoring saves current content as a version first — always reversible</span></li>
-        </ul>
-      </div>
-
-      <div class="cs-card" data-cs-anchor="shortcuts-ref">
-        <h3>Shortcuts</h3>
-        <ul>
-          <li><span class="cs-desc">Settings → General → Keyboard Shortcuts → Customize — remap any action</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="save"></span> <span class="cs-desc">save now</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="quickAssist"></span> <span class="cs-desc">Quick Assist — commands, or search anything</span></li>
-          <li><span class="cs-combo" data-cs-shortcut="generateOutline"></span> <span class="cs-desc">generate outline (AI)</span></li>
-          <li><span class="cs-desc">Shortcuts blocked by OS/browser always have a matching button</span></li>
-        </ul>
-      </div>
-      </div>
-      <div id="cheatsheet-bottom-spacer" class="cs-bottom-spacer"></div>
-        </div>
-      </div>
-
-    </div>
-    <div id="cheatsheet-foot"><span>Shortcuts blocked by the OS or browser always have a matching button or menu item that works instead.</span><button type="button" id="cheatsheet-to-shortcuts-btn">Customize shortcuts →</button></div>
-  </div>
-</div>
 <script>
 // ── Selection formatting popover ──────────────────────────────────────────
 // A small floating formatting bar that appears above selected text in rows (the row being
