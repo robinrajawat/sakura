@@ -35,7 +35,7 @@ html.calm-layout #header-actions .export-menu{top:0;left:calc(100% + 8px);right:
 html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
 /* Panels belong to the frame: everything the rail opens sits beside it, full height. To-Dos
    takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
-   are sheets over the page. */
+   sit in the same slot (see the end of this file). */
 html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:0!important;left:52px!important;right:auto!important;height:100vh!important;max-height:none!important;border-radius:0;border-top:none;border-bottom:none;border-left:none}
 html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,400px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
 html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:var(--todos-w,400px)}
@@ -191,6 +191,21 @@ html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
-/* Settings and Help are sheets on top of the page (owner 2026-11-01): the page behind them fades
-   back, so half-covered rows don't peek out beside the sheet. A click outside still closes it. */
-html.calm-layout body:has(:is(.settings-panel,.help-panel).open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
+/* Settings and Help sit in the side slot like Documents and To-Dos (owner 2026-11-01): they take
+   the File Explorer's place and move the page over, so the document stays in view while you change
+   a setting or read Help. Only where the page keeps at least ~500px; on narrower windows they stay
+   sheets over the page and the page behind fades back so half-covered rows don't peek out. */
+@media (min-width:1320px){
+  html.calm-layout body:has(.settings-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
+  html.calm-layout body:has(.settings-panel.open) #app-layout{margin-left:760px}
+}
+@media (min-width:1160px){
+  html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
+  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:600px}
+}
+@media (max-width:1319.98px){
+  html.calm-layout body:has(.settings-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
+}
+@media (max-width:1159.98px){
+  html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
+}

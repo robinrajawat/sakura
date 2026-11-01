@@ -169,11 +169,11 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none (2026-11-01: Settings/Help fade the page behind, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none (2026-11-01: Settings/Help beside the page, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
 
-- **Settings/Help fade the page behind (2026-11-01).** The 760px sheets cover only the left of the page, so half-covered rows (row band, note icons, cut-off text) peeked out beside them. While either is open, `#editor-pane-inner`, the floating controls and Share fade to opacity .3 (calm-layout.css); click outside or Esc still closes. Open question to owner: row right-click menu is 10 unlabeled icons; a labelled menu was offered, not decided.
+- **Settings/Help sit beside the page (2026-11-01).** Owner: push the page like To-Dos. On windows ≥1320px (Settings, 760px) / ≥1160px (Help, 600px) they take the File Explorer's place and move `#app-layout` over (calm-layout.css end); clicking in the page keeps them open (outside-click handler `docked()`), the rail/Esc close them. Narrower: still a sheet over the page, page content fades to .3. Owner decision: the row right-click quick row (icon bar) stays as is.
 
 - **App polish: "row" wording, plain find bar, Esc closes Settings (2026-11-01).** Owner asked for app-wide polish. (1) Visible text says row/document, never node (~40 strings: toasts, tooltips, row menu, shortcut labels; Ctrl/Cmd+F = "Find in document", category "Search"). Code identifiers unchanged. (2) Find bar (`search-bar.css`): only the box + close until you type; count, chevron arrows and Aa/W options appear with a query (an option you switched on stays); replace toggle hidden, Ctrl/Cmd+H opens/closes Replace. (3) Escape closes Settings/Help when focus is in the sheet, on the rail or on the page; Escape in their search box closes only the search (and blurs). New spec `settings-escape-find-bar.spec.ts`.
 
