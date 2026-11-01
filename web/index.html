@@ -33007,8 +33007,11 @@ function todosHistorySummary(list) {
     const panel=document.getElementById('todos-panel');
     if(!panel) return;
     pruneCompleted();
-    // To-Dos opens in the File Explorer's place beside the rail (owner, 2026-10-28): one panel at a time.
+    // To-Dos opens in the File Explorer's place beside the rail (owner, 2026-10-28): one panel at a time,
+    // so it also closes Settings and Help, which take that same slot.
     if(sidebarOpen)setSidebarOpen(false);
+    document.getElementById('settings-panel')?.classList.remove('open');
+    document.getElementById('help-panel')?.classList.remove('open');
     panel.classList.add('open');
     applyTodosWidth();
     renderTodos();
@@ -33495,6 +33498,13 @@ function todosHistorySummary(list) {
   initTodosDrag();
   initTodosResize();
   window.toggleTodosPanel=toggleTodosPanel;
+  // Settings or Help opening (from the rail, Search, a shortcut…) closes To-Dos: they share the slot
+  // beside the rail, and with both open the page slid under Settings and was cut off.
+  {
+    const sheetOpened=()=>{ if(document.querySelector('#settings-panel.open,#help-panel.open')&&document.getElementById('todos-panel')?.classList.contains('open'))closeTodosPanel(); };
+    const mo=new MutationObserver(sheetOpened);
+    ['settings-panel','help-panel'].forEach(id=>{ const p=document.getElementById(id); if(p)mo.observe(p,{attributes:true,attributeFilter:['class']}); });
+  }
   // The selection bar on a To-Do title (owner, 2026-10-23: the same bar everywhere). Offsets are
   // in the stored title's characters: the editor's chips add zero-width spaces and typing can add
   // leading spaces, so DOM offsets are mapped both ways.

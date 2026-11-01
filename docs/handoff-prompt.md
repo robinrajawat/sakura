@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none (2026-11-01: API card shows bodies in full, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
+**Open work:** app polish round 2026-11-01 (owner "do it", merge each on green): (1) one side panel at a time [this PR], (2) Search palette lower + recent docs, (3) one Shortcuts page in Settings (no popups), (4) remove dead `sakuraPrompt`. Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **One side panel at a time (2026-11-01).** Bug: To-Dos open + Settings opened = page slid under the docked Settings sheet (cut off mid-word), two rail icons lit. Now `openTodosPanel` closes Settings/Help, and a MutationObserver on `#settings-panel`/`#help-panel` closes To-Dos when either opens (covers every opener: rail, Search, shortcuts). Spec `one-side-panel.spec.ts`. Esc in the To-Dos field still blurs first, second Esc closes (by design).
 
 - **API card shows bodies/responses in full (2026-11-01).** Owner: avoid scrolls. `.pv-api-code` has no 320px cap and wraps long lines (pre-wrap + overflow-wrap:anywhere, same as print); the form's boxes wrap too and regrow on window resize (`apiEditorRegrow`).
 
 - **API form + PDF panel polish (2026-11-01).** The inline API form is on the page colour (`--edit-bg`) so its grey fields read as fields; body/response boxes start at 3 lines (72px) instead of 4. PDF: API body/response boxes use the note panel's #f6f5f2 (one panel tone on paper). Owner asked whether the PDF note panel should be subtler: kept, lighter disappears on office printers.
-
-- **API request editor is inline (2026-11-01).** Owner: the popup squeezed the body and response boxes. Double-click / Edit request… / a new API starter now turns the card itself into the form (`#api-editor`, built once by `apiEditorEl`, moved into the card's `.node-table-line`, class `api-editing`), full page width. Body/response boxes grow with their text (`apiEditorGrow`). No Save/Cancel/footer: Esc, Ctrl/Cmd+Enter, a click outside (`apiEditorOutside`, capture mousedown) or Tab out finishes via `apiEditorFinish` (one undo step; empty URL keeps it open, Esc then cancels). `render()` finishes an open form first. Top bar: Paste from Postman (cURL)…, Edit as table, hint.
 
 ### In progress / not built
 
