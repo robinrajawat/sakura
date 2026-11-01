@@ -2591,7 +2591,7 @@ html.calm-layout #header-actions .export-menu{top:0;left:calc(100% + 8px);right:
 html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
 /* Panels belong to the frame: everything the rail opens sits beside it, full height. To-Dos
    takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
-   are sheets over the page. */
+   sit in the same slot (see the end of this file). */
 html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:0!important;left:52px!important;right:auto!important;height:100vh!important;max-height:none!important;border-radius:0;border-top:none;border-bottom:none;border-left:none}
 html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,400px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
 html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:var(--todos-w,400px)}
@@ -2747,6 +2747,24 @@ html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
+/* Settings and Help sit in the side slot like Documents and To-Dos (owner 2026-11-01): they take
+   the File Explorer's place and move the page over, so the document stays in view while you change
+   a setting or read Help. Only where the page keeps at least ~500px; on narrower windows they stay
+   sheets over the page and the page behind fades back so half-covered rows don't peek out. */
+@media (min-width:1320px){
+  html.calm-layout body:has(.settings-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
+  html.calm-layout body:has(.settings-panel.open) #app-layout{margin-left:760px}
+}
+@media (min-width:1160px){
+  html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
+  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:600px}
+}
+@media (max-width:1319.98px){
+  html.calm-layout body:has(.settings-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
+}
+@media (max-width:1159.98px){
+  html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
+}
 /* GENERATED:css-app:END */
 </style>
 <style>
@@ -23381,8 +23399,10 @@ document.addEventListener('click',e=>{
   // since the modal is layered on top and still showing. That's exactly what "unlock it" in the
   // AI fallback warning ran into: clicking the password prompt's own button silently closed the
   // Settings panel behind it, only visible once the prompt itself closed a moment later.
+  // On wide windows Settings and Help sit beside the page (calm-layout.css), so working in the page
+  // keeps them open like To-Dos; the rail and anything outside the page still close them.
   if(e.target.closest('[role="dialog"][aria-modal="true"].open'))return;
-  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); if(!help.contains(e.target)&&e.target!==helpToggle)help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle&&!el('rail-settings-btn')?.contains(e.target))settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open');
+  const help=el('help-panel'),helpToggle=el('help-toggle'),settings=el('settings-panel'),settingsToggle=el('settings-toggle'),context=el('context-menu'),gsWrap=el('global-search-wrap'),accountMenu=el('account-menu'),accountToggle=el('account-toggle'); const docked=(p,w)=>p.classList.contains('open')&&document.documentElement.classList.contains('calm-layout')&&matchMedia('(min-width:'+w+'px)').matches&&!!e.target.closest('#app-layout'); if(!help.contains(e.target)&&e.target!==helpToggle&&!docked(help,1160))help.classList.remove('open'); if(!settings.contains(e.target)&&e.target!==settingsToggle&&!docked(settings,1320)&&!el('rail-settings-btn')?.contains(e.target))settings.classList.remove('open'); if(accountMenu&&!accountMenu.contains(e.target)&&e.target!==accountToggle&&!accountToggle?.contains(e.target))accountMenu.classList.remove('open'); if(gsWrap&&!gsWrap.contains(e.target))setQaOpen(false); if(context && !context.contains(e.target))hideContextMenu(); const hlPal=el('hl-palette'),hlCaret=el('hl-caret-btn'); if(hlPal&&!hlPal.contains(e.target)&&e.target!==hlCaret)hlPal.classList.remove('open'); const fcPal=el('fc-palette'),fcCaret=el('fc-caret-btn'); if(fcPal&&!fcPal.contains(e.target)&&e.target!==fcCaret)fcPal.classList.remove('open');
 },true);
 el('editor-pane').addEventListener('click',e=>{
   const blLink=e.target.closest('.bl-link[data-r]');
