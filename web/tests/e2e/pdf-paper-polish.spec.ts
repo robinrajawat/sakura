@@ -56,3 +56,37 @@ test('PDF: footer inside the text column, plain notes, plain names in Person col
   expect(out.person!.bg).toBe('none|rgba(0, 0, 0, 0)');
   expect(out.person!.shadow).toBe('none');
 });
+
+test('PDF: API body and response boxes use the same soft grey panel as notes', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('sakura_welcome_seen', '1'));
+  await page.goto('file://' + indexPath);
+  await page.evaluate(() => {
+    const l = document.getElementById('sakura-landing-overlay');
+    if (l) l.style.display = 'none';
+    const api = '<table data-table-display="api"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>'
+      + '<tr><td>Method</td><td>POST</td></tr><tr><td>URL</td><td>{{baseUrl}}/orders</td></tr>'
+      + '<tr><td>Body</td><td>{"id":"4711"}</td></tr><tr><td>Status</td><td>201 Created</td></tr>'
+      + '<tr><td>Response</td><td>{"status":"accepted"}</td></tr></tbody></table>';
+    // @ts-expect-error -- bare globals from index.html
+    nodes = [
+      { id: 1, depth: 0, text: 'Scope', parentId: null, isCheckbox: false, checked: false, note: '<p>Only customer data.</p>', noteTitle: '', tables: [], tags: [], styles: {} },
+      { id: 2, depth: 0, text: 'Create order', parentId: null, isCheckbox: false, checked: false, note: '', noteTitle: '', tables: [api], tags: [], styles: {} },
+    ];
+    // @ts-expect-error
+    collapsedIds = new Set(); selectedId = null; editingId = null; nextId = 3;
+    // @ts-expect-error
+    render();
+    // @ts-expect-error
+    window.__printed = false; window.print = () => { window.__printed = true; };
+    // @ts-expect-error
+    exportPdfDirect();
+  });
+  await page.waitForFunction(() => (window as unknown as { __printed: boolean }).__printed, null, { timeout: 15000 });
+  await page.emulateMedia({ media: 'print' });
+  const out = await page.evaluate(() => ({
+    note: getComputedStyle(document.querySelector('#preview-body .pv-inline-note-body')!).backgroundColor,
+    code: [...document.querySelectorAll('#preview-body .pv-api-code')].map(c => getComputedStyle(c).backgroundColor),
+  }));
+  expect(out.code).toHaveLength(2);
+  for (const bg of out.code) expect(bg).toBe(out.note);
+});
