@@ -189,7 +189,7 @@ What Sakura protects, and where the limits are:
 | New document | Ctrl/Cmd+Alt+N |
 | Undo / redo | Ctrl/Cmd+Z / Ctrl/Cmd+Y |
 
-You can change any shortcut in Settings → General → Keyboard shortcuts. Help → Cheatsheet lists the rest.
+Settings → Shortcuts lists every shortcut; click one to change it.
 
 ## Technical details
 

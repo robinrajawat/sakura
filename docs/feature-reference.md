@@ -263,7 +263,7 @@ How your data is protected depends on whether you're signed in:
 
 ## Settings Reference
 
-The Settings panel has five sections, plus Account while signed in: **General** (theme, text size, To-Dos auto-expiry, keyboard shortcuts), **Documents** (your name, PDF cover page / open items page / PDF mark, Trash), **Data & backup** (backup, restore, Secure Storage, reset), **AI**, and **About** (about, privacy, support, feedback and crash reports), and **Account** when signed in (Delete account; profile visibility is switched from the account menu). Dates and times follow your browser's language and region.
+The Settings panel has six sections, plus Account while signed in: **General** (theme, text size, To-Dos auto-expiry), **Shortcuts** (every shortcut with search and Reset all; click a combo to change it, edited in place, no popup), **Documents** (your name, PDF cover page / open items page / PDF mark, Trash), **Data & backup** (backup, restore, Secure Storage, reset), **AI**, and **About** (about, privacy, support, feedback and crash reports), and **Account** when signed in (Delete account; profile visibility is switched from the account menu). Dates and times follow your browser's language and region.
 
 | Setting | Section | Default | Notes |
 |---|---|---|---|
@@ -308,7 +308,7 @@ The Settings panel has five sections, plus Account while signed in: **General** 
 | Select all | Ctrl/Cmd+A |
 | Undo / Redo (while typing in a row, a word at a time; once you leave the row, the whole edit is one step) | Ctrl/Cmd+Z / Ctrl/Cmd+Y |
 
-If a shortcut is intercepted by the OS or browser before it reaches the page (for example a browser or OS shortcut on the same keys), the equivalent toolbar button or menu item works as a fallback, and conflicting shortcuts can be remapped in Settings → Keyboard Shortcuts.
+If a shortcut is intercepted by the OS or browser before it reaches the page (for example a browser or OS shortcut on the same keys), the equivalent toolbar button or menu item works as a fallback, and conflicting shortcuts can be remapped in Settings → Shortcuts (Help's **Keyboard shortcuts** button opens it).
 
 ## Browser Support
 
