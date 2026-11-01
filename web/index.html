@@ -2608,9 +2608,14 @@ html.calm-layout #global-search-wrap:not(.qa-open) .qa-input-row input{display:n
 html.calm-layout #appbar-qa-slot,html.calm-layout #global-search-wrap:not(.qa-open){width:36px!important;min-width:0!important}
 html.calm-layout #global-search-wrap:not(.qa-open) .qa-input-row:hover{background:var(--hover);color:var(--fg)}
 html.calm-layout #global-search-wrap .qa-input-row input{width:0;opacity:0;padding:0}
-html.calm-layout #global-search-wrap.qa-open .qa-input-row{position:fixed;left:calc(50% + 26px);top:14vh;transform:translateX(-50%);width:min(560px,calc(100vw - 84px));height:auto;padding:10px 14px;box-shadow:var(--shadow-panel);border-radius:var(--radius-panel);padding:6px 10px;gap:8px;overflow:visible;z-index:10002;background:var(--surface-panel);border-color:var(--border)}
+html.calm-layout #global-search-wrap.qa-open .qa-input-row{position:fixed;left:calc(50% + 26px);top:max(14vh,168px);transform:translateX(-50%);width:min(560px,calc(100vw - 84px));height:auto;padding:10px 14px;box-shadow:var(--shadow-panel);border-radius:var(--radius-panel);padding:6px 10px;gap:8px;overflow:visible;z-index:10002;background:var(--surface-panel);border-color:var(--border)}
 html.calm-layout #global-search-wrap.qa-open .qa-input-row input{width:auto;opacity:1}
-html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:calc(50% + 26px);top:calc(14vh + 50px);transform:translateX(-50%);right:auto;bottom:auto;width:min(560px,calc(100vw - 84px))}
+html.calm-layout #global-search-wrap .qa-dropdown{position:fixed;left:calc(50% + 26px);top:calc(max(14vh,168px) + 44px);transform:translateX(-50%);right:auto;bottom:auto;width:min(560px,calc(100vw - 84px));max-width:none;box-sizing:border-box;z-index:10002}
+/* While Search is open the page behind dims a little (owner 2026-11-01: the box floated over the
+   title and read as a glitch), so the box and its results read as one layer above the page, like a
+   standard command palette. Clicks pass through, so a click on the page still closes Search. */
+html.calm-layout body:has(#global-search-wrap.qa-open)::after{content:"";position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.08);pointer-events:none}
+html.calm-layout body.theme-dark:has(#global-search-wrap.qa-open)::after{background:rgba(0,0,0,.35)}
 /* One top line on the page colour: back / forward and where you are (Folder › Document) on the
    left, History · Share on the right. No tabs (owner,
    2026-10-28): one document at a time; switch from the File Explorer or Search. */
