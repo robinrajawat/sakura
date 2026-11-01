@@ -169,15 +169,15 @@ keep only the last 3 entries, and delete older ones (git history and the PRs kee
 anything still unbuilt or undecided into "In progress / not built" or "Parked". If this section
 contradicts README.md or docs/feature-reference.md, trust them.)*
 
-**Open work:** none (2026-11-01: API request editor inline, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
+**Open work:** none (2026-11-01: API form + PDF panel polish, no open PRs, branch = main). Check `mcp__github__list_pull_requests` at session start.
 
 ### Latest changes
+
+- **API form + PDF panel polish (2026-11-01).** The inline API form is on the page colour (`--edit-bg`) so its grey fields read as fields; body/response boxes start at 3 lines (72px) instead of 4. PDF: API body/response boxes use the note panel's #f6f5f2 (one panel tone on paper). Owner asked whether the PDF note panel should be subtler: kept, lighter disappears on office printers.
 
 - **API request editor is inline (2026-11-01).** Owner: the popup squeezed the body and response boxes. Double-click / Edit request… / a new API starter now turns the card itself into the form (`#api-editor`, built once by `apiEditorEl`, moved into the card's `.node-table-line`, class `api-editing`), full page width. Body/response boxes grow with their text (`apiEditorGrow`). No Save/Cancel/footer: Esc, Ctrl/Cmd+Enter, a click outside (`apiEditorOutside`, capture mousedown) or Tab out finishes via `apiEditorFinish` (one undo step; empty URL keeps it open, Esc then cancels). `render()` finishes an open form first. Top bar: Paste from Postman (cURL)…, Edit as table, hint.
 
 - **Settings/Help sit beside the page (2026-11-01).** Owner: push the page like To-Dos. On windows ≥1320px (Settings, 760px) / ≥1160px (Help, 600px) they take the File Explorer's place and move `#app-layout` over (calm-layout.css end); clicking in the page keeps them open (outside-click handler `docked()`), the rail/Esc close them. Narrower: still a sheet over the page, page content fades to .3. Owner decision: the row right-click quick row (icon bar) stays as is.
-
-- **App polish: "row" wording, plain find bar, Esc closes Settings (2026-11-01).** Owner asked for app-wide polish. (1) Visible text says row/document, never node (~40 strings: toasts, tooltips, row menu, shortcut labels; Ctrl/Cmd+F = "Find in document", category "Search"). Code identifiers unchanged. (2) Find bar (`search-bar.css`): only the box + close until you type; count, chevron arrows and Aa/W options appear with a query (an option you switched on stays); replace toggle hidden, Ctrl/Cmd+H opens/closes Replace. (3) Escape closes Settings/Help when focus is in the sheet, on the rail or on the page; Escape in their search box closes only the search (and blurs). New spec `settings-escape-find-bar.spec.ts`.
 
 ### In progress / not built
 
