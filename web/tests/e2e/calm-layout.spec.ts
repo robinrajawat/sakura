@@ -111,12 +111,12 @@ test('the top line shows the folders, not the document name; a folder there show
   });
   // No folders at all: nothing to say (2026-11-02).
   await expect(page.locator('#doc-path-crumbs')).toHaveText('');
-  // In no folder while folders exist: it says where the explorer lists it (owner 2026-10-29).
+  // In no folder while folders exist: still nothing (owner 2026-11-02; it used to say "Unfiled").
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     const fs = loadFolders(); fs.push({ id: 'f0', name: 'Other', parentId: null }); saveFolders(fs); renderDocPath();
   });
-  await expect(page.locator('#doc-path-crumbs')).toHaveText('Unfiled');
+  await expect(page.locator('#doc-path-crumbs')).toHaveText('');
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     const fs = loadFolders(); fs.push({ id: 'f1', name: 'Work', parentId: null }); saveFolders(fs); const m = loadDocFolderMap(); m[currentDocId] = 'f1'; saveDocFolderMap(m); renderDocPath();
@@ -178,14 +178,14 @@ test('Settings: sentence-case headings, one card per group, real buttons', async
   expect(s.width).toBeGreaterThan(700);
 });
 
-// Bug (owner 2026-10-30): a filed document still said "Unfiled". Moves and cloud sync redraw the
+// Bug (owner 2026-10-30): a filed document's path stayed empty/stale. Moves and cloud sync redraw the
 // sidebar, not the top line, so the path went stale. Redrawing the sidebar now redraws the path too.
 test('the folder path follows the sidebar when a document is filed after it opened', async ({ page }) => {
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     ensureDocumentForEditing(); el('header-title').value = 'Plan'; el('header-title').dispatchEvent(new Event('input')); saveToStorage(); const fs = loadFolders(); fs.push({ id: 'f0', name: 'Other', parentId: null }); saveFolders(fs); renderDocPath();
   });
-  await expect(page.locator('#doc-path-crumbs')).toHaveText('Unfiled');
+  await expect(page.locator('#doc-path-crumbs')).toHaveText('');
   await page.evaluate(() => {
     // @ts-expect-error -- bare globals from index.html
     const fs = loadFolders(); fs.push({ id: 'f2', name: 'Projects', parentId: null }); saveFolders(fs); const m = loadDocFolderMap(); m[currentDocId] = 'f2'; saveDocFolderMap(m); renderSidebar();

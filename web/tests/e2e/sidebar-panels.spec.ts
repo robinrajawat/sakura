@@ -73,6 +73,22 @@ test('Notifications open full height beside the rail, with the same header as th
   const font = (sel: string) => page.locator(sel).evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight, c.textTransform].join(' '); });
   expect(await font('.notif-menu-title')).toBe(await font('#sidebar .sb-section-label'));
   expect(await font('.notif-menu-title')).toBe('14.5px 600 none');
+  // Same shared width as Documents/To-Dos/Help, and it moves the page over instead of covering it (owner 2026-11-02).
+  expect(Math.round(r.width)).toBe(320);
+  await expect(page.locator('#sidebar')).toBeHidden();
+  const ml = await page.locator('#app-layout').evaluate((e) => getComputedStyle(e).marginLeft);
+  expect(ml).toBe('325px');
+});
+
+// An empty folder shows no "0" next to its name (owner 2026-11-02).
+test('an empty folder shows no count', async ({ page }) => {
+  await page.evaluate(() => {
+    // @ts-expect-error -- bare globals from index.html
+    const fs = loadFolders(); fs.push({ id: 'fe', name: 'Empty', parentId: null }); saveFolders(fs); setSidebarOpen(true); renderSidebar();
+  });
+  const row = page.locator('.sfolder-row', { hasText: 'Empty' });
+  await expect(row).toBeVisible();
+  await expect(row.locator('.sfolder-count')).toHaveText('');
 });
 
 test('back/forward are shortcuts only: no buttons on the top line', async ({ page }) => {

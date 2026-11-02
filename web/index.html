@@ -2557,7 +2557,7 @@ html.calm-layout #todos-resize-handle{left:auto;right:0;z-index:5}
 /* Same flat surface as the File Explorer, no edge line (owner 2026-11-02: colour change only), so the two read as one sidebar showing different things. */
 html.calm-layout #todos-panel,html.calm-layout .settings-panel,html.calm-layout .help-panel{background:var(--tb-bg);box-shadow:none;border-right:none}
 /* Notifications use the same side slot (owner 2026-10-29): full height beside the rail, flat, the list scrolls. */
-html.calm-layout #notif-menu{position:fixed;top:0!important;left:52px!important;right:auto!important;bottom:auto;width:340px;max-width:calc(100vw - 52px);height:100vh;max-height:none;margin:0;padding:14px 8px;border-radius:0;border:none;border-right:none;background:var(--tb-bg);box-shadow:none;overflow-y:auto}
+html.calm-layout #notif-menu{position:fixed;top:0!important;left:52px!important;right:auto!important;bottom:auto;width:var(--side-w,320px);max-width:calc(100vw - 52px);height:100vh;max-height:none;margin:0;padding:14px 8px;border-radius:0;border:none;border-right:none;background:var(--tb-bg);box-shadow:none;overflow-y:auto}
 /* Quick Assist is the rail's search icon; opened, its field and results float beside the rail. */
 html.calm-layout #appbar-qa-slot{width:auto}
 html.calm-layout #global-search-wrap .qa-input-row{width:36px;height:36px;padding:0;gap:0;justify-content:center;overflow:hidden;border-color:transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
@@ -2754,6 +2754,11 @@ html.calm-layout #help-quick-links>div>span{color:var(--muted)}
 @media (min-width:900px){
   html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
   html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
+}
+/* Notifications too: same shared width, takes the File Explorer's place and moves the page over (2026-11-02). */
+@media (min-width:900px){
+  html.calm-layout body:has(#notif-menu.open) :is(#sidebar,#sidebar-resize-handle){display:none}
+  html.calm-layout body:has(#notif-menu.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
 }
 @media (max-width:899.98px){
   html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
@@ -3563,7 +3568,7 @@ html.calm-layout #help-quick-links>div>span{color:var(--muted)}
             <div class="settings-section-title">About</div>
             <div class="settings-about-head">
               <svg width="44" height="44" viewBox="4.5 0.5 63 63" aria-hidden="true"><g opacity="0.9"><ellipse cx="36" cy="18" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 38%,transparent)" stroke="color-mix(in srgb,var(--fg) 55%,transparent)" stroke-width="1"/><ellipse cx="18" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="54" cy="30" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 30%,transparent)" stroke="color-mix(in srgb,var(--fg) 45%,transparent)" stroke-width="1"/><ellipse cx="24" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><ellipse cx="48" cy="46" rx="9" ry="9" fill="color-mix(in srgb,var(--fg) 22%,transparent)" stroke="color-mix(in srgb,var(--fg) 38%,transparent)" stroke-width="1"/><circle cx="36" cy="32" r="5.5" fill="color-mix(in srgb,var(--fg) 18%,transparent)" stroke="color-mix(in srgb,var(--fg) 48%,transparent)" stroke-width="1.2"/></g></svg>
-              <div class="settings-row-text"><span class="settings-about-name">Sakura</span><span class="settings-row-desc" id="about-version" data-version="__SAKURA_VERSION__" hidden></span><span class="settings-row-desc">Outline your work and follow it through. Documents with tables, charts and diagrams, threads and row status for open items, To-Dos and AI.</span><span class="settings-row-desc settings-about-copy">© 2026 Robin Singh Rajawat. All rights reserved.</span></div>
+              <div class="settings-row-text"><span class="settings-about-name">Sakura</span><span class="settings-row-desc" id="about-version" data-version="__SAKURA_VERSION__" hidden></span><span class="settings-row-desc">An outliner for structured thinking: documents with tables, charts and diagrams, discussion threads, To-Dos and AI.</span><span class="settings-row-desc settings-about-copy">© 2026 Robin Singh Rajawat. All rights reserved.</span></div>
             </div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">License</span><span class="settings-row-desc">The terms Sakura is shared under.</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">View</a></div>
@@ -13418,7 +13423,7 @@ function renderDocPath(){
   const crumb=(text,cls='')=>{ const b=document.createElement('button'); b.type='button'; b.className='doc-path-folder'+(cls?' '+cls:''); b.textContent=text; b.addEventListener('click',go); box.appendChild(b); };
   const folders=currentDocId?loadFolders():[]; let f=currentDocId?folders.find(x=>x.id===loadDocFolderMap()[currentDocId]):null; const chain=[]; let guard=0;
   while(f&&guard++<20){ chain.unshift(f); f=f.parentId?folders.find(x=>x.id===f.parentId):null; }
-  if(!chain.length){ if(currentDocId&&folders.length)crumb('Unfiled','doc-path-root'); return; }
+  if(!chain.length)return; // a document outside any folder shows an empty path, not 'Unfiled'
   chain.forEach((fd,i)=>{
     if(i){ const sep=document.createElement('span'); sep.className='doc-path-sep'; sep.setAttribute('aria-hidden','true'); sep.textContent='›'; box.appendChild(sep); }
     crumb(fd.name||'Unnamed folder');
@@ -26528,7 +26533,7 @@ function renderSidebarDocs(){
 
     const directCount = folderDocs.length;
     const totalCount = q ? directCount : folderSubtreeDocCount(folder, folders, allDocs, folderMap);
-    const count = document.createElement('span'); count.className='sfolder-count'; count.textContent=totalCount;
+    const count = document.createElement('span'); count.className='sfolder-count'; count.textContent=totalCount||''; // empty folders show no 0 (Trash already hides it)
     if(!q && totalCount!==directCount) count.dataset.tip=`${directCount} directly in this folder · ${totalCount} total including subfolders`;
     folderRow.appendChild(count);
     folderRow.dataset.tip = q ? 'Matching documents in this folder' : 'Right-click for more options · drag to reorder or nest';
