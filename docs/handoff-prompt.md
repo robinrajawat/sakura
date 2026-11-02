@@ -173,9 +173,9 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
-- **Settings column centred, About spaced (2026-11-02).** In the full-area Settings the 720px column is centred (`justify-content:center` on `.settings-content`) instead of hugging the section rail. About header: version in `--hint` with a gap below, copyright `.settings-about-copy` in `--hint` after a small gap, logo top-aligned. Rail tooltip "Data & backup" matches its label.
+- **Settings page layout (2026-11-02).** The section list (200px) and the settings column (720px) are centred together as one ~950px block (GitHub/Linear); `#settings-panel .settings-body` is the scroller (wheel anywhere) and the list is sticky; the header's title/buttons line up with the block. Search box always shown in the header (toggle hidden, so no double ×). About is a centred block (56px logo, name, version, description, copyright). Below 760px the list turns into icons.
 
-- **Settings fills the whole area (2026-11-02, owner chose).** `html.calm-layout .settings-panel` is `calc(100vw - 52px)` wide at every window size (as VS Code/Linear/Slack); the settings column is capped at 720px and centred (`grid-template-columns:minmax(0,720px)`); new × `#settings-close-btn` in the header. The page-move/fade rules for Settings are gone; Help keeps the side slot. Specs: `settings-escape-find-bar`, `one-side-panel`.
+- **Settings column centred, About spaced (2026-11-02).** In the full-area Settings the 720px column is centred (`justify-content:center` on `.settings-content`) instead of hugging the section rail. About header: version in `--hint` with a gap below, copyright `.settings-about-copy` in `--hint` after a small gap, logo top-aligned. Rail tooltip "Data & backup" matches its label.
 
 - **Narrow File Explorer folds nested folders (2026-11-02).** `.sfolder-children` is a grid; its column grew to the longest name, so nested folder/doc rows stuck out past a narrow panel (names cut, counts gone). Now `grid-template-columns:minmax(0,1fr)`, so names end in "…" at every depth. Spec: `sidebar-nested-folder-narrow.spec.ts`.
 
