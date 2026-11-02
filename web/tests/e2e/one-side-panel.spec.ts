@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 
 // To-Dos, Settings and Help share the slot beside the rail: one at a time. With To-Dos and Settings
 // both open the page slid under Settings and was cut off, and two rail icons were lit.
-test('opening Settings or Help closes To-Dos, and opening To-Dos closes them', async ({ page }) => {
+test('opening Settings closes To-Dos, and opening To-Dos closes it', async ({ page }) => {
   const open = (id: string) => page.evaluate((i) => document.getElementById(i)!.classList.contains('open'), id);
   // @ts-expect-error -- bare global from index.html
   await page.evaluate(() => toggleTodosPanel());
@@ -32,8 +32,9 @@ test('opening Settings or Help closes To-Dos, and opening To-Dos closes them', a
   expect(await open('todos-panel')).toBe(true);
   expect(await open('settings-panel')).toBe(false);
 
+  // Help is a pane on the right (owner 2026-11-02), so To-Dos stays open beside it.
   await page.evaluate(() => document.getElementById('help-panel')!.classList.add('open'));
-  expect(await open('todos-panel')).toBe(false);
+  expect(await open('todos-panel')).toBe(true);
 });
 
 // One side slot with different content (owner 2026-11-02: switching felt jumpy). The explorer used to
@@ -62,29 +63,50 @@ test('a click on the page leaves docked Help open; below 900px Help is a sheet a
     await page.setViewportSize({ width: w, height: 800 });
     await page.evaluate(() => { const h = document.getElementById('help-panel')!; if (!h.classList.contains('open')) document.getElementById('help-toggle')!.click(); });
     await expect(page.locator('#help-panel')).toBeVisible();
-    await page.mouse.click(w - 60, 600);
+    await page.mouse.click(200, 600);
     if (stays) await expect(page.locator('#help-panel')).toBeVisible();
     else await expect(page.locator('#help-panel')).toBeHidden();
   }
+  // As a sheet it covers the "?", so its × closes it.
+  await page.locator('#doc-help-btn').click();
+  await expect(page.locator('#help-panel')).toBeVisible();
+  await page.locator('#help-close-btn').click();
+  await expect(page.locator('#help-panel')).toBeHidden();
 });
 
-// Owner 2026-11-02: "isn't it the same shared panel?" Help behaves like To-Dos in the side slot:
-// the Documents button takes the slot over, and Help's edge drags the one shared width.
-test('Documents takes the slot over from Help, and Help resizes the shared width', async ({ page }) => {
+// Owner 2026-11-02: Help is a pane on the RIGHT, the standard place (Slack, Office, Google). Documents
+// stays open on the left beside it, the page makes room on the right, and dragging Help's left edge
+// resizes Help alone.
+test('Help opens on the right beside Documents and resizes from its left edge', async ({ page }) => {
   await page.setViewportSize({ width: 1400, height: 800 });
-  await page.evaluate(() => document.getElementById('help-toggle')!.click());
+  const box = (sel: string) => page.locator(sel).evaluate((e) => { const r = e.getBoundingClientRect(); return { left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width) }; });
+  // @ts-expect-error -- bare global from index.html
+  await page.evaluate(() => { if (!sidebarOpen) openDocumentsPanel(); });
+  await expect(page.locator('#sidebar')).toBeVisible();
+  const sideW = (await box('#sidebar')).width;
+  await page.locator('#doc-help-btn').click();
   await expect(page.locator('#help-panel')).toBeVisible();
-  const handle = page.locator('#help-resize-handle');
-  await expect(handle).toBeVisible();
-  const h = (await handle.boundingBox())!;
+  await expect(page.locator('#sidebar')).toBeVisible();
+  const help = await box('#help-panel');
+  expect(help.right).toBe(1400);
+  expect((await box('#app-layout')).right).toBe(help.left);
+
+  const h = (await page.locator('#help-resize-handle').boundingBox())!;
   await page.mouse.move(h.x + 3, h.y + 300);
   await page.mouse.down();
-  await page.mouse.move(h.x + 83, h.y + 300, { steps: 4 });
+  await page.mouse.move(h.x - 77, h.y + 300, { steps: 4 });
   await page.mouse.up();
-  const w = await page.locator('#help-panel').evaluate((e) => Math.round(e.getBoundingClientRect().width));
-  expect(w).toBeGreaterThan(380);
+  expect((await box('#help-panel')).width).toBe(help.width + 80);
+  expect((await box('#sidebar')).width).toBe(sideW);
+  expect(await page.evaluate(() => localStorage.getItem('sakura_help_width_v1'))).toBe(String(help.width + 80));
+
+  // The Documents button just closes Documents; Help stays. × closes Help.
   await page.locator('#rail-docs-btn').click();
+  await expect(page.locator('#sidebar')).toBeHidden();
+  await expect(page.locator('#help-panel')).toBeVisible();
+  await expect(page.locator('#doc-help-btn')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#help-close-btn').click();
   await expect(page.locator('#help-panel')).toBeHidden();
-  await expect(page.locator('#sidebar')).toBeVisible();
-  expect(await page.locator('#sidebar').evaluate((e) => Math.round(e.getBoundingClientRect().width))).toBe(w);
+  await expect(page.locator('#doc-help-btn')).toHaveAttribute('aria-pressed', 'false');
+  expect((await box('#app-layout')).right).toBe(1400);
 });

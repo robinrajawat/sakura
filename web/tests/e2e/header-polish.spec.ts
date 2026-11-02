@@ -64,7 +64,7 @@ test('the title byline is sentence case; status is plain text like the rest of t
   expect(s.sep).toBe('3px 3px 50%');
 });
 
-test('the byline is Status · author · link; Share closes the top line', async ({ page }) => {
+test('the byline is Status · author · link; the top line ends with Share and the Help "?"', async ({ page }) => {
   const s = await page.evaluate(() => {
     const dot = (id: string, pseudo: string) => { const a = getComputedStyle(document.getElementById(id)!, pseudo); return [a.width, a.height, a.borderRadius].join(' '); };
     const fold = document.querySelector('#ag-fold .ag-buttons')!;
@@ -77,7 +77,8 @@ test('the byline is Status · author · link; Share closes the top line', async 
   });
   expect(s.linkSep).toBe('3px 3px 50%');
   expect(s.inByline).toEqual([]);
-  expect(s.order).toEqual(['doc-share-wrap']);
+  // Help's "?" sits after Share, right above where the Help pane opens (owner 2026-11-02).
+  expect(s.order).toEqual(['doc-share-wrap', 'doc-help-btn']);
   // Share sits at the right edge, so its menu opens leftwards from there.
   expect(s.menuRight).toBe('0px');
 });

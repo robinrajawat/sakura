@@ -62,14 +62,14 @@ const rootTexts = (page: import('@playwright/test').Page) =>
 test.describe('Fixed main toolbar', () => {
   // The one layout (owner 2026-10-28) shows no toolbar row: the top line keeps only Share (History left it 2026-10-29).
   // The hidden toolbar buttons are gone (owner 2026-10-29); the Insert list still backs "/" and right-click.
-  test('the top line shows only Share; the Insert list keeps its items', async ({ page }) => {
+  test('the top line shows only Share and Help; the Insert list keeps its items', async ({ page }) => {
     const errors = trackErrors(page);
     await open(page);
     const shown = await page.evaluate(() =>
       Array.from(document.querySelectorAll('#quick-bar .quick-btn'))
         .filter((b) => (b as HTMLElement).offsetParent !== null)
         .map((b) => b.id || (b as HTMLElement).dataset.style));
-    expect(shown).toEqual(['doc-share-chip']);
+    expect(shown).toEqual(['doc-share-chip', 'doc-help-btn']);
     await page.evaluate(() => (window as any).eval("openSbMenuUnder(el('editor-pane-inner'), insertMenuItems(), { id: 'insert-menu', label: 'Insert' })"));
     // Two groups under small headings (owner 2026-10-29); row status marks only when you type.
     await expect(page.locator('#insert-menu .sb-context-heading')).toHaveText(['Text', 'Insert']);

@@ -38,10 +38,10 @@ const visibleItems = (page) =>
   );
 
 // Settings lives on the rail's gear only (owner 2026-10-29), so the account menu doesn't repeat it.
-test('signed out: Help, Send feedback and support; no Settings, sign out or About', async ({ page }) => {
+// Help opens from the "?" beside Share (owner 2026-11-02), so the account menu doesn't repeat it.
+test('signed out: Send feedback and support; no Help, Settings, sign out or About', async ({ page }) => {
   await page.locator('#account-toggle').click();
   expect(await visibleItems(page)).toEqual([
-    'account-help-btn',
     'account-feedback-btn',
     'account-support-btn',
   ]);
@@ -52,7 +52,7 @@ test('signed out: Help, Send feedback and support; no Settings, sign out or Abou
 test('signed in: sync and visibility share one line, sign out is last', async ({ page }) => {
   await showSignedIn(page);
   await page.locator('#account-toggle').click();
-  expect(await visibleItems(page)).toEqual(['account-help-btn', 'account-feedback-btn', 'account-support-btn', 'account-signout-btn']);
+  expect(await visibleItems(page)).toEqual(['account-feedback-btn', 'account-support-btn', 'account-signout-btn']);
   // Synced shows as a ring on the avatar, not as text, so the line doesn't change width.
   await expect(page.locator('#account-manage-btn')).toHaveClass(/sync-synced/);
   await expect(page.locator('#account-sync-status')).toBeHidden();
@@ -81,8 +81,7 @@ test('header opens Settings → Account; visibility link does not', async ({ pag
 });
 
 test('Help → About Sakura opens Settings → About', async ({ page }) => {
-  await page.locator('#account-toggle').click();
-  await page.locator('#account-help-btn').click();
+  await page.locator('#doc-help-btn').click();
   await expect(page.locator('#help-panel')).toHaveClass(/open/);
   await page.locator('#help-about-open-btn').click();
   await expect(page.locator('#settings-panel')).toHaveClass(/open/);
