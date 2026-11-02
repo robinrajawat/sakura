@@ -126,8 +126,10 @@ html.calm-layout .settings-section{border:none;background:none;padding:0}
 /* Settings, grouped (owner 2026-10-29: fewer boxes, but not flat): a wider panel so descriptions fit
    on one line, sentence-case headings, each group in one soft card with hairlines between rows (as
    macOS System Settings), and actions that look like buttons. Scoped to the Settings panel. */
-html.calm-layout .settings-panel{width:760px;max-width:calc(100vw - 52px)}
-html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px}
+/* Settings fills everything right of the app rail (owner 2026-11-02, as VS Code, Linear, Slack):
+   section rail on the left, the settings in one column up to 720px beside it. */
+html.calm-layout .settings-panel{width:calc(100vw - 52px);max-width:none;border-right:none;scrollbar-gutter:auto}
+html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px;grid-template-columns:minmax(0,720px)}
 html.calm-layout .settings-panel .settings-section{gap:8px}
 html.calm-layout .settings-panel .settings-section-title{font:600 var(--fs-md) 'Inter',sans-serif;letter-spacing:0;text-transform:none;color:var(--fg);border-bottom:none;padding:0}
 html.calm-layout .settings-panel .settings-list{border:1px solid color-mix(in srgb,var(--border) 70%,transparent);border-radius:12px;background:var(--bg);overflow:hidden}
@@ -196,20 +198,13 @@ html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
-/* Settings and Help sit in the side slot like Documents and To-Dos (owner 2026-11-01): they take
-   the File Explorer's place and move the page over, so the document stays in view while you change
-   a setting or read Help. Only where the page keeps at least ~500px; on narrower windows they stay
-   sheets over the page and the page behind fades back so half-covered rows don't peek out. */
-@media (min-width:1320px){
-  html.calm-layout body:has(.settings-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
-  html.calm-layout body:has(.settings-panel.open) #app-layout{margin-left:760px}
-}
+/* Help sits in the side slot like Documents and To-Dos (owner 2026-11-01): it takes the File
+   Explorer's place and moves the page over, so the document stays in view while you read Help. Only
+   where the page keeps at least ~500px; on narrower windows it stays a sheet over the page and the
+   page behind fades back so half-covered rows don't peek out. */
 @media (min-width:1160px){
   html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
   html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:600px}
-}
-@media (max-width:1319.98px){
-  html.calm-layout body:has(.settings-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
 }
 @media (max-width:1159.98px){
   html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}

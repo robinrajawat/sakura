@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Settings fills the whole area (2026-11-02, owner chose).** `html.calm-layout .settings-panel` is `calc(100vw - 52px)` wide at every window size (as VS Code/Linear/Slack); the settings column is capped at 720px (`grid-template-columns:minmax(0,720px)`); new × `#settings-close-btn` in the header. The page-move/fade rules for Settings are gone; Help keeps the side slot. Specs: `settings-escape-find-bar`, `one-side-panel`.
+
 - **Version history synced across devices (2026-11-02).** Signed in, each document version is also a Firestore record `users/{uid}/docs/{docId}/versions/{ts}` = `{ts, reason, json}` (`pushDocVersionsToCloud`, called from `recordDocRevisionNow` with the new version and the ones trimmed away). Opening History runs `syncDocVersionsWithCloud`: `planVersionSync` (src/utils/versionHistory.ts) joins both lists, keeps 10 here, uploads what the cloud lacks and deletes what is no longer kept. Versions over 900k chars stay local. `deleteDocFromCloud` also clears `versions`. No rules change (covered by `users/{uid}/**`). Spec: `version-history-sync.spec.ts`.
 
 - **Narrow File Explorer folds nested folders (2026-11-02).** `.sfolder-children` is a grid; its column grew to the longest name, so nested folder/doc rows stuck out past a narrow panel (names cut, counts gone). Now `grid-template-columns:minmax(0,1fr)`, so names end in "…" at every depth. Spec: `sidebar-nested-folder-narrow.spec.ts`.
-
-- **No "Untitled" flash on reload (2026-11-02).** The static page painted (empty "Untitled", filter box) while the 1.8 MB inline script loaded. The pre-setup script adds `presetup-doc-pending` (`#editor-wrap`, `#sidebar-inner` visibility:hidden, presetup.css); the startup line removes it right after `render()`, with a 4s safety timeout. Spec `reload-no-untitled-flash.spec.ts`.
 
 ### In progress / not built
 
