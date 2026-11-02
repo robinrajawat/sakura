@@ -122,7 +122,7 @@ test.describe('Document menu (right-click the title): Version history, Sort, Cle
     await open(page);
     await seedDoc(page);
     const pick = async (label: string) => {
-      await page.locator('#header-title').click({ button: 'right' });
+      await page.locator('#header-title').click({ button: 'right', position: { x: 12, y: 12 } });
       await page.locator('.sb-context-menu .sb-context-item', { hasText: label }).click();
     };
     await pick('Sort rows A → Z');
@@ -138,7 +138,7 @@ test.describe('Document menu (right-click the title): Version history, Sort, Cle
   test('Version history opens from the document menu', async ({ page }) => {
     await open(page);
     await seedDoc(page);
-    await page.locator('#header-title').click({ button: 'right' });
+    await page.locator('#header-title').click({ button: 'right', position: { x: 12, y: 12 } });
     await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Version history…' }).click();
     await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
   });
@@ -147,7 +147,7 @@ test.describe('Document menu (right-click the title): Version history, Sort, Cle
     const errors = trackErrors(page);
     await open(page);
     await seedDoc(page);
-    await page.locator('#header-title').click({ button: 'right' });
+    await page.locator('#header-title').click({ button: 'right', position: { x: 12, y: 12 } });
     await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Clear all rows' }).click();
     await expect(page.locator('#sakura-modal-overlay')).not.toHaveClass(/open/);
     // @ts-expect-error -- bare globals from index.html
@@ -163,9 +163,21 @@ test.describe('Document menu (right-click the title): Version history, Sort, Cle
     await open(page);
     await seedDoc(page);
     await expect(page.locator('#doc-tab-strip')).toBeHidden();
-    await page.locator('#header-title').click({ button: 'right' });
+    await page.locator('#header-title').click({ button: 'right', position: { x: 12, y: 12 } });
     const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
     expect(labels).toEqual(['Version history…', 'Sort rows A → Z', 'Sort rows Z → A', 'Sort rows by depth', 'Clear all rows']);
+  });
+
+  // Owner 2026-11-02: the title box runs the full width, so past the end of its words is empty space.
+  test('right-clicking past the end of the title gives the page menu, not the document menu', async ({ page }) => {
+    await open(page);
+    await seedDoc(page);
+    const box = (await page.locator('#header-title').boundingBox())!;
+    await page.mouse.click(box.x + box.width - 20, box.y + box.height / 2, { button: 'right' });
+    const labels = await page.locator('.sb-context-menu .sb-context-item').allTextContents();
+    expect(labels).not.toContain('Version history…');
+    expect(labels.join(' ')).toContain('New document');
+    await expect(page.locator('#header-title')).not.toBeFocused();
   });
 });
 

@@ -1,8 +1,8 @@
 # Third-Party Notices
 
 Sakura is all-rights-reserved (see [LICENSE](LICENSE)), but it relies on a
-third-party open-source project for an optional feature: draw.io, embedded
-for diagram editing — see its entry below. (Earlier versions also loaded
+third-party open-source projects: draw.io, embedded for diagram editing, and
+the Inter typeface, which ships with the app — see their entries below. (Earlier versions also loaded
 CDN libraries for Word import/export, PowerPoint export, and Excel export;
 those features and libraries have been removed.)
 
@@ -24,3 +24,16 @@ Sakura's own code; it's a link to their hosted editor, not a library
 Sakura executes. Included here for accuracy and courtesy regardless.
 
 Copyright draw.io AG / draw.io Ltd (formerly JGraph Ltd).
+
+---
+
+## Inter (typeface)
+
+Used for: the app's interface and document text. The variable font files
+(Latin and Latin Extended subsets) ship with Sakura in `web/public/fonts/`.
+
+- License: SIL Open Font License 1.1
+- Homepage: https://rsms.me/inter/
+- Repository: https://github.com/rsms/inter
+
+Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter).

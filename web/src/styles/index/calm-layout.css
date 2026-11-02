@@ -225,6 +225,9 @@ html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
 /* Keep Search's place on the rail while the box is still being moved in, so To-Dos below it doesn't
    jump 40px down on every load (owner 2026-11-02: "icons on the app bar seem to move"). */
 html.calm-layout #appbar-qa-slot:empty{display:flex}
+/* ...and show its magnifier there from the first frame, so Search doesn't pop in after the rest. */
+html.calm-layout #appbar-qa-slot:empty{position:relative;color:var(--muted)}
+html.calm-layout #appbar-qa-slot:empty::after{content:"";position:absolute;inset:9px;background:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
@@ -240,6 +243,8 @@ html.calm-layout .help-panel{scrollbar-gutter:auto}
 /* Narrow pane: each quick link shows its name (the button) with its description under it. */
 html.calm-layout #help-quick-links>div{flex-direction:column-reverse;align-items:flex-start;gap:2px}
 html.calm-layout #help-quick-links>div>button{padding:0;color:var(--fg);font-weight:500}
+/* Title + one-line description, no icons (owner 2026-11-02: the columns and sparkle icons read as table and AI). */
+html.calm-layout #help-quick-links>div>button svg{display:none}
 html.calm-layout #help-quick-links>div>span{color:var(--muted)}
 @media (max-width:899.98px){
   html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}

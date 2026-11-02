@@ -45,3 +45,21 @@ test("Search's place on the rail is kept while it is empty", async ({ page }) =>
   expect(await todosY()).toBe(before);
   await page.evaluate(() => document.getElementById('appbar-qa-slot')!.append((window as any).__qa));
 });
+
+// Owner 2026-11-02: text pasted into a note from a web page kept its black text and blue links,
+// unreadable in dark mode. Saved notes drop those colours, and notes already saved lose them on load.
+test('pasted colours leave notes (on save and for notes already saved)', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('sakura_welcome_seen', '1'));
+  await page.goto('file://' + indexPath);
+  const r = await page.evaluate(() => {
+    const w = window as any;
+    return {
+      saved: w.sakuraSanitizeRichHtml('<p style="color: rgb(0, 0, 0)"><b>Bold</b> <a href="https://x.com" style="color:#0000ee">x</a></p>'),
+      loaded: w.normalizeNode({ text: 'Row', note: '<span style="color:#111;font-style:italic">t</span>' }).note,
+      highlight: w.sakuraSanitizeRichHtml('<span style="background-color: rgba(234, 179, 8, 0.35);">h</span>'),
+    };
+  });
+  expect(r.saved).toBe('<p><b>Bold</b> <a href="https://x.com">x</a></p>');
+  expect(r.loaded).toBe('<span style="font-style:italic">t</span>');
+  expect(r.highlight).toContain('rgba(234, 179, 8, 0.35)');
+});

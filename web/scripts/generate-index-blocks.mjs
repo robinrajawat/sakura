@@ -210,6 +210,14 @@ initVaultState({
     footer: ''
   },
   {
+    name: 'pastedColours',
+    sourceFile: 'src/utils/pastedColours.ts',
+    testFile: 'tests/unit/pastedColours.test.ts',
+    // Drops colours pasted rich text brought with it (black text, blue links) so it reads in both
+    // themes. New function, called from sakuraSanitizeRichHtml and normalizeNode.
+    footer: ''
+  },
+  {
     name: 'versionHistory',
     sourceFile: 'src/utils/versionHistory.ts',
     testFile: 'tests/unit/versionHistory.test.ts',
