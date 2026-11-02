@@ -38,21 +38,25 @@ const visibleItems = (page) =>
   );
 
 // Settings lives on the rail's gear only (owner 2026-10-29), so the account menu doesn't repeat it.
-// Help opens from the "?" beside Share (owner 2026-11-02), so the account menu doesn't repeat it.
-test('signed out: Send feedback and support; no Help, Settings, sign out or About', async ({ page }) => {
+// Help opens from the "?" beside Share, and Send feedback / Buy me a coffee live in Help (owner
+// 2026-11-02): the account menu is only about your account.
+test('signed out: only Sign in; feedback and support are in Help', async ({ page }) => {
   await page.locator('#account-toggle').click();
-  expect(await visibleItems(page)).toEqual([
-    'account-feedback-btn',
-    'account-support-btn',
-  ]);
+  expect(await visibleItems(page)).toEqual([]);
+  await expect(page.locator('#account-signin-open-btn')).toBeVisible();
   await expect(page.locator('#account-about-btn')).toHaveCount(0);
-  await expect(page.locator('#account-support-btn .export-icon')).toHaveCSS('color', 'rgb(192, 138, 30)');
+  await page.keyboard.press('Escape');
+  await page.locator('#doc-help-btn').click();
+  await expect(page.locator('#help-feedback-btn')).toBeVisible();
+  await expect(page.locator('#help-support-btn')).toBeVisible();
+  await page.locator('#help-feedback-btn').click();
+  await expect(page.locator('#feedback-modal-overlay')).toHaveClass(/open/);
 });
 
 test('signed in: sync and visibility share one line, sign out is last', async ({ page }) => {
   await showSignedIn(page);
   await page.locator('#account-toggle').click();
-  expect(await visibleItems(page)).toEqual(['account-feedback-btn', 'account-support-btn', 'account-signout-btn']);
+  expect(await visibleItems(page)).toEqual(['account-signout-btn']);
   // Synced shows as a ring on the avatar, not as text, so the line doesn't change width.
   await expect(page.locator('#account-manage-btn')).toHaveClass(/sync-synced/);
   await expect(page.locator('#account-sync-status')).toBeHidden();

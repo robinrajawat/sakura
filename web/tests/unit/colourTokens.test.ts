@@ -14,7 +14,7 @@ const ALWAYS_LIGHT_FILES = ['pdf-export-overlay.css'];
 // The support item's gold is decoration, not a status (pinned by account-menu-layout.spec.ts).
 // hub.css: the gold coffee button is decoration; the swipe backgrounds stay saturated in both themes because
 // white text sits on them (the dark --success/--danger are too light for it).
-const ALLOWED_SELECTOR = /(hl-mark|#pv-open-items|\.thread-chip\.is-yes|\.account-support-icon|#account-coffee-btn|\.swipe-bg-(start|end))/;
+const ALLOWED_SELECTOR = /(hl-mark|#pv-open-items|\.thread-chip\.is-yes|#account-coffee-btn|\.swipe-bg-(start|end))/;
 
 function withoutPrintBlocks(css: string): string {
   let out = '';
