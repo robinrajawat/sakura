@@ -12686,6 +12686,9 @@ function loadDocsIndex(){try{const raw=localStorage.getItem(DOCS_INDEX_KEY); con
 function saveDocsIndex(list){try{localStorage.setItem(DOCS_INDEX_KEY,JSON.stringify(list)); markMetaChanged('docsIndex');}catch(e){}}
 function touchDocIndex(id,title){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); const entry=i>=0?{...list[i],title:title||'Untitled',updatedAt:Date.now()}:{id,title:title||'Untitled',updatedAt:Date.now()}; if(i>=0)list[i]=entry; else list.push(entry); saveDocsIndex(list); return list}
 // Update title only — does NOT change updatedAt (prevents list from re-sorting on every autosave)
+// A document with no title is listed by its first row's words (like Apple Notes), so two new documents
+// aren't both "Untitled" in the File Explorer, Search and Recent. Display only: the title field stays empty.
+function untitledDocName(list){ const first=(list||[]).find(n=>n&&String(n.text||'').trim()); return first?truncateTitle(String(first.text).replace(/\s+/g,' ').trim(),60):''; }
 function touchDocIndexTitleOnly(id,title){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); if(i>=0){list[i]={...list[i],title:title||'Untitled'}; saveDocsIndex(list);} return list}
 function setDocIcon(id,icon){const list=loadDocsIndex(); const i=list.findIndex(d=>d.id===id); if(i>=0){list[i]={...list[i],icon:icon||null}; saveDocsIndex(list);} return list}
 function saveCurrentDocId(id){try{localStorage.setItem(CURRENT_DOC_KEY,id)}catch(e){}}
@@ -13064,7 +13067,7 @@ function saveToStorage(){
       return;
     }
     storageWriteFailed=false;
-    const titleForIndex=payload.title||'Untitled';
+    const titleForIndex=payload.title||untitledDocName(payload.nodes)||'Untitled';
     // Only bump updatedAt when content is actually dirty; title changes always persist title
     if(dirty) touchDocIndex(currentDocId,titleForIndex);
     else touchDocIndexTitleOnly(currentDocId,titleForIndex);
