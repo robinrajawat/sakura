@@ -7,7 +7,7 @@ import { showSbContextMenu, closeSbContextMenu, openSbMenuUnder, sbMenuOpener } 
 const g = globalThis as Record<string, unknown>;
 g.hideLinkCard = () => {};
 g.esc = (v: unknown) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-g.closeAllPanelsExceptGlobalSearch = undefined;
+g.closeTransientMenus = undefined;
 
 const menu = () => document.querySelector('.sb-context-menu:not(.sb-context-submenu)') as HTMLElement | null;
 const items = () => [...document.querySelectorAll('.sb-context-menu:not(.sb-context-submenu) > .sb-context-item')] as HTMLElement[];

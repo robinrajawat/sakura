@@ -72,7 +72,7 @@ initNotificationsState({
 });
 bootLocalNotifications();
 el('notif-clear-all-btn')?.addEventListener('click',e=>{ e.stopPropagation(); clearAllNotifications(); });
-el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('settings-panel')?.classList.remove('open'); el('export-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
+el('notif-toggle')?.addEventListener('click',e=>{ e.stopPropagation(); el('export-menu')?.classList.remove('open'); el('appbar-more-menu')?.classList.remove('open'); el('account-menu')?.classList.remove('open'); toggleNotifMenu(); });
 document.addEventListener('click',e=>{ if(isNotifMenuOpen()&&!e.target.closest('#notif-wrap'))toggleNotifMenu(false); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&isNotifMenuOpen()){ e.preventDefault(); toggleNotifMenu(false); } });
 `.trim()
