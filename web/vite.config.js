@@ -1,5 +1,19 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { execSync } from 'child_process';
+
+// About's version line (Settings → About): the build date and short commit, stamped into the
+// built HTML in place of __SAKURA_VERSION__. Falls back to the CI commit, then to today's date.
+function sakuraVersion() {
+  const git = (cmd) => { try { return execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch { return ''; } };
+  const sha = (git('git rev-parse --short=7 HEAD') || (process.env.GITHUB_SHA || '').slice(0, 7));
+  const day = (git('git log -1 --format=%cs') || new Date().toISOString().slice(0, 10)).replace(/-/g, '.');
+  return sha ? `${day} · ${sha}` : day;
+}
+const stampVersion = () => ({
+  name: 'sakura-version',
+  transformIndexHtml: (html) => html.replace(/__SAKURA_VERSION__/g, sakuraVersion())
+});
 
 // Phase 0 (see docs/architecture-plan.md): this config exists to PROVE the build pipeline
 // works against the app exactly as it is today — index.html and hub.html are each a
@@ -29,6 +43,7 @@ import { resolve } from 'path';
 // public/ fixes the underlying cause instead.
 export default defineConfig({
   base: '/',
+  plugins: [stampVersion()],
   build: {
     rollupOptions: {
       input: {
