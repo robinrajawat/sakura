@@ -12915,8 +12915,54 @@ async function recordDocRevisionNow(id,contentObj,reason,opts){
   list.push({ts:last&&last.ts>=now?last.ts+1:now,reason:reason||'Auto',...(contentObj.rowFormat?{rowFormat:contentObj.rowFormat}:{}),nodes:contentObj.nodes,title:contentObj.title||'',author:contentObj.author||'',docStatus:typeof contentObj.docStatus==='string'?contentObj.docStatus:'',docLinkedUrl:typeof contentObj.docLinkedUrl==='string'?contentObj.docLinkedUrl:'',docLinkedUrlLabel:typeof contentObj.docLinkedUrlLabel==='string'?contentObj.docLinkedUrlLabel:'',diagrams:trimDiagramsForRevision(contentObj.diagrams),qa:Array.isArray(contentObj.qa)?contentObj.qa:[],remarks:Array.isArray(contentObj.remarks)?contentObj.remarks:[]});
   // Keeps REVISION_MAX_PER_DOC versions spread over time (src/utils/versionHistory.ts), not just
   // the newest ones.
-  await saveDocRevisions(id,trimVersions(list,REVISION_MAX_PER_DOC,now));
+  const kept=trimVersions(list,REVISION_MAX_PER_DOC,now);
+  await saveDocRevisions(id,kept);
+  // Signed in: the new version goes to the cloud too, and versions trimmed away here leave it.
+  const keptTs=new Set(kept.map(v=>v.ts)), added=kept[kept.length-1];
+  pushDocVersionsToCloud(id,added&&added.ts===list[list.length-1].ts?[added]:[],list.filter(v=>!keptTs.has(v.ts)).map(v=>v.ts));
   return true;
+}
+// Versions are synced across devices: each one is a record under
+// users/{uid}/docs/{docId}/versions/{ts} ({ts, reason, json}). A version too big for one cloud
+// record (Firestore's 1 MB limit) stays on this device only. Best effort: a failed write is
+// repaired the next time History is opened (syncDocVersionsWithCloud uploads what the cloud lacks).
+const DOC_VERSION_CLOUD_MAX_CHARS=900000;
+async function pushDocVersionsToCloud(docId,added,removedTs){
+  if(!currentUser||(!added.length&&!removedTs.length))return;
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const ref=ts=>mod.doc(db,'users',currentUser.uid,'docs',docId,'versions',String(ts));
+    for(const rev of added){
+      const json=JSON.stringify(rev);
+      if(json.length>DOC_VERSION_CLOUD_MAX_CHARS)continue;
+      await mod.setDoc(ref(rev.ts),{ts:rev.ts,reason:rev.reason||'Auto',json});
+    }
+    if(removedTs.length){
+      const batch=mod.writeBatch(db);
+      removedTs.forEach(ts=>batch.delete(ref(ts)));
+      await batch.commit();
+    }
+  }catch(e){ console.warn('[sakura] version sync: push failed for',docId,e); }
+}
+// Joins this device's versions of a document with the cloud's, keeps the result here, and brings
+// the cloud in line (uploads what it lacks, removes what the joined list no longer keeps).
+// Resolves true when this device's list changed.
+async function syncDocVersionsWithCloud(docId){
+  if(!currentUser||!docId)return false;
+  let cloud=[];
+  try{
+    const {mod,db}=await loadFirestoreMods();
+    const snap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs',docId,'versions'));
+    snap.docs.forEach(d=>{ try{ const v=JSON.parse(d.data().json); if(v&&Number.isFinite(v.ts)&&Array.isArray(v.nodes))cloud.push(v); }catch(e){} });
+  }catch(e){ console.warn('[sakura] version sync: read failed for',docId,e); return false; }
+  return withDocRevisionLock(docId,async()=>{
+    const local=await loadDocRevisions(docId);
+    const plan=planVersionSync(local,cloud,REVISION_MAX_PER_DOC,Date.now());
+    const changed=plan.merged.length!==local.length||plan.merged.some((v,i)=>v.ts!==local[i]?.ts);
+    if(changed)await saveDocRevisions(docId,plan.merged);
+    pushDocVersionsToCloud(docId,plan.upload,plan.removeTs);
+    return changed;
+  });
 }
 // The content is copied now (JSON round trip), so later edits to the live document can't change
 // what this version remembers while it waits its turn.
@@ -13622,6 +13668,8 @@ function openVersionHistory(docId){
   historyModalNodeId=null;
   renderVersionHistoryList();
   overlay.classList.add('open');
+  // Versions made on another device show up once the cloud copy has been read.
+  syncDocVersionsWithCloud(docId).then(changed=>{ if(changed&&historyModalDocId===docId)renderVersionHistoryList(); });
 }
 // Node-scoped view of the SAME document revision history the whole-document modal above
 // already uses — no separate storage, no separate capture cadence, just a different lens on
@@ -13692,7 +13740,7 @@ async function renderVersionHistoryList(){
     }
     return;
   }
-  if(footerHint)footerHint.textContent='Keeps the last '+REVISION_MAX_PER_DOC+' versions per document';
+  if(footerHint)footerHint.textContent='Keeps '+REVISION_MAX_PER_DOC+' versions per document'+(currentUser?', on all your devices':'');
   if(saveNowBtn)saveNowBtn.style.display='';
   const entry=loadDocsIndex().find(d=>d.id===docId);
   if(nameEl)nameEl.textContent=(docId===currentDocId?el('header-title')?.value:entry?.title)||entry?.title||'Untitled';
@@ -16881,7 +16929,7 @@ async function deleteDocFromCloud(docId){
     // the parent delete below: each subcollection is listed then batch-deleted, and a failure on
     // either just means this device's next sign-in retries the whole thing (deleteDocFromCloud
     // always runs again for anything still locally marked for deletion), not silent data loss.
-    for(const subcol of ['diagrams','attachments']){
+    for(const subcol of ['diagrams','attachments','versions']){
       try{
         const snap=await mod.getDocs(mod.collection(db,'users',currentUser.uid,'docs',docId,subcol));
         if(snap.empty)continue;
@@ -19968,6 +20016,21 @@ function mergeVersionLists(a, b, max, now) {
             byTs.set(Number(v.ts), v);
     }
     return trimVersions([...byTs.values()], max, now);
+}
+/**
+ * Syncing one document's versions with the cloud copy (one cloud record per version): the joined
+ * list to keep on this device, the versions the cloud is missing, and the cloud versions that the
+ * joined list no longer keeps (trimmed away here or on another device).
+ */
+function planVersionSync(local, cloud, max, now) {
+    const merged = mergeVersionLists(local, cloud, max, now);
+    const cloudTs = new Set((Array.isArray(cloud) ? cloud : []).map((v) => Number(v && v.ts)));
+    const keptTs = new Set(merged.map((v) => Number(v.ts)));
+    return {
+        merged,
+        upload: merged.filter((v) => !cloudTs.has(Number(v.ts))),
+        removeTs: [...cloudTs].filter((ts) => Number.isFinite(ts) && !keptTs.has(ts)),
+    };
 }
 function countRemoved(prev, next) {
     const before = Array.isArray(prev) ? prev : [];

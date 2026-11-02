@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isLargeRemoval, mergeVersionLists, pickVersionToDrop, trimVersions } from '../../src/utils/versionHistory';
+import { isLargeRemoval, mergeVersionLists, pickVersionToDrop, planVersionSync, trimVersions } from '../../src/utils/versionHistory';
 
 const M = 60000;
 const H = 60 * M;
@@ -80,5 +80,27 @@ describe('isLargeRemoval', () => {
   it('counts thread entries too', () => {
     expect(isLargeRemoval(rows(3), rows(3), rows(5), [])).toBe(true);
     expect(isLargeRemoval(rows(3), rows(3), rows(5), rows(1))).toBe(false);
+  });
+});
+
+describe('planVersionSync', () => {
+  it('uploads versions the cloud lacks and removes cloud versions no longer kept', () => {
+    const now = 100 * D;
+    const local = [{ ts: now - 3 * H }, { ts: now - 1 * H }];
+    const cloud = [{ ts: now - 2 * H }, { ts: now - 1 * H }];
+    const plan = planVersionSync(local, cloud, 10, now);
+    expect(plan.merged.map((v) => v.ts)).toEqual([now - 3 * H, now - 2 * H, now - 1 * H]);
+    expect(plan.upload.map((v) => v.ts)).toEqual([now - 3 * H]);
+    expect(plan.removeTs).toEqual([]);
+  });
+  it('trims the joined list and deletes trimmed cloud copies', () => {
+    const now = 100 * D;
+    const local = Array.from({ length: 6 }, (_, i) => ({ ts: now - i * M - 1 }));
+    const cloud = Array.from({ length: 6 }, (_, i) => ({ ts: now - (i + 10) * M }));
+    const plan = planVersionSync(local, cloud, 8, now);
+    expect(plan.merged).toHaveLength(8);
+    const kept = new Set(plan.merged.map((v) => v.ts));
+    expect(plan.removeTs.every((ts) => !kept.has(ts))).toBe(true);
+    expect(plan.upload.every((v) => local.some((l) => l.ts === v.ts))).toBe(true);
   });
 });
