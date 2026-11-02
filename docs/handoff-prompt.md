@@ -173,7 +173,7 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
-- **File Explorer divider (2026-11-02, owner).** The File Explorer had no right edge line while To-Dos/Help/Settings/Notifications have `border-right:1px solid var(--border)`, so Documents looked sharp and To-Dos looked shadowed. `html.calm-layout #sidebar{box-shadow:inset -1px 0 0 var(--border)}` gives it the same hairline without changing its width.
+- **Side panels: no edge line (2026-11-02, owner).** Robin prefers the File Explorer look: a panel edge is the colour change only. `border-right:none` on To-Dos, Help, Settings and Notifications in calm-layout.css (#792 briefly added a line to the explorer instead; reverted).
 
 - **One side panel width (2026-11-02, owner).** Documents, To-Dos and Help share one width (`SIDE_W_DEFAULT` 320, 240–560, key `sakura_sidebar_width_v1`; `applySidebarWidth` sets `--sb-width`, `--side-w`, `--todos-w`). Dragging the File Explorer's or To-Dos' edge changes it for all; the old `sakura_dock_panel_width_v1` is no longer read. Help: icon section list (names in tooltips), quick links stacked (name over description); page margin = width + 5px (the explorer's drag handle) so it doesn't shift between panels. Help moves the page from 900px windows up.
 
