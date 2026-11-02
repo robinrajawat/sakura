@@ -126,11 +126,29 @@ html.calm-layout .settings-section{border:none;background:none;padding:0}
 /* Settings, grouped (owner 2026-10-29: fewer boxes, but not flat): a wider panel so descriptions fit
    on one line, sentence-case headings, each group in one soft card with hairlines between rows (as
    macOS System Settings), and actions that look like buttons. Scoped to the Settings panel. */
-/* Settings fills everything right of the app rail (owner 2026-11-02, as VS Code, Linear, Slack):
-   section rail on the left, the settings in one column up to 720px, centred in the space beside it
-   (wide rows are hard to read, so the column doesn't stretch). */
+/* Settings fills everything right of the app rail (owner 2026-11-02, as VS Code, Linear, Slack);
+   the settings column stays at most 720px (wide rows are hard to read). */
 html.calm-layout .settings-panel{width:calc(100vw - 52px);max-width:none;border-right:none;scrollbar-gutter:auto}
-html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px;grid-template-columns:minmax(0,720px);justify-content:center}
+html.calm-layout .settings-panel .settings-content{gap:26px;padding:20px 28px 32px}
+/* The section list and the settings column are centred together as one ~950px block (as GitHub,
+   Linear, Stripe), so the list stays next to what it controls on wide windows. The whole body
+   scrolls (wheel anywhere, also beside the block); the list stays put while it does. The header's
+   title and buttons line up with the block's edges. */
+html.calm-layout #settings-panel .settings-body{overflow-y:auto;overflow-x:hidden;justify-content:center;gap:32px;padding:0 28px}
+html.calm-layout #settings-panel .settings-rail{flex:0 0 200px;position:sticky;top:0;align-self:flex-start;overflow:visible;border-right:none;padding:20px 0}
+html.calm-layout #settings-panel .settings-content{flex:0 1 720px;overflow:visible;scrollbar-gutter:auto;padding:20px 0 48px}
+html.calm-layout #settings-panel .settings-header{padding-inline:max(28px,calc((100% - 952px) / 2))}
+/* On the full page the search box is always shown (as macOS System Settings, VS Code), so there's
+   no search toggle beside the close button. */
+html.calm-layout #settings-search-wrap{display:block!important}
+html.calm-layout #settings-search-toggle-btn{display:none!important}
+@media (max-width:760px){
+  html.calm-layout #settings-panel .settings-body{gap:14px;padding:0 12px}
+  html.calm-layout #settings-panel .settings-rail{flex:0 0 40px;padding:12px 0}
+  html.calm-layout #settings-panel .settings-rail-btn span{display:none}
+  html.calm-layout #settings-panel .settings-rail-btn{justify-content:center;padding:8px 4px}
+  html.calm-layout #settings-panel .settings-header{padding-inline:12px}
+}
 html.calm-layout .settings-panel .settings-section{gap:8px}
 html.calm-layout .settings-panel .settings-section-title{font:600 var(--fs-md) 'Inter',sans-serif;letter-spacing:0;text-transform:none;color:var(--fg);border-bottom:none;padding:0}
 html.calm-layout .settings-panel .settings-list{border:1px solid color-mix(in srgb,var(--border) 70%,transparent);border-radius:12px;background:var(--bg);overflow:hidden}
@@ -163,9 +181,11 @@ html.calm-layout #settings-panel .settings-list-row>.settings-danger-btn:hover:n
 html.calm-layout #settings-panel .settings-row-desc a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .settings-inline-field{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 html.calm-layout #settings-panel :is(#ai-hosted-section,#ai-byok-section)>.settings-list-row:first-child{border-top:1px solid color-mix(in srgb,var(--border) 70%,transparent)}
-.settings-about-head{display:flex;align-items:flex-start;gap:16px;padding:2px 2px 10px}
-/* Name, then the version in a quieter grey, a gap, the description, and the copyright last. */
-.settings-about-head svg{margin-top:2px}
+/* A centred About block (as macOS General › About): logo, name, the version in a quieter grey, a
+   gap, the description, and the copyright last. */
+.settings-about-head{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:8px 2px 18px}
+.settings-about-head svg{width:56px;height:56px}
+.settings-about-head .settings-row-text{align-items:center;max-width:520px}
 .settings-about-head #about-version{color:var(--hint);margin-bottom:8px}
 .settings-about-head .settings-about-copy{margin-top:6px;color:var(--hint)}
 .settings-about-head svg{flex:0 0 auto}
