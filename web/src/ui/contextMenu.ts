@@ -10,7 +10,7 @@
  */
 declare function hideLinkCard(): void;
 declare function esc(value: unknown): string;
-declare const closeAllPanelsExceptGlobalSearch: (() => void) | undefined;
+declare const closeTransientMenus: (() => void) | undefined;
 
 // --- Sidebar context menu (right-click) ---
 let _sbContextEl: any = null;
@@ -231,7 +231,7 @@ export function openSbMenuUnder(btn: any, items: any, opts: any = {}){
   if(!btn)return;
   if(_sbAnchorJustClosed===btn){ _sbAnchorJustClosed=null; return; }
   if(_sbAnchorBtn===btn&&_sbContextEl){ closeSbContextMenu(); return; }
-  closeAllPanelsExceptGlobalSearch?.();
+  closeTransientMenus?.();
   const r=btn.getBoundingClientRect();
   showSbContextMenu(r.left,r.bottom+4,items,opts);
   const m=_sbContextEl; if(!m)return;
