@@ -37,8 +37,8 @@ html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
    takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
    sit in the same slot (see the end of this file). */
 html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:0!important;left:52px!important;right:auto!important;height:100vh!important;max-height:none!important;border-radius:0;border-top:none;border-bottom:none;border-left:none}
-html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,400px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
-html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:var(--todos-w,400px)}
+html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,320px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
+html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:calc(var(--todos-w,320px) + 5px)}
 html.calm-layout #todos-resize-handle{left:auto;right:0;z-index:5}
 /* Same flat surface as the File Explorer, so the two read as one sidebar showing different things. */
 html.calm-layout #todos-panel,html.calm-layout .settings-panel,html.calm-layout .help-panel{background:var(--tb-bg);box-shadow:none;border-right:1px solid var(--border)}
@@ -223,15 +223,25 @@ html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
-/* Help sits in the side slot like Documents and To-Dos (owner 2026-11-01): it takes the File
-   Explorer's place and moves the page over, so the document stays in view while you read Help. Only
-   where the page keeps at least ~500px; on narrower windows it stays a sheet over the page and the
-   page behind fades back so half-covered rows don't peek out. */
-@media (min-width:1160px){
+/* Help sits in the side slot like Documents and To-Dos, at the same shared width (owner 2026-11-02:
+   one side panel width, as VS Code): it takes the File Explorer's place and moves the page over, so
+   the document stays in view while you read Help. Its section list is icons (names in tooltips) so
+   the text gets the room. On narrow windows it stays a sheet over the faded page. */
+html.calm-layout .help-panel{width:var(--side-w,320px);max-width:calc(100vw - 52px)}
+html.calm-layout .help-panel .settings-rail{flex:0 0 44px;padding:8px 4px}
+html.calm-layout .help-panel .settings-rail-btn span{display:none}
+html.calm-layout .help-panel .settings-rail-btn{justify-content:center;padding:8px 4px}
+html.calm-layout .help-panel .settings-content{padding:14px 14px 20px}
+html.calm-layout .help-panel{scrollbar-gutter:auto}
+/* Narrow pane: each quick link shows its name (the button) with its description under it. */
+html.calm-layout #help-quick-links>div{flex-direction:column-reverse;align-items:flex-start;gap:2px}
+html.calm-layout #help-quick-links>div>button{padding:0;color:var(--fg);font-weight:500}
+html.calm-layout #help-quick-links>div>span{color:var(--muted)}
+@media (min-width:900px){
   html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
-  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:600px}
+  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
 }
-@media (max-width:1159.98px){
+@media (max-width:899.98px){
   html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
 }
 /* "‹ Help" in the Settings header when Settings was opened from Help (2026-11-02). */

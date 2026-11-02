@@ -1088,7 +1088,7 @@ body.theme-light .segmented-btn.active{background:color-mix(in srgb,var(--accent
 
 /* === Sidebar === */
 #app-layout{display:flex;flex:1;min-height:0;overflow:hidden}
-#sidebar{--sb-width:234px;width:var(--sb-width);flex:0 0 var(--sb-width);display:flex;flex-direction:column;background:var(--tb-bg);transition:width .18s cubic-bezier(.22,.8,.34,1),flex-basis .18s cubic-bezier(.22,.8,.34,1),opacity .15s;overflow:hidden}
+#sidebar{--sb-width:320px;width:var(--sb-width);flex:0 0 var(--sb-width);display:flex;flex-direction:column;background:var(--tb-bg);transition:width .18s cubic-bezier(.22,.8,.34,1),flex-basis .18s cubic-bezier(.22,.8,.34,1),opacity .15s;overflow:hidden}
 #sidebar.resizing{transition:width 0s,flex-basis 0s,opacity .15s}
 #sidebar.collapsed{width:0;flex-basis:0;opacity:0;pointer-events:none}
 #sidebar-inner{width:100%;display:flex;flex-direction:column;height:100%;overflow:hidden}
@@ -2551,8 +2551,8 @@ html.calm-layout #account-wrap .export-menu{top:auto;bottom:0}
    takes the File Explorer's place (one at a time) and moves the page over; Settings and Help
    sit in the same slot (see the end of this file). */
 html.calm-layout .settings-panel,html.calm-layout .help-panel{position:fixed;top:0!important;left:52px!important;right:auto!important;height:100vh!important;max-height:none!important;border-radius:0;border-top:none;border-bottom:none;border-left:none}
-html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,400px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
-html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:var(--todos-w,400px)}
+html.calm-layout #todos-panel{top:0!important;bottom:0!important;left:52px!important;right:auto!important;width:var(--todos-w,320px)!important;height:100vh!important;border-radius:0;border-top:none;border-left:none;border-bottom:none;border-right:1px solid var(--border)}
+html.calm-layout body:has(#todos-panel.open) #app-layout{margin-left:calc(var(--todos-w,320px) + 5px)}
 html.calm-layout #todos-resize-handle{left:auto;right:0;z-index:5}
 /* Same flat surface as the File Explorer, so the two read as one sidebar showing different things. */
 html.calm-layout #todos-panel,html.calm-layout .settings-panel,html.calm-layout .help-panel{background:var(--tb-bg);box-shadow:none;border-right:1px solid var(--border)}
@@ -2737,15 +2737,25 @@ html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
-/* Help sits in the side slot like Documents and To-Dos (owner 2026-11-01): it takes the File
-   Explorer's place and moves the page over, so the document stays in view while you read Help. Only
-   where the page keeps at least ~500px; on narrower windows it stays a sheet over the page and the
-   page behind fades back so half-covered rows don't peek out. */
-@media (min-width:1160px){
+/* Help sits in the side slot like Documents and To-Dos, at the same shared width (owner 2026-11-02:
+   one side panel width, as VS Code): it takes the File Explorer's place and moves the page over, so
+   the document stays in view while you read Help. Its section list is icons (names in tooltips) so
+   the text gets the room. On narrow windows it stays a sheet over the faded page. */
+html.calm-layout .help-panel{width:var(--side-w,320px);max-width:calc(100vw - 52px)}
+html.calm-layout .help-panel .settings-rail{flex:0 0 44px;padding:8px 4px}
+html.calm-layout .help-panel .settings-rail-btn span{display:none}
+html.calm-layout .help-panel .settings-rail-btn{justify-content:center;padding:8px 4px}
+html.calm-layout .help-panel .settings-content{padding:14px 14px 20px}
+html.calm-layout .help-panel{scrollbar-gutter:auto}
+/* Narrow pane: each quick link shows its name (the button) with its description under it. */
+html.calm-layout #help-quick-links>div{flex-direction:column-reverse;align-items:flex-start;gap:2px}
+html.calm-layout #help-quick-links>div>button{padding:0;color:var(--fg);font-weight:500}
+html.calm-layout #help-quick-links>div>span{color:var(--muted)}
+@media (min-width:900px){
   html.calm-layout body:has(.help-panel.open) :is(#sidebar,#sidebar-resize-handle){display:none}
-  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:600px}
+  html.calm-layout body:has(.help-panel.open) #app-layout{margin-left:calc(var(--side-w,320px) + 5px)}
 }
-@media (max-width:1159.98px){
+@media (max-width:899.98px){
   html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
 }
 /* "‹ Help" in the Settings header when Settings was opened from Help (2026-11-02). */
@@ -27170,9 +27180,18 @@ el('sakura-opml-file-input')?.addEventListener('change',async e=>{
 // --- Settings: new-folders-start-collapsed toggle ---
 
 // --- Resizable sidebar ---
-let sidebarWidth = 234;
-try{ const sv=localStorage.getItem(SB_WIDTH_KEY); if(sv){ const n=parseInt(sv,10); if(Number.isFinite(n)) sidebarWidth=Math.max(180,Math.min(480,n)); } }catch(e){}
-function applySidebarWidth(w){ sidebarWidth=w; const sb=el('sidebar'); if(sb) sb.style.setProperty('--sb-width', w+'px'); }
+// One side panel width (owner 2026-11-02, as VS Code): Documents, To-Dos and Help all use it, so
+// switching between them never moves the page. Dragging the File Explorer's or To-Dos' edge changes
+// it for all three; it's remembered under SB_WIDTH_KEY. --side-w (and --todos-w) carry it to CSS.
+const SIDE_W_MIN=240, SIDE_W_MAX=560, SIDE_W_DEFAULT=320;
+let sidebarWidth = SIDE_W_DEFAULT;
+try{ const sv=localStorage.getItem(SB_WIDTH_KEY); if(sv){ const n=parseInt(sv,10); if(Number.isFinite(n)) sidebarWidth=Math.max(SIDE_W_MIN,Math.min(SIDE_W_MAX,n)); } }catch(e){}
+function applySidebarWidth(w){
+  sidebarWidth=w; const sb=el('sidebar'); if(sb) sb.style.setProperty('--sb-width', w+'px');
+  const shown=Math.max(SIDE_W_MIN,Math.min(w,window.innerWidth-24));
+  document.documentElement.style.setProperty('--side-w', shown+'px');
+  document.documentElement.style.setProperty('--todos-w', shown+'px');
+}
 function saveSidebarWidth(){ try{ localStorage.setItem(SB_WIDTH_KEY, String(sidebarWidth)); }catch(e){} }
 (function initSidebarResize(){
   const handle = el('sidebar-resize-handle'); const sb = el('sidebar'); if(!handle||!sb) return;
@@ -27185,7 +27204,7 @@ function saveSidebarWidth(){ try{ localStorage.setItem(SB_WIDTH_KEY, String(side
   });
   window.addEventListener('mousemove', e=>{
     if(!dragging) return;
-    applySidebarWidth(Math.max(180, Math.min(480, startW + (e.clientX-startX))));
+    applySidebarWidth(Math.max(SIDE_W_MIN, Math.min(SIDE_W_MAX, startW + (e.clientX-startX))));
   });
   window.addEventListener('mouseup', ()=>{
     if(!dragging) return;
@@ -31049,7 +31068,7 @@ function todosHistorySummary(list) {
 (function(){
   const TODOS_KEY='sakura_todos_v1';
   const TODOS_POS_KEY='sakura_todos_pos_v1';
-  const TODOS_WIDTH_KEY='sakura_dock_panel_width_v1';
+  const TODOS_WIDTH_KEY='sakura_sidebar_width_v1'; // the one side panel width (SB_WIDTH_KEY), shared with Documents and Help
   const TODOS_SETTINGS_KEY='sakura_todos_settings_v1';
   let todosSelectedIds=new Set(); // bulk-select mode, open tasks only — scoped to this module, not persisted
   // Which rows currently show their full chip row + actions, via clicking the row's own
@@ -31111,8 +31130,8 @@ function todosHistorySummary(list) {
   // both. Whichever is set is what todo-link/todo-link-open render and act on.
   const REPEATS=[null,'daily','weekdays','weekly'];
   let searchQuery=''; // quick-find text, transient (not persisted); now filters (hides non-matches), not dims
-  const TODOS_WIDTH_MIN=280, TODOS_WIDTH_MAX=640;
-  let todosWidth=440; // default matches the shared dock-panel width all four tabs now share
+  const TODOS_WIDTH_MIN=240, TODOS_WIDTH_MAX=560;
+  let todosWidth=320; // the shared side panel width (see SIDE_W_DEFAULT)
   let completedOpen=false; // the Completed section starts collapsed; then a per-session toggle
   // Only the user-facing choices that remain live here. Old builds also stored featureEnabled,
   // rowActionsMode, showOverdueBadge, subtasksCollapsedByDefault, completedCollapsedByDefault and
@@ -32959,6 +32978,7 @@ function todosHistorySummary(list) {
   function saveTodosWidth(w){
     todosWidth=w;
     try{ localStorage.setItem(TODOS_WIDTH_KEY, String(w)); }catch(e){}
+    if(typeof applySidebarWidth==='function')applySidebarWidth(w);
   }
   // The width is --todos-w on the page: the panel and the page beside it both follow it.
   function applyTodosWidth(){
@@ -33018,7 +33038,7 @@ function todosHistorySummary(list) {
       if(!dragging) return;
       const maxW=Math.min(TODOS_WIDTH_MAX, window.innerWidth-24);
       todosWidth=Math.round(Math.max(TODOS_WIDTH_MIN, Math.min(maxW, startWidth+e.clientX-startX)));
-      document.documentElement.style.setProperty('--todos-w', todosWidth+'px');
+      applySidebarWidth(todosWidth); // one width for Documents, To-Dos and Help
     });
     document.addEventListener('mouseup',()=>{
       if(!dragging) return;

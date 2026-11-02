@@ -35,8 +35,10 @@ test('To-Dos sits flat beside the rail; dragging its right edge resizes it and t
   await page.mouse.up();
   await expect.poll(async () => Math.round((await panel.boundingBox())!.width)).toBe(Math.round(box.width) + 80);
   // The page moves over with it.
-  await expect.poll(() => page.evaluate(() => Math.round(document.getElementById('app-layout')!.getBoundingClientRect().left))).toBe(52 + Math.round(box.width) + 80);
-  expect(await page.evaluate(() => localStorage.getItem('sakura_dock_panel_width_v1'))).toBe(String(Math.round(box.width) + 80));
+  await expect.poll(() => page.evaluate(() => Math.round(document.getElementById('app-layout')!.getBoundingClientRect().left))).toBe(52 + Math.round(box.width) + 80 + 5);
+  // One side panel width (owner 2026-11-02): the File Explorer and Help take the same width.
+  expect(await page.evaluate(() => localStorage.getItem('sakura_sidebar_width_v1'))).toBe(String(Math.round(box.width) + 80));
+  expect(await page.evaluate(() => document.getElementById('sidebar')!.style.getPropertyValue('--sb-width'))).toBe((Math.round(box.width) + 80) + 'px');
 });
 
 test('explorer rows show just the name: no date, no hover buttons; double-click renames', async ({ page }) => {

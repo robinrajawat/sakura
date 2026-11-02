@@ -18,9 +18,9 @@ async function open(page: Page) {
 test('the title and the rows run the full width, at any text size; there is no width setting', async ({ page }) => {
   await open(page);
   const widths = () => page.evaluate(() => ['editor-pane-inner', 'editor-title-inner'].map((id) => Math.round(document.getElementById(id)!.getBoundingClientRect().width)));
-  for (const w of await widths()) expect(w).toBeGreaterThan(1100);
+  for (const w of await widths()) expect(w).toBeGreaterThan(1000); // beside the 320px side panel
   await page.evaluate('setEditorScale(1.2, false)');
-  for (const w of await widths()) expect(w).toBeGreaterThan(1100);
+  for (const w of await widths()) expect(w).toBeGreaterThan(1000); // beside the 320px side panel
   await expect(page.locator('#editor-full-width-toggle')).toHaveCount(0);
   expect(await page.evaluate('typeof setEditorFullWidth')).toBe('undefined');
 });
