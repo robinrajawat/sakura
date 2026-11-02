@@ -34,7 +34,7 @@ test('no History button on the top line; the title\'s right-click opens Version 
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.goto('file://' + indexPath);
   await expect(page.locator('#doc-history-chip')).toHaveCount(0);
-  await page.locator('#header-title').click({ button: 'right' });
+  await page.locator('#header-title').click({ button: 'right', position: { x: 12, y: 12 } });
   await page.locator('.sb-context-menu .sb-context-item', { hasText: 'Version history…' }).click();
   await expect(page.locator('#history-modal-overlay')).toHaveClass(/open/);
   await expect(page.locator('#history-save-now-btn')).toBeVisible();

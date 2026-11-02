@@ -109,7 +109,15 @@ Sakura v1.0.0 — see LICENSE for terms.
   shadow, subtle top-to-bottom shading, transparent outside). -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- Inter ships with the app (owner 2026-11-02): preloaded, it is ready before the first paint, so text
+     no longer shifts 1-2px when a Google-hosted copy arrives half a second in. SIL OFL 1.1, see
+     THIRD-PARTY-NOTICES.md. -->
+<link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/inter-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/inter-latin-ext.woff2) format('woff2');unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
 <script>
 // ---------- Mobile redirect ----------
 // The very first thing this page does, before anything else executes: below the breakpoint,
@@ -2746,6 +2754,9 @@ html.calm-layout #appbar-qa-slot{height:36px;flex:0 0 36px}
 /* Keep Search's place on the rail while the box is still being moved in, so To-Dos below it doesn't
    jump 40px down on every load (owner 2026-11-02: "icons on the app bar seem to move"). */
 html.calm-layout #appbar-qa-slot:empty{display:flex}
+/* ...and show its magnifier there from the first frame, so Search doesn't pop in after the rest. */
+html.calm-layout #appbar-qa-slot:empty{position:relative;color:var(--muted)}
+html.calm-layout #appbar-qa-slot:empty::after{content:"";position:absolute;inset:9px;background:var(--muted);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
 /* While open, the slot shows the Search icon as the pressed rail item. */
 html.calm-layout #appbar-qa-slot:has(.qa-open){position:relative;border-radius:8px;background:var(--hover)}
 html.calm-layout #appbar-qa-slot:has(.qa-open)::after{content:"";position:absolute;inset:9px;background:var(--fg);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center/18px no-repeat;pointer-events:none}
@@ -2761,6 +2772,8 @@ html.calm-layout .help-panel{scrollbar-gutter:auto}
 /* Narrow pane: each quick link shows its name (the button) with its description under it. */
 html.calm-layout #help-quick-links>div{flex-direction:column-reverse;align-items:flex-start;gap:2px}
 html.calm-layout #help-quick-links>div>button{padding:0;color:var(--fg);font-weight:500}
+/* Title + one-line description, no icons (owner 2026-11-02: the columns and sparkle icons read as table and AI). */
+html.calm-layout #help-quick-links>div>button svg{display:none}
 html.calm-layout #help-quick-links>div>span{color:var(--muted)}
 @media (max-width:899.98px){
   html.calm-layout body:has(.help-panel.open) :is(#editor-pane-inner,#editor-floating-controls,#doc-share-wrap){opacity:.3;transition:opacity .14s ease}
@@ -3604,7 +3617,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
             </div>
             <div class="settings-list">
               <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">License</span><span class="settings-row-desc">The terms Sakura is shared under.</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">View</a></div>
-              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Third-party notices</span><span class="settings-row-desc">Diagram editing embeds draw.io (diagrams.net).</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer">View</a></div>
+              <div class="settings-list-row"><div class="settings-row-text"><span class="settings-switch-text">Third-party notices</span><span class="settings-row-desc">The draw.io diagram editor and the Inter typeface.</span></div><a class="btn settings-link-btn" href="https://github.com/robinrajawat/sakura/blob/main/THIRD-PARTY-NOTICES.md" target="_blank" rel="noopener noreferrer">View</a></div>
             </div>
           </div>
           <div class="settings-section" data-cat="about" id="settings-section-about-privacy">
@@ -3965,9 +3978,10 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
 </ul>
 </div>
           <div class="help-section" data-cat="app" id="help-section-quick-assist">
-<h4>Quick Assist</h4>
+<h4>Search</h4>
 <ul>
-<li><span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> opens it. Type a command ("hide file explorer", "dark mode", "new document") or search documents, notes, threads, tables, To-Dos, settings and help</li>
+<li>The magnifier on the rail, or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">/</span> (or <span class="help-kbd">Ctrl/Cmd</span> + <span class="help-kbd">K</span> with no words selected), opens it. Empty, it lists your recent documents</li>
+<li>Search documents, rows, notes, threads, tables, To-Dos, settings and help, or type a command: "dark mode", "new document", "hide file explorer"</li>
 <li>Start with a scope to search one kind: notes:, thread:, table:, image:, diagram:, todo:</li>
 <li>Type show, hide, toggle or run on its own to list everything you can do. Every change shows an Undo</li>
 </ul>
@@ -4160,7 +4174,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
     <div id="status-left"><span id="sb-wordcount" class="status-strong">Words 0</span><span id="sb-depth-divider" class="status-divider" style="display:none">·</span><span id="sb-depth" class="status-strong" style="display:none"></span></div>
     <div id="status-right"><span id="sb-saved-divider" class="status-divider" style="display:none">·</span><span id="sb-saved" class="status-strong" style="display:none"></span><span id="sb-vault-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-vault-chip" class="status-chip status-chip-btn status-chip-icon" style="display:none"></button><span id="sb-auto-rewrite-divider" class="status-divider" style="display:none">·</span><button type="button" id="sb-auto-rewrite-chip" class="status-chip status-chip-btn" style="display:none"></button><span id="sb-qa-divider" class="status-divider">·</span><div class="global-search-wrap status-qa" id="global-search-wrap">
         <div class="qa-input-row">
-          <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse Quick Assist categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+          <button type="button" id="qa-category-icon-btn" class="qa-icon-btn" data-tip="Browse by category" aria-label="Browse search categories"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
           <input id="qa-input" type="text" placeholder="Search…" autocomplete="off" aria-label="Quick assist command and search input" />
         </div>
         <div class="qa-dropdown" id="qa-dropdown">
@@ -4461,7 +4475,7 @@ html.calm-layout #help-meta-links .help-coffee-icon{color:var(--support)}
               <div id="demo-features-grid">
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="20" y1="20" x2="15.3" y2="15.3"/></svg><span>Search everything</span></div>
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.5 2A4 4 0 0 0 6.5 19z"/><polyline points="9.5 14.5 12 12 14.5 14.5"/><line x1="12" y1="12" x2="12" y2="19.5"/></svg><span>Cloud sync</span></div>
-                <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg><span>Quick Assist</span></div>
+                <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg><span>Search</span></div>
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Encryption</span></div>
                 <div class="demo-feature-card"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Export to PDF or OPML</span></div>
               </div>
@@ -5328,6 +5342,59 @@ function popoverDismiss(doc, opts) {
 }
 
 /* GENERATED:popoverDismiss:END */
+/* GENERATED:pastedColours:START — DO NOT EDIT BY HAND. Source of truth: src/utils/pastedColours.ts (tests: tests/unit/pastedColours.test.ts). Regenerate with `npm run generate` after changing the source; CI fails if this block drifts from what the generator produces (see .github/workflows/ci.yml and scripts/generate-index-blocks.mjs). */
+/**
+ * Drops colours that came in with pasted rich text (owner, 2026-11-02: text pasted from a web page into
+ * a note kept its black text and bright blue links, unreadable in dark mode). Like Notion and Google
+ * Docs, pasted text takes the theme's own colours; bold, lists, tables and links stay.
+ *
+ * Kept: anything Sakura writes itself — a value using a theme variable (`var(--…)`), the selection
+ * bar's highlight (`hiliteColor` with an rgba at .35 alpha) and `transparent`.
+ * Dropped: `color`, `background` and `background-color` declarations with any other value, and the
+ * old `color` / `bgcolor` attributes (`<font color>`, `<td bgcolor>`).
+ *
+ * Works on the HTML string (no DOM), so it can run on save and when a stored note is normalized.
+ * Wired into index.html via scripts/generate-index-blocks.mjs's `pastedColours` block.
+ */
+const SAKURA_HIGHLIGHT = /^rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*0?\.35\s*\)$/i;
+function keepColourValue(prop, value) {
+    const v = value.replace(/!important/i, '').trim();
+    if (/var\(--/i.test(v))
+        return true;
+    if (prop === 'color')
+        return false;
+    return v.toLowerCase() === 'transparent' || SAKURA_HIGHLIGHT.test(v);
+}
+function cleanStyle(style) {
+    let dropped = false;
+    const kept = style.split(';').filter((decl) => {
+        const i = decl.indexOf(':');
+        if (i < 0)
+            return true;
+        const prop = decl.slice(0, i).trim().toLowerCase();
+        if (prop !== 'color' && prop !== 'background' && prop !== 'background-color')
+            return true;
+        const keep = keepColourValue(prop, decl.slice(i + 1));
+        if (!keep)
+            dropped = true;
+        return keep;
+    });
+    return { text: kept.map((d) => d.trim()).filter(Boolean).join('; '), dropped };
+}
+function stripPastedColours(html) {
+    if (!html || !/color|background/i.test(html))
+        return html || '';
+    return html.replace(/<[a-zA-Z][^>]*>/g, (tag) => tag
+        .replace(/\s(?:bg)?color\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/\sstyle\s*=\s*("([^"]*)"|'([^']*)')/i, (m, _q, dq, sq) => {
+        const { text, dropped } = cleanStyle(dq ?? sq ?? '');
+        if (!dropped)
+            return m;
+        return text ? ` style="${text.replace(/"/g, '&quot;')}"` : '';
+    }));
+}
+
+/* GENERATED:pastedColours:END */
 // Sanitizes rich HTML (Pad content, Note content) before it's ever assigned via innerHTML.
 // These fields are stored as raw HTML (needed for the WYSIWYG editors) and can arrive from
 // three places: this browser's own editing (already trusted), a local file import, or account
@@ -5361,7 +5428,8 @@ function sakuraSanitizeRichHtml(html){
         if(name==='style'&&/javascript:|expression\(/i.test(value)){ el.removeAttribute(attr.name); return; }
       });
     });
-    return container.innerHTML;
+    // Pasted colours made for another page (black text, blue links) go, so text reads in both themes.
+    return stripPastedColours(container.innerHTML);
   }catch(e){ return ''; } // fail closed — if sanitizing itself throws, discard rather than risk raw insertion
 }
 function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -12614,7 +12682,7 @@ function captionFromLegacyAlt(alt) {
 function emptyStyles(){return {bold:false,italic:false,underline:false,strike:false,highlight:false,color:false,heading:0}}
 function normalizeStyles(st){const hl=HIGHLIGHT_COLORS[st?.highlight]?st.highlight:false; const fc=FONT_COLORS.includes(st?.color)?st.color:false; const hd=Number.isInteger(st?.heading)&&st.heading>=1&&st.heading<=7?Math.min(st.heading,3):0; return {bold:!!st?.bold,italic:!!st?.italic,underline:!!st?.underline,strike:!!st?.strike,highlight:hl,color:fc,heading:hd}}
 function normalizeTags(t){return Array.isArray(t)?t.filter(s=>typeof s==='string'&&s.trim()).map(s=>s.trim()):[];}
-function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?n.note:'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(tidyTableHtml):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',...normalizeRowStatusMeta(n),createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})},n)}
+function normalizeNode(n){const _now=Date.now(); return normalizeNodeMarks({id:Number.isFinite(n.id)?n.id:nextId++,text:typeof n.text==='string'?n.text:'',depth:Number.isFinite(n.depth)?n.depth:0,parentId:n.parentId??null,styles:normalizeStyles(n.styles||{}),note:typeof n.note==='string'?stripPastedColours(n.note):'',noteTitle:typeof n.noteTitle==='string'?n.noteTitle:'',tables:Array.isArray(n.tables)?n.tables.filter(t=>typeof t==='string').map(t=>tidyTableHtml(stripPastedColours(t))):[],images:normalizeNodeImages(n.images,_now,newNodeImageId),tags:normalizeTags(n.tags),checked:!!n.checked,isCheckbox:!!n.isCheckbox,marker:normalizeThreadStatus(n.marker)||'',...normalizeRowStatusMeta(n),createdAt:Number.isFinite(n.createdAt)&&n.createdAt>0?n.createdAt:_now,modifiedAt:Number.isFinite(n.modifiedAt)&&n.modifiedAt>0?n.modifiedAt:_now,completedAt:(Number.isFinite(n.completedAt)&&n.completedAt>0)?n.completedAt:(n.checked&&n.isCheckbox?_now:null),...(n.noExport?{noExport:true}:{})},n)}
 // images (8th arg) is always deep-copied with fresh image ids -- every caller passing one is
 // creating a NEW node from an existing one's content (duplicate, paste), so the copy's pictures
 // must be independent objects, not shared references into the source node.
@@ -20303,7 +20371,7 @@ function showToast(msg, type, fromQa, durationMs) { const t = el('toast'); t.cla
     const icon = document.createElement('span');
     icon.className = 'toast-qa-icon';
     icon.innerHTML = QA_TOAST_ICON_SVG;
-    icon.dataset.tip = 'From Quick Assist';
+    icon.dataset.tip = 'From Search';
     t.appendChild(icon);
 } const span = document.createElement('span'); span.textContent = msg; t.appendChild(span); if (type === 'success')
     t.classList.add('toast-success'); t.classList.add('show'); clearTimeout(showToast._tm); showToast._tm = setTimeout(() => t.classList.remove('show'), durationMs || (/undo/i.test(msg) ? TOAST_UNDO_MS : 1600)); }
@@ -20321,7 +20389,7 @@ function showActionToast(msg, actionLabel, onAction, duration = 5000, fromQa = f
         const icon = document.createElement('span');
         icon.className = 'toast-qa-icon';
         icon.innerHTML = QA_TOAST_ICON_SVG;
-        icon.dataset.tip = 'From Quick Assist';
+        icon.dataset.tip = 'From Search';
         t.appendChild(icon);
     }
     const span = document.createElement('span');
@@ -23777,9 +23845,12 @@ el('editor-pane').addEventListener('contextmenu',e=>{if(e.target.closest('.node-
 // buttons, links and menus keep their own.
 // The title itself, when you're not typing in it: the document menu (Version history, Sort, Clear all),
 // like a row's own menu; while typing, the browser's menu (spelling) as in notes and threads.
+// The title box runs the full width, so a right-click past the end of its words is empty space and
+// gets the page menu, not the document menu (owner 2026-11-02: "works even on the empty space").
+function pastTitleWords(ht,x){ const cs=getComputedStyle(ht); const c=pastTitleWords._c||(pastTitleWords._c=document.createElement('canvas').getContext('2d')); c.font=cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily; const w=c.measureText(ht.value||ht.placeholder||'').width; return x>ht.getBoundingClientRect().left+parseFloat(cs.paddingLeft||'0')-ht.scrollLeft+w+8; }
 { let titleWasFocused=false; const ht=el('header-title');
   ht?.addEventListener('mousedown',e=>{ if(e.button===2){ titleWasFocused=document.activeElement===ht; if(!titleWasFocused)e.preventDefault(); } });
-  ht?.addEventListener('contextmenu',e=>{ if(titleWasFocused||!currentDocId)return; e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,docMenuItems()); }); }
+  ht?.addEventListener('contextmenu',e=>{ if(titleWasFocused||!currentDocId)return; e.preventDefault(); e.stopPropagation(); showSbContextMenu(e.clientX,e.clientY,pastTitleWords(ht,e.clientX)?chromeContextItems():docMenuItems()); }); }
 ['doc-tab-strip-row','editor-title-row'].forEach(id=>el(id)?.addEventListener('contextmenu',e=>{
   if(e.defaultPrevented||e.target.closest('input,textarea,[contenteditable="true"],button,a,[role="menu"],.todo-dd-menu,.sb-context-menu'))return;
   e.preventDefault(); showSbContextMenu(e.clientX,e.clientY,chromeContextItems());
@@ -23822,7 +23893,7 @@ const SHORTCUTS = {
   docBack:        {combo:'mod+[',         label:'Back to the previous document', category:'Documents & Zen', guarded:false, action:()=>goDocNav(-1)},
   docForward:     {combo:'mod+]',         label:'Forward',                  category:'Documents & Zen', guarded:false, action:()=>goDocNav(1)},
   toggleZen:      {combo:'mod+shift+e',   label:'Toggle zen mode',          category:'Documents & Zen', guarded:false, action:()=>setZenMode(!zenMode)},
-  quickAssist:    {combo:'mod+/',         label:'Open Quick Assist',        category:'Search',           guarded:false, action:()=>toggleQa()},
+  quickAssist:    {combo:'mod+/',         label:'Open Search',        category:'Search',           guarded:false, action:()=>toggleQa()},
   findInTree:     {combo:'mod+f',         label:'Find in document',         category:'Search',           guarded:false, action:()=>openSearch()},
   findReplace:    {combo:'mod+h',         label:'Find & replace',         category:'Search',           guarded:false, action:()=>{openSearch(); if(!el('replace-bar')?.classList.contains('open'))toggleReplaceBar();}},
   collapseAll:    {combo:'mod+alt+c',     label:'Collapse/expand all',       category:'Editing',          guarded:false, action:()=>toggleFoldAll()},

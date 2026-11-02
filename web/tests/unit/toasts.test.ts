@@ -47,7 +47,7 @@ describe('showToast', () => {
     t.showToast('Done', 'success', true);
     expect(toast().classList.contains('toast-success')).toBe(true);
     const icon = toast().querySelector('.toast-qa-icon') as HTMLElement;
-    expect(icon.dataset.tip).toBe('From Quick Assist');
+    expect(icon.dataset.tip).toBe('From Search');
     expect(icon.querySelector('svg')).not.toBeNull();
     t.showToast('Plain');
     expect(toast().classList.contains('toast-success')).toBe(false);
