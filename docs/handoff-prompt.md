@@ -173,11 +173,11 @@ contradicts README.md or docs/feature-reference.md, trust them.)*
 
 ### Latest changes
 
+- **Quieter chrome + way back to Help (2026-11-02).** `+N` fold badge weight 400 (was 500, read louder than the row icons); top line shows "Unfiled" only when folders exist; placeholder doc row drops its "not saved" word (tooltip stays); Trash count only when >0; About tagline lists tables/charts/diagrams/threads/row status/To-Dos/AI, Source code row removed (licence is All Rights Reserved). Help → About / Keyboard shortcuts open Settings with `#settings-back-btn` "‹ Help"; it or Esc returns to the same Help page (`showSettingsBackToHelp`/`goBackToHelp`; closing Settings any other way drops it). Spec `settings-back-to-help.spec.ts`.
+
 - **Click another row while typing (2026-11-02).** Bug: the row input's blur re-rendered between mouse-down and mouse-up, so the browser dropped the click and typing kept going into the old row. Now a document-level `_rowPointerDown` flag (set on mousedown on a `.node-row` outside `.node-input`) makes the blur wait for mouseup + a tick, so the other row's click handler moves the caret first. Spec `click-other-row-while-typing.spec.ts`.
 
-- **Settings rail order (2026-11-02).** Rail now runs most-used to least: General, Documents, AI, Shortcuts, Data & backup, Account, About (AI moved up under Documents; only the rail buttons moved, section DOM order unchanged). Help rail order checked and kept; Help's "Look" heading renamed "Appearance". Spec `toolbar-settings-simplify.spec.ts`.
-
-- **Shortcuts: one page in Settings, no popups (2026-11-01).** Help's Cheatsheet popup and Settings' Customize shortcuts popup listed the same thing. Now a **Shortcuts** rail in Settings (`data-cat="shortcuts"`, `#keyboard-shortcuts-section`) holds the list, search and Reset all, edited in place; Help's "Keyboard shortcuts" button (`#cheatsheet-open-btn`) opens it. Both popups and the cheatsheet's hand-written cards are gone. Spec `shortcuts-page.spec.ts`.
+- **Settings rail order (2026-11-02).** Rail now runs most-used to least: General, Documents, AI, Shortcuts, Data & backup, Account, About (only the rail buttons moved). Help's "Look" heading renamed "Appearance".
 
 ### In progress / not built
 
